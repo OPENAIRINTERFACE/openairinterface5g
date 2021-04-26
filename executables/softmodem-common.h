@@ -92,6 +92,7 @@ extern "C"
 #define CONFIG_HLP_RFSIM         "Run in rf simulator mode (also known as basic simulator)\n"
 #define CONFIG_HLP_NOKRNMOD      "(noS1 only): Use tun instead of namesh module \n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
+#define CONFIG_HLP_USRP_THREAD   "having extra thead for usrp tx\n"
 #define CONFIG_HLP_NFAPI         "Change the nFAPI mode for NR\n"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -119,6 +120,7 @@ extern "C"
 
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
+extern int usrp_tx_thread;
 #define CMDLINE_PARAMS_DESC {  \
     {"rf-config-file",       CONFIG_HLP_RFCFGF,       0,              strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,        TYPE_STRING, sizeof(RF_CONFIG_FILE)},\
     {"split73",              CONFIG_HLP_SPLIT73,      0,              strptr:(char **)&SPLIT73,           defstrval:NULL,        TYPE_STRING, sizeof(SPLIT73)},\
@@ -147,6 +149,7 @@ extern "C"
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
     {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
+    {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,              iptr:&usrp_tx_thread,               defstrval:0,           TYPE_INT,    0},        \
     {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                       defintval:0,           TYPE_UINT8,  0},                     \
   }
 
@@ -156,28 +159,28 @@ extern "C"
 #define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
 #define CONFIG_HLP_MSC           "Enable the MSC tracing utility \n"
-/*----------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters for LOG utility                                         */
-/*   optname         helpstr          paramflags        XXXptr                     defXXXval            type           numelt */
-/*----------------------------------------------------------------------------------------------------------------------------*/
+#define CONFIG_FLOG_OPT          "R"
+#define CONFIG_LOGL_OPT          "g"
+/*-------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters for LOG utility                                                              */
+/*   optname                        helpstr       paramflags        XXXptr                              defXXXval            type           numelt */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define START_MSC                softmodem_params.start_msc
 #define CMDLINE_LOGPARAMS_DESC {  \
-    {"R" ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages, defintval:1,         TYPE_INT,      0},     \
-    {"g" ,           CONFIG_HLP_LOGL, 0,                uptr:&glog_level,          defintval:0,         TYPE_UINT,     0},     \
-	{"telnetsrv",    CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,     defintval:0,         TYPE_UINT,     0},     \
-    {"msc",          CONFIG_HLP_MSC,  PARAMFLAG_BOOL,   uptr:&START_MSC,           defintval:0,         TYPE_UINT,     0},     \
-	{"log-mem",      NULL,            0,      strptr:(char **)&logmem_filename,    defstrval:NULL,      TYPE_STRING,   0},     \
+    {CONFIG_FLOG_OPT ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages,           defintval:1,         TYPE_INT,      0},     \
+    {CONFIG_LOGL_OPT ,           CONFIG_HLP_LOGL, 0,                uptr:&glog_level,                    defintval:0,         TYPE_UINT,     0},     \
+	{"telnetsrv",                CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,               defintval:0,         TYPE_UINT,     0},     \
+    {"msc",                      CONFIG_HLP_MSC,  PARAMFLAG_BOOL,   uptr:&START_MSC,                     defintval:0,         TYPE_UINT,     0},     \
+	{"log-mem",                  NULL,            0,                strptr:(char **)&logmem_filename,    defstrval:NULL,      TYPE_STRING,   0},     \
+	{"telnetclt",                NULL,            0,                uptr:&start_telnetclt,               defstrval:NULL,      TYPE_UINT,     0},     \
   }
 
-#define CMDLINE_ONLINELOG_IDX     0
-#define CMDLINE_GLOGLEVEL_IDX     1
-#define CMDLINE_GLOGVERBO_IDX     2
-#define CMDLINE_STARTTELN_IDX     3
 
 /* check function for global log level */
 #define CMDLINE_LOGPARAMS_CHECK_DESC { \
     { .s5= {NULL} } ,                       \
     { .s2= {config_check_intrange, {0,4}}}, \
+    { .s5= {NULL} } ,                       \
     { .s5= {NULL} } ,                       \
     { .s5= {NULL} } ,                       \
     { .s5= {NULL} } ,                       \
@@ -193,6 +196,7 @@ extern "C"
 #define SOFTMODEM_SIML1_BIT           (1<<12)
 #define SOFTMODEM_DOSCOPE_BIT         (1<<15)
 #define SOFTMODEM_RECPLAY_BIT         (1<<16)
+#define SOFTMODEM_TELNETCLT_BIT       (1<<17)
 #define SOFTMODEM_ENB_BIT             (1<<20)
 #define SOFTMODEM_GNB_BIT             (1<<21)
 #define SOFTMODEM_4GUE_BIT            (1<<22)
@@ -209,6 +213,7 @@ extern "C"
 #define IS_SOFTMODEM_SIML1           ( get_softmodem_optmask() & SOFTMODEM_SIML1_BIT)
 #define IS_SOFTMODEM_DOSCOPE         ( get_softmodem_optmask() & SOFTMODEM_DOSCOPE_BIT)
 #define IS_SOFTMODEM_IQPLAYER        ( get_softmodem_optmask() & SOFTMODEM_RECPLAY_BIT)
+#define IS_SOFTMODEM_TELNETCLT_BIT   ( get_softmodem_optmask() & SOFTMODEM_TELNETCLT_BIT)    
 #define IS_SOFTMODEM_ENB_BIT         ( get_softmodem_optmask() & SOFTMODEM_ENB_BIT)
 #define IS_SOFTMODEM_GNB_BIT         ( get_softmodem_optmask() & SOFTMODEM_GNB_BIT)
 #define IS_SOFTMODEM_4GUE_BIT        ( get_softmodem_optmask() & SOFTMODEM_4GUE_BIT)

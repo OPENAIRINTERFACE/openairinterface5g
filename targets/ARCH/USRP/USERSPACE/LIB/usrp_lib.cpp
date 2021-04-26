@@ -153,7 +153,7 @@ int check_ref_locked(usrp_state_t *s,size_t mboard) {
 }
 
 static int sync_to_gps(openair0_device *device) {
-  uhd::set_thread_priority_safe();
+  //uhd::set_thread_priority_safe();
   //std::string args;
   //Set up program options
   //po::options_description desc("Allowed options");
@@ -589,7 +589,7 @@ void *trx_usrp_write_thread(void * arg){
 
 int trx_usrp_write_init(openair0_device *device){
 
-  uhd::set_thread_priority_safe(1.0);
+  //uhd::set_thread_priority_safe(1.0);
   openair0_thread_t *write_thread = &device->write_thread;
   printf("initializing tx write thread\n");
 
@@ -597,7 +597,8 @@ int trx_usrp_write_init(openair0_device *device){
   write_thread->end                = 0;
   write_thread->count_write        = 0;
   printf("end of tx write thread\n");
-
+  pthread_mutex_init(&write_thread->mutex_write, NULL);
+  pthread_cond_init(&write_thread->cond_write, NULL);
   pthread_create(&write_thread->pthread_write,NULL,trx_usrp_write_thread,(void *)device);
 
   return(0);
@@ -948,7 +949,7 @@ extern "C" {
 
 
     // hotfix! to be checked later
-    uhd::set_thread_priority_safe(1.0);
+    //uhd::set_thread_priority_safe(1.0);
     // Initialize USRP device
     int vers=0,subvers=0,subsubvers=0;
     int bw_gain_adjust=0;
@@ -1337,18 +1338,18 @@ extern "C" {
   if(is_equal(s->sample_rate, (double)7.68e6))
     s->tx_forward_nsamps = 50;
 
-    recplay_state_t *recPlay=device->recplay_state;
+  recplay_state_t *recPlay=device->recplay_state;
 
-    if (recPlay != NULL) { // record mode
-      recPlay->maxSizeBytes=openair0_cfg[0].recplay_conf->u_sf_max *
+  if (recPlay != NULL) { // record mode
+    recPlay->maxSizeBytes=openair0_cfg[0].recplay_conf->u_sf_max *
                             (sizeof(iqrec_t)+BELL_LABS_IQ_BYTES_PER_SF);
-      recPlay->ms_sample = (iqrec_t *) malloc(recPlay->maxSizeBytes);
-      recPlay->currentPtr= (uint8_t *)recPlay->ms_sample;
+    recPlay->ms_sample = (iqrec_t *) malloc(recPlay->maxSizeBytes);
+    recPlay->currentPtr= (uint8_t *)recPlay->ms_sample;
 
-      if (recPlay->ms_sample == NULL) {
-        std::cerr<< "Memory allocation failed for subframe record or replay mode." << std::endl;
-        exit(-1);
-      }
+    if (recPlay->ms_sample == NULL) {
+      std::cerr<< "Memory allocation failed for subframe record or replay mode." << std::endl;
+      exit(-1);
+    }
   }
   return 0;
 }

@@ -573,7 +573,9 @@ static void handle_dl_harq(module_id_t mod_id,
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
     harq->round = 0;
     harq->ndi ^= 1;
-  } else if (harq->round == MAX_HARQ_ROUNDS) {
+  } else {
+    harq->round++;
+    if (harq->round == MAX_HARQ_ROUNDS) {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
     harq->round = 0;
     harq->ndi ^= 1;
@@ -582,7 +584,7 @@ static void handle_dl_harq(module_id_t mod_id,
     LOG_D(MAC, "retransmission error for UE %d (total %d)\n", UE_id, stats->dlsch_errors);
   } else {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].retrans_dl_harq, harq_pid);
-    harq->round++;
+    }
   }
 }
 
@@ -658,7 +660,7 @@ int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, int Mod_idP, int UE_i
 //returns the measured RSRP value (upper limit)
 int get_measured_rsrp(uint8_t index) {
   //if index is invalid returning minimum rsrp -140
-  if((index >= 0 && index <= 15) || index >= 114)
+  if(index <= 15 || index >= 114)
     return MIN_RSRP_VALUE;
 
   return L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[index];
@@ -981,7 +983,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
+      const int feedback_slot = (slot + num_slots) % num_slots;
       /* In case of realtime problems: we can only identify a HARQ process by
        * timing. If the HARQ process's feedback_slot is not the one we
        * expected, we assume that processing has been aborted and we need to
@@ -1038,7 +1040,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
       const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
+      const int feedback_slot = (slot + num_slots) % num_slots;
       /* In case of realtime problems: we can only identify a HARQ process by
        * timing. If the HARQ process's feedback_slot is not the one we
        * expected, we assume that processing has been aborted and we need to

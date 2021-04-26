@@ -57,7 +57,7 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/threadPool/thread-pool.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
-#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
 #include <openair2/LAYER2/MAC/mac_vars.h>
@@ -81,6 +81,9 @@ uint16_t sl_ahead=0;
 double cpuf;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
+THREAD_STRUCT thread_struct;
+nfapi_ue_release_request_body_t release_rntis;
+msc_interface_t msc_interface;
 
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
@@ -604,7 +607,7 @@ int main(int argc, char **argv)
                                 sampling_frequency,
                                 bandwidth,
 				DS_TDL,
-                                0, 0, 0);
+                                0, 0, 0, 0);
 
   if (UE2gNB == NULL) {
     printf("Problem generating channel model. Exiting.\n");
@@ -1167,7 +1170,6 @@ int main(int argc, char **argv)
 	gNB->UL_INFO.rx_ind.number_of_pdus = 0;
 	gNB->UL_INFO.crc_ind.number_crcs = 0;
 
-        start_meas(&gNB->phy_proc_rx);
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
         phy_procedures_gNB_uespec_RX(gNB, frame, slot);
@@ -1199,7 +1201,6 @@ int main(int argc, char **argv)
 	  LOG_M("rxsigF0_llr.m","rxsF0_llr",
 		&gNB->pusch_vars[0]->llr[0],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
 	}
-        start_meas(&gNB->phy_proc_rx);
         ////////////////////////////////////////////////////////////
 	
 	if (gNB->ulsch[0][0]->last_iteration_cnt >= 

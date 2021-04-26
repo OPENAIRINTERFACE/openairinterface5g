@@ -44,8 +44,6 @@
 
 //#define DEBUG_TURBO_ENCODER 1
 //#define CALLGRIND 1
-unsigned short threegpplte_interleaver_output;
-unsigned long long threegpplte_interleaver_tmp;
 
 #if defined(__x86_64__) || defined(__i386__)
 struct treillis {

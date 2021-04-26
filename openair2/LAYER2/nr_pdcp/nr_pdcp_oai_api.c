@@ -35,6 +35,7 @@
 /* from OAI */
 #include "pdcp.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #define TODO do { \
     printf("%s:%d:%s: todo\n", __FILE__, __LINE__, __FUNCTION__); \
@@ -491,7 +492,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
       //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
       //printf("\n");
-      itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
+      itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
 
   }
 }

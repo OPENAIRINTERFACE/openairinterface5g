@@ -194,6 +194,8 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
+  if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
+
   if ((frame&127) == 0) dump_pdsch_stats(gNB);
 
   //apply the OFDM symbol rotation here
@@ -548,6 +550,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   int power_rxF = signal_energy_nodc(&gNB->common_vars.rxdataF[0][offset+(47*12)],12*18);
   LOG_D(PHY,"frame %d, slot %d: UL signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
+  start_meas(&gNB->phy_proc_rx);
+
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
@@ -653,10 +657,10 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
           uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,1);
-	        start_meas(&gNB->rx_pusch_stats);
-	        for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
-	            nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
-	        }
+	  start_meas(&gNB->rx_pusch_stats);
+	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
+	       nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
+	  }
           int ulsch_power=0,ulsch_noise_power=0;
           for (int aarx=0;aarx<gNB->frame_parms.nb_antennas_rx;aarx++) {
              gNB->pusch_vars[ULSCH_id]->ulsch_power[aarx]/=num_dmrs;
@@ -675,7 +679,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
              return;
           } else gNB->pusch_vars[ULSCH_id]->DTX=0;
 
-	        stop_meas(&gNB->rx_pusch_stats);
+          stop_meas(&gNB->rx_pusch_stats);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,0);
           //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
           //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
@@ -687,6 +691,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
       }
     }
   }
+  stop_meas(&gNB->phy_proc_rx);
   // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
   if (pucch_decode_done || pusch_decode_done) {
     T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));

@@ -40,6 +40,7 @@
 #include <openair1/PHY/NR_UE_TRANSPORT/pucch_nr.h>
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair1/PHY/NR_UE_ESTIMATION/nr_estimation.h"
+#include <openair1/PHY/impl_defs_nr.h>
 
 #ifndef NO_RAT_NR
 
@@ -54,10 +55,172 @@
 #endif
 
 
+/* TS 36.213 Table 9.2.3-3: Mapping of values for one HARQ-ACK bit to sequences */
+static const int sequence_cyclic_shift_1_harq_ack_bit[2]
+/*        HARQ-ACK Value        0    1 */
+/* Sequence cyclic shift */ = { 0,   6 }
+;
+
+/* TS 36.213 Table 9.2.5-2: Mapping of values for two HARQ-ACK bits and positive SR to sequences */
+static const int sequence_cyclic_shift_2_harq_ack_bits_positive_sr[4]
+/*        HARQ-ACK Value      (0,0)  (0,1)   (1,0)  (1,1) */
+/* Sequence cyclic shift */ = {  1,     4,     10,     7 }
+;
+
 
 uint8_t nr_is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
 uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
 
+static const uint16_t scheduling_request_periodicity[NB_SR_PERIOD]
+= { 0, 0, 1, 2, 4, 5, 8, 10, 16, 20, 40, 80, 160, 320, 640 }
+;
+
+/* TS 38.213 9.2.5.2 UE procedure for multiplexing HARQ-ACK/SR and CSI in a PUCCH */
+/* this is a counter of number of pucch format 4 per subframe */
+static int nb_pucch_format_4_in_subframes[LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] = { 0 } ;
+
+/* TS 36.213 Table 9.2.5.2-1: Code rate  corresponding to higher layer parameter PUCCH-F2-maximum-coderate, */
+/* or PUCCH-F3-maximum-coderate, or PUCCH-F4-maximum-coderate */
+/* add one additional element set to 0 for parsing the array until this end */
+/* stored values are code rates * 100 */
+//static const int code_rate_r_time_100[8] = { (0.08 * 100), (0.15 * 100), (0.25*100), (0.35*100), (0.45*100), (0.60*100), (0.80*100), 0 } ;
+
+/* TS 38.213 Table 9.2.3-4: Mapping of values for two HARQ-ACK bits to sequences */
+static const int sequence_cyclic_shift_2_harq_ack_bits[4]
+/*        HARQ-ACK Value       (0,0)  (0,1)  (1,0)  (1,1) */
+/* Sequence cyclic shift */ = {   0,     3,     9,     6 }
+;
+
+/* TS 38.211 Table 6.4.1.3.3.2-1: DM-RS positions for PUCCH format 3 and 4 */
+static const int nb_symbols_excluding_dmrs[NB_SYMBOL_MINUS_FOUR][2][2]
+= {
+/*                     No additional DMRS            Additional DMRS   */
+/* PUCCH length      No hopping   hopping         No hopping   hopping */
+/* index                  0          1                 0          1    */
+/*    4     */    {{      3    ,     2   }   ,  {      3     ,    2    }},
+/*    5     */    {{      3    ,     3   }   ,  {      3     ,    3    }},
+/*    6     */    {{      4    ,     4   }   ,  {      4     ,    4    }},
+/*    7     */    {{      5    ,     5   }   ,  {      5     ,    5    }},
+/*    8     */    {{      6    ,     6   }   ,  {      6     ,    6    }},
+/*    9     */    {{      7    ,     7   }   ,  {      7     ,    7    }},
+/*   10     */    {{      8    ,     8   }   ,  {      6     ,    6    }},
+/*   11     */    {{      9    ,     9   }   ,  {      7     ,    7    }},
+/*   12     */    {{     10    ,    10   }   ,  {      8     ,    8    }},
+/*   13     */    {{     11    ,    11   }   ,  {      9     ,    9    }},
+/*   14     */    {{     12    ,    12   }   ,  {     10     ,   10    }},
+}
+;
+
+
+/* TS 36.213 Table 9.2.5-1: Mapping of values for one HARQ-ACK bit and positive SR to sequences */
+static const int sequence_cyclic_shift_1_harq_ack_bit_positive_sr[2]
+/*        HARQ-ACK Value        0    1 */
+/* Sequence cyclic shift */ = { 3,   9 }
+;
+
+static float RSRP_meas_mapping_nr[98] 
+= {
+  -140,
+    -139,
+    -138,
+    -137,
+    -136,
+    -135,
+    -134,
+    -133,
+    -132,
+    -131,
+    -130,
+    -129,
+    -128,
+    -127,
+    -126,
+    -125,
+    -124,
+    -123,
+    -122,
+    -121,
+    -120,
+    -119,
+    -118,
+    -117,
+    -116,
+    -115,
+    -114,
+    -113,
+    -112,
+    -111,
+    -110,
+    -109,
+    -108,
+    -107,
+    -106,
+    -105,
+    -104,
+    -103,
+    -102,
+    -101,
+    -100,
+    -99,
+    -98,
+    -97,
+    -96,
+    -95,
+    -94,
+    -93,
+    -92,
+    -91,
+    -90,
+    -89,
+    -88,
+    -87,
+    -86,
+    -85,
+    -84,
+    -83,
+    -82,
+    -81,
+    -80,
+    -79,
+    -78,
+    -77,
+    -76,
+    -75,
+    -74,
+    -73,
+    -72,
+    -71,
+    -70,
+    -69,
+    -68,
+    -67,
+    -66,
+    -65,
+    -64,
+    -63,
+    -62,
+    -61,
+    -60,
+    -59,
+    -58,
+    -57,
+    -56,
+    -55,
+    -54,
+    -53,
+    -52,
+    -51,
+    -50,
+    -49,
+    -48,
+    -47,
+    -46,
+    -45,
+    -44,
+    -43
+  }
+  ;
+  
 long
 binary_search_float_nr(
   float elements[],
@@ -201,6 +364,30 @@ void nr_generate_pucch3_4(int32_t **txdataF,
 * TS 38.213 9  UE procedure for reporting control information
 *
 *********************************************************************/
+
+/* TS 36.213 Table 9.2.1-1: PUCCH resource sets before dedicated PUCCH resource configuration */
+const initial_pucch_resource_t initial_pucch_resource[NB_INITIAL_PUCCH_RESOURCE]
+=
+{
+/*              format           first symbol     Number of symbols        PRB offset    nb index for       set of initial CS */
+/*  0  */ {  pucch_format0_nr,      12,                  2,                   0,            2,       {    0,   3,    0,    0  }   },
+/*  1  */ {  pucch_format0_nr,      12,                  2,                   0,            3,       {    0,   4,    8,    0  }   },
+/*  2  */ {  pucch_format0_nr,      12,                  2,                   3,            3,       {    0,   4,    8,    0  }   },
+/*  3  */ {  pucch_format1_nr,      10,                  4,                   0,            2,       {    0,   6,    0,    0  }   },
+/*  4  */ {  pucch_format1_nr,      10,                  4,                   0,            4,       {    0,   3,    6,    9  }   },
+/*  5  */ {  pucch_format1_nr,      10,                  4,                   2,            4,       {    0,   3,    6,    9  }   },
+/*  6  */ {  pucch_format1_nr,      10,                  4,                   4,            4,       {    0,   3,    6,    9  }   },
+/*  7  */ {  pucch_format1_nr,       4,                 10,                   0,            2,       {    0,   6,    0,    0  }   },
+/*  8  */ {  pucch_format1_nr,       4,                 10,                   0,            4,       {    0,   3,    6,    9  }   },
+/*  9  */ {  pucch_format1_nr,       4,                 10,                   2,            4,       {    0,   3,    6,    9  }   },
+/* 10  */ {  pucch_format1_nr,       4,                 10,                   4,            4,       {    0,   3,    6,    9  }   },
+/* 11  */ {  pucch_format1_nr,       0,                 14,                   0,            2,       {    0,   6,    0,    0  }   },
+/* 12  */ {  pucch_format1_nr,       0,                 14,                   0,            4,       {    0,   3,    6,    9  }   },
+/* 13  */ {  pucch_format1_nr,       0,                 14,                   2,            4,       {    0,   3,    6,    9  }   },
+/* 14  */ {  pucch_format1_nr,       0,                 14,                   4,            4,       {    0,   3,    6,    9  }   },
+/* 15  */ {  pucch_format1_nr,       0,                 14,                   0,            4,       {    0,   3,    6,    9  }   },
+}
+;
 
 bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_t *proc, bool reset_harq)
 {
@@ -863,7 +1050,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
             LOG_E(PHY,"PUCCH Downlink DAI has an invalid value : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
           }
           else if (harq_status->send_harq_status == 0) {
-            LOG_D(PHY,"PUCCH Downlink ack can not be transmitted : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+            LOG_E(PHY,"PUCCH Downlink ack can not be transmitted : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
           }
           else {
 

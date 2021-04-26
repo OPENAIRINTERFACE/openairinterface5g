@@ -66,6 +66,7 @@ uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
 uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
 
 uint64_t get_softmodem_optmask(void) {return 0;}
+softmodem_params_t *get_softmodem_params(void) {return 0;}
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
@@ -479,7 +480,7 @@ int main(int argc, char **argv)
 				300e-9,
                                 0,
                                 0,
-                                0);
+                                0, 0);
 
   if (gNB2UE==NULL) {
 	printf("Problem generating channel model. Exiting.\n");

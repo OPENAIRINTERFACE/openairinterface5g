@@ -527,6 +527,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
         ra_rnti = 1 + symbol + (9 /*slotP*/ * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
       else
         ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
+<<<<<<< HEAD
       
       // This should be handled differently when we use the initialBWP for RA
       ra->bwp_id = 0;
@@ -536,6 +537,15 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 	bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
 	ra->bwp_id = 1;
       }
+=======
+
+      ra->bwp_id = 1;
+      NR_BWP_Downlink_t *bwp = NULL; // For SA we use InitialBWP
+      if(get_softmodem_params()->sa != 1) {
+        bwp = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+      }
+
+>>>>>>> origin/develop
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
       
       LOG_D(NR_MAC,
@@ -565,16 +575,33 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       ra->timing_offset = timing_offset;
       ra->preamble_slot = slotP;
 
+<<<<<<< HEAD
       struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = bwp ? 
 	bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList:
 	scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+=======
+      NR_SearchSpaceId_t	ra_SearchSpace = 0;
+      struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = NULL;
+      if(bwp) {
+        commonSearchSpaceList = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+        ra_SearchSpace = *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      } else {
+        commonSearchSpaceList = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+        ra_SearchSpace = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      }
+>>>>>>> origin/develop
       AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
+
       // Common searchspace list
       for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
         ss = commonSearchSpaceList->list.array[i];
+<<<<<<< HEAD
         if (ss->searchSpaceId == (bwp ? 
 				  *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace :
 				  *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace))
+=======
+        if (ss->searchSpaceId == ra_SearchSpace)
+>>>>>>> origin/develop
           ra->ra_ss = ss;
       }
 
@@ -891,22 +918,16 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
 
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+    NR_SearchSpace_t *ss = ra->ra_ss;
+
     long BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
-    NR_SearchSpace_t *ss = NULL;
-    if(ra->ra_ss) {
-      ss = ra->ra_ss;
-    } else {
-      if (nr_mac->sched_ctrlCommon == NULL){
-        nr_mac->sched_ctrlCommon = calloc(1,sizeof(*nr_mac->sched_ctrlCommon));
-      }
-      if(nr_mac->sched_ctrlCommon->search_space == NULL) {
-        nr_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->search_space));
-        fill_default_searchSpaceZero(nr_mac->sched_ctrlCommon->search_space);
-      }
-      ss = nr_mac->sched_ctrlCommon->search_space;
+    NR_BWP_Downlink_t *bwp = NULL; // For SA we use InitialBWP
+    if(get_softmodem_params()->sa != 1) {
+      bwp = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
     }
 
+<<<<<<< HEAD
     NR_BWP_Downlink_t *bwp = NULL;
     NR_ControlResourceSet_t *coreset = NULL;
     NR_BWP_t *genericParameters = NULL;
@@ -925,6 +946,20 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     else {
       genericParameters= &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+=======
+    NR_ControlResourceSet_t *coreset = NULL;
+    if(bwp) {
+      coreset = get_coreset(bwp, ss, 0);
+    } else {
+      coreset = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
+    }
+
+    long BWPStart = 0;
+    if (get_softmodem_params()->sa != 1) {
+      BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    } else {
+      BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+>>>>>>> origin/develop
     }
     BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     ss = ra->ra_ss;
@@ -962,7 +997,13 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
+<<<<<<< HEAD
     const int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+=======
+    const int startSymbolAndLength = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->
+        downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->
+        pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+>>>>>>> origin/develop
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
     AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
@@ -970,9 +1011,12 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it. This is especially
     // important if we have multiple RAs, and the DLSCH has to reuse them, so we need to mark them
+<<<<<<< HEAD
     const int bwpid = bwp ? bwp->bwp_Id : 0;
+=======
+>>>>>>> origin/develop
     const int coresetid = coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][ra->bwp_id][coresetid];
     if (!pdcch_pdu_rel15) {
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -981,14 +1025,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
       nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, bwp);
-      nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu_rel15;
-    }
-
-    // TODO: This assignment should be done in function nr_configure_pdcch()
-    if(get_softmodem_params()->sa) {
-      pdcch_pdu_rel15->CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG_CSET_0;
-      pdcch_pdu_rel15->BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      pdcch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      nr_mac->pdcch_pdu_idx[CC_id][ra->bwp_id][coresetid] = pdcch_pdu_rel15;
     }
 
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
@@ -1006,11 +1043,17 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     const int pduindex = nr_mac->pdu_index[CC_id]++;
 
     uint8_t mcsTableIdx = 0;
+<<<<<<< HEAD
     if (bwp &&
 	bwp->bwp_Dedicated &&
 	bwp->bwp_Dedicated->pdsch_Config &&
 	bwp->bwp_Dedicated->pdsch_Config->choice.setup &&
 	bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table) {
+=======
+    if (bwp==NULL || bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL)
+      mcsTableIdx = 0;
+    else{
+>>>>>>> origin/develop
       if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0)
         mcsTableIdx = 1;
       else
@@ -1033,7 +1076,11 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->pduIndex = pduindex;
     pdsch_pdu_rel15->BWPSize  = BWPSize;
     pdsch_pdu_rel15->BWPStart = BWPStart;
+<<<<<<< HEAD
     pdsch_pdu_rel15->SubcarrierSpacing = genericParameters->subcarrierSpacing;
+=======
+    pdsch_pdu_rel15->SubcarrierSpacing = bwp!=NULL ? bwp->bwp_Common->genericParameters.subcarrierSpacing : scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
+>>>>>>> origin/develop
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
     pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
@@ -1045,7 +1092,11 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->nrOfLayers = 1;
     pdsch_pdu_rel15->transmissionScheme = 0;
     pdsch_pdu_rel15->refPoint = 0;
+<<<<<<< HEAD
     pdsch_pdu_rel15->dmrsConfigType = dmrsConfigType;
+=======
+    pdsch_pdu_rel15->dmrsConfigType = bwp!=NULL ? (bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
+>>>>>>> origin/develop
     pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->SCID = 0;
     pdsch_pdu_rel15->numDmrsCdmGrpsNoData = nrOfSymbols <=2 ? 1 : 2;
@@ -1116,9 +1167,13 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        NR_DL_DCI_FORMAT_1_0,
                        NR_RNTI_RA,
                        pdsch_pdu_rel15->BWPSize,
+<<<<<<< HEAD
                        bwpid);
 
 
+=======
+                       ra->bwp_id);
+>>>>>>> origin/develop
 
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
@@ -1166,32 +1221,40 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     uint8_t time_domain_assignment = 0;
     uint8_t mcsIndex = 0;
 
-    NR_SearchSpace_t *ss = NULL;
-    if(ra->ra_ss) {
-      ss = ra->ra_ss;
-    } else {
-      if (nr_mac->sched_ctrlCommon == NULL){
-        nr_mac->sched_ctrlCommon = calloc(1,sizeof(*nr_mac->sched_ctrlCommon));
-      }
-      if(nr_mac->sched_ctrlCommon->search_space == NULL) {
-        nr_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*nr_mac->sched_ctrlCommon->search_space));
-        fill_default_searchSpaceZero(nr_mac->sched_ctrlCommon->search_space);
-      }
-      ss = nr_mac->sched_ctrlCommon->search_space;
+    NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+    NR_SearchSpace_t *ss = ra->ra_ss;
+
+    NR_BWP_Downlink_t *bwp = NULL; // For SA we use InitialBWP
+    if(get_softmodem_params()->sa != 1) {
+      bwp = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
     }
 
+<<<<<<< HEAD
     NR_BWP_Downlink_t *bwp =  ra->CellGroup ? ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1] : NULL;
     NR_ControlResourceSet_t *coreset = get_coreset(scc,ra->CellGroup ? ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1] : NULL, ss, NR_SearchSpace__searchSpaceType_PR_common);
 
     if (coreset == NULL) coreset = nr_mac->sched_ctrlCommon->coreset;
+=======
+    NR_ControlResourceSet_t *coreset = NULL;
+    if(bwp) {
+      coreset = get_coreset(bwp, ss, 0);
+    } else {
+      coreset = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
+    }
+>>>>>>> origin/develop
 
     int UE_id = find_nr_UE_id(module_idP, ra->rnti);
     NR_UE_info_t *UE_info = &nr_mac->UE_info;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
+<<<<<<< HEAD
     NR_BWP_t *genericParameters = bwp ? & bwp->bwp_Common->genericParameters : &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters; 
     long BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     long BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+=======
+    long BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    long BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+>>>>>>> origin/develop
 
     // HARQ management
     int8_t current_harq_pid = sched_ctrl->dl_harq_pid;
@@ -1251,6 +1314,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 	  mac_pdu_length);
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
+<<<<<<< HEAD
 
     NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList;
     if (bwp &&
@@ -1263,6 +1327,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
         
     const int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+=======
+    const int startSymbolAndLength = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->
+        downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->
+        pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+>>>>>>> origin/develop
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
     AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
@@ -1273,7 +1342,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     uint16_t N_DMRS_SLOT = get_num_dmrs(dlDmrsSymbPos);
 
+<<<<<<< HEAD
     long dmrsConfigType = bwp ? (bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1):0;
+=======
+    long dmrsConfigType = bwp!=NULL ? (bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
+>>>>>>> origin/develop
     uint8_t N_PRB_DMRS = 0;
     AssertFatal(nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData == 1 || 
 		nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData == 2,
@@ -1287,11 +1360,17 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     uint8_t mcsTableIdx = 0;
+<<<<<<< HEAD
     if (bwp &&
 	bwp->bwp_Dedicated &&
 	bwp->bwp_Dedicated->pdsch_Config &&
 	bwp->bwp_Dedicated->pdsch_Config->choice.setup &&
 	bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table) {
+=======
+    if (bwp==NULL || bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL)
+      mcsTableIdx = 0;
+    else{
+>>>>>>> origin/develop
       if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0)
         mcsTableIdx = 1;
       else
@@ -1333,9 +1412,12 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it. This is especially
     // important if we have multiple RAs, and the DLSCH has to reuse them, so we need to mark them
+<<<<<<< HEAD
     const int bwpid = bwp ? bwp->bwp_Id : 0;
+=======
+>>>>>>> origin/develop
     const int coresetid = coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][ra->bwp_id][coresetid];
     if (!pdcch_pdu_rel15) {
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -1344,13 +1426,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
       nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, bwp);
-      nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu_rel15;
+      nr_mac->pdcch_pdu_idx[CC_id][ra->bwp_id][coresetid] = pdcch_pdu_rel15;
     }
-
-    // TODO: This assignment should be done in function nr_configure_pdcch()
-    pdcch_pdu_rel15->CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG_CSET_0;
-    pdcch_pdu_rel15->BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    pdcch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
     memset((void *)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -1382,7 +1459,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->pduIndex = pduindex;
     pdsch_pdu_rel15->BWPSize  = BWPSize;
     pdsch_pdu_rel15->BWPStart = BWPStart;
+<<<<<<< HEAD
     pdsch_pdu_rel15->SubcarrierSpacing = genericParameters->subcarrierSpacing;
+=======
+    pdsch_pdu_rel15->SubcarrierSpacing = bwp!=NULL ? bwp->bwp_Common->genericParameters.subcarrierSpacing : scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
+>>>>>>> origin/develop
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
     pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
@@ -1475,7 +1556,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        NR_DL_DCI_FORMAT_1_0,
                        NR_RNTI_TC,
                        pdsch_pdu_rel15->BWPSize,
+<<<<<<< HEAD
                        bwp_Id);
+=======
+                       ra->bwp_id);
+>>>>>>> origin/develop
 
     // Add padding header and zero rest out if there is space left
     if (mac_pdu_length < harq->tb_size) {

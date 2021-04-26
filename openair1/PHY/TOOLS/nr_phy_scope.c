@@ -240,7 +240,7 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
   for (int pix=0; pix<graph->w; pix++) {
     scopeSample_t *end=values+(pix+1)*samplesPerPixel;
     end-=2;
-    AssertFatal(end <= values+datasize,"diff : %ld", end-values+datasize);
+    AssertFatal(end <= values+datasize,"diff : %u", end-values+datasize);
     double val=0;
 
     for (scopeSample_t *s=values+(pix)*samplesPerPixel;
@@ -276,7 +276,7 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
     graph->initDone=true;
   }
 
-  fl_set_object_label_f(graph->text, "%s, avg I/Q pow: %4.1f", label, sqrt(avg));
+  fl_set_object_label_f(graph->text, "%s, avg I/Q pow: %4.1f", label, 0/*sqrt(avg)*/);
   graph->iteration++;
 }
 
@@ -444,7 +444,6 @@ static void puschThroughtput (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   //    fl_set_xyplot_ybounds(form->pusch_tput,0,ymax);
   */
 }
-
 static OAI_phy_scope_t *create_phy_scope_gnb(void) {
   FL_OBJECT *obj;
   OAI_phy_scope_t *fdui = calloc(( sizeof *fdui ),1);
@@ -493,7 +492,6 @@ static OAI_phy_scope_t *create_phy_scope_gnb(void) {
   fl_show_form (fdui->phy_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, "LTE UL SCOPE gNB");
   return fdui;
 }
-
 static const int scope_enb_num_ue = 1;
 void phy_scope_gNB(OAI_phy_scope_t *form,
                    scopeData_t *p,
@@ -517,7 +515,6 @@ void phy_scope_gNB(OAI_phy_scope_t *form,
 
   //fl_check_forms();
 }
-
 static void *scope_thread_gNB(void *arg) {
   scopeData_t *p=(scopeData_t *) arg;
   //# ifdef ENABLE_XFORMS_WRITE_STATS
@@ -542,7 +539,6 @@ static void *scope_thread_gNB(void *arg) {
 
   return NULL;
 }
-
 static void copyRxdataF(int32_t *data, int slot,  void *scopeData) {
   scopeData_t *scope=(scopeData_t *)scopeData;
   memcpy(scope->rxdataF + slot*scope->gNB->frame_parms.samples_per_slot_wCP,
@@ -562,7 +558,6 @@ void gNBinitScope(scopeParms_t *p) {
   pthread_t forms_thread;
   threadCreate(&forms_thread, scope_thread_gNB, p->gNB->scopeData, "scope", -1, OAI_PRIORITY_RT_LOW);
 }
-
 static void ueWaterFall  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // Received signal in time domain of receive antenna 0
   genericWaterFall(graph,
@@ -571,7 +566,6 @@ static void ueWaterFall  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eN
                    phy_vars_ue->frame_parms.slots_per_frame,
                    "X axis: one frame time");
 }
-
 /* replaced by waterfall
 static void ueTimeResponse  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // Received signal in time domain of receive antenna 0
@@ -580,14 +574,12 @@ static void ueTimeResponse  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int
                            phy_vars_ue->frame_parms.samples_per_frame);
 }
 */
-
 static void ueChannelResponse  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // Channel Impulse Response
   genericPowerPerAntena(graph, phy_vars_ue->frame_parms.nb_antennas_rx,
                         (const scopeSample_t **) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates_time,
                         phy_vars_ue->frame_parms.ofdm_symbol_size>>3);
 }
-
 static void ueFreqWaterFall (OAIgraph_t *graph,PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id ) {
   NR_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->frame_parms;
   //use 1st antenna
@@ -597,7 +589,6 @@ static void ueFreqWaterFall (OAIgraph_t *graph,PHY_VARS_NR_UE *phy_vars_ue, int 
                    phy_vars_ue->frame_parms.slots_per_frame,
                    "X axis: one frame frequency" );
 }
-
 /*
 static void uePbchFrequencyResp  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // Channel Frequency Response (includes 5 complex sample for filter)
@@ -633,7 +624,6 @@ static void uePbchFrequencyResp  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue
   oai_xygraph(graph,freq,chest_f_abs,frame_parms->ofdm_symbol_size,0,10);
 }
 */
-
 static void uePbchLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PBCH LLRs
   if ( !phy_vars_ue->pbch_vars[eNB_id]->llr)
@@ -649,7 +639,6 @@ static void uePbchLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_
 
   oai_xygraph(graph,bit_pbch,llr_pbch,864,0,10);
 }
-
 static void uePbchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PBCH I/Q of MF Output
   if (!phy_vars_ue->pbch_vars[eNB_id]->rxdataF_comp[0])
@@ -684,15 +673,14 @@ static void uePbchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_i
   AssertFatal(base <= 180*3,"");
   oai_xygraph(graph,I,Q,base,0, 10);
 }
-
 static void uePcchLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDCCH LLRs
   if (!phy_vars_ue->pdcch_vars[0][eNB_id]->llr)
     return;
 
-  int num_re = 4*273*12; // 12*frame_parms->N_RB_DL*num_pdcch_symbols
-  int Qm = 2;
-  int coded_bits_per_codeword = num_re*Qm;
+  //int num_re = 4*273*12; // 12*frame_parms->N_RB_DL*num_pdcch_symbols
+  //int Qm = 2;
+  int coded_bits_per_codeword = 2*4*100*12; //num_re*Qm;
   float *llr, *bit;
   oai_xygraph_getbuff(graph, &bit, &llr, coded_bits_per_codeword*RX_NB_TH_MAX, 0);
   int base=0;
@@ -710,7 +698,6 @@ static void uePcchLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_
   AssertFatal(base <= coded_bits_per_codeword*RX_NB_TH_MAX, "");
   oai_xygraph(graph,bit,llr,base,0,10);
 }
-
 static void uePcchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDCCH I/Q of MF Output
   if (!phy_vars_ue->pdcch_vars[0][eNB_id]->rxdataF_comp[0])
@@ -735,7 +722,6 @@ static void uePcchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_i
   AssertFatal(base <= nb*RX_NB_TH_MAX, "");
   oai_xygraph(graph,I,Q,base,0,10);
 }
-
 static void uePdschLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDSCH LLRs
   if (!phy_vars_ue->pdsch_vars[0][eNB_id]->llr[0])
@@ -763,7 +749,6 @@ static void uePdschLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB
   //fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword);
   oai_xygraph(graph,bit,llr,base,0,10);
 }
-
 static void uePdschIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDSCH I/Q of MF Output
   if (!phy_vars_ue->pdsch_vars[0][eNB_id]->rxdataF_comp0[0])
@@ -791,7 +776,6 @@ static void uePdschIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_
   AssertFatal(base <= sz*RX_NB_TH_MAX, "");
   oai_xygraph(graph,I,Q,sz*RX_NB_TH_MAX,0,10);
 }
-
 static void uePdschThroughput  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   /*
   float tput_time_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
@@ -815,7 +799,6 @@ static void uePdschThroughput  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, 
   fl_set_xyplot_ybounds(form->pdsch_tput,0,tput_ue_max[UE_id]);
   */
 }
-
 static OAI_phy_scope_t *create_phy_scope_nrue( int ID ) {
   FL_OBJECT *obj;
   OAI_phy_scope_t *fdui = calloc(( sizeof *fdui ),1);
@@ -885,7 +868,6 @@ static OAI_phy_scope_t *create_phy_scope_nrue( int ID ) {
   fl_show_form (fdui->phy_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, buf);
   return fdui;
 }
-
 void phy_scope_nrUE(OAI_phy_scope_t *form,
                     PHY_VARS_NR_UE *phy_vars_ue,
                     int eNB_id,
@@ -909,8 +891,6 @@ void phy_scope_nrUE(OAI_phy_scope_t *form,
 
   //fl_check_forms();
 }
-
-
 static void *nrUEscopeThread(void *arg) {
   PHY_VARS_NR_UE *ue=(PHY_VARS_NR_UE *)arg;
   size_t stksize;
@@ -934,13 +914,10 @@ static void *nrUEscopeThread(void *arg) {
 
   pthread_exit((void *)arg);
 }
-
 void nrUEinitScope(PHY_VARS_NR_UE *ue) {
   pthread_t forms_thread;
   threadCreate(&forms_thread, nrUEscopeThread, ue, "scope", -1, OAI_PRIORITY_RT_LOW);
 }
-
-
 void nrscope_autoinit(void *dataptr) {
   AssertFatal( (IS_SOFTMODEM_GNB_BIT||IS_SOFTMODEM_5GUE_BIT),"Scope cannot find NRUE or GNB context");
 
@@ -975,7 +952,6 @@ static void reset_stats_gNB(FL_OBJECT *button,
     }
   }
 }
-
 static FD_stats_form *create_form_stats_form(int ID) {
   FL_OBJECT *obj;
   FD_stats_form *fdui = calloc(( sizeof *fdui ),1);
