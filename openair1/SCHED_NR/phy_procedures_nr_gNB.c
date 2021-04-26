@@ -369,6 +369,11 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   uint16_t bw_scaling = 16 * gNB->frame_parms.ofdm_symbol_size / 2048;
+  // do some integer rounding to improve TA accuracy
+  if (sync_pos > 0)
+    sync_pos += bw_scaling / 2 - 1;
+  else if(sync_pos < 0)
+    sync_pos -= bw_scaling / 2 - 1;
   timing_advance_update = sync_pos / bw_scaling;
 
   // put timing advance command in 0..63 range
