@@ -277,7 +277,7 @@ int main(int argc, char **argv)
   //float psnr;
   float eff_tp_check = 0.7;
   uint8_t snrRun;
-  uint32_t TBS;
+  uint32_t TBS = 0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   //double iqim = 0.0;
@@ -995,7 +995,7 @@ int main(int argc, char **argv)
         if (run_initial_sync)
           nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[0].ssb_pdu);
         else
-          phy_procedures_gNB_TX(gNB,frame,slot,0);
+          phy_procedures_gNB_TX(gNB,frame,slot,1);
             
         int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
         
