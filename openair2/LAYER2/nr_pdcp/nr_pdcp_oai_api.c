@@ -1044,6 +1044,12 @@ void pdcp_config_set_security(
         uint8_t *const kRRCint_pP,
         uint8_t *const kUPenc_pP)
 {
+  nr_pdcp_ue_t *ue;
+  nr_pdcp_entity_t *rb;
+  int rnti = ctxt_pP->rnti;
+  int integrity_algorithm;
+  int ciphering_algorithm;
+
   DevAssert(pdcp_pP != NULL);
 
   if ((security_modeP >= 0) && (security_modeP <= 0x77)) {
@@ -1073,6 +1079,33 @@ void pdcp_config_set_security(
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           security_modeP);
   }
+
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
+
+  /* TODO: proper handling of DRBs, for the moment only SRBs are handled */
+
+  if (rb_id >= 1 && rb_id <= 3) {
+    rb = ue->srb[rb_id - 1];
+
+    if (rb == NULL) {
+      LOG_E(PDCP, "%s:%d:%s: no SRB found (rnti %d, rb_id %ld)\n",
+            __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
+      nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+      return;
+    }
+
+    integrity_algorithm = (security_modeP>>4) & 0xf;
+    ciphering_algorithm = security_modeP & 0x0f;
+    rb->set_security(rb, integrity_algorithm, (char *)kRRCint_pP,
+                     ciphering_algorithm, (char *)kRRCenc_pP);
+  } else {
+    LOG_E(PDCP, "%s:%d:%s: TODO\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
 

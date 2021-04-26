@@ -236,7 +236,7 @@ void nr_process_mac_pdu(
             mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
             mac_subheader_len = 2;
           }
-          LOG_I(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, rnti);
+          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, rnti);
           mac_rlc_data_ind(module_idP,
               rnti,
               module_idP,
@@ -406,20 +406,20 @@ void handle_nr_ul_harq(module_id_t mod_id,
   } else {
     harq->round++;
     if (harq->round == MAX_HARQ_ROUNDS) {
-    harq->ndi ^= 1;
-    harq->round = 0;
-    LOG_D(NR_MAC,
-          "RNTI %04x: Ulharq id %d crc failed in all rounds\n",
-          crc_pdu->rnti,
-          harq_pid);
-    UE_info->mac_stats[UE_id].ulsch_errors++;
-    add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
-  } else {
-    LOG_D(MAC,
-          "Ulharq id %d crc failed for RNTI %04x\n",
-          harq_pid,
-          crc_pdu->rnti);
-    add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
+      harq->ndi ^= 1;
+      harq->round = 0;
+      LOG_D(NR_MAC,
+            "RNTI %04x: Ulharq id %d crc failed in all rounds\n",
+            crc_pdu->rnti,
+            harq_pid);
+      UE_info->mac_stats[UE_id].ulsch_errors++;
+      add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
+    } else {
+      LOG_D(NR_MAC,
+            "Ulharq id %d crc failed for RNTI %04x\n",
+            harq_pid,
+            crc_pdu->rnti);
+      add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
     }
   }
 }

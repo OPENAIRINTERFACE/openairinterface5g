@@ -603,6 +603,7 @@ void RCconfig_NR_L1(void) {
       RC.gNB[j]->pusch_proc_threads = *(L1_ParamList.paramarray[j][L1_PUSCH_PROC_THREADS].uptr);
       RC.gNB[j]->pucch0_thres       = *(L1_ParamList.paramarray[j][L1_PUCCH0_DTX_THRESHOLD].uptr);
       RC.gNB[j]->prach_thres        = *(L1_ParamList.paramarray[j][L1_PRACH_DTX_THRESHOLD].uptr);
+      RC.gNB[j]->pusch_thres        = *(L1_ParamList.paramarray[j][L1_PUSCH_DTX_THRESHOLD].uptr);
       if(strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
         //sf_ahead = 2; // Need 4 subframe gap between RX and TX
       }else if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {

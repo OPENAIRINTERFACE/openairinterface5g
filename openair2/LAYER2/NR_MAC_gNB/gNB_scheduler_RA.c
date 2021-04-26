@@ -1120,8 +1120,6 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        pdsch_pdu_rel15->BWPSize,
                        bwpid);
 
-
-
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
 
