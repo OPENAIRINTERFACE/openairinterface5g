@@ -648,7 +648,8 @@ static NR_CipheringAlgorithm_t rrc_gNB_select_ciphering(uint16_t algorithms) {
 
 static e_NR_IntegrityProtAlgorithm rrc_gNB_select_integrity(uint16_t algorithms) {
   
-  return NR_IntegrityProtAlgorithm_nia1;
+  //only NIA2 supported for now
+  return NR_IntegrityProtAlgorithm_nia2;
 
   if (algorithms & NGAP_INTEGRITY_NIA3_MASK) {
     return NR_IntegrityProtAlgorithm_nia3;
