@@ -200,18 +200,17 @@ class PhySim:
 		# Waiting to complete the running test
 		count = 0
 		isFinished = False
-		testCompleteCount = 0
+		tmpPodNames = podNames
 		while(count < 25 and isFinished == False):
 			time.sleep(58)
-			for podName in podNames:
+			for podName in tmpPodNames:
 				mySSH.command(f'oc logs --tail=1 {podName} 2>&1', '\$', 6)
 				if mySSH.getBefore().count('Finished') != 0:
-					testCompleteCount += 1
-				time.sleep(1)
-			if testCompleteCount == 12:
+					tmpPodNames.remove(podName)
+				time.sleep(2)
+			if not tmpPodNames:
 				isFinished = True
 			count += 1
-			testCompleteCount = 0
 		if isFinished:
 			logging.debug('\u001B[1m PhySim test is Complete\u001B[0m')
         
