@@ -85,8 +85,8 @@ void mac_top_init_gNB(void)
         RC.nrmac[i]->pre_processor_dl = nr_preprocessor_phytest;
         RC.nrmac[i]->pre_processor_ul = nr_ul_preprocessor_phytest;
       } else {
-        RC.nrmac[i]->pre_processor_dl = nr_simple_dlsch_preprocessor;
-        RC.nrmac[i]->pre_processor_ul = nr_simple_ulsch_preprocessor;
+        RC.nrmac[i]->pre_processor_dl = nr_init_fr1_dlsch_preprocessor(i, 0);
+        RC.nrmac[i]->pre_processor_ul = nr_init_fr1_ulsch_preprocessor(i, 0);
       }
 
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)

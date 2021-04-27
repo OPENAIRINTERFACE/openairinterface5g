@@ -413,9 +413,9 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
   LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
 
-  if (nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15))
+  if (nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, &mac->def_dci_pdu_rel15[dci->dci_format]))
     return -1;
-  return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci->rnti, dci->dci_format));
+  return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, &mac->def_dci_pdu_rel15[dci->dci_format], dci->rnti, dci->dci_format));
 }
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint8_t dci_format){
