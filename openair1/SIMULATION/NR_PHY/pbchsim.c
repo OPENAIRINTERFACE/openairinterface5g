@@ -47,7 +47,7 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair1/PHY/MODULATION/nr_modulation.h"
-
+#include <executables/softmodem-common.h>
 //#define DEBUG_NR_PBCHSIM
 
 PHY_VARS_gNB *gNB;
