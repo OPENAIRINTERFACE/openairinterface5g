@@ -236,13 +236,38 @@ void nr_dlsim_preprocessor(module_id_t module_id,
       sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
   sched_ctrl->cce_index = 0;
 
-  sched_ctrl->rbStart = g_rbStart;
-  sched_ctrl->rbSize = g_rbSize;
-  sched_ctrl->mcs = g_mcsIndex;
-  sched_ctrl->time_domain_allocation = 2;
-  sched_ctrl->mcsTableIdx = g_mcsTableIdx;
+  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
+  nr_set_pdsch_semi_static(scc,
+                           UE_info->secondaryCellGroup[0],
+                           sched_ctrl->active_bwp,
+                           /* tda = */ 2,
+                           /* num_dmrs_cdm_grps_no_data = */ 1,
+                           ps);
+
+  NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
+  sched_pdsch->rbStart = g_rbStart;
+  sched_pdsch->rbSize = g_rbSize;
+  sched_pdsch->mcs = g_mcsIndex;
+  /* the following might override the table that is mandated by RRC
+   * configuration */
+  ps->mcsTableIdx = g_mcsTableIdx;
+
+  sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
+  sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
+  sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
+                                        sched_pdsch->R,
+                                        sched_pdsch->rbSize,
+                                        ps->nrOfSymbols,
+                                        ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
+                                        0 /* N_PRB_oh, 0 for initialBWP */,
+                                        0 /* tb_scaling */,
+                                        1 /* nrOfLayers */)
+                         >> 3;
+
   /* the simulator assumes the HARQ PID is equal to the slot number */
-  sched_ctrl->dl_harq_pid = slot;
+  sched_pdsch->dl_harq_pid = slot;
+
   /* The scheduler uses lists to track whether a HARQ process is
    * free/busy/awaiting retransmission, and updates the HARQ process states.
    * However, in the simulation, we never get ack or nack for any HARQ process,
@@ -255,11 +280,10 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   else
     add_front_nr_list(&sched_ctrl->retrans_dl_harq, slot);   // ... make PID retransmission
   sched_ctrl->harq_processes[slot].is_waiting = false;
-  AssertFatal(sched_ctrl->rbStart >= 0, "invalid rbStart %d\n", sched_ctrl->rbStart);
-  AssertFatal(sched_ctrl->rbSize > 0, "invalid rbSize %d\n", sched_ctrl->rbSize);
-  AssertFatal(sched_ctrl->mcs >= 0, "invalid sched_ctrl->mcs %d\n", sched_ctrl->mcs);
-  AssertFatal(sched_ctrl->mcsTableIdx >= 0 && sched_ctrl->mcsTableIdx <= 2, "invalid sched_ctrl->mcsTableIdx %d\n", sched_ctrl->mcsTableIdx);
-  sched_ctrl->numDmrsCdmGrpsNoData = 1;
+  AssertFatal(sched_pdsch->rbStart >= 0, "invalid rbStart %d\n", sched_pdsch->rbStart);
+  AssertFatal(sched_pdsch->rbSize > 0, "invalid rbSize %d\n", sched_pdsch->rbSize);
+  AssertFatal(sched_pdsch->mcs >= 0, "invalid mcs %d\n", sched_pdsch->mcs);
+  AssertFatal(ps->mcsTableIdx >= 0 && ps->mcsTableIdx <= 2, "invalid mcsTableIdx %d\n", ps->mcsTableIdx);
 }
 
 
@@ -634,7 +658,6 @@ int main(int argc, char **argv)
     RC.nb_nr_mac_CC[i] = 1;
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
-  gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
 
@@ -722,6 +745,9 @@ int main(int argc, char **argv)
   rrc_mac_config_req_gNB(0,0,n_tx,1,pusch_tgt_snrx10,pucch_tgt_snrx10,scc,0,0,NULL);
   // UE dedicated configuration
   rrc_mac_config_req_gNB(0,0,n_tx,1,pusch_tgt_snrx10,pucch_tgt_snrx10,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  // reset preprocessor to the one of DLSIM after it has been set during
+  // rrc_mac_config_req_gNB
+  gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
   phy_init_nr_gNB(gNB,0,0);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   NR_UE_info_t *UE_info = &RC.nrmac[0]->UE_info;

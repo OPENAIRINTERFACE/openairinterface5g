@@ -66,7 +66,13 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
   NR_UE_info_t *UE_info = &gNB->UE_info;
   int num = 1;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
-    LOG_I(MAC, "UE ID %d RNTI %04x (%d/%d)\n", UE_id, UE_info->rnti[UE_id], num++, UE_info->num_UEs);
+    LOG_I(MAC, "UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm\n",
+          UE_id,
+          UE_info->rnti[UE_id],
+          num++,
+          UE_info->num_UEs,
+          UE_info->UE_sched_ctrl[UE_id].ph,
+          UE_info->UE_sched_ctrl[UE_id].pcmax);
     NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
     LOG_I(MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
@@ -77,10 +83,15 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
     stats->num_rsrp_meas = 0;
     stats->cumul_rsrp = 0 ;
     LOG_I(MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
-    LOG_I(MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",
+    const NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    LOG_I(MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_errors %d, PUSCH SNR %2.1f dB, PUCCH SNR %2.1f dB, noise rssi %2.1f dB\n",
           UE_id,
           stats->ulsch_rounds[0], stats->ulsch_rounds[1],
-          stats->ulsch_rounds[2], stats->ulsch_rounds[3], stats->ulsch_errors);
+          stats->ulsch_rounds[2], stats->ulsch_rounds[3],
+          stats->ulsch_errors,
+          (float) sched_ctrl->pusch_snrx10 / 10,
+          (float) sched_ctrl->pucch_snrx10 / 10,
+          (float) (sched_ctrl->raw_rssi - 1280) / 10);
     LOG_I(MAC,
           "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
           UE_id,
@@ -314,61 +325,22 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   protocol_ctxt_t   ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
-  int nb_periods_per_frame;
-
   const int bwp_id = 1;
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
-  NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-
-  switch(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity) {
-    case 0:
-      nb_periods_per_frame = 20; // 10ms/0p5ms
-      break;
-
-    case 1:
-      nb_periods_per_frame = 16; // 10ms/0p625ms
-      break;
-
-    case 2:
-      nb_periods_per_frame = 10; // 10ms/1ms
-      break;
-
-    case 3:
-      nb_periods_per_frame = 8; // 10ms/1p25ms
-      break;
-
-    case 4:
-      nb_periods_per_frame = 5; // 10ms/2ms
-      break;
-
-    case 5:
-      nb_periods_per_frame = 4; // 10ms/2p5ms
-      break;
-
-    case 6:
-      nb_periods_per_frame = 2; // 10ms/5ms
-      break;
-
-    case 7:
-      nb_periods_per_frame = 1; // 10ms/10ms
-      break;
-
-    default:
-      AssertFatal(1==0,"Undefined tdd period %ld\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
-  }
 
   if (slot==0 && (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]>=257)) {
+    const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+    const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+    const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
+    const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
+    const int nb_periods_per_frame = n / nr_slots_period;
     // re-initialization of tdd_beam_association at beginning of frame (only for FR2)
     for (int i=0; i<nb_periods_per_frame; i++)
       gNB->tdd_beam_association[i] = -1;
   }
-
-  int num_slots_per_tdd = (nr_slots_per_frame[*scc->ssbSubcarrierSpacing])/nb_periods_per_frame;
-
-  const int nr_ulmix_slots = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
 
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
@@ -382,17 +354,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_pdcp_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
-
-#define BIT(x) (1 << (x))
-  const uint64_t dlsch_in_slot_bitmap = BIT( 1) | BIT( 2) | BIT( 3) | BIT( 4) | BIT( 5) | BIT( 6)
-                                      | BIT(11) | BIT(12) | BIT(13) | BIT(14) | BIT(15) | BIT(16);
-
-  uint8_t prach_config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
-  uint64_t ulsch_in_slot_bitmap;
-  if (prach_config_index==4) //this is the PRACH config used in the Benetel RRU. TODO: make this generic for any PRACH config. 
-    ulsch_in_slot_bitmap = BIT( 8) | BIT( 9);
-  else
-    ulsch_in_slot_bitmap = BIT( 8) | BIT(18);
 
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
@@ -419,7 +380,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 
   // This schedules MIB
-  schedule_nr_mib(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing],nb_periods_per_frame);
+  schedule_nr_mib(module_idP, frame, slot);
 
   // This schedules SIB1
   if ( get_softmodem_params()->sa == 1 )
@@ -454,14 +415,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // This schedules the DCI for Uplink and subsequently PUSCH
-  {
-    nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);
-  }
+  nr_schedule_ulsch(module_idP, frame, slot);
 
   // This schedules the DCI for Downlink and PDSCH
-  if (is_xlsch_in_slot(dlsch_in_slot_bitmap, slot))
-    nr_schedule_ue_spec(module_idP, frame, slot);
-
+  nr_schedule_ue_spec(module_idP, frame, slot);
 
   nr_schedule_pucch(module_idP, frame, slot);
 

@@ -569,9 +569,7 @@ static void handle_dl_harq(module_id_t mod_id,
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
     harq->round = 0;
     harq->ndi ^= 1;
-  } else {
-    harq->round++;
-    if (harq->round == MAX_HARQ_ROUNDS) {
+  } else if (harq->round >= MAX_HARQ_ROUNDS - 1) {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
     harq->round = 0;
     harq->ndi ^= 1;
@@ -580,7 +578,7 @@ static void handle_dl_harq(module_id_t mod_id,
     LOG_D(MAC, "retransmission error for UE %d (total %d)\n", UE_id, stats->dlsch_errors);
   } else {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].retrans_dl_harq, harq_pid);
-    }
+    harq->round++;
   }
 }
 
@@ -950,7 +948,50 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
 
   if ( !(reportQuantity_type))
     AssertFatal(reportQuantity_type, "reportQuantity is not configured");
+}
 
+static NR_UE_harq_t *find_harq(module_id_t mod_id, frame_t frame, sub_frame_t slot, int UE_id)
+{
+  /* In case of realtime problems: we can only identify a HARQ process by
+   * timing. If the HARQ process's feedback_frame/feedback_slot is not the one we
+   * expected, we assume that processing has been aborted and we need to
+   * skip this HARQ process, which is what happens in the loop below.
+   * Similarly, we might be "in advance", in which case we need to skip
+   * this result. */
+  NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
+  int8_t pid = sched_ctrl->feedback_dl_harq.head;
+  if (pid < 0)
+    return NULL;
+  NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
+  /* old feedbacks we missed: mark for retransmission */
+  while (harq->feedback_frame != frame
+         || (harq->feedback_frame == frame && harq->feedback_slot < slot)) {
+    LOG_W(MAC,
+          "expected HARQ pid %d feedback at %d.%d, but is at %d.%d instead (HARQ feedback is in the past)\n",
+          pid,
+          harq->feedback_frame,
+          harq->feedback_slot,
+          frame,
+          slot);
+    remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+    handle_dl_harq(mod_id, UE_id, pid, 0);
+    pid = sched_ctrl->feedback_dl_harq.head;
+    if (pid < 0)
+      return NULL;
+    harq = &sched_ctrl->harq_processes[pid];
+  }
+  /* feedbacks that we wait for in the future: don't do anything */
+  if (harq->feedback_slot > slot) {
+    LOG_W(MAC,
+          "expected HARQ pid %d feedback at %d.%d, but is at %d.%d instead (HARQ feedback is in the future)\n",
+          pid,
+          harq->feedback_frame,
+          harq->feedback_slot,
+          frame,
+          slot);
+    return NULL;
+  }
+  return harq;
 }
 
 void handle_nr_uci_pucch_0_1(module_id_t mod_id,
@@ -970,6 +1011,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
   sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
                                 uci_01->ul_cqi,
                                 30);
+  sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
@@ -978,28 +1020,12 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-      const int feedback_slot = (slot + num_slots) % num_slots;
-      /* In case of realtime problems: we can only identify a HARQ process by
-       * timing. If the HARQ process's feedback_slot is not the one we
-       * expected, we assume that processing has been aborted and we need to
-       * skip this HARQ process, which is what happens in the loop below. If
-       * you don't experience real-time problems, you might simply revert the
-       * commit that introduced these changes. */
-      int8_t pid = sched_ctrl->feedback_dl_harq.head;
-      DevAssert(pid >= 0);
-      while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
-        LOG_W(MAC,
-              "expected feedback slot %d, but found %d instead\n",
-              sched_ctrl->harq_processes[pid].feedback_slot,
-              feedback_slot);
-        remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-        handle_dl_harq(mod_id, UE_id, pid, 0);
-        pid = sched_ctrl->feedback_dl_harq.head;
-        DevAssert(pid >= 0);
-      }
-      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
+      NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
+      if (!harq)
+        break;
       DevAssert(harq->is_waiting);
+      const int8_t pid = sched_ctrl->feedback_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
     }
   }
@@ -1023,6 +1049,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
                                 uci_234->ul_cqi,
                                 30);
+  sched_ctrl->pucch_snrx10 = uci_234->ul_cqi * 5 - 640;
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
@@ -1030,28 +1057,12 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
       const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
-      const int feedback_slot = (slot + num_slots) % num_slots;
-      /* In case of realtime problems: we can only identify a HARQ process by
-       * timing. If the HARQ process's feedback_slot is not the one we
-       * expected, we assume that processing has been aborted and we need to
-       * skip this HARQ process, which is what happens in the loop below. If
-       * you don't experience real-time problems, you might simply revert the
-       * commit that introduced these changes. */
-      int8_t pid = sched_ctrl->feedback_dl_harq.head;
-      DevAssert(pid >= 0);
-      while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
-        LOG_W(MAC,
-              "expected feedback slot %d, but found %d instead\n",
-              sched_ctrl->harq_processes[pid].feedback_slot,
-              feedback_slot);
-        remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-        handle_dl_harq(mod_id, UE_id, pid, 0);
-        pid = sched_ctrl->feedback_dl_harq.head;
-        DevAssert(pid >= 0);
-      }
-      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
+      NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
+      if (!harq)
+        break;
       DevAssert(harq->is_waiting);
+      const int8_t pid = sched_ctrl->feedback_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
     }
   }
@@ -1219,6 +1230,29 @@ bool nr_acknack_scheduling(int mod_id,
 
   // advance ul_slot if it is not reachable by UE
   pucch->ul_slot = max(pucch->ul_slot, slot + pdsch_to_harq_feedback[0]);
+
+  // is there already CSI in this slot?
+  const NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[2];
+  // skip the CSI PUCCH if it is present and if in the next frame/slot
+  if (csi_pucch->csi_bits > 0
+      && csi_pucch->frame == pucch->frame
+      && csi_pucch->ul_slot == pucch->ul_slot) {
+    AssertFatal(!csi_pucch->simultaneous_harqcsi,
+                "%s(): %d.%d cannot handle simultaneous_harqcsi, but found for UE %d\n",
+                __func__,
+                pucch->frame,
+                pucch->ul_slot,
+                UE_id);
+    nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
+    /* advance the UL slot information in PUCCH by one so we won't schedule in
+     * the same slot again */
+    const int f = pucch->frame;
+    const int s = pucch->ul_slot;
+    memset(pucch, 0, sizeof(*pucch));
+    pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
+    pucch->ul_slot = (s + 1) % n_slots_frame;
+    return nr_acknack_scheduling(mod_id, UE_id, frame, slot);
+  }
 
   // Find the right timing_indicator value.
   int i = 0;
