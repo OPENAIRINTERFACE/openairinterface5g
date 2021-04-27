@@ -414,7 +414,7 @@ int main(int argc, char **argv)
   frame_parms->ssb_type = nr_ssb_type_C;
 
   nr_phy_config_request_sim_pbchsim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
-  phy_init_nr_gNB(gNB,0,0);
+  phy_init_nr_gNB(gNB,0,1);
   nr_set_ssb_first_subcarrier(&gNB->gNB_config,frame_parms);
 
   uint8_t n_hf = 0;
