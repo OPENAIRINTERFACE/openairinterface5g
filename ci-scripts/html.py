@@ -446,6 +446,37 @@ class HTMLManagement():
 					self.htmlFile.write('      </tr>\n')
 		self.htmlFile.close()
 
+	#for the moment it is limited to 4 columns, to be made generic later
+	def CreateHtmlDataLogTable(self, DataLog):
+		if (self.htmlFooterCreated or (not self.htmlHeaderCreated)):
+			return
+		self.htmlFile = open('test_results.html', 'a')
+		
+        # TabHeader 
+		self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
+		self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- ' + DataLog['Title'] + ' ---- </b></td>\n')
+		self.htmlFile.write('      </tr>\n')
+		self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
+		self.htmlFile.write('        <th colspan="2">'+ DataLog['ColNames'][0] +'</th>\n')
+		self.htmlFile.write('        <th>' + DataLog['ColNames'][1] + '</th>\n')
+		self.htmlFile.write('        <th>' + DataLog['ColNames'][2] + '</th>\n')
+		self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + '>'+ DataLog['ColNames'][3] +'</th>\n')
+		self.htmlFile.write('      </tr>\n')
+
+		for k in DataLog['Data']:
+			# TestRow 
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + k  + ' </td>\n')				
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + DataLog['Data'][k][0]  + ' </td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + DataLog['Data'][k][1]  + ' </td>\n')
+			if float(DataLog['Data'][k][2])> DataLog['Threshold'][k]:
+				self.htmlFile.write('        <td colspan="2" bgcolor = "red" >' + DataLog['Data'][k][2]  + ' ('+str(DataLog['Threshold'][k])+') ' + '</td>\n')
+			else:
+				self.htmlFile.write('        <td colspan="2" bgcolor = "green" >' + DataLog['Data'][k][2]  + ' ('+str(DataLog['Threshold'][k])+') ' + '</td>\n')					
+			self.htmlFile.write('      </tr>\n')
+		self.htmlFile.close()
+
+
 	def CreateHtmlTestRowQueue(self, options, status, ue_status, ue_queue):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
 			self.htmlFile = open('test_results.html', 'a')
