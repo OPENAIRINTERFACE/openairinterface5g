@@ -70,7 +70,6 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   uint16_t monitoringSymbolsWithinSlot = 0;
   uint8_t coreset_id = 1;
   int sps = 0;
-  def_dci_pdu_rel15 = calloc(1,2*sizeof(dci_pdu_rel15_t));
 
   AssertFatal(mac->scc == NULL || mac->scc_SIB == NULL, "both scc and scc_SIB cannot be non-null\n");
 

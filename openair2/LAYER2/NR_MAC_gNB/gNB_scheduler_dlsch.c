@@ -71,8 +71,8 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
   const int symb_dlMixed = tdd ? (1 << tdd->nrofDownlinkSymbols) - 1 : 0;
 
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  const NR_SearchSpace_t *search_space = get_searchspace(bwp, target_ss);
-  const NR_ControlResourceSet_t *coreset = get_coreset(bwp, search_space, 1 /* dedicated */);
+  const NR_SearchSpace_t *search_space = get_searchspace(scc, bwp->bwp_Dedicated, target_ss);
+  const NR_ControlResourceSet_t *coreset = get_coreset(scc, bwp, search_space, 1 /* dedicated */);
   // get coreset symbol "map"
   const uint16_t symb_coreset = (1 << coreset->duration) - 1;
 
@@ -510,7 +510,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
    * allocation after CCE alloc fail would be more complex) */
-  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1);
   if (!alloc) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
@@ -1211,8 +1211,5 @@ void nr_schedule_ue_spec(module_id_t module_id,
     gNB_mac->TX_req[CC_id].Number_of_PDUs++;
     gNB_mac->TX_req[CC_id].SFN = frame;
     gNB_mac->TX_req[CC_id].Slot = slot;
-
-    /* mark UE as scheduled */
-    memset(sched_pdsch, 0, sizeof(*sched_pdsch));
   }
 }

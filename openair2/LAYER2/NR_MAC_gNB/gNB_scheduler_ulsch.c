@@ -117,7 +117,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   AssertFatal(tdaList->list.count >= 3, "need to have at least three TDAs for UL slots\n");
   const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_UL = tdaList->list.array[0];
-  const int k2 = get_K2(ubwp, /* tda = */ 0, mu);
+  const int k2 = get_K2(scc, ubwp, /* tda = */ 0, mu);
   int start, len;
   SLIV2SL(tdaP_UL->startSymbolAndLength, &start, &len);
   const uint16_t symb_tda = ((1 << len) - 1) << start;
@@ -129,10 +129,10 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
   // get largest time domain allocation (TDA) for UL slot and UL in mixed slot
   int tdaMi = -1;
   const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
-  AssertFatal(k2 == get_K2(ubwp, /* tda = */ 1, mu),
+  AssertFatal(k2 == get_K2(scc, ubwp, /* tda = */ 1, mu),
               "scheduler cannot handle different k2 for UL slot (%d) and UL Mixed slot (%ld)\n",
               k2,
-              get_K2(ubwp, /* tda = */ 1, mu));
+              get_K2(scc, ubwp, /* tda = */ 1, mu));
   SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
   const uint16_t symb_tda_mi = ((1 << len) - 1) << start;
   // check whether PUCCH and TDA overlap: then, we cannot use it. Also, check
@@ -368,9 +368,9 @@ void nr_process_mac_pdu(module_id_t module_idP,
             mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
             mac_subheader_len = 2;
           }
-          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, rnti);
+          LOG_E(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, *UE_info->rnti);
           mac_rlc_data_ind(module_idP,
-              rnti,
+              *UE_info->rnti,
               module_idP,
               frameP,
               ENB_FLAG_YES,
@@ -1147,7 +1147,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   const int tda = nr_mac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
   if (tda < 0)
     return false;
-  int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
+  int K2 = get_K2(scc, sched_ctrl->active_ubwp, tda, mu);
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[slot / 64], sched_slot))

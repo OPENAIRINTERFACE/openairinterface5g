@@ -1283,7 +1283,7 @@ bool nr_acknack_scheduling(int mod_id,
     memset(pucch, 0, sizeof(*pucch));
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
     pucch->ul_slot = (s + 1) % n_slots_frame;
-    return nr_acknack_scheduling(mod_id, UE_id, frame, slot);
+    return nr_acknack_scheduling(mod_id, UE_id, frame, slot, -1);
   }
 
   // Find the right timing_indicator value.
