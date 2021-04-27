@@ -292,10 +292,10 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       }
     }
 
-#ifdef DEBUG_NR_PUCCH_RX
-    printf("PUCCH IDFT = (%d,%d)=>%f\n",corr_re[0],corr_im[0],10*log10(corr_re[0]*corr_re[0] + corr_im[0]*corr_im[0]));
-    if (l>1) printf("PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[1],corr_im[1],10*log10(corr_re[1]*corr_re[1] + corr_im[1]*corr_im[1]));
-#endif
+//#ifdef DEBUG_NR_PUCCH_RX
+    LOG_I(PHY,"PUCCH IDFT = (%d,%d)=>%f\n",corr_re[0],corr_im[0],10*log10(corr_re[0]*corr_re[0] + corr_im[0]*corr_im[0]));
+    if (l>1) LOG_I(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[1],corr_im[1],10*log10(corr_re[1]*corr_re[1] + corr_im[1]*corr_im[1]));
+i//#endif
     if (pucch_pdu->freq_hop_flag == 0 && l==1) // non-coherent correlation
       temp=corr_re[0]*corr_re[0] + corr_im[0]*corr_im[0];
     else if (pucch_pdu->freq_hop_flag == 0 && l==2) {
