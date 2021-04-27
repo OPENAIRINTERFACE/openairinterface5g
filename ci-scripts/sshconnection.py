@@ -112,10 +112,19 @@ class SSHConnection():
 		return self.sshresponse
 
 	def command(self, commandline, expectedline, timeout):
-		logging.debug(commandline)
+		if commandline.count('oc logs') == 0:
+			logging.debug(commandline)
 		self.ssh.timeout = timeout
-		self.ssh.sendline(commandline)
-		self.sshresponse = self.ssh.expect([expectedline, pexpect.EOF, pexpect.TIMEOUT])
+		# Nasty patch when pexpect output is out of sync.
+		# Much pronounced when running back-to-back-back oc commands
+		if (commandline.count('oc logs') > 0) or (commandline.count('oc get') > 0):
+			self.ssh.send(commandline)
+			self.ssh.expect([commandline, pexpect.TIMEOUT])
+			self.ssh.send('\r\n')
+			self.sshresponse = self.ssh.expect([expectedline, pexpect.EOF, pexpect.TIMEOUT])
+		else:
+			self.ssh.sendline(commandline)
+			self.sshresponse = self.ssh.expect([expectedline, pexpect.EOF, pexpect.TIMEOUT])
 		if self.sshresponse == 0:
 			return 0
 		elif self.sshresponse == 1:

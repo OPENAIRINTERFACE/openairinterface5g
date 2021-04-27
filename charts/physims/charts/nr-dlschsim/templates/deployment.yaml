@@ -40,6 +40,7 @@ spec:
           export OPENAIR_DIR=/opt/oai-physim &&
           cd cmake_targets/autotests &&
           ./run_exec_autotests.bash -g "015106" -q -np -b &&
+          echo "FINISHED" &&
           sleep infinity
       dnsPolicy: ClusterFirst
       restartPolicy: Always

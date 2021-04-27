@@ -189,7 +189,7 @@ class PhySim:
 			if mySSH.getBefore().count('Running') == 12:
 				logging.debug('\u001B[1m Running the physim test Scenarios\u001B[0m')
 				isRunning = True
-				podNames = re.findall('oai[\S\d\w]+', mySSH.getBefore())
+				podNames = re.findall('oai-[\S\d\w]+', mySSH.getBefore())
 			count +=1
 		if isRunning == False:
 			logging.error('\u001B[1m Some PODS Running FAILED \u001B[0m')
@@ -200,14 +200,15 @@ class PhySim:
 		# Waiting to complete the running test
 		count = 0
 		isFinished = False
-		tmpPodNames = podNames
-		while(count < 25 and isFinished == False):
-			time.sleep(58)
+		# doing a deep copy!
+		tmpPodNames = podNames.copy()
+		while(count < 28 and isFinished == False):
+			time.sleep(60)
 			for podName in tmpPodNames:
 				mySSH.command(f'oc logs --tail=1 {podName} 2>&1', '\$', 6)
-				if mySSH.getBefore().count('Finished') != 0:
+				if mySSH.getBefore().count('FINISHED') != 0:
+					logging.debug(podName + ' is finished')
 					tmpPodNames.remove(podName)
-				time.sleep(2)
 			if not tmpPodNames:
 				isFinished = True
 			count += 1
@@ -216,14 +217,14 @@ class PhySim:
         
 		# Getting the logs of each executables running in individual pods
 		for podName in podNames:
-			mySSH.command(f'oc logs {podName} >> cmake_targets/log/physim_test.txt 2>&1', '\$', 6)
+			mySSH.command(f'oc logs {podName} >> cmake_targets/log/physim_test.txt 2>&1', '\$', 15)
 		time.sleep(30)
 
 		# UnDeploy the physical simulator pods
 		mySSH.command('helm uninstall physim | tee -a cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
 		isFinished1 = False
 		while(isFinished1 == False):
-			time.sleep(10)
+			time.sleep(20)
 			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
 			if re.search('No resources found', mySSH.getBefore()):
 				isFinished1 = True
