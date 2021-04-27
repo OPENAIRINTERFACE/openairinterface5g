@@ -358,28 +358,18 @@ nr_rrc_pdcp_config_security(
     }
   }
 
-  key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
-  h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
-
-  if (h_rc == HASH_TABLE_OK) {
-    pdcp_config_set_security(
-        ctxt_pP,
-        pdcp_p,
-        DCCH,
-        DCCH+2,
-        (send_security_mode_command == TRUE)  ?
-        0 | (ue_context_pP->ue_context.integrity_algorithm << 4) :
-        (ue_context_pP->ue_context.ciphering_algorithm )         |
-        (ue_context_pP->ue_context.integrity_algorithm << 4),
-        kRRCenc,
-        kRRCint,
-        kUPenc);
-  } else {
-    LOG_E(NR_RRC,
-        PROTOCOL_NR_RRC_CTXT_UE_FMT"Could not get PDCP instance for SRB DCCH %u\n",
-        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-        DCCH);
-  }
+  pdcp_config_set_security(
+      ctxt_pP,
+      NULL,      /* pdcp_pP not used anymore in NR */
+      DCCH,
+      DCCH+2,
+      (send_security_mode_command == TRUE)  ?
+      0 | (ue_context_pP->ue_context.integrity_algorithm << 4) :
+      (ue_context_pP->ue_context.ciphering_algorithm )         |
+      (ue_context_pP->ue_context.integrity_algorithm << 4),
+      kRRCenc,
+      kRRCint,
+      kUPenc);
 }
 
 //------------------------------------------------------------------------------
