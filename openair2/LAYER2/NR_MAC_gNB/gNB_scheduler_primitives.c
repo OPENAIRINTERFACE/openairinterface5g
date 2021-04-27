@@ -120,7 +120,7 @@ static inline uint8_t get_max_candidates(uint8_t scs) {
 static inline uint8_t get_max_cces(uint8_t scs) {
   AssertFatal(scs<4, "Invalid PDCCH subcarrier spacing %d\n", scs);
   return (nr_max_number_of_cces_per_slot[scs]);
-} 
+}
 
 NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
                                      NR_BWP_Downlink_t *bwp,
@@ -221,12 +221,98 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 
 }
 
-void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
-                          const NR_BWP_Uplink_t *ubwp,
-                          long dci_format,
-                          int tda,
-                          uint8_t num_dmrs_cdm_grps_no_data,
-                          NR_sched_pusch_save_t *ps)
+bool nr_find_nb_rb(uint16_t Qm,
+                   uint16_t R,
+                   uint16_t nb_symb_sch,
+                   uint16_t nb_dmrs_prb,
+                   uint32_t bytes,
+                   uint16_t nb_rb_max,
+                   uint32_t *tbs,
+                   uint16_t *nb_rb)
+{
+  /* is the maximum (not even) enough? */
+  *nb_rb = nb_rb_max;
+  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+  /* check whether it does not fit, or whether it exactly fits. Some algorithms
+   * might depend on the return value! */
+  if (bytes > *tbs)
+    return false;
+  if (bytes == *tbs)
+    return true;
+
+  /* is the minimum enough? */
+  *nb_rb = 1;
+  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+  if (bytes <= *tbs)
+    return true;
+
+  /* perform binary search to allocate all bytes within a TBS up to nb_rb_max
+   * RBs */
+  int hi = nb_rb_max;
+  int lo = 1;
+  for (int p = (hi + lo) / 2; lo + 1 < hi; p = (hi + lo) / 2) {
+    const uint32_t TBS = nr_compute_tbs(Qm, R, p, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+    if (bytes == TBS) {
+      hi = p;
+      break;
+    } else if (bytes < TBS) {
+      hi = p;
+    } else {
+      lo = p;
+    }
+  }
+  *nb_rb = hi;
+  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+  /* return whether we could allocate all bytes and stay below nb_rb_max */
+  return *tbs >= bytes && *nb_rb <= nb_rb_max;
+}
+
+void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+                              const NR_CellGroupConfig_t *secondaryCellGroup,
+                              const NR_BWP_Downlink_t *bwp,
+                              int tda,
+                              uint8_t num_dmrs_cdm_grps_no_data,
+                              NR_pdsch_semi_static_t *ps)
+{
+  ps->time_domain_allocation = tda;
+
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
+      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
+
+  if (!secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup
+           ->mcs_Table)
+    ps->mcsTableIdx = 0;
+  else if (*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup
+                ->mcs_Table
+           == 0)
+    ps->mcsTableIdx = 1;
+  else
+    ps->mcsTableIdx = 2;
+
+  ps->numDmrsCdmGrpsNoData = num_dmrs_cdm_grps_no_data;
+  ps->dmrsConfigType =
+      bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type
+              == NULL
+          ? 0
+          : 1;
+  // if no data in dmrs cdm group is 1 only even REs have no data
+  // if no data in dmrs cdm group is 2 both odd and even REs have no data
+  ps->N_PRB_DMRS = num_dmrs_cdm_grps_no_data * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
+  ps->N_DMRS_SLOT =
+      get_num_dmrs_symbols(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex);
+  ps->dl_dmrs_symb_pos =
+      fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex);
+}
+
+void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+                              const NR_BWP_Uplink_t *ubwp,
+                              long dci_format,
+                              int tda,
+                              uint8_t num_dmrs_cdm_grps_no_data,
+                              NR_pusch_semi_static_t *ps)
 {
   ps->dci_format = dci_format;
   ps->time_domain_allocation = tda;
@@ -514,7 +600,7 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 }
 
 void config_uldci(const NR_BWP_Uplink_t *ubwp,
-		  const NR_ServingCellConfigCommon_t *scc,
+		              const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int dci_format,
@@ -522,7 +608,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
                   uint8_t tpc,
                   int n_ubwp,
                   int bwp_id) {
-  const int bw = NRRIV2BW(ubwp ? 
+  const int bw = NRRIV2BW(ubwp ?
 			  ubwp->bwp_Common->genericParameters.locationAndBandwidth :
 			  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   dci_pdu_rel15->frequency_domain_assignment.val =
@@ -545,11 +631,11 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
       // bwp indicator as per table 7.3.1.1.2-1 in 38.212
       dci_pdu_rel15->bwp_indicator.val = n_ubwp < 4 ? bwp_id : bwp_id - 1;
       // SRS resource indicator
-      if (ubwp && 
-	  ubwp->bwp_Dedicated &&
-	  ubwp->bwp_Dedicated->pusch_Config &&
-	  ubwp->bwp_Dedicated->pusch_Config->choice.setup &&
-	  ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig != NULL) {
+      if (ubwp &&
+          ubwp->bwp_Dedicated &&
+          ubwp->bwp_Dedicated->pusch_Config &&
+          ubwp->bwp_Dedicated->pusch_Config->choice.setup &&
+          ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig != NULL) {
         AssertFatal(*ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig == NR_PUSCH_Config__txConfig_codebook,
                     "Non Codebook configuration non supported\n");
         dci_pdu_rel15->srs_resource_indicator.val = 0; // taking resource 0 for SRS
@@ -734,9 +820,9 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 
 	n_set = pucch_Config->resourceSetToAddModList->list.count;
 	AssertFatal(n_set>0,"PUCCH resourceSetToAddModList is empty\n");
-	
+
 	LOG_D(NR_MAC, "UCI n_set= %d\n", n_set);
-	
+
 	N2 = 2;
 	// procedure to select pucch resource id from resource sets according to
 	// number of uci bits and pucch resource indicator pucch_resource
@@ -1693,6 +1779,24 @@ int get_nrofHARQ_ProcessesForPDSCH(e_NR_PDSCH_ServingCellConfig__nrofHARQ_Proces
   }
 }
 
+int get_dl_bwp_id(const NR_ServingCellConfig_t *servingCellConfig)
+{
+  if (servingCellConfig->firstActiveDownlinkBWP_Id)
+    return *servingCellConfig->firstActiveDownlinkBWP_Id;
+  else if (servingCellConfig->defaultDownlinkBWP_Id)
+    return *servingCellConfig->defaultDownlinkBWP_Id;
+  else
+    return 1;
+}
+
+int get_ul_bwp_id(const NR_ServingCellConfig_t *servingCellConfig)
+{
+  if (servingCellConfig->uplinkConfig && servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id)
+    return *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id;
+  else
+    return 1;
+}
+
 //------------------------------------------------------------------------------
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup)
 {
@@ -1725,9 +1829,9 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
-    sched_ctrl->ul_rssi = 0;
     /* set illegal time domain allocation to force recomputation of all fields */
-    sched_ctrl->pusch_save.time_domain_allocation = -1;
+    sched_ctrl->pdsch_semi_static.time_domain_allocation = -1;
+    sched_ctrl->pusch_semi_static.time_domain_allocation = -1;
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
 
     /* Set default BWPs */
@@ -1737,6 +1841,9 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 			     bwpList->list.count);
     const int bwp_id = 1;
     sched_ctrl->active_bwp = bwpList ? bwpList->list.array[bwp_id - 1] : NULL;
+    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+    sched_ctrl->coreset = get_coreset(NULL, sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
     if (ubwpList) AssertFatal(ubwpList->list.count == 1,
 			      "uplinkBWP_ToAddModList has %d BWP!\n",
@@ -1851,12 +1958,11 @@ void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti) {
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
   // al values passed to this function are x10
-
   int snrx10 = (cqi*5) - 640;
-  LOG_D(NR_MAC,"tpc : target %d, snrx10 %d\n",target,snrx10);
   if (snrx10 > target + incr) return 0; // decrease 1dB
   if (snrx10 < target - incr) return 2; // increase 1dB
   if (snrx10 < target - (3*incr)) return 3; // increase 3dB
+  LOG_D(NR_MAC,"tpc : target %d, snrx10 %d\n",target,snrx10);
   return 1; // no change
 }
 

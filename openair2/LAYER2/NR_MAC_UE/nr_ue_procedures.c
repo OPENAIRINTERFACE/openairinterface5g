@@ -375,21 +375,21 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
   if(pusch_config_pdu != NULL){
     NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
     if (mac->ULbwp[0] &&
-	mac->ULbwp[0]->bwp_Dedicated &&
-	mac->ULbwp[0]->bwp_Dedicated->pusch_Config &&
-       	mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup &&
-	mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
+      mac->ULbwp[0]->bwp_Dedicated &&
+      mac->ULbwp[0]->bwp_Dedicated->pusch_Config &&
+            mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup &&
+      mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
       pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
     }
     else if (mac->ULbwp[0] &&
-	     mac->ULbwp[0]->bwp_Common &&
-	     mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon &&
-	     mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup &&
-	     mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+      mac->ULbwp[0]->bwp_Common &&
+      mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon &&
+      mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup &&
+      mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
       pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
     }
     else pusch_TimeDomainAllocationList = mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-    	
+
     if (pusch_TimeDomainAllocationList && use_default==false) {
       if (time_domain_ind >= pusch_TimeDomainAllocationList->list.count) {
         LOG_E(MAC, "time_domain_ind %d >= pusch->TimeDomainAllocationList->list.count %d\n",
@@ -430,10 +430,10 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
 
   LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
-  int8_t ret = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15); 
+  int8_t ret = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, &mac->def_dci_pdu_rel15[dci->dci_format]));
   if ((ret&1) == 1) return -1;
   else if (ret == 2) dci->dci_format = NR_UL_DCI_FORMAT_0_0;
-  return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci->rnti, dci->dci_format));
+  return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, &mac->def_dci_pdu_rel15[dci->dci_format], dci->rnti, dci->dci_format));
 }
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint8_t dci_format){
@@ -478,7 +478,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     // - SUL_IND_0_0
 
     // Schedule PUSCH
-    
     ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, dci->time_domain_assignment.val);
 
     if (ret != -1){
@@ -725,10 +724,10 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     // Sanity check for pucch_resource_indicator value received to check for false DCI.
     valid = 0;
     if (mac->ULbwp[0] &&
-	mac->ULbwp[0]->bwp_Dedicated &&
-	mac->ULbwp[0]->bwp_Dedicated->pucch_Config &&
-	mac->ULbwp[0]->bwp_Dedicated->pucch_Config->choice.setup&&
-	mac->ULbwp[0]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList) {
+        mac->ULbwp[0]->bwp_Dedicated &&
+        mac->ULbwp[0]->bwp_Dedicated->pucch_Config &&
+        mac->ULbwp[0]->bwp_Dedicated->pucch_Config->choice.setup&&
+        mac->ULbwp[0]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList) {
       pucch_res_set_cnt = mac->ULbwp[0]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.count;
       for (int id = 0; id < pucch_res_set_cnt; id++) {
 	if (dlsch_config_pdu_1_0->pucch_resource_id < mac->ULbwp[0]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[id]->resourceList.list.count) {
@@ -754,13 +753,13 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       }
     } else valid=1;
     if (!valid) {
-	LOG_W(MAC, "[%d.%d] pucch_resource_indicator value %d is out of bounds. Possibly due to false DCI. Ignoring DCI!\n", frame, slot, dlsch_config_pdu_1_0->pucch_resource_id);
-	return -1;
-      }
+      LOG_W(MAC, "[%d.%d] pucch_resource_indicator value %d is out of bounds. Possibly due to false DCI. Ignoring DCI!\n", frame, slot, dlsch_config_pdu_1_0->pucch_resource_id);
+      return -1;
+    }
 
     /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
     dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = 1+dci->pdsch_to_harq_feedback_timing_indicator.val;
-    
+
     LOG_D(MAC,"(nr_ue_procedures.c) rnti = %x dl_config->number_pdus = %d\n",
 	  dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti,
 	  dl_config->number_pdus);
@@ -1219,7 +1218,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,N_RB,dci_size-pos,*dci_pdu);
 #endif
 
-      // check BWP id 
+      // check BWP id
       if (mac->DLbwp[0]) N_RB=NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       else         N_RB=NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
@@ -1367,27 +1366,27 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       pos+=fsize;
       dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
-      
+
       // Time domain assignment 4 bit
       pos+=4;
       dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
-      
+
       // VRB to PRB mapping 1 bit
       pos++;
       dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu>>(dci_size-pos))&0x1;
-      
+
       // MCS 5bit  //bit over 32, so dci_pdu ++
       pos+=5;
       dci_pdu_rel15->mcs = (*dci_pdu>>(dci_size-pos))&0x1f;
-      
+
       // Redundancy version  2 bit
       pos+=2;
       dci_pdu_rel15->rv = (*dci_pdu>>(dci_size-pos))&3;
-      
+
       // System information indicator 1 bit
       pos++;
       dci_pdu_rel15->system_info_indicator = (*dci_pdu>>(dci_size-pos))&0x1;
-      
+
       LOG_D(MAC,"N_RB = %i\n", N_RB);
       LOG_D(MAC,"dci_size = %i\n", dci_size);
       LOG_D(MAC,"fsize = %i\n", fsize);
@@ -1397,12 +1396,12 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       LOG_D(MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
       LOG_D(MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
       LOG_D(MAC,"dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
-      
+
       break;
 	
     case NR_RNTI_TC:
 
-      // check BWP id 
+      // check BWP id
       if (mac->DLbwp[0]) N_RB=NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       else         N_RB=NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
@@ -1521,7 +1520,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	dci_pdu_rel15->ndi= (*dci_pdu>>(dci_size-pos))&1;
 #ifdef DEBUG_EXTRACT_DCI
 	LOG_D(MAC,"NDI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->ndi,1,dci_size-pos,*dci_pdu);
-#endif      
+#endif
 	// Redundancy version  2bit
 	pos+=2;
 	dci_pdu_rel15->rv= (*dci_pdu>>(dci_size-pos))&3;

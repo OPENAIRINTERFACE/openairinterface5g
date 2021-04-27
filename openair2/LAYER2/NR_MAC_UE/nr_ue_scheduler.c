@@ -1005,10 +1005,9 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
               //and block this traffic from being forwarded to the upper layers at the gNB
               LOG_D(PHY, "In %s: Random data to be transmitted: TBS_bytes %d \n", __FUNCTION__, TBS_bytes);
 
-              //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-              //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
-              //have a valid LCID (nr_process_mac_pdu function)
-              ulsch_input_buffer[0] = 0x31;
+              // Make the first byte padding so that gNB ignores the PHY random
+              // data in the TB for the PHY at the MAC layer
+              ulsch_input_buffer[0] = UL_SCH_LCID_PADDING;
 
               for (int i = 1; i < TBS_bytes; i++) {
                 ulsch_input_buffer[i] = (unsigned char) rand();

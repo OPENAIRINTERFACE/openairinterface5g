@@ -385,6 +385,8 @@ typedef struct {
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
 
+  dci_pdu_rel15_t def_dci_pdu_rel15[8];
+
 } NR_UE_MAC_INST_t;
 
 typedef enum seach_space_mask_e {
