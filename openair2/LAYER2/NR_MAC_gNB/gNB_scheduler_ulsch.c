@@ -1144,7 +1144,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
    * schedule now (slot + k2 is not UL slot) */
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int tda = nr_mac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
+  const int tda = sched_ctrl->active_ubwp ? nr_mac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
   if (tda < 0)
     return false;
   int K2 = get_K2(scc, sched_ctrl->active_ubwp, tda, mu);

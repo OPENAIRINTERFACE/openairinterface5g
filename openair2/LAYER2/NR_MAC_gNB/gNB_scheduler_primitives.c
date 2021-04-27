@@ -139,9 +139,7 @@ NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
 			     "search space\n");
     return coreset;
   } else {
-    //    AssertFatal(bwp!=NULL,"bwp is null here, we have to check for a dedicated configuration for initialBWP in CellGroup, todo\n");
     const int n = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.count;
-
     for (int i = 0; i < n; i++) {
       NR_ControlResourceSet_t *coreset =
           bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[i];
@@ -1800,6 +1798,7 @@ int get_ul_bwp_id(const NR_ServingCellConfig_t *servingCellConfig)
 //------------------------------------------------------------------------------
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup)
 {
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_idP]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
   LOG_I(NR_MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
         mod_idP,
@@ -1841,9 +1840,9 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 			     bwpList->list.count);
     const int bwp_id = 1;
     sched_ctrl->active_bwp = bwpList ? bwpList->list.array[bwp_id - 1] : NULL;
-    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-    sched_ctrl->search_space = get_searchspace(NULL, sched_ctrl->active_bwp, target_ss);
-    sched_ctrl->coreset = get_coreset(NULL, sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+    const int target_ss = sched_ctrl->active_bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
+    sched_ctrl->search_space = get_searchspace(scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
+    sched_ctrl->coreset = get_coreset(scc, sched_ctrl->active_bwp, sched_ctrl->search_space, target_ss);
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
     if (ubwpList) AssertFatal(ubwpList->list.count == 1,
 			      "uplinkBWP_ToAddModList has %d BWP!\n",

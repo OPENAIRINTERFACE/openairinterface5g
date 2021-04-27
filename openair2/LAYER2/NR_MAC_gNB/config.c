@@ -339,9 +339,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            NR_ServingCellConfigCommon_t *scc,
-			   int add_ue,
-			   uint32_t rnti,
-			   NR_CellGroupConfig_t *CellGroup){
+                           int add_ue,
+                           uint32_t rnti,
+                           NR_CellGroupConfig_t *CellGroup){
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
@@ -384,7 +384,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                   ssb_SubcarrierOffset,
                   pdsch_AntennaPorts,
                   pusch_AntennaPorts,
-		  scc);
+		              scc);
     LOG_E(NR_MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   
     // if in nFAPI mode 
@@ -448,19 +448,23 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   if (CellGroup) {
 
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
+
     const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
-    AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
-    for (int i = 0; i < bwpList->list.count; ++i) {
-      const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
-      calculate_preferred_dl_tda(Mod_idP, bwp);
+    if(bwpList) {
+      AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
+      for (int i = 0; i < bwpList->list.count; ++i) {
+        const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
+        calculate_preferred_dl_tda(Mod_idP, bwp);
+      }
     }
 
-    const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList =
-        servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
-    AssertFatal(ubwpList->list.count > 0, "downlinkBWP_ToAddModList no BWPs!\n");
-    for (int i = 0; i < ubwpList->list.count; ++i) {
-      const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
-      calculate_preferred_ul_tda(Mod_idP, ubwp);
+    const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
+    if(ubwpList) {
+      AssertFatal(ubwpList->list.count > 0, "downlinkBWP_ToAddModList no BWPs!\n");
+      for (int i = 0; i < ubwpList->list.count; ++i) {
+        const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
+        calculate_preferred_ul_tda(Mod_idP, ubwp);
+      }
     }
 
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
@@ -482,7 +486,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       NR_RA_t *ra = &cc->ra[ra_index];
       ra->CellGroup = CellGroup;
       if (CellGroup->spCellConfig && CellGroup->spCellConfig->reconfigurationWithSync &&
-	  CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated!=NULL) {
+	        CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated!=NULL) {
         if (CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL) {
           ra->cfra = true;
           ra->rnti = rnti;

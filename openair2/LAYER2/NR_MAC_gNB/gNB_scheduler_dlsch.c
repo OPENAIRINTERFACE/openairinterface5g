@@ -713,10 +713,6 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot];
-  if (tda < 0)
-    return;
-
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp ?
 				    sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
 				    scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
