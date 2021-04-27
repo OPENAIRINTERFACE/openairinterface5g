@@ -123,7 +123,7 @@ static inline uint8_t get_max_cces(uint8_t scs) {
 } 
 
 NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
-				     NR_BWP_Downlink_t *bwp,
+                                     NR_BWP_Downlink_t *bwp,
                                      NR_SearchSpace_t *ss,
                                      NR_SearchSpace__searchSpaceType_PR ss_type) {
   NR_ControlResourceSetId_t coreset_id = *ss->controlResourceSetId;
