@@ -132,7 +132,9 @@ class Module_UE:
 				else:
 					logging.debug('\u001B[1;37;41m Module IP Address Not Found! \u001B[0m')
 					return -1
-
+			else:
+				logging.debug('\u001B[1;37;41m Module IP Address Not Found! \u001B[0m')
+				return -1
 
 
 

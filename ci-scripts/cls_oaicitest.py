@@ -389,10 +389,16 @@ class OaiCiTest():
 			is_module=Module_UE.CheckCMProcess()
 			if is_module:
 				Module_UE.Command("wup")
-				Module_UE.GetModuleIPAddress()
-				HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
-				self.UEIPAddresses.append(Module_UE.UEIPAddress)
-				logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
+				status=Module_UE.GetModuleIPAddress()
+				if status==0:
+					HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
+					self.UEIPAddresses.append(Module_UE.UEIPAddress)
+					logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
+				else: #status==-1 failed to retrieve IP address
+					HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
+					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
+					return
+
 
 	def InitializeOAIUE(self,HTML,RAN,EPC,COTS_UE):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
@@ -957,7 +963,7 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def AttachUE(self,HTML,RAN,EPC,COTS_UE,InfraUE):
+	def AttachUE(self,HTML,RAN,EPC,COTS_UE):
 		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
 			if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 				HELP.GenericHelp(CONST.Version)
@@ -1073,11 +1079,9 @@ class OaiCiTest():
 				cnt += 1
 		else:#if an ID is specified, it is a module from the yaml infrastructure file
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			is_module=Module_UE.CheckCMProcess()
-			if is_module:
-				Module_UE.Command("detach")
-				Module_UE.GetModuleIPAddress()
-				HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)			
+			Module_UE.Command("detach")
+				
+							
 
 	def RebootUE_common(self, device_id):
 		try:
