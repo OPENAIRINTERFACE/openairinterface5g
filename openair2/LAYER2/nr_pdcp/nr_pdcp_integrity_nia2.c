@@ -45,7 +45,7 @@ static void compute_t(unsigned char *t, uint32_t count, int bearer,
   t[1] = (count >> 16) & 255;
   t[2] = (count >>  8) & 255;
   t[3] = (count      ) & 255;
-  t[4] = (bearer << 3) | (direction << 2);
+  t[4] = ((bearer-1) << 3) | (direction << 2);
   memset(&t[5], 0, 8-5);
 }
 

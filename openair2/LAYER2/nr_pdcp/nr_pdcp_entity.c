@@ -101,7 +101,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     entity->integrity(entity->integrity_context, integrity,
                       buffer, size - integrity_size,
                       entity->rb_id, rcvd_count, entity->is_gnb ? 0 : 1);
-    if (memcmp(integrity, buffer, 4) != 0) {
+    if (memcmp(integrity, buffer + size - integrity_size, 4) != 0) {
       LOG_E(PDCP, "discard NR PDU, integrity failed\n");
       return;
     }
@@ -212,6 +212,7 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
                       header_size + size + integrity_size, sdu_id);
 }
 
+/* may be called several times, take care to clean previous settings */
 static void nr_pdcp_entity_set_security(nr_pdcp_entity_t *entity,
                                         int integrity_algorithm,
                                         char *integrity_key,
@@ -226,6 +227,46 @@ static void nr_pdcp_entity_set_security(nr_pdcp_entity_t *entity,
     memcpy(entity->integrity_key, integrity_key, 16);
   if (ciphering_key != NULL)
     memcpy(entity->ciphering_key, ciphering_key, 16);
+
+  if (integrity_algorithm == 0) {
+    entity->has_integrity = 0;
+    if (entity->free_integrity != NULL)
+      entity->free_integrity(entity->integrity_context);
+    entity->free_integrity = NULL;
+  }
+
+  if (integrity_algorithm != 0 && integrity_algorithm != -1) {
+    if (integrity_algorithm != 2) {
+      LOG_E(PDCP, "FATAL: only nia2 supported for the moment\n");
+      exit(1);
+    }
+    entity->has_integrity = 1;
+    if (entity->free_integrity != NULL)
+      entity->free_integrity(entity->integrity_context);
+    entity->integrity_context = nr_pdcp_integrity_nia2_init(entity->integrity_key);
+    entity->integrity = nr_pdcp_integrity_nia2_integrity;
+    entity->free_integrity = nr_pdcp_integrity_nia2_free_integrity;
+  }
+
+  if (ciphering_algorithm == 0) {
+    entity->has_ciphering = 0;
+    if (entity->free_security != NULL)
+      entity->free_security(entity->security_context);
+    entity->free_security = NULL;
+  }
+
+  if (ciphering_algorithm != 0 && ciphering_algorithm != -1) {
+    if (ciphering_algorithm != 2) {
+      LOG_E(PDCP, "FATAL: only nea2 supported for the moment\n");
+      exit(1);
+    }
+    entity->has_ciphering = 1;
+    if (entity->free_security != NULL)
+      entity->free_security(entity->security_context);
+    entity->security_context = nr_pdcp_security_nea2_init(entity->ciphering_key);
+    entity->cipher = nr_pdcp_security_nea2_cipher;
+    entity->free_security = nr_pdcp_security_nea2_free_security;
+  }
 }
 
 static void check_t_reordering(nr_pdcp_entity_t *entity)
@@ -339,34 +380,11 @@ nr_pdcp_entity_t *new_nr_pdcp_entity(
   ret->sn_max        = (1 << sn_size) - 1;
   ret->window_size   = 1 << (sn_size - 1);
 
-  if (ciphering_key != NULL && ciphering_algorithm != 0) {
-    if (ciphering_algorithm != 2) {
-      LOG_E(PDCP, "FATAL: only nea2 supported for the moment\n");
-      exit(1);
-    }
-    ret->has_ciphering = 1;
-    ret->ciphering_algorithm = ciphering_algorithm;
-    memcpy(ret->ciphering_key, ciphering_key, 16);
-
-    ret->security_context = nr_pdcp_security_nea2_init(ciphering_key);
-    ret->cipher = nr_pdcp_security_nea2_cipher;
-    ret->free_security = nr_pdcp_security_nea2_free_security;
-  }
   ret->is_gnb = is_gnb;
 
-  if (integrity_key != NULL && integrity_algorithm != 0) {
-    if (integrity_algorithm != 2) {
-      LOG_E(PDCP, "FATAL: only nia2 supported for the moment\n");
-      exit(1);
-    }
-    ret->has_integrity = 1;
-    ret->integrity_algorithm = integrity_algorithm;
-    memcpy(ret->integrity_key, integrity_key, 16);
-
-    ret->integrity_context = nr_pdcp_integrity_nia2_init(integrity_key);
-    ret->integrity = nr_pdcp_integrity_nia2_integrity;
-    ret->free_integrity = nr_pdcp_integrity_nia2_free_integrity;
-  }
+  nr_pdcp_entity_set_security(ret,
+                              integrity_algorithm, (char *)integrity_key,
+                              ciphering_algorithm, (char *)ciphering_key);
 
   return ret;
 }
