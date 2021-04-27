@@ -1314,11 +1314,11 @@
                       -n100 -s5 -T 2 1 2 -U 2 0 2
                       -n100 -s5 -T 2 2 2 -U 2 1 2
                       -n100 -s5 -a4 -b8 -T 2 1 2 -U 2 1 3
-                      -n100 -s2 -Z
-                      -n100 -s2 -Z -r75
-                      -n100 -s2 -Z -r216 -R217
-                      -n100 -s2 -Z -r270 -R273
-                      -n100 -s2 -Z -U 2 0 2
+                      -n100 -s5 -Z
+                      -n100 -s5 -Z -r75
+                      -n50 -s5 -Z -r216 -R217
+                      -n50 -s5 -Z -r270 -R273
+                      -n100 -s5 -Z -U 2 0 2
                       -n100 -m16 -s10 -z2</main_exec_args>
 
       <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5 nr_ulsim.test6 nr_ulsim.test7 nr_ulsim.test8 nr_ulsim.test9 nr_ulsim.test10 nr_ulsim.test11 nr_ulsim.test12 nr_ulsim.test13 nr_ulsim.test14</tags>
