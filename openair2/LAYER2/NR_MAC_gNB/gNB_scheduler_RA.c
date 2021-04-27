@@ -377,6 +377,16 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
           }
         }
       }
+
+      // block resources in vrb_map_UL
+      const NR_RACH_ConfigGeneric_t *rach_ConfigGeneric =
+          &scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric;
+      const uint8_t mu_pusch =
+          scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+      const int16_t N_RA_RB = get_N_RA_RB(cfg->prach_config.prach_sub_c_spacing.value, mu_pusch);
+      uint16_t *vrb_map_UL = &cc->vrb_map_UL[slotP * MAX_BWP_SIZE];
+      for (int i = 0; i < N_RA_RB * fdm; ++i)
+        vrb_map_UL[rach_ConfigGeneric->msg1_FrequencyStart + i] = 0xff; // all symbols
     }
   }
 }
@@ -869,7 +879,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
-    uint8_t time_domain_assignment = 3;
+    uint8_t time_domain_assignment = 1;
     uint8_t mcsIndex = 0;
     int rbStart = 0;
     int rbSize = 8;
@@ -1142,17 +1152,10 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     long BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
     // HARQ management
-    int8_t current_harq_pid = sched_ctrl->dl_harq_pid;
-    if (current_harq_pid < 0) {
-      current_harq_pid = sched_ctrl->available_dl_harq.head;
-      remove_front_nr_list(&sched_ctrl->available_dl_harq);
-      sched_ctrl->dl_harq_pid = current_harq_pid;
-    } else {
-      if (sched_ctrl->harq_processes[current_harq_pid].round == 0)
-        remove_nr_list(&sched_ctrl->available_dl_harq, current_harq_pid);
-      else
-        remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
-    }
+    AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
+                "UE context not initialized: no HARQ processes found\n");
+    int current_harq_pid = sched_ctrl->available_dl_harq.head;
+    remove_front_nr_list(&sched_ctrl->available_dl_harq);
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
     DevAssert(!harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
@@ -1161,6 +1164,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     nr_acknack_scheduling(module_idP, UE_id, frameP, slotP);
     harq->feedback_slot = sched_ctrl->sched_pucch->ul_slot;
+    harq->feedback_frame = sched_ctrl->sched_pucch->frame;
 
     // Bytes to be transmitted
     uint8_t *buf = (uint8_t *) harq->tb;
@@ -1191,17 +1195,23 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     uint16_t N_DMRS_SLOT = get_num_dmrs(dlDmrsSymbPos);
 
     long dmrsConfigType = bwp!=NULL ? (bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
+
+    nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData = 2;
+    if (nrOfSymbols == 2) {
+      nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData = 1;
+    }
+
+    AssertFatal(nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData == 1
+                || nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData == 2,
+                "nr_mac->schedCtrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData %d is not possible",
+                nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData);
+
     uint8_t N_PRB_DMRS = 0;
-
-    AssertFatal(nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData == 1 || nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData == 2,
-                "nr_mac->schedCtrlCommon->numDmrsCdmGrpsNoData %d is not possible",
-                nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData);
-
     if (dmrsConfigType==NFAPI_NR_DMRS_TYPE1) {
-      N_PRB_DMRS = nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 6;
+      N_PRB_DMRS = nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 6;
     }
     else {
-      N_PRB_DMRS = nr_mac->sched_ctrlCommon->numDmrsCdmGrpsNoData * 4;
+      N_PRB_DMRS = nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 4;
     }
 
     uint8_t mcsTableIdx = 0;
