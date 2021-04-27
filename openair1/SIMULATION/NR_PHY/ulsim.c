@@ -1180,7 +1180,6 @@ int main(int argc, char **argv)
 	gNB->UL_INFO.rx_ind.number_of_pdus = 0;
 	gNB->UL_INFO.crc_ind.number_crcs = 0;
 
-        start_meas(&gNB->phy_proc_rx);
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
         phy_procedures_gNB_uespec_RX(gNB, frame, slot);
@@ -1212,7 +1211,6 @@ int main(int argc, char **argv)
 	  LOG_M("rxsigF0_llr.m","rxsF0_llr",
 		&gNB->pusch_vars[0]->llr[0],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
 	}
-        start_meas(&gNB->phy_proc_rx);
         ////////////////////////////////////////////////////////////
 	
 	if (gNB->ulsch[0][0]->last_iteration_cnt >= 

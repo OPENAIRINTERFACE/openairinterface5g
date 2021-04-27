@@ -2828,8 +2828,6 @@ endif (${T_TRACER})
 #This rule and the following deal with it.
 add_custom_command (
   OUTPUT ${OPENAIR_DIR}/common/utils/T/T_IDs.h
-  COMMAND make clean
-  COMMAND make -j2
   COMMAND make check_vcd
   WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
   DEPENDS ${OPENAIR_DIR}/common/utils/T/T_messages.txt
@@ -2837,6 +2835,10 @@ add_custom_command (
           ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.h
   )
 
+execute_process (
+  COMMAND make check_vcd
+  WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
+)
 #This rule is specifically needed to generate T files
 #before anything else in a project that uses the T.
 #See below, there are some 'add_dependencies' showing that.
