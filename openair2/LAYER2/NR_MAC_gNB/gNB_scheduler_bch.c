@@ -428,6 +428,10 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      scc,
                      NULL);
 
+  pdcch_pdu_rel15->BWPSize = type0_PDCCH_CSS_config->num_rbs;
+  pdcch_pdu_rel15->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
+  pdcch_pdu_rel15->SubcarrierSpacing = type0_PDCCH_CSS_config->scs_pdcch;
+
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
   dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;

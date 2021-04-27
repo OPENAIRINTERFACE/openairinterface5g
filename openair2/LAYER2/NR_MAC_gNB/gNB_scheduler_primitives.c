@@ -605,9 +605,6 @@ void nr_configure_pdcch(gNB_MAC_INST *gNB_mac,
     sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
   }
   else {
-    pdcch_pdu->BWPSize = gNB_mac->type0_PDCCH_CSS_config->num_rbs;
-    pdcch_pdu->BWPStart = gNB_mac->type0_PDCCH_CSS_config->cset_start_rb;
-    pdcch_pdu->SubcarrierSpacing = gNB_mac->type0_PDCCH_CSS_config->scs_pdcch;
     pdcch_pdu->CyclicPrefix = 0;
     sps = 14;
   }
