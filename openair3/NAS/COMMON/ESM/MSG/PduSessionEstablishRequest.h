@@ -53,6 +53,7 @@ typedef struct pdu_session_establishment_request_msg_tag {
     uint8_t                                 pti;
     MessageType                             pdusessionestblishmsgtype;
     uint16_t                                maxdatarate;
+    uint8_t                                 pdusessiontype;
     /* Optional fields */
 } pdu_session_establishment_request_msg;
 

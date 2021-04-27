@@ -1039,14 +1039,14 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               SRB_configList, // NULL,
                               DRB_configList,
                               DRB_Release_configList2,
-                              0xff, // already configured during the securitymodecommand
+                              0, // already configured during the securitymodecommand
                               kRRCenc,
                               kRRCint,
                               kUPenc,
                               NULL,
                               NULL,
                               NULL,
-                              NULL);
+                              ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
   /* Refresh SRBs/DRBs */
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
     nr_rrc_rlc_config_asn1_req(ctxt_pP,
@@ -1054,7 +1054,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                           DRB_configList,
                           DRB_Release_configList2,
                           NULL,
-                          NULL,
+                          ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList,
                           NULL);
   }
 #endif
