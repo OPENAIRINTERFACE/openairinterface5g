@@ -651,18 +651,6 @@ error:
  * ************************************
  */
 
-int sort_ue_config(const void *a, const void *b) {
-  const Protocol__FlexUeConfig *fa = a;
-  const Protocol__FlexUeConfig *fb = b;
-
-  if (fa->rnti < fb->rnti)
-    return -1;
-  else if (fa->rnti < fb->rnti)
-    return 1;
-
-  return 0;
-}
-
 int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   xid_t xid;
   Protocol__FlexHeader *header = NULL;

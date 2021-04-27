@@ -150,7 +150,7 @@ void pseudo_random_sequence_optimised(unsigned int size, uint32_t *c, uint32_t c
   unsigned int n,x1,x2;
 
   /* init of m-sequences */
-  x1 = 1+ (1<<31);
+  x1 = 1+ (1U<<31);
   x2 = cinit;
   x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
 

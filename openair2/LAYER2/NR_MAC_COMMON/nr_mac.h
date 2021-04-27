@@ -149,10 +149,10 @@ typedef struct {
 // single Entry PHR MAC CE
 // TS 38.321 ch. 6.1.3.8
 typedef struct {
-  uint8_t PH: 6;
-  uint8_t R1: 2;
-  uint8_t PCMAX: 6;
-  uint8_t R2: 6;
+  uint8_t PH: 6;    // octet 1 [5:0]
+  uint8_t R1: 2;    // octet 1 [7:6]
+  uint8_t PCMAX: 6; // octet 2 [5:0]
+  uint8_t R2: 2;    // octet 2 [7:6]
 } __attribute__ ((__packed__)) NR_SINGLE_ENTRY_PHR_MAC_CE;
 
 
@@ -335,12 +335,12 @@ typedef struct {
 #define DL_SCH_LCID_CON_RES_ID                     0x3E
 #define DL_SCH_LCID_PADDING                        0x3F
 
-#define UL_SCH_LCID_CCCH                           0x00
+#define UL_SCH_LCID_CCCH1                          0x00
 #define UL_SCH_LCID_SRB1                           0x01
 #define UL_SCH_LCID_SRB2                           0x02
 #define UL_SCH_LCID_SRB3                           0x03
 #define UL_SCH_LCID_DTCH                           0x04
-#define UL_SCH_LCID_CCCH_MSG3                      0x21
+#define UL_SCH_LCID_CCCH                           0x34
 #define UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY      0x35
 #define UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT          0x36
 #define UL_SCH_LCID_CONFIGURED_GRANT_CONFIRMATION  0x37

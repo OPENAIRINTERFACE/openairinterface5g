@@ -10,7 +10,6 @@ int main(int argc, char *argv[])
 {
 	time_stats_t timeEncoder,timeDecoder;
 	opp_enabled=1;
-	cpu_freq_GHz = get_cpu_freq_GHz();
 	reset_meas(&timeEncoder);
 	reset_meas(&timeDecoder);
 	randominit(0);
@@ -138,8 +137,8 @@ int main(int argc, char *argv[])
 				SNR,
 				((double)bitErrorCumulative / (iterations*messageLength)),
 				((double)blockErrorCumulative/iterations),
-				((double)timeEncoder.diff/timeEncoder.trials)/(cpu_freq_GHz),
-				((double)timeDecoder.diff/timeDecoder.trials)/(cpu_freq_GHz*1000.0));
+				((double)timeEncoder.diff/timeEncoder.trials)/(get_cpu_freq_GHz()),
+				((double)timeDecoder.diff/timeDecoder.trials)/(get_cpu_freq_GHz()*1000.0));
 
 		blockErrorCumulative=0;
 		bitErrorCumulative=0;

@@ -698,8 +698,8 @@ class RANManagement():
 		NSA_RAPROC_PUSCH_check = 0
 		#dlsch and ulsch statistics (dictionary)
 		dlsch_ulsch_stats = {}
-		#count "L1 thread not ready" msg 	
-		L1_thread_not_ready_cnt = 0
+		#real time statistics (dictionary)
+		real_time_stats = {}
 		#count "problem receiving samples" msg
 		pb_receiving_samples_cnt = 0
 	
@@ -861,16 +861,21 @@ class RANManagement():
 			#keys below are the markers we are loooking for, loop over this keys list
 			#everytime these markers are found in the log file, the previous ones are overwritten in the dict
 			#eventually we record and print only the last occurence 
-			keys = {'dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
+			keys = {'UE ID','dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled', 'scheduling timing stats'}
 			for k in keys:
 				result = re.search(k, line)
 				if result is not None:
 					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
 					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
-			#count "L1 thread not ready" msg
-			result = re.search('\[PHY\]\s+L1_thread isn\'t ready', str(line))
-			if result is not None:
-				L1_thread_not_ready_cnt += 1	
+			#real time statistics
+			#same method as above
+			keys = {'feprx','feptx_prec','feptx_ofdm','feptx_total','L1 Tx processing','DLSCH encoding','L1 Rx processing','PUSCH inner-receiver','PUSCH decoding'}   
+			for k in keys:
+				result = re.search(k, line)     
+				if result is not None:
+					#remove 1- all useless char before relevant info  2- trailing char
+					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex 
+					real_time_stats[k]=tmp.group(1)
 			#count "problem receiving samples" msg
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
 			if result is not None:
@@ -901,13 +906,8 @@ class RANManagement():
 				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
 				htmlMsg = statMsg+'\n'
 			else:
-				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
+				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL or not relevant'
 				htmlMsg = statMsg+'\n'
-			logging.debug(statMsg)
-			htmleNBFailureMsg += htmlMsg
-			#L1 thread not ready log
-			statMsg = '[PHY] L1 thread is not ready msg count =  '+str(L1_thread_not_ready_cnt)
-			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
 			#problem receiving samples log
@@ -922,6 +922,18 @@ class RANManagement():
 				for key in dlsch_ulsch_stats: #for each dictionary key
 					statMsg += dlsch_ulsch_stats[key] + '\n' 
 					logging.debug(dlsch_ulsch_stats[key])
+				htmleNBFailureMsg += statMsg
+
+			#real time statistics statistics
+			if len(real_time_stats)!=0: #check if dictionary is not empty
+				statMsg=''
+				for key in real_time_stats: #for each dictionary key
+					statMsg += real_time_stats[key] + '\n' 
+					logging.debug(real_time_stats[key])
+				htmleNBFailureMsg += statMsg
+			else:
+				statMsg = 'No real time stats found in the log file\n'
+				logging.debug('No real time stats found in the log file')
 				htmleNBFailureMsg += statMsg
 
 		if uciStatMsgCount > 0:

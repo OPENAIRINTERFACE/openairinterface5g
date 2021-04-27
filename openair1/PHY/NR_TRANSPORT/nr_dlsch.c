@@ -152,7 +152,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     else {
       nb_re_dmrs = 4*rel15->numDmrsCdmGrpsNoData;
     }
-    n_dmrs = (rel15->rbSize+rel15->rbStart)*nb_re_dmrs;
+    n_dmrs = (rel15->BWPStart+rel15->rbStart+rel15->rbSize)*nb_re_dmrs;
 
     uint16_t dmrs_symbol_map = rel15->dlDmrsSymbPos;//single DMRS: 010000100 Double DMRS 110001100
     uint8_t dmrs_len = get_num_dmrs(rel15->dlDmrsSymbPos);
@@ -266,6 +266,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 #endif
     
     /// DMRS QPSK modulation
+    // TODO: performance improvement, we can skip the modulation of DMRS symbols outside the bandwidth part
     for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) {
       if (rel15->dlDmrsSymbPos & (1 << l)) {
         nr_modulation(pdsch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs[l]); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
@@ -318,11 +319,24 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
         /// DMRS QPSK modulation
         uint8_t k_prime=0;
         uint16_t n=0;
-        if ((dmrs_symbol_map & (1 << l))){ //DMRS time occasion
-          if (dmrs_Type == NFAPI_NR_DMRS_TYPE1) // another if condition to be included to check pdsch config type (reference of k)
-            dmrs_idx = rel15->rbStart*6;
-          else
-            dmrs_idx = rel15->rbStart*4;
+
+        if ((dmrs_symbol_map & (1 << l))){ // DMRS time occasion
+          // The reference point for is subcarrier 0 of the lowest-numbered resource block in CORESET 0 if the corresponding
+          // PDCCH is associated with CORESET 0 and Type0-PDCCH common search space and is addressed to SI-RNTI
+          // 3GPP TS 38.211 V15.8.0 Section 7.4.1.1.2 Mapping to physical resources
+          if (rel15->rnti==SI_RNTI) {
+            if (dmrs_Type==NFAPI_NR_DMRS_TYPE1) {
+              dmrs_idx = rel15->rbStart*6;
+            } else {
+              dmrs_idx = rel15->rbStart*4;
+            }
+          } else {
+            if (dmrs_Type == NFAPI_NR_DMRS_TYPE1) {
+              dmrs_idx = (rel15->rbStart+rel15->BWPStart)*6;
+            } else {
+              dmrs_idx = (rel15->rbStart+rel15->BWPStart)*4;
+            }
+          }
         }
 
         // Update l_prime in the case of double DMRS config
@@ -507,7 +521,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 	gNB->common_vars.beam_id[0][slot*frame_parms->symbols_per_slot+j] = rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx;
     }
     else {
-      LOG_W(PHY,"beam index for PDSCH allocation already taken\n");
+      LOG_D(PHY,"beam index for PDSCH allocation already taken\n");
     }
   }// dlsch loop
 

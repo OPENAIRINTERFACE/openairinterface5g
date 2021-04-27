@@ -374,7 +374,7 @@ static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, 
   int n;
 
   if (reset) {
-    *x1 = 1+ (1<<31);
+    *x1 = 1+ (1U<<31);
     *x2=*x2 ^ ((*x2 ^ (*x2>>1) ^ (*x2>>2) ^ (*x2>>3))<<31);
 
     // skip first 50 double words (1600 bits)

@@ -59,7 +59,7 @@
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
 double cpuf;
-#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 //#define MCS_COUNT 23//added for PHY abstraction
 #include <openair1/SIMULATION/LTE_PHY/common_sim.h>
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
@@ -72,6 +72,9 @@ node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 extern uint16_t beta_ack[16],beta_ri[16],beta_cqi[16];
 //extern  char* namepointer_chMag ;
 int xforms=0;
+THREAD_STRUCT thread_struct;
+nfapi_ue_release_request_body_t release_rntis;
+
 FD_lte_phy_scope_enb *form_enb;
 char title[255];
 
@@ -735,7 +738,7 @@ int main(int argc, char **argv) {
                                 30e-9,
                                 forgetting_factor,
                                 delay,
-                                0);
+                                0, 0);
   // set Doppler
   UE2eNB->max_Doppler = maxDoppler;
 

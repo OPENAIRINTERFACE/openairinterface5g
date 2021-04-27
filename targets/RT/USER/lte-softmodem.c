@@ -35,6 +35,7 @@
 #include <sched.h>
 
 #include "rt_wrapper.h"
+#include <common/utils/msc/msc.h>
 
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -55,6 +56,8 @@
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
+
+#include <openair1/PHY/phy_extern_ue.h>
 
 #include "PHY/phy_vars.h"
 #include "SCHED/sched_common_vars.h"
@@ -99,6 +102,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
+
+msc_interface_t msc_interface;
 
 
 uint16_t sf_ahead=4;
@@ -174,7 +179,6 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-int usrp_tx_thread = 0;
 
 THREAD_STRUCT thread_struct;
 /* struct for ethernet specific parameters given in eNB conf file */
@@ -741,7 +745,7 @@ int main ( int argc, char **argv )
   fflush(stderr);
   // end of CI modifications
   //getchar();
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
      load_softscope("enb",NULL);
   itti_wait_tasks_end();
   oai_exit=1;
@@ -749,7 +753,7 @@ int main ( int argc, char **argv )
   // stop threads
 
   if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
-    if(IS_SOFTMODEM_DOFORMS)
+    if(IS_SOFTMODEM_DOSCOPE)
       end_forms();
 
     LOG_I(ENB_APP,"stopping MODEM threads\n");

@@ -82,10 +82,12 @@ typedef struct configmodule_interface {
 #ifdef CONFIG_LOADCONFIG_MAIN
 configmodule_interface_t *cfgptr=NULL;
 
-static char config_helpstr [] = "\n lte-softmodem -O [config mode]<:dbgl[debugflags]> \n \
-          debugflags can also be defined in the config_libconfig section of the config file\n \
+static char config_helpstr [] = "\n lte-softmodem -O [config mode]<:dbgl[debugflags]><:incp[path]>\n \
+          debugflags can also be defined in the config section of the config file\n \
           debugflags: mask,    1->print parameters, 2->print memory allocations debug messages\n \
-                               4->print command line processing debug messages\n ";
+                               4->print command line processing debug messages\n \
+          incp parameter can be used to define the include path used for config files (@include directive)\n \
+                         defaults is set to the path of the main config file.\n";
 
 #define CONFIG_SECTIONNAME "config"
 #define CONFIGPARAM_DEBUGFLAGS_IDX        0

@@ -65,6 +65,7 @@ extern const int cqi_to_mcs[16];
 extern uint32_t RRC_CONNECTION_FLAG;
 
 extern uint8_t rb_table[34];
+extern rb_id_t mbms_rab_id;
 
 
 #if defined(PRE_SCD_THREAD)
@@ -80,5 +81,5 @@ extern SCHEDULER_MODES global_scheduler_mode;
 
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
-
+extern rb_id_t mbms_rab_id;
 #endif //DEF_H

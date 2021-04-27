@@ -51,8 +51,6 @@ typedef struct {
   pthread_mutex_t *mutex;
 } mac_stats_updates_context_t;
 
-/*Array holding the last stats reports for each eNB. Used for continuous reporting*/
-mac_stats_updates_context_t mac_stats_context[NUM_MAX_ENB];
 
 /*Functions to initialize and destroy the struct required for the
  *continuous stats update report*/

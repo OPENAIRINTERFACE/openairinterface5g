@@ -319,13 +319,15 @@ error:
 }
 
 int proto_agent_get_ack_result(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
+/* code useless in this status: return 0 anyways
   rlc_op_status_t result = 0;
-  //printf("PROTO_AGENT: handling the data_req_ack message\n");
+  printf("PROTO_AGENT: handling the data_req_ack message\n");
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
   Protocol__FspRlcDataReqAck *data_ack = input->data_req_ack;
   result = data_ack->result;
-  //printf("PROTO_AGENT: ACK RESULT IS %u\n", result);
+  printf("PROTO_AGENT: ACK RESULT IS %u\n", result);
   ack_result = result;
+*/
   return 0;
 }
 

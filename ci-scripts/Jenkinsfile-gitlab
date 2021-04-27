@@ -224,7 +224,7 @@ pipeline {
                 }
               }
             }
-        }
+   }
         
         stage ("Variant Builds") {
             parallel {

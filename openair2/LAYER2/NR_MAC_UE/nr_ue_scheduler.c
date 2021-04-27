@@ -502,11 +502,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     int ibwp_size = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
     // BWP start selection according to 8.3 of TS 38.213
-    pusch_config_pdu->bwp_size = ibwp_size;
-    if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size))
+    if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size)) {
       pusch_config_pdu->bwp_start = abwp_start;
-    else
+      pusch_config_pdu->bwp_size = abwp_size;
+    } else {
       pusch_config_pdu->bwp_start = ibwp_start;
+      pusch_config_pdu->bwp_size = ibwp_size;
+    }
 
     //// Resource assignment from RAR
     // Frequency domain allocation according to 8.3 of TS 38.213
@@ -520,7 +522,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       return -1;
 
     // virtual resource block to physical resource mapping for Msg3 PUSCH (6.3.1.7 in 38.211)
-    pusch_config_pdu->rb_start += ibwp_start - abwp_start;
+    //pusch_config_pdu->rb_start += ibwp_start - abwp_start;
 
     // Time domain allocation
     SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
@@ -647,7 +649,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       return -1;
     }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac, pusch_config_pdu, NULL, dci->time_domain_assignment.val) < 0) {
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac, pusch_config_pdu, NULL, dci->time_domain_assignment.val,false) < 0) {
       return -1;
     }
 
@@ -889,7 +891,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
           uint16_t TBS_bytes = ulcfg_pdu->pusch_config_pdu.pusch_data.tb_size;
 
-          if (ra->ra_state == WAIT_RAR){
+          if (ra->ra_state == WAIT_RAR && !ra->cfra){
             memcpy(ulsch_input_buffer, mac->ulsch_pdu.payload, TBS_bytes);
             LOG_D(NR_MAC,"[RAPROC] Msg3 to be transmitted:\n");
             for (int k = 0; k < TBS_bytes; k++) {
@@ -915,10 +917,9 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
               //and block this traffic from being forwarded to the upper layers at the gNB
               LOG_D(PHY, "In %s: Random data to be transmitted: TBS_bytes %d \n", __FUNCTION__, TBS_bytes);
 
-              //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-              //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
-              //have a valid LCID (nr_process_mac_pdu function)
-              ulsch_input_buffer[0] = 0x31;
+              // Make the first byte padding so that gNB ignores the PHY random
+              // data in the TB for the PHY at the MAC layer
+              ulsch_input_buffer[0] = UL_SCH_LCID_PADDING;
 
               for (int i = 1; i < TBS_bytes; i++) {
                 ulsch_input_buffer[i] = (unsigned char) rand();
@@ -943,7 +944,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           tx_req.tx_request_body[0].pdu_index = j;
           tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
 
-          if (ra->ra_state != RA_SUCCEEDED && !ra->cfra){
+          if (ra->ra_state == WAIT_RAR && !ra->cfra){
+            LOG_I(NR_MAC,"[RAPROC] RA-Msg3 transmitted\n");
             nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->gNB_index);
           }
 
@@ -983,7 +985,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
   struct NR_PUSCH_TimeDomainResourceAllocationList *pusch_TimeDomainAllocationList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   // k2 as per 3GPP TS 38.214 version 15.9.0 Release 15 ch 6.1.2.1.1
   // PUSCH time domain resource allocation is higher layer configured from uschTimeDomainAllocationList in either pusch-ConfigCommon
-  uint8_t k2;
+  int k2;
 
   if (is_Msg3) {
     k2 = *pusch_TimeDomainAllocationList->list.array[tda_id]->k2;
@@ -1670,7 +1672,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
 
   ra->RA_offset = 2; // to compensate the rx frame offset at the gNB
-  ra->generate_nr_prach = 0; // Reset flag for PRACH generation
+  ra->generate_nr_prach = GENERATE_IDLE; // Reset flag for PRACH generation
 
   if (is_nr_UL_slot(scc, slotP, mac->frame_type)) {
 
@@ -1687,7 +1689,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
     if (is_nr_prach_slot && ra->ra_state == RA_UE_IDLE) {
       AssertFatal(NULL != prach_occasion_info_p,"PRACH Occasion Info not returned in a valid NR Prach Slot\n");
 
-      ra->generate_nr_prach = 1;
+      ra->generate_nr_prach = GENERATE_PREAMBLE;
 
       format = prach_occasion_info_p->format;
       format0 = format & 0xff;        // single PRACH format

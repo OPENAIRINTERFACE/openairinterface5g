@@ -419,7 +419,7 @@ int main(int argc, char **argv)
 	printf("FFO = %lf; IFO = %d\n",eps-IFO,IFO);
   }
 
-  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, bw, DS_TDL,0, 0, 0);
+  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, bw, DS_TDL,0, 0, 0, 0);
 
   if (UE2gNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");

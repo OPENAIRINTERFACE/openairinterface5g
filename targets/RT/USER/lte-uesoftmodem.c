@@ -86,6 +86,7 @@
 #include "lte-softmodem.h"
 
 
+msc_interface_t msc_interface;
 /* temporary compilation wokaround (UE/eNB split */
 uint16_t sf_ahead;
 
@@ -168,7 +169,6 @@ extern void get_uethreads_params(void);
 
 int transmission_mode=1;
 
-int usrp_tx_thread = 0;
 
 
 char *usrp_args=NULL;
@@ -746,7 +746,7 @@ int main( int argc, char **argv ) {
   //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
 
 
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
     load_softscope("ue",NULL);
 
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
@@ -771,7 +771,7 @@ int main( int argc, char **argv ) {
   printf("oai_exit=%d\n",oai_exit);
 
   // stop threads
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
     end_forms();
 
   printf("stopping MODEM threads\n");
