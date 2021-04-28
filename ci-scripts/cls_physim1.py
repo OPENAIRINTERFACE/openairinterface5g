@@ -130,7 +130,7 @@ class PhySim:
 			else:
 				logging.debug('oai-physim size is unknown')
 
-		# logging to OC Cluster and then switch to corresponding project 
+		# logging to OC Cluster and then switch to corresponding project
 		mySSH.command(f'oc login -u {ocUserName} -p {ocPassword}', '\$', 6)
 		if mySSH.getBefore().count('Login successful.') == 0:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
@@ -185,7 +185,7 @@ class PhySim:
 		count = 0
 		while(count < 2 and isRunning == False):
 			time.sleep(60)
-			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
+			mySSH.command('oc get pods -o wide -l app.kubernetes.io/instance=physim | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 6, resync=True)
 			if mySSH.getBefore().count('Running') == 12:
 				logging.debug('\u001B[1m Running the physim test Scenarios\u001B[0m')
 				isRunning = True
@@ -193,7 +193,7 @@ class PhySim:
 			count +=1
 		if isRunning == False:
 			logging.error('\u001B[1m Some PODS Running FAILED \u001B[0m')
-			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim > cmake_targets/log/physim_pods_summary.txt 2>&1', '\$', 6)
+			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim 2>&1 | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 6)
 			mySSH.command('helm uninstall physim >> cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
 			self.AnalyzeLogFile_phySim(HTML)
 			sys.exit(-1)
@@ -203,9 +203,10 @@ class PhySim:
 		# doing a deep copy!
 		tmpPodNames = podNames.copy()
 		while(count < 28 and isFinished == False):
-			time.sleep(60)
+			time.sleep(58)
 			for podName in tmpPodNames:
-				mySSH.command(f'oc logs --tail=1 {podName} 2>&1', '\$', 6)
+				mySSH.command(f'oc logs --tail=1 {podName} 2>&1', '\$', 6, silent=True, resync=True)
+				time.sleep(2)
 				if mySSH.getBefore().count('FINISHED') != 0:
 					logging.debug(podName + ' is finished')
 					tmpPodNames.remove(podName)
@@ -214,10 +215,10 @@ class PhySim:
 			count += 1
 		if isFinished:
 			logging.debug('\u001B[1m PhySim test is Complete\u001B[0m')
-        
+
 		# Getting the logs of each executables running in individual pods
 		for podName in podNames:
-			mySSH.command(f'oc logs {podName} >> cmake_targets/log/physim_test.txt 2>&1', '\$', 15)
+			mySSH.command(f'oc logs {podName} >> cmake_targets/log/physim_test.txt 2>&1', '\$', 15, resync=True)
 		time.sleep(30)
 
 		# UnDeploy the physical simulator pods
@@ -225,7 +226,7 @@ class PhySim:
 		isFinished1 = False
 		while(isFinished1 == False):
 			time.sleep(20)
-			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6)
+			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6, resync=True)
 			if re.search('No resources found', mySSH.getBefore()):
 				isFinished1 = True
 		if isFinished1 == True:
@@ -249,7 +250,7 @@ class PhySim:
 		mySSH.command('cd ' + lSourcePath, '\$', 5)
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p physim_test_log_' + self.testCase_id, '\$', 5)
-		mySSH.command('mv log/physim_* ' + 'physim_test_log_' + self.testCase_id, '\$', 5)		
+		mySSH.command('cp log/physim_* ' + 'physim_test_log_' + self.testCase_id, '\$', 5)
 		if not os.path.exists(f'./physim_test_logs_{self.testCase_id}'):
 			os.mkdir(f'./physim_test_logs_{self.testCase_id}')
 		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/physim_test_log_' + self.testCase_id + '/*', './physim_test_logs_' + self.testCase_id)
@@ -279,7 +280,7 @@ class PhySim:
 							self.testCount[1] += 1
 						else:
 							self.testResult[testName[1]] = [ret3, 'FAIL']
-							self.testCount[2] += 1									
+							self.testCount[2] += 1
 		self.testSummary['Nbtests'] = self.testCount[0]
 		self.testSummary['Nbpass'] =  self.testCount[1]
 		self.testSummary['Nbfail'] =  self.testCount[2]
