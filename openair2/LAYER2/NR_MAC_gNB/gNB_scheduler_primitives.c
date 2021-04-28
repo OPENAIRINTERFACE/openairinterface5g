@@ -274,35 +274,34 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 {
   ps->time_domain_allocation = tda;
 
-  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
-      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = bwp ?
+      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :
+      scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
 
-  if (!secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup
-           ->mcs_Table)
-    ps->mcsTableIdx = 0;
-  else if (*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup
-                ->mcs_Table
-           == 0)
-    ps->mcsTableIdx = 1;
-  else
-    ps->mcsTableIdx = 2;
+  ps->mcsTableIdx = 0;
+  if (bwp &&
+      bwp->bwp_Dedicated &&
+      bwp->bwp_Dedicated->pdsch_Config &&
+      bwp->bwp_Dedicated->pdsch_Config->choice.setup &&
+      bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table) {
+    if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0)
+      ps->mcsTableIdx = 1;
+    else
+      ps->mcsTableIdx = 2;
+  }
+  else ps->mcsTableIdx = 0;
 
   ps->numDmrsCdmGrpsNoData = num_dmrs_cdm_grps_no_data;
-  ps->dmrsConfigType =
-      bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type
-              == NULL
-          ? 0
-          : 1;
+  ps->dmrsConfigType = bwp!=NULL ? (bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
+
   // if no data in dmrs cdm group is 1 only even REs have no data
   // if no data in dmrs cdm group is 2 both odd and even REs have no data
   ps->N_PRB_DMRS = num_dmrs_cdm_grps_no_data * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
-  ps->N_DMRS_SLOT =
-      get_num_dmrs_symbols(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex);
-  ps->dl_dmrs_symb_pos =
-      fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex);
+  ps->dl_dmrs_symb_pos = fill_dmrs_mask(bwp ? bwp->bwp_Dedicated->pdsch_Config->choice.setup : NULL, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex);
+  ps->N_DMRS_SLOT = get_num_dmrs(ps->dl_dmrs_symb_pos);
 }
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
