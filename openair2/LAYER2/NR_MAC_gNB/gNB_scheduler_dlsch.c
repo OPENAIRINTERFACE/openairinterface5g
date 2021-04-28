@@ -442,8 +442,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 &sched_ctrl->active_bwp->bwp_Common->genericParameters :
                                 &RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
 
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  int rbStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   const uint8_t num_dmrs_cdm_grps_no_data = ps->nrOfSymbols == 2 ? 1 : 2;
 
