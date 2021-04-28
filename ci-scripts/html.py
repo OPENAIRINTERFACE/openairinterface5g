@@ -47,7 +47,7 @@ import constants as CONST
 class HTMLManagement():
 
 	def __init__(self):
-	
+
 		self.htmlFile = ''
 		self.htmlHeaderCreated = False
 		self.htmlFooterCreated = False
@@ -86,13 +86,13 @@ class HTMLManagement():
 #-----------------------------------------------------------
 # Setters and Getters
 #-----------------------------------------------------------
-	
+
 	def SethtmlUEConnected(self, nbUEs):
 		if nbUEs > 0:
 			self.htmlUEConnected = nbUEs
 		else:
 			self.htmlUEConnected = 1
-	
+
 
 
 #-----------------------------------------------------------
@@ -412,7 +412,12 @@ class HTMLManagement():
 			for image in collectInfo:
 				files = collectInfo[image]
         		# TabHeader for image logs on built shared and target images
-				self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
+				if allImagesSize[image].count('unknown') > 0:
+					self.htmlFile.write('      <tr bgcolor = "orange" >\n')
+				elif allImagesSize[image].count('Build Failed') > 0:
+					self.htmlFile.write('      <tr bgcolor = "red" >\n')
+				else:
+					self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
 				self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- ' + image  + ' IMAGE STATUS ----> Size ' + allImagesSize[image] + ' </b></td>\n')
 				self.htmlFile.write('      </tr>\n')
 				self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
@@ -431,18 +436,20 @@ class HTMLManagement():
 						self.htmlFile.write('        <td bgcolor = "green" >' + str(parameters['errors'])  + '</td>\n')
 					else:
 						self.htmlFile.write('        <td bgcolor = "red" >' + str(parameters['errors'])  + '</td>\n')
-					if (parameters['warnings'] == 0):
+					if (parameters['errors'] > 0):
+						self.htmlFile.write('        <td bgcolor = "red" >' + str(parameters['warnings'])  + '</td>\n')
+					elif (parameters['warnings'] == 0):
 						self.htmlFile.write('        <td bgcolor = "green" >' + str(parameters['warnings'])  + '</td>\n')
 					elif ((parameters['warnings'] > 0) and (parameters['warnings'] <= 20)):
 						self.htmlFile.write('        <td bgcolor = "orange" >' + str(parameters['warnings'])  + '</td>\n')
 					else:
-						self.htmlFile.write('        <td bgcolor = "red" >' + str(parameters['warnings'])  + '</td>\n')	
+						self.htmlFile.write('        <td bgcolor = "red" >' + str(parameters['warnings'])  + '</td>\n')
 					if (parameters['errors'] == 0) and (parameters['warnings'] == 0):
 						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "green" ><font color="white">OK </font></th>\n')
 					elif (parameters['errors'] == 0) and ((parameters['warnings'] > 0) and (parameters['warnings'] <= 20)):
 						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "orange" ><font color="white">OK </font></th>\n')
 					else:
-						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "red" > NOT OK  </th>\n')	
+						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "red" > NOT OK  </th>\n')
 					self.htmlFile.write('      </tr>\n')
 		self.htmlFile.close()
 
@@ -613,6 +620,6 @@ class HTMLManagement():
 				if 'PASS' in value:
 					self.htmlFile.write('        <td colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "green" >' + value[1]  + '</td>\n')
 				else:
-					self.htmlFile.write('        <td colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "red" >' + value[1]  + '</td>\n')	
-            
+					self.htmlFile.write('        <td colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "red" >' + value[1]  + '</td>\n')
+
 		self.htmlFile.close()
