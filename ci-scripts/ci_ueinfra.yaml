@@ -14,14 +14,19 @@ idefix:
   HostPassword : oaicicd
   HostSourceCodePath : none
 dummy:
-  ID: dummy
-dummy2:  
-  ID: dummy2
-  Kind : cots
-  State : disabled
-  Process : quectel-cm
-  HostIPAddress : 192.168.18.186
+  ID: ''
+  State : ''
+  Kind : ''
+  Process : 
+    Name : ''
+    Cmd : ''
+  WakeupScript : ''
+  DetachScript : ''
+  PLMN : 22201
+  UENetwork : wwan0
+  HostIPAddress : 192.168.18.188
   HostUsername : oaicicd
   HostPassword : oaicicd
   HostSourceCodePath : none
+
 
