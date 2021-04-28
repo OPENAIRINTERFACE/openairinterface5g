@@ -781,7 +781,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const rnti_t rnti = UE_info->rnti[UE_id];
 
     /* POST processing */
-    const int nrOfLayers = 1;
     const uint16_t R = sched_pdsch->R;
     const uint8_t Qm = sched_pdsch->Qm;
     const uint32_t TBS = sched_pdsch->tb_size;

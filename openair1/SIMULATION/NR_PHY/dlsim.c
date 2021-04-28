@@ -215,9 +215,9 @@ void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSi
 void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dmrs_arg);
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration 
 
-/* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs from command line of
+/* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs/nrOfLayers from command line of
    dlsim, does not search for CCE/PUCCH occasion but simply sets to 0 */
-int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1;
+int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1, g_nrOfLayers = 1;
 void nr_dlsim_preprocessor(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot) {
@@ -262,7 +262,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                                         ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        1 /* nrOfLayers */)
+                                        g_nrOfLayers)
                          >> 3;
 
   /* the simulator assumes the HARQ PID is equal to the slot number */
@@ -316,7 +316,7 @@ int main(int argc, char **argv)
   //  char fname[40], vname[40];
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
   //int n_errors2, n_alamouti;
-  uint8_t nrOfLayers = 1,n_tx=1,n_rx=1;
+  uint8_t n_tx=1,n_rx=1;
   uint8_t round;
   uint8_t num_rounds = 4;
 
@@ -479,11 +479,11 @@ int main(int argc, char **argv)
       break;
       */
     case 'x':
-      nrOfLayers=atoi(optarg);
+      g_nrOfLayers=atoi(optarg);
 
-      if ((nrOfLayers!=1) &&
-          (nrOfLayers!=2)) {
-        printf("Unsupported nr Of Layers %d\n",nrOfLayers);
+      if ((g_nrOfLayers!=1) &&
+          (g_nrOfLayers!=2)) {
+        printf("Unsupported nr Of Layers %d\n",g_nrOfLayers);
         exit(-1);
       }
 
@@ -992,7 +992,7 @@ int main(int argc, char **argv)
           gNB_mac->UE_info.num_pdcch_cand[0][i] = 0;
       
         if (css_flag == 0) {
-          nr_schedule_ue_spec(0, frame, slot, nrOfLayers);
+          nr_schedule_ue_spec(0, frame, slot, g_nrOfLayers);
         } else {
           nr_schedule_css_dlsch_phytest(0,frame,slot);
         }
@@ -1138,7 +1138,7 @@ int main(int argc, char **argv)
         }
 
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
-        UE_harq_process->Nl = nrOfLayers;
+        UE_harq_process->Nl = g_nrOfLayers;
         nr_ue_scheduled_response(&scheduled_response);
         
         phy_procedures_nrUE_RX(UE,
