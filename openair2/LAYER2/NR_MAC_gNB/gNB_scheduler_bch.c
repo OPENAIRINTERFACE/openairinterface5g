@@ -380,10 +380,8 @@ void schedule_control_sib1(module_id_t module_id,
   uint32_t TBS = 0;
   do {
     rbSize++;
-    TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs,
-                                      gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
-                         nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs,
-                                             gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
+    TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
+                         nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
                          rbSize, nrOfSymbols, N_PRB_DMRS * dmrs_length,0, 0,1) >> 3;
   } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
 

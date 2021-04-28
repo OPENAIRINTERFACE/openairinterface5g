@@ -368,7 +368,7 @@ void nr_process_mac_pdu(module_id_t module_idP,
             mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
             mac_subheader_len = 2;
           }
-          LOG_E(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, *UE_info->rnti);
+          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, *UE_info->rnti);
           mac_rlc_data_ind(module_idP,
               *UE_info->rnti,
               module_idP,

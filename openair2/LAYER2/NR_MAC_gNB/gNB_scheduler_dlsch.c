@@ -551,7 +551,7 @@ void pf_dl(module_id_t module_id,
 
   gNB_MAC_INST *mac = RC.nrmac[module_id];
   NR_UE_info_t *UE_info = &mac->UE_info;
-  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
+  NR_ServingCellConfigCommon_t *scc=mac->common_channels[0].ServingCellConfigCommon;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
