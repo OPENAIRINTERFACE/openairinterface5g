@@ -90,7 +90,6 @@ nfapi_ue_release_request_body_t release_rntis;
 msc_interface_t msc_interface;
 
 
-int usrp_tx_thread = 0;
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 
