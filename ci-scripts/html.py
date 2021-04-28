@@ -457,7 +457,7 @@ class HTMLManagement():
 		self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- ' + DataLog['Title'] + ' ---- </b></td>\n')
 		self.htmlFile.write('      </tr>\n')
 		self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
-		self.htmlFile.write('        <th colspan="2">'+ DataLog['ColNames'][0] +'</th>\n')
+		self.htmlFile.write('        <th colspan="3">'+ DataLog['ColNames'][0] +'</th>\n')
 		self.htmlFile.write('        <th>' + DataLog['ColNames'][1] + '</th>\n')
 		self.htmlFile.write('        <th>' + DataLog['ColNames'][2] + '</th>\n')
 		self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + '>'+ DataLog['ColNames'][3] +'</th>\n')
@@ -466,13 +466,13 @@ class HTMLManagement():
 		for k in DataLog['Data']:
 			# TestRow 
 			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + k  + ' </td>\n')				
-			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + DataLog['Data'][k][0]  + ' </td>\n')
-			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + DataLog['Data'][k][1]  + ' </td>\n')
+			self.htmlFile.write('        <td colspan="3" bgcolor = "lightcyan" >' + k  + ' </td>\n')				
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + DataLog['Data'][k][0]  + ' </td>\n')
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + DataLog['Data'][k][1]  + ' </td>\n')
 			if float(DataLog['Data'][k][2])> DataLog['Threshold'][k]:
-				self.htmlFile.write('        <td colspan="2" bgcolor = "red" >' + DataLog['Data'][k][2]  + ' ('+str(DataLog['Threshold'][k])+') ' + '</td>\n')
+				self.htmlFile.write('        <th bgcolor = "red" >' + DataLog['Data'][k][2]  + ' ('+str(DataLog['Threshold'][k])+') ' + '</th>\n')
 			else:
-				self.htmlFile.write('        <td colspan="2" bgcolor = "green" >' + DataLog['Data'][k][2]  + ' ('+str(DataLog['Threshold'][k])+') ' + '</td>\n')					
+				self.htmlFile.write('        <th bgcolor = "green" ><font color="white">' + DataLog['Data'][k][2]  + ' ('+str(DataLog['Threshold'][k])+') ' + '</th>\n')					
 			self.htmlFile.write('      </tr>\n')
 		self.htmlFile.close()
 
