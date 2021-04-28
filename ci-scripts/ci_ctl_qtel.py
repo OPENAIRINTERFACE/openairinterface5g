@@ -24,6 +24,9 @@
 #
 #---------------------------------------------------------------------
 
+#usage example:
+#sudo python3 ci_ctl_qtel.py /dev/ttyUSB2 wup
+#sudo python3 ci_ctl_qtel.py /dev/ttyUSB2 detach
 
 
 import sys
@@ -44,28 +47,40 @@ class qtel_ctl:
 	    self.__send_command(ser,"AT+CFUN={}\r".format(state))
 
     def __send_command(self,ser,com):
-        if ser.inWaiting() > 0:
-            ser.flushInput()
         ser.write(com.encode())
+        time.sleep(0.1)
+        ret=[]
+        while ser.inWaiting()>0:
+            print("waiting")
+            msg=ser.readline()
+            msg=msg.decode("utf-8")
+            msg=msg.replace("\r","")
+            msg=msg.replace("\n","")
+            print(msg)
+            if msg!="":
+                ret.append(msg)
+            else:
+                print("msg empty")
+        return ret
 
 	#--------------
 	#public methods
 	#--------------
     def wup(self):#sending AT+CFUN=0, then AT+CFUN=1
-        self.__set_modem_state(self.modem,0)
+        self.__set_modem_state(self.modem,'0')
         time.sleep(3)
-        self.__set_modem_state(self.modem,1)
+        self.__set_modem_state(self.modem,'1')
 
     def detach(self):#sending AT+CFUN=0
-        self.__set_modem_state(self.modem,0)
+        self.__set_modem_state(self.modem,'0')
 
 
 
 
 if __name__ == "__main__":
-	#argv[1] : usb port
-	#argv[2] : qtel command (see function pointers dict "wup", "detach" etc ...)
+    #argv[1] : usb port
+    #argv[2] : qtel command (see function pointers dict "wup", "detach" etc ...)
     command = sys.argv[2]
     Module=qtel_ctl(sys.argv[1])
-	#calling the function to be applied
+    #calling the function to be applied
     Module.cmd_dict[command]()
