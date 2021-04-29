@@ -449,7 +449,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   const uint8_t num_dmrs_cdm_grps_no_data = ps->nrOfSymbols == 2 ? 1 : 2;
 
   int rbSize = 0;
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 0;
+  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
   if (tda == retInfo->time_domain_allocation) {
     /* Check that there are enough resources for retransmission */
     while (rbSize < retInfo->rbSize) {
@@ -666,7 +666,7 @@ void pf_dl(module_id_t module_id,
       max_rbSize++;
 
     /* MCS has been set above */
-    const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 0;
+    const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
     const uint8_t num_dmrs_cdm_grps_no_data = ps->nrOfSymbols == 2 ? 1 : 2;
@@ -1208,5 +1208,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     gNB_mac->TX_req[CC_id].Number_of_PDUs++;
     gNB_mac->TX_req[CC_id].SFN = frame;
     gNB_mac->TX_req[CC_id].Slot = slot;
+
+    /* mark UE as scheduled */
+    sched_pdsch->rbSize = 0;
   }
 }

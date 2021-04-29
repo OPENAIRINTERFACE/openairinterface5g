@@ -360,12 +360,12 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 	    if(ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1){
 	      // Monitors DCI 01 and 11 scrambled with C-RNTI, or CS-RNTI(s), or SP-CSI-RNTI
 	      if ((ra->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) && mac->crnti > 0) {
-		LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in the user specific search space\n");
-		rel15->num_dci_options = 2;
-		rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_1;
-		rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_1;
-		config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C, ss_id);
-		fill_dci_search_candidates(ss, rel15);
+          LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in the user specific search space\n");
+          rel15->num_dci_options = 2;
+          rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_1;
+          rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_1;
+          config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C, ss_id);
+          fill_dci_search_candidates(ss, rel15);
 
 #ifdef DEBUG_DCI
 		LOG_D(MAC, "[DCI_CONFIG] ss %d ue_Specific %p searchSpaceType->present %d dci_Formats %d\n",

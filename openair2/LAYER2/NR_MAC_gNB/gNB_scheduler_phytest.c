@@ -359,7 +359,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 0;
+  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
   if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
     nr_set_pdsch_semi_static(
@@ -409,7 +409,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
+  const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 1;
   if (tda < 0)
     return false;
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
