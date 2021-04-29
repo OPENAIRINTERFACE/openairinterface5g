@@ -66,6 +66,8 @@ static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 static int DEFBFW[] = {0x00007fff};
 
+THREAD_STRUCT thread_struct;
+
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
@@ -83,7 +85,6 @@ extern void set_function_spec_param(RU_t *ru);
 
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
-int usrp_tx_thread=0;
 
 void nfapi_setmode(nfapi_mode_t nfapi_mode) { return; }
 void exit_function(const char *file, const char *function, const int line, const char *s) {
