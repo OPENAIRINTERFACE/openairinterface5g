@@ -23,12 +23,20 @@
 #include "time_meas.h"
 #include <math.h>
 #include <unistd.h>
-
+#include <string.h>
+#include "assertions.h"
+#ifndef PHYSIM
+  #include "common/config/config_userapi.h"
+#endif
 // global var for openair performance profiler
 int opp_enabled = 0;
 double cpu_freq_GHz  __attribute__ ((aligned(32)));
 
 double cpu_freq_GHz  __attribute__ ((aligned(32)))=0.0;
+#ifndef PHYSIM
+static uint32_t    max_cpumeasur;
+time_stats_t  **measur_table;
+#endif
 double get_cpu_freq_GHz(void)
 {
   if (cpu_freq_GHz <1 ) {
@@ -133,3 +141,32 @@ double get_time_meas_us(time_stats_t *ts)
 
   return 0;
 }
+
+#ifndef PHYSIM
+
+
+int register_meas(char *name, time_stats_t *dst_ts)
+{  
+  for (int i=0; i<max_cpumeasur; i++) {
+	if (measur_table[i] == NULL) {	  
+	  measur_table[i] = (time_stats_t *)malloc(sizeof(time_stats_t));
+	  memset(measur_table[i] ,0,sizeof(time_stats_t));
+	  measur_table[i]->meas_name = strdup(name); 
+      measur_table[i]->meas_index = i; 
+      return i;
+    }
+  }
+  return -1;  
+}
+
+void init_meas(void)
+{
+  paramdef_t cpumeasur_params[] = CPUMEASUR_PARAMS_DESC;
+  int numparams=sizeof(cpumeasur_params)/sizeof(paramdef_t);
+  int ret = config_get( cpumeasur_params,numparams,CPUMEASUR_SECTION);
+  AssertFatal(ret >= 0, "cpumeasur configuration couldn't be performed");
+  measur_table=calloc(max_cpumeasur,sizeof( time_stats_t *));
+  AssertFatal(measur_table!=NULL, "couldn't allocate %u cpu measurements entries\n",max_cpumeasur);
+
+}
+#endif

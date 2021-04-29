@@ -34,7 +34,7 @@
 // global var to enable openair performance profiler
 extern int opp_enabled;
 extern double cpu_freq_GHz  __attribute__ ((aligned(32)));;
-
+// structure to store data to compute cpu measurment
 #if defined(__x86_64__) || defined(__i386__)
 typedef struct {
   long long in;
@@ -44,6 +44,8 @@ typedef struct {
   long long max;
   int trials;
   int meas_flag;
+  char *meas_name;           /*!< \brief name to use when printing the measure (not used for PHY simulators)*/ 
+  int meas_index;            /*!< \brief index of this measure in the measure array (not used for PHY simulators)*/ 
 } time_stats_t;
 #elif defined(__arm__)
 typedef struct {
@@ -137,4 +139,15 @@ static inline void copy_meas(time_stats_t *dst_ts,time_stats_t *src_ts) {
     dst_ts->max=src_ts->max;
   }
 }
+
+#ifndef PHYSIM
+#define CPUMEASUR_SECTION "cpumeasur"
+
+#define CPUMEASUR_PARAMS_DESC { \
+    {"max_cpumeasur",     "Max number of cpu measur entries",      0,       uptr:&max_cpumeasur,           defintval:100,         TYPE_UINT,   0},\
+  }
+  
+  void init_meas(void);
+  int register_meas(char *name, time_stats_t *ts);
+#endif  //ifndef PHYSIM
 #endif
