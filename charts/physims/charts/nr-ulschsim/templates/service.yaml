@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    {{- include "oai-nr-ulschsim.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+{{- if  contains "ClusterIP" .Values.service.type }}
+  clusterIP: None
+{{- end }}
+  ports:
+    - name: oai-nr-ulschsim
+      # Port accessible outside cluster
+      port: {{ .Values.service.port }}
+      # Port to forward to inside the pod
+      targetPort: {{ .Values.service.Port }}
+      protocol: TCP
+  selector:
+    {{- include "oai-nr-ulschsim.selectorLabels" . | nindent 4 }}
