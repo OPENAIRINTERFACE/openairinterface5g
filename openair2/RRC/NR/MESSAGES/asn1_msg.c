@@ -1564,7 +1564,7 @@ uint16_t do_RRCReconfiguration(
                                     NULL,
                                     (void *)&dl_dcch_msg,
                                     buffer,
-                                    100);
+                                    1000);
 
     if(enc_rval.encoded == -1) {
         LOG_I(NR_RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
