@@ -106,7 +106,7 @@ extern "C" {
 /* .log_format = 0x13 uncolored standard messages
  * .log_format = 0x93 colored standard messages */
 /* keep white space in first position; switching it to 0 allows colors to be disabled*/
-#define LOG_WITH_COLORS 0
+#define LOG_WITH_COLORS 1
 #if LOG_WITH_COLORS
 #define LOG_RED "\033[1;31m"  /*!< \brief VT100 sequence for bold red foreground */
 #define LOG_GREEN "\033[32m"  /*!< \brief VT100 sequence for green foreground */
@@ -416,7 +416,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 // debugging macros
 #define LOG_F  LOG_I           /* because  LOG_F was originaly to dump a message or buffer but is also used as a regular level...., to dump use LOG_DUMPMSG */
 
-#define LOG_MINIMAL 1 /* 1 for minimal logging: E, W and A */
+#define LOG_MINIMAL 0 /* 1 for minimal logging: E, W and A */
 
 #if LOG_MINIMAL
 
