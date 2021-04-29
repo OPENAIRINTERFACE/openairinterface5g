@@ -70,6 +70,7 @@
 #include "NR_RRCReconfigurationComplete-IEs.h"
 #include "NR_DLInformationTransfer.h"
 #include "NR_RRCReestablishmentRequest.h"
+#include "NR_UE-CapabilityRequestFilterNR.h"
 #include "PHY/defs_nr_common.h"
 #if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"
@@ -1076,7 +1077,8 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   
   ASN_SEQUENCE_ADD(&bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list,
                    ss2);
-
+  
+  SpCellConfig->spCellConfigDedicated->tag_Id=0;
 }
 
 void fill_initial_cellGroupConfig(rnti_t rnti,
@@ -1127,6 +1129,10 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
     logicalChannelGroup                                              = CALLOC(1, sizeof(long));
     *logicalChannelGroup                                             = 0;
     logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = logicalChannelGroup;
+    logicalChannelConfig->ul_SpecificParameters->schedulingRequestID = CALLOC(1, sizeof(*logicalChannelConfig->ul_SpecificParameters->schedulingRequestID));
+    *logicalChannelConfig->ul_SpecificParameters->schedulingRequestID = 0;
+    logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = 0;
+    logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = 0;
   //}
   rlc_BearerConfig->mac_LogicalChannelConfig                       = logicalChannelConfig;
   
@@ -1135,11 +1141,27 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   cellGroupConfig->rlc_BearerToReleaseList = NULL;
   
   /* mac CellGroup Config */
-  if (0) {
-    mac_CellGroupConfig                                                     = calloc(1, sizeof(NR_MAC_CellGroupConfig_t));
+  if (1) {
+    mac_CellGroupConfig                                                     = calloc(1, sizeof(*mac_CellGroupConfig));
+    mac_CellGroupConfig->schedulingRequestConfig                            = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
+    mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = CALLOC(1,sizeof(*mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));
+    struct NR_SchedulingRequestToAddMod *schedulingrequestlist;
+    schedulingrequestlist = CALLOC(1,sizeof(*schedulingrequestlist));
+    schedulingrequestlist->schedulingRequestId  = 0;
+    schedulingrequestlist->sr_ProhibitTimer = CALLOC(1,sizeof(*schedulingrequestlist->sr_ProhibitTimer));
+    *(schedulingrequestlist->sr_ProhibitTimer) = 0;
+    schedulingrequestlist->sr_TransMax      = 0;
+    ASN_SEQUENCE_ADD(&(mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList->list),schedulingrequestlist);
     mac_CellGroupConfig->bsr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->bsr_Config));
     mac_CellGroupConfig->bsr_Config->periodicBSR_Timer                      = NR_BSR_Config__periodicBSR_Timer_sf10;
     mac_CellGroupConfig->bsr_Config->retxBSR_Timer                          = NR_BSR_Config__retxBSR_Timer_sf80;
+    mac_CellGroupConfig->tag_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->tag_Config));
+    mac_CellGroupConfig->tag_Config->tag_ToReleaseList = NULL;
+    mac_CellGroupConfig->tag_Config->tag_ToAddModList  = calloc(1,sizeof(*mac_CellGroupConfig->tag_Config->tag_ToAddModList));
+    struct NR_TAG *tag=calloc(1,sizeof(*tag));
+    tag->tag_Id             = 0;
+    tag->timeAlignmentTimer = NR_TimeAlignmentTimer_infinity;
+    ASN_SEQUENCE_ADD(&mac_CellGroupConfig->tag_Config->tag_ToAddModList->list,tag);
     mac_CellGroupConfig->phr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->phr_Config));
     mac_CellGroupConfig->phr_Config->present                                = NR_SetupRelease_PHR_Config_PR_setup;
     mac_CellGroupConfig->phr_Config->choice.setup                           = calloc(1, sizeof(*mac_CellGroupConfig->phr_Config->choice.setup));
@@ -1243,7 +1265,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
 				       NULL,
 				       (void *)cellGroupConfig,
 				       masterCellGroup_buf,
-				       100);
+				       1000);
       
       if(enc_rval.encoded == -1) {
         LOG_E(NR_RRC, "ASN1 message CellGroupConfig encoding failed (%s, %lu)!\n",
@@ -1264,7 +1286,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
 				     NULL,
 				     (void *)&dl_ccch_msg,
 				     buffer,
-				     100);
+				     1000);
     
     if(enc_rval.encoded == -1) {
       LOG_E(NR_RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -1346,6 +1368,11 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    const uint8_t                Transaction_id)
 //------------------------------------------------------------------------------
 {
+  NR_UE_CapabilityRequestFilterNR_t *sa_band_filter;
+  NR_FreqBandList_t *sa_band_list;
+  NR_FreqBandInformation_t *sa_band_info;
+  NR_FreqBandInformationNR_t *sa_band_infoNR;
+
   NR_DL_DCCH_Message_t dl_dcch_msg;
   NR_UE_CapabilityRAT_Request_t *ue_capabilityrat_request;
 
@@ -1361,6 +1388,35 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   ue_capabilityrat_request =  CALLOC(1,sizeof(NR_UE_CapabilityRAT_Request_t));
   memset(ue_capabilityrat_request,0,sizeof(NR_UE_CapabilityRAT_Request_t));
   ue_capabilityrat_request->rat_Type = NR_RAT_Type_nr;
+
+  sa_band_infoNR = (NR_FreqBandInformationNR_t*)calloc(1,sizeof(NR_FreqBandInformationNR_t));
+  sa_band_infoNR->bandNR = 78;
+  sa_band_info = (NR_FreqBandInformation_t*)calloc(1,sizeof(NR_FreqBandInformation_t));
+  sa_band_info->present = NR_FreqBandInformation_PR_bandInformationNR;
+  sa_band_info->choice.bandInformationNR = sa_band_infoNR;
+  
+  sa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
+  ASN_SEQUENCE_ADD(&sa_band_list->list, sa_band_info);
+
+  sa_band_filter = (NR_UE_CapabilityRequestFilterNR_t*)calloc(1,sizeof(NR_UE_CapabilityRequestFilterNR_t));
+  sa_band_filter->frequencyBandListFilter = sa_band_list;
+
+  OCTET_STRING_t req_freq;
+  unsigned char req_freq_buf[1024];
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_CapabilityRequestFilterNR,
+				   NULL,
+				   (void *)sa_band_filter,
+				   req_freq_buf,
+				   1024);
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_UE_CapabilityRequestFilterNR, (void *)sa_band_filter);
+  }
+
+  req_freq.buf = req_freq_buf;
+  req_freq.size = (enc_rval.encoded+7)/8;
+
+  ue_capabilityrat_request->capabilityRequestFilter = &req_freq;
 
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1->choice.ueCapabilityEnquiry->criticalExtensions.choice.ueCapabilityEnquiry->ue_CapabilityRAT_RequestList.list,
                    ue_capabilityrat_request);
@@ -1508,7 +1564,7 @@ uint16_t do_RRCReconfiguration(
                                     NULL,
                                     (void *)&dl_dcch_msg,
                                     buffer,
-                                    100);
+                                    1000);
 
     if(enc_rval.encoded == -1) {
         LOG_I(NR_RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
