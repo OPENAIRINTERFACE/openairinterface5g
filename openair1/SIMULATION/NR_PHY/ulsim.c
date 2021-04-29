@@ -234,7 +234,7 @@ int main(int argc, char **argv)
   //int8_t interf1 = -21, interf2 = -21;
   FILE *input_fd = NULL;
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
-  uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
+  uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 3;
 
   NB_UE_INST = 1;
 
@@ -298,7 +298,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -422,6 +422,14 @@ int main(int argc, char **argv)
     case 's':
       snr0 = atof(optarg);
       printf("Setting SNR0 to %f\n", snr0);
+      break;
+
+    case 'u':
+      mu = atoi(optarg);
+      break;
+
+    case 'w':
+      start_rb = atoi(optarg);
       break;
 
 /*
@@ -552,6 +560,8 @@ int main(int argc, char **argv)
       printf("-n Number of trials to simulate\n");
       printf("-p Use extended prefix mode\n");
       printf("-t Delay spread for multipath channel\n");
+      printf("-u Set the numerology\n");
+      printf("-w Start PRB for PUSCH\n");
       //printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
@@ -592,10 +602,12 @@ int main(int argc, char **argv)
 
   if (N_RB_UL >= 217) sampling_frequency = 122.88;
   else if (N_RB_UL >= 106) sampling_frequency = 61.44;
+  else if (N_RB_UL >= 32) sampling_frequency = 32.72;
   else { printf("Need at least 106 PRBs\b"); exit(-1); }
   if (N_RB_UL == 273) bandwidth = 100;
   else if (N_RB_UL == 217) bandwidth = 80;
   else if (N_RB_UL == 106) bandwidth = 40;
+  else if (N_RB_UL == 32) bandwidth = 50;
   else { printf("Add N_RB_UL %d\n",N_RB_UL); exit(-1); }
 			   
   if (openair0_cfg[0].threequarter_fs == 1) sampling_frequency*=.75;
