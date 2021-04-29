@@ -25,7 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM localhost/ran-build:latest AS enb-build 
+FROM ran-build:latest AS enb-build
 
 RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
@@ -37,10 +37,9 @@ RUN /bin/sh oaienv && \
     mkdir -p log && \
     ./build_oai --eNB --ninja -w USRP --verbose-ci
 
-# debug
-#RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-softmodem.Rel15
-#RUN ls -ls /oai-ran/targets/bin
-#RUN ls -ls /oai-ran/cmake_targets/ran_build/build/*.so
+RUN yum install -y python3-pip && \
+    pip3 install --ignore-installed pyyaml && \
+    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-enb
@@ -59,6 +58,7 @@ RUN yum update -y && \
 
 WORKDIR /opt/oai-enb/bin
 COPY --from=enb-build /oai-ran/targets/bin/lte-softmodem.Rel15 .
+COPY --from=enb-build /oai-ran/docker/scripts/enb_entrypoint.sh entrypoint.sh
 
 WORKDIR /usr/local/lib/
 COPY --from=enb-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
@@ -93,34 +93,16 @@ COPY --from=enb-build /usr/local/lib64/libuhd.so.4.0.0 /usr/local/lib64
 
 RUN ldconfig
 
-#debug
-#RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
-#RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
-#RUN ldd /usr/local/lib/librfsimulator.so.Rel15
-#RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
-#RUN ldd /usr/local/lib/libcoding.so
-#RUN ldd /usr/local/lib/libparams_libconfig.so
-#RUN ldd /usr/local/lib/libdfts.so
-#RUN ldd /usr/local/lib/liboai_iqplayer.so
-#RUN ldd /opt/oai-enb/bin/lte-softmodem.Rel15
-
 # Copy the relevant configuration files for eNB
 WORKDIR /opt/oai-enb/etc
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/enb.* .
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/rcc.* .
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/cu.* .
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/du.* .
-COPY --from=enb-build /oai-ran/ci-scripts/conf_files/rru.* .
+COPY --from=enb-build /oai-ran/docker/etc .
 
 WORKDIR /opt/oai-enb
 
-#EXPOSE 2152/udp  # S1U, GTP/UDP
-#EXPOSE 22100/tcp # ?
-#EXPOSE 36412/udp # S1C, SCTP/UDP
-#EXPOSE 36422/udp # X2C, SCTP/UDP
-#EXPOSE 50000/udp # IF5 / ORI (control)
-#EXPOSE 50001/udp # IF5 / ECPRI (data)
+# 2152 --> S1U, GTP/UDP
+# 36412 --> S1C, SCTP/UDP
+# 36422 --> X2C, SCTP/UDP
+EXPOSE 2152/udp 36412/udp 36422/udp
 
-#CMD ["/opt/oai-enb/bin/lte-softmodem", "-O", "/opt/oai-enb/etc/enb.conf"]
-#ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
-CMD ["sleep", "infinity"]
+ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
+CMD ["/opt/oai-enb/bin/lte-softmodem.Rel15", "-O", "/opt/oai-enb/etc/enb.conf"]

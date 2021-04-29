@@ -41,11 +41,6 @@ RUN apt-get install -y python3-pip && \
     pip3 install --ignore-installed pyyaml && \
     python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
 
-# debug
-#RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-softmodem.Rel15
-#RUN ls -ls /oai-ran/targets/bin
-#RUN ls -ls /oai-ran/cmake_targets/ran_build/build/*.so
-
 #start from scratch for target executable
 FROM ubuntu:bionic as oai-enb
 ENV DEBIAN_FRONTEND=noninteractive
@@ -97,17 +92,6 @@ RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/li
 COPY --from=enb-build /usr/local/lib/libprotobuf-c.so.1 .
 
 RUN ldconfig
-
-#debug
-#RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
-#RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
-#RUN ldd /usr/local/lib/librfsimulator.so.Rel15
-#RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
-#RUN ldd /usr/local/lib/libcoding.so
-#RUN ldd /usr/local/lib/libparams_libconfig.so
-#RUN ldd /usr/local/lib/libdfts.so
-#RUN ldd /usr/local/lib/liboai_iqplayer.so
-#RUN ldd /opt/oai-enb/bin/lte-softmodem.Rel15
 
 # Copy the relevant configuration files for eNB
 WORKDIR /opt/oai-enb/etc
