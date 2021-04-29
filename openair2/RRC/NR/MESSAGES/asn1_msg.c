@@ -444,7 +444,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   ss1->nrofCandidates = calloc(1,sizeof(*ss1->nrofCandidates));
   ss1->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
   ss1->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
-  ss1->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
+  ss1->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n4;
   ss1->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
   ss1->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
   ss1->searchSpaceType = calloc(1,sizeof(*ss1->searchSpaceType));
@@ -1039,6 +1039,44 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
   *schedulingRequestResourceConfig->resource = 0;
   ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
+
+  SpCellConfig->spCellConfigDedicated->initialDownlinkBWP = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->initialDownlinkBWP));
+  NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+  bwp_Dedicated->pdcch_Config=calloc(1,sizeof(*bwp_Dedicated->pdcch_Config));
+  bwp_Dedicated->pdcch_Config->present = NR_SetupRelease_PDCCH_Config_PR_setup;
+  bwp_Dedicated->pdcch_Config->choice.setup = calloc(1,sizeof(*bwp_Dedicated->pdcch_Config->choice.setup));
+
+  bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList = calloc(1,sizeof(*bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList));
+  
+  NR_SearchSpace_t *ss2 = calloc(1,sizeof(*ss2));
+ 
+  ss2->searchSpaceId=2;
+  ss2->controlResourceSetId=calloc(1,sizeof(*ss2->controlResourceSetId));
+  *ss2->controlResourceSetId=0;
+  ss2->monitoringSlotPeriodicityAndOffset=calloc(1,sizeof(*ss2->monitoringSlotPeriodicityAndOffset));
+  ss2->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
+  ss2->monitoringSlotPeriodicityAndOffset->choice.sl1=(NULL_t)0;
+  ss2->duration=NULL;
+  ss2->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss2->monitoringSymbolsWithinSlot));
+  ss2->monitoringSymbolsWithinSlot->buf = calloc(1,2);
+  ss2->monitoringSymbolsWithinSlot->size = 2;
+  ss2->monitoringSymbolsWithinSlot->bits_unused = 2;
+  ss2->monitoringSymbolsWithinSlot->buf[0]=0x80;
+  ss2->monitoringSymbolsWithinSlot->buf[1]=0x0;
+  ss2->nrofCandidates=calloc(1,sizeof(*ss2->nrofCandidates));
+  ss2->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
+  ss2->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
+  ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
+  ss2->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
+  ss2->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
+  ss2->searchSpaceType=calloc(1,sizeof(*ss2->searchSpaceType));
+  ss2->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  ss2->searchSpaceType->choice.ue_Specific = calloc(1,sizeof(*ss2->searchSpaceType->choice.ue_Specific));
+  ss2->searchSpaceType->choice.ue_Specific->dci_Formats=NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0;
+  
+  ASN_SEQUENCE_ADD(&bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list,
+                   ss2);
+
 }
 
 void fill_initial_cellGroupConfig(rnti_t rnti,
@@ -1111,6 +1149,10 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   }
   cellGroupConfig->mac_CellGroupConfig                                      = mac_CellGroupConfig;
 
+  physicalCellGroupConfig                                                   = calloc(1,sizeof(*physicalCellGroupConfig));
+  physicalCellGroupConfig->p_NR_FR1                                         = calloc(1,sizeof(*physicalCellGroupConfig->p_NR_FR1));
+  *physicalCellGroupConfig->p_NR_FR1                                        = 20;
+  physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook                          = NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic;
   cellGroupConfig->physicalCellGroupConfig                                  = physicalCellGroupConfig;
   
   cellGroupConfig->spCellConfig                                             = calloc(1,sizeof(*cellGroupConfig->spCellConfig));
@@ -1665,7 +1707,8 @@ do_NR_DLInformationTransfer(
     encoded = uper_encode_to_new_buffer (&asn_DEF_NR_DL_DCCH_Message, NULL, (void *) &dl_dcch_msg, (void **)buffer);
     AssertFatal(encoded > 0,"ASN1 message encoding failed (%s, %ld)!\n",
                 "DLInformationTransfer", encoded);
-    LOG_D(NR_RRC,"DLInformationTransfer Encoded %zd bytes\n", encoded);
+    LOG_I(NR_RRC,"DLInformationTransfer Encoded %zd bytes\n", encoded);
+    for (int i=0;i<encoded;i++) printf("%02x ",(*buffer)[i]);
     return encoded;
 }
 

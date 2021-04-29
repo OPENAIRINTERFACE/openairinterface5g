@@ -86,6 +86,7 @@
 #include "lte-softmodem.h"
 
 
+msc_interface_t msc_interface;
 /* temporary compilation wokaround (UE/eNB split */
 uint16_t sf_ahead;
 
@@ -168,7 +169,6 @@ extern void get_uethreads_params(void);
 
 int transmission_mode=1;
 
-int usrp_tx_thread = 0;
 
 
 char *usrp_args=NULL;

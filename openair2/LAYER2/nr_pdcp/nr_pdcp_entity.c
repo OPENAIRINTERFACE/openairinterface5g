@@ -49,7 +49,8 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     return;
   }
 
-  if (!(buffer[0] & 0x80)) {
+  if (entity->type != NR_PDCP_SRB &&
+      !(buffer[0] & 0x80)) {
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
@@ -64,8 +65,9 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
                 buffer[2];
     header_size = 3;
   }
-
-  if (entity->has_integrity) {
+  /* SRBs always have MAC-I, even if integrity is not active */
+  if (entity->has_integrity
+      || entity->type == NR_PDCP_SRB) {
     integrity_size = 4;
   } else {
     integrity_size = 0;
@@ -180,7 +182,9 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
     header_size = 3;
   }
 
-  if (entity->has_integrity) {
+  /* SRBs always have MAC-I, even if integrity is not active */
+  if (entity->has_integrity
+      || entity->type == NR_PDCP_SRB) {
     integrity_size = 4;
   } else {
     integrity_size = 0;
@@ -193,6 +197,9 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
                       (unsigned char *)buf + header_size + size,
                       (unsigned char *)buf, header_size + size,
                       entity->rb_id, count, entity->is_gnb ? 1 : 0);
+  else if (integrity_size == 4)
+    /* set MAC-I to 0 for SRBs with integrity not active */
+    memset(buf + header_size + size, 0, 4);
 
   if (entity->has_ciphering)
     entity->cipher(entity->security_context,
@@ -205,12 +212,20 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
                       header_size + size + integrity_size, sdu_id);
 }
 
-static void nr_pdcp_entity_set_integrity_key(nr_pdcp_entity_t *entity,
-                                             char *key)
+static void nr_pdcp_entity_set_security(nr_pdcp_entity_t *entity,
+                                        int integrity_algorithm,
+                                        char *integrity_key,
+                                        int ciphering_algorithm,
+                                        char *ciphering_key)
 {
-  LOG_E(PDCP, "%s: %d: %s: TODO? to remove?\n", __FILE__, __LINE__, __FUNCTION__);
-  exit(1);
-  //memcpy(entity->integrity_key, key, 16);
+  if (integrity_algorithm != -1)
+    entity->integrity_algorithm = integrity_algorithm;
+  if (ciphering_algorithm != -1)
+    entity->ciphering_algorithm = ciphering_algorithm;
+  if (integrity_key != NULL)
+    memcpy(entity->integrity_key, integrity_key, 16);
+  if (ciphering_key != NULL)
+    memcpy(entity->ciphering_key, ciphering_key, 16);
 }
 
 static void check_t_reordering(nr_pdcp_entity_t *entity)
@@ -303,10 +318,10 @@ nr_pdcp_entity_t *new_nr_pdcp_entity(
 
   ret->type = type;
 
-  ret->recv_pdu          = nr_pdcp_entity_recv_pdu;
-  ret->recv_sdu          = nr_pdcp_entity_recv_sdu;
-  ret->set_integrity_key = nr_pdcp_entity_set_integrity_key;
-  ret->set_time          = nr_pdcp_entity_set_time;
+  ret->recv_pdu     = nr_pdcp_entity_recv_pdu;
+  ret->recv_sdu     = nr_pdcp_entity_recv_sdu;
+  ret->set_security = nr_pdcp_entity_set_security;
+  ret->set_time     = nr_pdcp_entity_set_time;
 
   ret->delete = nr_pdcp_entity_delete;
 

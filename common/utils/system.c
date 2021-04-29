@@ -199,15 +199,32 @@ void start_background_system(void) {
 
 void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name, int affinity, int priority){
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-  pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
+  int ret;
+  ret=pthread_attr_init(&attr);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  ret=pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  ret=pthread_attr_setschedpolicy(&attr, SCHED_OAI);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  if(priority<sched_get_priority_min(SCHED_OAI) || priority>sched_get_priority_max(SCHED_FIFO)) {
+    LOG_E(TMR,"Prio not possible: %d, min is %d, max: %d, forced in the range\n", 
+              priority, 
+              sched_get_priority_min(SCHED_OAI),
+              sched_get_priority_max(SCHED_OAI));
+    if(priority<sched_get_priority_min(SCHED_OAI))
+      priority=sched_get_priority_min(SCHED_OAI);
+    if(priority>sched_get_priority_max(SCHED_OAI))
+      priority=sched_get_priority_max(SCHED_OAI);
+  }
+  AssertFatal(priority<=sched_get_priority_max(SCHED_OAI),"");
   struct sched_param sparam={0};
   sparam.sched_priority = priority;
-  pthread_attr_setschedparam(&attr, &sparam);
-
-  pthread_create(t, &attr, func, param);
+  ret=pthread_attr_setschedparam(&attr, &sparam);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  ret=pthread_create(t, &attr, func, param);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
 
   pthread_setname_np(*t, name);
   if (affinity != -1 ) {
@@ -216,7 +233,6 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
     CPU_SET(affinity, &cpuset);
     AssertFatal( pthread_setaffinity_np(*t, sizeof(cpu_set_t), &cpuset) == 0, "Error setting processor affinity");
   }
-
   pthread_attr_destroy(&attr);
 }
 

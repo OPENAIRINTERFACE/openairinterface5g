@@ -201,7 +201,6 @@ int main(int argc, char *argv[]) {
   void *buff=malloc(bufSize);
   uint64_t timestamp=0;
   const int blockSize=1920;
-
   // If fileSize is not multiple of blockSize*4 then discard remaining samples
   fileSize = (fileSize/(blockSize<<2))*(blockSize<<2);
 

@@ -44,6 +44,7 @@
 #include <sys/sysinfo.h>
 #include "rt_wrapper.h"
 #include <errno.h>
+#include <common/utils/msc/msc.h>
 
 #include "openair1/PHY/defs_common.h"
 

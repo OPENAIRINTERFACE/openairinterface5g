@@ -41,7 +41,7 @@ extern inline  uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t res
   {
       // Init value for x1: x1(0) = 1, x1(n) = 0, n=1,2,...,30
       // x1(31) = [x1(3) + x1(0)]mod2 = 1
-      *x1 = 1 + (1<<31);
+      *x1 = 1 + (1U<<31);
       // Init value for x2: cinit = sum_{i=0}^30 x2*2^i
       // x2(31) = [x2(3)    + x2(2)    + x2(1)    + x2(0)]mod2
       //        =  (*x2>>3) ^ (*x2>>2) + (*x2>>1) + *x2

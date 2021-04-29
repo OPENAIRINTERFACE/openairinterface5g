@@ -77,7 +77,7 @@ fifo_dump_emos_UE emos_dump_UE;
 #include "intertask_interface.h"
 #include "T.h"
 
-char nr_mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
+char nr_mode_string[NUM_UE_MODE][20] = {"NOT SYNCHED","PRACH","RAR","RA_WAIT_CR", "PUSCH", "RESYNCH"};
 
 const uint8_t nr_rv_round_map_ue[4] = {0, 2, 1, 3};
 
@@ -1135,7 +1135,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dlsch1->harq_processes[harq_pid]->TBS);
       }
 
-      LOG_D(PHY," ------ end ldpc decoder for AbsSubframe %d.%d ------  \n", frame_rx, nr_slot_rx);
+      LOG_D(PHY," ------ end ldpc decoder for AbsSubframe %d.%d ------ decoded in %d \n", frame_rx, nr_slot_rx, ret);
       LOG_D(PHY, "harq_pid: %d, TBS expected dlsch0: %d  \n",harq_pid, dlsch0->harq_processes[harq_pid]->TBS);
 
       if(ret<dlsch0->max_ldpc_iterations+1){

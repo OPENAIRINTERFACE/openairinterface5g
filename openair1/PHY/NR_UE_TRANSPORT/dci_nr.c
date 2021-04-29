@@ -50,6 +50,16 @@
 #include "assertions.h"
 #include "T.h"
 
+char nr_dci_format_string[8][30] = {
+  "NR_DL_DCI_FORMAT_1_0",
+  "NR_DL_DCI_FORMAT_1_1",
+  "NR_DL_DCI_FORMAT_2_0",
+  "NR_DL_DCI_FORMAT_2_1",
+  "NR_DL_DCI_FORMAT_2_2",
+  "NR_DL_DCI_FORMAT_2_3",
+  "NR_UL_DCI_FORMAT_0_0",
+  "NR_UL_DCI_FORMAT_0_1"};
+
 //#define DEBUG_DCI_DECODING 1
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
@@ -918,10 +928,10 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                           currentPtrDCI);
 
         n_rnti = rel15->rnti;
-	LOG_D(PHY, "(%i.%i) dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d)\n", proc->frame_rx, proc->nr_slot_rx,n_rnti,rel15->dci_format_options[k],CCEind,dci_length);
+	LOG_D(PHY, "(%i.%i) dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d)\n", proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length);
         if (crc == n_rnti) {
-          LOG_D(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
-                proc->frame_rx, proc->nr_slot_rx,n_rnti,rel15->dci_format_options[k],CCEind,dci_length,*(unsigned long long*)dci_estimation);
+          LOG_D(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d,payload %llx)\n",
+                proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length,*(unsigned long long*)dci_estimation);
           dci_ind->SFN = proc->frame_rx;
           dci_ind->slot = proc->nr_slot_rx;
           dci_ind->dci_list[dci_ind->number_of_dcis].rnti        = n_rnti;

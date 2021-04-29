@@ -364,7 +364,8 @@ typedef struct {
   uint8_t mib_ssb;
   /// Last NDI of UL HARQ processes
   uint8_t UL_ndi[NR_MAX_HARQ_PROCESSES];
-
+  /// first ULTX of UL HARQ processes
+  int first_ul_tx[NR_MAX_HARQ_PROCESSES];
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;
   fapi_nr_dl_config_request_t dl_config_request;

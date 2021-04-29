@@ -304,25 +304,45 @@ nr_rrc_pdcp_config_security(
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
   uint8_t                            *kUPenc = NULL;
+  uint8_t                            *k_kdf  = NULL;
   pdcp_t                             *pdcp_p   = NULL;
   static int                          print_keys= 1;
   hashtable_rc_t                      h_rc;
   hash_key_t                          key;
 
 #ifndef PHYSIM
-    /* Derive the keys from kgnb */
-    if (SRB_configList != NULL) {
-        nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                          ue_context_pP->ue_context.kgnb,
-                          &kUPenc);
-    }
+  /* Derive the keys from kgnb */
+  if (SRB_configList != NULL) {
+    k_kdf = NULL;
+    nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                         ue_context_pP->ue_context.kgnb,
+                         &k_kdf);
+    /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
+    kUPenc = malloc(16);
+    if (kUPenc == NULL) exit(1);
+    memcpy(kUPenc, k_kdf+16, 16);
+    free(k_kdf);
+  }
 
-    nr_derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                          ue_context_pP->ue_context.kgnb,
-                          &kRRCenc);
-    nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
-                          ue_context_pP->ue_context.kgnb,
-                          &kRRCint);
+  k_kdf = NULL;
+  nr_derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                        ue_context_pP->ue_context.kgnb,
+                        &k_kdf);
+  /* kRRCenc: last 128 bits of key derivation function which returns 256 bits */
+  kRRCenc = malloc(16);
+  if (kRRCenc == NULL) exit(1);
+  memcpy(kRRCenc, k_kdf+16, 16);
+  free(k_kdf);
+
+  k_kdf = NULL;
+  nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
+                        ue_context_pP->ue_context.kgnb,
+                        &k_kdf);
+  /* kRRCint: last 128 bits of key derivation function which returns 256 bits */
+  kRRCint = malloc(16);
+  if (kRRCint == NULL) exit(1);
+  memcpy(kRRCint, k_kdf+16, 16);
+  free(k_kdf);
 #endif
   if (!IS_SOFTMODEM_IQPLAYER) {
     SET_LOG_DUMP(DEBUG_SECURITY) ;
@@ -338,28 +358,18 @@ nr_rrc_pdcp_config_security(
     }
   }
 
-  key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
-  h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
-
-  if (h_rc == HASH_TABLE_OK) {
-    pdcp_config_set_security(
-        ctxt_pP,
-        pdcp_p,
-        DCCH,
-        DCCH+2,
-        (send_security_mode_command == TRUE)  ?
-        0 | (ue_context_pP->ue_context.integrity_algorithm << 4) :
-        (ue_context_pP->ue_context.ciphering_algorithm )         |
-        (ue_context_pP->ue_context.integrity_algorithm << 4),
-        kRRCenc,
-        kRRCint,
-        kUPenc);
-  } else {
-    LOG_E(NR_RRC,
-        PROTOCOL_NR_RRC_CTXT_UE_FMT"Could not get PDCP instance for SRB DCCH %u\n",
-        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-        DCCH);
-  }
+  pdcp_config_set_security(
+      ctxt_pP,
+      NULL,      /* pdcp_pP not used anymore in NR */
+      DCCH,
+      DCCH+2,
+      (send_security_mode_command == TRUE)  ?
+      0 | (ue_context_pP->ue_context.integrity_algorithm << 4) :
+      (ue_context_pP->ue_context.ciphering_algorithm )         |
+      (ue_context_pP->ue_context.integrity_algorithm << 4),
+      kRRCenc,
+      kRRCint,
+      kUPenc);
 }
 
 //------------------------------------------------------------------------------
@@ -628,6 +638,10 @@ rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(
 }
 
 static NR_CipheringAlgorithm_t rrc_gNB_select_ciphering(uint16_t algorithms) {
+
+  return NR_CipheringAlgorithm_nea0;
+
+
   if (algorithms & NGAP_ENCRYPTION_NEA3_MASK) {
     return NR_CipheringAlgorithm_nea3;
   }
@@ -640,10 +654,13 @@ static NR_CipheringAlgorithm_t rrc_gNB_select_ciphering(uint16_t algorithms) {
     return NR_CipheringAlgorithm_nea1;
   }
 
-  return NR_CipheringAlgorithm_nea0;
 }
 
 static e_NR_IntegrityProtAlgorithm rrc_gNB_select_integrity(uint16_t algorithms) {
+  
+  //only NIA2 supported for now
+  return NR_IntegrityProtAlgorithm_nia2;
+
   if (algorithms & NGAP_INTEGRITY_NIA3_MASK) {
     return NR_IntegrityProtAlgorithm_nia3;
   }
@@ -671,7 +688,7 @@ rrc_gNB_process_security(
   /* Save security parameters */
   ue_context_pP->ue_context.security_capabilities = *security_capabilities_pP;
   // translation
-  LOG_D(NR_RRC,
+  LOG_I(NR_RRC,
         "[gNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %lu NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
         ctxt_pP->module_id,
         ue_context_pP->ue_context.security_capabilities.nRencryption_algorithms,

@@ -35,6 +35,7 @@
 /* from OAI */
 #include "pdcp.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #define TODO do { \
     printf("%s:%d:%s: todo\n", __FILE__, __LINE__, __FUNCTION__); \
@@ -491,7 +492,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
       //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
       //printf("\n");
-      itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
+      itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
 
   }
 }
@@ -557,21 +558,25 @@ static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   
  srb_found:
   {
-    uint8_t *rrc_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_RRC_GNB,
-					size);
-    MessageDef  *message_p;
+       uint8_t *rrc_buffer_p = entity->is_gnb ? 
+					itti_malloc(TASK_PDCP_ENB, TASK_RRC_GNB, size):
+                                        itti_malloc(TASK_PDCP_UE, TASK_RRC_NRUE, size);
+       MessageDef  *message_p;
 
-    AssertFatal(rrc_buffer_p != NULL, "OUT OF MEMORY");
-    memcpy(rrc_buffer_p, buf, size);
-    message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, NR_RRC_DCCH_DATA_IND);
-    AssertFatal(message_p != NULL, "OUT OF MEMORY");
-    NR_RRC_DCCH_DATA_IND(message_p).dcch_index = srb_id;
-    NR_RRC_DCCH_DATA_IND(message_p).sdu_p = (uint8_t*)buf;
-    NR_RRC_DCCH_DATA_IND(message_p).sdu_size = size;
-    NR_RRC_DCCH_DATA_IND(message_p).rnti = ue->rnti;
+       AssertFatal(rrc_buffer_p != NULL, "OUT OF MEMORY");
+       memcpy(rrc_buffer_p, buf, size);
+       message_p = entity->is_gnb ? 
+                            itti_alloc_new_message(TASK_PDCP_ENB, 0, NR_RRC_DCCH_DATA_IND):
+                            itti_alloc_new_message(TASK_PDCP_UE, 0, NR_RRC_DCCH_DATA_IND);
+
+       AssertFatal(message_p != NULL, "OUT OF MEMORY");
+       NR_RRC_DCCH_DATA_IND(message_p).dcch_index = srb_id;
+       NR_RRC_DCCH_DATA_IND(message_p).sdu_p = rrc_buffer_p;
+       NR_RRC_DCCH_DATA_IND(message_p).sdu_size = size;
+       NR_RRC_DCCH_DATA_IND(message_p).rnti = ue->rnti;
     
-    itti_send_msg_to_task(TASK_RRC_GNB, INSTANCE_DEFAULT, message_p);
-  }
+       itti_send_msg_to_task(entity->is_gnb ? TASK_RRC_GNB : TASK_RRC_NRUE, 0, message_p);
+    }
 }
 
 static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,
@@ -749,7 +754,7 @@ static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
     LOG_D(PDCP, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
-    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, srb_id,
+    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
                                   deliver_sdu_srb, ue, deliver_pdu_srb, ue,
                                   12, t_Reordering, -1,
                                   0, 0,
@@ -1039,35 +1044,38 @@ void pdcp_config_set_security(
         uint8_t *const kRRCint_pP,
         uint8_t *const kUPenc_pP)
 {
-  DevAssert(pdcp_pP != NULL);
+  nr_pdcp_ue_t *ue;
+  nr_pdcp_entity_t *rb;
+  int rnti = ctxt_pP->rnti;
+  int integrity_algorithm;
+  int ciphering_algorithm;
 
-  if ((security_modeP >= 0) && (security_modeP <= 0x77)) {
-    pdcp_pP->cipheringAlgorithm     = security_modeP & 0x0f;
-    pdcp_pP->integrityProtAlgorithm = (security_modeP>>4) & 0xf;
-    LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_SET_SECURITY_MODE: cipheringAlgorithm %d integrityProtAlgorithm %d\n",
-          PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
-          pdcp_pP->cipheringAlgorithm,
-          pdcp_pP->integrityProtAlgorithm);
-    pdcp_pP->kRRCenc = kRRCenc_pP;
-    pdcp_pP->kRRCint = kRRCint_pP;
-    pdcp_pP->kUPenc  = kUPenc_pP;
-    /* Activate security */
-    pdcp_pP->security_activated = 1;
-    MSC_LOG_EVENT(
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-      "0 Set security ciph %X integ %x UE %"PRIx16" ",
-      pdcp_pP->cipheringAlgorithm,
-      pdcp_pP->integrityProtAlgorithm,
-      ctxt_pP->rnti);
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
+
+  /* TODO: proper handling of DRBs, for the moment only SRBs are handled */
+
+  if (rb_id >= 1 && rb_id <= 3) {
+    rb = ue->srb[rb_id - 1];
+
+    if (rb == NULL) {
+      LOG_E(PDCP, "%s:%d:%s: no SRB found (rnti %d, rb_id %ld)\n",
+            __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
+      nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+      return;
+    }
+
+    integrity_algorithm = (security_modeP>>4) & 0xf;
+    ciphering_algorithm = security_modeP & 0x0f;
+    rb->set_security(rb, integrity_algorithm, (char *)kRRCint_pP,
+                     ciphering_algorithm, (char *)kRRCenc_pP);
   } else {
-    MSC_LOG_EVENT(
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-      "0 Set security failed UE %"PRIx16" ",
-      ctxt_pP->rnti);
-    LOG_E(PDCP,PROTOCOL_PDCP_CTXT_FMT"  bad security mode %d",
-          PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
-          security_modeP);
+    LOG_E(PDCP, "%s:%d:%s: TODO\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
   }
+
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
 

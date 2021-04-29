@@ -154,16 +154,15 @@ NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
 }
 
 NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
-				  NR_BWP_Downlink_t *bwp,
+				  NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
 				  NR_SearchSpace__searchSpaceType_PR target_ss) {
 
-
-  const int n = bwp ?
-    bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count:
+  const int n = bwp_Dedicated ?
+    bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count:
     scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.count;
   for (int i=0;i<n;i++) {
-    NR_SearchSpace_t *ss = bwp ?
-      bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i]:
+    NR_SearchSpace_t *ss = bwp_Dedicated ?
+      bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i]:
       scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.array[i];
     AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
@@ -171,7 +170,7 @@ NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
       return ss;
     }
   }
-  AssertFatal(0, "Couldn't find an adequate searchspace\n");
+  AssertFatal(0, "Couldn't find an adequate searchspace bwp_Dedicated %p\n",bwp_Dedicated);
 }
 
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
@@ -564,7 +563,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
       AssertFatal(0, "Valid UL formats are 0_0 and 0_1\n");
   }
 
-  LOG_I(NR_MAC,
+  LOG_D(NR_MAC,
         "%s() ULDCI type 0 payload: freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
         __func__,
         dci_pdu_rel15->frequency_domain_assignment.val,
@@ -1035,7 +1034,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
     case NR_RNTI_C:
       // indicating a DL DCI format 1bit
       pos++;
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
+      *dci_pdu |= ((uint64_t)1) << (dci_size - pos);
       LOG_D(NR_MAC,
             "Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",
             dci_pdu_rel15->format_indicator,
@@ -1192,7 +1191,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
     case NR_RNTI_TC:
       pos = 1;
       // indicating a DL DCI format 1bit
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos++);
+      *dci_pdu |= ((uint64_t)1) << (dci_size - pos++);
       // Freq domain assignment 0-16 bit
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       for (int i = 0; i < fsize; i++)
@@ -1247,9 +1246,9 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   case NR_UL_DCI_FORMAT_0_0:
     switch (rnti_type) {
     case NR_RNTI_C:
-      // indicating a DL DCI format 1bit
+      // indicating a UL DCI format 1bit
       pos=1;
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
+      //*dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
       // Freq domain assignment  max 16 bit
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       pos+=fsize;
@@ -1854,6 +1853,7 @@ uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
   // al values passed to this function are x10
 
   int snrx10 = (cqi*5) - 640;
+  LOG_D(NR_MAC,"tpc : target %d, snrx10 %d\n",target,snrx10);
   if (snrx10 > target + incr) return 0; // decrease 1dB
   if (snrx10 < target - incr) return 2; // increase 1dB
   if (snrx10 < target - (3*incr)) return 3; // increase 3dB

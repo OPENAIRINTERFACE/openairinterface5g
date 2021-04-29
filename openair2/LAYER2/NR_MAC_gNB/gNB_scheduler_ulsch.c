@@ -115,7 +115,7 @@ void nr_process_mac_pdu(
         mac_sdu_len = 0;
         rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID;
 
-        LOG_I(NR_MAC, "LCID received at gNB side: %d \n", rx_lcid);
+        LOG_D(NR_MAC, "LCID received at gNB side: %d \n", rx_lcid);
 
         unsigned char *ce_ptr;
         int n_Lcg = 0;
@@ -236,7 +236,7 @@ void nr_process_mac_pdu(
             mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
             mac_subheader_len = 2;
           }
-          LOG_I(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, rnti);
+          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, rnti);
           mac_rlc_data_ind(module_idP,
               rnti,
               module_idP,
@@ -403,22 +403,24 @@ void handle_nr_ul_harq(module_id_t mod_id,
           harq_pid,
           crc_pdu->rnti);
     add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
-  } else if (harq->round == MAX_HARQ_ROUNDS) {
-    harq->ndi ^= 1;
-    harq->round = 0;
-    LOG_D(NR_MAC,
-          "RNTI %04x: Ulharq id %d crc failed in all rounds\n",
-          crc_pdu->rnti,
-          harq_pid);
-    UE_info->mac_stats[UE_id].ulsch_errors++;
-    add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
   } else {
     harq->round++;
-    LOG_D(NR_MAC,
-          "Ulharq id %d crc failed for RNTI %04x\n",
-          harq_pid,
-          crc_pdu->rnti);
-    add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
+    if (harq->round == MAX_HARQ_ROUNDS) {
+      harq->ndi ^= 1;
+      harq->round = 0;
+      LOG_D(NR_MAC,
+            "RNTI %04x: Ulharq id %d crc failed in all rounds\n",
+            crc_pdu->rnti,
+            harq_pid);
+      UE_info->mac_stats[UE_id].ulsch_errors++;
+      add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
+    } else {
+      LOG_D(NR_MAC,
+            "Ulharq id %d crc failed for RNTI %04x\n",
+            harq_pid,
+            crc_pdu->rnti);
+      add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
+    }
   }
 }
 
@@ -452,7 +454,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_I(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
+    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d TA %d sduP %p\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -461,6 +463,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           current_rnti,
           UE_id,
           ul_cqi,
+          timing_advance,
           sduP);
 
     // if not missed detection (10dB threshold for now)
@@ -694,8 +697,14 @@ void pf_ul(module_id_t module_id,
      * every TTI if we can save it, so check whether dci_format, TDA, or
      * num_dmrs_cdm_grps_no_data has changed and only then recompute */
     sched_ctrl->sched_pusch.time_domain_allocation = tda;
-    sched_ctrl->search_space = get_searchspace(scc,sched_ctrl->active_bwp, 
-					       sched_ctrl->active_bwp ? 
+    NR_BWP_DownlinkDedicated_t *bwp_Dedicated=NULL;
+    if (sched_ctrl->active_bwp) bwp_Dedicated = sched_ctrl->active_bwp->bwp_Dedicated;
+    else if (UE_info->CellGroup[UE_id] &&
+	     UE_info->CellGroup[UE_id]->spCellConfig &&
+	     UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated) 
+	bwp_Dedicated = UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+    sched_ctrl->search_space = get_searchspace(scc,bwp_Dedicated, 
+					       bwp_Dedicated ? 
 					       NR_SearchSpace__searchSpaceType_PR_ue_Specific:
 					       NR_SearchSpace__searchSpaceType_PR_common);
     sched_ctrl->coreset = get_coreset(scc,sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
@@ -731,7 +740,7 @@ void pf_ul(module_id_t module_id,
       /* Get previous PSUCH filed info */
       sched_ctrl->sched_pusch = cur_harq->sched_pusch;
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-      LOG_I(NR_MAC, "%4d.%2d Allocate UL retransmission UE %d/RNTI %04x sched %4d.%2d (%d RBs)\n",
+      LOG_D(NR_MAC, "%4d.%2d Allocate UL retransmission UE %d/RNTI %04x sched %4d.%2d (%d RBs)\n",
             frame, slot, UE_id, UE_info->rnti[UE_id],
             sched_pusch->frame, sched_pusch->slot,
             sched_pusch->rbSize);
@@ -781,7 +790,7 @@ void pf_ul(module_id_t module_id,
       if (max_num_ue < 0)
         return;
 
-      LOG_I(NR_MAC,"Looking for min_rb %d RBs, starting at %d\n", min_rb,rbStart);
+      LOG_D(NR_MAC,"Looking for min_rb %d RBs, starting at %d\n", min_rb,rbStart);
       while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
       if (rbStart + min_rb >= bwpSize) {
         LOG_W(NR_MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
@@ -1022,7 +1031,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in
      * every TTI are pre-populated by the preprocessor and used below */
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-    LOG_I(NR_MAC,"UE %x : sched_pusch->rbSize %d\n",UE_info->rnti[UE_id],sched_pusch->rbSize);
+    LOG_D(NR_MAC,"UE %x : sched_pusch->rbSize %d\n",UE_info->rnti[UE_id],sched_pusch->rbSize);
     if (sched_pusch->rbSize <= 0)
       continue;
 
@@ -1068,7 +1077,7 @@ void nr_schedule_ulsch(module_id_t module_id,
       cur_harq->sched_pusch = *sched_pusch;
       sched_ctrl->sched_ul_bytes += sched_pusch->tb_size;
     } else {
-      LOG_I(NR_MAC,
+      LOG_D(NR_MAC,
             "%d.%2d UL retransmission RNTI %04x sched %d.%2d HARQ PID %d round %d NDI %d\n",
             frame,
             slot,
@@ -1081,7 +1090,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     }
     UE_info->mac_stats[UE_id].ulsch_current_bytes = sched_pusch->tb_size;
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "%4d.%2d RNTI %04x UL sched %4d.%2d start %d RBS %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
           frame,
           slot,
@@ -1112,7 +1121,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
     future_ul_tti_req->n_pdus += 1;
 
-    LOG_I(NR_MAC, "%4d.%2d Scheduling UE specific PUSCH for sched %d.%d, ul_tto_req %d.%d\n", frame, slot,
+    LOG_D(NR_MAC, "%4d.%2d Scheduling UE specific PUSCH for sched %d.%d, ul_tto_req %d.%d\n", frame, slot,
     sched_pusch->frame,sched_pusch->slot,future_ul_tti_req->SFN,future_ul_tti_req->Slot);
 
     pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
