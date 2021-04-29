@@ -1076,7 +1076,8 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   
   ASN_SEQUENCE_ADD(&bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list,
                    ss2);
-
+  
+  SpCellConfig->spCellConfigDedicated->tag_Id=0;
 }
 
 void fill_initial_cellGroupConfig(rnti_t rnti,
@@ -1127,6 +1128,10 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
     logicalChannelGroup                                              = CALLOC(1, sizeof(long));
     *logicalChannelGroup                                             = 0;
     logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = logicalChannelGroup;
+    logicalChannelConfig->ul_SpecificParameters->schedulingRequestID = CALLOC(1, sizeof(*logicalChannelConfig->ul_SpecificParameters->schedulingRequestID));
+    *logicalChannelConfig->ul_SpecificParameters->schedulingRequestID = 0;
+    logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = 0;
+    logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = 0;
   //}
   rlc_BearerConfig->mac_LogicalChannelConfig                       = logicalChannelConfig;
   
@@ -1135,11 +1140,27 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   cellGroupConfig->rlc_BearerToReleaseList = NULL;
   
   /* mac CellGroup Config */
-  if (0) {
-    mac_CellGroupConfig                                                     = calloc(1, sizeof(NR_MAC_CellGroupConfig_t));
+  if (1) {
+    mac_CellGroupConfig                                                     = calloc(1, sizeof(*mac_CellGroupConfig));
+    mac_CellGroupConfig->schedulingRequestConfig                            = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
+    mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = CALLOC(1,sizeof(*mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));
+    struct NR_SchedulingRequestToAddMod *schedulingrequestlist;
+    schedulingrequestlist = CALLOC(1,sizeof(*schedulingrequestlist));
+    schedulingrequestlist->schedulingRequestId  = 0;
+    schedulingrequestlist->sr_ProhibitTimer = CALLOC(1,sizeof(*schedulingrequestlist->sr_ProhibitTimer));
+    *(schedulingrequestlist->sr_ProhibitTimer) = 0;
+    schedulingrequestlist->sr_TransMax      = 0;
+    ASN_SEQUENCE_ADD(&(mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList->list),schedulingrequestlist);
     mac_CellGroupConfig->bsr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->bsr_Config));
     mac_CellGroupConfig->bsr_Config->periodicBSR_Timer                      = NR_BSR_Config__periodicBSR_Timer_sf10;
     mac_CellGroupConfig->bsr_Config->retxBSR_Timer                          = NR_BSR_Config__retxBSR_Timer_sf80;
+    mac_CellGroupConfig->tag_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->tag_Config));
+    mac_CellGroupConfig->tag_Config->tag_ToReleaseList = NULL;
+    mac_CellGroupConfig->tag_Config->tag_ToAddModList  = calloc(1,sizeof(*mac_CellGroupConfig->tag_Config->tag_ToAddModList));
+    struct NR_TAG *tag=calloc(1,sizeof(*tag));
+    tag->tag_Id             = 0;
+    tag->timeAlignmentTimer = NR_TimeAlignmentTimer_infinity;
+    ASN_SEQUENCE_ADD(&mac_CellGroupConfig->tag_Config->tag_ToAddModList->list,tag);
     mac_CellGroupConfig->phr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->phr_Config));
     mac_CellGroupConfig->phr_Config->present                                = NR_SetupRelease_PHR_Config_PR_setup;
     mac_CellGroupConfig->phr_Config->choice.setup                           = calloc(1, sizeof(*mac_CellGroupConfig->phr_Config->choice.setup));
@@ -1243,7 +1264,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
 				       NULL,
 				       (void *)cellGroupConfig,
 				       masterCellGroup_buf,
-				       100);
+				       1000);
       
       if(enc_rval.encoded == -1) {
         LOG_E(NR_RRC, "ASN1 message CellGroupConfig encoding failed (%s, %lu)!\n",
@@ -1264,7 +1285,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
 				     NULL,
 				     (void *)&dl_ccch_msg,
 				     buffer,
-				     100);
+				     1000);
     
     if(enc_rval.encoded == -1) {
       LOG_E(NR_RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
