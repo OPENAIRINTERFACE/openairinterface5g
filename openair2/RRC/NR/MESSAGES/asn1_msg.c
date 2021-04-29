@@ -70,6 +70,7 @@
 #include "NR_RRCReconfigurationComplete-IEs.h"
 #include "NR_DLInformationTransfer.h"
 #include "NR_RRCReestablishmentRequest.h"
+#include "NR_UE-CapabilityRequestFilterNR.h"
 #include "PHY/defs_nr_common.h"
 #if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"
@@ -1367,6 +1368,11 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    const uint8_t                Transaction_id)
 //------------------------------------------------------------------------------
 {
+  NR_UE_CapabilityRequestFilterNR_t *sa_band_filter;
+  NR_FreqBandList_t *sa_band_list;
+  NR_FreqBandInformation_t *sa_band_info;
+  NR_FreqBandInformationNR_t *sa_band_infoNR;
+
   NR_DL_DCCH_Message_t dl_dcch_msg;
   NR_UE_CapabilityRAT_Request_t *ue_capabilityrat_request;
 
@@ -1382,6 +1388,35 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   ue_capabilityrat_request =  CALLOC(1,sizeof(NR_UE_CapabilityRAT_Request_t));
   memset(ue_capabilityrat_request,0,sizeof(NR_UE_CapabilityRAT_Request_t));
   ue_capabilityrat_request->rat_Type = NR_RAT_Type_nr;
+
+  sa_band_infoNR = (NR_FreqBandInformationNR_t*)calloc(1,sizeof(NR_FreqBandInformationNR_t));
+  sa_band_infoNR->bandNR = 78;
+  sa_band_info = (NR_FreqBandInformation_t*)calloc(1,sizeof(NR_FreqBandInformation_t));
+  sa_band_info->present = NR_FreqBandInformation_PR_bandInformationNR;
+  sa_band_info->choice.bandInformationNR = sa_band_infoNR;
+  
+  sa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
+  ASN_SEQUENCE_ADD(&sa_band_list->list, sa_band_info);
+
+  sa_band_filter = (NR_UE_CapabilityRequestFilterNR_t*)calloc(1,sizeof(NR_UE_CapabilityRequestFilterNR_t));
+  sa_band_filter->frequencyBandListFilter = sa_band_list;
+
+  OCTET_STRING_t req_freq;
+  unsigned char req_freq_buf[1024];
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_CapabilityRequestFilterNR,
+				   NULL,
+				   (void *)sa_band_filter,
+				   req_freq_buf,
+				   1024);
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_UE_CapabilityRequestFilterNR, (void *)sa_band_filter);
+  }
+
+  req_freq.buf = req_freq_buf;
+  req_freq.size = (enc_rval.encoded+7)/8;
+
+  ue_capabilityrat_request->capabilityRequestFilter = &req_freq;
 
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1->choice.ueCapabilityEnquiry->criticalExtensions.choice.ueCapabilityEnquiry->ue_CapabilityRAT_RequestList.list,
                    ue_capabilityrat_request);
