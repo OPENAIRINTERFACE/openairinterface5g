@@ -60,7 +60,7 @@ static boolean_t loop_dcch_dtch = TRUE;
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp)
 {
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
-  const int bwp_id = bwp->bwp_Id;
+  const int bwp_id = bwp ? bwp->bwp_Id : 0;
   if (nrmac->preferred_dl_tda[bwp_id])
     return;
 
@@ -70,9 +70,10 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   const int symb_dlMixed = tdd ? (1 << tdd->nrofDownlinkSymbols) - 1 : 0;
 
-  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  const NR_SearchSpace_t *search_space = get_searchspace(scc, bwp->bwp_Dedicated, target_ss);
-  const NR_ControlResourceSet_t *coreset = get_coreset(scc, bwp, search_space, 1 /* dedicated */);
+  const int target_ss = bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
+  NR_SearchSpace_t *search_space = get_searchspace(scc, bwp ? bwp->bwp_Dedicated : NULL, target_ss);
+  const NR_ControlResourceSet_t *coreset = get_coreset(scc, (NR_BWP_Downlink_t*)bwp, search_space, target_ss);
+
   // get coreset symbol "map"
   const uint16_t symb_coreset = (1 << coreset->duration) - 1;
 

@@ -69,7 +69,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
     return;
 
   /* there is a mixed slot only when in TDD */
-  const NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
+  NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
   const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
   const NR_TDD_UL_DL_Pattern_t *tdd =
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
@@ -117,7 +117,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   AssertFatal(tdaList->list.count >= 3, "need to have at least three TDAs for UL slots\n");
   const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_UL = tdaList->list.array[0];
-  const int k2 = get_K2(scc, ubwp, /* tda = */ 0, mu);
+  const int k2 = get_K2(scc, (NR_BWP_Uplink_t*)ubwp,0, mu);
   int start, len;
   SLIV2SL(tdaP_UL->startSymbolAndLength, &start, &len);
   const uint16_t symb_tda = ((1 << len) - 1) << start;
@@ -129,10 +129,10 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
   // get largest time domain allocation (TDA) for UL slot and UL in mixed slot
   int tdaMi = -1;
   const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
-  AssertFatal(k2 == get_K2(scc, ubwp, /* tda = */ 1, mu),
+  AssertFatal(k2 == get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu),
               "scheduler cannot handle different k2 for UL slot (%d) and UL Mixed slot (%ld)\n",
               k2,
-              get_K2(scc, ubwp, /* tda = */ 1, mu));
+              get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu));
   SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
   const uint16_t symb_tda_mi = ((1 << len) - 1) << start;
   // check whether PUCCH and TDA overlap: then, we cannot use it. Also, check
