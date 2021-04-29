@@ -305,11 +305,11 @@ typedef struct NR_sched_pucch {
   uint8_t resource_indicator;
 } NR_sched_pucch_t;
 
-/* this struct is a helper: as long as the TDA and DCI format remain the same
- * over the same uBWP and search space, there is no need to recalculate all
- * S/L, MCS table, or DMRS-related parameters over and over again. Hence, we
- * store them in this struct for easy reference. */
-typedef struct NR_sched_pusch_save {
+/* PUSCH semi-static configuration: as long as the TDA and DCI format remain
+ * the same over the same uBWP and search space, there is no need to
+ * recalculate all S/L, MCS table, or DMRS-related parameters over and over
+ * again. Hence, we store them in this struct for easy reference. */
+typedef struct NR_pusch_semi_static_t {
   int dci_format;
   int time_domain_allocation;
   uint8_t num_dmrs_cdm_grps_no_data;
@@ -327,7 +327,7 @@ typedef struct NR_sched_pusch_save {
   uint16_t ul_dmrs_symb_pos;
   uint8_t num_dmrs_symb;
   uint8_t N_PRB_DMRS;
-} NR_sched_pusch_save_t;
+} NR_pusch_semi_static_t;
 
 typedef struct NR_sched_pusch {
   int frame;
@@ -336,9 +336,6 @@ typedef struct NR_sched_pusch {
   /// RB allocation within active uBWP
   uint16_t rbSize;
   uint16_t rbStart;
-
-  // time-domain allocation for scheduled RBs
-  int time_domain_allocation;
 
   /// MCS
   uint8_t mcs;
@@ -350,17 +347,68 @@ typedef struct NR_sched_pusch {
 
   /// UL HARQ PID to use for this UE, or -1 for "any new"
   int8_t ul_harq_pid;
+
+  /// the Time Domain Allocation used for this transmission. Note that this is
+  /// only important for retransmissions; otherwise, the TDA in
+  /// NR_pusch_semi_static_t has precedence
+  int time_domain_allocation;
 } NR_sched_pusch_t;
+
+/* PDSCH semi-static configuratio: as long as the TDA/DMRS/mcsTable remains the
+ * same, there is no need to recalculate all S/L or DMRS-related parameters
+ * over and over again.  Hence, we store them in this struct for easy
+ * reference. */
+typedef struct NR_pdsch_semi_static {
+  int time_domain_allocation;
+  uint8_t numDmrsCdmGrpsNoData;
+
+  int startSymbolIndex;
+  int nrOfSymbols;
+
+  uint8_t mcsTableIdx;
+
+  uint8_t N_PRB_DMRS;
+  uint8_t N_DMRS_SLOT;
+  uint16_t dl_dmrs_symb_pos;
+  nfapi_nr_dmrs_type_e dmrsConfigType;
+} NR_pdsch_semi_static_t;
+
+typedef struct NR_sched_pdsch {
+  /// RB allocation within active BWP
+  uint16_t rbSize;
+  uint16_t rbStart;
+
+  /// MCS-related infos
+  uint8_t mcs;
+
+  /// TBS-related info
+  uint16_t R;
+  uint8_t Qm;
+  uint32_t tb_size;
+
+  /// DL HARQ PID to use for this UE, or -1 for "any new"
+  int8_t dl_harq_pid;
+
+  /// the Time Domain Allocation used for this transmission. Note that this is
+  /// only important for retransmissions; otherwise, the TDA in
+  /// NR_pdsch_semi_static_t has precedence
+  int time_domain_allocation;
+} NR_sched_pdsch_t;
 
 typedef struct NR_UE_harq {
   bool is_waiting;
   uint8_t ndi;
   uint8_t round;
+  uint16_t feedback_frame;
   uint16_t feedback_slot;
 
-  /* Transport block to be sent using this HARQ process */
+  /* Transport block to be sent using this HARQ process, its size is in
+   * sched_pdsch */
   uint32_t tb[16384];
   uint32_t tb_size;
+
+  /// sched_pdsch keeps information on MCS etc used for the initial transmission
+  NR_sched_pdsch_t sched_pdsch;
 } NR_UE_harq_t;
 
 //! fixme : need to enhace for the multiple TB CQI report
@@ -442,13 +490,6 @@ typedef struct nr_csi_report {
   From spec 38.214 section 5.2.1.2 For periodic and semi-persistent CSI Resource Settings, the number of CSI-RS Resource Sets configured is limited to S=1
  */
 #define MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG 16
-typedef struct NR_UE_old_sched {
-  uint16_t rbSize;
-  int time_domain_allocation;
-  uint8_t mcsTableIdx;
-  uint8_t mcs;
-  uint8_t numDmrsCdmGrpsNoData;
-} NR_UE_ret_info_t;
 
 typedef enum {
   INACTIVE = 0,
@@ -469,15 +510,18 @@ typedef struct NR_UE_ul_harq {
 /*! \brief scheduling control information set through an API */
 #define MAX_CSI_REPORTS 48
 typedef struct {
-  /// total amount of data awaiting for this UE
-  uint32_t num_total_bytes;
-  /// per-LC status data
-  mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
-
   /// the currently active BWP in DL
   NR_BWP_Downlink_t *active_bwp;
   /// the currently active BWP in UL
   NR_BWP_Uplink_t *active_ubwp;
+  /// CCE index and aggregation, should be coherent with cce_list
+  NR_SearchSpace_t *search_space;
+  NR_ControlResourceSet_t *coreset;
+
+  /// CCE index and Aggr. Level are shared for PUSCH/PDSCH allocation decisions
+  /// corresponding to the sched_pusch/sched_pdsch structures below
+  int cce_index;
+  uint8_t aggregation_level;
 
   /// PUCCH scheduling information. Array of three, we assume for the moment:
   /// HARQ in the first field, SR in second, CSI in third (as fixed by RRC
@@ -485,44 +529,40 @@ typedef struct {
   /// nr_acknack_scheduling()!
   NR_sched_pucch_t sched_pucch[3];
 
-  NR_sched_pusch_save_t pusch_save;
+  /// PUSCH semi-static configuration: is not cleared across TTIs
+  NR_pusch_semi_static_t pusch_semi_static;
+  /// Sched PDSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pusch_t sched_pusch;
-
-  /// CCE index and aggregation, should be coherent with cce_list
-  NR_SearchSpace_t *search_space;
-  NR_ControlResourceSet_t *coreset;
-  int cce_index;
-  uint8_t aggregation_level;
-
-  /// RB allocation within active BWP
-  uint16_t rbSize;
-  uint16_t rbStart;
 
   /// uplink bytes that are currently scheduled
   int sched_ul_bytes;
   /// estimation of the UL buffer size
   int estimated_ul_buffer;
 
-  // time-domain allocation for scheduled RBs
-  int time_domain_allocation;
+  /// PHR info: power headroom level (dB)
+  int ph;
+  /// PHR info: nominal UE transmit power levels (dBm)
+  int pcmax;
 
-  /// MCS-related infos
-  uint8_t mcsTableIdx;
-  uint8_t mcs;
-  uint8_t numDmrsCdmGrpsNoData;
+  /// PDSCH semi-static configuration: is not cleared across TTIs
+  NR_pdsch_semi_static_t pdsch_semi_static;
+  /// Sched PDSCH: scheduling decisions, copied into HARQ and cleared every TTI
+  NR_sched_pdsch_t sched_pdsch;
 
-  /// Retransmission-related information
-  NR_UE_ret_info_t retInfo[NR_MAX_NB_HARQ_PROCESSES];
-  /// DL HARQ PID to use for this UE, or -1 for "any new"
-  int8_t dl_harq_pid;
+  /// total amount of data awaiting for this UE
+  uint32_t num_total_bytes;
+  /// per-LC status data
+  mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
 
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
   uint8_t tpc0;
   uint8_t tpc1;
-  uint16_t ul_rssi;
-  uint8_t current_harq_pid;
+  int raw_rssi;
+  int pusch_snrx10;
+  int pucch_snrx10;
+
   struct CSI_Report CSI_report[MAX_CSI_REPORTS];
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
@@ -540,7 +580,6 @@ typedef struct {
   NR_list_t feedback_ul_harq;
   /// UL HARQ processes that await retransmission
   NR_list_t retrans_ul_harq;
-  int dummy;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
 } NR_UE_sched_ctrl_t;
 
@@ -592,9 +631,7 @@ typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
                               sub_frame_t slot);
 typedef bool (*nr_pp_impl_ul)(module_id_t mod_id,
                               frame_t frame,
-                              sub_frame_t slot,
-                              int num_slots_per_tdd,
-                              uint64_t ulsch_in_slot_bitmap);
+                              sub_frame_t slot);
 
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
@@ -673,6 +710,19 @@ typedef struct gNB_MAC_INST_s {
   /// highest index not yet been used in a given slot. Dynamically allocated
   /// so we can have it for every slot as a function of the numerology
   int *pucch_index_used[MAX_NUM_BWP];
+
+  /// bitmap of DLSCH slots, can hold up to 160 slots
+  uint64_t dlsch_slot_bitmap[3];
+  /// Lookup for preferred time domain allocation for BWP, in DL, slots
+  /// dynamically allocated
+  int *preferred_dl_tda[MAX_NUM_BWP];
+  /// bitmap of ULSCH slots, can hold up to 160 slots
+  uint64_t ulsch_slot_bitmap[3];
+  /// Lookup for preferred time domain allocation for UL BWP, dynamically
+  /// allocated. The index refers to the DL slot, and the indicated TDA's k2
+  /// points to the right UL slot
+  int *preferred_ul_tda[MAX_NUM_BWP];
+
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
   /// UL preprocessor for differentiated scheduling
