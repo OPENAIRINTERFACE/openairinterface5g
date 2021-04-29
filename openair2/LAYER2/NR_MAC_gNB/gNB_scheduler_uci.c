@@ -961,7 +961,6 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
   NR_UE_info_t *UE_info = &(RC.nrmac[Mod_idP]->UE_info);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   int cumul_bits = 0;
-
   for (int csi_report_id = 0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++ ) {
     UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report = 0;
     uint8_t cri_bitlen = 0;
@@ -972,7 +971,7 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
     csi_period_offset(csirep, NULL, &period, &offset);
     // verify if report with current id has been scheduled for this frame and slot
     // -1 because this is processed 1 slot after the reception
-    if ((n_slots_frame*frame + slot - offset - 1)%period == 0) {
+    if ((n_slots_frame*frame + slot - offset)%period == 0) {
       reportQuantity_type = UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type;
       LOG_I(MAC,"SFN/SF:%d/%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
       switch(reportQuantity_type){
