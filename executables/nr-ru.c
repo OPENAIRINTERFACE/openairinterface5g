@@ -861,6 +861,17 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->tx_bw = 40e6;
         cfg->rx_bw = 40e6;
       }
+    } else if(N_RB == 133) {
+      if (fp->threequarter_fs) {
+	AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
+      }
+      else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
+      }
+
     } else {
       AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
     }

@@ -753,6 +753,21 @@ void nr_schedule_ue_spec(module_id_t module_id,
           current_harq_pid,
           harq->round,
           harq->ndi);
+    if ((get_softmodem_params()->phy_test == 1) && (frame&127) == 0) 
+      LOG_D(MAC,
+            "%4d.%2d RNTI %04x start %d RBs %d startSymbol %d nb_symbsol %d MCS %d TBS %d (%f Mbps) HARQ PID %d round %d NDI %d\n",
+            frame,
+            slot,
+            rnti,
+            sched_ctrl->rbStart,
+            sched_ctrl->rbSize,
+            startSymbolIndex,
+            nrOfSymbols,
+            sched_ctrl->mcs,
+            TBS,((double)TBS)*(1<<scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing))/1000,
+            current_harq_pid,
+            harq->round,
+            harq->ndi);
 
     NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
     AssertFatal(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList,
