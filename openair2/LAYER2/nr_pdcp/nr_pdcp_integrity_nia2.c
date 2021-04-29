@@ -63,6 +63,7 @@ void nr_pdcp_integrity_nia2_integrity(void *integrity_context,
    * (which is identical to 128-NIA2, see 33.501 D.3.1.3) */
   compute_t(t, count, bearer, direction);
 
+  CMAC_Init(ctx, NULL, 0, NULL, NULL);
   CMAC_Update(ctx, t, 8);
   CMAC_Update(ctx, buffer, length);
   CMAC_Final(ctx, mac, &maclen);
