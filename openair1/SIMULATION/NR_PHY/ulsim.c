@@ -209,7 +209,6 @@ double s_re1[122880],s_im1[122880],r_re1[122880],r_im1[122880];
 double r_re2[122880],r_im2[122880];
 double r_re3[122880],r_im3[122880];
 
-int usrp_tx_thread=0;
 
 int main(int argc, char **argv)
 {
