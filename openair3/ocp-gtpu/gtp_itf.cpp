@@ -459,6 +459,20 @@ int ocp_gtpv1u_update_s1u_tunnel(
   return 0;
 }
 
+  int gtpv1u_create_ngu_tunnel(  const instance_t instanceP,
+				 const gtpv1u_gnb_create_tunnel_req_t *  const create_tunnel_req_pP,
+				 gtpv1u_gnb_create_tunnel_resp_t * const create_tunnel_resp_pP) {
+    return !GTPNOK;
+  }
+  
+  int gtpv1u_update_ngu_tunnel(
+			       const instance_t instanceP,
+			       const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
+			       const rnti_t prior_rnti
+			       ) {
+    return GTPNOK;
+  }
+
 int ocp_gtpv1u_create_x2u_tunnel(
   const instance_t instanceP,
   const gtpv1u_enb_create_x2u_tunnel_req_t   *const create_tunnel_req_pP,
@@ -494,6 +508,12 @@ int newGtpuDeleteTunnel(instance_t instance, rnti_t rnti) {
 int ocp_gtpv1u_delete_s1u_tunnel( const instance_t instance,
                                   const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
   return  newGtpuDeleteTunnel(instance, req_pP->rnti);
+}
+
+  int gtpv1u_delete_x2u_tunnel( const instance_t instanceP,
+				const gtpv1u_enb_delete_tunnel_req_t * const req_pP,
+				int enbflag) {
+    return 0;
 }
 
 static int Gtpv1uHandleEchoReq(int h,
@@ -751,6 +771,13 @@ void *ocp_gtpv1uTask(void *args)  {
           break;
 
         case GTPV1U_ENB_S1_REQ:
+          // to be dev: should be removed, to use API
+          strcpy(addr.originHost, GTPV1U_ENB_S1_REQ(message_p).addrStr);
+          strcpy(addr.originService, GTPV1U_ENB_S1_REQ(message_p).portStr);
+          AssertFatal((legacyInstanceMapping=ocp_gtpv1Init(addr))!=0,"Instance 0 reserved for legacy\n");
+          break;
+
+      case GTPV1U_GNB_NG_REQ:
           // to be dev: should be removed, to use API
           strcpy(addr.originHost, GTPV1U_ENB_S1_REQ(message_p).addrStr);
           strcpy(addr.originService, GTPV1U_ENB_S1_REQ(message_p).portStr);

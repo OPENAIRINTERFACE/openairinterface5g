@@ -41,7 +41,7 @@
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair1/PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include <openair1/PHY/impl_defs_nr.h>
-#include <nr/nr_common.h>
+#include <common/utils/nr/nr_common.h>
 
 #ifndef NO_RAT_NR
 
@@ -1275,7 +1275,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
       if (pucch_resource_indicator < MAX_PUCCH_RESOURCE_INDICATOR) {
         // Verify that the value of pucch_resource_indicator is valid
         struct NR_PUCCH_Config__resourceSetToAddModList *resourceSetToAddModList = NULL;
-	struct NR_PUCCH_Config__resourceToAddModList *resourceToAddModList = NULL;
+	      struct NR_PUCCH_Config__resourceToAddModList *resourceToAddModList = NULL;
         if (bwp_id > 0 && mac->ULbwp[bwp_id-1]) {
            AssertFatal(mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList!=NULL,"mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList is null\n");
            resourceSetToAddModList = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList;

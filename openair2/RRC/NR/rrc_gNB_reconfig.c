@@ -52,7 +52,7 @@
 void fill_default_initialDownlinkBWP(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *servingcellconfigcommon) {
   bwp->bwp_Id = 0;
   bwp->bwp_Common=calloc(1,sizeof(*bwp->bwp_Common));
-  memcpy((void*)&bwp->bwp_Common, &servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP, sizeof(*bwp->bwp_Common));
+  *bwp->bwp_Common = *servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP;
 }
 
 void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellConfigCommon_t *servingcellconfigcommon) {
@@ -1024,7 +1024,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  long *delay[8];
  for (int i=0;i<8;i++) {
    delay[i] = calloc(1,sizeof(*delay[i]));
-   *delay[i] = i+2;
+   *delay[i] = (i<6) ? (i+2) : 0;
    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
  }
  pucch_Config->spatialRelationInfoToAddModList = calloc(1,sizeof(*pucch_Config->spatialRelationInfoToAddModList));
