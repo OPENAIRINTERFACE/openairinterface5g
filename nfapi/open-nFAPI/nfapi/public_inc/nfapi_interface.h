@@ -27,6 +27,8 @@
 #define NFAPI_PNF_PARAM_GENERAL_OUI_LENGTH 3
 #define NFAPI_MAX_NUM_RF_BANDS 16
 
+#define NFAPI_MAX_PACKED_MESSAGE_SIZE 8192
+
 // The following definition control the size of arrays used in the interface.
 // These may be changed if desired. They are used in the encoder to make sure 
 // that the user has not specified a 'count' larger than the max array, and also

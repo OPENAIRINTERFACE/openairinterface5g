@@ -4374,7 +4374,161 @@ int do_HandoverCommand(char *ho_buf, int ho_size, char *rrc_buf, int rrc_size) {
   return((enc_rval.encoded+7)/8);
 }
 
-OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname) {
+//-----------------------------------------------------------------------------
+int
+is_en_dc_supported(
+  LTE_UE_EUTRA_Capability_t *c
+)
+//-----------------------------------------------------------------------------
+{
+  LOG_D(RRC, "Entered %s \n", __FUNCTION__);
+  /* to be refined - check that the bands supported by the UE include
+   * the band of the gNB
+   */
+#define NCE nonCriticalExtension
+  return c != NULL
+         && c->NCE != NULL
+         && c->NCE->NCE != NULL
+         && c->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15 != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 != NULL
+         && *c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 ==
+         LTE_IRAT_ParametersNR_r15__en_DC_r15_supported;
+#undef NCE
+}
+
+void allocate_en_DC_r15(LTE_UE_EUTRA_Capability_t *cap)
+{
+  LOG_D(RRC, "Entered %s\n", __FUNCTION__);
+  if (!cap->nonCriticalExtension)
+    cap->nonCriticalExtension = CALLOC(1, sizeof(*cap->nonCriticalExtension));
+
+  typeof(cap->nonCriticalExtension) nce1 = cap->nonCriticalExtension;
+  if (!nce1->nonCriticalExtension)
+    nce1->nonCriticalExtension = CALLOC(1, sizeof(*nce1->nonCriticalExtension));
+
+  typeof(nce1->nonCriticalExtension) nce2 = nce1->nonCriticalExtension;
+  if (!nce2->nonCriticalExtension)
+    nce2->nonCriticalExtension = CALLOC(1, sizeof(*nce2->nonCriticalExtension));
+
+  typeof(nce2->nonCriticalExtension) nce3 = nce2->nonCriticalExtension;
+  if (!nce3->nonCriticalExtension)
+    nce3->nonCriticalExtension = CALLOC(1, sizeof(*nce3->nonCriticalExtension));
+
+  typeof(nce3->nonCriticalExtension) nce4 = nce3->nonCriticalExtension;
+  if (!nce4->nonCriticalExtension)
+    nce4->nonCriticalExtension = CALLOC(1, sizeof(*nce4->nonCriticalExtension));
+
+  typeof(nce4->nonCriticalExtension) nce5 = nce4->nonCriticalExtension;
+  if (!nce5->nonCriticalExtension)
+    nce5->nonCriticalExtension = CALLOC(1, sizeof(*nce5->nonCriticalExtension));
+
+  typeof(nce5->nonCriticalExtension) nce6 = nce5->nonCriticalExtension;
+  if (!nce6->nonCriticalExtension)
+    nce6->nonCriticalExtension = CALLOC(1, sizeof(*nce6->nonCriticalExtension));
+
+  typeof(nce6->nonCriticalExtension) nce7 = nce6->nonCriticalExtension;
+  if (!nce7->nonCriticalExtension)
+    nce7->nonCriticalExtension = CALLOC(1, sizeof(*nce7->nonCriticalExtension));
+
+  typeof(nce7->nonCriticalExtension) nce8 = nce7->nonCriticalExtension;
+  if (!nce8->nonCriticalExtension)
+    nce8->nonCriticalExtension = CALLOC(1, sizeof(*nce8->nonCriticalExtension));
+
+  typeof(nce8->nonCriticalExtension) nce9 = nce8->nonCriticalExtension;
+  if (!nce9->nonCriticalExtension)
+    nce9->nonCriticalExtension = CALLOC(1, sizeof(*nce9->nonCriticalExtension));
+
+  typeof(nce9->nonCriticalExtension) nce10 = nce9->nonCriticalExtension;
+  if (!nce10->nonCriticalExtension)
+    nce10->nonCriticalExtension = CALLOC(1, sizeof(*nce10->nonCriticalExtension));
+
+  typeof(nce10->nonCriticalExtension) nce11 = nce10->nonCriticalExtension;
+  if (!nce11->nonCriticalExtension)
+    nce11->nonCriticalExtension = CALLOC(1, sizeof(*nce11->nonCriticalExtension));
+
+  typeof(nce11->nonCriticalExtension) nce12 = nce11->nonCriticalExtension;
+  if (!nce12->nonCriticalExtension)
+    nce12->nonCriticalExtension = CALLOC(1, sizeof(*nce12->nonCriticalExtension));
+
+  typeof(nce12->nonCriticalExtension) nce13 = nce12->nonCriticalExtension;
+  if (!nce13->nonCriticalExtension)
+    nce13->nonCriticalExtension = CALLOC(1, sizeof(*nce13->nonCriticalExtension));
+
+  typeof(nce13->nonCriticalExtension) nce14 = nce13->nonCriticalExtension;
+  if (!nce14->nonCriticalExtension)
+    nce14->nonCriticalExtension = CALLOC(1, sizeof(*nce14->nonCriticalExtension));
+
+  typeof(nce14->nonCriticalExtension) nce15 = nce14->nonCriticalExtension;
+  if (!nce15->nonCriticalExtension)
+    nce15->nonCriticalExtension = CALLOC(1, sizeof(*nce15->nonCriticalExtension));
+
+  typeof(nce15->nonCriticalExtension) nce16 = nce15->nonCriticalExtension;
+  if (!nce16->nonCriticalExtension)
+    nce16->nonCriticalExtension = CALLOC(1, sizeof(*nce16->nonCriticalExtension));
+
+  typeof(nce16->nonCriticalExtension) nce17 = nce16->nonCriticalExtension;
+  if (!nce17->nonCriticalExtension)
+    nce17->nonCriticalExtension = CALLOC(1, sizeof(*nce17->nonCriticalExtension));
+
+  typeof(nce17->nonCriticalExtension) nce18 = nce17->nonCriticalExtension;
+  if (!nce18->nonCriticalExtension)
+    nce18->nonCriticalExtension = CALLOC(1, sizeof(*nce18->nonCriticalExtension));
+
+  typeof(nce18->nonCriticalExtension) nce19 = nce18->nonCriticalExtension;
+  if (!nce19->nonCriticalExtension)
+    nce19->nonCriticalExtension = CALLOC(1, sizeof(*nce19->nonCriticalExtension));
+
+  typeof(nce19->nonCriticalExtension) nce20 = nce19->nonCriticalExtension;
+  if (!nce20->nonCriticalExtension)
+    nce20->nonCriticalExtension = CALLOC(1, sizeof(*nce20->nonCriticalExtension));
+
+  typeof(nce20->nonCriticalExtension) nce21 = nce20->nonCriticalExtension;
+  if (!nce21->nonCriticalExtension)
+    nce21->nonCriticalExtension = CALLOC(1, sizeof(*nce21->nonCriticalExtension));
+
+  typeof(nce21->nonCriticalExtension) nce22 = nce21->nonCriticalExtension;
+  if (!nce22->nonCriticalExtension)
+    nce22->nonCriticalExtension = CALLOC(1, sizeof(*nce22->nonCriticalExtension));
+
+  typeof(nce22->nonCriticalExtension) nce23 = nce22->nonCriticalExtension;
+  if (!nce23->nonCriticalExtension)
+    nce23->nonCriticalExtension = CALLOC(1, sizeof(*nce23->nonCriticalExtension));
+
+  typeof(nce23->nonCriticalExtension) nce24 = nce23->nonCriticalExtension;
+  if (!nce24->irat_ParametersNR_r15)
+    nce24->irat_ParametersNR_r15 = CALLOC(1, sizeof(*nce24->irat_ParametersNR_r15));
+
+  typeof(nce24->irat_ParametersNR_r15) irat = nce24->irat_ParametersNR_r15;
+  if (!irat->en_DC_r15)
+    irat->en_DC_r15 = CALLOC(1, sizeof(*irat->en_DC_r15));
+
+  *irat->en_DC_r15 = LTE_IRAT_ParametersNR_r15__en_DC_r15_supported;
+
+}
+
+OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname, bool received_nr_msg) {
   static OAI_UECapability_t UECapability; /* TODO declared static to allow returning this has an address should be allocated in a cleaner way. */
   static LTE_SupportedBandEUTRA_t Bandlist[4]; // the macro ASN_SEQUENCE_ADD() does not copy the source, but only stores a reference to it
   static LTE_InterFreqBandInfo_t InterFreqBandInfo[4][4]; // the macro ASN_SEQUENCE_ADD() does not copy the source, but only stores a reference to it
@@ -4472,7 +4626,13 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname) {
       UE_EUTRA_Capability->featureGroupIndicators = bit_string;
     }
 
-    // UE_EUTRA_Capability->interRAT_Parameters     // null
+    if (get_softmodem_params()->nsa && received_nr_msg)
+    {
+       allocate_en_DC_r15(UE_EUTRA_Capability);
+       if (!is_en_dc_supported(UE_EUTRA_Capability)){
+         LOG_E(RRC, "We did not properly allocate en_DC_r15 for UE_EUTRA_Capability\n");
+       }
+    }
   } else {
     FILE *f = fopen(UE_EUTRA_Capability_xer_fname, "r");
     assert(f);

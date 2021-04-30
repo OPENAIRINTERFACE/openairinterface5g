@@ -84,8 +84,6 @@ typedef struct nfapi_vnf_config
 	void* (*malloc)(size_t size);
 	/*! A user define callback to override the default memory deallocation */
 	void (*free)(void*);
-	/*! A user define callback to handle trace from the pnf */
-	void (*trace)(nfapi_trace_level_t level, const char* message, ...);
 
 	/*! The port the VNF P5 SCTP connection listens on
 	 *
@@ -660,12 +658,6 @@ typedef struct nfapi_vnf_p7_config
 	 * If not set the vnf p7 library will use free
 	 */
 	void (*free)(void*);
-
-	/*! A user define callback to handle trace from the pnf
-	 * \param level The trace level
-	 * \param message The trace string
-	 */
-	void (*trace)(nfapi_trace_level_t level, const char* message, ...);
 
 	/*! The port the vnf p7 will receive on */
 	int port;

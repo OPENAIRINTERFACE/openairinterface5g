@@ -1225,7 +1225,7 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu_list = req->dl_tti_request_body.dl_tti_pdu_list;
 
   if (req->dl_tti_request_body.nPDUs)
-    NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() TX:%d/%d RX:%d/%d; sfn:%d, slot:%d, nGroup:%u, nPDUs: %u, nUE: %u, PduIdx: %u,\n",
+    NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() TX:%d/%d RX:%d/%d; sfn:%d, slot:%d, nGroup:%u, nPDUs: %u, nUE: %p, PduIdx: %p,\n",
                 __FUNCTION__, proc->frame_tx, proc->slot_tx, proc->frame_rx, proc->slot_rx, // TODO: change subframes to slot
                 req->SFN,
                 req->Slot,
@@ -1790,7 +1790,6 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
 
 int nr_start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfapi_nr_start_request_scf_t *req) {
   printf("[PNF] Received NFAPI_START_REQ phy_id:%d\n", req->header.phy_id);
-  nfapi_set_trace_level(NFAPI_TRACE_INFO);
   pnf_info *pnf = (pnf_info *)(config->user_data);
   phy_info *phy_info = pnf->phys;
   nfapi_pnf_p7_config_t *p7_config = nfapi_pnf_p7_config_create();
@@ -2295,15 +2294,13 @@ void oai_subframe_ind(uint16_t sfn, uint16_t sf) {
     uint16_t sfn_sf_tx = sfn<<4 | sf; 
 
     if ((sfn % 100 == 0) && sf==0) {
-      struct timespec ts;
-      clock_gettime(CLOCK_MONOTONIC, &ts);
-      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s %d.%d (sfn:%u sf:%u) SFN/SF(TX):%u\n", __FUNCTION__, ts.tv_sec, ts.tv_nsec, sfn, sf, NFAPI_SFNSF2DEC(sfn_sf_tx));
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] (sfn:%u sf:%u) SFN/SF(TX):%u\n", sfn, sf, NFAPI_SFNSF2DEC(sfn_sf_tx));
     }
 
     int subframe_ret = nfapi_pnf_p7_subframe_ind(p7_config_g, p7_config_g->phy_id, sfn_sf_tx);
 
     if (subframe_ret) {
-      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s(frame:%u subframe:%u) SFN/SF(TX):%u - PROBLEM with pnf_p7_subframe_ind()\n", __FUNCTION__, sfn, sf, sfn_sf_tx, NFAPI_SFNSF2DEC(sfn_sf_tx));
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] (frame:%u subframe:%u) SFN/SF(TX):%u - PROBLEM with pnf_p7_subframe_ind()\n", sfn, sf, sfn_sf_tx);
     } else {
       //NFAPI_TRACE(NFAPI_TRACE_INFO, "***NFAPI subframe handler finished *** \n");
     }
@@ -2347,8 +2344,8 @@ void oai_slot_ind(uint16_t sfn, uint16_t slot) {
     int slot_ret = nfapi_pnf_p7_slot_ind(p7_config_g, p7_config_g->phy_id, sfn, slot); 
 
     // if (subframe_ret) {
-    if (slot_ret) { 
-      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s(frame:%u slot:%u) SFN/SLOT(TX):%u - PROBLEM with pnf_p7_slot_ind()\n", __FUNCTION__, sfn, slot, sfn_slot_tx, NFAPI_SFNSLOT2DEC(sfn, slot));
+    if (slot_ret) {
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF](frame:%u slot:%u) SFN/SLOT(TX):%u - PROBLEM with pnf_p7_slot_ind()\n", sfn, slot, sfn_slot_tx);
       // printing anything causes error: probably because there isn't enough time to accomodate a print statement
     } else {
       //NFAPI_TRACE(NFAPI_TRACE_INFO, "***NFAPI subframe handler finished *** \n");

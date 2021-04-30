@@ -99,7 +99,6 @@
 #define ASN_MAX_ENCODE_SIZE 4096
 #define NUMBEROF_DRBS_TOBE_ADDED 1
 static int encode_CG_ConfigInfo(char *buffer,int buffer_size,rrc_eNB_ue_context_t *const ue_context_pP,int *enc_size);
-static int is_en_dc_supported(LTE_UE_EUTRA_Capability_t *c);
 
 extern RAN_CONTEXT_t RC;
 
@@ -7582,49 +7581,6 @@ rrc_eNB_decode_ccch(
 }
 
 //-----------------------------------------------------------------------------
-static int
-is_en_dc_supported(
-  LTE_UE_EUTRA_Capability_t *c
-)
-//-----------------------------------------------------------------------------
-{
-  /* to be refined - check that the eNB is connected to a gNB, check that
-   * the bands supported by the UE include the band of the gNB
-   */
-#define NCE nonCriticalExtension
-  return c != NULL
-         && c->NCE != NULL
-         && c->NCE->NCE != NULL
-         && c->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15 != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 != NULL
-         && *c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 ==
-         LTE_IRAT_ParametersNR_r15__en_DC_r15_supported;
-#undef NCE
-}
-
-//-----------------------------------------------------------------------------
 int
 rrc_eNB_decode_dcch(
   const protocol_ctxt_t *const ctxt_pP,
@@ -8289,8 +8245,19 @@ rrc_eNB_decode_dcch(
           ue_context_p->ue_context.UE_Capability = 0;
         }
 
-        if (dec_rval.code == RC_OK)
-          ue_context_p->ue_context.does_nr = is_en_dc_supported(ue_context_p->ue_context.UE_Capability);
+        if (dec_rval.code == RC_OK) {
+          /* do NR only if at least one gNB connected */
+          if (RC.rrc[ctxt_pP->module_id]->num_gnb_cells != 0)
+          {
+            allocate_en_DC_r15(ue_context_p->ue_context.UE_Capability);
+            if (!is_en_dc_supported(ue_context_p->ue_context.UE_Capability)){
+                    LOG_E(RRC, "We did not properly allocate en_DC_r15 for UE_EUTRA_Capability\n");
+            }
+            ue_context_p->ue_context.does_nr = is_en_dc_supported(ue_context_p->ue_context.UE_Capability);
+          }
+          else
+            ue_context_p->ue_context.does_nr = 0;
+        }
 
         if (EPC_MODE_ENABLED) {
           rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(ctxt_pP,

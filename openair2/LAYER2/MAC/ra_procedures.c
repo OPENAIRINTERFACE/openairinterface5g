@@ -287,7 +287,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
                                sub_frame_t subframeP) {
   uint8_t Size = 0;
   UE_MODE_t UE_mode;
-
+  protocol_ctxt_t ctxt;
   // Modification for phy_stub_ue operation
   if(NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) { // phy_stub_ue mode
     UE_mode = UE_mac_inst[module_idP].UE_mode[0];
@@ -320,6 +320,19 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 
     if (UE_mac_inst[module_idP].RA_active == 0) {
       LOG_I(MAC, "RA not active\n");
+
+      if (UE_rrc_inst[ctxt.module_id].Info[eNB_indexP].T300_cnt
+          != T300[UE_rrc_inst[ctxt.module_id].sib2[eNB_indexP]->ue_TimersAndConstants.t300]) {
+            /* Calling rrc_ue_generate_RRCConnectionRequest here to ensure that
+               every time we fill the UE_mac_inst context we generate new random
+               values in msg3. When the T300 timer has expired, rrc_common.c will
+               call rrc_ue_generate_RRCConnectionRequest, so we do not want to call
+               when UE_rrc_inst[ctxt.module_id].Info[eNB_indexP].T300_cnt ==
+               T300[UE_rrc_inst[ctxt.module_id].sib2[eNB_indexP]->ue_TimersAndConstants.t300. */
+            UE_rrc_inst[ctxt.module_id].Srb0[eNB_indexP].Tx_buffer.payload_size = 0;
+            rrc_ue_generate_RRCConnectionRequest(&ctxt, eNB_indexP);
+      }
+
       // check if RRC is ready to initiate the RA procedure
       Size = mac_rrc_data_req_ue(module_idP,
                                  CC_id,

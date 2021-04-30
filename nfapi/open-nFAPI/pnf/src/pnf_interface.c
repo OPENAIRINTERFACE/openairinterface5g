@@ -55,10 +55,6 @@ int nfapi_pnf_start(nfapi_pnf_config_t* config)
 	if(config == 0)
 		return -1;
 
-	// Make sure to set the defined trace function before using NFAPI_TRACE
-	if(config->trace)
-		nfapi_trace_g = config->trace;
-
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s\n", __FUNCTION__);
 
 	pnf_t* _this = (pnf_t*)(config);
@@ -88,10 +84,6 @@ int nfapi_nr_pnf_start(nfapi_pnf_config_t* config)
 	// Verify that config is not null
 	if(config == 0)
 		return -1;
-
-	// Make sure to set the defined trace function before using NFAPI_TRACE
-	if(config->trace)
-		nfapi_trace_g = config->trace;
 
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s\n", __FUNCTION__);
 

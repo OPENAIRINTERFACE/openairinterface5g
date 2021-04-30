@@ -353,7 +353,11 @@ int do_HandoverPreparation(char *ho_buf, int ho_size, LTE_UE_EUTRA_Capability_t 
 
 int do_HandoverCommand(char *ho_buf, int ho_size, char *rrc_buf, int rrc_size);
 
-OAI_UECapability_t *fill_ue_capability(char *LTE_UE_EUTRA_Capability_xer);
+OAI_UECapability_t *fill_ue_capability(char *LTE_UE_EUTRA_Capability_xer, bool received_nr_msg);
+
+int is_en_dc_supported(LTE_UE_EUTRA_Capability_t *c);
+
+void allocate_en_DC_r15(LTE_UE_EUTRA_Capability_t *cap);
 
 uint8_t
 do_UECapabilityEnquiry(

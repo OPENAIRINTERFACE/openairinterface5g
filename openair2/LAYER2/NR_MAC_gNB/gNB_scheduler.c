@@ -306,8 +306,6 @@ bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
-  gNB_MAC_INST     *mac        = RC.nrmac[module_idP];
-  nfapi_nr_config_request_scf_t *cfg = &mac->config[0];
   protocol_ctxt_t   ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
   int nb_periods_per_frame;

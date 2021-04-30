@@ -336,7 +336,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
 
   // NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   // const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  const int num_slots = 20;
+  //const int num_slots = 20;
   
   // if (((uci_01->pduBitmap >> 1) & 0x01)) {
   //   // iterate over received harq bits

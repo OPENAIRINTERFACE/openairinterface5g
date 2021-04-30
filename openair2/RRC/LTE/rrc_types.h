@@ -61,4 +61,12 @@ typedef enum Rrc_Sub_State_e {
   RRC_SUB_STATE_CONNECTED_LAST = RRC_SUB_STATE_CONNECTED,
 } Rrc_Sub_State_t;
 
+typedef enum Rrc_Msg_Type_e {
+  UE_CAPABILITY_DUMMY = 0xa0,
+  UE_CAPABILITY_ENQUIRY,
+  UE_CAPABILITY_INFO,
+  RRC_MEASUREMENT_PROCEDURE,
+} Rrc_Msg_Type_t;
+
+
 #endif /* RRC_TYPES_H_ */

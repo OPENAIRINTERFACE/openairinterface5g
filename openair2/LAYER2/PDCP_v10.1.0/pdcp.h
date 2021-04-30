@@ -44,7 +44,6 @@
 #include "LTE_SRB-ToAddModList.h"
 #include "LTE_MBMS-SessionInfoList-r9.h"
 #include "LTE_PMCH-InfoList-r9.h"
-#include "common/utils/ocp_itti/intertask_interface.h"
 
 typedef rlc_op_status_t  (*send_rlc_data_req_func_t)(const protocol_ctxt_t *const,
     const srb_flag_t, const MBMS_flag_t,

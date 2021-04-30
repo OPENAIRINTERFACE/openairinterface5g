@@ -870,7 +870,6 @@ void init_bler_table(void)
 
   for (unsigned int i = 0; i < NUM_MCS; i++)
   {
-    // Filename needs to be changed to dynamic name
     char fName[1024];
     snprintf(fName, sizeof(fName), "%s/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results/bler_tx1_chan18_nrx1_mcs%d.csv", openair_dir, i);
     FILE *pFile = fopen(fName, "r");
@@ -908,7 +907,7 @@ void init_bler_table(void)
 
         token = strtok_r(NULL, ";", &temp);
       }
-      nlines++;        
+      nlines++;
     }
     bler_data[i].length = nlines;
     fclose(pFile);

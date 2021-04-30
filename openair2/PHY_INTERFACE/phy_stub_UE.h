@@ -19,7 +19,6 @@
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
 //#include "openair1/PHY/defs.h"
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
-#include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
 #include "queue.h"
 
 #define NUM_MCS 28
@@ -41,13 +40,6 @@ eth_params_t         stub_eth_params;
 
 typedef struct
 {
-    uint16_t sfn_sf;
-    float sinr;
-    // Incomplete, need all channel parameters
-} channel_info;
-
-typedef struct 
-{   
     uint8_t sf;
     uint16_t rnti[256];
     uint8_t mcs[256];

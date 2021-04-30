@@ -182,6 +182,26 @@ void print_difftimes(void) {
   LOG_I(HW,"difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
 }
 
+int create_tasks_nrue(uint32_t ue_nb) {
+  LOG_D(NR_RRC, "%s(ue_nb:%d)\n", __FUNCTION__, ue_nb);
+  itti_wait_ready(1);
+
+  if (ue_nb > 0) {
+    if (itti_create_task (TASK_RRC_NRUE, rrc_nrue_task, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for RRC UE failed\n");
+      return -1;
+    }
+  }
+  if (ue_nb > 0 && get_softmodem_params()->nsa == 1) {
+    if (itti_create_task (TASK_RRC_NSA_NRUE, recv_msgs_from_lte_ue, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for RRC NSA nr-UE failed\n");
+      return -1;
+    }
+  }
+  itti_wait_ready(0);
+  return 0;
+}
+
 void exit_function(const char *file, const char *function, const int line, const char *s) {
   int CC_id;
 
@@ -517,50 +537,55 @@ int main( int argc, char **argv ) {
   if (get_softmodem_params()->sa)
     AssertFatal(get_softmodem_params()->phy_test == 0,"Standalone mode and phy_test are mutually exclusive\n");
 
-  for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+  if (create_tasks_nrue(1) < 0) {
+    LOG_E(NR_RRC,"Cannot create ITTI tasks for RRC layer of nr-UE\n");
+    exit(-1);
+  }
+  if (!get_softmodem_params()->nsa) {
+    for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
+      UE[CC_id] = PHY_vars_UE_g[0][CC_id];
+      memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
 
+      set_options(CC_id, UE[CC_id]);
 
-    PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
-    UE[CC_id] = PHY_vars_UE_g[0][CC_id];
-    memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
+      NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+      if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
+        mac->if_module->phy_config_request(&mac->phy_config);
 
-    set_options(CC_id, UE[CC_id]);
+      fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
 
-    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-    if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
-      mac->if_module->phy_config_request(&mac->phy_config);
+      nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
 
-    fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+      init_symbol_rotation(&UE[CC_id]->frame_parms, 0);
+      init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
 
-    nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
-    init_symbol_rotation(&UE[CC_id]->frame_parms, UE[CC_id]->frame_parms.dl_CarrierFreq);
-    init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
-
-    #ifdef FR2_TEST
-    // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0){
-      frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
-      if (frame_parms[CC_id]->frame_type == TDD)
-        frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+      #ifdef FR2_TEST
+      // Overwrite DL frequency (for FR2 testing)
+      if (downlink_frequency[0][0]!=0){
+        frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+        if (frame_parms[CC_id]->frame_type == TDD)
+          frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+      }
+      #endif
     }
-    #endif
+
+    init_openair0();
+    // init UE_PF_PO and mutex lock
+    pthread_mutex_init(&ue_pf_po_mutex, NULL);
+    memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
+    configure_linux();
+    mlockall(MCL_CURRENT | MCL_FUTURE);
+
+    if(IS_SOFTMODEM_DOFORMS) {
+      load_softscope("nr",PHY_vars_UE_g[0][0]);
+    }
+
+    init_NR_UE_threads(1);
+    printf("UE threads created by %ld\n", gettid());
+
   }
 
-  init_openair0();
-  // init UE_PF_PO and mutex lock
-  pthread_mutex_init(&ue_pf_po_mutex, NULL);
-  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
-  configure_linux();
-  mlockall(MCL_CURRENT | MCL_FUTURE);
- 
-  if(IS_SOFTMODEM_DOFORMS) { 
-    load_softscope("nr",PHY_vars_UE_g[0][0]);
-  }     
-
-  
-  init_NR_UE_threads(1);
-  printf("UE threads created by %ld\n", gettid());
-  
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   // Sleep a while before checking all parameters have been used

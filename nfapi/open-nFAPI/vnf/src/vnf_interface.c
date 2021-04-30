@@ -70,10 +70,6 @@ int nfapi_nr_vnf_start(nfapi_vnf_config_t* config)
 	if(config == 0)
 		return -1;
 
-	// Make sure to set the defined trace function before using NFAPI_TRACE
-	if(config->trace)
-		nfapi_trace_g = (nfapi_trace_fn_t)config->trace;
-
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s()\n", __FUNCTION__);
 
 	int p5ListenSock, p5Sock; 
@@ -219,7 +215,7 @@ int nfapi_nr_vnf_start(nfapi_vnf_config_t* config)
 		initMsg.sinit_max_instreams = 5; //MAX_SCTP_STREAMS;  // number of output streams can be greater
 		if (setsockopt(p5ListenSock, IPPROTO_SCTP, SCTP_INITMSG, &initMsg, sizeof(initMsg)) < 0)
 		{
-			NFAPI_TRACE(NFAPI_TRACE_ERROR, "After setsockopt (SCTP_INITMSG) errno: %d\n", errno)
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "After setsockopt (SCTP_INITMSG) errno: %d\n", errno);
 			close(p5ListenSock);
 			return 0;
 		}
@@ -624,7 +620,7 @@ int nfapi_vnf_start(nfapi_vnf_config_t* config)
 		initMsg.sinit_max_instreams = 5; //MAX_SCTP_STREAMS;  // number of output streams can be greater
 		if (setsockopt(p5ListenSock, IPPROTO_SCTP, SCTP_INITMSG, &initMsg, sizeof(initMsg)) < 0)
 		{
-			NFAPI_TRACE(NFAPI_TRACE_ERROR, "After setsockopt (SCTP_INITMSG) errno: %d\n", errno)
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "After setsockopt (SCTP_INITMSG) errno: %d\n", errno);
 			close(p5ListenSock);
 			return 0;
 		}

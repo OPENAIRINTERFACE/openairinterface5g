@@ -5771,7 +5771,7 @@ static uint8_t unpack_hi_dci0_request_body_value(void *tlv, uint8_t **ppReadPack
 		if(packedPduEnd > end)
 		{
 			// pdu end if past buffer end
-			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s pdu size to big %d %d\n", __FUNCTION__, packedPduEnd, end);
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s pdu size too big %s %s\n", __FUNCTION__, packedPduEnd, end);
 			return 0;
 		}
 

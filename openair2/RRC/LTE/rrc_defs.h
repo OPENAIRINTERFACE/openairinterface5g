@@ -52,7 +52,6 @@
 
 //for D2D
 #define DEBUG_CTRL_SOCKET
-#define BUFSIZE                1024
 #define CONTROL_SOCKET_PORT_NO 8888
 #define MAX_NUM_DEST           10
 //netlink
@@ -66,6 +65,8 @@
 #define MAX_PAYLOAD 1024 /* maximum payload size*/
 
 #define MAX_NUM_NEIGH_CELLs 6 /* maximum neighbouring cells number */
+
+#define MAX_NUM_GNB_CELLs 1   /* maximum gNB cells number */
 
 #define UE_STATE_NOTIFICATION_INTERVAL      50
 
@@ -374,6 +375,7 @@ typedef struct UE_RRC_INFO_s {
   uint32_t N310_cnt;
   uint32_t N311_cnt;
   rnti_t   rnti;
+  struct LTE_DL_DCCH_Message *dl_dcch_msg;
 } __attribute__ ((__packed__)) UE_RRC_INFO;
 
 typedef struct UE_S_TMSI_s {
@@ -804,9 +806,16 @@ typedef struct eNB_RRC_INST_s {
   int num_neigh_cells_cc[MAX_NUM_CCs];
   uint32_t neigh_cells_id[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
 
+  // gNB cells connected to this eNB
+  int num_gnb_cells;
+  int num_gnb_cells_cc[MAX_NUM_GNB_CELLs];
+  uint32_t gnb_cells_id[MAX_NUM_GNB_CELLs][MAX_NUM_CCs];
+
   // Nr scc freq band and SSB absolute frequency
   uint32_t nr_neigh_freq_band[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
+  uint32_t nr_gnb_freq_band[MAX_NUM_GNB_CELLs][MAX_NUM_CCs];
   int nr_scg_ssb_freq;
+
 
   // other RAN parameters
   int srb1_timer_poll_retransmit;

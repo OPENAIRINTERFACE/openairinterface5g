@@ -114,6 +114,7 @@ extern "C"
 #define USIM_TEST           softmodem_params.usim_test
 #define USE_256QAM_TABLE    softmodem_params.use_256qam_table
 #define NFAPI               softmodem_params.nfapi
+#define NSA                 softmodem_params.nsa
 
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
@@ -144,10 +145,11 @@ extern "C"
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
     {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
-    {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                       defintval:0,           TYPE_UINT8,  0},                     \
+    {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                  defintval:0,           TYPE_UINT8,  0},                     \
+    {"nsa",                  CONFIG_HLP_NSA,          PARAMFLAG_BOOL, iptr:&NSA,                          defintval:0,           TYPE_INT,    0},                     \
   }
 
-  
+#define CONFIG_HLP_NSA           "Enable NSA mode \n"
 #define CONFIG_HLP_FLOG          "Enable online log \n"
 #define CONFIG_HLP_LOGL          "Set the global log level, valid options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
 #define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
@@ -233,6 +235,7 @@ typedef struct {
   uint32_t       send_dmrs_sync;
   int            use_256qam_table;
   uint8_t        nfapi;
+  int            nsa;
 } softmodem_params_t;
 
 extern uint64_t get_softmodem_optmask(void);

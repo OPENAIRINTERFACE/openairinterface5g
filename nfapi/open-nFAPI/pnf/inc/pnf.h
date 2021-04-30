@@ -18,8 +18,7 @@
 #ifndef _PNF_H_
 #define _PNF_H_
 
-#include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
-
+#include "nfapi_pnf_interface.h"
 
 typedef struct {
 

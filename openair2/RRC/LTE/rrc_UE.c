@@ -92,8 +92,10 @@
 
 //for D2D
 int ctrl_sock_fd;
-#define BUFSIZE 1024
 struct sockaddr_in prose_app_addr;
+static const char nsa_ipaddr[] = "127.0.0.1";
+static int from_nr_ue_fd = -1;
+static int to_nr_ue_fd = -1;
 int slrb_id;
 int send_ue_information = 0;
 
@@ -122,6 +124,11 @@ static int decode_SI_MBMS( const protocol_ctxt_t *const ctxt_pP, const uint8_t e
 static int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, const uint8_t rsrq, const uint8_t rsrp );
 
 static int decode_SIB1_MBMS( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, const uint8_t rsrq, const uint8_t rsrp );
+
+typedef struct rrc_dcch_data_copy_t
+{
+    LTE_DL_DCCH_Message_t *dl_dcch_msg;
+} rrc_dcch_data_copy_t;
 
 
 /** \brief Generates/Encodes RRCConnnectionSetupComplete message at UE
@@ -166,7 +173,10 @@ rrc_ue_process_MBMSCountingRequest(
   LTE_MBMSCountingRequest_r10_t *MBMSCountingRequest,
   uint8_t eNB_index
 		);
- 
+
+static void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len);
+static void nsa_sendmsg_to_nrue(const void *message, size_t msg_len, Rrc_Msg_Type_t msg_type);
+
 protocol_ctxt_t ctxt_pP_local;
 
 
@@ -421,15 +431,6 @@ void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t *const ctxt_pP,
 #endif
       LOG_T(RRC,"%x.",rv[i]);
     }
-    rv[0] = ctxt_pP->module_id; // Debugging duplicate random values
-    LOG_A(RRC, "%s: random = %02X %02X %02X %02X %02X %02X\n",
-          __func__,
-          rv[0],
-          rv[1],
-          rv[2],
-          rv[3],
-          rv[4],
-          rv[5]);
 
     LOG_T(RRC,"\n");
     UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size =
@@ -808,6 +809,24 @@ rrc_ue_process_measConfig(
                 measObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1,
                 measObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf[0]);
           UE_rrc_inst[ctxt_pP->module_id].MeasObj[eNB_index][ind-1]=measObj;
+        }
+        if (measObj->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15) {
+          LOG_I(RRC,"NR_r15 Measurement : carrierFreq %ld\n",
+                measObj->measObject.choice.measObjectNR_r15.carrierFreq_r15);
+          if (!get_softmodem_params()->nsa) {
+            LOG_E(RRC, "Not in NSA mode but attempting to send measurement request to NR-UE\n");
+            return;
+          }
+          uint8_t buffer[RRC_BUF_SIZE];
+          asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_MeasObjectToAddMod,
+                                                          NULL,
+                                                          measObj,
+                                                          buffer,
+                                                          sizeof(buffer));
+          AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %zu)!\n",
+                        enc_rval.failed_type->name, enc_rval.encoded);
+          LOG_I(RRC, "Calling nsa_sendmsg_to_nr_ue to send a RRC_MEASUREMENT_PROCEDURE\n");
+          nsa_sendmsg_to_nrue(buffer, (enc_rval.encoded + 7)/8, RRC_MEASUREMENT_PROCEDURE);
         }
       }
     }
@@ -2229,10 +2248,27 @@ rrc_ue_decode_dcch(
           LOG_I(RRC, "[UE %d] Received Capability Enquiry (eNB %d)\n",
                 ctxt_pP->module_id,
                 eNB_indexP);
-          rrc_ue_process_ueCapabilityEnquiry(
-            ctxt_pP,
-            &dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry,
-            eNB_indexP);
+          if (get_softmodem_params()->nsa) {
+              LTE_UECapabilityEnquiry_t *ueCapabilityEnquiry_nsa = &dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry;
+              OCTET_STRING_t * requestedFreqBandsNR = ueCapabilityEnquiry_nsa->
+                                    criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.nonCriticalExtension->
+                                    nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                    nonCriticalExtension->requestedFreqBandsNR_MRDC_r15;
+              nsa_sendmsg_to_nrue(requestedFreqBandsNR->buf, requestedFreqBandsNR->size, UE_CAPABILITY_ENQUIRY);
+              // Save ueCapabilityEnquiry so we can use in nsa mode after nrUE response is received
+              UE_RRC_INFO *info = &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_indexP];
+              if (info->dl_dcch_msg != NULL) {
+                SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, info->dl_dcch_msg, ASFM_FREE_EVERYTHING);
+              }
+              info->dl_dcch_msg = dl_dcch_msg;
+              dl_dcch_msg = NULL;
+          }
+          else {
+            rrc_ue_process_ueCapabilityEnquiry(
+              ctxt_pP,
+              &dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry,
+              eNB_indexP);
+          }
           break;
 
         case LTE_DL_DCCH_MessageType__c1_PR_counterCheck:
@@ -4923,7 +4959,8 @@ openair_rrc_top_init_ue(
     memset (UE_rrc_inst, 0, NB_UE_INST * sizeof(UE_RRC_INST));
     LOG_D(RRC, "ALLOCATE %d Bytes for UE_RRC_INST @ %p\n", (unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)), UE_rrc_inst);
     // fill UE capability
-    UECap = fill_ue_capability (uecap_xer);
+    bool received_nr_msg = false;
+    UECap = fill_ue_capability (uecap_xer, received_nr_msg);
 
     for (module_id = 0; module_id < NB_UE_INST; module_id++) {
       UE_rrc_inst[module_id].UECap = UECap;
@@ -4941,6 +4978,11 @@ openair_rrc_top_init_ue(
      * crashes when calling this function.
      */
     //init_SL_preconfig(&UE_rrc_inst[module_id],0);
+    if (get_softmodem_params()->nsa == 1)
+    {
+      LOG_I(RRC, "Calling process_nsa_message\n");
+      //process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
+    }
   } else {
     UE_rrc_inst = NULL;
   }
@@ -5214,9 +5256,6 @@ void rrc_control_socket_init() {
 
 //--------------------------------------------------------
 void *rrc_control_socket_thread_fct(void *arg) {
-  int prose_addr_len;
-  char send_buf[BUFSIZE];
-  char receive_buf[BUFSIZE];
   //int optval;
   int n;
   struct sidelink_ctrl_element *sl_ctrl_msg_recv = NULL;
@@ -5235,15 +5274,16 @@ void *rrc_control_socket_thread_fct(void *arg) {
   int j = 0;
   int i = 0;
   //from the main program, listen for the incoming messages from control socket (ProSe App)
-  prose_addr_len = sizeof(prose_app_addr);
 
   //int enable_notification = 1;
   while (1) {
     LOG_I(RRC,"Listening to incoming connection from ProSe App \n");
     // receive a message from ProSe App
-    memset(receive_buf, 0, BUFSIZE);
-    n = recvfrom(ctrl_sock_fd, receive_buf, BUFSIZE, MSG_TRUNC,
-                 (struct sockaddr *) &prose_app_addr, (socklen_t *)&prose_addr_len);
+    char receive_buf[MAX_MESSAGE_SIZE];
+    memset(receive_buf, 0, sizeof(receive_buf));
+    socklen_t prose_addr_len = sizeof(prose_app_addr);
+    n = recvfrom(ctrl_sock_fd, receive_buf, sizeof(receive_buf), MSG_TRUNC,
+                 (struct sockaddr *) &prose_app_addr, &prose_addr_len);
 
     if (n < 0) {
       LOG_E(RRC, "ERROR: Failed to receive from ProSe App\n");
@@ -5252,7 +5292,7 @@ void *rrc_control_socket_thread_fct(void *arg) {
     if (n == 0) {
       LOG_E(RRC, "%s(%d). EOF for ctrl_sock_fd\n", __FUNCTION__, __LINE__);
     }
-    if (n > BUFSIZE) {
+    if (n > MAX_MESSAGE_SIZE) {
       LOG_E(RRC, "%s(%d). Message truncated. %d\n", __FUNCTION__, __LINE__, n);
       exit(EXIT_FAILURE);
     }
@@ -5263,6 +5303,7 @@ void *rrc_control_socket_thread_fct(void *arg) {
     memcpy((void *)sl_ctrl_msg_recv, (void *)receive_buf, sizeof(struct sidelink_ctrl_element));
 
     //process the message
+    char send_buf[MAX_MESSAGE_SIZE];
     switch (sl_ctrl_msg_recv->type) {
       case SESSION_INIT_REQ:
         if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)) {
@@ -5271,14 +5312,14 @@ void *rrc_control_socket_thread_fct(void *arg) {
 
         //TODO: get SL_UE_STATE from lower layer
         LOG_I(RRC,"Send UEStateInformation to ProSe App \n");
-        memset(send_buf, 0, BUFSIZE);
+        memset(send_buf, 0, MAX_MESSAGE_SIZE);
         sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
         sl_ctrl_msg_send->type = UE_STATUS_INFO;
         sl_ctrl_msg_send->sidelinkPrimitive.ue_state = UE_STATE_OFF_NETWORK; //off-network
         memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
         free(sl_ctrl_msg_send);
-        prose_addr_len = sizeof(prose_app_addr);
-        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+                   (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
         if (n < 0) {
           LOG_E(RRC, "ERROR: Failed to send to ProSe App\n");
@@ -5424,14 +5465,14 @@ void *rrc_control_socket_thread_fct(void *arg) {
                               (LTE_MBSFN_AreaInfoList_r9_t *)NULL
                              );
         LOG_I(RRC,"Send GroupCommunicationEstablishResp to ProSe App\n");
-        memset(send_buf, 0, BUFSIZE);
+        memset(send_buf, 0, MAX_MESSAGE_SIZE);
         sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
         sl_ctrl_msg_send->type = GROUP_COMMUNICATION_ESTABLISH_RSP;
         sl_ctrl_msg_send->sidelinkPrimitive.slrb_id = 3; //slrb_id
         memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
         free(sl_ctrl_msg_send);
-        prose_addr_len = sizeof(prose_app_addr);
-        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+                   (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
         if (n < 0) {
           LOG_E(RRC, "ERROR: Failed to send to ProSe App\n");
@@ -5485,7 +5526,7 @@ void *rrc_control_socket_thread_fct(void *arg) {
                               (LTE_MBSFN_AreaInfoList_r9_t *)NULL
                              );
         LOG_I(RRC,"Send GroupCommunicationReleaseResponse to ProSe App \n");
-        memset(send_buf, 0, BUFSIZE);
+        memset(send_buf, 0, MAX_MESSAGE_SIZE);
         sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
         sl_ctrl_msg_send->type = GROUP_COMMUNICATION_RELEASE_RSP;
 
@@ -5499,8 +5540,8 @@ void *rrc_control_socket_thread_fct(void *arg) {
 
         memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
         free(sl_ctrl_msg_send);
-        prose_addr_len = sizeof(prose_app_addr);
-        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+                   (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
         if (n < 0) {
           LOG_E(RRC, "ERROR: Failed to send to ProSe App\n");
@@ -5628,14 +5669,14 @@ void *rrc_control_socket_thread_fct(void *arg) {
                               (LTE_MBSFN_AreaInfoList_r9_t *)NULL
                              );
         LOG_I(RRC,"Send DirectCommunicationEstablishResp to ProSe App\n");
-        memset(send_buf, 0, BUFSIZE);
+        memset(send_buf, 0, MAX_MESSAGE_SIZE);
         sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
         sl_ctrl_msg_send->type = DIRECT_COMMUNICATION_ESTABLISH_RSP;
         sl_ctrl_msg_send->sidelinkPrimitive.slrb_id = 3; //slrb_id
         memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
         free(sl_ctrl_msg_send);
-        prose_addr_len = sizeof(prose_app_addr);
-        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+                   (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
         if (n < 0) {
           LOG_E(RRC, "ERROR: Failed to send to ProSe App\n");
@@ -5815,15 +5856,15 @@ void *rrc_control_socket_thread_fct(void *arg) {
         }
 
         LOG_I(RRC,"Send PC5EstablishRsp to ProSe App\n");
-        memset(send_buf, 0, BUFSIZE);
+        memset(send_buf, 0, MAX_MESSAGE_SIZE);
         sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
         sl_ctrl_msg_send->type = PC5S_ESTABLISH_RSP;
         sl_ctrl_msg_send->sidelinkPrimitive.pc5s_establish_rsp.slrbid_lcid28 = 10;
         sl_ctrl_msg_send->sidelinkPrimitive.pc5s_establish_rsp.slrbid_lcid29 = 10;
         sl_ctrl_msg_send->sidelinkPrimitive.pc5s_establish_rsp.slrbid_lcid30 = 10;
         memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
-        prose_addr_len = sizeof(prose_app_addr);
-        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+        n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+                   (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
         //         free(sl_ctrl_msg_send);
         if (n < 0) {
@@ -5863,27 +5904,24 @@ int decode_SL_Discovery_Message(
   const uint8_t                eNB_index,
   const uint8_t               *Sdu,
   const uint8_t                Sdu_len) {
-  int prose_addr_len;
-  char send_buf[BUFSIZE];
+  char send_buf[MAX_MESSAGE_SIZE];
   int n;
   struct sidelink_ctrl_element *sl_ctrl_msg_send = NULL;
   //from the main program, listen for the incoming messages from control socket (ProSe App)
-  prose_addr_len = sizeof(prose_app_addr);
   //Store in Rx_buffer
   memcpy((void *)&UE_rrc_inst[ctxt_pP->module_id].SL_Discovery[0].Rx_buffer.Payload[0], (void *)Sdu, Sdu_len);
   UE_rrc_inst[ctxt_pP->module_id].SL_Discovery[0].Rx_buffer.payload_size = Sdu_len;
-  memset(send_buf, 0, BUFSIZE);
+  memset(send_buf, 0, MAX_MESSAGE_SIZE);
   //send to ProSeApp
   memcpy((void *)send_buf, (void *)Sdu, Sdu_len);
-  prose_addr_len = sizeof(prose_app_addr);
   sl_ctrl_msg_send = calloc(1, sizeof(struct sidelink_ctrl_element));
   sl_ctrl_msg_send->type = PC5_DISCOVERY_MESSAGE;
   // TODO:  Add a check for the SDU size.
   memcpy((void *)&sl_ctrl_msg_send->sidelinkPrimitive.pc5_discovery_message.payload[0], (void *) Sdu,  PC5_DISCOVERY_PAYLOAD_SIZE);
   memcpy((void *)send_buf, (void *)sl_ctrl_msg_send, sizeof(struct sidelink_ctrl_element));
   free(sl_ctrl_msg_send);
-  prose_addr_len = sizeof(prose_app_addr);
-  n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0, (struct sockaddr *)&prose_app_addr, prose_addr_len);
+  n = sendto(ctrl_sock_fd, (char *)send_buf, sizeof(struct sidelink_ctrl_element), 0,
+             (struct sockaddr *)&prose_app_addr, sizeof(prose_app_addr));
 
   if (n < 0) {
     // TODO:  We should not just exit if the Prose App has not yet attached.  It creates a race condition.
@@ -6005,5 +6043,157 @@ rrc_rx_tx_ue(
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
   return (RRC_OK);
+}
+
+void *recv_msgs_from_nr_ue(void *args_p)
+{
+    itti_mark_task_ready (TASK_RRC_NSA_UE);
+    for (;;)
+    {
+        nsa_msg_t msg;
+        int recvLen = recvfrom(from_nr_ue_fd, &msg, sizeof(msg),
+                               MSG_WAITALL | MSG_TRUNC, NULL, NULL);
+        if (recvLen == -1)
+        {
+            LOG_E(RRC, "%s: recvfrom: %s\n", __func__, strerror(errno));
+            continue;
+        }
+        if (recvLen > sizeof(msg))
+        {
+            LOG_E(NR_RRC, "%s: Received a truncated message %d\n", __func__, recvLen);
+            continue;
+        }
+        LOG_I(RRC, "We have received a msg. Calling process_nr_nsa_msg\n");
+        process_nr_nsa_msg(&msg, recvLen);
+    }
+
+}
+
+void nsa_sendmsg_to_nrue(const void *message, size_t msg_len, Rrc_Msg_Type_t msg_type)
+{
+    LOG_I(RRC, "Entered %s \n", __FUNCTION__);
+    nsa_msg_t n_msg;
+    if (msg_len > sizeof(n_msg.msg_buffer))
+    {
+        LOG_E(RRC, "%s: message too big: %zu\n", __func__, msg_len);
+        abort();
+    }
+    n_msg.msg_type = msg_type;
+    memcpy(n_msg.msg_buffer, message, msg_len);
+    size_t to_send = sizeof(n_msg.msg_type) + msg_len;
+
+    struct sockaddr_in sa =
+    {
+        .sin_family = AF_INET,
+        .sin_port = htons(6008),
+    };
+    int sent = sendto(to_nr_ue_fd, &n_msg, to_send, 0,
+                      (struct sockaddr *)&sa, sizeof(sa));
+    if (sent == -1)
+    {
+        LOG_E(RRC, "%s: sendto: %s\n", __func__, strerror(errno));
+        return;
+    }
+    if (sent != to_send)
+    {
+        LOG_E(RRC, "%s: Short send %d != %zu\n", __func__, sent, to_send);
+        return;
+    }
+    LOG_I(RRC, "Sent a %d message to the nrUE (%zu bytes) \n", msg_type, to_send);
+}
+
+void init_connections_with_nr_ue(void)
+{
+    struct sockaddr_in sa =
+    {
+        .sin_family = AF_INET,
+        .sin_port = htons(6007),
+    };
+    AssertFatal(from_nr_ue_fd == -1, "from_nr_ue_fd was assigned already");
+    from_nr_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (from_nr_ue_fd == -1)
+    {
+        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, from_nr_ue_fd, errno, strerror(errno));
+        abort();
+    }
+
+    if (inet_aton(nsa_ipaddr, &sa.sin_addr) == 0)
+    {
+        LOG_E(RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
+        abort();
+    }
+
+    if (bind(from_nr_ue_fd, (struct sockaddr *) &sa, sizeof(sa)) == -1)
+    {
+        LOG_E(RRC,"%s: Failed to bind the socket\n", __FUNCTION__);
+        abort();
+    }
+
+    AssertFatal(to_nr_ue_fd == -1, "to_nr_ue_fd was assigned already");
+    to_nr_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (to_nr_ue_fd == -1)
+    {
+        LOG_E(RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, to_nr_ue_fd, errno, strerror(errno));
+        abort();
+    }
+
+}
+
+void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
+{
+    LOG_I(RRC, "We are processing an NSA message \n");
+    Rrc_Msg_Type_t msg_type = msg->msg_type;
+    uint8_t *const msg_buffer = msg->msg_buffer;
+    bool received_nr_msg = true;
+    protocol_ctxt_t ctxt;
+
+    switch (msg_type)
+    {
+        case UE_CAPABILITY_INFO:
+        {
+            LOG_I(RRC, "Processing a UE_CAPABILITY_INFO message \n");
+            /* Melissa:
+            1. Set these parameters if we get UE_CAPABILITY_INFO message:
+                a. irat-ParametersNR-r15
+                b. featureSetsEUTRA-r15
+                c. pdcp-ParametersNR-r15
+            2. Print the contents of each parameter
+            3. Call OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
+               and pass in the UE CAPABILITY INFO */
+            break;
+        }
+        case UE_CAPABILITY_DUMMY:
+        {
+            fill_ue_capability(NULL, received_nr_msg);
+            for (module_id_t module_id = 0; module_id < NB_UE_INST; module_id++) {
+                UE_rrc_inst[module_id].UECap = UE_rrc_inst->UECap;
+                UE_rrc_inst[module_id].UECapability = UE_rrc_inst->UECap->sdu;
+                UE_rrc_inst[module_id].UECapability_size = UE_rrc_inst->UECap->sdu_size;
+            }
+            if (!is_en_dc_supported(UE_rrc_inst->UECap->UE_EUTRA_Capability))
+            {
+              LOG_E(RRC, "en_dc is NOT supported! Not sending RRC_DCCH_DATA_COPY_IND to update UE_Capability_INFO\n");
+              break;
+            }
+
+            LOG_I(RRC, "Send itti msg to trigger processing of capabilites b/c we have a UE_CAPABILITY_DUMMY\n");
+            MessageDef *message_p;
+            rrc_dcch_data_copy_t *dl_dcch_buffer = itti_malloc (TASK_RRC_NSA_UE,
+                                                                TASK_RRC_UE,
+                                                                sizeof(rrc_dcch_data_copy_t));
+            UE_RRC_INFO *info = &UE_rrc_inst[ctxt.module_id].Info[0];
+            dl_dcch_buffer->dl_dcch_msg = info->dl_dcch_msg;
+            info->dl_dcch_msg = NULL;
+            message_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_DCCH_DATA_COPY_IND);
+            RRC_DCCH_DATA_COPY_IND (message_p).sdu_p = (void *)dl_dcch_buffer;
+            RRC_DCCH_DATA_COPY_IND (message_p).sdu_size = sizeof(rrc_dcch_data_copy_t);
+            RRC_DCCH_DATA_COPY_IND (message_p).eNB_index = 0;
+            itti_send_msg_to_task (TASK_RRC_UE, 0, message_p);
+            LOG_D(RRC, "Sent itti RRC_DCCH_DATA_COPY_IND\n");
+            break;
+        }
+        default:
+            LOG_E(RRC, "No NSA Message Found\n");
+    }
 }
 

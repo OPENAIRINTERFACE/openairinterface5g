@@ -1445,8 +1445,6 @@ void *ru_thread( void *param ) {
   int                i = 0;
   int                aa;
 
-  nfapi_nr_config_request_scf_t *cfg = &ru->config;
-  
   // set default return value
   ru_thread_status = 0;
   // set default return value

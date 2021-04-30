@@ -658,19 +658,17 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
   /* avoid gcc warnings */
   (void)data_p;
   pdcp_t                        *pdcp_p    = NULL;
-  //TTN for D2D (PC5S)
-  int prose_addr_len = sizeof(prose_pdcp_addr);
-  char send_buf[BUFSIZE], receive_buf[BUFSIZE];
-  //int optval;
   int bytes_received;
   sidelink_pc5s_element *sl_pc5s_msg_send = NULL;
   pc5s_header_t *pc5s_header = NULL;
   rb_id_t          rab_id  = 0;
   //TTN for D2D (PC5S)
   // receive a message from ProSe App
-  memset(receive_buf, 0, BUFSIZE);
-  bytes_received = recvfrom(pdcp_pc5_sockfd, receive_buf, BUFSIZE, MSG_TRUNC,
-                            (struct sockaddr *) &prose_pdcp_addr, (socklen_t *)&prose_addr_len);
+  char receive_buf[MAX_MESSAGE_SIZE];
+  memset(receive_buf, 0, sizeof(receive_buf));
+  socklen_t prose_addr_len = sizeof(prose_pdcp_addr);
+  bytes_received = recvfrom(pdcp_pc5_sockfd, receive_buf, sizeof(receive_buf), MSG_TRUNC,
+                            (struct sockaddr *) &prose_pdcp_addr, &prose_addr_len);
   if (bytes_received == -1) {
     LOG_E(PDCP, "%s(%d). recvfrom failed. %s\n", __FUNCTION__, __LINE__, strerror(errno));
     return;
@@ -678,7 +676,7 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
   if (bytes_received == 0) {
     LOG_E(PDCP, "%s(%d). EOF pdcp_pc5_sockfd.\n", __FUNCTION__, __LINE__);
   }
-  if (bytes_received > BUFSIZE) {
+  if (bytes_received > sizeof(receive_buf)) {
     LOG_E(PDCP, "%s(%d). Message truncated. %d\n", __FUNCTION__, __LINE__, bytes_received);
     return;
   }
@@ -686,17 +684,19 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
     pc5s_header = calloc(1, sizeof(pc5s_header_t));
     memcpy((void *)pc5s_header, (void *)receive_buf, sizeof(pc5s_header_t));
 
+    char send_buf[MAX_MESSAGE_SIZE];
     switch(pc5s_header->traffic_type) {
       case TRAFFIC_PC5S_SESSION_INIT :
         //send reply to ProSe app
         LOG_D(PDCP,"Received a request to open PDCP socket and establish a new PDCP session ... send response to ProSe App \n");
-        memset(send_buf, 0, BUFSIZE);
+        memset(send_buf, 0, sizeof(send_buf));
         sl_pc5s_msg_send = calloc(1, sizeof(sidelink_pc5s_element));
         sl_pc5s_msg_send->pc5s_header.traffic_type = TRAFFIC_PC5S_SESSION_INIT;
         sl_pc5s_msg_send->pc5sPrimitive.status = 1;
-        memcpy((void *)send_buf, (void *)sl_pc5s_msg_send, sizeof(sidelink_pc5s_element));
+        memcpy(send_buf, sl_pc5s_msg_send, sizeof(sidelink_pc5s_element));
         int prose_addr_len = sizeof(prose_pdcp_addr);
-        int bytes_sent = sendto(pdcp_pc5_sockfd, (char *)send_buf, sizeof(sidelink_pc5s_element), 0, (struct sockaddr *)&prose_pdcp_addr, prose_addr_len);
+        int bytes_sent = sendto(pdcp_pc5_sockfd, send_buf, sizeof(sidelink_pc5s_element), 0,
+                                (struct sockaddr *) &prose_pdcp_addr, prose_addr_len);
         free (sl_pc5s_msg_send);
 
         if (bytes_sent < 0) {
