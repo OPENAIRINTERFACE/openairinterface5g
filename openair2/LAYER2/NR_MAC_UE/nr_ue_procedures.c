@@ -1157,11 +1157,21 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                             uint64_t *dci_pdu,
                             dci_pdu_rel15_t *dci_pdu_rel15) {
 
-  int rnti_type = get_rnti_type(mac, rnti);
-  int N_RB=0,N_RB_UL=0;
+  int N_RB = 0;
+  int pos = 0;
+  int fsize = 0;
 
-  int pos=0;
-  int fsize=0;
+  int rnti_type = get_rnti_type(mac, rnti);
+
+  int N_RB_UL = 0;
+  if(mac->scc_SIB) {
+    N_RB_UL = NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  } else if(mac->ULbwp[0]) {
+    N_RB_UL = NRRIV2BW(mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  } else if(mac->scc) {
+    N_RB_UL = NRRIV2BW(mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  }
+
   LOG_D(MAC,"nr_extract_dci_info : dci_pdu %lx, size %d\n",*dci_pdu,dci_size);
   switch(dci_format) {
 
@@ -1700,10 +1710,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 
         // Freq domain assignment  max 16 bit
         fsize = (int)ceil( log2( (N_RB_UL*(N_RB_UL+1))>>1 ) );
-        //pos+=dci_pdu_rel15->frequency_domain_assignment.nbits;
         pos+=fsize;
-        
-        //pos+=dci_pdu_rel15->frequency_domain_assignment.nbits;
         dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
         
         // Time domain assignment 4bit
