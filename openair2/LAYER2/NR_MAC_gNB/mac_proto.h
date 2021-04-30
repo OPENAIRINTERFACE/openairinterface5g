@@ -69,14 +69,14 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
                          sub_frame_t slot);
 
-void schedule_control_sib1(module_id_t module_id,
-                           int CC_id,
-                           NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
-                           int time_domain_allocation,
-                           uint8_t mcsTableIdx,
-                           uint8_t mcs,
-                           uint8_t candidate_idx,
-                           int num_total_bytes);
+uint32_t schedule_control_sib1(module_id_t module_id,
+                               int CC_id,
+                               NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                               int time_domain_allocation,
+                               int startSymbolIndex,
+                               int nrOfSymbols,
+                               uint8_t candidate_idx,
+                               int num_total_bytes);
 
 void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 

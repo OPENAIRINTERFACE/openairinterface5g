@@ -140,6 +140,13 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
 
 uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i_ssb);
 
+void get_info_from_tda_tables(int default_abc,
+                              int tda,
+                              int dmrs_TypeA_Position,
+                              int normal_CP,
+                              int *startSymbolIndex,
+                              int *nrOfSymbols);
+
 void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
 uint8_t fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config, int L);
 

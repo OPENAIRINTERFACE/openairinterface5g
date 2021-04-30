@@ -182,6 +182,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
                                                       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
                                                       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
                                                       uint8_t time_domain_ind,
+                                                      int default_abc,
                                                       bool use_default);
 
 uint8_t nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,

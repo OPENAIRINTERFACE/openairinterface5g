@@ -126,150 +126,224 @@ const float   table_38213_13_12_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 0.5f, 0.5f
 const int32_t table_38213_10_1_1_c2[5] = { 0, 0, 4, 2, 1 };
 
 // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[16][3]={
-    {0,2,12},   // row index 1
-    {0,2,10},   // row index 2
-    {0,2,9},    // row index 3
-    {0,2,7},    // row index 4
-    {0,2,5},    // row index 5
-    {0,9,4},    // row index 6
-    {0,4,4},    // row index 7
-    {0,5,7},    // row index 8
-    {0,5,2},    // row index 9
-    {0,9,2},    // row index 10
-    {0,12,2},   // row index 11
-    {0,1,13},   // row index 12
-    {0,1,6},    // row index 13
-    {0,2,4},    // row index 14
-    {0,4,7},    // row index 15
-    {0,8,4}     // row index 16
+const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[16][4]={
+    {1,0,2,12},   // row index 1
+    {1,0,2,10},   // row index 2
+    {1,0,2,9},    // row index 3
+    {1,0,2,7},    // row index 4
+    {1,0,2,5},    // row index 5
+    {0,0,9,4},    // row index 6
+    {0,0,4,4},    // row index 7
+    {0,0,5,7},    // row index 8
+    {0,0,5,2},    // row index 9
+    {0,0,9,2},    // row index 10
+    {0,0,12,2},   // row index 11
+    {1,0,1,13},   // row index 12
+    {1,0,1,6},    // row index 13
+    {1,0,2,4},    // row index 14
+    {0,0,4,7},    // row index 15
+    {0,0,8,4}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[16][3]={
-    {0,3,11},   // row index 1
-    {0,3,9},    // row index 2
-    {0,3,8},    // row index 3
-    {0,3,6},    // row index 4
-    {0,3,4},    // row index 5
-    {0,10,4},   // row index 6
-    {0,6,4},    // row index 7
-    {0,5,7},    // row index 8
-    {0,5,2},    // row index 9
-    {0,9,2},    // row index 10
-    {0,12,2},   // row index 11
-    {0,1,13},   // row index 12
-    {0,1,6},    // row index 13
-    {0,2,4},    // row index 14
-    {0,4,7},    // row index 15
-    {0,8,4}     // row index 16
+const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[16][4]={
+    {1,0,3,11},   // row index 1
+    {1,0,3,9},    // row index 2
+    {1,0,3,8},    // row index 3
+    {1,0,3,6},    // row index 4
+    {1,0,3,4},    // row index 5
+    {0,0,10,4},   // row index 6
+    {0,0,6,4},    // row index 7
+    {0,0,5,7},    // row index 8
+    {0,0,5,2},    // row index 9
+    {0,0,9,2},    // row index 10
+    {0,0,12,2},   // row index 11
+    {1,0,1,13},   // row index 12
+    {1,0,1,6},    // row index 13
+    {1,0,2,4},    // row index 14
+    {0,0,4,7},    // row index 15
+    {0,0,8,4}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[16][3]={
-    {0,2,6},    // row index 1
-    {0,2,10},   // row index 2
-    {0,2,9},    // row index 3
-    {0,2,7},    // row index 4
-    {0,2,5},    // row index 5
-    {0,6,4},    // row index 6
-    {0,4,4},    // row index 7
-    {0,5,6},    // row index 8
-    {0,5,2},    // row index 9
-    {0,9,2},    // row index 10
-    {0,10,2},   // row index 11
-    {0,1,11},   // row index 12
-    {0,1,6},    // row index 13
-    {0,2,4},    // row index 14
-    {0,4,6},    // row index 15
-    {0,8,4}     // row index 16
+const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[16][4]={
+    {1,0,2,6},    // row index 1
+    {1,0,2,10},   // row index 2
+    {1,0,2,9},    // row index 3
+    {1,0,2,7},    // row index 4
+    {1,0,2,5},    // row index 5
+    {0,0,6,4},    // row index 6
+    {0,0,4,4},    // row index 7
+    {0,0,5,6},    // row index 8
+    {0,0,5,2},    // row index 9
+    {0,0,9,2},    // row index 10
+    {0,0,10,2},   // row index 11
+    {1,0,1,11},   // row index 12
+    {1,0,1,6},    // row index 13
+    {1,0,2,4},    // row index 14
+    {0,0,4,6},    // row index 15
+    {0,0,8,4}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[16][3]={
-    {0,3,5},    // row index 1
-    {0,3,9},    // row index 2
-    {0,3,8},    // row index 3
-    {0,3,6},    // row index 4
-    {0,3,4},    // row index 5
-    {0,8,2},    // row index 6
-    {0,6,4},    // row index 7
-    {0,5,6},    // row index 8
-    {0,5,2},    // row index 9
-    {0,9,2},    // row index 10
-    {0,10,2},   // row index 11
-    {0,1,11},   // row index 12
-    {0,1,6},    // row index 13
-    {0,2,4},    // row index 14
-    {0,4,6},    // row index 15
-    {0,8,4}     // row index 16
+const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[16][4]={
+    {1,0,3,5},    // row index 1
+    {1,0,3,9},    // row index 2
+    {1,0,3,8},    // row index 3
+    {1,0,3,6},    // row index 4
+    {1,0,3,4},    // row index 5
+    {0,0,8,2},    // row index 6
+    {0,0,6,4},    // row index 7
+    {0,0,5,6},    // row index 8
+    {0,0,5,2},    // row index 9
+    {0,0,9,2},    // row index 10
+    {0,0,10,2},   // row index 11
+    {1,0,1,11},   // row index 12
+    {1,0,1,6},    // row index 13
+    {1,0,2,4},    // row index 14
+    {0,0,4,6},    // row index 15
+    {0,0,8,4}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[16][3]={
-    {0,2,2},    // row index 1
-    {0,4,2},    // row index 2
-    {0,6,2},    // row index 3
-    {0,8,2},    // row index 4
-    {0,10,2},   // row index 5
-    {1,2,2},    // row index 6
-    {1,4,2},    // row index 7
-    {0,2,4},    // row index 8
-    {0,4,4},    // row index 9
-    {0,6,4},    // row index 10
-    {0,8,4},    // row index 11
-    {0,10,4},   // row index 12
-    {0,2,7},    // row index 13
-    {0,2,12},   // row index 14
-    {1,2,4},    // row index 15
-    {0,0,0}     // row index 16
+const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[16][4]={
+    {0,0,2,2},    // row index 1
+    {0,0,4,2},    // row index 2
+    {0,0,6,2},    // row index 3
+    {0,0,8,2},    // row index 4
+    {0,0,10,2},   // row index 5
+    {0,1,2,2},    // row index 6
+    {0,1,4,2},    // row index 7
+    {0,0,2,4},    // row index 8
+    {0,0,4,4},    // row index 9
+    {0,0,6,4},    // row index 10
+    {0,0,8,4},    // row index 11
+    {0,0,10,4},   // row index 12
+    {0,0,2,7},    // row index 13
+    {1,0,2,12},   // row index 14
+    {0,1,2,4},    // row index 15
+    {0,0,0,0}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[16][3]={
-    {0,2,2},    // row index 1
-    {0,4,2},    // row index 2
-    {0,6,2},    // row index 3
-    {0,8,2},    // row index 4
-    {0,10,2},   // row index 5
-    {1,2,2},    // row index 6
-    {1,4,2},    // row index 7
-    {0,2,4},    // row index 8
-    {0,4,4},    // row index 9
-    {0,6,4},    // row index 10
-    {0,8,4},    // row index 11
-    {0,10,4},   // row index 12
-    {0,2,7},    // row index 13
-    {0,3,11},   // row index 14
-    {1,2,4},    // row index 15
-    {0,0,0}     // row index 16
+const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[16][4]={
+    {0,0,2,2},    // row index 1
+    {0,0,4,2},    // row index 2
+    {0,0,6,2},    // row index 3
+    {0,0,8,2},    // row index 4
+    {0,0,10,2},   // row index 5
+    {0,1,2,2},    // row index 6
+    {0,1,4,2},    // row index 7
+    {0,0,2,4},    // row index 8
+    {0,0,4,4},    // row index 9
+    {0,0,6,4},    // row index 10
+    {0,0,8,4},    // row index 11
+    {0,0,10,4},   // row index 12
+    {0,0,2,7},    // row index 13
+    {1,0,3,11},   // row index 14
+    {0,1,2,4},    // row index 15
+    {0,0,0,0}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[16][3]={
-    {0,2,2},  // row index 1
-    {0,4,2},  // row index 2
-    {0,6,2},  // row index 3
-    {0,8,2},  // row index 4
-    {0,10,2}, // row index 5
-    {0,0,0},  // row index 6
-    {0,0,0},  // row index 7
-    {0,2,4},  // row index 8
-    {0,4,4},  // row index 9
-    {0,6,4},  // row index 10
-    {0,8,4},  // row index 11
-    {0,10,4}, // row index 12
-    {0,2,7},  // row index 13
-    {0,2,12},  // row index 14
-    {0,0,6},  // row index 15
-    {0,2,6}   // row index 16
+const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[16][4]={
+    {0,0,2,2},  // row index 1
+    {0,0,4,2},  // row index 2
+    {0,0,6,2},  // row index 3
+    {0,0,8,2},  // row index 4
+    {0,0,10,2}, // row index 5
+    {0,0,0,0},  // row index 6
+    {0,0,0,0},  // row index 7
+    {0,0,2,4},  // row index 8
+    {0,0,4,4},  // row index 9
+    {0,0,6,4},  // row index 10
+    {0,0,8,4},  // row index 11
+    {0,0,10,4}, // row index 12
+    {0,0,2,7},  // row index 13
+    {1,0,2,12},  // row index 14
+    {1,0,0,6},  // row index 15
+    {1,0,2,6}   // row index 16
 };
-const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[16][3]={
-    {0,2,2},  // row index 1
-    {0,4,2},  // row index 2
-    {0,6,2},  // row index 3
-    {0,8,2},  // row index 4
-    {0,10,2}, // row index 5
-    {0,0,0},  // row index 6
-    {0,0,0},  // row index 7
-    {0,2,4},  // row index 8
-    {0,4,4},  // row index 9
-    {0,6,4},  // row index 10
-    {0,8,4},  // row index 11
-    {0,10,4}, // row index 12
-    {0,2,7},  // row index 13
-    {0,3,11},  // row index 14
-    {0,0,6},  // row index 15
-    {0,2,6}   // row index 16
+const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[16][4]={
+    {0,0,2,2},  // row index 1
+    {0,0,4,2},  // row index 2
+    {0,0,6,2},  // row index 3
+    {0,0,8,2},  // row index 4
+    {0,0,10,2}, // row index 5
+    {0,0,0,0},  // row index 6
+    {0,0,0,0},  // row index 7
+    {0,0,2,4},  // row index 8
+    {0,0,4,4},  // row index 9
+    {0,0,6,4},  // row index 10
+    {0,0,8,4},  // row index 11
+    {0,0,10,4}, // row index 12
+    {0,0,2,7},  // row index 13
+    {1,0,3,11},  // row index 14
+    {1,0,0,6},  // row index 15
+    {1,0,2,6}   // row index 16
 };
+
+void get_info_from_tda_tables(int default_abc,
+                              int tda,
+                              int dmrs_TypeA_Position,
+                              int normal_CP,
+                              int *startSymbolIndex,
+                              int *nrOfSymbols) {
+  int k0 = 0;
+  int is_mapping_typeA = 1;
+  switch(default_abc){
+    case 1:
+      if (normal_CP){
+        if (dmrs_TypeA_Position){
+          is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][0];
+          k0 = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][1];
+          *startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][2];
+          *nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][3];
+        }
+        else{
+          is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][0];
+          k0 = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][1];
+          *startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][2];
+          *nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][3];
+        }
+      }
+      else{
+        if (dmrs_TypeA_Position){
+          is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][0];
+          k0 = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][1];
+          *startSymbolIndex = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][2];
+          *nrOfSymbols = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][3];
+        }
+        else{
+          is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][0];
+          k0 = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][1];
+          *startSymbolIndex = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][2];
+          *nrOfSymbols = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][3];
+        }
+      }
+      break;
+    case 2:
+      if (dmrs_TypeA_Position){
+        is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][0];
+        k0 = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][1];
+        *startSymbolIndex = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][2];
+        *nrOfSymbols = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][3];
+      }
+      else{
+        is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][0];
+        k0 = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][1];
+        *startSymbolIndex = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][2];
+        *nrOfSymbols = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][3];
+      }
+      break;
+    case 3:
+      if (dmrs_TypeA_Position){
+        is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][0];
+        k0 = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][1];
+        *startSymbolIndex = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][2];
+        *nrOfSymbols = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][3];
+      }
+      else{
+        is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][0];
+        k0 = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][1];
+        *startSymbolIndex = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][2];
+        *nrOfSymbols = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][3];
+      }
+      break;
+    default:
+     AssertFatal(1==0,"Invalid default time domaing allocation type\n");
+  }
+  AssertFatal(k0==0,"Only k0 = 0 is supported\n");
+  AssertFatal(is_mapping_typeA==1,"Only mapping type A is currently supported\n");
+}
 
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
 const char *duplex_mode[]={"FDD","TDD"};
