@@ -857,13 +857,6 @@ if(!IS_SOFTMODEM_NOS1)
       printf("NFAPI mode - DO NOT call init_gNB_afterRU()\n");
     }
 
-    if (nfapi_mode != 1 && nfapi_mode != 2) {
-      printf("Not NFAPI mode - call init_eNB_afterRU()\n");
-      init_eNB_afterRU();
-    } else {
-      printf("NFAPI mode - DO NOT call init_gNB_afterRU()\n");
-    }
-
     printf("ALL RUs ready - ALL gNBs ready\n");
     // connect the TX/RX buffers
     printf("Sending sync to all threads\n");

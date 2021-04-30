@@ -45,7 +45,7 @@ static void compute_t(unsigned char *t, uint32_t count, int bearer,
   t[1] = (count >> 16) & 255;
   t[2] = (count >>  8) & 255;
   t[3] = (count      ) & 255;
-  t[4] = (bearer << 3) | (direction << 2);
+  t[4] = ((bearer-1) << 3) | (direction << 2);
   memset(&t[5], 0, 8-5);
 }
 
@@ -63,6 +63,7 @@ void nr_pdcp_integrity_nia2_integrity(void *integrity_context,
    * (which is identical to 128-NIA2, see 33.501 D.3.1.3) */
   compute_t(t, count, bearer, direction);
 
+  CMAC_Init(ctx, NULL, 0, NULL, NULL);
   CMAC_Update(ctx, t, 8);
   CMAC_Update(ctx, buffer, length);
   CMAC_Final(ctx, mac, &maclen);
