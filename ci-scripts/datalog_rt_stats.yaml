@@ -6,7 +6,7 @@ ColNames :
   - Metric
   - Average
   - Max
-  - Average vs Reference Deviation (Acceptability Threshold)
+  - Average vs Reference Deviation (Reference Value ; Acceptability Threshold)
 Ref : 
   feprx : 60.0
   feptx_prec : 8.0

@@ -470,9 +470,9 @@ class HTMLManagement():
 			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + DataLog['Data'][k][0]  + ' </td>\n')
 			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + DataLog['Data'][k][1]  + ' </td>\n')
 			if float(DataLog['Data'][k][2])> DataLog['Threshold'][k]:
-				self.htmlFile.write('        <th bgcolor = "red" >' + DataLog['Data'][k][2]  + ' ('+str(DataLog['Threshold'][k])+') ' + '</th>\n')
+				self.htmlFile.write('        <th bgcolor = "red" >' + DataLog['Data'][k][2]  + ' (Ref = ' + str(DataLog['Ref'][k]) + ' ; Thres = '   +str(DataLog['Threshold'][k])+') ' + '</th>\n')
 			else:
-				self.htmlFile.write('        <th bgcolor = "green" ><font color="white">' + DataLog['Data'][k][2]  + ' ('+str(DataLog['Threshold'][k])+') ' + '</th>\n')					
+				self.htmlFile.write('        <th bgcolor = "green" ><font color="white">' + DataLog['Data'][k][2]  + ' (Ref = ' + str(DataLog['Ref'][k]) + ' ; Thres = '   +str(DataLog['Threshold'][k])+') ' + '</th>\n')					
 			self.htmlFile.write('      </tr>\n')
 		self.htmlFile.close()
 
