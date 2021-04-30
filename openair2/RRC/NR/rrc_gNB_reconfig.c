@@ -54,9 +54,7 @@ void fill_default_initialDownlinkBWP(NR_BWP_Downlink_t *bwp, NR_ServingCellConfi
   bwp->bwp_Id = 0;
 
   bwp->bwp_Common=calloc(1,sizeof(*bwp->bwp_Common));
-  memcpy((void*)&bwp->bwp_Common,
-         &servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP,
-         sizeof(bwp->bwp_Common));
+  *bwp->bwp_Common = *servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP;
 
   bwp->bwp_Dedicated=calloc(1,sizeof(*bwp->bwp_Dedicated));
   bwp->bwp_Dedicated->pdsch_Config = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config));

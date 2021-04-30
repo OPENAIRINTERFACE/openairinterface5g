@@ -183,6 +183,8 @@ typedef struct {
 typedef struct {
   in_addr_t             gnb_ip_address_for_NGu_up;
   tcp_udp_port_t        gnb_port_for_NGu_up;
+  char addrStr[256];
+  char portStr[256];
 } Gtpv1uNGReq;
 typedef struct gtpv1u_gnb_create_tunnel_req_s {
   rnti_t                 rnti;
