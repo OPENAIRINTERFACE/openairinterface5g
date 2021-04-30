@@ -234,7 +234,7 @@ int main(int argc, char **argv)
   //int8_t interf1 = -21, interf2 = -21;
   FILE *input_fd = NULL;
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
-  uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 3;
+  uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
 
   NB_UE_INST = 1;
 
