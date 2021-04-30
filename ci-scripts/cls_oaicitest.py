@@ -1080,6 +1080,7 @@ class OaiCiTest():
 		else:#if an ID is specified, it is a module from the yaml infrastructure file
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			Module_UE.Command("detach")
+			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)	
 				
 							
 
@@ -1956,7 +1957,7 @@ class OaiCiTest():
 			if type==0:
 				result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(?P<lostPack>[0-9]+)/ +(?P<sentPack>[0-9]+)', str(line))
 			else:
-				result = re.search('^.+ +(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(?P<lostPack>[0-9]+)\/(?P<sentPack>[0-9]+)', str(line))
+				result = re.search('^\[  3\].+ +(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(?P<lostPack>[0-9]+)\/(?P<sentPack>[0-9]+)', str(line))
 
 			if result is not None:
 				bitrate = result.group('bitrate')
