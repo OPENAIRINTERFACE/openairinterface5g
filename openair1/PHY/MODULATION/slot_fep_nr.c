@@ -340,9 +340,6 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
       (int16_t *)&rxdataF[symbol * frame_parms->ofdm_symbol_size],
       1);
 
-  // clear DC carrier from OFDM symbols
-  rxdataF[symbol * frame_parms->ofdm_symbol_size] = 0;
-
   return 0;
 }
 
