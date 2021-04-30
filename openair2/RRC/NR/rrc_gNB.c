@@ -812,6 +812,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 NULL,
                                 NULL,
                                 dedicatedNAS_MessageList,
+                                NULL,
                                 NULL);
 
   free(ue_context_pP->ue_context.nas_pdu.buffer);
@@ -912,6 +913,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   NR_QFI_t                       qfi = 0;
   int                            pdu_sessions_done = 0;
   int i;
+  NR_CellGroupConfig_t *cellGroupConfig;
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
 
@@ -1049,6 +1051,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   }
 
   memset(buffer, 0, RRC_BUF_SIZE);
+  cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
+  fill_mastercellGroupConfig(cellGroupConfig);
   size = do_RRCReconfiguration(ctxt_pP, buffer,
                                 xid,
                                 *SRB_configList2, 
@@ -1058,7 +1062,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                                 NULL,
                                 NULL,
                                 dedicatedNAS_MessageList,
-                                NULL);
+                                NULL,
+                                cellGroupConfig);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Reconfiguration\n");
 
   /* Free all NAS PDUs */
@@ -1165,6 +1170,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
                                NULL,
                                NULL,
                                dedicatedNAS_MessageList,
+                               NULL,
                                NULL);
 
   ue_context_pP->ue_context.pdu_session_release_command_flag = 1;
@@ -1668,6 +1674,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
                                 NULL,
                                 NULL,
                                 NULL, // MeasObj_list,
+                                NULL,
                                 NULL,
                                 NULL);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,
