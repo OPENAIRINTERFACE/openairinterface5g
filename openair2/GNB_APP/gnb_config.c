@@ -1109,15 +1109,17 @@ int RCconfig_nr_gtpu(void ) {
         IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
         LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
         GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_S1U;
+        strcpy(GTPV1U_ENB_S1_REQ(message).addrStr,address);
+        sprintf(GTPV1U_ENB_S1_REQ(message).portStr,"%d", gnb_port_for_NGU);
       } else {// TODO SA
         message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_GNB_NG_REQ);
         AssertFatal(message!=NULL,"");
         IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_GNB_NG_REQ(message).gnb_ip_address_for_NGu_up, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
         LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_GNB_NG_REQ(message).gnb_ip_address_for_NGu_up);
         GTPV1U_GNB_NG_REQ(message).gnb_port_for_NGu_up = gnb_port_for_NGU;
+        strcpy(GTPV1U_GNB_NG_REQ(message).addrStr,address);
+        sprintf(GTPV1U_GNB_NG_REQ(message).portStr,"%d", gnb_port_for_NGU);
       }
-    strcpy(GTPV1U_ENB_S1_REQ(message).addrStr,address);
-    sprintf(GTPV1U_ENB_S1_REQ(message).portStr,"%d", gnb_port_for_NGU);
      itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
     } else
     LOG_E(GTPU,"invalid address for NGU\n");

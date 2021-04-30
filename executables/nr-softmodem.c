@@ -98,7 +98,6 @@ pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
-msc_interface_t msc_interface;
 
 volatile int             start_gNB = 0;
 volatile int             oai_exit = 0;
@@ -851,13 +850,6 @@ if(!IS_SOFTMODEM_NOS1)
     }
 
     if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {
-      printf("Not NFAPI mode - call init_eNB_afterRU()\n");
-      init_eNB_afterRU();
-    } else {
-      printf("NFAPI mode - DO NOT call init_gNB_afterRU()\n");
-    }
-
-    if (nfapi_mode != 1 && nfapi_mode != 2) {
       printf("Not NFAPI mode - call init_eNB_afterRU()\n");
       init_eNB_afterRU();
     } else {

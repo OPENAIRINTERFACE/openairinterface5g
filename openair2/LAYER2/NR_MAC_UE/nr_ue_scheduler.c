@@ -974,7 +974,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
                 ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id,
                 mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id],
                 ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator,
-                TBS_bytes);
+                TBS_bytes,
+                ra->ra_state );
           if (ra->ra_state == WAIT_RAR && !ra->cfra){
             memcpy(ulsch_input_buffer, mac->ulsch_pdu.payload, TBS_bytes);
             LOG_D(NR_MAC,"[RAPROC] Msg3 to be transmitted:\n");
@@ -1690,7 +1691,8 @@ static int get_nr_prach_info_from_ssb_index(uint8_t ssb_idx,
   ssb_info_p = &ssb_list.tx_ssb[ssb_idx];
   LOG_D(NR_MAC,"checking for prach : ssb_info_p->nb_mapped_ro %d\n",ssb_info_p->nb_mapped_ro);
   for (uint8_t n_mapped_ro=0; n_mapped_ro<ssb_info_p->nb_mapped_ro; n_mapped_ro++) {
-    LOG_D(NR_MAC,"%d.%d: mapped_ro[%d]->frame.slot %d.%d, prach_assoc_pattern.nb_of_frame %d\n",slot,ssb_info_p->mapped_ro[n_mapped_ro]->frame,ssb_info_p->mapped_ro[n_mapped_ro]->slot,prach_assoc_pattern.nb_of_frame);
+    LOG_D(NR_MAC,"%d: mapped_ro[%d]->slot %d, prach_assoc_pattern.nb_of_frame %d\n",
+         slot,ssb_info_p->mapped_ro[n_mapped_ro]->frame,ssb_info_p->mapped_ro[n_mapped_ro]->slot,prach_assoc_pattern.nb_of_frame);
     if ((slot == ssb_info_p->mapped_ro[n_mapped_ro]->slot) &&
         (ssb_info_p->mapped_ro[n_mapped_ro]->frame == (frame % prach_assoc_pattern.nb_of_frame))) {
 

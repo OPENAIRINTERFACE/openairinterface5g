@@ -92,7 +92,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
 extern const char *duplex_mode[];
-msc_interface_t msc_interface;
 THREAD_STRUCT thread_struct;
 
 // Thread variables

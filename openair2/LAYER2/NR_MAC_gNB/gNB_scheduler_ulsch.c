@@ -768,8 +768,9 @@ void pf_ul(module_id_t module_id,
     sched_pusch->mcs = mcs;
     sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
     sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
-    if (ps->pusch_Config->tp_pi2BPSK
-        && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
+    LOG_W(NR_MAC, "Fixme: work around a NULL pointer (set in function nr_save_pusch_fields that is actually called)\n");
+    if (ps->pusch_Config && (ps->pusch_Config->tp_pi2BPSK
+        && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6)))) {
       sched_pusch->R >>= 1;
       sched_pusch->Qm <<= 1;
     }
