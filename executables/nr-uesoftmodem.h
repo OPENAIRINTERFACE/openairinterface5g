@@ -85,5 +85,7 @@ extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 void *UE_thread(void *arg);
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue, uint8_t UE_id, uint8_t abstraction_flag);
+void init_nrUE_standalone_thread(int ue_idx);
+extern void init_nrUE_single_thread_stub(int nb_inst);
 
 #endif

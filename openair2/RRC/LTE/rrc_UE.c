@@ -130,7 +130,6 @@ typedef struct rrc_dcch_data_copy_t
     LTE_DL_DCCH_Message_t *dl_dcch_msg;
 } rrc_dcch_data_copy_t;
 
-
 /** \brief Generates/Encodes RRCConnnectionSetupComplete message at UE
  *  \param ctxt_pP Running context
  *  \param eNB_index Index of corresponding eNB/CH
@@ -176,7 +175,6 @@ rrc_ue_process_MBMSCountingRequest(
 
 static void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len);
 static void nsa_sendmsg_to_nrue(const void *message, size_t msg_len, Rrc_Msg_Type_t msg_type);
-
 protocol_ctxt_t ctxt_pP_local;
 
 
@@ -788,7 +786,7 @@ rrc_ue_process_measConfig(
   }
 
   if (measConfig->measObjectToAddModList != NULL) {
-    LOG_D(RRC,"Measurement Object List is present\n");
+    LOG_I(RRC,"Measurement Object List is present\n");
 
     for (i=0; i<measConfig->measObjectToAddModList->list.count; i++) {
       measObj = measConfig->measObjectToAddModList->list.array[i];
@@ -1998,11 +1996,18 @@ rrc_ue_decode_dcch(
     return;
   }
 
-  uper_decode(NULL,
+  asn_dec_rval_t dec_rval = uper_decode(NULL,
               &asn_DEF_LTE_DL_DCCH_Message,
               (void **)&dl_dcch_msg,
               (uint8_t *)Buffer,
               RRC_BUF_SIZE,0,0);
+
+  if (dec_rval.code != RC_OK && dec_rval.consumed == 0)
+  {
+    LOG_E(RRC, "%s: Failed to decode LTE_DL_DCC_Msg\n", __FUNCTION__);
+    SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, dl_dcch_msg, ASFM_FREE_EVERYTHING);
+    return;
+  }
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout,&asn_DEF_LTE_DL_DCCH_Message,(void *)dl_dcch_msg);
@@ -2297,6 +2302,10 @@ rrc_ue_decode_dcch(
 #ifndef NO_RRM
   send_msg(&S_rrc,msg_rrc_end_scan_req(ctxt_pP->module_id,eNB_indexP));
 #endif
+  if (dl_dcch_msg != NULL)
+  {
+    SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, dl_dcch_msg, ASFM_FREE_EVERYTHING);
+  }
 }
 
 const char siWindowLength[9][5] = {"1ms","2ms","5ms","10ms","15ms","20ms","40ms","80ms","ERR"};
@@ -4149,6 +4158,7 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
       //          }
     }
   }
+  /* Melissa: also need to generate report based on MeasObj for 5G (can look in eNB for these)*/
 }
 
 // Measurement report triggering, described in 36.331 Section 5.5.4.1: called periodically
@@ -4207,7 +4217,7 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
                   LOG_D(RRC,"[UE %d] Frame %d : A3 event: check if a neighboring cell becomes offset better than serving to trigger a measurement event \n",
                         ctxt_pP->module_id, ctxt_pP->frame);
 
-                  if ((check_trigger_meas_event(
+                  if ((check_trigger_meas_event( //Melissa: Need a similar check for 5G UE which will go ask NR UE for the report (measu report)
                          ctxt_pP->module_id,
                          ctxt_pP->frame,
                          eNB_index,
@@ -4506,6 +4516,7 @@ void *rrc_ue_task( void *args_p ) {
     instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
     ue_mod_id = UE_INSTANCE_TO_MODULE_ID(instance);
 
+    /* TODO: Add case to handle nr-UE messages we want from nrUE RRC layer */
     switch (ITTI_MSG_ID(msg_p)) {
       case TERMINATE_MESSAGE:
         LOG_W(RRC, " *** Exiting RRC thread\n");
@@ -4630,6 +4641,22 @@ void *rrc_ue_task( void *args_p ) {
         result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), RRC_DCCH_DATA_IND (msg_p).sdu_p);
         AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
         break;
+
+      case RRC_DCCH_DATA_COPY_IND:
+      {
+        LOG_I(RRC, "[UE %d] Received %s. Now calling rrc_ue_process_ueCapabilityEnquiry\n",
+              ue_mod_id, ITTI_MSG_NAME (msg_p));
+        rrc_dcch_data_copy_t *dl_dcch_buffer = (void *)RRC_DCCH_DATA_COPY_IND (msg_p).sdu_p;
+        AssertFatal(RRC_DCCH_DATA_COPY_IND (msg_p).sdu_size == sizeof(*dl_dcch_buffer), "Size of dl_dcch_buffer incorrect\n");
+        rrc_ue_process_ueCapabilityEnquiry(
+              &ctxt,
+              &dl_dcch_buffer->dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry,
+              RRC_DCCH_DATA_COPY_IND (msg_p).eNB_index);
+        SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, dl_dcch_buffer->dl_dcch_msg, ASFM_FREE_EVERYTHING);
+        result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), RRC_DCCH_DATA_COPY_IND (msg_p).sdu_p);
+        AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+        break;
+      }
 
       case NAS_KENB_REFRESH_REQ:
         memcpy((void *)UE_rrc_inst[ue_mod_id].kenb, (void *)NAS_KENB_REFRESH_REQ(msg_p).kenb, sizeof(UE_rrc_inst[ue_mod_id].kenb));
@@ -4980,9 +5007,10 @@ openair_rrc_top_init_ue(
     //init_SL_preconfig(&UE_rrc_inst[module_id],0);
     if (get_softmodem_params()->nsa == 1)
     {
-      LOG_I(RRC, "Calling process_nsa_message\n");
+      //LOG_I(RRC, "Calling process_nsa_message\n");
       //process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
     }
+
   } else {
     UE_rrc_inst = NULL;
   }
@@ -6196,4 +6224,3 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             LOG_E(RRC, "No NSA Message Found\n");
     }
 }
-

@@ -476,93 +476,6 @@ void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs],
   }
 }
 
-/*
-void init_openair0(void) {
-
-  int card;
-  int i;
-
-  for (card=0; card<MAX_CARDS; card++) {
-
-    openair0_cfg[card].mmapped_dma=mmapped_dma;
-    openair0_cfg[card].configFilename = NULL;
-
-    if(config[0]->rf_config.dl_carrier_bandwidth.value == 100) {
-      if (frame_parms[0]->threequarter_fs) {
-  openair0_cfg[card].sample_rate=23.04e6;
-  openair0_cfg[card].samples_per_frame = 230400;
-  openair0_cfg[card].tx_bw = 10e6;
-  openair0_cfg[card].rx_bw = 10e6;
-      } else {
-  openair0_cfg[card].sample_rate=30.72e6;
-  openair0_cfg[card].samples_per_frame = 307200;
-  openair0_cfg[card].tx_bw = 10e6;
-  openair0_cfg[card].rx_bw = 10e6;
-      }
-    } else if(config[0]->rf_config.dl_carrier_bandwidth.value == 50) {
-      openair0_cfg[card].sample_rate=15.36e6;
-      openair0_cfg[card].samples_per_frame = 153600;
-      openair0_cfg[card].tx_bw = 5e6;
-      openair0_cfg[card].rx_bw = 5e6;
-    } else if (config[0]->rf_config.dl_carrier_bandwidth.value == 25) {
-      openair0_cfg[card].sample_rate=7.68e6;
-      openair0_cfg[card].samples_per_frame = 76800;
-      openair0_cfg[card].tx_bw = 2.5e6;
-      openair0_cfg[card].rx_bw = 2.5e6;
-    } else if (config[0]->rf_config.dl_carrier_bandwidth.value == 6) {
-      openair0_cfg[card].sample_rate=1.92e6;
-      openair0_cfg[card].samples_per_frame = 19200;
-      openair0_cfg[card].tx_bw = 1.5e6;
-      openair0_cfg[card].rx_bw = 1.5e6;
-    }
-
-
-    if (config[0]->subframe_config.duplex_mode.value==TDD)
-      openair0_cfg[card].duplex_mode = duplex_mode_TDD;
-    else //FDD
-      openair0_cfg[card].duplex_mode = duplex_mode_FDD;
-
-    printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
-     RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value,
-     RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value );
-    openair0_cfg[card].Mod_id = 0;
-
-    openair0_cfg[card].num_rb_dl=config[0]->rf_config.dl_carrier_bandwidth.value;
-
-    openair0_cfg[card].clock_source = clock_source;
-
-
-    openair0_cfg[card].tx_num_channels=min(2,RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value );
-    openair0_cfg[card].rx_num_channels=min(2,RC.gNB[0]->gNB_config.rf_config.tx_antenna_ports.value );
-
-    for (i=0; i<4; i++) {
-
-      if (i<openair0_cfg[card].tx_num_channels)
-  openair0_cfg[card].tx_freq[i] = downlink_frequency[0][i] ;
-      else
-  openair0_cfg[card].tx_freq[i]=0.0;
-
-      if (i<openair0_cfg[card].rx_num_channels)
-  openair0_cfg[card].rx_freq[i] =downlink_frequency[0][i] + uplink_frequency_offset[0][i] ;
-      else
-  openair0_cfg[card].rx_freq[i]=0.0;
-
-      openair0_cfg[card].autocal[i] = 1;
-      openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
-      openair0_cfg[card].rx_gain[i] = RC.gNB[0]->rx_total_gain_dB;
-
-
-      openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
-      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
-       card,i, openair0_cfg[card].tx_gain[i],
-       openair0_cfg[card].rx_gain[i],
-       openair0_cfg[card].tx_freq[i],
-       openair0_cfg[card].rx_freq[i]);
-    }
-  } // for loop on cards
-}
-*/
-
 void wait_RUs(void) {
   LOG_I(PHY,"Waiting for RUs to be configured ... RC.ru_mask:%02lx\n", RC.ru_mask);
   // wait for all RUs to be configured over fronthaul
@@ -807,12 +720,12 @@ if(!IS_SOFTMODEM_NOS1)
   if(IS_SOFTMODEM_NOS1)
     init_pdcp();
 
+  if (RC.nb_nr_L1_inst > 0)
+    RCconfig_NR_L1();
+
   if (RC.nb_nr_inst > 0)  {
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
-  } else {
-    printf("No ITTI, Initializing L1\n");
-    RCconfig_NR_L1();
   }
 
   /* Start the agent. If it is turned off in the configuration, it won't start */
