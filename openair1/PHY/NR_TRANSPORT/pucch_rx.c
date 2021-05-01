@@ -336,8 +336,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       if (l==2) uci_stats->current_pucch0_stat1 = dB_fixed64((int64_t)corr_re[1]*corr_re[1] + (int64_t)corr_im[1]*corr_im[1]);
     }
   }
-  //if(nr_sequences>1)
-  //  no_corr=(av_corr-xrtmag)/(nr_sequences-1)/l;
+
   av_corr/=nr_sequences/l;
 
   uint8_t xrtmag_dB = dB_fixed64(xrtmag);
