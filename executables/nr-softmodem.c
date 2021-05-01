@@ -562,7 +562,10 @@ int stop_L1L2(module_id_t gnb_id) {
   oai_exit = 0;
 
     //free_transport(RC.gNB[gnb_id]);
-  phy_free_nr_gNB(RC.gNB[gnb_id]);
+  if (RC.gNB[gnb_id]) {
+    phy_free_nr_gNB(RC.gNB[gnb_id]);
+    RC.gNB[gnb_id] = NULL;
+  }
 
 
   nr_phy_free_RU(RC.ru[gnb_id]);
@@ -880,8 +883,10 @@ if(!IS_SOFTMODEM_NOS1)
    * threads have been stopped (they partially use the same memory) */
   for (int inst = 0; inst < NB_gNB_INST; inst++) {
       //free_transport(RC.gNB[inst]);
-      if (RC.gNB[inst])
+      if (RC.gNB[inst]) {
           phy_free_nr_gNB(RC.gNB[inst]);
+          RC.gNB[inst] = NULL;
+      }
   }
 
   for (int inst = 0; inst < NB_RU; inst++) {
