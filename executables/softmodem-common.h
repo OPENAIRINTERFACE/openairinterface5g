@@ -123,22 +123,22 @@ extern "C"
 extern int usrp_tx_thread;
 #define CMDLINE_PARAMS_DESC {  \
     {"rf-config-file",       CONFIG_HLP_RFCFGF,       0,              strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,        TYPE_STRING, sizeof(RF_CONFIG_FILE)},\
-    {"split73",              CONFIG_HLP_SPLIT73,      0,              strptr:(char **)&SPLIT73,           defstrval:NULL,        TYPE_STRING, sizeof(SPLIT73)},\
-    {"thread-pool",          CONFIG_HLP_TPOOL,        0,              strptr:(char **)&TP_CONFIG,         defstrval:"n",         TYPE_STRING, sizeof(TP_CONFIG)}, \
+    {"split73",              CONFIG_HLP_SPLIT73,      0,              strptr:(char **)&SPLIT73,           defstrval:NULL,        TYPE_STRING, sizeof(SPLIT73)},       \
+    {"thread-pool",          CONFIG_HLP_TPOOL,        0,              strptr:(char **)&TP_CONFIG,         defstrval:"n",         TYPE_STRING, sizeof(TP_CONFIG)},     \
     {"phy-test",             CONFIG_HLP_PHYTST,       PARAMFLAG_BOOL, iptr:&PHY_TEST,                     defintval:0,           TYPE_INT,    0},                     \
     {"do-ra",                CONFIG_HLP_DORA,         PARAMFLAG_BOOL, iptr:&DO_RA,                        defintval:0,           TYPE_INT,    0},                     \
-    {"sa",                   CONFIG_HLP_SA,           PARAMFLAG_BOOL, iptr:&SA,                             defintval:0,           TYPE_INT,    0},                     \
+    {"sa",                   CONFIG_HLP_SA,           PARAMFLAG_BOOL, iptr:&SA,                           defintval:0,           TYPE_INT,    0},                     \
     {"usim-test",            CONFIG_HLP_USIM,         PARAMFLAG_BOOL, u8ptr:&USIM_TEST,                   defintval:0,           TYPE_UINT8,  0},                     \
-    {"clock-source",                CONFIG_HLP_CLK,          0,              uptr:&CLOCK_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
-    {"time-source",                CONFIG_HLP_TME,          0,              uptr:&TIMING_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
+    {"clock-source",         CONFIG_HLP_CLK,          0,              uptr:&CLOCK_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
+    {"time-source",          CONFIG_HLP_TME,          0,              uptr:&TIMING_SOURCE,                defintval:0,           TYPE_UINT,   0},                     \
     {"wait-for-sync",        NULL,                    PARAMFLAG_BOOL, iptr:&WAIT_FOR_SYNC,                defintval:0,           TYPE_INT,    0},                     \
     {"single-thread-enable", CONFIG_HLP_NOSNGLT,      PARAMFLAG_BOOL, iptr:&SINGLE_THREAD_FLAG,           defintval:0,           TYPE_INT,    0},                     \
-    {"C" ,                   CONFIG_HLP_DLF,          0,              u64ptr:&(downlink_frequency[0][0]), defuintval:0, TYPE_UINT64,   0},                     \
-    {"CO" ,                  CONFIG_HLP_ULF,          0,              iptr:&(uplink_frequency_offset[0][0]), defintval:0, TYPE_INT,   0},                     \
+    {"C" ,                   CONFIG_HLP_DLF,          0,              u64ptr:&(downlink_frequency[0][0]),     defuintval:3619200000,  TYPE_UINT64,   0},              \
+    {"CO" ,                  CONFIG_HLP_ULF,          0,              iptr:&(uplink_frequency_offset[0][0]),  defintval:3619200000,   TYPE_INT,      0},              \
     {"a" ,                   CONFIG_HLP_CHOFF,        0,              iptr:&CHAIN_OFFSET,                 defintval:0,           TYPE_INT,    0},                     \
     {"d" ,                   CONFIG_HLP_SOFTS,        PARAMFLAG_BOOL, uptr:(uint32_t *)&do_forms,         defintval:0,           TYPE_INT8,   0},                     \
     {"q" ,                   CONFIG_HLP_STMON,        PARAMFLAG_BOOL, iptr:&opp_enabled,                  defintval:0,           TYPE_INT,    0},                     \
-    {"numerology" ,          CONFIG_HLP_NUMEROLOGY,   PARAMFLAG_BOOL, iptr:&NUMEROLOGY,                   defintval:0,           TYPE_INT,    0},                     \
+    {"numerology" ,          CONFIG_HLP_NUMEROLOGY,   PARAMFLAG_BOOL, iptr:&NUMEROLOGY,                   defintval:1,           TYPE_INT,    0},                     \
     {"band" ,                CONFIG_HLP_BAND,         PARAMFLAG_BOOL, iptr:&BAND,                         defintval:78,          TYPE_INT,    0},                     \
     {"emulate-rf" ,          CONFIG_HLP_EMULATE_RF,   PARAMFLAG_BOOL, iptr:&EMULATE_RF,                   defintval:0,           TYPE_INT,    0},                     \
     {"parallel-config",      CONFIG_HLP_PARALLEL_CMD, 0,              strptr:(char **)&parallel_config,   defstrval:NULL,        TYPE_STRING, 0},                     \
@@ -149,8 +149,8 @@ extern int usrp_tx_thread;
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
     {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
-    {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,              iptr:&usrp_tx_thread,               defstrval:0,           TYPE_INT,    0},        \
-    {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                       defintval:0,           TYPE_UINT8,  0},                     \
+    {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,              iptr:&usrp_tx_thread,               defstrval:0,           TYPE_INT,    0},                     \
+    {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                  defintval:0,           TYPE_UINT8,  0},                     \
   }
 
   
