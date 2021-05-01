@@ -345,7 +345,7 @@ void pdcp_layer_init(void)
 #include "targets/RT/USER/lte-softmodem.h"
 #include "openair2/RRC/NAS/nas_config.h"
 
-uint64_t pdcp_module_init(uint64_t _pdcp_optmask, int id)
+uint64_t nr_pdcp_module_init(uint64_t _pdcp_optmask, int id)
 {
   /* hack: be sure to initialize only once */
   static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;

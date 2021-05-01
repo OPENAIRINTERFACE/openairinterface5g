@@ -53,6 +53,7 @@
 
 #include "intertask_interface.h"
 
+#include "nr-uesoftmodem.h"
 #include "executables/softmodem-common.h"
 #include "plmn_data.h"
 #include "pdcp.h"
@@ -132,6 +133,8 @@ uint8_t first_rrcreconfigurationcomplete = 0;
 static const char nsa_ipaddr[] = "127.0.0.1";
 static int from_lte_ue_fd = -1;
 static int to_lte_ue_fd = -1;
+uint16_t node_number;
+uint16_t ue_id_g;
 
 static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
   return NR_UE_rrc_inst[ue_mod_idP].nrRrcState;
@@ -2753,7 +2756,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
                        (const char *)NR_UE_rrc_inst[ctxt_pP->module_id].UECapability,
                        NR_UE_rrc_inst[ctxt_pP->module_id].UECapability_size);
   OCTET_STRING_t * requestedFreqBandsNR = UECapabilityEnquiry->criticalExtensions.choice.ueCapabilityEnquiry->ue_CapabilityEnquiryExt;
-  nsa_sendmsg(requestedFreqBandsNR->buf, requestedFreqBandsNR->size, UE_CAPABILITY_INFO);
+  nsa_sendmsg_to_lte_ue(requestedFreqBandsNR->buf, requestedFreqBandsNR->size, UE_CAPABILITY_INFO);
   //  ue_CapabilityRAT_Container.ueCapabilityRAT_Container.buf  = UE_rrc_inst[ue_mod_idP].UECapability;
   // ue_CapabilityRAT_Container.ueCapabilityRAT_Container.size = UE_rrc_inst[ue_mod_idP].UECapability_size;
   AssertFatal(UECapabilityEnquiry->criticalExtensions.present == NR_UECapabilityEnquiry__criticalExtensions_PR_ueCapabilityEnquiry,
@@ -2793,7 +2796,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
       GNB_RRC_DCCH_DATA_IND (message_p).size  = (enc_rval.encoded + 7) / 8;
       itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
 #else
-      rrc_data_req_ue (
+      rrc_data_req_nr_ue (
         ctxt_pP,
         DCCH,
         nr_rrc_mui++,

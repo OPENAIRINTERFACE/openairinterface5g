@@ -469,7 +469,7 @@ void init_pdcp(void) {
   }
   pdcp_layer_init();
   nr_DRB_preconfiguration();*/
-  pdcp_module_init(pdcp_initmask, 0);
+  nr_pdcp_module_init(pdcp_initmask, 0);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
   LOG_I(PDCP, "Before getting out from init_pdcp() \n");

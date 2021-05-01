@@ -403,6 +403,7 @@ void pdcp_mbms_run            (
 void pdcp_run            (
   const protocol_ctxt_t *const  ctxt_pP);
 uint64_t pdcp_module_init (uint64_t pdcp_optmask, int ue_id);
+uint64_t nr_pdcp_module_init(uint64_t _pdcp_optmask, int id);
 void pdcp_module_cleanup (void);
 void nr_ip_over_LTE_DRB_preconfiguration (void);
 void pdcp_layer_init     (void);
