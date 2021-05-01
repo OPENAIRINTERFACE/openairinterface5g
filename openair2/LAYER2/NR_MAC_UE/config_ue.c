@@ -725,7 +725,7 @@ int nr_rrc_mac_config_req_ue(
           ra->rach_ConfigDedicated = scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
         }
         mac->scc = scell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-	mac->physCellId = *mac->scc->physCellId;
+	      mac->physCellId = *mac->scc->physCellId;
         config_common_ue(mac,module_id,cc_idP);
         mac->crnti = scell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
         LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);

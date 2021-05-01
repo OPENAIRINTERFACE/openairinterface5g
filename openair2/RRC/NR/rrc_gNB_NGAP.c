@@ -304,10 +304,12 @@ nr_rrc_pdcp_config_security(
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
   uint8_t                            *kUPenc = NULL;
-  uint8_t                            *k_kdf  = NULL;
   static int                         print_keys= 1;
 
 #ifndef PHYSIM
+
+  uint8_t *k_kdf = NULL;
+
   /* Derive the keys from kgnb */
   if (SRB_configList != NULL) {
     k_kdf = NULL;

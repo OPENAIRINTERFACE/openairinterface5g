@@ -66,8 +66,10 @@ double cpuf;
 extern uint16_t prach_root_sequence_map0_3[838];
 openair0_config_t openair0_cfg[MAX_CARDS];
 //uint8_t nfapi_mode=0;
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
 uint16_t sl_ahead = 0;
 msc_interface_t msc_interface;
+uint32_t N_RB_DL = 106;
 
 //void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
@@ -171,6 +173,17 @@ int is_x2ap_enabled(void)
 int nr_derive_key(int alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)
 {
+  return 0;
+}
+
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
+                                            int             CC_idP,
+                                            int             UE_id,
+                                            rnti_t          rntiP,
+                                            const uint8_t   *sduP,
+                                            sdu_size_t      sdu_lenP,
+                                            const uint8_t   *sdu2P,
+                                            sdu_size_t      sdu2_lenP) {
   return 0;
 }
 
