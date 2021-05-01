@@ -937,14 +937,9 @@ void pf_ul(module_id_t module_id,
     if (UE_info->Msg4_ACKed[UE_id] != true) continue;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    int rbStart = 0; /*NRRIV2PRBOFFSET(sched_ctrl->active_bwp ?
-				  sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
-				  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,
-				  MAX_BWP_SIZE);*/
-    const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp?
-				      sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth:
-				      scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,
-				      MAX_BWP_SIZE);
+    NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+    int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
+    const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
@@ -1072,8 +1067,8 @@ void pf_ul(module_id_t module_id,
       return;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters:&scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-    int rbStart = 0; /*NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);*/
+    NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+    int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
