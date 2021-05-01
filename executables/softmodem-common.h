@@ -115,6 +115,7 @@ extern "C"
 #define USE_256QAM_TABLE    softmodem_params.use_256qam_table
 #define NFAPI               softmodem_params.nfapi
 #define NSA                 softmodem_params.nsa
+#define NODE_NUMBER         softmodem_params.node_number
 
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
@@ -147,6 +148,7 @@ extern "C"
     {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
     {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                  defintval:0,           TYPE_UINT8,  0},                     \
     {"nsa",                  CONFIG_HLP_NSA,          PARAMFLAG_BOOL, iptr:&NSA,                          defintval:0,           TYPE_INT,    0},                     \
+    {"node-number",          NULL,                    0,              u16ptr:&NODE_NUMBER,                defuintval:2,          TYPE_UINT16, 0},                     \
   }
 
 #define CONFIG_HLP_NSA           "Enable NSA mode \n"
@@ -236,6 +238,7 @@ typedef struct {
   int            use_256qam_table;
   uint8_t        nfapi;
   int            nsa;
+  uint16_t       node_number;
 } softmodem_params_t;
 
 extern uint64_t get_softmodem_optmask(void);

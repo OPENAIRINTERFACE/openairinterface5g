@@ -495,6 +495,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
                   errno,
                   strerror(errno));
       int msg_len=fread(buffer,1,1024,fd);
+      process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
       fclose(fd);
       if (rrc_config_path)
         sprintf(filename,"%s/rbconfig.raw",rrc_config_path);
@@ -507,6 +508,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
                   errno,
                   strerror(errno));
       msg_len=fread(buffer,1,1024,fd);
+      process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
       fclose(fd);
 
     }
@@ -2961,10 +2963,9 @@ void init_connections_with_lte_ue(void)
 
 static void process_measurement_objects_nr(LTE_MeasObjectToAddMod_t *buf)
 {
-    LOG_I(NR_RRC, "NR carrierFreq_r15 (ssb): %ld and sub carrier spacing:%ld and band: %ld.\n",
+    LOG_I(NR_RRC, "NR carrierFreq_r15 (ssb): %ld and sub carrier spacing:%ld\n",
           buf->measObject.choice.measObjectNR_r15.carrierFreq_r15,
-          buf->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15,
-          buf->measObject.choice.measObjectNR_r15.ext1->bandNR_r15);
+          buf->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15);
     #if 0
     uint16_t node_num = get_softmodem_params()->node_number;
     /* Receiving the RRC_Reconfiguration with the measurement objects
@@ -2974,7 +2975,6 @@ static void process_measurement_objects_nr(LTE_MeasObjectToAddMod_t *buf)
     ue_id_g = (node_num == 0)? 0 : node_num-2;
     init_nrUE_standalone_thread(ue_id_g);
     #endif
-
 }
 
 
@@ -3036,7 +3036,7 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
                to be opened. It will listen for PBCH from gNB (proxy technically). Then it will
                call the ususal MIB functions to handle the MIB. Intervene in 5G stack to decode the MIB.
                Also, after receiving PBCH it will start sending SSB index/cellID and some info from MIB to UE
-               as measurement reporting message */
+               as measurement reporting message*/
             break;
 
         default:

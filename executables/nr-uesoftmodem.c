@@ -150,14 +150,15 @@ int        usrp_tx_thread = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
 
-uint16_t ue_idx_standalone = 0xFFFF;
-
 char uecap_xer[1024],uecap_xer_in=0;
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
  */
 uint8_t abstraction_flag=0;
+
+uint16_t ue_id_g;
+uint16_t ue_idx_standalone = 0xFFFF;
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -585,6 +586,19 @@ int main( int argc, char **argv ) {
     init_NR_UE_threads(1);
     printf("UE threads created by %ld\n", gettid());
 
+  }
+ if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
+    init_queue(&dl_itti_config_req_tx_data_req_queue);
+    init_queue(&ul_dci_config_req_queue);
+
+    config_sync_var=0;
+    if (sem_init(&sfn_slot_semaphore, 0, 0) != 0)
+    {
+      LOG_E(MAC, "sem_init() error\n");
+      abort();
+    }
+    init_nrUE_standalone_thread(ue_id_g);
+    //init_NR_UE_threads(NB_UE_INST);
   }
 
   // wait for end of program

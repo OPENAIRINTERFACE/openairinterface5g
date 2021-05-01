@@ -35,7 +35,10 @@
 
 #include "platform_types.h"
 #include <openair1/PHY/thread_NR_UE.h>
+#include <semaphore.h>
 #include "fapi_nr_ue_interface.h"
+#include "openair2/PHY_INTERFACE/queue.h"
+#include "nfapi_nr_interface_scf.h"
 
 typedef struct NR_UL_TIME_ALIGNMENT NR_UL_TIME_ALIGNMENT_t;
 
@@ -200,6 +203,20 @@ typedef struct nr_ue_if_module_s {
    \param module_id module id*/
 nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id);
 
+void nrue_init_standalone_socket(const char *addr, int tx_port, int rx_port);
+
+void *nrue_standalone_pnf_task(void *context);
+extern int current_sfn_slot;
+extern sem_t sfn_slot_semaphore;
+
+extern queue_t dl_itti_config_req_tx_data_req_queue;
+extern queue_t ul_dci_config_req_queue;
+
+typedef struct nfapi_dl_tti_config_req_tx_data_req_t
+{
+    nfapi_nr_dl_tti_request_pdu_t *dl_itti_config_req;
+    nfapi_nr_tx_data_request_t *tx_data_req_pdu_list;
+} nfapi_dl_tti_config_req_tx_data_req_t;
 
 /**\brief done free of memory allocation by module_id and release to pointer pool.
    \param module_id module id*/

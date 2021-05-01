@@ -52,6 +52,7 @@
 
 //for D2D
 #define DEBUG_CTRL_SOCKET
+
 #define CONTROL_SOCKET_PORT_NO 8888
 #define MAX_NUM_DEST           10
 //netlink
@@ -812,10 +813,8 @@ typedef struct eNB_RRC_INST_s {
   uint32_t gnb_cells_id[MAX_NUM_GNB_CELLs][MAX_NUM_CCs];
 
   // Nr scc freq band and SSB absolute frequency
-  uint32_t nr_neigh_freq_band[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
   uint32_t nr_gnb_freq_band[MAX_NUM_GNB_CELLs][MAX_NUM_CCs];
   int nr_scg_ssb_freq;
-
 
   // other RAN parameters
   int srb1_timer_poll_retransmit;

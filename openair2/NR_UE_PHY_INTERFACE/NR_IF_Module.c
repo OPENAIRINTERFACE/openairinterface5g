@@ -43,8 +43,167 @@
 #define MAX_IF_MODULES 100
 
 const char *dl_indication_type[] = {"MIB", "SIB", "DLSCH", "DCI", "RAR"};
+int current_sfn_slot;
+sem_t sfn_slot_semaphore;
+
+queue_t dl_itti_config_req_tx_data_req_queue;
+queue_t ul_dci_config_req_queue;
+
+UL_IND_t *UL_INFO = NULL;
+
 
 static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
+static int ue_tx_sock_descriptor = -1;
+static int ue_rx_sock_descriptor = -1;
+int current_sfn_slot;
+sem_t sfn_slot_semaphore;
+
+void nrue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
+{
+  {
+    struct sockaddr_in server_address;
+    int addr_len = sizeof(server_address);
+    memset(&server_address, 0, addr_len);
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(tx_port);
+
+    int sd = socket(server_address.sin_family, SOCK_DGRAM, 0);
+    if (sd < 0)
+    {
+      LOG_E(MAC, "Socket creation error standalone PNF\n");
+      return;
+    }
+
+    if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0)
+    {
+      LOG_E(MAC, "Invalid standalone PNF Address\n");
+      close(sd);
+      return;
+    }
+
+    // Using connect to use send() instead of sendto()
+    if (connect(sd, (struct sockaddr *)&server_address, addr_len) < 0)
+    {
+      LOG_E(MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
+      close(sd);
+      return;
+    }
+    assert(ue_tx_sock_descriptor == -1);
+    ue_tx_sock_descriptor = sd;
+    LOG_D(NR_RRC, "Sucessfully set up tx_socket in %s.\n", __FUNCTION__);
+  }
+
+  {
+    struct sockaddr_in server_address;
+    int addr_len = sizeof(server_address);
+    memset(&server_address, 0, addr_len);
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(rx_port);
+
+    int sd = socket(server_address.sin_family, SOCK_DGRAM, 0);
+    if (sd < 0)
+    {
+      LOG_E(MAC, "Socket creation error standalone PNF\n");
+      return;
+    }
+
+    if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0)
+    {
+      LOG_E(MAC, "Invalid standalone PNF Address\n");
+      close(sd);
+      return;
+    }
+
+    if (bind(sd, (struct sockaddr *)&server_address, addr_len) < 0)
+    {
+      LOG_E(MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
+      close(sd);
+      return;
+    }
+    assert(ue_rx_sock_descriptor == -1);
+    ue_rx_sock_descriptor = sd;
+    LOG_D(NR_RRC, "Sucessfully set up rx_socket in %s.\n", __FUNCTION__);
+  }
+  LOG_I(NR_RRC, "NRUE standalone socket info: tx_port %d  rx_port %d on %s.\n",
+        tx_port, rx_port, addr);
+}
+
+void *nrue_standalone_pnf_task(void *context)
+{
+  struct sockaddr_in server_address;
+  socklen_t addr_len = sizeof(server_address);
+  char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
+  int sd = ue_rx_sock_descriptor;
+  assert(sd > 0);
+  LOG_I(NR_RRC, "Sucessfully started %s.\n", __FUNCTION__);
+
+  while (true)
+  {
+    ssize_t len = recvfrom(sd, buffer, sizeof(buffer), MSG_TRUNC, (struct sockaddr *)&server_address, &addr_len);
+    if (len == -1)
+    {
+      LOG_E(MAC, "reading from standalone pnf sctp socket failed \n");
+      continue;
+    }
+    if (len > sizeof(buffer))
+    {
+      LOG_E(MAC, "%s(%d). Message truncated. %zd\n", __FUNCTION__, __LINE__, len);
+      continue;
+    }
+    if (len == sizeof(uint16_t))
+    {
+      uint16_t sfn_slot = 0;
+      memcpy((void *)&sfn_slot, buffer, sizeof(sfn_slot));
+      current_sfn_slot = sfn_slot;
+
+      if (sem_post(&sfn_slot_semaphore) != 0)
+      {
+        LOG_E(MAC, "sem_post() error\n");
+        abort();
+      }
+      int sfn = NFAPI_SFNSLOT2SFN(sfn_slot);
+      int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
+      LOG_D(MAC, "Received from proxy sfn %d slot %d\n", sfn, slot);
+    }
+    else
+    {
+      nfapi_p7_message_header_t header;
+      if (nfapi_p7_message_header_unpack((void *)buffer, len, &header, sizeof(header), NULL) < 0)
+      {
+        LOG_E(MAC, "Header unpack failed for nrue_standalone pnf\n");
+        continue;
+      }
+      else
+      {
+        switch (header.message_id)
+        {
+          case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
+            LOG_I(NR_PHY, "Melissa, we have received a NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST message. \n");
+            /* Melissa, not 100% sure what to do but I think we need to
+              0. Add TX_DATA_REQUEST and pair them similarly
+              1. Queue them
+              2. De-queue and pair them
+              3. Get SSB PDU when received. Inside this NFAPI_NR_DL_TTI_SSB_PDU_TYPE
+                  we need the cell_id, SSB block index, SSB subcarrier offset, and the BCH payload
+              4. Send back the SSB PDU type (that comes in from Proxy) and send to LTE */
+            break;
+          case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
+            LOG_I(NR_PHY, "Melissa, we have received a NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message. \n");
+            break;
+          case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
+            LOG_I(NR_PHY, "Melissa, we have received a NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message. \n");
+            break;
+          case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
+            LOG_I(NR_PHY, "Melissa, we have received a NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message. \n");
+            break;
+          default:
+            LOG_E(MAC, "Case Statement has no corresponding nfapi message, this is the header ID %d\n", header.message_id);
+            break;
+        }
+      }
+    }
+  } //while(true)
+}
 
 //  L2 Abstraction Layer
 int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){

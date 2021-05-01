@@ -1282,7 +1282,7 @@ rrc_eNB_generate_UECapabilityEnquiry(
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
   int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
-  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0];
   size = do_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
@@ -1332,7 +1332,7 @@ rrc_eNB_generate_NR_UECapabilityEnquiry(
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
   int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
-  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0];
   size = do_NR_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
@@ -8996,22 +8996,22 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
 }
 
 void rrc_eNB_process_ENDC_x2_setup_request(int mod_id, x2ap_ENDC_setup_req_t *m) {
-  if (RC.rrc[mod_id]->num_neigh_cells > MAX_NUM_NEIGH_CELLs) {
-    LOG_E(RRC, "Error: number of neighbouring cells is exceeded \n");
+  if (RC.rrc[mod_id]->num_gnb_cells >= MAX_NUM_GNB_CELLs) {
+    LOG_E(RRC, "Error: number of gNB cells is exceeded\n");
     return;
   }
 
   if (m->num_cc > MAX_NUM_CCs) {
-    LOG_E(RRC, "Error: number of neighbouring cells carriers is exceeded \n");
+    LOG_E(RRC, "Error: number of gNB cells carriers is exceeded \n");
     return;
   }
 
-  RC.rrc[mod_id]->num_neigh_cells++;
-  RC.rrc[mod_id]->num_neigh_cells_cc[RC.rrc[mod_id]->num_neigh_cells-1] = m->num_cc;
+  RC.rrc[mod_id]->num_gnb_cells++;
+  RC.rrc[mod_id]->num_gnb_cells_cc[RC.rrc[mod_id]->num_gnb_cells-1] = m->num_cc;
 
   for (int i=0; i<m->num_cc; i++) {
-    RC.rrc[mod_id]->neigh_cells_id[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->Nid_cell[i];
-    RC.rrc[mod_id]->nr_neigh_freq_band[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->servedNrCell_band[i];
+    RC.rrc[mod_id]->gnb_cells_id[RC.rrc[mod_id]->num_gnb_cells-1][i] = m->Nid_cell[i];
+    RC.rrc[mod_id]->nr_gnb_freq_band[RC.rrc[mod_id]->num_gnb_cells-1][i] = m->servedNrCell_band[i];
   }
 
 }
