@@ -657,6 +657,7 @@ static void add_rlc_srb(int rnti, struct NR_SRB_ToAddMod *s, NR_RLC_BearerConfig
   int t_reassembly;
   int sn_field_length;
 
+  LOG_I(RLC,"Trying to add SRB %d\n",srb_id);
   if (srb_id != 1 && srb_id != 2) {
     LOG_E(RLC, "%s:%d:%s: fatal, bad srb id %d\n",
         __FILE__, __LINE__, __FUNCTION__, srb_id);

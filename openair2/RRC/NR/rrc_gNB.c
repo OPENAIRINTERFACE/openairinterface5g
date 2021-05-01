@@ -1265,6 +1265,8 @@ rrc_gNB_process_RRCReconfigurationComplete(
                    ue_context_pP->ue_context.rnti);
 
 #ifndef ITTI_SIM
+  LOG_I(NR_RRC,"Configuring PDCP DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
+  
   nr_rrc_pdcp_config_asn1_req(ctxt_pP,
                               SRB_configList, // NULL,
                               DRB_configList,
@@ -1279,6 +1281,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
   /* Refresh SRBs/DRBs */
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    LOG_I(NR_RRC,"Configuring RLC DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
     nr_rrc_rlc_config_asn1_req(ctxt_pP,
                           SRB_configList, // NULL,
                           DRB_configList,
