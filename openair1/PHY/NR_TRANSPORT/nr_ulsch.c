@@ -151,7 +151,8 @@ void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
                                      aa,gNB->ulsch_stats[i].power[aa]/10,gNB->ulsch_stats[i].power[aa]%10,
                                      aa,gNB->ulsch_stats[i].noise_power[aa]/10,gNB->ulsch_stats[i].noise_power[aa]%10);
           else       stroff+=sprintf(output+stroff,"                  ulsch_power[%d] %d.%d, ulsch_noise_power[%d] %d.%d\n", 
-                                     aa,gNB->ulsch_stats[i].noise_power[aa]/10,gNB->ulsch_stats[i].noise_power[aa]%10);
+                                     aa,gNB->ulsch_stats[i].power[aa]/10,gNB->ulsch_stats[i].power[aa]%10,
+                                     gNB->ulsch_stats[i].noise_power[aa]/10,gNB->ulsch_stats[i].noise_power[aa]%10);
 
       AssertFatal(stroff<(STATSTRLEN-1000),"Increase STATSTRLEN\n");
 

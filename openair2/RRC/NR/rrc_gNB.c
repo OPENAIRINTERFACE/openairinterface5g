@@ -1015,7 +1015,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
           break;
 
         default:
-          LOG_E(NR_RRC,"not supported 5qi %d\n", ue_context_pP->ue_context.pdusession[i].param.qos[qos_flow_index].fiveQI);
+          LOG_E(NR_RRC,"not supported 5qi %lu\n", ue_context_pP->ue_context.pdusession[i].param.qos[qos_flow_index].fiveQI);
           ue_context_pP->ue_context.pdusession[i].status = PDU_SESSION_STATUS_FAILED;
           ue_context_pP->ue_context.pdusession[i].xid = xid;
           pdu_sessions_done++;

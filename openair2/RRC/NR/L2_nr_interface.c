@@ -43,6 +43,8 @@
 #include "NR_MIB.h"
 #include "NR_BCCH-BCH-Message.h"
 #include "rrc_gNB_UE_context.h"
+#include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
+
 
 extern RAN_CONTEXT_t RC;
 
