@@ -478,22 +478,25 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       exit(1);
 
     rb_found:
+    {
+      int offset=0;
+      if (entity->has_sdap == 1 && entity->has_sdapULheader == 1) offset = 1; // this is the offset of the SDAP header in bytes
+
       gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
-                                  size + GTPU_HEADER_OVERHEAD_MAX);
+                                  size + GTPU_HEADER_OVERHEAD_MAX - offset);
       AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
-      memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf, size);
+      memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf+offset, size-offset);
       message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_GNB_TUNNEL_DATA_REQ);
       AssertFatal(message_p != NULL, "OUT OF MEMORY");
-      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
-      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).length       = size;
-      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
-      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).buffer              = gtpu_buffer_p;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).length              = size-offset;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).offset              = GTPU_HEADER_OVERHEAD_MAX;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti                = ue->rnti;
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id       = entity->pdusession_id;
-      LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
-      //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
-      //printf("\n");
+      if (offset==1) LOG_I(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
+      LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size-offset);
       itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
-
+   }
   }
 }
 
@@ -754,7 +757,8 @@ static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
     LOG_D(PDCP, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
-    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id, 0,
+    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id, 
+                                  0, 0, 0, 0, // sdap parameters
                                   deliver_sdu_srb, ue, deliver_pdu_srb, ue,
                                   12, t_Reordering, -1,
                                   0, 0,
@@ -786,6 +790,9 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   }
   
   int pdusession_id; 
+  int has_sdap = 0;
+  int has_sdapULheader=0;
+  int has_sdapDLheader=0;
   if (s->cnAssociation->present == NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity)
      pdusession_id = s->cnAssociation->choice.eps_BearerIdentity;
   else {
@@ -794,6 +801,13 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
       exit(-1);
     }
     pdusession_id = s->cnAssociation->choice.sdap_Config->pdu_Session;
+    has_sdap = 1;
+    has_sdapULheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present ? 1 : 0;
+    has_sdapDLheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present ? 1 : 0;
+    if (has_sdapDLheader==1) {
+      LOG_E(PDCP,"%s:%d:%s: fatal, no support for SDAP DL yet\n",__FILE__,__LINE__,__FUNCTION__);
+      exit(-1);
+    }
   }
   /* TODO(?): accept different UL and DL SN sizes? */
   if (sn_size_ul != sn_size_dl) {
@@ -814,7 +828,8 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
     LOG_D(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id,pdusession_id,
+    pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id,pdusession_id,has_sdap,
+                                  has_sdapULheader,has_sdapDLheader,
                                   deliver_sdu_drb, ue, deliver_pdu_drb, ue,
                                   sn_size_dl, t_reordering, discard_timer,
                                   ciphering_algorithm, integrity_algorithm,
