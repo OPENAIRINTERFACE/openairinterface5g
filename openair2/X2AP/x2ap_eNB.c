@@ -116,9 +116,7 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
       /* some sanity check - to be refined at some point */
       if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
         X2AP_ERROR("x2ap_enb_data_p not NULL and sctp state not SCTP_STATE_ESTABLISHED, what to do?\n");
-        // Allow for a gracious exit when we kill first the gNB, then the eNB
-        //abort();
-        return;
+        exit(1);
       }
 
       x2ap_enb_data_p->in_streams  = sctp_new_association_resp->in_streams;

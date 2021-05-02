@@ -57,6 +57,7 @@
 #include "enb_paramdef.h"
 #include "proto_agent.h"
 #include "executables/thread-common.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw);
 extern uint32_t to_earfcn_UL(int eutra_bandP, uint32_t ul_CarrierFreq, uint32_t bw);
@@ -2058,7 +2059,9 @@ int RCconfig_gtpu(void ) {
     IPV4_STR_ADDR_TO_INT_NWBO ( address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
     LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
     GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = enb_port_for_S1U;
-    itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+    strcpy(GTPV1U_ENB_S1_REQ(message).addrStr,address);
+    sprintf(GTPV1U_ENB_S1_REQ(message).portStr,"%d", enb_port_for_S1U);
+    itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
   } else
     LOG_E(GTPU,"invalid address for S1U\n");
 
@@ -3142,21 +3145,21 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
       rrc_eNB_carrier_data_t *carrier =  &RC.rrc[i]->carrier[0];
       // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
       LOG_I(ENB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, resp->nr_cellid %lx\n",
-            j,i,RC.rrc[i]->nr_cellid,resp->nr_cellid[j]);
+            j,i,RC.rrc[i]->nr_cellid,resp->cells_to_activate[j].nr_cellid);
 
-      if (RC.rrc[i]->nr_cellid == resp->nr_cellid[j] &&
-          (check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
-           resp->nrpci[j] == carrier->physCellId)) {
+      if (RC.rrc[i]->nr_cellid == resp->cells_to_activate[j].nr_cellid &&
+          (check_plmn_identity(carrier, resp->cells_to_activate[j].mcc, resp->cells_to_activate[j].mnc, resp->cells_to_activate[j].mnc_digit_length)>0 &&
+           resp->cells_to_activate[j].nrpci == carrier->physCellId)) {
         // copy system information and decode it
-        for (si_ind=0; si_ind<resp->num_SI[j]; si_ind++)  {
+        for (si_ind=0; si_ind<resp->cells_to_activate[j].num_SI; si_ind++)  {
           //printf("SI %d size %d: ", si_ind, resp->SI_container_length[j][si_ind]);
           //for (int n=0;n<resp->SI_container_length[j][si_ind];n++)
           //  printf("%02x ",resp->SI_container[j][si_ind][n]);
           //printf("\n");
           extract_and_decode_SI(i,
                                 si_ind,
-                                resp->SI_container[j][si_ind],
-                                resp->SI_container_length[j][si_ind]);
+                                resp->cells_to_activate[j].SI_container[si_ind],
+                                resp->cells_to_activate[j].SI_container_length[si_ind]);
         }
 
         // perform MAC/L1 common configuration

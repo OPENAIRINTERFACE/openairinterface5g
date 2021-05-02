@@ -141,6 +141,7 @@
 #define GNB_CONFIG_STRING_PUCCHGROUPHOPPING                     "pucchGroupHopping"
 #define GNB_CONFIG_STRING_HOPPINGID                             "hoppingId"
 #define GNB_CONFIG_STRING_P0NOMINAL                             "p0_nominal"
+#define GNB_CONFIG_STRING_PUCCHRES                              "pucch_ResourceCommon"
 #define GNB_CONFIG_STRING_INITIALULBWPK2_0                      "initialULBWPk2_0"
 #define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_0             "initialULBWPmappingType_0"
 #define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_0    "initialULBWPstartSymbolAndLength_0"
@@ -210,6 +211,24 @@
 
 
 #define CARRIERBANDWIDTH_OKVALUES {11,18,24,25,31,32,38,51,52,65,66,78,79,93,106,107,121,132,133,135,160,162,189,216,217,245,264,270,273}
+
+/* Serving Cell Config Dedicated */
+#define GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED                     "servingCellConfigDedicated"
+#define GNB_CONFIG_STRING_DLPTRSFREQDENSITY0_0                           "dl_ptrsFreqDensity0_0"
+#define GNB_CONFIG_STRING_DLPTRSFREQDENSITY1_0                           "dl_ptrsFreqDensity1_0"
+#define GNB_CONFIG_STRING_DLPTRSTIMEDENSITY0_0                           "dl_ptrsTimeDensity0_0"
+#define GNB_CONFIG_STRING_DLPTRSTIMEDENSITY1_0                           "dl_ptrsTimeDensity1_0"
+#define GNB_CONFIG_STRING_DLPTRSTIMEDENSITY2_0                           "dl_ptrsTimeDensity2_0"
+#define GNB_CONFIG_STRING_DLPTRSEPRERATIO_0                              "dl_ptrsEpreRatio_0"
+#define GNB_CONFIG_STRING_DLPTRSREOFFSET_0                               "dl_ptrsReOffset_0"
+#define GNB_CONFIG_STRING_ULPTRSFREQDENSITY0_0                           "ul_ptrsFreqDensity0_0"
+#define GNB_CONFIG_STRING_ULPTRSFREQDENSITY1_0                           "ul_ptrsFreqDensity1_0"
+#define GNB_CONFIG_STRING_ULPTRSTIMEDENSITY0_0                           "ul_ptrsTimeDensity0_0"
+#define GNB_CONFIG_STRING_ULPTRSTIMEDENSITY1_0                           "ul_ptrsTimeDensity1_0"
+#define GNB_CONFIG_STRING_ULPTRSTIMEDENSITY2_0                           "ul_ptrsTimeDensity2_0"
+#define GNB_CONFIG_STRING_ULPTRSREOFFSET_0                               "ul_ptrsReOffset_0"
+#define GNB_CONFIG_STRING_ULPTRSMAXPORTS_0                               "ul_ptrsMaxPorts_0"
+#define GNB_CONFIG_STRING_ULPTRSPOWER_0                                  "ul_ptrsPower_0"
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*                                            pdcch_ConfigSIB1 parameters                                             */
@@ -379,6 +398,7 @@
 {GNB_CONFIG_STRING_PUCCHGROUPHOPPING, NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_GroupHopping,defint64val:NR_PUCCH_ConfigCommon__pucch_GroupHopping_neither,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_HOPPINGID, NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId,defint64val:40,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_P0NOMINAL, NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal,defint64val:1,TYPE_INT64,0},\
+{GNB_CONFIG_STRING_PUCCHRES, NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon,defint64val:0,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_SSBPOSITIONSINBURSTPR,NULL,0,uptr:&scc->ssb_PositionsInBurst->present,defuintval:NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap,TYPE_UINT,0/*140*/}, \
 {GNB_CONFIG_STRING_SSBPOSITIONSINBURST,NULL,0,u64ptr:&ssb_bitmap,defintval:0xff,TYPE_UINT64,0}, \
 {GNB_CONFIG_STRING_REFERENCESUBCARRIERSPACING,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing,defint64val:NR_SubcarrierSpacing_kHz30,TYPE_INT64,0},\
@@ -395,6 +415,26 @@
 {GNB_CONFIG_STRING_SSPBCHBLOCKPOWER,NULL,0,i64ptr:&scc->ss_PBCH_BlockPower,defint64val:20,TYPE_INT64,0}, \
 {GNB_CONFIG_STRING_MSG1SUBCARRIERSPACING,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing,defintval:-1,TYPE_INT64,0}}
 
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                     Serving Cell Config Dedicated configuration parameters                                                                                                     */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+#define SCDPARAMS_DESC(scd) { \
+{GNB_CONFIG_STRING_DLPTRSFREQDENSITY0_0,NULL,0,i64ptr:scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity->list.array[0],defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_DLPTRSFREQDENSITY1_0,NULL,0,i64ptr:scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity->list.array[1],defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_DLPTRSTIMEDENSITY0_0,NULL,0,i64ptr:scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->timeDensity->list.array[0],defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_DLPTRSTIMEDENSITY1_0,NULL,0,i64ptr:scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->timeDensity->list.array[1],defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_DLPTRSTIMEDENSITY2_0,NULL,0,i64ptr:scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->timeDensity->list.array[2],defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_DLPTRSEPRERATIO_0,NULL,0,i64ptr:scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->epre_Ratio,defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_DLPTRSREOFFSET_0,NULL,0,i64ptr:scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->resourceElementOffset,defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_ULPTRSFREQDENSITY0_0,NULL,0,i64ptr:scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->frequencyDensity->list.array[0],defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_ULPTRSFREQDENSITY1_0,NULL,0,i64ptr:scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->frequencyDensity->list.array[1],defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_ULPTRSTIMEDENSITY0_0,NULL,0,i64ptr:scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[0],defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_ULPTRSTIMEDENSITY1_0,NULL,0,i64ptr:scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[1],defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_ULPTRSTIMEDENSITY2_0,NULL,0,i64ptr:scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[2],defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_ULPTRSREOFFSET_0,NULL,0,i64ptr:scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->resourceElementOffset,defint64val:-1,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_ULPTRSMAXPORTS_0,NULL,0,i64ptr:&scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->maxNrofPorts,defint64val:0,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_ULPTRSPOWER_0,NULL,0,i64ptr:&scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->ptrs_Power,defint64val:0,TYPE_INT64,0}}
 
 
 

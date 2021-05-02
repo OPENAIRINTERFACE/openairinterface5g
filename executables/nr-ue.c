@@ -85,12 +85,6 @@
  *
  */
 
-#ifndef NO_RAT_NR
-  #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
-#else
-  #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
-#endif
-
 typedef enum {
   pss = 0,
   pbch = 1,
@@ -237,43 +231,6 @@ static void UE_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].rx_freq[0],
               openair0_cfg[UE->rf_map.card].tx_freq[0]);
 
-        // reconfigure for potentially different bandwidth
-        switch(UE->frame_parms.N_RB_DL) {
-          case 6:
-            openair0_cfg[UE->rf_map.card].sample_rate =1.92e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =.96e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =.96e6;
-            //            openair0_cfg[0].rx_gain[0] -= 12;
-            break;
-
-          case 25:
-            openair0_cfg[UE->rf_map.card].sample_rate =7.68e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =2.5e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =2.5e6;
-            //            openair0_cfg[0].rx_gain[0] -= 6;
-            break;
-
-          case 50:
-            openair0_cfg[UE->rf_map.card].sample_rate =15.36e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =5.0e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =5.0e6;
-            //            openair0_cfg[0].rx_gain[0] -= 3;
-            break;
-
-          case 100:
-            openair0_cfg[UE->rf_map.card].sample_rate=30.72e6;
-            openair0_cfg[UE->rf_map.card].rx_bw=10.0e6;
-            openair0_cfg[UE->rf_map.card].tx_bw=10.0e6;
-            //            openair0_cfg[0].rx_gain[0] -= 0;
-            break;
-
-          case 66:
-            openair0_cfg[UE->rf_map.card].sample_rate=122.88e6;
-            openair0_cfg[UE->rf_map.card].rx_bw=100.e6;
-            openair0_cfg[UE->rf_map.card].tx_bw=100.e6;
-            break;
-        }
-
         if (UE->mode != loop_through_memory) {
           UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
           //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
@@ -321,6 +278,7 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_slot_tx);
   uint8_t gNB_id = 0;
 
+  LOG_D(PHY,"%d.%d => slot type %d\n",proc->frame_tx,proc->nr_slot_tx,tx_slot_type);
   if (tx_slot_type == NR_UPLINK_SLOT || tx_slot_type == NR_MIXED_SLOT){
 
     // trigger L2 to run ue_scheduler thru IF module
@@ -370,11 +328,19 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     LOG_D(PHY, "In %s: slot %d, time %lu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc()-a)/3500);
 #endif
 
-    if(IS_SOFTMODEM_NOS1){
+    if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa){
       NR_UE_MAC_INST_t *mac = get_mac_inst(0);
       protocol_ctxt_t ctxt;
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO, mac->crnti, proc->frame_rx, proc->nr_slot_rx, 0);
       pdcp_run(&ctxt);
+
+      /* send tick to RLC and PDCP every ms */
+      if (proc->nr_slot_rx % UE->frame_parms.slots_per_subframe == 0) {
+        void nr_rlc_tick(int frame, int subframe);
+        void nr_pdcp_tick(int frame, int subframe);
+        nr_rlc_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
+        nr_pdcp_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
+      }
     }
   }
 
@@ -669,8 +635,8 @@ void *UE_thread(void *arg) {
     }
 
     curMsg->proc.timestamp_tx = timestamp+
-                                UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                                &UE->frame_parms,DURATION_RX_TO_TX) - firstSymSamp;
+      UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,DURATION_RX_TO_TX) 
+      - firstSymSamp;
 
     notifiedFIFO_elt_t *res;
 
@@ -692,8 +658,10 @@ void *UE_thread(void *arg) {
             decoded_frame_rx, curMsg->proc.frame_rx  );
 
     // use previous timing_advance value to compute writeTimestamp
-    writeTimestamp = timestamp + UE->frame_parms.get_samples_slot_timestamp(slot_nr, &UE->frame_parms,DURATION_RX_TO_TX - RX_NB_TH) -
-                     firstSymSamp - openair0_cfg[0].tx_sample_advance - UE->N_TA_offset - timing_advance;
+    writeTimestamp = timestamp+
+      UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,DURATION_RX_TO_TX
+      - RX_NB_TH) - firstSymSamp - openair0_cfg[0].tx_sample_advance -
+      UE->N_TA_offset - timing_advance;
 
     // but use current UE->timing_advance value to compute writeBlockSize
     if (UE->timing_advance != timing_advance) {
@@ -707,7 +675,11 @@ void *UE_thread(void *arg) {
     if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
 
       uint8_t    tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
-      int   nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+      int   nrofUplinkSlots = 0;
+      if (mac->scc_SIB)
+	nrofUplinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+      else if (mac->scc)
+	nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
       uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSlots != 0);
       uint8_t first_tx_slot = tdd_period - num_UL_slots;
 
@@ -722,13 +694,13 @@ void *UE_thread(void *arg) {
     }
 
     if (flags || IS_SOFTMODEM_RFSIM)
-      AssertFatal( writeBlockSize ==
-                 UE->rfdevice.trx_write_func(&UE->rfdevice,
-					       writeTimestamp,
-					       txp,
-					       writeBlockSize,
-					       UE->frame_parms.nb_antennas_tx,
-					       flags),"");
+      AssertFatal(writeBlockSize ==
+                  UE->rfdevice.trx_write_func(&UE->rfdevice,
+                                              writeTimestamp,
+                                              txp,
+                                              writeBlockSize,
+                                              UE->frame_parms.nb_antennas_tx,
+                                              flags),"");
     
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       memset(txp[i], 0, writeBlockSize);
@@ -768,23 +740,6 @@ void init_NR_UE(int nb_inst, char* rrc_config_path) {
     AssertFatal((rrc_inst = nr_l3_init_ue(rrc_config_path)) != NULL, "can not initialize RRC module\n");
     AssertFatal((mac_inst = nr_l2_init_ue(rrc_inst)) != NULL, "can not initialize L2 module\n");
     AssertFatal((mac_inst->if_module = nr_ue_if_module_init(inst)) != NULL, "can not initialize IF module\n");
-
-    NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
-    if (mac_inst->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
-      pusch_TimeDomainAllocationList = mac_inst->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
-    }
-    else if (mac_inst->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
-      pusch_TimeDomainAllocationList = mac_inst->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-    }
-    	
-    if (pusch_TimeDomainAllocationList) {
-      for(int i = 0; i < pusch_TimeDomainAllocationList->list.count; i++) {
-        AssertFatal(*pusch_TimeDomainAllocationList->list.array[i]->k2 >= DURATION_RX_TO_TX, 
-                    "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d)\n", 
-                    *pusch_TimeDomainAllocationList->list.array[i]->k2,
-                    DURATION_RX_TO_TX);
-      }
-    }
   }
 }
 

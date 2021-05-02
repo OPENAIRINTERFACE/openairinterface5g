@@ -80,6 +80,7 @@
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
 
+
 /*! \brief NR_list_t is a "list" (of users, HARQ processes, slices, ...).
  * Especially useful in the scheduler and to keep "classes" of users. */
 typedef struct {
@@ -160,8 +161,8 @@ typedef struct {
   NR_SearchSpace_t *ra_ss;
   // Beam index
   uint8_t beam_id;
-  /// secondaryCellGroup for UE in NSA that is to come
-  NR_CellGroupConfig_t *secondaryCellGroup;
+  /// CellGroup for UE that is to come (NSA is non-null, null for SA)
+  NR_CellGroupConfig_t *CellGroup;
   /// Preambles for contention-free access
   NR_preamble_ue_t preambles;
   /// NSA: the UEs C-RNTI to use
@@ -246,7 +247,16 @@ typedef struct pdcchStateInd {
   uint8_t servingCellId;
   uint8_t coresetId;
   uint8_t tciStateId;
+  bool tci_present_inDCI;
 } pdcchStateInd_t;
+
+typedef struct pucchSpatialRelation {
+  bool is_scheduled;
+  uint8_t servingCellId;
+  uint8_t bwpId;
+  uint8_t pucchResourceId;
+  bool s0tos7_actDeact[8];
+} pucchSpatialRelation_t;
 
 typedef struct SPCSIReportingpucch {
   bool is_scheduled;
@@ -271,12 +281,14 @@ typedef struct pdschTciStatesActDeact {
   uint8_t bwpId;
   uint8_t highestTciStateActivated;
   bool tciStateActDeact[MAX_TCI_STATES];
+  uint8_t codepoint[8];
 } pdschTciStatesActDeact_t;
 
 typedef struct UE_info {
   sp_zp_csirs_t sp_zp_csi_rs;
   csi_rs_im_t csi_im;
   pdcchStateInd_t pdcch_state_ind;
+  pucchSpatialRelation_t pucch_spatial_relation;
   SPCSIReportingpucch_t SP_CSI_reporting_pucch;
   aperiodicCSI_triggerStateSelection_t aperi_CSI_trigger;
   pdschTciStatesActDeact_t pdsch_TCI_States_ActDeact;
@@ -292,6 +304,7 @@ typedef struct NR_sched_pucch {
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
+  int r_pucch;
 } NR_sched_pucch_t;
 
 /* this struct is a helper: as long as the TDA and DCI format remain the same
@@ -352,6 +365,84 @@ typedef struct NR_UE_harq {
   uint32_t tb_size;
 } NR_UE_harq_t;
 
+//! fixme : need to enhace for the multiple TB CQI report
+
+
+//
+/*! As per spec 38.214 section 5.2.1.4.2
+ * - if the UE is configured with the higher layer parameter groupBasedBeamReporting set to 'disabled', the UE shall report in
+  a single report nrofReportedRS (higher layer configured) different CRI or SSBRI for each report setting.
+ * - if the UE is configured with the higher layer parameter groupBasedBeamReporting set to 'enabled', the UE shall report in a
+  single reporting instance two different CRI or SSBRI for each report setting, where CSI-RS and/or SSB
+  resources can be received simultaneously by the UE either with a single spatial domain receive filter, or with
+  multiple simultaneous spatial domain receive filter
+*/
+#define MAX_NR_OF_REPORTED_RS 4
+
+typedef enum NR_CSI_Report_Config {
+  CSI_Report_PR_cri_ri_li_pmi_cqi_report,
+  CSI_Report_PR_ssb_cri_report
+} NR_CSI_Report_Config_PR;
+struct CRI_RI_LI_PMI_CQI {
+  uint8_t cri;
+  uint8_t ri;
+  uint8_t li;
+  uint8_t pmi_x1;
+  uint8_t pmi_x2;
+  uint8_t cqi;
+};
+
+typedef struct CRI_SSB_RSRP {
+  uint8_t nr_ssbri_cri;
+  uint8_t CRI_SSBRI[MAX_NR_OF_REPORTED_RS];
+  uint8_t RSRP;
+  uint8_t diff_RSRP[MAX_NR_OF_REPORTED_RS - 1];
+} CRI_SSB_RSRP_t;
+
+struct CSI_Report {
+  NR_CSI_Report_Config_PR present;
+  union Config_CSI_Report {
+    struct CRI_RI_LI_PMI_CQI cri_ri_li_pmi_cqi_report;
+    struct CRI_SSB_RSRP ssb_cri_report;
+  } choice;
+};
+
+#define MAX_SR_BITLEN 8
+
+typedef struct {
+  uint8_t nb_ssbri_cri;
+  uint8_t cri_ssbri_bitlen;
+  uint8_t rsrp_bitlen;
+  uint8_t diff_rsrp_bitlen;
+}L1_RSRP_bitlen_t;
+
+typedef struct{
+  uint8_t cri_bitlen;
+  uint8_t ri_bitlen;
+  uint8_t li_bitlen;
+  uint8_t pmi_x1_bitlen;
+  uint8_t pmi_x2_bitlen;
+  uint8_t cqi_bitlen;
+} CSI_Meas_bitlen_t;
+
+typedef struct nr_csi_report {
+  NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
+  long periodicity;
+  uint16_t offset;
+  long ** SSB_Index_list;
+  long ** CSI_Index_list;
+//  uint8_t nb_of_nzp_csi_report;
+  uint8_t nb_of_csi_ssb_report;
+  L1_RSRP_bitlen_t CSI_report_bitlen;
+  CSI_Meas_bitlen_t csi_meas_bitlen;
+} nr_csi_report_t;
+
+/*! As per the spec 38.212 and table:  6.3.1.1.2-12 in a single UCI sequence we can have multiple CSI_report 
+  the number of CSI_report will depend on number of CSI resource sets that are configured in CSI-ResourceConfig RRC IE
+  From spec 38.331 from the IE CSI-ResourceConfig for SSB RSRP reporting we can configure only one resource set 
+  From spec 38.214 section 5.2.1.2 For periodic and semi-persistent CSI Resource Settings, the number of CSI-RS Resource Sets configured is limited to S=1
+ */
+#define MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG 16
 typedef struct NR_UE_old_sched {
   uint16_t rbSize;
   int time_domain_allocation;
@@ -376,26 +467,8 @@ typedef struct NR_UE_ul_harq {
   NR_sched_pusch_t sched_pusch;
 } NR_UE_ul_harq_t;
 
-
-typedef struct {
-  uint8_t nb_ssbri_cri;
-  uint8_t cri_ssbri_bitlen;
-  uint8_t rsrp_bitlen;
-  uint8_t diff_rsrp_bitlen;
-}CRI_SSBRI_RSRP_bitlen_t;
-
-
-#define MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG 16
-typedef struct nr_csi_report {
-  NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
-  NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR CSI_Resource_type;
-  uint8_t nb_of_nzp_csi_report;
-  uint8_t nb_of_csi_ssb_report;
-  CRI_SSBRI_RSRP_bitlen_t CSI_report_bitlen[MAX_CSI_RESOURCE_SET_IN_CSI_RESOURCE_CONFIG];
-} nr_csi_report_t;
-
-
 /*! \brief scheduling control information set through an API */
+#define MAX_CSI_REPORTS 48
 typedef struct {
   /// total amount of data awaiting for this UE
   uint32_t num_total_bytes;
@@ -450,6 +523,11 @@ typedef struct {
   uint8_t tpc0;
   uint8_t tpc1;
   uint16_t ul_rssi;
+  uint8_t current_harq_pid;
+  int pusch_consecutive_dtx_cnt;
+  int pucch_consecutive_dtx_cnt;
+  int ul_failure;
+  struct CSI_Report CSI_report[MAX_CSI_REPORTS];
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
@@ -487,6 +565,8 @@ typedef struct {
   int ulsch_total_bytes_scheduled;
   int ulsch_total_bytes_rx;
   int ulsch_current_bytes;
+  int cumul_rsrp;
+  uint8_t num_rsrp_meas;
 } NR_mac_stats_t;
 
 
@@ -502,13 +582,14 @@ typedef struct {
 
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
-  NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
+  NR_CellGroupConfig_t *CellGroup[MAX_MOBILES_PER_GNB];
   /// CCE indexing
   int Y[MAX_MOBILES_PER_GNB][3][160];
   int m[MAX_MOBILES_PER_GNB];
   int num_pdcch_cand[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET];
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
+  bool Msg4_ACKed[MAX_MOBILES_PER_GNB];
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
@@ -536,6 +617,12 @@ typedef struct gNB_MAC_INST_s {
   int                             pusch_target_snrx10;
   /// Pucch target SNR
   int                             pucch_target_snrx10;
+  /// PUCCH Failure threshold (compared to consecutive PUCCH DTX)
+  int                             pucch_failure_thres;
+  /// PUSCH Failure threshold (compared to consecutive PUSCH DTX)
+  int                             pusch_failure_thres;
+  /// Subcarrier Offset
+  int                             ssb_SubcarrierOffset;
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
@@ -589,19 +676,19 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t schedule_pch;
   /// CCE lists
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
+  /// list of allocated beams per period
+  int16_t *tdd_beam_association;
   /// PUCCH: keep track of the resources has already been used by saving the
   /// highest index not yet been used in a given slot. Dynamically allocated
   /// so we can have it for every slot as a function of the numerology
   int *pucch_index_used[MAX_NUM_BWP];
-
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
   /// UL preprocessor for differentiated scheduling
   nr_pp_impl_ul pre_processor_ul;
 
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
-  NR_CellGroupConfig_t *secondaryCellGroupCommon;
-  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
+  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
 } gNB_MAC_INST;
 

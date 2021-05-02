@@ -116,7 +116,6 @@ int test_ldpc(short No_iteration,
   double sigma;
   sigma = 1.0/sqrt(2*SNR);
   opp_enabled=1;
-  cpu_freq_GHz = get_cpu_freq_GHz();
   //short test_input[block_length];
   unsigned char *test_input[MAX_NUM_DLSCH_SEGMENTS]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};;
   //short *c; //padded codeword
@@ -144,7 +143,7 @@ int test_ldpc(short No_iteration,
   t_nrLDPC_procBuf nrLDPC_procBuf;
   t_nrLDPC_procBuf* p_nrLDPC_procBuf = &nrLDPC_procBuf;
     
-  t_nrLDPC_time_stats decoder_profiler;
+  t_nrLDPC_time_stats decoder_profiler = {0};
   t_nrLDPC_time_stats* p_decoder_profiler =&decoder_profiler ;
 
   int32_t n_iter = 0;
@@ -614,7 +613,6 @@ int main(int argc, char *argv[])
               exit(1);
               break;
     }
-  cpu_freq_GHz = get_cpu_freq_GHz();
   //printf("the decoder supports BG2, Kb=10, Z=128 & 256\n");
   //printf(" range of blocklength: 1201 -> 1280, 2401 -> 2560\n");
   printf("block length %d: \n", block_length);
@@ -704,25 +702,25 @@ int main(int argc, char *argv[])
     printf("SNR %f, Std iterations: %f\n",SNR, dec_iter->n_iter_std);
     printf("SNR %f, Max iterations: %d\n",SNR, dec_iter->n_iter_max);
     printf("\n");
-    printf("Encoding time mean: %15.3f us\n",(double)time_optim->diff/time_optim->trials/1000.0/cpu_freq_GHz);
-    printf("Encoding time std: %15.3f us\n",sqrt((double)time_optim->diff_square/time_optim->trials/pow(1000,2)/pow(cpu_freq_GHz,2)-pow((double)time_optim->diff/time_optim->trials/1000.0/cpu_freq_GHz,2)));
-    printf("Encoding time max: %15.3f us\n",(double)time_optim->max/1000.0/cpu_freq_GHz);
+    printf("Encoding time mean: %15.3f us\n",(double)time_optim->diff/time_optim->trials/1000.0/get_cpu_freq_GHz());
+    printf("Encoding time std: %15.3f us\n",sqrt((double)time_optim->diff_square/time_optim->trials/pow(1000,2)/pow(get_cpu_freq_GHz(),2)-pow((double)time_optim->diff/time_optim->trials/1000.0/get_cpu_freq_GHz(),2)));
+    printf("Encoding time max: %15.3f us\n",(double)time_optim->max/1000.0/get_cpu_freq_GHz());
     printf("\n");
-    printf("Decoding time mean: %15.3f us\n",(double)time_decoder->diff/time_decoder->trials/1000.0/cpu_freq_GHz);
-    printf("Decoding time std: %15.3f us\n",sqrt((double)time_decoder->diff_square/time_decoder->trials/pow(1000,2)/pow(cpu_freq_GHz,2)-pow((double)time_decoder->diff/time_decoder->trials/1000.0/cpu_freq_GHz,2)));
-    printf("Decoding time max: %15.3f us\n",(double)time_decoder->max/1000.0/cpu_freq_GHz);
+    printf("Decoding time mean: %15.3f us\n",(double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz());
+    printf("Decoding time std: %15.3f us\n",sqrt((double)time_decoder->diff_square/time_decoder->trials/pow(1000,2)/pow(get_cpu_freq_GHz(),2)-pow((double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz(),2)));
+    printf("Decoding time max: %15.3f us\n",(double)time_decoder->max/1000.0/get_cpu_freq_GHz());
 
     fprintf(fd,"%f %f %f %f %f %f %f %f %f %f %f %f %d \n",
     		SNR,
     		(double)decoded_errors[i]/(double)n_trials ,
     		(double)errors_bit/(double)n_trials/(double)block_length/(double)n_segments ,
     		errors_bit_uncoded/(double)n_trials/(double)n_segments ,
-    		(double)time_optim->diff/time_optim->trials/1000.0/cpu_freq_GHz,
-    		sqrt((double)time_optim->diff_square/time_optim->trials/pow(1000,2)/pow(cpu_freq_GHz,2)-pow((double)time_optim->diff/time_optim->trials/1000.0/cpu_freq_GHz,2)),
-    		(double)time_optim->max/1000.0/cpu_freq_GHz,
-    		(double)time_decoder->diff/time_decoder->trials/1000.0/cpu_freq_GHz,
-    		sqrt((double)time_decoder->diff_square/time_decoder->trials/pow(1000,2)/pow(cpu_freq_GHz,2)-pow((double)time_decoder->diff/time_decoder->trials/1000.0/cpu_freq_GHz,2)),
-    		(double)time_decoder->max/1000.0/cpu_freq_GHz,
+    		(double)time_optim->diff/time_optim->trials/1000.0/get_cpu_freq_GHz(),
+    		sqrt((double)time_optim->diff_square/time_optim->trials/pow(1000,2)/pow(get_cpu_freq_GHz(),2)-pow((double)time_optim->diff/time_optim->trials/1000.0/get_cpu_freq_GHz(),2)),
+    		(double)time_optim->max/1000.0/get_cpu_freq_GHz(),
+    		(double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz(),
+    		sqrt((double)time_decoder->diff_square/time_decoder->trials/pow(1000,2)/pow(get_cpu_freq_GHz(),2)-pow((double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz(),2)),
+    		(double)time_decoder->max/1000.0/get_cpu_freq_GHz(),
     		dec_iter->n_iter_mean,
     		dec_iter->n_iter_std,
     		dec_iter->n_iter_max

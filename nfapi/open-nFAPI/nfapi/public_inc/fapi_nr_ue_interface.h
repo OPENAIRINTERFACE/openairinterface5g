@@ -111,8 +111,8 @@ typedef struct {
   uint8_t ssb_index;
   uint8_t ssb_length;
   uint16_t cell_id;
-
-} fapi_nr_mib_pdu_t;
+  uint16_t ssb_start_subcarrier;
+} fapi_nr_ssb_pdu_t;
 
 typedef struct {
   uint32_t pdu_length;
@@ -124,7 +124,7 @@ typedef struct {
   uint8_t pdu_type;
   union {
     fapi_nr_pdsch_pdu_t pdsch_pdu;
-    fapi_nr_mib_pdu_t mib_pdu;
+    fapi_nr_ssb_pdu_t ssb_pdu;
     fapi_nr_sib_pdu_t sib_pdu;
   };
 } fapi_nr_rx_indication_body_t;
@@ -972,7 +972,7 @@ typedef struct
 
 typedef struct 
 {
-  uint32_t ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
+  int ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
   uint8_t  bch_payload;//Defines option selected for generation of BCH payload, see Table 3-13 (v0.0.011 Value: 0: MAC generates the full PBCH payload 1: PHY generates the timing PBCH bits 2: PHY generates the full PBCH payload
   uint8_t  scs_common;//subcarrierSpacing for common, used for initial access and broadcast message. [38.211 sec 4.2] Value:0->3
 

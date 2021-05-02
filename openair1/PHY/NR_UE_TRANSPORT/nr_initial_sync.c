@@ -289,8 +289,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames)
                               proc,
                               i,
                               0,
-                              is*fp->samples_per_frame+ue->ssb_offset,
-                              0);
+                              is*fp->samples_per_frame+ue->ssb_offset);
 
 #ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"Calling sss detection (normal CP)\n");
@@ -317,7 +316,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames)
         ue->init_sync_frame = is;
       }   
 
-      nr_gold_pdcch(ue,0, 2);
     /*
     int nb_prefix_samples0 = fp->nb_prefix_samples0;
     fp->nb_prefix_samples0 = fp->nb_prefix_samples;

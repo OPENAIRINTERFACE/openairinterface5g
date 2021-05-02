@@ -149,13 +149,13 @@ void fill_scc(NR_ServingCellConfigCommon_t *scc,uint64_t *ssb_bitmap,int N_RB_DL
   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present=NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139;
   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139=0;
   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig=NR_RACH_ConfigCommon__restrictedSetConfig_unrestrictedSet;
-  *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->k2=2;
+  *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->k2=6;
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->mappingType=NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->startSymbolAndLength=55;
-  *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[1]->k2=2;
+  *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[1]->k2=6;
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[1]->mappingType=NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[1]->startSymbolAndLength=69;
-  *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[2]->k2=2;
+  *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[2]->k2=6;
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[2]->mappingType=NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
   scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[2]->startSymbolAndLength=55;
   *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[3]->k2=33;
@@ -222,6 +222,7 @@ void fill_scc(NR_ServingCellConfigCommon_t *scc,uint64_t *ssb_bitmap,int N_RB_DL
 
 void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap);
 void prepare_scc(NR_ServingCellConfigCommon_t *scc);
+void prepare_scd(NR_ServingCellConfig_t *scd);
 ngap_gNB_config_t ngap_config;
 uint32_t ngap_generate_gNB_id(void) {return 0;}
 void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port) { return;}

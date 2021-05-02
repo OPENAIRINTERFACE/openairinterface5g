@@ -164,7 +164,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
     pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL,
 						    scc->dmrs_TypeA_Position,
-						    NrOfSymbols);
+						    NrOfSymbols,
+                StartSymbolIndex);
 
     /*
     AssertFatal(k0==0,"k0 is not zero for Initial DL BWP TimeDomain Alloc\n");
@@ -254,14 +255,20 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   }
 }
 
+extern int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda);
+extern uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData);
+uint32_t target_dl_mcs = 9;
+uint32_t target_dl_bw = 50;
+uint64_t dlsch_slot_bitmap = (1<<1);
 /* schedules whole bandwidth for first user, all the time */
 void nr_preprocessor_phytest(module_id_t module_id,
                              frame_t frame,
                              sub_frame_t slot)
 {
-  if (slot != 1)
+  if (!is_xlsch_in_slot(dlsch_slot_bitmap, slot))
     return;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   const int UE_id = 0;
   const int CC_id = 0;
   AssertFatal(UE_info->active[UE_id],
@@ -272,24 +279,25 @@ void nr_preprocessor_phytest(module_id_t module_id,
   /* find largest unallocated chunk */
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = 0;
-  int tStart = 0;
   int rbSize = 0;
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
-  /* find largest unallocated RB region */
-  do {
+  /* loop ensures that we allocate exactly target_dl_bw, or return */
+  while (true) {
     /* advance to first free RB */
-    while (tStart < bwpSize && vrb_map[tStart])
-      tStart++;
-    /* find maximum rbSize at current rbStart */
-    int tSize = 1;
-    while (tStart + tSize < bwpSize && !vrb_map[tStart + tSize])
-      tSize++;
-    if (tSize > rbSize) {
-      rbStart = tStart;
-      rbSize = tSize;
-    }
-    tStart += tSize;
-  } while (tStart < bwpSize);
+    while (rbStart < bwpSize && vrb_map[rbStart])
+      rbStart++;
+    rbSize = 1;
+    /* iterate until we are at target_dl_bw or no available RBs */
+    while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && rbSize < target_dl_bw)
+      rbSize++;
+    /* found target_dl_bw? */
+    if (rbSize == target_dl_bw)
+      break;
+    /* at end and below target_dl_bw? */
+    if (rbStart + rbSize >= bwpSize)
+      return;
+    rbStart += rbSize;
+  }
 
   sched_ctrl->num_total_bytes = 0;
   const int lcid = DL_SCH_LCID_DTCH;
@@ -309,12 +317,12 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
 
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+  sched_ctrl->search_space = get_searchspace(scc,sched_ctrl->active_bwp, target_ss);
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space);
-  sched_ctrl->coreset = get_coreset(
+  sched_ctrl->coreset = get_coreset(scc,
       sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = UE_info->Y[UE_id][cid][slot];
@@ -331,7 +339,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
 
-  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot,-1);
   if (!alloc) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
@@ -354,15 +362,15 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->rbStart = rbStart;
   sched_ctrl->rbSize = rbSize;
   sched_ctrl->time_domain_allocation = 2;
-  if (!UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table)
+  if (!UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table)
     sched_ctrl->mcsTableIdx = 0;
   else {
-    if (*UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table == 0)
+    if (*UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->mcs_Table == 0)
       sched_ctrl->mcsTableIdx = 1;
     else
       sched_ctrl->mcsTableIdx = 2;
   }
-  sched_ctrl->mcs = 9;
+  sched_ctrl->mcs = target_dl_mcs;
   sched_ctrl->numDmrsCdmGrpsNoData = 1;
   /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
   sched_ctrl->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
@@ -374,6 +382,9 @@ void nr_preprocessor_phytest(module_id_t module_id,
   if ((frame&127) == 0) LOG_I(MAC,"phytest: %d.%d DL mcs %d, DL rbStart %d, DL rbSize %d\n", frame, slot, sched_ctrl->mcs, rbStart,rbSize);
 }
 
+uint32_t target_ul_mcs = 9;
+uint32_t target_ul_bw = 50;
+uint64_t ulsch_slot_bitmap = (1<<8);
 bool nr_ul_preprocessor_phytest(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
@@ -404,25 +415,26 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id,
               "time domain assignment %d >= %d\n",
               tda,
               tdaList->list.count);
-  int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
+  int K2 = get_K2(scc,sched_ctrl->active_ubwp, tda, mu);
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   /* check if slot is UL, and that slot is 8 (assuming K2=6 because of UE
    * limitations).  Note that if K2 or the TDD configuration is changed, below
    * conditions might exclude each other and never be true */
-  if (!(is_xlsch_in_slot(ulsch_in_slot_bitmap, sched_slot) && sched_slot == 8))
+  if (!is_xlsch_in_slot(ulsch_slot_bitmap, sched_slot))
     return false;
 
-  const int bw = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   uint16_t rbStart = 0;
-  uint16_t rbSize = 50; /* due to OAI UE limitations */
-  if (rbSize>bw)
-    rbSize = bw;
+  uint16_t rbSize = target_ul_bw;
 
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  int startSymbolIndex, nrOfSymbols;
+  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+  const uint16_t symb = ((1 << nrOfSymbols) - 1) << startSymbolIndex;
   for (int i = rbStart; i < rbStart + rbSize; ++i) {
-    if (vrb_map_UL[i]) {
+    if ((vrb_map_UL[i] & symb) != 0) {
       LOG_E(MAC,
             "%s(): %4d.%2d RB %d is already reserved, cannot schedule UE\n",
             __func__,
@@ -437,12 +449,12 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->sched_pusch.frame = sched_frame;
 
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+  sched_ctrl->search_space = get_searchspace(scc,sched_ctrl->active_bwp, target_ss);
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space);
-  sched_ctrl->coreset = get_coreset(
+  sched_ctrl->coreset = get_coreset(scc,
       sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = UE_info->Y[UE_id][cid][slot];
@@ -478,7 +490,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id,
                          num_dmrs_cdm_grps_no_data,
                          ps);
 
-  const int mcs = 9;
+  const int mcs = target_ul_mcs;
   NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
   sched_pusch->mcs = mcs;
   sched_pusch->rbStart = rbStart;

@@ -89,7 +89,7 @@ static int DEFBFW[] = {0x00007fff};
 
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-
+#include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
 
 #include "T.h"
@@ -119,7 +119,6 @@ uint16_t sl_ahead;
 
 extern int emulate_rf;
 extern int numerology;
-extern int usrp_tx_thread;
 
 /*************************************************************/
 /* Functions to attach and configure RRU                     */
@@ -755,17 +754,25 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     if (fp->freq_range==nr_FR2) {
       // the beam index is written in bits 8-10 of the flags
       // bit 11 enables the gpio programming
+      // currently we switch beams every 10 slots (should = 1 TDD period in FR2) and we take the beam index of the first symbol of the first slot of this period
       int beam=0;
-      //if (slot==0) beam = 11; //3 for boresight & 8 to enable
+      if (slot%10==0) {
+	if (ru->common.beam_id[0][slot*fp->symbols_per_slot] < 8) {
+	  beam = ru->common.beam_id[0][slot*fp->symbols_per_slot] | 8;
+	}
+      }
       /*
-      if (slot==0 || slot==40) beam=0&8;
-      if (slot==10 || slot==50) beam=1&8;
-      if (slot==20 || slot==60) beam=2&8;
-      if (slot==30 || slot==70) beam=3&8;
+      if (slot==0 || slot==40) beam=0|8;
+      if (slot==10 || slot==50) beam=1|8;
+      if (slot==20 || slot==60) beam=2|8;
+      if (slot==30 || slot==70) beam=3|8;
       */
       flags |= beam<<8;
-    }
 
+      LOG_D(HW,"slot %d, beam %d\n",slot,ru->common.beam_id[0][slot*fp->symbols_per_slot]);
+
+    }
+    
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS, flags ); 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
@@ -797,58 +804,21 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int mu = config->ssb_config.scs_common.value;
   int N_RB = config->carrier_config.dl_grid_size[config->ssb_config.scs_common.value].value;
 
-  if (mu == NR_MU_0) { //or if LTE
-    if(N_RB == 100) {
-      if (fp->threequarter_fs) {
-        cfg->sample_rate=23.04e6;
-        cfg->samples_per_frame = 230400;
-        cfg->tx_bw = 10e6;
-        cfg->rx_bw = 10e6;
-      } else {
-        cfg->sample_rate=30.72e6;
-        cfg->samples_per_frame = 307200;
-        cfg->tx_bw = 10e6;
-        cfg->rx_bw = 10e6;
-      }
-    } else if(N_RB == 50) {
-      cfg->sample_rate=15.36e6;
-      cfg->samples_per_frame = 153600;
-      cfg->tx_bw = 5e6;
-      cfg->rx_bw = 5e6;
-    } else if (N_RB == 25) {
-      cfg->sample_rate=7.68e6;
-      cfg->samples_per_frame = 76800;
-      cfg->tx_bw = 2.5e6;
-      cfg->rx_bw = 2.5e6;
-    } else if (N_RB == 6) {
-      cfg->sample_rate=1.92e6;
-      cfg->samples_per_frame = 19200;
-      cfg->tx_bw = 1.5e6;
-      cfg->rx_bw = 1.5e6;
-    } else AssertFatal(1==0,"Unknown N_RB %d\n",N_RB);
-  } else if (mu == NR_MU_1) {
-    if(N_RB == 273) {
-      if (fp->threequarter_fs) {
-        AssertFatal(0 == 1,"three quarter sampling not supported for N_RB 273\n");
-      } else {
-        cfg->sample_rate=122.88e6;
-        cfg->samples_per_frame = 1228800;
-        cfg->tx_bw = 100e6;
-        cfg->rx_bw = 100e6;
-      }
-    } else if(N_RB == 217) {
+  if (mu == NR_MU_0) {
+    switch(N_RB) {
+    case 270:
       if (fp->threequarter_fs) {
         cfg->sample_rate=92.16e6;
         cfg->samples_per_frame = 921600;
-        cfg->tx_bw = 80e6;
-        cfg->rx_bw = 80e6;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
       } else {
-        cfg->sample_rate=122.88e6;
-        cfg->samples_per_frame = 1228800;
-        cfg->tx_bw = 80e6;
-        cfg->rx_bw = 80e6;
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
       }
-    } else if(N_RB == 106) {
+    case 216:
       if (fp->threequarter_fs) {
         cfg->sample_rate=46.08e6;
         cfg->samples_per_frame = 460800;
@@ -861,7 +831,80 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->tx_bw = 40e6;
         cfg->rx_bw = 40e6;
       }
-    } else if(N_RB == 133) {
+      break;
+    case 106:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=23.04e6;
+        cfg->samples_per_frame = 230400;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
+      }
+      else {
+        cfg->sample_rate=30.72e6;
+        cfg->samples_per_frame = 307200;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
+      }
+      break;
+    case 52:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=11.52e6;
+        cfg->samples_per_frame = 115200;
+        cfg->tx_bw = 10e6;
+        cfg->rx_bw = 10e6;
+      }
+      else {
+        cfg->sample_rate=15.36e6;
+        cfg->samples_per_frame = 153600;
+        cfg->tx_bw = 10e6;
+        cfg->rx_bw = 10e6;
+      }
+    case 25:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=5.76e6;
+        cfg->samples_per_frame = 57600;
+        cfg->tx_bw = 5e6;
+        cfg->rx_bw = 5e6;
+      }
+      else {
+        cfg->sample_rate=7.68e6;
+        cfg->samples_per_frame = 76800;
+        cfg->tx_bw = 5e6;
+        cfg->rx_bw = 5e6;
+      }
+      break;
+    default:
+      AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
+    }
+  } else if (mu == NR_MU_1) {
+    switch(N_RB) {
+    case 273:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=184.32e6;
+        cfg->samples_per_frame = 1843200;
+        cfg->tx_bw = 100e6;
+        cfg->rx_bw = 100e6;
+      } else {
+        cfg->sample_rate=122.88e6;
+        cfg->samples_per_frame = 1228800;
+        cfg->tx_bw = 100e6;
+        cfg->rx_bw = 100e6;
+      }
+      break;
+    case 217:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=92.16e6;
+        cfg->samples_per_frame = 921600;
+        cfg->tx_bw = 80e6;
+        cfg->rx_bw = 80e6;
+      } else {
+        cfg->sample_rate=122.88e6;
+        cfg->samples_per_frame = 1228800;
+        cfg->tx_bw = 80e6;
+        cfg->rx_bw = 80e6;
+      }
+      break;
+    case 133 :
       if (fp->threequarter_fs) {
 	AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
       }
@@ -872,20 +915,82 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->rx_bw = 50e6;
       }
 
-    } else {
+      break;
+    case 106:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=46.08e6;
+        cfg->samples_per_frame = 460800;
+        cfg->tx_bw = 40e6;
+        cfg->rx_bw = 40e6;
+      }
+      else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 40e6;
+        cfg->rx_bw = 40e6;
+      }
+     break;
+    case 51:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=23.04e6;
+        cfg->samples_per_frame = 230400;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
+      }
+      else {
+        cfg->sample_rate=30.72e6;
+        cfg->samples_per_frame = 307200;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
+      }
+      break;
+    case 24:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=11.52e6;
+        cfg->samples_per_frame = 115200;
+        cfg->tx_bw = 10e6;
+        cfg->rx_bw = 10e6;
+      }
+      else {
+        cfg->sample_rate=15.36e6;
+        cfg->samples_per_frame = 153600;
+        cfg->tx_bw = 10e6;
+        cfg->rx_bw = 10e6;
+      }
+      break;
+    default:
       AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
     }
   } else if (mu == NR_MU_3) {
-    if (N_RB == 66) {
-      cfg->sample_rate = 122.88e6;
-      cfg->samples_per_frame = 1228800;
-      cfg->tx_bw = 100e6;
-      cfg->rx_bw = 100e6;
-    } else if(N_RB == 32) {
-      cfg->sample_rate=61.44e6;
-      cfg->samples_per_frame = 614400;
-      cfg->tx_bw = 50e6;
-      cfg->rx_bw = 50e6;
+    switch(N_RB) {
+    case 66:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=184.32e6;
+        cfg->samples_per_frame = 1843200;
+        cfg->tx_bw = 100e6;
+        cfg->rx_bw = 100e6;
+      } else {
+        cfg->sample_rate = 122.88e6;
+        cfg->samples_per_frame = 1228800;
+        cfg->tx_bw = 100e6;
+        cfg->rx_bw = 100e6;
+      }
+      break;
+    case 32:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=92.16e6;
+        cfg->samples_per_frame = 921600;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
+      } else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
+      }
+      break;
+    default:
+      AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
     }
   } else {
     AssertFatal(0 == 1,"Numerology %d not supported for the moment\n",mu);
@@ -932,60 +1037,52 @@ int setup_RU_buffers(RU_t *ru) {
   int i,j;
   int card,ant;
   //uint16_t N_TA_offset = 0;
-  NR_DL_FRAME_PARMS *frame_parms;
+  NR_DL_FRAME_PARMS *fp;
   nfapi_nr_config_request_scf_t *config = &ru->config;
 
   if (ru) {
-    frame_parms = ru->nr_frame_parms;
-    printf("setup_RU_buffers: frame_parms = %p\n",frame_parms);
+    fp = ru->nr_frame_parms;
+    printf("setup_RU_buffers: frame_parms = %p\n",fp);
   } else {
     printf("ru pointer is NULL\n");
     return(-1);
   }
+
   int mu = config->ssb_config.scs_common.value;
   int N_RB = config->carrier_config.dl_grid_size[config->ssb_config.scs_common.value].value;
-
 
   if (config->cell_config.frame_duplex_type.value == TDD) {
     int N_TA_offset =  config->carrier_config.uplink_frequency.value < 6000000 ? 400 : 431; // reference samples  for 25600Tc @ 30.72 Ms/s for FR1, same @ 61.44 Ms/s for FR2
 
     double factor=1;
-
     switch (mu) {
-    case 0: //15 kHz scs
-      AssertFatal(N_TA_offset == 400,"scs_common 15kHz only for FR1\n");
-      if (N_RB <= 25) factor = .25;      // 7.68 Ms/s
-      else if (N_RB <=50) factor = .5;   // 15.36 Ms/s
-      else if (N_RB <=75) factor = 1.0;  // 30.72 Ms/s
-      else if (N_RB <=100) factor = 1.0; // 30.72 Ms/s
-      else AssertFatal(1==0,"Too many PRBS for mu=0\n");
-      break;
-    case 1: //30 kHz sc
-      AssertFatal(N_TA_offset == 400,"scs_common 30kHz only for FR1\n");
-      if (N_RB <= 106) factor = 2.0; // 61.44 Ms/s
-      else if (N_RB <= 275) factor = 4.0; // 122.88 Ms/s
-      break;
-    case 2: //60 kHz scs
-      AssertFatal(1==0,"scs_common should not be 60 kHz\n");
-      break;
-    case 3: //120 kHz scs
-      AssertFatal(N_TA_offset == 431,"scs_common 120kHz only for FR2\n");
-      break;
-    case 4: //240 kHz scs
-      AssertFatal(1==0,"scs_common should not be 60 kHz\n");
-      if (N_RB <= 32) factor = 1.0; // 61.44 Ms/s
-      else if (N_RB <= 66) factor = 2.0; // 122.88 Ms/s
-      else AssertFatal(1==0,"N_RB %d is too big for curretn FR2 implementation\n",N_RB);
-      break;
-
-      if      (N_RB == 100) ru->N_TA_offset = 624;
-      else if (N_RB == 50)  ru->N_TA_offset = 624/2;
-      else if (N_RB == 25)  ru->N_TA_offset = 624/4;
+      case 0: //15 kHz scs
+        AssertFatal(N_TA_offset == 400, "scs_common 15kHz only for FR1\n");
+        factor = fp->samples_per_subframe / 30720.0;
+        break;
+      case 1: //30 kHz sc
+        AssertFatal(N_TA_offset == 400, "scs_common 30kHz only for FR1\n");
+        factor = fp->samples_per_subframe / 30720.0;
+        break;
+      case 2: //60 kHz scs
+        AssertFatal(1==0, "scs_common should not be 60 kHz\n");
+        break;
+      case 3: //120 kHz scs
+        AssertFatal(N_TA_offset == 431, "scs_common 120kHz only for FR2\n");
+        factor = fp->samples_per_subframe / 61440.0;
+        break;
+      case 4: //240 kHz scs
+        AssertFatal(N_TA_offset == 431, "scs_common 240kHz only for FR2\n");
+        factor = fp->samples_per_subframe / 61440.0;
+        break;
+      default:
+        AssertFatal(1==0, "Invalid scs_common!\n");
     }
-    if (frame_parms->threequarter_fs == 1) factor = factor*.75;
+
     ru->N_TA_offset = (int)(N_TA_offset * factor);
-    LOG_I(PHY,"RU %d Setting N_TA_offset to %d samples (factor %f, UL Freq %d, N_RB %d)\n",ru->idx,ru->N_TA_offset,factor,
-	  config->carrier_config.uplink_frequency.value, N_RB);
+
+    LOG_I(PHY,"RU %d Setting N_TA_offset to %d samples (factor %f, UL Freq %d, N_RB %d, mu %d)\n",ru->idx,ru->N_TA_offset,factor,
+	  config->carrier_config.uplink_frequency.value, N_RB, mu);
   }
   else ru->N_TA_offset = 0;
 
@@ -1258,12 +1355,17 @@ void *ru_thread( void *param ) {
       for (aa=0;aa<ru->nb_rx;aa++)
 	memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
-
+      if (IS_SOFTMODEM_DOSCOPE && RC.gNB[0]->scopeData) 
+         ((scopeData_t*)RC.gNB[0]->scopeData)->slotFunc(ru->common.rxdataF[0],proc->tti_rx, RC.gNB[0]->scopeData);
       // Do PRACH RU processing
 
       int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
       uint8_t prachStartSymbol,N_dur;
       if (prach_id>=0) {
+
+	T(T_GNB_PHY_PRACH_INPUT_SIGNAL, T_INT(proc->frame_rx), T_INT(proc->tti_rx), T_INT(0),
+	  T_BUFFER(&ru->common.rxdata[0][fp->get_samples_slot_timestamp(proc->tti_rx-1,fp,0)]/*-ru->N_TA_offset*/, fp->get_samples_per_slot(proc->tti_rx,fp)*4*2));
+
 	N_dur = get_nr_prach_duration(ru->prach_list[prach_id].fmt);
 	/*
 	get_nr_prach_info_from_index(ru->config.prach_config.prach_ConfigurationIndex.value,
@@ -1643,11 +1745,9 @@ void set_function_spec_param(RU_t *ru) {
         ru->nr_start_if          = NULL;                    // no if interface
         ru->rfdevice.host_type   = RAU_HOST;
 
-	// FK this here looks messed up. The following lines should be part of the  if (ru->function == gNodeB_3GPP), shouldn't they?
-
-	ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
-	ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
-	ru->start_rf               = start_rf;                            // need to start the local RF interface
+	ru->fh_south_in            = rx_rf;                 // local synchronous RF RX
+	ru->fh_south_out           = tx_rf;                 // local synchronous RF TX
+	ru->start_rf               = start_rf;              // need to start the local RF interface
 	ru->stop_rf                = stop_rf;
 	ru->start_write_thread     = start_write_thread;                  // starting RF TX in different thread
 	printf("configuring ru_id %u (start_rf %p)\n", ru->idx, start_rf);
@@ -1859,37 +1959,39 @@ void RCconfig_RU(void)
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_CLK_SRC)) {
         if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "internal") == 0) {
           RC.ru[j]->openair0_cfg.clock_source = internal;
-          LOG_D(PHY, "RU clock source set as internal\n");
+          LOG_I(PHY, "RU clock source set as internal\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "external") == 0) {
           RC.ru[j]->openair0_cfg.clock_source = external;
-          LOG_D(PHY, "RU clock source set as external\n");
+          LOG_I(PHY, "RU clock source set as external\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "gpsdo") == 0) {
           RC.ru[j]->openair0_cfg.clock_source = gpsdo;
-          LOG_D(PHY, "RU clock source set as gpsdo\n");
+          LOG_I(PHY, "RU clock source set as gpsdo\n");
         } else {
           LOG_E(PHY, "Erroneous RU clock source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
         }
       }
       else {
-        RC.ru[j]->openair0_cfg.clock_source = unset;
+        LOG_I(PHY,"Setting clock source to internal\n");
+        RC.ru[j]->openair0_cfg.clock_source = internal;
       }
 
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_TME_SRC)) {
         if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "internal") == 0) {
           RC.ru[j]->openair0_cfg.time_source = internal;
-          LOG_D(PHY, "RU time source set as internal\n");
+          LOG_I(PHY, "RU time source set as internal\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "external") == 0) {
           RC.ru[j]->openair0_cfg.time_source = external;
-          LOG_D(PHY, "RU time source set as external\n");
+          LOG_I(PHY, "RU time source set as external\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "gpsdo") == 0) {
           RC.ru[j]->openair0_cfg.time_source = gpsdo;
-          LOG_D(PHY, "RU time source set as gpsdo\n");
+          LOG_I(PHY, "RU time source set as gpsdo\n");
         } else {
           LOG_E(PHY, "Erroneous RU time source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
         }
       }
       else {
-	RC.ru[j]->openair0_cfg.time_source = unset;
+        LOG_I(PHY,"Setting time source to internal\n");
+	RC.ru[j]->openair0_cfg.time_source = internal;
       }
       
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {

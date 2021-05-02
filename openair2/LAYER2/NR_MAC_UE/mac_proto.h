@@ -53,7 +53,8 @@ int8_t nr_ue_decode_mib(
     uint8_t extra_bits, 
     uint32_t ssb_length, 
     uint32_t ssb_index,
-    void *pduP, 
+    void *pduP,
+    uint16_t ssb_start_subcarrier,
     uint16_t cell_id );
 
 /**\brief decode SIB1 and other SIs pdus in NR_UE, from if_module dl_ind
@@ -82,8 +83,10 @@ int nr_rrc_mac_config_req_ue(
     int                             cc_idP,
     uint8_t                         gNB_index,
     NR_MIB_t                        *mibP,
-    //NR_ServingCellConfigCommon_t    *sccP,
-    NR_CellGroupConfig_t            *cell_group_config);
+    NR_ServingCellConfigCommonSIB_t *sccP,
+    NR_CellGroupConfig_t            *cell_group_config,
+    NR_CellGroupConfig_t            *scell_group_config
+);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
 NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst);
@@ -178,7 +181,8 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
                                                       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
                                                       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
-                                                      uint8_t time_domain_ind);
+                                                      uint8_t time_domain_ind,
+                                                      bool use_default);
 
 uint8_t
 nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
@@ -300,7 +304,7 @@ void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
                      uint8_t *nb_dmrs_re_per_rb,
                      uint16_t *number_dmrs_symbols);
 
-void build_ssb_to_ro_map(NR_ServingCellConfigCommon_t *scc, uint8_t unpaired);
+void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac);
 
 void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format);
 

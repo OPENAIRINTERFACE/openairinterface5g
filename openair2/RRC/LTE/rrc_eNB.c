@@ -87,6 +87,7 @@
 
 #include "pdcp.h"
 #include "gtpv1u_eNB_task.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "intertask_interface.h"
 
@@ -1283,7 +1284,7 @@ rrc_eNB_generate_UECapabilityEnquiry(
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
   int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
-  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0];
   size = do_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
@@ -1333,7 +1334,7 @@ rrc_eNB_generate_NR_UECapabilityEnquiry(
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
   int16_t eutra_band = RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0];
-  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_neigh_freq_band[0][0];
+  uint32_t nr_band = RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0];
   size = do_NR_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
@@ -4968,7 +4969,7 @@ void rrc_eNB_handover_ue_context_release(
     ue_context_p->ue_context.enb_gtp_ebi[e_rab] = 0;
   }
 
-  itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->module_id, msg_delete_tunnels_p);
+  itti_send_msg_to_task(TASK_VARIABLE, ctxt_pP->module_id, msg_delete_tunnels_p);
   struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids = NULL;
   rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(RC.rrc[ctxt_pP->module_id], 0, eNB_ue_s1ap_id);
 
@@ -6557,10 +6558,9 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
               (int)DRB_configList->list.array[i]->drb_Identity,
               (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
         /* For pre-ci tests */
-        LOG_I(RRC, "[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete from UE %u, reconfiguring DRB %d/LCID %d\n",
+        LOG_I(RRC, "[eNB %d] Frame  %d : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete, reconfiguring DRB %d/LCID %d\n",
               ctxt_pP->module_id,
               ctxt_pP->frame,
-              oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[ctxt_pP->module_id][ue_context_pP->local_uid],
               (int)DRB_configList->list.array[i]->drb_Identity,
               (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
 
@@ -6585,7 +6585,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                     "[eNB %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
                     ctxt_pP->module_id, ctxt_pP->module_id,
                     (long int)((ue_context_pP->local_uid * LTE_maxDRB) + DRB_configList->list.array[i]->drb_Identity));
-              ue_module_id = oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[ctxt_pP->module_id][ue_context_pP->local_uid];
+              ue_module_id = 0; // Was oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[ctxt_pP->module_id][ue_context_pP->local_uid];
               rb_conf_ipv4(0, //add
                            ue_module_id,  //cx
                            ctxt_pP->module_id,    //inst
@@ -7588,8 +7588,8 @@ is_en_dc_supported(
 )
 //-----------------------------------------------------------------------------
 {
-  /* to be refined - check that the eNB is connected to a gNB, check that
-   * the bands supported by the UE include the band of the gNB
+  /* to be refined - check that the bands supported by the UE include
+   * the band of the gNB
    */
 #define NCE nonCriticalExtension
   return c != NULL
@@ -8289,8 +8289,13 @@ rrc_eNB_decode_dcch(
           ue_context_p->ue_context.UE_Capability = 0;
         }
 
-        if (dec_rval.code == RC_OK)
-          ue_context_p->ue_context.does_nr = is_en_dc_supported(ue_context_p->ue_context.UE_Capability);
+        if (dec_rval.code == RC_OK) {
+          /* do NR only if at least one gNB connected */
+          if (RC.rrc[ctxt_pP->module_id]->num_gnb_cells != 0)
+            ue_context_p->ue_context.does_nr = is_en_dc_supported(ue_context_p->ue_context.UE_Capability);
+          else
+            ue_context_p->ue_context.does_nr = 0;
+        }
 
         if (EPC_MODE_ENABLED) {
           rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(ctxt_pP,
@@ -8563,16 +8568,16 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         }
 
         F1AP_SETUP_RESP (msg_p).gNB_CU_name                                = rrc->node_name;
-        F1AP_SETUP_RESP (msg_p).mcc[cu_cell_ind]                           = rrc->configuration.mcc[0];
-        F1AP_SETUP_RESP (msg_p).mnc[cu_cell_ind]                           = rrc->configuration.mnc[0];
-        F1AP_SETUP_RESP (msg_p).mnc_digit_length[cu_cell_ind]              = rrc->configuration.mnc_digit_length[0];
-        F1AP_SETUP_RESP (msg_p).nr_cellid[cu_cell_ind]                     = rrc->nr_cellid;
-        F1AP_SETUP_RESP (msg_p).nrpci[cu_cell_ind]                         = f1_setup_req->nr_pci[i];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].mcc                           = rrc->configuration.mcc[0];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].mnc                           = rrc->configuration.mnc[0];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].mnc_digit_length              = rrc->configuration.mnc_digit_length[0];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].nr_cellid                     = rrc->nr_cellid;
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].nrpci                         = f1_setup_req->nr_pci[i];
         int num_SI= 0;
 
         if (rrc->carrier[0].SIB23) {
-          F1AP_SETUP_RESP (msg_p).SI_container[cu_cell_ind][num_SI]        = rrc->carrier[0].SIB23;
-          F1AP_SETUP_RESP (msg_p).SI_container_length[cu_cell_ind][num_SI] = rrc->carrier[0].sizeof_SIB23;
+          F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container[num_SI]        = rrc->carrier[0].SIB23;
+          F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[num_SI] = rrc->carrier[0].sizeof_SIB23;
           //printf("SI %d size %d: ", 0, F1AP_SETUP_RESP(msg_p).SI_container_length[j][num_SI]);
           //for (int n = 0; n < F1AP_SETUP_RESP(msg_p).SI_container_length[j][num_SI]; n++)
           //  printf("%02x ", F1AP_SETUP_RESP(msg_p).SI_container[0][num_SI][n]);
@@ -8580,7 +8585,7 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
           num_SI++;
         }
 
-        F1AP_SETUP_RESP (msg_p).num_SI[cu_cell_ind] = num_SI;
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].num_SI = num_SI;
         cu_cell_ind++;
         found_cell=1;
         F1AP_SETUP_RESP (msg_p).num_cells_to_activate = cu_cell_ind;
@@ -9029,22 +9034,22 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
 }
 
 void rrc_eNB_process_ENDC_x2_setup_request(int mod_id, x2ap_ENDC_setup_req_t *m) {
-  if (RC.rrc[mod_id]->num_neigh_cells > MAX_NUM_NEIGH_CELLs) {
-    LOG_E(RRC, "Error: number of neighbouring cells is exceeded \n");
+  if (RC.rrc[mod_id]->num_gnb_cells >= MAX_NUM_GNB_CELLs) {
+    LOG_E(RRC, "Error: number of gNB cells is exceeded\n");
     return;
   }
 
   if (m->num_cc > MAX_NUM_CCs) {
-    LOG_E(RRC, "Error: number of neighbouring cells carriers is exceeded \n");
+    LOG_E(RRC, "Error: number of gNB cells carriers is exceeded \n");
     return;
   }
 
-  RC.rrc[mod_id]->num_neigh_cells++;
-  RC.rrc[mod_id]->num_neigh_cells_cc[RC.rrc[mod_id]->num_neigh_cells-1] = m->num_cc;
+  RC.rrc[mod_id]->num_gnb_cells++;
+  RC.rrc[mod_id]->num_gnb_cells_cc[RC.rrc[mod_id]->num_gnb_cells-1] = m->num_cc;
 
   for (int i=0; i<m->num_cc; i++) {
-    RC.rrc[mod_id]->neigh_cells_id[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->Nid_cell[i];
-    RC.rrc[mod_id]->nr_neigh_freq_band[RC.rrc[mod_id]->num_neigh_cells-1][i] = m->servedNrCell_band[i];
+    RC.rrc[mod_id]->gnb_cells_id[RC.rrc[mod_id]->num_gnb_cells-1][i] = m->Nid_cell[i];
+    RC.rrc[mod_id]->nr_gnb_freq_band[RC.rrc[mod_id]->num_gnb_cells-1][i] = m->servedNrCell_band[i];
   }
 
 }

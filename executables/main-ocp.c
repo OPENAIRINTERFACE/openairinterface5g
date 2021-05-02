@@ -73,17 +73,20 @@ int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 volatile int oai_exit = 0;
 double cpuf;
+msc_interface_t msc_interface;
+THREAD_STRUCT thread_struct;
+
 uint16_t sf_ahead=4;
 //uint16_t slot_ahead=6;
 int otg_enabled;
 uint64_t  downlink_frequency[MAX_NUM_CCs][4];
 int32_t   uplink_frequency_offset[MAX_NUM_CCs][4];
 int split73;
-int usrp_tx_thread = 0;
 char * split73_config;
 int split73;
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB]= {0};
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB]= {0};
+uint8_t proto_agent_flag = 0;
 void flexran_agent_slice_update(mid_t module_idP) {
 }
 int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p){
@@ -1318,7 +1321,7 @@ int main ( int argc, char **argv ) {
 
   // end of CI modifications
   //getchar();
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
     load_softscope("enb", NULL);
 
   itti_wait_tasks_end();
@@ -1327,7 +1330,7 @@ int main ( int argc, char **argv ) {
   // stop threads
 
   if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
-    if(IS_SOFTMODEM_DOFORMS)
+    if(IS_SOFTMODEM_DOSCOPE)
       end_forms();
 
     LOG_I(ENB_APP,"stopping MODEM threads\n");

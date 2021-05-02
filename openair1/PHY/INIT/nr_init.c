@@ -142,6 +142,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
   AssertFatal(pdcch_dmrs!=NULL, "NR init: pdcch_dmrs malloc failed\n");
 
+  gNB->bad_pucch = 0;
+
   for (int slot=0; slot<fp->slots_per_frame; slot++) {
     pdcch_dmrs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
     AssertFatal(pdcch_dmrs[slot]!=NULL, "NR init: pdcch_dmrs for slot %d - malloc failed\n", slot);
@@ -231,13 +233,15 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   common_vars->rxdata  = (int32_t **)malloc16(Prx*sizeof(int32_t*));
   common_vars->txdataF = (int32_t **)malloc16(Ptx*sizeof(int32_t*));
   common_vars->rxdataF = (int32_t **)malloc16(Prx*sizeof(int32_t*));
+  common_vars->beam_id = (uint8_t **)malloc16(Ptx*sizeof(uint8_t*));
 
   for (i=0;i<Ptx;i++){
       common_vars->txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t)); // [hna] samples_per_frame without CP
       LOG_D(PHY,"[INIT] common_vars->txdataF[%d] = %p (%lu bytes)\n",
 	    i,common_vars->txdataF[i],
 	    fp->samples_per_frame_wCP*sizeof(int32_t));
-      
+      common_vars->beam_id[i] = (uint8_t*)malloc16_clear(fp->symbols_per_slot*fp->slots_per_frame*sizeof(uint8_t));
+      memset(common_vars->beam_id[i],255,fp->symbols_per_slot*fp->slots_per_frame);
   }
   for (i=0;i<Prx;i++){
     common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
@@ -464,8 +468,8 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
 
   gNB->mac_enabled   = 1;
   if (mu==1) {
-    fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
-    fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
+    fp->dl_CarrierFreq = 3600000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
+    fp->ul_CarrierFreq = 3600000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
     fp->nr_band = 78;
     //  fp->threequarter_fs= 0;
   } else if (mu==3) {
@@ -474,7 +478,8 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
     fp->nr_band = 261;
     //  fp->threequarter_fs= 0;
   }
-    
+
+  fp->threequarter_fs = 0;
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 
   nr_init_frame_parms(gNB_config, fp);

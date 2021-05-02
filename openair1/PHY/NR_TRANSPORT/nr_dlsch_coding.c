@@ -61,10 +61,8 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB)
     if (N_RB != 273) {
       a_segments = a_segments*N_RB;
       a_segments = a_segments/273 +1;
-    }  
-    
-    
-    
+    }
+
 #ifdef DEBUG_DLSCH_FREE
     LOG_D(PHY,"Freeing dlsch %p\n",dlsch);
 #endif
@@ -110,8 +108,6 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB)
           harq->d[r] = NULL;
         }
       }
-      free16(harq, sizeof(NR_DL_gNB_HARQ_t));
-      harq = NULL;
     }
   }
 
@@ -133,7 +129,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   if (N_RB != 273) {
     a_segments = a_segments*N_RB;
     a_segments = a_segments/273 +1;
-  }  
+  }
 
   uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
 
@@ -145,31 +141,30 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   dlsch->Mdlharq = Mdlharq;
   dlsch->Mlimit = 4;
   dlsch->Nsoft = Nsoft;
-  
-  for (layer=0; layer<NR_MAX_NB_LAYERS; layer++) {
-    dlsch->ue_spec_bf_weights[layer] = (int32_t **)malloc16(64 * sizeof(int32_t *));
 
-    for (aa = 0; aa < 64; aa++) {
-      dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES * sizeof(int32_t));
-      for (re = 0; re < OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
+  for (layer=0; layer<NR_MAX_NB_LAYERS; layer++) {
+    dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(64*sizeof(int32_t*));
+
+    for (aa=0; aa<64; aa++) {
+      dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+      for (re=0;re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
         dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
       }
     }
 
-    dlsch->txdataF[layer] =
-        (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH / NR_MAX_NB_LAYERS)
-                            * sizeof(int32_t)); // NR_MAX_NB_LAYERS is already included in NR_MAX_PDSCH_ENCODED_LENGTH
+    dlsch->txdataF[layer] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH/NR_MAX_NB_LAYERS)*sizeof(int32_t)); // NR_MAX_NB_LAYERS is already included in NR_MAX_PDSCH_ENCODED_LENGTH
+    dlsch->txdataF_precoding[layer] = (int32_t *)malloc16(2*14*frame_parms->ofdm_symbol_size*sizeof(int32_t));
   }
 
-  for (int q = 0; q < NR_MAX_NB_CODEWORDS; q++)
-    dlsch->mod_symbs[q] = (int32_t *)malloc16(NR_MAX_PDSCH_ENCODED_LENGTH * sizeof(int32_t));
+  for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
+    dlsch->mod_symbs[q] = (int32_t *)malloc16(NR_MAX_PDSCH_ENCODED_LENGTH*sizeof(int32_t));
 
-  dlsch->calib_dl_ch_estimates = (int32_t **)malloc16(64 * sizeof(int32_t *));
-  for (aa = 0; aa < 64; aa++) {
-    dlsch->calib_dl_ch_estimates[aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES * sizeof(int32_t));
+  dlsch->calib_dl_ch_estimates = (int32_t**)malloc16(64*sizeof(int32_t*));
+  for (aa=0; aa<64; aa++) {
+    dlsch->calib_dl_ch_estimates[aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
   }
 
-  for (i = 0; i < 20; i++) {
+  for (i=0; i<20; i++) {
     dlsch->harq_ids[0][i] = 0;
     dlsch->harq_ids[1][i] = 0;
   }
@@ -268,7 +263,6 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   float Coderate = 0.0;
   uint8_t Nl = 4;
 
-  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
@@ -294,7 +288,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   }
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
-  LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
+  LOG_D(PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d mod_order %d)\n", A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
 
   if (A > 3824) {
     // Add 24-bit crc (polynomial A) to payload
@@ -304,7 +298,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     a[2+(A>>3)] = ((uint8_t*)&crc)[0];
     //printf("CRC %x (A %d)\n",crc,A);
     //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
-    
+
     harq->B = A+24;
     //    harq->b = a;
 
@@ -323,7 +317,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     a[1+(A>>3)] = ((uint8_t*)&crc)[0];
     //printf("CRC %x (A %d)\n",crc,A);
     //printf("a0 %d a1 %d \n", a[A>>3], a[1+(A>>3)]);
-    
+
     harq->B = A+16;
     //    harq->b = a;
 
@@ -339,17 +333,17 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     Coderate = (float) R /(float) 1024;
   else  // to scale for mcs 20 and 26 in table 5.1.3.1-2 which are decimal and input 2* in nr_tbs_tools
     Coderate = (float) R /(float) 2048;
-  
+
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
     harq->BG = 2;
   else
     harq->BG = 1;
-  
+
   start_meas(dlsch_segmentation_stats);
   Kb = nr_segmentation(harq->b, harq->c, harq->B, &harq->C, &harq->K, Zc, &harq->F, harq->BG);
   stop_meas(dlsch_segmentation_stats);
   F = harq->F;
-  
+
   Kr = harq->K;
 #ifdef DEBUG_DLSCH_CODING
   uint16_t Kr_bytes;
@@ -357,7 +351,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 #endif
 
   //printf("segment Z %d k %d Kr %d BG %d C %d\n", *Zc,harq->K,Kr,BG,harq->C);
-  
+
   for (r=0; r<harq->C; r++) {
     //d_tmp[r] = &harq->d[r][0];
     //channel_input[r] = &harq->d[r][0];
@@ -369,7 +363,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
       LOG_D(PHY,"%d ", harq->c[r][cnt]);
     }
     LOG_D(PHY,"\n");
-    
+
 #endif
     //ldpc_encoder_orig((unsigned char*)harq->c[r],harq->d[r],*Zc,Kb,Kr,BG,0);
     //ldpc_encoder_optim((unsigned char*)harq->c[r],(unsigned char*)&harq->d[r][0],*Zc,Kb,Kr,BG,NULL,NULL,NULL,NULL);
@@ -380,23 +374,22 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   impp.tinput = tinput;
   impp.tparity = tparity;
   impp.toutput = toutput;
-  
+
   for(int j=0;j<(harq->C/8+1);j++) {
     impp.macro_num=j;
     nrLDPC_encoder(harq->c,harq->d,*Zc,Kb,Kr,harq->BG,&impp);
   }
-  
 
 #ifdef DEBUG_DLSCH_CODING
   write_output("enc_input0.m","enc_in0",&harq->c[0][0],Kr_bytes,1,4);
   write_output("enc_output0.m","enc0",&harq->d[0][0],(3*8*Kr_bytes)+12,1,4);
 #endif
- 
+
   F = harq->F;
-  
+
   Kr = harq->K;
   for (r=0; r<harq->C; r++) {
-    
+
     if (F>0) {
       for (int k=(Kr-F-2*(*Zc)); k<Kr-2*(*Zc); k++) {
 	// writing into positions d[r][k-2Zc] as in clause 5.3.2 step 2) in 38.212
@@ -405,15 +398,13 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 	//printf("r %d filler bits [%d] = %d \n", r,k, harq->d[r][k]);
       }
     }
-    
-    
-    
+
 #ifdef DEBUG_DLSCH_CODING
     LOG_D(PHY,"rvidx in encoding = %d\n", rel15->rvIndex[0]);
 #endif
-    
+
     E = nr_get_E(G, harq->C, mod_order, rel15->nrOfLayers, r);
-    
+
     //#ifdef DEBUG_DLSCH_CODING
     LOG_D(PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
 	  r,
@@ -423,13 +414,13 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 	  F,
 	  Kr-F-2*(*Zc),
 	  mod_order,nb_rb);
-    
+
     // for tbslbrm calculation according to 5.4.2.1 of 38.212
     if (rel15->nrOfLayers < Nl)
       Nl = rel15->nrOfLayers;
-    
+
     Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl);
-    
+
     start_meas(dlsch_rate_matching_stats);
     nr_rate_matching_ldpc(Ilbrm,
                           Tbslbrm,

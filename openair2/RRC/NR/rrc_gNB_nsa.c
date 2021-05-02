@@ -39,6 +39,7 @@
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
+#include <openair3/ocp-gtpu/gtp_itf.h>
 #include "UTIL/OSA/osa_defs.h"
 
 extern boolean_t nr_rrc_pdcp_config_asn1_req(
@@ -62,7 +63,8 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const NR_DRB_ToAddModList_t   * const drb2add_listP,
     const NR_DRB_ToReleaseList_t  * const drb2release_listP,
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
-    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_srb_bearer2add_list,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_drb_bearer2add_list);
 
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
@@ -238,11 +240,21 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                           cipher_algo,
                           NR_SecurityConfig__keyToUse_secondary);
   }
-  fill_default_reconfig(carrier->servingcellconfigcommon,
+  if (ue_context_p->ue_context.spCellConfig) {
+    fill_default_reconfig(carrier->servingcellconfigcommon,
+                        ue_context_p->ue_context.spCellConfig->spCellConfigDedicated,
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
                         carrier->initial_csi_index[rrc->Nb_ue]);
+  } else {
+    fill_default_reconfig(carrier->servingcellconfigcommon,
+                        NULL,
+                        reconfig_ies,
+                        ue_context_p->ue_context.secondaryCellGroup,
+                        carrier->pdsch_AntennaPorts,
+                        carrier->initial_csi_index[rrc->Nb_ue]);
+  }
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void *)CG_Config,0,sizeof(*CG_Config));
@@ -333,15 +345,25 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
   rrc->Nb_ue++;
   // configure MAC and RLC
-  rrc_mac_config_req_gNB(rrc->module_id,
-                         rrc->carrier.ssb_SubcarrierOffset,
-                         rrc->carrier.pdsch_AntennaPorts,
-                         rrc->carrier.pusch_TargetSNRx10,
-                         rrc->carrier.pucch_TargetSNRx10,
-                         NULL,
-                         1, // add_ue flag
-                         ue_context_p->ue_id_rnti,
-                         ue_context_p->ue_context.secondaryCellGroup);
+  if (NODE_IS_DU(rrc->node_type)) {
+    rrc_mac_config_req_gNB(rrc->module_id,
+                           rrc->carrier.ssb_SubcarrierOffset,
+                           rrc->carrier.pdsch_AntennaPorts,
+			   rrc->carrier.pusch_AntennaPorts,
+                           rrc->carrier.servingcellconfigcommon,
+                           1, // add_ue flag
+                           ue_context_p->ue_id_rnti,
+                           ue_context_p->ue_context.secondaryCellGroup);
+  } else {
+    rrc_mac_config_req_gNB(rrc->module_id,
+                           rrc->carrier.ssb_SubcarrierOffset,
+                           rrc->carrier.pdsch_AntennaPorts,
+                           rrc->carrier.pusch_AntennaPorts,
+                           NULL,
+                           1, // add_ue flag
+                           ue_context_p->ue_id_rnti,
+                           ue_context_p->ue_context.secondaryCellGroup);
+  }
 
   if(m == NULL){
     LOG_W(RRC, "Calling RRC PDCP/RLC ASN1 request functions for protocol context %p with module_id %d, rnti %x, frame %d, subframe %d eNB_index %d \n", &ctxt,
@@ -371,6 +393,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       ue_context_p->ue_context.rb_config->drb_ToAddModList,
       ue_context_p->ue_context.rb_config->drb_ToReleaseList,
       (LTE_PMCH_InfoList_r9_t *) NULL,
+      NULL,
       ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
   LOG_D(RRC, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
@@ -414,7 +437,7 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
     ue_context->ue_context.gnb_gtp_ebi[e_rab] = 0;
   }
 
-  itti_send_msg_to_task(TASK_GTPV1_U, rrc->module_id, msg_delete_tunnels_p);
+  itti_send_msg_to_task(TASK_VARIABLE, rrc->module_id, msg_delete_tunnels_p);
 
   /* remove context */
   rrc_gNB_remove_ue_context(&ctxt, rrc, ue_context);

@@ -42,9 +42,9 @@
 /* maximum size of a message - increase if needed */
 #if BASIC_SIMULATOR
    /* let's have 100 RBs functional for the basic simulator */
-#  define T_BUFFER_MAX (1024*64*2)
+#  define T_BUFFER_MAX (1024*64*4)
 #else
-#  define T_BUFFER_MAX (1024*64*2)
+#  define T_BUFFER_MAX (1024*64*4)
 #endif
 
 /* size of the local cache for messages (must be pow(2,something)) */
@@ -73,7 +73,7 @@ typedef struct {
 } T_cache_t;
 
 /* number of VCD functions (to be kept up to date! see in T_messages.txt) */
-#define VCD_NUM_FUNCTIONS (269)
+#define VCD_NUM_FUNCTIONS (273)
 
 /* number of VCD variables (to be kept up to date! see in T_messages.txt) */
 #define VCD_NUM_VARIABLES (187)

@@ -30,7 +30,7 @@
 * \warning
 */
 
-#include <LAYER2/NR_MAC_gNB/nr_mac_gNB.h>
+
 #include "nr_dci.h"
 #include "nr_dlsch.h"
 #include "nr_sch_dmrs.h"
@@ -85,10 +85,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
   // compute rb_offset and n_prb based on frequency allocation
   nr_fill_cce_list(gNB,0,pdcch_pdu_rel15);
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
-  cset_start_sc = frame_parms.first_carrier_offset + rb_offset*NR_NB_SC_PER_RB;
-  if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1) {
-    cset_start_sc = cset_start_sc + RC.nrmac[gNB->Mod_id]->type0_PDCCH_CSS_config.cset_start_rb*NR_NB_SC_PER_RB;
-  }
+  cset_start_sc = frame_parms.first_carrier_offset + (pdcch_pdu_rel15->BWPStart + rb_offset) * NR_NB_SC_PER_RB;
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
     /*The coreset is initialised
@@ -97,6 +94,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
      * in time: by its first slot and its first symbol*/
     const nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[d];
 
+    LOG_D(PHY,"DCI pdu %d, rnti %x, aggregation %d CCE %d Scrambling_Id %x ScramblingRNTI %x PayloadSizeBits %d\n",d,dci_pdu->RNTI,dci_pdu->AggregationLevel,dci_pdu->CceIndex,dci_pdu->ScramblingId,dci_pdu->ScramblingRNTI,dci_pdu->PayloadSizeBits);
     cset_start_symb = pdcch_pdu_rel15->StartSymbolIndex;
     cset_nsymb = pdcch_pdu_rel15->DurationSymbols;
     dci_idx = 0;
@@ -228,6 +226,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 	  printf("PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
 		 ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
 #endif
+
             dci_idx++;
           }
 

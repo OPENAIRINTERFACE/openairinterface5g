@@ -40,7 +40,16 @@ typedef struct nr_pdcp_entity_t {
   void (*recv_sdu)(struct nr_pdcp_entity_t *entity, char *buffer, int size,
                    int sdu_id);
   void (*delete)(struct nr_pdcp_entity_t *entity);
-  void (*set_integrity_key)(struct nr_pdcp_entity_t *entity, char *key);
+  /* set_security: pass -1 to integrity_algorithm / ciphering_algorithm
+   *               to keep the current algorithm
+   *               pass NULL to integrity_key / ciphering_key
+   *               to keep the current key
+   */
+  void (*set_security)(struct nr_pdcp_entity_t *entity,
+                       int integrity_algorithm,
+                       char *integrity_key,
+                       int ciphering_algorithm,
+                       char *ciphering_key);
   void (*set_time)(struct nr_pdcp_entity_t *entity, uint64_t now);
 
   /* callbacks provided to the PDCP module */
@@ -53,7 +62,7 @@ typedef struct nr_pdcp_entity_t {
 
   /* configuration variables */
   int rb_id;
-
+  int pdusession_id;
   int sn_size;                  /* SN size, in bits */
   int t_reordering;             /* unit: ms */
   int discard_timer;            /* unit: ms */
@@ -85,7 +94,12 @@ typedef struct nr_pdcp_entity_t {
                  unsigned char *buffer, int length,
                  int bearer, int count, int direction);
   void (*free_security)(void *security_context);
-  /* security algorithms need to know uplink/downlink information
+  void *integrity_context;
+  void (*integrity)(void *integrity_context, unsigned char *out,
+                 unsigned char *buffer, int length,
+                 int bearer, int count, int direction);
+  void (*free_integrity)(void *integrity_context);
+  /* security/integrity algorithms need to know uplink/downlink information
    * which is reverse for gnb and ue, so we need to know if this
    * pdcp entity is for a gnb or an ue
    */
@@ -99,7 +113,7 @@ typedef struct nr_pdcp_entity_t {
 
 nr_pdcp_entity_t *new_nr_pdcp_entity(
     nr_pdcp_entity_type_t type,
-    int is_gnb, int rb_id,
+    int is_gnb, int rb_id, int pdusession_id,
     void (*deliver_sdu)(void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
                         char *buf, int size),
     void *deliver_sdu_data,

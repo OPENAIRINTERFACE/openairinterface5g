@@ -41,7 +41,7 @@ KERNEL_VERSION=$(uname -r | cut -d '.' -f1)
 KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
 
 #check if we run inside a container
-IS_CONTAINER=`egrep -c "docker|podman|kubepods" /proc/self/cgroup || true`
+IS_CONTAINER=`egrep -c "docker|podman|kubepods|libpod|buildah" /proc/self/cgroup || true`
 #sudo is not needed when we are root
 if [ "$UID" = 0 ]
 then
@@ -222,6 +222,11 @@ compilations() {
     ret=$?
   } > $dlog/$2.$REL.txt 2>&1
   set -e
+  if [ "$VERBOSE_CI" == "1" ]; then
+     echo_info "====== Start of log for $2.$REL.txt ======"
+     cat $dlog/$2.$REL.txt
+     echo_info "====== End of log for $2.$REL.txt ======"
+  fi
   if [[ $ret -ne 0 ]]; then
      check_warnings "$dlog/$2.$REL.txt"
      check_errors "$dlog/$2.$REL.txt"
@@ -360,10 +365,10 @@ check_install_usrp_uhd_driver(){
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         if [ $IS_CONTAINER -eq 0 ]
         then
-            $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
+            $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils $CMAKE
             $SUDO -H pip install requests
         else
-            $SUDO $INSTALLER -y install boost boost-devel cmake3
+            $SUDO $INSTALLER -y install boost boost-devel $CMAKE
             $SUDO pip3 install mako requests
         fi
         if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
@@ -489,7 +494,7 @@ install_soapy_from_source(){
     #git checkout tags/release_003_010_001_001
     mkdir -p build
     cd build
-    cmake ../
+    $CMAKE ../
     echo "Compiling SoapyRemote"
     make -j`nproc`
     $SUDO make install
@@ -508,7 +513,7 @@ install_soapy_iris_from_source(){
     cd sklk-soapyiris
     mkdir -p build
     cd build
-    cmake ../
+    $CMAKE ../
     echo "Compiling SoapyIris"
     make -j`nproc`
     $SUDO make install
@@ -685,7 +690,7 @@ check_install_oai_software() {
 	automake  \
 	bison  \
 	build-essential \
-	cmake \
+	$CMAKE \
 	cmake-curses-gui  \
         ninja-build \
 	doxygen \

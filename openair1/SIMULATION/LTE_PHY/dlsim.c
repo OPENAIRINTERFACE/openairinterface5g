@@ -65,11 +65,14 @@ void feptx_ofdm(RU_t *ru, int frame, int subframe);
 void feptx_prec(RU_t *ru, int frame, int subframe);
 
 double cpuf;
-#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 //#define MCS_COUNT 23//added for PHY abstraction
 #include <openair1/SIMULATION/LTE_PHY/common_sim.h>
 
 int otg_enabled=0;
+THREAD_STRUCT thread_struct;
+nfapi_ue_release_request_body_t release_rntis;
+
 /*the following parameters are used to control the processing times calculations*/
 double t_tx_max = -1000000000; /*!< \brief initial max process time for tx */
 double t_rx_max = -1000000000; /*!< \brief initial max process time for rx */
@@ -1179,7 +1182,7 @@ int main(int argc, char **argv) {
                                    DS_TDL,
                                    forgetting_factor,
                                    rx_sample_offset,
-                                   0);
+                                   0, 0);
   reset_meas(&eNB2UE[0]->random_channel);
   reset_meas(&eNB2UE[0]->interp_time);
 
@@ -1193,7 +1196,7 @@ int main(int argc, char **argv) {
                                        DS_TDL,
                                        forgetting_factor,
                                        rx_sample_offset,
-                                       0);
+                                       0, 0);
       reset_meas(&eNB2UE[n]->random_channel);
       reset_meas(&eNB2UE[n]->interp_time);
     }
