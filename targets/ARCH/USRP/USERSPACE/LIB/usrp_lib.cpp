@@ -310,6 +310,23 @@ static int trx_usrp_start(openair0_device *device) {
   return 0;
 }
 
+static void trx_usrp_send_end_of_burst(usrp_state_t *s) {
+  // if last packet sent was end of burst no need to do anything. otherwise send end of burst packet
+  if (s->tx_md.end_of_burst)
+    return;
+
+  s->tx_md.end_of_burst = true;
+  s->tx_md.start_of_burst = false;
+  s->tx_md.has_time_spec = false;
+
+  int32_t dummy = 0;
+  std::vector<const void *> buffs;
+  for (size_t ch = 0; ch < s->tx_stream->get_num_channels(); ch++)
+    buffs.push_back(&dummy); // same buffer for each channel
+
+  s->tx_stream->send(buffs, 0, s->tx_md);
+}
+
 static void trx_usrp_write_reset(openair0_thread_t *wt);
 
 /*! \brief Terminate operation of the USRP transceiver -- free all associated resources
@@ -328,6 +345,7 @@ static void trx_usrp_end(openair0_device *device) {
   if (usrp_tx_thread != 0)
     trx_usrp_write_reset(&device->write_thread);
 
+  trx_usrp_send_end_of_burst(s);
   s->tx_stream->~tx_streamer();
   s->rx_stream->~rx_streamer();
   s->usrp->~multi_usrp();
