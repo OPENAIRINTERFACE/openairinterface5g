@@ -57,7 +57,8 @@
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
 #define CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10             "pusch_TargetSNRx10"
 #define CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10             "pucch_TargetSNRx10"
-
+#define CONFIG_STRING_MACRLC_PUCCHFAILURETHRES             "pucch_FailureThres"
+#define CONFIG_STRING_MACRLC_PUSCHFAILURETHRES             "pusch_FailureThres"
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            MacRLC  configuration parameters                                                                           */
@@ -83,6 +84,8 @@
 {CONFIG_STRING_MACRLC_REMOTE_S_PORTD,                    NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10,            NULL,   0,            iptr:NULL,   defintval:200,               TYPE_INT,       0},  \
 {CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10,            NULL,   0,            iptr:NULL,   defintval:150,               TYPE_INT,       0},  \
+{CONFIG_STRING_MACRLC_PUCCHFAILURETHRES,            NULL,   0,            iptr:NULL,   defintval:10,                TYPE_INT,       0},  \
+{CONFIG_STRING_MACRLC_PUSCHFAILURETHRES,            NULL,   0,            iptr:NULL,   defintval:10,                TYPE_INT,       0},  \
 }
 #define MACRLC_CC_IDX                                          0
 #define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -103,5 +106,7 @@
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
 #define MACRLC_PUSCHTARGETSNRX10_IDX                           17
 #define MACRLC_PUCCHTARGETSNRX10_IDX                           18
+#define MACRLC_PUCCHFAILURETHRES_IDX                           19
+#define MACRLC_PUSCHFAILURETHRES_IDX                           20
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif

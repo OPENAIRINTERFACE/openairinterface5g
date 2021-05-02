@@ -333,7 +333,7 @@ void nr_pdcp_entity_delete(nr_pdcp_entity_t *entity)
 
 nr_pdcp_entity_t *new_nr_pdcp_entity(
     nr_pdcp_entity_type_t type,
-    int is_gnb, int rb_id,
+    int is_gnb, int rb_id, int pdusession_id,
     void (*deliver_sdu)(void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
                         char *buf, int size),
     void *deliver_sdu_data,
@@ -372,6 +372,7 @@ nr_pdcp_entity_t *new_nr_pdcp_entity(
   ret->deliver_pdu_data = deliver_pdu_data;
 
   ret->rb_id         = rb_id;
+  ret->pdusession_id = pdusession_id;
   ret->sn_size       = sn_size;
   ret->t_reordering  = t_reordering;
   ret->discard_timer = discard_timer;

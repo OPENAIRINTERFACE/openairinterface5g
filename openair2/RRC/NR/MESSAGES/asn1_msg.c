@@ -1081,7 +1081,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   SpCellConfig->spCellConfigDedicated->tag_Id=0;
 }
 
-void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig) {
+void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup) {
 
   NR_RLC_BearerConfig_t                            *rlc_BearerConfig     = NULL;
   NR_RLC_Config_t                                  *rlc_Config           = NULL;
@@ -1116,7 +1116,24 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig) {
     rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold                = NR_UL_AM_RLC__maxRetxThreshold_t8;
   //}
   rlc_BearerConfig->rlc_Config                                     = rlc_Config;
+
+  logicalChannelConfig                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
+  logicalChannelConfig->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig->ul_SpecificParameters));
+  logicalChannelConfig->ul_SpecificParameters->priority            = 3;
+  logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration  = NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms5;
+  logicalChannelGroup                                              = CALLOC(1, sizeof(long));
+  *logicalChannelGroup                                             = 0;
+  logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = logicalChannelGroup;
+  logicalChannelConfig->ul_SpecificParameters->schedulingRequestID = CALLOC(1, sizeof(*logicalChannelConfig->ul_SpecificParameters->schedulingRequestID));
+  *logicalChannelConfig->ul_SpecificParameters->schedulingRequestID = 0;
+  logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = 0;
+  logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = 0;
+  //}
+  rlc_BearerConfig->mac_LogicalChannelConfig                       = logicalChannelConfig;
+
   ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
+  ASN_SEQUENCE_ADD(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig);
 
   /*DRB Configuration*/
   rlc_BearerConfig                                                 = calloc(1, sizeof(NR_RLC_BearerConfig_t));
@@ -1141,24 +1158,23 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig) {
   rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold                = NR_UL_AM_RLC__maxRetxThreshold_t4;
   //}
   rlc_BearerConfig->rlc_Config                                     = rlc_Config;
-  ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
+  logicalChannelConfig                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
+  logicalChannelConfig->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig->ul_SpecificParameters));
+  logicalChannelConfig->ul_SpecificParameters->priority            = 13;
+  logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8;
+  logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration  = NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms100;
+  logicalChannelGroup                                              = CALLOC(1, sizeof(long));
+  *logicalChannelGroup                                             = 1;
+  logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = logicalChannelGroup;
+  logicalChannelConfig->ul_SpecificParameters->schedulingRequestID = CALLOC(1, sizeof(*logicalChannelConfig->ul_SpecificParameters->schedulingRequestID));
+  *logicalChannelConfig->ul_SpecificParameters->schedulingRequestID = 0;
+  logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = 0;
+  logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = 0;
 
-
-  //if (0) {
-    logicalChannelConfig                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
-    logicalChannelConfig->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig->ul_SpecificParameters));
-    logicalChannelConfig->ul_SpecificParameters->priority            = 3;
-    logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-    logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration  = NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms5;
-    logicalChannelGroup                                              = CALLOC(1, sizeof(long));
-    *logicalChannelGroup                                             = 0;
-    logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = logicalChannelGroup;
-    logicalChannelConfig->ul_SpecificParameters->schedulingRequestID = CALLOC(1, sizeof(*logicalChannelConfig->ul_SpecificParameters->schedulingRequestID));
-    *logicalChannelConfig->ul_SpecificParameters->schedulingRequestID = 0;
-    logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = 0;
-    logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = 0;
-  //}
   rlc_BearerConfig->mac_LogicalChannelConfig                       = logicalChannelConfig;
+
+  ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
+  ASN_SEQUENCE_ADD(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig);
 
   cellGroupConfig->rlc_BearerToReleaseList = NULL;
 

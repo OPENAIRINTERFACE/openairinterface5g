@@ -97,7 +97,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
 				  NR_CellGroupConfig_t *cellGroupConfig,
 				  NR_ServingCellConfigCommon_t *scc);
 
-void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig);
+void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup);
 
 uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
                     uint8_t                      *const buffer,

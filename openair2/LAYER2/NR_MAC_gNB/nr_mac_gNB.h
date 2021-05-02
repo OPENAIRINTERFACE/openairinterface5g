@@ -524,6 +524,9 @@ typedef struct {
   uint8_t tpc1;
   uint16_t ul_rssi;
   uint8_t current_harq_pid;
+  int pusch_consecutive_dtx_cnt;
+  int pucch_consecutive_dtx_cnt;
+  int ul_failure;
   struct CSI_Report CSI_report[MAX_CSI_REPORTS];
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
@@ -614,6 +617,10 @@ typedef struct gNB_MAC_INST_s {
   int                             pusch_target_snrx10;
   /// Pucch target SNR
   int                             pucch_target_snrx10;
+  /// PUCCH Failure threshold (compared to consecutive PUCCH DTX)
+  int                             pucch_failure_thres;
+  /// PUSCH Failure threshold (compared to consecutive PUSCH DTX)
+  int                             pusch_failure_thres;
   /// Subcarrier Offset
   int                             ssb_SubcarrierOffset;
   /// Common cell resources

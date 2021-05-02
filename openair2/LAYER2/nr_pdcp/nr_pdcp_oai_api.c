@@ -482,13 +482,13 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
                                   size + GTPU_HEADER_OVERHEAD_MAX);
       AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
       memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf, size);
-      message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
+      message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_GNB_TUNNEL_DATA_REQ);
       AssertFatal(message_p != NULL, "OUT OF MEMORY");
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length       = size;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).length       = size;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id       = entity->pdusession_id;
       LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
       //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
       //printf("\n");
@@ -532,7 +532,7 @@ rb_found:
   memblock = get_free_mem_block(size, __FUNCTION__);
   memcpy(memblock->data, buf, size);
 
-  LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
+  LOG_I(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
   //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
   //printf("\n");
   enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
@@ -754,7 +754,7 @@ static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
     LOG_D(PDCP, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
-    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
+    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id, 0,
                                   deliver_sdu_srb, ue, deliver_pdu_srb, ue,
                                   12, t_Reordering, -1,
                                   0, 0,
@@ -780,7 +780,21 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   int sn_size_ul = decode_sn_size_ul(*s->pdcp_Config->drb->pdcp_SN_SizeUL);
   int sn_size_dl = decode_sn_size_dl(*s->pdcp_Config->drb->pdcp_SN_SizeDL);
   int discard_timer = decode_discard_timer(*s->pdcp_Config->drb->discardTimer);
-
+  if ((!s->cnAssociation) || s->cnAssociation->present == NR_DRB_ToAddMod__cnAssociation_PR_NOTHING) { 
+    LOG_E(PDCP,"%s:%d:%s: fatal, cnAssociation is missing or present is NR_DRB_ToAddMod__cnAssociation_PR_NOTHING\n",__FILE__,__LINE__,__FUNCTION__);
+    exit(-1);
+  }
+  
+  int pdusession_id; 
+  if (s->cnAssociation->present == NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity)
+     pdusession_id = s->cnAssociation->choice.eps_BearerIdentity;
+  else {
+    if (!s->cnAssociation->choice.sdap_Config) {
+      LOG_E(PDCP,"%s:%d:%s: fatal, sdap_Config is null",__FILE__,__LINE__,__FUNCTION__);
+      exit(-1);
+    }
+    pdusession_id = s->cnAssociation->choice.sdap_Config->pdu_Session;
+  }
   /* TODO(?): accept different UL and DL SN sizes? */
   if (sn_size_ul != sn_size_dl) {
     LOG_E(PDCP, "%s:%d:%s: fatal, bad SN sizes, must be same. ul=%d, dl=%d\n",
@@ -800,7 +814,7 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
     LOG_D(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    pdcp_drb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, drb_id,
+    pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id,pdusession_id,
                                   deliver_sdu_drb, ue, deliver_pdu_drb, ue,
                                   sn_size_dl, t_reordering, discard_timer,
                                   ciphering_algorithm, integrity_algorithm,
