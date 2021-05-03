@@ -88,6 +88,7 @@ class Containerize():
 		self.host = ''
 		self.allImagesSize = {}
 		self.collectInfo = {}
+
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
@@ -335,6 +336,31 @@ class Containerize():
 					errorandwarnings['warnings'] = warningsNo
 					errorandwarnings['status'] = status
 				files[fil] = errorandwarnings
+			# Let analyze the target image creation part
+			if os.path.isfile('build_log_{}/{}.log'.format(self.testCase_id,image)):
+				errorandwarnings = {}
+				with open('build_log_{}/{}.log'.format(self.testCase_id,image), mode='r') as inputfile:
+					startOfTargetImageCreation = False
+					buildStatus = False
+					for line in inputfile:
+						result = re.search('FROM .* as ' + image + '$', str(line))
+						if result is not None:
+							startOfTargetImageCreation = True
+						if startOfTargetImageCreation:
+							result = re.search('Successfully tagged ' + image + ':', str(line))
+							if result is not None:
+								buildStatus = True
+							result = re.search('COMMIT ' + image + ':', str(line))
+							if result is not None:
+								buildStatus = True
+					inputfile.close()
+					if buildStatus:
+						errorandwarnings['errors'] = 0
+					else:
+						errorandwarnings['errors'] = 1
+					errorandwarnings['warnings'] = 0
+					errorandwarnings['status'] = buildStatus
+					files['Target Image Creation'] = errorandwarnings
 			self.collectInfo[image] = files
 		
 		if status:
