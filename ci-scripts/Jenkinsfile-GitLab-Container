@@ -179,7 +179,7 @@ pipeline {
     stage ("Image Test Processes") {
       parallel {
         stage ("Physical Simulators") {
-          when { expression {doFlexranCtrlTest && doMandatoryTests} }
+          when { expression {doMandatoryTests} }
           steps {
             script {
               triggerSlaveJob ('RAN-PhySim-Cluster', 'Test-Physim-Cluster')
