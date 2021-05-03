@@ -386,7 +386,7 @@ instance_t ocp_gtpv1Init(openAddr_t context) {
   return id;
 }
 
-teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int bearer_id, teid_t teid,
+teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int bearer_id, teid_t outgoing_teid,
 			   transport_layer_addr_t remoteAddr, int port, gtpCallback callBack) {
   pthread_mutex_lock(&globGtp.gtp_lock);
   auto inst=&globGtp.instances[instance];
@@ -397,18 +397,18 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int bearer_id, teid
     inst->ue2te_mapping.erase(it);
   }
 
-  uint32_t s1u_teid=gtpv1uNewTeid();
+  uint32_t incoming_teid=gtpv1uNewTeid();
 
-  while ( inst->te2ue_mapping.find(s1u_teid) != inst->te2ue_mapping.end() ) {
-    LOG_W(GTPU, "generated a random Teid that exists, re-generating (%u)\n",s1u_teid);
-    s1u_teid=gtpv1uNewTeid();
+  while ( inst->te2ue_mapping.find(incoming_teid) != inst->te2ue_mapping.end() ) {
+    LOG_W(GTPU, "generated a random Teid that exists, re-generating (%u)\n",incoming_teid);
+    incoming_teid=gtpv1uNewTeid();
   };
 
-  inst->te2ue_mapping[s1u_teid].rnti=rnti;
+  inst->te2ue_mapping[incoming_teid].rnti=rnti;
 
-  inst->te2ue_mapping[s1u_teid].rb_id= teid;
+  inst->te2ue_mapping[incoming_teid].rb_id= outgoing_teid;
 
-  inst->te2ue_mapping[s1u_teid].callBack=callBack;
+  inst->te2ue_mapping[incoming_teid].callBack=callBack;
 
   auto tmp=&inst->ue2te_mapping[rnti].bearers[bearer_id];
 
@@ -433,12 +433,16 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int bearer_id, teid
     default:
       AssertFatal(false, "SGW Address size impossible");
   }
-
-  tmp->teid_incoming = s1u_teid;
+ 
+  tmp->teid_incoming = incoming_teid;
   tmp->outgoing_port=port;
-  tmp->teid_outgoing= teid;
+  tmp->teid_outgoing= outgoing_teid;
   pthread_mutex_unlock(&globGtp.gtp_lock);
-  return s1u_teid;
+  LOG_I(GTPU, "Created tunnel for RNTI %x, teid for DL: %d, teid for UL %d\n",
+        rnti,
+	tmp->teid_incoming,
+        tmp->teid_outgoing);
+  return incoming_teid;
 }
 
 int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
