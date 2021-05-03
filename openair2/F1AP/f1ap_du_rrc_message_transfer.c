@@ -1256,7 +1256,6 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 								     RC.nrrrc[ctxt.module_id],
 								     ctxt.rnti);
 
-  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   if (srb_id == 0) {
     NR_DL_CCCH_Message_t* dl_ccch_msg=NULL;
     asn_dec_rval_t dec_rval;
@@ -1300,7 +1299,10 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 			       rrcSetup_ies->masterCellGroup.size,0,0);
 	AssertFatal(dec_rval.code == RC_OK, "could not decode masterCellGroup\n");
 
-      // configure MAC
+#if NR
+	gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
+
+	// configure MAC
 	rrc_mac_config_req_gNB(ctxt.module_id,
 			       rrc->carrier.ssb_SubcarrierOffset,
 			       rrc->carrier.pdsch_AntennaPorts,
@@ -1310,7 +1312,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 			       ue_context_p->ue_context.rnti,
 			       ue_context_p->ue_context.masterCellGroup
 			       );
-        // rrc_rlc_config_asn1_req
+	// rrc_rlc_config_asn1_req
 	nr_rrc_rlc_config_asn1_req(&ctxt,
 				   ue_context_p->ue_context.SRB_configList,
 				   NULL,
@@ -1318,6 +1320,8 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 				   NULL,
 				   NULL,
 				   NULL);
+#endif
+
       // This should be somewhere in the f1ap_cudu_ue_inst_t
       /*int macrlc_instance = 0; 
 

@@ -335,6 +335,10 @@ else (CUDA_FOUND)
     )
 endif ()
 
+if(NR)
+  add_definitions(-DNR=1)
+endif()
+
 if (SANITIZE_ADDRESS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-common")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-common")
