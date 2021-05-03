@@ -632,7 +632,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     pusch_config_pdu->bwp_size = n_RB_ULBWP;
 
-    fapi_nr_pusch_config_dedicated_t *pusch_config_dedicated = &mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated;
     NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0] ? mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup : NULL;
 
     // Basic sanity check for MCS value to check for a false or erroneous DCI
