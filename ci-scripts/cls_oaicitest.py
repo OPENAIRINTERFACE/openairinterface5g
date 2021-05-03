@@ -367,7 +367,7 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def InitializeUE(self,HTML,COTS_UE, InfraUE):
+	def InitializeUE(self,HTML,RAN,EPC, COTS_UE, InfraUE):
 		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
 			if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 				HELP.GenericHelp(CONST.Version)

@@ -711,7 +711,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML,COTS_UE, InfraUE)
+					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE)
 				elif action == 'Terminate_UE':
 					CiTestObj.TerminateUE(HTML,COTS_UE)
 				elif action == 'Attach_UE':
