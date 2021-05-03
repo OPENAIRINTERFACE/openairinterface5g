@@ -73,6 +73,7 @@ extern "C"
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
 #define CONFIG_HLP_256QAM        "Use the 256 QAM mcs table for PDSCH\n"
 
+#define CONFIG_HLP_NONSTOP       "Go back to frame sync mode after 100 consecutive PBCH failures\n"
 //#define CONFIG_HLP_NUMUES        "Set the number of UEs for the emulation"
 #define CONFIG_HLP_MSLOTS        "Skip the missed slots/subframes \n"
 #define CONFIG_HLP_ULMCS         "Set the maximum uplink MCS\n"
@@ -117,6 +118,7 @@ extern "C"
 #define USIM_TEST           softmodem_params.usim_test
 #define USE_256QAM_TABLE    softmodem_params.use_256qam_table
 #define NFAPI               softmodem_params.nfapi
+#define NON_STOP            softmodem_params.non_stop
 
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
@@ -151,6 +153,7 @@ extern int usrp_tx_thread;
     {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
     {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,              iptr:&usrp_tx_thread,               defstrval:0,           TYPE_INT,    0},                     \
     {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                  defintval:0,           TYPE_UINT8,  0},                     \
+    {"non-stop",            CONFIG_HLP_NONSTOP,      PARAMFLAG_BOOL, iptr:&NON_STOP,                      defintval:0,           TYPE_INT,    0},                     \
   }
 
   
@@ -242,6 +245,7 @@ typedef struct {
   uint32_t       send_dmrs_sync;
   int            use_256qam_table;
   uint8_t        nfapi;
+  int            non_stop;
 } softmodem_params_t;
 
 extern uint64_t get_softmodem_optmask(void);
