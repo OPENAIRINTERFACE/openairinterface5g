@@ -239,6 +239,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 			   rrc->carrier.ssb_SubcarrierOffset,
 			   rrc->carrier.pdsch_AntennaPorts,
 			   rrc->carrier.pusch_AntennaPorts,
+                           rrc->carrier.sib1_tda,
 			   (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
 			   0,
 			   0, // WIP hardcoded rnti
@@ -331,6 +332,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
   rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
+  rrc->carrier.sib1_tda = configuration->sib1_tda;
    /// System Information INIT
   pthread_mutex_init(&rrc->cell_info_mutex,NULL);
   rrc->cell_info_configured = 0;
@@ -493,6 +495,7 @@ rrc_gNB_generate_RRCSetup(
 			     rrc->carrier.ssb_SubcarrierOffset,
 			     rrc->carrier.pdsch_AntennaPorts,
 			     rrc->carrier.pusch_AntennaPorts,
+			     rrc->carrier.sib1_tda,
 			     NULL,
 			     0,
 			     ue_context_pP->ue_context.rnti,
@@ -564,6 +567,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          rrc_instance_p->carrier.ssb_SubcarrierOffset,
                          rrc_instance_p->carrier.pdsch_AntennaPorts,
                          rrc_instance_p->carrier.pusch_AntennaPorts,
+                         rrc_instance_p->carrier.sib1_tda,
                          (NR_ServingCellConfigCommon_t *)rrc_instance_p->carrier.servingcellconfigcommon,
                          0,
                          ue_context_pP->ue_context.rnti,

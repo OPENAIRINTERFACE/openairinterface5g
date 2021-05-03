@@ -392,13 +392,13 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   gNB_mac->sched_ctrlCommon->rbSize = rbSize;
   gNB_mac->sched_ctrlCommon->rbStart = 0;
 
-  LOG_I(MAC,"mcs = %i\n", gNB_mac->sched_ctrlCommon->mcs);
-  LOG_I(MAC,"startSymbolIndex = %i\n", startSymbolIndex);
-  LOG_I(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
-  LOG_I(MAC,"rbSize = %i\n", gNB_mac->sched_ctrlCommon->rbSize);
-  LOG_I(MAC,"TBS = %i\n", TBS);
-  LOG_I(MAC,"dmrs_length %d\n",dmrs_length);
-  LOG_I(MAC,"N_PRB_DMRS = %d\n",N_PRB_DMRS);
+  LOG_D(MAC,"mcs = %i\n", gNB_mac->sched_ctrlCommon->mcs);
+  LOG_D(MAC,"startSymbolIndex = %i\n", startSymbolIndex);
+  LOG_D(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
+  LOG_D(MAC,"rbSize = %i\n", gNB_mac->sched_ctrlCommon->rbSize);
+  LOG_D(MAC,"TBS = %i\n", TBS);
+  LOG_D(MAC,"dmrs_length %d\n",dmrs_length);
+  LOG_D(MAC,"N_PRB_DMRS = %d\n",N_PRB_DMRS);
   // Mark the corresponding RBs as used
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->rbSize; rb++) {
     vrb_map[rb + rbStart] = 1;
@@ -548,11 +548,12 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
   // TODO: Get these values from RRC
   const int CC_id = 0;
-  int time_domain_allocation = 0;
   uint8_t candidate_idx = 0;
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
   NR_ServingCellConfigCommon_t *scc = gNB_mac->common_channels[CC_id].ServingCellConfigCommon;
+
+  int time_domain_allocation = gNB_mac->sib1_tda;
 
   int L_max;
   switch (scc->ssb_PositionsInBurst->present) {
