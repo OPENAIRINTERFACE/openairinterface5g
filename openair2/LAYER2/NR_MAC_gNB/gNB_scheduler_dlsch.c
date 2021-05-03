@@ -55,7 +55,7 @@
 #define HALFWORD 16
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
-static boolean_t loop_dcch_dtch = TRUE;
+static int loop_dcch_dtch = DL_SCH_LCID_DTCH;
 
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp)
 {
@@ -390,8 +390,14 @@ void nr_store_dlsch_buffer(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     sched_ctrl->num_total_bytes = 0;
-    loop_dcch_dtch = BOOL_NOT(loop_dcch_dtch);
-    const int lcid = loop_dcch_dtch?DL_SCH_LCID_DTCH:DL_SCH_LCID_DCCH;
+    if (loop_dcch_dtch == DL_SCH_LCID_DCCH1)
+      loop_dcch_dtch = DL_SCH_LCID_DTCH;
+    else if (loop_dcch_dtch == DL_SCH_LCID_DTCH)
+      loop_dcch_dtch = DL_SCH_LCID_DCCH;
+    else if (loop_dcch_dtch == DL_SCH_LCID_DCCH)
+      loop_dcch_dtch = DL_SCH_LCID_DCCH1;
+
+    const int lcid = loop_dcch_dtch;
     // const int lcid = DL_SCH_LCID_DTCH;
     const uint16_t rnti = UE_info->rnti[UE_id];
     sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
@@ -1086,7 +1092,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       /* next, get RLC data */
 
       // const int lcid = DL_SCH_LCID_DTCH;
-      const int lcid = loop_dcch_dtch?DL_SCH_LCID_DTCH:DL_SCH_LCID_DCCH;
+      const int lcid = loop_dcch_dtch;
       int dlsch_total_bytes = 0;
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
@@ -1114,11 +1120,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                  0);
 
           LOG_D(NR_MAC,
-                "%4d.%2d RNTI %04x: %d bytes from DTCH %d (ndata %d, remaining size %d)\n",
+                "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
                 frame,
                 slot,
                 rnti,
                 len,
+                lcid < 4 ? "DCCH" : "DTCH",
                 lcid,
                 ndata,
                 size);

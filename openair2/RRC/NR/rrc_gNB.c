@@ -688,6 +688,7 @@ rrc_gNB_process_RRCSetupComplete(
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing NR_RRCSetupComplete from UE (SRB1 Active)\n",
       PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
   ue_context_pP->ue_context.Srb1.Active = 1;
+  ue_context_pP->ue_context.Srb1.Srb_info.Srb_id = 1;
   ue_context_pP->ue_context.Status = NR_RRC_CONNECTED;
 
   if (AMF_MODE_ENABLED) {
@@ -959,7 +960,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     sdap_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
     memset(sdap_config, 0, sizeof(NR_SDAP_Config_t));
     sdap_config->pdu_Session = ue_context_pP->ue_context.pdusession[i].param.pdusession_id;
-    sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
+    sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
     sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_present;
     sdap_config->defaultDRB = TRUE;
     sdap_config->mappedQoS_FlowsToAdd = calloc(1, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
@@ -1049,7 +1050,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
   memset(buffer, 0, RRC_BUF_SIZE);
   cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-  fill_mastercellGroupConfig(cellGroupConfig);
+  fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup);
   size = do_RRCReconfiguration(ctxt_pP, buffer,
                                 xid,
                                 *SRB_configList2, 
@@ -1294,6 +1295,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
     for (int i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
       if (SRB_configList->list.array[i]->srb_Identity == 1) {
         ue_context_pP->ue_context.Srb1.Active = 1;
+        ue_context_pP->ue_context.Srb1.Srb_info.Srb_id = 1;
       } else if (SRB_configList->list.array[i]->srb_Identity == 2) {
         ue_context_pP->ue_context.Srb2.Active = 1;
         ue_context_pP->ue_context.Srb2.Srb_info.Srb_id = 2;

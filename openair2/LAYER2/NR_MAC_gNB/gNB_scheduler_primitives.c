@@ -1840,6 +1840,10 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
+    sched_ctrl->ul_rssi = 0;
+    sched_ctrl->pucch_consecutive_dtx_cnt = 0;
+    sched_ctrl->pusch_consecutive_dtx_cnt = 0;
+    sched_ctrl->ul_failure                = 0;
     /* set illegal time domain allocation to force recomputation of all fields */
     sched_ctrl->pdsch_semi_static.time_domain_allocation = -1;
     sched_ctrl->pusch_semi_static.time_domain_allocation = -1;
