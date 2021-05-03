@@ -6091,7 +6091,7 @@ void *recv_msgs_from_nr_ue(void *args_p)
             LOG_E(NR_RRC, "%s: Received a truncated message %d\n", __func__, recvLen);
             continue;
         }
-        LOG_I(RRC, "We have received a msg. Calling process_nr_nsa_msg\n");
+        LOG_D(RRC, "We have received a %d msg (%d bytes). Calling process_nr_nsa_msg\n", msg.msg_type, recvLen);
         process_nr_nsa_msg(&msg, recvLen);
     }
 
@@ -6127,7 +6127,7 @@ void nsa_sendmsg_to_nrue(const void *message, size_t msg_len, Rrc_Msg_Type_t msg
         LOG_E(RRC, "%s: Short send %d != %zu\n", __func__, sent, to_send);
         return;
     }
-    LOG_I(RRC, "Sent a %d message to the nrUE (%zu bytes) \n", msg_type, to_send);
+    LOG_D(RRC, "Sent a %d message to the nrUE (%d bytes) \n", msg_type, sent);
 }
 
 void init_connections_with_nr_ue(void)
@@ -6169,9 +6169,10 @@ void init_connections_with_nr_ue(void)
 
 void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
 {
-    LOG_I(RRC, "We are processing an NSA message \n");
+    LOG_D(RRC, "We are processing an NSA message %d \n", msg->msg_type);
     Rrc_Msg_Type_t msg_type = msg->msg_type;
     uint8_t *const msg_buffer = msg->msg_buffer;
+    msg_len -= sizeof(msg->msg_type);
     bool received_nr_msg = true;
     protocol_ctxt_t ctxt;
 
@@ -6179,7 +6180,7 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
     {
         case UE_CAPABILITY_INFO:
         {
-            LOG_I(RRC, "Processing a UE_CAPABILITY_INFO message \n");
+            LOG_D(RRC, "Processing a UE_CAPABILITY_INFO message \n");
             /* Melissa:
             1. Set these parameters if we get UE_CAPABILITY_INFO message:
                 a. irat-ParametersNR-r15
@@ -6218,6 +6219,49 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             RRC_DCCH_DATA_COPY_IND (message_p).eNB_index = 0;
             itti_send_msg_to_task (TASK_RRC_UE, 0, message_p);
             LOG_D(RRC, "Sent itti RRC_DCCH_DATA_COPY_IND\n");
+            break;
+        }
+
+        case NR_UE_RRC_MEASUREMENT:
+        {
+            nfapi_p7_message_header_t header;
+            if (nfapi_p7_message_header_unpack((void *)msg_buffer, msg_len, &header, sizeof(header), NULL) < 0)
+            {
+                LOG_E(MAC, "Header unpack failed in %s \n", __FUNCTION__);
+                break;
+            }
+            if (header.message_id != NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST)
+            {
+                LOG_E(MAC, "%s: Unexpected nfapi message type: %d\n", __FUNCTION__, header.message_id);
+                break;
+            }
+
+            nfapi_nr_dl_tti_request_t dl_tti_request;
+            int unpack_len = nfapi_nr_p7_message_unpack((void *)msg_buffer,
+                                                         msg_len,
+                                                         &dl_tti_request,
+                                                         sizeof(nfapi_nr_dl_tti_request_t),
+                                                         NULL);
+            if (unpack_len < 0)
+            {
+                LOG_E(RRC, "%s: SSB PDU unpack failed \n", __FUNCTION__);
+                break;
+            }
+            int num_pdus = dl_tti_request.dl_tti_request_body.nPDUs;
+            if (num_pdus <= 0)
+            {
+                LOG_E(RRC, "%s: dl_tti_request number of PDUS <= 0\n", __FUNCTION__);
+                abort();
+            }
+            for (int i = 0; i < num_pdus; i++)
+            {
+                nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request.dl_tti_request_body.dl_tti_pdu_list[i];
+                if (pdu_list->PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE)
+                {
+                    LOG_I(RRC, "Got an NR_UE_RRC_MEASUREMENT. pdulist[%d].ssRSRB = %d\n",
+                         i, pdu_list->ssb_pdu.ssb_pdu_rel15.ssRSRB);
+                }
+            }
             break;
         }
         default:

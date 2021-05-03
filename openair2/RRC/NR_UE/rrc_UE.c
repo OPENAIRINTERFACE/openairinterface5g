@@ -133,7 +133,6 @@ uint8_t first_rrcreconfigurationcomplete = 0;
 static const char nsa_ipaddr[] = "127.0.0.1";
 static int from_lte_ue_fd = -1;
 static int to_lte_ue_fd = -1;
-uint16_t node_number;
 uint16_t ue_id_g;
 
 static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
@@ -209,7 +208,7 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 static void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len);
-static void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, MessagesIds msg_type);
+static void start_oai_nrue_threads(void);
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
@@ -2910,7 +2909,7 @@ void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, MessagesIds msg_
         .sin_family = AF_INET,
         .sin_port = htons(6007),
     };
-    int sent = sendto(from_lte_ue_fd, n_msg.msg_buffer, to_send, 0,
+    int sent = sendto(from_lte_ue_fd, &n_msg, to_send, 0,
                       (struct sockaddr *)&sa, sizeof(sa));
     if (sent == -1)
     {
@@ -2922,6 +2921,7 @@ void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, MessagesIds msg_
         LOG_E(RRC, "%s: Short send %d != %zu\n", __func__, sent, to_send);
         return;
     }
+    LOG_D(NR_RRC, "Sent a %d message to the LTE UE (%d bytes) \n", msg_type, sent);
 }
 
 void init_connections_with_lte_ue(void)
@@ -2961,22 +2961,20 @@ void init_connections_with_lte_ue(void)
     LOG_I(NR_RRC, "Started LTE-NR link in the nr-UE\n");
 }
 
-static void process_measurement_objects_nr(LTE_MeasObjectToAddMod_t *buf)
+static void start_oai_nrue_threads()
 {
-    LOG_I(NR_RRC, "NR carrierFreq_r15 (ssb): %ld and sub carrier spacing:%ld\n",
-          buf->measObject.choice.measObjectNR_r15.carrierFreq_r15,
-          buf->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15);
-    #if 0
-    uint16_t node_num = get_softmodem_params()->node_number;
-    /* Receiving the RRC_Reconfiguration with the measurement objects
-       from the LTE UE should trigger the socket to be opened between
-       the NRUE(s) and the proxy. This allows us to start receiving
-       nFAPI messages from the gNB via the proxy. */
+    init_queue(&dl_itti_config_req_tx_data_req_queue);
+    init_queue(&ul_dci_config_req_queue);
+
+    if (sem_init(&sfn_slot_semaphore, 0, 0) != 0)
+    {
+      LOG_E(MAC, "sem_init() error\n");
+      abort();
+    }
+    int node_num = get_softmodem_params()->node_number;
     ue_id_g = (node_num == 0)? 0 : node_num-2;
     init_nrUE_standalone_thread(ue_id_g);
-    #endif
 }
-
 
 void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
 {
@@ -3015,6 +3013,7 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
         }
 
         case RRC_MEASUREMENT_PROCEDURE:
+        {
             LOG_I(NR_RRC, "We are processing a %d message \n", msg_type);
 
             LTE_MeasObjectToAddMod_t *nr_meas_obj = NULL;
@@ -3029,7 +3028,10 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
               LOG_E(RRC, "Failed to decode measurement object (%zu bits) %d\n", dec_rval.consumed, dec_rval.code);
               break;
             }
-            process_measurement_objects_nr(nr_meas_obj);
+            LOG_I(NR_RRC, "NR carrierFreq_r15 (ssb): %ld and sub carrier spacing:%ld\n",
+                  nr_meas_obj->measObject.choice.measObjectNR_r15.carrierFreq_r15,
+                  nr_meas_obj->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15);
+            start_oai_nrue_threads();
             /* Create a processs RRC_MEASUREMENT_PROCEDURE function. This
                function will tell the NR UE which frequency to take measurements
                on. You can log these values for fun. This will trigger 5G UE socket with proxy
@@ -3038,6 +3040,7 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
                Also, after receiving PBCH it will start sending SSB index/cellID and some info from MIB to UE
                as measurement reporting message*/
             break;
+        }
 
         default:
             LOG_E(NR_RRC, "No NSA Message Found\n");

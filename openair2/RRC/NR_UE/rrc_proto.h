@@ -132,6 +132,8 @@ void *recv_msgs_from_lte_ue(void *args_p);
 
 void init_connections_with_lte_ue(void);
 
+void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, MessagesIds msg_type);
+
 /**\brief RRC UE generate RRCSetupRequest message.
    \param ctxt_pP    protocol context 
    \param gNB_index  gNB index  */

@@ -37,6 +37,7 @@
 #include "NR_MAC_UE/mac_extern.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 #include "executables/softmodem-common.h"
+#include "openair2/RRC/NR_UE/rrc_proto.h"
 
 #include <stdio.h>
 
@@ -128,6 +129,44 @@ void nrue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
         tx_port, rx_port, addr);
 }
 
+
+static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
+{
+    int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
+    char buffer[MAX_MESSAGE_SIZE];
+    if (num_pdus <= 0)
+    {
+        LOG_E(NR_PHY, "%s: dl_tti_request number of PDUS <= 0\n", __FUNCTION__);
+        abort();
+    }
+    LOG_D(NR_PHY, "%s: dl_tti_request number of PDUS: %d\n", __FUNCTION__, num_pdus);
+    for (int i = 0; i < num_pdus; i++)
+    {
+        nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request->dl_tti_request_body.dl_tti_pdu_list[i];
+        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE)
+        {
+            LOG_I(NR_PHY, "Cell_id: %d, the ssb_block_idx %d, sc_offset: %d and payload %d\n",
+                pdu_list->ssb_pdu.ssb_pdu_rel15.PhysCellId,
+                pdu_list->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex,
+                pdu_list->ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset,
+                pdu_list->ssb_pdu.ssb_pdu_rel15.bchPayload);
+            pdu_list->ssb_pdu.ssb_pdu_rel15.ssRSRB = 60;
+            LOG_D(NR_RRC, "Setting pdulist[%d].ssRSRB to %d\n", i, pdu_list->ssb_pdu.ssb_pdu_rel15.ssRSRB);
+        }
+    }
+
+    size_t pack_len = nfapi_nr_p7_message_pack((void *)dl_tti_request,
+                                    buffer,
+                                    sizeof(buffer),
+                                    NULL);
+    if (pack_len < 0)
+    {
+        LOG_E(NR_PHY, "%s: Error packing nr p7 message.\n", __FUNCTION__);
+    }
+    LOG_I(NR_RRC, "Calling nsa_sendmsg_to_lte_ue to send a NR_UE_RRC_MEASUREMENT\n");
+    nsa_sendmsg_to_lte_ue(buffer, pack_len, NR_UE_RRC_MEASUREMENT);
+}
+
 void *nrue_standalone_pnf_task(void *context)
 {
   struct sockaddr_in server_address;
@@ -142,12 +181,12 @@ void *nrue_standalone_pnf_task(void *context)
     ssize_t len = recvfrom(sd, buffer, sizeof(buffer), MSG_TRUNC, (struct sockaddr *)&server_address, &addr_len);
     if (len == -1)
     {
-      LOG_E(MAC, "reading from standalone pnf sctp socket failed \n");
+      LOG_E(NR_PHY, "reading from standalone pnf sctp socket failed \n");
       continue;
     }
     if (len > sizeof(buffer))
     {
-      LOG_E(MAC, "%s(%d). Message truncated. %zd\n", __FUNCTION__, __LINE__, len);
+      LOG_E(NR_PHY, "%s(%d). Message truncated. %zd\n", __FUNCTION__, __LINE__, len);
       continue;
     }
     if (len == sizeof(uint16_t))
@@ -158,19 +197,20 @@ void *nrue_standalone_pnf_task(void *context)
 
       if (sem_post(&sfn_slot_semaphore) != 0)
       {
-        LOG_E(MAC, "sem_post() error\n");
+        LOG_E(NR_PHY, "sem_post() error\n");
         abort();
       }
       int sfn = NFAPI_SFNSLOT2SFN(sfn_slot);
       int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
-      LOG_D(MAC, "Received from proxy sfn %d slot %d\n", sfn, slot);
+      LOG_D(NR_PHY, "Received from proxy sfn %d slot %d\n", sfn, slot);
     }
     else
     {
       nfapi_p7_message_header_t header;
+      nfapi_nr_dl_tti_request_t dl_tti_request;
       if (nfapi_p7_message_header_unpack((void *)buffer, len, &header, sizeof(header), NULL) < 0)
       {
-        LOG_E(MAC, "Header unpack failed for nrue_standalone pnf\n");
+        LOG_E(NR_PHY, "Header unpack failed for nrue_standalone pnf\n");
         continue;
       }
       else
@@ -178,26 +218,32 @@ void *nrue_standalone_pnf_task(void *context)
         switch (header.message_id)
         {
           case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
-            LOG_I(NR_PHY, "Melissa, we have received a NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST message. \n");
-            /* Melissa, not 100% sure what to do but I think we need to
-              0. Add TX_DATA_REQUEST and pair them similarly
-              1. Queue them
-              2. De-queue and pair them
-              3. Get SSB PDU when received. Inside this NFAPI_NR_DL_TTI_SSB_PDU_TYPE
-                  we need the cell_id, SSB block index, SSB subcarrier offset, and the BCH payload
-              4. Send back the SSB PDU type (that comes in from Proxy) and send to LTE */
+            LOG_D(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST message. \n");
+            if (nfapi_nr_p7_message_unpack((void *)buffer, len, &dl_tti_request,
+                                           sizeof(nfapi_nr_dl_tti_request_t), NULL) < 0)
+            {
+                LOG_E(NR_PHY, "Message dl_tti_request failed to unpack\n");
+                break;
+            }
+            save_nr_measurement_info(&dl_tti_request);
             break;
           case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
-            LOG_I(NR_PHY, "Melissa, we have received a NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message. \n");
+            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message. \n");
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
-            LOG_I(NR_PHY, "Melissa, we have received a NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message. \n");
+            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message. \n");
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
-            LOG_I(NR_PHY, "Melissa, we have received a NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message. \n");
+            LOG_D(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message. \n");
+            if (nfapi_nr_p7_message_unpack((void *)buffer, len, &dl_tti_request,
+                                           sizeof(dl_tti_request), NULL) < 0)
+            {
+                LOG_E(NR_PHY, "Message dl_tti_request failed to unpack\n");
+                break;
+            }
             break;
           default:
-            LOG_E(MAC, "Case Statement has no corresponding nfapi message, this is the header ID %d\n", header.message_id);
+            LOG_E(NR_PHY, "Case Statement has no corresponding nfapi message, this is the header ID %d\n", header.message_id);
             break;
         }
       }

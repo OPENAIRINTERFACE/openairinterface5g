@@ -587,20 +587,8 @@ int main( int argc, char **argv ) {
     printf("UE threads created by %ld\n", gettid());
 
   }
- if (NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
-    init_queue(&dl_itti_config_req_tx_data_req_queue);
-    init_queue(&ul_dci_config_req_queue);
 
-    config_sync_var=0;
-    if (sem_init(&sfn_slot_semaphore, 0, 0) != 0)
-    {
-      LOG_E(MAC, "sem_init() error\n");
-      abort();
-    }
-    init_nrUE_standalone_thread(ue_id_g);
-    //init_NR_UE_threads(NB_UE_INST);
-  }
-
+  config_sync_var=0;
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   // Sleep a while before checking all parameters have been used
