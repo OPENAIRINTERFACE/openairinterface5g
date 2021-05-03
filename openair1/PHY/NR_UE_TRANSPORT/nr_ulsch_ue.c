@@ -525,7 +525,8 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
       nr_normal_prefix_mod(txdataF[ap],
                            &txdata[ap][tx_offset],
                            14,
-                           frame_parms);
+                           frame_parms,
+                           slot);
     }
   }
 
