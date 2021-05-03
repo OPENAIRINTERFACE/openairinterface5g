@@ -181,7 +181,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
       else {
         uint8_t nb_ssb_resources =0;
         //Finding the CSI_RS or SSB Resources
-        if (NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP == reportQuantity_type || 
+        if (NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP == reportQuantity_type ||
             NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type) {
 
           if (NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled == csi_reportconfig->groupBasedBeamReporting.present) {
@@ -191,18 +191,18 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
 		/*! From Spec 38.331
 		 * nrofReportedRS
 		 * The number (N) of measured RS resources to be reported per report setting in a non-group-based report. N <= N_max, where N_max is either 2 or 4 depending on UE
-		 * capability. FFS: The signaling mechanism for the gNB to select a subset of N beams for the UE to measure and report.  
+		 * capability. FFS: The signaling mechanism for the gNB to select a subset of N beams for the UE to measure and report.
 		 * When the field is absent the UE applies the value 1
 		 */
               csi_report->CSI_report_bitlen.nb_ssbri_cri= 1;
-          }else 
+          }else
 	    csi_report->CSI_report_bitlen.nb_ssbri_cri= 2;
 
           if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == csi_report->reportQuantity_type) {
             for ( csi_ssb_idx = 0; csi_ssb_idx < csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; csi_ssb_idx++) {
               if (csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceSetId ==
                   *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.array[0])){
- 
+
                 ///We can configure only one SSB resource set from spec 38.331 IE CSI-ResourceConfig
                 nb_ssb_resources=  csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList.list.count;
                 csi_report->SSB_Index_list = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList.list.array;
@@ -226,12 +226,12 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
 
          if (nb_ssb_resources) {
            csi_report->CSI_report_bitlen.cri_ssbri_bitlen =ceil(log2 (nb_ssb_resources));
-           csi_report->CSI_report_bitlen.rsrp_bitlen = 7; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP 
+           csi_report->CSI_report_bitlen.rsrp_bitlen = 7; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP
            csi_report->CSI_report_bitlen.diff_rsrp_bitlen =4; //From spec 38.212 Table 6.3.1.1.2-6: CRI, SSBRI, and RSRP
-         } else { 
+         } else {
             csi_report->CSI_report_bitlen.cri_ssbri_bitlen =0;
-            csi_report->CSI_report_bitlen.rsrp_bitlen = 0;  
-            csi_report->CSI_report_bitlen.diff_rsrp_bitlen =0; 
+            csi_report->CSI_report_bitlen.rsrp_bitlen = 0;
+            csi_report->CSI_report_bitlen.diff_rsrp_bitlen =0;
          }
 
         LOG_I (MAC, "UCI: CSI_bit len : ssbri %d, rsrp: %d, diff_rsrp: %d\n",
@@ -270,7 +270,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
                 csi_report->csi_meas_bitlen.ri_bitlen=0;
                 break;
               case 2:
-		/*  From Spec 38.212 
+		/*  From Spec 38.212
 		 *  If the higher layer parameter nrofCQIsPerReport=1, nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator
 		 *  values in the 4 LSBs of the higher layer parameter typeI-SinglePanel-ri-Restriction according to Subclause 5.2.2.2.1 [6,
 		 *  TS 38.214]; otherwise nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator values according to Subclause
@@ -283,7 +283,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
 
                  ri_restriction = csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0];
 
-                 /* Replace dummy with the nrofCQIsPerReport from the CSIreport 
+                 /* Replace dummy with the nrofCQIsPerReport from the CSIreport
                  config when equalent ASN structure present */
                 if (0==*(csi_reportconfig->dummy)){
                   nb_allowed_ri = number_of_bits_set((ri_restriction & 0xf0), &max_ri);
@@ -293,7 +293,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
                   nb_allowed_ri = number_of_bits_set(ri_restriction, &max_ri);
                   ri_bitlen = ceil(log2(nb_allowed_ri));
                 }
-                ri_bitlen = ri_bitlen<1?ri_bitlen:1; //from the spec 38.212 and table  6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel 
+                ri_bitlen = ri_bitlen<1?ri_bitlen:1; //from the spec 38.212 and table  6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel
                 csi_report->csi_meas_bitlen.ri_bitlen=ri_bitlen;
                 break;
               case 4:
@@ -301,7 +301,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
 
                 ri_restriction = csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0];
 
-                /* Replace dummy with the nrofCQIsPerReport from the CSIreport 
+                /* Replace dummy with the nrofCQIsPerReport from the CSIreport
                 config when equalent ASN structure present */
                 if (0==*(csi_reportconfig->dummy)){
                   nb_allowed_ri = number_of_bits_set((ri_restriction & 0xf0), &max_ri);
@@ -311,16 +311,16 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
                   nb_allowed_ri = number_of_bits_set(ri_restriction,&max_ri);
                   ri_bitlen = ceil(log2(nb_allowed_ri));
                 }
-                ri_bitlen = ri_bitlen<2?ri_bitlen:2; //from the spec 38.212 and table  6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel 
+                ri_bitlen = ri_bitlen<2?ri_bitlen:2; //from the spec 38.212 and table  6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel
                 csi_report->csi_meas_bitlen.ri_bitlen=ri_bitlen;
                 break;
               case 6:
               case 8:
                 AssertFatal (NULL!=csi_reportconfig->dummy, "nrofCQIsPerReport is not present");
-		 
+
                 ri_restriction = csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->typeI_SinglePanel_ri_Restriction.buf[0];
 
-                /* Replace dummy with the nrofCQIsPerReport from the CSIreport 
+                /* Replace dummy with the nrofCQIsPerReport from the CSIreport
                 config when equalent ASN structure present */
                 if (0==*(csi_reportconfig->dummy)){
                   nb_allowed_ri = number_of_bits_set((ri_restriction & 0xf0),&max_ri);
@@ -353,7 +353,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
               case 4:
               case 6:
               case 8:
-		/*  From Spec 38.212 
+		/*  From Spec 38.212
 		 *  If the higher layer parameter nrofCQIsPerReport=1, nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator
 		 *  values in the 4 LSBs of the higher layer parameter typeI-SinglePanel-ri-Restriction according to Subclause 5.2.2.2.1 [6,
 		 *  TS 38.214]; otherwise nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator values according to Subclause
@@ -383,7 +383,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
             case 4:
             case 6:
             case 8:
-	        /*  From Spec 38.212 
+	        /*  From Spec 38.212
 		 *  If the higher layer parameter nrofCQIsPerReport=1, nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator
 		 *  values in the 4 LSBs of the higher layer parameter typeI-SinglePanel-ri-Restriction according to Subclause 5.2.2.2.1 [6,
 		 *  TS 38.214]; otherwise nRI in Table 6.3.1.1.2-3 is the number of allowed rank indicator values according to Subclause
@@ -392,18 +392,18 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
 		 *  But from Current RRC ASN structures nrofCQIsPerReport is not present. Present a dummy variable is present so using it to
 		 *  calculate RI for antennas equal or more than two.
 		 * */
-		 
+
               if (max_ri > 4 && max_ri < 8){
                 if (NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel==csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.present){
                   if (NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI==csi_reportconfig->reportFreqConfiguration->cqi_FormatIndicator)
                     csi_report->csi_meas_bitlen.cqi_bitlen = 8;
-                  else 
+                  else
                     csi_report->csi_meas_bitlen.cqi_bitlen = 4;
                 }
               }else{ //This condition will work even for type1-multipanel.
                 if (NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI==csi_reportconfig->reportFreqConfiguration->cqi_FormatIndicator)
                   csi_report->csi_meas_bitlen.cqi_bitlen = 4;
-                else 
+                else
                   csi_report->csi_meas_bitlen.cqi_bitlen = 2;
               }
               break;
@@ -449,7 +449,7 @@ uint16_t nr_get_csi_bitlen(int Mod_idP,
       NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP==UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type){
     CSI_report_bitlen = &(UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen); //This might need to be moodif for Aperiodic CSI-RS measurements
     csi_bitlen+= ((CSI_report_bitlen->cri_ssbri_bitlen * CSI_report_bitlen->nb_ssbri_cri) +
-                  CSI_report_bitlen->rsrp_bitlen +(CSI_report_bitlen->diff_rsrp_bitlen * 
+                  CSI_report_bitlen->rsrp_bitlen +(CSI_report_bitlen->diff_rsrp_bitlen *
                   (CSI_report_bitlen->nb_ssbri_cri -1 )));
   } else{
    csi_meas_bitlen = &(UE_info->csi_report_template[UE_id][csi_report_id].csi_meas_bitlen); //This might need to be moodif for Aperiodic CSI-RS measurements
@@ -569,7 +569,7 @@ static void handle_dl_harq(module_id_t mod_id,
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
     harq->round = 0;
     harq->ndi ^= 1;
-  } else if (harq->round == MAX_HARQ_ROUNDS) {
+  } else if (harq->round >= MAX_HARQ_ROUNDS - 1) {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].available_dl_harq, harq_pid);
     harq->round = 0;
     harq->ndi ^= 1;
@@ -654,7 +654,7 @@ int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, int Mod_idP, int UE_i
 //returns the measured RSRP value (upper limit)
 int get_measured_rsrp(uint8_t index) {
   //if index is invalid returning minimum rsrp -140
-  if((index >= 0 && index <= 15) || index >= 114)
+  if(index <= 15 || index >= 114)
     return MIN_RSRP_VALUE;
 
   return L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[index];
@@ -890,7 +890,7 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
     reportQuantity_type = UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type;
     LOG_D(PHY,"SFN/SF:%d%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
 
-    if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type || 
+    if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type ||
         NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP == reportQuantity_type) {
       uint8_t csi_ssb_idx = 0;
       uint8_t diff_rsrp_idx = 0;
@@ -922,12 +922,12 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
           reverse_n_bits(payload, cri_ssbri_bitlen);
 
         if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type)
-          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] = 
+          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] =
             *(UE_info->csi_report_template[UE_id][csi_report_id].SSB_Index_list[cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
         else
-          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] = 
+          sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] =
             *(UE_info->csi_report_template[UE_id][csi_report_id].CSI_Index_list[cri_ssbri_bitlen>0?((*payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
-	  
+
         *payload >>= cri_ssbri_bitlen;
         LOG_D(PHY,"SSB_index = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
       }
@@ -946,9 +946,52 @@ void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
     }
   }
 
-  if ( !(reportQuantity_type)) 
+  if ( !(reportQuantity_type))
     AssertFatal(reportQuantity_type, "reportQuantity is not configured");
+}
 
+static NR_UE_harq_t *find_harq(module_id_t mod_id, frame_t frame, sub_frame_t slot, int UE_id)
+{
+  /* In case of realtime problems: we can only identify a HARQ process by
+   * timing. If the HARQ process's feedback_frame/feedback_slot is not the one we
+   * expected, we assume that processing has been aborted and we need to
+   * skip this HARQ process, which is what happens in the loop below.
+   * Similarly, we might be "in advance", in which case we need to skip
+   * this result. */
+  NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
+  int8_t pid = sched_ctrl->feedback_dl_harq.head;
+  if (pid < 0)
+    return NULL;
+  NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
+  /* old feedbacks we missed: mark for retransmission */
+  while (harq->feedback_frame != frame
+         || (harq->feedback_frame == frame && harq->feedback_slot < slot)) {
+    LOG_W(MAC,
+          "expected HARQ pid %d feedback at %d.%d, but is at %d.%d instead (HARQ feedback is in the past)\n",
+          pid,
+          harq->feedback_frame,
+          harq->feedback_slot,
+          frame,
+          slot);
+    remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+    handle_dl_harq(mod_id, UE_id, pid, 0);
+    pid = sched_ctrl->feedback_dl_harq.head;
+    if (pid < 0)
+      return NULL;
+    harq = &sched_ctrl->harq_processes[pid];
+  }
+  /* feedbacks that we wait for in the future: don't do anything */
+  if (harq->feedback_slot > slot) {
+    LOG_W(MAC,
+          "expected HARQ pid %d feedback at %d.%d, but is at %d.%d instead (HARQ feedback is in the future)\n",
+          pid,
+          harq->feedback_frame,
+          harq->feedback_slot,
+          frame,
+          slot);
+    return NULL;
+  }
+  return harq;
 }
 
 void handle_nr_uci_pucch_0_1(module_id_t mod_id,
@@ -968,6 +1011,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
   sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
                                 uci_01->ul_cqi,
                                 30);
+  sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
@@ -976,28 +1020,12 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-      /* In case of realtime problems: we can only identify a HARQ process by
-       * timing. If the HARQ process's feedback_slot is not the one we
-       * expected, we assume that processing has been aborted and we need to
-       * skip this HARQ process, which is what happens in the loop below. If
-       * you don't experience real-time problems, you might simply revert the
-       * commit that introduced these changes. */
-      int8_t pid = sched_ctrl->feedback_dl_harq.head;
-      DevAssert(pid >= 0);
-      while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
-        LOG_W(MAC,
-              "expected feedback slot %d, but found %d instead\n",
-              sched_ctrl->harq_processes[pid].feedback_slot,
-              feedback_slot);
-        remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-        handle_dl_harq(mod_id, UE_id, pid, 0);
-        pid = sched_ctrl->feedback_dl_harq.head;
-        DevAssert(pid >= 0);
-      }
-      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
+      NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
+      if (!harq)
+        break;
       DevAssert(harq->is_waiting);
+      const int8_t pid = sched_ctrl->feedback_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
     }
   }
@@ -1021,6 +1049,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
                                 uci_234->ul_cqi,
                                 30);
+  sched_ctrl->pucch_snrx10 = uci_234->ul_cqi * 5 - 640;
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
@@ -1028,28 +1057,12 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
       const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
-      const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-      /* In case of realtime problems: we can only identify a HARQ process by
-       * timing. If the HARQ process's feedback_slot is not the one we
-       * expected, we assume that processing has been aborted and we need to
-       * skip this HARQ process, which is what happens in the loop below. If
-       * you don't experience real-time problems, you might simply revert the
-       * commit that introduced these changes. */
-      int8_t pid = sched_ctrl->feedback_dl_harq.head;
-      DevAssert(pid >= 0);
-      while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
-        LOG_W(MAC,
-              "expected feedback slot %d, but found %d instead\n",
-              sched_ctrl->harq_processes[pid].feedback_slot,
-              feedback_slot);
-        remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-        handle_dl_harq(mod_id, UE_id, pid, 0);
-        pid = sched_ctrl->feedback_dl_harq.head;
-        DevAssert(pid >= 0);
-      }
-      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
+      NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
+      if (!harq)
+        break;
       DevAssert(harq->is_waiting);
+      const int8_t pid = sched_ctrl->feedback_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
     }
   }
@@ -1217,6 +1230,29 @@ bool nr_acknack_scheduling(int mod_id,
 
   // advance ul_slot if it is not reachable by UE
   pucch->ul_slot = max(pucch->ul_slot, slot + pdsch_to_harq_feedback[0]);
+
+  // is there already CSI in this slot?
+  const NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[2];
+  // skip the CSI PUCCH if it is present and if in the next frame/slot
+  if (csi_pucch->csi_bits > 0
+      && csi_pucch->frame == pucch->frame
+      && csi_pucch->ul_slot == pucch->ul_slot) {
+    AssertFatal(!csi_pucch->simultaneous_harqcsi,
+                "%s(): %d.%d cannot handle simultaneous_harqcsi, but found for UE %d\n",
+                __func__,
+                pucch->frame,
+                pucch->ul_slot,
+                UE_id);
+    nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
+    /* advance the UL slot information in PUCCH by one so we won't schedule in
+     * the same slot again */
+    const int f = pucch->frame;
+    const int s = pucch->ul_slot;
+    memset(pucch, 0, sizeof(*pucch));
+    pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
+    pucch->ul_slot = (s + 1) % n_slots_frame;
+    return nr_acknack_scheduling(mod_id, UE_id, frame, slot);
+  }
 
   // Find the right timing_indicator value.
   int i = 0;

@@ -228,16 +228,6 @@ void rx_func(void *param) {
   rnti_to_remove_count = 0;
   if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 
-  // Call the scheduler
-
-  pthread_mutex_lock(&gNB->UL_INFO_mutex);
-  gNB->UL_INFO.frame     = frame_rx;
-  gNB->UL_INFO.slot      = slot_rx;
-  gNB->UL_INFO.module_id = gNB->Mod_id;
-  gNB->UL_INFO.CC_id     = gNB->CC_id;
-  gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
-  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-  
   // RX processing
   int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
   int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
@@ -264,6 +254,18 @@ void rx_func(void *param) {
   stop_meas( &softmodem_stats_rxtx_sf );
   LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
 
+  // Call the scheduler
+
+  start_meas(&gNB->ul_indication_stats);
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+  gNB->UL_INFO.frame     = frame_rx;
+  gNB->UL_INFO.slot      = slot_rx;
+  gNB->UL_INFO.module_id = gNB->Mod_id;
+  gNB->UL_INFO.CC_id     = gNB->CC_id;
+  gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+  stop_meas(&gNB->ul_indication_stats);
+  
   notifiedFIFO_elt_t *res; 
 
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
@@ -323,18 +325,24 @@ static void *process_stats_thread(void *param) {
 
   PHY_VARS_gNB *gNB  = (PHY_VARS_gNB *)param;
 
+  reset_meas(&gNB->phy_proc_tx);
   reset_meas(&gNB->dlsch_encoding_stats);
-  reset_meas(&gNB->dlsch_scrambling_stats);
-  reset_meas(&gNB->dlsch_modulation_stats);
+  reset_meas(&gNB->phy_proc_rx);
+  reset_meas(&gNB->ul_indication_stats);
+  reset_meas(&gNB->rx_pusch_stats);
+  reset_meas(&gNB->ulsch_decoding_stats);
 
   wait_sync("process_stats_thread");
 
   while(!oai_exit)
   {
     sleep(1);
-    print_meas(&gNB->dlsch_encoding_stats, "pdsch_encoding", NULL, NULL);
-    print_meas(&gNB->dlsch_scrambling_stats, "pdsch_scrambling", NULL, NULL);
-    print_meas(&gNB->dlsch_modulation_stats, "pdsch_modulation", NULL, NULL);
+    print_meas(&gNB->phy_proc_tx, "L1 Tx processing", NULL, NULL);
+    print_meas(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL);
+    print_meas(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL);
+    print_meas(&gNB->ul_indication_stats, "UL Indication", NULL, NULL);
+    print_meas(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL);
+    print_meas(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL);
   }
   return(NULL);
 }
@@ -347,7 +355,9 @@ void init_gNB_Tpool(int inst) {
   // ULSCH decoding threadpool
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+  LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->pusch_proc_threads,numCPU);
   int threadCnt = min(numCPU, gNB->pusch_proc_threads);
+  if (threadCnt < 2) LOG_E(PHY,"Number of threads for gNB should be more than 1. Allocated only %d\n",threadCnt);
   char ul_pool[80];
   sprintf(ul_pool,"-1");
   int s_offset = 0;

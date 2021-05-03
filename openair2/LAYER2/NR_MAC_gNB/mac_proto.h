@@ -67,9 +67,15 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
+/* \brief main DL scheduler function. Calls a preprocessor to decide on
+ * resource allocation, then "post-processes" resource allocation (nFAPI
+ * messages, statistics, HARQ handling, CEs, ... */
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
                          sub_frame_t slot);
+
+/* \brief default FR1 DL preprocessor init routine, returns preprocessor to call */
+nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id);
 
 void schedule_control_sib1(module_id_t module_id,
                            int CC_id,
@@ -82,30 +88,15 @@ void schedule_control_sib1(module_id_t module_id,
 
 void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
-/* \brief default preprocessor */
-void nr_simple_dlsch_preprocessor(module_id_t module_id,
-                                  frame_t frame,
-                                  sub_frame_t slot);
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 
-void schedule_nr_mib(module_id_t module_idP,
-                     frame_t frameP,
-                     sub_frame_t subframeP,
-                     uint8_t slots_per_frame,
-                     int nb_periods_per_frame);
+/* \brief main UL scheduler function. Calls a preprocessor to decide on
+ * resource allocation, then "post-processes" resource allocation (nFAPI
+ * messages, statistics, HARQ handling, ... */
+void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot);
 
-/// uplink scheduler
-void nr_schedule_ulsch(module_id_t module_id,
-                       frame_t frame,
-                       sub_frame_t slot,
-                       int num_slots_per_tdd,
-                       int ul_slots,
-                       uint64_t ulsch_in_slot_bitmap);
-
-bool nr_simple_ulsch_preprocessor(module_id_t module_id,
-                                  frame_t frame,
-                                  sub_frame_t slot,
-                                  int num_slots_per_tdd,
-                                  uint64_t ulsch_in_slot_bitmap);
+/* \brief default FR1 UL preprocessor init routine, returns preprocessor to call */
+nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id);
 
 /////// Random Access MAC-PHY interface functions and primitives ///////
 
@@ -122,7 +113,7 @@ void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 void nr_initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP,
                          uint16_t preamble_index, uint8_t freq_index, uint8_t symbol, int16_t timing_offset);
 
-void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
+void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t *ra);
 
 int nr_allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t slotP, int test_only);
 
@@ -159,11 +150,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                              sub_frame_t slot);
 /* \brief UL preprocessor for phytest: schedules UE_id 0 with fixed MCS on a
  * fixed set of resources */
-bool nr_ul_preprocessor_phytest(module_id_t module_id,
-                                frame_t frame,
-                                sub_frame_t slot,
-                                int num_slots_per_tdd,
-                                uint64_t ulsch_in_slot_bitmap);
+bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_t slot);
 
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
@@ -262,23 +249,26 @@ void prepare_dci(const NR_CellGroupConfig_t *secondaryCellGroup,
                  int bwp_id);
 
 /* find coreset within the search space */
-NR_ControlResourceSet_t *get_coreset(NR_BWP_Downlink_t *bwp,
-                                     NR_SearchSpace_t *ss,
-                                     int ss_type);
+NR_ControlResourceSet_t *get_coreset(const NR_BWP_Downlink_t *bwp, const NR_SearchSpace_t *ss, int ss_type);
 
 /* find a search space within a BWP */
-NR_SearchSpace_t *get_searchspace(
-    NR_BWP_Downlink_t *bwp,
-    NR_SearchSpace__searchSpaceType_PR target_ss);
+NR_SearchSpace_t *get_searchspace(const NR_BWP_Downlink_t *bwp, NR_SearchSpace__searchSpaceType_PR target_ss);
 
-long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
+long get_K2(const NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
 
-void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
-                          const NR_BWP_Uplink_t *ubwp,
-                          long dci_format,
-                          int tda,
-                          uint8_t num_dmrs_cdm_grps_no_data,
-                          NR_sched_pusch_save_t *ps);
+void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+                              const NR_CellGroupConfig_t *secondaryCellGroup,
+                              const NR_BWP_Downlink_t *bwp,
+                              int tda,
+                              uint8_t num_dmrs_cdm_grps_no_data,
+                              NR_pdsch_semi_static_t *ps);
+
+void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+                              const NR_BWP_Uplink_t *ubwp,
+                              long dci_format,
+                              int tda,
+                              uint8_t num_dmrs_cdm_grps_no_data,
+                              NR_pusch_semi_static_t *ps);
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 
@@ -320,6 +310,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
 
 void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
 
+void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti);
+
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      NR_BWP_Downlink_t *bwp,
                      NR_ControlResourceSet_t *coreset,
@@ -355,15 +347,17 @@ void config_nr_mib(int Mod_idP,
                    int cellBarred,
                    int intraFreqReselection);
 
+int nr_write_ce_dlsch_pdu(module_id_t module_idP,
+                          const NR_UE_sched_ctrl_t *ue_sched_ctl,
+                          unsigned char *mac_pdu,
+                          unsigned char drx_cmd,
+                          unsigned char *ue_cont_res_id);
+
 void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
 
-void nr_process_mac_pdu(
-    module_id_t module_idP,
-    rnti_t rnti,
-    uint8_t CC_id,
-    frame_t frameP,
-    uint8_t *pduP,
-    uint16_t mac_pdu_len);
+void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+
+void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra);
 
 int binomial(int n, int k);
 
@@ -406,5 +400,18 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 
 void find_SSB_and_RO_available(module_id_t module_idP);
 
+void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp);
+void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp);
+
 bool find_free_CCE(module_id_t module_id, sub_frame_t slot, int UE_id);
+
+bool nr_find_nb_rb(uint16_t Qm,
+                   uint16_t R,
+                   uint16_t nb_symb_sch,
+                   uint16_t nb_dmrs_prb,
+                   uint32_t bytes,
+                   uint16_t nb_rb_max,
+                   uint32_t *tbs,
+                   uint16_t *nb_rb);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

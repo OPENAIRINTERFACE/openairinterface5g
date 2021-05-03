@@ -171,24 +171,31 @@ NR_sched_pusch_t (for values changing every TTI, e.g., frequency domain
 allocation) and NR_sched_pusch_save_t (for values changing less frequently, at
 least in FR1 [to my understanding], e.g., DMRS fields when the time domain
 allocation stays between TTIs) structures. Furthermore, the preprocessor is an
-exchangeable module that might schedule differently, e.g., one user for
-phytest, multiple users in FR1, or maybe FR2: phytest is in
-nr_ul_preprocessor_phytest(), for FR1 is nr_simple_ulsch_preprocessor() [under
-development], for FR2 does not exist yet.
+exchangeable module that schedules differently based on a particular
+use-case/deployment type, e.g., one user for phytest [in
+nr_ul_preprocessor_phytest()], multiple users in FR1
+[nr_fr1_ulsch_preprocessor()], or maybe FR2 [does not exist yet]:
 * calls preprocessor via pre_processor_ul(): the preprocessor is responsible
-  for allocating CCEs (using allocate_nr_CCEs()). Note that we do not yet have
-  scheduling requests or buffer status reports, and only one UE. E.g.,
-  nr_simple_ulsch_preprocessor():
+  for allocating CCEs (using allocate_nr_CCEs()) and deciding on resource
+  allocation for the UEs including TB size. Note that we do not yet have
+  scheduling requests. What it typically does:
   1)  check whether the current frame/slot plus K2 is an UL slot, and return if
       not.
   2)  Find first free start RB in vrb_map_UL, and as many free consecutive RBs
       as possible.
-  3)  allocate a CCE for the UE (and return if it is not possible)
-  4)  Calculate DMRS stuff (nr_save_pusch_fields()) and the TBS.
-  5)  Mark used resources in vrb_map_UL.
-* loop through all users: get a free HARQ PID and
-  update statistics. Fill nFAPI structures directly for PUSCH, and call
-  config_uldci() and fill_dci_pdu_rel15() for DCI filling and PDCCH messages.
+  3)  Either set up resource allocation directly (e.g., for a single UE,
+      phytest), or call into a function to perform actual resource allocation.
+      Currently, this is done using pf_ul() which implements a basic
+      proportional fair scheduler:
+      * for every UE, check for retransmission and allocate as necessary
+      * Calculate DMRS stuff (nr_set_pusch_semi_static())
+      * Calculate the PF coefficient and put eligible UEs into a list
+      * Allocate resources to the UE(s) with the highest coefficient
+  4)  Mark used resources in vrb_map_UL.
+* loop through all users: get a HARQ process as indicated through the
+  preprocessor, update statistics, fill nFAPI structures directly for PUSCH,
+  and call config_uldci() and fill_dci_pdu_rel15() for DCI filling and PDCCH
+  messages.
 
 Calls nr_schedule_ue_spec(). It is divided into the "preprocessor" and the
 "postprocessor": the first makes the scheduling decisions, the second fills
@@ -196,29 +203,28 @@ nFAPI structures to indicate to the PHY what it is supposed to do. To signal
 which users have how many resources, the preprocessor populates the
 NR_UE_sched_ctrl_t structure of affected users. In particular, the field rbSize
 decides whether a user is to be allocated. Furthermore, the preprocessor is an
-exchangeable module that might schedule differently, e.g., one user for
-phytest, multiple users in FR1, or maybe FR2: phytest is in
-nr_preprocessor_phytest(), for FR1 is nr_simple_dlsch_preprocessor() [under
-development], for FR2 does not exist yet.
+exchangeable module that schedules differently based on a particular
+use-case/deployment type, e.g., one user for phytest [in
+nr_preprocessor_phytest()], multiple users in FR1
+[nr_fr1_dlsch_preprocessor()], or maybe FR2 [does not exist yet].
 * calls preprocessor via pre_processor_dl(): the preprocessor is responsible
   for allocating CCEs and PUCCH (using allocate_nr_CCEs() and
   nr_acknack_scheduling()) and deciding on the frequency/time domain
-  allocation. E.g., nr_simple_dlsch_preprocessor():
-  1)  mac_rlc_status_ind() locks and checks directly inside rlc data the
-      quantity of waiting data.
-  2)  return from the preprocessor if there is no data and no timing advance to
-      send,
-  3)  otherwise, allocate a CCE for the UE (and return if it is not possible)
-  4)  find a PUCCH occasion for HARQ
-  5a) check if there is a retransmission: if yes, find free resources to
-      transmit using the same resources, else
-  5b) calculate the necessary RBs needed to get a TBS large enough to hold all
-      data, or until no more resources are available
-  6)  Mark taken resources in the vrb_map
+  allocation including the TB size. What it typically does:
+  1)  Check available resources in the vrb_map
+  2)  Checks the quantity of waiting data in RLC
+  3)  Either set up resource allocation directly (e.g., for a single UE,
+      phytest), or call into a function to perform actual resource allocation.
+      Currently, this is done using pf_dl() which implements a basic
+      proportional fair scheduler:
+      * for every UE, check for retransmission and allocate as necessary
+      * Calculate the PF coefficient and put eligible UEs into a list
+      * Allocate resources to the UE(s) with the highest coefficient
+  4)  Mark taken resources in the vrb_map
 * loop through all users: check if a new TA is necessary. Then, if a user has
-  allocated resources, compute its TBS, and fill nFAPI structures
-  (nr_fill_nfapi_dl_pdu() to populate what should be done by the lower layers
-  to make the Tx subframe). Update statistics (round, sent bytes).
+  allocated resources, update statistics (round, sent bytes), update HARQ
+  process information, and fill nFAPI structures (allocate a DCI and PDCCH
+  messages, TX_req, ...)
 
 # RRC
 RRC is a regular thread with itti loop on queue: TASK_RRC_GNB
@@ -295,6 +301,28 @@ gtp thread calls directly pdcp_data_req(), so it runs inside it's context intern
 
 ## inside other threads
 gtpv1u_create_s1u_tunnel(), delete tunnel, ... functions are called inside the other threads, without mutex.
+
+# New GTP
+## initialization
+Coexistance until full merge with legacy GTP
+cmake new option: NEW_GTPU to use the new implementation (it changes for the entire executable)
+It is possible to use both old and new GTP in same executable because the itti task and all functions names are different 
+Current status of new implementation: not tested, X2 not developped, 5G new GTP option not developped, remain issues on data coming from void: muid, enb_flag, ...
+
+ocp_gtpv1uTask(): this creates only the thread, doesn't configure anything
+gtpv1Init(): creates a listening socket to Linux for a given reception and select a local IP address
+
+newGtpuCreateTunnel() this function will replace the xxx_create_tunnel_xxx() for various cases
+This creates a outgoing context for a teid (in input), it computes and return the incoming teid that will be used for incoming packets
+These teids and in a "instance", so in a Linux socket: same teid can co-exist for different sockets
+ Remain here a lack to fill: the information given in the legacy funtions is not enough to fullfil the data needed by the callback
+stuff like enb_flag, but also mui and more important data are not given explicitly by any legacy function (gtpv1u_create_s1u_tunnel), but the legacy and the new interface to lower layer (like pdcp) require this data.
+The datamodel is still not fully understood, so this data source remain unknown
+A new parameter is the callback function: will be pdpcp_data_req() and gtpv_data_req() (x2 case) for existing implementation and later other call backs like the F1-U implementation.
+
+incoming packets
+the gtp layer retrieves the data, the teid, find out the related data: rnti, bearer and quite a lot of other parameters (not clear why, because it looks like all is statefull, so the lower layer should have the context) 
+if lower layers can be stateless, it is a good idea to keep the context in the gtp layer and pass it to the callback, but the design remain obfuscated.
 
 # NGAP
 NGAP would be a itti thread as is S1AP (+twin thread SCTP that is almost void processing)?  

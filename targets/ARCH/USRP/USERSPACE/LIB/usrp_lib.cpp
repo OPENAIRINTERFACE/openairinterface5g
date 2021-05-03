@@ -153,7 +153,7 @@ int check_ref_locked(usrp_state_t *s,size_t mboard) {
 }
 
 static int sync_to_gps(openair0_device *device) {
-  uhd::set_thread_priority_safe();
+  //uhd::set_thread_priority_safe();
   //std::string args;
   //Set up program options
   //po::options_description desc("Allowed options");
@@ -276,7 +276,7 @@ static int trx_usrp_start(openair0_device *device) {
   // setup GPIO for TDD, GPIO(4) = ATR_RX
   //set data direction register (DDR) to output
   s->usrp->set_gpio_attr("FP0", "DDR", 0xfff, 0xfff);
-  //set lower 7 bits to be controlled automatically by ATR (the rest 5 bits are controlled manually) 
+  //set lower 7 bits to be controlled automatically by ATR (the rest 5 bits are controlled manually)
   s->usrp->set_gpio_attr("FP0", "CTRL", 0x7f,0xfff);
   //set pins 4 (RX_TX_Switch) and 6 (Shutdown PA) to 1 when the radio is only receiving (ATR_RX)
   s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
@@ -301,7 +301,7 @@ static int trx_usrp_start(openair0_device *device) {
   }
 
   uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-  cmd.time_spec = uhd::time_spec_t(1.0);    
+  cmd.time_spec = uhd::time_spec_t(1.0);
   cmd.stream_now = false; // start at constant delay
   s->rx_stream->issue_stream_cmd(cmd);
 
@@ -315,7 +315,7 @@ static void trx_usrp_end(openair0_device *device) {
     return;
 
   usrp_state_t *s = (usrp_state_t *)device->priv;
-  
+
   if (s == NULL)
     return;
   iqrecorder_end(device);
@@ -436,7 +436,7 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHI
         buff_ptrs.push_back(&(((int16_t *)buff_tx[i])[0]));
 
       ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
-    } 
+    }
     else {
       ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md);
     }
@@ -480,7 +480,7 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHI
       @param antenna_id index of the antenna if the device has multiple antennas
       @param flags flags must be set to TRUE if timestamp parameter needs to be applied
 */
-void *trx_usrp_write_thread(void * arg){ 
+void *trx_usrp_write_thread(void * arg){
   int ret=0;
   openair0_device *device=(openair0_device *)arg;
   openair0_thread_t *write_thread = &device->write_thread;
@@ -549,7 +549,7 @@ void *trx_usrp_write_thread(void * arg){
       }
     }
 
-    
+
     s->tx_md.has_time_spec  = true;
     s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet;
     s->tx_md.end_of_burst   = last_packet;
@@ -572,7 +572,7 @@ void *trx_usrp_write_thread(void * arg){
         buff_ptrs.push_back(&(((int16_t *)buff_tx[i])[0]));
 
       ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
-    } 
+    }
     else {
       ret = (int)s->tx_stream->send(&(((int16_t *)buff_tx[0])[0]), nsamps, s->tx_md);
     }
@@ -589,7 +589,7 @@ void *trx_usrp_write_thread(void * arg){
 
 int trx_usrp_write_init(openair0_device *device){
 
-  uhd::set_thread_priority_safe(1.0);
+  //uhd::set_thread_priority_safe(1.0);
   openair0_thread_t *write_thread = &device->write_thread;
   printf("initializing tx write thread\n");
 
@@ -597,7 +597,8 @@ int trx_usrp_write_init(openair0_device *device){
   write_thread->end                = 0;
   write_thread->count_write        = 0;
   printf("end of tx write thread\n");
-
+  pthread_mutex_init(&write_thread->mutex_write, NULL);
+  pthread_cond_init(&write_thread->cond_write, NULL);
   pthread_create(&write_thread->pthread_write,NULL,trx_usrp_write_thread,(void *)device);
 
   return(0);
@@ -697,15 +698,23 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
    s->usrp->set_gpio_attr("FP0", "OUT", gpio789<<7, 0x380);
    s->usrp->clear_command_time();
    gpio789 = (gpio789+1)&7;*/
+  recplay_state_t *recPlay=device->recplay_state;
 
-  if (device->recplay_state != NULL) { // record mode
+  if ( recPlay != NULL) { // record mode
     // Copy subframes to memory (later dump on a file)
-    if (device->recplay_state->nb_samples < device->openair0_cfg->recplay_conf->u_sf_max) {
-      (device->recplay_state->ms_sample+device->recplay_state->nb_samples)->header = BELL_LABS_IQ_HEADER;
-      (device->recplay_state->ms_sample+device->recplay_state->nb_samples)->ts = *ptimestamp;
-      memcpy((device->recplay_state->ms_sample+device->recplay_state->nb_samples)->samples, buff[0], nsamps*4);
-      device->recplay_state->nb_samples++;
-    } else     exit_function(__FILE__, __FUNCTION__, __LINE__,"Recording reaches max iq limit\n");
+    if (recPlay->nbSamplesBlocks < device->openair0_cfg->recplay_conf->u_sf_max &&
+        recPlay->maxSizeBytes > (recPlay->currentPtr-(uint8_t *)recPlay->ms_sample) +
+        sizeof(iqrec_t) + nsamps*4 ) {
+      iqrec_t *hdr=(iqrec_t *)recPlay->currentPtr;
+      hdr->header = BELL_LABS_IQ_HEADER;
+      hdr->ts = *ptimestamp;
+      hdr->nbBytes=nsamps*4;
+      memcpy(hdr+1, buff[0], nsamps*4);
+      recPlay->currentPtr+=sizeof(iqrec_t)+nsamps*4;
+      recPlay->nbSamplesBlocks++;
+      LOG_D(HW,"recorded %d samples, for TS %lu, shift in buffer %ld\n", nsamps, hdr->ts, recPlay->currentPtr-(uint8_t *)recPlay->ms_sample);
+    } else
+      exit_function(__FILE__, __FUNCTION__, __LINE__,"Recording reaches max iq limit\n");
   }
 
   return samples_received;
@@ -940,29 +949,29 @@ extern "C" {
 
 
     // hotfix! to be checked later
-    uhd::set_thread_priority_safe(1.0);
+    //uhd::set_thread_priority_safe(1.0);
     // Initialize USRP device
     int vers=0,subvers=0,subsubvers=0;
     int bw_gain_adjust=0;
-  
+
     if (device->openair0_cfg->recplay_mode == RECPLAY_RECORDMODE) {
       std::cerr << "USRP device initialized in subframes record mode" << std::endl;
     }
-  
+
     sscanf(uhd::get_version_string().c_str(),"%d.%d.%d",&vers,&subvers,&subsubvers);
     LOG_I(HW,"UHD version %s (%d.%d.%d)\n",
           uhd::get_version_string().c_str(),vers,subvers,subsubvers);
     std::string args;
-  
+
     if (openair0_cfg[0].sdr_addrs == NULL) {
       args = "type=b200";
     } else {
       args = openair0_cfg[0].sdr_addrs;
       LOG_I(HW,"Checking for USRP with args %s\n",openair0_cfg[0].sdr_addrs);
     }
-  
+
     uhd::device_addrs_t device_adds = uhd::device::find(args);
-  
+
     if (device_adds.size() == 0) {
       LOG_E(HW,"No USRP Device Found.\n ");
       free(s);
@@ -972,38 +981,38 @@ extern "C" {
       free(s);
       return -1;
     }
-  
+
     LOG_I(HW,"Found USRP %s\n", device_adds[0].get("type").c_str());
     double usrp_master_clock;
-  
+
     if (device_adds[0].get("type") == "b200") {
       device->type = USRP_B200_DEV;
       usrp_master_clock = 30.72e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
       args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=7680, recv_frame_size=7680" ;
     }
-  
+
     if (device_adds[0].get("type") == "n3xx") {
       printf("Found USRP n300\n");
-      device->type=USRP_N300_DEV; 
+      device->type=USRP_N300_DEV;
       usrp_master_clock = 122.88e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
       //args += ", send_buff_size=33554432";
     }
-  
+
     if (device_adds[0].get("type") == "x300") {
       printf("Found USRP x300\n");
       device->type=USRP_X300_DEV;
       usrp_master_clock = 184.32e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
-  
+
       // USRP recommended: https://files.ettus.com/manual/page_usrp_x3x0_config.html
       if ( 0 != system("sysctl -w net.core.rmem_max=33554432 net.core.wmem_max=33554432") )
         LOG_W(HW,"Can't set kernel parameters for X3xx\n");
     }
-  
+
     s->usrp = uhd::usrp::multi_usrp::make(args);
-  
+
     if (args.find("clock_source")==std::string::npos) {
 	if (openair0_cfg[0].clock_source == internal) {
 	  s->usrp->set_clock_source("internal");
@@ -1017,7 +1026,7 @@ extern "C" {
 	  s->usrp->set_clock_source("gpsdo");
 	  LOG_D(HW,"Setting clock source to gpsdo\n");
 	}
-	else { 
+	else {
 	  LOG_W(HW,"Clock source set neither in usrp_args nor on command line, using default!\n");
 	}
     }
@@ -1040,7 +1049,7 @@ extern "C" {
 	  s->usrp->set_time_source("gpsdo");
 	  LOG_D(HW,"Setting time source to gpsdo\n");
 	}
-	else { 
+	else {
 	  LOG_W(HW,"Time source set neither in usrp_args nor on command line, using default!\n");
 	}
     }
@@ -1050,10 +1059,10 @@ extern "C" {
 	}
   }
 
-    
+
   if (s->usrp->get_clock_source(0) == "gpsdo") {
     s->use_gps = 1;
-  
+
     if (sync_to_gps(device)==EXIT_SUCCESS) {
       LOG_I(HW,"USRP synced with GPS!\n");
     } else {
@@ -1068,15 +1077,15 @@ extern "C" {
       exit(EXIT_FAILURE);
     }
   }
-  
+
   if (device->type==USRP_X300_DEV) {
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
-    std::cerr << "-- Using calibration table: calib_table_x310" << std::endl; 
+    std::cerr << "-- Using calibration table: calib_table_x310" << std::endl;
   }
 
   if (device->type==USRP_N300_DEV) {
     openair0_cfg[0].rx_gain_calib_table = calib_table_n310;
-    std::cerr << "-- Using calibration table: calib_table_n310" << std::endl; 
+    std::cerr << "-- Using calibration table: calib_table_n310" << std::endl;
   }
 
 
@@ -1091,7 +1100,7 @@ extern "C" {
         openair0_cfg[0].tx_bw                 = 80e6;
         openair0_cfg[0].rx_bw                 = 80e6;
         break;
-  
+
       case 92160000:
         // from usrp_time_offset
         //openair0_cfg[0].samples_per_packet    = 2048;
@@ -1099,7 +1108,7 @@ extern "C" {
         openair0_cfg[0].tx_bw                 = 80e6;
         openair0_cfg[0].rx_bw                 = 80e6;
         break;
-  
+
       case 61440000:
         // from usrp_time_offset
         //openair0_cfg[0].samples_per_packet    = 2048;
@@ -1107,14 +1116,14 @@ extern "C" {
         openair0_cfg[0].tx_bw                 = 40e6;
         openair0_cfg[0].rx_bw                 = 40e6;
         break;
-  
+
       case 46080000:
         //openair0_cfg[0].samples_per_packet    = 2048;
-        openair0_cfg[0].tx_sample_advance     = 65;
+        openair0_cfg[0].tx_sample_advance     = 15;
         openair0_cfg[0].tx_bw                 = 40e6;
         openair0_cfg[0].rx_bw                 = 40e6;
         break;
-  
+
       case 30720000:
         // from usrp_time_offset
         //openair0_cfg[0].samples_per_packet    = 2048;
@@ -1122,35 +1131,35 @@ extern "C" {
         openair0_cfg[0].tx_bw                 = 20e6;
         openair0_cfg[0].rx_bw                 = 20e6;
         break;
-  
+
       case 15360000:
         //openair0_cfg[0].samples_per_packet    = 2048;
-        openair0_cfg[0].tx_sample_advance     = 40;
+        openair0_cfg[0].tx_sample_advance     = 45;
         openair0_cfg[0].tx_bw                 = 10e6;
         openair0_cfg[0].rx_bw                 = 10e6;
         break;
-  
+
       case 7680000:
         //openair0_cfg[0].samples_per_packet    = 2048;
         openair0_cfg[0].tx_sample_advance     = 50;
         openair0_cfg[0].tx_bw                 = 5e6;
         openair0_cfg[0].rx_bw                 = 5e6;
         break;
-  
+
       case 1920000:
         //openair0_cfg[0].samples_per_packet    = 2048;
         openair0_cfg[0].tx_sample_advance     = 50;
         openair0_cfg[0].tx_bw                 = 1.25e6;
         openair0_cfg[0].rx_bw                 = 1.25e6;
         break;
-  
+
       default:
         LOG_E(HW,"Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
         exit(-1);
         break;
     }
   }
-  
+
   if (device->type == USRP_B200_DEV) {
     if ((vers == 3) && (subvers == 9) && (subsubvers>=2)) {
       openair0_cfg[0].rx_gain_calib_table = calib_table_b210;
@@ -1161,7 +1170,7 @@ extern "C" {
       bw_gain_adjust=1;
       std::cerr << "-- Using calibration table: calib_table_b210_38" << std::endl; // Bell Labs info
     }
-  
+
     switch ((int)openair0_cfg[0].sample_rate) {
       case 46080000:
         s->usrp->set_master_clock_rate(46.08e6);
@@ -1170,7 +1179,7 @@ extern "C" {
         openair0_cfg[0].tx_bw                 = 40e6;
         openair0_cfg[0].rx_bw                 = 40e6;
         break;
-  
+
       case 30720000:
         s->usrp->set_master_clock_rate(30.72e6);
         //openair0_cfg[0].samples_per_packet    = 1024;
@@ -1178,7 +1187,7 @@ extern "C" {
         openair0_cfg[0].tx_bw                 = 20e6;
         openair0_cfg[0].rx_bw                 = 20e6;
         break;
-  
+
       case 23040000:
         s->usrp->set_master_clock_rate(23.04e6); //to be checked
         //openair0_cfg[0].samples_per_packet    = 1024;
@@ -1186,7 +1195,7 @@ extern "C" {
         openair0_cfg[0].tx_bw                 = 20e6;
         openair0_cfg[0].rx_bw                 = 20e6;
         break;
-  
+
       case 15360000:
         s->usrp->set_master_clock_rate(30.72e06);
         //openair0_cfg[0].samples_per_packet    = 1024;
@@ -1194,7 +1203,7 @@ extern "C" {
         openair0_cfg[0].tx_bw                 = 20e6;
         openair0_cfg[0].rx_bw                 = 20e6;
         break;
-  
+
       case 7680000:
         s->usrp->set_master_clock_rate(30.72e6);
         //openair0_cfg[0].samples_per_packet    = 1024;
@@ -1202,7 +1211,7 @@ extern "C" {
         openair0_cfg[0].tx_bw                 = 20e6;
         openair0_cfg[0].rx_bw                 = 20e6;
         break;
-  
+
       case 1920000:
         s->usrp->set_master_clock_rate(30.72e6);
         //openair0_cfg[0].samples_per_packet    = 1024;
@@ -1210,20 +1219,20 @@ extern "C" {
         openair0_cfg[0].tx_bw                 = 20e6;
         openair0_cfg[0].rx_bw                 = 20e6;
         break;
-  
+
       default:
         LOG_E(HW,"Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
         exit(-1);
         break;
     }
   }
-  
+
   /* device specific */
   //openair0_cfg[0].txlaunch_wait = 1;//manage when TX processing is triggered
   //openair0_cfg[0].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
   openair0_cfg[0].iq_txshift = 4;//shift
   openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
-  
+
   for(int i=0; i<((int) s->usrp->get_rx_num_channels()); i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
@@ -1240,13 +1249,13 @@ extern "C" {
             openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],gain_range.stop());
     }
   }
-  
+
   LOG_D(HW, "usrp->get_tx_num_channels() == %zd\n", s->usrp->get_tx_num_channels());
   LOG_D(HW, "openair0_cfg[0].tx_num_channels == %d\n", openair0_cfg[0].tx_num_channels);
-  
+
   for(int i=0; i<((int) s->usrp->get_tx_num_channels()); i++) {
     ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
-  
+
     if (i<openair0_cfg[0].tx_num_channels) {
       s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
       s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
@@ -1254,7 +1263,7 @@ extern "C" {
       LOG_I(HW,"USRP TX_GAIN:%3.2lf gain_range:%3.2lf tx_gain:%3.2lf\n", gain_range_tx.stop()-openair0_cfg[0].tx_gain[i], gain_range_tx.stop(), openair0_cfg[0].tx_gain[i]);
     }
   }
-  
+
   //s->usrp->set_clock_source("external");
   //s->usrp->set_time_source("external");
   // display USRP settings
@@ -1268,32 +1277,32 @@ extern "C" {
   int max=s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps();
   samples/=10000;
   LOG_I(HW,"RF board max packet size %u, size for 100µs jitter %d \n", max, samples);
-  
+
   if ( samples < max ) {
     stream_args_rx.args["spp"] = str(boost::format("%d") % samples );
   }
-  
+
   LOG_I(HW,"rx_max_num_samps %zu\n",
         s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
-  
+
   for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++)
     stream_args_rx.channels.push_back(i);
-  
+
   s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
   uhd::stream_args_t stream_args_tx("sc16", "sc16");
-  
+
   for (int i = 0; i<openair0_cfg[0].tx_num_channels; i++)
     stream_args_tx.channels.push_back(i);
-  
+
   s->tx_stream = s->usrp->get_tx_stream(stream_args_tx);
-  
+
   /* Setting TX/RX BW after streamers are created due to USRP calibration issue */
   for(int i=0; i<((int) s->usrp->get_tx_num_channels()) && i<openair0_cfg[0].tx_num_channels; i++)
     s->usrp->set_tx_bandwidth(openair0_cfg[0].tx_bw,i);
-  
+
   for(int i=0; i<((int) s->usrp->get_rx_num_channels()) && i<openair0_cfg[0].rx_num_channels; i++)
     s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
-  
+
   for (int i=0; i<openair0_cfg[0].rx_num_channels; i++) {
     LOG_I(HW,"RX Channel %d\n",i);
     LOG_I(HW,"  Actual RX sample rate: %fMSps...\n",s->usrp->get_rx_rate(i)/1e6);
@@ -1302,7 +1311,7 @@ extern "C" {
     LOG_I(HW,"  Actual RX bandwidth: %fM...\n", s->usrp->get_rx_bandwidth(i)/1e6);
     LOG_I(HW,"  Actual RX antenna: %s...\n", s->usrp->get_rx_antenna(i).c_str());
   }
-  
+
   for (int i=0; i<openair0_cfg[0].tx_num_channels; i++) {
     LOG_I(HW,"TX Channel %d\n",i);
     LOG_I(HW,"  Actual TX sample rate: %fMSps...\n", s->usrp->get_tx_rate(i)/1e6);
@@ -1312,33 +1321,35 @@ extern "C" {
     LOG_I(HW,"  Actual TX antenna: %s...\n", s->usrp->get_tx_antenna(i).c_str());
     LOG_I(HW,"  Actual TX packet size: %lu\n",s->tx_stream->get_max_num_samps());
   }
-  
+
   LOG_I(HW,"Device timestamp: %f...\n", s->usrp->get_time_now().get_real_secs());
   device->trx_write_func = trx_usrp_write;
   device->trx_read_func  = trx_usrp_read;
   s->sample_rate = openair0_cfg[0].sample_rate;
-  
+
   // TODO:
   // init tx_forward_nsamps based usrp_time_offset ex
   if(is_equal(s->sample_rate, (double)30.72e6))
     s->tx_forward_nsamps  = 176;
-  
+
   if(is_equal(s->sample_rate, (double)15.36e6))
     s->tx_forward_nsamps = 90;
-  
+
   if(is_equal(s->sample_rate, (double)7.68e6))
     s->tx_forward_nsamps = 50;
-  
-  
-  if (device->recplay_state != NULL) { // record mode
-    device->recplay_state->ms_sample = (iqrec_t *) malloc(openair0_cfg[0].recplay_conf->u_sf_max * sizeof(iqrec_t));
-  
-    if (device->recplay_state->ms_sample == NULL) {
+
+  recplay_state_t *recPlay=device->recplay_state;
+
+  if (recPlay != NULL) { // record mode
+    recPlay->maxSizeBytes=openair0_cfg[0].recplay_conf->u_sf_max *
+                            (sizeof(iqrec_t)+BELL_LABS_IQ_BYTES_PER_SF);
+    recPlay->ms_sample = (iqrec_t *) malloc(recPlay->maxSizeBytes);
+    recPlay->currentPtr= (uint8_t *)recPlay->ms_sample;
+
+    if (recPlay->ms_sample == NULL) {
       std::cerr<< "Memory allocation failed for subframe record or replay mode." << std::endl;
       exit(-1);
     }
-  
-    memset(device->recplay_state->ms_sample, 0, openair0_cfg[0].recplay_conf->u_sf_max * BELL_LABS_IQ_BYTES_PER_SF);
   }
   return 0;
 }

@@ -109,6 +109,8 @@
 
 #define MAX_NUM_NR_CHANNEL_BITS (14*273*12*8)  // 14 symbols, 273 RB
 #define MAX_NUM_NR_RE (14*273*12)
+#define NR_RX_NB_TH 1
+#define NR_NB_TH_SLOT 2
 
 extern const uint8_t nr_rv_round_map[4]; 
 extern const uint8_t nr_rv_round_map_ue[4]; 

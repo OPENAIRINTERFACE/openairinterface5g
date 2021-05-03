@@ -724,7 +724,7 @@ int main(int argc, char **argv) {
                                 BW,
                                 0,
                                 0,
-                                0);
+                                0, 0);
 
   if (interf1>-20)
     eNB2UE1 = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
@@ -733,7 +733,7 @@ int main(int argc, char **argv) {
                                    BW,
                                    0,
                                    0,
-                                   0);
+                                   0, 0);
 
   if (interf2>-20)
     eNB2UE2 = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
@@ -742,7 +742,7 @@ int main(int argc, char **argv) {
                                    BW,
                                    0,
                                    0,
-                                   0);
+                                   0, 0);
 
   if (eNB2UE==NULL) {
     msg("Problem generating channel model. Exiting.\n");

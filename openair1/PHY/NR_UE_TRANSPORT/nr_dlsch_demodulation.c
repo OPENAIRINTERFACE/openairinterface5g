@@ -52,7 +52,7 @@
  * set as command line argument, see lte-softmodem.c
  * default value: 0
  */
-int16_t nr_dlsch_demod_shift = 0;
+int32_t nr_dlsch_demod_shift = 0;
 //int16_t interf_unaw_shift = 13;
 
 //#define DEBUG_HARQ

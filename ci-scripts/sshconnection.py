@@ -111,11 +111,20 @@ class SSHConnection():
 		self.sshresponse = self.ssh.expect(expected)
 		return self.sshresponse
 
-	def command(self, commandline, expectedline, timeout):
-		logging.debug(commandline)
+	def command(self, commandline, expectedline, timeout, silent=False, resync=False):
+		if not silent:
+			logging.debug(commandline)
 		self.ssh.timeout = timeout
-		self.ssh.sendline(commandline)
-		self.sshresponse = self.ssh.expect([expectedline, pexpect.EOF, pexpect.TIMEOUT])
+		# Nasty patch when pexpect output is out of sync.
+		# Much pronounced when running back-to-back-back oc commands
+		if resync:
+			self.ssh.send(commandline)
+			self.ssh.expect([commandline, pexpect.TIMEOUT])
+			self.ssh.send('\r\n')
+			self.sshresponse = self.ssh.expect([expectedline, pexpect.EOF, pexpect.TIMEOUT])
+		else:
+			self.ssh.sendline(commandline)
+			self.sshresponse = self.ssh.expect([expectedline, pexpect.EOF, pexpect.TIMEOUT])
 		if self.sshresponse == 0:
 			return 0
 		elif self.sshresponse == 1:

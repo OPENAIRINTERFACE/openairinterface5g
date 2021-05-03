@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    {{- include "oai-ulsim.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "oai-ulsim.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "oai-ulsim.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+    {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+      - name: physim
+        image: "{{ .Values.global.image.repository }}:{{ .Values.global.image.version }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        ports:
+        - containerPort: 80
+          name: oai-ulsim
+        # volumeMounts:
+        # - mountPath: /opt/oai-ulsim/certs
+        #   name: certs
+        command: ["/bin/sh", "-c"]
+        args:
+        - >  
+          export OPENAIR_DIR=/opt/oai-physim &&
+          cd cmake_targets/autotests &&
+          ./run_exec_autotests.bash -g "015101" -q -np -b &&
+          echo "FINISHED" &&
+          sleep infinity
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccountName: {{ .Values.global.serviceAccountName }}
+      terminationGracePeriodSeconds: 30

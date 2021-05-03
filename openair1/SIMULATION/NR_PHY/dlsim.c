@@ -63,7 +63,7 @@
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "NR_RRCReconfiguration.h"
-#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
 #include <openair2/LAYER2/MAC/mac_vars.h>
@@ -83,16 +83,23 @@ uint16_t sf_ahead=4 ;
 uint16_t sl_ahead=0;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
+THREAD_STRUCT thread_struct;
+nfapi_ue_release_request_body_t release_rntis;
+msc_interface_t msc_interface;
+
 
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t     module_id,
-			      const int             CC_id,
-			      const uint8_t         gNB_index,
-			      const int8_t          channel,
-			      const uint8_t*        pduP,
-			      const sdu_size_t      pdu_len)
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
+                              const int CC_id,
+                              const uint8_t gNB_index,
+                              const frame_t frame,
+                              const sub_frame_t sub_frame,
+                              const rnti_t rnti,
+                              const channel_t channel,
+                              const uint8_t* pduP,
+                              const sdu_size_t pdu_len)
 {
   return 0;
 }
@@ -195,6 +202,8 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+void processSlotTX(void *arg) {}
+
 //nFAPI P7 dummy functions
 
 int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
@@ -229,13 +238,38 @@ void nr_dlsim_preprocessor(module_id_t module_id,
       sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
   sched_ctrl->cce_index = 0;
 
-  sched_ctrl->rbStart = g_rbStart;
-  sched_ctrl->rbSize = g_rbSize;
-  sched_ctrl->mcs = g_mcsIndex;
-  sched_ctrl->time_domain_allocation = 2;
-  sched_ctrl->mcsTableIdx = g_mcsTableIdx;
+  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
+  nr_set_pdsch_semi_static(scc,
+                           UE_info->secondaryCellGroup[0],
+                           sched_ctrl->active_bwp,
+                           /* tda = */ 2,
+                           /* num_dmrs_cdm_grps_no_data = */ 1,
+                           ps);
+
+  NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
+  sched_pdsch->rbStart = g_rbStart;
+  sched_pdsch->rbSize = g_rbSize;
+  sched_pdsch->mcs = g_mcsIndex;
+  /* the following might override the table that is mandated by RRC
+   * configuration */
+  ps->mcsTableIdx = g_mcsTableIdx;
+
+  sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
+  sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
+  sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
+                                        sched_pdsch->R,
+                                        sched_pdsch->rbSize,
+                                        ps->nrOfSymbols,
+                                        ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
+                                        0 /* N_PRB_oh, 0 for initialBWP */,
+                                        0 /* tb_scaling */,
+                                        1 /* nrOfLayers */)
+                         >> 3;
+
   /* the simulator assumes the HARQ PID is equal to the slot number */
-  sched_ctrl->dl_harq_pid = slot;
+  sched_pdsch->dl_harq_pid = slot;
+
   /* The scheduler uses lists to track whether a HARQ process is
    * free/busy/awaiting retransmission, and updates the HARQ process states.
    * However, in the simulation, we never get ack or nack for any HARQ process,
@@ -248,13 +282,26 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   else
     add_front_nr_list(&sched_ctrl->retrans_dl_harq, slot);   // ... make PID retransmission
   sched_ctrl->harq_processes[slot].is_waiting = false;
-  AssertFatal(sched_ctrl->rbStart >= 0, "invalid rbStart %d\n", sched_ctrl->rbStart);
-  AssertFatal(sched_ctrl->rbSize > 0, "invalid rbSize %d\n", sched_ctrl->rbSize);
-  AssertFatal(sched_ctrl->mcs >= 0, "invalid sched_ctrl->mcs %d\n", sched_ctrl->mcs);
-  AssertFatal(sched_ctrl->mcsTableIdx >= 0 && sched_ctrl->mcsTableIdx <= 2, "invalid sched_ctrl->mcsTableIdx %d\n", sched_ctrl->mcsTableIdx);
-  sched_ctrl->numDmrsCdmGrpsNoData = 1;
+  AssertFatal(sched_pdsch->rbStart >= 0, "invalid rbStart %d\n", sched_pdsch->rbStart);
+  AssertFatal(sched_pdsch->rbSize > 0, "invalid rbSize %d\n", sched_pdsch->rbSize);
+  AssertFatal(sched_pdsch->mcs >= 0, "invalid mcs %d\n", sched_pdsch->mcs);
+  AssertFatal(ps->mcsTableIdx >= 0 && ps->mcsTableIdx <= 2, "invalid mcsTableIdx %d\n", ps->mcsTableIdx);
 }
 
+typedef struct {
+  uint64_t       optmask;   //mask to store boolean config options
+  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
+  tpool_t        Tpool;             // thread pool 
+} nrUE_params_t;
+
+nrUE_params_t nrUE_params;
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+
+void do_nothing(void *args) {
+}
 
 int main(int argc, char **argv)
 {
@@ -270,7 +317,7 @@ int main(int argc, char **argv)
   //float psnr;
   float eff_tp_check = 0.7;
   uint8_t snrRun;
-  uint32_t TBS;
+  uint32_t TBS = 0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   //double iqim = 0.0;
@@ -627,7 +674,6 @@ int main(int argc, char **argv)
     RC.nb_nr_mac_CC[i] = 1;
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
-  gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
 
@@ -715,6 +761,9 @@ int main(int argc, char **argv)
   rrc_mac_config_req_gNB(0,0,n_tx,1,pusch_tgt_snrx10,pucch_tgt_snrx10,scc,0,0,NULL);
   // UE dedicated configuration
   rrc_mac_config_req_gNB(0,0,n_tx,1,pusch_tgt_snrx10,pucch_tgt_snrx10,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  // reset preprocessor to the one of DLSIM after it has been set during
+  // rrc_mac_config_req_gNB
+  gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
   phy_init_nr_gNB(gNB,0,0);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   NR_UE_info_t *UE_info = &RC.nrmac[0]->UE_info;
@@ -767,7 +816,7 @@ int main(int argc, char **argv)
 				30e-9,
                                 0,
                                 0,
-                                0);
+                                0, 0);
 
   if (gNB2UE==NULL) {
     printf("Problem generating channel model. Exiting.\n");
@@ -852,6 +901,7 @@ int main(int argc, char **argv)
   unsigned int errors_bit    = 0;
   uint32_t errors_scrambling = 0;
 
+  initTpool("N", &(nrUE_params.Tpool), false);
 
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
@@ -988,7 +1038,7 @@ int main(int argc, char **argv)
         if (run_initial_sync)
           nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[0].ssb_pdu);
         else
-          phy_procedures_gNB_TX(gNB,frame,slot,0);
+          phy_procedures_gNB_TX(gNB,frame,slot,1);
             
         int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
         
@@ -1102,7 +1152,8 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               dlsch_threads);
+                               dlsch_threads,
+                               NULL);
         
         //printf("dlsim round %d ends\n",round);
         round++;
