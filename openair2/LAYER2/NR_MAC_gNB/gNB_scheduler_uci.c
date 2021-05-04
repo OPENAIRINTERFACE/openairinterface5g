@@ -1276,10 +1276,21 @@ bool nr_acknack_scheduling(int mod_id,
   pucch->dai_c++;
   pucch->resource_indicator = 0; // each UE has dedicated PUCCH resources
 
+  NR_PUCCH_Config_t *pucch_Config = NULL;
+  if (sched_ctrl->active_ubwp) {
+    pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
+  } else if (RC.nrmac[mod_id]->UE_info.CellGroup[UE_id] &&
+             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig &&
+             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated &&
+             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
+    pucch_Config = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+  }
+
   /* verify that at that slot and symbol, resources are free. We only do this
    * for initialCyclicShift 0 (we assume it always has that one), so other
    * initialCyclicShifts can overlap with ICS 0!*/
-  const NR_PUCCH_Config_t *pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
   const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[pucch->resource_indicator];
   DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
   if (resource->format.choice.format0->initialCyclicShift == 0) {
@@ -1431,7 +1442,19 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
   NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    NR_PUCCH_Config_t *pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
+
+    NR_PUCCH_Config_t *pucch_Config = NULL;
+    if (sched_ctrl->active_ubwp) {
+      pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
+    } else if (RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id] &&
+             RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig &&
+             RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated &&
+             RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+             RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+             RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
+      pucch_Config = RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+    }
+
     AssertFatal(pucch_Config->schedulingRequestResourceToAddModList->list.count>0,"NO SR configuration available");
 
     for (int SR_resource_id =0; SR_resource_id < pucch_Config->schedulingRequestResourceToAddModList->list.count;SR_resource_id++) {

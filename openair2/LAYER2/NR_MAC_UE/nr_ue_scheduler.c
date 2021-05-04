@@ -714,7 +714,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
 
     /* FREQ_HOPPING_FLAG */
-    if ((pusch_Config->frequencyHopping!=NULL) && (pusch_Config->resourceAllocation != NR_PUSCH_Config__resourceAllocation_resourceAllocationType0)){
+    if ((pusch_Config!=NULL) && (pusch_Config->frequencyHopping!=NULL) && (pusch_Config->resourceAllocation != NR_PUSCH_Config__resourceAllocation_resourceAllocationType0)){
       pusch_config_pdu->frequency_hopping = dci->frequency_hopping_flag.val;
     }
 
