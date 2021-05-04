@@ -40,16 +40,6 @@ import subprocess
 
 
 class Module_UE:
-#  ID: idefix
-#  State : enabled
-#  Kind : quectel
-#  Process : quectel-cm
-#  WakeupScript : ci_qtel.py
-#  UENetwork : wwan0
-#  HostIPAddress : 192.168.18.188
-#  HostUsername : oaicicd
-#  HostPassword : oaicicd
-#  HostSourceCodePath : none
 
 	def __init__(self,Module):
 		#create attributes as in the Module dictionary
