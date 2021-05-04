@@ -553,7 +553,7 @@ void *UE_thread(void *arg) {
         if (UE->is_synchronized) {
           decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
           // shift the frame index with all the frames we trashed meanwhile we perform the synch search
-          decoded_frame_rx=(decoded_frame_rx + (!UE->init_sync_frame) + trashed_frames) % MAX_FRAME_NUMBER;
+          decoded_frame_rx=(decoded_frame_rx + UE->init_sync_frame + trashed_frames) % MAX_FRAME_NUMBER;
         }
         delNotifiedFIFO_elt(res);
         start_rx_stream=0;
@@ -693,9 +693,9 @@ void *UE_thread(void *arg) {
       pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
     }
 
-    if (  decoded_frame_rx>0 && decoded_frame_rx != curMsg->proc.frame_rx)
+    if (decoded_frame_rx>0 && decoded_frame_rx != curMsg->proc.frame_rx)
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
-            decoded_frame_rx, curMsg->proc.frame_rx  );
+            decoded_frame_rx, curMsg->proc.frame_rx);
 
     // use previous timing_advance value to compute writeTimestamp
     writeTimestamp = timestamp+

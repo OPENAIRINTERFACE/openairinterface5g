@@ -252,8 +252,8 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
         case 3:
           // long bitmap FR2 max 64 SSBs
           num_ssb = 0;
-          for (int i_ssb=0; i_ssb<63; i_ssb++) {
-            if ((longBitmap->buf[i_ssb/8]>>(7-i_ssb))&0x01) {
+          for (int i_ssb=0; i_ssb<64; i_ssb++) {
+            if ((longBitmap->buf[i_ssb/8]>>(7-(i_ssb%8)))&0x01) {
               ssb_start_symbol = get_ssb_start_symbol(band,scs,i_ssb);
               // if start symbol is in current slot, schedule current SSB, fill VRB map and call get_type0_PDCCH_CSS_config_parameters
               if ((ssb_start_symbol/14) == rel_slot){

@@ -524,11 +524,9 @@ typedef struct {
   int cce_index;
   uint8_t aggregation_level;
 
-  /// PUCCH scheduling information. Array of three, we assume for the moment:
-  /// HARQ in the first field, SR in second, CSI in third (as fixed by RRC
-  /// conf., i.e. if actually present).  The order is important for
-  /// nr_acknack_scheduling()!
-  NR_sched_pucch_t sched_pucch[3];
+  /// PUCCH scheduling information. Array of two: HARQ+SR in the first field,
+  /// CSI in second.  This order is important for nr_acknack_scheduling()!
+  NR_sched_pucch_t sched_pucch[2];
 
   /// PUSCH semi-static configuration: is not cleared across TTIs
   NR_pusch_semi_static_t pusch_semi_static;
@@ -549,6 +547,9 @@ typedef struct {
   NR_pdsch_semi_static_t pdsch_semi_static;
   /// Sched PDSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pdsch_t sched_pdsch;
+  /// For UL synchronization: store last UL scheduling grant
+  frame_t last_ul_frame;
+  sub_frame_t last_ul_slot;
 
   /// total amount of data awaiting for this UE
   uint32_t num_total_bytes;
@@ -569,6 +570,8 @@ typedef struct {
   int pucch_consecutive_dtx_cnt;
   int ul_failure;
   struct CSI_Report CSI_report[MAX_CSI_REPORTS];
+  bool SR;
+
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
@@ -716,10 +719,6 @@ typedef struct gNB_MAC_INST_s {
   int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
   /// list of allocated beams per period
   int16_t *tdd_beam_association;
-  /// PUCCH: keep track of the resources has already been used by saving the
-  /// highest index not yet been used in a given slot. Dynamically allocated
-  /// so we can have it for every slot as a function of the numerology
-  int *pucch_index_used[MAX_NUM_BWP];
 
   /// bitmap of DLSCH slots, can hold up to 160 slots
   uint64_t dlsch_slot_bitmap[3];
@@ -732,6 +731,9 @@ typedef struct gNB_MAC_INST_s {
   /// allocated. The index refers to the DL slot, and the indicated TDA's k2
   /// points to the right UL slot
   int *preferred_ul_tda[MAX_NUM_BWP];
+
+  /// maximum number of slots before a UE will be scheduled ULSCH automatically
+  uint32_t ulsch_max_slots_inactivity;
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
