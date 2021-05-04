@@ -1185,11 +1185,15 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
 				  NR_ServingCellConfigCommon_t *scc) {
 
   NR_RLC_BearerConfig_t                            *rlc_BearerConfig     = NULL;
+  NR_RLC_BearerConfig_t                            *rlc_BearerConfig2    = NULL;
   NR_RLC_Config_t                                  *rlc_Config           = NULL;
+  NR_RLC_Config_t                                  *rlc_Config2          = NULL;
   NR_LogicalChannelConfig_t                        *logicalChannelConfig = NULL;
+  NR_LogicalChannelConfig_t                        *logicalChannelConfig2= NULL;
   NR_MAC_CellGroupConfig_t                         *mac_CellGroupConfig  = NULL;
   NR_PhysicalCellGroupConfig_t	                   *physicalCellGroupConfig = NULL;
   long *logicalChannelGroup = NULL;
+  long *logicalChannelGroup2 = NULL;
   
   cellGroupConfig->cellGroupId = 0;
   
@@ -1218,8 +1222,8 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
     rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold                = NR_UL_AM_RLC__maxRetxThreshold_t8;
   //}
   rlc_BearerConfig->rlc_Config                                     = rlc_Config;
-  
-  
+
+
   //if (0) {
     logicalChannelConfig                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
     logicalChannelConfig->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig->ul_SpecificParameters));
@@ -1236,6 +1240,41 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   rlc_BearerConfig->mac_LogicalChannelConfig                       = logicalChannelConfig;
   
   ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
+
+  // SRB2
+  rlc_BearerConfig2                                                 = calloc(1, sizeof(NR_RLC_BearerConfig_t));
+  rlc_BearerConfig2->logicalChannelIdentity                         = 2;
+  rlc_BearerConfig2->servedRadioBearer                              = calloc(1, sizeof(*rlc_BearerConfig2->servedRadioBearer));
+  rlc_BearerConfig2->servedRadioBearer->present                     = NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity;
+  rlc_BearerConfig2->servedRadioBearer->choice.srb_Identity         = 2;
+  rlc_BearerConfig2->reestablishRLC                                 = NULL;
+  rlc_Config2 = calloc(1, sizeof(NR_RLC_Config_t));
+  rlc_Config2->present                                              = NR_RLC_Config_PR_am;
+  rlc_Config2->choice.am                                            = calloc(1, sizeof(*rlc_Config2->choice.am));
+  rlc_Config2->choice.am->dl_AM_RLC.sn_FieldLength                  = calloc(1, sizeof(NR_SN_FieldLengthAM_t));
+  *(rlc_Config2->choice.am->dl_AM_RLC.sn_FieldLength)               = NR_SN_FieldLengthAM_size12;
+  rlc_Config2->choice.am->dl_AM_RLC.t_Reassembly                    = NR_T_Reassembly_ms35;
+  rlc_Config2->choice.am->dl_AM_RLC.t_StatusProhibit                = NR_T_StatusProhibit_ms0;
+  rlc_Config2->choice.am->ul_AM_RLC.sn_FieldLength                  = calloc(1, sizeof(NR_SN_FieldLengthAM_t));
+  *(rlc_Config2->choice.am->ul_AM_RLC.sn_FieldLength)               = NR_SN_FieldLengthAM_size12;
+  rlc_Config2->choice.am->ul_AM_RLC.t_PollRetransmit                = NR_T_PollRetransmit_ms45;
+  rlc_Config2->choice.am->ul_AM_RLC.pollPDU                         = NR_PollPDU_infinity;
+  rlc_Config2->choice.am->ul_AM_RLC.pollByte                        = NR_PollByte_infinity;
+  rlc_Config2->choice.am->ul_AM_RLC.maxRetxThreshold                = NR_UL_AM_RLC__maxRetxThreshold_t8;
+  rlc_BearerConfig2->rlc_Config                                     = rlc_Config2;
+  logicalChannelConfig2                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
+  logicalChannelConfig2->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig2->ul_SpecificParameters));
+  logicalChannelConfig2->ul_SpecificParameters->priority            = 1;
+  logicalChannelConfig2->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  logicalChannelGroup2                                              = CALLOC(1, sizeof(long));
+  *logicalChannelGroup2                                             = 0;
+  logicalChannelConfig2->ul_SpecificParameters->logicalChannelGroup = logicalChannelGroup2;
+  logicalChannelConfig2->ul_SpecificParameters->schedulingRequestID = CALLOC(1, sizeof(*logicalChannelConfig2->ul_SpecificParameters->schedulingRequestID));
+  *logicalChannelConfig2->ul_SpecificParameters->schedulingRequestID = 0;
+  logicalChannelConfig2->ul_SpecificParameters->logicalChannelSR_Mask = 0;
+  logicalChannelConfig2->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = 0;
+  rlc_BearerConfig2->mac_LogicalChannelConfig                       = logicalChannelConfig2;
+  ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig2);
   
   cellGroupConfig->rlc_BearerToReleaseList = NULL;
   
@@ -1297,6 +1336,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
     NR_RRCSetup_t                                    *rrcSetup;
     NR_RRCSetup_IEs_t                                *ie;
     NR_SRB_ToAddMod_t                                *SRB1_config          = NULL;
+    NR_SRB_ToAddMod_t                                *SRB2_config          = NULL;
     NR_PDCP_Config_t                                 *pdcp_Config          = NULL;
     NR_CellGroupConfig_t                             *cellGroupConfig      = NULL;
     char masterCellGroup_buf[1000];
@@ -1335,6 +1375,11 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
     SRB1_config->pdcp_Config = pdcp_Config;
     ie->radioBearerConfig.srb_ToAddModList = *SRB_configList;
     ASN_SEQUENCE_ADD(&(*SRB_configList)->list, SRB1_config);
+
+    SRB2_config = calloc(1, sizeof(NR_SRB_ToAddMod_t));
+    SRB2_config->srb_Identity = 2;
+    SRB2_config->pdcp_Config = pdcp_Config;
+    ASN_SEQUENCE_ADD(&(*SRB_configList)->list, SRB2_config);
 
     ie->radioBearerConfig.srb3_ToRelease    = NULL;
     ie->radioBearerConfig.drb_ToAddModList  = NULL;
