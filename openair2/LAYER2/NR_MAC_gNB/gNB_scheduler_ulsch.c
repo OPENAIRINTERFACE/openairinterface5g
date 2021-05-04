@@ -745,6 +745,34 @@ long get_K2(const NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu) {
     return 3;
 }
 
+bool nr_UE_is_to_be_scheduled(module_id_t mod_id, int CC_id, int UE_id, frame_t frame, sub_frame_t slot)
+{
+  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
+  const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const int now = frame * n + slot;
+
+  const struct gNB_MAC_INST_s *nrmac = RC.nrmac[mod_id];
+  const NR_UE_sched_ctrl_t *sched_ctrl = &nrmac->UE_info.UE_sched_ctrl[UE_id];
+  const int last_ul_sched = sched_ctrl->last_ul_frame * n + sched_ctrl->last_ul_slot;
+
+  const int diff = (now - last_ul_sched + 1024 * n) % (1024 * n);
+  /* UE is to be scheduled if
+   * (1) we think the UE has more bytes awaiting than what we scheduled
+   * (2) there is a scheduling request
+   * (3) or we did not schedule it in more than 10 frames */
+  const bool has_data = sched_ctrl->estimated_ul_buffer > sched_ctrl->sched_ul_bytes;
+  const bool high_inactivity = diff >= nrmac->ulsch_max_slots_inactivity;
+  LOG_D(MAC,
+        "%4d.%2d UL inactivity %d slots has_data %d SR %d\n",
+        frame,
+        slot,
+        diff,
+        has_data,
+        sched_ctrl->SR);
+  return has_data || sched_ctrl->SR || high_inactivity;
+}
+
 int next_list_entry_looped(NR_list_t *list, int UE_id)
 {
   if (UE_id < 0)
@@ -874,7 +902,6 @@ void update_ul_ue_R_Qm(NR_sched_pusch_t *sched_pusch, const NR_pusch_semi_static
 
 float ul_thr_ue[MAX_MOBILES_PER_GNB];
 uint32_t ul_pf_tbs[3][28]; // pre-computed, approximate TBS values for PF coefficient
-int bsr0ue = -1;
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -893,12 +920,6 @@ void pf_ul(module_id_t module_id,
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
   NR_list_t UE_sched = { .head = -1, .next = ue_array, .tail = -1, .len = MAX_MOBILES_PER_GNB };
-
-  /* Hack: currently, we do not have SR, and need to schedule UEs continuously.
-   * To keep the wasted resources low, we switch UEs to be scheduled in a
-   * round-robin fashion below, and only schedule a UE with BSR=0 if it is the
-   * selected one */
-  bsr0ue = next_list_entry_looped(UE_list, bsr0ue);
 
   /* Loop UE_list to calculate throughput and coeff */
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -931,11 +952,16 @@ void pf_ul(module_id_t module_id,
       continue;
     }
 
-    /* Check BSR and schedule UE if it is zero to avoid starvation, since we do
-     * not have SR (yet) */
-    if (sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes <= 0) {
-      if (UE_id != bsr0ue)
-        continue;
+    const int B = max(0, sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes);
+    /* preprocessor computed sched_frame/sched_slot */
+    const bool do_sched = nr_UE_is_to_be_scheduled(module_id, 0, UE_id, sched_pusch->frame, sched_pusch->slot);
+
+    if (B == 0 && !do_sched)
+      continue;
+
+    /* Schedule UE on SR or UL inactivity and no data (otherwise, will be scheduled
+     * based on data to transmit) */
+    if (B == 0 && do_sched) {
       /* if no data, pre-allocate 5RB */
       bool freeCCE = find_free_CCE(module_id, slot, UE_id);
       if (!freeCCE) {
@@ -1106,7 +1132,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
-  if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[slot / 64], sched_slot))
+  if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot))
     return false;
 
   sched_ctrl->sched_pusch.slot = sched_slot;
@@ -1218,6 +1244,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     UE_info->mac_stats[UE_id].ulsch_current_bytes = 0;
+
     /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in
      * every TTI are pre-populated by the preprocessor and used below */
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
@@ -1225,6 +1252,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       continue;
 
     uint16_t rnti = UE_info->rnti[UE_id];
+    sched_ctrl->SR = false;
 
     int8_t harq_id = sched_pusch->ul_harq_pid;
     if (harq_id < 0) {
@@ -1281,6 +1309,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
             cur_harq->ndi);
     }
     UE_info->mac_stats[UE_id].ulsch_current_bytes = sched_pusch->tb_size;
+    sched_ctrl->last_ul_frame = sched_pusch->frame;
+    sched_ctrl->last_ul_slot = sched_pusch->slot;
 
     LOG_D(MAC,
           "%4d.%2d RNTI %04x UL sched %4d.%2d start %2d RBS %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d est %6d sched %6d est BSR %6d\n",
