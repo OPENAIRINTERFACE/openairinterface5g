@@ -142,7 +142,7 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
     case FAPI_NR_RX_PDU_TYPE_MIB:
       rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.pdu = ue->pbch_vars[gNB_id]->decoded_output;
       rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.additional_bits = ue->pbch_vars[gNB_id]->xtra_byte;
-      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.ssb_index = frame_parms->ssb_index;
+      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.ssb_index = (frame_parms->ssb_index)&0x7;
       rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.ssb_length = frame_parms->Lmax;
       rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.cell_id = frame_parms->Nid_cell;
     break;
@@ -350,7 +350,7 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
-  LOG_D(PHY,"[UE  %d] Frame %d, Trying PBCH (NidCell %d, gNB_id %d)\n",ue->Mod_id,frame_rx,ue->frame_parms.Nid_cell,gNB_id);
+  LOG_D(PHY,"[UE  %d] Frame %d Slot %d, Trying PBCH (NidCell %d, gNB_id %d)\n",ue->Mod_id,frame_rx,nr_slot_rx,ue->frame_parms.Nid_cell,gNB_id);
 
   ret = nr_rx_pbch(ue, proc,
 		   ue->pbch_vars[gNB_id],
