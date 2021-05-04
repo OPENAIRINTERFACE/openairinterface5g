@@ -878,10 +878,10 @@ void nr_pdcch_unscrambling(int16_t *z,
  * re-encoded DCI bits and returns the number of mismatched bits
  */
 uint16_t nr_dci_false_detection(uint64_t *dci,
-                            int16_t *soft_in,
-                            const t_nrPolar_params *polar_param,
-                            int encoded_length,
-                            int rnti) {
+                                int16_t *soft_in,
+                                t_nrPolar_params *polar_param,
+                                int encoded_length,
+                                int rnti) {
 
   uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
   polar_encoder_fast(dci, (void*)encoder_output, rnti, 1, polar_param);
@@ -922,7 +922,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
       for (int k = 0; k < rel15->num_dci_options; k++) {
         int dci_length = rel15->dci_length_options[k];
         uint64_t dci_estimation[2]= {0};
-        const t_nrPolar_params *currentPtrDCI = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, dci_length, L, 1, &ue->polarList);
+        t_nrPolar_params *currentPtrDCI = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, dci_length, L, 1, &ue->polarList);
 
         LOG_D(PHY, "Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d\n", j, rel15->number_of_candidates, CCEind, CCEind*9*6*2, L);
 
