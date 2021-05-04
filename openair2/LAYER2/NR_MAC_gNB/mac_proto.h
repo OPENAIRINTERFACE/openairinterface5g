@@ -420,4 +420,10 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint32_t *tbs,
                    uint16_t *nb_rb);
 
+void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
+
+void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRecconf,
+                       int *period,
+                       int *offset);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

@@ -402,7 +402,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // This schedule SR
-  // TODO
+  nr_sr_reporting(module_idP, frame, slot);
 
   // Schedule CSI-RS transmission
   nr_csirs_scheduling(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);

@@ -589,7 +589,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
       frame_parms->ssb_index += (((nr_ue_pbch_vars->xtra_byte>>(7-i))&0x01)<<(3+i));
   }
 
-  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms,i_ssb);
+  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms,frame_parms->ssb_index);
   if (frame_parms->half_frame_bit)
     ue->symbol_offset += (frame_parms->slots_per_frame>>1)*frame_parms->symbols_per_slot;
 

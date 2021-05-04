@@ -25,7 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM localhost/ran-build:latest AS lte-ue-build 
+FROM ran-build:latest AS lte-ue-build
 
 RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
@@ -37,10 +37,10 @@ RUN /bin/sh oaienv && \
     mkdir -p log && \
     ./build_oai --UE --ninja -w USRP --verbose-ci
 
-# debug
-#RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-uesoftmodem.Rel15
-#RUN ls -lst /oai-ran/targets/bin
-#RUN ls -lst /oai-ran/cmake_targets/ran_build/build/*.so
+RUN yum install -y python3-pip && \
+    pip3 install --ignore-installed pyyaml && \
+    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/lte_ue_parameters.yaml && \
+    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/lte_ue_sim_parameters.yaml
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-lte-ue
@@ -59,12 +59,10 @@ RUN yum update -y && \
 
 WORKDIR /opt/oai-lte-ue/bin
 COPY --from=lte-ue-build /oai-ran/targets/bin/lte-uesoftmodem.Rel15 .
+COPY --from=lte-ue-build /oai-ran/docker/scripts/lte_ue_entrypoint.sh entrypoint.sh
 COPY --from=lte-ue-build /oai-ran/targets/bin/conf2uedata .
 COPY --from=lte-ue-build /oai-ran/targets/bin/nvram .
 COPY --from=lte-ue-build /oai-ran/targets/bin/usim .
-COPY --from=lte-ue-build /oai-ran/targets/bin/.ue_emm.nvram0 .
-COPY --from=lte-ue-build /oai-ran/targets/bin/.ue.nvram0 .
-COPY --from=lte-ue-build /oai-ran/targets/bin/.usim.nvram0 .
 
 WORKDIR /usr/local/lib/
 COPY --from=lte-ue-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
@@ -99,26 +97,10 @@ COPY --from=lte-ue-build /usr/local/lib64/libuhd.so.4.0.0 /usr/local/lib64
 
 RUN ldconfig
 
-#debug
-#RUN ldd /opt/oai-lte-ue/bin/lte-uesoftmodem.Rel15
-#RUN ldd /opt/oai-lte-ue/bin/conf2uedata
-#RUN ldd /opt/oai-lte-ue/bin/nvram
-#RUN ldd /opt/oai-lte-ue/bin/usim
-#RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
-#RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
-#RUN ldd /usr/local/lib/librfsimulator.so.Rel15
-#RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
-#RUN ldd /usr/local/lib/libcoding.so
-#RUN ldd /usr/local/lib/libparams_libconfig.so
-#RUN ldd /usr/local/lib/libSIMU.so
-#RUN ldd /usr/local/lib/libdfts.so
-
-# Copy the relevant configuration files for eNB
+# Copy the relevant configuration files for UE
 WORKDIR /opt/oai-lte-ue/etc
-COPY --from=lte-ue-build /oai-ran/ci-scripts/conf_files/ue.* .
-COPY --from=lte-ue-build /oai-ran/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf ./ue_usim.conf
+COPY --from=lte-ue-build /oai-ran/docker/etc .
 
 WORKDIR /opt/oai-lte-ue
-#CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem", "-O", "/opt/oai-lte-ue/etc/enb.conf"]
-#ENTRYPOINT ["/opt/oai-lte-ue/bin/entrypoint.sh"]
-CMD ["sleep", "infinity"]
+CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem.Rel15"]
+ENTRYPOINT ["/opt/oai-lte-ue/bin/entrypoint.sh"]

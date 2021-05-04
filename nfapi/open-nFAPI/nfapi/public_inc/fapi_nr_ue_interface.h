@@ -1058,12 +1058,6 @@ typedef struct {
   fapi_nr_tdd_table_t tdd_table;
   fapi_nr_prach_config_t prach_config;
 
-  fapi_nr_dl_bwp_common_config_t     dl_bwp_common;
-  fapi_nr_dl_bwp_dedicated_config_t  dl_bwp_dedicated;
-
-  fapi_nr_ul_bwp_common_config_t     ul_bwp_common;
-  fapi_nr_ul_bwp_dedicated_config_t  ul_bwp_dedicated;
-
 } fapi_nr_config_request_t;
 
 #endif
