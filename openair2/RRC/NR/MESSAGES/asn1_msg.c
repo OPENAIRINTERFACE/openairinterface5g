@@ -1287,7 +1287,8 @@ uint16_t do_RRCReconfiguration(
     //                                  1,
     //                                  1,
     //                                  carrier->pdsch_AntennaPorts,
-    //                                  carrier->initial_csi_index[gnb_rrc_inst->Nb_ue]);
+    //                                  carrier->initial_csi_index[ue_context_p->local_uid + 1],
+    //                                  ue_context_pP->local_uid);
 
     /******************** Meas Config ********************/
     // measConfig

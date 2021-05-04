@@ -253,8 +253,8 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
         case 3:
           // long bitmap FR2 max 64 SSBs
           num_ssb = 0;
-          for (int i_ssb=0; i_ssb<63; i_ssb++) {
-            if ((longBitmap->buf[i_ssb/8]>>(7-i_ssb))&0x01) {
+          for (int i_ssb=0; i_ssb<64; i_ssb++) {
+            if ((longBitmap->buf[i_ssb/8]>>(7-(i_ssb%8)))&0x01) {
               ssb_start_symbol = get_ssb_start_symbol(band,scs,i_ssb);
               // if start symbol is in current slot, schedule current SSB, fill VRB map and call get_type0_PDCCH_CSS_config_parameters
               if ((ssb_start_symbol/14) == rel_slot){
@@ -433,8 +433,8 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      bwp);
 
   // TODO: This assignment should be done in function nr_configure_pdcch()
-  pdcch_pdu_rel15->BWPSize = gNB_mac->type0_PDCCH_CSS_config->num_rbs;
-  pdcch_pdu_rel15->BWPStart = gNB_mac->type0_PDCCH_CSS_config->cset_start_rb;
+  pdcch_pdu_rel15->BWPSize = type0_PDCCH_CSS_config->num_rbs;
+  pdcch_pdu_rel15->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -593,7 +593,8 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
       uint8_t sib1_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, BCCH, SI_RNTI, 1, sib1_payload);
       LOG_D(NR_MAC,"sib1_sdu_length = %i\n", sib1_sdu_length);
       LOG_D(NR_MAC,"SIB1: \n");
-      for (int k=0;k<sib1_sdu_length;k++) LOG_D(NR_MAC,"byte %d : %x\n",k,((uint8_t*)sib1_payload)[k]);
+      for (int k=0;k<sib1_sdu_length;k++)
+        LOG_D(NR_MAC,"byte %d : %x\n",k,((uint8_t*)sib1_payload)[k]);
 
       // Configure sched_ctrlCommon for SIB1
       schedule_control_sib1(module_idP, CC_id, type0_PDCCH_CSS_config, time_domain_allocation, mcsTableIdx, mcs, candidate_idx, sib1_sdu_length);
@@ -609,7 +610,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
       }
 
       // TODO: There are exceptions to this in table 5.1.2.1.1-4,5 (Default time domain allocation tables B, C)
-      int mappingtype = (startSymbolIndex <= 3) ? typeA : typeB ;
+      int mappingtype = (startSymbolIndex <= 3) ? typeA : typeB;
 
       // Calculate number of PRB_DMRS
       uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 6;
