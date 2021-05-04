@@ -763,7 +763,26 @@ rrc_ue_establish_drb(
   return(0);
 }
 
+static void dump_report_config(const UE_RRC_INST *ue, const char *label)
+{
+    for(int i = 0; i < NB_CNX_UE; i++) {
+      for(int j = 0; j < MAX_MEAS_ID; j++) {
+        LTE_ReportConfigToAddMod_t *rc = ue->ReportConfig[i][j];
+        if (rc == NULL)
+        {
+          LOG_I(RRC, "%s: %d %d = NULL\n", label, i, j);
+        }
+        else
+        {
+          LOG_I(RRC, "%s: %d %d = %d %d\n",
+             label, i, j,
+             rc->reportConfig.present,
+             rc->reportConfig.choice.reportConfigInterRAT.triggerType.present);
+        }
+      }
+    }
 
+}
 //-----------------------------------------------------------------------------
 void
 rrc_ue_process_measConfig(
@@ -777,29 +796,41 @@ rrc_ue_process_measConfig(
   int i;
   long ind;
   LTE_MeasObjectToAddMod_t *measObj;
+  UE_RRC_INST *ue = &UE_rrc_inst[ctxt_pP->module_id];
 
   if (measConfig->measObjectToRemoveList != NULL) {
-    for (i=0; i<measConfig->measObjectToRemoveList->list.count; i++) {
-      ind   = *measConfig->measObjectToRemoveList->list.array[i];
-      free(UE_rrc_inst[ctxt_pP->module_id].MeasObj[eNB_index][ind-1]);
+    for (i = 0; i < measConfig->measObjectToRemoveList->list.count; i++) {
+      ind = *measConfig->measObjectToRemoveList->list.array[i];
+      free(ue->MeasObj[eNB_index][ind-1]);
+      ue->MeasObj[eNB_index][ind-1] = NULL;
+      free(ue->MeasObj[eNB_index+1][ind-1]);
+      ue->MeasObj[eNB_index+1][ind-1] = NULL;
     }
   }
 
   if (measConfig->measObjectToAddModList != NULL) {
     LOG_I(RRC,"Measurement Object List is present\n");
 
-    for (i=0; i<measConfig->measObjectToAddModList->list.count; i++) {
+    for (i = 0; i < measConfig->measObjectToAddModList->list.count; i++) {
       measObj = measConfig->measObjectToAddModList->list.array[i];
-      ind   = measConfig->measObjectToAddModList->list.array[i]->measObjectId;
-
-      if (UE_rrc_inst[ctxt_pP->module_id].MeasObj[eNB_index][ind-1]) {
-        LOG_D(RRC,"Modifying measurement object %ld\n",ind);
-        memcpy((char *)UE_rrc_inst[ctxt_pP->module_id].MeasObj[eNB_index][ind-1],
+      ind = measConfig->measObjectToAddModList->list.array[i]->measObjectId;
+      if (ind < 1 || ind > MAX_MEAS_OBJ) {
+        LOG_E(MAC, "measObjectId is out of bounds: %ld. Setting to 1. i = %d.\n", ind, i);
+        //ind = 1;
+      }
+      if (ue->MeasObj[eNB_index][ind-1]) {
+        LOG_D(RRC, "Modifying measurement object [%d][%ld]\n", eNB_index, ind);
+        memcpy((char *)ue->MeasObj[eNB_index][ind-1],
                (char *)measObj,
                sizeof(LTE_MeasObjectToAddMod_t));
-      } else {
-        LOG_I(RRC,"Adding measurement object %ld\n",ind);
-
+      }
+      if (ue->MeasObj[eNB_index+1][ind-1]) {
+        LOG_D(RRC, "Modifying NR measurement object [%d][%ld]\n", eNB_index + 1, ind);
+        memcpy((char *)ue->MeasObj[eNB_index+1][ind-1],
+               (char *)measObj,
+               sizeof(LTE_MeasObjectToAddMod_t));
+      }
+      else {
         if (measObj->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA) {
           LOG_I(RRC,"EUTRA Measurement : carrierFreq %ld, allowedMeasBandwidth %ld,presenceAntennaPort1 %d, neighCellConfig %d\n",
                 measObj->measObject.choice.measObjectEUTRA.carrierFreq,
@@ -807,10 +838,12 @@ rrc_ue_process_measConfig(
                 measObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1,
                 measObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf[0]);
           UE_rrc_inst[ctxt_pP->module_id].MeasObj[eNB_index][ind-1]=measObj;
+          LOG_D(RRC, "Adding measurement object [%d][%ld]\n", eNB_index, ind);
+          ue->MeasObj[eNB_index][ind-1]=measObj;
         }
         if (measObj->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15) {
-          LOG_I(RRC,"NR_r15 Measurement : carrierFreq %ld\n",
-                measObj->measObject.choice.measObjectNR_r15.carrierFreq_r15);
+          LOG_I(RRC, "Adding NR measurement object [%d][%ld]\n", eNB_index + 1, ind);
+          ue->MeasObj[eNB_index+1][ind-1] = measObj;
           if (!get_softmodem_params()->nsa) {
             LOG_E(RRC, "Not in NSA mode but attempting to send measurement request to NR-UE\n");
             return;
@@ -834,7 +867,7 @@ rrc_ue_process_measConfig(
                           (LTE_RadioResourceConfigCommonSIB_t *)NULL,
                           (struct LTE_PhysicalConfigDedicated *)NULL,
                           (LTE_SCellToAddMod_r10_t *)NULL,
-                          UE_rrc_inst[ctxt_pP->module_id].MeasObj[eNB_index],
+                          ue->MeasObj[eNB_index],
                           (LTE_MAC_MainConfig_t *)NULL,
                           0,
                           (struct LTE_LogicalChannelConfig *)NULL,
@@ -862,109 +895,141 @@ rrc_ue_process_measConfig(
   if (measConfig->reportConfigToRemoveList != NULL) {
     for (i=0; i<measConfig->reportConfigToRemoveList->list.count; i++) {
       ind   = *measConfig->reportConfigToRemoveList->list.array[i];
-      free(UE_rrc_inst[ctxt_pP->module_id].ReportConfig[eNB_index][ind-1]);
+      free(ue->ReportConfig[eNB_index][ind-1]);
+      ue->ReportConfig[eNB_index][ind-1] = NULL;
+      free(ue->ReportConfig[eNB_index+1][ind-1]);
+      ue->ReportConfig[eNB_index+1][ind-1] = NULL;
     }
   }
 
   if (measConfig->reportConfigToAddModList != NULL) {
     LOG_I(RRC,"Report Configuration List is present\n");
 
-    for (i=0; i<measConfig->reportConfigToAddModList->list.count; i++) {
-      ind   = measConfig->reportConfigToAddModList->list.array[i]->reportConfigId;
-
-      if (UE_rrc_inst[ctxt_pP->module_id].ReportConfig[eNB_index][ind-1]) {
-        LOG_I(RRC,"Modifying Report Configuration %ld\n",ind-1);
-        memcpy((char *)UE_rrc_inst[ctxt_pP->module_id].ReportConfig[eNB_index][ind-1],
+    for (i=0; i < measConfig->reportConfigToAddModList->list.count; i++) {
+      ind = measConfig->reportConfigToAddModList->list.array[i]->reportConfigId;
+      if (ind < 1 || ind > MAX_MEAS_CONFIG) {
+        LOG_E(MAC, "ReportConfigId is out of bounds: %ld. Setting to 1. i = %d.\n", ind, i);
+        //ind = 1;
+      }
+      if (ue->ReportConfig[eNB_index][ind-1]) {
+        LOG_D(RRC,"Modifying ReportConfig [%d][%ld]\n", eNB_index, ind-1);
+        memcpy((char *)ue->ReportConfig[eNB_index][ind-1],
                (char *)measConfig->reportConfigToAddModList->list.array[i],
                sizeof(LTE_ReportConfigToAddMod_t));
       } else {
-        LOG_D(RRC,"Adding Report Configuration %ld %p \n",ind-1,measConfig->reportConfigToAddModList->list.array[i]);
-        UE_rrc_inst[ctxt_pP->module_id].ReportConfig[eNB_index][ind-1] = measConfig->reportConfigToAddModList->list.array[i];
+        LOG_D(RRC,"Adding ReportConfig [%d][%ld]\n", eNB_index, ind-1);
+        ue->ReportConfig[eNB_index][ind-1] = measConfig->reportConfigToAddModList->list.array[i];
       }
+      dump_report_config(ue, "W_LTE");
+      if (ue->ReportConfig[eNB_index+1][ind-1]) {
+        LOG_D(RRC,"Modifying NR ReportConfig [%d][%ld]\n", eNB_index + 1, ind-1);
+        memcpy((char *)ue->ReportConfig[eNB_index+1][ind-1],
+               (char *)measConfig->reportConfigToAddModList->list.array[i],
+               sizeof(LTE_ReportConfigToAddMod_t));
+      } else {
+        LOG_D(RRC,"Adding NR ReportConfig [%d][%ld]\n", eNB_index + 1, ind-1);
+        ue->ReportConfig[eNB_index+1][ind-1] = measConfig->reportConfigToAddModList->list.array[i];
+      }
+      dump_report_config(ue, "W_NR");
     }
   }
 
   if (measConfig->quantityConfig != NULL) {
-    if (UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[eNB_index]) {
+    if (ue->QuantityConfig[eNB_index]) {
       LOG_D(RRC,"Modifying Quantity Configuration \n");
-      memcpy((char *)UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[eNB_index],
+      memcpy((char *)ue->QuantityConfig[eNB_index],
              (char *)measConfig->quantityConfig,
              sizeof(LTE_QuantityConfig_t));
     } else {
       LOG_D(RRC,"Adding Quantity configuration\n");
-      UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[eNB_index] = measConfig->quantityConfig;
+      ue->QuantityConfig[eNB_index] = measConfig->quantityConfig;
     }
   }
 
   if (measConfig->measIdToRemoveList != NULL) {
     for (i=0; i<measConfig->measIdToRemoveList->list.count; i++) {
       ind   = *measConfig->measIdToRemoveList->list.array[i];
-      free(UE_rrc_inst[ctxt_pP->module_id].MeasId[eNB_index][ind-1]);
+      free(ue->MeasId[eNB_index][ind-1]);
+      ue->MeasId[eNB_index][ind-1] = NULL;
+      free(ue->MeasId[eNB_index+1][ind-1]);
+      ue->MeasId[eNB_index+1][ind-1] = NULL;
     }
   }
 
   if (measConfig->measIdToAddModList != NULL) {
     for (i=0; i<measConfig->measIdToAddModList->list.count; i++) {
       ind   = measConfig->measIdToAddModList->list.array[i]->measId;
-
-      if (UE_rrc_inst[ctxt_pP->module_id].MeasId[eNB_index][ind-1]) {
-        LOG_D(RRC,"Modifying Measurement ID %ld\n",ind-1);
-        memcpy((char *)UE_rrc_inst[ctxt_pP->module_id].MeasId[eNB_index][ind-1],
+      if (ind < 1 || ind > MAX_MEAS_ID) {
+        LOG_E(MAC, "measId is out of bounds: %ld. Setting to 1. i = %d.\n", ind, i);
+        //ind = 1;
+      }
+      if (ue->MeasId[eNB_index][ind-1]) {
+        LOG_I(RRC,"Modifying Measurement ID [%d][%ld]\n", eNB_index, ind-1);
+        memcpy((char *)ue->MeasId[eNB_index][ind-1],
                (char *)measConfig->measIdToAddModList->list.array[i],
                sizeof(LTE_MeasIdToAddMod_t));
       } else {
-        LOG_D(RRC,"Adding Measurement ID %ld %p\n",ind-1,measConfig->measIdToAddModList->list.array[i]);
-        UE_rrc_inst[ctxt_pP->module_id].MeasId[eNB_index][ind-1] = measConfig->measIdToAddModList->list.array[i];
+        LOG_I(RRC,"Adding Measurement ID [%d][%ld]\n", eNB_index, ind-1);
+        ue->MeasId[eNB_index][ind-1] = measConfig->measIdToAddModList->list.array[i];
+      }
+      if (ue->MeasId[eNB_index+1][ind-1]) {
+        LOG_I(RRC,"Modifying NR Measurement ID [%d][%ld]\n", eNB_index+1, ind-1);
+        memcpy((char *)ue->MeasId[eNB_index+1][ind-1],
+               (char *)measConfig->measIdToAddModList->list.array[i],
+               sizeof(LTE_MeasIdToAddMod_t));
+      } else {
+        LOG_I(RRC,"Adding NR Measurement ID [%d][%ld]\n", eNB_index+1, ind-1);
+        ue->MeasId[eNB_index+1][ind-1] = measConfig->measIdToAddModList->list.array[i];
       }
     }
   }
 
   if (measConfig->measGapConfig !=NULL) {
-    if (UE_rrc_inst[ctxt_pP->module_id].measGapConfig[eNB_index]) {
-      memcpy((char *)UE_rrc_inst[ctxt_pP->module_id].measGapConfig[eNB_index],
+    if (ue->measGapConfig[eNB_index]) {
+      memcpy((char *)ue->measGapConfig[eNB_index],
              (char *)measConfig->measGapConfig,
              sizeof(LTE_MeasGapConfig_t));
     } else {
-      UE_rrc_inst[ctxt_pP->module_id].measGapConfig[eNB_index] = measConfig->measGapConfig;
+      ue->measGapConfig[eNB_index] = measConfig->measGapConfig;
     }
   }
 
   if (measConfig->quantityConfig != NULL) {
-    if (UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[eNB_index]) {
+    if (ue->QuantityConfig[eNB_index]) {
       LOG_I(RRC,"Modifying Quantity Configuration \n");
-      memcpy((char *)UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[eNB_index],
+      memcpy((char *)ue->QuantityConfig[eNB_index],
              (char *)measConfig->quantityConfig,
              sizeof(LTE_QuantityConfig_t));
     } else {
       LOG_I(RRC,"Adding Quantity configuration\n");
-      UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[eNB_index] = measConfig->quantityConfig;
+      ue->QuantityConfig[eNB_index] = measConfig->quantityConfig;
     }
 
-    UE_rrc_inst[ctxt_pP->module_id].filter_coeff_rsrp = 1./pow(2,
-        (*UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRP)/4);
-    UE_rrc_inst[ctxt_pP->module_id].filter_coeff_rsrq = 1./pow(2,
-        (*UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRQ)/4);
+    ue->filter_coeff_rsrp = 1./pow(2,
+        (*ue->QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRP)/4);
+    ue->filter_coeff_rsrq = 1./pow(2,
+        (*ue->QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRQ)/4);
     LOG_I(RRC,"[UE %d] set rsrp-coeff for eNB %d: %ld rsrq-coeff: %ld rsrp_factor: %f rsrq_factor: %f \n",
           ctxt_pP->module_id, eNB_index, // UE_rrc_inst[ue_mod_idP].Info[eNB_index].UE_index,
-          *UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRP,
-          *UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRQ,
-          UE_rrc_inst[ctxt_pP->module_id].filter_coeff_rsrp,
-          UE_rrc_inst[ctxt_pP->module_id].filter_coeff_rsrq);
+          *ue->QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRP,
+          *ue->QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRQ,
+          ue->filter_coeff_rsrp,
+          ue->filter_coeff_rsrq);
   }
 
   if (measConfig->s_Measure != NULL) {
-    UE_rrc_inst[ctxt_pP->module_id].s_measure = *measConfig->s_Measure;
+    ue->s_measure = *measConfig->s_Measure;
   }
 
   if (measConfig->speedStatePars != NULL) {
-    if (UE_rrc_inst[ctxt_pP->module_id].speedStatePars) {
-      memcpy((char *)UE_rrc_inst[ctxt_pP->module_id].speedStatePars,(char *)measConfig->speedStatePars,sizeof(struct LTE_MeasConfig__speedStatePars));
+    if (ue->speedStatePars) {
+      memcpy((char *)ue->speedStatePars,(char *)measConfig->speedStatePars,sizeof(struct LTE_MeasConfig__speedStatePars));
     } else {
-      UE_rrc_inst[ctxt_pP->module_id].speedStatePars = measConfig->speedStatePars;
+      ue->speedStatePars = measConfig->speedStatePars;
     }
 
     LOG_I(RRC,"[UE %d] Configuring mobility optimization params for UE %d \n",
-          ctxt_pP->module_id,UE_rrc_inst[ctxt_pP->module_id].Info[0].UE_index);
+          ctxt_pP->module_id,ue->Info[0].UE_index);
   }
 }
 
@@ -4172,37 +4237,38 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
   LTE_Q_OffsetRange_t  ofs = 0;
   LTE_Q_OffsetRange_t  ocs = 0;
   long             a3_offset;
+  LTE_RSRP_RangeNR_r15_t rsrp;
   LTE_MeasObjectId_t   measObjId;
   LTE_ReportConfigId_t reportConfigId;
-
+  UE_RRC_INST *ue = &UE_rrc_inst[ctxt_pP->module_id];
   for(i=0 ; i<NB_CNX_UE ; i++) {
     for(j=0 ; j<MAX_MEAS_ID ; j++) {
-      if(UE_rrc_inst[ctxt_pP->module_id].MeasId[i][j] != NULL) {
-        measObjId = UE_rrc_inst[ctxt_pP->module_id].MeasId[i][j]->measObjectId;
-        reportConfigId = UE_rrc_inst[ctxt_pP->module_id].MeasId[i][j]->reportConfigId;
+      if(ue->MeasId[i][j] != NULL) {
+        measObjId = ue->MeasId[i][j]->measObjectId;
+        reportConfigId = ue->MeasId[i][j]->reportConfigId;
 
-        if( /*UE_rrc_inst[ctxt_pP->module_id].MeasId[i][j] != NULL && */ UE_rrc_inst[ctxt_pP->module_id].MeasObj[i][measObjId-1] != NULL) {
-          if(UE_rrc_inst[ctxt_pP->module_id].MeasObj[i][measObjId-1]->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA) {
+        if(ue->MeasObj[i][measObjId-1] != NULL) {
+          if(ue->MeasObj[i][measObjId-1]->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA) {
             /* consider any neighboring cell detected on the associated frequency to be
              * applicable when the concerned cell is not included in the blackCellsToAddModList
              * defined within the VarMeasConfig for this measId */
-            //    LOG_I(RRC,"event %d %d %p \n", measObjId,reportConfigId, UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][reportConfigId-1]);
-            if((UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][reportConfigId-1] != NULL) &&
-                (UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][reportConfigId-1]->reportConfig.present == LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA) &&
-                (UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.present ==
+            //    LOG_I(RRC,"event %d %d %p \n", measObjId,reportConfigId, ue->ReportConfig[i][reportConfigId-1]);
+            dump_report_config(ue, "R_LTE");
+            if((ue->ReportConfig[i][reportConfigId-1] != NULL) &&
+                (ue->ReportConfig[i][reportConfigId-1]->reportConfig.present == LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA) &&
+                (ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.present ==
                  LTE_ReportConfigEUTRA__triggerType_PR_event)) {
-              hys = UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis;
-              ttt_ms = timeToTrigger_ms[UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][reportConfigId
+              hys = ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis;
+              ttt_ms = timeToTrigger_ms[ue->ReportConfig[i][reportConfigId
                                         -1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger];
               // Freq specific offset of neighbor cell freq
-              ofn = 5;//((UE_rrc_inst[ctxt_pP->module_id].MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq != NULL) ?
-              // *UE_rrc_inst[ctxt_pP->module_id].MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq : 15); //  /* 15 is the Default */
+              ofn = 5;//((ue->MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq != NULL) ?
+              // *ue->MeasObj[i][measObjId-1]->measObject.choice.measObjectEUTRA.offsetFreq : 15); //  /* 15 is the Default */
               // cellIndividualOffset of neighbor cell - not defined yet
               ocn = 0;
-              a3_offset = UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][reportConfigId
-                          -1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset;
+              a3_offset = ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.choice.eventA3.a3_Offset;
 
-              switch (UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present) {
+              switch (ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.eventId.present) {
                 case LTE_ReportConfigEUTRA__triggerType__event__eventId_PR_eventA1:
                   LOG_D(RRC,"[UE %d] Frame %d : A1 event: check if serving becomes better than threshold\n",
                         ctxt_pP->module_id, ctxt_pP->frame);
@@ -4217,33 +4283,30 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
                   LOG_D(RRC,"[UE %d] Frame %d : A3 event: check if a neighboring cell becomes offset better than serving to trigger a measurement event \n",
                         ctxt_pP->module_id, ctxt_pP->frame);
 
-                  if ((check_trigger_meas_event( //Melissa: Need a similar check for 5G UE which will go ask NR UE for the report (measu report)
+                  if ((check_trigger_meas_event(
                          ctxt_pP->module_id,
                          ctxt_pP->frame,
                          eNB_index,
                          i,j,ofn,ocn,hys,ofs,ocs,a3_offset,ttt_ms)) &&
-                      (UE_rrc_inst[ctxt_pP->module_id].Info[0].State >= RRC_CONNECTED) &&
-                      (UE_rrc_inst[ctxt_pP->module_id].Info[0].T304_active == 0 )      &&
-                      (UE_rrc_inst[ctxt_pP->module_id].HandoverInfoUe.measFlag == 1)) {
+                      (ue->Info[0].State >= RRC_CONNECTED) &&
+                      (ue->Info[0].T304_active == 0 )      &&
+                      (ue->HandoverInfoUe.measFlag == 1)) {
                     //trigger measurement reporting procedure (36.331, section 5.5.5)
-                    if (UE_rrc_inst[ctxt_pP->module_id].measReportList[i][j] == NULL) {
-                      UE_rrc_inst[ctxt_pP->module_id].measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
+                    if (ue->measReportList[i][j] == NULL) {
+                      ue->measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
                     }
 
-                    UE_rrc_inst[ctxt_pP->module_id].measReportList[i][j]->measId = UE_rrc_inst[ctxt_pP->module_id].MeasId[i][j]->measId;
-                    UE_rrc_inst[ctxt_pP->module_id].measReportList[i][j]->numberOfReportsSent = 0;
+                    ue->measReportList[i][j]->measId = ue->MeasId[i][j]->measId;
+                    ue->measReportList[i][j]->numberOfReportsSent = 0;
                     rrc_ue_generate_MeasurementReport(
                       ctxt_pP,
                       eNB_index);
-                    UE_rrc_inst[ctxt_pP->module_id].HandoverInfoUe.measFlag = 1;
-                    LOG_I(RRC,"[UE %d] Frame %d: A3 event detected, state: %d \n",
-                          ctxt_pP->module_id, ctxt_pP->frame, UE_rrc_inst[ctxt_pP->module_id].Info[0].State);
+                    ue->HandoverInfoUe.measFlag = 1;
                   } else {
-                    if(UE_rrc_inst[ctxt_pP->module_id].measReportList[i][j] != NULL) {
-                      free(UE_rrc_inst[ctxt_pP->module_id].measReportList[i][j]);
+                    if(ue->measReportList[i][j] != NULL) {
+                      free(ue->measReportList[i][j]);
                     }
-
-                    UE_rrc_inst[ctxt_pP->module_id].measReportList[i][j] = NULL;
+                    ue->measReportList[i][j] = NULL;
                   }
 
                   break;
@@ -4260,7 +4323,64 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
 
                 default:
                   LOG_D(RRC,"Invalid ReportConfigEUTRA__triggerType__event__eventId: %d",
-                        UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][j]->reportConfig.choice.reportConfigEUTRA.triggerType.present);
+                        ue->ReportConfig[i][j]->reportConfig.choice.reportConfigEUTRA.triggerType.present);
+                  break;
+              }
+            }
+          }
+
+          if (ue->MeasObj[i][measObjId-1]->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15) {
+            dump_report_config(ue, "R_NR");
+            if((ue->ReportConfig[i][reportConfigId-1] != NULL) &&
+                (ue->ReportConfig[i][reportConfigId-1]->reportConfig.present ==
+                 LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigInterRAT) &&
+                (ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.triggerType.present ==
+                 LTE_ReportConfigInterRAT__triggerType_PR_event)) {
+
+              LTE_ReportConfigToAddMod_t *rc = ue->ReportConfig[i][reportConfigId-1];
+              LOG_I(RRC, "Got to here %d\n", __LINE__);
+              hys = rc->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.hysteresis;
+              ttt_ms = timeToTrigger_ms[rc->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.timeToTrigger];
+              ofn = 5;
+              ocn = 0;
+              rsrp = rc->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.
+                     eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.choice.nr_RSRP_r15;
+              switch (rc->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.present) {
+                case LTE_ReportConfigInterRAT__triggerType__event__eventId_PR_eventB1_NR_r15:
+                  LOG_I(RRC,"[UE %d] Frame %d : B1_NR_r15 event: check if serving becomes better than threshold\n",
+                        ctxt_pP->module_id, ctxt_pP->frame);
+                  if ((check_trigger_meas_event(
+                         ctxt_pP->module_id,
+                         ctxt_pP->frame,
+                         eNB_index,
+                         i, j, ofn, ocn, hys, ofs, ocs, 0, ttt_ms)) &&
+                         (ue->Info[0].State >= RRC_CONNECTED) &&
+                         (ue->Info[0].T304_active == 0 )      &&
+                         (ue->HandoverInfoUe.measFlag == 1)) {
+                    //trigger measurement reporting procedure (36.331, section 5.5.5)
+                    if (ue->measReportList[i][j] == NULL) {
+                      ue->measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
+                    }
+
+                    ue->measReportList[i][j]->measId = ue->MeasId[i][j]->measId;
+                    ue->measReportList[i][j]->numberOfReportsSent = 0;
+                    rrc_ue_generate_MeasurementReport(ctxt_pP, eNB_index);
+                    ue->HandoverInfoUe.measFlag = 1;
+                    LOG_I(RRC,"[UE %d] Frame %d: RSRB detected, state: %d \n",
+                          ctxt_pP->module_id, ctxt_pP->frame, ue->Info[0].State);
+                  } else {
+                    LOG_I(RRC, "Got to here %d\n", __LINE__);
+                    if(ue->measReportList[i][j] != NULL) {
+                      free(ue->measReportList[i][j]);
+                    }
+
+                    ue->measReportList[i][j] = NULL;
+                  }
+                  break;
+
+                default:
+                  LOG_I(RRC,"Invalid LTE_ReportConfigInterRAT__triggerType__event__eventId: %d",
+                        ue->ReportConfig[i][j]->reportConfig.choice.reportConfigEUTRA.triggerType.present);
                   break;
               }
             }

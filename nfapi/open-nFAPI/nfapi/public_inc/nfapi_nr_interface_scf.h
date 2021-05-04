@@ -1007,7 +1007,7 @@ typedef struct {
   /// A value indicating how the BCH payload is generated. This should match the PARAM/CONFIG TLVs. Value: 0: MAC generates the full PBCH payload, see Table 3-41, where bchPayload has 31 bits 1: PHY generates the timing PBCH bits, see Table 3-41, where the bchPayload has 24 bits 2: PHY generates the full PBCH payload
   uint8_t  bchPayloadFlag;
   uint32_t bchPayload;
-  /// A value indicating the channel quality between the gNB and nrUE
+  /// A value indicating the channel quality between the gNB and nrUE. Value: 0->255 dBM (ssbRSRP)
   uint8_t  ssRSRB;
   nfapi_nr_tx_precoding_and_beamforming_t precoding_and_beamforming;
 } nfapi_nr_dl_tti_ssb_pdu_rel15_t;
