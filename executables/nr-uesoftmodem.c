@@ -232,9 +232,16 @@ nrUE_params_t *get_nrUE_params(void) {
 }
 /* initialie thread pools used for NRUE processing paralleliation */ 
 void init_tpools(uint8_t nun_dlsch_threads) {
-  char *params=calloc(1,(RX_NB_TH*3)+1);
-  for (int i=0; i<RX_NB_TH; i++) {
-    memcpy(params+(i*3),"-1,",3);
+  char *params = NULL;
+  if (IS_SOFTMODEM_RFSIM) {
+    params = calloc(1,2);
+    memcpy(params,"N",1);
+  }
+  else {
+    params = calloc(1,(NR_RX_NB_TH*NR_NB_TH_SLOT*3)+1);
+    for (int i=0; i<NR_RX_NB_TH*NR_NB_TH_SLOT; i++) {
+      memcpy(params+(i*3),"-1,",3);
+    }
   }
   initTpool(params, &(nrUE_params.Tpool), false);
   free(params);
@@ -259,7 +266,6 @@ static void get_options(void) {
     printf("%s\n",uecap_xer);
     uecap_xer_in=1;
   } /* UE with config file  */
-    init_tpools(nrUE_params.nr_dlsch_parallel);
 }
 
 // set PHY vars from command line
@@ -418,6 +424,7 @@ int main( int argc, char **argv ) {
   get_options (); //Command-line options specific for NRUE
 
   get_common_options(SOFTMODEM_5GUE_BIT );
+  init_tpools(nrUE_params.nr_dlsch_parallel);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 #if T_TRACER
   T_Config_Init();

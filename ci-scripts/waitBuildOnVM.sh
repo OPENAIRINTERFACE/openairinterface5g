@@ -47,7 +47,7 @@ function wait_on_vm_build {
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
     echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
 
-    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]]
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]] || [[ "$VM_NAME" == *"-phy-sim"* ]]
     then
         echo "This VM type is no longer supported in the pipeline framework"
         return
@@ -93,7 +93,7 @@ function wait_on_vm_build {
 }
 
 function check_on_vm_build {
-    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]]
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]] || [[ "$VM_NAME" == *"-phy-sim"* ]]
     then
         echo "This VM type is no longer supported in the pipeline framework"
         return

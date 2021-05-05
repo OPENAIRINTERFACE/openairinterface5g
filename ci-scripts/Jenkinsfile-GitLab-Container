@@ -176,6 +176,30 @@ pipeline {
         }
       }
     }
+    stage ("Image Test Processes") {
+      parallel {
+        stage ("Physical Simulators") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-PhySim-Cluster', 'Test-Physim-Cluster')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-PhySim-Cluster')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+      }
+    }
   }
   post {
     always {

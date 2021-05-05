@@ -37,6 +37,8 @@ import logging
 import os
 import time
 from multiprocessing import Process, Lock, SimpleQueue
+import yaml
+
 
 #-----------------------------------------------------------
 # OAI Testing modules
@@ -90,6 +92,7 @@ class RANManagement():
 		self.testCase_id = ''
 		self.epcPcapFile = ''
 		self.runtime_stats= ''
+		self.datalog_rt_stats={}
 
 
 
@@ -633,6 +636,8 @@ class RANManagement():
 					HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			else:
 				HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+		if len(self.datalog_rt_stats)!=0:
+			HTML.CreateHtmlDataLogTable(self.datalog_rt_stats)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
 
@@ -699,6 +704,21 @@ class RANManagement():
 		#count "problem receiving samples" msg
 		pb_receiving_samples_cnt = 0
 	
+		#the datalog config file has to be loaded
+		datalog_rt_stats_file='datalog_rt_stats.yaml'
+		if (os.path.isfile(datalog_rt_stats_file)):
+			yaml_file=datalog_rt_stats_file
+		elif (os.path.isfile('ci-scripts/'+datalog_rt_stats_file)):
+			yaml_file='ci-scripts/'+datalog_rt_stats_file
+		else:
+			logging.error("Datalog RT stats yaml file cannot be found")
+			sys.exit("Datalog RT stats yaml file cannot be found")
+
+		with open(yaml_file,'r') as f:
+			datalog_rt_stats = yaml.load(f,Loader=yaml.FullLoader)
+		rt_keys = datalog_rt_stats['Ref'] #we use the keys from the Ref field  
+
+
 		for line in enb_log_file.readlines():
 			# Runtime statistics
 			result = re.search('Run time:' ,str(line))
@@ -857,21 +877,21 @@ class RANManagement():
 			#keys below are the markers we are loooking for, loop over this keys list
 			#everytime these markers are found in the log file, the previous ones are overwritten in the dict
 			#eventually we record and print only the last occurence 
-			keys = {'UE ID','dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled', 'scheduling timing stats'}
+			keys = {'UE ID','dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
 			for k in keys:
 				result = re.search(k, line)
 				if result is not None:
 					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
 					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
-			#real time statistics
-			#same method as above
-			keys = {'feprx','feptx_prec','feptx_ofdm','feptx_total','L1 Tx processing','DLSCH encoding','L1 Rx processing','PUSCH inner-receiver','PUSCH decoding'}   
-			for k in keys:
+			#real time statistics for gNB
+			for k in rt_keys:
 				result = re.search(k, line)     
 				if result is not None:
 					#remove 1- all useless char before relevant info  2- trailing char
+					line=line.replace('[0m','')
 					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex 
 					real_time_stats[k]=tmp.group(1)
+
 			#count "problem receiving samples" msg
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
 			if result is not None:
@@ -920,13 +940,23 @@ class RANManagement():
 					logging.debug(dlsch_ulsch_stats[key])
 				htmleNBFailureMsg += statMsg
 
-			#real time statistics statistics
+			#real time statistics
+			datalog_rt_stats['Data']={}
 			if len(real_time_stats)!=0: #check if dictionary is not empty
-				statMsg=''
-				for key in real_time_stats: #for each dictionary key
-					statMsg += real_time_stats[key] + '\n' 
-					logging.debug(real_time_stats[key])
-				htmleNBFailureMsg += statMsg
+				for k in real_time_stats:
+					tmp=re.match(r'^(?P<metric>.*):\s+(?P<avg>\d+\.\d+) us;\s+\d+;\s+(?P<max>\d+\.\d+) us;',real_time_stats[k])
+					if tmp is not None:
+						metric=tmp.group('metric')
+						avg=float(tmp.group('avg'))
+						max=float(tmp.group('max'))
+						datalog_rt_stats['Data'][metric]=["{:.0f}".format(avg),"{:.0f}".format(max),"{:.2f}".format(avg/datalog_rt_stats['Ref'][metric])]
+				#once all metrics are collected, store the data as a class attribute to build a dedicated HTML table afterward
+				self.datalog_rt_stats=datalog_rt_stats
+				#check if there is a fail => will render the test as failed
+				for k in datalog_rt_stats['Data']:
+					if float(datalog_rt_stats['Data'][k][2])> datalog_rt_stats['Threshold'][k]: #condition for fail : avg/ref is greater than the fixed threshold
+						#setting prematureExit is ok although not the best option
+						self.prematureExit=True
 			else:
 				statMsg = 'No real time stats found in the log file\n'
 				logging.debug('No real time stats found in the log file')
