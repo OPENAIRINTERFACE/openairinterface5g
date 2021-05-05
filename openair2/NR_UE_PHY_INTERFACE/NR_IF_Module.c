@@ -150,8 +150,8 @@ static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
                 pdu_list->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex,
                 pdu_list->ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset,
                 pdu_list->ssb_pdu.ssb_pdu_rel15.bchPayload);
-            pdu_list->ssb_pdu.ssb_pdu_rel15.ssRSRB = 60;
-            LOG_D(NR_RRC, "Setting pdulist[%d].ssRSRB to %d\n", i, pdu_list->ssb_pdu.ssb_pdu_rel15.ssRSRB);
+            pdu_list->ssb_pdu.ssb_pdu_rel15.ssbRsrp = 60;
+            LOG_D(NR_RRC, "Setting pdulist[%d].ssbRsrp to %d\n", i, pdu_list->ssb_pdu.ssb_pdu_rel15.ssbRsrp);
         }
     }
 

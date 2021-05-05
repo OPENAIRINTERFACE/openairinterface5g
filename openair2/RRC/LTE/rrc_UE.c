@@ -763,26 +763,6 @@ rrc_ue_establish_drb(
   return(0);
 }
 
-static void dump_report_config(const UE_RRC_INST *ue, const char *label)
-{
-    for(int i = 0; i < NB_CNX_UE; i++) {
-      for(int j = 0; j < MAX_MEAS_ID; j++) {
-        LTE_ReportConfigToAddMod_t *rc = ue->ReportConfig[i][j];
-        if (rc == NULL)
-        {
-          LOG_I(RRC, "%s: %d %d = NULL\n", label, i, j);
-        }
-        else
-        {
-          LOG_I(RRC, "%s: %d %d = %d %d\n",
-             label, i, j,
-             rc->reportConfig.present,
-             rc->reportConfig.choice.reportConfigInterRAT.triggerType.present);
-        }
-      }
-    }
-
-}
 //-----------------------------------------------------------------------------
 void
 rrc_ue_process_measConfig(
@@ -803,8 +783,6 @@ rrc_ue_process_measConfig(
       ind = *measConfig->measObjectToRemoveList->list.array[i];
       free(ue->MeasObj[eNB_index][ind-1]);
       ue->MeasObj[eNB_index][ind-1] = NULL;
-      free(ue->MeasObj[eNB_index+1][ind-1]);
-      ue->MeasObj[eNB_index+1][ind-1] = NULL;
     }
   }
 
@@ -814,52 +792,42 @@ rrc_ue_process_measConfig(
     for (i = 0; i < measConfig->measObjectToAddModList->list.count; i++) {
       measObj = measConfig->measObjectToAddModList->list.array[i];
       ind = measConfig->measObjectToAddModList->list.array[i]->measObjectId;
-      if (ind < 1 || ind > MAX_MEAS_OBJ) {
-        LOG_E(MAC, "measObjectId is out of bounds: %ld. Setting to 1. i = %d.\n", ind, i);
-        //ind = 1;
-      }
+      AssertFatal(ind > 0 && ind <= MAX_MEAS_OBJ && eNB_index >= 0 && eNB_index < NB_CNX_UE,
+                 "measObjectId is out of bounds. ind = %ld, eNB_index = %d, i = %d.\n", ind, eNB_index, i);
       if (ue->MeasObj[eNB_index][ind-1]) {
         LOG_D(RRC, "Modifying measurement object [%d][%ld]\n", eNB_index, ind);
         memcpy((char *)ue->MeasObj[eNB_index][ind-1],
                (char *)measObj,
                sizeof(LTE_MeasObjectToAddMod_t));
-      }
-      if (ue->MeasObj[eNB_index+1][ind-1]) {
-        LOG_D(RRC, "Modifying NR measurement object [%d][%ld]\n", eNB_index + 1, ind);
-        memcpy((char *)ue->MeasObj[eNB_index+1][ind-1],
-               (char *)measObj,
-               sizeof(LTE_MeasObjectToAddMod_t));
-      }
-      else {
-        if (measObj->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA) {
-          LOG_I(RRC,"EUTRA Measurement : carrierFreq %ld, allowedMeasBandwidth %ld,presenceAntennaPort1 %d, neighCellConfig %d\n",
-                measObj->measObject.choice.measObjectEUTRA.carrierFreq,
-                measObj->measObject.choice.measObjectEUTRA.allowedMeasBandwidth,
-                measObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1,
-                measObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf[0]);
+      } else {
+          if (measObj->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA) {
+            LOG_I(RRC,"EUTRA Measurement : carrierFreq %ld, allowedMeasBandwidth %ld,presenceAntennaPort1 %d, neighCellConfig %d\n",
+                  measObj->measObject.choice.measObjectEUTRA.carrierFreq,
+                  measObj->measObject.choice.measObjectEUTRA.allowedMeasBandwidth,
+                  measObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1,
+                  measObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf[0]);
+          } else if (measObj->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15) {
+            LOG_I(RRC, "NR_r15 Measurement: carrierFreq: %ld\n",
+                  measObj->measObject.choice.measObjectNR_r15.carrierFreq_r15);
+            if (!get_softmodem_params()->nsa) {
+              LOG_E(RRC, "Not in NSA mode but attempting to send measurement request to NR-UE\n");
+              return;
+            }
+            uint8_t buffer[RRC_BUF_SIZE];
+            asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_MeasObjectToAddMod,
+                                                            NULL,
+                                                            measObj,
+                                                            buffer,
+                                                            sizeof(buffer));
+            AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %zu)!\n",
+                          enc_rval.failed_type->name, enc_rval.encoded);
+            LOG_I(RRC, "Calling nsa_sendmsg_to_nr_ue to send a RRC_MEASUREMENT_PROCEDURE\n");
+            nsa_sendmsg_to_nrue(buffer, (enc_rval.encoded + 7)/8, RRC_MEASUREMENT_PROCEDURE);
+          }
           UE_rrc_inst[ctxt_pP->module_id].MeasObj[eNB_index][ind-1]=measObj;
           LOG_D(RRC, "Adding measurement object [%d][%ld]\n", eNB_index, ind);
           ue->MeasObj[eNB_index][ind-1]=measObj;
         }
-        if (measObj->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15) {
-          LOG_I(RRC, "Adding NR measurement object [%d][%ld]\n", eNB_index + 1, ind);
-          ue->MeasObj[eNB_index+1][ind-1] = measObj;
-          if (!get_softmodem_params()->nsa) {
-            LOG_E(RRC, "Not in NSA mode but attempting to send measurement request to NR-UE\n");
-            return;
-          }
-          uint8_t buffer[RRC_BUF_SIZE];
-          asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_MeasObjectToAddMod,
-                                                          NULL,
-                                                          measObj,
-                                                          buffer,
-                                                          sizeof(buffer));
-          AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %zu)!\n",
-                        enc_rval.failed_type->name, enc_rval.encoded);
-          LOG_I(RRC, "Calling nsa_sendmsg_to_nr_ue to send a RRC_MEASUREMENT_PROCEDURE\n");
-          nsa_sendmsg_to_nrue(buffer, (enc_rval.encoded + 7)/8, RRC_MEASUREMENT_PROCEDURE);
-        }
-      }
     }
 
     LOG_I(RRC,"call rrc_mac_config_req \n");
@@ -897,8 +865,6 @@ rrc_ue_process_measConfig(
       ind   = *measConfig->reportConfigToRemoveList->list.array[i];
       free(ue->ReportConfig[eNB_index][ind-1]);
       ue->ReportConfig[eNB_index][ind-1] = NULL;
-      free(ue->ReportConfig[eNB_index+1][ind-1]);
-      ue->ReportConfig[eNB_index+1][ind-1] = NULL;
     }
   }
 
@@ -907,10 +873,8 @@ rrc_ue_process_measConfig(
 
     for (i=0; i < measConfig->reportConfigToAddModList->list.count; i++) {
       ind = measConfig->reportConfigToAddModList->list.array[i]->reportConfigId;
-      if (ind < 1 || ind > MAX_MEAS_CONFIG) {
-        LOG_E(MAC, "ReportConfigId is out of bounds: %ld. Setting to 1. i = %d.\n", ind, i);
-        //ind = 1;
-      }
+      AssertFatal(ind > 0 && ind <= MAX_MEAS_CONFIG && eNB_index >= 0 && eNB_index < NB_CNX_UE,
+                 "ReportConfigId is out of bounds. ind = %ld, eNB_index = %d, i = %d.\n", ind, eNB_index, i);
       if (ue->ReportConfig[eNB_index][ind-1]) {
         LOG_D(RRC,"Modifying ReportConfig [%d][%ld]\n", eNB_index, ind-1);
         memcpy((char *)ue->ReportConfig[eNB_index][ind-1],
@@ -920,17 +884,6 @@ rrc_ue_process_measConfig(
         LOG_D(RRC,"Adding ReportConfig [%d][%ld]\n", eNB_index, ind-1);
         ue->ReportConfig[eNB_index][ind-1] = measConfig->reportConfigToAddModList->list.array[i];
       }
-      dump_report_config(ue, "W_LTE");
-      if (ue->ReportConfig[eNB_index+1][ind-1]) {
-        LOG_D(RRC,"Modifying NR ReportConfig [%d][%ld]\n", eNB_index + 1, ind-1);
-        memcpy((char *)ue->ReportConfig[eNB_index+1][ind-1],
-               (char *)measConfig->reportConfigToAddModList->list.array[i],
-               sizeof(LTE_ReportConfigToAddMod_t));
-      } else {
-        LOG_D(RRC,"Adding NR ReportConfig [%d][%ld]\n", eNB_index + 1, ind-1);
-        ue->ReportConfig[eNB_index+1][ind-1] = measConfig->reportConfigToAddModList->list.array[i];
-      }
-      dump_report_config(ue, "W_NR");
     }
   }
 
@@ -951,18 +904,14 @@ rrc_ue_process_measConfig(
       ind   = *measConfig->measIdToRemoveList->list.array[i];
       free(ue->MeasId[eNB_index][ind-1]);
       ue->MeasId[eNB_index][ind-1] = NULL;
-      free(ue->MeasId[eNB_index+1][ind-1]);
-      ue->MeasId[eNB_index+1][ind-1] = NULL;
     }
   }
 
   if (measConfig->measIdToAddModList != NULL) {
     for (i=0; i<measConfig->measIdToAddModList->list.count; i++) {
       ind   = measConfig->measIdToAddModList->list.array[i]->measId;
-      if (ind < 1 || ind > MAX_MEAS_ID) {
-        LOG_E(MAC, "measId is out of bounds: %ld. Setting to 1. i = %d.\n", ind, i);
-        //ind = 1;
-      }
+      AssertFatal(ind > 0 && ind <= MAX_MEAS_ID && eNB_index >= 0 && eNB_index < NB_CNX_UE,
+                 "measId is out of bounds. ind = %ld, eNB_index = %d, i = %d.\n", ind, eNB_index, i);
       if (ue->MeasId[eNB_index][ind-1]) {
         LOG_I(RRC,"Modifying Measurement ID [%d][%ld]\n", eNB_index, ind-1);
         memcpy((char *)ue->MeasId[eNB_index][ind-1],
@@ -971,15 +920,6 @@ rrc_ue_process_measConfig(
       } else {
         LOG_I(RRC,"Adding Measurement ID [%d][%ld]\n", eNB_index, ind-1);
         ue->MeasId[eNB_index][ind-1] = measConfig->measIdToAddModList->list.array[i];
-      }
-      if (ue->MeasId[eNB_index+1][ind-1]) {
-        LOG_I(RRC,"Modifying NR Measurement ID [%d][%ld]\n", eNB_index+1, ind-1);
-        memcpy((char *)ue->MeasId[eNB_index+1][ind-1],
-               (char *)measConfig->measIdToAddModList->list.array[i],
-               sizeof(LTE_MeasIdToAddMod_t));
-      } else {
-        LOG_I(RRC,"Adding NR Measurement ID [%d][%ld]\n", eNB_index+1, ind-1);
-        ue->MeasId[eNB_index+1][ind-1] = measConfig->measIdToAddModList->list.array[i];
       }
     }
   }
@@ -4253,7 +4193,6 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
              * applicable when the concerned cell is not included in the blackCellsToAddModList
              * defined within the VarMeasConfig for this measId */
             //    LOG_I(RRC,"event %d %d %p \n", measObjId,reportConfigId, ue->ReportConfig[i][reportConfigId-1]);
-            dump_report_config(ue, "R_LTE");
             if((ue->ReportConfig[i][reportConfigId-1] != NULL) &&
                 (ue->ReportConfig[i][reportConfigId-1]->reportConfig.present == LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA) &&
                 (ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.present ==
@@ -4330,7 +4269,6 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
           }
 
           if (ue->MeasObj[i][measObjId-1]->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15) {
-            dump_report_config(ue, "R_NR");
             if((ue->ReportConfig[i][reportConfigId-1] != NULL) &&
                 (ue->ReportConfig[i][reportConfigId-1]->reportConfig.present ==
                  LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigInterRAT) &&
@@ -4338,7 +4276,6 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
                  LTE_ReportConfigInterRAT__triggerType_PR_event)) {
 
               LTE_ReportConfigToAddMod_t *rc = ue->ReportConfig[i][reportConfigId-1];
-              LOG_I(RRC, "Got to here %d\n", __LINE__);
               hys = rc->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.hysteresis;
               ttt_ms = timeToTrigger_ms[rc->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.timeToTrigger];
               ofn = 5;
@@ -4347,8 +4284,7 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
                      eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.choice.nr_RSRP_r15;
               switch (rc->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.present) {
                 case LTE_ReportConfigInterRAT__triggerType__event__eventId_PR_eventB1_NR_r15:
-                  LOG_I(RRC,"[UE %d] Frame %d : B1_NR_r15 event: check if serving becomes better than threshold\n",
-                        ctxt_pP->module_id, ctxt_pP->frame);
+                  LOG_I(RRC,"[UE %d] Frame %d : B1_NR_r15 event!\n", ctxt_pP->module_id, ctxt_pP->frame);
                   if ((check_trigger_meas_event(
                          ctxt_pP->module_id,
                          ctxt_pP->frame,
@@ -4369,7 +4305,6 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
                     LOG_I(RRC,"[UE %d] Frame %d: RSRB detected, state: %d \n",
                           ctxt_pP->module_id, ctxt_pP->frame, ue->Info[0].State);
                   } else {
-                    LOG_I(RRC, "Got to here %d\n", __LINE__);
                     if(ue->measReportList[i][j] != NULL) {
                       free(ue->measReportList[i][j]);
                     }
@@ -6378,8 +6313,8 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
                 nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request.dl_tti_request_body.dl_tti_pdu_list[i];
                 if (pdu_list->PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE)
                 {
-                    LOG_I(RRC, "Got an NR_UE_RRC_MEASUREMENT. pdulist[%d].ssRSRB = %d\n",
-                         i, pdu_list->ssb_pdu.ssb_pdu_rel15.ssRSRB);
+                    LOG_I(RRC, "Got an NR_UE_RRC_MEASUREMENT. pdulist[%d].ssbRsrp = %d\n",
+                         i, pdu_list->ssb_pdu.ssb_pdu_rel15.ssbRsrp);
                 }
             }
             break;

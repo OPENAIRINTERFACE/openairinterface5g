@@ -4583,7 +4583,7 @@ rrc_eNB_process_MeasurementReport(
   }
 
   /* TODO: improve NR triggering */
-  if (measResults2->measId == 7) {
+  if (measResults2->measId == 7) { //Melissa this is where we finish step 26
     if ((ue_context_pP->ue_context.Status != RRC_NR_NSA) && (ue_context_pP->ue_context.Status != RRC_NR_NSA_RECONFIGURED)) {
       MessageDef      *msg;
       ue_context_pP->ue_context.Status = RRC_NR_NSA;

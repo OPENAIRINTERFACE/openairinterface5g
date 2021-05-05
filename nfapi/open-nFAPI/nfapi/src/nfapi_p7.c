@@ -372,7 +372,7 @@ static uint8_t pack_dl_tti_ssb_pdu_rel15_value(void* tlv, uint8_t **ppWritePacke
 		push16(value->ssbOffsetPointA, ppWritePackedMsg, end) &&
 		push8(value->bchPayloadFlag, ppWritePackedMsg, end) &&
 		push32(value->bchPayload, ppWritePackedMsg, end) &&
-		push8(value->ssRSRB, ppWritePackedMsg, end)
+		push8(value->ssbRsrp, ppWritePackedMsg, end)
 		// TODO: pack precoding_and_beamforming too
 	);
 
@@ -3876,7 +3876,7 @@ static uint8_t unpack_dl_tti_ssb_pdu_rel15_value(void* tlv, uint8_t **ppReadPack
 		pull16(ppReadPackedMsg, &value->ssbOffsetPointA, end) &&
 		pull8(ppReadPackedMsg, &value->bchPayloadFlag, end) &&
 		pull32(ppReadPackedMsg, &value->bchPayload, end) &&
-		pull8(ppReadPackedMsg, &value->ssRSRB, end)
+		pull8(ppReadPackedMsg, &value->ssbRsrp, end)
 		// TODO: pack precoding_and_beamforming too
 	);
 
