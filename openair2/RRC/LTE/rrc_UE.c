@@ -824,7 +824,6 @@ rrc_ue_process_measConfig(
             LOG_I(RRC, "Calling nsa_sendmsg_to_nr_ue to send a RRC_MEASUREMENT_PROCEDURE\n");
             nsa_sendmsg_to_nrue(buffer, (enc_rval.encoded + 7)/8, RRC_MEASUREMENT_PROCEDURE);
           }
-          UE_rrc_inst[ctxt_pP->module_id].MeasObj[eNB_index][ind-1]=measObj;
           LOG_D(RRC, "Adding measurement object [%d][%ld]\n", eNB_index, ind);
           ue->MeasObj[eNB_index][ind-1]=measObj;
         }
@@ -4096,8 +4095,7 @@ void ue_meas_filtering( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_
 //Below routine implements Measurement Reporting procedure from 36.331 Section 5.5.5
 //-----------------------------------------------------------------------------
 void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t eNB_index ) {
-  uint8_t             buffer[32], size;
-  uint8_t             i;
+  uint8_t             buffer[RRC_BUF_SIZE];
   uint8_t             target_eNB_offset;
   LTE_MeasId_t        measId;
   LTE_PhysCellId_t    targetCellId;
@@ -4111,7 +4109,7 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
   nElem1 = 35;
   target_eNB_offset = UE_rrc_inst[ctxt_pP->module_id].Info[0].handoverTarget; // eNB_offset of target eNB: used to obtain the mod_id of target eNB
 
-  for (i=0; i<MAX_MEAS_ID; i++) {
+  for (int i = 0; i < MAX_MEAS_ID; i++) {
     if (UE_rrc_inst[ctxt_pP->module_id].measReportList[0][i] != NULL) {
       measId = UE_rrc_inst[ctxt_pP->module_id].measReportList[0][i]->measId;
       // Note: Values in the meas report have to be the mapped values...to implement binary search for LUT
@@ -4119,7 +4117,7 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
       rsrp_s = binary_search_float(RSRP_meas_mapping,nElem, rsrp_filtered);
       rsrq_filtered = UE_rrc_inst[ctxt_pP->module_id].rsrq_db_filtered[eNB_index];//nid_cell]; //RSRQ of serving cell
       rsrq_s = binary_search_float(RSRQ_meas_mapping,nElem1,rsrq_filtered);//mapped RSRQ of serving cell
-      LOG_D(RRC,"[UE %d] Frame %d: source eNB %d :rsrp_s: %ld rsrq_s: %ld rsrp_filtered: %f rsrq_filtered: %f \n",
+      LOG_I(RRC,"Melissa [UE %d] Frame %d: source eNB %d :rsrp_s: %ld rsrq_s: %ld rsrp_filtered: %f rsrq_filtered: %f \n",
             ctxt_pP->module_id,
             ctxt_pP->frame,
             eNB_index,
@@ -4129,7 +4127,7 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
             rsrq_filtered);
       rsrp_t = binary_search_float(RSRP_meas_mapping,nElem,UE_rrc_inst[ctxt_pP->module_id].rsrp_db_filtered[target_eNB_offset]); //RSRP of target cell
       rsrq_t = binary_search_float(RSRQ_meas_mapping,nElem1,UE_rrc_inst[ctxt_pP->module_id].rsrq_db_filtered[target_eNB_offset]); //RSRQ of target cell
-      LOG_D(RRC,"[UE %d] Frame %d: target eNB %d :rsrp_t: %ld rsrq_t: %ld rsrp_filtered: %f rsrq_filtered: %f \n",
+      LOG_I(RRC,"Melissa [UE %d] Frame %d: target eNB %d :rsrp_t: %ld rsrq_t: %ld rsrp_filtered: %f rsrq_filtered: %f \n",
             ctxt_pP->module_id,
             ctxt_pP->frame,
             target_eNB_offset,
@@ -4142,7 +4140,7 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
 
       if (pframe!=ctxt_pP->frame) {
         pframe=ctxt_pP->frame;
-        LOG_D(RRC, "[UE %d] Frame %ld: doing MeasReport: servingCell(%ld) targetCell(%ld) rsrp_s(%ld) rsrq_s(%ld) rsrp_t(%ld) rsrq_t(%ld) \n",
+        LOG_I(RRC, "[UE %d] Frame %ld: doing MeasReport: servingCell(%ld) targetCell(%ld) rsrp_s(%ld) rsrq_s(%ld) rsrp_t(%ld) rsrq_t(%ld) \n",
               ctxt_pP->module_id,
               (long int)ctxt_pP->frame,
               (long int)get_adjacent_cell_id(ctxt_pP->module_id, eNB_index),
@@ -4151,8 +4149,9 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
               (long int)rsrq_s,
               (long int)rsrp_t,
               (long int)rsrq_t);
-        size = do_MeasurementReport(ctxt_pP->module_id, buffer,measId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
-        LOG_I(RRC, "[UE %d] Frame %d : Generating Measurement Report for eNB %d\n",
+        ssize_t size = do_nrMeasurementReport(ctxt_pP->module_id, buffer,measId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
+        AssertFatal(size >= 0, "do_nrMeasurementReport failed \n");
+        LOG_I(RRC, "Melissa [UE %d] Frame %d : Generating Measurement Report for eNB %d\n",
               ctxt_pP->module_id, ctxt_pP->frame, eNB_index);
         result = pdcp_data_req(ctxt_pP,  SRB_FLAG_YES, DCCH, rrc_mui++, 0, size, buffer, PDCP_TRANSMISSION_MODE_DATA,NULL, NULL);
         AssertFatal (result == TRUE, "PDCP data request failed!\n");
@@ -4165,6 +4164,43 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
   }
   /* Melissa: also need to generate report based on MeasObj for 5G (can look in eNB for these)*/
 }
+static bool have_received_nr_meas_msg(void)
+{
+  return true;
+}
+
+static bool does_rrcConnReconfig_have_nr(const UE_RRC_INST *ue) {
+  for (int i = 0; i < NB_CNX_UE; i++) {
+    for (int j = 0; j < MAX_MEAS_ID; j++) {
+      LTE_ReportConfigId_t reportConfigId = ue->MeasId[i][j]->reportConfigId;
+      AssertFatal(reportConfigId >= 1 && reportConfigId <= MAX_MEAS_CONFIG, "Bad index\n");
+      const LTE_ReportConfigToAddMod_t *rc = ue->ReportConfig[i][reportConfigId-1];
+      if (rc == NULL) {
+        LOG_D(RRC, "UE_rrc_inst[ctxt_pP->module_id]->ReportConfig[%d][%ld] = NULL\n", i, reportConfigId-1);
+        continue;
+      }
+      if (rc->reportConfig.present != LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigInterRAT) {
+        LOG_D(RRC, "reportConfig.present = %d, not LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigInterRAT\n",
+              rc->reportConfig.present);
+        continue;
+      }
+      LTE_ReportConfigInterRAT_t irat = rc->reportConfig.choice.reportConfigInterRAT;
+      if (irat.triggerType.present != LTE_ReportConfigInterRAT__triggerType_PR_event) {
+        LOG_D(RRC, "irat.triggerType.present = %d, not LTE_ReportConfigInterRAT__triggerType_PR_event\n",
+              irat.triggerType.present);
+        continue;
+      }
+      if (irat.triggerType.choice.event.eventId.present != LTE_ReportConfigInterRAT__triggerType__event__eventId_PR_eventB1_NR_r15) {
+        LOG_D(RRC, "irat.triggerType.choice.event.eventId.present = %d\n",
+              irat.triggerType.choice.event.eventId.present);
+        continue;
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
 
 // Measurement report triggering, described in 36.331 Section 5.5.4.1: called periodically
 //-----------------------------------------------------------------------------
@@ -4177,7 +4213,6 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
   LTE_Q_OffsetRange_t  ofs = 0;
   LTE_Q_OffsetRange_t  ocs = 0;
   long             a3_offset;
-  LTE_RSRP_RangeNR_r15_t rsrp;
   LTE_MeasObjectId_t   measObjId;
   LTE_ReportConfigId_t reportConfigId;
   UE_RRC_INST *ue = &UE_rrc_inst[ctxt_pP->module_id];
@@ -4269,55 +4304,25 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
           }
 
           if (ue->MeasObj[i][measObjId-1]->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15) {
-            if((ue->ReportConfig[i][reportConfigId-1] != NULL) &&
-                (ue->ReportConfig[i][reportConfigId-1]->reportConfig.present ==
-                 LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigInterRAT) &&
-                (ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.triggerType.present ==
-                 LTE_ReportConfigInterRAT__triggerType_PR_event)) {
+            LOG_I(RRC,"[UE %d] Frame %d: B1_NR_r15 event\n", ctxt_pP->module_id, ctxt_pP->frame);
+            if (does_rrcConnReconfig_have_nr(ue) && have_received_nr_meas_msg()) {
+              LOG_I(RRC,"[UE %d] Frame %d: Triggering generation of Meas Report for NR_r15\n",
+                    ctxt_pP->module_id, ctxt_pP->frame);
 
-              LTE_ReportConfigToAddMod_t *rc = ue->ReportConfig[i][reportConfigId-1];
-              hys = rc->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.hysteresis;
-              ttt_ms = timeToTrigger_ms[rc->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.timeToTrigger];
-              ofn = 5;
-              ocn = 0;
-              rsrp = rc->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.
-                     eventId.choice.eventB1_NR_r15.b1_ThresholdNR_r15.choice.nr_RSRP_r15;
-              switch (rc->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.eventId.present) {
-                case LTE_ReportConfigInterRAT__triggerType__event__eventId_PR_eventB1_NR_r15:
-                  LOG_I(RRC,"[UE %d] Frame %d : B1_NR_r15 event!\n", ctxt_pP->module_id, ctxt_pP->frame);
-                  if ((check_trigger_meas_event(
-                         ctxt_pP->module_id,
-                         ctxt_pP->frame,
-                         eNB_index,
-                         i, j, ofn, ocn, hys, ofs, ocs, 0, ttt_ms)) &&
-                         (ue->Info[0].State >= RRC_CONNECTED) &&
-                         (ue->Info[0].T304_active == 0 )      &&
-                         (ue->HandoverInfoUe.measFlag == 1)) {
-                    //trigger measurement reporting procedure (36.331, section 5.5.5)
-                    if (ue->measReportList[i][j] == NULL) {
-                      ue->measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
-                    }
-
-                    ue->measReportList[i][j]->measId = ue->MeasId[i][j]->measId;
-                    ue->measReportList[i][j]->numberOfReportsSent = 0;
-                    rrc_ue_generate_MeasurementReport(ctxt_pP, eNB_index);
-                    ue->HandoverInfoUe.measFlag = 1;
-                    LOG_I(RRC,"[UE %d] Frame %d: RSRB detected, state: %d \n",
-                          ctxt_pP->module_id, ctxt_pP->frame, ue->Info[0].State);
-                  } else {
-                    if(ue->measReportList[i][j] != NULL) {
-                      free(ue->measReportList[i][j]);
-                    }
-
-                    ue->measReportList[i][j] = NULL;
-                  }
-                  break;
-
-                default:
-                  LOG_I(RRC,"Invalid LTE_ReportConfigInterRAT__triggerType__event__eventId: %d",
-                        ue->ReportConfig[i][j]->reportConfig.choice.reportConfigEUTRA.triggerType.present);
-                  break;
+              if (ue->measReportList[i][j] == NULL) {
+                ue->measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
               }
+              ue->measReportList[i][j]->measId = ue->MeasId[i][j]->measId;
+              ue->measReportList[i][j]->numberOfReportsSent = 0;
+              rrc_ue_generate_MeasurementReport(ctxt_pP, eNB_index);
+              ue->HandoverInfoUe.measFlag = 1;
+              LOG_I(RRC,"[UE %d] Frame %d: RSRB detected, state: %d \n",
+                    ctxt_pP->module_id, ctxt_pP->frame, ue->Info[0].State);
+            } else {
+                if(ue->measReportList[i][j] != NULL) {
+                  free(ue->measReportList[i][j]);
+                }
+                ue->measReportList[i][j] = NULL;
             }
           }
         }
