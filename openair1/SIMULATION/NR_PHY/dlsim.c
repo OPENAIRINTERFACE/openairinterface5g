@@ -918,8 +918,7 @@ int main(int argc, char **argv)
   //Configure UE
   rrc.carrier.MIB = (uint8_t*) malloc(4);
   rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
-
-  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib, rrc.carrier.sib1->servingCellConfigCommon, UE_info->CellGroup[0], secondaryCellGroup);
+  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib, NULL, NULL, secondaryCellGroup);
 
 
   nr_dcireq_t dcireq;

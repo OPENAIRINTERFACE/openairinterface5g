@@ -551,6 +551,8 @@ int main(int argc, char **argv)
         pucch_pdu.initial_cyclic_shift  = 0;
         pucch_pdu.start_symbol_index    = startingSymbolIndex;
         pucch_pdu.prb_start             = startingPRB;
+        pucch_pdu.bwp_start             = 0;
+        pucch_pdu.freq_hop_flag         = 0;
         nr_decode_pucch0(gNB, nr_frame_tx, nr_slot_tx,&uci_pdu,&pucch_pdu);
         if(sr_flag==1){
           if (uci_pdu.sr->sr_indication == 0 || uci_pdu.sr->sr_confidence_level == 1)
