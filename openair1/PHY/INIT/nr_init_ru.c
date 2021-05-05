@@ -120,7 +120,7 @@ int nr_phy_init_RU(RU_t *ru) {
     AssertFatal(RC.nb_nr_L1_inst <= NUMBER_OF_eNB_MAX,"gNB instances %d > %d\n",
 		RC.nb_nr_L1_inst,NUMBER_OF_gNB_MAX);
 
-    LOG_E(PHY,"[INIT] %s() RC.nb_nr_L1_inst:%d \n", __FUNCTION__, RC.nb_nr_L1_inst);
+    LOG_I(PHY,"[INIT] %s() RC.nb_nr_L1_inst:%d \n", __FUNCTION__, RC.nb_nr_L1_inst);
     
     int beam_count = 0;
     if (ru->nb_tx>1) {//Enable beamforming when nb_tx > 1
