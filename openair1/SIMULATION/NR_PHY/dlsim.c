@@ -129,6 +129,12 @@ rrc_data_ind(
 {
 }
 
+int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
+                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
+                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
+    return 0;
+}
+
 int
 gtpv1u_create_s1u_tunnel(
   const instance_t                              instanceP,
