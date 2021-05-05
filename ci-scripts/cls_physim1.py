@@ -154,6 +154,7 @@ class PhySim:
 			sys.exit(-1)
 		else:
 			logging.debug('\u001B[1m Podman Login to OC Cluster Registry Successfully\u001B[0m')
+		time.sleep(2)
 		mySSH.command('oc create -f openshift/oai-physim-image-stream.yml', '\$', 6)
 		if mySSH.getBefore().count('(AlreadyExists):') == 0 and mySSH.getBefore().count('created') == 0:
 			logging.error(f'\u001B[1m Image Stream "oai-physim" Creation Failed on OC Cluster {ocProjectName}\u001B[0m')
@@ -161,7 +162,9 @@ class PhySim:
 			sys.exit(-1)
 		else:
 			logging.debug(f'\u001B[1m   Image Stream "oai-physim" created on OC project {ocProjectName}\u001B[0m')
+		time.sleep(2)
 		mySSH.command(f'sudo podman tag oai-physim:{imageTag} default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
+		time.sleep(2)
 		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag} --tls-verify=false', '\$', 30)
 		if mySSH.getBefore().count('Storing signatures') == 0:
 			logging.error('\u001B[1m Image "oai-physim" push to OC Cluster Registry Failed\u001B[0m')
@@ -171,6 +174,7 @@ class PhySim:
 			logging.debug('\u001B[1m Image "oai-physim" push to OC Cluster Registry Successfully\u001B[0m')
 
 		# Using helm charts deployment
+		time.sleep(5)
 		mySSH.command(f'sed -i -e "s#TAG#{imageTag}#g" ./charts/physims/values.yaml', '\$', 6)
 		mySSH.command('helm install physim ./charts/physims/ | tee -a cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
 		if mySSH.getBefore().count('STATUS: deployed') == 0:
@@ -203,11 +207,10 @@ class PhySim:
 		# doing a deep copy!
 		tmpPodNames = podNames.copy()
 		while(count < 28 and isFinished == False):
-			time.sleep(58)
+			time.sleep(60)
 			for podName in tmpPodNames:
-				mySSH.command(f'oc logs --tail=1 {podName} 2>&1', '\$', 6, silent=True, resync=True)
-				time.sleep(2)
-				if mySSH.getBefore().count('FINISHED') != 0:
+				mySSH.command2(f'oc logs --tail=1 {podName} 2>&1', 6, silent=True)
+				if mySSH.cmd2Results.count('FINISHED') != 0:
 					logging.debug(podName + ' is finished')
 					tmpPodNames.remove(podName)
 			if not tmpPodNames:
