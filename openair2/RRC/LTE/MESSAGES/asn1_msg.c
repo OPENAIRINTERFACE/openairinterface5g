@@ -4216,97 +4216,59 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
   return((enc_rval.encoded+7)/8);
 }
 
-ssize_t do_nrMeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_id,long rsrp_s,long rsrq_s,long rsrp_t,long rsrq_t) {
-  asn_enc_rval_t enc_rval;
+
+ssize_t do_nrMeasurementReport(int measid, long phy_id, uint8_t *buffer) {
+
   LTE_UL_DCCH_Message_t ul_dcch_msg;
-  LTE_MeasurementReport_t  *measurementReport;
-  ul_dcch_msg.message.present                     = LTE_UL_DCCH_MessageType_PR_c1;
-  ul_dcch_msg.message.choice.c1.present           = LTE_UL_DCCH_MessageType__c1_PR_measurementReport;
-  measurementReport            = &ul_dcch_msg.message.choice.c1.choice.measurementReport;
-  measurementReport->criticalExtensions.present=LTE_MeasurementReport__criticalExtensions_PR_c1;
-  measurementReport->criticalExtensions.choice.c1.present=LTE_MeasurementReport__criticalExtensions__c1_PR_measurementReport_r8;
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.nonCriticalExtension=CALLOC(1,
-      sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.nonCriticalExtension));
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measId=measid;
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrpResult=rsrp_s;
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrqResult=rsrq_s;
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells=CALLOC(1,
-      sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells));
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->present=LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
+  memset((void *)&ul_dcch_msg, 0, sizeof(LTE_UL_DCCH_Message_t));
+  ul_dcch_msg.message.present = LTE_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1.present = LTE_UL_DCCH_MessageType__c1_PR_measurementReport;
+
+  LTE_MeasurementReport_t *measurementReport = &ul_dcch_msg.message.choice.c1.choice.measurementReport;
+  measurementReport->criticalExtensions.present = LTE_MeasurementReport__criticalExtensions_PR_c1;
+  measurementReport->criticalExtensions.choice.c1.present = LTE_MeasurementReport__criticalExtensions__c1_PR_measurementReport_r8;
+
+  LTE_MeasurementReport_r8_IEs_t *mr_r8 = &measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8;
+  mr_r8->measResults.measId = measid;
+  mr_r8->measResults.measResultNeighCells = CALLOC(1, sizeof(*mr_r8->measResults.measResultNeighCells));
+  mr_r8->measResults.measResultNeighCells->present = LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
+
+  LTE_MeasResultCellListNR_r15_t *mr_cl = &mr_r8->measResults.measResultNeighCells->choice.measResultNeighCellListNR_r15;
+  mr_cl = CALLOC(1, sizeof(*mr_cl));
+
+  LTE_MeasResultCellNR_r15_t *measResultNR_r15;
+  measResultNR_r15 = CALLOC(1, sizeof(*measResultNR_r15));
+  measResultNR_r15->pci_r15 = phy_id;
+
   LTE_MeasResultCellListNR_r15_t *measResultListNR_r15;
-  measResultListNR_r15 = CALLOC(1,sizeof(*measResultListNR_r15));
-  struct LTE_MeasResultCellNR_r15 *measResultNR_r15;
-  measResultNR_r15 = CALLOC(1,sizeof(*measResultNR_r15));
-  measResultNR_r15->pci_r15;
-  struct LTE_CGI_InfoNR_r15 *measresult_nr_cgi2;
-  measresult_nr_cgi2 = CALLOC(1,sizeof(*measresult_nr_cgi2));
+  measResultListNR_r15 = CALLOC(1, sizeof(*measResultListNR_r15));
+  ASN_SEQUENCE_ADD(&measResultListNR_r15->list, measResultNR_r15);
 
-  int count = measresult_nr_cgi2->plmn_IdentityInfoList_r15->list.count;
-  for (int i = 0; i < count; i++)
-  {
-    AssertFatal(i < count, "%d >= measresult_nr_cgi2->plmn_IdentityInfoList_r15->list.count", i);
-    //LTE_PLMN_IdentityInfoNR_r15_t *plmn_info_list = measResultNR_r15->ext1->cgi_Info_r15->plmn_IdentityInfoList_r15->list.array[i]->cellIdentity_r15.
-    LTE_PLMN_IdentityInfoNR_r15_t *plmn_info_list = measresult_nr_cgi2->plmn_IdentityInfoList_r15->list.array[i];
-    memset(&plmn_info_list,0,sizeof(plmn_info_list));
-    LTE_PLMN_Identity_t *plmn_id = plmn_info_list->plmn_IdentityList_r15.list.array[i];
-    memset(&plmn_id, 0, sizeof(plmn_id));
-    plmn_id->mcc = CALLOC(1, sizeof(plmn_id->mcc));
-    asn_set_empty(plmn_id->mcc->list);
+  ASN_SEQUENCE_ADD(&mr_cl->list, measResultListNR_r15);
 
-    LTE_MCC_MNC_Digit_t dummy;
-    dummy=2;
-    ASN_SEQUENCE_ADD(plmn_id->mcc->list, &dummy);
-    dummy=6;
-    ASN_SEQUENCE_ADD(plmn_id->mcc->list, &dummy);
-    dummy=2;
-    ASN_SEQUENCE_ADD(plmn_id->mcc->list, &dummy);
-
-    plmn_id->mnc.list.size=0;
-    plmn_id->mnc.list.count=0;
-    dummy=8;
-    ASN_SEQUENCE_ADD(&plmn_id->mnc.list, &dummy);
-    dummy=0;
-    ASN_SEQUENCE_ADD(&plmn_id->mnc.list, &dummy);
-
-    plmn_info_list->cellIdentity_r15.buf = MALLOC(8);
-    plmn_info_list->cellIdentity_r15.buf[0] = 0x01;
-    plmn_info_list->cellIdentity_r15.buf[1] = 0x48;
-    plmn_info_list->cellIdentity_r15.buf[2] = 0x0f;
-    plmn_info_list->cellIdentity_r15.buf[3] = 0x03;
-    plmn_info_list->cellIdentity_r15.size = 4;
-    plmn_info_list->cellIdentity_r15.bits_unused = 4;
-    plmn_info_list->trackingAreaCode_r15->buf = MALLOC(2);
-    plmn_info_list->trackingAreaCode_r15->buf[0]=0x00;
-    plmn_info_list->trackingAreaCode_r15->buf[1]=0x10;
-    plmn_info_list->trackingAreaCode_r15->size=2;
-    plmn_info_list->trackingAreaCode_r15->bits_unused=0;
-  }
-
-  measResultNR_r15->ext1->cgi_Info_r15 = measResultNR_r15;
-  struct LTE_MeasResultNR_r15_t meas2;
-  meas2.rsrpResult_r15 = &(rsrp_t);
-  meas2.rsrqResult_r15 = &(rsrq_t);
-  measResultNR_r15->measResultCell_r15 = meas2;
-
-  ASN_SEQUENCE_ADD(&measResultListNR_r15->list, measResultListNR_r15);
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultNeighCellListNR_r15 = *(measResultListNR_r15);
-
-  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message,
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message,
                                    NULL,
                                    (void *)&ul_dcch_msg,
                                    buffer,
                                    RRC_BUF_SIZE);
-
   if(enc_rval.encoded == -1) {
-    LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
+    LOG_I(RRC, "[eNB AssertFatal] ASN1 message encoding failed (%s, %lu)!\n",
           enc_rval.failed_type->name, enc_rval.encoded);
+    free(mr_r8->measResults.measResultNeighCells);
+    mr_r8->measResults.measResultNeighCells = NULL;
     free(measResultListNR_r15);
     measResultListNR_r15 = NULL;
+    free(measResultNR_r15);
+    measResultNR_r15 = NULL;
     return -1;
   }
 
+  free(mr_r8->measResults.measResultNeighCells);
+  mr_r8->measResults.measResultNeighCells = NULL;
   free(measResultListNR_r15);
   measResultListNR_r15 = NULL;
+  free(measResultNR_r15);
+  measResultNR_r15 = NULL;
   return((enc_rval.encoded+7)/8);
 }
 

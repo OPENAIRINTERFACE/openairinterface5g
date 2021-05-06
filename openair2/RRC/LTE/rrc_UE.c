@@ -151,6 +151,8 @@ static void rrc_ue_generate_RRCConnectionReconfigurationComplete( const protocol
 
 static void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t eNB_index );
 
+static void rrc_ue_generate_nrMeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t eNB_index );
+
 static uint8_t check_trigger_meas_event(
   module_id_t module_idP,
   frame_t frameP,
@@ -4091,6 +4093,36 @@ void ue_meas_filtering( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_
     }
   }
 }
+//Below routine implements Measurement Reporting procedure from 36.331 Section 5.5.5
+//-----------------------------------------------------------------------------
+void rrc_ue_generate_nrMeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t eNB_index ) {
+  uint8_t buffer[RRC_BUF_SIZE];
+  uint8_t target_eNB_offset = UE_rrc_inst[ctxt_pP->module_id].Info[0].handoverTarget;
+  LTE_PhysCellId_t targetCellId = UE_rrc_inst[ctxt_pP->module_id].HandoverInfoUe.targetCellId;
+
+  for (int i = 0; i < MAX_MEAS_ID; i++) {
+    if (UE_rrc_inst[ctxt_pP->module_id].measReportList[eNB_index][i] != NULL) {
+      LTE_MeasId_t measId = UE_rrc_inst[ctxt_pP->module_id].measReportList[eNB_index][i]->measId;
+
+      LOG_I(RRC,"Melissa [UE %d] Frame %d: source eNB: %d target eNB: %d servingCell(%d) targetCell(%ld)\n",
+            ctxt_pP->module_id,
+            ctxt_pP->frame,
+            eNB_index,
+            target_eNB_offset,
+            get_adjacent_cell_id(ctxt_pP->module_id, eNB_index),
+            targetCellId);
+
+      if (ctxt_pP->frame != 0) {
+        ssize_t size = do_nrMeasurementReport(measId, targetCellId, buffer);
+        AssertFatal(size >= 0, "do_nrMeasurementReport failed \n");
+        LOG_I(RRC, "Melissa [UE %d] Frame %d : Generating Measurement Report for eNB %d\n",
+              ctxt_pP->module_id, ctxt_pP->frame, eNB_index);
+        int result = pdcp_data_req(ctxt_pP,  SRB_FLAG_YES, DCCH, rrc_mui++, 0, size, buffer, PDCP_TRANSMISSION_MODE_DATA,NULL, NULL);
+        AssertFatal (result == TRUE, "PDCP data request failed!\n");
+      }
+    }
+  }
+}
 
 //Below routine implements Measurement Reporting procedure from 36.331 Section 5.5.5
 //-----------------------------------------------------------------------------
@@ -4149,9 +4181,9 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
               (long int)rsrq_s,
               (long int)rsrp_t,
               (long int)rsrq_t);
-        ssize_t size = do_nrMeasurementReport(ctxt_pP->module_id, buffer,measId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
-        AssertFatal(size >= 0, "do_nrMeasurementReport failed \n");
-        LOG_I(RRC, "Melissa [UE %d] Frame %d : Generating Measurement Report for eNB %d\n",
+        ssize_t size = do_MeasurementReport(ctxt_pP->module_id, buffer,measId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
+        AssertFatal(size >= 0, "do_MeasurementReport failed \n");
+        LOG_I(RRC, "[UE %d] Frame %d : Generating Measurement Report for eNB %d\n",
               ctxt_pP->module_id, ctxt_pP->frame, eNB_index);
         result = pdcp_data_req(ctxt_pP,  SRB_FLAG_YES, DCCH, rrc_mui++, 0, size, buffer, PDCP_TRANSMISSION_MODE_DATA,NULL, NULL);
         AssertFatal (result == TRUE, "PDCP data request failed!\n");
@@ -4162,7 +4194,6 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
       //          }
     }
   }
-  /* Melissa: also need to generate report based on MeasObj for 5G (can look in eNB for these)*/
 }
 static bool have_received_nr_meas_msg(void)
 {
@@ -4314,7 +4345,7 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
               }
               ue->measReportList[i][j]->measId = ue->MeasId[i][j]->measId;
               ue->measReportList[i][j]->numberOfReportsSent = 0;
-              rrc_ue_generate_MeasurementReport(ctxt_pP, eNB_index);
+              rrc_ue_generate_nrMeasurementReport(ctxt_pP, eNB_index);
               ue->HandoverInfoUe.measFlag = 1;
               LOG_I(RRC,"[UE %d] Frame %d: RSRB detected, state: %d \n",
                     ctxt_pP->module_id, ctxt_pP->frame, ue->Info[0].State);

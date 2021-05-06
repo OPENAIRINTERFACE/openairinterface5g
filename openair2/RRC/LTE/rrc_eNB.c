@@ -4584,6 +4584,7 @@ rrc_eNB_process_MeasurementReport(
 
   /* TODO: improve NR triggering */
   if (measResults2->measId == 7) { //Melissa this is where we finish step 26
+    LOG_I(RRC, "MELISSA! You got into NR triggering!!\n");
     if ((ue_context_pP->ue_context.Status != RRC_NR_NSA) && (ue_context_pP->ue_context.Status != RRC_NR_NSA_RECONFIGURED)) {
       MessageDef      *msg;
       ue_context_pP->ue_context.Status = RRC_NR_NSA;
@@ -4607,10 +4608,12 @@ rrc_eNB_process_MeasurementReport(
 
         memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer,enc_buf,enc_size);
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = enc_size;
-
+        #if 0
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
-          = measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId;
-
+          = measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId; //Melissa
+        #endif
+        X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
+          = measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15;
         //For the moment we have a single E-RAB which will be the one to be added to the gNB
         //Not sure how to select bearers to be added if there are multiple.
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded = 1;
