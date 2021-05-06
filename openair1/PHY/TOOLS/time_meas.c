@@ -191,6 +191,17 @@ void run_cpumeasur(void) {
 
 }
 
+void run_cpumeasur(void) {
+    struct sched_param schedp;
+    pthread_setname_np(pthread_self(), "measur");
+    schedp.sched_priority=0;
+    int rt=pthread_setschedparam(pthread_self(), SCHED_IDLE, &schedp);
+    AssertFatal(rt==0, "couldn't set measur thread priority: %s\n",strerror(errno));
+    initNotifiedFIFO(&measur_fifo);
+    while(1) {
+    }
+}
+
 void init_meas(void)
 {
   pthread_t thid;
