@@ -343,7 +343,7 @@ class Containerize():
 					startOfTargetImageCreation = False
 					buildStatus = False
 					for line in inputfile:
-						result = re.search('FROM .* as ' + image + '$', str(line))
+						result = re.search('FROM .* [aA][sS] ' + image + '$', str(line))
 						if result is not None:
 							startOfTargetImageCreation = True
 						if startOfTargetImageCreation:
