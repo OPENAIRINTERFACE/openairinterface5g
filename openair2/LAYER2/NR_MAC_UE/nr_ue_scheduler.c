@@ -1215,7 +1215,7 @@ static void build_ro_list(NR_UE_MAC_INST_t *mac) {
 
   prach_config_info_p = get_prach_config_info(fr2_flag, config_index, unpaired);
 
-  if (fr2_flag > 0) { //FR2
+  if (mac->frequency_range == FR2) { //FR2
 
     x = prach_config_info_p[2];
     y = prach_config_info_p[3];

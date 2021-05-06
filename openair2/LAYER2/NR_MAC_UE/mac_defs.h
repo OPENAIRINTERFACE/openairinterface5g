@@ -384,6 +384,7 @@ typedef struct {
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
+  frequency_range_t frequency_range;
 
   dci_pdu_rel15_t def_dci_pdu_rel15[8];
 
