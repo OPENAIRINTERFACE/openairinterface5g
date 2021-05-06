@@ -18,7 +18,7 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include "time_meas.h"
 #include <math.h>
@@ -26,6 +26,7 @@
 #include <string.h>
 #include "assertions.h"
 #ifndef PHYSIM
+  #include <pthread.h>
   #include "common/config/config_userapi.h"
 #endif
 // global var for openair performance profiler
@@ -35,7 +36,8 @@ double cpu_freq_GHz  __attribute__ ((aligned(32)));
 double cpu_freq_GHz  __attribute__ ((aligned(32)))=0.0;
 #ifndef PHYSIM
 static uint32_t    max_cpumeasur;
-time_stats_t  **measur_table;
+static time_stats_t  **measur_table;
+notifiedFIFO_t measur_fifo;
 #endif
 double get_cpu_freq_GHz(void)
 {
@@ -146,27 +148,59 @@ double get_time_meas_us(time_stats_t *ts)
 
 
 int register_meas(char *name, time_stats_t *dst_ts)
-{  
+{
   for (int i=0; i<max_cpumeasur; i++) {
-	if (measur_table[i] == NULL) {	  
-	  measur_table[i] = (time_stats_t *)malloc(sizeof(time_stats_t));
-	  memset(measur_table[i] ,0,sizeof(time_stats_t));
-	  measur_table[i]->meas_name = strdup(name); 
-      measur_table[i]->meas_index = i; 
+    if (measur_table[i] == NULL) {
+      measur_table[i] = (time_stats_t *)malloc(sizeof(time_stats_t));
+      memset(measur_table[i] ,0,sizeof(time_stats_t));
+      measur_table[i]->meas_name = strdup(name);
+      measur_table[i]->meas_index = i;
       return i;
     }
   }
-  return -1;  
+  return -1;
+}
+
+void run_cpumeasur(void) {
+    struct sched_param schedp;
+    pthread_setname_np(pthread_self(), "measur");
+    schedp.sched_priority=0;
+    int rt=pthread_setschedparam(pthread_self(), SCHED_IDLE, &schedp);
+    AssertFatal(rt==0, "couldn't set measur thread priority: %s\n",strerror(errno));
+    initNotifiedFIFO(&measur_fifo);
+    while(1) {
+      notifiedFIFO_elt_t *msg = pullNotifiedFIFO(&measur_fifo);
+      time_stats_msg_t *tsm = (time_stats_msg_t *)NotifiedFifoData(msg);
+        switch(tsm->msgid) {
+          case TIMESTAT_MSGID_START:
+             measur_table[tsm->timestat_id]->in=tsm->ts;
+             (measur_table[tsm->timestat_id]->trials)++;
+          break;
+          case TIMESTAT_MSGID_STOP:
+    /// process duration is the difference between two clock points
+             measur_table[tsm->timestat_id]->p_time = (tsm->ts - measur_table[tsm->timestat_id]->in);
+             measur_table[tsm->timestat_id]->diff += measur_table[tsm->timestat_id]->p_time;
+             if ( measur_table[tsm->timestat_id]->p_time > measur_table[tsm->timestat_id]->max )
+               measur_table[tsm->timestat_id]->max = measur_table[tsm->timestat_id]->p_time;
+          break;
+          default:
+          break;
+      }
+    delNotifiedFIFO_elt(msg);
+    }
+
 }
 
 void init_meas(void)
 {
+  pthread_t thid;
   paramdef_t cpumeasur_params[] = CPUMEASUR_PARAMS_DESC;
   int numparams=sizeof(cpumeasur_params)/sizeof(paramdef_t);
-  int ret = config_get( cpumeasur_params,numparams,CPUMEASUR_SECTION);
-  AssertFatal(ret >= 0, "cpumeasur configuration couldn't be performed");
+  int rt = config_get( cpumeasur_params,numparams,CPUMEASUR_SECTION);
+  AssertFatal(rt >= 0, "cpumeasur configuration couldn't be performed");
   measur_table=calloc(max_cpumeasur,sizeof( time_stats_t *));
   AssertFatal(measur_table!=NULL, "couldn't allocate %u cpu measurements entries\n",max_cpumeasur);
-
+  rt=pthread_create(&thid,NULL, (void *(*)(void *))run_cpumeasur, NULL);
+  AssertFatal(rt==0, "couldn't create cpu measurment thread: %s\n",strerror(errno));
 }
 #endif

@@ -682,7 +682,6 @@ void run_telnetclt(void) {
   pthread_setname_np(pthread_self(), "telnetclt");
   set_sched(pthread_self(),0,telnetparams.priority);
   sock = socket(AF_INET, SOCK_STREAM, 0);
-//  FIELD *field[4];
   if (sock < 0)
     fprintf(stderr,"[TELNETSRV] Error %s on socket call\n",strerror(errno));
   char prompt[sizeof(TELNET_PROMPT_PREFIX)+10];
@@ -694,50 +693,17 @@ void run_telnetclt(void) {
   name.sin_port = htons((unsigned short)(telnetparams.listenport));
   if(connect(sock, (void *) &name, sizeof(name)))
     fprintf(stderr,"[TELNETSRV] Error %s on connect call\n",strerror(errno));
-
-
-//  (void) initscr();      /* initialize the curses library */
-//  keypad(stdscr, TRUE);  /* enable keyboard mapping */
-//  (void) nonl();         /* tell curses not to do NL->CR/NL on output */
-//  (void) cbreak();       /* take input chars one at a time, no wait for \n */
-//  (void) echo();         /* echo input - in color */
-//  WINDOW *inputw = newwin(10, 132, 0, 0);
-//  int row,col;
-//  getmaxyx(stdscr,row,col);
-//  field[0] = new_field((row-2)/2, col, 0, 0, 0, 0);
-//	field[1] = new_field((row-2)/2, col, (row-2)/2, 0, 0, 0);
-//	field[2] = new_field(1, col, row-2, 0, 0, 0);
-//	field[3] = NULL;
-
-	/* Set field options */
-//	field_opts_off(field[0], O_ACTIVE);
-//	field_opts_off(field[1], O_ACTIVE);
-//	set_field_back(field[0], A_UNDERLINE); 	/* Print a line for the option 	*/
-//	field_opts_off(field[0], O_AUTOSKIP);  	/* Don't go to next field when this */
-						/* Field is filled up 		*/
-//	set_field_back(field[1], A_UNDERLINE); 
-//	field_opts_off(field[1], O_AUTOSKIP);
-
-	/* Create the form and post it */
-//	FORM  *my_form = new_form(field);
-//	post_form(my_form);
-//	refresh(); 
-  
-  
-//  echo();
  
   struct timeval ts;
   ts.tv_sec = 1; // 1 second
   ts.tv_usec = 0;
   while (1) {
-      // select setup
       fd_set fds;   
       FD_ZERO(&fds);
       FD_SET(sock, &fds);
       FD_SET(STDIN_FILENO , &fds);     
       // wait for data
       int nready = select(sock + 1, &fds, (fd_set *) 0, (fd_set *) 0, &ts);
-//      mvprintw(row-2,0,"select: %i \n",nready);
       if (nready < 0) {
           perror("select. Error");
           break;                                                                                                                                   
@@ -767,22 +733,13 @@ void run_telnetclt(void) {
 		char *inbuf=NULL;  
       	size_t inlen=0; 
         inlen = getline( &inbuf,&inlen, stdin);
-//        mvprintw(row-1,0,inbuf);
         if ( inlen > 0 ) {
       	  if ( send(sock, inbuf,inlen, 0) < 0) 
               break;
           }
-        free(inbuf);
-//        refresh();  
+        free(inbuf); 
       }
   }
-/*  nocbreak();
-  unpost_form(my_form);
-  free_form(my_form);
-  free_field(field[0]);
-  free_field(field[1]); 
-  free_field(field[2]); 
-  endwin();*/
   close(sock);
   return;
 } /* run_telnetclt */

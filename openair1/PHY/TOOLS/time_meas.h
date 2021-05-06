@@ -31,6 +31,9 @@
 #include <pthread.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
+#ifndef PHYSIM  
+  #include "common/utils/threadPool/thread-pool.h"
+#endif
 // global var to enable openair performance profiler
 extern int opp_enabled;
 extern double cpu_freq_GHz  __attribute__ ((aligned(32)));;
@@ -58,6 +61,13 @@ typedef struct {
 } time_stats_t;
 #endif
 
+#define TIMESTAT_MSGID_START      0
+#define TIMESTAT_MSGID_STOP      1
+typedef struct {
+  int               msgid;         /*!< \brief message id, as defined by TIMESTAT_MSGID_X macros */
+  int               timestat_id;   /*!< \brief points to the time_stats_t entry in cpumeas table */
+  OAI_CPUTIME_TYPE  ts;            /*!< \brief time stamp */
+} time_stats_msg_t;
 static inline void start_meas(time_stats_t *ts) __attribute__((always_inline));
 static inline void stop_meas(time_stats_t *ts) __attribute__((always_inline));
 
@@ -121,6 +131,20 @@ static inline void stop_meas(time_stats_t *ts) {
     ts->meas_flag=0;
   }
 }
+
+static inline void send_meas(int measur_idx) {
+  if (opp_enabled) {
+    extern notifiedFIFO_t measur_fifo;
+
+    notifiedFIFO_elt_t *msg =newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
+    time_stats_msg_t *tsm = (time_stats_msg_t *)NotifiedFifoData(msg);
+    tsm->ts = rdtsc_oai();
+    pushNotifiedFIFO(&measur_fifo, msg);
+  }
+}
+         		
+ 
+          		
 
 static inline void reset_meas(time_stats_t *ts) {
   ts->in=0;
