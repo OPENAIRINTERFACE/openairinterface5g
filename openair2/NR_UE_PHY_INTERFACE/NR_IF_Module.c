@@ -164,7 +164,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
         switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
 
         case FAPI_NR_RX_PDU_TYPE_SSB:
-
+          mac->ssb_rsrp_dBm = (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.rsrp_dBm;
           ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
                                        (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu,
                                        (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.additional_bits,

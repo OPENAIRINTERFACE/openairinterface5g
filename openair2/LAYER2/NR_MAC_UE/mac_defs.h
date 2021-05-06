@@ -362,6 +362,9 @@ typedef struct {
   RA_config_t ra;
   /// SSB index from MIB decoding
   uint8_t mib_ssb;
+  /// measured SSB RSRP in dBm
+  short ssb_rsrp_dBm;
+
   /// Last NDI of UL HARQ processes
   uint8_t UL_ndi[NR_MAX_HARQ_PROCESSES];
   /// first ULTX of UL HARQ processes
