@@ -214,7 +214,7 @@ int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex,int8_t *ptrs_arg);
-void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dmrs_arg);
+void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg);
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration 
 
 /* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs/nrOfLayers from command line of
@@ -742,7 +742,7 @@ int main(int argc, char **argv)
   fix_scd(scd);
   /* -U option modify DMRS */
   if(modify_dmrs) {
-    update_dmrs_config(secondaryCellGroup, NULL,dmrs_arg);
+    update_dmrs_config(secondaryCellGroup, dmrs_arg);
   }
   /* -T option enable PTRS */
   if(enable_ptrs) {
@@ -872,9 +872,6 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  if(modify_dmrs) {
-    update_dmrs_config( NULL,UE,dmrs_arg);
-  }
   init_nr_ue_transport(UE,0);
 
   nr_gold_pbch(UE);
@@ -1402,11 +1399,12 @@ void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSi
   rrc_config_dl_ptrs_params(bwp, ptrsFreqDenst, ptrsTimeDenst, &epre_Ratio, &reOffset);
 }
 
-void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dmrs_arg)
+void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg)
 {
   int8_t  mapping_type = typeA;//default value
   int8_t  add_pos = pdsch_dmrs_pos0;//default value
-  int8_t  dmrs_config_type = pdsch_dmrs_type1;//default value
+  int8_t  dmrs_config_type = NFAPI_NR_DMRS_TYPE1;//default value
+
   if(dmrs_arg[0] == 0) {
     mapping_type = typeA;
   }
@@ -1418,28 +1416,26 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dm
     add_pos = dmrs_arg[1];
   }
   /* DMRS Conf Type 1 or 2 */
-  if(dmrs_arg[2] >= 1 && dmrs_arg[2] <3 ) {
-    dmrs_config_type = dmrs_arg[2]-1;
+  if(dmrs_arg[2] == 1) {
+    dmrs_config_type = NFAPI_NR_DMRS_TYPE1;
+  } else if(dmrs_arg[2] == 2) {
+    dmrs_config_type = NFAPI_NR_DMRS_TYPE2;
   }
 
-  if(scg != NULL) {
-    NR_BWP_Downlink_t *bwp = scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
-    *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = add_pos;
-    if (dmrs_config_type == pdsch_dmrs_type2)
-      bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type));
-    else bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type = NULL;
-    for (int i=0;i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;i++) {
-      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType = mapping_type; 
-    }
+  NR_BWP_Downlink_t *bwp = scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
+  NR_DMRS_DownlinkConfig_t *dmrs_config;
+  if(mapping_type == typeA)
+    dmrs_config = (NR_DMRS_DownlinkConfig_t *)bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
+  else
+    dmrs_config = (NR_DMRS_DownlinkConfig_t *)bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+  *dmrs_config->dmrs_AdditionalPosition = add_pos;
+  if (dmrs_config_type == NFAPI_NR_DMRS_TYPE2)
+    dmrs_config->dmrs_Type = calloc(1,sizeof(*dmrs_config->dmrs_Type));
+  else
+    dmrs_config->dmrs_Type = NULL;
+  for (int i=0;i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;i++) {
+    bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType = mapping_type; 
   }
-  if(ue != NULL) {
-    for (int i=0;i<MAX_NR_OF_DL_ALLOCATIONS;i++) {
-      ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i]->mappingType = mapping_type;
-    }
-    ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = add_pos;
-    if (dmrs_config_type == pdsch_dmrs_type2)
-      ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type2;
-    else ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type1;
-  }
+
   printf("[DLSIM] DMRS Config is modified with Mapping Type %d, Additional Positions %d Config. Type %d \n", dmrs_arg[0], add_pos, dmrs_arg[2] );
 }

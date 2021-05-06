@@ -186,8 +186,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   //int16_t  *pllr_symbol_cw0_deint;
   //int16_t  *pllr_symbol_cw1_deint;
   //uint16_t bundle_L = 2;
-  uint8_t pilots=0;
-  uint8_t config_type;// We should not use ue->dmrs_DownlinkConfig.pdsch_dmrs_type;
   uint16_t n_tx=1, n_rx=1;
   int32_t median[16];
   uint32_t len;
@@ -344,8 +342,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   printf("Demod  dlsch0_harq->pmi_alloc %d\n",  dlsch0_harq->pmi_alloc);
 #endif
 
-  pilots = ((1<<symbol)&dlsch0_harq->dlDmrsSymbPos)>0 ? 1 : 0;
-  config_type = dlsch0_harq->dmrsConfigType;
+  uint8_t pilots = (dlsch0_harq->dlDmrsSymbPos >> symbol) & 1;
+  uint8_t config_type = dlsch0_harq->dmrsConfigType;
 
   if (beamforming_mode==0) {//No beamforming
 #if UE_TIMING_TRACE
@@ -389,7 +387,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     return(-1);
   }
 
-  len = (pilots==1)? ((config_type==pdsch_dmrs_type1)?nb_rb*(12-6*dlsch0_harq->n_dmrs_cdm_groups): nb_rb*(12-4*dlsch0_harq->n_dmrs_cdm_groups)):(nb_rb*12);
+  len = (pilots==1)? ((config_type==NFAPI_NR_DMRS_TYPE1)?nb_rb*(12-6*dlsch0_harq->n_dmrs_cdm_groups): nb_rb*(12-4*dlsch0_harq->n_dmrs_cdm_groups)):(nb_rb*12);
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
@@ -643,7 +641,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                nr_slot_rx,
                                symbol,
                                (nb_rb*12),
-                               harq_pid,
                                dlsch[0]->rnti,rx_type);
       pdsch_vars[gNB_id]->dl_valid_re[symbol-1] -= pdsch_vars[gNB_id]->ptrs_re_per_slot[0][symbol];
     }
@@ -2061,7 +2058,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
   unsigned char j=0;
 
-  if (config_type==pdsch_dmrs_type1) {
+  if (config_type==NFAPI_NR_DMRS_TYPE1) {
     AssertFatal(n_dmrs_cdm_groups == 1 || n_dmrs_cdm_groups == 2,
                 "n_dmrs_cdm_groups %d is illegal\n",n_dmrs_cdm_groups);
     nushift = n_dmrs_cdm_groups -1;//delta in Table 7.4.1.1.2-1
@@ -2097,7 +2094,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
         rxF_ext+=12;
       } else {//the symbol contains DMRS
         j=0;
-        if (config_type==pdsch_dmrs_type1){
+        if (config_type==NFAPI_NR_DMRS_TYPE1){
           if (nushift == 0) {//data is multiplexed
             for (i = (1-nushift); i<12; i+=2) {
               rxF_ext[j]=rxF[i];
@@ -2107,7 +2104,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
             dl_ch0_ext+=6;
             rxF_ext+=6;
           }
-        } else {//pdsch_dmrs_type2
+        } else {//NFAPI_NR_DMRS_TYPE2
           for (i = (2+nushift); i<6; i++) {
             rxF_ext[j]=rxF[i];
             dl_ch0_ext[j]=dl_ch0[i];
@@ -2155,7 +2152,7 @@ unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
   int8_t validDmrsEst = 0; //store last DMRS Symbol index
 
-  if (config_type==pdsch_dmrs_type1) {
+  if (config_type==NFAPI_NR_DMRS_TYPE1) {
     AssertFatal(n_dmrs_cdm_groups == 1 || n_dmrs_cdm_groups == 2,
                 "n_dmrs_cdm_groups %d is illegal\n",n_dmrs_cdm_groups);
     nushift = n_dmrs_cdm_groups -1;//delta in Table 7.4.1.1.2-1
@@ -2193,7 +2190,7 @@ unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,
         }
         else {//the symbol contains DMRS
           j=0;
-          if (config_type==pdsch_dmrs_type1) {
+          if (config_type==NFAPI_NR_DMRS_TYPE1) {
             if (nushift == 0) {//data is multiplexed
               for (i = (1-nushift); i<12; i+=2) {
                 if (aatx==0) rxF_ext[j]=rxF[i];
@@ -2204,7 +2201,7 @@ unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,
               if (aatx==0) rxF_ext+=6;
             }
           }
-          else {//pdsch_dmrs_type2
+          else {//NFAPI_NR_DMRS_TYPE2
             for (i = (2+nushift); i<6; i++) {
               if (aatx==0) rxF_ext[j]=rxF[i];
               dl_ch0_ext[j]=dl_ch0[i];

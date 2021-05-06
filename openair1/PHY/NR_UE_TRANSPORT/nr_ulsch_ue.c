@@ -114,7 +114,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
   NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][gNB_id];
-  // ptrs_UplinkConfig_t *ptrs_Uplink_Config = &UE->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
 
   uint8_t  num_of_codewords = 1; // tmp assumption
   int      Nid_cell = 0;

@@ -494,10 +494,6 @@ typedef struct{ // CSI-MeasConfig IE is used to configure CSI-RS (reference sign
   uint8_t reportTriggerSize;
 } csi_MeasConfig_t;
 typedef enum {
-  pdsch_dmrs_type1 = 0,
-  pdsch_dmrs_type2 = 1
-} pdsch_dmrs_type_t;
-typedef enum {
   pusch_dmrs_type1 = 0,
   pusch_dmrs_type2 = 1
 } pusch_dmrs_type_t;
@@ -519,10 +515,6 @@ typedef enum {
   offset11 = 3,
 } ptrs_resource_elementoffset_t;
 typedef enum {
-  pdsch_len1 = 1,
-  pdsch_len2 = 2
-} pdsch_maxLength_t;
-typedef enum {
   pusch_len1 = 1,
   pusch_len2 = 2
 } pusch_maxLength_t;
@@ -535,28 +527,11 @@ typedef struct {
   uint16_t n_rb0;
   uint16_t n_rb1;
 } ptrs_frequency_density_t;
-typedef struct { // The IE PTRS-UplinkConfig is used to configure uplink Phase-Tracking-Reference-Signals (PTRS)
-  uint8_t  num_ptrs_ports;
-  ptrs_resource_elementoffset_t resourceElementOffset;
-  ptrs_time_density_t  timeDensity;
-  ptrs_frequency_density_t  frequencyDensity;
-  uint32_t  ul_ptrs_power;
-} ptrs_UplinkConfig_t;
 typedef struct { // The IE DMRS-DownlinkConfig is used to configure downlink demodulation reference signals for PDSCH
-  pdsch_dmrs_type_t pdsch_dmrs_type;
   pdsch_dmrs_AdditionalPosition_t pdsch_dmrs_AdditionalPosition;
-  pdsch_maxLength_t pdsch_maxLength;
   uint16_t scramblingID0;
   uint16_t scramblingID1;
 } dmrs_DownlinkConfig_t;
-typedef struct { // The IE DMRS-UplinkConfig is used to configure uplink demodulation reference signals for PUSCH
-  pusch_dmrs_type_t pusch_dmrs_type;
-  pusch_dmrs_AdditionalPosition_t pusch_dmrs_AdditionalPosition;
-  pusch_maxLength_t pusch_maxLength;
-  ptrs_UplinkConfig_t ptrs_UplinkConfig;
-  uint16_t scramblingID0;
-  uint16_t scramblingID1;
-} dmrs_UplinkConfig_t;
 typedef struct {
 /*
  * Serving cell ID of a PSCell. The PCell of the Master Cell Group uses ID = 0
@@ -640,10 +615,6 @@ typedef struct {
  * resourceAllocation
  */
   ul_resourceAllocation_t ul_resourceAllocation;
-/*
- * DMRS-Uplinkconfig
- */
-  dmrs_UplinkConfig_t dmrs_UplinkConfig;
 /*
  * rgb_Size
  */
