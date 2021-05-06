@@ -174,6 +174,20 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
   return 0;
 }
 
+typedef struct {
+  uint64_t       optmask;   //mask to store boolean config options
+  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
+  tpool_t        Tpool;             // thread pool 
+} nrUE_params_t;
+
+nrUE_params_t nrUE_params;
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+
+void processSlotTX(void *arg) {}
+
 int main(int argc, char **argv){
 
   char c;

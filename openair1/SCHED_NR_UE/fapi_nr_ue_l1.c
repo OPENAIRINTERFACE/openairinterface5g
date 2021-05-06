@@ -128,6 +128,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
               // dlsch0_harq->status not ACTIVE may be due to false retransmission. Reset the 
               // following flag to skip PDSCH procedures in that case.
               dlsch0->active = 0;
+              dlsch0_harq->harq_ack.ack = 1;
+              dlsch0_harq->harq_ack.send_harq_status = 1;
             }
             dlsch0_harq->harq_ack.vDAI_DL = dlsch_config_pdu->dai;
             /* PTRS */
