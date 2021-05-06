@@ -121,6 +121,12 @@ rrc_data_ind(
 {
 }
 
+int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
+                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
+                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
+    return 0;
+}
+
 int
 gtpv1u_create_s1u_tunnel(
   const instance_t                              instanceP,
@@ -757,7 +763,7 @@ int main(int argc, char **argv)
   rrc.carrier.MIB = (uint8_t*) malloc(4);
   rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
 
-  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib, rrc.carrier.sib1->servingCellConfigCommon, secondaryCellGroup, secondaryCellGroup);
+  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib, NULL, NULL, secondaryCellGroup);
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
 

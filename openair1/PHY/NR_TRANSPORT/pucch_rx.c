@@ -174,7 +174,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
 
-
   AssertFatal(pucch_pdu->bit_len_harq > 0 || pucch_pdu->sr_flag > 0,
 	      "Either bit_len_harq (%d) or sr_flag (%d) must be > 0\n",
 	      pucch_pdu->bit_len_harq,pucch_pdu->sr_flag);

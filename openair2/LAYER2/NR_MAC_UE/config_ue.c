@@ -717,7 +717,7 @@ int nr_rrc_mac_config_req_ue(
       mac->common_configuration_complete = 1;
     }
     if(scell_group_config != NULL ){
-      mac->cg = cell_group_config;
+      mac->cg = scell_group_config;
       mac->servCellIndex = *scell_group_config->spCellConfig->servCellIndex;
       config_control_ue(mac);
       if (scell_group_config->spCellConfig->reconfigurationWithSync) {
