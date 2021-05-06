@@ -1210,10 +1210,8 @@ static void build_ro_list(NR_UE_MAC_INST_t *mac) {
   int unpaired = mac->phy_config.config_req.cell_config.frame_duplex_type;
   // Identify the proper PRACH Configuration Index table according to the operating frequency
   LOG_D(NR_MAC,"mu = %u, PRACH config index  = %u, unpaired = %u\n", mu, config_index, unpaired);
-  int fr2_flag=0;
-  if (downlink_frequency[0][0] > 6e9) fr2_flag = 1;
 
-  prach_config_info_p = get_prach_config_info(fr2_flag, config_index, unpaired);
+  prach_config_info_p = get_prach_config_info(mac->frequency_range, config_index, unpaired);
 
   if (mac->frequency_range == FR2) { //FR2
 
