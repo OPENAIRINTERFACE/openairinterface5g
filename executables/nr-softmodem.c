@@ -739,10 +739,6 @@ if(!IS_SOFTMODEM_NOS1)
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-
-  if(IS_SOFTMODEM_NOS1)
-    init_pdcp();
-
   if (RC.nb_nr_L1_inst > 0)
     RCconfig_NR_L1();
 
