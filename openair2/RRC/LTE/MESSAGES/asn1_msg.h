@@ -343,7 +343,14 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
 
 ssize_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_id,long rsrp_s,long rsrq_s,long rsrp_t,long rsrq_t);
 
-ssize_t do_nrMeasurementReport(int measid, long phy_id, uint8_t *buffer);
+ssize_t do_nrMeasurementReport(uint8_t *buffer,
+                               size_t bufsize,
+                               LTE_MeasId_t measid,
+                               LTE_PhysCellIdNR_r15_t phy_id,
+                               long rsrp_s,
+                               long rsrq_s,
+                               long rsrp_tar,
+                               long rsrq_tar);
 
 uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t transaction_id, uint32_t pdu_length, uint8_t *pdu_buffer);
 

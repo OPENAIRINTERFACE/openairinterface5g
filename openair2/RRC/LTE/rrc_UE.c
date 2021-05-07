@@ -4097,12 +4097,17 @@ void ue_meas_filtering( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_
 //-----------------------------------------------------------------------------
 void rrc_ue_generate_nrMeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t eNB_index ) {
   uint8_t buffer[RRC_BUF_SIZE];
-  uint8_t target_eNB_offset = UE_rrc_inst[ctxt_pP->module_id].Info[0].handoverTarget;
-  LTE_PhysCellId_t targetCellId = UE_rrc_inst[ctxt_pP->module_id].HandoverInfoUe.targetCellId;
+  UE_RRC_INST *ue = &UE_rrc_inst[ctxt_pP->module_id];
+  uint8_t target_eNB_offset = ue->Info[0].handoverTarget;
+  LTE_PhysCellId_t targetCellId = ue->HandoverInfoUe.targetCellId;
 
   for (int i = 0; i < MAX_MEAS_ID; i++) {
-    if (UE_rrc_inst[ctxt_pP->module_id].measReportList[eNB_index][i] != NULL) {
-      LTE_MeasId_t measId = UE_rrc_inst[ctxt_pP->module_id].measReportList[eNB_index][i]->measId;
+    if (ue->measReportList[eNB_index][i] != NULL) {
+      LTE_MeasId_t measId = ue->measReportList[eNB_index][i]->measId;
+      long rsrp_s = binary_search_float(RSRP_meas_mapping, 98, ue->rsrp_db_filtered[eNB_index]);
+      long rsrq_s = binary_search_float(RSRQ_meas_mapping, 35, ue->rsrq_db_filtered[eNB_index]);
+      long rsrp_tar = binary_search_float(RSRP_meas_mapping, 98, ue->rsrp_db_filtered[target_eNB_offset]);
+      long rsrq_tar = binary_search_float(RSRQ_meas_mapping, 35, ue->rsrq_db_filtered[target_eNB_offset]);
 
       LOG_I(RRC,"Melissa [UE %d] Frame %d: source eNB: %d target eNB: %d servingCell(%d) targetCell(%ld)\n",
             ctxt_pP->module_id,
@@ -4113,7 +4118,9 @@ void rrc_ue_generate_nrMeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t
             targetCellId);
 
       if (ctxt_pP->frame != 0) {
-        ssize_t size = do_nrMeasurementReport(measId, targetCellId, buffer);
+        LOG_I(RRC, "Melissa, this is measId %ld, targetCellId %ld, rsrp_s %ld, rsrq_s %ld, rsrp_t %ld, rsrq_t %ld\n",
+                    measId, targetCellId, rsrp_s, rsrq_s, rsrp_tar, rsrq_tar);
+        ssize_t size = do_nrMeasurementReport(buffer, sizeof(buffer), measId, targetCellId, rsrp_s, rsrq_s, rsrp_tar, rsrq_tar);
         AssertFatal(size >= 0, "do_nrMeasurementReport failed \n");
         LOG_I(RRC, "Melissa [UE %d] Frame %d : Generating Measurement Report for eNB %d\n",
               ctxt_pP->module_id, ctxt_pP->frame, eNB_index);
