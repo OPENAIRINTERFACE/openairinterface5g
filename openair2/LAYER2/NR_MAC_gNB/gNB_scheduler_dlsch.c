@@ -785,11 +785,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
     return;
 
-  // FIXME: Feedback timing for ack/nack are not adapted for OAI UE, which has a rx/tx delay of 6 slots.
-  //  As k2 for pusch needs to be at least 6, dl_DataToUL_ACK needs to be not lower than 6.
-  if(IS_SOFTMODEM_RFSIM && slot!=1)
-    return;
-
   /* PREPROCESSOR */
   gNB_mac->pre_processor_dl(module_id, frame, slot);
 
