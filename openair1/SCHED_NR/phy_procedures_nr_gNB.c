@@ -523,7 +523,7 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
 }
 
-void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
+int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   /* those variables to log T_GNB_PHY_PUCCH_PUSCH_IQ only when we try to decode */
   int pucch_decode_done = 0;
   int pusch_decode_done = 0;
@@ -652,10 +652,10 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 	  start_meas(&gNB->rx_pusch_stats);
 	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
 	    no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
-            if (no_sig && (get_softmodem_params()->phy_test == 0)) {
+            if (no_sig) {
               LOG_I(PHY, "PUSCH not detected in symbol %d\n",symbol);
               nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
-              return;
+              return 1;
             }
 	  }
 	  stop_meas(&gNB->rx_pusch_stats);
@@ -682,4 +682,5 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,0);
+  return 0;
 }

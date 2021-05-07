@@ -303,7 +303,7 @@ int main(int argc, char **argv)
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
   }
-
+  int ul_proc_error = 0; // uplink processing checking status flag
   //logInit();
   randominit(0);
 
@@ -1184,7 +1184,7 @@ int main(int argc, char **argv)
 
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
-        phy_procedures_gNB_uespec_RX(gNB, frame, slot);
+        ul_proc_error = phy_procedures_gNB_uespec_RX(gNB, frame, slot);
 
 	if (n_trials==1 && round==0) {
 	  LOG_M("rxsig0.m","rx0",&gNB->common_vars.rxdata[0][slot_offset],slot_length,1,1);
@@ -1214,9 +1214,9 @@ int main(int argc, char **argv)
 		&gNB->pusch_vars[0]->llr[0],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
 	}
         ////////////////////////////////////////////////////////////
-	
-	if (gNB->ulsch[0][0]->last_iteration_cnt >= 
-	    gNB->ulsch[0][0]->max_ldpc_iterations+1) {
+
+	if ((gNB->ulsch[0][0]->last_iteration_cnt >= 
+	    gNB->ulsch[0][0]->max_ldpc_iterations+1) || ul_proc_error == 1) {
 	  error_flag = 1; 
 	  n_errors[round]++;
 	  crc_status = 1;
