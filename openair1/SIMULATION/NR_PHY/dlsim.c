@@ -202,6 +202,8 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+void processSlotTX(void *arg) {}
+
 //nFAPI P7 dummy functions
 
 int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
@@ -286,6 +288,20 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   AssertFatal(ps->mcsTableIdx >= 0 && ps->mcsTableIdx <= 2, "invalid mcsTableIdx %d\n", ps->mcsTableIdx);
 }
 
+typedef struct {
+  uint64_t       optmask;   //mask to store boolean config options
+  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
+  tpool_t        Tpool;             // thread pool 
+} nrUE_params_t;
+
+nrUE_params_t nrUE_params;
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+
+void do_nothing(void *args) {
+}
 
 int main(int argc, char **argv)
 {
@@ -879,6 +895,7 @@ int main(int argc, char **argv)
   unsigned int errors_bit    = 0;
   uint32_t errors_scrambling = 0;
 
+  initTpool("N", &(nrUE_params.Tpool), false);
 
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
@@ -1129,7 +1146,8 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               dlsch_threads);
+                               dlsch_threads,
+                               NULL);
         
         //printf("dlsim round %d ends\n",round);
         round++;

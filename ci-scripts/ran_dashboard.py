@@ -40,6 +40,8 @@ import shlex      #lexical analysis
 import json       #json structures
 import datetime   #now() and date formating
 from datetime import datetime
+import re
+import gitlab
 
 #-----------------------------------------------------------
 # Class Declaration
@@ -79,7 +81,7 @@ class gDashboard:
         #line 2 empty
         #line 3 is for the column names
         i=3
-        row =["MR","Created_at","Author","Title","Assignee", "Reviewer", "CAN START","IN PROGRESS","COMPLETED","OK MERGE","Merge conflicts"]
+        row =["MR","Created_at","Author","Title","Assignee", "Reviewer", "CAN START","IN PROGRESS","COMPLETED","Review Form","OK MERGE","Merge conflicts"]
         self.sheet.insert_row(row, index=i, value_input_option='RAW')
 
         #line 4 onward, MR data lines
@@ -120,10 +122,32 @@ class gDashboard:
             else:
                 conflicts = ""
 
+
+            #add a column flagging that the review form is present
+            #we use gitlab API to parse the MR notes
+            gl = gitlab.Gitlab.from_config('OAI')
+            project_id = 223
+            project = gl.projects.get(project_id)
+            #get the opened MR in the project
+            mrs = project.mergerequests.list(state='opened')
+            for m in range (0,len(mrs)):
+                if mrs[m].iid==self.d[x]['iid']:#check the iid is the one we are on
+                    mr_notes = mrs[m].notes.list(all=True)
+                    n=0
+                    found=False
+                    review_form=""
+                    while found==False and n<len(mr_notes):
+                        res=re.search('Code Review by',mr_notes[n].body)#this is the marker we are looking for in all notes
+                        if res!=None:
+                            review_form = "X"
+                            found=True
+                        n+=1
+
+
             #build final row to be inserted, the first column is left empty for now, will be filled afterward with hyperlinks to gitlab MR
             row =["", str(date_time_obj.date()),str(self.d[x]['author']['name']),str(self.d[x]['title']),\
             assignee, reviewer,\
-            milestone1,milestone2,milestone3,milestone4,conflicts]
+            milestone1,milestone2,milestone3,review_form,milestone4,conflicts]
             
             #insert the row to worksheet
             self.sheet.insert_row(row, index=i, value_input_option='RAW')
@@ -246,10 +270,10 @@ class gDashboard:
                             "sheetId": sheetId,
                             "dimension": "COLUMNS",
                             "startIndex": 6,
-                            "endIndex": 10
+                            "endIndex": 11
                         },
                         "properties": {
-                            "pixelSize": 135
+                            "pixelSize": 120
                         },
                         "fields": "pixelSize"
                     }
