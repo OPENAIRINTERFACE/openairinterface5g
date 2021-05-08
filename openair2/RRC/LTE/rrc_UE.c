@@ -2259,6 +2259,26 @@ rrc_ue_decode_dcch(
           LOG_I(RRC, "[UE %d] Received Capability Enquiry (eNB %d)\n",
                 ctxt_pP->module_id,
                 eNB_indexP);
+          /* Melissa: Here we can see if the UE is now in NSA mode. If it is, then
+             we will send the nrUECapabilityEnquiry and handle this type of message
+             differently in the NR UE. */
+        #if 0
+          if () {
+                LTE_UECapabilityEnquiry_t *ueCapabilityEnquiry_nsa = &dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry;
+                OCTET_STRING_t * requestedFreqBandsNR = ueCapabilityEnquiry_nsa->
+                                      criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.nonCriticalExtension->
+                                      nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                      nonCriticalExtension->requestedFreqBandsNR_MRDC_r15;
+                nsa_sendmsg_to_nrue(requestedFreqBandsNR->buf, requestedFreqBandsNR->size, NRUE_CAPABILITY_ENQUIRY);
+                // Save ueCapabilityEnquiry so we can use in nsa mode after nrUE response is received
+                UE_RRC_INFO *info = &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_indexP];
+                if (info->dl_dcch_msg != NULL) {
+                  SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, info->dl_dcch_msg, ASFM_FREE_EVERYTHING);
+                }
+                info->dl_dcch_msg = dl_dcch_msg;
+                dl_dcch_msg = NULL;
+          } else if softmodem...
+        #endif
           if (get_softmodem_params()->nsa) {
               LTE_UECapabilityEnquiry_t *ueCapabilityEnquiry_nsa = &dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry;
               OCTET_STRING_t * requestedFreqBandsNR = ueCapabilityEnquiry_nsa->
@@ -2273,8 +2293,7 @@ rrc_ue_decode_dcch(
               }
               info->dl_dcch_msg = dl_dcch_msg;
               dl_dcch_msg = NULL;
-          }
-          else {
+          } else {
             rrc_ue_process_ueCapabilityEnquiry(
               ctxt_pP,
               &dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry,
@@ -4109,7 +4128,7 @@ void rrc_ue_generate_nrMeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t
       long rsrp_tar = binary_search_float(RSRP_meas_mapping, 98, ue->rsrp_db_filtered[target_eNB_offset]);
       long rsrq_tar = binary_search_float(RSRQ_meas_mapping, 35, ue->rsrq_db_filtered[target_eNB_offset]);
 
-      LOG_I(RRC,"Melissa [UE %d] Frame %d: source eNB: %d target eNB: %d servingCell(%d) targetCell(%ld)\n",
+      LOG_I(RRC,"[UE %d] Frame %d: source eNB: %d target eNB: %d servingCell(%d) targetCell(%ld)\n",
             ctxt_pP->module_id,
             ctxt_pP->frame,
             eNB_index,
@@ -4118,21 +4137,12 @@ void rrc_ue_generate_nrMeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t
             targetCellId);
 
       if (ctxt_pP->frame != 0) {
-        LOG_I(RRC, "Melissa, this is measId %ld, targetCellId %ld, rsrp_s %ld, rsrq_s %ld, rsrp_t %ld, rsrq_t %ld\n",
+        LOG_I(RRC, "measId %ld, targetCellId %ld, rsrp_s %ld, rsrq_s %ld, rsrp_t %ld, rsrq_t %ld\n",
                     measId, targetCellId, rsrp_s, rsrq_s, rsrp_tar, rsrq_tar);
         ssize_t size = do_nrMeasurementReport(buffer, sizeof(buffer), measId, targetCellId, rsrp_s, rsrq_s, rsrp_tar, rsrq_tar);
         AssertFatal(size >= 0, "do_nrMeasurementReport failed \n");
-        LOG_I(RRC, "Melissa [UE %d] Frame %d : Generating Measurement Report for eNB %d\n",
+        LOG_I(RRC, "[UE %d] Frame %d : Generating Measurement Report for eNB %d\n",
               ctxt_pP->module_id, ctxt_pP->frame, eNB_index);
-        #if 0
-        rrc_data_req (ctxt_pP,
-                      DCCH,
-                      rrc_mui++,
-                      SDU_CONFIRM_NO,
-                      (enc_rval.encoded + 7) / 8,
-                      buffer,
-                      PDCP_TRANSMISSION_MODE_CONTROL);
-        #endif
         int result = pdcp_data_req(ctxt_pP,  SRB_FLAG_YES, DCCH, rrc_mui++, 0, size, buffer, PDCP_TRANSMISSION_MODE_DATA,NULL, NULL);
         AssertFatal (result == TRUE, "PDCP data request failed!\n");
       }
@@ -4165,7 +4175,7 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
       rsrp_s = binary_search_float(RSRP_meas_mapping,nElem, rsrp_filtered);
       rsrq_filtered = UE_rrc_inst[ctxt_pP->module_id].rsrq_db_filtered[eNB_index];//nid_cell]; //RSRQ of serving cell
       rsrq_s = binary_search_float(RSRQ_meas_mapping,nElem1,rsrq_filtered);//mapped RSRQ of serving cell
-      LOG_I(RRC,"Melissa [UE %d] Frame %d: source eNB %d :rsrp_s: %ld rsrq_s: %ld rsrp_filtered: %f rsrq_filtered: %f \n",
+      LOG_I(RRC,"[UE %d] Frame %d: source eNB %d :rsrp_s: %ld rsrq_s: %ld rsrp_filtered: %f rsrq_filtered: %f \n",
             ctxt_pP->module_id,
             ctxt_pP->frame,
             eNB_index,
@@ -4175,7 +4185,7 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
             rsrq_filtered);
       rsrp_t = binary_search_float(RSRP_meas_mapping,nElem,UE_rrc_inst[ctxt_pP->module_id].rsrp_db_filtered[target_eNB_offset]); //RSRP of target cell
       rsrq_t = binary_search_float(RSRQ_meas_mapping,nElem1,UE_rrc_inst[ctxt_pP->module_id].rsrq_db_filtered[target_eNB_offset]); //RSRQ of target cell
-      LOG_I(RRC,"Melissa [UE %d] Frame %d: target eNB %d :rsrp_t: %ld rsrq_t: %ld rsrp_filtered: %f rsrq_filtered: %f \n",
+      LOG_I(RRC,"[UE %d] Frame %d: target eNB %d :rsrp_t: %ld rsrq_t: %ld rsrp_filtered: %f rsrq_filtered: %f \n",
             ctxt_pP->module_id,
             ctxt_pP->frame,
             target_eNB_offset,
@@ -4213,6 +4223,8 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
 }
 static bool have_received_nr_meas_msg(void)
 {
+  /* Melissa: This is a hack. Need to base bool on whether we have received a
+     NR_UE_RRC_MEASUREMENT messsage from the NR UE. */
   return true;
 }
 
@@ -6234,7 +6246,7 @@ void nsa_sendmsg_to_nrue(const void *message, size_t msg_len, Rrc_Msg_Type_t msg
         LOG_E(RRC, "%s: Short send %d != %zu\n", __func__, sent, to_send);
         return;
     }
-    LOG_D(RRC, "Sent a %d message to the nrUE (%d bytes) \n", msg_type, sent);
+    LOG_I(RRC, "Sent a %d message to the nrUE (%d bytes) \n", msg_type, sent);
 }
 
 void init_connections_with_nr_ue(void)
@@ -6288,6 +6300,21 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
         case UE_CAPABILITY_INFO:
         {
             LOG_D(RRC, "Processing a UE_CAPABILITY_INFO message \n");
+            LOG_I(RRC, "Send itti msg to trigger processing of capabilites b/c we have a UE_CAPABILITY_INFO\n");
+            MessageDef *message_p;
+            rrc_dcch_data_copy_t *dl_dcch_buffer = itti_malloc (TASK_RRC_NSA_UE,
+                                                                TASK_RRC_UE,
+                                                                sizeof(rrc_dcch_data_copy_t));
+            UE_RRC_INFO *info = &UE_rrc_inst[ctxt.module_id].Info[0];
+            dl_dcch_buffer->dl_dcch_msg = info->dl_dcch_msg;
+            info->dl_dcch_msg = NULL;
+            message_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_DCCH_DATA_COPY_IND);
+            RRC_DCCH_DATA_COPY_IND (message_p).sdu_p = (void *)dl_dcch_buffer;
+            RRC_DCCH_DATA_COPY_IND (message_p).sdu_size = sizeof(rrc_dcch_data_copy_t);
+            RRC_DCCH_DATA_COPY_IND (message_p).eNB_index = 0;
+            itti_send_msg_to_task (TASK_RRC_UE, 0, message_p);
+            LOG_D(RRC, "Sent itti RRC_DCCH_DATA_COPY_IND\n");
+            break;
             /* Melissa:
             1. Set these parameters if we get UE_CAPABILITY_INFO message:
                 a. irat-ParametersNR-r15

@@ -4245,7 +4245,7 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrpResult = rsrp_s;
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrqResult = rsrq_s;
 
-  #if 0
+  #if 0 //Melissa: This was a hack. Incomplete filling of ul_dcch_msg is done above
   LTE_MeasResults_t *mr_r8 = &measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults;
   mr_r8->measId = measid;
   mr_r8->measResultPCell.rsrpResult = rsrp_s;

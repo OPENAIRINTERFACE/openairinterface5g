@@ -3004,11 +3004,37 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
                 LOG_D(NR_RRC, "Received NR band information: %ld.\n",
                      nr_freq_band_list->list.array[i]->choice.bandInformationNR->bandNR);
             }
-
             MessageDef *dummy_msg = itti_alloc_new_message(TASK_RRC_NSA_UE, 0, UE_CAPABILITY_DUMMY);
             LOG_I(NR_RRC, "We are calling nsa_sendmsg_to_lte_ue to send a UE_CAPABILITY_DUMMY\n");
             nsa_sendmsg_to_lte_ue(dummy_msg, sizeof(dummy_msg), UE_CAPABILITY_DUMMY);
             LOG_I(NR_RRC, "We have sent a UE_CAPABILITY_DUMMY\n");
+            break;
+        }
+
+        case NRUE_CAPABILITY_ENQUIRY:
+        {
+            LOG_I(NR_RRC, "We are processing a %d message \n", msg_type);
+            NR_FreqBandList_t *nr_freq_band_list = NULL;
+            asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                            &asn_DEF_NR_FreqBandList,
+                            (void **)&nr_freq_band_list,
+                            msg_buffer,
+                            msg_len);
+            if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
+            {
+              SEQUENCE_free(&asn_DEF_NR_FreqBandList, nr_freq_band_list, ASFM_FREE_EVERYTHING);
+              LOG_E(RRC, "Failed to decode UECapabilityInfo (%zu bits)\n", dec_rval.consumed);
+              break;
+            }
+            for (int i = 0; i < nr_freq_band_list->list.count; i++)
+            {
+                LOG_D(NR_RRC, "Received NR band information: %ld.\n",
+                     nr_freq_band_list->list.array[i]->choice.bandInformationNR->bandNR);
+            }
+            MessageDef *nrue_cap_info = itti_alloc_new_message(TASK_RRC_NSA_UE, 0, UE_CAPABILITY_INFO);
+            LOG_I(NR_RRC, "We are calling nsa_sendmsg_to_lte_ue to send a UE_CAPABILITY_INFO\n");
+            nsa_sendmsg_to_lte_ue(nrue_cap_info, sizeof(nrue_cap_info), UE_CAPABILITY_INFO);
+            LOG_I(NR_RRC, "We have sent a UE_CAPABILITY_INFO\n");
             break;
         }
 
