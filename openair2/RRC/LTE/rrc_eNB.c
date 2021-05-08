@@ -4612,8 +4612,8 @@ rrc_eNB_process_MeasurementReport(
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
           = measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId; //Melissa
         #endif
-        X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
-          = measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15;
+        X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId = 0;
+        //  = measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15;
         //For the moment we have a single E-RAB which will be the one to be added to the gNB
         //Not sure how to select bearers to be added if there are multiple.
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).nb_e_rabs_tobeadded = 1;

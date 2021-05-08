@@ -4124,6 +4124,15 @@ void rrc_ue_generate_nrMeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t
         AssertFatal(size >= 0, "do_nrMeasurementReport failed \n");
         LOG_I(RRC, "Melissa [UE %d] Frame %d : Generating Measurement Report for eNB %d\n",
               ctxt_pP->module_id, ctxt_pP->frame, eNB_index);
+        #if 0
+        rrc_data_req (ctxt_pP,
+                      DCCH,
+                      rrc_mui++,
+                      SDU_CONFIRM_NO,
+                      (enc_rval.encoded + 7) / 8,
+                      buffer,
+                      PDCP_TRANSMISSION_MODE_CONTROL);
+        #endif
         int result = pdcp_data_req(ctxt_pP,  SRB_FLAG_YES, DCCH, rrc_mui++, 0, size, buffer, PDCP_TRANSMISSION_MODE_DATA,NULL, NULL);
         AssertFatal (result == TRUE, "PDCP data request failed!\n");
       }
