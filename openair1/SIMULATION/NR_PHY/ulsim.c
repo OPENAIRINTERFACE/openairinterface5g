@@ -1130,6 +1130,10 @@ int main(int argc, char **argv)
 
         phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id);
 
+        LOG_D(PHY, "Sending Uplink data \n");
+        nr_ue_pusch_common_procedures(UE,
+                                      slot,
+                                      frame_parms,1);
 
         if (n_trials==1) {
           LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_parms->samples_per_subframe*10,1,1);
