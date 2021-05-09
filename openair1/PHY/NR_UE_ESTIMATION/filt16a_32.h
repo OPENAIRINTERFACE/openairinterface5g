@@ -169,4 +169,17 @@ extern short filt8_dcll2[8];
 
 extern short filt8_dclh2[8];
 
+extern short filt8_avlip0[8];
+
+extern short filt8_avlip1[8];
+
+extern short filt8_avlip2[8];
+
+extern short filt8_avlip3[8];
+
+extern short filt8_avlip4[8];
+
+extern short filt8_avlip5[8];
+
+extern short filt8_avlip6[8];
 #endif
