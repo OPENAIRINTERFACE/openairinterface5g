@@ -379,6 +379,46 @@ rrc_gNB_get_next_transaction_identifier(
   return nr_rrc_transaction_identifier[gnb_mod_idP];
 }
 
+void apply_macrlc_config(gNB_RRC_INST *rrc,
+                         rrc_gNB_ue_context_t         *const ue_context_pP,
+                         const protocol_ctxt_t        *const ctxt_pP ) {
+
+      rrc_mac_config_req_gNB(rrc->module_id,
+                             rrc->carrier.ssb_SubcarrierOffset,
+                             rrc->carrier.pdsch_AntennaPorts,
+                             rrc->carrier.pusch_AntennaPorts,
+                             NULL,
+                             0,
+                             ue_context_pP->ue_context.rnti,
+                             ue_context_pP->ue_context.masterCellGroup
+                             );
+      nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                 ue_context_pP->ue_context.SRB_configList,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList,
+                                 NULL);
+}
+
+void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,
+                       const protocol_ctxt_t        *const ctxt_pP ) {
+
+      nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                  ue_context_pP->ue_context.SRB_configList,
+                                  NULL,
+                                  NULL,
+                                  0xff,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
+
+}
+
 //-----------------------------------------------------------------------------
 void
 rrc_gNB_generate_RRCSetup(
@@ -489,34 +529,9 @@ rrc_gNB_generate_RRCSetup(
       //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
 
       // configure MAC
-      rrc_mac_config_req_gNB(rrc->module_id,
-			     rrc->carrier.ssb_SubcarrierOffset,
-			     rrc->carrier.pdsch_AntennaPorts,
-			     rrc->carrier.pusch_AntennaPorts,
-			     NULL,
-			     0,
-			     ue_context_pP->ue_context.rnti,
-			     ue_context_pP->ue_context.masterCellGroup
-			     );
-      nr_rrc_rlc_config_asn1_req(ctxt_pP,
-				 ue_context_pP->ue_context.SRB_configList, 
-				 NULL,
-				 NULL,
-				 NULL,
-				 ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList,
-				 NULL);
-      nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-				  ue_context_pP->ue_context.SRB_configList,
-				  NULL,
-				  NULL,
-				  0xff,
-				  NULL,
-				  NULL,
-				  NULL,
-				  NULL,
-				  NULL,
-				  NULL,
-                                  ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
+      apply_macrlc_config(rrc,ue_context_pP,ctxt_pP);
+
+      apply_pdcp_config(ue_context_pP,ctxt_pP);
 #endif
     }
     break;

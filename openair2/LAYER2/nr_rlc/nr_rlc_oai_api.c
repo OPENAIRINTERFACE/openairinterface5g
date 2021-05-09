@@ -48,7 +48,6 @@ extern RAN_CONTEXT_t RC;
 #include <stdint.h>
 
 static nr_rlc_ue_manager_t *nr_rlc_ue_manager;
-uint8_t ccch_flag = 1;
 
 /* TODO: handle time a bit more properly */
 static uint64_t nr_rlc_current_time;
@@ -490,23 +489,6 @@ rb_found:
 
     if (NODE_IS_DU(type) && is_srb == 1) {
       MessageDef *msg;
-      if (ccch_flag) {
-        /* for rfsim, because UE send RRCSetupRequest in SRB1 */
-        LOG_I(RLC, "[MSG] RRC Setup Request\n");
-        msg = itti_alloc_new_message(TASK_RLC_ENB, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).gNB_DU_ue_id         = 0;
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).mcc                  = RC.nrrrc[0]->configuration.mcc[0];
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc                  = RC.nrrrc[0]->configuration.mnc[0];
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc_digit_length     = RC.nrrrc[0]->configuration.mnc_digit_length[0];
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).nr_cellid            = RC.nrrrc[0]->nr_cellid;
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).crnti                = ue->rnti;
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container        = (unsigned char *)buf;
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container_length = size;
-        itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0), msg);
-        ccch_flag = 0;
-        return;
-      }
-
       msg = itti_alloc_new_message(TASK_RLC_ENB, 0, F1AP_UL_RRC_MESSAGE);
       F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
       F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
