@@ -1478,13 +1478,13 @@ function run_test_on_vm {
         echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
     fi
 
-    if [ "$RUN_OPTIONS" == "none" ]
+    if [ "$RUN_OPTIONS" == "none" ] || [[ $RUN_OPTIONS =~ .*run_exec_autotests.* ]]
     then
         echo "No run on VM testing for this variant currently"
         return
     fi
 
-    if [[ $RUN_OPTIONS =~ .*run_exec_autotests.* ]]
+    if [[ $RUN_OPTIONS =~ .*run_XXXX_autotests.* ]]
     then
         echo "############################################################"
         echo "Running test script on VM ($VM_NAME)"

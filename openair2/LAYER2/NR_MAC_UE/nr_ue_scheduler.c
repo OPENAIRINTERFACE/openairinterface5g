@@ -151,14 +151,25 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
 
 void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci) {
 
-  fapi_nr_pusch_config_dedicated_t *pusch_config_dedicated = &mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated;
+  NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup;
 
+  long	transformPrecoder;
+  if (pusch_Config->transformPrecoder)
+    transformPrecoder = *pusch_Config->transformPrecoder;
+  else {
+    if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder)
+      transformPrecoder = NR_PUSCH_Config__transformPrecoder_enabled;
+    else
+      transformPrecoder = NR_PUSCH_Config__transformPrecoder_disabled;
+  }
+
+
   /* PRECOD_NBR_LAYERS */
-  if ((pusch_config_dedicated->tx_config == tx_config_nonCodebook));
+  if ((*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_nonCodebook));
   // 0 bits if the higher layer parameter txConfig = nonCodeBook
 
-  if ((pusch_config_dedicated->tx_config == tx_config_codebook)){
+  if ((*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook)){
 
     uint8_t n_antenna_port = 0; //FIXME!!!
 
@@ -167,43 +178,43 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
     if (n_antenna_port == 4){ // 4 antenna port and the higher layer parameter txConfig = codebook
 
       // Table 7.3.1.1.2-2: transformPrecoder=disabled and maxRank = 2 or 3 or 4
-      if ((pusch_config_dedicated->transform_precoder == transform_precoder_disabled)
-        && ((pusch_config_dedicated->max_rank == 2) ||
-        (pusch_config_dedicated->max_rank == 3) ||
-        (pusch_config_dedicated->max_rank == 4))){
+      if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled)
+        && ((*pusch_Config->maxRank == 2) ||
+        (*pusch_Config->maxRank == 3) ||
+        (*pusch_Config->maxRank == 4))){
 
-        if (pusch_config_dedicated->codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
+        if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_fullyAndPartialAndNonCoherent) {
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][0];
           pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][1];
         }
 
-        if (pusch_config_dedicated->codebook_subset == codebook_subset_partialAndNonCoherent){
+        if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_partialAndNonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][2];
           pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][3];
         }
 
-        if (pusch_config_dedicated->codebook_subset == codebook_subset_nonCoherent){
+        if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][4];
           pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][5];
         }
       }
 
       // Table 7.3.1.1.2-3: transformPrecoder= enabled, or transformPrecoder=disabled and maxRank = 1
-      if (((pusch_config_dedicated->transform_precoder == transform_precoder_enabled)
-        || (pusch_config_dedicated->transform_precoder == transform_precoder_disabled))
-        && (pusch_config_dedicated->max_rank == 1)){
+      if (((transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled)
+        || (transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled))
+        && (*pusch_Config->maxRank == 1)){
 
-        if (pusch_config_dedicated->codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
+        if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_fullyAndPartialAndNonCoherent) {
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][6];
           pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][7];
         }
 
-        if (pusch_config_dedicated->codebook_subset == codebook_subset_partialAndNonCoherent){
+        if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_partialAndNonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][8];
           pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][9];
         }
 
-        if (pusch_config_dedicated->codebook_subset == codebook_subset_nonCoherent){
+        if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][10];
           pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][11];
         }
@@ -212,14 +223,14 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
 
     if (n_antenna_port == 4){ // 2 antenna port and the higher layer parameter txConfig = codebook
       // Table 7.3.1.1.2-4: transformPrecoder=disabled and maxRank = 2
-      if ((pusch_config_dedicated->transform_precoder == transform_precoder_disabled) && (pusch_config_dedicated->max_rank == 2)){
+      if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank == 2)){
 
-        if (pusch_config_dedicated->codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
+        if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_fullyAndPartialAndNonCoherent) {
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][12];
           pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][13];
         }
 
-        if (pusch_config_dedicated->codebook_subset == codebook_subset_nonCoherent){
+        if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][14];
           pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][15];
         }
@@ -227,16 +238,16 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
       }
 
       // Table 7.3.1.1.2-5: transformPrecoder= enabled, or transformPrecoder= disabled and maxRank = 1
-      if (((pusch_config_dedicated->transform_precoder == transform_precoder_enabled)
-        || (pusch_config_dedicated->transform_precoder == transform_precoder_disabled))
-        && (pusch_config_dedicated->max_rank == 1)){
+      if (((transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled)
+        || (transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled))
+        && (*pusch_Config->maxRank == 1)){
 
-        if (pusch_config_dedicated->codebook_subset == codebook_subset_fullyAndPartialAndNonCoherent) {
+        if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_fullyAndPartialAndNonCoherent) {
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][16];
           pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][17];
         }
 
-        if (pusch_config_dedicated->codebook_subset == codebook_subset_nonCoherent){
+        if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][18];
           pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][19];
         }
@@ -247,7 +258,7 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
 
   /*-------------------- Changed to enable Transform precoding in RF SIM------------------------------------------------*/
 
-  if (pusch_config_pdu->transform_precoding == transform_precoder_enabled) {
+ /*if (pusch_config_pdu->transform_precoding == transform_precoder_enabled) {
 
     pusch_config_dedicated->transform_precoder = transform_precoder_enabled;
 
@@ -271,15 +282,7 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
 
     }
   } else
-    pusch_config_dedicated->transform_precoder = transform_precoder_disabled;
-
-  // mapping type b configured from RRC. TBD: Mapping type b is not handled in this function.
-  if ((pusch_config_dedicated->transform_precoder == transform_precoder_enabled) &&
-      (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_b.dmrs_type == 1) &&
-      (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_b.max_length == 1)) { // tables 7.3.1.1.2-6
-    pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
-    pusch_config_pdu->dmrs_ports = dci->antenna_ports.val;
-  }
+    pusch_config_dedicated->transform_precoder = transform_precoder_disabled;*/
 }
 
 // todo: this function shall be reviewed completely because of the many comments left by the author
@@ -287,27 +290,47 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
 
   /* ANTENNA_PORTS */
   uint8_t rank = 0; // We need to initialize rank FIXME!!!
-  fapi_nr_pusch_config_dedicated_t *pusch_config_dedicated = &mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated;
 
-  if ((pusch_config_dedicated->transform_precoder == transform_precoder_enabled) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.max_length == 1)) { // tables 7.3.1.1.2-6
+  NR_ServingCellConfigCommon_t *scc = mac->scc;
+  NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup;
+
+  long	transformPrecoder;
+  if (pusch_Config->transformPrecoder)
+    transformPrecoder = *pusch_Config->transformPrecoder;
+  else {
+    if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder)
+      transformPrecoder = NR_PUSCH_Config__transformPrecoder_enabled;
+    else
+      transformPrecoder = NR_PUSCH_Config__transformPrecoder_disabled;
+  }
+  long *max_length = NULL;
+  long *dmrs_type = NULL;
+  if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA) {
+    max_length = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->maxLength;
+    dmrs_type = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->dmrs_Type;
+  }
+  else {
+    max_length = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->maxLength;
+    dmrs_type = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->dmrs_Type;
+  }
+
+
+  if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled) &&
+    (dmrs_type == NULL) && (max_length == NULL)) { // tables 7.3.1.1.2-6
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2; //TBC
       pusch_config_pdu->dmrs_ports = dci->antenna_ports.val; //TBC
   }
 
-  if ((pusch_config_dedicated->transform_precoder == transform_precoder_enabled) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.max_length == 2)) { // tables 7.3.1.1.2-7
+  if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled) &&
+    (dmrs_type == NULL) && (max_length != NULL)) { // tables 7.3.1.1.2-7
 
     pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2; //TBC
     pusch_config_pdu->dmrs_ports = (dci->antenna_ports.val > 3)?(dci->antenna_ports.val-4):(dci->antenna_ports.val); //TBC
     //pusch_config_pdu->n_front_load_symb = (dci->antenna_ports > 3)?2:1; //FIXME
   }
 
-  if ((pusch_config_dedicated->transform_precoder == transform_precoder_disabled) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.max_length == 1)) { // tables 7.3.1.1.2-8/9/10/11
+  if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) &&
+    (dmrs_type == NULL) && (max_length == NULL)) { // tables 7.3.1.1.2-8/9/10/11
 
     if (rank == 1) {
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = (dci->antenna_ports.val > 1)?2:1; //TBC
@@ -339,9 +362,8 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
     }
   }
 
-  if ((pusch_config_dedicated->transform_precoder == transform_precoder_disabled) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 1) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.max_length == 2)) { // tables 7.3.1.1.2-12/13/14/15
+  if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) &&
+    (dmrs_type == NULL) && (max_length != NULL)) { // tables 7.3.1.1.2-12/13/14/15
 
     if (rank == 1){
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = (dci->antenna_ports.val > 1)?2:1; //TBC
@@ -377,9 +399,9 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
     }
   }
 
-  if ((pusch_config_dedicated->transform_precoder == transform_precoder_disabled) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 2) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.max_length == 1)) { // tables 7.3.1.1.2-16/17/18/19
+  if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) &&
+    (dmrs_type != NULL) &&
+    (max_length == NULL)) { // tables 7.3.1.1.2-16/17/18/19
 
     if (rank == 1){
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = (dci->antenna_ports.val > 1)?((dci->antenna_ports.val > 5)?3:2):1; //TBC
@@ -411,9 +433,8 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
     }
   }
 
-  if ((pusch_config_dedicated->transform_precoder == transform_precoder_disabled) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.dmrs_type == 2) &&
-    (pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.max_length == 2)) { // tables 7.3.1.1.2-20/21/22/23
+  if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) &&
+    (dmrs_type != NULL) && (max_length != NULL)) { // tables 7.3.1.1.2-20/21/22/23
 
     if (rank == 1){
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = table_7_3_1_1_2_20[dci->antenna_ports.val][0]; //TBC
@@ -571,7 +592,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     int target_ss;
     bool valid_ptrs_setup = 0;
     uint16_t n_RB_ULBWP = NRRIV2BW(mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    fapi_nr_pusch_config_dedicated_t *pusch_config_dedicated = &mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated;
     NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup;
 
     // Basic sanity check for MCS value to check for a false or erroneous DCI
@@ -654,7 +674,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
 
     /* FREQ_HOPPING_FLAG */
-    if ((pusch_config_dedicated->resource_allocation != 0) && (pusch_config_dedicated->frequency_hopping !=0)){
+    if ((pusch_Config->frequencyHopping!=NULL) && (pusch_Config->resourceAllocation != NR_PUSCH_Config__resourceAllocation_resourceAllocationType0)){
       pusch_config_pdu->frequency_hopping = dci->frequency_hopping_flag.val;
     }
 
