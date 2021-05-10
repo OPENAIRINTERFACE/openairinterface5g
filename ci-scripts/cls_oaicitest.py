@@ -2203,10 +2203,14 @@ class OaiCiTest():
 			logging.debug("Iperf for Module in DL mode detected")
 			#server side UE
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+			cmd = 'rm iperf_server_ ' +  self.testCase_id + '_' + self.ue_id + '.log'
+			SSH.command(cmd,'\$',5)
 			cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',5)
 			#client side EPC
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+			SSH.command(cmd,'\$',5)
 			cmd = 'iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',int(iperf_time)*5.0)
 
@@ -2221,10 +2225,14 @@ class OaiCiTest():
 			logging.debug("Iperf for Module in UL mode detected")
 			#server side EPC
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+			SSH.command(cmd,'\$',5)
 			cmd = 'echo $USER; nohup iperf -s -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',5)
 			#client side UE
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+			SSH.command(cmd,'\$',5)
 			cmd = 'iperf -B ' + UE_IPAddress + ' ' + '-c ' + EPC.IPAddress + ' ' + self.iperf_args + ' > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',int(iperf_time)*5.0)
 
