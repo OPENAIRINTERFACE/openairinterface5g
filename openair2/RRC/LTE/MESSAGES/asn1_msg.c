@@ -4225,13 +4225,6 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
                                long rsrq_s,
                                long rsrp_tar,
                                long rsrq_tar) {
-  LOG_I(RRC, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~MICHAEL~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-  #if EMIT_ASN_DEBUG
-  #warning EMIT_ASN_DEBUG is enabled
-  #else
-  #error EMIT_ASN_DEBUG is disabled
-  #endif
-
 
   LTE_UL_DCCH_Message_t ul_dcch_msg;
   memset(&ul_dcch_msg, 0, sizeof(ul_dcch_msg));
@@ -4253,14 +4246,9 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
   mr_r8->measResultNeighCells = CALLOC(1, sizeof(*mr_r8->measResultNeighCells));
   mr_r8->measResultNeighCells->present = LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
 
-
-  LTE_MeasResultNR_r15_t *measResultNR_r15;
-  measResultNR_r15 = CALLOC(1, sizeof(*measResultNR_r15));
-  measResultNR_r15->rsrpResult_r15 = &rsrp_tar;
-  measResultNR_r15->rsrqResult_r15 = &rsrq_tar;
-
   LTE_MeasResultCellNR_r15_t *measResultCellNR_r15;
   measResultCellNR_r15 = CALLOC(1, sizeof(*measResultCellNR_r15));
+  measResultCellNR_r15->ext1 //Melissa should be null
   measResultCellNR_r15->pci_r15 = phy_id;
   measResultCellNR_r15->measResultCell_r15.rsrpResult_r15 = &rsrp_tar;
   measResultCellNR_r15->measResultCell_r15.rsrqResult_r15 = &rsrq_tar;

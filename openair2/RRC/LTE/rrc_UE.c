@@ -1736,6 +1736,29 @@ rrc_ue_process_ueCapabilityEnquiry(
         buffer,
         PDCP_TRANSMISSION_MODE_CONTROL);
     }
+    else if (*UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.array[i]
+            == LTE_RAT_Type_nr) {
+        ASN_SEQUENCE_ADD(
+          &ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
+          &ue_CapabilityRAT_Container);
+        enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, buffer, 100);
+        AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+                    enc_rval.failed_type->name, enc_rval.encoded);
+
+        if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+          xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
+        }
+
+        LOG_A(RRC,"NR_UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+        rrc_data_req_ue (
+          ctxt_pP,
+          DCCH,
+          rrc_mui++,
+          SDU_CONFIRM_NO,
+          (enc_rval.encoded + 7) / 8,
+          buffer,
+          PDCP_TRANSMISSION_MODE_CONTROL);
+        }
   }
 }
 
@@ -1777,6 +1800,9 @@ rrc_ue_process_rrcConnectionReconfiguration(
         LOG_I(RRC,"Radio Resource Configuration is present\n");
         rrc_ue_process_radioResourceConfigDedicated(ctxt_pP,eNB_index, rrcConnectionReconfiguration_r8->radioResourceConfigDedicated);
       }
+      /* Melissa: Here we need to open up container to get r_15 non-criticalExtensions. Look in
+         eNB as to how this message is put into the container. Need scg_group_config and scg_RB_config.
+         These two need to be sent over to the NR UE. */
 
       //TTN for D2D
       //if RRCConnectionReconfiguration message includes the sl-CommConfig
@@ -2259,11 +2285,17 @@ rrc_ue_decode_dcch(
           LOG_I(RRC, "[UE %d] Received Capability Enquiry (eNB %d)\n",
                 ctxt_pP->module_id,
                 eNB_indexP);
-          /* Melissa: Here we can see if the UE is now in NSA mode. If it is, then
-             we will send the nrUECapabilityEnquiry and handle this type of message
-             differently in the NR UE. */
-        #if 0
-          if () {
+
+          LTE_UE_CapabilityRequest_t *ue_cap = &dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.
+                                                choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest;
+          bool have_received_nrue_cap = false;
+          for (int i = 0; i < ue_cap->list.count; i++) {
+            if (*ue_cap->list.array[i] == LTE_RAT_Type_nr || *ue_cap->list.array[i] == LTE_RAT_Type_eutra_nr) {
+                have_received_nrue_cap = true;
+                break;
+            }
+          }
+          if (have_received_nrue_cap) {
                 LTE_UECapabilityEnquiry_t *ueCapabilityEnquiry_nsa = &dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry;
                 OCTET_STRING_t * requestedFreqBandsNR = ueCapabilityEnquiry_nsa->
                                       criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.nonCriticalExtension->
@@ -2277,9 +2309,7 @@ rrc_ue_decode_dcch(
                 }
                 info->dl_dcch_msg = dl_dcch_msg;
                 dl_dcch_msg = NULL;
-          } else if softmodem...
-        #endif
-          if (get_softmodem_params()->nsa) {
+          } else if (get_softmodem_params()->nsa && !have_received_nrue_cap) {
               LTE_UECapabilityEnquiry_t *ueCapabilityEnquiry_nsa = &dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry;
               OCTET_STRING_t * requestedFreqBandsNR = ueCapabilityEnquiry_nsa->
                                     criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.nonCriticalExtension->
@@ -6299,8 +6329,7 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
     {
         case UE_CAPABILITY_INFO:
         {
-            LOG_D(RRC, "Processing a UE_CAPABILITY_INFO message \n");
-            LOG_I(RRC, "Send itti msg to trigger processing of capabilites b/c we have a UE_CAPABILITY_INFO\n");
+            LOG_I(RRC, "Create itti msg to send received UE_CAPABILITY_INFO to eNB\n");
             MessageDef *message_p;
             rrc_dcch_data_copy_t *dl_dcch_buffer = itti_malloc (TASK_RRC_NSA_UE,
                                                                 TASK_RRC_UE,
@@ -6313,16 +6342,7 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             RRC_DCCH_DATA_COPY_IND (message_p).sdu_size = sizeof(rrc_dcch_data_copy_t);
             RRC_DCCH_DATA_COPY_IND (message_p).eNB_index = 0;
             itti_send_msg_to_task (TASK_RRC_UE, 0, message_p);
-            LOG_D(RRC, "Sent itti RRC_DCCH_DATA_COPY_IND\n");
-            break;
-            /* Melissa:
-            1. Set these parameters if we get UE_CAPABILITY_INFO message:
-                a. irat-ParametersNR-r15
-                b. featureSetsEUTRA-r15
-                c. pdcp-ParametersNR-r15
-            2. Print the contents of each parameter
-            3. Call OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
-               and pass in the UE CAPABILITY INFO */
+            LOG_I(RRC, "Sent itti RRC_DCCH_DATA_COPY_IND\n");
             break;
         }
         case UE_CAPABILITY_DUMMY:

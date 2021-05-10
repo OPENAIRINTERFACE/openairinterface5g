@@ -2976,6 +2976,43 @@ static void start_oai_nrue_threads()
     init_nrUE_standalone_thread(ue_id_g);
 }
 
+static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
+{
+  NR_UE_NR_Capability_t *UE_Capability_nr = CALLOC(1, sizeof(NR_UE_NR_Capability_t));
+  NR_BandNR_t *nr_bandnr = CALLOC(1, sizeof(NR_BandNR_t));
+  nr_bandnr->bandNR = 78;
+  ASN_SEQUENCE_ADD(&UE_Capability_nr->rf_Parameters.supportedBandListNR.list, nr_bandnr);
+  OAI_NR_UECapability_t *UECap = CALLOC(1, sizeof(OAI_NR_UECapability_t));
+  UECap->UE_NR_Capability = UE_Capability_nr;
+
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_NR_Capability,
+                                   NULL,
+                                   (void *)UE_Capability_nr,
+                                   &UECap->sdu[0],
+                                   MAX_UE_NR_CAPABILITY_SIZE);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+  UECap->sdu_size = (enc_rval.encoded + 7) / 8;
+  LOG_I(NR_RRC, "[NR_RRC] NRUE Capability encoded, %d bytes (%zd bits)\n",
+        UECap->sdu_size, enc_rval.encoded + 7);
+
+  NR_UE_rrc_inst[0].UECap = UECap;
+  NR_UE_rrc_inst[0].UECapability = UECap->sdu;
+  NR_UE_rrc_inst[0].UECapability_size = UECap->sdu_size;
+
+  NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container;
+  memset(&ue_CapabilityRAT_Container, 0, sizeof(NR_UE_CapabilityRAT_Container_t));
+  ue_CapabilityRAT_Container.rat_Type = NR_RAT_Type_nr;
+  OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ue_CapabilityRAT_Container,
+                       (const char *)NR_UE_rrc_inst[0].UECapability,
+                       NR_UE_rrc_inst[0].UECapability_size);
+  ue_CapabilityRAT_Container.ue_CapabilityRAT_Container.buf  = NR_UE_rrc_inst[0].UECapability;
+  ue_CapabilityRAT_Container.ue_CapabilityRAT_Container.size = NR_UE_rrc_inst[0].UECapability_size;
+  nsa_sendmsg_to_lte_ue(ue_CapabilityRAT_Container.ue_CapabilityRAT_Container.buf,
+                        ue_CapabilityRAT_Container.ue_CapabilityRAT_Container.size,
+                        UE_CAPABILITY_INFO);
+}
+
 void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
 {
     LOG_I(NR_RRC, "We are processing an NSA message\n");
@@ -3023,18 +3060,11 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
             if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
             {
               SEQUENCE_free(&asn_DEF_NR_FreqBandList, nr_freq_band_list, ASFM_FREE_EVERYTHING);
-              LOG_E(RRC, "Failed to decode UECapabilityInfo (%zu bits)\n", dec_rval.consumed);
+              LOG_E(NR_RRC, "Failed to decode UECapabilityInfo (%zu bits)\n", dec_rval.consumed);
               break;
             }
-            for (int i = 0; i < nr_freq_band_list->list.count; i++)
-            {
-                LOG_D(NR_RRC, "Received NR band information: %ld.\n",
-                     nr_freq_band_list->list.array[i]->choice.bandInformationNR->bandNR);
-            }
-            MessageDef *nrue_cap_info = itti_alloc_new_message(TASK_RRC_NSA_UE, 0, UE_CAPABILITY_INFO);
-            LOG_I(NR_RRC, "We are calling nsa_sendmsg_to_lte_ue to send a UE_CAPABILITY_INFO\n");
-            nsa_sendmsg_to_lte_ue(nrue_cap_info, sizeof(nrue_cap_info), UE_CAPABILITY_INFO);
-            LOG_I(NR_RRC, "We have sent a UE_CAPABILITY_INFO\n");
+            LOG_I(NR_RRC, "Calling nsa_rrc_ue_process_ueCapabilityEnquiry\n");
+            nsa_rrc_ue_process_ueCapabilityEnquiry();
             break;
         }
 
