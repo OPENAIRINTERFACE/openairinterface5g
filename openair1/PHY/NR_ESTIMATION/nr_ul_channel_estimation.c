@@ -765,7 +765,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                          8);
       ul_ch -= 24;
 
-      for (pilot_cnt=0; pilot_cnt<4*nb_rb_pusch; pilot_cnt += 4) {
+      for (pilot_cnt=4; pilot_cnt<4*(nb_rb_pusch-1); pilot_cnt += 4) {
 
         ch_0 = ((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15;
         ch_1 = ((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15;
