@@ -118,13 +118,14 @@ long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
  * This function returns the UL config corresponding to a given UL slot
  * from MAC instance .
  */
-fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot) {
+fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot)
+{
   //Check if request to access ul_config is for a UL slot
-  if (is_nr_UL_slot(mac->scc, slot) == 0) {
+  if (is_nr_UL_slot(mac->scc, slot, mac->frame_type) == 0) {
     LOG_W(MAC, "Slot %d is not a UL slot. %s called for wrong slot!!!\n", slot, __FUNCTION__);
     return NULL;
   }
-  
+
   // Calculate the index of the UL slot in mac->ul_config_request list. This is
   // based on the TDD pattern (slot configuration period) and number of UL+mixed
   // slots in the period. TS 38.213 Sec 11.1
@@ -560,19 +561,10 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   } else if (dci) {
 
     int target_ss;
-    uint8_t  ptrs_time_density;
-    uint8_t  ptrs_freq_density;
-    nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
+    bool valid_ptrs_setup = 0;
     uint16_t n_RB_ULBWP = NRRIV2BW(mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     fapi_nr_pusch_config_dedicated_t *pusch_config_dedicated = &mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated;
     NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup;
-
-    // These should come from RRC config!!!
-    uint8_t  ptrs_mcs1          = 2;
-    uint8_t  ptrs_mcs2          = 4;
-    uint8_t  ptrs_mcs3          = 10;
-    uint16_t n_rb0              = 25;
-    uint16_t n_rb1              = 75;
 
     // Basic sanity check for MCS value to check for a false or erroneous DCI
     if (dci->mcs > 28) {
@@ -689,12 +681,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       pusch_config_pdu->absolute_delta_PUSCH = 4;
     }
 
-    ptrs_time_density  = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
-    ptrs_freq_density  = get_K_ptrs(n_rb0, n_rb1, pusch_config_pdu->rb_size);
-    // PTRS ports configuration
-    // TbD: ptrs_dmrs_port and ptrs_port_index are not initialised!
-    ptrs_ports_list.ptrs_re_offset = 0;
-
     /* DMRS */
     l_prime_mask = get_l_prime(pusch_config_pdu->nr_of_symbols, typeB, pusch_dmrs_pos0, pusch_len1);
     if (pusch_config_pdu->transform_precoding == transform_precoder_disabled)
@@ -708,12 +694,20 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
 
     /* PTRS */
-    pusch_config_pdu->pusch_ptrs.ptrs_time_density = ptrs_time_density;
-    pusch_config_pdu->pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
-    pusch_config_pdu->pusch_ptrs.ptrs_ports_list   = &ptrs_ports_list;
-
-    if (1 << pusch_config_pdu->pusch_ptrs.ptrs_time_density >= pusch_config_pdu->nr_of_symbols) {
-      pusch_config_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
+    if (mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS != NULL) {
+      if (pusch_config_pdu->transform_precoding == transform_precoder_disabled) {
+        nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
+        pusch_config_pdu->pusch_ptrs.ptrs_ports_list = &ptrs_ports_list;
+        valid_ptrs_setup = set_ul_ptrs_values(mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup,
+                                              pusch_config_pdu->rb_size, pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table,
+                                              &pusch_config_pdu->pusch_ptrs.ptrs_freq_density,&pusch_config_pdu->pusch_ptrs.ptrs_time_density,
+                                              &pusch_config_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,&pusch_config_pdu->pusch_ptrs.num_ptrs_ports,
+                                              &pusch_config_pdu->pusch_ptrs.ul_ptrs_power, pusch_config_pdu->nr_of_symbols);
+        if(valid_ptrs_setup==true) {
+          pusch_config_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS;
+        }
+        LOG_D(MAC, "UL PTRS values: PTRS time den: %d, PTRS freq den: %d\n", pusch_config_pdu->pusch_ptrs.ptrs_time_density, pusch_config_pdu->pusch_ptrs.ptrs_freq_density);
+      }
     }
 
   }
@@ -889,34 +883,40 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
           uint16_t TBS_bytes = ulcfg_pdu->pusch_config_pdu.pusch_data.tb_size;
 
-          // Push data from MAC to PHY only when NDI toggles
-          if (IS_SOFTMODEM_NOS1 && (mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator)){
-            // Getting IP traffic to be transmitted
-            data_existing = nr_ue_get_sdu(mod_id,
-                                          cc_id,
-                                          frame_tx,
-                                          slot_tx,
-                                          0,
-                                          ulsch_input_buffer,
-                                          TBS_bytes,
-                                          &access_mode);
-          }
+          if (ra->ra_state == WAIT_RAR){
+            memcpy(ulsch_input_buffer, mac->ulsch_pdu.payload, TBS_bytes);
+            LOG_D(NR_MAC,"[RAPROC] Msg3 to be transmitted:\n");
+            for (int k = 0; k < TBS_bytes; k++) {
+              LOG_D(NR_MAC,"(%i): 0x%x\n",k,mac->ulsch_pdu.payload[k]);
+            }
+          } else {
+            if (IS_SOFTMODEM_NOS1 && (mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator)){
+              // Getting IP traffic to be transmitted
+              data_existing = nr_ue_get_sdu(mod_id,
+                                            cc_id,
+                                            frame_tx,
+                                            slot_tx,
+                                            0,
+                                            ulsch_input_buffer,
+                                            TBS_bytes,
+                                            &access_mode);
+            }
 
-          mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
-          //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-          if (!IS_SOFTMODEM_NOS1 || !data_existing) {
-            //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
-            //and block this traffic from being forwarded to the upper layers at the gNB
-            LOG_D(PHY, "In %s: Random data to be transmitted: TBS_bytes %d \n", __FUNCTION__, TBS_bytes);
+            mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
+            //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
+            if (!IS_SOFTMODEM_NOS1 || !data_existing) {
+              //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
+              //and block this traffic from being forwarded to the upper layers at the gNB
+              LOG_D(PHY, "In %s: Random data to be transmitted: TBS_bytes %d \n", __FUNCTION__, TBS_bytes);
 
-            //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-            //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
-            //have a valid LCID (nr_process_mac_pdu function)
-            ulsch_input_buffer[0] = 0x31;
+              //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
+              //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
+              //have a valid LCID (nr_process_mac_pdu function)
+              ulsch_input_buffer[0] = 0x31;
 
-            for (int i = 1; i < TBS_bytes; i++) {
-              ulsch_input_buffer[i] = (unsigned char) rand();
-              //printf(" input encoder a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+              for (int i = 1; i < TBS_bytes; i++) {
+                ulsch_input_buffer[i] = (unsigned char) rand();
+              }
             }
           }
 
@@ -1662,7 +1662,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   ra->RA_offset = 2; // to compensate the rx frame offset at the gNB
   ra->generate_nr_prach = 0; // Reset flag for PRACH generation
 
-  if (is_nr_UL_slot(scc, slotP)) {
+  if (is_nr_UL_slot(scc, slotP, mac->frame_type)) {
 
     // WIP Need to get the proper selected ssb_idx
     //     Initial beam selection functionality is not available yet
@@ -1683,13 +1683,11 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       format0 = format & 0xff;        // single PRACH format
       format1 = (format >> 8) & 0xff; // dual PRACH format
 
-      ul_config->sfn = frameP;
-      ul_config->slot = slotP;
-
-      ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PRACH;
       prach_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
       memset(prach_config_pdu, 0, sizeof(fapi_nr_ul_config_prach_pdu));
-      ul_config->number_pdus += 1;
+
+      fill_ul_config(ul_config, frameP, slotP, FAPI_NR_UL_CONFIG_TYPE_PRACH);
+
       LOG_D(PHY, "In %s: (%p) %d UL PDUs:\n", __FUNCTION__, ul_config, ul_config->number_pdus);
 
       ncs = get_NCS(rach_ConfigGeneric->zeroCorrelationZoneConfig, format0, setup->restrictedSetConfig);
@@ -1767,11 +1765,10 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
             AssertFatal(1 == 0, "Invalid PRACH format");
         }
       } // if format1
+      fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
+      if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+        mac->if_module->scheduled_response(&scheduled_response);
     } // is_nr_prach_slot
-
-    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
-    if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
-      mac->if_module->scheduled_response(&scheduled_response);
   } // if is_nr_UL_slot
 }
 

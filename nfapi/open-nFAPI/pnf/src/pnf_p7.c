@@ -1572,7 +1572,7 @@ uint8_t is_nr_p7_request_in_window(uint16_t sfn,uint16_t slot, const char* name,
 	{ 	
 		
 		NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is out of window %d (delta:%d) [max:%d]\n", current_sfn_slot_dec, name, recv_sfn_slot_dec,  (current_sfn_slot_dec - recv_sfn_slot_dec), timing_window);
-		
+		//NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is out of window [max:%d]\n", current_sfn_slot_dec, name, recv_sfn_slot_dec,  (current_sfn_slot_dec - recv_sfn_slot_dec), timing_window);
 	}//Need to add more cases
 	
 

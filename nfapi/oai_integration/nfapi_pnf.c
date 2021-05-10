@@ -2406,36 +2406,3 @@ int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind) {
   //free(ind.rx_indication_body.rx_pdu_list);
   return retval;
 }
-
-//NR UPLINK INDICATION
-
-int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) {
-  ind->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
-  ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION;
-  return nfapi_pnf_p7_nr_rx_data_ind(p7_config_g, ind);
-}
-
-int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) {
-  ind->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
-  ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION;
-  return nfapi_pnf_p7_nr_crc_ind(p7_config_g, ind);
-}
-
-int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) {
-  ind->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
-  ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION;
-  return nfapi_pnf_p7_nr_srs_ind(p7_config_g, ind);
-}
-
-int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) {
-  ind->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
-  ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
-  return nfapi_pnf_p7_nr_uci_ind(p7_config_g, ind);
-}
-
-int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) {
-  ind->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
-  ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION;
-  return nfapi_pnf_p7_nr_rach_ind(p7_config_g, ind);
-}
-

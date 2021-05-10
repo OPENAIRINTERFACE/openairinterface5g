@@ -131,6 +131,7 @@ void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
 
 void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   
+  //if(NFAPI_MODE == NFAPI_MODE_VNF)
   PHY_VARS_gNB *gNB;
   // copy data from L2 interface into L1 structures
   module_id_t                   Mod_id       = Sched_INFO->module_id;
@@ -250,7 +251,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     {
       Sched_INFO->DL_req->SFN = frame;
       Sched_INFO->DL_req->Slot = slot;
-      printf("DL tti Frame = %d, slot = %d. \n",frame,slot);
+      //printf("DL tti Frame = %d, slot = %d. \n",frame,slot);
       oai_nfapi_dl_tti_req(Sched_INFO->DL_req);
     }
     if (Sched_INFO->TX_req->Number_of_PDUs > 0)

@@ -624,7 +624,7 @@ int main( int argc, char **argv )
                                 0);
   NR_UE_rrc_inst[ctxt.module_id].Info[0].State = RRC_SI_RECEIVED;
 
-  rrc_ue_generate_RRCSetupRequest(&ctxt, 0);
+  nr_rrc_ue_generate_RRCSetupRequest(ctxt.module_id, 0);
 
   printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();

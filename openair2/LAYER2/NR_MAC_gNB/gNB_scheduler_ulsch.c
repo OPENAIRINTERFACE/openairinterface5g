@@ -396,7 +396,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
+    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -413,7 +413,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if (timing_advance != 0xffff)
         UE_scheduling_control->ta_update = timing_advance;
       UE_scheduling_control->ul_rssi = rssi;
-      LOG_D(MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
+      LOG_D(NR_MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
     }
     else{
       UE_scheduling_control->tpc0 = 1;
@@ -432,7 +432,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 #endif
 
     if (sduP != NULL){
-      LOG_D(MAC, "Received PDU at MAC gNB \n");
+      LOG_D(NR_MAC, "Received PDU at MAC gNB \n");
 
       const uint32_t tb_size = UE_scheduling_control->ul_harq_processes[harq_pid].sched_pusch.tb_size;
       UE_scheduling_control->sched_ul_bytes -= tb_size;
@@ -469,7 +469,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       // random access pusch with TC-RNTI
       if (ra->rnti != current_rnti) {
-        LOG_W(MAC,
+        LOG_W(NR_MAC,
               "expected TC-RNTI %04x to match current RNTI %04x\n",
               ra->rnti,
               current_rnti);
@@ -477,19 +477,25 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       }
       const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
       UE_info->UE_beam_index[UE_id] = ra->beam_id;
-      LOG_I(MAC,
+      LOG_I(NR_MAC,
             "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
             "adding UE MAC Context UE_id %d/RNTI %04x\n",
             gnb_mod_idP,
             current_rnti,
             UE_id,
             ra->rnti);
+
+      LOG_D(NR_MAC,"[RAPROC] Received Msg3:\n");
+      for (int k = 0; k < sdu_lenP; k++) {
+        LOG_D(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
+      }
+
       // re-initialize ta update variables afrer RA procedure completion
       UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
 
       free(ra->preambles.preamble_list);
       ra->state = RA_IDLE;
-      LOG_I(MAC,
+      LOG_I(NR_MAC,
             "reset RA state information for RA-RNTI %04x/index %d\n",
             ra->rnti,
             i);
@@ -1069,18 +1075,16 @@ void nr_schedule_ulsch(module_id_t module_id,
 
     /* PUSCH PTRS */
     if (ps->NR_DMRS_UplinkConfig->phaseTrackingRS != NULL) {
-      // TODO to be fixed from RRC config
-      uint8_t ptrs_mcs1 = 2;  // higher layer parameter in PTRS-UplinkConfig
-      uint8_t ptrs_mcs2 = 4;  // higher layer parameter in PTRS-UplinkConfig
-      uint8_t ptrs_mcs3 = 10; // higher layer parameter in PTRS-UplinkConfig
-      uint16_t n_rb0 = 25;    // higher layer parameter in PTRS-UplinkConfig
-      uint16_t n_rb1 = 75;    // higher layer parameter in PTRS-UplinkConfig
-      pusch_pdu->pusch_ptrs.ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, pusch_pdu->mcs_index, pusch_pdu->mcs_table);
-      pusch_pdu->pusch_ptrs.ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, pusch_pdu->rb_size);
+      bool valid_ptrs_setup = false;
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
-      pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
-
-      pusch_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
+      valid_ptrs_setup = set_ul_ptrs_values(ps->NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup,
+                                            pusch_pdu->rb_size, pusch_pdu->mcs_index, pusch_pdu->mcs_table,
+                                            &pusch_pdu->pusch_ptrs.ptrs_freq_density,&pusch_pdu->pusch_ptrs.ptrs_time_density,
+                                            &pusch_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,&pusch_pdu->pusch_ptrs.num_ptrs_ports,
+                                            &pusch_pdu->pusch_ptrs.ul_ptrs_power, pusch_pdu->nr_of_symbols);
+      if (valid_ptrs_setup==true) {
+        pusch_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS; // enable PUSCH PTRS
+      }
     }
     else{
       pusch_pdu->pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS

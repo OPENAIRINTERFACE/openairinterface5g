@@ -26,8 +26,12 @@
 
 #include "vnf_p7.h"
 
+#include "common/ran_context.h"
+
+#include "openair1/PHY/defs_gNB.h"
 #define FAPI2_IP_DSCP	0
 
+extern RAN_CONTEXT_t RC;
 
 nfapi_vnf_p7_config_t* nfapi_vnf_p7_config_create()
 {
@@ -93,6 +97,7 @@ struct timespec timespec_sub(struct timespec lhs, struct timespec rhs)
 // send indications to mac
 int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 {
+	uint16_t vnf_frame; uint8_t vnf_slot;
 	if(config == 0)
 		return -1;
 
@@ -145,7 +150,7 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 
 	//struct timespec original_pselect_timeout;
 	struct timespec pselect_timeout;
-	pselect_timeout.tv_sec = 0;
+	pselect_timeout.tv_sec = 0; 
 	pselect_timeout.tv_nsec = 500000; // ns in a 0.5 ms
 	//pselect_timeout.tv_nsec = 500000;
 
@@ -257,7 +262,8 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 
 //long wraps = pselect_timeout.tv_nsec % 1e9;
 
-
+			// pselect_timeout.tv_sec = 100; // 0
+			// pselect_timeout.tv_nsec = 0;//500000; // ns in a 0.5 ms
 			selectRetval = pselect(maxSock+1, &rfds, NULL, NULL, &pselect_timeout, NULL);
 		//	selectRetval = pselect(120, &rfds, NULL, NULL, &pselect_timeout, NULL);
 
@@ -388,6 +394,8 @@ NFAPI_TRACE(NFAPI_TRACE_ERROR, "INVAL: pselect_timeout:%d.%ld adj[dur:%d adj:%d]
 			selectRetval = 0;
 		}
 
+		nfapi_vnf_p7_connection_info_t* curr = vnf_p7->p7_connections;
+		uint8_t ul_p7_count = 0;
 		if(selectRetval == 0)
 		{
 			//vnf_p7->sf_start_time_hr = vnf_get_current_time_hr();
@@ -395,7 +403,7 @@ NFAPI_TRACE(NFAPI_TRACE_ERROR, "INVAL: pselect_timeout:%d.%ld adj[dur:%d adj:%d]
 struct timespec current_time;
 	clock_gettime(CLOCK_MONOTONIC, &current_time);
 			// pselect timed out
-			nfapi_vnf_p7_connection_info_t* curr = vnf_p7->p7_connections;
+			
 			while(curr != 0)
 			{
 				if (curr->slot == 19)
@@ -410,17 +418,49 @@ struct timespec current_time;
 				{
 				curr->slot++;
 				}
+				//printf("Frame = %d, slot = %d in VNF main loop. n",curr->sfn,curr->slot);
+				vnf_frame = curr->sfn; vnf_slot = curr->slot;
+
+				struct timespec curr_time;
+			clock_gettime(CLOCK_MONOTONIC, &curr_time);
+				//printf("SFN=%d, slot=%d, Curr_time=%d.%d \n",vnf_frame,vnf_slot,curr_time.tv_sec,curr_time.tv_nsec);
+
 				vnf_nr_sync(vnf_p7, curr);	
 				curr = curr->next;	
 			}
 			send_mac_slot_indications(vnf_p7);
+			
+
+
+			// // Call the scheduler
+			// 	struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+			// 	pthread_mutex_lock(&gNB->UL_INFO_mutex);
+			// 	gNB->UL_INFO.frame     = vnf_frame;
+			// 	gNB->UL_INFO.slot      = vnf_slot;
+
+			// 	gNB->UL_INFO.module_id = gNB->Mod_id;
+			// 	gNB->UL_INFO.CC_id     = gNB->CC_id;
+			// 	gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+			// 	pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 		}
 		else if(selectRetval > 0)
 		{
 			// have a p7 message
 			if(FD_ISSET(vnf_p7->socket, &rfds))
-			{
+			{	
+			
 				vnf_nr_p7_read_dispatch_message(vnf_p7); 
+
+				// Call the scheduler
+				struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+				pthread_mutex_lock(&gNB->UL_INFO_mutex);
+				gNB->UL_INFO.frame     = vnf_frame;
+				gNB->UL_INFO.slot      = vnf_slot;
+
+				gNB->UL_INFO.module_id = gNB->Mod_id;
+				gNB->UL_INFO.CC_id     = gNB->CC_id;
+				gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+				pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 			}
 		}
 		else

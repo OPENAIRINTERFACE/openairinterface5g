@@ -31,6 +31,7 @@
  */
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "common/utils/nr/nr_common.h"
 #include <limits.h>
 
 #define reserved 0xffff
@@ -1220,6 +1221,11 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
     else { // FDD
       x = table_6_3_3_2_2_prachConfig_Index[index][2];
       s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
+      for(int i = 0; i < 64 ; i++) {
+        if ( (s_map >> i) & 0x01) {
+          (*N_RA_sfn)++;
+        }
+      }
       *N_RA_slot = table_6_3_3_2_2_prachConfig_Index[index][6];
       if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
         *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
@@ -1396,19 +1402,17 @@ int get_nr_prach_info_from_index(uint8_t index,
             if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
               format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
             *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %lu) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u \n",
-                  frame,
-                  slot,
-                  index,
-                  table_6_3_3_2_3_prachConfig_Index[index][6],
-                  pointa,
-                  mu,
-                  unpaired,
-                  *start_symbol,
-                  *N_t_slot,
-                  *N_dur,
-                  *N_RA_slot,
-                  *RA_sfn_index);
+            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %lu) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u \n", frame,
+              slot,
+              index, table_6_3_3_2_3_prachConfig_Index[index][6],
+              pointa,
+              mu,
+              unpaired,
+              *start_symbol,
+              *N_t_slot,
+              *N_dur,
+              *N_RA_slot,
+              *RA_sfn_index);
           }
           return 1;
         }
@@ -1428,6 +1432,11 @@ int get_nr_prach_info_from_index(uint8_t index,
           if (mu == 1) {
             if ( (table_6_3_3_2_2_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
+          }
+          for(int i = 0; i <= subframe ; i++) {
+            if ( (s_map >> i) & 0x01) {
+              (*RA_sfn_index)++;
+            }
           }
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
             *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
@@ -1567,79 +1576,6 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
   }
 }
 
-// Table 5.2-1 NR operating bands in FR1 & FR2 (3GPP TS 38.101)
-// Table 5.4.2.3-1 Applicable NR-ARFCN per operating band in FR1 & FR2 (3GPP TS 38.101)
-// Notes:
-// - N_OFFs for bands from 80 to 89 and band 95 is referred to UL
-// - Frequencies are expressed in KHz
-// - col: NR_band ul_min  ul_max  dl_min  dl_max  step  N_OFFs_DL  deltaf_raster
-nr_bandentry_t nr_bandtable[] = {
-  {1,   1920000, 1980000, 2110000, 2170000, 20, 422000, 100},
-  {2,   1850000, 1910000, 1930000, 1990000, 20, 386000, 100},
-  {3,   1710000, 1785000, 1805000, 1880000, 20, 361000, 100},
-  {5,    824000,  849000,  869000,  894000, 20, 173800, 100},
-  {7,   2500000, 2570000, 2620000, 2690000, 20, 524000, 100},
-  {8,    880000,  915000,  925000,  960000, 20, 185000, 100},
-  {12,   698000,  716000,  729000,  746000, 20, 145800, 100},
-  {14,   788000,  798000,  758000,  768000, 20, 151600, 100},
-  {18,   815000,  830000,  860000,  875000, 20, 172000, 100},
-  {20,   832000,  862000,  791000,  821000, 20, 158200, 100},
-  {25,  1850000, 1915000, 1930000, 1995000, 20, 386000, 100},
-  {26,   814000,  849000,  859000,  894000, 20, 171800, 100},
-  {28,   703000,  758000,  758000,  813000, 20, 151600, 100},
-  {29,      000,     000,  717000,  728000, 20, 143400, 100},
-  {30,  2305000, 2315000, 2350000, 2360000, 20, 470000, 100},
-  {34,  2010000, 2025000, 2010000, 2025000, 20, 402000, 100},
-  {38,  2570000, 2620000, 2570000, 2630000, 20, 514000, 100},
-  {39,  1880000, 1920000, 1880000, 1920000, 20, 376000, 100},
-  {40,  2300000, 2400000, 2300000, 2400000, 20, 460000, 100},
-  {41,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
-  {41,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
-  {47,  5855000, 5925000, 5855000, 5925000,  1, 790334,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
-  {50,  1432000, 1517000, 1432000, 1517000, 20, 286400, 100},
-  {51,  1427000, 1432000, 1427000, 1432000, 20, 285400, 100},
-  {53,  2483500, 2495000, 2483500, 2495000, 20, 496700, 100},
-  {65,  1920000, 2010000, 2110000, 2200000, 20, 422000, 100},
-  {66,  1710000, 1780000, 2110000, 2200000, 20, 422000, 100},
-  {70,  1695000, 1710000, 1995000, 2020000, 20, 399000, 100},
-  {71,   663000,  698000,  617000,  652000, 20, 123400, 100},
-  {74,  1427000, 1470000, 1475000, 1518000, 20, 295000, 100},
-  {75,      000,     000, 1432000, 1517000, 20, 286400, 100},
-  {76,      000,     000, 1427000, 1432000, 20, 285400, 100},
-  {77,  3300000, 4200000, 3300000, 4200000,  1, 620000,  15},
-  {77,  3300000, 4200000, 3300000, 4200000,  2, 620000,  30},
-  {78,  3300000, 3800000, 3300000, 3800000,  1, 620000,  15},
-  {78,  3300000, 3800000, 3300000, 3800000,  2, 620000,  30},
-  {79,  4400010, 5000000, 4400010, 5000000,  1, 693334,  15},
-  {79,  4400010, 5000000, 4400010, 5000000,  2, 693334,  30},
-  {80,  1710000, 1785000,     000,     000, 20, 342000, 100},
-  {81,   880000,  915000,     000,     000, 20, 176000, 100},
-  {82,   832000,  862000,     000,     000, 20, 166400, 100},
-  {83,   703000,  748000,     000,     000, 20, 140600, 100},
-  {84,  1920000, 1980000,     000,     000, 20, 384000, 100},
-  {86,  1710000, 1785000,     000,     000, 20, 342000, 100},
-  {89,   824000,  849000,     000,     000, 20, 342000, 100},
-  {90,  2496000, 2690000, 2496000, 2690000, 3,  499200,  15},
-  {90,  2496000, 2690000, 2496000, 2690000, 6,  499200,  30},
-  {90,  2496000, 2690000, 2496000, 2690000, 20, 499200, 100},
-  {91,   832000,  862000, 1427000, 1432000, 20, 285400, 100},
-  {92,   832000,  862000, 1432000, 1517000, 20, 286400, 100},
-  {93,   880000,  915000, 1427000, 1432000, 20, 285400, 100},
-  {94,   880000,  915000, 1432000, 1517000, 20, 286400, 100},
-  {95,  2010000, 2025000,     000,     000, 20, 402000, 100},
-  {257,26500020,29500000,26500020,29500000,  1,2054166,  60},
-  {257,26500080,29500000,26500080,29500000,  2,2054167, 120},
-  {258,24250080,27500000,24250080,27500000,  1,2016667,  60},
-  {258,24250080,27500000,24250080,27500000,  2,2016667, 120},
-  {260,37000020,40000000,37000020,40000000,  1,2229166,  60},
-  {260,37000080,40000000,37000080,40000000,  2,2229167, 120},
-  {261,27500040,28350000,27500040,28350000,  1,2070833,  60},
-  {261,27500040,28350000,27500040,28350000,  2,2070833, 120}
-};
-
-
 // TS 38.211 Table 6.4.1.1.3-3: PUSCH DMRS positions l' within a slot for single-symbol DMRS and intra-slot frequency hopping disabled.
 // The first 4 colomns are PUSCH mapping type A and the last 4 colomns are PUSCH mapping type B.
 // When l' = l0, it is represented by 1
@@ -1680,11 +1616,9 @@ int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                    
 {1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //14              // (DMRS l' position)
 };
 
-#define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
-
 // Returns the corresponding row index of the NR table
-int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
-
+int get_nr_table_idx(int nr_bandP, uint8_t scs_index)
+{
   int i, j;
   int scs_khz = 15 << scs_index;
   int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
@@ -1695,8 +1629,8 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
       AssertFatal(0 == 1, "Band %d is a supplementary band (%d). This is not supported yet.\n", nr_bandP, supplementary_bands[j]);
   }
 
-  AssertFatal(nr_bandP <= nr_bandtable[NR_BANDTABLE_SIZE-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[NR_BANDTABLE_SIZE-1].band);
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
+  AssertFatal(nr_bandP <= nr_bandtable[nr_bandtable_size-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[nr_bandtable_size-1].band);
+  for (i = 0; i < nr_bandtable_size && nr_bandtable[i].band != nr_bandP; i++);
 
   // selection of correct Deltaf raster according to SCS
   if ((nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
@@ -1705,35 +1639,33 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
   LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
 
   return i;
-
 }
 
 // Computes the duplex spacing (either positive or negative) in KHz
-void get_delta_duplex(int nr_bandP, uint8_t scs_index, int32_t *delta_duplex){
-
+int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index)
+{
   int nr_table_idx = get_nr_table_idx(nr_bandP, scs_index);
 
-  *delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
+  int32_t delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
 
-  LOG_D(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", *delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
+  LOG_I(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
 
+  return delta_duplex;
 }
 
-void get_frame_type(uint16_t current_band,
-                    uint8_t scs_index,
-                    lte_frame_type_t *current_type){
+lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
+{
+  lte_frame_type_t current_type;
+  int32_t delta_duplex = get_delta_duplex(current_band, scs_index);
 
-  int32_t current_offset;
-  get_delta_duplex(current_band, scs_index, &current_offset);
-
-  current_offset *= 1000;
-  if (current_offset == 0)
-    *current_type = TDD;
+  if (delta_duplex == 0)
+    current_type = TDD;
   else
-    *current_type = FDD;
+    current_type = FDD;
 
-  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[*current_type], current_offset);
+  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[current_type], delta_duplex);
 
+  return current_type;
 }
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
@@ -1911,7 +1843,6 @@ uint64_t from_nrarfcn(int nr_bandP,
   int deltaFglobal = 5;
   uint32_t N_REF_Offs = 0;
   uint64_t F_REF_Offs_khz = 0;
-  int32_t delta_duplex;
   uint64_t N_OFFs, frequency, freq_min;
   int i = get_nr_table_idx(nr_bandP, scs_index);
 
@@ -1926,7 +1857,7 @@ uint64_t from_nrarfcn(int nr_bandP,
     F_REF_Offs_khz = 24250080;
   }
 
-  get_delta_duplex(nr_bandP, scs_index, &delta_duplex);
+  int32_t delta_duplex = get_delta_duplex(nr_bandP, scs_index);
 
   if (delta_duplex <= 0){ // DL band >= UL band
     if (nrarfcn >= nr_bandtable[i].N_OFFs_DL){ // is TDD of FDD DL
@@ -2836,11 +2767,15 @@ int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slot) {
   else return(slot_in_period <= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
 }
 
-int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slot) {
+int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slot, lte_frame_type_t frame_type) {
 
   int period,period1,period2=0;
 
-  if (scc->tdd_UL_DL_ConfigurationCommon==NULL) return(1);
+  // Note: condition on frame_type
+  // goal: the UL scheduler assumes mode is TDD therefore this hack is needed to make FDD work
+  if (scc->tdd_UL_DL_ConfigurationCommon == NULL || frame_type == FDD) {
+    return(1);
+  }
 
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
       scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
@@ -3064,51 +2999,14 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
     valid = false;
     return valid;
   }
-  //printf("[MAC] PTRS is set  K= %u L= %u\n", *K_ptrs,1<<*L_ptrs);
+
+  /* Moved below check from scheduler function to here */
+  if (*L_ptrs >= NrOfSymbols) {
+    valid = false;
+    return valid;
+  }
   return valid;
 }
-void get_band(uint64_t downlink_frequency,
-              uint16_t *current_band,
-              int32_t *current_offset,
-              lte_frame_type_t *current_type)
-{
-    int ind;
-    uint64_t center_frequency_khz;
-    uint64_t center_freq_diff_khz;
-    uint64_t dl_freq_khz = downlink_frequency/1000;
-
-    center_freq_diff_khz = 999999999999999999; // 2^64
-    *current_band = 0;
-
-    for ( ind=0;
-          ind < sizeof(nr_bandtable) / sizeof(nr_bandtable[0]);
-          ind++) {
-
-      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
-
-      if ( nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz ) {
-
-        center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min)/2;
-        if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
-          *current_band = nr_bandtable[ind].band;
-	  *current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
-          center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
-
-	  if (*current_offset == 0)
-	    *current_type = TDD;
-	  else
-	    *current_type = FDD;
-        }
-      }
-    }
-
-    LOG_I( PHY, "DL frequency %"PRIu64": band %d, frame_type %d, UL frequency %"PRIu64"\n",
-         downlink_frequency, *current_band, *current_type, downlink_frequency+*current_offset);
-
-    AssertFatal(*current_band != 0,
-	    "Can't find EUTRA band for frequency %lu\n", downlink_frequency);
-}
-
 
 uint32_t get_ssb_slot(uint32_t ssb_index){
   //  this function now only support f <= 3GHz
@@ -3480,3 +3378,79 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
 
   return 0;
 }
+
+/* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */
+bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
+                        uint16_t rbSize,uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,
+                        uint8_t *reOffset, uint8_t *maxNumPorts, uint8_t *ulPower,
+                        uint8_t NrOfSymbols)
+{
+  bool valid = true;
+
+  /* as defined in T 38.214 6.2.3 */
+  if(rbSize < 3) {
+    valid = false;
+    return valid;
+  }
+  /* Check for Frequency Density values */
+  if(ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.count < 2) {
+    /* Default value for K_PTRS = 2 as defined in T 38.214 6.2.3 */
+    *K_ptrs = 2;
+  }
+  else {
+    *K_ptrs = get_K_ptrs(*ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.array[0],
+                         *ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.array[1],
+                         rbSize);
+  }
+  /* Check for time Density values */
+  if(ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.count < 3) {
+    *L_ptrs = 0;
+  }
+  else {
+    *L_ptrs = get_L_ptrs(*ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[0],
+                         *ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[1],
+                         *ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[2],
+                         mcsIndex,
+                         mcsTable);
+  }
+  
+  *reOffset  = *ul_ptrs_config->transformPrecoderDisabled->resourceElementOffset;
+  *maxNumPorts = ul_ptrs_config->transformPrecoderDisabled->maxNrofPorts;
+  *ulPower = ul_ptrs_config->transformPrecoderDisabled->ptrs_Power;
+  /* If either or both of the parameters PT-RS time density (LPT-RS) and PT-RS frequency density (KPT-RS), shown in Table
+   * 6.2.3.1-1 and Table 6.2.3.1-2, indicates that 'PT-RS not present', the UE shall assume that PT-RS is not present
+   */
+  if(*K_ptrs ==2  || *K_ptrs ==4 ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  if(*L_ptrs ==0 || *L_ptrs ==1 || *L_ptrs ==2  ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  /* PTRS is not present also :
+   * When the UE is receiving a PUSCH with allocation duration of 4 symbols and if LPT-RS is set to 4, the UE shall assume
+   * PT-RS is not transmitted
+   * When the UE is receiving a PUSCH with allocation duration of 2 symbols as defined in Clause 6.4.1.2.2 of [4, TS
+   * 38.211] and if LPT-RS is set to 2 or 4, the UE shall assume PT-RS is not transmitted.
+   */
+  if((NrOfSymbols == 4 && *L_ptrs ==2) || ((NrOfSymbols == 2 && *L_ptrs > 0))) {
+    valid = false;
+    return valid;
+  }
+
+  /* Moved below check from nr_ue_scheduler function to here */
+  if (*L_ptrs >= NrOfSymbols) {
+    valid = false;
+    return valid;
+  }
+  return valid;
+}
+

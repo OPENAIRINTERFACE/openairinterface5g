@@ -741,4 +741,10 @@ typedef struct RRU_config_s {
   MBSFN_config_t MBSFN_config[8];
 } RRU_config_t;
 
+typedef struct processingData_RU {
+  int frame_tx;
+  int slot_tx;
+  openair0_timestamp timestamp_tx;
+  RU_t *ru;
+} processingData_RU_t;
 #endif //__PHY_DEFS_RU__H__

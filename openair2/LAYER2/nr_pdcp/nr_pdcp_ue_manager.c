@@ -189,6 +189,20 @@ void nr_pdcp_ue_add_drb_pdcp_entity(nr_pdcp_ue_t *ue, int drb_id, nr_pdcp_entity
   ue->drb[drb_id] = entity;
 }
 
+/* must be called with lock acquired */
+nr_pdcp_ue_t **nr_pdcp_manager_get_ue_list(nr_pdcp_ue_manager_t *_m)
+{
+  nr_pdcp_ue_manager_internal_t *m = _m;
+  return m->ue_list;
+}
+
+/* must be called with lock acquired */
+int nr_pdcp_manager_get_ue_count(nr_pdcp_ue_manager_t *_m)
+{
+  nr_pdcp_ue_manager_internal_t *m = _m;
+  return m->ue_count;
+}
+
 int nr_pdcp_get_first_rnti(nr_pdcp_ue_manager_t *_m)
 {
   nr_pdcp_ue_manager_internal_t *m = _m;

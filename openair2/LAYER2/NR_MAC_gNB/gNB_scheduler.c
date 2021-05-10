@@ -66,11 +66,15 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
   int num = 1;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     LOG_I(MAC, "UE ID %d RNTI %04x (%d/%d)\n", UE_id, UE_info->rnti[UE_id], num++, UE_info->num_UEs);
-    const NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
-    LOG_I(MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d\n",
+    NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
+    const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
+    LOG_I(MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
           UE_id,
           stats->dlsch_rounds[0], stats->dlsch_rounds[1],
-          stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors);
+          stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
+          avg_rsrp, stats->num_rsrp_meas);
+    stats->num_rsrp_meas = 0;
+    stats->cumul_rsrp = 0 ;
     LOG_I(MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
     LOG_I(MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",
           UE_id,
@@ -365,7 +369,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   /* send tick to RLC and RRC every ms */
   if ((slot & ((1 << *scc->ssbSubcarrierSpacing) - 1)) == 0) {
     void nr_rlc_tick(int frame, int subframe);
+    void nr_pdcp_tick(int frame, int subframe);
     nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
+    nr_pdcp_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 

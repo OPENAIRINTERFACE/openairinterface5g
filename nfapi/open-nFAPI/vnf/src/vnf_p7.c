@@ -461,7 +461,6 @@ int vnf_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* p7_info, u
 	{
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() sendto_result %d %d\n", __FUNCTION__, sendto_result, errno);
 	}
-
 	return 0;
 }
 
@@ -677,7 +676,6 @@ int vnf_nr_build_send_dl_node_sync(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_inf
 	//dl_node_sync.t1 = calculate_t1(p7_info->sfn_sf, vnf_p7->sf_start_time_hr);
 	dl_node_sync.t1 = calculate_nr_t1(p7_info->sfn,p7_info->slot, vnf_p7->slot_start_time_hr);
 	dl_node_sync.delta_sfn_slot = 0;
-
 	return vnf_nr_p7_pack_and_send_p7_msg(vnf_p7, &dl_node_sync.header);	
 }
 
@@ -1453,102 +1451,8 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 		phy->previous_t1 = ind.t1;
 		phy->previous_t2 = ind.t2;
 	}
-}
 
-//NR HANDLES FOR UPLINK MESSAGES
 
-void vnf_handle_nr_rx_data_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
-{
-	// ensure it's valid
-	if (pRecvMsg == NULL || vnf_p7 == NULL)
-	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
-	}
-	else
-	{
-		nfapi_nr_rx_data_indication_t ind;
-	
-		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
-		{
-			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
-		}
-
-	}
-}
-
-void vnf_handle_nr_crc_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
-{
-	// ensure it's valid
-	if (pRecvMsg == NULL || vnf_p7 == NULL)
-	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
-	}
-	else
-	{
-		nfapi_nr_crc_indication_t ind;
-	
-		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
-		{
-			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
-		}
-		
-	}
-}
-
-void vnf_handle_nr_srs_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
-{
-	// ensure it's valid
-	if (pRecvMsg == NULL || vnf_p7 == NULL)
-	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
-	}
-	else
-	{
-		nfapi_nr_srs_indication_t ind;
-	
-		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
-		{
-			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
-		}
-		
-	}
-}
-
-void vnf_handle_nr_uci_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
-{
-	// ensure it's valid
-	if (pRecvMsg == NULL || vnf_p7 == NULL)
-	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
-	}
-	else
-	{
-		nfapi_nr_uci_indication_t ind;
-	
-		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
-		{
-			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
-		}
-	}
-}
-
-void vnf_handle_nr_rach_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
-{
-	// ensure it's valid
-	if (pRecvMsg == NULL || vnf_p7 == NULL)
-	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
-	}
-	else
-	{
-		nfapi_nr_rach_indication_t ind;
-	
-		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
-		{
-			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
-		}
-		
-	}
 }
 
 void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
@@ -2131,25 +2035,45 @@ void vnf_nr_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 			vnf_nr_handle_timing_info(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
 			
-		case NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION:
-			vnf_handle_nr_rx_data_indication(pRecvMsg, recvMsgLen, vnf_p7);
+		case NFAPI_HARQ_INDICATION:
+			vnf_handle_harq_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
 	
-		case NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION:
-			vnf_handle_nr_crc_indication(pRecvMsg, recvMsgLen, vnf_p7);
+		case NFAPI_CRC_INDICATION:
+			vnf_handle_crc_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
 	
-		case NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION:
-			vnf_handle_nr_uci_indication(pRecvMsg, recvMsgLen, vnf_p7);
+		case NFAPI_RX_ULSCH_INDICATION:
+			vnf_handle_rx_ulsch_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
 	
-		case NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION:
-			vnf_handle_nr_rach_indication(pRecvMsg, recvMsgLen, vnf_p7);
+		case NFAPI_RACH_INDICATION:
+			vnf_handle_rach_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
 	
-		case NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION:
-			vnf_handle_nr_srs_indication(pRecvMsg, recvMsgLen, vnf_p7);
+		case NFAPI_SRS_INDICATION:
+			vnf_handle_srs_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
+
+		case NFAPI_RX_SR_INDICATION:
+			vnf_handle_rx_sr_indication(pRecvMsg, recvMsgLen, vnf_p7);
+			break;
+
+		case NFAPI_RX_CQI_INDICATION:
+			vnf_handle_rx_cqi_indication(pRecvMsg, recvMsgLen, vnf_p7);
+			break;
+			
+		case NFAPI_LBT_DL_INDICATION:
+			vnf_handle_lbt_dl_indication(pRecvMsg, recvMsgLen, vnf_p7);
+			break;
+			
+		case NFAPI_NB_HARQ_INDICATION:
+			vnf_handle_nb_harq_indication(pRecvMsg, recvMsgLen, vnf_p7);
+			break;
+			
+		case NFAPI_NRACH_INDICATION:
+			vnf_handle_nrach_indication(pRecvMsg, recvMsgLen, vnf_p7);
+			break;			
 
 		case NFAPI_UE_RELEASE_RESPONSE:
 			vnf_handle_ue_release_resp(pRecvMsg, recvMsgLen, vnf_p7);

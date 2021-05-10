@@ -101,8 +101,8 @@ void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
   //gNB_config->subframe_config.dl_cyclic_prefix_type.value = (fp->Ncp == NORMAL) ? NFAPI_CP_NORMAL : NFAPI_CP_EXTENDED;
 
   gNB->mac_enabled   = 1;
-  fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
-  fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
+  fp->dl_CarrierFreq = 3600000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
+  fp->ul_CarrierFreq = 3600000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   if (mu>2) fp->nr_band = 257;
   else fp->nr_band = 78;
   fp->threequarter_fs= 0;
@@ -111,7 +111,7 @@ void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
 
   nr_init_frame_parms(gNB_config, fp);
 
-  init_symbol_rotation(fp,fp->dl_CarrierFreq);
+  init_symbol_rotation(fp);
 
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");
@@ -540,7 +540,7 @@ int main(int argc, char **argv)
   if (input_fd==NULL) {
     gNB->pbch_configured = 1;
  
-    gNB->ssb_pdu.ssb_pdu_rel15.bchPayload = 0;
+    gNB->ssb_pdu.ssb_pdu_rel15.bchPayload = 0x55dd33;
 
     for (int slot=0;slot<frame_parms->slots_per_frame;slot++) {
     	for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++)
@@ -692,9 +692,7 @@ int main(int argc, char **argv)
           nr_slot_fep(UE,
                       &proc,
                       i%frame_parms->symbols_per_slot,
-                      ssb_slot,
-                      0,
-                      0);
+                      ssb_slot);
 
           nr_pbch_channel_estimation(UE,&proc,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
 
@@ -718,9 +716,9 @@ int main(int argc, char **argv)
  
 	  payload_ret = (UE->pbch_vars[0]->xtra_byte == gNB_xtra_byte);
 	  for (i=0;i<3;i++){
-	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)));
+	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == ((gNB->ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)) & 0xff));
 	  } 
-	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->rx_ind.rx_indication_body->mib_pdu.additional_bits);
+	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->pbch_vars[0]->xtra_byte);
 	  //printf("ret %d\n", payload_ret);
 	  if (payload_ret!=4) 
 	    n_errors_payload++;
