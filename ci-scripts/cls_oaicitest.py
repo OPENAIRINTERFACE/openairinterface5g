@@ -2203,9 +2203,9 @@ class OaiCiTest():
 			logging.debug("Iperf for Module in DL mode detected")
 			#server side UE
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-			cmd = 'rm iperf_server_ ' +  self.testCase_id + '_' + self.ue_id + '.log'
+			cmd = 'rm iperf_server_' +  self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
+			cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u -i 1 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',5)
 			#client side EPC
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
@@ -2227,7 +2227,7 @@ class OaiCiTest():
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			cmd = 'echo $USER; nohup iperf -s -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
+			cmd = 'echo $USER; nohup iperf -s -u -i 1 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',5)
 			#client side UE
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
@@ -2543,7 +2543,7 @@ class OaiCiTest():
 			if (os.path.isfile('iperf_server_' + self.testCase_id + '.log')):
 				os.remove('iperf_server_' + self.testCase_id + '.log')
 			SSH.copyin(iServerIPAddr, iServerUser, iServerPasswd, '/tmp/tmp_iperf_server_' + self.testCase_id + '.log', 'iperf_server_' + self.testCase_id + '_OAI-UE.log')
-			filename='iperf_server_' + self.testCase_id + '_' + device_id + '.log'
+			filename='iperf_server_' + self.testCase_id + '_OAI-UE.log'
 			self.Iperf_analyzeV2Server(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options,filename,0)
 
 		# copying on the EPC server for logCollection
