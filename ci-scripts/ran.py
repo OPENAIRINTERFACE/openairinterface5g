@@ -242,7 +242,6 @@ class RANManagement():
 		while (count > 0) and buildOAIprocess:
 			mySSH.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 6)
 			result = re.search('build_oai', mySSH.getBefore())
-			print(result)
 			if result is None:
 				buildOAIprocess = False
 			else:
@@ -636,7 +635,8 @@ class RANManagement():
 					HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			else:
 				HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
-		if len(self.datalog_rt_stats)!=0:
+		#display rt stats for gNB only
+		if len(self.datalog_rt_stats)!=0 and nodeB_prefix == 'g':
 			HTML.CreateHtmlDataLogTable(self.datalog_rt_stats)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
