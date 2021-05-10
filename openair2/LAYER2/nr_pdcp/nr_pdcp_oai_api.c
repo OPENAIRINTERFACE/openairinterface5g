@@ -700,7 +700,17 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
 {
   MessageDef      *msg_p;
   int             result;
-  protocol_ctxt_t ctxt;
+  protocol_ctxt_t ctxt={.module_id=0,
+                        .enb_flag=1,
+                        .instance=0,
+                        .rnti=0,
+                        .frame=-1,
+                        .subframe=-1,
+                        .eNB_index=0,
+                        .configured=true,
+                        .brOption=false
+                       };
+
 
   while (1) {
     itti_poll_msg(ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, &msg_p);
