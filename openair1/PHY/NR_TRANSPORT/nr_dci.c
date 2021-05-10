@@ -182,7 +182,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     }
 
     /*Mapping the encoded DCI along with the DMRS */
-    for(int symbol = 0; symbol < pdcch_pdu_rel15->DurationSymbols; symbol++) {
+    for(int symbol_idx = 0; symbol_idx < pdcch_pdu_rel15->DurationSymbols; symbol_idx++) {
       for (int cce_count = 0; cce_count < dci_pdu->AggregationLevel; cce_count+=pdcch_pdu_rel15->DurationSymbols) {
 
         int8_t cce_idx = reg_list_order[cce_count];
@@ -194,7 +194,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
           if (k >= frame_parms.ofdm_symbol_size)
             k -= frame_parms.ofdm_symbol_size;
 
-          l = cset_start_symb + symbol;
+          l = cset_start_symb + symbol_idx;
 
           // dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
           if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
@@ -239,7 +239,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
           } // m
         } // reg_in_cce_idx
       } // cce_count
-    } // symbol
+    } // symbol_idx
 
     LOG_D(PHY,
           "DCI: payloadSize = %d | payload = %llx\n",
