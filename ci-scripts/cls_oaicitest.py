@@ -2535,7 +2535,7 @@ class OaiCiTest():
 			if (os.path.isfile('iperf_server_' + self.testCase_id + '.log')):
 				os.remove('iperf_server_' + self.testCase_id + '.log')
 			SSH.copyin(iServerIPAddr, iServerUser, iServerPasswd, '/tmp/tmp_iperf_server_' + self.testCase_id + '.log', 'iperf_server_' + self.testCase_id + '_OAI-UE.log')
-			filename='iperf_server_' + self.testCase_id + '_' + device_id + '.log'
+			filename='iperf_server_' + self.testCase_id + '_OAI-UE.log'
 			self.Iperf_analyzeV2Server(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options,filename,0)
 
 		# copying on the EPC server for logCollection
