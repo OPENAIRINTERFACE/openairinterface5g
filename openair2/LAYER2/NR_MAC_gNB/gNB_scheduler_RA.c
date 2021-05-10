@@ -806,6 +806,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   int startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
   int start_symbol_index,nr_of_symbols;
   SLIV2SL(startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
+  int mappingtype = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
 
   pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_pdu->rnti = ra->rnti;
@@ -831,7 +832,10 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     pusch_pdu->transform_precoding = 0;
   pusch_pdu->data_scrambling_id = *scc->physCellId;
   pusch_pdu->nrOfLayers = 1;
-  pusch_pdu->ul_dmrs_symb_pos = 1<<start_symbol_index; // ok for now but use fill dmrs mask later
+
+  pusch_pdu->ul_dmrs_symb_pos = get_l_prime(nr_of_symbols,mappingtype,pusch_dmrs_pos2,pusch_len1,start_symbol_index, scc->dmrs_TypeA_Position);
+  LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , ul_dmrs_symb_pos:%x\n", start_symbol_index, nr_of_symbols, mappingtype, pusch_pdu->ul_dmrs_symb_pos);
+
   pusch_pdu->dmrs_config_type = 0;
   pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
@@ -946,6 +950,10 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
     AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
+    int mappingtype = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->
+        downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->
+        pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
+
     uint8_t numDmrsCdmGrpsNoData = 2;
     if (nrOfSymbols == 2) {
       numDmrsCdmGrpsNoData = 1;
@@ -1031,7 +1039,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL,
                                                     nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                                     nrOfSymbols,
-                                                    startSymbolIndex);
+                                                    startSymbolIndex,
+                                                    mappingtype);
 
     int x_Overhead = 0;
     uint8_t tb_scaling = 0;
@@ -1188,10 +1197,15 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
     AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
+    int mappingtype = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->
+        downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->
+        pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
+
     uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL,
                                             nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                             nrOfSymbols,
-                                            startSymbolIndex);
+                                            startSymbolIndex,
+                                            mappingtype);
 
     uint16_t N_DMRS_SLOT = get_num_dmrs(dlDmrsSymbPos);
 
