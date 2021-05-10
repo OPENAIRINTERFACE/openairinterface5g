@@ -1513,7 +1513,8 @@ class OaiCiTest():
 					SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 				else: #launch from Module
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-					cmd = 'ping -I ' + UE_IPAddress + ' ' + self.ping_args + ' ' +  EPC.IPAddress  + ' 2>&1 > ping_' + self.testCase_id + '_' + self.ue_id + '.log' 
+					#ping from module NIC rather than IP address to make sure round trip is over the air	
+					cmd = 'ping -I ' + ModuleUE.UENetwork  + ' ' + self.ping_args + ' ' +  EPC.IPAddress  + ' 2>&1 > ping_' + self.testCase_id + '_' + self.ue_id + '.log' 
 					SSH.command(cmd,'\$',int(ping_time[0])*1.5)
 					#copy the ping log file to have it locally for analysis (ping stats)
 					SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'ping_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
@@ -2205,7 +2206,7 @@ class OaiCiTest():
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			cmd = 'rm iperf_server_' +  self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u -i 1 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
+			cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u -i 1 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',5)
 			#client side EPC
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
@@ -2227,13 +2228,13 @@ class OaiCiTest():
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			cmd = 'echo $USER; nohup iperf -s -u -i 1 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
+			cmd = 'echo $USER; nohup iperf3 -s 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',5)
 			#client side UE
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			cmd = 'iperf -B ' + UE_IPAddress + ' ' + '-c ' + EPC.IPAddress + ' ' + self.iperf_args + ' > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
+			cmd = 'iperf3 ' + '-c ' + EPC.IPAddress + ' ' + self.iperf_args + ' > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',int(iperf_time)*5.0)
 
 			#copy the 2 resulting files locally
