@@ -1240,10 +1240,14 @@ extern "C" {
       set_rx_gain_offset(&openair0_cfg[0],i,bw_gain_adjust);
       ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(i);
       // limit to maximum gain
-      AssertFatal( openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] <= gain_range.stop(),
-                   "RX Gain too high, lower by %f dB\n",
-                   openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] - gain_range.stop());
-      s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],i);
+      double gain=openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i];
+      if ( gain > gain_range.stop())  {
+                   LOG_E(HW,"RX Gain too high, lower by %f dB\n",
+                   gain - gain_range.stop());
+               gain=gain_range.stop();
+      }
+          
+      s->usrp->set_rx_gain(gain,i);
       LOG_I(HW,"RX Gain %d %f (%f) => %f (max %f)\n",i,
             openair0_cfg[0].rx_gain[i],openair0_cfg[0].rx_gain_offset[i],
             openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],gain_range.stop());

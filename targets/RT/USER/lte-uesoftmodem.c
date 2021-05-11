@@ -86,7 +86,6 @@
 #include "lte-softmodem.h"
 
 
-msc_interface_t msc_interface;
 /* temporary compilation wokaround (UE/eNB split */
 uint16_t sf_ahead;
 
