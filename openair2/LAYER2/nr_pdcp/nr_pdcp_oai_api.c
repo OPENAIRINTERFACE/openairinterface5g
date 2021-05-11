@@ -548,7 +548,7 @@ static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   int srb_id;
   int i;
 
-  for (i = 0; i < 3; i++) {
+  for (i = 0; i < 2; i++) {
     if (entity == ue->srb[i]) {
       srb_id = i+1;
       goto srb_found;
@@ -591,7 +591,7 @@ static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   int i;
   mem_block_t *memblock;
 
-  for (i = 0; i < 3; i++) {
+  for (i = 0; i < 2; i++) {
     if (entity == ue->srb[i]) {
       srb_id = i+1;
       goto srb_found;
@@ -1096,7 +1096,7 @@ void pdcp_config_set_security(
 
   /* TODO: proper handling of DRBs, for the moment only SRBs are handled */
 
-  if (rb_id >= 1 && rb_id <= 3) {
+  if (rb_id >= 1 && rb_id <= 2) {
     rb = ue->srb[rb_id - 1];
 
     if (rb == NULL) {
@@ -1146,7 +1146,7 @@ static boolean_t pdcp_data_req_srb(
 
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
 
-  if (rb_id < 1 || rb_id > 3)
+  if (rb_id < 1 || rb_id > 2)
     rb = NULL;
   else
     rb = ue->srb[rb_id - 1];
