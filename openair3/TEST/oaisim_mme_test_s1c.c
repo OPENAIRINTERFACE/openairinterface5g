@@ -299,7 +299,6 @@ void mme_test_s1_notify_sctp_data_ind(uint32_t assoc_id, int32_t stream, const u
 int main( int argc, char **argv )
 //------------------------------------------------------------------------------
 {
-  AssertFatal(!get_softmodem_params()->nsa, "In NSA mode\n");
   // initialize the log (see log.h for details)
   logInit();
 

@@ -265,8 +265,7 @@ int restart_L1L2(module_id_t gnb_id) {
 }
 
 int create_gNB_tasks(uint32_t gnb_nb) {
-  AssertFatal(!get_softmodem_params()->nsa, "In NSA mode\n");
-  LOG_I(GNB_APP, "%s(gnb_nb:%d)\n", __FUNCTION__, gnb_nb);
+  LOG_D(GNB_APP, "%s(gnb_nb:%d)\n", __FUNCTION__, gnb_nb);
   itti_wait_ready(1);
 
 
