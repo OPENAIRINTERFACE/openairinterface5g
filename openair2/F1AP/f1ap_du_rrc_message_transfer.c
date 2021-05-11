@@ -90,8 +90,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   if (RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
     LOG_I(F1AP, "node is gNB DU, call DU_handle_DL_NR_RRC_MESSAGE_TRANSFER \n");
-    DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance, assoc_id, stream, pdu);
-    return 0;
+    return DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance, assoc_id, stream, pdu);
   }
 
   LOG_D(F1AP, "DU_handle_DL_RRC_MESSAGE_TRANSFER \n");
