@@ -809,6 +809,7 @@ void *et_eNB_app_task(void *args_p)
 //------------------------------------------------------------------------------
 int et_play_scenario(et_scenario_t* const scenario, const struct shift_packet_s *shifts)
 {
+  AssertFatal(!get_softmodem_params()->nsa, "In NSA mode\n");
   et_event_t             event;
   struct shift_packet_s *shift                 = shifts;
   et_packet_t           *packet                = NULL;

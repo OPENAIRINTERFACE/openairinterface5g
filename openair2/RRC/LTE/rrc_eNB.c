@@ -4424,7 +4424,6 @@ static int encode_CG_ConfigInfo(
   struct NR_CG_ConfigInfo *cg_configinfo = NULL;
   struct NR_RadioBearerConfig *rb_config = NULL;
   asn_enc_rval_t enc_rval;
-  int RRC_OK = 1;
   char temp_buff[ASN_MAX_ENCODE_SIZE];
   NR_UE_CapabilityRAT_ContainerList_t *ue_cap_rat_container_list = NULL;
   NR_UE_CapabilityRAT_Container_t *ue_cap_rat_container_MRDC = NULL;
@@ -4444,7 +4443,11 @@ static int encode_CG_ConfigInfo(
     = calloc(1,sizeof(struct NR_CG_ConfigInfo_IEs));
   AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo != NULL,
               "failed to allocate memory for cg_configinfo_IEs");
-
+  /* Melissa Elkadi: None of the three following if statments are true. In this case,
+     we never fill the container and in the gNB we are never parsing the UE_capability_info.
+     I believe this is happening because we are not properly sending the UE_Capability_Info
+     over from the LTE UE. We received the info from the NR UE but dont fill the container
+     properly. */
   if(ue_context_pP->ue_context.UE_Capability_MRDC) {
     RAT_Container_count++;
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_MRDC_Capability,NULL,

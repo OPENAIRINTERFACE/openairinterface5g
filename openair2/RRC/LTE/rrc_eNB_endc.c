@@ -173,7 +173,7 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   unsigned char scg_conf_buf[4] = { 0, 0, 0, 0 };
   if (scg_group_config!=NULL) {
 	  nr.choice.setup.nr_SecondaryCellGroupConfig_r15 = scg_group_config; //&scg_conf;
-          LOG_E(RRC, "Melissa, setting scg_group_config\n");
+          LOG_E(RRC, "Melissa Elkadi. setting scg_group_config\n");
   }
   else{
 	  nr.choice.setup.nr_SecondaryCellGroupConfig_r15 = &dummy_scg_conf;
@@ -201,7 +201,7 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
 
   if(scg_RB_config!=NULL) {
 	  cr_1510.nr_RadioBearerConfig1_r15 = scg_RB_config;
-          LOG_E(RRC, "Melissa, setting scg_RB_config\n");
+          LOG_E(RRC, "Melissa Elkadi. setting scg_RB_config\n");
   }
   else{
 	  cr_1510.nr_RadioBearerConfig1_r15 = &dummy_nr1_conf;

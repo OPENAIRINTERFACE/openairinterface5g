@@ -46,6 +46,7 @@ int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2
         NR_CG_ConfigInfo_IEs_t *cg_ConfigInfo = CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo;
 
         if (cg_ConfigInfo->ue_CapabilityInfo) {
+          LOG_I(RRC, "Melissa Elkadi. We got here %s():%d\n", __FUNCTION__, __LINE__);
           // Decode UE-CapabilityRAT-ContainerList
           NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList=NULL;
           UE_CapabilityRAT_ContainerList = calloc(1,sizeof(NR_UE_CapabilityRAT_ContainerList_t));
@@ -59,7 +60,7 @@ int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2
             AssertFatal(1==0,"[InterNode] Failed to decode NR_UE_CapabilityRAT_ContainerList (%zu bits), size of OCTET_STRING %lu\n",
                         dec_rval.consumed, cg_ConfigInfo->ue_CapabilityInfo->size);
           }
-
+          LOG_I(RRC, "Melissa Elkadi. We got here %s():%d\n", __FUNCTION__, __LINE__);
           rrc_parse_ue_capabilities(rrc,UE_CapabilityRAT_ContainerList, m,cg_ConfigInfo);
         }
 

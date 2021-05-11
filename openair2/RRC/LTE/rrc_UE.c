@@ -1762,7 +1762,20 @@ rrc_ue_process_ueCapabilityEnquiry(
   }
 }
 
-
+static LTE_RRCConnectionReconfiguration_v1510_IEs_t* does_nce_exist(LTE_RRCConnectionReconfiguration_r8_IEs_t *c)
+{
+#define NCE nonCriticalExtension
+  return c != NULL
+         && c->NCE != NULL
+         && c->NCE->NCE != NULL
+         && c->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL;
+#undef NCE
+}
 //-----------------------------------------------------------------------------
 void
 rrc_ue_process_rrcConnectionReconfiguration(
@@ -1775,56 +1788,69 @@ rrc_ue_process_rrcConnectionReconfiguration(
   LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), Processing RRCConnectionReconfiguration (eNB %d)\n",
         ctxt_pP->module_id,ctxt_pP->frame,eNB_index);
 
-  if (rrcConnectionReconfiguration->criticalExtensions.present == LTE_RRCConnectionReconfiguration__criticalExtensions_PR_c1) {
+  if (rrcConnectionReconfiguration->criticalExtensions.present ==
+      LTE_RRCConnectionReconfiguration__criticalExtensions_PR_c1) {
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present ==
         LTE_RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
-      LTE_RRCConnectionReconfiguration_r8_IEs_t *rrcConnectionReconfiguration_r8 =
-        &rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8;
+      LTE_RRCConnectionReconfiguration_r8_IEs_t *r_r8 = &rrcConnectionReconfiguration->
+                                                         criticalExtensions.choice.c1.
+                                                         choice.rrcConnectionReconfiguration_r8;
 
-      if (rrcConnectionReconfiguration_r8->mobilityControlInfo) {
+      /* Melissa: Here we need to open up container to get r_15 non-criticalExtensions. Look in
+         eNB as to how this message is put into the container. Need scg_group_config and scg_RB_config.
+         These two need to be sent over to the NR UE. */
+      LOG_E(RRC, "Checking if we have NR RRCConnectionReconfig\n");
+      LTE_RRCConnectionReconfiguration_v1510_IEs_t *nce_nr = does_nce_exist(&r_r8);
+      LOG_E(RRC, "This is nce_nr %p\n", nce_nr);
+      if (nce_nr) {
+        if (nce_nr->nr_Config_r15->present == LTE_RRCConnectionReconfiguration_v1510_IEs__nr_Config_r15_PR_setup) {
+          LOG_E(RRC, "We successfully have NR RRCConnectionReconfig\n");
+          //extract_nr_elements();
+          //nsa_sendmsg_to_nrue(buf, len, RRC_CONFIG_COMPLETE_REQ);
+          return;
+        }
+      }
+
+      if (r_r8->mobilityControlInfo) {
         LOG_I(RRC,"Mobility Control Information is present\n");
         rrc_ue_process_mobilityControlInfo(
           ctxt_pP,
           eNB_index,
-          rrcConnectionReconfiguration_r8->mobilityControlInfo);
+          r_r8->mobilityControlInfo);
       }
 
-      if (rrcConnectionReconfiguration_r8->measConfig != NULL) {
+      if (r_r8->measConfig != NULL) {
         LOG_I(RRC,"Measurement Configuration is present\n");
         rrc_ue_process_measConfig(ctxt_pP,
                                   eNB_index,
-                                  rrcConnectionReconfiguration_r8->measConfig);
+                                  r_r8->measConfig);
       }
 
-      if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated) {
+      if (r_r8->radioResourceConfigDedicated) {
         LOG_I(RRC,"Radio Resource Configuration is present\n");
-        rrc_ue_process_radioResourceConfigDedicated(ctxt_pP,eNB_index, rrcConnectionReconfiguration_r8->radioResourceConfigDedicated);
+        rrc_ue_process_radioResourceConfigDedicated(ctxt_pP,
+                                                    eNB_index,
+                                                    r_r8->radioResourceConfigDedicated);
       }
-      /* Melissa: Here we need to open up container to get r_15 non-criticalExtensions. Look in
-         eNB as to how this message is put into the container. Need scg_group_config and scg_RB_config.
-         These two need to be sent over to the NR UE. */
 
       //TTN for D2D
       //if RRCConnectionReconfiguration message includes the sl-CommConfig
-      if ((rrcConnectionReconfiguration_r8->nonCriticalExtension != NULL)
-          && (rrcConnectionReconfiguration_r8->nonCriticalExtension->nonCriticalExtension
+      if ((r_r8->nonCriticalExtension != NULL)
+          && (r_r8->nonCriticalExtension->nonCriticalExtension != NULL)
+          && (r_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension != NULL)
+          && (r_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension != NULL)
+          && (r_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension
               != NULL)
-          && (rrcConnectionReconfiguration_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension
-              != NULL)
-          && (rrcConnectionReconfiguration_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension
-              != NULL)
-          && (rrcConnectionReconfiguration_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension
-              != NULL)
-          && (rrcConnectionReconfiguration_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sl_CommConfig_r12
+          && (r_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sl_CommConfig_r12
               != NULL)) {
-        if (rrcConnectionReconfiguration_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sl_CommConfig_r12->commTxResources_r12->present !=
+        if (r_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sl_CommConfig_r12->commTxResources_r12->present !=
             LTE_SL_CommConfig_r12__commTxResources_r12_PR_NOTHING) {
           LOG_I(RRC,"sl-CommConfig is present\n");
           //process sl-CommConfig
           rrc_ue_process_sidelink_radioResourceConfig(ctxt_pP->module_id,eNB_index,
               (LTE_SystemInformationBlockType18_r12_t *)NULL,
               (LTE_SystemInformationBlockType19_r12_t *)NULL,
-              rrcConnectionReconfiguration_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sl_CommConfig_r12,
+              r_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sl_CommConfig_r12,
               (LTE_SL_DiscConfig_r12_t *)NULL
                                                      );
         }
@@ -1832,28 +1858,28 @@ rrc_ue_process_rrcConnectionReconfiguration(
 
       /*
             //if RRCConnectionReconfiguration message includes the sl-DiscConfig
-            if (rrcConnectionReconfiguration_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sl_DiscConfig_r12->discTxResources_r12->present != SL_DiscConfig_r12__discTxResources_r12_PR_NOTHING ){
+            if (r_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sl_DiscConfig_r12->discTxResources_r12->present != SL_DiscConfig_r12__discTxResources_r12_PR_NOTHING ){
                LOG_I(RRC,"sl-DiscConfig is present\n");
                //process sl-DiscConfig
                rrc_ue_process_sidelink_radioResourceConfig(ctxt_pP->module_id,eNB_index,
                      (SystemInformationBlockType18_r12_t *)NULL,
                      (SystemInformationBlockType19_r12_t *)NULL,
                      (SL_CommConfig_r12_t* )NULL,
-                     rrcConnectionReconfiguration_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sl_DiscConfig_r12
+                     r_r8->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->sl_DiscConfig_r12
                      );
             }
       */
 
       /* Check if there is dedicated NAS information to forward to NAS */
-      if (rrcConnectionReconfiguration_r8->dedicatedInfoNASList != NULL) {
+      if (r_r8->dedicatedInfoNASList != NULL) {
         int list_count;
         uint32_t pdu_length;
         uint8_t *pdu_buffer;
         MessageDef *msg_p;
 
-        for (list_count = 0; list_count < rrcConnectionReconfiguration_r8->dedicatedInfoNASList->list.count; list_count++) {
-          pdu_length = rrcConnectionReconfiguration_r8->dedicatedInfoNASList->list.array[list_count]->size;
-          pdu_buffer = rrcConnectionReconfiguration_r8->dedicatedInfoNASList->list.array[list_count]->buf;
+        for (list_count = 0; list_count < r_r8->dedicatedInfoNASList->list.count; list_count++) {
+          pdu_length = r_r8->dedicatedInfoNASList->list.array[list_count]->size;
+          pdu_buffer = r_r8->dedicatedInfoNASList->list.array[list_count]->buf;
           msg_p = itti_alloc_new_message(TASK_RRC_UE, 0, NAS_CONN_ESTABLI_CNF);
           NAS_CONN_ESTABLI_CNF(msg_p).errCode = AS_SUCCESS;
           NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length = pdu_length;
@@ -1861,7 +1887,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
           itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
         }
 
-        free (rrcConnectionReconfiguration_r8->dedicatedInfoNASList);
+        free (r_r8->dedicatedInfoNASList);
       }
 
 #if ENABLE_RAL
@@ -6329,6 +6355,19 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
     {
         case UE_CAPABILITY_INFO:
         {
+            NR_UE_NR_Capability_t *UE_Capability_nr = NULL;
+            asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                            &asn_DEF_NR_UE_NR_Capability,
+                            (void **)&UE_Capability_nr,
+                            msg_buffer,
+                            msg_len);
+            if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
+            {
+              SEQUENCE_free(&asn_DEF_NR_UE_NR_Capability, UE_Capability_nr, ASFM_FREE_EVERYTHING);
+              LOG_E(RRC, "Failed to decode UE_Capability_nr (%zu bits) %d\n", dec_rval.consumed, dec_rval.code);
+              break;
+            }
+
             LOG_I(RRC, "Create itti msg to send received UE_CAPABILITY_INFO to eNB\n");
             MessageDef *message_p;
             rrc_dcch_data_copy_t *dl_dcch_buffer = itti_malloc (TASK_RRC_NSA_UE,
