@@ -901,7 +901,7 @@ nwGtpv1uProcessUdpReq( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
   case NW_GTP_END_MARKER:
 #if defined(LOG_GTPU) && LOG_GTPU > 0
     for(int i =1; i<= udpDataLen; i++){
-      printf("%02x ", udpData[i-1]);
+      printf("%02x ", (uint8_t)udpData[i-1]);
       if(i % 20 == 0)printf("\n");
     }
 #endif  	
