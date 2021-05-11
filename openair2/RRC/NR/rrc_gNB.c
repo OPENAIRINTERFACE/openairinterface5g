@@ -803,6 +803,22 @@ rrc_gNB_generate_defaultRRCReconfiguration(
 
   dedicatedNAS_MessageList = CALLOC(1, sizeof(struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList));
 
+  /* Add all NAS PDUs to the list */
+  for (int i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
+    if (ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer != NULL) {
+      dedicatedNAS_Message = CALLOC(1, sizeof(NR_DedicatedNAS_Message_t));
+      memset(dedicatedNAS_Message, 0, sizeof(OCTET_STRING_t));
+      OCTET_STRING_fromBuf(dedicatedNAS_Message,
+                            (char *)ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer,
+                            ue_context_pP->ue_context.pdusession[i].param.nas_pdu.length);
+      ASN_SEQUENCE_ADD(&dedicatedNAS_MessageList->list, dedicatedNAS_Message);
+    }
+
+    ue_context_pP->ue_context.pdusession[i].status = PDU_SESSION_STATUS_DONE;
+    LOG_D(NR_RRC, "setting the status for the default DRB (index %d) to (%d,%s)\n",
+          i, ue_context_pP->ue_context.pdusession[i].status, "PDU_SESSION_STATUS_DONE");
+  }
+
   if (ue_context_pP->ue_context.nas_pdu_flag == 1) {
     dedicatedNAS_Message = CALLOC(1, sizeof(NR_DedicatedNAS_Message_t));
     memset(dedicatedNAS_Message, 0, sizeof(OCTET_STRING_t));
@@ -834,6 +850,15 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,(char *)buffer, size, "[MSG] RRC Reconfiguration\n");
+
+  /* Free all NAS PDUs */
+  for (int i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
+    if (ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer != NULL) {
+      free(ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer);
+      ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer = NULL;
+    }
+  }
+
   LOG_I(NR_RRC, "[gNB %d] Frame %d, Logical Channel DL-DCCH, Generate NR_RRCReconfiguration (bytes %d, UE id %x)\n",
           ctxt_pP->module_id,
           ctxt_pP->frame,
@@ -935,15 +960,14 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
   /* Configure SRB2 */
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
-  if (*SRB_configList2) {
-    free(*SRB_configList2);
+  if (*SRB_configList2 == NULL) {
+    *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
+    memset(*SRB_configList2, 0, sizeof(**SRB_configList2));
+    SRB2_config = CALLOC(1, sizeof(*SRB2_config));
+    SRB2_config->srb_Identity = 2;
+    ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
+    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
   }
-  *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
-  memset(*SRB_configList2, 0, sizeof(**SRB_configList2));
-  SRB2_config = CALLOC(1, sizeof(*SRB2_config));
-  SRB2_config->srb_Identity = 2;
-  ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
-  ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
 
   DRB_configList = &ue_context_pP->ue_context.DRB_configList;
   if (*DRB_configList) {
@@ -2294,13 +2318,14 @@ rrc_gNB_decode_dcch(
             itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->instance, msg_delete_tunnels_p);
             //NGAP_PDUSESSION_RELEASE_RESPONSE
             rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(ctxt_pP, ue_context_p, xid);
-          } else {
-            rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(ctxt_pP,
-                                               ue_context_p,
-                                               ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier);
+          } else if (ue_context_p->ue_context.established_pdu_sessions_flag != 1) {
+            if (ue_context_p->ue_context.setup_pdu_sessions > 0) {
+              rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(ctxt_pP,
+                ue_context_p,
+                ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier);
+            }
           }
         }
-
         if (first_rrcreconfiguration == 0){
           first_rrcreconfiguration = 1;
           rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
@@ -2581,7 +2606,13 @@ rrc_gNB_decode_dcch(
                                     ue_context_p,
                                     ul_dcch_msg);
       }
-      rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
+
+      if (ue_context_p->ue_context.established_pdu_sessions_flag == 1) {
+        rrc_gNB_generate_dedicatedRRCReconfiguration(ctxt_pP, ue_context_p);
+      } else {
+        rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
+      }
+
       break;
 
             case NR_UL_DCCH_MessageType__c1_PR_rrcReestablishmentComplete:
