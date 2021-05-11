@@ -4446,8 +4446,8 @@ static int encode_CG_ConfigInfo(
   /* Melissa Elkadi: None of the three following if statments are true. In this case,
      we never fill the container and in the gNB we are never parsing the UE_capability_info.
      I believe this is happening because we are not properly sending the UE_Capability_Info
-     over from the LTE UE. We received the info from the NR UE but dont fill the container
-     properly. */
+     over from the LTE UE. We received the info from the NR UE but we dont fill the container
+     properly? */
   if(ue_context_pP->ue_context.UE_Capability_MRDC) {
     RAT_Container_count++;
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_MRDC_Capability,NULL,
@@ -8149,6 +8149,7 @@ rrc_eNB_decode_dcch(
         for (i = 0; i < ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count; i++) {
           if (ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type ==
               LTE_RAT_Type_nr) {
+              LOG_I(RRC, "Melissa we got nrUE capabilities for UE %x\n", ctxt_pP->rnti);
             if(ue_context_p->ue_context.UE_Capability_nr) {
               ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability,ue_context_p->ue_context.UE_Capability_nr);
               ue_context_p->ue_context.UE_Capability_nr = 0;

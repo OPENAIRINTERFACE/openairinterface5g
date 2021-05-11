@@ -2995,7 +2995,7 @@ static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
   UECap->sdu_size = (enc_rval.encoded + 7) / 8;
   LOG_I(NR_RRC, "[NR_RRC] NRUE Capability encoded, %d bytes (%zd bits)\n",
         UECap->sdu_size, enc_rval.encoded + 7);
-
+  /* Melissa: Hack. Need to add ctxt->mod_id as array indices */
   NR_UE_rrc_inst[0].UECap = UECap;
   NR_UE_rrc_inst[0].UECapability = UECap->sdu;
   NR_UE_rrc_inst[0].UECapability_size = UECap->sdu_size;
@@ -3006,11 +3006,10 @@ static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
   OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ue_CapabilityRAT_Container,
                        (const char *)NR_UE_rrc_inst[0].UECapability,
                        NR_UE_rrc_inst[0].UECapability_size);
-  ue_CapabilityRAT_Container.ue_CapabilityRAT_Container.buf  = NR_UE_rrc_inst[0].UECapability;
-  ue_CapabilityRAT_Container.ue_CapabilityRAT_Container.size = NR_UE_rrc_inst[0].UECapability_size;
+
   nsa_sendmsg_to_lte_ue(ue_CapabilityRAT_Container.ue_CapabilityRAT_Container.buf,
                         ue_CapabilityRAT_Container.ue_CapabilityRAT_Container.size,
-                        UE_CAPABILITY_INFO);
+                        NRUE_CAPABILITY_INFO);
 }
 
 void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)

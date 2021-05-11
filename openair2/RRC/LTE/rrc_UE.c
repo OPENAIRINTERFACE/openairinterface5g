@@ -130,6 +130,22 @@ typedef struct rrc_dcch_data_copy_t
     LTE_DL_DCCH_Message_t *dl_dcch_msg;
 } rrc_dcch_data_copy_t;
 
+typedef struct rrc_nrue_cap_info_t
+{
+    uint8_t mesg[RRC_BUF_SIZE];
+    size_t mesg_len;
+    LTE_DL_DCCH_Message_t *dl_dcch_msg;
+} rrc_nrue_cap_info_t;
+
+static void rrc_ue_process_ueCapabilityEnquiry(const protocol_ctxt_t *const ctxt_pP,
+                                               LTE_UECapabilityEnquiry_t *UECapabilityEnquiry,
+                                               uint8_t eNB_index);
+
+static void rrc_ue_process_nrueCapabilityEnquiry(const protocol_ctxt_t *const ctxt_pP,
+                                                 LTE_UECapabilityEnquiry_t *UECapabilityEnquiry,
+                                                 rrc_nrue_cap_info_t *nrue_cap_info,
+                                                 uint8_t eNB_index);
+
 /** \brief Generates/Encodes RRCConnnectionSetupComplete message at UE
  *  \param ctxt_pP Running context
  *  \param eNB_index Index of corresponding eNB/CH
@@ -1671,6 +1687,79 @@ rrc_ue_process_MBMSCountingRequest(
 
 //-----------------------------------------------------------------------------
 void
+rrc_ue_process_nrueCapabilityEnquiry(
+  const protocol_ctxt_t *const ctxt_pP,
+  LTE_UECapabilityEnquiry_t *UECapabilityEnquiry,
+  rrc_nrue_cap_info_t *nrue_cap_info,
+  uint8_t eNB_index
+)
+//-----------------------------------------------------------------------------
+{
+  asn_enc_rval_t enc_rval;
+  uint8_t buffer[RRC_BUF_SIZE];
+  LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), Processing NRUECapabilityEnquiry (eNB %d)\n",
+        ctxt_pP->module_id,
+        ctxt_pP->frame,
+        eNB_index);
+  LTE_UL_DCCH_Message_t ul_dcch_msg;
+  memset(&ul_dcch_msg, 0, sizeof(ul_dcch_msg));
+  LTE_UECapabilityInformation_t *ue_cap = &ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation;
+  ul_dcch_msg.message.present = LTE_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1.present = LTE_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation;
+  ue_cap->rrc_TransactionIdentifier = UECapabilityEnquiry->rrc_TransactionIdentifier;
+
+  NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container;
+  memset((void *)&ue_CapabilityRAT_Container, 0, sizeof(NR_UE_CapabilityRAT_Container_t));
+  ue_CapabilityRAT_Container.rat_Type = NR_RAT_Type_nr;
+  OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ue_CapabilityRAT_Container,
+                       (const char *)nrue_cap_info->mesg,
+                       nrue_cap_info->mesg_len);
+  ue_cap->criticalExtensions.present           = LTE_UECapabilityInformation__criticalExtensions_PR_c1;
+  ue_cap->criticalExtensions.choice.c1.present = LTE_UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8;
+  ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count = 0;
+  int count = UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count;
+  xer_fprint(stdout, &asn_DEF_NR_UE_CapabilityRAT_Container, (void *)&ue_CapabilityRAT_Container);
+  LTE_UE_CapabilityRequest_t *cap_req = &UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest;
+  for (int i = 0; i < count; i++) {
+    enc_rval.encoded = 0;
+    if (*cap_req->list.array[i] == LTE_RAT_Type_nr) {
+        ASN_SEQUENCE_ADD(&ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
+                         &ue_CapabilityRAT_Container);
+        ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type = LTE_RAT_Type_nr;
+        asn_enc_rval_t enc_rval_nr = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, buffer, sizeof(buffer));
+        AssertFatal (enc_rval_nr.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+                     enc_rval_nr.failed_type->name, enc_rval_nr.encoded);
+        enc_rval.encoded = enc_rval.encoded + enc_rval_nr.encoded;
+        xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
+    }
+    if (*cap_req->list.array[i] == LTE_RAT_Type_eutra_nr) {
+        ASN_SEQUENCE_ADD(&ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
+                         &ue_CapabilityRAT_Container);
+        ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type = LTE_RAT_Type_eutra_nr;
+        asn_enc_rval_t enc_rval_eutra_nr = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, buffer, sizeof(buffer));
+        AssertFatal (enc_rval_eutra_nr.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+                     enc_rval_eutra_nr.failed_type->name, enc_rval_eutra_nr.encoded);
+        enc_rval.encoded = enc_rval.encoded + enc_rval_eutra_nr.encoded;
+        xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
+    }
+    if (enc_rval.encoded > 0) {
+      LOG_A(RRC,"NR_UECapabilityInformation Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+      rrc_data_req_ue (
+        ctxt_pP,
+        DCCH,
+        rrc_mui++,
+        SDU_CONFIRM_NO,
+        (enc_rval.encoded + 7) / 8,
+        buffer,
+        PDCP_TRANSMISSION_MODE_CONTROL);
+    }
+  }
+}
+
+
+
+//-----------------------------------------------------------------------------
+void
 rrc_ue_process_ueCapabilityEnquiry(
   const protocol_ctxt_t *const ctxt_pP,
   LTE_UECapabilityEnquiry_t *UECapabilityEnquiry,
@@ -1765,15 +1854,16 @@ rrc_ue_process_ueCapabilityEnquiry(
 static LTE_RRCConnectionReconfiguration_v1510_IEs_t* does_nce_exist(LTE_RRCConnectionReconfiguration_r8_IEs_t *c)
 {
 #define NCE nonCriticalExtension
-  return c != NULL
-         && c->NCE != NULL
-         && c->NCE->NCE != NULL
-         && c->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL;
+  if(c != NULL && c->NCE != NULL
+      && c->NCE->NCE != NULL
+      && c->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL)
+    return c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE;
+  return NULL;
 #undef NCE
 }
 //-----------------------------------------------------------------------------
@@ -1800,7 +1890,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
          eNB as to how this message is put into the container. Need scg_group_config and scg_RB_config.
          These two need to be sent over to the NR UE. */
       LOG_E(RRC, "Checking if we have NR RRCConnectionReconfig\n");
-      LTE_RRCConnectionReconfiguration_v1510_IEs_t *nce_nr = does_nce_exist(&r_r8);
+      LTE_RRCConnectionReconfiguration_v1510_IEs_t *nce_nr = does_nce_exist(r_r8);
       LOG_E(RRC, "This is nce_nr %p\n", nce_nr);
       if (nce_nr) {
         if (nce_nr->nr_Config_r15->present == LTE_RRCConnectionReconfiguration_v1510_IEs__nr_Config_r15_PR_setup) {
@@ -4277,12 +4367,6 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
     }
   }
 }
-static bool have_received_nr_meas_msg(void)
-{
-  /* Melissa: This is a hack. Need to base bool on whether we have received a
-     NR_UE_RRC_MEASUREMENT messsage from the NR UE. */
-  return true;
-}
 
 static bool does_rrcConnReconfig_have_nr(const UE_RRC_INST *ue) {
   for (int i = 0; i < NB_CNX_UE; i++) {
@@ -4420,7 +4504,7 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
 
           if (ue->MeasObj[i][measObjId-1]->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15) {
             LOG_I(RRC,"[UE %d] Frame %d: B1_NR_r15 event\n", ctxt_pP->module_id, ctxt_pP->frame);
-            if (does_rrcConnReconfig_have_nr(ue) && have_received_nr_meas_msg()) {
+            if (does_rrcConnReconfig_have_nr(ue)) {
               LOG_I(RRC,"[UE %d] Frame %d: Triggering generation of Meas Report for NR_r15\n",
                     ctxt_pP->module_id, ctxt_pP->frame);
 
@@ -4829,6 +4913,23 @@ void *rrc_ue_task( void *args_p ) {
               RRC_DCCH_DATA_COPY_IND (msg_p).eNB_index);
         SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, dl_dcch_buffer->dl_dcch_msg, ASFM_FREE_EVERYTHING);
         result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), RRC_DCCH_DATA_COPY_IND (msg_p).sdu_p);
+        AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+        break;
+      }
+
+      case RRC_NRUE_CAP_INFO_IND:
+      {
+        LOG_I(RRC, "[UE %d] Received %s. Now calling rrc_ue_process_nrueCapabilityEnquiry\n",
+              ue_mod_id, ITTI_MSG_NAME (msg_p));
+        rrc_nrue_cap_info_t *nrue_cap_info = (void *)RRC_NRUE_CAP_INFO_IND (msg_p).sdu_p;
+        AssertFatal(RRC_NRUE_CAP_INFO_IND (msg_p).sdu_size == sizeof(*nrue_cap_info), "Size of nrue_cap_info incorrect\n");
+        rrc_ue_process_nrueCapabilityEnquiry(
+              &ctxt,
+              &nrue_cap_info->dl_dcch_msg->message.choice.c1.choice.ueCapabilityEnquiry,
+              nrue_cap_info,
+              RRC_NRUE_CAP_INFO_IND (msg_p).eNB_index);
+        SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, nrue_cap_info->dl_dcch_msg, ASFM_FREE_EVERYTHING);
+        result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), RRC_NRUE_CAP_INFO_IND (msg_p).sdu_p);
         AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
         break;
       }
@@ -6353,35 +6454,26 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
 
     switch (msg_type)
     {
-        case UE_CAPABILITY_INFO:
+        case NRUE_CAPABILITY_INFO:
         {
-            NR_UE_NR_Capability_t *UE_Capability_nr = NULL;
-            asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
-                            &asn_DEF_NR_UE_NR_Capability,
-                            (void **)&UE_Capability_nr,
-                            msg_buffer,
-                            msg_len);
-            if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
-            {
-              SEQUENCE_free(&asn_DEF_NR_UE_NR_Capability, UE_Capability_nr, ASFM_FREE_EVERYTHING);
-              LOG_E(RRC, "Failed to decode UE_Capability_nr (%zu bits) %d\n", dec_rval.consumed, dec_rval.code);
-              break;
-            }
+            LOG_I(RRC, "Create itti msg to send received NRUE_CAPABILITY_INFO to eNB\n");
 
-            LOG_I(RRC, "Create itti msg to send received UE_CAPABILITY_INFO to eNB\n");
             MessageDef *message_p;
-            rrc_dcch_data_copy_t *dl_dcch_buffer = itti_malloc (TASK_RRC_NSA_UE,
-                                                                TASK_RRC_UE,
-                                                                sizeof(rrc_dcch_data_copy_t));
+            rrc_nrue_cap_info_t *nrue_cap_buf = itti_malloc (TASK_RRC_NSA_UE,
+                                                             TASK_RRC_UE,
+                                                             sizeof(rrc_nrue_cap_info_t));
+            AssertFatal(msg_len <= sizeof(nrue_cap_buf->mesg), "msg_len = %d\n", msg_len);
+            memcpy(nrue_cap_buf->mesg, msg_buffer, msg_len);
+            nrue_cap_buf->mesg_len = msg_len;
             UE_RRC_INFO *info = &UE_rrc_inst[ctxt.module_id].Info[0];
-            dl_dcch_buffer->dl_dcch_msg = info->dl_dcch_msg;
+            nrue_cap_buf->dl_dcch_msg = info->dl_dcch_msg;
             info->dl_dcch_msg = NULL;
-            message_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_DCCH_DATA_COPY_IND);
-            RRC_DCCH_DATA_COPY_IND (message_p).sdu_p = (void *)dl_dcch_buffer;
-            RRC_DCCH_DATA_COPY_IND (message_p).sdu_size = sizeof(rrc_dcch_data_copy_t);
-            RRC_DCCH_DATA_COPY_IND (message_p).eNB_index = 0;
+            message_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_NRUE_CAP_INFO_IND);
+            RRC_NRUE_CAP_INFO_IND (message_p).sdu_p = (void *)nrue_cap_buf;
+            RRC_NRUE_CAP_INFO_IND (message_p).sdu_size = sizeof(*nrue_cap_buf);
+            RRC_NRUE_CAP_INFO_IND (message_p).eNB_index = 0;
             itti_send_msg_to_task (TASK_RRC_UE, 0, message_p);
-            LOG_I(RRC, "Sent itti RRC_DCCH_DATA_COPY_IND\n");
+            LOG_I(RRC, "Sent itti RRC_NRUE_CAP_INFO_IND\n");
             break;
         }
         case UE_CAPABILITY_DUMMY:

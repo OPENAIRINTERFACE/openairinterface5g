@@ -838,6 +838,13 @@ typedef struct OAI_UECapability_s {
   LTE_UE_EUTRA_Capability_t *UE_EUTRA_Capability;
 } OAI_UECapability_t;
 
+#define MAX_UE_NR_CAPABILITY_SIZE 255
+typedef struct OAI_NR_UECapability_s {
+  uint8_t sdu[MAX_UE_NR_CAPABILITY_SIZE];
+  uint8_t sdu_size;
+  NR_UE_NR_Capability_t *UE_NR_Capability;
+} OAI_NR_UECapability_t;
+
 typedef struct UE_RRC_INST_s {
   Rrc_State_t     RrcState;
   Rrc_Sub_State_t RrcSubState;

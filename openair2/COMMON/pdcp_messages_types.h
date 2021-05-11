@@ -34,6 +34,7 @@
 #define RRC_DCCH_DATA_REQ(mSGpTR)               (mSGpTR)->ittiMsg.rrc_dcch_data_req
 #define RRC_DCCH_DATA_IND(mSGpTR)               (mSGpTR)->ittiMsg.rrc_dcch_data_ind
 #define RRC_PCCH_DATA_REQ(mSGpTR)               (mSGpTR)->ittiMsg.rrc_pcch_data_req
+#define RRC_NRUE_CAP_INFO_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_nrue_cap_info_ind
 #define RRC_DCCH_DATA_COPY_IND(mSGpTR)          (mSGpTR)->ittiMsg.rrc_dcch_data_copy_ind
 
 // gNB
