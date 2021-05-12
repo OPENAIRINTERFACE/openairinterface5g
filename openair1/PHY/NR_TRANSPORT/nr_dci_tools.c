@@ -255,10 +255,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     dlsch->harq_mask                |= (1<<harq_pid);
     dlsch->rnti                      = pdcch_pdu_rel15->dci_pdu[i].RNTI;
     
-    //    nr_fill_cce_list(gNB,0);  
-    
-    
-
+    //    nr_fill_cce_list(gNB,0);
   }
 
 }

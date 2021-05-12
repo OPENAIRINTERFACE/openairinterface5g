@@ -745,10 +745,6 @@ if(!IS_SOFTMODEM_NOS1)
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
 
-
-
-  
-
   /* Start the agent. If it is turned off in the configuration, it won't start */
   /*
   RCconfig_nr_flexran();

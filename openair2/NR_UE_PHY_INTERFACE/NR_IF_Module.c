@@ -60,7 +60,7 @@ int handle_bcch_bch(module_id_t module_id, int cc_id,
 			  ssb_length,  //  Lssb = 64 is not support    
 			  ssb_index,
 			  pduP,
-                          ssb_start_subcarrier,
+			  ssb_start_subcarrier,
 			  cell_id);
 
 }

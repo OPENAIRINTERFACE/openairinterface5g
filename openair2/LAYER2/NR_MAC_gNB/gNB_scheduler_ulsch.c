@@ -566,6 +566,7 @@ void handle_nr_ul_harq(module_id_t mod_id,
     add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
   }
 }
+
 /*
 * When data are received on PHY and transmitted to MAC
 */
@@ -661,7 +662,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       }
     }
   } else if(sduP) {
-
 
     bool no_sig = true;
     for (int k = 0; k < sdu_lenP; k++) {

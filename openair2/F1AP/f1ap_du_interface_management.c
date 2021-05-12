@@ -195,11 +195,11 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
         served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
-	uint8_t fiveGS_TAC[3];
-	served_cell_information.fiveGS_TAC=calloc(1,sizeof(*served_cell_information.fiveGS_TAC));
-	fiveGS_TAC[0] = ((uint8_t*)&f1ap_du_data->tac[i])[2];
-	fiveGS_TAC[1] = ((uint8_t*)&f1ap_du_data->tac[i])[1];
-	fiveGS_TAC[2] = ((uint8_t*)&f1ap_du_data->tac[i])[0];
+        uint8_t fiveGS_TAC[3];
+        served_cell_information.fiveGS_TAC=calloc(1,sizeof(*served_cell_information.fiveGS_TAC));
+        fiveGS_TAC[0] = ((uint8_t*)&f1ap_du_data->tac[i])[2];
+        fiveGS_TAC[1] = ((uint8_t*)&f1ap_du_data->tac[i])[1];
+        fiveGS_TAC[2] = ((uint8_t*)&f1ap_du_data->tac[i])[0];
         OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
                              (const char *)fiveGS_TAC,
                              3);
@@ -719,10 +719,10 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         served_cell_information.nRPCI = f1ap_setup_req->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
-	uint8_t fiveGS_TAC[3];
-	fiveGS_TAC[0] = ((uint8_t*)&f1ap_setup_req->tac[i])[2];
-	fiveGS_TAC[1] = ((uint8_t*)&f1ap_setup_req->tac[i])[1];
-	fiveGS_TAC[2] = ((uint8_t*)&f1ap_setup_req->tac[i])[0];
+        uint8_t fiveGS_TAC[3];
+        fiveGS_TAC[0] = ((uint8_t*)&f1ap_setup_req->tac[i])[2];
+        fiveGS_TAC[1] = ((uint8_t*)&f1ap_setup_req->tac[i])[1];
+        fiveGS_TAC[2] = ((uint8_t*)&f1ap_setup_req->tac[i])[0];
         OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
                              (const char *)fiveGS_TAC,
                              3);
@@ -739,7 +739,6 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         memset(servedPLMN_item,0,sizeof(*servedPLMN_item));
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &servedPLMN_item->pLMN_Identity);
         ASN_SEQUENCE_ADD(&served_cell_information.servedPLMNs.list, servedPLMN_item);
-
 
         // // /* - CHOICE NR-MODE-Info */
         F1AP_NR_Mode_Info_t nR_Mode_Info;
@@ -885,7 +884,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         served_cell_information.nRPCI = f1ap_setup_req->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
-	served_cell_information.fiveGS_TAC=calloc(1,sizeof(*served_cell_information.fiveGS_TAC));
+	      served_cell_information.fiveGS_TAC=calloc(1,sizeof(*served_cell_information.fiveGS_TAC));
         OCTET_STRING_fromBuf(served_cell_information.fiveGS_TAC,
                              (const char *) &f1ap_setup_req->tac[i],
                              3);
@@ -902,8 +901,6 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         memset(servedPLMN_item,0,sizeof(*servedPLMN_item));
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &servedPLMN_item->pLMN_Identity);
         ASN_SEQUENCE_ADD(&served_cell_information.servedPLMNs.list, servedPLMN_item);
-
-
 
         // // /* - CHOICE NR-MODE-Info */
         F1AP_NR_Mode_Info_t nR_Mode_Info;

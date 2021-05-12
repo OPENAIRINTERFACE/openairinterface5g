@@ -57,8 +57,8 @@ uint16_t nr_dci_size(const NR_BWP_UplinkCommon_t *initialULBWP,
                      const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
-		     nr_rnti_type_t rnti_type,
-		     uint16_t N_RB,
+                     nr_rnti_type_t rnti_type,
+                     uint16_t N_RB,
                      int bwp_id);
 
 void find_aggregation_candidates(uint8_t *aggregation_level,

@@ -960,7 +960,6 @@ boolean_t rrc_pdcp_config_asn1_req(
   return 0;
 }
 
-
 void nr_DRB_preconfiguration(uint16_t crnti)
 {
 
@@ -1056,7 +1055,6 @@ void nr_DRB_preconfiguration(uint16_t crnti)
 
 }
 
-
 uint64_t get_pdcp_optmask(void)
 {
   return pdcp_optmask;
@@ -1117,7 +1115,6 @@ void pdcp_config_set_security(
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
-
 
 static boolean_t pdcp_data_req_srb(
   protocol_ctxt_t  *ctxt_pP,
@@ -1227,12 +1224,10 @@ boolean_t pdcp_data_req(
   )
 {
   if (srb_flagP) {
-   return pdcp_data_req_srb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size,
-                           sdu_buffer);
+   return pdcp_data_req_srb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer);
   }
   else{
-    return pdcp_data_req_drb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size,
-                           sdu_buffer);
+    return pdcp_data_req_drb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer);
   }
 }
 

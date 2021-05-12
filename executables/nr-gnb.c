@@ -404,7 +404,6 @@ void init_gNB_Tpool(int inst) {
   if(opp_enabled == 1) threadCreate(&proc->process_stats_thread, process_stats_thread,(void *)gNB, "time_meas", -1, OAI_PRIORITY_RT_LOW);
   threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
 
-
 }
 
 
@@ -492,8 +491,6 @@ printf("after %p\n", gNB->common_vars.rxdataF[aa]);
   }
 
 }
-
-
 
 void init_gNB(int single_thread_flag,int wait_for_sync) {
 

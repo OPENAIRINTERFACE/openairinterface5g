@@ -121,10 +121,8 @@ static  int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, te
   msgHdr->version=1;
   msgHdr->msgType=GTP_GPDU;
   msgHdr->msgLength=htons(msgLen);
-
   if ( seqNumFlag || extHdrFlag || npduNumFlag)
     msgHdr->msgLength+=4;
-
   msgHdr->teid=htonl(teid);
 
   if(seqNumFlag || extHdrFlag || npduNumFlag) {
@@ -814,8 +812,8 @@ void gtpv1uReceiver(int h) {
 void *ocp_gtpv1uTask(void *args)  {
   while(1) {
     /* Trying to fetch a message from the message queue.
-    If the queue is empty, this function will block till a
-    message is sent to the task.
+       If the queue is empty, this function will block till a
+       message is sent to the task.
     */
     MessageDef *message_p = NULL;
     itti_receive_msg(OCP_GTPV1_U, &message_p);

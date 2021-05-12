@@ -572,19 +572,18 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
        return -1;
     }
     else {
-	//  link to rrc instance
+      //  link to rrc instance
        SEQUENCE_free( &asn_DEF_NR_MIB, (void *)NR_UE_rrc_inst[module_id].mib, 1 );
        NR_UE_rrc_inst[module_id].mib = bcch_message->message.choice.mib;
-	//memcpy( (void *)mib,
-	//    (void *)&bcch_message->message.choice.mib,
-	//    sizeof(NR_MIB_t) );
+      //memcpy( (void *)mib,
+      //    (void *)&bcch_message->message.choice.mib,
+      //    sizeof(NR_MIB_t) );
        
        nr_rrc_mac_config_req_ue( 0, 0, 0, NR_UE_rrc_inst[module_id].mib, NULL, NULL, NULL);
       }
         
     return 0;
 }
-
 
 const char  siWindowLength[10][5] = {"5s", "10s", "20s", "40s", "80s", "160s", "320s", "640s", "1280s","ERR"};// {"1ms","2ms","5ms","10ms","15ms","20ms","40ms","80ms","ERR"};
 const short siWindowLength_int[9] = {5,10,20,40,80,160,320,640,1280};//{1,2,5,10,15,20,40,80};
@@ -1177,7 +1176,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(
           if(sib1 != NULL){
             SEQUENCE_free(&asn_DEF_NR_SIB1, (void *)sib1, 1 );
           }
-	  NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus|=1;
+	        NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus|=1;
           sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
           if (*(int64_t*)sib1 != 1) {
             NR_UE_rrc_inst[module_id].sib1[gNB_index] = sib1;
@@ -1186,21 +1185,21 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(
             }
             LOG_I(NR_RRC, "SIB1 decoded\n");
 
-	    ///	    dump_SIB1();
+            ///	    dump_SIB1();
             // FIXME: improve condition for the RA trigger
             // Check for on-demand not broadcasted SI
             check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
             if( nr_rrc_get_state(module_id) <= RRC_STATE_IDLE_NR ) {
               NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
               // TODO: remove flag after full RA procedures implemented
-	      //              get_softmodem_params()->do_ra = 1;
-	      LOG_I(PHY,"Setting state to NR_RRC_SI_RECEIVED\n");
-	      nr_rrc_set_state (module_id, NR_RRC_SI_RECEIVED);
+              //              get_softmodem_params()->do_ra = 1;
+              LOG_I(PHY,"Setting state to NR_RRC_SI_RECEIVED\n");
+              nr_rrc_set_state (module_id, NR_RRC_SI_RECEIVED);
             }
-	    // take ServingCellConfigCommon and configure L1/L2
-	    NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
-	    nr_rrc_mac_config_req_ue(module_id,0,0,NULL,sib1->servingCellConfigCommon,NULL,NULL);
-	    nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
+            // take ServingCellConfigCommon and configure L1/L2
+            NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
+            nr_rrc_mac_config_req_ue(module_id,0,0,NULL,sib1->servingCellConfigCommon,NULL,NULL);
+            nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
           } else {
             LOG_E(NR_RRC, "SIB1 not decoded\n");
           }
@@ -1265,7 +1264,6 @@ nr_rrc_ue_process_masterCellGroup(
     //TODO (resume all suspended radio bearers and resume SCG transmission for all radio bearers, if suspended)
     // NSA procedures
   }
- 
 
   if( cellGroupConfig->rlc_BearerToReleaseList != NULL){
     //TODO (perform RLC bearer release as specified in 5.3.5.5.3)
@@ -1285,14 +1283,14 @@ nr_rrc_ue_process_masterCellGroup(
 
   if( cellGroupConfig->spCellConfig != NULL){
     if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config &&
-	NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig) {
+	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig) {
       memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig,cellGroupConfig->spCellConfig,
              sizeof(struct NR_SpCellConfig));
     } else {
       if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config)
-	NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
+	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
       else 
-	NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = cellGroupConfig;
+	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = cellGroupConfig;
     }
     LOG_I(RRC,"Sending CellGroupConfig to MAC\n");
     nr_rrc_mac_config_req_ue(ctxt_pP->module_id,0,0,NULL,NULL,cellGroupConfig,NULL);
@@ -1354,6 +1352,7 @@ static void rrc_ue_generate_RRCSetupComplete(
 
   for (int i=0;i<size;i++) printf("%02x ",buffer[i]);
   printf("\n");
+
    // ctxt_pP_local.rnti = ctxt_pP->rnti;
   rrc_data_req_ue(
       ctxt_pP,

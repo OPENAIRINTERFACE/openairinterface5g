@@ -296,7 +296,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   for(i=0;i<nr_sequences;i++){
     for (l=0;l<pucch_pdu->nr_of_symbols;l++) {
-      corr_re[l]=0;corr_im[l]=0;
+      corr_re[l]=0;
+      corr_im[l]=0;
       seq_index = (pucch_pdu->initial_cyclic_shift+
 		   mcs[i]+
 		   gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index])%12;
@@ -345,7 +346,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #endif
 
   index=maxpos;
-
 
   // estimate CQI for MAC (from antenna port 0 only)
   int max_n0 = uci_stats->pucch0_n00>uci_stats->pucch0_n01 ? uci_stats->pucch0_n00:uci_stats->pucch0_n01;
@@ -399,7 +399,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       uci_stats->pucch0_positive_SR++;
     }
     uci_stats->pucch01_trials++;
-
   }
   else {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
@@ -1642,7 +1641,6 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     uci_pdu->pduBitmap|=8;
   }
 }
-
 
 void dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
 

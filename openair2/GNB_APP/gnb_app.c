@@ -176,11 +176,10 @@ void *gNB_app_task(void *args_p)
   /* for no gcc warnings */
   (void)instance;
 
-  int                             cell_to_activate = 0;
+  int cell_to_activate = 0;
   itti_mark_task_ready (TASK_GNB_APP);
 
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
-
 
   if (RC.nb_nr_macrlc_inst>0) RCconfig_nr_macrlc();
 

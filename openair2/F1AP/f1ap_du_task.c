@@ -160,13 +160,13 @@ void *F1AP_DU_task(void *arg) {
                                               &F1AP_SETUP_REQ(received_msg));
         break;
       case F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE:
-	DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+	      DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
 							&F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(received_msg));
-	break;
+	      break;
       case F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE:
-	DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+	      DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
 						    &F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE(received_msg));
-	break;
+	      break;
 
       case SCTP_NEW_ASSOCIATION_RESP:
         // 1. store the respon
@@ -190,9 +190,8 @@ void *F1AP_DU_task(void *arg) {
         DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(0,0,0,msg->crnti,
                                                 msg->rrc_container,
                                                 msg->rrc_container_length,
-						msg->du2cu_rrc_container,
-						msg->du2cu_rrc_container_length
-						);
+                                                msg->du2cu_rrc_container,
+                                                msg->du2cu_rrc_container_length);
         break;
 
      case F1AP_UL_RRC_MESSAGE: // to rrc

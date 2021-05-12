@@ -1214,7 +1214,6 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   //}
   rlc_BearerConfig->rlc_Config                                     = rlc_Config;
 
-
   //if (0) {
     logicalChannelConfig                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
     logicalChannelConfig->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig->ul_SpecificParameters));
@@ -1432,7 +1431,6 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
     LOG_D(NR_RRC,"RRCSetup Encoded %zd bits (%zd bytes)\n",
             enc_rval.encoded,(enc_rval.encoded+7)/8);
     return((enc_rval.encoded+7)/8);
-
 }
 
 uint8_t do_NR_SecurityModeCommand(
@@ -1636,8 +1634,7 @@ int16_t do_RRCReconfiguration(
     NR_SecurityConfig_t          *security_config,
     NR_SDAP_Config_t             *sdap_config,
     NR_MeasConfig_t              *meas_config,
-    struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList
-                                 *dedicatedNAS_MessageList,
+    struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
     NR_MAC_CellGroupConfig_t     *mac_CellGroupConfig,
     NR_CellGroupConfig_t         *cellGroupConfig)
 //------------------------------------------------------------------------------

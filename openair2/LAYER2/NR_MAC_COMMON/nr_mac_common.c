@@ -2906,7 +2906,7 @@ int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slo
 			       
   if (tdd_UL_DL_ConfigurationCommon->pattern2) {
     if (tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
-	tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
+        tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
       period2 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
     else
       period2 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
@@ -2938,7 +2938,7 @@ int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t	*tdd_UL_DL_ConfigurationCommon, sl
 			       
   if (tdd_UL_DL_ConfigurationCommon->pattern2) {
     if (tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
-	tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
+	      tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
       period2 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
     else
       period2 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];

@@ -440,7 +440,6 @@ if (0) {
             DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Scalar = 1L;
             DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Exponent = 6L;
 
-
             /* OPTIONAL */
             /* delayCritical */
             if (0) {
@@ -582,8 +581,9 @@ if (0) {
 
               /* packetErrorRate */
               flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Scalar = 1L;
-	      flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Exponent = 6L;
-              /* OPTIONAL */
+	            flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Exponent = 6L;
+
+	            /* OPTIONAL */
               /* delayCritical */
               if (0) {
                 flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->delayCritical = (long *)calloc(1, sizeof(long));

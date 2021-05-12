@@ -801,8 +801,8 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   memset(buffer, 0, RRC_BUF_SIZE);
   size = do_RRCReconfiguration(ctxt_pP, buffer,
                                 xid,
-                                NULL,//*SRB_configList2,
-                                NULL,//*DRB_configList,
+                                NULL, //*SRB_configList2,
+                                NULL, //*DRB_configList,
                                 NULL,
                                 NULL,
                                 NULL,
@@ -1736,7 +1736,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
 int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                            const uint8_t      *buffer,
                            int                buffer_length,
-			   OCTET_STRING_t     *du_to_cu_rrc_container,
+                           OCTET_STRING_t     *du_to_cu_rrc_container,
                            const int          CC_id)
 {
   module_id_t                                       Idx;
@@ -1861,9 +1861,9 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                   LOG_E(RRC, "%s:%d:%s: rrc_gNB_get_next_free_ue_context returned NULL\n", __FILE__, __LINE__, __FUNCTION__);
               }
 
-	      if (ue_context_p != NULL) {
-		ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence = TRUE;
-		ue_context_p->ue_context.ng_5G_S_TMSI_Part1 = s_tmsi_part1;
+              if (ue_context_p != NULL) {
+                ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence = TRUE;
+                ue_context_p->ue_context.ng_5G_S_TMSI_Part1 = s_tmsi_part1;
               }
             }
           } else {

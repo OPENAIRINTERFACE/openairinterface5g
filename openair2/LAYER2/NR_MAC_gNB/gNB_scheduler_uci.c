@@ -481,7 +481,7 @@ void nr_csi_meas_reporting(int Mod_idP,
     const NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
-	!CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig) continue;
+	      !CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig) continue;
     const NR_CSI_MeasConfig_t *csi_measconfig = CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
     AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count > 0,
                 "NO CSI report configuration available");
@@ -1197,7 +1197,7 @@ bool nr_acknack_scheduling(int mod_id,
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
       pucch->ul_slot = (s + 1) % n_slots_frame;
-      return nr_acknack_scheduling(mod_id, UE_id, frame, slot,pucch->r_pucch);
+      return nr_acknack_scheduling(mod_id, UE_id, frame, slot, pucch->r_pucch);
     }
 
     pucch->timing_indicator = i;

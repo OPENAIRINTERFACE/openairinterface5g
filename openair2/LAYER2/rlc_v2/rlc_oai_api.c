@@ -1042,4 +1042,3 @@ void du_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
                      mem_block_t *sdu_pP){
 
 }
-

@@ -169,7 +169,6 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
       }
     }
   }
-
   AssertFatal(rrc_inst>=0,"couldn't find an RRC instance for nr_cell %llu\n",(unsigned long long int)nr_cellid);
 
   int f1ap_uid = f1ap_add_ue(&f1ap_cu_inst[rrc_inst], rrc_inst, CC_id, 0, rnti);
@@ -344,7 +343,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   
   F1AP_ULRRCMessageTransfer_t    *container;
   F1AP_ULRRCMessageTransferIEs_t *ie;
-  
+
   uint64_t        cu_ue_f1ap_id;
   uint64_t        du_ue_f1ap_id;
   uint64_t        srb_id;

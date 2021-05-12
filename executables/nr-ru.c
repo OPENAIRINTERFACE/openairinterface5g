@@ -1979,7 +1979,7 @@ void RCconfig_RU(void)
       }
       else {
         LOG_I(PHY,"Setting time source to internal\n");
-	RC.ru[j]->openair0_cfg.time_source = internal;
+	      RC.ru[j]->openair0_cfg.time_source = internal;
       }
       
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {

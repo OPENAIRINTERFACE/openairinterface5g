@@ -134,7 +134,6 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     }
   }
 
-
   LOG_D(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
   LOG_D(MAC,"system frame number(with LSB): %d\n", (int)frame);
   LOG_D(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
@@ -375,10 +374,10 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
   if(pusch_config_pdu != NULL){
     NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
     if (mac->ULbwp[0] &&
-      mac->ULbwp[0]->bwp_Dedicated &&
-      mac->ULbwp[0]->bwp_Dedicated->pusch_Config &&
-            mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup &&
-      mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
+        mac->ULbwp[0]->bwp_Dedicated &&
+        mac->ULbwp[0]->bwp_Dedicated->pusch_Config &&
+        mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup &&
+        mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
       pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
     }
     else if (mac->ULbwp[0] &&
@@ -419,7 +418,6 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
     }
     LOG_D(NR_MAC,"start_symbol = %i\n", pusch_config_pdu->start_symbol_index);
     LOG_D(NR_MAC,"number_symbols = %i\n", pusch_config_pdu->nr_of_symbols);
-
   }
   return 0;
 }
@@ -672,9 +670,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
-							 mac->mib->dmrs_TypeA_Position,
-							 dlsch_config_pdu_1_0->number_symbols,
-							 dlsch_config_pdu_1_0->start_symbol);
+                                                         mac->mib->dmrs_TypeA_Position,
+                                                         dlsch_config_pdu_1_0->number_symbols,
+                                                         dlsch_config_pdu_1_0->start_symbol);
     dlsch_config_pdu_1_0->dmrsConfigType = (mac->DLbwp[0] != NULL) ? (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
     /* number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214 version 15.9.0 Release 15 */
     if (dlsch_config_pdu_1_0->number_symbols == 2)
@@ -1230,9 +1228,11 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       //Identifier for DCI formats
       pos++;
       dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
+
+      //switch to DCI_0_0
       if (dci_pdu_rel15->format_indicator == 0)
-	//switch to DCI_0_0
-	return 2+nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, dci_pdu, dci_pdu_rel15);
+        return 2+nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, dci_pdu, dci_pdu_rel15);
+
 #ifdef DEBUG_EXTRACT_DCI
       LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,N_RB,dci_size-pos,*dci_pdu);
 #endif

@@ -620,8 +620,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     int target_ss;
     bool valid_ptrs_setup = 0;
     uint16_t n_RB_ULBWP;
-    if (mac->ULbwp[0] &&
-	mac->ULbwp[0]->bwp_Common) {
+    if (mac->ULbwp[0] && mac->ULbwp[0]->bwp_Common) {
       n_RB_ULBWP = NRRIV2BW(mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       pusch_config_pdu->bwp_start = NRRIV2PRBOFFSET(mac->ULbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     }
@@ -770,11 +769,11 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     /* PTRS */
     if (mac->ULbwp[0] &&
-	mac->ULbwp[0]->bwp_Dedicated &&
-	mac->ULbwp[0]->bwp_Dedicated->pusch_Config &&
-	mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup &&
-	mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB &&
-	mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS) {
+        mac->ULbwp[0]->bwp_Dedicated &&
+        mac->ULbwp[0]->bwp_Dedicated->pusch_Config &&
+        mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup &&
+        mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB &&
+        mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS) {
       if (pusch_config_pdu->transform_precoding == transform_precoder_disabled) {
         nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
         pusch_config_pdu->pusch_ptrs.ptrs_ports_list = &ptrs_ports_list;
@@ -989,7 +988,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
                 mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id],
                 ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator,
                 TBS_bytes,
-                ra->ra_state );
+                ra->ra_state);
           if (ra->ra_state == WAIT_RAR && !ra->cfra){
             memcpy(ulsch_input_buffer, mac->ulsch_pdu.payload, TBS_bytes);
             LOG_D(NR_MAC,"[RAPROC] Msg3 to be transmitted:\n");
@@ -998,7 +997,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
             }
             LOG_D(NR_MAC,"Flipping NDI for harq_id %d (Msg3)\n",ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
             mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
-	    mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
+	          mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
           } else {
 
             if ( (mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator ||
@@ -1088,6 +1087,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
 
   int delta = 0;
   NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
+
   // Get the numerology to calculate the Tx frame and slot
   int mu = ubwp ?
     ubwp->bwp_Common->genericParameters.subcarrierSpacing :
@@ -1619,7 +1619,7 @@ static void map_ssb_to_ro(NR_UE_MAC_INST_t *mac) {
       for (ssb_idx=0; ssb_idx<MAX_NB_SSB; ssb_idx++) {
         uint8_t nb_mapped_ro_in_association_period=0; // Reset the nb of mapped ROs for the new SSB index
 
-	LOG_D(NR_MAC,"Checking ssb_idx %d => %d\n",
+	      LOG_D(NR_MAC,"Checking ssb_idx %d => %d\n",
 	      ssb_idx,ssb_list.tx_ssb[ssb_idx].transmitted);
 
         // Map only the transmitted ssb_idx
@@ -1822,7 +1822,6 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   ra->RA_offset = 2; // to compensate the rx frame offset at the gNB
   ra->generate_nr_prach = GENERATE_IDLE; // Reset flag for PRACH generation
   NR_TDD_UL_DL_ConfigCommon_t *tdd_config = scc==NULL ? scc_SIB->tdd_UL_DL_ConfigurationCommon : scc->tdd_UL_DL_ConfigurationCommon;
-
 
   if (is_nr_UL_slot(tdd_config, slotP, mac->frame_type)) {
 

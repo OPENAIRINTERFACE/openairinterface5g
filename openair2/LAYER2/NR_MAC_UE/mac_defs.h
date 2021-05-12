@@ -315,7 +315,7 @@ typedef struct {
 typedef struct {
 
   NR_ServingCellConfigCommon_t    *scc;
-  NR_ServingCellConfigCommonSIB_t    *scc_SIB;
+  NR_ServingCellConfigCommonSIB_t *scc_SIB;
   NR_CellGroupConfig_t            *cg;
   int                             servCellIndex;
   NR_CSI_ReportConfig_t           *csirc;

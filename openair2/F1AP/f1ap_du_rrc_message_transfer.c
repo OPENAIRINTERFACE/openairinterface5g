@@ -479,36 +479,36 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                       DRB2LCHAN[i] = (uint8_t) * DRB_configList->list.array[i]->logicalChannelIdentity;
                     }
 
-                    rrc_mac_config_req_eNB(
-					   ctxt.module_id,
-					   0,0,0,0,0,0,
-					   0,
-					   ue_context_p->ue_context.rnti,
-					   (LTE_BCCH_BCH_Message_t *) NULL,
-					   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-					   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-					   physicalConfigDedicated,
-					   (LTE_SCellToAddMod_r10_t *)NULL,
-					   //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
-					   (LTE_MeasObjectToAddMod_t **) NULL,
-					   mac_MainConfig,
-					   DRB2LCHAN[i],
-					   DRB_configList->list.array[i]->logicalChannelConfig,
-					   measGapConfig,
-					   (LTE_TDD_Config_t *) NULL,
-					   NULL,
-					   (LTE_SchedulingInfoList_t *) NULL,
-					   0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
-					   , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL,
-					   (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
-					   0,
-					   (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-					   (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-					   (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-					   (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-					   (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-					   (LTE_MBSFNAreaConfiguration_r9_t*) NULL
-					   );
+                     rrc_mac_config_req_eNB(
+                     ctxt.module_id,
+                     0,0,0,0,0,0,
+                     0,
+                     ue_context_p->ue_context.rnti,
+                     (LTE_BCCH_BCH_Message_t *) NULL,
+                     (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                     (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                     physicalConfigDedicated,
+                     (LTE_SCellToAddMod_r10_t *)NULL,
+                     //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+                     (LTE_MeasObjectToAddMod_t **) NULL,
+                     mac_MainConfig,
+                     DRB2LCHAN[i],
+                     DRB_configList->list.array[i]->logicalChannelConfig,
+                     measGapConfig,
+                     (LTE_TDD_Config_t *) NULL,
+                     NULL,
+                     (LTE_SchedulingInfoList_t *) NULL,
+                     0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
+                     , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL,
+                     (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
+                     0,
+                     (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                     (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                     (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                     (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                     (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+                     (LTE_MBSFNAreaConfiguration_r9_t*) NULL
+                     );
                   }
 
                 } else {        // remove LCHAN from MAC/PHY
@@ -883,12 +883,9 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
     ie->id                             = F1AP_ProtocolIE_ID_id_DUtoCURRCContainer;
     ie->criticality                    = F1AP_Criticality_reject;
     ie->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_DUtoCURRCContainer;
-    OCTET_STRING_fromBuf(&ie->value.choice.DUtoCURRCContainer,
-                         (char *)sdu2P,
-                         sdu2_lenP);
+    OCTET_STRING_fromBuf(&ie->value.choice.DUtoCURRCContainer, (char *)sdu2P, sdu2_lenP);
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }    
-
 
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {

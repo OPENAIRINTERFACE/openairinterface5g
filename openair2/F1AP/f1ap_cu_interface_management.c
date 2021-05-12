@@ -349,58 +349,55 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
       /* optional */
       /* - nRPCI */
       if (1) {
-	cells_to_be_activated_list_item.nRPCI = (F1AP_NRPCI_t *)calloc(1, sizeof(F1AP_NRPCI_t));
-	*cells_to_be_activated_list_item.nRPCI = f1ap_setup_resp->cells_to_activate[i].nrpci;  // int 0..1007
+        cells_to_be_activated_list_item.nRPCI = (F1AP_NRPCI_t *)calloc(1, sizeof(F1AP_NRPCI_t));
+        *cells_to_be_activated_list_item.nRPCI = f1ap_setup_resp->cells_to_activate[i].nrpci;  // int 0..1007
       }
       
       /* optional */
       /* - gNB-CU System Information */
       if (1) {
-	/* 3.1.2 gNB-CUSystem Information */
-	F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs;
-	cells_to_be_activated_list_itemExtIEs = (F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t));
-	cells_to_be_activated_list_itemExtIEs->id                     = F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation;
-	cells_to_be_activated_list_itemExtIEs->criticality            = F1AP_Criticality_reject;
-	cells_to_be_activated_list_itemExtIEs->extensionValue.present = F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation;
-	
-	F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)calloc(1, sizeof(F1AP_GNB_CUSystemInformation_t));
-	//LOG_I(F1AP, "%s() SI %d size %d: ", __func__, i, f1ap_setup_resp->SI_container_length[i][0]);
-	//for (int n = 0; n < f1ap_setup_resp->SI_container_length[i][0]; n++)
-	//  printf("%02x ", f1ap_setup_resp->SI_container[i][0][n]);
-      //printf("\n");
-	
-      // for (int sIBtype=2;sIBtype<33;sIBtype++) { //21 ? 33 ?
-	for (int sIBtype=2;sIBtype<21;sIBtype++) {
-	  if (f1ap_setup_resp->cells_to_activate[i].SI_container[sIBtype]!=NULL) {
-	    AssertFatal(sIBtype < 6 || sIBtype == 9, "Illegal SI type %d\n",sIBtype);
-	    F1AP_SibtypetobeupdatedListItem_t *sib_item = calloc(1,sizeof(*sib_item));
-	    memset((void*)sib_item,0,sizeof(*sib_item));
-	    sib_item->sIBtype = sIBtype;
-	    OCTET_STRING_fromBuf(&sib_item->sIBmessage,
-				 (const char*)f1ap_setup_resp->cells_to_activate[i].SI_container[sIBtype], 
-				 f1ap_setup_resp->cells_to_activate[i].SI_container_length[sIBtype]);
-	    
-	    LOG_D(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_setup_resp->cells_to_activate[i].SI_container_length[sIBtype]);
-	    ASN_SEQUENCE_ADD(&gNB_CUSystemInformation->sibtypetobeupdatedlist.list,sib_item);
-	  }
-	}
-	cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation = *gNB_CUSystemInformation;
-	
-	
-	F1AP_ProtocolExtensionContainer_154P112_t p_154P112_t;
-	memset((void *)&p_154P112_t, 0, sizeof(F1AP_ProtocolExtensionContainer_154P112_t));
-	
-	ASN_SEQUENCE_ADD(&p_154P112_t.list,
-			 cells_to_be_activated_list_itemExtIEs);
-	cells_to_be_activated_list_item.iE_Extensions = (struct F1AP_ProtocolExtensionContainer*)&p_154P112_t;
-	
-	free(gNB_CUSystemInformation);
-	gNB_CUSystemInformation = NULL;
+      /* 3.1.2 gNB-CUSystem Information */
+      F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs;
+      cells_to_be_activated_list_itemExtIEs = (F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t));
+      cells_to_be_activated_list_itemExtIEs->id                     = F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation;
+      cells_to_be_activated_list_itemExtIEs->criticality            = F1AP_Criticality_reject;
+      cells_to_be_activated_list_itemExtIEs->extensionValue.present = F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation;
+
+      F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)calloc(1, sizeof(F1AP_GNB_CUSystemInformation_t));
+      //LOG_I(F1AP, "%s() SI %d size %d: ", __func__, i, f1ap_setup_resp->SI_container_length[i][0]);
+      //for (int n = 0; n < f1ap_setup_resp->SI_container_length[i][0]; n++)
+      //  printf("%02x ", f1ap_setup_resp->SI_container[i][0][n]);
+          //printf("\n");
+
+          // for (int sIBtype=2;sIBtype<33;sIBtype++) { //21 ? 33 ?
+      for (int sIBtype=2;sIBtype<21;sIBtype++) {
+        if (f1ap_setup_resp->cells_to_activate[i].SI_container[sIBtype]!=NULL) {
+          AssertFatal(sIBtype < 6 || sIBtype == 9, "Illegal SI type %d\n",sIBtype);
+          F1AP_SibtypetobeupdatedListItem_t *sib_item = calloc(1,sizeof(*sib_item));
+          memset((void*)sib_item,0,sizeof(*sib_item));
+          sib_item->sIBtype = sIBtype;
+          OCTET_STRING_fromBuf(&sib_item->sIBmessage,
+             (const char*)f1ap_setup_resp->cells_to_activate[i].SI_container[sIBtype],
+             f1ap_setup_resp->cells_to_activate[i].SI_container_length[sIBtype]);
+
+          LOG_D(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_setup_resp->cells_to_activate[i].SI_container_length[sIBtype]);
+          ASN_SEQUENCE_ADD(&gNB_CUSystemInformation->sibtypetobeupdatedlist.list,sib_item);
+        }
+      }
+      cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation = *gNB_CUSystemInformation;
+
+      F1AP_ProtocolExtensionContainer_154P112_t p_154P112_t;
+      memset((void *)&p_154P112_t, 0, sizeof(F1AP_ProtocolExtensionContainer_154P112_t));
+
+      ASN_SEQUENCE_ADD(&p_154P112_t.list, cells_to_be_activated_list_itemExtIEs);
+      cells_to_be_activated_list_item.iE_Extensions = (struct F1AP_ProtocolExtensionContainer*)&p_154P112_t;
+
+      free(gNB_CUSystemInformation);
+      gNB_CUSystemInformation = NULL;
       }
       /* ADD */
       cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item = cells_to_be_activated_list_item;
-    ASN_SEQUENCE_ADD(&ie->value.choice.Cells_to_be_Activated_List.list,
-		     cells_to_be_activated_list_item_ies);
+      ASN_SEQUENCE_ADD(&ie->value.choice.Cells_to_be_Activated_List.list, cells_to_be_activated_list_item_ies);
     }
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
@@ -571,9 +568,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
     ie->criticality               = F1AP_Criticality_reject;
     ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_Cells_to_be_Activated_List;
     
-    for (i=0;
-	 i<f1ap_gnb_cu_configuration_update->num_cells_to_activate;
-	 i++) {
+    for (i=0; i<f1ap_gnb_cu_configuration_update->num_cells_to_activate; i++) {
       
       F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies;
       cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemIEs_t));
@@ -833,8 +828,6 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
                         gnb_cu_tnl_association_to_update_item_ies);
   }  
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-
   */
 
   /* 
@@ -942,8 +935,8 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
     LOG_E(F1AP, "Failed to encode F1 gNB-CU CONFIGURATION UPDATE\n");
     return -1;
   }
-  
-  printf("F1AP gNB-CU CONFIGURATION UPDATE : ");
+
+  LOG_I(F1AP, "F1AP gNB-CU CONFIGURATION UPDATE : ");
   for (int i=0;i<len;i++) printf("%02x ",buffer[i]);
   printf("\n");
   cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);

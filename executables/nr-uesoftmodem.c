@@ -183,6 +183,7 @@ struct timespec clock_difftime(struct timespec start, struct timespec end) {
 void print_difftimes(void) {
   LOG_I(HW,"difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
 }
+
 int create_tasks_nrue(uint32_t ue_nb) {
   LOG_D(NR_RRC, "%s(ue_nb:%d)\n", __FUNCTION__, ue_nb);
   itti_wait_ready(1);

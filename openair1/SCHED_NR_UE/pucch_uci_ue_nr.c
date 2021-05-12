@@ -564,10 +564,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
       int N_CS = initial_pucch_resource[initial_pucch_id].nb_CS_indexes;
       /* see TS 38213 Table 9.2.1-1: PUCCH resource sets before dedicated PUCCH resource configuration */
-      BWPsize  =  NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,
-			      MAX_BWP_SIZE);
-      BWPstart =  NRRIV2PRBOFFSET(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,
-				     MAX_BWP_SIZE);
+      BWPsize = NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      BWPstart = NRRIV2PRBOFFSET(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       int RB_BWP_offset;
       if (initial_pucch_id == 15) {
         RB_BWP_offset =BWPsize/4;
@@ -601,9 +599,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     else if ((pucch_resource_set != MAX_NB_OF_PUCCH_RESOURCE_SETS) && (pucch_resource_id != MAX_NB_OF_PUCCH_RESOURCES)) {
       /* check that current configuration is supported */
       if (mac->cg &&
-	  mac->cg->physicalCellGroupConfig &&
-          (mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL ||
-           mac->cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook != 1)) {
+	        mac->cg->physicalCellGroupConfig &&
+          (mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL || mac->cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook != 1)) {
         LOG_E(PHY,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
         return(FALSE);
       }
@@ -618,17 +615,17 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       }
       NR_PUCCH_Config_t *pucch_Config;
       if (bwp_id>0 &&
-	  mac->ULbwp[bwp_id-1] &&
-	  mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
+          mac->ULbwp[bwp_id-1] &&
+          mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
           mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config &&
           mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup)
           pucch_Config =  mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup;
       else if (bwp_id==0 &&
-	       mac->cg &&
-	       mac->cg->spCellConfig &&
-	       mac->cg->spCellConfig->spCellConfigDedicated &&
-	       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-	       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+               mac->cg &&
+               mac->cg->spCellConfig &&
+               mac->cg->spCellConfig->spCellConfigDedicated &&
+               mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+               mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
                mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config &&
                mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
         pucch_Config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
@@ -683,9 +680,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int O_CRC = 0;
 
   nb_symbols = nb_symbols_total; /* by default, it can be reduced due to symbols reserved for dmrs */
-  pucch_resource = format>1 ? 
-    mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[pucch_resource_id]:
-    0;
+  pucch_resource = format>1 ? mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[pucch_resource_id] : 0;
 
   switch(format) {
     case pucch_format0_nr:
@@ -864,13 +859,13 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format0_nr:
     {
       int pucch_GroupHopping = mac->ULbwp[bwp_id-1] ?
-	mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping:
-	mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup->pucch_GroupHopping;
+            mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping:
+            mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup->pucch_GroupHopping;
       int hoppingId = mac->ULbwp[bwp_id-1] ?
-	mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId[0]:
-	(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup->hoppingId?
-	 mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup->hoppingId[0]:
-	 mac->physCellId);
+            mac->ULbwp[bwp_id-1]->bwp_Common->pucch_ConfigCommon->choice.setup->hoppingId[0]:
+            (mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup->hoppingId?
+             mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup->hoppingId[0]:
+             mac->physCellId);
       nr_generate_pucch0(ue,ue->common_vars.txdataF,
 			 &ue->frame_parms,
 			 pucch_GroupHopping,
@@ -1319,7 +1314,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
               current_resource_id = r_PUCCH;
             }
             else {
-		current_resource_id = resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.array[pucch_resource_indicator][0];
+		          current_resource_id = resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.array[pucch_resource_indicator][0];
             }
           }
 

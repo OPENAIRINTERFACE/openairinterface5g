@@ -490,7 +490,6 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
   itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, message_p);
 }
 
-
 //------------------------------------------------------------------------------
 int
 rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
@@ -736,7 +735,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
     struct rrc_gNB_ue_context_s *ue_context_p = NULL;
     protocol_ctxt_t              ctxt;
     memset(&ctxt, 0, sizeof(protocol_ctxt_t));
-
     ue_initial_id  = NGAP_DOWNLINK_NAS (msg_p).ue_initial_id;
     gNB_ue_ngap_id = NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id;
     ue_context_p = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);

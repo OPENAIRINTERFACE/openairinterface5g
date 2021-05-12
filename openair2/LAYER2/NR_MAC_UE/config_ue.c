@@ -173,12 +173,12 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     
     for (i=0; i<5; i++) {
       if (i==scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
-	cfg->carrier_config.dl_grid_size[i] = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-	cfg->carrier_config.dl_k0[i] = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
+        cfg->carrier_config.dl_grid_size[i] = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+        cfg->carrier_config.dl_k0[i] = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
       }
       else {
-	cfg->carrier_config.dl_grid_size[i] = 0;
-	cfg->carrier_config.dl_k0[i] = 0;
+        cfg->carrier_config.dl_grid_size[i] = 0;
+        cfg->carrier_config.dl_k0[i] = 0;
       }
     }
     

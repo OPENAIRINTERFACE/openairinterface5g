@@ -318,8 +318,7 @@ mac_rrc_data_ind(
       sduP,
       sdu_lenP,
       NULL,
-      0
-    );
+      0);
     return(0);
   }
 

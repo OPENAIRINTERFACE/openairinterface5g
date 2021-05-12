@@ -40,6 +40,7 @@ typedef struct nr_pdcp_entity_t {
   void (*recv_sdu)(struct nr_pdcp_entity_t *entity, char *buffer, int size,
                    int sdu_id);
   void (*delete)(struct nr_pdcp_entity_t *entity);
+
   /* set_security: pass -1 to integrity_algorithm / ciphering_algorithm
    *               to keep the current algorithm
    *               pass NULL to integrity_key / ciphering_key
@@ -50,6 +51,7 @@ typedef struct nr_pdcp_entity_t {
                        char *integrity_key,
                        int ciphering_algorithm,
                        char *ciphering_key);
+
   void (*set_time)(struct nr_pdcp_entity_t *entity, uint64_t now);
 
   /* callbacks provided to the PDCP module */
