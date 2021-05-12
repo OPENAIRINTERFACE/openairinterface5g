@@ -1233,7 +1233,7 @@ int nr_acknack_scheduling(int mod_id,
     // and if we don't multiplex
     // FIXME currently we support at most 11 bits in pucch2 so skip also in that case
     if(!csi_pucch->simultaneous_harqcsi
-       || ((csi_pucch->csi_bits + csi_pucch->dai_c) == 11)) {
+       || ((csi_pucch->csi_bits + csi_pucch->dai_c) >= 11)) {
       nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
       memset(csi_pucch, 0, sizeof(*csi_pucch));
       /* advance the UL slot information in PUCCH by one so we won't schedule in
