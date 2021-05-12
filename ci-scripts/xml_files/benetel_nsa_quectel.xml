@@ -30,19 +30,17 @@
  040000
  000002
  010000
- 000001
  050000
  050001
  000001
  070000
  000001
- 070001
+ 070000
  000001
  010002
  000001
  080001
  080000
-  
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 

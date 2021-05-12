@@ -30,19 +30,17 @@
  040000
  000002
  010000
- 000001
  050000
  050001
  000001
  070000
  000001
- 070001
+ 070000
  000001
  010002
  000001
  080001
  080000
-  
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -82,13 +80,13 @@
 	<testCase id="000001">
 		<class>IdleSleep</class>
 		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
+		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
 	</testCase>
 
 	<testCase id="000002">
 		<class>IdleSleep</class>
 		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>30</idle_sleep_time_in_sec>
+		<idle_sleep_time_in_sec>20</idle_sleep_time_in_sec>
 	</testCase>
 
 
