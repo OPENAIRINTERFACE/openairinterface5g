@@ -1709,11 +1709,32 @@ rrc_ue_process_nrueCapabilityEnquiry(
   ue_cap->rrc_TransactionIdentifier = UECapabilityEnquiry->rrc_TransactionIdentifier;
 
   NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container;
-  memset((void *)&ue_CapabilityRAT_Container, 0, sizeof(NR_UE_CapabilityRAT_Container_t));
+  memset(&ue_CapabilityRAT_Container, 0, sizeof(ue_CapabilityRAT_Container));
   ue_CapabilityRAT_Container.rat_Type = NR_RAT_Type_nr;
   OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ue_CapabilityRAT_Container,
                        (const char *)nrue_cap_info->mesg,
                        nrue_cap_info->mesg_len);
+
+  NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container_mrdc;
+  memset(&ue_CapabilityRAT_Container_mrdc, 0, sizeof(ue_CapabilityRAT_Container_mrdc));
+  uint8_t buffer_mrdc[RRC_BUF_SIZE];
+  NR_UE_MRDC_Capability_t *UE_Capability_MRDC = CALLOC(1, sizeof(NR_UE_MRDC_Capability_t));
+  asn_enc_rval_t enc_rval_mrdc = uper_encode_to_buffer(&asn_DEF_NR_UE_MRDC_Capability,
+                                   NULL,
+                                   (void *)UE_Capability_MRDC,
+                                   &buffer_mrdc,
+                                   sizeof(buffer_mrdc));
+  AssertFatal (enc_rval_mrdc.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval_mrdc.failed_type->name, enc_rval_mrdc.encoded);
+  LOG_I(RRC, "[NR_RRC] NRUE MRDC Capability encoded, %ld bytes (%ld bits)\n",
+        (enc_rval_mrdc.encoded + 7) / 8, enc_rval_mrdc.encoded + 7);
+
+  ue_CapabilityRAT_Container_mrdc.rat_Type = NR_RAT_Type_eutra_nr;
+  OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container_mrdc.ue_CapabilityRAT_Container,
+                       (const char *)buffer_mrdc,
+                       (enc_rval_mrdc.encoded + 7) / 8);
+
+
   ue_cap->criticalExtensions.present           = LTE_UECapabilityInformation__criticalExtensions_PR_c1;
   ue_cap->criticalExtensions.choice.c1.present = LTE_UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8;
   ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count = 0;
@@ -1734,7 +1755,7 @@ rrc_ue_process_nrueCapabilityEnquiry(
     }
     if (*cap_req->list.array[i] == LTE_RAT_Type_eutra_nr) {
         ASN_SEQUENCE_ADD(&ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
-                         &ue_CapabilityRAT_Container);
+                         &ue_CapabilityRAT_Container_mrdc);
         ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type = LTE_RAT_Type_eutra_nr;
         asn_enc_rval_t enc_rval_eutra_nr = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, buffer, sizeof(buffer));
         AssertFatal (enc_rval_eutra_nr.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
