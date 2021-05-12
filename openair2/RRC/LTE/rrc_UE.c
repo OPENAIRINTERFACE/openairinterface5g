@@ -176,7 +176,7 @@ static uint8_t check_trigger_meas_event(
   uint8_t ue_cnx_index,
   uint8_t meas_index,
   LTE_Q_OffsetRange_t ofn, LTE_Q_OffsetRange_t ocn, LTE_Hysteresis_t hys,
-  LTE_Q_OffsetRange_t ofs, LTE_Q_OffsetRange_t ocs, long a3_offset, LTE_TimeToTrigger_t ttt);
+  LTE_Q_OffsetRange_t ofs, LTE_Q_OffsetRange_t ocs, LTE_TimeToTrigger_t ttt);
 
 static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
 static void decode_MBMSCountingRequest(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
@@ -2494,7 +2494,7 @@ rrc_ue_decode_dcch(
 #ifndef NO_RRM
   send_msg(&S_rrc,msg_rrc_end_scan_req(ctxt_pP->module_id,eNB_indexP));
 #endif
-  if (dl_dcch_msg != NULL)
+  if (0) //Melissa hack: Were not done with underlying members of dl_dcch_msg (Use after free)
   {
     SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, dl_dcch_msg, ASFM_FREE_EVERYTHING);
   }
@@ -4376,8 +4376,8 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
               (long int)rsrq_t);
         ssize_t size = do_MeasurementReport(ctxt_pP->module_id, buffer,measId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
         AssertFatal(size >= 0, "do_MeasurementReport failed \n");
-        LOG_I(RRC, "[UE %d] Frame %d : Generating Measurement Report for eNB %d\n",
-              ctxt_pP->module_id, ctxt_pP->frame, eNB_index);
+        LOG_I(RRC, "[UE %d] Frame %d : Generating Measurement Report for eNB %d. Size is %d\n",
+              ctxt_pP->module_id, ctxt_pP->frame, eNB_index, size);
         result = pdcp_data_req(ctxt_pP,  SRB_FLAG_YES, DCCH, rrc_mui++, 0, size, buffer, PDCP_TRANSMISSION_MODE_DATA,NULL, NULL);
         AssertFatal (result == TRUE, "PDCP data request failed!\n");
         //LOG_D(RRC, "[UE %d] Frame %d Sending MeasReport (%d bytes) through DCCH%d to PDCP \n",ue_mod_idP,frameP, size, DCCH);
@@ -4481,7 +4481,7 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
                          ctxt_pP->module_id,
                          ctxt_pP->frame,
                          eNB_index,
-                         i,j,ofn,ocn,hys,ofs,ocs,a3_offset,ttt_ms)) &&
+                         i,j,ofn,ocn,hys,ofs,ocs,ttt_ms)) &&
                       (ue->Info[0].State >= RRC_CONNECTED) &&
                       (ue->Info[0].T304_active == 0 )      &&
                       (ue->HandoverInfoUe.measFlag == 1)) {
@@ -4524,8 +4524,34 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
           }
 
           if (ue->MeasObj[i][measObjId-1]->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15) {
-            LOG_I(RRC,"[UE %d] Frame %d: B1_NR_r15 event\n", ctxt_pP->module_id, ctxt_pP->frame);
-            if (does_rrcConnReconfig_have_nr(ue)) {
+            if (!does_rrcConnReconfig_have_nr(ue))
+              break;
+            LTE_TimeToTrigger_t trig_per = ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.timeToTrigger;
+            hys = ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.hysteresis;
+            ttt_ms = timeToTrigger_ms[trig_per];
+            bool is_in_period = check_trigger_meas_event(ctxt_pP->module_id,
+                                                         ctxt_pP->frame,
+                                                         eNB_index,
+                                                         i, j, 5, 0, hys, 0, 0, ttt_ms);
+            bool is_state_connected = false;
+            bool is_t304_inactive = false;
+            bool have_meas_flag = false;
+            if (ue->Info[0].State >= RRC_CONNECTED)
+              is_state_connected = true;
+            if (ue->Info[0].T304_active == 0)
+              is_t304_inactive = true;
+            if (ue->HandoverInfoUe.measFlag == 1);
+              have_meas_flag = true;
+
+            LOG_I(RRC,"[UE %d] Frame %d: B1_NR_r15 event. nr_meas %d, period %d, state %d, t304 %d, measfalg %d \n",
+                  ctxt_pP->module_id, ctxt_pP->frame,
+                  does_rrcConnReconfig_have_nr(ue),
+                  is_in_period,
+                  is_state_connected,
+                  is_t304_inactive,
+                  have_meas_flag);
+
+            if (does_rrcConnReconfig_have_nr(ue) && is_in_period && is_state_connected && is_t304_inactive && have_meas_flag) {
               LOG_I(RRC,"[UE %d] Frame %d: Triggering generation of Meas Report for NR_r15\n",
                     ctxt_pP->module_id, ctxt_pP->frame);
 
@@ -4565,15 +4591,16 @@ uint8_t check_trigger_meas_event(
   LTE_Hysteresis_t    hys,
   LTE_Q_OffsetRange_t ofs,
   LTE_Q_OffsetRange_t ocs,
-  long            a3_offset,
   LTE_TimeToTrigger_t ttt ) {
   uint8_t eNB_offset;
   //  uint8_t currentCellIndex = frame_parms->Nid_cell;
   uint8_t tmp_offset;
-  LOG_D(RRC,"[UE %d] ofn(%ld) ocn(%ld) hys(%ld) ofs(%ld) ocs(%ld) a3_offset(%ld) ttt(%ld) rssi %3.1f\n",
+  LOG_I(RRC,"[UE %d] ofn(%ld) ocn(%ld) hys(%ld) ofs(%ld) ocs(%ld) ttt(%ld) rssi %3.1f\n",
         ue_mod_idP,
-        ofn,ocn,hys,ofs,ocs,a3_offset,ttt,
+        ofn,ocn,hys,ofs,ocs,ttt,
         10*log10(get_RSSI(ue_mod_idP,0))-get_rx_total_gain_dB(ue_mod_idP,0));
+  LOG_I(RRC, "Elkadi [UE %d] Frame %d: num_adj: %d eNB_idx: %d, NB_eNB_INST: %d\n",
+        ue_mod_idP, frameP, get_n_adj_cells(ue_mod_idP,0), eNB_index, NB_eNB_INST);
 
   for (eNB_offset = 0; eNB_offset<1+get_n_adj_cells(ue_mod_idP,0); eNB_offset++) {
     /* RHS: Verify that idx 0 corresponds to currentCellIndex in rsrp array */
@@ -4586,17 +4613,17 @@ uint8_t check_trigger_meas_event(
 
       if(UE_rrc_inst[ue_mod_idP].rsrp_db_filtered[eNB_offset]+ofn+ocn-hys > UE_rrc_inst[ue_mod_idP].rsrp_db_filtered[eNB_index]+ofs+ocs-1/*+a3_offset*/) {
         UE_rrc_inst->measTimer[ue_cnx_index][meas_index][tmp_offset] += 2; //Called every subframe = 2ms
-        LOG_D(RRC,"[UE %d] Frame %d: Entry measTimer[%d][%d][%d]: %d currentCell: %d betterCell: %d \n",
+        LOG_I(RRC,"[UE %d] Frame %d: Entry measTimer[%d][%d][%d]: %d currentCell: %d betterCell: %d \n",
               ue_mod_idP, frameP, ue_cnx_index,meas_index,tmp_offset,UE_rrc_inst->measTimer[ue_cnx_index][meas_index][tmp_offset],0,eNB_offset);
       } else {
         UE_rrc_inst->measTimer[ue_cnx_index][meas_index][tmp_offset] = 0; //Exit condition: Resetting the measurement timer
-        LOG_D(RRC,"[UE %d] Frame %d: Exit measTimer[%d][%d][%d]: %d currentCell: %d betterCell: %d \n",
+        LOG_I(RRC,"[UE %d] Frame %d: Exit measTimer[%d][%d][%d]: %d currentCell: %d betterCell: %d \n",
               ue_mod_idP, frameP, ue_cnx_index,meas_index,tmp_offset,UE_rrc_inst->measTimer[ue_cnx_index][meas_index][tmp_offset],0,eNB_offset);
       }
 
       if (UE_rrc_inst->measTimer[ue_cnx_index][meas_index][tmp_offset] >= ttt) {
         UE_rrc_inst->HandoverInfoUe.targetCellId = get_adjacent_cell_id(ue_mod_idP,tmp_offset); //WARNING!!!...check this!
-        LOG_D(RRC,"[UE %d] Frame %d eNB %d: Handover triggered: targetCellId: %ld currentCellId: %d eNB_offset: %d rsrp source: %3.1f rsrp target: %3.1f\n",
+        LOG_I(RRC,"[UE %d] Frame %d eNB %d: Handover triggered: targetCellId: %ld currentCellId: %d eNB_offset: %d rsrp source: %3.1f rsrp target: %3.1f\n",
               ue_mod_idP, frameP, eNB_index,
               UE_rrc_inst->HandoverInfoUe.targetCellId,ue_cnx_index,eNB_offset,
               get_RSRP(ue_mod_idP,0,0),

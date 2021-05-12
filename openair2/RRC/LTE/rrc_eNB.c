@@ -4448,7 +4448,9 @@ static int encode_CG_ConfigInfo(
      I believe this is happening because we are not properly sending the UE_Capability_Info
      over from the LTE UE. We received the info from the NR UE but we dont fill the container
      properly? */
+  LOG_I(RRC,"Got here Melissa Elkadi %s():%d\n", __FUNCTION__, __LINE__);
   if(ue_context_pP->ue_context.UE_Capability_MRDC) {
+    LOG_I(RRC,"Got here Melissa Elkadi%s():%d\n", __FUNCTION__, __LINE__);
     RAT_Container_count++;
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_MRDC_Capability,NULL,
                                      (void *)ue_context_pP->ue_context.UE_Capability_MRDC,temp_buff,ASN_MAX_ENCODE_SIZE);
@@ -4463,6 +4465,7 @@ static int encode_CG_ConfigInfo(
   }
 
   if(ue_context_pP->ue_context.UE_Capability_nr) {
+    LOG_I(RRC,"Got here Melissa Elkadi %s():%d\n", __FUNCTION__, __LINE__);
     RAT_Container_count++;
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_NR_Capability,NULL,
                                      (void *)ue_context_pP->ue_context.UE_Capability_nr,temp_buff,ASN_MAX_ENCODE_SIZE);
@@ -4477,6 +4480,7 @@ static int encode_CG_ConfigInfo(
   }
 
   if (RAT_Container_count) {
+    LOG_I(RRC,"Got here Melissa Elkadi %s():%d\n", __FUNCTION__, __LINE__);
     cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo = calloc(1,sizeof( OCTET_STRING_t));
     AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo-> ue_CapabilityInfo != NULL, "failed to allocate memory for ue_capabilityinfo");
     ue_cap_rat_container_list = calloc(1,sizeof(NR_UE_CapabilityRAT_ContainerList_t));
@@ -8149,7 +8153,7 @@ rrc_eNB_decode_dcch(
         for (i = 0; i < ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count; i++) {
           if (ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type ==
               LTE_RAT_Type_nr) {
-              LOG_I(RRC, "Melissa we got nrUE capabilities for UE %x\n", ctxt_pP->rnti);
+              LOG_I(RRC, "got nrUE capabilities for UE %x\n", ctxt_pP->rnti);
             if(ue_context_p->ue_context.UE_Capability_nr) {
               ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability,ue_context_p->ue_context.UE_Capability_nr);
               ue_context_p->ue_context.UE_Capability_nr = 0;
