@@ -882,7 +882,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 	  log2_ifft_size = 8;
 	  // compute energy and accumulate over receive antennas and repetitions for BR
 	  for (i=0;i<256;i++)
-	    prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[(i<<1)] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])>>10;
+	    prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[(i<<1)] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])/nb_rx;
 	}
 
 	if (LOG_DUMPFLAG(PRACH)) {	
