@@ -124,7 +124,7 @@ typedef struct {
 
 // Convenience methods to convert between SFN/SLOT formats
 #define NFAPI_SFNSLOT2DEC(_sfn,_slot) ( _sfn*20 + _slot  )  // total count of slots
-#define NFAPI_SFNSLOTDEC2SFNSLOT(_sfnslot_dec) ((((_sfnslot_dec) / 20) << 4) | (((_sfnslot_dec) - (((_sfnslot_dec) / 20) * 10)) & 0x3F))
+#define NFAPI_SFNSLOTDEC2SFNSLOT(_sfnslot_dec) ((((_sfnslot_dec) / 20) << 6) | (((_sfnslot_dec) - (((_sfnslot_dec) / 20) * 20)) & 0x3F))
 
 #define NFAPI_SFNSLOT2SFN(_sfnslot) ((_sfnslot) >> 6)
 #define NFAPI_SFNSLOT2SLOT(_sfnslot) ((_sfnslot) & 0x3F)
