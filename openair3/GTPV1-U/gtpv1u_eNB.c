@@ -911,7 +911,8 @@ gtpv1u_create_s1u_tunnel(
 
     do {
       s1u_teid = gtpv1u_new_teid();
-      LOG_D(GTPU, "gtpv1u_create_s1u_tunnel() 0x%x %u(dec)\n", s1u_teid, s1u_teid);
+      LOG_I(GTPU, "gtpv1u_data_g %p\n", RC.gtpv1u_data_g);
+      LOG_I(GTPU, "gtpv1u_create_s1u_tunnel() 0x%x %u(dec)\n", s1u_teid, s1u_teid);
       stack_req.apiInfo.createTunnelEndPointInfo.teid          = s1u_teid;
       stack_req.apiInfo.createTunnelEndPointInfo.hUlpSession   = 0;
       stack_req.apiInfo.createTunnelEndPointInfo.hStackSession = 0;

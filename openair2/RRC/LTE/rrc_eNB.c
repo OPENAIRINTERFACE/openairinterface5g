@@ -9027,6 +9027,7 @@ void rrc_eNB_process_ENDC_x2_setup_request(int mod_id, x2ap_ENDC_setup_req_t *m)
 }
 
 void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, x2ap_ENDC_sgnb_addition_req_ACK_t *m) {
+  LOG_I(RRC, "Melissa we got here %s():%d\n", __FUNCTION__, __LINE__);
   NR_CG_Config_t *CG_Config = NULL;
   {
     int i;
@@ -9472,6 +9473,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       break;
 
     case X2AP_ENDC_SGNB_ADDITION_REQ_ACK: {
+      LOG_I(RRC, "Melissa Elkadi we got here %s():%d\n", __FUNCTION__, __LINE__);
       rrc_eNB_process_AdditionResponseInformation(ENB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg_p));
       break;
     }
