@@ -656,6 +656,7 @@ int ngap_gNB_initial_ctxt_resp(
   NGAP_InitialContextSetupResponse_t    *out;
   NGAP_InitialContextSetupResponseIEs_t *ie;
   uint8_t  *buffer = NULL;
+  uint8_t pdusessionTransfer_buffer[1000];
   uint32_t length;
   int      i;
   asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
@@ -729,7 +730,8 @@ int ngap_gNB_initial_ctxt_resp(
       pdusessionTransfer_p = (NGAP_PDUSessionResourceSetupResponseTransfer_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseTransfer_t));
 
       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.present = NGAP_UPTransportLayerInformation_PR_gTPTunnel;
-     
+    
+      pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel = (NGAP_GTPTunnel_t *)calloc(1, sizeof(NGAP_GTPTunnel_t)); 
       GTP_TEID_TO_ASN1(initial_ctxt_resp_p->pdusessions[i].gtp_teid, &pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->gTP_TEID);
 
       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf = malloc(initial_ctxt_resp_p->pdusessions[i].gNB_addr.length);
@@ -757,17 +759,27 @@ int ngap_gNB_initial_ctxt_resp(
         ass_qos_item_p->qosFlowIdentifier = initial_ctxt_resp_p->pdusessions[i].associated_qos_flows[j].qfi;
 
         /* qosFlowMappingIndication */
-        if(initial_ctxt_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind != QOSFLOW_MAPPING_INDICATION_NON) {
-          ass_qos_item_p->qosFlowMappingIndication = malloc(sizeof(*ass_qos_item_p->qosFlowMappingIndication));
-          *ass_qos_item_p->qosFlowMappingIndication = initial_ctxt_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind;
-        }
+        //if(initial_ctxt_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind != QOSFLOW_MAPPING_INDICATION_NON) {
+        //  ass_qos_item_p->qosFlowMappingIndication = malloc(sizeof(*ass_qos_item_p->qosFlowMappingIndication));
+        //  *ass_qos_item_p->qosFlowMappingIndication = initial_ctxt_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind;
+        // }
         ASN_SEQUENCE_ADD(&pdusessionTransfer_p->dLQosFlowPerTNLInformation.associatedQosFlowList.list, ass_qos_item_p);
       }
                
       memset(&res, 0, sizeof(res));
-      res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
-      item->pDUSessionResourceSetupResponseTransfer.buf = res.buffer;
-      item->pDUSessionResourceSetupResponseTransfer.size = res.result.encoded;
+      //res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
+      //item->pDUSessionResourceSetupResponseTransfer.buf = res.buffer;
+      //item->pDUSessionResourceSetupResponseTransfer.size = res.result.encoded;
+
+      xer_fprint(stdout, &asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
+      memset(pdusessionTransfer_buffer, 0, 1000);
+      asn_enc_rval_t  enc_rval = aper_encode_to_buffer(&asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, 
+          NULL, 
+          pdusessionTransfer_p, 
+          pdusessionTransfer_buffer,1000);
+      AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
+      item->pDUSessionResourceSetupResponseTransfer.buf = pdusessionTransfer_buffer; 
+      item->pDUSessionResourceSetupResponseTransfer.size = enc_rval.encoded;
 
       ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
     
@@ -845,6 +857,8 @@ int ngap_gNB_initial_ctxt_resp(
     // ie->value.choice.CriticalityDiagnostics =;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
+
+  xer_fprint(stdout, &asn_DEF_NGAP_NGAP_PDU, &pdu);
 
   if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     NGAP_ERROR("Failed to encode InitialContextSetupResponse\n");
