@@ -28,6 +28,7 @@
 extern "C" {
 #endif
 
+#define NFAPI_MAX_PACKED_MESSAGE_SIZE 8192
 
 /*! The nfapi VNF phy configuration information
  */
