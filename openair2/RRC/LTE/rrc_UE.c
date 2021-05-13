@@ -4436,6 +4436,10 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
   LTE_MeasObjectId_t   measObjId;
   LTE_ReportConfigId_t reportConfigId;
   UE_RRC_INST *ue = &UE_rrc_inst[ctxt_pP->module_id];
+  bool is_in_period = false;
+  bool is_state_connected = false;
+  bool is_t304_inactive = false;
+  bool have_meas_flag = false;
   for(i=0 ; i<NB_CNX_UE ; i++) {
     for(j=0 ; j<MAX_MEAS_ID ; j++) {
       if(ue->MeasId[i][j] != NULL) {
@@ -4527,15 +4531,24 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
             if (!does_rrcConnReconfig_have_nr(ue))
               break;
             LTE_TimeToTrigger_t trig_per = ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.timeToTrigger;
-            hys = ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.hysteresis;
             ttt_ms = timeToTrigger_ms[trig_per];
-            bool is_in_period = check_trigger_meas_event(ctxt_pP->module_id,
-                                                         ctxt_pP->frame,
-                                                         eNB_index,
-                                                         i, j, 5, 0, hys, 0, 0, ttt_ms);
-            bool is_state_connected = false;
-            bool is_t304_inactive = false;
-            bool have_meas_flag = false;
+            LOG_I(RRC, "[UE %d] Frame %d: B1_NR_r15 event. nr_meas %d, period %d, state %d, t304 %d, measfalg %d count %ld, ttt %ld\n",
+                  ctxt_pP->module_id, ctxt_pP->frame,
+                  does_rrcConnReconfig_have_nr(ue),
+                  is_in_period,
+                  is_state_connected,
+                  is_t304_inactive,
+                  have_meas_flag,
+                  ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount,
+                  ttt_ms);
+            if (ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount < ttt_ms) {
+              ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount = ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount + 1;
+              break;
+            }
+            else {
+                ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount = 0;
+                is_in_period = true;
+            }
             if (ue->Info[0].State >= RRC_CONNECTED)
               is_state_connected = true;
             if (ue->Info[0].T304_active == 0)
@@ -4543,17 +4556,9 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
             if (ue->HandoverInfoUe.measFlag == 1);
               have_meas_flag = true;
 
-            LOG_I(RRC,"[UE %d] Frame %d: B1_NR_r15 event. nr_meas %d, period %d, state %d, t304 %d, measfalg %d \n",
-                  ctxt_pP->module_id, ctxt_pP->frame,
-                  does_rrcConnReconfig_have_nr(ue),
-                  is_in_period,
-                  is_state_connected,
-                  is_t304_inactive,
-                  have_meas_flag);
-
             if (does_rrcConnReconfig_have_nr(ue) && is_in_period && is_state_connected && is_t304_inactive && have_meas_flag) {
-              LOG_I(RRC,"[UE %d] Frame %d: Triggering generation of Meas Report for NR_r15\n",
-                    ctxt_pP->module_id, ctxt_pP->frame);
+              LOG_I(RRC,"[UE %d] MELISSA ELAKDI! Frame %d: Triggering generation of Meas Report for NR_r15. count = %d\n",
+                    ctxt_pP->module_id, ctxt_pP->frame, ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount);
 
               if (ue->measReportList[i][j] == NULL) {
                 ue->measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
