@@ -1714,7 +1714,7 @@ rrc_ue_process_nrueCapabilityEnquiry(
   OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ue_CapabilityRAT_Container,
                        (const char *)nrue_cap_info->mesg,
                        nrue_cap_info->mesg_len);
-
+  # if(1) //Melissa: This is a hack. The MRDC capabilites should be filled in the NR UE
   NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container_mrdc;
   memset(&ue_CapabilityRAT_Container_mrdc, 0, sizeof(ue_CapabilityRAT_Container_mrdc));
   uint8_t buffer_mrdc[RRC_BUF_SIZE];
@@ -1733,7 +1733,7 @@ rrc_ue_process_nrueCapabilityEnquiry(
   OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container_mrdc.ue_CapabilityRAT_Container,
                        (const char *)buffer_mrdc,
                        (enc_rval_mrdc.encoded + 7) / 8);
-
+  #endif
 
   ue_cap->criticalExtensions.present           = LTE_UECapabilityInformation__criticalExtensions_PR_c1;
   ue_cap->criticalExtensions.choice.c1.present = LTE_UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8;
