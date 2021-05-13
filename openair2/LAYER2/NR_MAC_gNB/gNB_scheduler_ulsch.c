@@ -657,7 +657,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       }
       if (ul_cqi < 128) UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt++;
       if (UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
-         LOG_I(NR_MAC,"Detected UL Failure on PUSCH, stopping scheduling\n");
+         LOG_D(NR_MAC,"Detected UL Failure on PUSCH, stopping scheduling\n");
          UE_info->UE_sched_ctrl[UE_id].ul_failure = 1;
       }
     }
