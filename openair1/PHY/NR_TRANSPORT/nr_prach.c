@@ -881,14 +881,14 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 	         idft(IDFT_256,prachF,prach_ifft_tmp,1);
 	         log2_ifft_size = 8;
 	  // compute energy and accumulate over receive antennas and repetitions for BR
-	         for (i=0;i<256;i++)
-	           prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[(i<<1)] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])/nb_rx;
-	       }
+	  for (i=0;i<256;i++)
+	    prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[(i<<1)] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])/nb_rx;
+	}
 
-	       if (LOG_DUMPFLAG(PRACH)) {	
-	          if (aa==0) LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
-            if (aa==1) LOG_M("prach_rxF_comp1.m","prach_rxF_comp1",prachF,1024,1,1);
-	       }
+	if (LOG_DUMPFLAG(PRACH)) {	
+	  if (aa==0) LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
+    if (aa==1) LOG_M("prach_rxF_comp1.m","prach_rxF_comp1",prachF,1024,1,1);
+	}
       }// antennas_rx
     } // new dft
     
