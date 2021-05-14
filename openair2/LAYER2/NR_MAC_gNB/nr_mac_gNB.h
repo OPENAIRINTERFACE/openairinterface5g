@@ -558,6 +558,7 @@ typedef struct {
   /// per-LC status data
   mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
 
+  int lcid_mask;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
@@ -607,6 +608,7 @@ typedef struct {
   int dlsch_current_bytes;
   int ulsch_rounds[8];
   int ulsch_errors;
+  int ulsch_DTX;
   int ulsch_total_bytes_scheduled;
   int ulsch_total_bytes_rx;
   int ulsch_current_bytes;

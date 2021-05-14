@@ -437,10 +437,10 @@ void nr_process_mac_pdu(module_id_t module_idP,
             mac_subheader_len = 2;
           }
 
-          LOG_D(NR_MAC,
-                "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n",
+          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-%s %d (gNB %d, %d bytes)\n",
                 module_idP,
                 frameP,
+                rx_lcid<4?"DCCH":"DTCH",
                 rx_lcid,
                 module_idP,
                 mac_sdu_len);
@@ -655,7 +655,10 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         if (UE_scheduling_control->sched_ul_bytes < 0)
           UE_scheduling_control->sched_ul_bytes = 0;
       }
-      if (ul_cqi < 128) UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt++;
+      if (ul_cqi <= 128) {
+        UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt++;
+        UE_info->mac_stats[UE_id].ulsch_DTX++;
+      }
       if (UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
          LOG_D(NR_MAC,"Detected UL Failure on PUSCH, stopping scheduling\n");
          UE_info->UE_sched_ctrl[UE_id].ul_failure = 1;
@@ -1306,6 +1309,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
   const NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->ul_failure == 1) continue;
     UE_info->mac_stats[UE_id].ulsch_current_bytes = 0;
 
     /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in
