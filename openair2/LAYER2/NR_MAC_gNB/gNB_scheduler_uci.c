@@ -1085,6 +1085,10 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 
 
 // function to update pucch scheduling parameters in UE list when a USS DL is scheduled
+// this function returns an index to NR_sched_pucch structure
+// currently this structure contains PUCCH0 at index 0 and PUCCH2 at index 1
+// if the function returns -1 it was not possible to schedule acknack
+// when current pucch is ready to be scheduled nr_fill_nfapi_pucch is called
 int nr_acknack_scheduling(int mod_id,
                           int UE_id,
                           frame_t frame,
