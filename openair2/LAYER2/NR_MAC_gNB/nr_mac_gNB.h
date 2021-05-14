@@ -517,6 +517,7 @@ typedef struct {
   /// DL HARQ PID to use for this UE, or -1 for "any new"
   int8_t dl_harq_pid;
 
+  int lcid_mask;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
@@ -562,6 +563,7 @@ typedef struct {
   int dlsch_current_bytes;
   int ulsch_rounds[8];
   int ulsch_errors;
+  int ulsch_DTX;
   int ulsch_total_bytes_scheduled;
   int ulsch_total_bytes_rx;
   int ulsch_current_bytes;

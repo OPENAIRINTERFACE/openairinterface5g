@@ -77,10 +77,12 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
     stats->num_rsrp_meas = 0;
     stats->cumul_rsrp = 0 ;
     LOG_I(MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
-    LOG_I(MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",
+    LOG_I(MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_DTX %d, ulsch_errors %d\n",
           UE_id,
           stats->ulsch_rounds[0], stats->ulsch_rounds[1],
-          stats->ulsch_rounds[2], stats->ulsch_rounds[3], stats->ulsch_errors);
+          stats->ulsch_rounds[2], stats->ulsch_rounds[3], 
+          stats->ulsch_DTX,
+          stats->ulsch_errors);
     LOG_I(MAC,
           "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
           UE_id,

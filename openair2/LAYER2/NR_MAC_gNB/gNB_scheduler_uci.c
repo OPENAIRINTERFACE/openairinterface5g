@@ -126,6 +126,7 @@ void nr_schedule_pucch(int Mod_idP,
 
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->ul_failure==1) continue;
     const int n = sizeof(sched_ctrl->sched_pucch) / sizeof(*sched_ctrl->sched_pucch);
     for (int i = 0; i < n; i++) {
       NR_sched_pucch_t *curr_pucch = &UE_info->UE_sched_ctrl[UE_id].sched_pucch[i];
@@ -975,7 +976,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
                                   uci_01->ul_cqi,
                                   30);
-  LOG_I(NR_MAC,"pucch tpc %d\n",sched_ctrl->tpc1);
+  LOG_D(NR_MAC,"pucch tpc %d\n",sched_ctrl->tpc1);
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   if (((uci_01->pduBitmap >> 1) & 0x01)) {
@@ -1149,7 +1150,7 @@ bool nr_acknack_scheduling(int mod_id,
     }
   }
 
-  LOG_I(MAC,"1. DL slot %d, UL_ACK %d\n",slot,pucch->ul_slot);
+  LOG_D(MAC,"1. DL slot %d, UL_ACK %d\n",slot,pucch->ul_slot);
   /* if the UE's next PUCCH occasion is after the possible UL slots (within the
    * same frame) or wrapped around to the next frame, then we assume there is
    * no possible PUCCH allocation anymore */
