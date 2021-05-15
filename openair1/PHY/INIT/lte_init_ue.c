@@ -39,6 +39,7 @@ void init_7_5KHz(void);
 
 uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
+void init_sss(void);
 
 void phy_config_sib1_ue(module_id_t Mod_id,int CC_id,
                         uint8_t eNB_id,
@@ -629,6 +630,7 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
   init_frame_parms(&ue->frame_parms,1);
   lte_sync_time_init(&ue->frame_parms);
   init_lte_top(&ue->frame_parms);
+  init_sss();
   init_7_5KHz();
   init_ul_hopping(&ue->frame_parms);
   // many memory allocation sizes are hard coded

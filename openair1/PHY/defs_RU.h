@@ -436,6 +436,14 @@ typedef enum {
 typedef struct RU_t_s {
   /// index of this ru
   uint32_t idx;
+  /// pointer to first RU
+  struct RU_t_s *ru0;
+  /// pointer to ru_mask
+  uint64_t *ru_mask;
+  /// pointer to ru_mutex
+  pthread_mutex_t *ru_mutex;
+  /// pointer to ru_cond
+  pthread_cond_t *ru_cond;
   /// Pointer to configuration file
   char *rf_config_file;
   /// southbound interface
@@ -446,6 +454,12 @@ typedef struct RU_t_s {
   node_function_t function;
   /// Ethernet parameters for fronthaul interface
   eth_params_t eth_params;
+  /// flag to indicate RF emulation mode
+  int emulate_rf;
+  /// numerology index
+  int numerology;
+  /// flag to indicate basicsim operation
+  int basicsim;
   /// flag to indicate the RU is in sync with a master reference
   int in_synch;
   /// timing offset

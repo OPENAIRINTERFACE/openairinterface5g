@@ -72,6 +72,7 @@ int allocate_pbch_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
   first_re=0;
   last_re=12;
 
+
   for (re=first_re; re<last_re; re++) {
 
     tti_offset = symbol_offset + re_off + re;

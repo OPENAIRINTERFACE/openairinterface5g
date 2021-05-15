@@ -32,7 +32,6 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
-#include "SCHED/sched_eNB.h"
 #ifdef DEBUG_DCI_TOOLS
 #include "PHY/phy_vars.h"
 #endif
@@ -43,7 +42,6 @@
 //#define DEBUG_HARQ
 
 
-#include "LAYER2/MAC/mac.h"
 
 //#define DEBUG_DCI
 
@@ -100,7 +98,6 @@ uint16_t RIV2nb_rb_LUT100[6000];
 uint16_t RIV2first_rb_LUT100[6000];
 uint16_t RIV_max100=0;
 
-extern RAN_CONTEXT_t RC;
 
 extern uint32_t current_dlsch_cqi;
 
@@ -272,15 +269,6 @@ uint16_t get_nCCE(uint8_t num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,uint
 }
 
 
-
-uint16_t get_nCCE_mac(uint8_t Mod_id,uint8_t CC_id,int num_pdcch_symbols,int subframe)
-{
-
-  // check for eNB only !
-  return(get_nCCE(num_pdcch_symbols,
-		  &RC.eNB[Mod_id][CC_id]->frame_parms,
-		  get_mi(&RC.eNB[Mod_id][CC_id]->frame_parms,subframe)));
-}
 
 
 void conv_eMTC_rballoc (uint16_t resource_block_coding, uint32_t N_RB_DL, uint32_t * rb_alloc)
