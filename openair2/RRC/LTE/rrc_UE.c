@@ -4376,7 +4376,7 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
               (long int)rsrq_t);
         ssize_t size = do_MeasurementReport(ctxt_pP->module_id, buffer,measId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
         AssertFatal(size >= 0, "do_MeasurementReport failed \n");
-        LOG_I(RRC, "[UE %d] Frame %d : Generating Measurement Report for eNB %d. Size is %d\n",
+        LOG_I(RRC, "[UE %d] Frame %d : Generating Measurement Report for eNB %d. Size is %zu\n",
               ctxt_pP->module_id, ctxt_pP->frame, eNB_index, size);
         result = pdcp_data_req(ctxt_pP,  SRB_FLAG_YES, DCCH, rrc_mui++, 0, size, buffer, PDCP_TRANSMISSION_MODE_DATA,NULL, NULL);
         AssertFatal (result == TRUE, "PDCP data request failed!\n");
