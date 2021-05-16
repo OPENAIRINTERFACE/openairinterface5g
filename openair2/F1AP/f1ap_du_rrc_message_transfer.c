@@ -721,7 +721,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
 
         } else {
           LOG_I(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
-          ue_context_p->ue_context.Status = RRC_CONNECTED;
+          ue_context_p->ue_context.StatusRrc = RRC_CONNECTED;
         }
         break;
 
