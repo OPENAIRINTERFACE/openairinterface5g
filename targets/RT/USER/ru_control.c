@@ -61,30 +61,17 @@
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#include "PHY/phy_extern.h"
-#include "LAYER2/MAC/mac_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "SCHED/sched_eNB.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/INIT/phy_init.h"
 
-#include "LAYER2/MAC/mac.h"
-#include "LAYER2/MAC/mac_extern.h"
-#include "LAYER2/MAC/mac_proto.h"
-#include "RRC/LTE/rrc_extern.h"
-#include "PHY_INTERFACE/phy_interface.h"
-
 #include "common/utils/LOG/log.h"
-#include "UTIL/OTG/otg_tx.h"
-#include "UTIL/OTG/otg_externs.h"
-#include "UTIL/MATH/oml.h"
-#include "UTIL/OPT/opt.h"
-#include "enb_config.h"
 
 
 int attach_rru(RU_t *ru);
-void configure_ru(int idx, void *arg);
-void configure_rru(int idx, void *arg);
+void configure_ru(RU_t *ru, void *arg);
+void configure_rru(RU_t *ru, void *arg);
 void fill_rf_config(RU_t *ru, char *rf_config_file);
 void* ru_thread_control( void* param );
 
@@ -164,7 +151,7 @@ int send_capab(RU_t *ru)
     cap->FH_fmt                                   = MBP_IF5;
     break;
   default:
-    AssertFatal(1==0,"RU_function is unknown %d\n",RC.ru[0]->function);
+    AssertFatal(1==0,"RU_function is unknown %d\n",ru->function);
     break;
   }
   cap->num_bands                                  = ru->num_bands;
@@ -224,7 +211,7 @@ int attach_rru(RU_t *ru)
       LOG_E(PHY,"Received incorrect message %d from RRU %d\n",rru_config_msg.type,ru->idx); 
     }
   }
-  configure_ru(ru->idx,
+  configure_ru(ru,
 	       (RRU_capabilities_t *)&rru_config_msg.msg[0]);
 		    
   rru_config_msg.type = RRU_config;
@@ -296,7 +283,7 @@ int connect_rau(RU_t *ru)
     cap->FH_fmt                                   = MBP_IF5;
     break;
   default:
-    AssertFatal(1==0,"RU_function is unknown %d\n",RC.ru[0]->function);
+    AssertFatal(1==0,"RU_function is unknown %d\n",ru->function);
     break;
   }
   cap->num_bands                                  = ru->num_bands;
@@ -335,7 +322,7 @@ int connect_rau(RU_t *ru)
 	    ((RRU_config_t *)&rru_config_msg.msg[0])->prach_FreqOffset[0],
 	    ((RRU_config_t *)&rru_config_msg.msg[0])->prach_ConfigIndex[0]);
       
-      configure_rru(ru->idx,
+      configure_rru(ru,
 		    (void*)&rru_config_msg.msg[0]);
       configuration_received = 1;
     }
@@ -388,21 +375,20 @@ int check_capabilities(RU_t *ru,
   return(-1);
 }
 
-void configure_ru(int idx,
+void configure_ru(RU_t *ru,
                   void *arg)
 {
-  RU_t               *ru           = RC.ru[idx];
   RRU_config_t       *config       = (RRU_config_t *)arg;
   RRU_capabilities_t *capabilities = (RRU_capabilities_t*)arg;
   int ret;
 
-  LOG_I(PHY, "Received capabilities from RRU %d\n",idx);
+  LOG_I(PHY, "Received capabilities from RRU %d\n",ru->idx);
 
 
   if (capabilities->FH_fmt < MAX_FH_FMTs) LOG_I(PHY, "RU FH options %s\n",rru_format_options[capabilities->FH_fmt]);
 
   AssertFatal((ret=check_capabilities(ru,capabilities)) == 0,
-	      "Cannot configure RRU %d, check_capabilities returned %d\n", idx,ret);
+	      "Cannot configure RRU %d, check_capabilities returned %d\n", ru->idx,ret);
   // take antenna capabilities of RRU
   ru->nb_tx                      = capabilities->nb_tx[0];
   ru->nb_rx                      = capabilities->nb_rx[0];
@@ -440,11 +426,10 @@ void configure_ru(int idx,
   phy_init_RU(ru);
 }
 
-void configure_rru(int idx,
+void configure_rru(RU_t *ru,
                    void *arg)
 {
   RRU_config_t *config = (RRU_config_t *)arg;
-  RU_t         *ru     = RC.ru[idx];
 
   ru->frame_parms->eutra_band                                               = config->band_list[0];
   ru->frame_parms->dl_CarrierFreq                                           = config->tx_freq[0];
@@ -486,7 +471,6 @@ void configure_rru(int idx,
 static int send_update_rru(RU_t * ru, LTE_DL_FRAME_PARMS * fp){
   //ssize_t      msg_len/*,len*/;
   int i;
-  //LTE_DL_FRAME_PARMS *fp = &RC.eNB[0][0]->frame_parms;
   RRU_CONFIG_msg_t rru_config_msg;
   memset((void *)&rru_config_msg,0,sizeof(rru_config_msg));
   rru_config_msg.type = RRU_config_update;
@@ -535,7 +519,7 @@ void* ru_thread_control( void* param )
 	send_tick(ru);
 
       if (ru->state == RU_RUN && ru->if_south != LOCAL_RF){
-	LTE_DL_FRAME_PARMS *fp = &RC.eNB[0][0]->frame_parms;	
+	LTE_DL_FRAME_PARMS *fp = &ru->eNB_list[0]->frame_parms;	
 	LOG_D(PHY,"Check MBSFN SF changes\n");
 	if(fp->num_MBSFN_config != ru_sf_update){
 		ru_sf_update = fp->num_MBSFN_config;
@@ -579,7 +563,7 @@ void* ru_thread_control( void* param )
 		      ((RRU_capabilities_t*)&rru_config_msg.msg[0])->nb_tx[0],
 		      ((RRU_capabilities_t*)&rru_config_msg.msg[0])->nb_rx[0]);
 
-		configure_ru(ru->idx,(RRU_capabilities_t *)&rru_config_msg.msg[0]);
+		configure_ru(ru,(RRU_capabilities_t *)&rru_config_msg.msg[0]);
 
 		// send config
 		if (send_config(ru,rru_config_msg) == 0) ru->state = RU_CONFIG;
@@ -603,7 +587,7 @@ void* ru_thread_control( void* param )
 		      ((RRU_config_t *)&rru_config_msg.msg[0])->prach_ConfigIndex[0]);
 	      
 		ru->frame_parms = calloc(1, sizeof(*ru->frame_parms));
-		configure_rru(ru->idx, (void*)&rru_config_msg.msg[0]);
+		configure_rru(ru, (void*)&rru_config_msg.msg[0]);
 
  					  
 		fill_rf_config(ru,ru->rf_config_file);
@@ -652,10 +636,10 @@ void* ru_thread_control( void* param )
 					
 
 		LOG_I(PHY, "Signaling main thread that RU %d (is_slave %d) is ready in state %s\n",ru->idx,ru->is_slave,ru_states[ru->state]);
-		pthread_mutex_lock(&RC.ru_mutex);
-		RC.ru_mask &= ~(1<<ru->idx);
-		pthread_cond_signal(&RC.ru_cond);
-		pthread_mutex_unlock(&RC.ru_mutex);
+		pthread_mutex_lock(ru->ru_mutex);
+		*ru->ru_mask &= ~(1<<ru->idx);
+		pthread_cond_signal(ru->ru_cond);
+		pthread_mutex_unlock(ru->ru_mutex);
 					  
 		wait_sync("ru_thread_control");
 
@@ -710,10 +694,10 @@ void* ru_thread_control( void* param )
 		if (ru->state == RU_READY){
 
 		  LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
-		  pthread_mutex_lock(&RC.ru_mutex);
-		  RC.ru_mask &= ~(1<<ru->idx);
-		  pthread_cond_signal(&RC.ru_cond);
-		  pthread_mutex_unlock(&RC.ru_mutex);
+		  pthread_mutex_lock(ru->ru_mutex);
+		  *ru->ru_mask &= ~(1<<ru->idx);
+		  pthread_cond_signal(ru->ru_cond);
+		  pthread_mutex_unlock(ru->ru_mutex);
 						  
 		  wait_sync("ru_thread_control");
 						
@@ -736,7 +720,7 @@ void* ru_thread_control( void* param )
 	      break;
 
 	    case RRU_sync_ok: //RAU
-	      if (ru->if_south == LOCAL_RF) LOG_E(PHY,"Received RRU_config_ok msg...Ignoring\n");
+	      if (ru->if_south == LOCAL_RF) LOG_E(PHY,"Received RRU_sync_ok msg...Ignoring\n");
 	      else{
 		if (ru->is_slave == 1){
                   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Received RRU_sync_ok from RRU %d\n",ru->idx);

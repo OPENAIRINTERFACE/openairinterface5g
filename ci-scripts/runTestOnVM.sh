@@ -1235,9 +1235,9 @@ function start_rf_sim_gnb {
     then
         if [ $LOC_RA_TEST -eq 0 ] #no RA test => use --phy-test option
         then
-            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --phy-test\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --phy-test --lowmem --noS1\" > ./my-nr-softmodem-run.sh " >> $1
         else #RA test => use --do-ra option
-            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --rfsim --do-ra\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --rfsim --do-ra --lowmem --noS1\" > ./my-nr-softmodem-run.sh " >> $1
         fi
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1

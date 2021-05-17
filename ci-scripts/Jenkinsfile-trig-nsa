@@ -37,7 +37,7 @@ pipeline {
             steps {
                 script {     
                     //retrieve MR that are opened nd with tag READY_TO_BE_MERGED             
-                    MR_LIST= sh returnStdout: true, script: 'curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100&labels=READY_TO_BE_MERGED" | jq ".[].iid" || true '
+                    MR_LIST= sh returnStdout: true, script: 'curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100&milestone=REVIEW_COMPLETED_AND_APPROVED" | jq ".[].iid" || true '
                     echo "List of selected MR:\n${MR_LIST}" 
                     def MR_ARRAY = MR_LIST.split('\n') 
                     //for every selected MR, retrieve the branch name and the latest commit              
@@ -48,7 +48,7 @@ pipeline {
                         COMMIT_ID=COMMIT_ID.trim()
                         echo "Testing NSA on : ${MR} ${SRC_BRANCH} ${COMMIT_ID}"
                         //calling NSA sub job
-                        build job: "RAN-CI-NSA-B210", wait : false, propagate : false, parameters: [
+                        build job: "RAN-CI-NSA-B210-N310-ModuleUE", wait : false, propagate : false, parameters: [
                             string(name: 'eNB_MR', value: String.valueOf(MR)),                          
                             string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
                             string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),

@@ -1,3 +1,5 @@
+#include "nfapi/oai_integration/vendor_ext.h"
+
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req)             { return(0);  }
 int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req)                            { return(0);  }
 int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req)       { return(0);  }

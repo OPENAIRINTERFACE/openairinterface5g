@@ -53,6 +53,9 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rrc_eNB_UE_context.h"
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 /*
  * message primitives
  */

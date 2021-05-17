@@ -221,9 +221,9 @@ pipeline {
               archiveArtifacts artifacts: "physim_deploytest_logs_${env.BUILD_ID}.zip"
             }
             if (fileExists("test_results.html")) {
-              sh "mv test_results.html test_results_${env.JOB_NAME}.html"
-              sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's@build #TEMPLATE_BUILD_ID@build #${BUILD_ID}@' -e 's#Build-ID: TEMPLATE_BUILD_ID#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' -e 's#TEMPLATE_STAGE_NAME#${testStageName}#' test_results_${JOB_NAME}.html"
-              archiveArtifacts artifacts: "test_results_${env.JOB_NAME}.html"
+              sh "mv test_results.html test_results-${env.JOB_NAME}.html"
+              sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's@build #TEMPLATE_BUILD_ID@build #${BUILD_ID}@' -e 's#Build-ID: TEMPLATE_BUILD_ID#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' -e 's#TEMPLATE_STAGE_NAME#${testStageName}#' test_results-${JOB_NAME}.html"
+              archiveArtifacts artifacts: "test_results-${env.JOB_NAME}.html"
             }
           }
         }

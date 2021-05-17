@@ -309,14 +309,14 @@ function report_test {
                     NB_ENB_GOT_SYNC=`egrep -c "got sync" $ENB_LOG`
                     NB_UE_GOT_SYNC=`egrep -c "got sync" $UE_LOG`
                     NB_ENB_SYNCED_WITH_UE=`egrep -c "got UE capabilities for UE" $ENB_LOG`
-                    if [ $NB_ENB_GOT_SYNC -eq 1 ] && [ $NB_UE_GOT_SYNC -eq 2 ] && [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
+                    if [ $NB_ENB_GOT_SYNC -gt 0 ] && [ $NB_UE_GOT_SYNC -eq 2 ] && [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
                     then
                         echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
                     else
                         echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
                     fi
                     echo "        <td><pre>" >> ./test_simulator_results.html
-                    if [ $NB_ENB_GOT_SYNC -eq 1 ]
+                    if [ $NB_ENB_GOT_SYNC -gt 0 ]
                     then
                         echo "<font color = \"blue\">- eNB --> got sync</font>" >> ./test_simulator_results.html
                     else

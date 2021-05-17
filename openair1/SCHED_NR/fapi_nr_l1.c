@@ -168,7 +168,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   int pdcch_received=0;
   gNB->num_pdsch_rnti[slot]=0;
-  for (int i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
+  for (int i=0; i<gNB->number_of_nr_dlsch_max; i++) {
     gNB->dlsch[i][0]->rnti=0;
     gNB->dlsch[i][0]->harq_mask=0;
   }

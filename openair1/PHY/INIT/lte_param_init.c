@@ -25,7 +25,6 @@
 #include <execinfo.h>
 #include <signal.h>
 
-#include "SIMULATION/TOOLS/sim.h"
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
@@ -33,7 +32,9 @@
 #include "phy_init.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/softmodem-common.h"
+#include "SIMULATION/TOOLS/sim.h"
+
 extern PHY_VARS_eNB *eNB;
 extern PHY_VARS_UE *UE;
 extern RU_t *ru;

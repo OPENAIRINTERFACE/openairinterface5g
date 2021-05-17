@@ -595,6 +595,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       CC_id = UE_PCCID(module_idP, UE_id);
       UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
+/* to be merged with MAC_stats.log generation. probably redundant
       if (((frameP & 127) == 0) && (subframeP == 0)) {
         double total_bler;
         if(UE_scheduling_control->pusch_rx_num[CC_id] == 0 && UE_scheduling_control->pusch_rx_error_num[CC_id] == 0) {
@@ -632,7 +633,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
               UE_scheduling_control->aperiodic_ri_received[CC_id]
         );
       }
-
+*/
       RC.eNB[module_idP][CC_id]->pusch_stats_bsr[UE_id][(frameP * 10) + subframeP] = -63;
 
       if (UE_id == UE_info->list.head) {

@@ -21,7 +21,6 @@
 
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
@@ -118,12 +117,12 @@ int lte_est_timing_advance_pusch(LTE_DL_FRAME_PARMS *frame_parms,
   int temp, i, aa, max_pos=0, max_val=0;
   short Re,Im;
 
-  uint8_t cyclic_shift = 0;
-  int sync_pos = (frame_parms->ofdm_symbol_size-cyclic_shift*frame_parms->ofdm_symbol_size/12)%(frame_parms->ofdm_symbol_size);
+ // uint8_t cyclic_shift = 0;
+  int sync_pos = 0;//(frame_parms->ofdm_symbol_size-cyclic_shift*frame_parms->ofdm_symbol_size/12)%(frame_parms->ofdm_symbol_size);
   
   AssertFatal(frame_parms->ofdm_symbol_size > 127,"frame_parms->ofdm_symbol_size %d<128\n",frame_parms->ofdm_symbol_size);
-  AssertFatal(frame_parms->nb_antennas_rx >0 && frame_parms->nb_antennas_rx<3,"frame_parms->nb_antennas_rx %d not in [0,1]\n",
-	      frame_parms->nb_antennas_rx);
+  AssertFatal(frame_parms->nb_antennas_rx >0 && frame_parms->nb_antennas_rx<=4,"frame_parms->nb_antennas_rx %d not in [1...%d]\n",
+	      frame_parms->nb_antennas_rx,4);
   for (i = 0; i < frame_parms->ofdm_symbol_size; i++) {
     temp = 0;
 
@@ -141,10 +140,6 @@ int lte_est_timing_advance_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (max_pos>frame_parms->ofdm_symbol_size/2)
     max_pos = max_pos-frame_parms->ofdm_symbol_size;
-
-  //#ifdef DEBUG_PHY
-  LOG_D(PHY,"max_pos = %d, sync_pos=%d\n",max_pos,sync_pos);
-  //#endif //DEBUG_PHY
 
   return max_pos - sync_pos;
 }

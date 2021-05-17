@@ -23,7 +23,6 @@
 #define __PHY_EXTERN_H__
 
 #include "PHY/defs_common.h"
-#include "common/ran_context.h"
 
 extern  char* namepointer_chMag ;
 extern char* namepointer_log2;
@@ -33,14 +32,13 @@ extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 
 #include "PHY/LTE_TRANSPORT/transport_extern.h"
-//#include "SIMULATION/ETH_TRANSPORT/extern.h"
+#include "PHY/defs_RU.h"
 
 extern unsigned int DAQ_MBOX;
 extern int number_of_cards;
 
 extern const short conjugate[8],conjugate2[8];
 
-extern RAN_CONTEXT_t RC;
 
 extern short primary_synch0[144];
 extern short primary_synch1[144];
