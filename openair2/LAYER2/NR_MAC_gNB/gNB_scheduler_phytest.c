@@ -339,8 +339,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
 
-  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
-  if (!alloc) {
+  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  if (alloc < 0) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
           __func__,
@@ -355,12 +355,13 @@ void nr_preprocessor_phytest(module_id_t module_id,
     return;
   }
 
-  AssertFatal(alloc,
-              "could not find uplink slot for PUCCH (RNTI %04x@%d.%d)!\n",
-              rnti, frame, slot);
+  //AssertFatal(alloc,
+  //            "could not find uplink slot for PUCCH (RNTI %04x@%d.%d)!\n",
+  //            rnti, frame, slot);
 
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+  sched_pdsch->pucch_allocation = alloc;
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
   const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot];
