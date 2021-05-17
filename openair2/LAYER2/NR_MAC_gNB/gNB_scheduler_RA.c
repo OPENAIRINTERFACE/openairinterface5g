@@ -976,9 +976,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     LOG_D(MAC,"Msg2 startSymbolIndex.nrOfSymbols %d.%d\n",startSymbolIndex,nrOfSymbols);
 
-    int mappingtype = ra->CellGroup->spCellConfig->spCellConfigDedicated->
-        downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->
-        pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
+    int mappingtype = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
 
     // look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it. This is especially
     // important if we have multiple RAs, and the DLSCH has to reuse them, so we need to mark them
@@ -1252,9 +1250,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
     AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
-    int mappingtype = ra->CellGroup->spCellConfig->spCellConfigDedicated->
-        downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->
-        pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
+    int mappingtype = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
 
     uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL,
                                             scc->dmrs_TypeA_Position,
