@@ -51,6 +51,8 @@
 #include "asn1_conversions.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
+#include <executables/softmodem-common.h>
+
 static prach_association_pattern_t prach_assoc_pattern;
 static ssb_list_info_t ssb_list;
 
@@ -502,7 +504,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   int NrOfSymbols;
   uint8_t nb_dmrs_re_per_rb;
 
-  uint16_t        l_prime_mask = 1;
+  uint16_t        l_prime_mask = 0;
   uint16_t number_dmrs_symbols = 0;
   int                N_PRB_oh  = 0;
 
@@ -517,22 +519,26 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   if (mac->scc) initialUplinkBWP = mac->scc->uplinkConfigCommon->initialUplinkBWP;
   else          initialUplinkBWP = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
 
+  pusch_dmrs_AdditionalPosition_t add_pos = pusch_dmrs_pos2;
+  pusch_maxLength_t dmrslength = pusch_len1;
+
   if (rar_grant) {
 
     // Note: for Msg3 or MsgA PUSCH transmission the N_PRB_oh is always set to 0
     NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
     NR_BWP_UplinkDedicated_t *ibwp;
-    int scs,abwp_start,abwp_size,startSymbolAndLength;
+    int scs,abwp_start,abwp_size,startSymbolAndLength,mappingtype;
     NR_PUSCH_Config_t *pusch_Config=NULL;
     if (mac->cg && ubwp &&
-	mac->cg->spCellConfig &&
-	mac->cg->spCellConfig->spCellConfigDedicated &&
-	mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-	mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP
-	) {
+        mac->cg->spCellConfig &&
+        mac->cg->spCellConfig->spCellConfigDedicated &&
+        mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+        mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
+
       ibwp = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
       pusch_Config = ibwp->pusch_Config->choice.setup;
       startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->startSymbolAndLength;
+      mappingtype = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->mappingType;
 
       // active BWP start
       abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -541,6 +547,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
     else {
       startSymbolAndLength = initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->startSymbolAndLength;
+      mappingtype = initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->mappingType;
 
       // active BWP start
       abwp_start = NRRIV2PRBOFFSET(initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -577,6 +584,9 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
     pusch_config_pdu->start_symbol_index = StartSymbolIndex;
     pusch_config_pdu->nr_of_symbols = NrOfSymbols;
+
+    l_prime_mask = get_l_prime(NrOfSymbols, mappingtype, add_pos, dmrslength, StartSymbolIndex, mac->scc->dmrs_TypeA_Position);
+    LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , DMRS_MASK:%x\n", pusch_config_pdu->start_symbol_index, pusch_config_pdu->nr_of_symbols, mappingtype, l_prime_mask);
 
     #ifdef DEBUG_MSG3
     LOG_D(NR_MAC, "In %s BWP assignment (BWP (start %d, size %d) \n", __FUNCTION__, pusch_config_pdu->bwp_start, pusch_config_pdu->bwp_size);
@@ -668,17 +678,25 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     }
 
+    NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
+    if (pusch_Config->pusch_TimeDomainAllocationList) {
+      pusch_TimeDomainAllocationList = pusch_Config->pusch_TimeDomainAllocationList->choice.setup;
+    }
+    else if (mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+      pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+    }
+
+    int mappingtype = pusch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
+
+    NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = NULL;
+    NR_DMRS_ulconfig = (mappingtype == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA)
+                ? pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup : pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+
     /* TRANSFORM PRECODING ------------------------------------------------------------------------------------------*/
 
     if (pusch_config_pdu->transform_precoding == transform_precoder_enabled) {
 
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
-
-      NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = NULL;
-      if(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
-        NR_DMRS_ulconfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup;
-      else
-        NR_DMRS_ulconfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
 
       uint32_t n_RS_Id = 0;
       if (NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
@@ -748,9 +766,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       pusch_config_pdu->absolute_delta_PUSCH = 4;
     }
 
+    if (NR_DMRS_ulconfig != NULL) {
+      add_pos = (NR_DMRS_ulconfig->dmrs_AdditionalPosition == NULL) ? 2 : *NR_DMRS_ulconfig->dmrs_AdditionalPosition;
+      dmrslength = NR_DMRS_ulconfig->maxLength == NULL ? pusch_len1 : pusch_len2;
+    }
+
     /* DMRS */
-    l_prime_mask = get_l_prime(pusch_config_pdu->nr_of_symbols, typeB,
-			       (*dci_format == NR_UL_DCI_FORMAT_0_1) ? pusch_dmrs_pos0 : pusch_dmrs_pos2, pusch_len1);
+    l_prime_mask = get_l_prime(pusch_config_pdu->nr_of_symbols, mappingtype, add_pos, dmrslength, pusch_config_pdu->start_symbol_index, scc->dmrs_TypeA_Position);
     if ((mac->ULbwp[0] && pusch_config_pdu->transform_precoding == transform_precoder_disabled))
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
     else if (*dci_format == NR_UL_DCI_FORMAT_0_0 || (mac->ULbwp[0] && pusch_config_pdu->transform_precoding == transform_precoder_enabled))
@@ -758,11 +780,11 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     // Num PRB Overhead from PUSCH-ServingCellConfig
     if (mac->cg &&
-	mac->cg->spCellConfig &&
-	mac->cg->spCellConfig->spCellConfigDedicated &&
-	mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-	mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig &&
-	mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead)
+        mac->cg->spCellConfig &&
+        mac->cg->spCellConfig->spCellConfigDedicated &&
+        mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+        mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig &&
+        mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead)
       N_PRB_oh = *mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead;
 
     else N_PRB_oh = 0;
@@ -799,7 +821,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->nr_of_symbols,
     rnti_types[rnti_type]);
 
-  pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask << pusch_config_pdu->start_symbol_index;;
+  pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask;
   pusch_config_pdu->target_code_rate = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
   pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
 

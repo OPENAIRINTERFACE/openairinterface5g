@@ -240,7 +240,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
             /* FDD.1.3 freqBandListNr */
             int fdd_ul_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.ul_num_frequency_bands;
-            LOG_D(F1AP, "fdd_ul_num_available_freq_Bands = %d \n", fdd_ul_num_available_freq_Bands);
+            LOG_I(F1AP, "fdd_ul_num_available_freq_Bands = %d \n", fdd_ul_num_available_freq_Bands);
             int fdd_ul_j;
             for (fdd_ul_j=0;
                  fdd_ul_j<fdd_ul_num_available_freq_Bands;
@@ -282,7 +282,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
             /* FDD.2.3 freqBandListNr */
             int fdd_dl_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.dl_num_frequency_bands;
-            LOG_D(F1AP, "fdd_dl_num_available_freq_Bands = %d \n", fdd_dl_num_available_freq_Bands);
+            LOG_I(F1AP, "fdd_dl_num_available_freq_Bands = %d \n", fdd_dl_num_available_freq_Bands);
             int fdd_dl_j;
             for (fdd_dl_j=0;
                  fdd_dl_j<fdd_dl_num_available_freq_Bands;
@@ -336,7 +336,8 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
             /* TDD.1.3 freqBandListNr */
             int tdd_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].tdd.num_frequency_bands;
-            LOG_D(F1AP, "tdd_num_available_freq_Bands = %d \n", tdd_num_available_freq_Bands);
+            LOG_I(F1AP, "tdd_num_available_freq_Bands = %d \n", tdd_num_available_freq_Bands);
+            AssertFatal(tdd_num_available_freq_Bands > 0, "should have at least one TDD band available\n");
             int j;
             for (j=0;
                  j<tdd_num_available_freq_Bands;
@@ -518,10 +519,12 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                 cell->nRCGI.nRCellIdentity.buf[2],
                 cell->nRCGI.nRCellIdentity.buf[3],
                 cell->nRCGI.nRCellIdentity.buf[4]);
+
           BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity,
           F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nr_cellid);
-           F1AP_ProtocolExtensionContainer_154P112_t *ext = (F1AP_ProtocolExtensionContainer_154P112_t *)cell->iE_Extensions;
-	  if (ext==NULL) continue;
+          F1AP_ProtocolExtensionContainer_154P112_t *ext = (F1AP_ProtocolExtensionContainer_154P112_t *)cell->iE_Extensions;
+
+          if (ext==NULL) continue;
 
           for (int cnt=0;cnt<ext->list.count;cnt++) {
             F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs=(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)ext->list.array[cnt];
@@ -582,10 +585,9 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
     } // switch ie
   } // for IE
   AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
-  LOG_D(F1AP,"F1AP: num_cells_to_activate %d\n",num_cells_to_activate);
+  AssertFatal(num_cells_to_activate>0,"No cells activated\n");
   F1AP_SETUP_RESP (msg_p).num_cells_to_activate = num_cells_to_activate;
-  // tmp
-  // F1AP_SETUP_RESP (msg_p).num_SI[0] = 1;
+
   for (int i=0;i<num_cells_to_activate;i++)
     AssertFatal(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI > 0, "System Information %d is missing",i);
 
@@ -605,7 +607,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
   } else {
     LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
          assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
-    itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+    itti_send_msg_to_task(TASK_ENB_APP, instance, msg_p);
   }
 
   return 0;
@@ -1138,7 +1140,7 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
 	  F1AP_ProtocolExtensionContainer_154P112_t *ext = (F1AP_ProtocolExtensionContainer_154P112_t *)cell->iE_Extensions;
 
 	  if (ext==NULL) continue;
- 
+
           for (int cnt=0;cnt<ext->list.count;cnt++) {
             F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs=(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)ext->list.array[cnt];
             switch (cells_to_be_activated_list_itemExtIEs->id) {
@@ -1244,7 +1246,7 @@ int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
   AssertFatal(GNBCUConfigurationUpdateAcknowledge->noofTNLAssociations_failed == 0,
 	      "%d TNLAssociations failed\n",
 	      GNBCUConfigurationUpdateAcknowledge->noofTNLAssociations_failed);
-  
+
   AssertFatal(GNBCUConfigurationUpdateAcknowledge->noofDedicatedSIDeliveryNeededUEs == 0,
 	      "%d DedicatedSIDeliveryNeededUEs\n",
 	      GNBCUConfigurationUpdateAcknowledge->noofDedicatedSIDeliveryNeededUEs);

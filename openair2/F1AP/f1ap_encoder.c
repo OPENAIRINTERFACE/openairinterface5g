@@ -84,12 +84,8 @@ int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length)
     LOG_E(F1AP, "----------------- ASN1 ENCODER PRINT END----------------- \n");
   }
 
-  encoded = aper_encode_to_new_buffer(&asn_DEF_F1AP_F1AP_PDU, 0, pdu, (void **)buffer);
-
-  if (encoded < 0) {
-    LOG_E(F1AP, "Failed to encode F1AP message\n");
-    return -1;
-  }
+  AssertFatal((encoded = aper_encode_to_new_buffer(&asn_DEF_F1AP_F1AP_PDU, 0, pdu, (void **)buffer))>0,
+	      "Failed to encode F1AP message\n");
 
   *length = encoded;
 

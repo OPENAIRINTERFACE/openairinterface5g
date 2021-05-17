@@ -155,7 +155,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
       // first get RRC instance (note, no the ITTI instance)
       gNB_RRC_INST *rrc = RC.nrrrc[i];
       if (rrc->nr_cellid == nr_cellid) {
-        rrc_inst = i; 
+        rrc_inst = i;
         break;
       }
     }
@@ -164,7 +164,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
           // first get RRC instance (note, no the ITTI instance)
       eNB_RRC_INST *rrc = RC.rrc[i];
       if (rrc->nr_cellid == nr_cellid) {
-        rrc_inst = i; 
+        rrc_inst = i;
         break;
       }
     }
@@ -180,20 +180,20 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   f1ap_cu_inst[rrc_inst].f1ap_ue[f1ap_uid].du_ue_f1ap_id = du_ue_f1ap_id;
 
   if (RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0; 
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0;
     NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = 0;
     NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = ccch_sdu_len;
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = rrc_inst; // CU instance 
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = rrc_inst; // CU instance
     NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id     = CC_id; 
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id     = CC_id;
     itti_send_msg_to_task (TASK_RRC_GNB, instance, message_p);
   } else {
-    RRC_MAC_CCCH_DATA_IND (message_p).frame      = 0; 
+    RRC_MAC_CCCH_DATA_IND (message_p).frame      = 0;
     RRC_MAC_CCCH_DATA_IND (message_p).sub_frame  = 0;
     RRC_MAC_CCCH_DATA_IND (message_p).sdu_size   = ccch_sdu_len;
-    RRC_MAC_CCCH_DATA_IND (message_p).enb_index  = rrc_inst; // CU instance 
+    RRC_MAC_CCCH_DATA_IND (message_p).enb_index  = rrc_inst; // CU instance
     RRC_MAC_CCCH_DATA_IND (message_p).rnti       = rnti;
-    RRC_MAC_CCCH_DATA_IND (message_p).CC_id      = CC_id; 
+    RRC_MAC_CCCH_DATA_IND (message_p).CC_id      = CC_id;
     itti_send_msg_to_task (TASK_RRC_ENB, instance, message_p);
   }
 
@@ -211,7 +211,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
                                     {
 
   LOG_D(F1AP, "CU send DL_RRC_MESSAGE_TRANSFER \n");
-  F1AP_F1AP_PDU_t                 pdu; 
+  F1AP_F1AP_PDU_t                 pdu;
   F1AP_DLRRCMessageTransfer_t    *out;
   F1AP_DLRRCMessageTransferIEs_t *ie;
 
@@ -300,25 +300,23 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   /* optional */
   /* c7. RAT_FrequencyPriorityInformation */
   /* TODO */ 
-  if (0) {
-    int endc=1;
-    ie = (F1AP_DLRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_DLRRCMessageTransferIEs_t));
-    ie->id                            = F1AP_ProtocolIE_ID_id_RAT_FrequencyPriorityInformation;
-    ie->criticality                   = F1AP_Criticality_reject;
-    ie->value.present                 = F1AP_DLRRCMessageTransferIEs__value_PR_RAT_FrequencyPriorityInformation;
-    if (endc==1) {
-      ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_eNDC;
-      ie->value.choice.RAT_FrequencyPriorityInformation.choice.eNDC = 123L;
-    }
-    else {
-      ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_nGRAN;
-      ie->value.choice.RAT_FrequencyPriorityInformation.choice.nGRAN = 11L;
-    }
-      //ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_rAT_FrequencySelectionPriority;
-      //ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority = 123L;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  int endc=1;
+  ie = (F1AP_DLRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_DLRRCMessageTransferIEs_t));
+  ie->id                            = F1AP_ProtocolIE_ID_id_RAT_FrequencyPriorityInformation;
+  ie->criticality                   = F1AP_Criticality_reject;
+  ie->value.present                 = F1AP_DLRRCMessageTransferIEs__value_PR_RAT_FrequencyPriorityInformation;
+  if (endc==1) {
+    ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_eNDC;
+    ie->value.choice.RAT_FrequencyPriorityInformation.choice.eNDC = 123L;
   }
-
+  else {
+    ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_nGRAN;
+    ie->value.choice.RAT_FrequencyPriorityInformation.choice.nGRAN = 11L;
+  }
+    //ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_rAT_FrequencySelectionPriority;
+    //ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority = 123L;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+ 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 DL RRC MESSAGE TRANSFER \n");

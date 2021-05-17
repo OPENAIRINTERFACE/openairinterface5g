@@ -40,7 +40,8 @@
 #include "assertions.h"
 #include "common/utils/load_module_shlib.h"
 #include "common/utils/LOG/log.h"
-#include "targets/RT/USER/lte-softmodem.h"
+//#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/softmodem-common.h"
 
 char *get_devname(int devtype) {
 char *devnames[MAX_RF_DEV_TYPE]=DEVTYPE_NAMES;

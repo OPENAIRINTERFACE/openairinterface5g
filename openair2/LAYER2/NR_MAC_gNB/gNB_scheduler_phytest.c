@@ -146,15 +146,18 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     int startSymbolAndLength=0;
     int StartSymbolIndex=-1,NrOfSymbols=14;
     int StartSymbolIndex_tmp,NrOfSymbols_tmp;
+    int mappingtype_tmp, mappingtype;
 
     for (int i=0;
 	 i<scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;
 	 i++) {
       startSymbolAndLength = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
       SLIV2SL(startSymbolAndLength,&StartSymbolIndex_tmp,&NrOfSymbols_tmp);
+      mappingtype_tmp = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType;
       if (NrOfSymbols_tmp < NrOfSymbols) {
 	NrOfSymbols = NrOfSymbols_tmp;
         StartSymbolIndex = StartSymbolIndex_tmp;
+        mappingtype = mappingtype_tmp;
 	//	k0 = *scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
 	//	time_domain_assignment = i;
       }
@@ -165,7 +168,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL,
 						    scc->dmrs_TypeA_Position,
 						    NrOfSymbols,
-                StartSymbolIndex);
+                StartSymbolIndex,
+                mappingtype);
 
     /*
     AssertFatal(k0==0,"k0 is not zero for Initial DL BWP TimeDomain Alloc\n");

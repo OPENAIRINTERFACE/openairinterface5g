@@ -437,7 +437,7 @@ rrc_gNB_generate_RRCSetup(
       F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
       itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
       LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
-  
+
     break;
 
     case ngran_gNB_DU:
@@ -497,7 +497,7 @@ rrc_gNB_generate_RRCSetup(
 			     ue_context_pP->ue_context.masterCellGroup
 			     );
       nr_rrc_rlc_config_asn1_req(ctxt_pP,
-				 ue_context_pP->ue_context.SRB_configList, 
+				 ue_context_pP->ue_context.SRB_configList,
 				 NULL,
 				 NULL,
 				 NULL,
@@ -564,7 +564,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          ue_context_pP->ue_context.rnti,
                          (NR_CellGroupConfig_t *)NULL
 			 );
-  
+
   MSC_LOG_TX_MESSAGE(
 		     MSC_RRC_GNB,
 		     MSC_RRC_UE,
@@ -687,7 +687,7 @@ rrc_gNB_process_RRCSetupComplete(
       PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
   ue_context_pP->ue_context.Srb1.Active = 1;
   ue_context_pP->ue_context.Srb1.Srb_info.Srb_id = 1;
-  ue_context_pP->ue_context.Status = NR_RRC_CONNECTED;
+  ue_context_pP->ue_context.status = NR_RRC_CONNECTED;
 
   if (AMF_MODE_ENABLED) {
     rrc_gNB_send_NGAP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcSetupComplete);
@@ -879,14 +879,14 @@ rrc_gNB_generate_defaultRRCReconfiguration(
       // rrc_rlc_config_asn1_req
     }
     break;
-    
+
   default :
     LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
   }
 }
 
 //-----------------------------------------------------------------------------
-void 
+void
 rrc_gNB_generate_dedicatedRRCReconfiguration(
     const protocol_ctxt_t     *const ctxt_pP,
     rrc_gNB_ue_context_t      *ue_context_pP
@@ -899,7 +899,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   NR_DRB_ToAddModList_t        **DRB_configList  = NULL;
   NR_DRB_ToAddModList_t        **DRB_configList2 = NULL;
   NR_SRB_ToAddModList_t        **SRB_configList2 = NULL;
-  NR_SRB_ToAddModList_t        *SRB_configList  = ue_context_pP->ue_context.SRB_configList; 
+  NR_SRB_ToAddModList_t        *SRB_configList  = ue_context_pP->ue_context.SRB_configList;
   struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList
                                 *dedicatedNAS_MessageList = NULL;
   NR_DedicatedNAS_Message_t     *dedicatedNAS_Message = NULL;
@@ -1051,7 +1051,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup);
   size = do_RRCReconfiguration(ctxt_pP, buffer,
                                 xid,
-                                *SRB_configList2, 
+                                *SRB_configList2,
                                 *DRB_configList,
                                 NULL,
                                 NULL,
@@ -1262,7 +1262,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
 #ifndef ITTI_SIM
   LOG_I(NR_RRC,"Configuring PDCP DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
-  
+
   nr_rrc_pdcp_config_asn1_req(ctxt_pP,
                               SRB_configList, // NULL,
                               DRB_configList,
@@ -1495,7 +1495,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
 
   uint8_t next_xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
   int ret = 0;
-  ue_context_pP->ue_context.Status = NR_RRC_CONNECTED;
+  ue_context_pP->ue_context.status = NR_RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
   ue_context_pP->ue_context.reestablishment_xid = next_xid;
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
@@ -1990,7 +1990,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
           }
 #endif
           //c-plane not end
-          if((ue_context_p->ue_context.Status != NR_RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == NR_ReestablishmentCause_spare1)) {
+          if((ue_context_p->ue_context.status != NR_RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == NR_ReestablishmentCause_spare1)) {
             LOG_E(NR_RRC,
                   PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest (UE %x c-plane is not end), RRC establishment failed \n",
                   PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);
@@ -2002,9 +2002,9 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
             LOG_E(NR_RRC,
                   PROTOCOL_NR_RRC_CTXT_UE_FMT" RRRCReconfigurationComplete(Previous) don't receive, delete the Previous UE,\nprevious Status %d, new Status NR_RRC_RECONFIGURED\n",
                   PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-                  ue_context_p->ue_context.Status
+                  ue_context_p->ue_context.status
                   );
-            ue_context_p->ue_context.Status = NR_RRC_RECONFIGURED;
+            ue_context_p->ue_context.status = NR_RRC_RECONFIGURED;
             protocol_ctxt_t  ctxt_old_p;
             PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt_old_p,
                                           ctxt_pP->instance,
@@ -2707,13 +2707,13 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
 	  if (msg_p2 == NULL) {
 	    msg_p2 = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE);
 	  }
-	  
+
 	  F1AP_SETUP_RESP (msg_p).gNB_CU_name                                = rrc->node_name;
 	  F1AP_SETUP_RESP (msg_p).num_cells_to_activate = 0;
 
 	}
 
-	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).gNB_CU_name                                = rrc->node_name;	
+	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).gNB_CU_name                                = rrc->node_name;
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].mcc                           = rrc->configuration.mcc[0];
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].mnc                           = rrc->configuration.mnc[0];
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].mnc_digit_length              = rrc->configuration.mnc_digit_length[0];
@@ -2731,7 +2731,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         cu_cell_ind++;
         found_cell=1;
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).num_cells_to_activate = cu_cell_ind;
-	// send 
+	// send
         break;
       } else {// setup_req mcc/mnc match rrc internal list element
         LOG_W(NR_RRC,"[Inst %d] No matching MCC/MNC: rrc->mcc/f1_setup_req->mcc %d/%d rrc->mnc/f1_setup_req->mnc %d/%d rrc->nr_cellid/f1_setup_req->nr_cellid %ld/%ld \n",

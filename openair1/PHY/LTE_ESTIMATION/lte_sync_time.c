@@ -27,12 +27,9 @@
 
 //#include <string.h>
 #include <math.h>
-#include "LAYER2/MAC/mac.h"
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
-#include "PHY_INTERFACE/phy_interface.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
-#include "RRC/LTE/rrc_extern.h"
 
 // Note: this is for prototype of generate_drs_pusch (OTA synchronization of RRUs)
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"

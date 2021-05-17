@@ -244,6 +244,8 @@ void *eNB_app_task(void *args_p) {
 
   }
 
+  LOG_I(ENB_APP,"TASK_ENB_APP is ready\n");
+
   do {
     // Wait for a message
     itti_receive_msg (TASK_ENB_APP, &msg_p);

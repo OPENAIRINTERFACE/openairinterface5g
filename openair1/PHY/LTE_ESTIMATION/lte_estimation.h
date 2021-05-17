@@ -288,6 +288,8 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
                        unsigned short Msc_RS,
                        unsigned char Qm);
 
+void init_fde(void);
 
+void dump_I0_stats(FILE *fd,PHY_VARS_eNB *eNB);
 /** @} */
 #endif

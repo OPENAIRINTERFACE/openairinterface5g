@@ -440,6 +440,7 @@ if (0) {
             DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Scalar = 1L;
             DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Exponent = 6L;
 
+
             /* OPTIONAL */
             /* delayCritical */
             if (0) {
@@ -475,7 +476,7 @@ if (0) {
         /* OPTIONAL */
         /* gBR_QoS_Flow_Information */
         if (0) {
-          DRB_Information->dRB_QoS.gBR_QoS_Flow_Information = (F1AP_GBR_QoSFlowInformation_t *)calloc(1, sizeof(F1AP_GBR_QoSFlowInformation_t)); 
+          DRB_Information->dRB_QoS.gBR_QoS_Flow_Information = (F1AP_GBR_QoSFlowInformation_t *)calloc(1, sizeof(F1AP_GBR_QoSFlowInformation_t));
           asn_long2INTEGER(&DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxFlowBitRateDownlink, 1L);
           asn_long2INTEGER(&DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxFlowBitRateUplink, 1L);
           asn_long2INTEGER(&DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->guaranteedFlowBitRateDownlink, 1L);
@@ -484,14 +485,14 @@ if (0) {
           /* OPTIONAL */
           /* maxPacketLossRateDownlink */
           if (0) {
-            DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
+            DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t));
             *DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = 1L;
           }
 
           /* OPTIONAL */
           /* maxPacketLossRateUplink */
           if (0) {
-            DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
+            DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t));
             *DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = 1L;
           }
 
@@ -500,7 +501,7 @@ if (0) {
         /* OPTIONAL */
         /* reflective_QoS_Attribute */
         if (0) {
-          DRB_Information->dRB_QoS.reflective_QoS_Attribute = (long *)calloc(1, sizeof(long)); 
+          DRB_Information->dRB_QoS.reflective_QoS_Attribute = (long *)calloc(1, sizeof(long));
           *DRB_Information->dRB_QoS.reflective_QoS_Attribute = 1L;
         }
 
@@ -728,7 +729,7 @@ if (0) {
     ie->criticality                    = F1AP_Criticality_reject;
     ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_RAT_FrequencyPriorityInformation;
 
-    int endc = 1; // RK: Get this from somewhere ... 
+    int endc = 1; // RK: Get this from somewhere ...
     if (endc) {
       ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_eNDC;
       ie->value.choice.RAT_FrequencyPriorityInformation.choice.eNDC = 11L;

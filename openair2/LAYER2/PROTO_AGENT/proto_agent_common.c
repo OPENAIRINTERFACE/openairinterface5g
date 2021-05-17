@@ -508,6 +508,13 @@ error:
   return -1;
 }
 
+boolean_t pdcp_data_ind(
+  const protocol_ctxt_t *const  ctxt_pP,
+  const srb_flag_t srb_flagP,
+  const MBMS_flag_t MBMS_flagP,
+  const rb_id_t rb_id,
+  const sdu_size_t sdu_buffer_size,
+  mem_block_t *const sdu_buffer);
 
 int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
   boolean_t result = 0;

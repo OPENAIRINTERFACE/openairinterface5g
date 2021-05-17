@@ -750,7 +750,7 @@ void phy_procedures_eNB_uespec_RX_fromsplit(uint8_t *bufferZone, int nbBlocks,PH
   recvFs6Ul(bufferZone, nbBlocks, eNB, ul_propa);
 
   // dirty memory allocation in OAI...
-  for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++)
+  for (int i = 0; i < NUMBER_OF_UCI_MAX; i++)
     if ( eNB->uci_vars[i].frame == proc->frame_rx &&
          eNB->uci_vars[i].subframe == proc->subframe_rx )
       eNB->uci_vars[i].active=0;
@@ -1145,7 +1145,7 @@ void appendFs6DLUEcch(uint8_t *bufferZone, PHY_VARS_eNB *eNB, int frame, int sub
   commonUDP_t *newUDPheader=(commonUDP_t *) firstFreeByte;
   bool first_UE=true;
 
-  for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++) {
+  for (int i = 0; i < NUMBER_OF_UCI_MAX; i++) {
     LTE_eNB_UCI *uci = &(eNB->uci_vars[i]);
 
     if ((uci->active == 1) && (uci->frame == frame) && (uci->subframe == subframe)) {

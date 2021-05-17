@@ -553,7 +553,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     uint8_t           *const bufferP,
     const uint8_t     buffer_len ){
     NR_BCCH_BCH_Message_t *bcch_message = NULL;
-    
+
 
     if (NR_UE_rrc_inst[module_id].mib != NULL)
       SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
@@ -564,7 +564,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
                                                    (void **)&bcch_message,
                                                    (const void *)bufferP,
                                                    buffer_len );
-      
+
     if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
        LOG_I(NR_RRC,"NR_BCCH_BCH decode error\n");
        // free the memory
@@ -578,10 +578,10 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
       //memcpy( (void *)mib,
       //    (void *)&bcch_message->message.choice.mib,
       //    sizeof(NR_MIB_t) );
-       
+
        nr_rrc_mac_config_req_ue( 0, 0, 0, NR_UE_rrc_inst[module_id].mib, NULL, NULL, NULL);
       }
-        
+
     return 0;
 }
 
@@ -1289,7 +1289,7 @@ nr_rrc_ue_process_masterCellGroup(
     } else {
       if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config)
 	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
-      else 
+      else
 	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = cellGroupConfig;
     }
     LOG_I(RRC,"Sending CellGroupConfig to MAC\n");
@@ -1474,7 +1474,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    MessageDef *msg_p;
 
    asn_dec_rval_t dec_rval = uper_decode(  NULL,
-					   &asn_DEF_NR_DL_DCCH_Message,    
+					   &asn_DEF_NR_DL_DCCH_Message,
 					   (void**)&nr_dl_dcch_msg,
 					   (uint8_t *)bufferP,
 					   buffer_len, 0, 0);
@@ -1489,7 +1489,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    }
 
    if(nr_dl_dcch_msg != NULL){
-     switch(nr_dl_dcch_msg->message.present){            
+     switch(nr_dl_dcch_msg->message.present){
        case NR_DL_DCCH_MessageType_PR_c1:
 	 switch(nr_dl_dcch_msg->message.choice.c1->present){
 	   case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
@@ -1794,41 +1794,41 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    }
  }
 
- //-----------------------------------------------------------------------------
- int32_t
- nr_rrc_ue_establish_srb1(
-     module_id_t       ue_mod_idP,
-     frame_t           frameP,
-     uint8_t           gNB_index,
-     NR_SRB_ToAddMod_t *SRB_config
- )
- //-----------------------------------------------------------------------------
- {
-   // add descriptor from RRC PDU
-   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Active = 1;
-   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
-   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Srb_info.Srb_id = 1;
-   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB1 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH, gNB_index);
-   return(0);
- }
+//-----------------------------------------------------------------------------
+int32_t
+nr_rrc_ue_establish_srb1(
+    module_id_t       ue_mod_idP,
+    frame_t           frameP,
+    uint8_t           gNB_index,
+    NR_SRB_ToAddMod_t *SRB_config
+)
+//-----------------------------------------------------------------------------
+{
+  // add descriptor from RRC PDU
+  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Active = 1;
+  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
+  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Srb_info.Srb_id = 1;
+  LOG_I(NR_RRC, "[UE %d], CONFIG_SRB1 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH, gNB_index);
+  return(0);
+}
 
- //-----------------------------------------------------------------------------
- int32_t
- nr_rrc_ue_establish_srb2(
-     module_id_t       ue_mod_idP,
-     frame_t           frameP,
-     uint8_t           gNB_index,
-     NR_SRB_ToAddMod_t *SRB_config
- )
- //-----------------------------------------------------------------------------
- {
-   // add descriptor from RRC PDU
-   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Active = 1;
-   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
-   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Srb_info.Srb_id = 2;
-   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB2 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH1, gNB_index);
-   return(0);
- }
+//-----------------------------------------------------------------------------
+int32_t
+nr_rrc_ue_establish_srb2(
+    module_id_t       ue_mod_idP,
+    frame_t           frameP,
+    uint8_t           gNB_index,
+    NR_SRB_ToAddMod_t *SRB_config
+)
+//-----------------------------------------------------------------------------
+{
+  // add descriptor from RRC PDU
+  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Active = 1;
+  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
+  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Srb_info.Srb_id = 2;
+  LOG_I(NR_RRC, "[UE %d], CONFIG_SRB2 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH1, gNB_index);
+  return(0);
+}
 
  //-----------------------------------------------------------------------------
  int32_t
@@ -2065,7 +2065,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
        if (SRB_id == 1) {
 	 if (NR_UE_rrc_inst[ctxt_pP->module_id].SRB1_config[gNB_index]) {
 	   memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].SRB1_config[gNB_index],
-		  radioBearerConfig->srb_ToAddModList->list.array[cnt], 
+		  radioBearerConfig->srb_ToAddModList->list.array[cnt],
 		  sizeof(NR_SRB_ToAddMod_t));
 	 } else {
 	   NR_UE_rrc_inst[ctxt_pP->module_id].SRB1_config[gNB_index] = radioBearerConfig->srb_ToAddModList->list.array[cnt];
