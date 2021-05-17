@@ -392,7 +392,6 @@ class OaiCiTest():
 				status=Module_UE.GetModuleIPAddress()
 				if status==0:
 					HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
-					self.UEIPAddresses.append(Module_UE.UEIPAddress)
 					logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
 				else: #status==-1 failed to retrieve IP address
 					HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
@@ -1733,10 +1732,10 @@ class OaiCiTest():
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 				return
 		else:
+			self.UEIPAddresses=[]
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			Module_UE.GetModuleIPAddress()
-			if Module_UE.UEIPAddress not in self.UEIPAddresses:
-				self.UEIPAddresses.append(Module_UE.UEIPAddress)
+			self.UEIPAddresses.append(Module_UE.UEIPAddress)
 		logging.debug(self.UEIPAddresses)
 		multi_jobs = []
 		i = 0
@@ -2620,10 +2619,10 @@ class OaiCiTest():
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 				return
 		else: #is a module
+			self.UEIPAddresses=[]
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			Module_UE.GetModuleIPAddress()
-			if Module_UE.UEIPAddress not in self.UEIPAddresses:
-				self.UEIPAddresses.append(Module_UE.UEIPAddress)
+			self.UEIPAddresses.append(Module_UE.UEIPAddress)
 
 
 
