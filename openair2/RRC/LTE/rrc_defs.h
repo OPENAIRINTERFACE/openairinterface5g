@@ -519,13 +519,13 @@ typedef struct RB_INFO_TABLE_ENTRY_s {
   RB_INFO Rb_info;
   uint8_t Active;
   uint32_t Next_check_frame;
-  uint8_t Status;
+  uint8_t StatusRb;
 } RB_INFO_TABLE_ENTRY;
 
 typedef struct SRB_INFO_TABLE_ENTRY_s {
   SRB_INFO Srb_info;
   uint8_t Active;
-  uint8_t Status;
+  uint8_t StatusSrb;
   uint32_t Next_check_frame;
 } SRB_INFO_TABLE_ENTRY;
 
@@ -599,7 +599,7 @@ typedef struct eNB_RRC_UE_s {
   LTE_CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
 
-  uint8_t                            Status; // RRC status, type enum UE_STATE_t
+  uint8_t                            StatusRrc; // RRC status, type enum UE_STATE_t
   rnti_t                             rnti;
   int                                gnb_rnti;     //RNTI of the UE at the gNB if in ENDC connection
   int                                gnb_x2_assoc_id;
