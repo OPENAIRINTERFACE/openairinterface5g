@@ -1642,7 +1642,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   }
 }
 
-void dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
+void nr_dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
 
    int strpos=0;
    char output[16384];

@@ -164,6 +164,8 @@ uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 #include <executables/split_headers.h>
+#include <SIMULATION/ETH_TRANSPORT/proto.h>
+
 int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
   AssertFatal(false, "Must not be called in this context\n");

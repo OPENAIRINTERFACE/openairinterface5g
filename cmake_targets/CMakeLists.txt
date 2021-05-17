@@ -531,24 +531,24 @@ if (${RU} STREQUAL 0)
   file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 endif (${RU} STREQUAL 0)
 
-  add_custom_target (
-    s1ap_flag ALL
-    ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${S1AP_C_DIR}" "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}" "S1AP_" -fno-include-deps
-    DEPENDS  "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}"
+add_custom_target (
+  s1ap_flag ALL
+  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "${S1AP_C_DIR}" "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}" "S1AP_" -fno-include-deps
+  DEPENDS  "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}"
+)
+
+add_library(S1AP_LIB
+  ${S1AP_source}
+  ${S1AP_DIR}/s1ap_common.c
   )
+add_dependencies(S1AP_LIB rrc_flag s1ap_flag)
 
-  add_library(S1AP_LIB
-    ${S1AP_source}
-    ${S1AP_DIR}/s1ap_common.c
-    )
-  add_dependencies(S1AP_LIB rrc_flag s1ap_flag)
-
-  include_directories ("${S1AP_C_DIR}")
-  include_directories ("${S1AP_DIR}")
+include_directories ("${S1AP_C_DIR}")
+include_directories ("${S1AP_DIR}")
 
 add_library(S1AP_ENB
-    ${S1AP_DIR}/s1ap_eNB.c
-    ${S1AP_DIR}/s1ap_eNB_context_management_procedures.c
+  ${S1AP_DIR}/s1ap_eNB.c
+  ${S1AP_DIR}/s1ap_eNB_context_management_procedures.c
   ${S1AP_DIR}/s1ap_eNB_decoder.c
   ${S1AP_DIR}/s1ap_eNB_encoder.c
   ${S1AP_DIR}/s1ap_eNB_handlers.c
@@ -813,6 +813,7 @@ add_dependencies(X2AP_ENB X2AP_LIB rrc_flag x2_flag)
 
 # F1AP
 ##############
+set (F1AP_RELEASE R16)
 add_list1_option(F1AP_RELEASE R16 "F1AP ASN.1 grammar version" R16)
 set(F1AP_DIR ${OPENAIR2_DIR}/F1AP)
 if (${F1AP_RELEASE} STREQUAL "R16")
@@ -1020,6 +1021,7 @@ add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION w
 add_boolean_option(UESIM_EXPANSION          False         "enable UESIM_EXPANSION with max 256 UE")
 add_boolean_option(ITTI_SIM                 False         "enable itti simulator")
 add_boolean_option(RFSIM_NAS                False         "enable rfsim nas")
+
 ########################
 # Include order
 ##########################

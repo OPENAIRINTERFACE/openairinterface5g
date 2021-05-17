@@ -806,19 +806,19 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   int scs = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
   int fh = 0;
   int startSymbolAndLength = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
+  int mappingtype = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
 
   if (ra->CellGroup) {
     AssertFatal(ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
 		"downlinkBWP_ToAddModList has %d BWP!\n", ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
     NR_BWP_Uplink_t *ubwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
 
-
     startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
+    mappingtype = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
     abwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     scs = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
     fh = ubwp->bwp_Dedicated->pusch_Config->choice.setup->frequencyHopping ? 1 : 0;
-
   }
 
   LOG_D(NR_MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d,%d) for rnti: %d\n",
@@ -833,7 +833,6 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
 
   int start_symbol_index,nr_of_symbols;
   SLIV2SL(startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
-  int mappingtype = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
 
   pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_pdu->rnti = ra->rnti;

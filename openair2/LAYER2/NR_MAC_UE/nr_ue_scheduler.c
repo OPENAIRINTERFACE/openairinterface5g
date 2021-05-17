@@ -772,7 +772,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
 
     /* DMRS */
-    l_prime_mask = get_l_prime(pusch_config_pdu->nr_of_symbols, mappingtype, add_pos, dmrslength, pusch_config_pdu->start_symbol_index, scc->dmrs_TypeA_Position);
+    l_prime_mask = get_l_prime(pusch_config_pdu->nr_of_symbols, mappingtype, add_pos, dmrslength, pusch_config_pdu->start_symbol_index, mac->scc->dmrs_TypeA_Position);
     if ((mac->ULbwp[0] && pusch_config_pdu->transform_precoding == transform_precoder_disabled))
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
     else if (*dci_format == NR_UL_DCI_FORMAT_0_0 || (mac->ULbwp[0] && pusch_config_pdu->transform_precoding == transform_precoder_enabled))

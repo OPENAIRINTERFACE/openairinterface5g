@@ -63,7 +63,7 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
-#include "enb_config.h"
+#include "gnb_config.h"
 #include <executables/softmodem-common.h>
 
 #ifdef SMBV
@@ -1981,7 +1981,7 @@ void RCconfig_RU(void)
         LOG_I(PHY,"Setting time source to internal\n");
 	      RC.ru[j]->openair0_cfg.time_source = internal;
       }
-      
+
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
         if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
           RC.ru[j]->if_south                        = LOCAL_RF;
@@ -2051,7 +2051,7 @@ void RCconfig_RU(void)
           RC.ru[j]->if_south                     = REMOTE_IF4p5;
           RC.ru[j]->function                     = NGFI_RAU_IF4p5;
           RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF4p5_MODE;
-        } 
+        }
       }  /* strcmp(local_rf, "yes") != 0 */
 
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);

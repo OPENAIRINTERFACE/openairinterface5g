@@ -359,7 +359,7 @@ void *nrL1_stats_thread(void *param) {
     AssertFatal(fd!=NULL,"Cannot open ngL1_stats.log\n");
     dump_nr_I0_stats(fd,gNB);
     dump_pusch_stats(fd,gNB);
-    //    dump_uci_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
+    //    nr_dump_uci_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
     fclose(fd);
   }
   return(NULL);
