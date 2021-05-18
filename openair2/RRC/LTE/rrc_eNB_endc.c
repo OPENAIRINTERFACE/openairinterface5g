@@ -234,7 +234,8 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
                                    (void *)&dl_dcch_msg,
                                    buffer,
                                    buffer_size);
-
+  AssertFatal (enc_rval.encoded > 0, "asn_DEF_LTE_DL_DCCH_Message message encoding failed (%s, %jd)!\n",
+                 enc_rval.failed_type->name, enc_rval.encoded);
 {
 int len = (enc_rval.encoded + 7) / 8;
 int i;

@@ -9026,7 +9026,7 @@ void rrc_eNB_process_ENDC_x2_setup_request(int mod_id, x2ap_ENDC_setup_req_t *m)
 }
 
 void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, x2ap_ENDC_sgnb_addition_req_ACK_t *m) {
-  LOG_I(RRC, "Melissa we got here %s():%d\n", __FUNCTION__, __LINE__);
+  LOG_I(RRC, "Melissa Elkadi we got here %s():%d\n", __FUNCTION__, __LINE__);
   NR_CG_Config_t *CG_Config = NULL;
   {
     int i;
