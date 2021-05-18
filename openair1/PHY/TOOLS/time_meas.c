@@ -183,24 +183,35 @@ void run_cpumeasur(void) {
              if ( measur_table[tsm->timestat_id]->p_time > measur_table[tsm->timestat_id]->max )
                measur_table[tsm->timestat_id]->max = measur_table[tsm->timestat_id]->p_time;
           break;
-          default:
-          break;
+           case TIMESTAT_MSGID_DISPLAY:
+            {
+            char aline[256];
+            int start, stop;
+             if (tsm->displayFunc != NULL) {
+               if(tsm->timestat_id >= 0) {
+                 start=tsm->timestat_id ;
+                 stop=start+1;
+               }
+               else {
+                  start=0;
+                  stop=max_cpumeasur ;
+               }
+               for (int i=start ; i<stop ; i++) {
+                 if (measur_table[i] != NULL) {
+                   sprintf(aline,"%s: %15.3f us ",measur_table[i]->meas_name, measur_table[i]->trials==0?0:(  (measur_table[i]->trials/measur_table[i]->diff )/ cpu_freq_GHz /1000 ));
+                   tsm->displayFunc(aline);
+                   }
+                }
+             }
+            }
+            break;
+            default:
+            break;
       }
     delNotifiedFIFO_elt(msg);
     }
-
 }
 
-void run_cpumeasur(void) {
-    struct sched_param schedp;
-    pthread_setname_np(pthread_self(), "measur");
-    schedp.sched_priority=0;
-    int rt=pthread_setschedparam(pthread_self(), SCHED_IDLE, &schedp);
-    AssertFatal(rt==0, "couldn't set measur thread priority: %s\n",strerror(errno));
-    initNotifiedFIFO(&measur_fifo);
-    while(1) {
-    }
-}
 
 void init_meas(void)
 {

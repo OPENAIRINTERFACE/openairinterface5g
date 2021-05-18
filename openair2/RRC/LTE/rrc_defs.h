@@ -364,7 +364,7 @@ typedef struct UE_RRC_INFO_s {
   uint8_t SIwindowsize_MBMS; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
   uint8_t handoverTarget;
   HO_STATE_t ho_state;
-  uint16_t SIperiod; //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
+  uint16_t SIperiod ; //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
   uint16_t SIperiod_MBMS; //!< Corresponds to the SIB1-MBMS si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120 TODO
   unsigned short UE_index;
   uint32_t T300_active;
@@ -376,7 +376,7 @@ typedef struct UE_RRC_INFO_s {
   uint32_t N310_cnt;
   uint32_t N311_cnt;
   rnti_t   rnti;
-} __attribute__ ((__packed__)) UE_RRC_INFO;
+} __attribute__ ((__packed__)) __attribute__ ((aligned (1))) UE_RRC_INFO;
 
 typedef struct UE_S_TMSI_s {
   boolean_t  presence;

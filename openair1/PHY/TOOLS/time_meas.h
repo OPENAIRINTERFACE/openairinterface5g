@@ -31,7 +31,7 @@
 #include <pthread.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
-#ifndef PHYSIM  
+#ifndef PHYSIM
   #include "common/utils/threadPool/thread-pool.h"
 #endif
 // global var to enable openair performance profiler
@@ -39,35 +39,35 @@ extern int opp_enabled;
 extern double cpu_freq_GHz  __attribute__ ((aligned(32)));;
 // structure to store data to compute cpu measurment
 #if defined(__x86_64__) || defined(__i386__)
-typedef struct {
-  long long in;
-  long long diff;
-  long long p_time; /*!< \brief absolute process duration */
-  long long diff_square; /*!< \brief process duration square */
-  long long max;
-  int trials;
-  int meas_flag;
-  char *meas_name;           /*!< \brief name to use when printing the measure (not used for PHY simulators)*/ 
-  int meas_index;            /*!< \brief index of this measure in the measure array (not used for PHY simulators)*/ 
-} time_stats_t;
+  #define OAI_CPUTIME_TYPE long long
 #elif defined(__arm__)
-typedef struct {
-  uint32_t in;
-  uint32_t diff;
-  uint32_t p_time; /*!< \brief absolute process duration */
-  uint32_t diff_square; /*!< \brief process duration square */
-  uint32_t max;
-  int trials;
-} time_stats_t;
+  #define OAI_CPUTIME_TYPE uint32_t
+#else
+  #error "building on unsupported CPU architecture"
 #endif
-
-#define TIMESTAT_MSGID_START      0
-#define TIMESTAT_MSGID_STOP      1
 typedef struct {
-  int               msgid;         /*!< \brief message id, as defined by TIMESTAT_MSGID_X macros */
-  int               timestat_id;   /*!< \brief points to the time_stats_t entry in cpumeas table */
-  OAI_CPUTIME_TYPE  ts;            /*!< \brief time stamp */
+  OAI_CPUTIME_TYPE in;      /*!< \brief time at measue starting point */
+  OAI_CPUTIME_TYPE diff;     /*!< \brief average difference between time at starting point and time at endpoint*/
+  OAI_CPUTIME_TYPE p_time; /*!< \brief absolute process duration */
+  OAI_CPUTIME_TYPE diff_square; /*!< \brief process duration square */
+  OAI_CPUTIME_TYPE max;      /*!< \brief maximum difference between time at starting point and time at endpoint*/
+  int trials;                /*!< \brief number of start point - end point iterations */
+  int meas_flag;             /*!< \brief 1: stop_meas not called (consecutive calls of start_meas) */
+  char *meas_name;           /*!< \brief name to use when printing the measure (not used for PHY simulators)*/
+  int meas_index;            /*!< \brief index of this measure in the measure array (not used for PHY simulators)*/
+} time_stats_t;
+
+#define TIMESTAT_MSGID_START       0
+#define TIMESTAT_MSGID_STOP         1
+#define TIMESTAT_MSGID_DISPLAY    2
+typedef struct {
+  int               msgid;                    /*!< \brief message id, as defined by TIMESTAT_MSGID_X macros */
+  int               timestat_id;            /*!< \brief points to the time_stats_t entry in cpumeas table */
+  OAI_CPUTIME_TYPE  ts;             /*!< \brief time stamp */
+   void (*displayFunc)(void *);   /*!< \brief function to call when DISPLAY message is received*/
 } time_stats_msg_t;
+
+
 static inline void start_meas(time_stats_t *ts) __attribute__((always_inline));
 static inline void stop_meas(time_stats_t *ts) __attribute__((always_inline));
 
@@ -132,20 +132,6 @@ static inline void stop_meas(time_stats_t *ts) {
   }
 }
 
-static inline void send_meas(int measur_idx) {
-  if (opp_enabled) {
-    extern notifiedFIFO_t measur_fifo;
-
-    notifiedFIFO_elt_t *msg =newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
-    time_stats_msg_t *tsm = (time_stats_msg_t *)NotifiedFifoData(msg);
-    tsm->ts = rdtsc_oai();
-    pushNotifiedFIFO(&measur_fifo, msg);
-  }
-}
-         		
- 
-          		
-
 static inline void reset_meas(time_stats_t *ts) {
   ts->in=0;
   ts->diff=0;
@@ -165,13 +151,23 @@ static inline void copy_meas(time_stats_t *dst_ts,time_stats_t *src_ts) {
 }
 
 #ifndef PHYSIM
+extern notifiedFIFO_t measur_fifo;
 #define CPUMEASUR_SECTION "cpumeasur"
 
 #define CPUMEASUR_PARAMS_DESC { \
     {"max_cpumeasur",     "Max number of cpu measur entries",      0,       uptr:&max_cpumeasur,           defintval:100,         TYPE_UINT,   0},\
   }
-  
+
   void init_meas(void);
   int register_meas(char *name, time_stats_t *ts);
+
+  static inline void send_meas(int measur_idx) {
+    if (opp_enabled) {
+      notifiedFIFO_elt_t *msg =newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
+      time_stats_msg_t *tsm = (time_stats_msg_t *)NotifiedFifoData(msg);
+      tsm->ts = rdtsc_oai();
+      pushNotifiedFIFO(&measur_fifo, msg);
+    }
+  }
 #endif  //ifndef PHYSIM
 #endif

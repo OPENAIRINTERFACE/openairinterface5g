@@ -10,7 +10,7 @@ set(TELNETSRV_SOURCE
 add_library(telnetsrv MODULE ${TELNETSRV_SOURCE} )
 target_link_libraries(telnetsrv PRIVATE history ncurses form )
 
-foreach(TELNETLIB enb gnb 4gUE 5gUE)
+foreach(TELNETLIB enb gnb 4Gue 5Gue)
     set(TELNETLIB_SRCS "")
     foreach(TELNETLIB_ASRC measurements phycmd)
        set(TELNETLIB_SRC ${OPENAIR_DIR}/common/utils/telnetsrv/telnetsrv_${TELNETLIB}_${TELNETLIB_ASRC}.c)
