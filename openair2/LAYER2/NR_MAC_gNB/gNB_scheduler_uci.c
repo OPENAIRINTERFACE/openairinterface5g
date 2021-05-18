@@ -288,6 +288,7 @@ void nr_csi_meas_reporting(int Mod_idP,
   }
 }
 
+__attribute__((unused))
 static void handle_dl_harq(module_id_t mod_id,
                            int UE_id,
                            int8_t harq_pid,
@@ -392,7 +393,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 
   // NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   // const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  const int num_slots = 20;
+  //const int num_slots = 20;
   // if ((uci_234->pduBitmap >> 1) & 0x01) {
   //   // iterate over received harq bits
   //   for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {

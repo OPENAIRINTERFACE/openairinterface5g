@@ -176,7 +176,7 @@ static uint8_t check_trigger_meas_event(
   uint8_t ue_cnx_index,
   uint8_t meas_index,
   LTE_Q_OffsetRange_t ofn, LTE_Q_OffsetRange_t ocn, LTE_Hysteresis_t hys,
-  LTE_Q_OffsetRange_t ofs, LTE_Q_OffsetRange_t ocs, LTE_TimeToTrigger_t ttt);
+  LTE_Q_OffsetRange_t ofs, LTE_Q_OffsetRange_t ocs, long a3_offset, LTE_TimeToTrigger_t ttt);
 
 static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
 static void decode_MBMSCountingRequest(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
@@ -825,6 +825,7 @@ rrc_ue_process_measConfig(
                   measObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1,
                   measObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf[0]);
           } else if (measObj->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15) {
+            ue->subframeCount = 0;
             LOG_I(RRC, "NR_r15 Measurement: carrierFreq: %ld\n",
                   measObj->measObject.choice.measObjectNR_r15.carrierFreq_r15);
             if (!get_softmodem_params()->nsa) {
@@ -4436,10 +4437,6 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
   LTE_MeasObjectId_t   measObjId;
   LTE_ReportConfigId_t reportConfigId;
   UE_RRC_INST *ue = &UE_rrc_inst[ctxt_pP->module_id];
-  bool is_in_period = false;
-  bool is_state_connected = false;
-  bool is_t304_inactive = false;
-  bool have_meas_flag = false;
   for(i=0 ; i<NB_CNX_UE ; i++) {
     for(j=0 ; j<MAX_MEAS_ID ; j++) {
       if(ue->MeasId[i][j] != NULL) {
@@ -4485,7 +4482,7 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
                          ctxt_pP->module_id,
                          ctxt_pP->frame,
                          eNB_index,
-                         i,j,ofn,ocn,hys,ofs,ocs,ttt_ms)) &&
+                         i,j,ofn,ocn,hys,ofs,ocs,a3_offset,ttt_ms)) &&
                       (ue->Info[0].State >= RRC_CONNECTED) &&
                       (ue->Info[0].T304_active == 0 )      &&
                       (ue->HandoverInfoUe.measFlag == 1)) {
@@ -4530,25 +4527,19 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
           if (ue->MeasObj[i][measObjId-1]->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectNR_r15) {
             if (!does_rrcConnReconfig_have_nr(ue))
               break;
-            LTE_TimeToTrigger_t trig_per = ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.triggerType.choice.event.timeToTrigger;
+            LTE_ReportConfigInterRAT_t *rc = &ue->ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT;
+            LTE_TimeToTrigger_t trig_per = rc->triggerType.choice.event.timeToTrigger;
             ttt_ms = timeToTrigger_ms[trig_per];
-            LOG_I(RRC, "[UE %d] Frame %d: B1_NR_r15 event. nr_meas %d, period %d, state %d, t304 %d, measfalg %d count %ld, ttt %ld\n",
-                  ctxt_pP->module_id, ctxt_pP->frame,
-                  does_rrcConnReconfig_have_nr(ue),
-                  is_in_period,
-                  is_state_connected,
-                  is_t304_inactive,
-                  have_meas_flag,
-                  ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount,
-                  ttt_ms);
-            if (ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount < ttt_ms) {
-              ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount = ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount + 1;
+            LOG_I(RRC, "[UE %d] Frame %d: B1_NR_r15 event. count %d, ttt %ld\n",
+                  ctxt_pP->module_id, ctxt_pP->frame, ue->subframeCount, ttt_ms);
+            if (ue->subframeCount < ttt_ms) {
+              ++ue->subframeCount;
               break;
             }
-            else {
-                ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount = 0;
-                is_in_period = true;
-            }
+            ue->subframeCount = 0;
+            bool is_state_connected = false;
+            bool is_t304_inactive = false;
+            bool have_meas_flag = false;
             if (ue->Info[0].State >= RRC_CONNECTED)
               is_state_connected = true;
             if (ue->Info[0].T304_active == 0)
@@ -4556,9 +4547,9 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
             if (ue->HandoverInfoUe.measFlag == 1);
               have_meas_flag = true;
 
-            if (does_rrcConnReconfig_have_nr(ue) && is_in_period && is_state_connected && is_t304_inactive && have_meas_flag) {
-              LOG_I(RRC,"[UE %d] MELISSA ELAKDI! Frame %d: Triggering generation of Meas Report for NR_r15. count = %d\n",
-                    ctxt_pP->module_id, ctxt_pP->frame, ue->ReportConfig[eNB_index][reportConfigId-1]->reportConfig.choice.reportConfigInterRAT.subframeCount);
+            if (is_state_connected && is_t304_inactive && have_meas_flag) {
+              LOG_I(RRC,"[UE %d] Frame %d: Triggering generation of Meas Report for NR_r15. count = %d\n",
+                    ctxt_pP->module_id, ctxt_pP->frame, ue->subframeCount);
 
               if (ue->measReportList[i][j] == NULL) {
                 ue->measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
@@ -4596,6 +4587,7 @@ uint8_t check_trigger_meas_event(
   LTE_Hysteresis_t    hys,
   LTE_Q_OffsetRange_t ofs,
   LTE_Q_OffsetRange_t ocs,
+  long            a3_offset,
   LTE_TimeToTrigger_t ttt ) {
   uint8_t eNB_offset;
   //  uint8_t currentCellIndex = frame_parms->Nid_cell;

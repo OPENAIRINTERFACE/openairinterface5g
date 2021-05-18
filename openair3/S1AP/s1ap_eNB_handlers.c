@@ -112,10 +112,6 @@ int s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm(uint32_t               as
     uint32_t               stream,
     S1AP_S1AP_PDU_t       *pdu);
 
-static int s1ap_eNB_snd_s1_setup_request(
-  s1ap_eNB_instance_t *instance_p,
-  s1ap_eNB_mme_data_t *s1ap_mme_data_p);
-
 int s1ap_timer_setup(
   uint32_t      interval_sec,
   uint32_t      interval_us,

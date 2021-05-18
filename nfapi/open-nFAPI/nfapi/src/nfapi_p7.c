@@ -6433,7 +6433,7 @@ static uint8_t unpack_nr_crc_indication_body(void* tlv, uint8_t **ppReadPackedMs
 
 static uint8_t unpack_nr_crc_indication(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t* config)
 {
-	uint8_t *ptr = *ppReadPackedMsg;
+	//uint8_t *ptr = *ppReadPackedMsg;
 	// printf("\n Read P7 message indication unpack: ");
 	// while(ptr < end){
 	// 	printf(" %d ", *ptr);
