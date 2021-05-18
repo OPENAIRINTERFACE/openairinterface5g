@@ -105,6 +105,7 @@ rrc_ue_decode_dcch(
   const protocol_ctxt_t *const ctxt_pP,
   const rb_id_t                Srb_id,
   const uint8_t         *const Buffer,
+  const uint32_t               Buffer_size,
   const uint8_t                eNB_indexP
 );
 

@@ -1873,21 +1873,31 @@ rrc_ue_process_ueCapabilityEnquiry(
   }
 }
 
-static LTE_RRCConnectionReconfiguration_v1510_IEs_t* does_nce_exist(LTE_RRCConnectionReconfiguration_r8_IEs_t *c)
+static bool is_nr_r15_config_present(LTE_RRCConnectionReconfiguration_r8_IEs_t *c)
 {
 #define NCE nonCriticalExtension
-  if(c != NULL && c->NCE != NULL
-      && c->NCE->NCE != NULL
-      && c->NCE->NCE->NCE != NULL
-      && c->NCE->NCE->NCE->NCE != NULL
-      && c->NCE->NCE->NCE->NCE->NCE != NULL
-      && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-      && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL)
-    return c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE;
-  return NULL;
+#define chk(x) do { \
+  if ((x) == NULL) { \
+    LOG_I(RRC, "NULL at %d\n", __LINE__); \
+    return false; \
+  } \
+} while(0)
+  chk(c);
+  chk(c->NCE);
+  chk(c->NCE->NCE);
+  chk(c->NCE->NCE->NCE);
+  chk(c->NCE->NCE->NCE->NCE);
+  chk(c->NCE->NCE->NCE->NCE->NCE);
+  chk(c->NCE->NCE->NCE->NCE->NCE->NCE);
+  chk(c->NCE->NCE->NCE->NCE->NCE->NCE->NCE);
+  chk(c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE);
+  return c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->nr_Config_r15->present ==
+         LTE_RRCConnectionReconfiguration_v1510_IEs__nr_Config_r15_PR_setup;
+
 #undef NCE
+#undef chk
 }
+
 //-----------------------------------------------------------------------------
 void
 rrc_ue_process_rrcConnectionReconfiguration(
@@ -1911,17 +1921,13 @@ rrc_ue_process_rrcConnectionReconfiguration(
       /* Melissa: Here we need to open up container to get r_15 non-criticalExtensions. Look in
          eNB as to how this message is put into the container. Need scg_group_config and scg_RB_config.
          These two need to be sent over to the NR UE. */
-      LOG_E(RRC, "Checking if we have NR RRCConnectionReconfig\n");
-      LTE_RRCConnectionReconfiguration_v1510_IEs_t *nce_nr = does_nce_exist(r_r8);
-      LOG_E(RRC, "This is nce_nr %p\n", nce_nr);
-      if (nce_nr) {
-        if (nce_nr->nr_Config_r15->present == LTE_RRCConnectionReconfiguration_v1510_IEs__nr_Config_r15_PR_setup) {
-          LOG_E(RRC, "We successfully have NR RRCConnectionReconfig\n");
+      if (is_nr_r15_config_present(r_r8)) {
+          LOG_I(RRC, "We successfully have NR RRCConnectionReconfig\n");
           //extract_nr_elements();
           //nsa_sendmsg_to_nrue(buf, len, RRC_CONFIG_COMPLETE_REQ);
           return;
-        }
       }
+      LOG_E(RRC, "Unfortunately, nr_r15_config is not present.\n");
 
       if (r_r8->mobilityControlInfo) {
         LOG_I(RRC,"Mobility Control Information is present\n");
@@ -2149,6 +2155,7 @@ rrc_ue_decode_dcch(
   const protocol_ctxt_t *const ctxt_pP,
   const rb_id_t                Srb_id,
   const uint8_t         *const Buffer,
+  const uint32_t               Buffer_size,
   const uint8_t                eNB_indexP
 )
 //-----------------------------------------------------------------------------
@@ -2170,7 +2177,7 @@ rrc_ue_decode_dcch(
               &asn_DEF_LTE_DL_DCCH_Message,
               (void **)&dl_dcch_msg,
               (uint8_t *)Buffer,
-              RRC_BUF_SIZE,0,0);
+              Buffer_size, 0, 0);
 
   if (dec_rval.code != RC_OK && dec_rval.consumed == 0)
   {
@@ -4940,6 +4947,7 @@ void *rrc_ue_task( void *args_p ) {
           &ctxt,
           RRC_DCCH_DATA_IND (msg_p).dcch_index,
           RRC_DCCH_DATA_IND (msg_p).sdu_p,
+          RRC_DCCH_DATA_IND (msg_p).sdu_size,
           RRC_DCCH_DATA_IND (msg_p).eNB_index);
         // Message buffer has been processed, free it now.
         result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), RRC_DCCH_DATA_IND (msg_p).sdu_p);
@@ -6496,6 +6504,7 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
     msg_len -= sizeof(msg->msg_type);
     bool received_nr_msg = true;
     protocol_ctxt_t ctxt;
+    memset(&ctxt, 0, sizeof(ctxt));
 
     switch (msg_type)
     {
