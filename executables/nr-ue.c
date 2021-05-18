@@ -373,8 +373,7 @@ void processSlotRX(void *arg) {
       if (get_softmodem_params()->usim_test==0) {
         pucch_procedures_ue_nr(UE,
                                gNB_id,
-                               proc,
-                               FALSE);
+                               proc);
       }
 
       LOG_D(PHY, "Sending Uplink data \n");

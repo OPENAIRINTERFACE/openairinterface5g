@@ -1794,6 +1794,77 @@ void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac) {
   LOG_D(NR_MAC,"Map SSB to RO done\n");
 }
 
+
+void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, int thread_id) {
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  int O_SR = 0;
+  int O_ACK = 0;
+  int O_CSI = 0;
+  int N_UCI = 0;
+
+  PUCCH_sched_t *pucch = calloc(1,sizeof(*pucch));
+  pucch->resource_indicator = -1;
+  pucch->initial_pucch_id = -1;
+  uint16_t rnti = mac->crnti;  //FIXME not sure this is valid for all pucch instances
+
+  // SR
+
+
+  // CSI
+
+
+  // ACKNACK
+  O_ACK = get_downlink_ack(mac, frameP, slotP, pucch);
+
+  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
+  NR_PUCCH_Config_t *pucch_Config;
+  if (bwp_id>0 &&
+      mac->ULbwp[bwp_id-1] &&
+      mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
+      mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config &&
+      mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup) {
+    pucch_Config =  mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup;
+  }
+  else if (bwp_id==0 &&
+           mac->cg &&
+           mac->cg->spCellConfig &&
+           mac->cg->spCellConfig->spCellConfigDedicated &&
+           mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+           mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+           mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config &&
+           mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
+      pucch_Config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+  }
+  else AssertFatal(1==0,"no pucch_Config\n");
+
+
+  // if multiplexing of HARQ and CSI is not possible, transmit only HARQ bits
+  if ((O_ACK != 0) && (O_ACK != 0) && (pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI == NULL)) {
+    O_CSI = 0;
+    pucch->csi_part1_payload = 0;
+    pucch->csi_part2_payload = 0;
+  }
+
+  N_UCI = O_SR + O_ACK + O_CSI;
+
+  if (N_UCI > 0) {
+    pucch->resource_set_id = find_pucch_resource_set(mac, N_UCI);
+    select_pucch_resource(mac, pucch);
+    fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
+    fapi_nr_ul_config_pucch_pdu *pucch_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu;
+    nr_ue_configure_pucch(mac,
+                          slotP,
+                          rnti,
+                          pucch,
+                          pucch_pdu,
+                          O_SR, O_ACK, O_CSI);
+    fill_ul_config(ul_config, frameP, slotP, FAPI_NR_UL_CONFIG_TYPE_PUCCH);
+  }
+
+}
+
+
 // This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211, tables 6.3.3.2.x
 // PRACH formats 9, 10, 11 are corresponding to dual PRACH format configurations A1/B1, A2/B2, A3/B3.
 // - todo:

@@ -122,9 +122,10 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            uint8_t gNB_id,
                            PHY_VARS_NR_UE *ue,
                            NR_UE_DLSCH_t *dlsch0,
+                           NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus){
 
-  int harq_pid;
+
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
   if (n_pdus > 1){
@@ -133,11 +134,27 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
 
   switch (pdu_type){
     case FAPI_NR_RX_PDU_TYPE_SIB:
+      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.harq_pid = dlsch0->current_harq_pid;
+      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.ack_nack = dlsch0->harq_processes[dlsch0->current_harq_pid]->ack;
+      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu = dlsch0->harq_processes[dlsch0->current_harq_pid]->b;
+      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu_length = dlsch0->harq_processes[dlsch0->current_harq_pid]->TBS / 8;
+    break;
     case FAPI_NR_RX_PDU_TYPE_DLSCH:
+      if(dlsch0) {
+        rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.harq_pid = dlsch0->current_harq_pid;
+        rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.ack_nack = dlsch0->harq_processes[dlsch0->current_harq_pid]->ack;
+        rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu = dlsch0->harq_processes[dlsch0->current_harq_pid]->b;
+        rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu_length = dlsch0->harq_processes[dlsch0->current_harq_pid]->TBS / 8;
+      }
+      if(dlsch1) {
+        AssertFatal(1==0,"Second codeword currently not supported\n");
+      }
+      break;
     case FAPI_NR_RX_PDU_TYPE_RAR:
-      harq_pid = dlsch0->current_harq_pid;
-      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu = dlsch0->harq_processes[harq_pid]->b;
-      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu_length = dlsch0->harq_processes[harq_pid]->TBS / 8;
+      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.harq_pid = dlsch0->current_harq_pid;
+      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.ack_nack = dlsch0->harq_processes[dlsch0->current_harq_pid]->ack;
+      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu = dlsch0->harq_processes[dlsch0->current_harq_pid]->b;
+      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu_length = dlsch0->harq_processes[dlsch0->current_harq_pid]->TBS / 8;
     break;
     case FAPI_NR_RX_PDU_TYPE_SSB:
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.pdu = ue->pbch_vars[gNB_id]->decoded_output;
@@ -1018,6 +1035,28 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     }
 
 
+    switch (pdsch) {
+      case RA_PDSCH:
+        nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
+        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, gNB_id, ue, dlsch0, NULL, number_pdus);
+        ue->UE_mode[gNB_id] = RA_RESPONSE;
+        break;
+      case PDSCH:
+        nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
+        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, gNB_id, ue, dlsch0, NULL, number_pdus);
+        break;
+      case SI_PDSCH:
+        nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
+        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SIB, gNB_id, ue, dlsch0, NULL, number_pdus);
+        break;
+      default:
+        break;
+    }
+
+      LOG_D(PHY, "In %s DL PDU length in bits: %d, in bytes: %d \n", __FUNCTION__, dlsch0->harq_processes[harq_pid]->TBS, dlsch0->harq_processes[harq_pid]->TBS / 8);
+
+
+
 #if UE_TIMING_TRACE
     stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 #if DISABLE_LOG_X
@@ -1115,42 +1154,18 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 #endif
 
 #endif
-      LOG_I(PHY,"AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
+      LOG_D(PHY,"AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
             frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
 
       LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dlsch1->harq_processes[harq_pid]->TBS);
     }
 
     LOG_D(PHY," ------ end ldpc decoder for AbsSubframe %d.%d ------ decoded in %d \n", frame_rx, nr_slot_rx, ret);
-    LOG_D(PHY, "harq_pid: %d, TBS expected dlsch0: %d  \n",harq_pid, dlsch0->harq_processes[harq_pid]->TBS);
 
-    if(ret<dlsch0->max_ldpc_iterations+1){
-
-      switch (pdsch) {
-        case RA_PDSCH:
-          nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-          nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, gNB_id, ue, dlsch0, number_pdus);
-          ue->UE_mode[gNB_id] = RA_RESPONSE;
-          break;
-        case PDSCH:
-          nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-          nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, gNB_id, ue, dlsch0, number_pdus);
-          break;
-        case SI_PDSCH:
-          nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-          nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SIB, gNB_id, ue, dlsch0, number_pdus);
-          break;
-        default:
-          break;
+    //  send to mac
+    if (ue->if_inst && ue->if_inst->dl_indication) {
+      ue->if_inst->dl_indication(&dl_indication, ul_time_alignment);
       }
-
-      LOG_D(PHY, "In %s DL PDU length in bits: %d, in bytes: %d \n", __FUNCTION__, dlsch0->harq_processes[harq_pid]->TBS, dlsch0->harq_processes[harq_pid]->TBS / 8);
-
-      //  send to mac
-      if (ue->if_inst && ue->if_inst->dl_indication) {
-        ue->if_inst->dl_indication(&dl_indication, ul_time_alignment);
-      }
-    }
 
     if (ue->mac_enabled == 1) {
 

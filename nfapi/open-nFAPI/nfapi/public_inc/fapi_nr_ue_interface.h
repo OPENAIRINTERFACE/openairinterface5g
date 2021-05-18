@@ -101,6 +101,8 @@ typedef struct {
 
 
 typedef struct {
+  uint8_t harq_pid;
+  uint8_t ack_nack;
   uint32_t pdu_length;
   uint8_t* pdu;
 } fapi_nr_pdsch_pdu_t;
@@ -188,87 +190,33 @@ typedef struct {
 } fapi_nr_ul_config_prach_pdu;
 
 typedef struct {
-
-        pucch_format_nr_t      format;              /* format   0    1    2    3    4    */
-        uint8_t                initialCyclicShift;  /*          x    x                   */
-        uint8_t                nrofSymbols;         /*          x    x    x    x    x    */
-        uint8_t                startingSymbolIndex; /*          x    x    x    x    x    */
-        uint8_t                timeDomainOCC;       /*               x                   */
-        uint8_t                nrofPRBs;            /*                    x    x         */
-        uint16_t               startingPRB;         /*                                     maxNrofPhysicalResourceBlocks  = 275 */
-        uint8_t                occ_length;          /*                              x    */
-        uint8_t                occ_Index;           /*                              x    */
-
-        feature_status_t       intraSlotFrequencyHopping;
-        uint16_t               secondHopPRB;
-
-        /*
-         -- Enabling inter-slot frequency hopping when PUCCH Format 1, 3 or 4 is repeated over multiple slots.
-         -- The field is not applicable for format 2.
-         */
-        feature_status_t       interslotFrequencyHopping;
-        /*
-            -- Enabling 2 DMRS symbols per hop of a PUCCH Format 3 or 4 if both hops are more than X symbols when FH is enabled (X=4).
-            -- Enabling 4 DMRS sybmols for a PUCCH Format 3 or 4 with more than 2X+1 symbols when FH is disabled (X=4).
-            -- Corresponds to L1 parameter 'PUCCH-F3-F4-additional-DMRS' (see 38.213, section 9.2.1)
-            -- The field is not applicable for format 1 and 2.
-        */
-        enable_feature_t       additionalDMRS;
-        /*
-            -- Max coding rate to determine how to feedback UCI on PUCCH for format 2, 3 or 4
-            -- Corresponds to L1 parameter 'PUCCH-F2-maximum-coderate', 'PUCCH-F3-maximum-coderate' and 'PUCCH-F4-maximum-coderate'
-            -- (see 38.213, section 9.2.5)
-            -- The field is not applicable for format 1.
-         */
-        PUCCH_MaxCodeRate_t    maxCodeRate;
-        /*
-            -- Number of slots with the same PUCCH F1, F3 or F4. When the field is absent the UE applies the value n1.
-            -- Corresponds to L1 parameter 'PUCCH-F1-number-of-slots', 'PUCCH-F3-number-of-slots' and 'PUCCH-F4-number-of-slots'
-            -- (see 38.213, section 9.2.6)
-            -- The field is not applicable for format 2.
-         */
-        uint8_t                nrofSlots;
-        /*
-            -- Enabling pi/2 BPSK for UCI symbols instead of QPSK for PUCCH.
-            -- Corresponds to L1 parameter 'PUCCH-PF3-PF4-pi/2PBSK' (see 38.213, section 9.2.5)
-            -- The field is not applicable for format 1 and 2.
-         */
-        feature_status_t       pi2PBSK;
-        /*
-            -- Enabling simultaneous transmission of CSI and HARQ-ACK feedback with or without SR with PUCCH Format 2, 3 or 4
-            -- Corresponds to L1 parameter 'PUCCH-F2-Simultaneous-HARQ-ACK-CSI', 'PUCCH-F3-Simultaneous-HARQ-ACK-CSI' and
-            -- 'PUCCH-F4-Simultaneous-HARQ-ACK-CSI' (see 38.213, section 9.2.5)
-            -- When the field is absent the UE applies the value OFF
-            -- The field is not applicable for format 1.
-         */
-        enable_feature_t       simultaneousHARQ_ACK_CSI;
-        /*
-              -- Configuration of group- and sequence hopping for all the PUCCH formats 0, 1, 3 and 4. "neither" implies neither group
-              -- or sequence hopping is enabled. "enable" enables group hopping and disables sequence hopping. "disable"” disables group
-              -- hopping and enables sequence hopping. Corresponds to L1 parameter 'PUCCH-GroupHopping' (see 38.211, section 6.4.1.3)
-              pucch-GroupHopping            ENUMERATED { neither, enable, disable },
-         */
-        pucch_GroupHopping_t   pucch_GroupHopping;
-        /*
-              -- Cell-Specific scrambling ID for group hoppping and sequence hopping if enabled.
-              -- Corresponds to L1 parameter 'HoppingID' (see 38.211, section 6.3.2.2)
-              hoppingId               BIT STRING (SIZE (10))                              OPTIONAL,   -- Need R
-         */
-        uint16_t               hoppingId;
-        /*
-              -- Power control parameter P0 for PUCCH transmissions. Value in dBm. Only even values (step size 2) allowed.
-              -- Corresponds to L1 parameter 'p0-nominal-pucch' (see 38.213, section 7.2)
-              p0-nominal                INTEGER (-202..24)                                OPTIONAL,   -- Need R
-         */
-        int8_t                 p0_nominal;
-
-        int8_t                 deltaF_PUCCH_f[NUMBER_PUCCH_FORMAT_NR];
-        uint8_t                p0_PUCCH_Id;     /* INTEGER (1..8)     */
-        int8_t                 p0_PUCCH_Value;
-        // pathlossReferenceRSs        SEQUENCE (SIZE (1..maxNrofPUCCH-PathlossReferenceRSs)) OF PUCCH-PathlossReferenceRS OPTIONAL, -- Need M
-        int8_t                 twoPUCCH_PC_AdjustmentStates;
-
-    } fapi_nr_ul_config_pucch_pdu;
+  uint16_t rnti;
+  uint16_t bwp_size;
+  uint16_t bwp_start;
+  uint8_t format_type;
+  uint8_t start_symbol_index;
+  uint8_t nr_of_symbols;
+  uint16_t prb_start;
+  uint16_t prb_size;
+  uint32_t hopping_id;
+  uint8_t freq_hop_flag;
+  uint8_t group_hop_flag;
+  uint8_t sequence_hop_flag;
+  uint16_t second_hop_prb;
+  uint16_t initial_cyclic_shift;
+  uint8_t time_domain_occ_idx;
+  uint8_t add_dmrs_flag;
+  uint16_t dmrs_scrambling_id;
+  uint16_t data_scrambling_id;
+  uint8_t dmrs_cyclic_shift;
+  uint8_t pi_2bpsk;
+  uint8_t mcs;
+  uint8_t pre_dft_occ_idx;
+  uint8_t pre_dft_occ_len;
+  int16_t pucch_tx_power;
+  uint32_t n_bit;
+  uint64_t payload;
+} fapi_nr_ul_config_pucch_pdu;
 
 typedef struct
 {
@@ -460,11 +408,8 @@ typedef struct {
   uint8_t tb2_rv;
   uint8_t harq_process_nbr;
   vrb_to_prb_mapping_t vrb_to_prb_mapping;
-  uint8_t dai;
   double scaling_factor_S;
   int8_t accumulated_delta_PUCCH;
-  uint8_t pucch_resource_id;
-  uint8_t pdsch_to_harq_feedback_time_ind;
   uint8_t n_dmrs_cdm_groups;
   uint8_t dmrs_ports[10];
   uint8_t n_front_load_symb;
