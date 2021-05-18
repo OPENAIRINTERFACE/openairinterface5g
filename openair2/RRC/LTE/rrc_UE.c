@@ -1922,12 +1922,32 @@ rrc_ue_process_rrcConnectionReconfiguration(
          eNB as to how this message is put into the container. Need scg_group_config and scg_RB_config.
          These two need to be sent over to the NR UE. */
       if (is_nr_r15_config_present(r_r8)) {
-          LOG_I(RRC, "We successfully have NR RRCConnectionReconfig\n");
-          //extract_nr_elements();
-          //nsa_sendmsg_to_nrue(buf, len, RRC_CONFIG_COMPLETE_REQ);
-          return;
+          OCTET_STRING_t *nr_RadioBearer = r_r8->nonCriticalExtension->nonCriticalExtension->
+                                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                            nr_RadioBearerConfig1_r15;
+          OCTET_STRING_t *nr_SecondaryCellGroup = r_r8->nonCriticalExtension->nonCriticalExtension->
+                                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                            nr_Config_r15->choice.setup.nr_SecondaryCellGroupConfig_r15;
+          LOG_I(RRC, "MELISSA ELKADI! nr_RadioBearerConfig1_r15 size %ld nr_SecondaryCellGroupConfig_r15 size %ld\n",
+                      nr_RadioBearer->size,
+                      nr_SecondaryCellGroup->size);
+          uint8_t buffer[8192];
+          LTE_RRCConnectionReconfiguration_t *rrcCR;
+          memcpy((char *)rrcCR,
+                 (char *)rrcConnectionReconfiguration,
+                 sizeof(LTE_RRCConnectionReconfiguration_t));
+          asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_RRCConnectionReconfiguration,
+                                                          NULL,
+                                                          rrcCR,
+                                                          buffer,
+                                                          sizeof(buffer));
+          AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %zu)!\n",
+                        enc_rval.failed_type->name, enc_rval.encoded);
+          LOG_I(RRC, "Calling nsa_sendmsg_to_nr_ue to send a RRC_CONFIG_COMPLETE_REQ\n");
+          nsa_sendmsg_to_nrue(buffer, (enc_rval.encoded + 7)/8, RRC_CONFIG_COMPLETE_REQ);
       }
-      LOG_E(RRC, "Unfortunately, nr_r15_config is not present.\n");
 
       if (r_r8->mobilityControlInfo) {
         LOG_I(RRC,"Mobility Control Information is present\n");

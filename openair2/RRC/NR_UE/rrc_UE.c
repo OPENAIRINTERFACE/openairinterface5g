@@ -3096,6 +3096,40 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
                as measurement reporting message*/
             break;
         }
+        case RRC_CONFIG_COMPLETE_REQ:
+        {
+            LOG_I(NR_RRC, "MELISSA ELKADI! We got a RRC_CONFIG_COMPLETE_REQ\n");
+            #if 0
+            NR_DL_DCCH_Message_t *dl_dcch_msg = NULL;
+            asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                                                  &asn_DEF_NR_DL_DCCH_Message,
+                                                  (void **)&dl_dcch_msg,
+                                                  msg_buffer,
+                                                  msg_len);
+
+            if (dec_rval.code != RC_OK && dec_rval.consumed == 0)
+            {
+                LOG_E(RRC, "%s: Failed to decode LTE_DL_DCC_Msg\n", __FUNCTION__);
+                SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, dl_dcch_msg, ASFM_FREE_EVERYTHING);
+                return;
+            }
+            LTE_RRCConnectionReconfiguration_t *rrcConnectionReconfiguration = &dl_dcch_msg->
+            LTE_RRCConnectionReconfiguration_r8_IEs_t *r_r8 = &rrcConnectionReconfiguration->
+                                                         criticalExtensions.choice.c1.
+                                                         choice.rrcConnectionReconfiguration_r8;
+            OCTET_STRING_t *nr_RadioBearer = r_r8->nonCriticalExtension->nonCriticalExtension->
+                                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                            nr_RadioBearerConfig1_r15;
+            OCTET_STRING_t *nr_SecondaryCellGroup = r_r8->nonCriticalExtension->nonCriticalExtension->
+                                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                            nr_Config_r15->choice.setup.nr_SecondaryCellGroupConfig_r15;
+            LOG_I(NR_RRC, "MELISSA ELKADI! nr_RadioBearerConfig1_r15 size %ld nr_SecondaryCellGroupConfig_r15 size %ld\n",
+                      nr_RadioBearer->size,
+                      nr_SecondaryCellGroup->size);
+            #endif
+        }
 
         default:
             LOG_E(NR_RRC, "No NSA Message Found\n");
