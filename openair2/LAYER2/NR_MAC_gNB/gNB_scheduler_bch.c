@@ -423,16 +423,12 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
   dl_req->nPDUs += 1;
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-  nr_configure_pdcch(gNB_mac,
-                     pdcch_pdu_rel15,
+  nr_configure_pdcch(pdcch_pdu_rel15,
                      gNB_mac->sched_ctrlCommon->search_space,
                      gNB_mac->sched_ctrlCommon->coreset,
                      scc,
-                     NULL);
-
-  pdcch_pdu_rel15->BWPSize = type0_PDCCH_CSS_config->num_rbs;
-  pdcch_pdu_rel15->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
-  pdcch_pdu_rel15->SubcarrierSpacing = type0_PDCCH_CSS_config->scs_pdcch;
+                     NULL,
+                     type0_PDCCH_CSS_config);
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));

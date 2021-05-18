@@ -586,25 +586,27 @@ int nr_get_default_pucch_res(int pucch_ResourceCommon) {
   return(default_pucch_csset[pucch_ResourceCommon]);
 }
 
-void nr_configure_pdcch(gNB_MAC_INST *gNB_mac,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
+void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
                         NR_ServingCellConfigCommon_t *scc,
-                        NR_BWP_Downlink_t *bwp)
-{
+                        NR_BWP_t *bwp,
+                        NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
 
   int sps;
   if (bwp) { // This is not for SIB1
-    pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    pdcch_pdu->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
-    pdcch_pdu->CyclicPrefix = (bwp->bwp_Common->genericParameters.cyclicPrefix==NULL) ? 0 : *bwp->bwp_Common->genericParameters.cyclicPrefix;
+    pdcch_pdu->BWPSize  = NRRIV2BW(bwp->locationAndBandwidth, MAX_BWP_SIZE);
+    pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->locationAndBandwidth, MAX_BWP_SIZE);
+    pdcch_pdu->SubcarrierSpacing = bwp->subcarrierSpacing;
+    pdcch_pdu->CyclicPrefix = (bwp->cyclicPrefix==NULL) ? 0 : *bwp->cyclicPrefix;
 
     //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
-    sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+    sps = bwp->cyclicPrefix == NULL ? 14 : 12;
   }
   else {
+    pdcch_pdu->BWPSize = type0_PDCCH_CSS_config->num_rbs;
+    pdcch_pdu->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
+    pdcch_pdu->SubcarrierSpacing = type0_PDCCH_CSS_config->scs_pdcch;
     pdcch_pdu->CyclicPrefix = 0;
     sps = 14;
   }
@@ -635,7 +637,7 @@ void nr_configure_pdcch(gNB_MAC_INST *gNB_mac,
   
   if (pdcch_pdu->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
     pdcch_pdu->RegBundleSize = (coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize);
-    pdcch_pdu->InterleaverSize = (coreset->cce_REG_MappingType.choice.interleaved->interleaverSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->interleaverSize);
+    pdcch_pdu->InterleaverSize = (coreset->cce_REG_MappingType.choice.interleaved->interleaverSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->interleaverSize);
     AssertFatal(scc->physCellId != NULL,"scc->physCellId is null\n");
     pdcch_pdu->ShiftIndex = coreset->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
   }
@@ -646,7 +648,10 @@ void nr_configure_pdcch(gNB_MAC_INST *gNB_mac,
   }
   
   if(coreset->controlResourceSetId == 0) {
-    pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
+    if(bwp == NULL)
+      pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
+    else
+      pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG_CSET_0;
   } else{
     pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   }
