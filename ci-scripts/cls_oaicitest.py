@@ -177,7 +177,7 @@ class OaiCiTest():
 			ue_prefix = ''
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
-			full_ran_repo_name = self.ranRepository
+			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
 		SSH.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
@@ -220,7 +220,7 @@ class OaiCiTest():
 
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
-			SSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
+			SSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
 		if self.ranAllowMerge:
