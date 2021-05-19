@@ -439,10 +439,6 @@ set(asn1_generated_dir ${OPENAIR_BIN_DIR})
 set(protoc_call "${OPENAIR_CMAKE}/tools/generate_protobuf")
 set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
-if (${RU} STREQUAL 1)
-add_definitions(-DNO_RRC)
-endif (${RU} STREQUAL 1)
-
 # RRC
 ######
 set (RRC_ASN1_VERSION "Rel15")
@@ -485,7 +481,6 @@ add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/RRC_${NR_RRC_ASN1_VERSION})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-if (${RU} STREQUAL 0)
   execute_process(
     COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "NR_" "-findirect-choice" "${NR_RRC_FULL_DIR}" "${NR_RRC_GRAMMAR}"
     RESULT_VARIABLE ret)
@@ -494,7 +489,6 @@ if (NOT ${ret} STREQUAL 0)
 endif ()
 file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
 file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
-endif (${RU} STREQUAL 0)
 
 add_custom_target (
   nr_rrc_flag ALL
