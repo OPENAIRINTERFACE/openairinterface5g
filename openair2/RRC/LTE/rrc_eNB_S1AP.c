@@ -1072,7 +1072,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
                  ue_context_p->ue_context.nr_security.kgNB);
 
     // in case, send the S1SP initial context response if it is not sent with the attach complete message
-    if (ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
+    if (ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED) {
       LOG_I(RRC, "Sending rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP, cause %ld\n", ue_context_p->ue_context.reestablishment_cause);
       //if(ue_context_p->ue_context.reestablishment_cause == ReestablishmentCause_spare1){}
       rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(&ctxt,ue_context_p);

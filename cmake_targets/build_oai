@@ -71,6 +71,7 @@ ITTI_SIM="False"
 RFSIM_NAS="False"
 SANITIZE_ADDRESS="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
+RU=0
 trap handle_ctrl_c INT
 
 function print_help() {
