@@ -110,7 +110,7 @@ int l1_north_init_gNB() {
 
 int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
                     unsigned char is_secondary_gNB,
-                    unsigned char abstraction_flag) {
+                    unsigned char lowmem_flag) {
   // shortcuts
   NR_DL_FRAME_PARMS *const fp       = &gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -127,6 +127,15 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   LOG_I(PHY,"[gNB %d] %s() About to wait for gNB to be configured\n", gNB->Mod_id, __FUNCTION__);
 
   while(gNB->configured == 0) usleep(10000);
+
+  if (lowmem_flag == 1) {
+    gNB->number_of_nr_dlsch_max = 2;
+    gNB->number_of_nr_ulsch_max = 2;
+  }
+  else {
+    gNB->number_of_nr_dlsch_max = NUMBER_OF_NR_DLSCH_MAX;
+    gNB->number_of_nr_ulsch_max = NUMBER_OF_NR_ULSCH_MAX;
+  }  
 
   load_dftslib();
 
@@ -287,7 +296,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   int N_RB_UL = cfg->carrier_config.ul_grid_size[cfg->ssb_config.scs_common.value].value;
 
-  for (int ULSCH_id=0; ULSCH_id<NUMBER_OF_NR_ULSCH_MAX; ULSCH_id++) {
+  for (int ULSCH_id=0; ULSCH_id<gNB->number_of_nr_ulsch_max; ULSCH_id++) {
     pusch_vars[ULSCH_id] = (NR_gNB_PUSCH *)malloc16_clear( sizeof(NR_gNB_PUSCH) );
     pusch_vars[ULSCH_id]->rxdataF_ext           = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->rxdataF_ext2          = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
@@ -372,7 +381,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   free_and_zero(prach_vars->prach_ifft[0]);
   free_and_zero(prach_vars->rxsigF[0]);
 */
-  for (int ULSCH_id=0; ULSCH_id<NUMBER_OF_NR_ULSCH_MAX; ULSCH_id++) {
+  for (int ULSCH_id=0; ULSCH_id<gNB->number_of_nr_ulsch_max; ULSCH_id++) {
     for (int i = 0; i < 2; i++) {
       free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext[i]);
       free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext2[i]);
@@ -563,9 +572,9 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
     AssertFatal(gNB->pucch[i]!=NULL,"Can't initialize pucch %d \n", i);
   }
 
-  for (i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
+  for (i=0; i<gNB->number_of_nr_dlsch_max; i++) {
 
-    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n",i,NUMBER_OF_NR_DLSCH_MAX);
+    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n",i,gNB->number_of_nr_dlsch_max);
 
     for (j=0; j<2; j++) {
       gNB->dlsch[i][j] = new_gNB_dlsch(fp,1,16,NSOFT,0,grid_size);
@@ -573,9 +582,9 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
     }
   }
 
-  for (i=0; i<NUMBER_OF_NR_ULSCH_MAX; i++) {
+  for (i=0; i<gNB->number_of_nr_ulsch_max; i++) {
 
-    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
+    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH  %d/%d\n",i,gNB->number_of_nr_ulsch_max);
 
     for (j=0; j<2; j++) {
       // ULSCH for data

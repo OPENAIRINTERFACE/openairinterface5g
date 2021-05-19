@@ -643,12 +643,26 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
+
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
+    if (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
+      pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList->choice.setup;
+    else if (mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
+      pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+
+    int mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
+
     /* dmrs symbol positions*/
-    dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
+    dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(NULL,
 							 mac->scc->dmrs_TypeA_Position,
                dlsch_config_pdu_1_0->number_symbols,
-               dlsch_config_pdu_1_0->start_symbol);
-    dlsch_config_pdu_1_0->dmrsConfigType = (pdsch_config) ? (pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? NFAPI_NR_DMRS_TYPE1 : NFAPI_NR_DMRS_TYPE2) : NFAPI_NR_DMRS_TYPE1;
+               dlsch_config_pdu_1_0->start_symbol,
+               mappingtype);
+
+    // For DCI 1_0, dmrs type is type1. referred to section 5.1.6.2 of 3GPP TS 38.214
+    dlsch_config_pdu_1_0->dmrsConfigType = 0;
+    LOG_D(MAC, "DCI 1_0 start_sym:%d NR Symb:%d, DMRS_symb_pos:%x\n", dlsch_config_pdu_1_0->start_symbol, dlsch_config_pdu_1_0->number_symbols, dlsch_config_pdu_1_0->dlDmrsSymbPos);
+
     /* number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214 version 15.9.0 Release 15 */
     if (dlsch_config_pdu_1_0->number_symbols == 2)
       dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 1;
@@ -786,10 +800,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
 
-    // FIXME: fix number of additional dmrs
-    if(pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition == NULL)
-      pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition=calloc(1,sizeof(*pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
-
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_1 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
 
     dlsch_config_pdu_1_1->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -810,11 +820,21 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
+
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
+    if (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
+      pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList->choice.setup;
+    else if (mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
+      pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+
+    int mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
+
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_1->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
 							 mac->scc->dmrs_TypeA_Position,
 							 dlsch_config_pdu_1_1->number_symbols,
-               dlsch_config_pdu_1_1->start_symbol);
+               dlsch_config_pdu_1_1->start_symbol,
+               mappingtype);
     dlsch_config_pdu_1_1->dmrsConfigType = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? NFAPI_NR_DMRS_TYPE1 : NFAPI_NR_DMRS_TYPE2;
     /* TODO: fix number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214,
              using tables 7.3.1.2.2-1, 7.3.1.2.2-2, 7.3.1.2.2-3, 7.3.1.2.2-4 of 3GPP TS 38.212 */

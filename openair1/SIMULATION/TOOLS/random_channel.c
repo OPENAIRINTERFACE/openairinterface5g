@@ -2034,7 +2034,6 @@ static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt)
       prnt("ERROR: %s, unknown channel parameter\n",param);
       return CMDSTATUS_FOUND;
     }
-
     display_channelmodel(defined_channels[cd_id],debug,prnt);
     free(param);
     free(value);

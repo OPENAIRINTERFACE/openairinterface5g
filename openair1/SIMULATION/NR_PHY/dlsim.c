@@ -69,6 +69,8 @@
 #include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
 
+#include <executables/softmodem-common.h>
+
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -761,7 +763,7 @@ int main(int argc, char **argv)
   // reset preprocessor to the one of DLSIM after it has been set during
   // rrc_mac_config_req_gNB
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
-  phy_init_nr_gNB(gNB,0,0);
+  phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   NR_UE_info_t *UE_info = &RC.nrmac[0]->UE_info;
   UE_info->num_UEs=1;
@@ -1410,32 +1412,81 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg)
   }
   else if (dmrs_arg[0] == 1) {
     mapping_type = typeB;
+  } else {
+    AssertFatal(1==0,"Incorrect Mappingtype, valid options 0-typeA, 1-typeB\n");
   }
-  /* Additional DMRS positions 0 ,1 and 2 */
-  if(dmrs_arg[1] >= 0 && dmrs_arg[1] <3 ) {
+
+  /* Additional DMRS positions 0 ,1 ,2 and 3 */
+  if(dmrs_arg[1] >= 0 && dmrs_arg[1] <4 ) {
     add_pos = dmrs_arg[1];
+  } else {
+    AssertFatal(1==0,"Incorrect Additional Position, valid options 0-pos1, 1-pos1, 2-pos2, 3-pos3\n");
   }
+
   /* DMRS Conf Type 1 or 2 */
   if(dmrs_arg[2] == 1) {
     dmrs_config_type = NFAPI_NR_DMRS_TYPE1;
   } else if(dmrs_arg[2] == 2) {
     dmrs_config_type = NFAPI_NR_DMRS_TYPE2;
+  } else {
+    AssertFatal(1==0,"Incorrect DMRS Configuration Type, valid options 1-type1, 2-type2\n");
   }
 
   NR_BWP_Downlink_t *bwp = scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
-  NR_DMRS_DownlinkConfig_t *dmrs_config;
-  if(mapping_type == typeA)
-    dmrs_config = (NR_DMRS_DownlinkConfig_t *)bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
-  else
-    dmrs_config = (NR_DMRS_DownlinkConfig_t *)bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
-  *dmrs_config->dmrs_AdditionalPosition = add_pos;
-  if (dmrs_config_type == NFAPI_NR_DMRS_TYPE2)
-    dmrs_config->dmrs_Type = calloc(1,sizeof(*dmrs_config->dmrs_Type));
-  else
-    dmrs_config->dmrs_Type = NULL;
-  for (int i=0;i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;i++) {
-    bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType = mapping_type; 
+
+  AssertFatal((bwp->bwp_Dedicated->pdsch_Config != NULL && bwp->bwp_Dedicated->pdsch_Config->choice.setup != NULL), "Base RRC reconfig structures are not allocated.\n");
+
+  if(mapping_type == typeA) {
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
+    if (dmrs_config_type == NFAPI_NR_DMRS_TYPE2)
+      bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type));
+    else
+      bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type = NULL;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength=NULL;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID0=NULL;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID1=NULL;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS=NULL;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL;
+    printf("DLSIM: Allocated Mapping TypeA in RRC reconfig message\n");
   }
 
-  printf("[DLSIM] DMRS Config is modified with Mapping Type %d, Additional Positions %d Config. Type %d \n", dmrs_arg[0], add_pos, dmrs_arg[2] );
+  if(mapping_type == typeB) {
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB));
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup));
+    if (dmrs_config_type == NFAPI_NR_DMRS_TYPE2)
+      bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_Type = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_Type));
+    else
+      bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_Type = NULL;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->maxLength=NULL;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->scramblingID0=NULL;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->scramblingID1=NULL;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->phaseTrackingRS=NULL;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_AdditionalPosition = NULL;
+    printf("DLSIM: Allocated Mapping TypeB in RRC reconfig message\n");
+  }
+
+  struct NR_SetupRelease_DMRS_DownlinkConfig	*dmrs_MappingtypeA = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA;
+  struct NR_SetupRelease_DMRS_DownlinkConfig	*dmrs_MappingtypeB = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB;
+
+
+  NR_DMRS_DownlinkConfig_t *dmrs_config = (mapping_type == typeA) ? dmrs_MappingtypeA->choice.setup : dmrs_MappingtypeB->choice.setup;
+
+  if (add_pos != 2) { // pos0,pos1,pos3
+    if (dmrs_config->dmrs_AdditionalPosition == NULL) {
+      dmrs_config->dmrs_AdditionalPosition = calloc(1,sizeof(*dmrs_MappingtypeA->choice.setup->dmrs_AdditionalPosition));
+    }
+    *dmrs_config->dmrs_AdditionalPosition = add_pos;
+  } else { // if NULL, Value pos2
+    free(dmrs_config->dmrs_AdditionalPosition);
+    dmrs_config->dmrs_AdditionalPosition = NULL;
+  }
+
+  for (int i=0;i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;i++) {
+    bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType = mapping_type;
+  }
+
+  printf("[DLSIM] DMRS Config is modified with Mapping Type %d, Additional Positions %d Config. Type %d \n", mapping_type, add_pos, dmrs_config_type);
 }

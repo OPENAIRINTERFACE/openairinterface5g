@@ -60,7 +60,7 @@
 #include "dummy_functions.c"
 #include "executables/thread-common.h"
 #include "executables/split_headers.h"
-
+#include "common/ran_context.h"
 void feptx_ofdm(RU_t *ru, int frame, int subframe);
 void feptx_prec(RU_t *ru, int frame, int subframe);
 
@@ -85,6 +85,7 @@ double DS_TDL = .03;
 static int cmpdouble(const void *p1, const void *p2) {
   return *(double *)p1 > *(double *)p2;
 }
+RAN_CONTEXT_t RC;
 
 int emulate_rf = 0;
 int split73=0;
@@ -936,9 +937,10 @@ int main(int argc, char **argv) {
 
     NB_RB = conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
   } else {
-    if (rballocset==0) NB_RB = 8;
+    if (rballocset==0) NB_RB = 2+TPC;
     else               NB_RB = DLSCH_RB_ALLOC;
 
+    printf("Common PDSCH: NB_RB = %d\n",NB_RB);
     AssertFatal(NB_RB <= N_RB_DL,"illegal NB_RB %d\n",NB_RB);
   }
 

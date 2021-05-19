@@ -130,12 +130,16 @@ class RANManagement():
 		result = re.search('--eNBocp', self.Build_eNB_args)
 		if result is not None:
 			self.air_interface[self.eNB_instance] = 'ocp-enb'
-		else:	
-			result = re.search('--gNB', self.Build_eNB_args)
+		else:
+			result = re.search('--RU', self.Build_eNB_args)
 			if result is not None:
-				self.air_interface[self.eNB_instance] = 'nr-softmodem'
+				self.air_interface[self.eNB_instance] = 'oairu'
 			else:
-				self.air_interface[self.eNB_instance] = 'lte-softmodem'
+				result = re.search('--gNB', self.Build_eNB_args)
+				if result is not None:
+					self.air_interface[self.eNB_instance] = 'nr-softmodem'
+				else:
+					self.air_interface[self.eNB_instance] = 'lte-softmodem'
 		
 		# Worakround for some servers, we need to erase completely the workspace
 		if self.Build_eNB_forced_workspace_cleanup:
@@ -242,7 +246,6 @@ class RANManagement():
 		while (count > 0) and buildOAIprocess:
 			mySSH.command('ps aux | grep --color=never build_ | grep -v grep', '\$', 6)
 			result = re.search('build_oai', mySSH.getBefore())
-			print(result)
 			if result is None:
 				buildOAIprocess = False
 			else:
@@ -297,7 +300,7 @@ class RANManagement():
 				mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 				mySSH.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
 				#-qq quiet / -u update orcreate files
-				mySSH.command('unzip -u -qq -DD tmp_build' + testcaseId + '.zip', '\$', 5)
+				mySSH.command('unzip -o -u -qq -DD tmp_build' + testcaseId + '.zip', '\$', 5)
 				mySSH.command('rm -f tmp_build' + testcaseId + '.zip', '\$', 5)
 				mySSH.close()
 		else:
@@ -636,7 +639,8 @@ class RANManagement():
 					HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			else:
 				HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
-		if len(self.datalog_rt_stats)!=0:
+		#display rt stats for gNB only
+		if len(self.datalog_rt_stats)!=0 and nodeB_prefix == 'g':
 			HTML.CreateHtmlDataLogTable(self.datalog_rt_stats)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1

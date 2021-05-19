@@ -43,7 +43,7 @@
 
 void polar_encoder(uint32_t *in,
                    uint32_t *out,
-                   t_nrPolar_params *polarParams) {
+                   const t_nrPolar_params *polarParams) {
   if (1) {//polarParams->idx == 0 || polarParams->idx == 1) { //PBCH or PDCCH
     /*
     uint64_t B = (((uint64_t)*in)&((((uint64_t)1)<<32)-1)) | (((uint64_t)crc24c((uint8_t*)in,polarParams->payloadBits)>>8)<<polarParams->payloadBits);
@@ -154,7 +154,7 @@ void polar_encoder(uint32_t *in,
 
 void polar_encoder_dci(uint32_t *in,
                        uint32_t *out,
-                       t_nrPolar_params *polarParams,
+                       const t_nrPolar_params *polarParams,
                        uint16_t n_RNTI) {
 #ifdef DEBUG_POLAR_ENCODER_DCI
   printf("[polar_encoder_dci] in: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n", in[0], in[1], in[2], in[3]);
@@ -251,9 +251,9 @@ void polar_encoder_dci(uint32_t *in,
 #endif
 }
 
-static inline void polar_rate_matching(t_nrPolar_params *polarParams,void *in,void *out) __attribute__((always_inline));
+static inline void polar_rate_matching(const t_nrPolar_params *polarParams,void *in,void *out) __attribute__((always_inline));
 
-static inline void polar_rate_matching(t_nrPolar_params *polarParams,void *in,void *out) {
+static inline void polar_rate_matching(const t_nrPolar_params *polarParams,void *in,void *out) {
 
   // handle rate matching with a single 128 bit word using bit shuffling
   // can be done with SIMD intrisics if needed
@@ -411,7 +411,7 @@ void polar_encoder_fast(uint64_t *A,
                         void *out,
                         int32_t crcmask,
                         uint8_t ones_flag,
-                        t_nrPolar_params *polarParams) {
+                        const t_nrPolar_params *polarParams) {
   //  AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->payloadBits < 65, "payload bits = %d > 64, is not supported yet\n",polarParams->payloadBits);

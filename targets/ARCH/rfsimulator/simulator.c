@@ -61,10 +61,7 @@
 #define MAX_SIMULATION_CONNECTED_NODES 5
 #define GENERATE_CHANNEL 10 //each frame in DL
 
-// Fixme: datamodel, external variables in .h files, ...
-#include <common/ran_context.h>
 
-extern RAN_CONTEXT_t RC;
 //
 
 #define RFSIMU_SECTION    "rfsimulator"

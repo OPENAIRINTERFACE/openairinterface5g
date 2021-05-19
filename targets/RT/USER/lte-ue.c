@@ -283,13 +283,7 @@ void init_UE(int nb_inst,
 
     LOG_I(PHY,"Allocating UE context %d\n",inst);
 
-    if ( !IS_SOFTMODEM_SIML1 ) PHY_vars_UE_g[inst][0] = init_ue_vars(fp0,inst,0);
-    else {
-      // needed for memcopy below. these are not used in the RU, but needed for UE
-      RC.ru[0]->frame_parms->nb_antennas_rx = fp0->nb_antennas_rx;
-      RC.ru[0]->frame_parms->nb_antennas_tx = fp0->nb_antennas_tx;
-      PHY_vars_UE_g[inst][0]  = init_ue_vars(RC.ru[0]->frame_parms,inst,0);
-    }
+    PHY_vars_UE_g[inst][0] = init_ue_vars(fp0,inst,0);
 
     // turn off timing control loop in UE
     PHY_vars_UE_g[inst][0]->no_timing_correction = timing_correction;
@@ -371,17 +365,13 @@ void init_UE(int nb_inst,
        */
       UE->N_TA_offset = 0;
 
-    if (IS_SOFTMODEM_SIML1 ) init_ue_devices(UE);
-
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     init_UE_threads(inst);
 
-    if (!IS_SOFTMODEM_SIML1 ) {
-      ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
+    ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
 
-      if (ret !=0) {
-        exit_fun("Error loading device library");
-      }
+    if (ret !=0) {
+      exit_fun("Error loading device library");
     }
 
     UE->rfdevice.host_type = RAU_HOST;
