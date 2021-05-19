@@ -36,8 +36,8 @@
 #include "LTE_asn_constant.h"
 #include "NR_asn_constant.h"
 #else 
-#define LTE_maxDRB 14
-#define LTE_maxDRB_NB_r13 5
+#define LTE_maxDRB 11
+#define LTE_maxDRB_NB_r13 2
 #define NR_MAXDRB 14
 #endif
 
