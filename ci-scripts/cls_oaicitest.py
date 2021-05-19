@@ -581,7 +581,7 @@ class OaiCiTest():
 				SSH.command('ifconfig oaitun_ue1', '\$', 4)
 				SSH.command('ifconfig oaitun_ue1', '\$', 4)
 				# ifconfig output is different between ubuntu 16 and ubuntu 18
-				result = re.search('inet addr:1|inet 1', SSH.getBefore())
+				result = re.search('inet addr:[0-9]|inet [0-9]', SSH.getBefore())
 				if result is not None:
 					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
 					tunnelInterfaceStatus = True
