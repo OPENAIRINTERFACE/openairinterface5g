@@ -686,7 +686,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
              nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
              gNB->pusch_vars[ULSCH_id]->DTX=1;
              stats->DTX++;
-             return;
+             return 1;
           } else gNB->pusch_vars[ULSCH_id]->DTX=0;
 
           stop_meas(&gNB->rx_pusch_stats);
