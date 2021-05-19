@@ -182,62 +182,64 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     }
 
     /*Mapping the encoded DCI along with the DMRS */
-    for (int cce_count = 0; cce_count < dci_pdu->AggregationLevel; cce_count ++) {
+    for(int symbol_idx = 0; symbol_idx < pdcch_pdu_rel15->DurationSymbols; symbol_idx++) {
+      for (int cce_count = 0; cce_count < dci_pdu->AggregationLevel; cce_count+=pdcch_pdu_rel15->DurationSymbols) {
 
-      int8_t cce_idx = reg_list_order[cce_count];
+        int8_t cce_idx = reg_list_order[cce_count];
 
-      for (int reg_in_cce_idx = 0; reg_in_cce_idx < NR_NB_REG_PER_CCE; reg_in_cce_idx++) {
+        for (int reg_in_cce_idx = 0; reg_in_cce_idx < NR_NB_REG_PER_CCE; reg_in_cce_idx++) {
 
-        k = cset_start_sc + gNB->cce_list[d][cce_idx].reg_list[reg_in_cce_idx].start_sc_idx;
-
-        if (k >= frame_parms.ofdm_symbol_size)
-          k -= frame_parms.ofdm_symbol_size;
-
-        l = cset_start_symb + gNB->cce_list[d][cce_idx].reg_list[reg_in_cce_idx].symb_idx;
-
-        // dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
-        if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
-          dmrs_idx =(gNB->cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx / pdcch_pdu_rel15->DurationSymbols) * 3;
-        else
-          dmrs_idx = (gNB->cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx / pdcch_pdu_rel15->DurationSymbols + rb_offset) * 3;
-
-        k_prime = 0;
-
-        for (int m = 0; m < NR_NB_SC_PER_RB; m++) {
-          if (m == (k_prime << 2) + 1) { // DMRS if not already mapped
-            ((int16_t *) txdataF)[(l * frame_parms.ofdm_symbol_size + k) << 1] =
-                (amp * mod_dmrs[l][dmrs_idx << 1]) >> 15;
-            ((int16_t *) txdataF)[((l * frame_parms.ofdm_symbol_size + k) << 1) + 1] =
-                (amp * mod_dmrs[l][(dmrs_idx << 1) + 1]) >> 15;
-
-#ifdef DEBUG_PDCCH_DMRS
-	    printf("PDCCH DMRS: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
-		   ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
-#endif
-
-            dmrs_idx++;
-            k_prime++;
-
-          } else { // DCI payload
-            ((int16_t *) txdataF)[(l * frame_parms.ofdm_symbol_size + k) << 1] = (amp * mod_dci[dci_idx << 1]) >> 15;
-            ((int16_t *) txdataF)[((l * frame_parms.ofdm_symbol_size + k) << 1) + 1] =
-                (amp * mod_dci[(dci_idx << 1) + 1]) >> 15;
-#ifdef DEBUG_DCI
-	  printf("PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
-		 ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
-#endif
-
-            dci_idx++;
-          }
-
-          k++;
+          k = cset_start_sc + gNB->cce_list[d][cce_idx].reg_list[reg_in_cce_idx].start_sc_idx;
 
           if (k >= frame_parms.ofdm_symbol_size)
             k -= frame_parms.ofdm_symbol_size;
 
-        } // m
-      } // reg_in_cce_idx
-    } // cce_count
+          l = cset_start_symb + symbol_idx;
+
+          // dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
+          if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
+            dmrs_idx = (gNB->cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx) * 3;
+          else
+            dmrs_idx = (gNB->cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx + rb_offset) * 3;
+
+          k_prime = 0;
+
+          for (int m = 0; m < NR_NB_SC_PER_RB; m++) {
+            if (m == (k_prime << 2) + 1) { // DMRS if not already mapped
+              ((int16_t *) txdataF)[(l * frame_parms.ofdm_symbol_size + k) << 1] =
+                  (amp * mod_dmrs[l][dmrs_idx << 1]) >> 15;
+              ((int16_t *) txdataF)[((l * frame_parms.ofdm_symbol_size + k) << 1) + 1] =
+                  (amp * mod_dmrs[l][(dmrs_idx << 1) + 1]) >> 15;
+
+#ifdef DEBUG_PDCCH_DMRS
+              printf("PDCCH DMRS: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
+               ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
+#endif
+
+              dmrs_idx++;
+              k_prime++;
+
+            } else { // DCI payload
+              ((int16_t *) txdataF)[(l * frame_parms.ofdm_symbol_size + k) << 1] = (amp * mod_dci[dci_idx << 1]) >> 15;
+              ((int16_t *) txdataF)[((l * frame_parms.ofdm_symbol_size + k) << 1) + 1] =
+                  (amp * mod_dci[(dci_idx << 1) + 1]) >> 15;
+#ifdef DEBUG_DCI
+              printf("PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
+               ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
+#endif
+
+              dci_idx++;
+            }
+
+            k++;
+
+            if (k >= frame_parms.ofdm_symbol_size)
+              k -= frame_parms.ofdm_symbol_size;
+
+          } // m
+        } // reg_in_cce_idx
+      } // cce_count
+    } // symbol_idx
 
     LOG_D(PHY,
           "DCI: payloadSize = %d | payload = %llx\n",

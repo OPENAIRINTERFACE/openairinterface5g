@@ -136,7 +136,7 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
 
 
-  int N_reg = n_rb * pdcch_pdu_rel15->DurationSymbols;
+  int N_reg = n_rb;
   int C=-1;
 
   AssertFatal(N_reg > 0,"N_reg cannot be 0\n");
@@ -174,8 +174,8 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
 	  for (uint8_t reg_idx=0; reg_idx<bsize; reg_idx++) {
 	    reg = &cce->reg_list[reg_idx];
 	    reg->reg_idx = bsize*idx + reg_idx;
-	    reg->start_sc_idx = (reg->reg_idx/pdcch_pdu_rel15->DurationSymbols) * NR_NB_SC_PER_RB;
-	    reg->symb_idx = reg->reg_idx % pdcch_pdu_rel15->DurationSymbols;
+	    reg->start_sc_idx = reg->reg_idx * NR_NB_SC_PER_RB;
+	    reg->symb_idx = 0;
 	    LOG_D(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
 	  }
 	}
@@ -185,8 +185,8 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
 	for (uint8_t reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
 	  reg = &cce->reg_list[reg_idx];
 	  reg->reg_idx = cce->cce_idx*NR_NB_REG_PER_CCE + reg_idx;
-	  reg->start_sc_idx = (reg->reg_idx/pdcch_pdu_rel15->DurationSymbols) * NR_NB_SC_PER_RB;
-	  reg->symb_idx = reg->reg_idx % pdcch_pdu_rel15->DurationSymbols;
+	  reg->start_sc_idx = reg->reg_idx * NR_NB_SC_PER_RB;
+	  reg->symb_idx = 0;
 	  LOG_D(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
 	}
 	
