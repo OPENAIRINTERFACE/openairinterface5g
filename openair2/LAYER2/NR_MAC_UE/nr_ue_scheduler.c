@@ -1849,6 +1849,7 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
   N_UCI = O_SR + O_ACK + O_CSI;
 
   if (N_UCI > 0) {
+
     pucch->resource_set_id = find_pucch_resource_set(mac, N_UCI);
     select_pucch_resource(mac, pucch);
     fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
@@ -1860,6 +1861,10 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
                           pucch_pdu,
                           O_SR, O_ACK, O_CSI);
     fill_ul_config(ul_config, frameP, slotP, FAPI_NR_UL_CONFIG_TYPE_PUCCH);
+    nr_scheduled_response_t scheduled_response;
+    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
+    if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+      mac->if_module->scheduled_response(&scheduled_response);
   }
 
 }
