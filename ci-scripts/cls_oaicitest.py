@@ -2228,6 +2228,8 @@ class OaiCiTest():
 			SSH.command(cmd,'\$',5)
 			cmd = 'echo $USER; nohup iperf -s -i 1 -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
+			cmd = 'echo $USER; nohup iperf -s -i 1 -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+			SSH.command(cmd,'\$',5)
 
 			#cmd = 'echo $USER; nohup iperf3 -s -i 1 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			#SSH.command(cmd,'\$',5)
