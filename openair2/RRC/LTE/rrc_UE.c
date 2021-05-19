@@ -1918,9 +1918,6 @@ rrc_ue_process_rrcConnectionReconfiguration(
                                                          criticalExtensions.choice.c1.
                                                          choice.rrcConnectionReconfiguration_r8;
 
-      /* Melissa: Here we need to open up container to get r_15 non-criticalExtensions. Look in
-         eNB as to how this message is put into the container. Need scg_group_config and scg_RB_config.
-         These two need to be sent over to the NR UE. */
       if (is_nr_r15_config_present(r_r8)) {
           OCTET_STRING_t *nr_RadioBearer = r_r8->nonCriticalExtension->nonCriticalExtension->
                                             nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
@@ -1930,23 +1927,26 @@ rrc_ue_process_rrcConnectionReconfiguration(
                                             nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
                                             nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
                                             nr_Config_r15->choice.setup.nr_SecondaryCellGroupConfig_r15;
-          LOG_I(RRC, "MELISSA ELKADI! nr_RadioBearerConfig1_r15 size %ld nr_SecondaryCellGroupConfig_r15 size %ld\n",
+          uint32_t total_size = nr_RadioBearer->size + nr_SecondaryCellGroup->size;
+          struct msg {
+                uint32_t RadioBearer_size;
+                uint32_t SecondaryCellGroup_size;
+                uint8_t trans_id;
+                uint8_t buffer[total_size];
+          } msg;
+
+          msg.RadioBearer_size = nr_RadioBearer->size;
+          msg.SecondaryCellGroup_size = nr_SecondaryCellGroup->size;
+          msg.trans_id = rrcConnectionReconfiguration->rrc_TransactionIdentifier;
+          memcpy(msg.buffer, nr_RadioBearer->buf, nr_RadioBearer->size);
+          memcpy(msg.buffer + nr_RadioBearer->size, nr_SecondaryCellGroup->buf, nr_SecondaryCellGroup->size);
+
+          LOG_D(RRC, "nr_RadioBearerConfig1_r15 size %ld nr_SecondaryCellGroupConfig_r15 size %ld\n",
                       nr_RadioBearer->size,
                       nr_SecondaryCellGroup->size);
-          uint8_t buffer[8192];
-          LTE_RRCConnectionReconfiguration_t *rrcCR;
-          memcpy((char *)rrcCR,
-                 (char *)rrcConnectionReconfiguration,
-                 sizeof(LTE_RRCConnectionReconfiguration_t));
-          asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_RRCConnectionReconfiguration,
-                                                          NULL,
-                                                          rrcCR,
-                                                          buffer,
-                                                          sizeof(buffer));
-          AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %zu)!\n",
-                        enc_rval.failed_type->name, enc_rval.encoded);
-          LOG_I(RRC, "Calling nsa_sendmsg_to_nr_ue to send a RRC_CONFIG_COMPLETE_REQ\n");
-          nsa_sendmsg_to_nrue(buffer, (enc_rval.encoded + 7)/8, RRC_CONFIG_COMPLETE_REQ);
+
+          LOG_I(RRC, "Calling nsa_sendmsg_to_nr_ue to send an RRC_CONFIG_COMPLETE_REQ\n");
+          nsa_sendmsg_to_nrue(&msg, sizeof(msg), RRC_CONFIG_COMPLETE_REQ);
       }
 
       if (r_r8->mobilityControlInfo) {
@@ -6622,6 +6622,13 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
                 }
             }
             break;
+        }
+
+        case NR_RRC_CONFIG_COMPLETE_REQ:
+        {
+           LOG_I(RRC, "Got an NR_RRC_CONFIG_COMPLETE_REQ. Now make octet string and call below!\n");
+           //rrc_ue_generate_RRCConnectionReconfigurationComplete(ctxt, 0, 0);
+           break;
         }
         default:
             LOG_E(RRC, "No NSA Message Found\n");

@@ -2398,7 +2398,9 @@ do_RRCConnectionReconfigurationComplete(
   rrcConnectionReconfigurationComplete->criticalExtensions.present =
     LTE_RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8;
   rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
-
+ /* Melissa need to add the release 15 message here into the ul_dcch_msg that we just got.
+    We will receive the buffer as an octet string and then pull the data out and put it into
+    this message we are encoding here. */
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
   }
