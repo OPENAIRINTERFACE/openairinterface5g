@@ -836,7 +836,7 @@ inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,
       c = (uint8_t)((s>>i)&1);
       btildep[i] = (((B>>i)&1) ^ c);
 #ifdef DEBUG_NR_PUCCH_TX
-      printf("\t\t\t btilde[%d]=%lx from unscrambled bit %d and scrambling %d (%x)\n",i+(iprime<<5),btilde[i],((B>>i)&1),c,s>>i);
+      printf("\t\t\t btilde[%d]=%x from unscrambled bit %d and scrambling %d (%x)\n",i+(iprime<<5),btilde[i],((B>>i)&1),c,s>>i);
 #endif
     }
     M_bit3-=32;
@@ -961,7 +961,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
                         int nr_slot_tx,
                         fapi_nr_ul_config_pucch_pdu *pucch_pdu) {
 #ifdef DEBUG_NR_PUCCH_TX
-  printf("\t [nr_generate_pucch2] start function at slot(nr_slot_tx)=%d  with payload=%lu and nr_bit=%d\n",nr_slot_tx, payload, nr_bit);
+  printf("\t [nr_generate_pucch2] start function at slot(nr_slot_tx)=%d  with payload=%lu and nr_bit=%d\n",nr_slot_tx, pucch_pdu->payload, pucch_pdu->n_bit);
 #endif
   // b is the block of bits transmitted on the physical channel after payload coding
   uint64_t b[16]; // limit to 1024-bit encoded length
@@ -1131,7 +1131,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
                           int nr_slot_tx,
                           fapi_nr_ul_config_pucch_pdu *pucch_pdu) {
 #ifdef DEBUG_NR_PUCCH_TX
-  printf("\t [nr_generate_pucch3_4] start function at slot(nr_slot_tx)=%d with payload=%lu and nr_bit=%d\n", nr_slot_tx, payload, nr_bit);
+  printf("\t [nr_generate_pucch3_4] start function at slot(nr_slot_tx)=%d with payload=%lu and nr_bit=%d\n", nr_slot_tx, pucch_pdu->payload, pucch_pdu->n_bit);
 #endif
   // b is the block of bits transmitted on the physical channel after payload coding
   uint64_t b[16];
