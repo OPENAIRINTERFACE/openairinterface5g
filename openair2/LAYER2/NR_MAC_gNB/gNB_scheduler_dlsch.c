@@ -518,8 +518,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
    * allocation after CCE alloc fail would be more complex) */
-  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1);
-  if (!alloc) {
+  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1);
+  if (alloc<0) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
           __func__,
@@ -534,6 +534,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
       cce_list[sched_ctrl->cce_index + i] = 0;
     return false;
   }
+
+  sched_ctrl->sched_pdsch.pucch_allocation = alloc;
 
   /* just reuse from previous scheduling opportunity, set new start RB */
   sched_ctrl->sched_pdsch = *retInfo;
@@ -649,9 +651,9 @@ void pf_dl(module_id_t module_id,
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
-    const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot,-1);
-    if (!alloc) {
-      LOG_W(NR_MAC,
+    const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1);
+    if (alloc<0) {
+      LOG_D(MAC,
             "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
             __func__,
             UE_id,
@@ -683,7 +685,7 @@ void pf_dl(module_id_t module_id,
           scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
-
+    sched_pdsch->pucch_allocation = alloc;
     uint32_t TBS = 0;
     uint16_t rbSize;
     const int oh = 2 + (sched_ctrl->num_total_bytes >= 256)
@@ -846,7 +848,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
     DevAssert(!harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
-    NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
+    NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[sched_pdsch->pucch_allocation];
     harq->feedback_frame = pucch->frame;
     harq->feedback_slot = pucch->ul_slot;
     harq->is_waiting = true;

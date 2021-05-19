@@ -1227,9 +1227,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     const int delta_PRI=0;
     int r_pucch = ((CCEIndex<<1)/N_cce)+(delta_PRI<<1);
 
-    nr_acknack_scheduling(module_idP, UE_id, frameP, slotP,r_pucch);
-    harq->feedback_slot = sched_ctrl->sched_pucch->ul_slot;
-    harq->feedback_frame = sched_ctrl->sched_pucch->frame;
+    int alloc = nr_acknack_scheduling(module_idP, UE_id, frameP, slotP, r_pucch);
+    AssertFatal(alloc>=0,"Couldn't find a pucch allocation for ack nack (msg4)\n");
+    NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[alloc];
+    harq->feedback_slot = pucch->ul_slot;
+    harq->feedback_frame = pucch->frame;
 
     // Bytes to be transmitted
     uint8_t *buf = (uint8_t *) harq->tb;
@@ -1417,10 +1419,10 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_payload.rv = pdsch_pdu_rel15->rvIndex[0];
     dci_payload.harq_pid = current_harq_pid;
     dci_payload.ndi = harq->ndi;
-    dci_payload.dai[0].val = (sched_ctrl->sched_pucch->dai_c-1)&3;
+    dci_payload.dai[0].val = (pucch->dai_c-1)&3;
     dci_payload.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
     dci_payload.pucch_resource_indicator = delta_PRI; // This is delta_PRI from 9.2.1 in 38.213
-    dci_payload.pdsch_to_harq_feedback_timing_indicator.val = sched_ctrl->sched_pucch->timing_indicator;
+    dci_payload.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator;
 
     LOG_D(NR_MAC,
           "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d pucchres %d harqtiming %d\n",
