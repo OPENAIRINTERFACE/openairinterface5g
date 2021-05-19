@@ -287,9 +287,10 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
           nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
         }else{
           //  after first time, update it and free the memory after.
-          SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)NR_UE_rrc_inst[module_id].cell_group_config, 0);
           NR_UE_rrc_inst[module_id].cell_group_config = cellGroupConfig;
           nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
+          LOG_I(NR_RRC, "Melissa, we have finished nr_rrc_ue_process_scg_config. Now freeing. \n");
+          SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)NR_UE_rrc_inst[module_id].cell_group_config, 0);
         }
       }
       if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->measConfig != NULL){

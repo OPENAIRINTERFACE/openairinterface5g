@@ -2383,10 +2383,13 @@ uint8_t
 do_RRCConnectionReconfigurationComplete(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t *buffer,
+  LTE_RRCConnectionReconfigurationComplete_v1510_IEs_t *str,
   const uint8_t Transaction_id
 )
 //------------------------------------------------------------------------------
 {
+  LOG_I(RRC, "Melissa, entered do_RRCConnectionReconfigurationComplete \n");
+
   asn_enc_rval_t enc_rval;
   LTE_UL_DCCH_Message_t ul_dcch_msg;
   LTE_RRCConnectionReconfigurationComplete_t *rrcConnectionReconfigurationComplete;
@@ -2398,6 +2401,14 @@ do_RRCConnectionReconfigurationComplete(
   rrcConnectionReconfigurationComplete->criticalExtensions.present =
     LTE_RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8;
   rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
+  rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
+                                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                        scg_ConfigResponseNR_r15->buf = str->scg_ConfigResponseNR_r15->buf;
+  rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
+                                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
+                                        scg_ConfigResponseNR_r15->size = str->scg_ConfigResponseNR_r15->size;
  /* Melissa need to add the release 15 message here into the ul_dcch_msg that we just got.
     We will receive the buffer as an octet string and then pull the data out and put it into
     this message we are encoding here. */

@@ -156,6 +156,7 @@ uint8_t
 do_RRCConnectionReconfigurationComplete(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t *buffer,
+  LTE_RRCConnectionReconfigurationComplete_v1510_IEs_t *str,
   const uint8_t Transaction_id
 );
 

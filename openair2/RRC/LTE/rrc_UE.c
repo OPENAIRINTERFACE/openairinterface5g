@@ -163,7 +163,10 @@ static void rrc_ue_generate_RRCConnectionSetupComplete(
  *  \param eNB_index Index of corresponding eNB/CH
  *  \param Transaction_id RRC transaction identifier
  */
-static void rrc_ue_generate_RRCConnectionReconfigurationComplete( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, const uint8_t Transaction_id );
+static void rrc_ue_generate_RRCConnectionReconfigurationComplete(const protocol_ctxt_t *const ctxt_pP,
+                                                                 const uint8_t eNB_index,
+                                                                 const uint8_t Transaction_id,
+                                                                 LTE_RRCConnectionReconfigurationComplete_v1510_IEs_t *str);
 
 static void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t eNB_index );
 
@@ -563,9 +566,13 @@ static void rrc_ue_generate_RRCConnectionSetupComplete(
 }
 
 //-----------------------------------------------------------------------------
-void rrc_ue_generate_RRCConnectionReconfigurationComplete( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, const uint8_t Transaction_id ) {
+void rrc_ue_generate_RRCConnectionReconfigurationComplete(const protocol_ctxt_t *const ctxt_pP,
+                                                          const uint8_t eNB_index,
+                                                          const uint8_t Transaction_id,
+                                                          LTE_RRCConnectionReconfigurationComplete_v1510_IEs_t *str) {
   uint8_t buffer[32], size;
-  size = do_RRCConnectionReconfigurationComplete(ctxt_pP, buffer, Transaction_id);
+  LOG_I(RRC, "Melissa, calling do_RRCConnectionReconfigurationComplete \n");
+  size = do_RRCConnectionReconfigurationComplete(ctxt_pP, buffer, str, Transaction_id);
   LOG_I(RRC,PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel UL-DCCH (SRB1), Generating RRCConnectionReconfigurationComplete (bytes %d, eNB_index %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP), size, eNB_index);
   LOG_D(RLC,
@@ -2293,7 +2300,8 @@ rrc_ue_decode_dcch(
             rrc_ue_generate_RRCConnectionReconfigurationComplete(
               ctxt_pP,
               target_eNB_index,
-              dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.rrc_TransactionIdentifier);
+              dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.rrc_TransactionIdentifier,
+              NULL);
             UE_rrc_inst[ctxt_pP->module_id].Info[eNB_indexP].State = RRC_HO_EXECUTION;
             UE_rrc_inst[ctxt_pP->module_id].Info[target_eNB_index].State = RRC_RECONFIGURED;
             LOG_I(RRC, "[UE %d] State = RRC_RECONFIGURED during HO (eNB %d)\n",
@@ -2347,7 +2355,8 @@ rrc_ue_decode_dcch(
             rrc_ue_generate_RRCConnectionReconfigurationComplete(
               ctxt_pP,
               eNB_indexP,
-              dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.rrc_TransactionIdentifier);
+              dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.rrc_TransactionIdentifier,
+              NULL);
             UE_rrc_inst[ctxt_pP->module_id].Info[eNB_indexP].State = RRC_RECONFIGURED;
             LOG_I(RRC, "[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",
                   ctxt_pP->module_id,
@@ -6626,9 +6635,33 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
 
         case NR_RRC_CONFIG_COMPLETE_REQ:
         {
-           LOG_I(RRC, "Got an NR_RRC_CONFIG_COMPLETE_REQ. Now make octet string and call below!\n");
-           //rrc_ue_generate_RRCConnectionReconfigurationComplete(ctxt, 0, 0);
-           break;
+            LOG_I(RRC, "Got an NR_RRC_CONFIG_COMPLETE_REQ. Now make octet string and call below!\n");
+            LTE_UL_DCCH_Message_t *nr_ul_dcch_msg = NULL;
+            asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                                                           &asn_DEF_LTE_UL_DCCH_Message,
+                                                           (void **)&nr_ul_dcch_msg,
+                                                           msg_buffer,
+                                                           msg_len);
+            if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
+            {
+              SEQUENCE_free(&asn_DEF_LTE_UL_DCCH_Message, (void *)nr_ul_dcch_msg, ASFM_FREE_EVERYTHING);
+              LOG_E(NR_RRC, "Failed to decode UECapabilityInfo (%zu bits)\n", dec_rval.consumed);
+              break;
+            }
+            LTE_RRCConnectionReconfigurationComplete_t *rrc_comp = &nr_ul_dcch_msg->
+                                                                    message.choice.
+                                                                    c1.choice.
+                                                                    rrcConnectionReconfigurationComplete;
+            uint8_t t_id = rrc_comp->rrc_TransactionIdentifier;
+            LTE_RRCConnectionReconfigurationComplete_r8_IEs_t *rrc_comp_r8 = &rrc_comp->criticalExtensions.choice.
+                                                                             rrcConnectionReconfigurationComplete_r8;
+            LTE_RRCConnectionReconfigurationComplete_v1510_IEs_t *str = rrc_comp_r8->nonCriticalExtension->
+                                                                        nonCriticalExtension->nonCriticalExtension->
+                                                                        nonCriticalExtension->nonCriticalExtension->
+                                                                        nonCriticalExtension;
+
+            rrc_ue_generate_RRCConnectionReconfigurationComplete(&ctxt, &ctxt.eNB_index, t_id, &str);
+            break;
         }
         default:
             LOG_E(RRC, "No NSA Message Found\n");

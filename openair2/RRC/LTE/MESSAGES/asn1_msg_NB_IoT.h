@@ -132,6 +132,7 @@ uint8_t do_RRCConnectionSetupComplete_NB_IoT(uint8_t Mod_id, uint8_t* buffer, co
 uint8_t do_RRCConnectionReconfigurationComplete_NB_IoT(
   const protocol_ctxt_t* const ctxt_pP,
   uint8_t* buffer,
+  LTE_RRCConnectionReconfigurationComplete_v1510_IEs_t *str,
   const uint8_t Transaction_id
 );
 
