@@ -37,7 +37,7 @@ pipeline {
             steps {
                 script {     
                     //retrieve MR that are opened nd with tag READY_TO_BE_MERGED             
-                    MR_LIST= sh returnStdout: true, script: 'curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100&milestone=REVIEW_COMPLETED_AND_APPROVED" | jq ".[].iid" || true '
+                    MR_LIST= sh returnStdout: true, script: 'curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100&labels=NSA" | jq ".[].iid" || true '
                     echo "List of selected MR:\n${MR_LIST}" 
                     def MR_ARRAY = MR_LIST.split('\n') 
                     //for every selected MR, retrieve the branch name and the latest commit              
