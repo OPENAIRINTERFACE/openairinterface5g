@@ -224,7 +224,7 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
 	}
         #endif
 	// Trigger start send DL packets
-	if(PAYLOAD_1 == 0x12 && PAYLOAD_2 == 0xce && SYMBOL == 0x09 && ANT_NUM == 0x00 && dl_start == 0){
+	if(PAYLOAD_1 == 0x12 && PAYLOAD_2 == 0xce && SYMBOL == 0x08 && ANT_NUM == 0x00 && dl_start == 0){
 
 		printf("\nU-Plane Started\n");
 		printf("\n====================================================\n");
@@ -249,7 +249,7 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
                 int a = ANT_NUM;
                 int tx_frame = FRAME;
                 int tx_subframe = SUBFRAME >> 4;
-                int tx_symbol = SYMBOL + 5;
+                int tx_symbol = SYMBOL + 6;
                 if (tx_symbol > 13) {
                   tx_symbol -= 14;
                   tx_subframe++;
