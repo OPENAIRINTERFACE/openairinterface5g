@@ -91,7 +91,7 @@ class Module_UE:
 	def Command(self,cmd):
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.cmd_dict[cmd],'\$',5)
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S python3 ' + self.cmd_dict[cmd],'\$',10)
 		time.sleep(5)
 		logging.debug("Module "+ cmd)
 		mySSH.close()

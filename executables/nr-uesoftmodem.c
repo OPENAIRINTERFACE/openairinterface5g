@@ -82,7 +82,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 #include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
-#define NRUE_MAIN
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
@@ -90,6 +89,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 extern const char *duplex_mode[];
 msc_interface_t msc_interface;
 THREAD_STRUCT thread_struct;
+nrUE_params_t nrUE_params;
 
 // Thread variables
 pthread_cond_t nfapi_sync_cond;

@@ -148,7 +148,7 @@ class RANManagement():
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
-			full_ran_repo_name = self.ranRepository
+			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
 		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
@@ -191,7 +191,7 @@ class RANManagement():
 		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
+			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
 		if (self.ranAllowMerge):
@@ -388,13 +388,13 @@ class RANManagement():
 		# do not reset board twice in IF4.5 case
 		result = re.search('^rru|^enb|^du.band', str(config_file))
 		if result is not None:
-			mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 60)
+			mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 90)
 			result = re.search('type: b200', mySSH.getBefore())
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
 				mySSH.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 				# Reloading FGPA bin firmware
-				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 60)
+				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 90)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		mySSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		localMmeIpAddr = EPC.MmeIPAddress
@@ -707,6 +707,8 @@ class RANManagement():
 		real_time_stats = {}
 		#count "problem receiving samples" msg
 		pb_receiving_samples_cnt = 0
+		#NSA specific log markers
+		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
 	
 		#the datalog config file has to be loaded
 		datalog_rt_stats_file='datalog_rt_stats.yaml'
@@ -722,8 +724,9 @@ class RANManagement():
 			datalog_rt_stats = yaml.load(f,Loader=yaml.FullLoader)
 		rt_keys = datalog_rt_stats['Ref'] #we use the keys from the Ref field  
 
-
+		line_cnt=0 #log file line counter
 		for line in enb_log_file.readlines():
+			line_cnt+=1
 			# Runtime statistics
 			result = re.search('Run time:' ,str(line))
 			if result is not None:
@@ -899,7 +902,13 @@ class RANManagement():
 			#count "problem receiving samples" msg
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
 			if result is not None:
-				pb_receiving_samples_cnt += 1				
+				pb_receiving_samples_cnt += 1
+
+			#nsa markers logging
+			for k in nsa_markers:
+				result = re.search(k, line)
+				if result is not None:
+					nsa_markers[k].append(line_cnt)					
 
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
@@ -908,7 +917,7 @@ class RANManagement():
 		else:
 			nodeB_prefix = 'g'
 
-		if self.air_interface[self.eNB_instance] == 'nr-softmodem':
+		if nodeB_prefix == 'g':
 			if ulschReceiveOK > 0:
 				statMsg = nodeB_prefix + 'NB showed ' + str(ulschReceiveOK) + ' "ULSCH received ok" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -932,6 +941,22 @@ class RANManagement():
 			htmleNBFailureMsg += htmlMsg
 			#problem receiving samples log
 			statMsg = '[PHY] problem receiving samples msg count =  '+str(pb_receiving_samples_cnt)
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			#nsa markers
+			statMsg = 'logfile line count = ' + str(line_cnt)			
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			if len(nsa_markers['SgNBReleaseRequestAcknowledge'])!=0:
+				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(nsa_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences , starting line ' + str(nsa_markers['SgNBReleaseRequestAcknowledge'][0])
+			else:
+				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(nsa_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences' 
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			statMsg = 'FAILURE = ' + str(len(nsa_markers['FAILURE'])) + ' occurences'
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
@@ -965,6 +990,25 @@ class RANManagement():
 				statMsg = 'No real time stats found in the log file\n'
 				logging.debug('No real time stats found in the log file')
 				htmleNBFailureMsg += statMsg
+
+		else:
+			#nsa markers
+			statMsg = 'logfile line count = ' + str(line_cnt)			
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			if len(nsa_markers['SgNBReleaseRequest'])!=0:
+				statMsg = 'SgNBReleaseRequest = ' + str(len(nsa_markers['SgNBReleaseRequest'])) + ' occurences , starting line ' + str(nsa_markers['SgNBReleaseRequest'][0])
+			else:
+				statMsg = 'SgNBReleaseRequest = ' + str(len(nsa_markers['SgNBReleaseRequest'])) + ' occurences'
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			statMsg = 'scgFailureInformationNR-r15 = ' + str(len(nsa_markers['scgFailureInformationNR-r15'])) + ' occurences'
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg			
+
 
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
