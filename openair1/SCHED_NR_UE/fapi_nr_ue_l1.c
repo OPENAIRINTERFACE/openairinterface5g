@@ -122,6 +122,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
             dlsch0_harq->Nl=1;
             dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
+            downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch0->rnti_type);
             if (dlsch0_harq->status != ACTIVE) {
               // dlsch0_harq->status not ACTIVE may be due to false retransmission. Reset the 
               // following flag to skip PDSCH procedures in that case.
@@ -201,6 +202,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             if(pucch_vars->active[j] == false) {
               LOG_D(PHY,"%d.%d Copying pucch pdu to UE PHY\n",scheduled_response->frame,slot);
               memcpy((void*)&(pucch_vars->pucch_pdu[j]), (void*)pucch_config_pdu, sizeof(fapi_nr_ul_config_pucch_pdu));
+              pucch_vars->active[j] = true;
               found = true;
             }
           }
