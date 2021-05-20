@@ -317,7 +317,7 @@ typedef struct gNB_RRC_UE_s {
   NR_CipheringAlgorithm_t            ciphering_algorithm;
   e_NR_IntegrityProtAlgorithm        integrity_algorithm;
 
-  uint8_t                            status;
+  uint8_t                            StatusRrc;
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 
