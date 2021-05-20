@@ -7707,11 +7707,12 @@ rrc_eNB_decode_dcch(
         if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.
             present ==
             LTE_RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8) {
+            LOG_I(RRC, "Melissa, the present is set for NR woowho! The status is %d\n",ue_context_p->ue_context.Status);
           /*NN: revise the condition */
           /*FK: left the condition as is for the case MME is used (S1 mode) but setting  dedicated_DRB = 1 otherwise (noS1 mode) so that no second RRCReconfiguration message activationg more DRB is sent as this causes problems with the nasmesh driver.*/
           int flexran_agent_handover = 0;
 
-          if (EPC_MODE_ENABLED) {
+          if (1) {
             if (ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
               dedicated_DRB = 1;
               LOG_I(RRC,
@@ -7761,29 +7762,34 @@ rrc_eNB_decode_dcch(
                     PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_HO_EXECUTION (xid %ld)\n",
                     PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
             } else if(ue_context_p->ue_context.Status == RRC_NR_NSA) {
+              LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
               //Looking for a condition to trigger S1AP E-RAB-Modification-indication, based on the reception of RRCConnectionReconfigurationComplete
               //including NR specific elements.
               if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                  nonCriticalExtension!=NULL) {
+                  nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
                 if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                    nonCriticalExtension->nonCriticalExtension!=NULL) {
+                    nonCriticalExtension->nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
                   if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                      nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) {
+                      nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
                     if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) {
+                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
                       if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                          nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) {
+                          nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
                         if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) {
+                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
                           if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
                               nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension
                               ->scg_ConfigResponseNR_r15!=NULL) {
+                            LOG_I(RRC, "Melissa, the scg_config response is not null!\n");
                             dedicated_DRB = -1;     /* put a value that does not run anything below */
                             ue_context_p->ue_context.Status = RRC_NR_NSA_RECONFIGURED;
                             /*Trigger E-RAB Modification Indication */
+                            LOG_I(RRC, "Melissa, calling rrc_eNB_send_E_RAB_Modification_Indication!\n");
                             rrc_eNB_send_E_RAB_Modification_Indication(ctxt_pP, ue_context_p);
+                            LOG_I(RRC, "Melissa, calling rrc_eNB_process_reconfiguration_complete_endc!\n");
                             /* send reconfiguration complete to gNB */
                             rrc_eNB_process_reconfiguration_complete_endc(ctxt_pP, ue_context_p);
+                            LOG_I(RRC, "Melissa, finished rrc_eNB_process_reconfiguration_complete_endc!\n");
                           }
                         }
                       }

@@ -2401,7 +2401,6 @@ static void assign_scg_ConfigResponseNR_r15(LTE_RRCConnectionReconfigurationComp
   typeof(nce5->nonCriticalExtension) nce6;
   nce5->nonCriticalExtension = nce6 = CALLOC(1, sizeof(*nce6));
 
-  typeof(nce6->scg_ConfigResponseNR_r15) scg;
   nce6->scg_ConfigResponseNR_r15 = str;
 }
 
@@ -2430,13 +2429,12 @@ do_RRCConnectionReconfigurationComplete(
     LTE_RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8;
   if (str != NULL) {
     assign_scg_ConfigResponseNR_r15(rrcConnectionReconfigurationComplete, str);
+    LOG_I(RRC, "Melissa we finished assign_scg_ConfigResponseNR_r15\n");
   }
   else {
     rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
   }
- /* Melissa need to add the release 15 message here into the ul_dcch_msg that we just got.
-    We will receive the buffer as an octet string and then pull the data out and put it into
-    this message we are encoding here. */
+
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
   }
@@ -2448,7 +2446,7 @@ do_RRCConnectionReconfigurationComplete(
                                    buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-  LOG_D(RRC,"RRCConnectionReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_I(RRC,"RRCConnectionReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
 }
 
