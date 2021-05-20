@@ -339,68 +339,22 @@ typedef struct {
 *
 ************************************************************************/
 
-/* FFS TODO_NR partial structure that should be complete */
-
-typedef enum {
-  semiStatic = 0,
-  dynamic =    1
-} pdsch_HARQ_ACK_Codebook_t;
-
-
-////////////////////////////////////////////////////////////////////////////////################################
 #define MAX_NR_RATE_MATCH_PATTERNS            4
 #define MAX_NR_ZP_CSI_RS_RESOURCES           32
 #define MAX_NR_OF_DL_ALLOCATIONS             16
 #define MAX_NR_OF_UL_ALLOCATIONS            (16)
 
-typedef enum{
-  dl_resourceAllocationType0 = 1,
-  dl_resourceAllocationType1 = 2,
-  dl_dynamicSwitch = 3
-} dl_resourceAllocation_t;
-typedef enum{
-  dl_rgb_config1 = 1,
-  dl_rgb_config2 = 2
-} dl_rgb_Size_t;
 typedef enum {
-  st_n4       = 1,
-  st_wideband = 2
-} static_bundleSize_t;
-typedef enum {
-  dy_1_n4       = 1,
-  dy_1_wideband = 2,
-  dy_1_n2_wideband = 3,
-  dy_1_n4_wideband = 4
-} bundleSizeSet1_t;
-typedef enum {
-  dy_2_n4       = 1,
-  dy_2_wideband = 2,
-} bundleSizeSet2_t;
-typedef struct{
-  bundleSizeSet1_t bundleSizeSet1;
-  bundleSizeSet2_t bundleSizeSet2;
-} dynamic_bundleSize_t;
-typedef struct {
-  static_bundleSize_t staticBundling;
-  dynamic_bundleSize_t dynamicBundlig;
-} prb_bundleType_t;
-typedef enum {
-  nb_code_n1 = 1,
-  nb_code_n2 = 2
-} maxNrofCodeWordsScheduledByDCI_t;
-typedef struct{
-// to be defined FIXME!!!
-}rateMatchPattern_t;
-typedef struct{
-// to be defined FIXME!!!
-}zp_CSI_RS_Resource_t;
+  typeA = 0,
+  typeB = 1
+} mappingType_t;
 
-typedef struct{
-        int   k0;    
-        int     mappingType;
-        int     startSymbolAndLength;
-
-}PDSCH_TimeDomainResourceAllocation_t;
+typedef enum {
+  pdsch_dmrs_pos0 = 0,
+  pdsch_dmrs_pos1 = 1,
+  pdsch_dmrs_pos2 = 2,
+  pdsch_dmrs_pos3 = 3,
+} pdsch_dmrs_AdditionalPosition_t;
 
 /***********************************************************************
 *
@@ -410,50 +364,10 @@ typedef struct{
 *
 ************************************************************************/
 
-
-typedef enum {
-  enable_tpc_accumulation = 0,  /* by default it is enable */
-  disable_tpc_accumulation = 1
-} tpc_Accumulation_t;
-
-typedef enum {
-  typeA = 0,
-  typeB = 1
-} mappingType_t;
-
-typedef struct {
-  tpc_Accumulation_t tpc_Accumulation;
-} PUSCH_PowerControl_t;
-
-typedef struct {
-
-  uint8_t         k2;
-  mappingType_t   mappingType;
-  uint8_t         startSymbolAndLength;
-} PUSCH_TimeDomainResourceAllocation_t;
-////////////////////////////////////////////////////////////////////////////////################################
-typedef enum{
-  maxCodeBlockGroupsPerTransportBlock_n2 = 2,
-  maxCodeBlockGroupsPerTransportBlock_n4 = 4,
-  maxCodeBlockGroupsPerTransportBlock_n6 = 6,
-  maxCodeBlockGroupsPerTransportBlock_n8 = 8
-} maxCodeBlockGroupsPerTransportBlock_t;
-typedef struct{ // The IE PUSCH-ServingCellConfig is used to configure UE specific PUSCH parameters that are common across the UE's BWPs of one serving cell
-	  maxCodeBlockGroupsPerTransportBlock_t maxCodeBlockGroupsPerTransportBlock;
-} PUSCH_ServingCellConfig_t;
-typedef struct{ // CSI-MeasConfig IE is used to configure CSI-RS (reference signals)
-  uint8_t reportTriggerSize;
-} csi_MeasConfig_t;
 typedef enum {
   pusch_dmrs_type1 = 0,
   pusch_dmrs_type2 = 1
 } pusch_dmrs_type_t;
-typedef enum {
-  pdsch_dmrs_pos0 = 0,
-  pdsch_dmrs_pos1 = 1,
-  pdsch_dmrs_pos2 = 2,
-  pdsch_dmrs_pos3 = 3,
-} pdsch_dmrs_AdditionalPosition_t;
 typedef enum {
   pusch_dmrs_pos0 = 0,
   pusch_dmrs_pos1 = 1,
@@ -461,48 +375,9 @@ typedef enum {
   pusch_dmrs_pos3 = 3,
 } pusch_dmrs_AdditionalPosition_t;
 typedef enum {
-  offset00 = 0,
-  offset01 = 1,
-  offset10 = 2,
-  offset11 = 3,
-} ptrs_resource_elementoffset_t;
-typedef enum {
   pusch_len1 = 1,
   pusch_len2 = 2
 } pusch_maxLength_t;
-typedef struct {
-  uint8_t ptrs_mcs1;
-  uint8_t ptrs_mcs2;
-  uint8_t ptrs_mcs3;
-} ptrs_time_density_t;
-typedef struct {
-  uint16_t n_rb0;
-  uint16_t n_rb1;
-} ptrs_frequency_density_t;
-typedef struct {
-/*
- * Serving cell ID of a PSCell. The PCell of the Master Cell Group uses ID = 0
- */
-  uint8_t servCellIndex;
-}servCellIndex_t;
-typedef struct{
-  uint8_t cif_presence;
-}own_t;
-typedef struct{
-  servCellIndex_t scheduling_cell_id;
-  uint8_t cif_InSchedulingCell;
-}other_t;
-typedef struct{
- own_t own;
- other_t other;
-}schedulingCellInfo_t;
-typedef struct{
- schedulingCellInfo_t schedulingCellInfo;
-} crossCarrierSchedulingConfig_t;
-typedef struct{
-  // this variable will be filled with '1' if SUL is supported and '0' if SUL is not supported
-  uint8_t supplementaryUplink;
-}supplementaryUplink_t;
 
 typedef enum {
   txConfig_codebook = 1,
@@ -760,150 +635,6 @@ typedef struct {
   void                   *spatial_Relation_Info[MAX_NR_OF_SPATIAL_RELATION_INFOS];
   PUCCH_PowerControl_t   pucch_PowerControl;
 } PUCCH_Config_t;
-
-/***********************************************************************
-*
-* FUNCTIONALITY    :  PhysicalCellGroupConfig
-*
-* DESCRIPTION      :  Physical cell group configuration
-*
-************************************************************************/
-
-typedef uint16_t RNTI_value_t;
-
-typedef struct {
-/*
-  -- Enables spatial bundling of HARQ ACKs. It is configured per cell group (i.e. for all the cells within the cell group) for PUCCH
-  -- reporting of HARQ-ACK. It is only applicable when more than 4 layers are possible to schedule.
-  -- Corresponds to L1 parameter 'HARQ-ACK-spatial-bundling' (see 38.213, section FFS_Section)
-  -- Absence indicates that spatial bundling is disabled.
-*/
-  bool                          harq_ACK_SpatialBundlingPUCCH;
-/*
-  -- Enables spatial bundling of HARQ ACKs. It is configured per cell group (i.e. for all the cells within the cell group) for PUSCH
-  -- reporting of HARQ-ACK. It is only applicable when more than 4 layers are possible to schedule.
-  -- Corresponds to L1 parameter 'HARQ-ACK-spatial-bundling' (see 38.213, section FFS_Section)
-  -- Absence indicates that spatial bundling is disabled.
-*/
-  bool                          harq_ACK_SpatialBundlingPUSCH;
-/*
-  -- The maximum transmit power to be used by the UE in this NR cell group.
-*/
-  uint8_t                       p_NR;
-/*
-  -- The PDSCH HARQ-ACK codebook is either semi-static of dynamic. This is applicable to both CA and none CA operation.
-  -- Corresponds to L1 parameter 'HARQ-ACK-codebook' (see 38.213, section FFS_Section)
-*/
-  pdsch_HARQ_ACK_Codebook_t     pdsch_HARQ_ACK_Codebook;
-/*
-  -- RNTI used for SRS TPC commands on DCI. Corresponds to L1 parameter 'TPC-SRS-RNTI' (see 38.213, section 10)
-*/
-  RNTI_value_t                  tpc_SRS_RNTI;
-/*
-  -- RNTI used for PUCCH TPC commands on DCI. Corresponds to L1 parameter 'TPC-PUCCH-RNTI' (see 38.213, section 10).
-*/
-  RNTI_value_t                  tpc_PUCCH_RNTI;
-/*
-  -- RNTI used for PUSCH TPC commands on DCI. Corresponds to L1 parameter 'TPC-PUSCH-RNTI' (see 38.213, section 10)
-*/
-  RNTI_value_t                  tpc_PUSCH_RNTI;
-} PhysicalCellGroupConfig_t;
-
-/***********************************************************************
-*
-* FUNCTIONALITY    :  CellGroupConfig
-*
-* DESCRIPTION      :  Cell Group configuration
-*
-************************************************************************/
-
-/* FFS TODO_NR partial structure that should be complete */
-
-typedef struct {
-/*
-  cellGroupId                 CellGroupId,
-
-  -- Logical Channel configuration and association with radio bearers:
-  rlc-BearerToAddModList            SEQUENCE (SIZE(1..maxLC-ID)) OF RLC-Bearer-Config       OPTIONAL,   -- Need N
-  rlc-BearerToReleaseList           SEQUENCE (SIZE(1..maxLC-ID)) OF LogicalChannelIdentity      OPTIONAL,   -- Need N
-
-  -- Parameters applicable for the entire cell group:
-  mac-CellGroupConfig             MAC-CellGroupConfig                       OPTIONAL, -- Need M
-*/
-  PhysicalCellGroupConfig_t  physicalCellGroupConfig;
-/*
-  -- Serving Cell specific parameters (SpCell and SCells)
-  spCellConfig                SpCellConfig                          OPTIONAL,   -- Need M
-  sCellToAddModList             SEQUENCE (SIZE (1..maxNrofSCells)) OF SCellConfig       OPTIONAL, -- Need N
-  -- List of seconary serving cells to be released (not applicable for SpCells)
-  sCellToReleaseList              SEQUENCE (SIZE (1..maxNrofSCells)) OF SCellIndex        OPTIONAL, -- Need N
-  ...
-  */
-} CellGroupConfig_t;
-
-/***********************************************************************
-*
-* FUNCTIONALITY    :  PDSCH_ServingCellConfig
-*
-* DESCRIPTION      :  pdsch serving cell configuration
-*
-************************************************************************/
-
-/* FFS TODO_NR partial structure that should be complete */
-
-typedef int PDSCH_CodeBlockGroupTransmission_t;  /* dummy struct which should be change by correct structure */
-
-typedef enum {
-  xOh6  = 0,
-  xOh12 = 1,
-  xOh18 = 2
-} xOverhead_t;
-
-typedef enum {
-  n2_dl_harq  = 2,
-  n4_dl_harq  = 4,
-  n6_dl_harq  = 6,
-  n10_dl_harq = 10,
-  n12_dl_harq = 12,
-  n16_dl_harq = 16
-} nrofHARQ_ProcessesForPDSCH_t;
-typedef enum{
-  maxCodeBlockGroupsPerTransportBlock_dl_n2 = 2,
-  maxCodeBlockGroupsPerTransportBlock_dl_n4 = 4,
-  maxCodeBlockGroupsPerTransportBlock_dl_n6 = 6,
-  maxCodeBlockGroupsPerTransportBlock_dl_n8 = 8
-} maxCodeBlockGroupsPerTransportBlock_dl_t;
-
-typedef struct {
-/*
-  -- Enables and configures code-block-group (CBG) based transmission (see 38.213, section 9.1.1)
-*/
-  PDSCH_CodeBlockGroupTransmission_t  *codeBlockGroupTransmission;
-/*
-  -- Accounts for overhead from CSI-RS, CORESET, etc. If the field is absent, the UE applies value xOh0.
-  -- Corresponds to L1 parameter 'Xoh-PDSCH' (see 38.214, section 5.1.3.2)
-*/
-  xOverhead_t                         xOverhead;
-/*
-  -- The number of HARQ processes to be used on the PDSCH of a serving cell. n2 corresponds to 2 HARQ processes, n4 to 4 HARQ processes
-  -- and so on. If the field is absent, the UE uses 8 HARQ processes.
-  -- Corresponds to L1 parameter 'number-HARQ-process-PDSCH' (see 38.214, section REF)
-*/
-  nrofHARQ_ProcessesForPDSCH_t        nrofHARQ_ProcessesForPDSCH;
-/*
-  -- The ID of the serving cell (of the same cell group) to use for PUCCH.
-  -- If the field is absent, the UE sends the HARQ feedback on the PUCCH of the SpCell of this cell group.
-*/
-  uint8_t                            pucch_Cell;
-/*
- * maxCodeBlockGroupsPerTransportBlock_dl_t
- */
-  maxCodeBlockGroupsPerTransportBlock_dl_t maxCodeBlockGroupsPerTransportBlock_dl;
-/*
- * codeBlockGroupFlushIndicator (boolean)
- */
-  uint8_t codeBlockGroupFlushIndicator;
-} PDSCH_ServingCellConfig_t;
 
 /***********************************************************************
 *

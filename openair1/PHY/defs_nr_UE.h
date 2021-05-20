@@ -963,22 +963,9 @@ typedef struct {
 
   //#if defined(UPGRADE_RAT_NR)
 #if 1
-
   SystemInformationBlockType1_nr_t systemInformationBlockType1_nr;
-
-  CellGroupConfig_t          cell_group_config;
-  PDSCH_ServingCellConfig_t  PDSCH_ServingCellConfig;
-
   PUCCH_ConfigCommon_nr_t    pucch_config_common_nr[NUMBER_OF_CONNECTED_gNB_MAX];
   PUCCH_Config_t             pucch_config_dedicated_nr[NUMBER_OF_CONNECTED_gNB_MAX];
-
-  SRS_NR                     srs;
-
-  crossCarrierSchedulingConfig_t crossCarrierSchedulingConfig;
-  supplementaryUplink_t supplementaryUplink;
-  csi_MeasConfig_t csi_MeasConfig;
-  PUSCH_ServingCellConfig_t PUSCH_ServingCellConfig;
-
 #endif
 
   uint8_t ncs_cell[20][7];
