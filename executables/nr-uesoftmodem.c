@@ -93,6 +93,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
 extern const char *duplex_mode[];
+THREAD_STRUCT thread_struct;
 
 // Thread variables
 pthread_cond_t nfapi_sync_cond;
@@ -150,7 +151,7 @@ int          chain_offset = 0;
 int           card_offset = 0;
 uint64_t num_missed_slots = 0; // counter for the number of missed slots
 int     transmission_mode = 1;
-int        usrp_tx_thread = 0;
+int            numerology = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
 uint32_t       N_RB_DL=106;

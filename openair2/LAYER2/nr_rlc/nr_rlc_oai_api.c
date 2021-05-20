@@ -47,8 +47,8 @@ extern RAN_CONTEXT_t RC;
 
 #include <stdint.h>
 
+#include <executables/softmodem-common.h>
 static nr_rlc_ue_manager_t *nr_rlc_ue_manager;
-uint8_t ccch_flag = 1;
 
 /* TODO: handle time a bit more properly */
 static uint64_t nr_rlc_current_time;
@@ -337,7 +337,6 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
   return ret;
 }
 
-int oai_emulation;
 
 rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
                                   const srb_flag_t   srb_flagP,
@@ -449,7 +448,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   exit(1);
 
 rb_found:
-  LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d",
+  LOG_I(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d\n",
         __FILE__, __LINE__, __FUNCTION__, ue->rnti, is_srb, rb_id, size);
 
   memblock = get_free_mem_block(size, __func__);
@@ -491,23 +490,6 @@ rb_found:
 
     if (NODE_IS_DU(type) && is_srb == 1) {
       MessageDef *msg;
-      if (ccch_flag) {
-        /* for rfsim, because UE send RRCSetupRequest in SRB1 */
-        LOG_I(RLC, "[MSG] RRC Setup Request\n");
-        msg = itti_alloc_new_message(TASK_RLC_ENB, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).gNB_DU_ue_id         = 0;
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).mcc                  = RC.nrrrc[0]->configuration.mcc[0];
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc                  = RC.nrrrc[0]->configuration.mnc[0];
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).mnc_digit_length     = RC.nrrrc[0]->configuration.mnc_digit_length[0];
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).nr_cellid            = RC.nrrrc[0]->nr_cellid;
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).crnti                = ue->rnti;
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container        = (unsigned char *)buf;
-        F1AP_INITIAL_UL_RRC_MESSAGE(msg).rrc_container_length = size;
-        itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0), msg);
-        ccch_flag = 0;
-        return;
-      }
-
       msg = itti_alloc_new_message(TASK_RLC_ENB, 0, F1AP_UL_RRC_MESSAGE);
       F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
       F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
@@ -658,6 +640,7 @@ static void add_rlc_srb(int rnti, struct NR_SRB_ToAddMod *s, NR_RLC_BearerConfig
   int t_reassembly;
   int sn_field_length;
 
+  LOG_I(RLC,"Trying to add SRB %d\n",srb_id);
   if (srb_id != 1 && srb_id != 2) {
     LOG_E(RLC, "%s:%d:%s: fatal, bad srb id %d\n",
         __FILE__, __LINE__, __FUNCTION__, srb_id);
@@ -765,7 +748,7 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
   /* TODO: accept other values? */
   if (logical_channel_group != 1) {
     LOG_E(RLC, "%s:%d:%s: fatal error\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
+    //exit(1);
   }
 
   switch (r->present) {

@@ -119,7 +119,6 @@ uint16_t sl_ahead;
 
 extern int emulate_rf;
 extern int numerology;
-extern int usrp_tx_thread;
 
 /*************************************************************/
 /* Functions to attach and configure RRU                     */
@@ -905,6 +904,18 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->rx_bw = 80e6;
       }
       break;
+    case 133 :
+      if (fp->threequarter_fs) {
+	AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
+      }
+      else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
+      }
+
+      break;
     case 106:
       if (fp->threequarter_fs) {
         cfg->sample_rate=46.08e6;
@@ -918,7 +929,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->tx_bw = 40e6;
         cfg->rx_bw = 40e6;
       }
-      break;
+     break;
     case 51:
       if (fp->threequarter_fs) {
         cfg->sample_rate=23.04e6;

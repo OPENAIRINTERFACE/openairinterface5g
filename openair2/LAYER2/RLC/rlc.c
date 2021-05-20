@@ -36,6 +36,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "targets/COMMON/openairinterface5g_limits.h"
 #include "assertions.h"
+#include <rlc.h>
 
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
@@ -51,7 +52,27 @@ extern boolean_t pdcp_data_ind(
 #define DEBUG_RLC_PDCP_INTERFACE 1
 //#define TRACE_RLC_PAYLOAD 1
 #define DEBUG_RLC_DATA_REQ 1
+void (*rlc_rrc_data_conf)(
+  const protocol_ctxt_t *const ctxtP,
+  const rb_id_t         rb_idP,
+  const mui_t           muiP,
+  const rlc_tx_status_t statusP) __attribute__ ((aligned(32)));
 
+void (*rlc_rrc_data_ind)(
+  const protocol_ctxt_t *const ctxtP,
+  const rb_id_t     rb_idP,
+  const sdu_size_t  sdu_sizeP,
+  const uint8_t    *const sduP)  __attribute__ ((aligned(32)));
+
+logical_chan_id_t    rlc_mbms_rbid2lcid_ue [MAX_MOBILES_PER_ENB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
+logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[MAX_eNB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
+rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_ue[MAX_MOBILES_PER_ENB][RLC_MAX_MBMS_LC];    // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
+rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[MAX_eNB][RLC_MAX_MBMS_LC];  // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
+hash_table_t  *rlc_coll_p  __attribute__ ((aligned(32)));
+
+
+logical_chan_id_t    rlc_mbms_rbid2lcid_ue [MAX_MOBILES_PER_ENB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
+logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[MAX_eNB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
 //-----------------------------------------------------------------------------
 void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char *dataP, const signed long sizeP)
 //-----------------------------------------------------------------------------

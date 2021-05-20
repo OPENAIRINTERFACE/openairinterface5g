@@ -53,6 +53,7 @@
 
 #include "executables/softmodem-common.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "executables/nr-softmodem.h"
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -76,10 +77,12 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
     stats->num_rsrp_meas = 0;
     stats->cumul_rsrp = 0 ;
     LOG_I(MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
-    LOG_I(MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",
+    LOG_I(MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_DTX %d, ulsch_errors %d\n",
           UE_id,
           stats->ulsch_rounds[0], stats->ulsch_rounds[1],
-          stats->ulsch_rounds[2], stats->ulsch_rounds[3], stats->ulsch_errors);
+          stats->ulsch_rounds[2], stats->ulsch_rounds[3], 
+          stats->ulsch_DTX,
+          stats->ulsch_errors);
     LOG_I(MAC,
           "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
           UE_id,
@@ -91,6 +94,7 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
         LOG_I(MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
     }
   }
+  print_meas(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL);
 }
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
@@ -309,7 +313,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
 
-  protocol_ctxt_t   ctxt;
+  protocol_ctxt_t   ctxt={0};
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
   int nb_periods_per_frame;

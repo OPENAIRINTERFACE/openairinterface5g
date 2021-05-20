@@ -67,10 +67,12 @@ extern uint16_t prach_root_sequence_map0_3[838];
 openair0_config_t openair0_cfg[MAX_CARDS];
 //uint8_t nfapi_mode=0;
 uint16_t sl_ahead = 0;
+msc_interface_t msc_interface;
 
 //void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
 /* temporary dummy implem of get_softmodem_optmask, till basic simulators implemented as device */
+msc_interface_t msc_interface;
 uint64_t get_softmodem_optmask(void) {return 0;}
 softmodem_params_t *get_softmodem_params(void) {return 0;}
 int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
@@ -675,7 +677,7 @@ int main(int argc, char **argv){
                                 DS_TDL,
                                 0.0,
                                 delay,
-                                0);
+                                0, 0);
 
   if (UE2gNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");

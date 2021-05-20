@@ -55,7 +55,7 @@
 #define HALFWORD 16
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
-static boolean_t loop_dcch_dtch = TRUE;
+static int loop_dcch_dtch = DL_SCH_LCID_DTCH;
 // Compute and write all MAC CEs and subheaders, and return number of written
 // bytes
 int nr_write_ce_dlsch_pdu(module_id_t module_idP,
@@ -343,8 +343,14 @@ void nr_store_dlsch_buffer(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     sched_ctrl->num_total_bytes = 0;
-    loop_dcch_dtch = BOOL_NOT(loop_dcch_dtch);
-    const int lcid = loop_dcch_dtch?DL_SCH_LCID_DTCH:DL_SCH_LCID_DCCH;
+    if ((sched_ctrl->lcid_mask&(1<<4)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH1) 
+      loop_dcch_dtch = DL_SCH_LCID_DTCH;
+    else if ((sched_ctrl->lcid_mask&(1<<1)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DTCH)
+      loop_dcch_dtch = DL_SCH_LCID_DCCH;
+    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH)
+      loop_dcch_dtch = DL_SCH_LCID_DCCH1;
+
+    const int lcid = loop_dcch_dtch;
     // const int lcid = DL_SCH_LCID_DTCH;
     const uint16_t rnti = UE_info->rnti[UE_id];
     sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
@@ -358,22 +364,22 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                       0,
                                                       0);
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
         "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. \n",
         frame,
         slot,
         lcid,
         sched_ctrl->num_total_bytes);  
-
     if (sched_ctrl->num_total_bytes == 0
         && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
       return;
 
     LOG_D(NR_MAC,
-          "[%s][%d.%d], DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
+          "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
           __func__,
           frame,
           slot,
+          lcid<4?"DCCH":"DTCH",
           lcid,
           sched_ctrl->rlc_status[lcid].bytes_in_buffer,
           sched_ctrl->ta_apply);
@@ -452,10 +458,18 @@ void pf_dl(module_id_t module_id,
     if (UE_info->Msg4_ACKed[UE_id] != true) continue;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     int bwp_Id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0; 
-    sched_ctrl->search_space = get_searchspace(scc,sched_ctrl->active_bwp, 
-					       sched_ctrl->active_bwp ? 
-					       NR_SearchSpace__searchSpaceType_PR_ue_Specific:
-					       NR_SearchSpace__searchSpaceType_PR_common);
+    NR_BWP_DownlinkDedicated_t *bwp_Dedicated=NULL;
+    if (sched_ctrl->active_bwp) bwp_Dedicated = sched_ctrl->active_bwp->bwp_Dedicated;
+    else if (UE_info->CellGroup[UE_id] &&
+             UE_info->CellGroup[UE_id]->spCellConfig &&
+             UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated)
+        bwp_Dedicated = UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+
+    sched_ctrl->search_space = get_searchspace(scc,bwp_Dedicated,
+                                               bwp_Dedicated ?         
+                                               NR_SearchSpace__searchSpaceType_PR_ue_Specific:
+                                               NR_SearchSpace__searchSpaceType_PR_common);
+
     sched_ctrl->coreset = get_coreset(scc,sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
     if (sched_ctrl->coreset == NULL) sched_ctrl->coreset = mac->sched_ctrlCommon->coreset;
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
@@ -709,6 +723,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->ul_failure==1) continue;
     UE_info->mac_stats[UE_id].dlsch_current_bytes = 0;
 
     /* update TA and set ta_apply every 10 frames.
@@ -787,7 +802,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "%4d.%2d RNTI %04x start %d RBs %d startSymbol %d nb_symbsol %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
           frame,
           slot,
@@ -801,6 +816,22 @@ void nr_schedule_ue_spec(module_id_t module_id,
           current_harq_pid,
           harq->round,
           harq->ndi);
+    if ((get_softmodem_params()->phy_test == 1) && (frame&127) == 0) 
+      LOG_D(MAC,
+            "%4d.%2d RNTI %04x start %d RBs %d startSymbol %d nb_symbsol %d MCS %d TBS %d (%f Mbps) HARQ PID %d round %d NDI %d\n",
+            frame,
+            slot,
+            rnti,
+            sched_ctrl->rbStart,
+            sched_ctrl->rbSize,
+            startSymbolIndex,
+            nrOfSymbols,
+            sched_ctrl->mcs,
+            TBS,
+            ((double)TBS)*(1<<scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing)/1000,
+            current_harq_pid,
+            harq->round,
+            harq->ndi);
 
     NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
 
@@ -820,7 +851,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      LOG_I(NR_MAC,"Trying to configure DL pdcch for bwp %d, cs %d\n",bwpid,coresetid);
+      LOG_D(NR_MAC,"Trying to configure DL pdcch for bwp %d, cs %d\n",bwpid,coresetid);
       NR_SearchSpace_t *ss = bwp ? sched_ctrl->search_space:gNB_mac->sched_ctrlCommon->search_space;
       NR_ControlResourceSet_t *coreset = bwp? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
       nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
@@ -958,9 +989,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_payload.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator; // PDSCH to HARQ TI
     dci_payload.antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
     dci_payload.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "
-          "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
+          "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d tpc %d\n",
           frame,
           slot,
           dci_payload.frequency_domain_assignment.val,
@@ -972,7 +1003,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.mcs,
           dci_payload.tb_scaling,
           dci_payload.ndi,
-          dci_payload.rv);
+          dci_payload.rv,
+          dci_payload.tpc);
 
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
     const int dci_format = bwp ? (f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0) : NR_DL_DCI_FORMAT_1_0;
@@ -987,7 +1019,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        pdsch_pdu->BWPSize,
                        bwp? bwp->bwp_Id : 0);
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
           (unsigned long long)pdcch_pdu->FreqDomainResource,
           pdcch_pdu->StartSymbolIndex,
@@ -1051,7 +1083,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       /* next, get RLC data */
 
       // const int lcid = DL_SCH_LCID_DTCH;
-      const int lcid = loop_dcch_dtch?DL_SCH_LCID_DTCH:DL_SCH_LCID_DCCH;
+      const int lcid = loop_dcch_dtch;
       int dlsch_total_bytes = 0;
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
@@ -1079,11 +1111,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                  0);
 
           LOG_I(NR_MAC,
-                "%4d.%2d RNTI %04x: %d bytes from DTCH %d (ndata %d, remaining size %d)\n",
+                "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
                 frame,
                 slot,
                 rnti,
                 len,
+                lcid < 4 ? "DCCH" : "DTCH",
                 lcid,
                 ndata,
                 size);

@@ -52,6 +52,9 @@
 
 #undef GTP_DUMP_SOCKET
 
+#undef GTPV1U_BEARER_OFFSET
+#define GTPV1U_BEARER_OFFSET 1
+
 extern unsigned char NB_eNB_INST;
 
 extern RAN_CONTEXT_t RC;

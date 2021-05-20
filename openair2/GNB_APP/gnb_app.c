@@ -188,7 +188,7 @@ void *gNB_app_task(void *args_p)
 
   /* For the CU case the gNB registration with the AMF might have to take place after the F1 setup, as the PLMN info
      * can originate from the DU. */
-  if (AMF_MODE_ENABLED && !NODE_IS_DU(RC.nrrrc[0]->node_type) && !NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+  if (AMF_MODE_ENABLED && !NODE_IS_DU(RC.nrrrc[0]->node_type)) {
     /* Try to register each gNB */
     //registered_gnb = 0;
     __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);

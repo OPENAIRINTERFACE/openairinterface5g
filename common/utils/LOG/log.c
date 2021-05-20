@@ -243,7 +243,7 @@ int write_file_matlab(const char *fname,
       fprintf(fp,"%d \n",((unsigned char *)&data)[0]);
       break;
   default:
-    AssertFatal(false, "unknown dump format: %d\n", format);
+    AssertFatal(false, "unknown dump format: %u\n", format);
   }
 
   if ((format != 10 && format !=11 && format !=12 && format != 13 && format != 15) || multiVec) {
@@ -460,7 +460,7 @@ int logInit (void)
   register_log_component("LOCALIZE","log",LOCALIZE);
   register_log_component("NAS","log",NAS);
   register_log_component("UDP","",UDP_);
-  register_log_component("GTPV1U","",GTPU);
+  register_log_component("GTPU","",GTPU);
   register_log_component("S1AP","",S1AP);
   register_log_component("F1AP","",F1AP);
   register_log_component("M2AP","",M2AP);

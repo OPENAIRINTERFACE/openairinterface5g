@@ -113,7 +113,6 @@ int main(int argc, char *argv[])
   //Initiate timing. (Results depend on CPU Frequency. Therefore, might change due to performance variances during simulation.)
     time_stats_t timeEncoder,timeDecoder;
     opp_enabled=1;
-    cpu_freq_GHz = get_cpu_freq_GHz();
     reset_meas(&timeEncoder);
     reset_meas(&timeDecoder);
     randominit(0);
@@ -324,9 +323,9 @@ if (logFlag){
 #endif
 
       //Iteration times are in microseconds.
-      timeEncoderCumulative+=(timeEncoder.diff/(cpu_freq_GHz*1000.0));
-      timeDecoderCumulative+=(timeDecoder.diff/(cpu_freq_GHz*1000.0));
-      if (logFlag) fprintf(logFile,",%f,%d,%u,%f,%f\n", SNR, nBitError, blockErrorState, (timeEncoder.diff/(cpu_freq_GHz*1000.0)), (timeDecoder.diff/(cpu_freq_GHz*1000.0)));
+      timeEncoderCumulative+=(timeEncoder.diff/(get_cpu_freq_GHz()*1000.0));
+      timeDecoderCumulative+=(timeDecoder.diff/(get_cpu_freq_GHz()*1000.0));
+      if (logFlag) fprintf(logFile,",%f,%d,%u,%f,%f\n", SNR, nBitError, blockErrorState, (timeEncoder.diff/(get_cpu_freq_GHz()*1000.0)), (timeDecoder.diff/(get_cpu_freq_GHz()*1000.0)));
 
       if (nBitError<0) {
         blockErrorCumulative++;
@@ -348,7 +347,7 @@ if (logFlag){
     printf("[ListSize=%d] SNR=%+8.3f, BLER=%9.6f, BER=%12.9f, t_Encoder=%9.3fus, t_Decoder=%9.3fus\n",
            decoderListSize, SNR, ((double)blockErrorCumulative/iterations),
            ((double)bitErrorCumulative / (iterations*testLength)),
-           (double)timeEncoder.diff/timeEncoder.trials/(cpu_freq_GHz*1000.0),(double)timeDecoder.diff/timeDecoder.trials/(cpu_freq_GHz*1000.0));
+           (double)timeEncoder.diff/timeEncoder.trials/(get_cpu_freq_GHz()*1000.0),(double)timeDecoder.diff/timeDecoder.trials/(get_cpu_freq_GHz()*1000.0));
     //(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);
 
     if (blockErrorCumulative==0 && bitErrorCumulative==0) break;

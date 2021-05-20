@@ -142,9 +142,12 @@ extern int asn1_xer_print;
       } \
     } \
     if (ie == NULL ) { \
-      NGAP_ERROR("NGAP_FIND_PROTOCOLIE_BY_ID: %s %d: ie is NULL\n",__FILE__,__LINE__);\
+      if (mandatory) {\
+      NGAP_ERROR("NGAP_FIND_PROTOCOLIE_BY_ID: %s %d: ie is NULL (searching for ie: %ld)\n",__FILE__,__LINE__, IE_ID);\
+      abort();\
+      }\
+      else NGAP_INFO("NGAP_FIND_PROTOCOLIE_BY_ID: %s %d: ie is NULL (searching for ie: %ld)\n",__FILE__,__LINE__, IE_ID);\
     } \
-    if (mandatory)  DevAssert(ie != NULL); \
   } while(0)
 /** \brief Function callback prototype.
  **/

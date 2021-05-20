@@ -52,6 +52,7 @@
 FILE    *g_msc_fd;
 char     g_msc_proto2str[MAX_MSC_PROTOS][MSC_MAX_PROTO_NAME_LENGTH];
 
+msc_interface_t msc_interface;
 
 typedef unsigned long msc_message_number_t;
 typedef struct msc_queue_item_s {

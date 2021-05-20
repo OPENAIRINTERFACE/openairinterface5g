@@ -288,8 +288,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   }
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
-  LOG_D(PHY,"DLSCH coding, A %d (%d) G %d nb_re_dmrs %d length_dmrs %d Nl %d nb_symb_sch %d nb_rb %d\n",
-        A,A/8,G,nb_re_dmrs,length_dmrs,rel15->nrOfLayers,nb_symb_sch,nb_rb);
+  LOG_D(PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", 
+        A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,(int)mod_order);
 
   if (A > 3824) {
     // Add 24-bit crc (polynomial A) to payload

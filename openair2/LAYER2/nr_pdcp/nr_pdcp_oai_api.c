@@ -35,6 +35,7 @@
 /* from OAI */
 #include "pdcp.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #define TODO do { \
     printf("%s:%d:%s: todo\n", __FILE__, __LINE__, __FUNCTION__); \
@@ -477,22 +478,25 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       exit(1);
 
     rb_found:
-      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
-                                  size + GTPU_HEADER_OVERHEAD_MAX);
-      AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
-      memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf, size);
-      message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
-      AssertFatal(message_p != NULL, "OUT OF MEMORY");
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length       = size;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
-      LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
-      //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
-      //printf("\n");
-      itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
+    {
+      int offset=0;
+      if (entity->has_sdap == 1 && entity->has_sdapULheader == 1) offset = 1; // this is the offset of the SDAP header in bytes
 
+      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
+                                  size + GTPU_HEADER_OVERHEAD_MAX - offset);
+      AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
+      memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf+offset, size-offset);
+      message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_GNB_TUNNEL_DATA_REQ);
+      AssertFatal(message_p != NULL, "OUT OF MEMORY");
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).buffer              = gtpu_buffer_p;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).length              = size-offset;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).offset              = GTPU_HEADER_OVERHEAD_MAX;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti                = ue->rnti;
+      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id       = entity->pdusession_id;
+      if (offset==1) LOG_I(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
+      LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size-offset);
+      itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
+   }
   }
 }
 
@@ -531,7 +535,7 @@ rb_found:
   memblock = get_free_mem_block(size, __FUNCTION__);
   memcpy(memblock->data, buf, size);
 
-  LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
+  LOG_I(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
   //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
   //printf("\n");
   enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
@@ -696,7 +700,17 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
 {
   MessageDef      *msg_p;
   int             result;
-  protocol_ctxt_t ctxt;
+  protocol_ctxt_t ctxt={.module_id=0,
+                        .enb_flag=1,
+                        .instance=0,
+                        .rnti=0,
+                        .frame=-1,
+                        .subframe=-1,
+                        .eNB_index=0,
+                        .configured=true,
+                        .brOption=false
+                       };
+
 
   while (1) {
     itti_poll_msg(ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, &msg_p);
@@ -753,7 +767,8 @@ static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
     LOG_D(PDCP, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
-    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
+    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id, 
+                                  0, 0, 0, 0, // sdap parameters
                                   deliver_sdu_srb, ue, deliver_pdu_srb, ue,
                                   12, t_Reordering, -1,
                                   0, 0,
@@ -779,7 +794,31 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   int sn_size_ul = decode_sn_size_ul(*s->pdcp_Config->drb->pdcp_SN_SizeUL);
   int sn_size_dl = decode_sn_size_dl(*s->pdcp_Config->drb->pdcp_SN_SizeDL);
   int discard_timer = decode_discard_timer(*s->pdcp_Config->drb->discardTimer);
-
+  if ((!s->cnAssociation) || s->cnAssociation->present == NR_DRB_ToAddMod__cnAssociation_PR_NOTHING) { 
+    LOG_E(PDCP,"%s:%d:%s: fatal, cnAssociation is missing or present is NR_DRB_ToAddMod__cnAssociation_PR_NOTHING\n",__FILE__,__LINE__,__FUNCTION__);
+    exit(-1);
+  }
+  
+  int pdusession_id; 
+  int has_sdap = 0;
+  int has_sdapULheader=0;
+  int has_sdapDLheader=0;
+  if (s->cnAssociation->present == NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity)
+     pdusession_id = s->cnAssociation->choice.eps_BearerIdentity;
+  else {
+    if (!s->cnAssociation->choice.sdap_Config) {
+      LOG_E(PDCP,"%s:%d:%s: fatal, sdap_Config is null",__FILE__,__LINE__,__FUNCTION__);
+      exit(-1);
+    }
+    pdusession_id = s->cnAssociation->choice.sdap_Config->pdu_Session;
+    has_sdap = 1;
+    has_sdapULheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present ? 1 : 0;
+    has_sdapDLheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present ? 1 : 0;
+    if (has_sdapDLheader==1) {
+      LOG_E(PDCP,"%s:%d:%s: fatal, no support for SDAP DL yet\n",__FILE__,__LINE__,__FUNCTION__);
+      exit(-1);
+    }
+  }
   /* TODO(?): accept different UL and DL SN sizes? */
   if (sn_size_ul != sn_size_dl) {
     LOG_E(PDCP, "%s:%d:%s: fatal, bad SN sizes, must be same. ul=%d, dl=%d\n",
@@ -799,7 +838,8 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
     LOG_D(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    pdcp_drb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, drb_id,
+    pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id,pdusession_id,has_sdap,
+                                  has_sdapULheader,has_sdapDLheader,
                                   deliver_sdu_drb, ue, deliver_pdu_drb, ue,
                                   sn_size_dl, t_reordering, discard_timer,
                                   ciphering_algorithm, integrity_algorithm,
@@ -1043,35 +1083,38 @@ void pdcp_config_set_security(
         uint8_t *const kRRCint_pP,
         uint8_t *const kUPenc_pP)
 {
-  DevAssert(pdcp_pP != NULL);
+  nr_pdcp_ue_t *ue;
+  nr_pdcp_entity_t *rb;
+  int rnti = ctxt_pP->rnti;
+  int integrity_algorithm;
+  int ciphering_algorithm;
 
-  if ((security_modeP >= 0) && (security_modeP <= 0x77)) {
-    pdcp_pP->cipheringAlgorithm     = security_modeP & 0x0f;
-    pdcp_pP->integrityProtAlgorithm = (security_modeP>>4) & 0xf;
-    LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_SET_SECURITY_MODE: cipheringAlgorithm %d integrityProtAlgorithm %d\n",
-          PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
-          pdcp_pP->cipheringAlgorithm,
-          pdcp_pP->integrityProtAlgorithm);
-    pdcp_pP->kRRCenc = kRRCenc_pP;
-    pdcp_pP->kRRCint = kRRCint_pP;
-    pdcp_pP->kUPenc  = kUPenc_pP;
-    /* Activate security */
-    pdcp_pP->security_activated = 1;
-    MSC_LOG_EVENT(
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-      "0 Set security ciph %X integ %x UE %"PRIx16" ",
-      pdcp_pP->cipheringAlgorithm,
-      pdcp_pP->integrityProtAlgorithm,
-      ctxt_pP->rnti);
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
+
+  /* TODO: proper handling of DRBs, for the moment only SRBs are handled */
+
+  if (rb_id >= 1 && rb_id <= 3) {
+    rb = ue->srb[rb_id - 1];
+
+    if (rb == NULL) {
+      LOG_E(PDCP, "%s:%d:%s: no SRB found (rnti %d, rb_id %ld)\n",
+            __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
+      nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+      return;
+    }
+
+    integrity_algorithm = (security_modeP>>4) & 0xf;
+    ciphering_algorithm = security_modeP & 0x0f;
+    rb->set_security(rb, integrity_algorithm, (char *)kRRCint_pP,
+                     ciphering_algorithm, (char *)kRRCenc_pP);
   } else {
-    MSC_LOG_EVENT(
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-      "0 Set security failed UE %"PRIx16" ",
-      ctxt_pP->rnti);
-    LOG_E(PDCP,PROTOCOL_PDCP_CTXT_FMT"  bad security mode %d",
-          PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
-          security_modeP);
+    LOG_E(PDCP, "%s:%d:%s: TODO\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
   }
+
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
 

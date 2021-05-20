@@ -98,6 +98,13 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
 		       NR_RRCReconfiguration_t *reconfig,
 		       NR_RadioBearerConfig_t *rbconfig);
 
+void apply_macrlc_config(gNB_RRC_INST *rrc,
+                         rrc_gNB_ue_context_t         *const ue_context_pP,
+                         const protocol_ctxt_t        *const ctxt_pP );
+
+void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,
+                       const protocol_ctxt_t        *const ctxt_pP );
+
 void
 rrc_gNB_generate_RRCSetup(
     const protocol_ctxt_t        *const ctxt_pP,
@@ -187,3 +194,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
     uint8_t                  xid,
     uint32_t                 nas_length,
     uint8_t                 *nas_buffer);
+
+void 
+rrc_gNB_generate_dedicatedRRCReconfiguration(
+    const protocol_ctxt_t     *const ctxt_pP,
+    rrc_gNB_ue_context_t      *ue_context_pP);

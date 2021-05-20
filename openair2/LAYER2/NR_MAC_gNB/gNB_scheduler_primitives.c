@@ -154,16 +154,15 @@ NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
 }
 
 NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
-				  NR_BWP_Downlink_t *bwp,
+				  NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
 				  NR_SearchSpace__searchSpaceType_PR target_ss) {
 
-
-  const int n = bwp ?
-    bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count:
+  const int n = bwp_Dedicated ?
+    bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count:
     scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.count;
   for (int i=0;i<n;i++) {
-    NR_SearchSpace_t *ss = bwp ?
-      bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i]:
+    NR_SearchSpace_t *ss = bwp_Dedicated ?
+      bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i]:
       scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.array[i];
     AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
@@ -171,7 +170,7 @@ NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
       return ss;
     }
   }
-  AssertFatal(0, "Couldn't find an adequate searchspace\n");
+  AssertFatal(0, "Couldn't find an adequate searchspace bwp_Dedicated %p\n",bwp_Dedicated);
 }
 
 int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
@@ -1256,9 +1255,9 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   case NR_UL_DCI_FORMAT_0_0:
     switch (rnti_type) {
     case NR_RNTI_C:
-      // indicating a DL DCI format 1bit
+      // indicating a UL DCI format 1bit
       pos=1;
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
+      //*dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
       // Freq domain assignment  max 16 bit
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       pos+=fsize;
@@ -1732,10 +1731,14 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
       compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
+    sched_ctrl->lcid_mask = 0;
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
     sched_ctrl->ul_rssi = 0;
+    sched_ctrl->pucch_consecutive_dtx_cnt = 0;
+    sched_ctrl->pusch_consecutive_dtx_cnt = 0;
+    sched_ctrl->ul_failure                = 0;
     /* set illegal time domain allocation to force recomputation of all fields */
     sched_ctrl->pusch_save.time_domain_allocation = -1;
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
@@ -1863,6 +1866,7 @@ uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
   // al values passed to this function are x10
 
   int snrx10 = (cqi*5) - 640;
+  LOG_D(NR_MAC,"tpc : target %d, snrx10 %d\n",target,snrx10);
   if (snrx10 > target + incr) return 0; // decrease 1dB
   if (snrx10 < target - incr) return 2; // increase 1dB
   if (snrx10 < target - (3*incr)) return 3; // increase 3dB

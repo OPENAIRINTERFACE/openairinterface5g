@@ -53,9 +53,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int pusch_AntennaPorts,
                            int sib1_tda,
                            NR_ServingCellConfigCommon_t *scc,
-			   int nsa_flag,
-			   uint32_t rnti,
-			   NR_CellGroupConfig_t *CellGroup
+		                  	   int nsa_flag,
+			                     uint32_t rnti,
+			                     NR_CellGroupConfig_t *CellGroup
                            );
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 
@@ -273,8 +273,8 @@ NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
 
 /* find a search space within a BWP */
 NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
-				  NR_BWP_Downlink_t *bwp,
-				  NR_SearchSpace__searchSpaceType_PR target_ss);
+                                  NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
+                                  NR_SearchSpace__searchSpaceType_PR target_ss);
 
 long get_K2(NR_ServingCellConfigCommon_t *scc, NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
 
