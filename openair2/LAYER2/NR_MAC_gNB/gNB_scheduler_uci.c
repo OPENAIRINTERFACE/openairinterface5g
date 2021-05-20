@@ -376,6 +376,8 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
 
     // setting the CSI or SSB index list
     if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == csi_report->reportQuantity_type) {
+      AssertFatal(csi_MeasConfig->csi_SSB_ResourceSetToAddModList != NULL,
+                  "Wrong settings! Report quantity is SSB-RSRP but csi_MeasConfig->csi_SSB_ResourceSetToAddModList is NULL\n");
       for (int csi_idx = 0; csi_idx < csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; csi_idx++) {
         if (csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_idx]->csi_SSB_ResourceSetId ==
             *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.array[0])){
@@ -389,6 +391,8 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
     }
     else {
       if (resourceType == NR_CSI_ResourceConfig__resourceType_periodic) {
+        AssertFatal(csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList != NULL,
+                    "Wrong settings! Report quantity requires CSI-RS but csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList is NULL\n");
         for (int csi_idx = 0; csi_idx < csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.count; csi_idx++) {
           if (csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_idx]->nzp_CSI_ResourceSetId ==
               *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0])) {
