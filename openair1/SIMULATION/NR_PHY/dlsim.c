@@ -1428,8 +1428,6 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg)
     dmrs_config_type = NFAPI_NR_DMRS_TYPE1;
   } else if(dmrs_arg[2] == 2) {
     dmrs_config_type = NFAPI_NR_DMRS_TYPE2;
-  } else {
-    AssertFatal(1==0,"Incorrect DMRS Configuration Type, valid options 1-type1, 2-type2\n");
   }
 
   NR_BWP_Downlink_t *bwp = scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
