@@ -3112,7 +3112,7 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
             uint32_t nr_SecondaryCellGroup_size = hdr.SecondaryCellGroup_size;
             AssertFatal(sizeof(hdr) + nr_RadioBearer_size + nr_SecondaryCellGroup_size != msg_len,
                         "Bad received msg\n");
-            uint8_t t_id = hdr.trans_id;
+            NR_RRC_TransactionIdentifier_t t_id = hdr.trans_id;
             LOG_I(NR_RRC, "nr_RadioBearerConfig1_r15 size %d nr_SecondaryCellGroupConfig_r15 size %d t_id %d\n",
                       nr_RadioBearer_size,
                       nr_SecondaryCellGroup_size,
@@ -3123,11 +3123,9 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
             process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, nr_SecondaryCellGroup_buffer,
                                 nr_SecondaryCellGroup_size);
             process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, nr_RadioBearer_buffer, nr_RadioBearer_size);
-            LOG_I(NR_RRC, "Calling do_NR_RRCReconfigurationComplete. t_id %d \n", t_id);
-            protocol_ctxt_t ctxt;
-            memset(&ctxt, 0, sizeof(ctxt));
+            LOG_I(NR_RRC, "Calling do_NR_RRCReconfigurationComplete. t_id %ld \n", t_id);
             uint8_t buffer[RRC_BUF_SIZE];
-            size_t size = do_NR_RRCReconfigurationComplete(&ctxt, buffer, t_id);
+            size_t size = do_NR_RRCReconfigurationComplete_for_nsa(buffer, sizeof(buffer), t_id);
             nsa_sendmsg_to_lte_ue(buffer, size, NR_RRC_CONFIG_COMPLETE_REQ);
             break;
         }

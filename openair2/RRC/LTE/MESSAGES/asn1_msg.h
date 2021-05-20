@@ -41,6 +41,7 @@
 
 #include "RRC/LTE/rrc_defs.h"
 #include "LTE_SL-DestinationInfoList-r12.h"
+#include "OctetString.h"
 
 /*
  * The variant of the above function which dumps the BASIC-XER (XER_F_BASIC)
@@ -156,8 +157,9 @@ uint8_t
 do_RRCConnectionReconfigurationComplete(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t *buffer,
-  LTE_RRCConnectionReconfigurationComplete_v1510_IEs_t *str,
-  const uint8_t Transaction_id
+  size_t buffer_size,
+  const uint8_t Transaction_id,
+  OCTET_STRING_t *str
 );
 
 /**

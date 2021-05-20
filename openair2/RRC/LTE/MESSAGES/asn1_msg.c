@@ -2378,13 +2378,41 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
   return((enc_rval.encoded+7)/8);
 }
 
+static void assign_scg_ConfigResponseNR_r15(LTE_RRCConnectionReconfigurationComplete_t *rrc, OCTET_STRING_t *str)
+{
+  /* Melissa TODO: Need to free this memory when we are done. */
+  LTE_RRCConnectionReconfigurationComplete_r8_IEs_t *rrc_r8 = &rrc->criticalExtensions.choice.
+                                                    rrcConnectionReconfigurationComplete_r8;
+  typeof(rrc_r8->nonCriticalExtension) nce1;
+  rrc_r8->nonCriticalExtension = nce1 = CALLOC(1, sizeof(*nce1));
+
+  typeof(nce1->nonCriticalExtension) nce2;
+  nce1->nonCriticalExtension = nce2 = CALLOC(1, sizeof(*nce2));
+
+  typeof(nce2->nonCriticalExtension) nce3;
+  nce2->nonCriticalExtension = nce3 = CALLOC(1, sizeof(*nce3));
+
+  typeof(nce3->nonCriticalExtension) nce4;
+  nce3->nonCriticalExtension = nce4 = CALLOC(1, sizeof(*nce4));
+
+  typeof(nce4->nonCriticalExtension) nce5;
+  nce4->nonCriticalExtension = nce5 = CALLOC(1, sizeof(*nce5));
+
+  typeof(nce5->nonCriticalExtension) nce6;
+  nce5->nonCriticalExtension = nce6 = CALLOC(1, sizeof(*nce6));
+
+  typeof(nce6->scg_ConfigResponseNR_r15) scg;
+  nce6->scg_ConfigResponseNR_r15 = str;
+}
+
 //------------------------------------------------------------------------------
-uint8_t
+size_t
 do_RRCConnectionReconfigurationComplete(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t *buffer,
-  LTE_RRCConnectionReconfigurationComplete_v1510_IEs_t *str,
-  const uint8_t Transaction_id
+  size_t buffer_size,
+  const uint8_t Transaction_id,
+  OCTET_STRING_t *str
 )
 //------------------------------------------------------------------------------
 {
@@ -2400,15 +2428,12 @@ do_RRCConnectionReconfigurationComplete(
   rrcConnectionReconfigurationComplete->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionReconfigurationComplete->criticalExtensions.present =
     LTE_RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8;
-  rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
-  rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
-                                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
-                                        scg_ConfigResponseNR_r15->buf = str->scg_ConfigResponseNR_r15->buf;
-  rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
-                                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
-                                        scg_ConfigResponseNR_r15->size = str->scg_ConfigResponseNR_r15->size;
+  if (str != NULL) {
+    assign_scg_ConfigResponseNR_r15(rrcConnectionReconfigurationComplete, str);
+  }
+  else {
+    rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
+  }
  /* Melissa need to add the release 15 message here into the ul_dcch_msg that we just got.
     We will receive the buffer as an octet string and then pull the data out and put it into
     this message we are encoding here. */
@@ -2420,7 +2445,7 @@ do_RRCConnectionReconfigurationComplete(
                                    NULL,
                                    (void *)&ul_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   LOG_D(RRC,"RRCConnectionReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);

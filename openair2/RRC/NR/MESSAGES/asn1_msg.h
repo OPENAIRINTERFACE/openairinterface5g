@@ -128,6 +128,8 @@ uint8_t do_RRCSetupComplete(uint8_t Mod_id,
 
 uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv);
 
+uint8_t do_NR_RRCReconfigurationComplete_for_nsa(uint8_t *buffer, size_t buffer_size, NR_RRC_TransactionIdentifier_t Transaction_id);
+
 uint8_t do_NR_RRCReconfigurationComplete(
                         const protocol_ctxt_t *const ctxt_pP,
                         uint8_t *buffer,

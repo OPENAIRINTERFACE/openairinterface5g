@@ -1381,6 +1381,40 @@ uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
   LOG_D(NR_RRC,"[UE] RRCSetupRequest Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
 }
+
+//------------------------------------------------------------------------------
+uint8_t
+do_NR_RRCReconfigurationComplete_for_nsa(
+  uint8_t *buffer,
+  size_t buffer_size,
+  NR_RRC_TransactionIdentifier_t Transaction_id
+)
+//------------------------------------------------------------------------------
+{
+  NR_RRCReconfigurationComplete_t rrc_complete_msg;
+  memset(&rrc_complete_msg, 0, sizeof(rrc_complete_msg));
+  rrc_complete_msg.rrc_TransactionIdentifier = Transaction_id;
+  rrc_complete_msg.criticalExtensions.choice.rrcReconfigurationComplete =
+        CALLOC(1, sizeof(*rrc_complete_msg.criticalExtensions.choice.rrcReconfigurationComplete));
+  rrc_complete_msg.criticalExtensions.present =
+	NR_RRCReconfigurationComplete__criticalExtensions_PR_rrcReconfigurationComplete;
+  rrc_complete_msg.criticalExtensions.choice.rrcReconfigurationComplete->nonCriticalExtension = NULL;
+  rrc_complete_msg.criticalExtensions.choice.rrcReconfigurationComplete->lateNonCriticalExtension = NULL;
+  if (0) {
+    xer_fprint(stdout, &asn_DEF_NR_RRCReconfigurationComplete, (void *)&rrc_complete_msg);
+  }
+
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RRCReconfigurationComplete,
+                                                  NULL,
+                                                  (void *)&rrc_complete_msg,
+                                                  buffer,
+                                                  buffer_size);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+  LOG_I(NR_RRC, "rrcReconfigurationComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+  return((enc_rval.encoded+7)/8);
+}
+
 //------------------------------------------------------------------------------
 uint8_t
 do_NR_RRCReconfigurationComplete(

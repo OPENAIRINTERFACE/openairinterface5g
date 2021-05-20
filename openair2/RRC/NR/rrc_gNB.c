@@ -2433,7 +2433,7 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case X2AP_ENDC_SGNB_RECONF_COMPLETE:
-        LOG_I(NR_RRC, "Handling of reconfiguration complete message at RRC gNB is pending \n");
+        LOG_I(NR_RRC, "Melissa Elkadi Handling of reconfiguration complete message at RRC gNB is pending \n");
         break;
 
       case NGAP_INITIAL_CONTEXT_SETUP_REQ:
