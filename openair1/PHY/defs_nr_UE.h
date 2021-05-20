@@ -968,17 +968,14 @@ typedef struct {
 
   CellGroupConfig_t          cell_group_config;
   PDSCH_ServingCellConfig_t  PDSCH_ServingCellConfig;
-  PDSCH_Config_t             PDSCH_Config;
 
   PUCCH_ConfigCommon_nr_t    pucch_config_common_nr[NUMBER_OF_CONNECTED_gNB_MAX];
   PUCCH_Config_t             pucch_config_dedicated_nr[NUMBER_OF_CONNECTED_gNB_MAX];
 
-  PUSCH_Config_t             pusch_config;
   SRS_NR                     srs;
 
   crossCarrierSchedulingConfig_t crossCarrierSchedulingConfig;
   supplementaryUplink_t supplementaryUplink;
-  dmrs_DownlinkConfig_t dmrs_DownlinkConfig;
   csi_MeasConfig_t csi_MeasConfig;
   PUSCH_ServingCellConfig_t PUSCH_ServingCellConfig;
 

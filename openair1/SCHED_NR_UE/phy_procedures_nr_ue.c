@@ -1155,7 +1155,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         }
       }
 
-      if (ue->mac_enabled == 1) {
+      if (ue->mac_enabled == 1) { // TODO: move this from PHY to MAC layer!
 
         /* Time Alignment procedure
         // - UE processing capability 1
@@ -1176,11 +1176,34 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         const int Ta_max = 3846; // Max value of 12 bits TA Command
         const double N_TA_max = Ta_max * bw_scaling * tc_factor;
 
+        NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+
+        NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
+        NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup;
+        NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = pusch_Config->pusch_TimeDomainAllocationList->choice.setup;
+        long mapping_type_ul = pusch_TimeDomainAllocationList->list.array[0]->mappingType;
+
+        NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+        NR_PDSCH_Config_t *pdsch_Config = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup;
+        NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
+        long mapping_type_dl = pdsch_TimeDomainAllocationList->list.array[0]->mappingType;
+
+        NR_DMRS_DownlinkConfig_t *NR_DMRS_dlconfig;
+        if (mapping_type_dl == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA)
+          NR_DMRS_dlconfig = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
+        else
+          NR_DMRS_dlconfig = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+
+        pdsch_dmrs_AdditionalPosition_t add_pos_dl = pdsch_dmrs_pos2;
+        if (NR_DMRS_dlconfig->dmrs_AdditionalPosition)
+          add_pos_dl = *NR_DMRS_dlconfig->dmrs_AdditionalPosition;
+
         /* PDSCH decoding time N_1 for processing capability 1 */
         int N_1;
-        if (ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition == pdsch_dmrs_pos0)
+
+        if (add_pos_dl == pdsch_dmrs_pos0)
           N_1 = pdsch_N_1_capability_1[numerology][1];
-        else if (ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition == pdsch_dmrs_pos1 || ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition == 2) // TODO set to pdsch_dmrs_pos2 when available
+        else if (add_pos_dl == pdsch_dmrs_pos1 || add_pos_dl == pdsch_dmrs_pos2)
           N_1 = pdsch_N_1_capability_1[numerology][2];
         else
           N_1 = pdsch_N_1_capability_1[numerology][3];
@@ -1191,8 +1214,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         /* d_1_1 depending on the number of PDSCH symbols allocated */
         const int d = 0; // TODO number of overlapping symbols of the scheduling PDCCH and the scheduled PDSCH
         int d_1_1 = 0;
-        mappingType_t mapping_type_dl = ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[0]->mappingType;
-        if (mapping_type_dl == typeA)
+        if (mapping_type_dl == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA)
          if (nb_symb_sch + start_symbol < 7)
           d_1_1 = 7 - (nb_symb_sch + start_symbol);
          else
@@ -1207,8 +1229,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
         /* d_2_1 */
         int d_2_1;
-        mappingType_t mapping_type_ul = ue->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
-        if (mapping_type_ul == typeB && start_symbol != 0)
+        if (mapping_type_ul == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB && start_symbol != 0)
           d_2_1 = 0;
         else
           d_2_1 = 1;

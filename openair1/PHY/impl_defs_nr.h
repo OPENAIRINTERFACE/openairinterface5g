@@ -401,62 +401,6 @@ typedef struct{
         int     startSymbolAndLength;
 
 }PDSCH_TimeDomainResourceAllocation_t;
-typedef struct {
-/*
- * resourceAllocation
- */
-  dl_resourceAllocation_t dl_resourceAllocation;
-/*
- * corresponds to I, where I the number of entries in the higher layer parameter pdsch-AllocationList
- */
-  uint8_t n_pdsh_alloc_list;
-/*
- * rateMatchPatternToAddModList
- */
-  rateMatchPattern_t rateMatchPatternToAddModList[MAX_NR_RATE_MATCH_PATTERNS];
-/*
- * rateMatchPatternToReleaseList
- */
-  uint8_t rateMatchPatternToReleaseList[MAX_NR_RATE_MATCH_PATTERNS];
-  /*
-   * n_rateMatchPatterns indicates the number of rateMatchPatterns defined currently
-   */
-  uint8_t n_rateMatchPatterns;
-  /*
-   * zp-CSI-RS-ResourceToAddModList
-   */
-  zp_CSI_RS_Resource_t zp_CSI_RS_Resource[MAX_NR_ZP_CSI_RS_RESOURCES];
-  /*
-   * zp-CSI-RS-ResourceToReleaseList
-   */
-  uint8_t zp_CSI_RS_ResourceId[MAX_NR_ZP_CSI_RS_RESOURCES];
-  /*
-   * n_zp-CSI-RS-Resource
-   */
-  uint8_t n_zp_CSI_RS_ResourceId;
-/*
- * rgb_Size
- */
-  dl_rgb_Size_t dl_rgbSize;
-/*
- * prb-BundlingType
- */
-  prb_bundleType_t prbBundleType;
-/*
- * pdsch-HARQ-ACK-Codebook: this is part of the IE PhysicalCellGroupConfig which is used to configure cell-group specific L1 parameters (TS 38.331)
- */
-  pdsch_HARQ_ACK_Codebook_t pdsch_HARQ_ACK_Codebook;
-  ////////////////////////////////////////////////////////////////////////////////################################
-
-/*
-  Maximum number of code words that a single DCI may schedule. This changes the number of MCS/RV/NDI bits in the DCI message from 1 to 2.
-*/
-  maxNrofCodeWordsScheduledByDCI_t maxNrofCodeWordsScheduledByDCI;
-
-
-  PDSCH_TimeDomainResourceAllocation_t *pdsch_TimeDomainResourceAllocation[MAX_NR_OF_DL_ALLOCATIONS];
-
-} PDSCH_Config_t;
 
 /***********************************************************************
 *
@@ -507,6 +451,7 @@ typedef enum {
 typedef enum {
   pdsch_dmrs_pos0 = 0,
   pdsch_dmrs_pos1 = 1,
+  pdsch_dmrs_pos2 = 2,
   pdsch_dmrs_pos3 = 3,
 } pdsch_dmrs_AdditionalPosition_t;
 typedef enum {
@@ -534,11 +479,6 @@ typedef struct {
   uint16_t n_rb0;
   uint16_t n_rb1;
 } ptrs_frequency_density_t;
-typedef struct { // The IE DMRS-DownlinkConfig is used to configure downlink demodulation reference signals for PDSCH
-  pdsch_dmrs_AdditionalPosition_t pdsch_dmrs_AdditionalPosition;
-  uint16_t scramblingID0;
-  uint16_t scramblingID1;
-} dmrs_DownlinkConfig_t;
 typedef struct {
 /*
  * Serving cell ID of a PSCell. The PCell of the Master Cell Group uses ID = 0
@@ -603,53 +543,6 @@ typedef struct {
   betaOffset_type_t betaOffset_type;
   betaOffset_t betaOffset;
 } uci_onPusch_t;
-typedef struct {
-/*
- * txConfig
- */
-  txConfig_t txConfig;
-/*
- * frequencyHopping
- */
-	frequencyHopping_t frequencyHopping;
-/*
- * frequencyHoppingOffsetLists
- */
-  uint16_t frequencyHoppingOffsetLists[4];
-  // n_frequencyHoppingOffsetLists contains the number of offsets listed. We can list up to 4 offsets
-  uint8_t n_frequencyHoppingOffsetLists;
-/*
- * resourceAllocation
- */
-  ul_resourceAllocation_t ul_resourceAllocation;
-/*
- * rgb_Size
- */
-  ul_rgb_Size_t ul_rgbSize;
-/*
- * corresponds to I, where I the number of entries in the higher layer parameter pusch-AllocationList
- */
-  uint8_t n_push_alloc_list;
-/*
- * transformPrecoder
- */
-transformPrecoder_t transformPrecoder;
-/*
- * codebookSubset
- */
-codebookSubset_t codebookSubset;
-/*
- * maxRank
- */
-uint8_t maxRank;
-/*
- * uci_onPusch
- */
-uci_onPusch_t uci_onPusch;
-////////////////////////////////////////////////////////////////////////////////################################
-  PUSCH_PowerControl_t                    pusch_PowerControl;
-  PUSCH_TimeDomainResourceAllocation_t    *pusch_TimeDomainResourceAllocation[MAX_NR_OF_UL_ALLOCATIONS];
-} PUSCH_Config_t;
 
 /***********************************************************************
 *

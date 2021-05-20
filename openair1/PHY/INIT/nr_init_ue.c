@@ -186,23 +186,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
   /////////////////////////PUSCH DMRS init/////////////////////////
   ///////////
-
-  // default values until overwritten by RRCConnectionReconfiguration
-
-  for (i=0; i<MAX_NR_OF_UL_ALLOCATIONS; i++) {
-    ue->pusch_config.pusch_TimeDomainResourceAllocation[i] = (PUSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PUSCH_TimeDomainResourceAllocation_t));
-    ue->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeB;
-  }
-
-  for (i=0;i<MAX_NR_OF_DL_ALLOCATIONS;i++){
-    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i] = (PDSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PDSCH_TimeDomainResourceAllocation_t));
-    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i]->mappingType = typeA;
-  }
-
-  //------------- config DMRS parameters--------------//
-  ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = pdsch_dmrs_pos0;
-  //-------------------------------------------------//
-
   ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
   pusch_dmrs             = ue->nr_gold_pusch_dmrs;
   n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization

@@ -701,11 +701,11 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int8_t delta = get_delta(p, config_type);
 
   // checking if re-initialization of scrambling IDs is needed
-  if ((ue->dmrs_DownlinkConfig.scramblingID0 != ue->scramblingID[0]) || (ue->dmrs_DownlinkConfig.scramblingID1 != ue->scramblingID[1])){
-    ue->scramblingID[0]=ue->dmrs_DownlinkConfig.scramblingID0;
-    ue->scramblingID[1]=ue->dmrs_DownlinkConfig.scramblingID1;
+  /*if ((XXX.scramblingID0 != ue->scramblingID[0]) || (XXX.scramblingID1 != ue->scramblingID[1])){
+    ue->scramblingID[0] = XXX.scramblingID0;
+    ue->scramblingID[1] = XXX.scramblingID1;
     nr_gold_pdsch(ue,ue->scramblingID);
-  }
+  }*/
 
   nr_pdsch_dmrs_rx(ue, Ns, ue->nr_gold_pdsch[gNB_id][Ns][symbol][0], &pilot[0], 1000+p, 0, nb_rb_pdsch+rb_offset, config_type);
 
