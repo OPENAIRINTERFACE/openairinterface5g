@@ -1271,7 +1271,11 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->cqi_Table = calloc(1,sizeof(*csirep1->cqi_Table));
  *csirep1->cqi_Table = NR_CSI_ReportConfig__cqi_Table_table1;
  csirep1->subbandSize = NR_CSI_ReportConfig__subbandSize_value1;
- csirep1->non_PMI_PortIndication = NULL;
+ csirep1->non_PMI_PortIndication = calloc(1,sizeof(*csirep1->non_PMI_PortIndication));
+ NR_PortIndexFor8Ranks_t *portindex1 = calloc(1,sizeof(*portindex1));
+ portindex1->present = NR_PortIndexFor8Ranks_PR_portIndex1;
+ portindex1->choice.portIndex1 = (NULL_t)0;
+ ASN_SEQUENCE_ADD(&csirep1->non_PMI_PortIndication->list,portindex1);
  csirep1->ext1 = NULL;
 
  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep1);
