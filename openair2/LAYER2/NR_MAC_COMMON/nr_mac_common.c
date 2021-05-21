@@ -3537,6 +3537,66 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
 
 }
 
+void find_period_offest_SR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset) {
+  NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR P_O = SchedulingReqRec->periodicityAndOffset->present;
+  switch (P_O){
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl1:
+      *period = 1;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl1;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl2:
+      *period = 2;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl2;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl4:
+      *period = 4;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl4;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl5:
+      *period = 5;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl5;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl8:
+      *period = 8;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl8;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl10:
+      *period = 10;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl10;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl16:
+      *period = 16;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl16;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl20:
+      *period = 20;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl20;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40:
+      *period = 40;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl40;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl80:
+      *period = 80;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl80;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl160:
+      *period = 160;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl160;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl320:
+      *period = 320;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl320;
+      break;
+    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl640:
+      *period = 640;
+      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl640;
+      break;
+    default:
+      AssertFatal(1==0,"No periodicityAndOffset resources found in schedulingrequestresourceconfig");
+  }
+}
+
 uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t nr_prbs,
                                 uint16_t O_tot,
