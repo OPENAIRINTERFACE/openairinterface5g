@@ -703,7 +703,7 @@ static int Gtpv1uHandleGpdu(int h,
   int offset=8;
 
   if( msgHdr->E ||  msgHdr->S ||msgHdr->PN)
-    offset+=4;
+    offset+=8;
 
   // This context is not good for gtp
   // frame, ... has no meaning
