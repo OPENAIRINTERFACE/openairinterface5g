@@ -145,7 +145,7 @@ static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
         nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request->dl_tti_request_body.dl_tti_pdu_list[i];
         if (pdu_list->PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE)
         {
-            LOG_I(NR_PHY, "Cell_id: %d, the ssb_block_idx %d, sc_offset: %d and payload %d\n",
+            LOG_D(NR_PHY, "Cell_id: %d, the ssb_block_idx %d, sc_offset: %d and payload %d\n",
                 pdu_list->ssb_pdu.ssb_pdu_rel15.PhysCellId,
                 pdu_list->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex,
                 pdu_list->ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset,
@@ -163,8 +163,8 @@ static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
     {
         LOG_E(NR_PHY, "%s: Error packing nr p7 message.\n", __FUNCTION__);
     }
-    LOG_I(NR_RRC, "Calling nsa_sendmsg_to_lte_ue to send a NR_UE_RRC_MEASUREMENT\n");
     nsa_sendmsg_to_lte_ue(buffer, pack_len, NR_UE_RRC_MEASUREMENT);
+    LOG_A(NR_RRC, "Populated NR_UE_RRC_MEASUREMENT information and sent to LTE UE\n");
 }
 
 void *nrue_standalone_pnf_task(void *context)
@@ -228,10 +228,10 @@ void *nrue_standalone_pnf_task(void *context)
             save_nr_measurement_info(&dl_tti_request);
             break;
           case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
-            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message. \n");
+            LOG_D(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message. \n");
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
-            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message. \n");
+            LOG_D(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message. \n");
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
             LOG_D(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message. \n");

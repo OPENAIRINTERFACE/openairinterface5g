@@ -98,6 +98,8 @@ static int from_nr_ue_fd = -1;
 static int to_nr_ue_fd = -1;
 int slrb_id;
 int send_ue_information = 0;
+/* Melissa, this is a hack. Just created a ctxt global. Need to pass to process_nr_nsa_msg(). */
+protocol_ctxt_t ctxt_g;
 
 // for malloc_clear
 #include "PHY/defs_UE.h"
@@ -571,7 +573,6 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(const protocol_ctxt_t 
                                                           const uint8_t Transaction_id,
                                                           OCTET_STRING_t *str) {
   uint8_t buffer[RRC_BUF_SIZE];
-  LOG_I(RRC, "Melissa, calling do_RRCConnectionReconfigurationComplete \n");
   size_t size = do_RRCConnectionReconfigurationComplete(ctxt_pP, buffer, sizeof(buffer), Transaction_id, str);
   LOG_I(RRC,PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel UL-DCCH (SRB1), Generating RRCConnectionReconfigurationComplete (bytes %zu, eNB_index %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP), size, eNB_index);
@@ -847,8 +848,9 @@ rrc_ue_process_measConfig(
                                                             sizeof(buffer));
             AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %zu)!\n",
                           enc_rval.failed_type->name, enc_rval.encoded);
-            LOG_I(RRC, "Calling nsa_sendmsg_to_nr_ue to send a RRC_MEASUREMENT_PROCEDURE\n");
             nsa_sendmsg_to_nrue(buffer, (enc_rval.encoded + 7)/8, RRC_MEASUREMENT_PROCEDURE);
+            LOG_A(RRC, "Encoded measurement object %zu bits (%zu bytes) and sent to NR UE\n",
+                  enc_rval.encoded, (enc_rval.encoded + 7)/8);
           }
           LOG_D(RRC, "Adding measurement object [%d][%ld]\n", eNB_index, ind);
           ue->MeasObj[eNB_index][ind-1]=measObj;
@@ -1952,9 +1954,9 @@ rrc_ue_process_rrcConnectionReconfiguration(
                       nr_RadioBearer->size,
                       nr_SecondaryCellGroup->size);
 
-          LOG_I(RRC, "Calling nsa_sendmsg_to_nr_ue to send an RRC_CONFIG_COMPLETE_REQ\n");
           nsa_sendmsg_to_nrue(&msg, sizeof(msg), RRC_CONFIG_COMPLETE_REQ);
-          #if 0
+          LOG_A(RRC, "Sent RRC_CONFIG_COMPLETE_REQ to the NR UE\n");
+          #if 0 //Melissa, this is a hack. We need the transaction_id from latest dl_dcch_msg the LTE UE received. (Ln 6658)
           LTE_RRCConnectionReconfiguration_t *rrc = &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].dl_dcch_msg->message.
                                                     choice.c1.choice.rrcConnectionReconfiguration;
           if (rrc != NULL) {
@@ -2485,6 +2487,8 @@ rrc_ue_decode_dcch(
                                       nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
                                       nonCriticalExtension->requestedFreqBandsNR_MRDC_r15;
                 nsa_sendmsg_to_nrue(requestedFreqBandsNR->buf, requestedFreqBandsNR->size, NRUE_CAPABILITY_ENQUIRY);
+                LOG_A(RRC, "Second ueCapabilityEnquiry (request for NR capabilities) sent to NR UE with size %zu\n",
+                      requestedFreqBandsNR->size);
                 // Save ueCapabilityEnquiry so we can use in nsa mode after nrUE response is received
                 UE_RRC_INFO *info = &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_indexP];
                 if (info->dl_dcch_msg != NULL) {
@@ -2499,6 +2503,7 @@ rrc_ue_decode_dcch(
                                     nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->
                                     nonCriticalExtension->requestedFreqBandsNR_MRDC_r15;
               nsa_sendmsg_to_nrue(requestedFreqBandsNR->buf, requestedFreqBandsNR->size, UE_CAPABILITY_ENQUIRY);
+              LOG_A(RRC, "Initial ueCapabilityEnquiry sent to NR UE with size %zu\n", requestedFreqBandsNR->size);
               // Save ueCapabilityEnquiry so we can use in nsa mode after nrUE response is received
               UE_RRC_INFO *info = &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_indexP];
               if (info->dl_dcch_msg != NULL) {
@@ -4864,6 +4869,7 @@ void *rrc_ue_task( void *args_p ) {
     itti_receive_msg (TASK_RRC_UE, &msg_p);
     instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
     ue_mod_id = UE_INSTANCE_TO_MODULE_ID(instance);
+    ctxt_g = ctxt;
 
     /* TODO: Add case to handle nr-UE messages we want from nrUE RRC layer */
     switch (ITTI_MSG_ID(msg_p)) {
@@ -6541,8 +6547,6 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
     uint8_t *const msg_buffer = msg->msg_buffer;
     msg_len -= sizeof(msg->msg_type);
     bool received_nr_msg = true;
-    protocol_ctxt_t ctxt;
-    memset(&ctxt, 0, sizeof(ctxt));
 
     switch (msg_type)
     {
@@ -6557,7 +6561,7 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             AssertFatal(msg_len <= sizeof(nrue_cap_buf->mesg), "msg_len = %d\n", msg_len);
             memcpy(nrue_cap_buf->mesg, msg_buffer, msg_len);
             nrue_cap_buf->mesg_len = msg_len;
-            UE_RRC_INFO *info = &UE_rrc_inst[ctxt.module_id].Info[0];
+            UE_RRC_INFO *info = &UE_rrc_inst[ctxt_g.module_id].Info[0];
             nrue_cap_buf->dl_dcch_msg = info->dl_dcch_msg;
             info->dl_dcch_msg = NULL;
             message_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_NRUE_CAP_INFO_IND);
@@ -6587,7 +6591,7 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             rrc_dcch_data_copy_t *dl_dcch_buffer = itti_malloc (TASK_RRC_NSA_UE,
                                                                 TASK_RRC_UE,
                                                                 sizeof(rrc_dcch_data_copy_t));
-            UE_RRC_INFO *info = &UE_rrc_inst[ctxt.module_id].Info[0];
+            UE_RRC_INFO *info = &UE_rrc_inst[ctxt_g.module_id].Info[0];
             dl_dcch_buffer->dl_dcch_msg = info->dl_dcch_msg;
             info->dl_dcch_msg = NULL;
             message_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_DCCH_DATA_COPY_IND);
@@ -6650,13 +6654,13 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             OCTET_STRING_fromBuf(&rrcConfigurationComplete,
                                 (const char *)msg_buffer,
                                 msg_len);
-            #if 0
+            #if 0 //Melissa, this is a hack. We need the transaction_id from latest dl_dcch_msg the LTE UE received. (Ln 6658)
             LTE_RRCConnectionReconfiguration_t *rrc_saved = &UE_rrc_inst[ctxt.module_id].Info[0].dl_dcch_msg->message.
                                                             choice.c1.choice.rrcConnectionReconfiguration;
             uint8_t t_id = rrc_saved->rrc_TransactionIdentifier;
             rrc_saved = NULL;
             #endif
-            rrc_ue_generate_RRCConnectionReconfigurationComplete(&ctxt, ctxt.eNB_index, 0, &rrcConfigurationComplete);
+            rrc_ue_generate_RRCConnectionReconfigurationComplete(&ctxt_g, ctxt_g.eNB_index, 0, &rrcConfigurationComplete);
             break;
         }
         default:

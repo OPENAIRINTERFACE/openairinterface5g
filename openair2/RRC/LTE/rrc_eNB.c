@@ -1339,7 +1339,7 @@ rrc_eNB_generate_NR_UECapabilityEnquiry(
            rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
            eutra_band,
            nr_band);
-  LOG_I(RRC,
+  LOG_A(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         size);
@@ -3464,6 +3464,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15->ss_rsrq = TRUE;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.ext7->reportQuantityCellNR_r15->ss_sinr = TRUE;
     ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_NR);
+    LOG_A(RRC, "Generating RRCCConnectionReconfigurationRequest (NRUE Measurement Report Request).\n");
   }
 
   //  LTE_RRCConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
@@ -4443,14 +4444,7 @@ static int encode_CG_ConfigInfo(
     = calloc(1,sizeof(struct NR_CG_ConfigInfo_IEs));
   AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo != NULL,
               "failed to allocate memory for cg_configinfo_IEs");
-  /* Melissa Elkadi: None of the three following if statments are true. In this case,
-     we never fill the container and in the gNB we are never parsing the UE_capability_info.
-     I believe this is happening because we are not properly sending the UE_Capability_Info
-     over from the LTE UE. We received the info from the NR UE but we dont fill the container
-     properly? */
-  LOG_I(RRC,"Got here Melissa Elkadi %s():%d\n", __FUNCTION__, __LINE__);
   if(ue_context_pP->ue_context.UE_Capability_MRDC) {
-    LOG_I(RRC,"Got here Melissa Elkadi%s():%d\n", __FUNCTION__, __LINE__);
     RAT_Container_count++;
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_MRDC_Capability,NULL,
                                      (void *)ue_context_pP->ue_context.UE_Capability_MRDC,temp_buff,ASN_MAX_ENCODE_SIZE);
@@ -4465,7 +4459,6 @@ static int encode_CG_ConfigInfo(
   }
 
   if(ue_context_pP->ue_context.UE_Capability_nr) {
-    LOG_I(RRC,"Got here Melissa Elkadi %s():%d\n", __FUNCTION__, __LINE__);
     RAT_Container_count++;
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_NR_Capability,NULL,
                                      (void *)ue_context_pP->ue_context.UE_Capability_nr,temp_buff,ASN_MAX_ENCODE_SIZE);
@@ -4480,7 +4473,6 @@ static int encode_CG_ConfigInfo(
   }
 
   if (RAT_Container_count) {
-    LOG_I(RRC,"Got here Melissa Elkadi %s():%d\n", __FUNCTION__, __LINE__);
     cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo->ue_CapabilityInfo = calloc(1,sizeof( OCTET_STRING_t));
     AssertFatal(cg_configinfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo-> ue_CapabilityInfo != NULL, "failed to allocate memory for ue_capabilityinfo");
     ue_cap_rat_container_list = calloc(1,sizeof(NR_UE_CapabilityRAT_ContainerList_t));
@@ -4632,7 +4624,7 @@ rrc_eNB_process_MeasurementReport(
                  sizeof(transport_layer_addr_t));
         }
 
-        LOG_I(RRC,
+        LOG_A(RRC,
               "[eNB %d] frame %d subframe %d: UE rnti %x switching to NSA mode\n",
               ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->subframe, ctxt_pP->rnti);
         itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
@@ -7707,12 +7699,11 @@ rrc_eNB_decode_dcch(
         if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.
             present ==
             LTE_RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8) {
-            LOG_I(RRC, "Melissa, the present is set for NR woowho! The status is %d\n",ue_context_p->ue_context.Status);
           /*NN: revise the condition */
           /*FK: left the condition as is for the case MME is used (S1 mode) but setting  dedicated_DRB = 1 otherwise (noS1 mode) so that no second RRCReconfiguration message activationg more DRB is sent as this causes problems with the nasmesh driver.*/
           int flexran_agent_handover = 0;
 
-          if (1) {
+          if (1) { //Melissa: This is a hack. We are bypassing EPC mode here.
             if (ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
               dedicated_DRB = 1;
               LOG_I(RRC,
@@ -7762,34 +7753,30 @@ rrc_eNB_decode_dcch(
                     PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_HO_EXECUTION (xid %ld)\n",
                     PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
             } else if(ue_context_p->ue_context.Status == RRC_NR_NSA) {
-              LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
               //Looking for a condition to trigger S1AP E-RAB-Modification-indication, based on the reception of RRCConnectionReconfigurationComplete
               //including NR specific elements.
               if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                  nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
+                  nonCriticalExtension!=NULL) {
                 if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                    nonCriticalExtension->nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
+                    nonCriticalExtension->nonCriticalExtension!=NULL) {
                   if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                      nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
+                      nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) {
                     if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
+                        nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) {
                       if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                          nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
+                          nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) {
                         if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
-                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) { LOG_I(RRC, "Melissa, got here %d!\n", __LINE__);
+                            nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL) {
                           if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
                               nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension
                               ->scg_ConfigResponseNR_r15!=NULL) {
-                            LOG_I(RRC, "Melissa, the scg_config response is not null!\n");
                             dedicated_DRB = -1;     /* put a value that does not run anything below */
                             ue_context_p->ue_context.Status = RRC_NR_NSA_RECONFIGURED;
                             /*Trigger E-RAB Modification Indication */
-                            LOG_I(RRC, "Melissa, calling rrc_eNB_send_E_RAB_Modification_Indication!\n");
                             rrc_eNB_send_E_RAB_Modification_Indication(ctxt_pP, ue_context_p);
-                            LOG_I(RRC, "Melissa, calling rrc_eNB_process_reconfiguration_complete_endc!\n");
                             /* send reconfiguration complete to gNB */
                             rrc_eNB_process_reconfiguration_complete_endc(ctxt_pP, ue_context_p);
-                            LOG_I(RRC, "Melissa, finished rrc_eNB_process_reconfiguration_complete_endc!\n");
+                            LOG_A(RRC, "Sent rrcReconfigurationComplete to gNB\n");
                           }
                         }
                       }
@@ -8159,7 +8146,7 @@ rrc_eNB_decode_dcch(
         for (i = 0; i < ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count; i++) {
           if (ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type ==
               LTE_RAT_Type_nr) {
-              LOG_I(RRC, "got nrUE capabilities for UE %x\n", ctxt_pP->rnti);
+              LOG_A(RRC, "got nrUE capabilities for UE %x\n", ctxt_pP->rnti);
             if(ue_context_p->ue_context.UE_Capability_nr) {
               ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability,ue_context_p->ue_context.UE_Capability_nr);
               ue_context_p->ue_context.UE_Capability_nr = 0;
@@ -9032,7 +9019,6 @@ void rrc_eNB_process_ENDC_x2_setup_request(int mod_id, x2ap_ENDC_setup_req_t *m)
 }
 
 void rrc_eNB_process_AdditionResponseInformation(const module_id_t enb_mod_idP, x2ap_ENDC_sgnb_addition_req_ACK_t *m) {
-  LOG_I(RRC, "Melissa Elkadi we got here %s():%d\n", __FUNCTION__, __LINE__);
   NR_CG_Config_t *CG_Config = NULL;
   {
     int i;
@@ -9478,7 +9464,6 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       break;
 
     case X2AP_ENDC_SGNB_ADDITION_REQ_ACK: {
-      LOG_I(RRC, "Melissa Elkadi we got here %s():%d\n", __FUNCTION__, __LINE__);
       rrc_eNB_process_AdditionResponseInformation(ENB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg_p));
       break;
     }

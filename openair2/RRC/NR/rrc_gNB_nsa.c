@@ -65,7 +65,6 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
-  LOG_I(RRC, "Melissa Elkadi. We got here %s():%d\n", __FUNCTION__, __LINE__);
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
 
   OCTET_STRING_t *ueCapabilityRAT_Container_nr=NULL;
@@ -125,6 +124,7 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerL
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) && ueCapabilityRAT_Container_MRDC != NULL ) {
     xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
   }
+  LOG_A(RRC, "Successfully decoded UE NR capabilities (NR and MRDC)\n");
 
   rrc_add_nsa_user(rrc,ue_context_p, m);
 }
@@ -134,7 +134,6 @@ RB_PROTOTYPE(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s, entries,
              rrc_gNB_compare_ue_rnti_id);
 
 void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m) {
-  LOG_I(RRC, "Melissa Elkadi. We got here %s():%d\n", __FUNCTION__, __LINE__);
   // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
   rrc_gNB_carrier_data_t *carrier=&rrc->carrier;
   MessageDef *msg;
@@ -281,7 +280,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       create_tunnel_req.num_tunnels    = m->nb_e_rabs_tobeadded;
       RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[rrc->module_id]->rrc_ue_head, ue_context_p);
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_id_rnti, 0, 0,rrc->module_id);
-      #if 0 //Melissa this is a hack.
+      #if 0 //Melissa this is a hack: we are bypassing the EPC functionality.
       gtpv1u_create_s1u_tunnel(
         ctxt.instance,
         &create_tunnel_req,
@@ -377,7 +376,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       (LTE_PMCH_InfoList_r9_t *) NULL,
       ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
-  LOG_I(RRC, "Melissa Elkadi. %s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
+  LOG_I(RRC, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
 
 }
 

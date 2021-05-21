@@ -2415,8 +2415,6 @@ do_RRCConnectionReconfigurationComplete(
 )
 //------------------------------------------------------------------------------
 {
-  LOG_I(RRC, "Melissa, entered do_RRCConnectionReconfigurationComplete \n");
-
   asn_enc_rval_t enc_rval;
   LTE_UL_DCCH_Message_t ul_dcch_msg;
   LTE_RRCConnectionReconfigurationComplete_t *rrcConnectionReconfigurationComplete;
@@ -2429,7 +2427,7 @@ do_RRCConnectionReconfigurationComplete(
     LTE_RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8;
   if (str != NULL) {
     assign_scg_ConfigResponseNR_r15(rrcConnectionReconfigurationComplete, str);
-    LOG_I(RRC, "Melissa we finished assign_scg_ConfigResponseNR_r15\n");
+    LOG_D(RRC, "Successfully assigned scg_ConfigResponseNR_r15\n");
   }
   else {
     rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;

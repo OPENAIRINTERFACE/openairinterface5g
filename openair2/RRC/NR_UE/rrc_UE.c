@@ -289,7 +289,6 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
           //  after first time, update it and free the memory after.
           NR_UE_rrc_inst[module_id].cell_group_config = cellGroupConfig;
           nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
-          LOG_I(NR_RRC, "Melissa, we have finished nr_rrc_ue_process_scg_config. Now freeing. \n");
           SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)NR_UE_rrc_inst[module_id].cell_group_config, 0);
         }
       }
@@ -2994,7 +2993,7 @@ static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   UECap->sdu_size = (enc_rval.encoded + 7) / 8;
-  LOG_I(NR_RRC, "[NR_RRC] NRUE Capability encoded, %d bytes (%zd bits)\n",
+  LOG_A(NR_RRC, "[NR_RRC] NRUE Capability encoded, %d bytes (%zd bits)\n",
         UECap->sdu_size, enc_rval.encoded + 7);
   /* Melissa: Hack. Need to add ctxt->mod_id as array indices */
   NR_UE_rrc_inst[0].UECap = UECap;
@@ -3015,7 +3014,7 @@ static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
 
 void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
 {
-    LOG_I(NR_RRC, "We are processing an NSA message\n");
+    LOG_D(NR_RRC, "Processing an NSA message\n");
     Rrc_Msg_Type_t msg_type = msg->msg_type;
     uint8_t *const msg_buffer = msg->msg_buffer;
     msg_len -= sizeof(msg->msg_type);
@@ -3023,7 +3022,7 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
     {
         case UE_CAPABILITY_ENQUIRY:
         {
-            LOG_I(NR_RRC, "We are processing a %d message \n", msg_type);
+            LOG_D(NR_RRC, "We are processing a %d message \n", msg_type);
             NR_FreqBandList_t *nr_freq_band_list = NULL;
             asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
                             &asn_DEF_NR_FreqBandList,
@@ -3042,9 +3041,9 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
                      nr_freq_band_list->list.array[i]->choice.bandInformationNR->bandNR);
             }
             MessageDef *dummy_msg = itti_alloc_new_message(TASK_RRC_NSA_UE, 0, UE_CAPABILITY_DUMMY);
-            LOG_I(NR_RRC, "We are calling nsa_sendmsg_to_lte_ue to send a UE_CAPABILITY_DUMMY\n");
+            LOG_D(NR_RRC, "We are calling nsa_sendmsg_to_lte_ue to send a UE_CAPABILITY_DUMMY\n");
             nsa_sendmsg_to_lte_ue(dummy_msg, sizeof(dummy_msg), UE_CAPABILITY_DUMMY);
-            LOG_I(NR_RRC, "We have sent a UE_CAPABILITY_DUMMY\n");
+            LOG_A(NR_RRC, "Sent initial NRUE Capability response to LTE UE\n");
             break;
         }
 
@@ -3084,17 +3083,10 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
               LOG_E(RRC, "Failed to decode measurement object (%zu bits) %d\n", dec_rval.consumed, dec_rval.code);
               break;
             }
-            LOG_I(NR_RRC, "NR carrierFreq_r15 (ssb): %ld and sub carrier spacing:%ld\n",
+            LOG_D(NR_RRC, "NR carrierFreq_r15 (ssb): %ld and sub carrier spacing:%ld\n",
                   nr_meas_obj->measObject.choice.measObjectNR_r15.carrierFreq_r15,
                   nr_meas_obj->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15);
             start_oai_nrue_threads();
-            /* Create a processs RRC_MEASUREMENT_PROCEDURE function. This
-               function will tell the NR UE which frequency to take measurements
-               on. You can log these values for fun. This will trigger 5G UE socket with proxy
-               to be opened. It will listen for PBCH from gNB (proxy technically). Then it will
-               call the ususal MIB functions to handle the MIB. Intervene in 5G stack to decode the MIB.
-               Also, after receiving PBCH it will start sending SSB index/cellID and some info from MIB to UE
-               as measurement reporting message*/
             break;
         }
         case RRC_CONFIG_COMPLETE_REQ:
@@ -3113,7 +3105,7 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
             AssertFatal(sizeof(hdr) + nr_RadioBearer_size + nr_SecondaryCellGroup_size != msg_len,
                         "Bad received msg\n");
             NR_RRC_TransactionIdentifier_t t_id = hdr.trans_id;
-            LOG_I(NR_RRC, "nr_RadioBearerConfig1_r15 size %d nr_SecondaryCellGroupConfig_r15 size %d t_id %d\n",
+            LOG_I(NR_RRC, "nr_RadioBearerConfig1_r15 size %d nr_SecondaryCellGroupConfig_r15 size %d t_id %ld\n",
                       nr_RadioBearer_size,
                       nr_SecondaryCellGroup_size,
                       t_id);
