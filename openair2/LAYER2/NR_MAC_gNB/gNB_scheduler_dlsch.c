@@ -825,7 +825,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
             startSymbolIndex,
             nrOfSymbols,
             sched_ctrl->mcs,
-            TBS,((double)TBS)*(1<<scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing))/1000,
+            TBS,((double)TBS)*(1<<scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing)/1000,
             current_harq_pid,
             harq->round,
             harq->ndi);
