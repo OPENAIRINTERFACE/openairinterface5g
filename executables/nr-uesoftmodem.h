@@ -72,9 +72,6 @@ extern uint64_t get_nrUE_optmask(void);
 extern uint64_t set_nrUE_optmask(uint64_t bitmask);
 extern nrUE_params_t *get_nrUE_params(void);
 
-#ifdef NRUE_MAIN
-nrUE_params_t nrUE_params;
-#endif
 
 // In nr-ue.c
 extern int setup_nr_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);

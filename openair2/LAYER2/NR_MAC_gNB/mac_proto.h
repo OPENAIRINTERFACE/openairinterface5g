@@ -187,10 +187,10 @@ void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frameP,
                            sub_frame_t slotP);
 
-bool nr_acknack_scheduling(int Mod_idP,
-                           int UE_id,
-                           frame_t frameP,
-                           sub_frame_t slotP);
+int nr_acknack_scheduling(int Mod_idP,
+                          int UE_id,
+                          frame_t frameP,
+                          sub_frame_t slotP);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,

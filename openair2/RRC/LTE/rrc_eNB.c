@@ -1202,7 +1202,7 @@ rrc_eNB_process_RRCConnectionSetupComplete(
   LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing LTE_RRCConnectionSetupComplete from UE (SRB1 Active)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
   ue_context_pP->ue_context.Srb1.Active = 1;
-  ue_context_pP->ue_context.Status = RRC_CONNECTED;
+  ue_context_pP->ue_context.StatusRrc = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity timer when UE goes into RRC_CONNECTED
   T(T_ENB_RRC_CONNECTION_SETUP_COMPLETE,
     T_INT(ctxt_pP->module_id),
@@ -1578,7 +1578,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   int                                    measurements_enabled;
   uint8_t next_xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);
   int ret = 0;
-  ue_context_pP->ue_context.Status = RRC_CONNECTED;
+  ue_context_pP->ue_context.StatusRrc = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
   ue_context_pP->ue_context.reestablishment_xid = next_xid;
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
@@ -2208,7 +2208,7 @@ rrc_eNB_generate_RRCConnectionRelease(
 #if 0
 
   if(ue_context_pP != NULL) {
-    if(ue_context_pP->ue_context.Status == RRC_NR_NSA) {
+    if(ue_context_pP->ue_context.StatusRrc == RRC_NR_NSA) {
       //rrc_eNB_generate_SgNBReleaseRequest(ctxt_pP,ue_context_pP);
     }
   }
@@ -4586,9 +4586,9 @@ rrc_eNB_process_MeasurementReport(
 
   /* TODO: improve NR triggering */
   if (measResults2->measId == 7) {
-    if ((ue_context_pP->ue_context.Status != RRC_NR_NSA) && (ue_context_pP->ue_context.Status != RRC_NR_NSA_RECONFIGURED)) {
+    if ((ue_context_pP->ue_context.StatusRrc != RRC_NR_NSA) && (ue_context_pP->ue_context.StatusRrc != RRC_NR_NSA_RECONFIGURED)) {
       MessageDef      *msg;
-      ue_context_pP->ue_context.Status = RRC_NR_NSA;
+      ue_context_pP->ue_context.StatusRrc = RRC_NR_NSA;
       ue_context_pP->ue_context.gnb_rnti = -1;         // set when receiving X2AP_ENDC_SGNB_ADDITION_REQ_ACK
       ue_context_pP->ue_context.gnb_x2_assoc_id = -1;  // set when receiving X2AP_ENDC_SGNB_ADDITION_REQ_ACK
 
@@ -4724,12 +4724,12 @@ rrc_eNB_process_MeasurementReport(
   LOG_D(RRC, "A3 event is triggered...\n");
 
   /* if the UE is not in handover mode, start handover procedure */
-  if (ue_context_pP->ue_context.Status != RRC_HO_EXECUTION) {
+  if (ue_context_pP->ue_context.StatusRrc != RRC_HO_EXECUTION) {
     MessageDef      *msg;
     LOG_I(RRC, "Send HO preparation message at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
     /* HO info struct may not be needed anymore */
     ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
-    ue_context_pP->ue_context.Status = RRC_HO_EXECUTION;
+    ue_context_pP->ue_context.StatusRrc = RRC_HO_EXECUTION;
     ue_context_pP->ue_context.handover_info->state = HO_REQUEST;
     /* HO Preparation message */
     msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_HANDOVER_REQ);
@@ -4861,7 +4861,7 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
   RB_INSERT(rrc_ue_tree_s, &RC.rrc[mod_id]->rrc_ue_head, ue_context_target_p);
   LOG_D(RRC, "eNB %d: Created new UE context uid %u\n", mod_id, ue_context_target_p->local_uid);
   ue_context_target_p->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_target_p->ue_context.handover_info)));
-  //ue_context_target_p->ue_context.Status = RRC_HO_EXECUTION;
+  //ue_context_target_p->ue_context.StatusRrc = RRC_HO_EXECUTION;
   //ue_context_target_p->ue_context.handover_info->state = HO_ACK;
   ue_context_target_p->ue_context.handover_info->x2_id = m->x2_id;
   ue_context_target_p->ue_context.handover_info->assoc_id = m->target_assoc_id;
@@ -4936,7 +4936,7 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
   }
 
   rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ(mod_id, ue_context_target_p);
-  ue_context_target_p->ue_context.Status = RRC_HO_EXECUTION;
+  ue_context_target_p->ue_context.StatusRrc = RRC_HO_EXECUTION;
   ue_context_target_p->ue_context.handover_info->state = HO_ACK;
 }
 
@@ -5051,7 +5051,7 @@ flexran_rrc_eNB_trigger_handover (int mod_id,
   LOG_D(RRC, "Handover is triggered by FlexRAN controller...\n");
 
   /* if the UE is not in handover mode, start handover procedure */
-  if (ue_context_pP->ue_context.Status != RRC_HO_EXECUTION) {
+  if (ue_context_pP->ue_context.StatusRrc != RRC_HO_EXECUTION) {
     MessageDef      *msg;
     LOG_I(RRC, "Send HO preparation message at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
     /* Check memory leakage for handover info */
@@ -5059,7 +5059,7 @@ flexran_rrc_eNB_trigger_handover (int mod_id,
     //free(ue_context_pP->ue_context.handover_info);
     //}
     ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
-    ue_context_pP->ue_context.Status = RRC_HO_EXECUTION;
+    ue_context_pP->ue_context.StatusRrc = RRC_HO_EXECUTION;
     ue_context_pP->ue_context.handover_info->state = HO_REQUEST;
     /* HO Preparation message */
     msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_HANDOVER_REQ);
@@ -5120,7 +5120,7 @@ check_handovers(
   RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
     ctxt_pP->rnti  = ue_context_p->ue_id_rnti;
 
-    if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION && ue_context_p->ue_context.handover_info != NULL) {
+    if (ue_context_p->ue_context.StatusRrc == RRC_HO_EXECUTION && ue_context_p->ue_context.handover_info != NULL) {
       /* in the source, UE in HO_PREPARE mode */
       if (ue_context_p->ue_context.handover_info->state == HO_PREPARE) {
         LOG_D(RRC,
@@ -5171,7 +5171,7 @@ check_handovers(
       }
     }
 
-    if (ue_context_p->ue_context.Status == RRC_RECONFIGURED
+    if (ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED
         && ue_context_p->ue_context.handover_info != NULL &&
         ue_context_p->ue_context.handover_info->forwarding_state == FORWARDING_NO_EMPTY ) {
       MessageDef   *msg_p;
@@ -5237,7 +5237,7 @@ check_handovers(
       ue_context_p->ue_context.handover_info->forwarding_state = FORWARDING_EMPTY;
     }
 
-    if( ue_context_p->ue_context.Status == RRC_RECONFIGURED &&
+    if( ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED &&
         ue_context_p->ue_context.handover_info != NULL &&
         ue_context_p->ue_context.handover_info->forwarding_state == FORWARDING_EMPTY &&
         ue_context_p->ue_context.handover_info->endmark_state == ENDMARK_NO_EMPTY &&
@@ -7228,7 +7228,7 @@ rrc_eNB_decode_ccch(
           }
 
           //c-plane not end
-          if((ue_context_p->ue_context.Status != RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == LTE_ReestablishmentCause_spare1)) {
+          if((ue_context_p->ue_context.StatusRrc != RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == LTE_ReestablishmentCause_spare1)) {
             LOG_E(RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" LTE_RRCConnectionReestablishmentRequest (UE %x c-plane is not end), let's reject the UE\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);
@@ -7240,9 +7240,9 @@ rrc_eNB_decode_ccch(
             LOG_E(RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" RRRCConnectionReconfigurationComplete(Previous) don't receive, delete the Previous UE,\nprevious Status %d, new Status RRC_RECONFIGURED\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-                  ue_context_p->ue_context.Status
+                  ue_context_p->ue_context.StatusRrc
                  );
-            ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+            ue_context_p->ue_context.StatusRrc = RRC_RECONFIGURED;
             protocol_ctxt_t  ctxt_old_p;
             PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt_old_p,
                                           ctxt_pP->instance,
@@ -8014,7 +8014,7 @@ rrc_eNB_decode_dcch(
           int flexran_agent_handover = 0;
 
           if (EPC_MODE_ENABLED) {
-            if (ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
+            if (ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED) {
               dedicated_DRB = 1;
               LOG_I(RRC,
                     PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
@@ -8039,7 +8039,7 @@ rrc_eNB_decode_dcch(
                 dedicated_DRB = 2;
                 RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
               }
-            } else if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION) {
+            } else if (ue_context_p->ue_context.StatusRrc == RRC_HO_EXECUTION) {
               int16_t UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
 
               if(UE_id == -1) {
@@ -8053,7 +8053,7 @@ rrc_eNB_decode_dcch(
               RC.rrc[ctxt_pP->module_id]->Nb_ue++;
               dedicated_DRB = 3;
               RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
-              ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+              ue_context_p->ue_context.StatusRrc = RRC_RECONFIGURED;
 
               if(ue_context_p->ue_context.handover_info) {
                 ue_context_p->ue_context.handover_info->state = HO_CONFIGURED;
@@ -8062,7 +8062,7 @@ rrc_eNB_decode_dcch(
               LOG_I(RRC,
                     PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_HO_EXECUTION (xid %ld)\n",
                     PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-            } else if(ue_context_p->ue_context.Status == RRC_NR_NSA) {
+            } else if(ue_context_p->ue_context.StatusRrc == RRC_NR_NSA) {
               //Looking for a condition to trigger S1AP E-RAB-Modification-indication, based on the reception of RRCConnectionReconfigurationComplete
               //including NR specific elements.
               if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
@@ -8081,7 +8081,7 @@ rrc_eNB_decode_dcch(
                               nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension
                               ->scg_ConfigResponseNR_r15!=NULL) {
                             dedicated_DRB = -1;     /* put a value that does not run anything below */
-                            ue_context_p->ue_context.Status = RRC_NR_NSA_RECONFIGURED;
+                            ue_context_p->ue_context.StatusRrc = RRC_NR_NSA_RECONFIGURED;
                             /*Trigger E-RAB Modification Indication */
                             rrc_eNB_send_E_RAB_Modification_Indication(ctxt_pP, ue_context_p);
                             /* send reconfiguration complete to gNB */
@@ -8095,7 +8095,7 @@ rrc_eNB_decode_dcch(
               }
             } else {
               dedicated_DRB = 0;
-              ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+              ue_context_p->ue_context.StatusRrc = RRC_RECONFIGURED;
               LOG_I(RRC,
                     PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %ld)\n",
                     PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
@@ -8104,7 +8104,7 @@ rrc_eNB_decode_dcch(
             ue_context_p->ue_context.reestablishment_xid = -1;
           } else {
             dedicated_DRB = 1;
-            ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+            ue_context_p->ue_context.StatusRrc = RRC_RECONFIGURED;
             LOG_I(RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
@@ -9272,8 +9272,8 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
     }
 
     /* remove UE from gNB if UE is in NSA mode */
-    if (ue_to_be_removed[cur_ue]->ue_context.Status == RRC_NR_NSA ||
-        ue_to_be_removed[cur_ue]->ue_context.Status == RRC_NR_NSA_RECONFIGURED) {
+    if (ue_to_be_removed[cur_ue]->ue_context.StatusRrc == RRC_NR_NSA ||
+        ue_to_be_removed[cur_ue]->ue_context.StatusRrc == RRC_NR_NSA_RECONFIGURED) {
       MessageDef *message_p;
       message_p = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_RELEASE_REQUEST);
       X2AP_ENDC_SGNB_RELEASE_REQUEST(message_p).rnti = ue_to_be_removed[cur_ue]->ue_context.gnb_rnti;
@@ -9281,7 +9281,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
       X2AP_ENDC_SGNB_RELEASE_REQUEST(message_p).cause = X2AP_CAUSE_RADIO_CONNECTION_WITH_UE_LOST;
       itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, message_p);
       /* set state to RRC_NR_NSA_DELETED to avoid sending X2AP_ENDC_SGNB_RELEASE_REQUEST again later */
-      ue_to_be_removed[cur_ue]->ue_context.Status = RRC_NR_NSA_DELETED;
+      ue_to_be_removed[cur_ue]->ue_context.StatusRrc = RRC_NR_NSA_DELETED;
     }
 
     rrc_eNB_free_UE(ctxt_pP->module_id, ue_to_be_removed[cur_ue]);
@@ -9451,13 +9451,13 @@ void rrc_eNB_process_ENDC_DC_prep_timeout(module_id_t module_id, x2ap_ENDC_dc_pr
     return;
   }
 
-  if (ue_context->ue_context.Status != RRC_NR_NSA) {
+  if (ue_context->ue_context.StatusRrc != RRC_NR_NSA) {
     LOG_E(RRC, "receiving DC prep timeout for UE rnti %d not in state RRC_NR_NSA\n", m->rnti);
     return;
   }
 
   LOG_I(RRC, "DC prep timeout for UE rnti %d, put back to RRC_RECONFIGURED mode\n", m->rnti);
-  ue_context->ue_context.Status = RRC_RECONFIGURED;
+  ue_context->ue_context.StatusRrc = RRC_RECONFIGURED;
 }
 
 void rrc_eNB_process_ENDC_sgNB_release_required(module_id_t module_id, x2ap_ENDC_sgnb_release_required_t *m)
@@ -9478,7 +9478,7 @@ void rrc_eNB_process_ENDC_sgNB_release_required(module_id_t module_id, x2ap_ENDC
   ue_context->ue_context.ue_release_timer_thres_rrc = 100;
   ue_context->ue_context.ue_release_timer_rrc = 1;
 
-  ue_context->ue_context.Status = RRC_NR_NSA_DELETED;
+  ue_context->ue_context.StatusRrc = RRC_NR_NSA_DELETED;
 
   PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
                                 module_id,  /* TODO: should be 'instance' */
@@ -9744,7 +9744,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
         if (X2AP_HANDOVER_CANCEL(msg_p).cause == X2AP_T_RELOC_PREP_TIMEOUT) {
           /* for prep timeout, simply return to normal state */
           /* TODO: be sure that it's correct to set Status to RRC_RECONFIGURED */
-          ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+          ue_context_p->ue_context.StatusRrc = RRC_RECONFIGURED;
           /* TODO: be sure free is enough here (check memory leaks) */
           free(ue_context_p->ue_context.handover_info);
           ue_context_p->ue_context.handover_info = NULL;

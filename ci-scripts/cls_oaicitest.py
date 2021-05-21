@@ -177,7 +177,7 @@ class OaiCiTest():
 			ue_prefix = ''
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
-			full_ran_repo_name = self.ranRepository
+			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
 		SSH.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
@@ -220,7 +220,7 @@ class OaiCiTest():
 
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
-			SSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
+			SSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
 		if self.ranAllowMerge:
@@ -392,7 +392,6 @@ class OaiCiTest():
 				status=Module_UE.GetModuleIPAddress()
 				if status==0:
 					HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
-					self.UEIPAddresses.append(Module_UE.UEIPAddress)
 					logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
 				else: #status==-1 failed to retrieve IP address
 					HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
@@ -422,13 +421,13 @@ class OaiCiTest():
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		# b2xx_fx3_utils reset procedure
-		SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 60)
+		SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 90)
 		result = re.search('type: b200', SSH.getBefore())
 		if result is not None:
 			logging.debug('Found a B2xx device --> resetting it')
 			SSH.command('echo ' + self.UEPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 			# Reloading FGPA bin firmware
-			SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 60)
+			SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 90)
 		result = re.search('type: n3xx', str(SSH.getBefore()))
 		if result is not None:
 			logging.debug('Found a N3xx device --> resetting it')
@@ -1513,7 +1512,8 @@ class OaiCiTest():
 					SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 				else: #launch from Module
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-					cmd = 'ping -I ' + UE_IPAddress + ' ' + self.ping_args + ' ' +  EPC.IPAddress  + ' 2>&1 > ping_' + self.testCase_id + '_' + self.ue_id + '.log' 
+					#ping from module NIC rather than IP address to make sure round trip is over the air	
+					cmd = 'ping -I ' + Module_UE.UENetwork  + ' ' + self.ping_args + ' ' +  EPC.IPAddress  + ' 2>&1 > ping_' + self.testCase_id + '_' + self.ue_id + '.log' 
 					SSH.command(cmd,'\$',int(ping_time[0])*1.5)
 					#copy the ping log file to have it locally for analysis (ping stats)
 					SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'ping_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
@@ -1732,10 +1732,10 @@ class OaiCiTest():
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 				return
 		else:
+			self.UEIPAddresses=[]
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			Module_UE.GetModuleIPAddress()
-			if Module_UE.UEIPAddress not in self.UEIPAddresses:
-				self.UEIPAddresses.append(Module_UE.UEIPAddress)
+			self.UEIPAddresses.append(Module_UE.UEIPAddress)
 		logging.debug(self.UEIPAddresses)
 		multi_jobs = []
 		i = 0
@@ -1957,7 +1957,7 @@ class OaiCiTest():
 			if type==0:
 				result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(?P<lostPack>[0-9]+)/ +(?P<sentPack>[0-9]+)', str(line))
 			else:
-				result = re.search('^\[  3\].+ +(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(?P<lostPack>[0-9]+)\/(?P<sentPack>[0-9]+)', str(line))
+				result = re.search('^\[  \d\].+ +(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(?P<lostPack>[0-9]+)\/(?P<sentPack>[0-9]+)', str(line))
 
 			if result is not None:
 				bitrate = result.group('bitrate')
@@ -2203,13 +2203,16 @@ class OaiCiTest():
 			logging.debug("Iperf for Module in DL mode detected")
 			#server side UE
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-			cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
+			cmd = 'rm iperf_server_' +  self.testCase_id + '_' + self.ue_id + '.log'
+			SSH.command(cmd,'\$',5)
+			cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',5)
 			#client side EPC
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+			SSH.command(cmd,'\$',5)
 			cmd = 'iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',int(iperf_time)*5.0)
-
 			#copy the 2 resulting files locally
 			SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 			SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
@@ -2217,23 +2220,27 @@ class OaiCiTest():
 			filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)	
 
-		elif self.iperf_direction=="UL":
+		elif self.iperf_direction=="UL":#does not work at the moment
 			logging.debug("Iperf for Module in UL mode detected")
 			#server side EPC
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			cmd = 'echo $USER; nohup iperf -s -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
+			cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
+			cmd = 'echo $USER; nohup iperf -s -i 1 -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+			SSH.command(cmd,'\$',5)
+
 			#client side UE
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-			cmd = 'iperf -B ' + UE_IPAddress + ' ' + '-c ' + EPC.IPAddress + ' ' + self.iperf_args + ' > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
-			SSH.command(cmd,'\$',int(iperf_time)*5.0)
+			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+			SSH.command(cmd,'\$',5)
+			SSH.command('/opt/iperf-2.0.10/iperf -c 192.172.0.1 ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', int(iperf_time)*5.0)
 
 			#copy the 2 resulting files locally
-			SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
-			SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
+			SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
+			SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 			#send for analysis
-			filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)				
+			filename='iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)		
 		else :
 			logging.debug("Incorrect or missing IPERF direction in XML")
 
@@ -2597,10 +2604,10 @@ class OaiCiTest():
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC)
 				return
 		else: #is a module
+			self.UEIPAddresses=[]
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			Module_UE.GetModuleIPAddress()
-			if Module_UE.UEIPAddress not in self.UEIPAddresses:
-				self.UEIPAddresses.append(Module_UE.UEIPAddress)
+			self.UEIPAddresses.append(Module_UE.UEIPAddress)
 
 
 
@@ -3402,7 +3409,7 @@ class OaiCiTest():
 				UhdVersion = result.group('uhd_version')
 				logging.debug('UHD Version is: ' + UhdVersion)
 				HTML.UhdVersion[idx]=UhdVersion
-		SSH.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 60)
+		SSH.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 90)
 		usrp_boards = re.findall('product: ([0-9A-Za-z]+)\\\\r\\\\n', SSH.getBefore())
 		count = 0
 		for board in usrp_boards:

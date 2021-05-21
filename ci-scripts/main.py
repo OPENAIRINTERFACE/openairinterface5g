@@ -786,7 +786,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Cppcheck_Analysis':
 					SCA.CppCheckAnalysis(HTML)
 				elif action == 'Deploy_Run_PhySim':
-					PHYSIM.Deploy_PhySim(HTML)
+					PHYSIM.Deploy_PhySim(HTML, RAN)
 				else:
 					sys.exit('Invalid class (action) from xml')
 				if not RAN.prematureExit:
