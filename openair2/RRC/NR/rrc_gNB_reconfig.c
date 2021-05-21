@@ -959,22 +959,16 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_PUCCH_ResourceSet_t *pucchresset1=calloc(1,sizeof(*pucchresset1));
  pucchresset0->pucch_ResourceSetId = 0;
  NR_PUCCH_ResourceId_t *pucchresset0id0=calloc(1,sizeof(*pucchresset0id0));
- NR_PUCCH_ResourceId_t *pucchresset0id1=calloc(1,sizeof(*pucchresset0id1));
  *pucchresset0id0=1;
  ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id0);
- *pucchresset0id1=2;
- ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id1);
  pucchresset0->maxPayloadSize=NULL;
 
  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset0);
 
  pucchresset1->pucch_ResourceSetId = 1;
  NR_PUCCH_ResourceId_t *pucchresset1id0=calloc(1,sizeof(*pucchresset1id0));
- NR_PUCCH_ResourceId_t *pucchresset1id1=calloc(1,sizeof(*pucchresset1id1));
- *pucchresset1id0=3;
+ *pucchresset1id0=2;
  ASN_SEQUENCE_ADD(&pucchresset1->resourceList.list,pucchresset1id0);
- *pucchresset1id1=4;
- ASN_SEQUENCE_ADD(&pucchresset1->resourceList.list,pucchresset1id1);
  pucchresset1->maxPayloadSize=NULL;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset1);
 
@@ -984,6 +978,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_PUCCH_Resource_t *pucchres1=calloc(1,sizeof(*pucchres1));
  NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
  NR_PUCCH_Resource_t *pucchres3=calloc(1,sizeof(*pucchres3));
+
  pucchres0->pucch_ResourceId=1;
  pucchres0->startingPRB= (8 + uid) % curr_bwp;
  pucchres0->intraSlotFrequencyHopping=NULL;
@@ -995,18 +990,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchres0->format.choice.format0->startingSymbolIndex=13;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres0);
 
- pucchres1->pucch_ResourceId=2;
- pucchres1->startingPRB= (8 + uid) % curr_bwp;
- pucchres1->intraSlotFrequencyHopping=NULL;
- pucchres1->secondHopPRB=NULL;
- pucchres1->format.present= NR_PUCCH_Resource__format_PR_format0;
- pucchres1->format.choice.format0=calloc(1,sizeof(*pucchres1->format.choice.format0));
- pucchres1->format.choice.format0->initialCyclicShift=0;
- pucchres1->format.choice.format0->nrofSymbols=1;
- pucchres1->format.choice.format0->startingSymbolIndex=12;
- ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres1);
-
- pucchres2->pucch_ResourceId=3;
+ pucchres2->pucch_ResourceId=2;
  pucchres2->startingPRB=0;
  pucchres2->intraSlotFrequencyHopping=NULL;
  pucchres2->secondHopPRB=NULL;
@@ -1016,17 +1000,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchres2->format.choice.format2->nrofSymbols=1;
  pucchres2->format.choice.format2->startingSymbolIndex=13;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres2);
-
- pucchres3->pucch_ResourceId=4;
- pucchres3->startingPRB=0;
- pucchres3->intraSlotFrequencyHopping=NULL;
- pucchres3->secondHopPRB=NULL;
- pucchres3->format.present= NR_PUCCH_Resource__format_PR_format2;
- pucchres3->format.choice.format2=calloc(1,sizeof(*pucchres3->format.choice.format2));
- pucchres3->format.choice.format2->nrofPRBs=8;
- pucchres3->format.choice.format2->nrofSymbols=1;
- pucchres3->format.choice.format2->startingSymbolIndex=12;
- ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres3);
 
  pucch_Config->format2=calloc(1,sizeof(*pucch_Config->format2));
  pucch_Config->format2->present=NR_SetupRelease_PUCCH_FormatConfig_PR_setup;
@@ -1203,7 +1176,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 9 + (10 * uid) % 320;
  NR_PUCCH_CSI_Resource_t *pucchcsires1 = calloc(1,sizeof(*pucchcsires1));
  pucchcsires1->uplinkBandwidthPartId=1;
- pucchcsires1->pucch_Resource=3;
+ pucchcsires1->pucch_Resource=2;
  ASN_SEQUENCE_ADD(&csirep1->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
  csirep1->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP;
  csirep1->reportQuantity.choice.ssb_Index_RSRP=(NULL_t)0;
