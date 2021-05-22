@@ -77,7 +77,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
   }
 
   rx_deliv_sn  = entity->rx_deliv & entity->sn_max;
-  rx_deliv_hfn = (entity->rx_deliv >> entity->sn_size) & ~entity->sn_max;
+  rx_deliv_hfn = entity->rx_deliv >> entity->sn_size;
 
   if (rcvd_sn < rx_deliv_sn - entity->window_size) {
     rcvd_hfn = rx_deliv_hfn + 1;
