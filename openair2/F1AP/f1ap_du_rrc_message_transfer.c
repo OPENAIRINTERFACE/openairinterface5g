@@ -161,10 +161,10 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_RAT_FrequencyPriorityInformation, true);
 
     switch(ie->value.choice.RAT_FrequencyPriorityInformation.present) {
-      case F1AP_RAT_FrequencyPriorityInformation_PR_subscriberProfileIDforRFP:
+      case F1AP_RAT_FrequencyPriorityInformation_PR_eNDC:
         //subscriberProfileIDforRFP = ie->value.choice.RAT_FrequencyPriorityInformation.choice.subscriberProfileIDforRFP;
         break;
-      case F1AP_RAT_FrequencyPriorityInformation_PR_rAT_FrequencySelectionPriority:
+      case F1AP_RAT_FrequencyPriorityInformation_PR_nGRAN:
         //rAT_FrequencySelectionPriority = ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority;
         break;
       default:
@@ -721,7 +721,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
 
         } else {
           LOG_I(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
-          ue_context_p->ue_context.Status = RRC_CONNECTED;
+          ue_context_p->ue_context.StatusRrc = RRC_CONNECTED;
         }
         break;
 
@@ -836,7 +836,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
   ie->id                             = F1AP_ProtocolIE_ID_id_C_RNTI;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_C_RNTI;
-  C_RNTI_TO_BIT_STRING(rntiP, &ie->value.choice.C_RNTI);
+  ie->value.choice.C_RNTI=rntiP;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */

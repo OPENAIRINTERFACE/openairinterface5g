@@ -26,7 +26,7 @@
 #include "ProtocolDiscriminator.h"
 #include "SecurityHeaderType.h"
 #include "MessageType.h"
-#include "PagingIdentity.h"
+#include "NasPagingIdentity.h"
 #include "Cli.h"
 #include "SsCode.h"
 #include "LcsIndicator.h"

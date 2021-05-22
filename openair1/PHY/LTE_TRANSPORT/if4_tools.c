@@ -30,10 +30,13 @@
 * \warning
 */
 
-#include "PHY/defs_eNB.h"
+#include <stdio.h>
+//#include "PHY/defs_eNB.h"
+#include "PHY/defs_RU.h"
 #include "PHY/TOOLS/alaw_lut.h"
-#include "PHY/phy_extern.h"
-#include "SCHED/sched_eNB.h"
+//#include "PHY/phy_extern.h"
+//#include "SCHED/sched_eNB.h"
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
 //#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"

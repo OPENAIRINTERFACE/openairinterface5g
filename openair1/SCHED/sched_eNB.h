@@ -193,7 +193,7 @@ int8_t find_ue_ulsch(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 
 
 
-void schedule_response(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc);
+void schedule_response(Sched_Rsp_t *Sched_INFO, void *proc);
 
 LTE_eNB_UE_stats *get_UE_stats(uint8_t Mod_id, uint8_t CC_id,uint16_t rnti);
 

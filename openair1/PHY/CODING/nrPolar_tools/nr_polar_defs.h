@@ -138,22 +138,22 @@ typedef struct nrPolar_params t_nrPolar_params;
 
 void polar_encoder(uint32_t *input,
                    uint32_t *output,
-                   t_nrPolar_params *polarParams);
+                   const t_nrPolar_params *polarParams);
 
 void polar_encoder_dci(uint32_t *in,
                        uint32_t *out,
-                       t_nrPolar_params *polarParams,
+                       const t_nrPolar_params *polarParams,
                        uint16_t n_RNTI);
 
 void polar_encoder_fast(uint64_t *A,
                         void *out,
                         int32_t crcmask,
                         uint8_t ones_flag,
-                        t_nrPolar_params *polarParams);
+                        const t_nrPolar_params *polarParams);
 
 int8_t polar_decoder(double *input,
-					 uint32_t *output,
-                     t_nrPolar_params *polarParams,
+                     uint32_t *output,
+                     const t_nrPolar_params *polarParams,
                      uint8_t listSize);
 
 uint32_t polar_decoder_int16(int16_t *input,
@@ -163,21 +163,21 @@ uint32_t polar_decoder_int16(int16_t *input,
 
 int8_t polar_decoder_dci(double *input,
                          uint32_t *out,
-                         t_nrPolar_params *polarParams,
+                         const t_nrPolar_params *polarParams,
                          uint8_t listSize,
                          uint16_t n_RNTI);
 
 void generic_polar_decoder(const t_nrPolar_params *pp,
-						   decoder_node_t *node);
+                           decoder_node_t *node);
 
 void applyFtoleft(const t_nrPolar_params *pp,
-				  decoder_node_t *node);
+                  decoder_node_t *node);
 
 void applyGtoright(const t_nrPolar_params *pp,
-				   decoder_node_t *node);
+                   decoder_node_t *node);
 
 void computeBeta(const t_nrPolar_params *pp,
-				 decoder_node_t *node);
+                 decoder_node_t *node);
 
 void build_decoder_tree(t_nrPolar_params *pp);
 void build_polar_tables(t_nrPolar_params *polarParams);

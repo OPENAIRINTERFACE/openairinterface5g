@@ -33,6 +33,9 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 int agent_task_created = 0;
 /* 
  * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 

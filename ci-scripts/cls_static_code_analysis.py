@@ -101,7 +101,7 @@ class StaticCodeAnalysis():
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
-			full_ran_repo_name = self.ranRepository
+			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
 		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
@@ -115,7 +115,7 @@ class StaticCodeAnalysis():
 		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
+			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
 
 		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:xenial || true', '\$', 60)
 		mySSH.command('docker build --tag oai-cppcheck:xenial --file ci-scripts/docker/Dockerfile.cppcheck.xenial . > cmake_targets/log/cppcheck-xenial.txt 2>&1', '\$', 600)

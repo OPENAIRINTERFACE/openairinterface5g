@@ -18,23 +18,26 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-#ifndef __RFSIM__H__
-#define __RFSIM__H__
-#include "lte-softmodem.h"
-#include "openair1/SIMULATION/TOOLS/sim.h"
-#include "platform_constants.h"
-#include "common/ran_context.h"
-#include "PHY/defs_UE.h"
-#include "PHY/defs_eNB.h"
 
-void init_ocm(void);
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 
-void update_ocm(double snr_dB,double sinr_dB);
+#include "OctetString.h"
 
-//extern pthread_mutex_t async_server_lock;
-//extern pthread_cond_t async_server_notify;
-//extern int async_server_shutdown;
+#ifndef NASPAGING_IDENTITY_H_
+#define NASPAGING_IDENTITY_H_
 
-void init_channel_vars(void);
+#define PAGING_IDENTITY_MINIMUM_LENGTH 2
+#define PAGING_IDENTITY_MAXIMUM_LENGTH 2
 
-#endif
+typedef uint8_t PagingIdentity;
+
+int encode_paging_identity(PagingIdentity *pagingidentity, uint8_t iei, uint8_t *buffer, uint32_t len);
+
+void dump_paging_identity_xml(PagingIdentity *pagingidentity, uint8_t iei);
+
+int decode_paging_identity(PagingIdentity *pagingidentity, uint8_t iei, uint8_t *buffer, uint32_t len);
+
+#endif /* PAGING IDENTITY_H_ */
+

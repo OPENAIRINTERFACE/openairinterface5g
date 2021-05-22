@@ -28,6 +28,7 @@
 #include "TDD-Config.h"
 #include "MBSFN-SubframeConfigList.h"*/
 #include "openair1/PHY/defs_RU.h"
+#include "openair1/PHY/impl_defs_nr.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
@@ -196,7 +197,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   }
 
   for (i=0;i<MAX_NR_OF_DL_ALLOCATIONS;i++){
-    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i] = (NR_PDSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
+    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i] = (PDSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PDSCH_TimeDomainResourceAllocation_t));
     ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i]->mappingType = typeA;
   }
 
