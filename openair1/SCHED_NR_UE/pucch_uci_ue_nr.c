@@ -417,7 +417,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int dmrs_scrambling_id=0,data_scrambling_id=0;
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-  NR_PUCCH_Resource_t *pucch_resource;
+  NR_PUCCH_Resource_t *pucch_resource = NULL;
   uint16_t crnti = mac->crnti;
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
 
