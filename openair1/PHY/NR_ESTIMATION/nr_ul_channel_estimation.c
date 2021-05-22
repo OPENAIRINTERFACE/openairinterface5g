@@ -37,6 +37,7 @@
 //#define DEBUG_CH
 //#define DEBUG_PUSCH
 
+#define NO_INTERP 1
 #define dBc(x,y) (dB_fixed(((int32_t)(x))*(x) + ((int32_t)(y))*(y)))
 
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
@@ -187,7 +188,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     //if ((gNB->frame_parms.N_RB_UL&1)==0) {
 
     if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1 && gNB->fd_interpolation == 1){
-
+      LOG_D(PHY,"PUSCH estimation DMRS type 1, Freq-domain interpolation");
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
@@ -432,7 +433,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #endif    
     }
     else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type2 && gNB->fd_interpolation == 1) { //pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
-
+      LOG_D(PHY,"PUSCH estimation DMRS type 2, Freq-domain interpolation");
       // Treat first DMRS specially (left edge)
 
         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
@@ -518,6 +519,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     }
 
     else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1) {// this is case without frequency-domain linear interpolation, just take average of LS channel estimates of 6 DMRS REs and use a common value for the whole PRB
+      LOG_D(PHY,"PUSCH estimation DMRS type 1, no Freq-domain interpolation");
       int32_t ch_0, ch_1;
       // First PRB
       ch_0 = ((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15;
@@ -565,6 +567,13 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       ch[0] = ch_0 / 6;
       ch[1] = ch_1 / 6;
 
+
+
+
+#ifdef NO_INTERP
+      for (int i=0;i<12;i++) ((int32_t*)ul_ch)[i] = *(int32_t*)ch;
+      ul_ch+=24;
+#else
       multadd_real_vector_complex_scalar(filt8_avlip0,
                                          ch,
                                          ul_ch,
@@ -582,6 +591,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                          ul_ch,
                                          8);
       ul_ch -= 24;
+#endif
 
       for (pilot_cnt=6; pilot_cnt<6*(nb_rb_pusch-1); pilot_cnt += 6) {
 
@@ -630,6 +640,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         ch[0] = ch_0 / 6;
         ch[1] = ch_1 / 6;
 
+#ifdef NO_INTERP
+      for (int i=0;i<12;i++) ((int32_t*)ul_ch)[i] = *(int32_t*)ch;
+      ul_ch+=24;
+#else
         ul_ch[6] += (ch[0] * 1365)>>15; // 1/12*16384
         ul_ch[7] += (ch[1] * 1365)>>15; // 1/12*16384
 
@@ -651,6 +665,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                            ul_ch,
                                            8);
         ul_ch -= 16;
+#endif
       }
       // Last PRB
       ch_0 = ((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15;
@@ -698,6 +713,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       ch[0] = ch_0 / 6;
       ch[1] = ch_1 / 6;
 
+#ifdef NO_INTERP
+      for (int i=0;i<12;i++) ((int32_t*)ul_ch)[i] = *(int32_t*)ch;
+      ul_ch+=24;
+#else
       ul_ch[6] += (ch[0] * 1365)>>15; // 1/12*16384
       ul_ch[7] += (ch[1] * 1365)>>15; // 1/12*16384
 
@@ -712,8 +731,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                          ch,
                                          ul_ch,
                                          8);
+#endif
     }
     else  { // this is case without frequency-domain linear interpolation, just take average of LS channel estimates of 4 DMRS REs and use a common value for the whole PRB
+      LOG_D(PHY,"PUSCH estimation DMRS type 2, no Freq-domain interpolation");
       int32_t ch_0, ch_1;
       //First PRB
       ch_0 = ((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15;

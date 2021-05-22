@@ -55,7 +55,6 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
       int Im = ((int16_t*)ul_ch_estimates_time[aa])[1+(i<<1)];
       temp += (Re*Re/2) + (Im*Im/2);      
     }
-
     if (temp > max_val) {
       max_pos = i;
       max_val = temp;
