@@ -570,7 +570,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
 
 
-#ifdef NO_INTERP
+#if NO_INTERP
       for (int i=0;i<12;i++) ((int32_t*)ul_ch)[i] = *(int32_t*)ch;
       ul_ch+=24;
 #else
@@ -640,7 +640,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         ch[0] = ch_0 / 6;
         ch[1] = ch_1 / 6;
 
-#ifdef NO_INTERP
+#if NO_INTERP
       for (int i=0;i<12;i++) ((int32_t*)ul_ch)[i] = *(int32_t*)ch;
       ul_ch+=24;
 #else
@@ -713,7 +713,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       ch[0] = ch_0 / 6;
       ch[1] = ch_1 / 6;
 
-#ifdef NO_INTERP
+#if NO_INTERP
       for (int i=0;i<12;i++) ((int32_t*)ul_ch)[i] = *(int32_t*)ch;
       ul_ch+=24;
 #else
