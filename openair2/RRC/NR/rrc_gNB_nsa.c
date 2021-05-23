@@ -280,7 +280,9 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       create_tunnel_req.num_tunnels    = m->nb_e_rabs_tobeadded;
       RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[rrc->module_id]->rrc_ue_head, ue_context_p);
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_id_rnti, 0, 0,rrc->module_id);
-      #if 0 //Melissa this is a hack: we are bypassing the EPC functionality.
+      #if 1 //Melissa this is a hack: we are bypassing the EPC functionality.
+      memset(&create_tunnel_resp, 0, sizeof(create_tunnel_resp));
+      #else
       gtpv1u_create_s1u_tunnel(
         ctxt.instance,
         &create_tunnel_req,
