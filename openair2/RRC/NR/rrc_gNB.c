@@ -339,7 +339,7 @@ void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x
   AssertFatal(cg_configinfo->criticalExtensions.choice.c1->present == NR_CG_ConfigInfo__criticalExtensions__c1_PR_cg_ConfigInfo,
               "ueCapabilityInformation not present\n");
   parse_CG_ConfigInfo(rrc,cg_configinfo,m);
-  LOG_A(NR_RRC, "Successfully parced CG_ConfigInfo of size %zu bits. (%zu bytes)\n",
+  LOG_A(NR_RRC, "Successfully parsed CG_ConfigInfo of size %zu bits. (%zu bytes)\n",
         dec_rval.consumed, (dec_rval.consumed +7/8));
 }
 
