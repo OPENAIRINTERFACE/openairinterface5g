@@ -353,7 +353,7 @@ int main(int argc, char **argv)
   NB_UE_INST = 1;
   //double pbch_sinr;
   //int pbch_tx_ant;
-  int N_RB_DL=106,mu=2;
+  int N_RB_DL=106,mu=1;
 
   //unsigned char frame_type = 0;
 

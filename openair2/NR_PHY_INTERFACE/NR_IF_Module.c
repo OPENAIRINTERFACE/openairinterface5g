@@ -106,10 +106,6 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
 
   UL_info->uci_ind.num_ucis = 0;
 
-  // mark corresponding PUCCH resources as free
-  // NOTE: we just assume it is BWP ID 1, to be revised for multiple BWPs
-  //Abhi : TODO
-  RC.nrmac[mod_id]->pucch_index_used[1][slot] = 0;
 }
 
 
