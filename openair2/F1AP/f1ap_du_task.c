@@ -102,7 +102,7 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data->default_sctp_stream_id = 0;
 
   /* setup parameters for F1U and start the server */
-  const cudu_params_t params = RC.nrrrc[instance]->node_type == ngran_gNB_DU ? (cudu_params_t){
+  const cudu_params_t params = (RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_DU) ? (cudu_params_t){
     .local_ipv4_address  = RC.nrmac[instance]->eth_params_n.my_addr,
     .local_port          = RC.nrmac[instance]->eth_params_n.my_portd,
     .remote_ipv4_address = RC.nrmac[instance]->eth_params_n.remote_addr,
@@ -201,7 +201,7 @@ void *F1AP_DU_task(void *arg) {
 
      case F1AP_UL_RRC_MESSAGE: // to rrc
         LOG_I(F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
-        if (RC.nrrrc[0]->node_type == ngran_gNB_DU) {
+        if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_DU) {
           DU_send_UL_NR_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                              &F1AP_UL_RRC_MESSAGE(received_msg));
         } else {

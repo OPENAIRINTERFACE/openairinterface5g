@@ -116,7 +116,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
   AssertFatal(ie!=NULL,"RRCContainer is missing\n");
   // create an ITTI message and copy SDU
-  if (RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
+  if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
     message_p = itti_alloc_new_message (TASK_CU_F1, 0, NR_RRC_MAC_CCCH_DATA_IND);
     memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
     ccch_sdu_len = ie->value.choice.RRCContainer.size;
@@ -150,7 +150,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   }
   // Find instance from nr_cellid
   int rrc_inst = -1;
-  if (RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
+  if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
     for (int i=0;i<RC.nb_nr_inst;i++) {
       // first get RRC instance (note, no the ITTI instance)
       gNB_RRC_INST *rrc = RC.nrrrc[i];
@@ -179,7 +179,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   }
   f1ap_cu_inst[rrc_inst].f1ap_ue[f1ap_uid].du_ue_f1ap_id = du_ue_f1ap_id;
 
-  if (RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
+  if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
     NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0;
     NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = 0;
     NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = ccch_sdu_len;

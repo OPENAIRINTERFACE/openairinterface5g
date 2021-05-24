@@ -246,14 +246,14 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   );
 
   if (num_cells_available > 0) {
-    if (RC.nrrrc[0]->node_type == ngran_gNB_CU) {
+    if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_CU) {
       itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
     } else {
       itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
     }
   } else {
     CU_send_F1_SETUP_FAILURE(instance);
-    if (RC.nrrrc[0]->node_type == ngran_gNB_CU) {
+    if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_CU) {
       itti_free(TASK_RRC_GNB,message_p);
     } else {
       itti_free(TASK_RRC_ENB,message_p);

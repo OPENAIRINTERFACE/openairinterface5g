@@ -600,7 +600,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
   0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
   assoc_id);
 
-  if (RC.nrrrc[0]->node_type == ngran_gNB_DU) {
+  if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_DU) {
     LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message to GNB_APP with assoc_id (%d->%d)\n",
          assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
     itti_send_msg_to_task(TASK_GNB_APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
@@ -1212,7 +1212,7 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
   0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
   assoc_id);
 
-  if (RC.nrrrc[0]->node_type == ngran_gNB_DU) {
+  if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_DU) {
     LOG_D(F1AP, "Sending F1AP_GNB_CU_CONFIGURATION_UPDATE ITTI message to GNB_APP with assoc_id (%d->%d)\n",
          assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
     itti_send_msg_to_task(TASK_GNB_APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
