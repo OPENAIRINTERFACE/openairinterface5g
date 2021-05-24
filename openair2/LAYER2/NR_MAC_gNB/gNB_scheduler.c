@@ -325,11 +325,52 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   protocol_ctxt_t   ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
-  const int bwp_id = 1;
+  int nb_periods_per_frame;
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
+  
+  // NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+  // const int bwp_id = *gNB->secondaryCellGroupCommon->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
+
+  // switch(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity) {
+  //   case 0:
+  //     nb_periods_per_frame = 20; // 10ms/0p5ms
+  //     break;
+
+  //   case 1:
+  //     nb_periods_per_frame = 16; // 10ms/0p625ms
+  //     break;
+
+  //   case 2:
+  //     nb_periods_per_frame = 10; // 10ms/1ms
+  //     break;
+
+  //   case 3:
+  //     nb_periods_per_frame = 8; // 10ms/1p25ms
+  //     break;
+
+  //   case 4:
+  //     nb_periods_per_frame = 5; // 10ms/2ms
+  //     break;
+
+  //   case 5:
+  //     nb_periods_per_frame = 4; // 10ms/2p5ms
+  //     break;
+
+  //   case 6:
+  //     nb_periods_per_frame = 2; // 10ms/5ms
+  //     break;
+
+  //   case 7:
+  //     nb_periods_per_frame = 1; // 10ms/10ms
+  //     break;
+
+  //   default:
+  //     AssertFatal(1==0,"Undefined tdd period %ld\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+  
+  }
 
   if (slot==0 && (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]>=257)) {
     const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;

@@ -2880,7 +2880,9 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
       dci_pdu->antenna_ports.nbits = getAntPortBitWidth(typeA,typeB);
       size += dci_pdu->antenna_ports.nbits;
       // Tx Config Indication
-      long *isTciEnable = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1]->tci_PresentInDCI;
+      //Abhi : Check this -- bwp_id to replaced with corset_id ? each BWP can have multiple CORSETs .. this has to be corset_id
+      int corset_id = 1 ;
+      long *isTciEnable = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[corset_id-1]->tci_PresentInDCI;
       if (isTciEnable != NULL) {
         dci_pdu->transmission_configuration_indication.nbits = 3;
         size += dci_pdu->transmission_configuration_indication.nbits;

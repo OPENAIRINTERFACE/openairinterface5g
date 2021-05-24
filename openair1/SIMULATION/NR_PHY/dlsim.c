@@ -353,7 +353,7 @@ int main(int argc, char **argv)
   NB_UE_INST = 1;
   //double pbch_sinr;
   //int pbch_tx_ant;
-  int N_RB_DL=106,mu=1;
+  int N_RB_DL=106,mu=2;
 
   //unsigned char frame_type = 0;
 
@@ -793,6 +793,10 @@ int main(int argc, char **argv)
   else if (mu == 1 && N_RB_DL == 106) { 
     fs = 61.44e6;
     bw = 40e6;
+  }
+  else if (mu == 2 && N_RB_DL == 106) { 
+    fs = 122.88e6;
+    bw = 80e6;
   }
   else if (mu == 3 && N_RB_DL == 66) {
     fs = 122.88e6;

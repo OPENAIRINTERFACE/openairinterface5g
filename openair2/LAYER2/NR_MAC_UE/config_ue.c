@@ -333,20 +333,21 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
 
   NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
 
-  if (bwp_ind && dci_format){
+//Abhi : TODO : uncomment this when DCI based swithching is available
+  // if (bwp_ind && dci_format){
 
-    switch(*dci_format){
-    case NR_UL_DCI_FORMAT_0_1:
-      mac->UL_BWP_Id = *bwp_ind;
-      break;
-    case NR_DL_DCI_FORMAT_1_1:
-      mac->DL_BWP_Id = *bwp_ind;
-      break;
-    default:
-      LOG_E(MAC, "In %s: failed to configure BWP Id from DCI with format %d \n", __FUNCTION__, *dci_format);
-    }
+  //   switch(*dci_format){
+  //   case NR_UL_DCI_FORMAT_0_1:
+  //     mac->UL_BWP_Id = *bwp_ind;
+  //     break;
+  //   case NR_DL_DCI_FORMAT_1_1:
+  //     mac->DL_BWP_Id = *bwp_ind;
+  //     break;
+  //   default:
+  //     LOG_E(MAC, "In %s: failed to configure BWP Id from DCI with format %d \n", __FUNCTION__, *dci_format);
+  //   }
 
-  } else {
+  // } else {
 
     if (scd->firstActiveDownlinkBWP_Id)
       mac->DL_BWP_Id = *scd->firstActiveDownlinkBWP_Id;
@@ -360,9 +361,9 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
     else
       mac->UL_BWP_Id = 1;
 
-  }
+  // }
 
-  LOG_D(MAC, "In %s setting DL_BWP_Id %ld UL_BWP_Id %ld \n", __FUNCTION__, mac->DL_BWP_Id, mac->UL_BWP_Id);
+  LOG_I(MAC, "In %s setting DL_BWP_Id %ld UL_BWP_Id %ld \n", __FUNCTION__, mac->DL_BWP_Id, mac->UL_BWP_Id);
 
 }
 
@@ -373,15 +374,18 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
     */
 void config_control_ue(NR_UE_MAC_INST_t *mac){
 
+  //Abhi : Hardcoded CORSET ID here
   uint8_t coreset_id = 1, ss_id;
 
   NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   AssertFatal(scd->downlinkBWP_ToAddModList != NULL, "downlinkBWP_ToAddModList is null\n");
-  AssertFatal(scd->downlinkBWP_ToAddModList->list.count == 1, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
+  //AssertFatal(scd->downlinkBWP_ToAddModList->list.count == 1, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
 
   config_bwp_ue(mac, NULL, NULL);
   NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   AssertFatal(dl_bwp_id != 0, "DL_BWP_Id is 0!");
+  AssertFatal(ul_bwp_id != 0, "UL_BWP_Id is 0!");
 
   NR_BWP_DownlinkCommon_t *bwp_Common = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common;
   AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
@@ -389,6 +393,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Dedicated;
   AssertFatal(dl_bwp_Dedicated != NULL, "dl_bwp_Dedicated is null\n");
 
+  //Abhi : TODO : add assert statements for UL BWP! 
   NR_SetupRelease_PDCCH_Config_t *pdcch_Config = dl_bwp_Dedicated->pdcch_Config;
   AssertFatal(pdcch_Config != NULL, "pdcch_Config is null\n");
 
@@ -412,14 +417,20 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
 
   struct NR_UplinkConfig__uplinkBWP_ToAddModList *uplinkBWP_ToAddModList = scd->uplinkConfig->uplinkBWP_ToAddModList;
   AssertFatal(uplinkBWP_ToAddModList != NULL, "uplinkBWP_ToAddModList is null\n");
-  AssertFatal(uplinkBWP_ToAddModList->list.count == 1, "uplinkBWP_ToAddModList->list->count is %d\n", uplinkBWP_ToAddModList->list.count);
+  // AssertFatal(uplinkBWP_ToAddModList->list.count == 1, "uplinkBWP_ToAddModList->list->count is %d\n", uplinkBWP_ToAddModList->list.count);
 
   // check pdcch_Config, pdcch_ConfigCommon and DL BWP
-  mac->DLbwp[0] = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1];
+  // Check dedicated UL BWP and pass to MAC
+  for (int num_BWP = 0; num_BWP <MAX_NUM_BWP ;num_BWP++)
+  {
+    mac->DLbwp[num_BWP] = scd->downlinkBWP_ToAddModList->list.array[num_BWP];
+    mac->ULbwp[num_BWP] = uplinkBWP_ToAddModList->list.array[num_BWP];
+  }
+  
   mac->coreset[dl_bwp_id - 1][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
 
-  // Check dedicated UL BWP and pass to MAC
-  mac->ULbwp[0] = uplinkBWP_ToAddModList->list.array[0];
+  
+  
   AssertFatal(mac->ULbwp[0]->bwp_Dedicated != NULL, "UL bwp_Dedicated is null\n");
 
   // check available Search Spaces in the searchSpacesToAddModList and pass to MAC
@@ -443,7 +454,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[0][0][ss_id] = css;
+    mac->SSpace[dl_bwp_id -1][coreset_id -1][ss_id] = css;
     ss_id++;
   }
 

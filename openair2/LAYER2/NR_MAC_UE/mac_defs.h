@@ -74,7 +74,7 @@
 // ==========
 
 #define NB_NR_UE_MAC_INST 1
-#define MAX_NUM_BWP       2
+#define MAX_NUM_BWP       4
 #define NUM_SLOT_FRAME    10
 
 /*!\brief value for indicating BSR Timer is not running */
