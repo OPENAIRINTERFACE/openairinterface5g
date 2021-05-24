@@ -330,9 +330,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
+  const int bwp_id = *gNB->secondaryCellGroupCommon->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
+
   
   // NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  // const int bwp_id = *gNB->secondaryCellGroupCommon->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
 
   // switch(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity) {
   //   case 0:
@@ -370,7 +371,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   //   default:
   //     AssertFatal(1==0,"Undefined tdd period %ld\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
   
-  }
+  // }
 
   if (slot==0 && (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]>=257)) {
     const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
