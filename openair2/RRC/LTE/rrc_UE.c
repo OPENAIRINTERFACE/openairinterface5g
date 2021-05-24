@@ -1772,7 +1772,8 @@ rrc_ue_process_nrueCapabilityEnquiry(
         xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
     }
     if (enc_rval.encoded > 0) {
-      LOG_A(RRC,"NR_UECapabilityInformation Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+      LOG_A(RRC, "%s: NR_UECapabilityInformation Encoded %zd bits (%zd bytes)\n",
+            __FUNCTION__, enc_rval.encoded, (enc_rval.encoded+7)/8);
       rrc_data_req_ue (
         ctxt_pP,
         DCCH,
@@ -1844,7 +1845,8 @@ rrc_ue_process_ueCapabilityEnquiry(
         xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
       }
 
-      LOG_A(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+      LOG_A(RRC, "%s: UECapabilityInformation Encoded %zd bits (%zd bytes)\n",
+            __FUNCTION__, enc_rval.encoded,(enc_rval.encoded+7)/8);
       rrc_data_req_ue (
         ctxt_pP,
         DCCH,
@@ -1867,7 +1869,8 @@ rrc_ue_process_ueCapabilityEnquiry(
           xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
         }
 
-        LOG_A(RRC,"NR_UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+        LOG_A(RRC, "%s: NR_UECapabilityInformation Encoded %zd bits (%zd bytes)\n",
+              __FUNCTION__, enc_rval.encoded,(enc_rval.encoded+7)/8);
         rrc_data_req_ue (
           ctxt_pP,
           DCCH,
@@ -4997,7 +5000,11 @@ void *rrc_ue_task( void *args_p ) {
 
       case RRC_DCCH_DATA_COPY_IND:
       {
-        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, RRC_DCCH_DATA_COPY_IND (msg_p).module_id, ENB_FLAG_NO, RRC_DCCH_DATA_COPY_IND (msg_p).rnti, RRC_DCCH_DATA_COPY_IND (msg_p).frame, 0, RRC_DCCH_DATA_COPY_IND (msg_p).eNB_index);
+        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, RRC_DCCH_DATA_COPY_IND (msg_p).module_id,
+                                       ENB_FLAG_NO, RRC_DCCH_DATA_COPY_IND (msg_p).rnti,
+                                       RRC_DCCH_DATA_COPY_IND (msg_p).frame,
+                                       0,
+                                       RRC_DCCH_DATA_COPY_IND (msg_p).eNB_index);
         LOG_I(RRC, "[UE %d] Received %s. Now calling rrc_ue_process_ueCapabilityEnquiry\n",
               ue_mod_id, ITTI_MSG_NAME (msg_p));
         rrc_dcch_data_copy_t *dl_dcch_buffer = (void *)RRC_DCCH_DATA_COPY_IND (msg_p).sdu_p;
@@ -5014,7 +5021,11 @@ void *rrc_ue_task( void *args_p ) {
 
       case RRC_NRUE_CAP_INFO_IND:
       {
-        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, RRC_NRUE_CAP_INFO_IND (msg_p).module_id, ENB_FLAG_NO, RRC_NRUE_CAP_INFO_IND (msg_p).rnti, RRC_NRUE_CAP_INFO_IND (msg_p).frame, 0, RRC_NRUE_CAP_INFO_IND (msg_p).eNB_index);
+        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, RRC_NRUE_CAP_INFO_IND (msg_p).module_id,
+                                       ENB_FLAG_NO, RRC_NRUE_CAP_INFO_IND (msg_p).rnti,
+                                       RRC_NRUE_CAP_INFO_IND (msg_p).frame,
+                                       0,
+                                       RRC_NRUE_CAP_INFO_IND (msg_p).eNB_index);
         LOG_I(RRC, "[UE %d] Received %s. Now calling rrc_ue_process_nrueCapabilityEnquiry\n",
               ue_mod_id, ITTI_MSG_NAME (msg_p));
         rrc_nrue_cap_info_t *nrue_cap_info = (void *)RRC_NRUE_CAP_INFO_IND (msg_p).sdu_p;

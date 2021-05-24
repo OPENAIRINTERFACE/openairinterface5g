@@ -124,7 +124,7 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerL
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) && ueCapabilityRAT_Container_MRDC != NULL ) {
     xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
   }
-  LOG_A(RRC, "Successfully decoded UE NR capabilities (NR and MRDC)\n");
+  LOG_A(RRC, "Successfully decoded UE NR capabilities for RNTI %d (NR and MRDC)\n", ue_context_p->ue_id_rnti);
 
   rrc_add_nsa_user(rrc,ue_context_p, m);
 }
