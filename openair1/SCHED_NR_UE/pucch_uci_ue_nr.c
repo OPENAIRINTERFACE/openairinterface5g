@@ -58,10 +58,6 @@
 uint8_t nr_is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
 uint8_t nr_is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
 
-static const uint16_t scheduling_request_periodicity[NB_SR_PERIOD]
-= { 0, 0, 1, 2, 4, 5, 8, 10, 16, 20, 40, 80, 160, 320, 640 }
-;
-
 /* TS 36.213 Table 9.2.5.2-1: Code rate  corresponding to higher layer parameter PUCCH-F2-maximum-coderate, */
 /* or PUCCH-F3-maximum-coderate, or PUCCH-F4-maximum-coderate */
 /* add one additional element set to 0 for parsing the array until this end */
@@ -490,59 +486,7 @@ boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format
   }
 }
 
-/*******************************************************************
-*
-* NAME :         trigger_periodic_scheduling_request
-*
-* PARAMETERS :   pointer to resource set
-*
-* RETURN :       1 if peridic scheduling request is triggered
-*                0 no periodic scheduling request
-*
-* DESCRIPTION :  TS 38.213 9.2.4 UE procedure for reporting SR
-*
-*********************************************************************/
 
-int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_t *proc)
-{
-  const int max_sr_periodicity[NB_NUMEROLOGIES_NR] = { 80, 160, 320, 640, 640 };
-
-  int active_scheduling_request = ue->scheduling_request_config_nr[gNB_id].active_sr_id;
-
-  /* is there any valid scheduling request configuration */
-  if (ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[active_scheduling_request] == NULL) {
-    return (0);
-  }
-
-  if (ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[active_scheduling_request]->periodicity < 2) {
-    LOG_W(PHY,"PUCCH Not supported scheduling request period smaller than 1 slot : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-    return (0);
-  }
-
-  int16_t SR_periodicity = scheduling_request_periodicity[ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[active_scheduling_request]->periodicity];
-  uint16_t SR_offset = ue->scheduling_request_config_nr[gNB_id].sr_ResourceConfig[active_scheduling_request]->offset;
-
-  if (SR_periodicity > max_sr_periodicity[ue->frame_parms.numerology_index]) {
-    LOG_W(PHY,"PUCCH Invalid scheduling request period : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-    return (0);
-  }
-
-  if (SR_offset > SR_periodicity) {
-    LOG_E(PHY,"PUCCH SR offset %d is greater than SR periodicity %d : at line %d in function %s of file %s \n", SR_offset, SR_periodicity, LINE_FILE , __func__, FILE_NAME);
-    return (0);
-  }
-  else if (SR_periodicity == 1) {
-    return (1); /* period is slot */
-  }
-
-  int16_t N_slot_frame = ue->frame_parms.slots_per_frame;
-  if (((proc->frame_tx * N_slot_frame) + proc->nr_slot_tx - SR_offset)%SR_periodicity == 0) {
-    return (1);
-  }
-  else {
-    return (0);
-  }
-}
 
 /*******************************************************************
 *

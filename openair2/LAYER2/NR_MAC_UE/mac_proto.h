@@ -125,25 +125,17 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              int slot,
                              int thread_id);
 
-/* \brief Get SR payload (0,1) from UE MAC
-@param Mod_id Instance id of UE in machine
-@param CC_id Component Carrier index
-@param eNB_id Index of eNB that UE is attached to
-@param rnti C_RNTI of UE
-@param subframe subframe number
-@returns 0 for no SR, 1 for SR
-*/
-uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
-       uint8_t eNB_id, rnti_t rnti, sub_frame_t subframe);
-
-int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
+int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, int slotP);
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, fapi_nr_dci_indication_pdu_t *dci_ind);
 int nr_ue_process_dci_indication_pdu(module_id_t module_id, int cc_id, int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci);
 
 uint32_t get_ssb_frame(uint32_t test);
 
-uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
+bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
+                                         PUCCH_sched_t *pucch,
+                                         frame_t frame,
+                                         int slot);
 
 /* \brief Get payload (MAC PDU) from UE PHY
 @param dl_info            pointer to dl indication

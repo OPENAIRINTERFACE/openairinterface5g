@@ -1289,7 +1289,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
              mac->cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig &&
              mac->cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup &&
              mac->cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
-      LOG_E(PHY,"PUCCH Unsupported code block group for serving cell config : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+      LOG_E(MAC,"PUCCH Unsupported code block group for serving cell config : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
       return;
     }
     NR_PUCCH_Config_t *pucch_Config;
@@ -1356,7 +1356,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     pucch_pdu->second_hop_prb = pucchres->secondHopPRB!= NULL ?  *pucchres->secondHopPRB : 0;
 
     if ((O_SR+O_CSI+O_SR) > (sizeof(uint64_t)*8)) {
-      LOG_E(PHY,"PUCCH number of UCI bits exceeds payload size : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+      LOG_E(MAC,"PUCCH number of UCI bits exceeds payload size : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
       return;
     }
     pucch_pdu->payload = (pucch->csi_part1_payload << (O_ACK + O_SR)) |  (pucch->sr_payload << O_ACK) | pucch->ack_payload;
@@ -1487,7 +1487,7 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
   int16_t G_b_f_c = 0;
 
   if (pucch_Config->spatialRelationInfoToAddModList != NULL) {  /* FFS TODO NR */
-    LOG_E(PHY,"PUCCH Spatial relation infos are not yet implemented : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
+    LOG_E(MAC,"PUCCH Spatial relation infos are not yet implemented : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
     return (PUCCH_POWER_DEFAULT);
   }
 
@@ -1497,7 +1497,7 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
   }
   else {
     G_b_f_c = pucch->delta_pucch;
-    LOG_D(PHY,"PUCCH Transmit power control command not yet implemented for NR : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
+    LOG_D(MAC,"PUCCH Transmit power control command not yet implemented for NR : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
     return (PUCCH_POWER_DEFAULT);
   }
 
@@ -1558,13 +1558,13 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
       break;
     default:
     {
-      LOG_E(PHY,"PUCCH unknown pucch format : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
+      LOG_E(MAC,"PUCCH unknown pucch format : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
       return (0);
     }
   }
 
   if (*power_config->twoPUCCH_PC_AdjustmentStates > 1) {
-    LOG_E(PHY,"PUCCH power control adjustment states with 2 states not yet implemented : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
+    LOG_E(MAC,"PUCCH power control adjustment states with 2 states not yet implemented : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
     return (PUCCH_POWER_DEFAULT);
   }
 
@@ -1738,13 +1738,13 @@ void select_pucch_resource(NR_UE_MAC_INST_t *mac,
 
     n_list = resourceSetToAddModList->list.count;
     if (pucch->resource_set_id > n_list) {
-      LOG_E(PHY,"Invalid PUCCH resource set id %d\n",pucch->resource_set_id);
+      LOG_E(MAC,"Invalid PUCCH resource set id %d\n",pucch->resource_set_id);
       pucch->pucch_resource = NULL;
       return;
     }
     n_list = resourceSetToAddModList->list.array[pucch->resource_set_id]->resourceList.list.count;
     if (pucch->resource_indicator > n_list) {
-      LOG_E(PHY,"Invalid PUCCH resource id %d\n",pucch->resource_indicator);
+      LOG_E(MAC,"Invalid PUCCH resource id %d\n",pucch->resource_indicator);
       pucch->pucch_resource = NULL;
       return;
     }
@@ -1759,7 +1759,7 @@ void select_pucch_resource(NR_UE_MAC_INST_t *mac,
       }
     }
     if (res_found == 0) {
-      LOG_E(PHY,"Couldn't find PUCCH Resource\n");
+      LOG_E(MAC,"Couldn't find PUCCH Resource\n");
       pucch->pucch_resource = NULL;
     }
   }
@@ -1861,18 +1861,18 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
         if (sched_frame == frame && sched_slot == slot) {
 
           if (current_harq->dai > NR_DL_MAX_DAI) {
-            LOG_E(PHY,"PUCCH Downlink DAI has an invalid value : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+            LOG_E(MAC,"PUCCH Downlink DAI has an invalid value : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
           }
           else {
 
             if ((pucch->resource_indicator != -1) && (pucch->resource_indicator != current_harq->pucch_resource_indicator))
-              LOG_E(PHY, "Value of pucch_resource_indicator %d not matching with what set before %d (Possibly due to a false DCI) \n",
+              LOG_E(MAC, "Value of pucch_resource_indicator %d not matching with what set before %d (Possibly due to a false DCI) \n",
                     current_harq->pucch_resource_indicator,pucch->resource_indicator);
             else{
               dai_current = current_harq->dai+1; // DCI DAI to counter DAI conversion
 
               if (dai_current == 0) {
-                LOG_E(PHY,"PUCCH Downlink dai is invalid : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+                LOG_E(MAC,"PUCCH Downlink dai is invalid : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
                 return(0);
               } else if (dai_current > dai_max) {
                 dai_max = dai_current;
@@ -1904,7 +1904,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
     return(0);
   }
   else  if (number_harq_feedback > (sizeof(uint32_t)*8)) {
-    LOG_E(PHY,"PUCCH number of ack bits exceeds payload size : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+    LOG_E(MAC,"PUCCH number of ack bits exceeds payload size : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
     return(0);
   }
 
@@ -1989,7 +1989,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   }
 
   if (number_harq_feedback != O_ACK) {
-    LOG_E(PHY,"PUCCH Error for number of bits for acknowledgment : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+    LOG_E(MAC,"PUCCH Error for number of bits for acknowledgment : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
     return (0);
   }
 
@@ -1998,8 +1998,84 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
 }
 
 
-int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe){
+bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
+                                         PUCCH_sched_t *pucch,
+                                         frame_t frame,
+                                         int slot) {
 
+  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
+  NR_PUCCH_Config_t *pucch_Config = NULL;
+  int scs;
+  NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
+  NR_BWP_UplinkCommon_t *initialUplinkBWP;
+  if (mac->scc) initialUplinkBWP = mac->scc->uplinkConfigCommon->initialUplinkBWP;
+  else          initialUplinkBWP = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
+
+  if (mac->cg && ubwp &&
+      mac->cg->spCellConfig &&
+      mac->cg->spCellConfig->spCellConfigDedicated &&
+      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
+    scs = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+  }
+  else
+    scs = initialUplinkBWP->genericParameters.subcarrierSpacing;
+
+  const int n_slots_frame = nr_slots_per_frame[scs];
+
+  if (bwp_id>0 &&
+      mac->ULbwp[bwp_id-1] &&
+      mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
+      mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config &&
+      mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup) {
+    pucch_Config =  mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup;
+  }
+  else if (bwp_id==0 &&
+           mac->cg &&
+           mac->cg->spCellConfig &&
+           mac->cg->spCellConfig->spCellConfigDedicated &&
+           mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+           mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+           mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config &&
+           mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
+    pucch_Config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+  }
+  if(!pucch_Config || pucch_Config->schedulingRequestResourceToAddModList->list.count==0)
+    return false; // SR not configured
+
+  for (int SR_resource_id =0; SR_resource_id < pucch_Config->schedulingRequestResourceToAddModList->list.count;SR_resource_id++) {
+    NR_SchedulingRequestResourceConfig_t *SchedulingRequestResourceConfig = pucch_Config->schedulingRequestResourceToAddModList->list.array[SR_resource_id];
+    int SR_period; int SR_offset;
+
+    find_period_offest_SR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
+    int sfn_sf = frame * n_slots_frame + slot;
+
+    if ((sfn_sf - SR_offset) % SR_period == 0) {
+      LOG_D(MAC, "Scheduling Request active in frame %d slot %d \n", frame, slot);
+      NR_PUCCH_ResourceId_t *PucchResourceId = SchedulingRequestResourceConfig->resource;
+
+      int found = -1;
+      NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[0]; // set with formats 0,1
+      int n_list = pucchresset->resourceList.list.count;
+       for (int i=0; i<n_list; i++) {
+        if (*pucchresset->resourceList.list.array[i] == *PucchResourceId ) {
+          found = i;
+          break;
+        }
+      }
+      if (found == -1) {
+        LOG_E(MAC,"Couldn't find PUCCH resource for SR\n");
+        return false;
+      }
+      pucch->resource_indicator = found;
+      return true;
+    }
+  }
+  return false;
+}
+
+
+int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, int slotP){
   return 0;
 }
 
