@@ -72,11 +72,16 @@ void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data_from_du->sctp_out_streams = sctp_new_association_resp->out_streams;
 
   /* setup parameters for F1U and start the server */
-  const cudu_params_t params = {
+  const cudu_params_t params = RC.nrrrc[instance]->node_type == ngran_gNB_CU ? (cudu_params_t){
     .local_ipv4_address  = RC.nrrrc[instance]->eth_params_s.my_addr,
     .local_port          = RC.nrrrc[instance]->eth_params_s.my_portd,
     .remote_ipv4_address = RC.nrrrc[instance]->eth_params_s.remote_addr,
     .remote_port         = RC.nrrrc[instance]->eth_params_s.remote_portd
+  } : (cudu_params_t){
+    .local_ipv4_address  = RC.rrc[instance]->eth_params_s.my_addr,
+    .local_port          = RC.rrc[instance]->eth_params_s.my_portd,
+    .remote_ipv4_address = RC.rrc[instance]->eth_params_s.remote_addr,
+    .remote_port         = RC.rrc[instance]->eth_params_s.remote_portd
   };
   AssertFatal(proto_agent_start(instance, &params) == 0,
               "could not start PROTO_AGENT for F1U on instance %ld!\n", instance);
