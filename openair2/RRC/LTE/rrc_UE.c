@@ -98,8 +98,6 @@ static int from_nr_ue_fd = -1;
 static int to_nr_ue_fd = -1;
 int slrb_id;
 int send_ue_information = 0;
-/* Melissa, this is a hack. Just created a ctxt global. Need to pass to process_nr_nsa_msg(). */
-protocol_ctxt_t ctxt_g;
 
 // for malloc_clear
 #include "PHY/defs_UE.h"
@@ -4869,7 +4867,6 @@ void *rrc_ue_task( void *args_p ) {
     itti_receive_msg (TASK_RRC_UE, &msg_p);
     instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
     ue_mod_id = UE_INSTANCE_TO_MODULE_ID(instance);
-    ctxt_g = ctxt;
 
     /* TODO: Add case to handle nr-UE messages we want from nrUE RRC layer */
     switch (ITTI_MSG_ID(msg_p)) {
@@ -5000,6 +4997,7 @@ void *rrc_ue_task( void *args_p ) {
 
       case RRC_DCCH_DATA_COPY_IND:
       {
+        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, RRC_DCCH_DATA_COPY_IND (msg_p).module_id, ENB_FLAG_NO, RRC_DCCH_DATA_COPY_IND (msg_p).rnti, RRC_DCCH_DATA_COPY_IND (msg_p).frame, 0, RRC_DCCH_DATA_COPY_IND (msg_p).eNB_index);
         LOG_I(RRC, "[UE %d] Received %s. Now calling rrc_ue_process_ueCapabilityEnquiry\n",
               ue_mod_id, ITTI_MSG_NAME (msg_p));
         rrc_dcch_data_copy_t *dl_dcch_buffer = (void *)RRC_DCCH_DATA_COPY_IND (msg_p).sdu_p;
@@ -5016,6 +5014,7 @@ void *rrc_ue_task( void *args_p ) {
 
       case RRC_NRUE_CAP_INFO_IND:
       {
+        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, RRC_NRUE_CAP_INFO_IND (msg_p).module_id, ENB_FLAG_NO, RRC_NRUE_CAP_INFO_IND (msg_p).rnti, RRC_NRUE_CAP_INFO_IND (msg_p).frame, 0, RRC_NRUE_CAP_INFO_IND (msg_p).eNB_index);
         LOG_I(RRC, "[UE %d] Received %s. Now calling rrc_ue_process_nrueCapabilityEnquiry\n",
               ue_mod_id, ITTI_MSG_NAME (msg_p));
         rrc_nrue_cap_info_t *nrue_cap_info = (void *)RRC_NRUE_CAP_INFO_IND (msg_p).sdu_p;
@@ -6547,6 +6546,8 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
     uint8_t *const msg_buffer = msg->msg_buffer;
     msg_len -= sizeof(msg->msg_type);
     bool received_nr_msg = true;
+    protocol_ctxt_t ctxt;
+    module_id_t module_id = 0;
 
     switch (msg_type)
     {
@@ -6561,12 +6562,14 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             AssertFatal(msg_len <= sizeof(nrue_cap_buf->mesg), "msg_len = %d\n", msg_len);
             memcpy(nrue_cap_buf->mesg, msg_buffer, msg_len);
             nrue_cap_buf->mesg_len = msg_len;
-            UE_RRC_INFO *info = &UE_rrc_inst[ctxt_g.module_id].Info[0];
+            UE_RRC_INFO *info = &UE_rrc_inst[module_id].Info[0];
             nrue_cap_buf->dl_dcch_msg = info->dl_dcch_msg;
             info->dl_dcch_msg = NULL;
             message_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_NRUE_CAP_INFO_IND);
             RRC_NRUE_CAP_INFO_IND (message_p).sdu_p = (void *)nrue_cap_buf;
             RRC_NRUE_CAP_INFO_IND (message_p).sdu_size = sizeof(*nrue_cap_buf);
+            RRC_NRUE_CAP_INFO_IND (message_p).module_id = module_id;
+            RRC_NRUE_CAP_INFO_IND (message_p).rnti = info->rnti;
             RRC_NRUE_CAP_INFO_IND (message_p).eNB_index = 0;
             itti_send_msg_to_task (TASK_RRC_UE, 0, message_p);
             LOG_I(RRC, "Sent itti RRC_NRUE_CAP_INFO_IND\n");
@@ -6575,11 +6578,10 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
         case UE_CAPABILITY_DUMMY:
         {
             fill_ue_capability(NULL, received_nr_msg);
-            for (module_id_t module_id = 0; module_id < NB_UE_INST; module_id++) {
-                UE_rrc_inst[module_id].UECap = UE_rrc_inst->UECap;
-                UE_rrc_inst[module_id].UECapability = UE_rrc_inst->UECap->sdu;
-                UE_rrc_inst[module_id].UECapability_size = UE_rrc_inst->UECap->sdu_size;
-            }
+            UE_rrc_inst[module_id].UECap = UE_rrc_inst->UECap;
+            UE_rrc_inst[module_id].UECapability = UE_rrc_inst->UECap->sdu;
+            UE_rrc_inst[module_id].UECapability_size = UE_rrc_inst->UECap->sdu_size;
+
             if (!is_en_dc_supported(UE_rrc_inst->UECap->UE_EUTRA_Capability))
             {
               LOG_E(RRC, "en_dc is NOT supported! Not sending RRC_DCCH_DATA_COPY_IND to update UE_Capability_INFO\n");
@@ -6591,15 +6593,17 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             rrc_dcch_data_copy_t *dl_dcch_buffer = itti_malloc (TASK_RRC_NSA_UE,
                                                                 TASK_RRC_UE,
                                                                 sizeof(rrc_dcch_data_copy_t));
-            UE_RRC_INFO *info = &UE_rrc_inst[ctxt_g.module_id].Info[0];
+            UE_RRC_INFO *info = &UE_rrc_inst[module_id].Info[0];
             dl_dcch_buffer->dl_dcch_msg = info->dl_dcch_msg;
             info->dl_dcch_msg = NULL;
             message_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_DCCH_DATA_COPY_IND);
             RRC_DCCH_DATA_COPY_IND (message_p).sdu_p = (void *)dl_dcch_buffer;
             RRC_DCCH_DATA_COPY_IND (message_p).sdu_size = sizeof(rrc_dcch_data_copy_t);
+            RRC_DCCH_DATA_COPY_IND (message_p).module_id = module_id;
+            RRC_DCCH_DATA_COPY_IND (message_p).rnti = info->rnti;
             RRC_DCCH_DATA_COPY_IND (message_p).eNB_index = 0;
             itti_send_msg_to_task (TASK_RRC_UE, 0, message_p);
-            LOG_D(RRC, "Sent itti RRC_DCCH_DATA_COPY_IND\n");
+            LOG_I(RRC, "Sent itti RRC_DCCH_DATA_COPY_IND\n");
             break;
         }
 
@@ -6660,7 +6664,11 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             uint8_t t_id = rrc_saved->rrc_TransactionIdentifier;
             rrc_saved = NULL;
             #endif
-            rrc_ue_generate_RRCConnectionReconfigurationComplete(&ctxt_g, ctxt_g.eNB_index, 0, &rrcConfigurationComplete);
+            UE_RRC_INFO *info = &UE_rrc_inst[module_id].Info[0];
+            PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_id,
+                                           ENB_FLAG_NO, info->rnti,
+                                           0, 0, 0);
+            rrc_ue_generate_RRCConnectionReconfigurationComplete(&ctxt, ctxt.eNB_index, 0, &rrcConfigurationComplete);
             break;
         }
         default:
