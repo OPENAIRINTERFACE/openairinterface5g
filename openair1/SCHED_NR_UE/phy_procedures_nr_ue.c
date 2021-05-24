@@ -1778,6 +1778,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(newElt);
   curMsg->proc = *proc;
   curMsg->UE = ue;
+  curMsg->ue_sched_mode = ONLY_PUSCH;
   pushTpool(&(get_nrUE_params()->Tpool), newElt);
 
 #if UE_TIMING_TRACE
