@@ -234,9 +234,12 @@ typedef struct {
 
 typedef enum {
   RA_UE_IDLE = 0,
-  WAIT_RAR = 1,
-  WAIT_CONTENTION_RESOLUTION = 2,
-  RA_SUCCEEDED = 3
+  GENERATE_IDLE = 0,
+  GENERATE_PREAMBLE = 1,
+  WAIT_RAR = 2,
+  WAIT_CONTENTION_RESOLUTION = 3,
+  RA_SUCCEEDED = 4,
+  RA_FAILED = 5
 } RA_state_t;
 
 typedef struct {
@@ -257,8 +260,10 @@ typedef struct {
   uint8_t RA_attempt_number;
   /// Random-access procedure flag
   uint8_t RA_active;
+  /// Random-access preamble index
+  int ra_PreambleIndex;
   /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
-  uint8_t generate_nr_prach;
+  RA_state_t generate_nr_prach;
 
   /// Random-access window counter
   int16_t RA_window_cnt;
@@ -289,6 +294,8 @@ typedef struct {
   uint8_t RA_contention_resolution_timer_active;
   /// Random-access Contention Resolution Timer count value
   uint8_t RA_contention_resolution_cnt;
+  /// Transmitted UE Contention Resolution Identifier
+  uint8_t cont_res_id[6];
 
   /// BeamfailurerecoveryConfig
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
@@ -318,7 +325,7 @@ typedef struct {
   NR_TAG_Config_t                 *tag_Config;
   NR_PHR_Config_t                 *phr_Config;
   NR_RNTI_Value_t                 *cs_RNTI;
-  NR_MIB_t                         *mib;
+  NR_MIB_t                        *mib;
 
   NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP];
   NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP];
@@ -373,6 +380,8 @@ typedef struct {
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
+
+  dci_pdu_rel15_t def_dci_pdu_rel15[8];
 
 } NR_UE_MAC_INST_t;
 

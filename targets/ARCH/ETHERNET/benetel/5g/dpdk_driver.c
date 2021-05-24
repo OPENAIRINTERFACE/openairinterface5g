@@ -312,14 +312,13 @@ l2fwd_simple_forward(struct rte_mbuf *m, unsigned portid, benetel_t *bs)
                 oai_slot = tx_subframe * 2 + tx_slot;
                 lock_dl_buffer(bs->buffers, oai_slot);
                 if (!(bs->buffers->dl_busy[a][oai_slot] & (1 << tx_symbol))) {
-                  printf("%s: warning, DL underflow (antenna %d sl.symbol %d.%d)\n", __FUNCTION__,
-                         a, oai_slot, tx_symbol);
+                  //printf("%s: warning, DL underflow (antenna %d sl.symbol %d.%d)\n", __FUNCTION__,a, oai_slot, tx_symbol);
                   memset(IQ_ptr, 0, 1272 * 4);
                 } else {
                   memcpy(IQ_ptr, bs->buffers->dl[a][oai_slot] + tx_symbol * 1272*4,
                          1272*4);
                 }
-//printf("DL buffer f sf slot symbol %d %d %d %d (sf %d)\n", tx_frame, tx_subframe, tx_slot, tx_symbol, (int)sf);
+	        //printf("DL buffer f sf slot symbol %d %d %d %d (sf %d)\n", tx_frame, tx_subframe, tx_slot, tx_symbol, (int)sf);
                 bs->buffers->dl_busy[a][oai_slot] &= ~(1 << tx_symbol);
                 unlock_dl_buffer(bs->buffers, oai_slot);
 	}

@@ -36,7 +36,6 @@
 
 #include <stdbool.h>
 #include "types.h"
-#include "NR_PDSCH-TimeDomainResourceAllocation.h"
 
 #ifdef DEFINE_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
 #define EXTERN
@@ -214,10 +213,8 @@ typedef enum {
 
 #define NB_SRS_PERIOD         (17)
 
-const uint16_t srs_period[NB_SRS_PERIOD]
-#ifdef INIT_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
+static const uint16_t srs_period[NB_SRS_PERIOD]
 = { 1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 64, 80, 160, 320, 640, 1280, 2560}
-#endif
 ;
 
 /// SRS_Resource of SRS_Config information element from 38.331 RRC specifications
@@ -397,6 +394,13 @@ typedef struct{
 typedef struct{
 // to be defined FIXME!!!
 }zp_CSI_RS_Resource_t;
+
+typedef struct{
+        int   k0;    
+        int     mappingType;
+        int     startSymbolAndLength;
+
+}PDSCH_TimeDomainResourceAllocation_t;
 typedef struct {
 /*
  * resourceAllocation
@@ -449,7 +453,8 @@ typedef struct {
 */
   maxNrofCodeWordsScheduledByDCI_t maxNrofCodeWordsScheduledByDCI;
 
-  NR_PDSCH_TimeDomainResourceAllocation_t *pdsch_TimeDomainResourceAllocation[MAX_NR_OF_DL_ALLOCATIONS];
+
+  PDSCH_TimeDomainResourceAllocation_t *pdsch_TimeDomainResourceAllocation[MAX_NR_OF_DL_ALLOCATIONS];
 
 } PDSCH_Config_t;
 
@@ -796,7 +801,6 @@ typedef struct {
   uint8_t                initial_CS_indexes[MAX_NB_CYCLIC_SHIFT];
 } initial_pucch_resource_t;
 
-const initial_pucch_resource_t initial_pucch_resource[NB_INITIAL_PUCCH_RESOURCE]; /* TS 36.213 Table 9.2.1-1: PUCCH resource sets before dedicated PUCCH resource configuration */
 
 /* structure with all possible fields for pucch format from 0 to 4  */
 typedef struct {
@@ -1051,11 +1055,6 @@ typedef struct {
 
 #define NB_SR_PERIOD    (15)
 
-const uint16_t scheduling_request_periodicity[NB_SR_PERIOD]
-#ifdef INIT_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
-= { 0, 0, 1, 2, 4, 5, 8, 10, 16, 20, 40, 80, 160, 320, 640 }
-#endif
-;
 
 typedef enum {
   sr_sym2     = 0,

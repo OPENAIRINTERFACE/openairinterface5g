@@ -397,6 +397,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     if ((xrtmag_dB<(11+dB_fixed(no_corr))) || (dB_fixed(av_corr)<(13+gNB->measurements.n0_power_tot_dB))) //TODO  these are temporary threshold based on measurments with the phone
       no_conf=true;
   }
+  gNB->bad_pucch += no_conf;
   // first bit of bitmap for sr presence and second bit for acknack presence
   uci_pdu->pduBitmap = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
   uci_pdu->pucch_format = 0; // format 0
@@ -1627,7 +1628,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   if (pucch_pdu->bit_len_harq>0) {
     int harq_bytes=pucch_pdu->bit_len_harq>>3;
     if ((pucch_pdu->bit_len_harq&7) > 0) harq_bytes++;
-    uci_pdu->pduBitmap|=1;
+    uci_pdu->pduBitmap|=2;
     uci_pdu->harq.harq_payload = (uint8_t*)malloc(harq_bytes);
     uci_pdu->harq.harq_crc = decoderState;
     int i=0;
@@ -1641,7 +1642,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   }
   
   if (pucch_pdu->sr_flag == 1) {
-    uci_pdu->pduBitmap|=2;
+    uci_pdu->pduBitmap|=1;
     uci_pdu->sr.sr_bit_len = 1;
     uci_pdu->sr.sr_payload = malloc(1);
     uci_pdu->sr.sr_payload[0] = decodedPayload[0]&1;

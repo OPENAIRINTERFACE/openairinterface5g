@@ -121,11 +121,10 @@ static inline uint8_t get_max_candidates(uint8_t scs) {
 static inline uint8_t get_max_cces(uint8_t scs) {
   AssertFatal(scs<4, "Invalid PDCCH subcarrier spacing %d\n", scs);
   return (nr_max_number_of_cces_per_slot[scs]);
-} 
+}
 
-NR_ControlResourceSet_t *get_coreset(NR_BWP_Downlink_t *bwp,
-                                     NR_SearchSpace_t *ss,
-                                     int ss_type) {
+NR_ControlResourceSet_t *get_coreset(const NR_BWP_Downlink_t *bwp, const NR_SearchSpace_t *ss, int ss_type)
+{
   NR_ControlResourceSetId_t coreset_id = *ss->controlResourceSetId;
   if (ss_type == 0) { // common search space
     AssertFatal(coreset_id != 0, "coreset0 currently not supported\n");
@@ -147,9 +146,8 @@ NR_ControlResourceSet_t *get_coreset(NR_BWP_Downlink_t *bwp,
   }
 }
 
-NR_SearchSpace_t *get_searchspace(
-    NR_BWP_Downlink_t *bwp,
-    NR_SearchSpace__searchSpaceType_PR target_ss) {
+NR_SearchSpace_t *get_searchspace(const NR_BWP_Downlink_t *bwp, NR_SearchSpace__searchSpaceType_PR target_ss)
+{
   DevAssert(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList);
   DevAssert(bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count > 0);
 
@@ -179,7 +177,7 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   int coreset_id = coreset->controlResourceSetId;
 
   int *cce_list;
-  if(bwp->bwp_Id == 0) {
+  if( bwp==NULL || bwp->bwp_Id == 0 ) {
     cce_list = nr_mac->cce_list[1][0];
   } else {
     cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
@@ -213,12 +211,99 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 
 }
 
-void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
-                          const NR_BWP_Uplink_t *ubwp,
-                          long dci_format,
-                          int tda,
-                          uint8_t num_dmrs_cdm_grps_no_data,
-                          NR_sched_pusch_save_t *ps)
+bool nr_find_nb_rb(uint16_t Qm,
+                   uint16_t R,
+                   uint16_t nb_symb_sch,
+                   uint16_t nb_dmrs_prb,
+                   uint32_t bytes,
+                   uint16_t nb_rb_max,
+                   uint32_t *tbs,
+                   uint16_t *nb_rb)
+{
+  /* is the maximum (not even) enough? */
+  *nb_rb = nb_rb_max;
+  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+  /* check whether it does not fit, or whether it exactly fits. Some algorithms
+   * might depend on the return value! */
+  if (bytes > *tbs)
+    return false;
+  if (bytes == *tbs)
+    return true;
+
+  /* is the minimum enough? */
+  *nb_rb = 1;
+  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+  if (bytes <= *tbs)
+    return true;
+
+  /* perform binary search to allocate all bytes within a TBS up to nb_rb_max
+   * RBs */
+  int hi = nb_rb_max;
+  int lo = 1;
+  for (int p = (hi + lo) / 2; lo + 1 < hi; p = (hi + lo) / 2) {
+    const uint32_t TBS = nr_compute_tbs(Qm, R, p, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+    if (bytes == TBS) {
+      hi = p;
+      break;
+    } else if (bytes < TBS) {
+      hi = p;
+    } else {
+      lo = p;
+    }
+  }
+  *nb_rb = hi;
+  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+  /* return whether we could allocate all bytes and stay below nb_rb_max */
+  return *tbs >= bytes && *nb_rb <= nb_rb_max;
+}
+
+void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+                              const NR_CellGroupConfig_t *secondaryCellGroup,
+                              const NR_BWP_Downlink_t *bwp,
+                              int tda,
+                              uint8_t num_dmrs_cdm_grps_no_data,
+                              NR_pdsch_semi_static_t *ps)
+{
+  ps->time_domain_allocation = tda;
+
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
+      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
+  const int mapping_type = tdaList->list.array[tda]->mappingType;
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
+
+  if (!secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup
+           ->mcs_Table)
+    ps->mcsTableIdx = 0;
+  else if (*secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup
+                ->mcs_Table
+           == 0)
+    ps->mcsTableIdx = 1;
+  else
+    ps->mcsTableIdx = 2;
+
+  ps->numDmrsCdmGrpsNoData = num_dmrs_cdm_grps_no_data;
+  ps->dmrsConfigType =
+      bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type
+              == NULL
+          ? 0
+          : 1;
+  // if no data in dmrs cdm group is 1 only even REs have no data
+  // if no data in dmrs cdm group is 2 both odd and even REs have no data
+  ps->N_PRB_DMRS = num_dmrs_cdm_grps_no_data * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
+  ps->N_DMRS_SLOT =
+      get_num_dmrs_symbols(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, mapping_type);
+  ps->dl_dmrs_symb_pos =
+      fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, mapping_type);
+}
+
+void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+                              const NR_BWP_Uplink_t *ubwp,
+                              long dci_format,
+                              int tda,
+                              uint8_t num_dmrs_cdm_grps_no_data,
+                              NR_pusch_semi_static_t *ps)
 {
   ps->dci_format = dci_format;
   ps->time_domain_allocation = tda;
@@ -271,11 +356,12 @@ void nr_save_pusch_fields(const NR_ServingCellConfigCommon_t *scc,
                  : *ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition);
   const pusch_maxLength_t pusch_maxLength =
       ps->NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2;
-  const uint16_t l_prime_mask = get_l_prime(ps->nrOfSymbols,
+  ps->ul_dmrs_symb_pos = get_l_prime(ps->nrOfSymbols,
                                             ps->mapping_type,
                                             additional_pos,
-                                            pusch_maxLength);
-  ps->ul_dmrs_symb_pos = l_prime_mask << ps->startSymbolIndex;
+                                            pusch_maxLength,
+                                            ps->startSymbolIndex,
+                                            scc->dmrs_TypeA_Position);
   uint8_t num_dmrs_symb = 0;
   for(int i = ps->startSymbolIndex; i < ps->startSymbolIndex + ps->nrOfSymbols; i++)
     num_dmrs_symb += (ps->ul_dmrs_symb_pos >> i) & 1;
@@ -564,6 +650,8 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_BWP_Downlink_t *bwp)
 {
+  int sps = 0;
+
   if (bwp) { // This is not the InitialBWP
     pdcch_pdu->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -572,8 +660,18 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
 
     // first symbol
     //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
-    int sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+    sps = bwp->bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+  }
+  else { // this is for InitialBWP
+    pdcch_pdu->BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    pdcch_pdu->SubcarrierSpacing = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
+    pdcch_pdu->CyclicPrefix = (scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix==NULL) ? 0 : *scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix;
 
+    // first symbol
+    //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
+    sps = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+  }
     AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
     
@@ -618,10 +716,6 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
 
     //precoderGranularity
     pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
-  }
-  else { // this is for InitialBWP
-    AssertFatal(1==0,"Fill in InitialBWP PDCCH configuration\n");
-  }
 }
 
 
@@ -1135,6 +1229,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       break;
 
     case NR_RNTI_TC:
+      pos = 1;
       // indicating a DL DCI format 1bit
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos++);
       // Freq domain assignment 0-16 bit
@@ -1163,9 +1258,27 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // TPC command for scheduled PUCCH – 2 bits
       for (int i = 0; i < 2; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->tpc >> (1 - i)) & 1) << (dci_size - pos++);
+      // PUCCH resource indicator – 3 bits
+      for (int i = 0; i < 3; i++)
+        *dci_pdu |= (((uint64_t)dci_pdu_rel15->pucch_resource_indicator >> (2 - i)) & 1) << (dci_size - pos++);
       // PDSCH-to-HARQ_feedback timing indicator – 3 bits
       for (int i = 0; i < 3; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val >> (2 - i)) & 1) << (dci_size - pos++);
+
+      LOG_D(NR_MAC,"N_RB = %i\n", N_RB);
+      LOG_D(NR_MAC,"dci_size = %i\n", dci_size);
+      LOG_D(NR_MAC,"fsize = %i\n", fsize);
+      LOG_D(NR_MAC,"dci_pdu_rel15->format_indicator = %i\n", dci_pdu_rel15->format_indicator);
+      LOG_D(NR_MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+      LOG_D(NR_MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+      LOG_D(NR_MAC,"dci_pdu_rel15->harq_pid = %i\n", dci_pdu_rel15->harq_pid);
+      LOG_D(NR_MAC,"dci_pdu_rel15->dai[0].val = %i\n", dci_pdu_rel15->dai[0].val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->tpc = %i\n", dci_pdu_rel15->tpc);
+      LOG_D(NR_MAC,"dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = %i\n", dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val);
+
       break;
     }
     break;
@@ -1623,6 +1736,24 @@ int get_nrofHARQ_ProcessesForPDSCH(e_NR_PDSCH_ServingCellConfig__nrofHARQ_Proces
   }
 }
 
+int get_dl_bwp_id(const NR_ServingCellConfig_t *servingCellConfig)
+{
+  if (servingCellConfig->firstActiveDownlinkBWP_Id)
+    return *servingCellConfig->firstActiveDownlinkBWP_Id;
+  else if (servingCellConfig->defaultDownlinkBWP_Id)
+    return *servingCellConfig->defaultDownlinkBWP_Id;
+  else
+    return 1;
+}
+
+int get_ul_bwp_id(const NR_ServingCellConfig_t *servingCellConfig)
+{
+  if (servingCellConfig->uplinkConfig && servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id)
+    return *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id;
+  else
+    return 1;
+}
+
 //------------------------------------------------------------------------------
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secondaryCellGroup)
 {
@@ -1651,23 +1782,32 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
-    sched_ctrl->ul_rssi = 0;
     /* set illegal time domain allocation to force recomputation of all fields */
-    sched_ctrl->pusch_save.time_domain_allocation = -1;
+    sched_ctrl->pdsch_semi_static.time_domain_allocation = -1;
+    sched_ctrl->pusch_semi_static.time_domain_allocation = -1;
     const NR_ServingCellConfig_t *servingCellConfig = secondaryCellGroup->spCellConfig->spCellConfigDedicated;
 
     /* Set default BWPs */
     const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
-    AssertFatal(bwpList->list.count == 1,
-                "downlinkBWP_ToAddModList has %d BWP!\n",
+    const int bwp_id = get_dl_bwp_id(servingCellConfig);
+    AssertFatal(bwp_id > 0 && bwp_id <= bwpList->list.count,
+                "%s(): illegal bwp_id %d (max %d)!\n",
+                __func__,
+                bwp_id,
                 bwpList->list.count);
-    const int bwp_id = 1;
     sched_ctrl->active_bwp = bwpList->list.array[bwp_id - 1];
+    const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+    sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+    sched_ctrl->coreset = get_coreset(sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
-    AssertFatal(ubwpList->list.count == 1,
-                "uplinkBWP_ToAddModList has %d BWP!\n",
+    const int ubwp_id = get_ul_bwp_id(servingCellConfig);
+    AssertFatal(ubwp_id > 0 && ubwp_id <= ubwpList->list.count,
+                "%s(): illegal ubwp_id %d (max %d)!\n",
+                __func__,
+                ubwp_id,
                 ubwpList->list.count);
-    sched_ctrl->active_ubwp = ubwpList->list.array[bwp_id - 1];
+    sched_ctrl->active_ubwp = ubwpList->list.array[ubwp_id - 1];
 
     /* get Number of HARQ processes for this UE */
     AssertFatal(servingCellConfig->pdsch_ServingCellConfig->present == NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup,
@@ -1690,7 +1830,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
       add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
     create_nr_list(&sched_ctrl->feedback_ul_harq, 16);
     create_nr_list(&sched_ctrl->retrans_ul_harq, 16);
-    LOG_I(MAC, "gNB %d] Add NR UE_id %d : rnti %x\n",
+    LOG_I(MAC, "[gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
           rntiP);
@@ -1713,6 +1853,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
 {
   int UE_id;
   int i;
+  int cc_id;
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
 
   for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
@@ -1745,10 +1886,34 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
     if (rnti_to_remove_count == 10) exit(1);
     rnti_to_remove[rnti_to_remove_count] = rnti;
-    LOG_W(MAC, "to remove in mac rnti_to_remove[%d]=%d\n", rnti_to_remove_count, rnti);
+    LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
     rnti_to_remove_count++;
     if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
   }
+
+  /* clear RA process(es?) associated to the UE */
+  for (cc_id = 0; cc_id < NFAPI_CC_MAX; cc_id++) {
+    NR_COMMON_channels_t *cc = &RC.nrmac[mod_id]->common_channels[cc_id];
+    for (i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+      if (cc->ra[i].rnti == rnti) {
+        LOG_D(MAC, "free RA process %d for rnti %d\n", i, rnti);
+        /* is it enough? */
+        cc->ra[i].cfra  = false;
+        cc->ra[i].rnti  = 0;
+        cc->ra[i].crnti = 0;
+      }
+    }
+  }
+}
+
+void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti) {
+  // Hack to remove UE in the phy (following the same procedure as in function mac_remove_nr_ue)
+  if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
+  if (rnti_to_remove_count == 10) exit(1);
+  rnti_to_remove[rnti_to_remove_count] = rnti;
+  LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
+  rnti_to_remove_count++;
+  if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 }
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {

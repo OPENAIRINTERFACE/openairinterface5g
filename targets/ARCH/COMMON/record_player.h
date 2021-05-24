@@ -46,21 +46,22 @@ extern "C"
 #define BELL_LABS_IQ_HEADER       0xabababababababab
 #define BELL_LABS_IQ_PER_SF       7680 // Up to 5MHz bw for now
 #define BELL_LABS_IQ_BYTES_PER_SF (BELL_LABS_IQ_PER_SF * 4)
+#define MAX_BELL_LABS_IQ_BYTES_PER_SF  BELL_LABS_IQ_BYTES_PER_SF*10
 
-#define    OAIIQFILE_ID "OIQF"
+#define OAIIQFILE_ID {'O', 'I','Q','F'}
 typedef struct {
   uint64_t      devtype;
   uint64_t      tx_sample_advance;
   double        bw;
+  unsigned int  nbSamplesBlocks;
   char          oaiid[4];
 } iqfile_header_t;
 
 typedef struct {
   int64_t       header;
   int64_t       ts;
-  int64_t       rfu1;
+  int64_t       nbBytes;
   int64_t       rfu2; // pad for 256 bits alignement required by AVX2
-  unsigned char samples[BELL_LABS_IQ_BYTES_PER_SF]; // iq's for one subframe
 } iqrec_t;
 #define DEF_NB_SF           120000               // default nb of sf or ms to capture (2 minutes at 5MHz)
 #define DEF_SF_FILE         "/tmp/iqfile"        // default subframes file name
@@ -114,13 +115,15 @@ typedef struct {
   int             use_mmap; // default is to use mmap
   size_t          mapsize;
   FILE            *pFile;
-  int             mmapfd;
-  int             iqfd;
+  int             fd;
   iqrec_t        *ms_sample;                      // memory for all subframes
-  unsigned int    nb_samples;
+  unsigned int    nbSamplesBlocks;
+  uint8_t        *currentPtr;
+  uint64_t        currentTs;
+  unsigned int    curSamplesBlock;
+  int64_t         wrap_count;
+  size_t          maxSizeBytes;
 } recplay_state_t;
-
-
 
 #ifdef __cplusplus
 }

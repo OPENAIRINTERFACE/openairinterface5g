@@ -36,6 +36,13 @@
 
 #define reserved 0xffff
 
+// start symbols for SSB types A,B,C,D,E
+uint16_t symbol_ssb_AC[8]={2,8,16,22,30,36,44,50};
+uint16_t symbol_ssb_BD[64]={4,8,16,20,32,36,44,48,60,64,72,76,88,92,100,104,144,148,156,160,172,176,184,188,200,204,212,216,228,232,240,244,284,288,
+                            296,300,312,316,324,328,340,344,352,356,368,372,380,384,424,428,436,440,452,456,464,468,480,484,492,496,508,512,520,524};
+uint16_t symbol_ssb_E[64]={8,12,16,20,32,36,40,44,64,68,72,76,88,92,96,100,120,124,128,132,144,148,152,156,176,180,184,188,200,204,208,212,288,292,
+                           296,300,312,316,320,324,344,348,352,356,368,372,376,380,400,404,408,412,424,428,432,436,456,460,464,468,480,484,488,492};
+
 const uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 
 // Table 6.3.3.1-5 (38.211) NCS for preamble formats with delta_f_RA = 1.25 KHz
@@ -117,6 +124,152 @@ const int32_t table_38213_13_12_c2[16] = { 1,  2,  1,  2,  1,  2,  2,  2,  2,  1
 const float   table_38213_13_12_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 0.5f, 0.5f, 0.5f, 1, 0.5f, 0.5f, 1, 1,  reserved,  reserved}; // M, index 14-15 reserved
 
 const int32_t table_38213_10_1_1_c2[5] = { 0, 0, 4, 2, 1 };
+
+// for PDSCH from TS 38.214 subclause 5.1.2.1.1
+const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[16][3]={
+    {0,2,12},   // row index 1
+    {0,2,10},   // row index 2
+    {0,2,9},    // row index 3
+    {0,2,7},    // row index 4
+    {0,2,5},    // row index 5
+    {0,9,4},    // row index 6
+    {0,4,4},    // row index 7
+    {0,5,7},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,12,2},   // row index 11
+    {0,1,13},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,7},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[16][3]={
+    {0,3,11},   // row index 1
+    {0,3,9},    // row index 2
+    {0,3,8},    // row index 3
+    {0,3,6},    // row index 4
+    {0,3,4},    // row index 5
+    {0,10,4},   // row index 6
+    {0,6,4},    // row index 7
+    {0,5,7},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,12,2},   // row index 11
+    {0,1,13},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,7},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[16][3]={
+    {0,2,6},    // row index 1
+    {0,2,10},   // row index 2
+    {0,2,9},    // row index 3
+    {0,2,7},    // row index 4
+    {0,2,5},    // row index 5
+    {0,6,4},    // row index 6
+    {0,4,4},    // row index 7
+    {0,5,6},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,10,2},   // row index 11
+    {0,1,11},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,6},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[16][3]={
+    {0,3,5},    // row index 1
+    {0,3,9},    // row index 2
+    {0,3,8},    // row index 3
+    {0,3,6},    // row index 4
+    {0,3,4},    // row index 5
+    {0,8,2},    // row index 6
+    {0,6,4},    // row index 7
+    {0,5,6},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,10,2},   // row index 11
+    {0,1,11},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,6},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[16][3]={
+    {0,2,2},    // row index 1
+    {0,4,2},    // row index 2
+    {0,6,2},    // row index 3
+    {0,8,2},    // row index 4
+    {0,10,2},   // row index 5
+    {1,2,2},    // row index 6
+    {1,4,2},    // row index 7
+    {0,2,4},    // row index 8
+    {0,4,4},    // row index 9
+    {0,6,4},    // row index 10
+    {0,8,4},    // row index 11
+    {0,10,4},   // row index 12
+    {0,2,7},    // row index 13
+    {0,2,12},   // row index 14
+    {1,2,4},    // row index 15
+    {0,0,0}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[16][3]={
+    {0,2,2},    // row index 1
+    {0,4,2},    // row index 2
+    {0,6,2},    // row index 3
+    {0,8,2},    // row index 4
+    {0,10,2},   // row index 5
+    {1,2,2},    // row index 6
+    {1,4,2},    // row index 7
+    {0,2,4},    // row index 8
+    {0,4,4},    // row index 9
+    {0,6,4},    // row index 10
+    {0,8,4},    // row index 11
+    {0,10,4},   // row index 12
+    {0,2,7},    // row index 13
+    {0,3,11},   // row index 14
+    {1,2,4},    // row index 15
+    {0,0,0}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[16][3]={
+    {0,2,2},  // row index 1
+    {0,4,2},  // row index 2
+    {0,6,2},  // row index 3
+    {0,8,2},  // row index 4
+    {0,10,2}, // row index 5
+    {0,0,0},  // row index 6
+    {0,0,0},  // row index 7
+    {0,2,4},  // row index 8
+    {0,4,4},  // row index 9
+    {0,6,4},  // row index 10
+    {0,8,4},  // row index 11
+    {0,10,4}, // row index 12
+    {0,2,7},  // row index 13
+    {0,2,12},  // row index 14
+    {0,0,6},  // row index 15
+    {0,2,6}   // row index 16
+};
+const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[16][3]={
+    {0,2,2},  // row index 1
+    {0,4,2},  // row index 2
+    {0,6,2},  // row index 3
+    {0,8,2},  // row index 4
+    {0,10,2}, // row index 5
+    {0,0,0},  // row index 6
+    {0,0,0},  // row index 7
+    {0,2,4},  // row index 8
+    {0,4,4},  // row index 9
+    {0,6,4},  // row index 10
+    {0,8,4},  // row index 11
+    {0,10,4}, // row index 12
+    {0,2,7},  // row index 13
+    {0,3,11},  // row index 14
+    {0,0,6},  // row index 15
+    {0,2,6}   // row index 16
+};
 
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
 const char *duplex_mode[]={"FDD","TDD"};
@@ -1010,7 +1163,7 @@ int get_format0(uint8_t index,
                 uint8_t unpaired,
 		frequency_range_t frequency_range){
 
-  uint16_t format;
+  uint16_t format=0;
   if (unpaired) {
     if (frequency_range==FR1)
       format = table_6_3_3_2_3_prachConfig_Index[index][0];
@@ -1576,6 +1729,47 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
   }
 }
 
+// TS 38.211 Table 7.4.1.1.2-3: PDSCH DMRS positions l' within a slot for single-symbol DMRS and intra-slot frequency hopping disabled.
+// The first 4 colomns are PDSCH mapping type A and the last 4 colomns are PDSCH mapping type B.
+// When l' = l0, it is represented by 1
+// E.g. when symbol duration is 12 in colomn 7, value 1057 ('10000100001') which means l' =  l0, 5, 10.
+
+int32_t table_7_4_1_1_2_3_pdsch_dmrs_positions_l [13][8] = {                             // Duration in symbols
+{-1,          -1,          -1,         -1,          1,          1,         1,         1},       //2              // (DMRS l' position)
+{0,            0,           0,          0,          1,          1,         1,         1},       //3              // (DMRS l' position)
+{0,            0,           0,          0,          1,          1,         1,         1},       //4               // (DMRS l' position)
+{0,            0,           0,          0,          1,          17,        17,       17},       //5               // (DMRS l' position)
+{0,            0,           0,          0,          1,          17,        17,       17},       //6               // (DMRS l' position)
+{0,            0,           0,          0,          1,          17,        17,       17},       //7               // (DMRS l' position)
+{0,          128,         128,        128,          1,          65,        73,       73},       //8               // (DMRS l' position)
+{0,          128,         128,        128,          1,         129,       145,      145},       //9               // (DMRS l' position)
+{0,          512,         576,        576,          1,         129,       145,      145},       //10              // (DMRS l' position)
+{0,          512,         576,        576,          1,         257,       273,      585},       //11              // (DMRS l' position)
+{0,          512,         576,       2336,          1,         513,       545,      585},       //12              // (DMRS l' position)
+{0,         2048,        2176,       2336,          1,         513,       545,      585},       //13              // (DMRS l' position)
+{0,         2048,        2176,       2336,         -1,          -1,       -1,        -1},       //14              // (DMRS l' position)
+};
+
+
+// TS 38.211 Table 7.4.1.1.2-4: PDSCH DMRS positions l' within a slot for double-symbol DMRS and intra-slot frequency hopping disabled.
+// The first 4 colomns are PDSCH mapping type A and the last 4 colomns are PDSCH mapping type B.
+// When l' = l0, it is represented by 1
+
+int32_t table_7_4_1_1_2_4_pdsch_dmrs_positions_l [12][8] = {                             // Duration in symbols
+{-1,          -1,          -1,         -1,         -1,         -1,        -1,         -1},       //<4              // (DMRS l' position)
+{0,            0,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //5               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //6               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //7               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //8               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //9               // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //10              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //11              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        771,        -1,         -1},       //12              // (DMRS l' position)
+{0,         3072,          -1,         -1,          3,        771,        -1,         -1},       //13              // (DMRS l' position)
+{0,         3072,          -1,         -1,          -1,        -1,        -1,         -1},       //14              // (DMRS l' position)
+};
+
 // TS 38.211 Table 6.4.1.1.3-3: PUSCH DMRS positions l' within a slot for single-symbol DMRS and intra-slot frequency hopping disabled.
 // The first 4 colomns are PUSCH mapping type A and the last 4 colomns are PUSCH mapping type B.
 // When l' = l0, it is represented by 1
@@ -1583,17 +1777,17 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
 
 int32_t table_6_4_1_1_3_3_pusch_dmrs_positions_l [12][8] = {                             // Duration in symbols
 {-1,          -1,          -1,         -1,          1,          1,         1,         1},       //<4              // (DMRS l' position)
-{1,            1,           1,          1,          1,          1,         1,         1},       //4               // (DMRS l' position)
-{1,            1,           1,          1,          1,          5,         5,         5},       //5               // (DMRS l' position)
-{1,            1,           1,          1,          1,          5,         5,         5},       //6               // (DMRS l' position)
-{1,            1,           1,          1,          1,          5,         5,         5},       //7               // (DMRS l' position)
-{1,          129,         129,        129,          1,         65,        73,        73},       //8               // (DMRS l' position)
-{1,          129,         129,        129,          1,         65,        73,        73},       //9               // (DMRS l' position)
-{1,          513,         577,        577,          1,        257,       273,       585},       //10              // (DMRS l' position)
-{1,          513,         577,        577,          1,        257,       273,       585},       //11              // (DMRS l' position)
-{1,          513,         577,       2337,          1,       1025,      1057,       585},       //12              // (DMRS l' position)
-{1,         2049,        2177,       2337,          1,       1025,      1057,       585},       //13              // (DMRS l' position)
-{1,         2049,        2177,       2337,          1,       1025,      1057,       585},       //14              // (DMRS l' position)
+{0,            0,           0,          0,          1,          1,         1,         1},       //4               // (DMRS l' position)
+{0,            0,           0,          0,          1,         17,        17,        17},       //5               // (DMRS l' position)
+{0,            0,           0,          0,          1,         17,        17,        17},       //6               // (DMRS l' position)
+{0,            0,           0,          0,          1,         17,        17,        17},       //7               // (DMRS l' position)
+{0,          128,         128,        128,          1,         65,        73,        73},       //8               // (DMRS l' position)
+{0,          128,         128,        128,          1,         65,        73,        73},       //9               // (DMRS l' position)
+{0,          512,         576,        576,          1,        257,       273,       585},       //10              // (DMRS l' position)
+{0,          512,         576,        576,          1,        257,       273,       585},       //11              // (DMRS l' position)
+{0,          512,         576,       2336,          1,       1025,      1057,       585},       //12              // (DMRS l' position)
+{0,         2048,        2176,       2336,          1,       1025,      1057,       585},       //13              // (DMRS l' position)
+{0,         2048,        2176,       2336,          1,       1025,      1057,       585},       //14              // (DMRS l' position)
 };
 
 
@@ -1603,17 +1797,17 @@ int32_t table_6_4_1_1_3_3_pusch_dmrs_positions_l [12][8] = {                    
 
 int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                             // Duration in symbols
 {-1,          -1,          -1,         -1,         -1,         -1,        -1,         -1},       //<4              // (DMRS l' position)
-{1,            1,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //5               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //6               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //7               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //8               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //9               // (DMRS l' position)
-{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //10              // (DMRS l' position)
-{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //11              // (DMRS l' position)
-{1,          257,          -1,         -1,          1,        513,        -1,         -1},       //12              // (DMRS l' position)
-{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //13              // (DMRS l' position)
-{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //14              // (DMRS l' position)
+{0,            0,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //5               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //6               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //7               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //8               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //9               // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //10              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //11              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,       1539,        -1,         -1},       //12              // (DMRS l' position)
+{0,         3072,          -1,         -1,          3,       1539,        -1,         -1},       //13              // (DMRS l' position)
+{0,         3072,          -1,         -1,          3,       1539,        -1,         -1},       //14              // (DMRS l' position)
 };
 
 // Returns the corresponding row index of the NR table
@@ -2159,8 +2353,8 @@ int get_num_dmrs(uint16_t dmrs_mask ) {
   return(num_dmrs);
 }
 /* returns the total DMRS symbols in a slot*/
-uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols){
-  return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols));
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols, int startSymbol, int mappingtype){
+  return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols, startSymbol, mappingtype));
 }
 
 // Table 5.1.2.2.1-1 38.214
@@ -2224,29 +2418,46 @@ uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position) {
 
 }
 
-int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength) {
+int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength, uint8_t start_symbol, uint8_t dmrs_typeA_position) {
 
   uint8_t row, colomn;
   int32_t l_prime;
+
+  LOG_D(MAC, "PUSCH: NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", duration_in_symbols, start_symbol, mapping_type, dmrs_typeA_position);
+
+  // Section 6.4.1.1.3 in Spec 38.211
+  // For PDSCH Mapping TypeA, ld is duration between first OFDM of the slot and last OFDM symbol of the scheduled PUSCH resources
+  // For TypeB, ld is the duration of the scheduled PUSCH resources
+  uint8_t ld = (mapping_type == typeA) ? (duration_in_symbols + start_symbol) : duration_in_symbols;
+  uint8_t l0 = (dmrs_typeA_position == NR_MIB__dmrs_TypeA_Position_pos2) ? 2 : 3 ;
 
   colomn = additional_pos;
 
   if (mapping_type == typeB)
     colomn += 4;
 
-  if (duration_in_symbols < 4)
+  if (ld < 4)
     row = 0;
   else
-    row = duration_in_symbols - 3;
+    row = ld - 3;
 
-  if (pusch_maxLength == pusch_len1)
+  if (pusch_maxLength == pusch_len1) {
     l_prime = table_6_4_1_1_3_3_pusch_dmrs_positions_l[row][colomn];
-  else
+    l0 = 1 << l0;
+  }
+  else {
     l_prime = table_6_4_1_1_3_4_pusch_dmrs_positions_l[row][colomn];
+    l0 = 1<<l0 | 1<<(l0+1);
+  }
 
-  AssertFatal(l_prime>0,"invalid l_prime < 0\n");
+  LOG_D(MAC, "PUSCH - l0:%d, ld:%d,row:%d, column:%d, addpos:%d, maxlen:%d\n", l0, ld, row, colomn, additional_pos, pusch_maxLength);
+  AssertFatal(l_prime>=0,"invalid l_prime < 0\n");
+
+  l_prime = (mapping_type == typeA) ? (l_prime | l0) : (l_prime << start_symbol);
+  LOG_D(MAC, " PUSCH DMRS MASK in HEX:%x\n", l_prime);
 
   return l_prime;
+
 }
 
 /*******************************************************************
@@ -2273,7 +2484,7 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
     mcs4 = 28;
 
   if (I_mcs < mcs1) {
-    LOG_I(PHY, "PUSH PT-RS is not present.\n");
+    LOG_D(PHY, "PUSH PT-RS is not present.\n");
     return -1;
   } else if (I_mcs >= mcs1 && I_mcs < mcs2)
     return 2;
@@ -2303,7 +2514,7 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
 
   if (N_RB < nrb0) {
-    LOG_I(PHY,"PUSH PT-RS is not present.\n");
+    LOG_D(PHY,"PUSH PT-RS is not present.\n");
     return -1;
   } else if (N_RB >= nrb0 && N_RB < nrb1)
     return 2;
@@ -2764,7 +2975,7 @@ int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slot) {
   int slots1=period1*(1<<scs)/1000;
   int slot_in_period = slot % slots;
   if (slot_in_period < slots1) return(slot_in_period <= scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
-  else return(slot_in_period <= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
+  else return(slot_in_period <= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);
 }
 
 int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slot, lte_frame_type_t frame_type) {
@@ -2796,91 +3007,93 @@ int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slot, lte_frame_type
   int slots1=period1*(1<<scs)/1000;
   int slot_in_period = slot % slots;
   if (slot_in_period < slots1) return(slot_in_period >= scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
-  else return(slot_in_period >= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
+  else return(slot_in_period >= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);
 }
 
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols) {
+int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols, int startSymbol, int mappingtype_fromDCI) {
 
-  int l0;
+  int l0;int dmrs_AdditionalPosition = 0;int maxLength = 0;
+  NR_DMRS_DownlinkConfig_t *dmrs_config = NULL;
+
+  LOG_D(MAC, "NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", NrOfSymbols, startSymbol, mappingtype_fromDCI, dmrs_TypeA_Position);
+
   if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0=2;
   else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0=3;
   else AssertFatal(1==0,"Illegal dmrs_TypeA_Position %d\n",(int)dmrs_TypeA_Position);
-  if (pdsch_Config == NULL) { // Initial BWP
-    return(1<<l0);
+
+  // in case of DCI FORMAT 1_0 or dedicated pdsch config not received additionposition = pos2, len1 should be used
+  // referred to section 5.1.6.2 in 38.214
+  dmrs_AdditionalPosition = 2;
+  maxLength = 1;
+
+  if (pdsch_Config != NULL) {
+    if (mappingtype_fromDCI == typeA) { // Type A
+      if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA && pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup)
+        dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
+    } else if (mappingtype_fromDCI == typeB) {
+      if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB && pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup)
+        dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+    } else {
+      AssertFatal(1==0,"Incorrect Mappingtype\n");
+    }
+
+    AssertFatal(dmrs_config != NULL," DMRS configs not present in PDSCH DMRS Downlink config\n");
+
+    // default values of maxlength = len2, additionalposition is pos2
+    if (dmrs_config->maxLength != NULL) maxLength = 2;
+    if (dmrs_config->dmrs_AdditionalPosition != NULL) dmrs_AdditionalPosition = *dmrs_config->dmrs_AdditionalPosition;
+  }
+
+  uint8_t ld, row, column;
+  int32_t l_prime = -1;
+
+  // columns 0-3 for TypeA, 4-7 for TypeB
+  column = (mappingtype_fromDCI == typeA) ? dmrs_AdditionalPosition : (dmrs_AdditionalPosition + 4);
+
+  // Section 7.4.1.1.2 in Spec 38.211
+  // For PDSCH Mapping TypeA, ld is duration between first OFDM of the slot and last OFDM symbol of the scheduled PDSCH resources
+  // For TypeB, ld is the duration of the scheduled PDSCH resources
+  ld = (mappingtype_fromDCI == typeA) ? (NrOfSymbols + startSymbol) : NrOfSymbols;
+
+  // Section 7.4.1.1.2 in Spec 38.211
+  //For PDSCH Mapping typeB, if PDSCH duration ld <=4, only single symbol DMRS is supported
+  if (mappingtype_fromDCI == typeB && ld <= 4)
+    maxLength = 1;
+
+  AssertFatal(ld > 2 && ld < 15,"Illegal NrOfSymbols according to Table 5.1.2.1-1 Spec 38.214 %d\n",ld);
+  AssertFatal((NrOfSymbols + startSymbol) < 15,"Illegal S+L according to Table 5.1.2.1-1 Spec 38.214 S:%d L:%d\n",startSymbol, NrOfSymbols);
+
+  if (mappingtype_fromDCI == typeA) {
+
+    // Section 7.4.1.1.2 in Spec 38.211
+    AssertFatal((l0 == 2) || (l0 == 3 && dmrs_AdditionalPosition != 3),"Wrong config, If dmrs_TypeA_Position POS3, ADD POS cannot be POS3 \n");
+
+    // Table 5.1.2.1-1 in Spec 38.214
+    AssertFatal(startSymbol <= l0, "Wrong config, Start symbol %d cannot be later than dmrs_TypeA_Position %d \n", startSymbol, l0);
+
+    // Section 7.4.1.1.2 in Spec 38.211
+    AssertFatal(l0 == 2 || (l0 == 3 && (ld != 3 || ld != 4)), "ld 3 or 4 symbols only possible with dmrs_TypeA_Position POS2 \n");
+
+  }
+
+  if (maxLength == 1) {
+    row = ld - 2;
+    l_prime = table_7_4_1_1_2_3_pdsch_dmrs_positions_l[row][column];
+    l0 = 1 << l0;
   }
   else {
-    if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA &&
-	pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
-      // Relative to start of slot
-      NR_DMRS_DownlinkConfig_t *dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
-      AssertFatal(NrOfSymbols>1 && NrOfSymbols < 15,"Illegal NrOfSymbols %d\n",NrOfSymbols);
-      int pos2=0;
-      if (dmrs_config->maxLength == NULL) {
-	// this is Table 7.4.1.1.2-3: PDSCH DM-RS positions l for single-symbol DM-RS
-	if (dmrs_config->dmrs_AdditionalPosition == NULL) pos2=1;
-	else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition == NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0 )
-	  return(1<<l0);
-	
-	
-	switch (NrOfSymbols) {
-	case 2 :
-	case 3 :
-	case 4 :
-	case 5 :
-	case 6 :
-	case 7 :
-    return(1<<l0);
-	  break;
-	case 8 :
-	case 9:
-	  return(1<<l0 | 1<<7);
-	  break;
-	case 10:
-	case 11:
-	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<9);
-	  else
-	    return(1<<l0 | 1<<6 | 1<<9);
-	  break;
-	case 12:
-	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<9);
-	  else if (pos2==1)
-	    return(1<<l0 | 1<<6 | 1<<9);
-	  else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
-	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
-	  break;
-	case 13:
-	case 14:
-	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<11);
-	  else if (pos2==1)
-	    return(1<<l0 | 1<<7 | 1<<11);
-	  else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
-	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
-	  break;
-	}
-      }
-      else {
-	// Table 7.4.1.1.2-4: PDSCH DM-RS positions l for double-symbol DM-RS.
-	AssertFatal(NrOfSymbols>3,"Illegal NrOfSymbols %d for len2 DMRS\n",NrOfSymbols);
-	if (NrOfSymbols < 10) return(1<<l0);
-	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0 | 1<<8);
-	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
-        if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
-      }
-    }
-    else if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB &&
-	     pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
-      // Relative to start of PDSCH resource
-      AssertFatal(1==0,"TypeB DMRS not supported yet\n");
-    }
+    row = (ld < 4) ? 0 : (ld - 3);
+    l_prime = table_7_4_1_1_2_4_pdsch_dmrs_positions_l[row][column];
+    l0 = 1<<l0 | 1<<(l0+1);
   }
-  AssertFatal(1==0,"Shouldn't get here\n");
-  return(-1);
+
+  LOG_D(MAC, "l0:%d, ld:%d,row:%d, column:%d, addpos:%d, maxlen:%d\n", l0, ld, row, column, dmrs_AdditionalPosition, maxLength);
+  AssertFatal(l_prime>=0,"ERROR in configuration.Check Time Domain allocation of this Grant. l_prime < 1. row:%d, column:%d\n", row, column);
+
+  l_prime = (mappingtype_fromDCI == typeA) ? (l_prime | l0) : (l_prime << startSymbol);
+  LOG_D(MAC, " PDSCH DMRS MASK in HEX:%x\n", l_prime);
+
+  return l_prime;
 }
 
 uint8_t get_pusch_mcs_table(long *mcs_Table,
@@ -3008,56 +3221,58 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
   return valid;
 }
 
-uint32_t get_ssb_slot(uint32_t ssb_index){
-  //  this function now only support f <= 3GHz
-  return ssb_index & 0x3 ;
+uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i_ssb) {
 
-  //  return first_symbol(case, freq, ssb_index) / 14
+  switch (scs) {
+    case NR_SubcarrierSpacing_kHz15:
+      return symbol_ssb_AC[i_ssb];  //type A
+    case NR_SubcarrierSpacing_kHz30:
+      if (band == 5 || band == 66)
+        return symbol_ssb_BD[i_ssb];  //type B
+      else
+        return symbol_ssb_AC[i_ssb];  //type C
+    case NR_SubcarrierSpacing_kHz120:
+      return symbol_ssb_BD[i_ssb];  //type D
+    case NR_SubcarrierSpacing_kHz240:
+      return symbol_ssb_E[i_ssb];
+    default:
+      AssertFatal(1 == 0, "SCS %ld not allowed for SSB \n",scs);
+  }
 }
 
-int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
-                                          NR_MIB_t *mib,
-                                          uint8_t extra_bits,
-                                          uint32_t ssb_length,
-                                          uint32_t ssb_index,
-                                          uint32_t ssb_offset_point_a) {
+void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                           frame_t frameP,
+                                           NR_MIB_t *mib,
+                                           uint8_t num_slot_per_frame,
+                                           uint8_t ssb_subcarrier_offset,
+                                           uint16_t ssb_start_symbol,
+                                           NR_SubcarrierSpacing_t scs_ssb,
+                                           frequency_range_t frequency_range,
+                                           uint32_t ssb_index,
+                                           uint32_t ssb_offset_point_a) {
 
-  //  deafult for testing
-  subcarrier_spacing_t scs_ssb = scs_30kHz;
-  channel_bandwidth_t min_channel_bw = bw_10MHz;
-  frequency_range_t frequency_range = FR1;
-  const uint32_t num_slot_per_frame = 20;
+  NR_SubcarrierSpacing_t scs_pdcch;
 
-  type0_PDCCH_CSS_config->ssb_length = ssb_length;
+  channel_bandwidth_t min_channel_bw = bw_10MHz; // TODO remove hardcoding and implement Table 5.3.5-1 in 38.104
+
+  if (frequency_range == FR2) {
+    if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60)
+      scs_pdcch = NR_SubcarrierSpacing_kHz60;
+    else
+      scs_pdcch = NR_SubcarrierSpacing_kHz120;
+  }
+  else {
+    frequency_range = FR1;
+    if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60)
+      scs_pdcch = NR_SubcarrierSpacing_kHz15;
+    else
+      scs_pdcch = NR_SubcarrierSpacing_kHz30;
+  }
+
   type0_PDCCH_CSS_config->ssb_index = ssb_index;
-  type0_PDCCH_CSS_config->frame = (mib->systemFrameNumber.buf[0] >> mib->systemFrameNumber.bits_unused);
+  type0_PDCCH_CSS_config->frame = frameP;
 
-  uint16_t frame_number_4lsb = 0;
-  for (int i=0; i<4; i++) {
-    frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
-  }
-
-  uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
-  uint8_t ssb_subcarrier_offset = (uint8_t)mib->ssb_SubcarrierOffset;
-
-  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame << 4;
-  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame | frame_number_4lsb;
-
-  if(type0_PDCCH_CSS_config->ssb_length == 64){
-    type0_PDCCH_CSS_config->ssb_index = type0_PDCCH_CSS_config->ssb_index & (( extra_bits >> 2 ) & 0x1C );    //	{ extra_bits[5:7], ssb_index[2:0] }
-  }else{
-    if(ssb_subcarrier_offset_msb){
-      ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
-    }
-  }
-
-  //  assume carrier frequency < 6GHz
-  subcarrier_spacing_t scs_pdcch;
-  if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60){
-    scs_pdcch = scs_15kHz;
-  }else{  //NR_MIB__subCarrierSpacingCommon_scs30or120
-    scs_pdcch = scs_30kHz;
-  }
+  uint8_t ssb_slot = ssb_start_symbol/14;
 
   uint32_t is_condition_A = (ssb_subcarrier_offset == 0);   //  38.213 ch.13
   uint32_t index_4msb = (mib->pdcch_ConfigSIB1.controlResourceSetZero);
@@ -3068,8 +3283,8 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   type0_PDCCH_CSS_config->rb_offset = -1;
 
   //  type0-pdcch coreset
-  switch( (scs_ssb << 5) | scs_pdcch ){
-    case (scs_15kHz << 5) | scs_15kHz :
+  switch( (scs_ssb << 3) | scs_pdcch ){
+    case (NR_SubcarrierSpacing_kHz15 << 5) | NR_SubcarrierSpacing_kHz15:
       AssertFatal(index_4msb < 15, "38.213 Table 13-1 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_1_c2[index_4msb];
@@ -3077,7 +3292,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_1_c4[index_4msb];
       break;
 
-    case (scs_15kHz << 5) | scs_30kHz:
+    case (NR_SubcarrierSpacing_kHz15 << 3) | NR_SubcarrierSpacing_kHz30:
       AssertFatal(index_4msb < 14, "38.213 Table 13-2 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_2_c2[index_4msb];
@@ -3085,7 +3300,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_2_c4[index_4msb];
       break;
 
-    case (scs_30kHz << 5) | scs_15kHz:
+    case (NR_SubcarrierSpacing_kHz30 << 3) | NR_SubcarrierSpacing_kHz15:
       if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
         AssertFatal(index_4msb < 9, "38.213 Table 13-3 4 MSB out of range\n");
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3102,7 +3317,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
 
       break;
 
-    case (scs_30kHz << 5) | scs_30kHz:
+    case (NR_SubcarrierSpacing_kHz30 << 3) | NR_SubcarrierSpacing_kHz30:
       if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
         type0_PDCCH_CSS_config->num_rbs     = table_38213_13_4_c2[index_4msb];
@@ -3118,7 +3333,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }else{ ; }
       break;
 
-    case (scs_120kHz << 5) | scs_60kHz:
+    case (NR_SubcarrierSpacing_kHz120 << 3) | NR_SubcarrierSpacing_kHz60:
       AssertFatal(index_4msb < 12, "38.213 Table 13-7 4 MSB out of range\n");
       if(index_4msb & 0x7){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3135,7 +3350,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }
       break;
 
-    case (scs_120kHz << 5) | scs_120kHz:
+    case (NR_SubcarrierSpacing_kHz120 << 3) | NR_SubcarrierSpacing_kHz120:
       AssertFatal(index_4msb < 8, "38.213 Table 13-8 4 MSB out of range\n");
       if(index_4msb & 0x3){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3152,7 +3367,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }
       break;
 
-    case (scs_240kHz << 5) | scs_60kHz:
+    case (NR_SubcarrierSpacing_kHz240 << 3) | NR_SubcarrierSpacing_kHz60:
       AssertFatal(index_4msb < 4, "38.213 Table 13-9 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_9_c2[index_4msb];
@@ -3160,7 +3375,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_9_c4[index_4msb];
       break;
 
-    case (scs_240kHz << 5) | scs_120kHz:
+    case (NR_SubcarrierSpacing_kHz240 << 3) | NR_SubcarrierSpacing_kHz120:
       AssertFatal(index_4msb < 8, "38.213 Table 13-10 4 MSB out of range\n");
       if(index_4msb & 0x3){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3231,7 +3446,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
     type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
     big_m = table_38213_13_11_c3[index_4lsb];
 
-    uint32_t temp = (uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
+    uint32_t temp = (uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
     type0_PDCCH_CSS_config->n_c = temp / num_slot_per_frame;
     if((temp/num_slot_per_frame) & 0x1){
       type0_PDCCH_CSS_config->sfn_c = SFN_C_MOD_2_EQ_1;
@@ -3267,12 +3482,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   /// MUX PATTERN 2
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 2){
 
-    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_60kHz)){
+    if((scs_ssb == NR_SubcarrierSpacing_kHz120) && (scs_pdcch == NR_SubcarrierSpacing_kHz60)){
       //  38.213 Table 13-13
       AssertFatal(index_4lsb == 0, "38.213 Table 13-13 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3289,12 +3504,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
         default: break;
       }
 
-    }else if((scs_ssb == scs_240kHz) && (scs_pdcch == scs_120kHz)){
+    }else if((scs_ssb == NR_SubcarrierSpacing_kHz240) && (scs_pdcch == NR_SubcarrierSpacing_kHz120)){
       //  38.213 Table 13-14
       AssertFatal(index_4lsb == 0, "38.213 Table 13-14 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x7){    //  ssb_index(i) mod 8
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3310,11 +3525,11 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
           break;
         case 4:
           type0_PDCCH_CSS_config->first_symbol_index = 12;
-          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          type0_PDCCH_CSS_config->n_c = ssb_slot - 1;
           break;
         case 5:
           type0_PDCCH_CSS_config->first_symbol_index = 13;
-          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          type0_PDCCH_CSS_config->n_c = ssb_slot - 1;
           break;
         case 6:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3331,12 +3546,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
 
   /// MUX PATTERN 3
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 3){
-    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_120kHz)){
+    if((scs_ssb == NR_SubcarrierSpacing_kHz120) && (scs_pdcch == NR_SubcarrierSpacing_kHz120)){
       //  38.213 Table 13-15
       AssertFatal(index_4lsb == 0, "38.213 Table 13-15 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 4;
@@ -3373,10 +3588,9 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   AssertFatal(type0_PDCCH_CSS_config->sfn_c!=SFN_C_IMPOSSIBLE,"");
   AssertFatal(type0_PDCCH_CSS_config->n_c!=UINT_MAX,"");
 
-  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
+  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
   type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
 
-  return 0;
 }
 
 /* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */

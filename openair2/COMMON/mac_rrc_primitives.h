@@ -189,7 +189,7 @@ typedef struct MEAS_REQ_TABLE_ENTRY {
   MAC_MEAS_REQ Mac_meas_req;
   unsigned int Last_report_frame;
   unsigned int Next_check_frame;
-  uint8_t Status;
+  uint8_t StatusMeas;
   uint8_t Meas_req_status;
   uint8_t Rx_activity;
   //uint8_t Meas_Direction;//???
@@ -269,7 +269,7 @@ typedef struct {
   char Wideband_sinr;
   uint8_t Forg_fact;
   unsigned short Rep_interval;
-  uint8_t Status;
+  uint8_t StatusMeas;
   unsigned int Last_report_frame;
   unsigned int Next_check_frame;
   uint8_t Active;
@@ -299,7 +299,7 @@ typedef struct {
   unsigned short Rep_interval;
   unsigned int Last_report_frame;
   unsigned int Next_check_frame;
-  uint8_t Status; //IDLE,NEED_rADIO_CONFIG, RADIO_CONFIG_TX, RADIO_CONFIG_ok
+  uint8_t StatusMeas; //IDLE,NEED_rADIO_CONFIG, RADIO_CONFIG_TX, RADIO_CONFIG_ok
   uint8_t Active;
 } __attribute__ ((__packed__)) DEFAULT_CH_MEAS;
 #define DEFAULT_eNB_MEAS_SIZE sizeof(DEFAULT_eNB_MEAS)

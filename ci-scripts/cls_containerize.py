@@ -83,10 +83,12 @@ class Containerize():
 		self.flexranCtrlDeployed = False
 		self.flexranCtrlIpAddress = ''
 		self.cli = ''
+		self.cliBuildOptions = ''
 		self.dockerfileprefix = ''
 		self.host = ''
 		self.allImagesSize = {}
 		self.collectInfo = {}
+
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
@@ -124,9 +126,11 @@ class Containerize():
 		if self.host == 'Ubuntu':
 			self.cli = 'docker'
 			self.dockerfileprefix = '.ubuntu18'
+			self.cliBuildOptions = '--no-cache'
 		elif self.host == 'Red Hat':
 			self.cli = 'sudo podman'
 			self.dockerfileprefix = '.rhel8.2'
+			self.cliBuildOptions = '--no-cache --disable-compression'
 
 		imageNames = []
 		result = re.search('eNB', self.imageKind)
@@ -144,6 +148,8 @@ class Containerize():
 					imageNames.append(('oai-gnb', 'gNB'))
 					imageNames.append(('oai-lte-ue', 'lteUE'))
 					imageNames.append(('oai-nr-ue', 'nrUE'))
+					if self.host == 'Red Hat':
+						imageNames.append(('oai-physim', 'phySim'))
 		if len(imageNames) == 0:
 			imageNames.append(('oai-enb', 'eNB'))
 		
@@ -156,7 +162,7 @@ class Containerize():
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
-			full_ran_repo_name = self.ranRepository
+			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
 		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
@@ -170,7 +176,7 @@ class Containerize():
 		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
+			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
 		imageTag = 'develop'
@@ -201,7 +207,7 @@ class Containerize():
 
 		# Build the shared image only on Push Events (not on Merge Requests)
 		if (not self.ranAllowMerge):
-			mySSH.command(self.cli + ' build --target ' + sharedimage + ' --tag ' + sharedimage + ':' + sharedTag + ' --file docker/Dockerfile.ran' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-build.log 2>&1', '\$', 1600)
+			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + sharedimage + ' --tag ' + sharedimage + ':' + sharedTag + ' --file docker/Dockerfile.ran' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-build.log 2>&1', '\$', 1600)
 		# First verify if the shared image was properly created.
 		status = True
 		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + sharedimage + ':' + sharedTag, '\$', 5)
@@ -249,7 +255,7 @@ class Containerize():
 			# the archived Dockerfiles have "ran-build:latest" as base image
 			# we need to update them with proper tag
 			mySSH.command('sed -i -e "s#' + sharedimage + ':latest#' + sharedimage + ':' + sharedTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
-			mySSH.command(self.cli + ' build --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
+			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
 			# split the log
 			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
 			mySSH.command('python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/' + image + '.log', '\$', 5)
@@ -330,6 +336,31 @@ class Containerize():
 					errorandwarnings['warnings'] = warningsNo
 					errorandwarnings['status'] = status
 				files[fil] = errorandwarnings
+			# Let analyze the target image creation part
+			if os.path.isfile('build_log_{}/{}.log'.format(self.testCase_id,image)):
+				errorandwarnings = {}
+				with open('build_log_{}/{}.log'.format(self.testCase_id,image), mode='r') as inputfile:
+					startOfTargetImageCreation = False
+					buildStatus = False
+					for line in inputfile:
+						result = re.search('FROM .* [aA][sS] ' + image + '$', str(line))
+						if result is not None:
+							startOfTargetImageCreation = True
+						if startOfTargetImageCreation:
+							result = re.search('Successfully tagged ' + image + ':', str(line))
+							if result is not None:
+								buildStatus = True
+							result = re.search('COMMIT ' + image + ':', str(line))
+							if result is not None:
+								buildStatus = True
+					inputfile.close()
+					if buildStatus:
+						errorandwarnings['errors'] = 0
+					else:
+						errorandwarnings['errors'] = 1
+					errorandwarnings['warnings'] = 0
+					errorandwarnings['status'] = buildStatus
+					files['Target Image Creation'] = errorandwarnings
 			self.collectInfo[image] = files
 		
 		if status:

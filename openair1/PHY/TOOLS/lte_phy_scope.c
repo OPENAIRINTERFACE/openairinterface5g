@@ -27,7 +27,6 @@
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 
 #define TPUT_WINDOW_LENGTH 100
-int otg_enabled;
 
 FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 
@@ -57,11 +56,9 @@ static void ia_receiver_on_off( FL_OBJECT *button, long arg) {
 static void dl_traffic_on_off( FL_OBJECT *button, long arg) {
   if (fl_get_button(button)) {
     fl_set_object_label(button, "DL Traffic ON");
-    otg_enabled = 1;
     fl_set_object_color(button, FL_GREEN, FL_GREEN);
   } else {
     fl_set_object_label(button, "DL Traffic OFF");
-    otg_enabled = 0;
     fl_set_object_color(button, FL_RED, FL_RED);
   }
 }
@@ -131,7 +128,6 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void ) {
   fdui->button_0 = fl_add_button( FL_PUSH_BUTTON, 20, 600, 240, 40, "" );
   fl_set_object_lalign(fdui->button_0, FL_ALIGN_CENTER );
   fl_set_button(fdui->button_0,0);
-  otg_enabled = 0;
   fl_set_object_label(fdui->button_0, "DL Traffic OFF");
   fl_set_object_color(fdui->button_0, FL_RED, FL_RED);
   fl_set_object_callback(fdui->button_0, dl_traffic_on_off, 0 );
@@ -153,7 +149,6 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   int16_t **chest_t;
   int16_t **chest_f;
   int16_t *pusch_llr;
-  int32_t *pusch_comp;
   int32_t *pucch1_comp;
   int32_t *pucch1_thres;
   int32_t *pucch1ab_comp;
@@ -184,12 +179,11 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   chest_f_abs = (float *) calloc(nsymb_ce*nb_antennas_rx*nb_antennas_tx,sizeof(float));
   llr = (float *) calloc(coded_bits_per_codeword,sizeof(float)); // init to zero
   bit = malloc(coded_bits_per_codeword*sizeof(float));
-
-  rxsig_t = (int16_t**) phy_vars_enb->RU_list[0]->common.rxdata;
+  rxsig_t = (int16_t **) phy_vars_enb->RU_list[0]->common.rxdata;
   chest_t = (int16_t **) phy_vars_enb->srs_vars[UE_id].srs_ch_estimates;
   chest_f = (int16_t **) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates;
   pusch_llr = (int16_t *) phy_vars_enb->pusch_vars[UE_id]->llr;
-  pusch_comp = (int32_t *) phy_vars_enb->pusch_vars[UE_id]->rxdataF_comp[0];
+  int16_t *pusch_comp= (int16_t *) phy_vars_enb->pusch_vars[UE_id]->rxdataF_comp[0];
   pucch1_comp = (int32_t *) phy_vars_enb->pucch1_stats[UE_id];
   pucch1_thres = (int32_t *) phy_vars_enb->pucch1_stats_thres[UE_id];
   pucch1ab_comp = (int32_t *) phy_vars_enb->pucch1ab_stats[UE_id];

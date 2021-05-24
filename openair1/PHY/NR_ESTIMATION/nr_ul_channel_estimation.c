@@ -73,7 +73,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   symbol_offset = gNB->frame_parms.ofdm_symbol_size*symbol;
 
   k = bwp_start_subcarrier;
-  int re_offset = k;
+  int re_offset;
 
   uint16_t nb_rb_pusch = pusch_pdu->rb_size;
 
@@ -128,7 +128,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   //------------------generate DMRS------------------//
 
   if (pusch_pdu->transform_precoding == transform_precoder_disabled) {
-    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, pusch_pdu->rb_start*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
+    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, (pusch_pdu->bwp_start + pusch_pdu->rb_start)*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
   }
   else {  // if transform precoding or SC-FDMA is enabled in Uplink
 
@@ -170,6 +170,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
     ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
+    re_offset = k;
 
     memset(ul_ch,0,4*(gNB->frame_parms.ofdm_symbol_size));
 

@@ -127,7 +127,7 @@ typedef enum UE_STATE_NR_e {
 #define MAX_MEAS_ID                                   6
 
 #define PAYLOAD_SIZE_MAX                              1024
-#define RRC_BUF_SIZE                                  255
+#define RRC_BUF_SIZE                                  8192
 #define UNDEF_SECURITY_MODE                           0xff
 #define NO_SECURITY_MODE                              0x20
 
@@ -238,13 +238,13 @@ typedef struct RB_INFO_TABLE_ENTRY_NR_s {
   NR_RB_INFO                                          Rb_info;
   uint8_t                                             Active;
   uint32_t                                            Next_check_frame;
-  uint8_t                                             Status;
+  uint8_t                                             status;
 } NR_RB_INFO_TABLE_ENTRY;
 
 typedef struct SRB_INFO_TABLE_ENTRY_NR_s {
   NR_SRB_INFO                                         Srb_info;
   uint8_t                                             Active;
-  uint8_t                                             Status;
+  uint8_t                                             status;
   uint32_t                                            Next_check_frame;
 } NR_SRB_INFO_TABLE_ENTRY;
 
@@ -315,7 +315,7 @@ typedef struct gNB_RRC_UE_s {
   NR_CipheringAlgorithm_t            ciphering_algorithm;
   e_NR_IntegrityProtAlgorithm        integrity_algorithm;
 
-  uint8_t                            Status;
+  uint8_t                            status;
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 
@@ -431,6 +431,7 @@ typedef struct {
   NR_BCCH_BCH_Message_t                     mib;
   int ssb_SubcarrierOffset;                  
   int pdsch_AntennaPorts;
+  int pusch_AntennaPorts;
   int pusch_TargetSNRx10;
   int pucch_TargetSNRx10;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;

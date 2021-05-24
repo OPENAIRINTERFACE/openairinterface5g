@@ -27,6 +27,9 @@ def nodeExecutor = params.nodeExecutor
 def doMandatoryTests = false
 def doFullTestsuite = false
 
+//
+def gitCommitAuthorEmailAddr
+
 pipeline {
   agent {
     label nodeExecutor
@@ -152,21 +155,64 @@ pipeline {
             }
           }
         }
+        stage ("CppCheck Analysis") {
+          steps {
+            script {
+              triggerSlaveJob ('RAN-cppcheck', 'CppCheck Analysis')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-cppcheck')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+      }
+    }
+    stage ("Image Test Processes") {
+      parallel {
+        stage ("Physical Simulators") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-PhySim-Cluster', 'Test-Physim-Cluster')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-PhySim-Cluster')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
       }
     }
   }
   post {
     always {
       script {
+        def eSubject = JOB_NAME + ' - Build # ' + BUILD_ID + ' - ' + currentBuild.result + '!'
+        def eBody = "Hi,\n\n"
+        eBody += "Here are attached HTML report files for " + JOB_NAME + "  - Build # " + BUILD_ID + " - " + currentBuild.result + "!\n\n"
+        eBody += "Regards,\n"
+        eBody += "OAI CI Team"
         emailext attachmentsPattern: '*results*.html',
-           body: '''Hi,
-
-Here are attached HTML report files for $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!
-
-Regards,
-OAI CI Team''',
+           body: eBody,
            replyTo: 'no-reply@openairinterface.org',
-           subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
+           subject: eSubject,
            to: gitCommitAuthorEmailAddr
 
         if (fileExists('.git/CI_COMMIT_MSG')) {

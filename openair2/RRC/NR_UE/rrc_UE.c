@@ -72,6 +72,7 @@
 #include "nr_nas_msg_sim.h"
 #endif
 
+NR_UE_RRC_INST_t *NR_UE_rrc_inst;
 /* NAS Attach request with IMSI */
 static const char  nr_nas_attach_req_imsi[] = {
   0x07, 0x41,
@@ -1365,10 +1366,10 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
                            (void **)&dl_ccch_msg,
                            (uint8_t *)Srb_info->Rx_buffer.Payload,
                            100,0,0);
-    
-    // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+
+    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
       xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);
-    // }
+    }
     
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
       LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",ctxt_pP->module_id,ctxt_pP->frame,dec_rval.consumed);
@@ -1735,13 +1736,13 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
     MessageDef *message_p;
     uint8_t *message_buffer;
     message_buffer = itti_malloc (TASK_RRC_NRUE,TASK_RRC_GNB_SIM,
-          NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size);
-    memcpy (message_buffer, (uint8_t*)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
-          NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size);
+          NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size);
+    memcpy (message_buffer, (uint8_t*)NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload,
+          NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size);
     message_p = itti_alloc_new_message (TASK_RRC_NRUE, 0, UE_RRC_CCCH_DATA_IND);
     GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
-    GNB_RRC_CCCH_DATA_IND (message_p).size  = NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size;
-    itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
+    GNB_RRC_CCCH_DATA_IND (message_p).size  = NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size;
+    itti_send_msg_to_task (TASK_RRC_GNB_SIM, gNB_index, message_p);
 #endif
   }
 }
@@ -1758,7 +1759,7 @@ nr_rrc_ue_establish_srb1(
 {
   // add descriptor from RRC PDU
   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Active = 1;
-  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Srb_info.Srb_id = 1;
   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB1 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH, gNB_index);
   return(0);
@@ -1776,7 +1777,7 @@ nr_rrc_ue_establish_srb2(
 {
   // add descriptor from RRC PDU
   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Active = 1;
-  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Srb_info.Srb_id = 2;
   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB2 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH1, gNB_index);
   return(0);
@@ -2472,7 +2473,6 @@ void *rrc_nrue_task( void *args_p ) {
       case NR_RRC_MAC_BCCH_DATA_IND:
         LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, gNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
               NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
-        //      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0);
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NOT_A_RNTI, NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
         nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message (ctxt.module_id,
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index,
@@ -2480,6 +2480,7 @@ void *rrc_nrue_task( void *args_p ) {
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
                                    NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
+        break;
 
       case NR_RRC_MAC_CCCH_DATA_IND:
         LOG_D(NR_RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
@@ -2568,7 +2569,7 @@ void *rrc_nrue_task( void *args_p ) {
         LOG_E(NR_RRC, "[UE %d] Received unexpected message %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
         break;
     }
-    LOG_I(NR_RRC, "[UE %d] RRC Status %d\n", ue_mod_id, nr_rrc_get_state(ue_mod_id));
+    LOG_D(NR_RRC, "[UE %d] RRC Status %d\n", ue_mod_id, nr_rrc_get_state(ue_mod_id));
     result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
     msg_p = NULL;

@@ -85,6 +85,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "x2ap_eNB.h"
 #include "ngap_gNB.h"
 #include "gnb_paramdef.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 #include "nfapi/oai_integration/vendor_ext.h"
 
 pthread_cond_t nfapi_sync_cond;
@@ -92,11 +93,12 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 extern uint8_t nfapi_mode; // Default to monolithic mode
-
+THREAD_STRUCT thread_struct;
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
+msc_interface_t msc_interface;
 
 volatile int             start_gNB = 0;
 volatile int             oai_exit = 0;
@@ -114,7 +116,6 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
 
-static char                    *itti_dump_file = NULL;
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;
@@ -160,15 +161,18 @@ int otg_enabled;
 
 //static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 //static nfapi_nr_config_request_t *config[MAX_NUM_CCs];
-uint32_t target_dl_mcs = 28; //maximum allowed mcs
-uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
+#include <executables/split_headers.h>
 int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
   AssertFatal(false, "Must not be called in this context\n");
 }
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
+    AssertFatal(false, "Must not be called in this context\n");
+}
+
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
@@ -179,7 +183,6 @@ extern void *udp_eNB_task(void *args_p);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-int usrp_tx_thread = 0;
 
 
 static char *parallel_config = NULL;
@@ -717,12 +720,11 @@ if(!IS_SOFTMODEM_NOS1)
   if(IS_SOFTMODEM_NOS1)
     init_pdcp();
 
+  if (RC.nb_nr_L1_inst > 0)
+    RCconfig_NR_L1();
   if (RC.nb_nr_inst > 0)  {
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
-  } else {
-    printf("No ITTI, Initializing L1\n");
-    RCconfig_NR_L1();
   }
 
   /* Start the agent. If it is turned off in the configuration, it won't start */
@@ -810,7 +812,7 @@ if(!IS_SOFTMODEM_NOS1)
   printf("RC.nb_RU:%d\n", RC.nb_RU);
   // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
   printf("ALL RUs ready - init gNBs\n");
-  if(IS_SOFTMODEM_DOFORMS) {
+  if(IS_SOFTMODEM_DOSCOPE) {
     sleep(1);	
     scopeParms_t p;
     p.argc=&argc;

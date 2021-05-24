@@ -330,7 +330,7 @@ void init_SL_preconfig(UE_RRC_INST *UE, const uint8_t eNB_index ) {
   preconfigpool->data_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12    = 0;
   // 40 ms SL Period
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.present              = LTE_SubframeBitmapSL_r12_PR_bs40_r12;
-  preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf         = CALLOC(1,5);
+  preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf         = CALLOC(5,1);
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.size        = 5;
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.bits_unused = 0;
   // last 36 subframes for PSCCH
@@ -338,7 +338,7 @@ void init_SL_preconfig(UE_RRC_INST *UE, const uint8_t eNB_index ) {
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf[1]      = 0xFF;
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf[2]      = 0xFF;
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf[3]      = 0xFF;
-  preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf[5]      = 0xFF;
+  preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf[4]      = 0xFF;
   preconfigpool->dataHoppingConfig_r12.hoppingParameter_r12                         = 0;
   preconfigpool->dataHoppingConfig_r12.numSubbands_r12                              = LTE_SL_HoppingConfigComm_r12__numSubbands_r12_ns1;
   preconfigpool->dataHoppingConfig_r12.rb_Offset_r12                                = 0;
@@ -492,7 +492,7 @@ rrc_t310_expiration(
                           UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Srb_info.Srb_id,
                           Rlc_info_um);
       UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Active = 0;
-      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Status = IDLE;
+      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].StatusSrb = IDLE;
       UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Next_check_frame = 0;
     }
   } else { // Restablishment procedure
@@ -671,7 +671,7 @@ rrc_ue_establish_srb1(
 {
   // add descriptor from RRC PDU
   UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Active = 1;
-  UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].StatusSrb = RADIO_CONFIG_OK;//RADIO CFG
   UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Srb_info.Srb_id = 1;
   // copy default configuration for now
   //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
@@ -695,7 +695,7 @@ rrc_ue_establish_srb2(
 {
   // add descriptor from RRC PDU
   UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Active = 1;
-  UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].StatusSrb = RADIO_CONFIG_OK;//RADIO CFG
   UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Srb_info.Srb_id = 2;
   // copy default configuration for now
   //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);

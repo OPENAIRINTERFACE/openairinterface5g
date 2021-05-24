@@ -73,10 +73,10 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
 
     if (rnti == ra->ra_rnti) {
       rnti_type = NR_RNTI_RA;
+    } else if (rnti == ra->t_crnti && (ra->ra_state == WAIT_RAR || ra->ra_state == WAIT_CONTENTION_RESOLUTION) ) {
+      rnti_type = NR_RNTI_TC;
     } else if (rnti == mac->crnti) {
       rnti_type = NR_RNTI_C;
-    } else if (rnti == ra->t_crnti) {
-      rnti_type = NR_RNTI_TC;
     } else if (rnti == 0xFFFE) {
       rnti_type = NR_RNTI_P;
     } else if (rnti == 0xFFFF) {
@@ -101,11 +101,12 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                         void *pduP,
                         uint16_t cell_id)
 {
-  LOG_I(MAC,"[L2][MAC] decode mib\n");
+  LOG_D(MAC,"[L2][MAC] decode mib\n");
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-
-  nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
+  NR_ServingCellConfigCommon_t    *scc = mac->scc;
+  frequency_range_t frequency_range;
+  nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
   //if(mac->mib != NULL){
@@ -120,9 +121,11 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   frame = frame << 4;
   frame = frame | frame_number_4lsb;
   if(ssb_length == 64){
+    frequency_range = FR2;
     for (int i=0; i<3; i++)
       ssb_index += (((extra_bits>>(7-i))&0x01)<<(3+i));
   }else{
+    frequency_range = FR1;
     if(ssb_subcarrier_offset_msb){
       ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
     }
@@ -141,13 +144,37 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   //storing ssb index in the mac structure
   mac->mib_ssb = ssb_index;
 
-  get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config, mac->mib, extra_bits, ssb_length, ssb_index,
-                                        mac->phy_config.config_req.ssb_table.ssb_offset_point_a);
+  if (get_softmodem_params()->sa == 1) {
 
-  ssb_index = mac->type0_PDCCH_CSS_config.ssb_index; //  TODO: ssb_index should obtain from L1 in case Lssb != 64
-  mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
-  mac->type0_pdcch_ss_sfn_c = mac->type0_PDCCH_CSS_config.sfn_c;
-  mac->type0_pdcch_ss_n_c = mac->type0_PDCCH_CSS_config.n_c;
+    // TODO these values shouldn't be taken from SCC in SA
+    uint8_t scs_ssb = *scc->ssbSubcarrierSpacing;
+    uint32_t band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+    int scs_scaling = 1<<scs_ssb;
+    if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000)
+      scs_scaling = scs_scaling*3;
+    if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA > 2016666)
+      scs_scaling = scs_scaling>>2;
+    uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
+
+    uint16_t ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
+
+    get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
+                                          frame,
+                                          mac->mib,
+                                          nr_slots_per_frame[scs_ssb],
+                                          ssb_subcarrier_offset,
+                                          ssb_start_symbol,
+                                          scs_ssb,
+                                          frequency_range,
+                                          ssb_index,
+                                          absolute_diff/(12*scs_scaling)-10);
+
+
+    mac->type0_pdcch_ss_mux_pattern = mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
+    mac->type0_pdcch_ss_sfn_c = mac->type0_PDCCH_CSS_config.sfn_c;
+    mac->type0_pdcch_ss_n_c = mac->type0_PDCCH_CSS_config.n_c;
+  }
+
   mac->dl_config_request.sfn = mac->type0_PDCCH_CSS_config.frame;
   mac->dl_config_request.slot = (ssb_index>>1) + ((ssb_index>>4)<<1); // not valid for 240kHz SCS
 
@@ -161,7 +188,7 @@ int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
                                 uint8_t *pduP,
                                 uint32_t pdu_len) {
   LOG_D(NR_MAC, "Decoding NR-BCCH-DL-SCH-Message (SIB1 or SI)\n");
-  nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
+  nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
   return 0;
 }
 
@@ -237,85 +264,15 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
 int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
 						      nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
 						      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
-						      uint8_t time_domain_ind
-						      ){
+						      uint8_t time_domain_ind,
+						      bool use_default){
+
   int dmrs_typeA_pos = mac->scc->dmrs_TypeA_Position;
 //  uint8_t k_offset=0;
   uint8_t sliv_S=0;
   uint8_t sliv_L=0;
-  uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?12:11}, // row index 1
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?10:9},  // row index 2
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?9:8},   // row index 3
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?7:6},   // row index 4
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?5:4},   // row index 5
-    {0,(dmrs_typeA_pos == 0)?9:10,(dmrs_typeA_pos == 0)?4:4},   // row index 6
-    {0,(dmrs_typeA_pos == 0)?4:6, (dmrs_typeA_pos == 0)?4:4},   // row index 7
-    {0,5,7},  // row index 8
-    {0,5,2},  // row index 9
-    {0,9,2},  // row index 10
-    {0,12,2}, // row index 11
-    {0,1,13}, // row index 12
-    {0,1,6},  // row index 13
-    {0,2,4},  // row index 14
-    {0,4,7},  // row index 15
-    {0,8,4}   // row index 16
-  };
-  /*uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?6:5},   // row index 1
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?10:9},  // row index 2
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?9:8},   // row index 3
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?7:6},   // row index 4
-    {0,(dmrs_typeA_pos == 0)?2:3, (dmrs_typeA_pos == 0)?5:4},   // row index 5
-    {0,(dmrs_typeA_pos == 0)?6:8, (dmrs_typeA_pos == 0)?4:2},   // row index 6
-    {0,(dmrs_typeA_pos == 0)?4:6, (dmrs_typeA_pos == 0)?4:4},   // row index 7
-    {0,5,6},  // row index 8
-    {0,5,2},  // row index 9
-    {0,9,2},  // row index 10
-    {0,10,2}, // row index 11
-    {0,1,11}, // row index 12
-    {0,1,6},  // row index 13
-    {0,2,4},  // row index 14
-    {0,4,6},  // row index 15
-    {0,8,4}   // row index 16
-    };*/
-  /*uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-    {0,2,2},  // row index 1
-    {0,4,2},  // row index 2
-    {0,6,2},  // row index 3
-    {0,8,2},  // row index 4
-    {0,10,2}, // row index 5
-    {1,2,2},  // row index 6
-    {1,4,2},  // row index 7
-    {0,2,4},  // row index 8
-    {0,4,4},  // row index 9
-    {0,6,4},  // row index 10
-    {0,8,4},  // row index 11
-    {0,10,4}, // row index 12
-    {0,2,7},  // row index 13
-    {0,(dmrs_typeA_pos == 0)?2:3,(dmrs_typeA_pos == 0)?12:11},  // row index 14
-    {1,2,4},  // row index 15
-    {0,0,0}   // row index 16
-    };*/
-  /*uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-    {0,2,2},  // row index 1
-    {0,4,2},  // row index 2
-    {0,6,2},  // row index 3
-    {0,8,2},  // row index 4
-    {0,10,2}, // row index 5
-    {0,0,0},  // row index 6
-    {0,0,0},  // row index 7
-    {0,2,4},  // row index 8
-    {0,4,4},  // row index 9
-    {0,6,4},  // row index 10
-    {0,8,4},  // row index 11
-    {0,10,4}, // row index 12
-    {0,2,7},  // row index 13
-    {0,(dmrs_typeA_pos == 0)?2:3,(dmrs_typeA_pos == 0)?12:11},  // row index 14
-    {0,0,6},  // row index 15
-    {0,2,6}   // row index 16
-    };*/
   uint8_t mu_pusch = 1;
+
   // definition table j Table 6.1.2.1.1-4
   uint8_t j = (mu_pusch==3)?3:(mu_pusch==2)?2:1;
   uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
@@ -364,7 +321,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList->choice.setup;
     else if (mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
       pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    if (pdsch_TimeDomainAllocationList) {
+    if (pdsch_TimeDomainAllocationList && use_default==false) {
 
       if (time_domain_ind >= pdsch_TimeDomainAllocationList->list.count) {
         LOG_E(MAC, "time_domain_ind %d >= pdsch->TimeDomainAllocationList->list.count %d\n",
@@ -387,8 +344,15 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
     }
     else {// Default configuration from tables
 //      k_offset = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][0];
-      sliv_S   = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][1];
-      sliv_L   = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][2];
+
+      if(dmrs_typeA_pos == 0) {
+        sliv_S = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[time_domain_ind][1];
+        sliv_L = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[time_domain_ind][2];
+      } else {
+        sliv_S = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[time_domain_ind][1];
+        sliv_L = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[time_domain_ind][2];
+      }
+
       // k_offset = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
       // sliv_S   = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
       // sliv_L   = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
@@ -413,7 +377,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
     }
     	
-    if (pusch_TimeDomainAllocationList) {
+    if (pusch_TimeDomainAllocationList && use_default==false) {
       if (time_domain_ind >= pusch_TimeDomainAllocationList->list.count) {
         LOG_E(MAC, "time_domain_ind %d >= pusch->TimeDomainAllocationList->list.count %d\n",
               time_domain_ind, pusch_TimeDomainAllocationList->list.count);
@@ -430,8 +394,8 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
     }
     else {
 //      k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][0];
-      sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][1];
-      sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][2];
+      sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][1];
+      sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][2];
       // k_offset = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
       // sliv_S   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
       // sliv_L   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
@@ -449,8 +413,9 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
   LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
 
-  uint32_t dci_format = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15);
-  return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci->rnti, dci_format));
+  if (nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, &mac->def_dci_pdu_rel15[dci->dci_format]))
+    return -1;
+  return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, &mac->def_dci_pdu_rel15[dci->dci_format], dci->rnti, dci->dci_format));
 }
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint8_t dci_format){
@@ -469,7 +434,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   AssertFatal(mac->DLbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");
   AssertFatal(mac->ULbwp[0]!=NULL,"DLbwp[0] should not be zero here!\n");
 
-  const uint16_t n_RB_DLBWP = (ra->ra_state == WAIT_RAR) ? NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE) : NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const uint16_t n_RB_DLBWP = (ra->ra_state == WAIT_RAR || ra->ra_state == WAIT_CONTENTION_RESOLUTION) ? NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE) : NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   LOG_D(MAC, "In %s: Processing received DCI format %s (DL BWP %d)\n", __FUNCTION__, dci_formats[dci_format], n_RB_DLBWP);
 
@@ -514,10 +479,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
       // Config PUSCH PDU
       ret = nr_config_pusch_pdu(mac, pusch_config_pdu, dci, NULL, rnti, &dci_format);
-
-      if (ret != -1 && ra->RA_active && mac->crnti){
-        nr_ra_succeeded(module_id, frame, slot);
-      }
 
     }
     
@@ -578,10 +539,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       // Config PUSCH PDU
       ret = nr_config_pusch_pdu(mac, pusch_config_pdu, dci, NULL, rnti, &dci_format);
 
-      if (ret != -1 && ra->RA_active && mac->crnti){
-        nr_ra_succeeded(module_id, frame, slot);
-      }
-
     }
     break;
   }
@@ -640,7 +597,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_0 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
-    NR_PDSCH_Config_t *pdsch_config=mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup;
+    NR_PDSCH_Config_t *pdsch_config = NULL;
     uint16_t BWPSize = 0;
 
     if(rnti == SI_RNTI) {
@@ -648,7 +605,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
       dlsch_config_pdu_1_0->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
       dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
-      pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL; // For PDSCH with mapping type A, the UE shall assume dmrs-AdditionalPosition='pos2'
       BWPSize = dlsch_config_pdu_1_0->BWPSize;
     } else {
       if (ra->RA_window_cnt >= 0 && rnti == ra->ra_rnti){
@@ -656,9 +612,20 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       } else {
         dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
       }
-      dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      dlsch_config_pdu_1_0->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
+      if( (ra->RA_window_cnt >= 0 && rnti == ra->ra_rnti) || (rnti == ra->t_crnti) ) {
+        dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        if (get_softmodem_params()->sa) {
+          dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        } else { // NSA mode is not using the Initial BWP
+          dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+          pdsch_config = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup;
+        }
+      } else {
+        dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        dlsch_config_pdu_1_0->SubcarrierSpacing = mac->DLbwp[0]->bwp_Common->genericParameters.subcarrierSpacing;
+        pdsch_config = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup;
+      }
       BWPSize = n_RB_DLBWP;
     }
 
@@ -669,15 +636,30 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val) < 0) {
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val,rnti==SI_RNTI) < 0) {
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
+
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
+    if (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
+      pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList->choice.setup;
+    else if (mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
+      pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+
+    int mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
+
     /* dmrs symbol positions*/
-    dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
+    dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(NULL,
 							 mac->scc->dmrs_TypeA_Position,
-               dlsch_config_pdu_1_0->start_symbol+dlsch_config_pdu_1_0->number_symbols);
-    dlsch_config_pdu_1_0->dmrsConfigType = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+               dlsch_config_pdu_1_0->number_symbols,
+               dlsch_config_pdu_1_0->start_symbol,
+               mappingtype);
+
+    // For DCI 1_0, dmrs type is type1. referred to section 5.1.6.2 of 3GPP TS 38.214
+    dlsch_config_pdu_1_0->dmrsConfigType = 0;
+    LOG_D(MAC, "DCI 1_0 start_sym:%d NR Symb:%d, DMRS_symb_pos:%x\n", dlsch_config_pdu_1_0->start_symbol, dlsch_config_pdu_1_0->number_symbols, dlsch_config_pdu_1_0->dlDmrsSymbPos);
+
     /* number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214 version 15.9.0 Release 15 */
     if (dlsch_config_pdu_1_0->number_symbols == 2)
       dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 1;
@@ -686,7 +668,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* VRB_TO_PRB_MAPPING */
     dlsch_config_pdu_1_0->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping.val == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
     /* MCS TABLE INDEX */
-    dlsch_config_pdu_1_0->mcs_table = (pdsch_config->mcs_Table) ? (*pdsch_config->mcs_Table + 1) : 0;
+    dlsch_config_pdu_1_0->mcs_table = (pdsch_config) ? ((pdsch_config->mcs_Table) ? (*pdsch_config->mcs_Table + 1) : 0) : 0;
     /* MCS */
     dlsch_config_pdu_1_0->mcs = dci->mcs;
     // Basic sanity check for MCS value to check for a false or erroneous DCI
@@ -739,7 +721,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
 
     /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
-    dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = dci->pdsch_to_harq_feedback_timing_indicator.val;
+    dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = mac->ULbwp[mac->UL_BWP_Id-1]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
 
     LOG_D(MAC,"(nr_ue_procedures.c) rnti = %x dl_config->number_pdus = %d\n",
 	  dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti,
@@ -769,6 +751,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     LOG_D(MAC,"(nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             
     dl_config->number_pdus = dl_config->number_pdus + 1;
+
     break;
   }
 
@@ -814,10 +797,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
 
-    // FIXME: fix number of additional dmrs
-    if(pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition == NULL)
-      pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition=calloc(1,sizeof(*pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
-
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_1 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
 
     dlsch_config_pdu_1_1->BWPSize = NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -834,20 +813,31 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,dci->time_domain_assignment.val) < 0) {
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,dlsch_config_pdu_1_1,dci->time_domain_assignment.val,false) < 0) {
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
+
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
+    if (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
+      pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList->choice.setup;
+    else if (mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
+      pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+
+    int mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
+
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_1->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
 							 mac->scc->dmrs_TypeA_Position,
-							 dlsch_config_pdu_1_1->number_symbols);
+							 dlsch_config_pdu_1_1->number_symbols,
+               dlsch_config_pdu_1_1->start_symbol,
+               mappingtype);
     dlsch_config_pdu_1_1->dmrsConfigType = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
     /* TODO: fix number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214,
              using tables 7.3.1.2.2-1, 7.3.1.2.2-2, 7.3.1.2.2-3, 7.3.1.2.2-4 of 3GPP TS 38.212 */
     dlsch_config_pdu_1_1->n_dmrs_cdm_groups = 1;
     /* VRB_TO_PRB_MAPPING */
-    if (mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.resource_allocation != 0)
+    if ((pdsch_config->resourceAllocation == 1) && (pdsch_config->vrb_ToPRB_Interleaver != NULL))
       dlsch_config_pdu_1_1->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping.val == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
     /* PRB_BUNDLING_SIZE_IND */
     dlsch_config_pdu_1_1->prb_bundling_size_ind = dci->prb_bundling_size_indicator.val;
@@ -906,11 +896,22 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND */
     // according to TS 38.213 Table 9.2.3-1
     NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
-    dlsch_config_pdu_1_1->pdsch_to_harq_feedback_time_ind = mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
+    dlsch_config_pdu_1_1->pdsch_to_harq_feedback_time_ind =
+      mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
+
     /* ANTENNA_PORTS */
     uint8_t n_codewords = 1; // FIXME!!!
-    if ((mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.dmrs_type == 1) &&
-	(mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.max_length == 1)){
+    long *max_length = NULL;
+    long *dmrs_type = NULL;
+    if (pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA) {
+      max_length = pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength;
+      dmrs_type = pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type;
+    }
+    if (pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeB) {
+      max_length = pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->maxLength;
+      dmrs_type = pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_Type;
+    }
+    if ((dmrs_type == NULL) && (max_length == NULL)){
       // Table 7.3.1.2.2-1: Antenna port(s) (1000 + DMRS port), dmrs-Type=1, maxLength=1
       dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_1[dci->antenna_ports.val][0];
       dlsch_config_pdu_1_1->dmrs_ports[0]     = table_7_3_2_3_3_1[dci->antenna_ports.val][1];
@@ -918,8 +919,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       dlsch_config_pdu_1_1->dmrs_ports[2]     = table_7_3_2_3_3_1[dci->antenna_ports.val][3];
       dlsch_config_pdu_1_1->dmrs_ports[3]     = table_7_3_2_3_3_1[dci->antenna_ports.val][4];
     }
-    if ((mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.dmrs_type == 1) &&
-	(mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.max_length == 2)){
+    if ((dmrs_type == NULL) && (max_length != NULL)){
       // Table 7.3.1.2.2-2: Antenna port(s) (1000 + DMRS port), dmrs-Type=1, maxLength=2
       if (n_codewords == 1) {
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][0];
@@ -942,8 +942,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][9];
       }
     }
-    if ((mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.dmrs_type == 2) &&
-	(mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.max_length == 1)){
+    if ((dmrs_type != NULL) && (max_length == NULL)){
       // Table 7.3.1.2.2-3: Antenna port(s) (1000 + DMRS port), dmrs-Type=2, maxLength=1
       if (n_codewords == 1) {
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][0];
@@ -962,8 +961,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	dlsch_config_pdu_1_1->dmrs_ports[5]     = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][6];
       }
     }
-    if ((mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.dmrs_type == 2) &&
-	(mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.dmrs_dl_for_pdsch_mapping_type_a.max_length == 2)){
+    if ((dmrs_type != NULL) && (max_length != NULL)){
       // Table 7.3.1.2.2-4: Antenna port(s) (1000 + DMRS port), dmrs-Type=2, maxLength=2
       if (n_codewords == 1) {
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][0];
@@ -1129,11 +1127,11 @@ int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
 }
 
 uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
-			 uint8_t dci_format,
-			 uint8_t dci_size,
-			 uint16_t rnti,
-			 uint64_t *dci_pdu,
-			 dci_pdu_rel15_t *dci_pdu_rel15) {
+                            uint8_t dci_format,
+                            uint8_t dci_size,
+                            uint16_t rnti,
+                            uint64_t *dci_pdu,
+                            dci_pdu_rel15_t *dci_pdu_rel15) {
 
   int rnti_type = get_rnti_type(mac, rnti);
 
@@ -1147,32 +1145,6 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   int pos=0;
   int fsize=0;
 
-  if (rnti_type == NR_RNTI_C) {
-    // First find out the DCI format from the first bit (UE performed blind decoding)
-    pos++;
-    dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
-#ifdef DEBUG_EXTRACT_DCI
-    LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,N_RB,dci_size-pos,*dci_pdu);
-#endif
-
-    if (dci_format == NR_UL_DCI_FORMAT_0_0 || dci_format == NR_DL_DCI_FORMAT_1_0) {
-      if (dci_pdu_rel15->format_indicator == 0) 
-        dci_format = NR_UL_DCI_FORMAT_0_0;
-      else
-        dci_format = NR_DL_DCI_FORMAT_1_0;
-    }
-    else if (dci_format == NR_UL_DCI_FORMAT_0_1 || dci_format == NR_DL_DCI_FORMAT_1_1) {
-      // In case the sizes of formats 0_1 and 1_1 happen to be the same
-      if (dci_pdu_rel15->format_indicator == 0) 
-        dci_format = NR_UL_DCI_FORMAT_0_1;
-      else
-        dci_format = NR_DL_DCI_FORMAT_1_1;
-    }
-  }
-#ifdef DEBUG_EXTRACT_DCI
-  LOG_D(MAC, "DCI format is %d\n", dci_format);
-#endif
-  
   switch(dci_format) {
 
   case NR_DL_DCI_FORMAT_1_0:
@@ -1213,7 +1185,15 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       break;
 
     case NR_RNTI_C:
-	
+
+      //Identifier for DCI formats
+      pos++;
+      dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
+      if (dci_pdu_rel15->format_indicator == 0)
+        return 1; // discard dci, format indicator not corresponding to dci_format
+#ifdef DEBUG_EXTRACT_DCI
+      LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,N_RB,dci_size-pos,*dci_pdu);
+#endif
       // Freq domain assignment (275rb >> fsize = 16)
       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       pos+=fsize;
@@ -1323,7 +1303,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	  
       } //end else
       break;
-    	
+
     case NR_RNTI_P:
       /*
       // Short Messages Indicator  E2 bits
@@ -1392,39 +1372,74 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       break;
 	
     case NR_RNTI_TC:
-      // indicating a DL DCI format 1bit
+
+      // indicating a DL DCI format - 1 bit
       pos++;
       dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
-      // Freq domain assignment 0-16 bit
+
+      if (dci_pdu_rel15->format_indicator == 0)
+        return 1; // discard dci, format indicator not corresponding to dci_format
+
+        // Freq domain assignment 0-16 bit
       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       pos+=fsize;
       dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
-      // Time domain assignment 4 bit
+
+      // Time domain assignment - 4 bits
       pos+=4;
       dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
-      // VRB to PRB mapping 1 bit
+
+      // VRB to PRB mapping - 1 bit
+      pos++;
       dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu>>(dci_size-pos))&1;
+
       // MCS 5bit  //bit over 32, so dci_pdu ++
       pos+=5;
       dci_pdu_rel15->mcs = (*dci_pdu>>(dci_size-pos))&0x1f;
-      // New data indicator 1bit
+
+      // New data indicator - 1 bit
+      pos++;
       dci_pdu_rel15->ndi = (*dci_pdu>>(dci_size-pos))&1;
-      // Redundancy version  2bit
+
+      // Redundancy version - 2 bits
       pos+=2;
       dci_pdu_rel15->rv = (*dci_pdu>>(dci_size-pos))&3;
-      // HARQ process number  4bit
+
+      // HARQ process number - 4 bits
       pos+=4;
       dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
-      // Downlink assignment index  E2 bits
+
+      // Downlink assignment index - 2 bits
       pos+=2;
       dci_pdu_rel15->dai[0].val = (*dci_pdu>>(dci_size-pos))&3;
-      // TPC command for scheduled PUCCH  E2 bits
+
+      // TPC command for scheduled PUCCH - 2 bits
       pos+=2;
       dci_pdu_rel15->tpc  = (*dci_pdu>>(dci_size-pos))&3;
-      // PDSCH-to-HARQ_feedback timing indicator  E3 bits
+
+      // PUCCH resource indicator - 3 bits
+      pos+=3;
+      dci_pdu_rel15->pucch_resource_indicator = (*dci_pdu>>(dci_size-pos))&7;
+
+      // PDSCH-to-HARQ_feedback timing indicator - 3 bits
       pos+=3;
       dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = (*dci_pdu>>(dci_size-pos))&7;
-       
+
+      LOG_D(NR_MAC,"N_RB = %i\n", N_RB);
+      LOG_D(NR_MAC,"dci_size = %i\n", dci_size);
+      LOG_D(NR_MAC,"fsize = %i\n", fsize);
+      LOG_D(NR_MAC,"dci_pdu_rel15->format_indicator = %i\n", dci_pdu_rel15->format_indicator);
+      LOG_D(NR_MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+      LOG_D(NR_MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+      LOG_D(NR_MAC,"dci_pdu_rel15->harq_pid = %i\n", dci_pdu_rel15->harq_pid);
+      LOG_D(NR_MAC,"dci_pdu_rel15->dai[0].val = %i\n", dci_pdu_rel15->dai[0].val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->tpc = %i\n", dci_pdu_rel15->tpc);
+      LOG_D(NR_MAC,"dci_pdu_rel15->pucch_resource_indicator = %i\n", dci_pdu_rel15->pucch_resource_indicator);
+      LOG_D(NR_MAC,"dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = %i\n", dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val);
+
       break;
     }
     break;
@@ -1433,6 +1448,11 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     switch(rnti_type)
       {
       case NR_RNTI_C:
+        //Identifier for DCI formats
+        pos++;
+        dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
+        if (dci_pdu_rel15->format_indicator == 1)
+          return 1; // discard dci, format indicator not corresponding to dci_format
 	fsize = (int)ceil( log2( (N_RB_UL*(N_RB_UL+1))>>1 ) );
 	pos+=fsize;
 	dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
@@ -1508,6 +1528,11 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   switch(rnti_type)
     {
       case NR_RNTI_C:
+        //Identifier for DCI formats
+        pos++;
+        dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
+        if (dci_pdu_rel15->format_indicator == 0)
+          return 1; // discard dci, format indicator not corresponding to dci_format
         // Carrier indicator
         pos+=dci_pdu_rel15->carrier_indicator.nbits;
         dci_pdu_rel15->carrier_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->carrier_indicator.nbits)-1);
@@ -1593,6 +1618,11 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     switch(rnti_type)
       {
       case NR_RNTI_C:
+        //Identifier for DCI formats
+        pos++;
+        dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
+        if (dci_pdu_rel15->format_indicator == 1)
+          return 1; // discard dci, format indicator not corresponding to dci_format
         // Carrier indicator
         pos+=dci_pdu_rel15->carrier_indicator.nbits;
         dci_pdu_rel15->carrier_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->carrier_indicator.nbits)-1);
@@ -1701,7 +1731,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     break;
        }
     
-    return dci_format;
+    return 0;
 }
 
 ///////////////////////////////////
@@ -1746,7 +1776,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
   frame_t frameP         = dl_info->frame;
   int slot               = dl_info->slot;
   uint8_t *pduP          = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu;
-  uint16_t pdu_len       = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
+  int32_t pdu_len        = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
   uint8_t gNB_index      = dl_info->gNB_index;
   uint8_t CC_id          = dl_info->cc_id;
   uint8_t done           = 0;
@@ -1757,7 +1787,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
     return;
   }
 
-  LOG_D(MAC, "In %s [%d.%d]: processing PDU %d of %d total number of PDUs...\n", __FUNCTION__, frameP, slot, pdu_id, dl_info->rx_ind->number_pdus);
+  LOG_D(MAC, "In %s [%d.%d]: processing PDU %d (with length %d) of %d total number of PDUs...\n", __FUNCTION__, frameP, slot, pdu_id, pdu_len, dl_info->rx_ind->number_pdus);
 
     while (!done && pdu_len > 0){
         mac_ce_len = 0x0000;
@@ -1773,16 +1803,41 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
             //  MAC CE
 
             case DL_SCH_LCID_CCCH:
-                //  MSG4 RRC Connection Setup 38.331
-                //  varialbe length
-                mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
+              //  MSG4 RRC Setup 38.331
+              //  variable length
+              if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+                mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)
+                              | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pduP)->L2 & 0xff);
+                mac_subheader_len = 3;
+              } else {
+                mac_sdu_len = ((NR_MAC_SUBHEADER_SHORT *) pduP)->L;
                 mac_subheader_len = 2;
-                if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
-                    mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
-                    mac_subheader_len = 3;
-                }
+              }
 
+              // Check if it is a valid CCCH message, we get all 00's messages very often
+              int i = 0;
+              for(i=0; i<(mac_subheader_len+mac_sdu_len); i++) {
+                if(pduP[i] != 0) {
+                  break;
+                }
+              }
+              if (i == (mac_subheader_len+mac_sdu_len)) {
+                LOG_D(NR_MAC, "%s() Invalid CCCH message!, pdu_len: %d\n", __func__, pdu_len);
+                done = 1;
                 break;
+              }
+
+              if ( mac_sdu_len > 0 ) {
+                LOG_D(NR_MAC,"DL_SCH_LCID_CCCH (e.g. RRCSetup) with payload len %d\n", mac_sdu_len);
+                for (int i = 0; i < mac_subheader_len; i++) {
+                  LOG_D(NR_MAC, "MAC header %d: 0x%x\n", i, pduP[i]);
+                }
+                for (int i = 0; i < mac_sdu_len; i++) {
+                  LOG_D(NR_MAC, "%d: 0x%x\n", i, pduP[mac_subheader_len + i]);
+                }
+                nr_mac_rrc_data_ind_ue(module_idP, CC_id, gNB_index, frameP, 0, mac->crnti, CCCH, pduP+mac_subheader_len, mac_sdu_len);
+              }
+              break;
 
             case DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH:
 
@@ -1889,17 +1944,34 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 
                 break;
             case DL_SCH_LCID_CON_RES_ID:
-                //  Clause 5.1.5 and 6.1.3.3 of 3GPP TS 38.321 version 16.2.1 Release 16
-                // WIP todo: handle CCCH_pdu
-                mac_ce_len = 6;
-                
-                LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received contention resolution msg: %x.%x.%x.%x.%x.%x, Terminating RA procedure\n", module_idP, frameP, pduP[0], pduP[1], pduP[2], pduP[3], pduP[4], pduP[5]);
+              //  Clause 5.1.5 and 6.1.3.3 of 3GPP TS 38.321 version 16.2.1 Release 16
+              // MAC Header: 1 byte (R/R/LCID)
+              // MAC SDU: 6 bytes (UE Contention Resolution Identity)
+              mac_ce_len = 6;
 
-                if (ra->RA_active == 1) {
-                  nr_ra_succeeded(module_idP, frameP, slot);
+              if(ra->ra_state == WAIT_CONTENTION_RESOLUTION) {
+                LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received contention resolution identity: 0x%02x%02x%02x%02x%02x%02x Terminating RA procedure\n",
+                      module_idP, frameP, pduP[1], pduP[2], pduP[3], pduP[4], pduP[5], pduP[6]);
+
+                bool ra_success = true;
+                for(int i = 0; i<mac_ce_len; i++) {
+                  if(ra->cont_res_id[i] != pduP[i+1]) {
+                    ra_success = false;
+                    break;
+                  }
                 }
 
-                break;
+                if ( (ra->RA_active == 1) && ra_success) {
+                  nr_ra_succeeded(module_idP, frameP, slot);
+                } else if (!ra_success){
+                  // TODO: Handle failure of RA procedure @ MAC layer
+                  //  nr_ra_failed(module_idP, CC_id, prach_resources, frameP, slot); // prach_resources is a PHY structure
+                  ra->ra_state = RA_UE_IDLE;
+                  ra->RA_active = 0;
+                }
+              }
+
+              break;
             case DL_SCH_LCID_PADDING:
                 done = 1;
                 //  end of MAC PDU, can ignore the rest.
@@ -1961,7 +2033,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         pduP += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         if (pdu_len < 0)
-          LOG_E(MAC, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", pdu_len);
+          LOG_E(MAC, "[UE %d][%d.%d] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", module_idP, frameP, slot, pdu_len);
     }
 }
 
@@ -2017,8 +2089,9 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
         last_size = 3;
       }
     } else { // UL CCCH SDU
-      mac_pdu_ptr->R = 0;
-      mac_pdu_ptr->LCID = sdu_lcids[i];
+      ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
+      ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->LCID = sdu_lcids[i];
+      last_size = 1;
     }
 
     mac_pdu_ptr += last_size;
@@ -2194,27 +2267,32 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
   NR_MAC_RAR *rar          = (NR_MAC_RAR *) (dlsch_buffer + 1);   // RAR subPDU pointer
   uint8_t preamble_index   = get_ra_PreambleIndex(mod_id, cc_id, gNB_id); //prach_resources->ra_PreambleIndex;
 
-  LOG_D(MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
+  LOG_D(NR_MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
 
   while (1) {
     n_subheaders++;
     if (rarh->T == 1) {
       n_subPDUs++;
-      LOG_D(MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU\n", mod_id);
+      LOG_I(NR_MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU\n", mod_id);
     } else {
-      n_subPDUs++;
       ra->RA_backoff_indicator = table_7_2_1[((NR_RA_HEADER_BI *)rarh)->BI];
       ra->RA_BI_found = 1;
-      LOG_D(MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d\n", mod_id, ra->RA_backoff_indicator);
+      LOG_I(NR_MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d ms\n", mod_id, ra->RA_backoff_indicator);
+      if ( ((NR_RA_HEADER_BI *)rarh)->E == 1) {
+        rarh += sizeof(NR_RA_HEADER_BI);
+        continue;
+      } else {
+        break;
+      }
     }
     if (rarh->RAPID == preamble_index) {
-      LOG_I(MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
+      LOG_I(NR_MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
       rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
       ra->RA_RAPID_found = 1;
       break;
     }
     if (rarh->E == 0) {
-      LOG_W(PHY,"[UE %d][RAPROC] Received RAR preamble (%d) doesn't match the intended RAPID...\n", mod_id, preamble_index);
+      LOG_W(NR_MAC,"[UE %d][RAPROC][%d.%d] Received RAR preamble (%d) doesn't match the intended RAPID (%d)\n", mod_id, frame, slot, rarh->RAPID, preamble_index);
       break;
     } else {
       rarh += sizeof(NR_MAC_RAR) + 1;
@@ -2290,21 +2368,37 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       rnti = mac->crnti;
     }
 
-  #ifdef DEBUG_RAR
-  LOG_D(MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
-    __FUNCTION__,
-    frame,
-    slot,
-    mod_id,
-    rar_grant.Msg3_t_alloc,
-    rar_grant.Msg3_f_alloc,
-    ul_time_alignment->ta_command,
-    rar_grant.mcs,
-    rar_grant.freq_hopping,
-    tpc_command,
-    csi_req,
-    ra->t_crnti);
-  #endif
+#ifdef DEBUG_RAR
+    LOG_I(NR_MAC, "rarh->E = 0x%x\n", rarh->E);
+    LOG_I(NR_MAC, "rarh->T = 0x%x\n", rarh->T);
+    LOG_I(NR_MAC, "rarh->RAPID = 0x%x (%i)\n", rarh->RAPID, rarh->RAPID);
+
+    LOG_I(NR_MAC, "rar->R = 0x%x\n", rar->R);
+    LOG_I(NR_MAC, "rar->TA1 = 0x%x\n", rar->TA1);
+
+    LOG_I(NR_MAC, "rar->TA2 = 0x%x\n", rar->TA2);
+    LOG_I(NR_MAC, "rar->UL_GRANT_1 = 0x%x\n", rar->UL_GRANT_1);
+
+    LOG_I(NR_MAC, "rar->UL_GRANT_2 = 0x%x\n", rar->UL_GRANT_2);
+    LOG_I(NR_MAC, "rar->UL_GRANT_3 = 0x%x\n", rar->UL_GRANT_3);
+    LOG_I(NR_MAC, "rar->UL_GRANT_4 = 0x%x\n", rar->UL_GRANT_4);
+
+    LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
+    LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
+
+    LOG_I(NR_MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d t_crnti %x \n",
+      __FUNCTION__,
+      frame,
+      slot,
+      mod_id,
+      rar_grant.Msg3_t_alloc,
+      rar_grant.Msg3_f_alloc,
+      ul_time_alignment->ta_command,
+      rar_grant.mcs,
+      rar_grant.freq_hopping,
+      tpc_command,
+      ra->t_crnti);
+#endif
 
     // Schedule Msg3
     ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, rar_grant.Msg3_t_alloc);

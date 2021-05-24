@@ -131,7 +131,7 @@ void tx_func(void *param) {
 }
 
 void rx_func(void *param) {
-  //printf("inside rx func. \n");
+
   processingData_L1_t *info = (processingData_L1_t *) param;
   PHY_VARS_gNB *gNB = info->gNB;
   int frame_rx = info->frame_rx;
@@ -228,18 +228,6 @@ void rx_func(void *param) {
   rnti_to_remove_count = 0;
   if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 
-  // Call the scheduler
-
-  if(NFAPI_MODE == NFAPI_MONOLITHIC) 
-  {
-    pthread_mutex_lock(&gNB->UL_INFO_mutex);
-    gNB->UL_INFO.frame     = frame_rx;
-    gNB->UL_INFO.slot      = slot_rx;
-    gNB->UL_INFO.module_id = gNB->Mod_id;
-    gNB->UL_INFO.CC_id     = gNB->CC_id;
-    gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
-    pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-  }
   // RX processing
   int tx_slot_type; int rx_slot_type;
   if(NFAPI_MODE != NFAPI_MONOLITHIC) { //slot selection routines not working properly in nfapi, so temporarily hardcoding
@@ -277,19 +265,32 @@ void rx_func(void *param) {
     L1_nr_prach_procedures(gNB,frame_rx,slot_rx);
 
     //apply the rx signal rotation here
-    apply_nr_rotation_ul(&gNB->frame_parms,
-			 gNB->common_vars.rxdataF[0],
-			 slot_rx,
-			 0,
-			 gNB->frame_parms.Ncp==EXTENDED?12:14,
-			 gNB->frame_parms.ofdm_symbol_size);
-    
+    for (int aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
+      apply_nr_rotation_ul(&gNB->frame_parms,
+                           gNB->common_vars.rxdataF[aa],
+                           slot_rx,
+                           0,
+                           gNB->frame_parms.Ncp==EXTENDED?12:14,
+                           gNB->frame_parms.ofdm_symbol_size);
+    }
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
   }
 
   stop_meas( &softmodem_stats_rxtx_sf );
   LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
 
+  // Call the scheduler
+
+  start_meas(&gNB->ul_indication_stats);
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+  gNB->UL_INFO.frame     = frame_rx;
+  gNB->UL_INFO.slot      = slot_rx;
+  gNB->UL_INFO.module_id = gNB->Mod_id;
+  gNB->UL_INFO.CC_id     = gNB->CC_id;
+  gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+  stop_meas(&gNB->ul_indication_stats);
+  
   notifiedFIFO_elt_t *res; 
 
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
@@ -349,18 +350,24 @@ static void *process_stats_thread(void *param) {
 
   PHY_VARS_gNB *gNB  = (PHY_VARS_gNB *)param;
 
+  reset_meas(&gNB->phy_proc_tx);
   reset_meas(&gNB->dlsch_encoding_stats);
-  reset_meas(&gNB->dlsch_scrambling_stats);
-  reset_meas(&gNB->dlsch_modulation_stats);
+  reset_meas(&gNB->phy_proc_rx);
+  reset_meas(&gNB->ul_indication_stats);
+  reset_meas(&gNB->rx_pusch_stats);
+  reset_meas(&gNB->ulsch_decoding_stats);
 
   wait_sync("process_stats_thread");
 
   while(!oai_exit)
   {
     sleep(1);
-    print_meas(&gNB->dlsch_encoding_stats, "pdsch_encoding", NULL, NULL);
-    print_meas(&gNB->dlsch_scrambling_stats, "pdsch_scrambling", NULL, NULL);
-    print_meas(&gNB->dlsch_modulation_stats, "pdsch_modulation", NULL, NULL);
+    print_meas(&gNB->phy_proc_tx, "L1 Tx processing", NULL, NULL);
+    print_meas(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL);
+    print_meas(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL);
+    print_meas(&gNB->ul_indication_stats, "UL Indication", NULL, NULL);
+    print_meas(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL);
+    print_meas(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL);
   }
   return(NULL);
 }
@@ -373,7 +380,9 @@ void init_gNB_Tpool(int inst) {
   // ULSCH decoding threadpool
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+  LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->pusch_proc_threads,numCPU);
   int threadCnt = min(numCPU, gNB->pusch_proc_threads);
+  if (threadCnt < 2) LOG_E(PHY,"Number of threads for gNB should be more than 1. Allocated only %d\n",threadCnt);
   char ul_pool[80];
   sprintf(ul_pool,"-1");
   int s_offset = 0;
@@ -446,6 +455,8 @@ void init_eNB_afterRU(void) {
   PHY_VARS_gNB *gNB;
   LOG_I(PHY,"%s() RC.nb_nr_inst:%d\n", __FUNCTION__, RC.nb_nr_inst);
 
+  if(NFAPI_MODE == NFAPI_MODE_PNF)
+    RC.nb_nr_inst = 1;
   for (inst=0; inst<RC.nb_nr_inst; inst++) {
     LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, RC.gNB[inst]);
     gNB                                  =  RC.gNB[inst];
@@ -494,18 +505,16 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
   PHY_VARS_gNB *gNB;
 
   if (RC.gNB == NULL) {
-    RC.gNB = (PHY_VARS_gNB **) malloc((1+RC.nb_nr_L1_inst)*sizeof(PHY_VARS_gNB *));
-    for (inst=0; inst<RC.nb_nr_L1_inst; inst++) {
-      RC.gNB[inst] = (PHY_VARS_gNB *) malloc(sizeof(PHY_VARS_gNB));
-      memset((void*)RC.gNB[inst],0,sizeof(PHY_VARS_gNB));
-    }
+    RC.gNB = (PHY_VARS_gNB **) calloc(1+RC.nb_nr_L1_inst, sizeof(PHY_VARS_gNB *));
+    LOG_I(PHY,"gNB L1 structure RC.gNB allocated @ %p\n",RC.gNB);
   }
-
-  LOG_I(PHY,"gNB L1 structure RC.gNB allocated @ %p\n",RC.gNB);
 
   for (inst=0; inst<RC.nb_nr_L1_inst; inst++) {
 
-    LOG_I(PHY,"[lte-softmodem.c] gNB structure RC.gNB[%d] allocated @ %p\n",inst,RC.gNB[inst]);
+    if (RC.gNB[inst] == NULL) {
+      RC.gNB[inst] = (PHY_VARS_gNB *) calloc(1, sizeof(PHY_VARS_gNB));
+      LOG_I(PHY,"[nr-gnb.c] gNB structure RC.gNB[%d] allocated @ %p\n",inst,RC.gNB[inst]);
+    }
     gNB                     = RC.gNB[inst];
     gNB->abstraction_flag   = 0;
     gNB->single_thread_flag = single_thread_flag;
@@ -535,7 +544,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
   }
   
 
-  LOG_I(PHY,"[nr-softmodem.c] gNB structure allocated\n");
+  LOG_I(PHY,"[nr-gnb.c] gNB structure allocated\n");
 }
 
 

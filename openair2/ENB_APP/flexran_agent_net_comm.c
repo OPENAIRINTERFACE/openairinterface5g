@@ -30,7 +30,7 @@
 #include "common/utils/LOG/log.h"
 
 flexran_agent_channel_t *agent_channel[NUM_MAX_ENB][FLEXRAN_AGENT_MAX];
-flexran_agent_channel_instance_t channel_instance;
+static flexran_agent_channel_instance_t channel_instance;
 int flexran_agent_channel_id = 0;
 
 int flexran_agent_msg_send(mid_t mod_id, agent_id_t agent_id, void *data, int size, int priority) {

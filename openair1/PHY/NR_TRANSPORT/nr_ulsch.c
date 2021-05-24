@@ -41,7 +41,7 @@ int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
   int16_t first_free_index=-1;
 
   AssertFatal(gNB!=NULL,"gNB is null\n");
-  for (i=0; i<NUMBER_OF_NR_ULSCH_MAX; i++) {
+  for (i=0; i<gNB->number_of_nr_ulsch_max; i++) {
     AssertFatal(gNB->ulsch[i]!=NULL,"gNB->ulsch[%d] is null\n",i);
     AssertFatal(gNB->ulsch[i][0]!=NULL,"gNB->ulsch[%d][0] is null\n",i);
     LOG_D(PHY,"searching for rnti %x : ulsch_index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,gNB->ulsch[i][0]->harq_mask,gNB->ulsch[i][0]->rnti,first_free_index);
@@ -62,7 +62,7 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
 
  
   int ulsch_id = find_nr_ulsch(ulsch_pdu->rnti,gNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal( (ulsch_id>=0) && (ulsch_id<NUMBER_OF_NR_ULSCH_MAX),
+  AssertFatal( (ulsch_id>=0) && (ulsch_id<gNB->number_of_nr_ulsch_max),
               "illegal or no ulsch_id found!!! rnti %04x ulsch_id %d\n",ulsch_pdu->rnti,ulsch_id);
 
   NR_gNB_ULSCH_t  *ulsch = gNB->ulsch[ulsch_id][0];
@@ -139,7 +139,7 @@ void nr_ulsch_unscrambling_optim(int16_t* llr,
 
 void dump_pusch_stats(PHY_VARS_gNB *gNB) {
 
-  for (int i=0;i<NUMBER_OF_NR_ULSCH_MAX;i++)
+  for (int i=0;i<gNB->number_of_nr_ulsch_max;i++)
     if (gNB->ulsch_stats[i].rnti>0) 
       LOG_I(PHY,"ULSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, current_Qm %d, current_RI %d, total_bytes RX/SCHED %d/%d\n",
 	    gNB->ulsch_stats[i].rnti,
@@ -159,6 +159,6 @@ void dump_pusch_stats(PHY_VARS_gNB *gNB) {
 
 void clear_pusch_stats(PHY_VARS_gNB *gNB) {
 
-  for (int i=0;i<NUMBER_OF_NR_ULSCH_MAX;i++)
+  for (int i=0;i<gNB->number_of_nr_ulsch_max;i++)
     memset((void*)&gNB->ulsch_stats[i],0,sizeof(gNB->ulsch_stats[i]));
 }

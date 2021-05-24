@@ -67,6 +67,8 @@
 
 #define MAX_NUM_NEIGH_CELLs 6 /* maximum neighbouring cells number */
 
+#define MAX_NUM_GNB_CELLs 1   /* maximum gNB cells number */
+
 #define UE_STATE_NOTIFICATION_INTERVAL      50
 
 #define IPV4_ADDR    "%u.%u.%u.%u"
@@ -327,7 +329,7 @@ typedef enum SL_TRIGGER_e {
 #define MAX_MEAS_ID 6
 
 #define PAYLOAD_SIZE_MAX 1024
-#define RRC_BUF_SIZE 255
+#define RRC_BUF_SIZE 8192
 #define UNDEF_SECURITY_MODE 0xff
 #define NO_SECURITY_MODE 0x20
 
@@ -517,13 +519,13 @@ typedef struct RB_INFO_TABLE_ENTRY_s {
   RB_INFO Rb_info;
   uint8_t Active;
   uint32_t Next_check_frame;
-  uint8_t Status;
+  uint8_t StatusRb;
 } RB_INFO_TABLE_ENTRY;
 
 typedef struct SRB_INFO_TABLE_ENTRY_s {
   SRB_INFO Srb_info;
   uint8_t Active;
-  uint8_t Status;
+  uint8_t StatusSrb;
   uint32_t Next_check_frame;
 } SRB_INFO_TABLE_ENTRY;
 
@@ -597,7 +599,7 @@ typedef struct eNB_RRC_UE_s {
   LTE_CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
 
-  uint8_t                            Status; // RRC status, type enum UE_STATE_t
+  uint8_t                            StatusRrc; // RRC status, type enum UE_STATE_t
   rnti_t                             rnti;
   int                                gnb_rnti;     //RNTI of the UE at the gNB if in ENDC connection
   int                                gnb_x2_assoc_id;
@@ -804,8 +806,13 @@ typedef struct eNB_RRC_INST_s {
   int num_neigh_cells_cc[MAX_NUM_CCs];
   uint32_t neigh_cells_id[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
 
+  // gNB cells connected to this eNB
+  int num_gnb_cells;
+  int num_gnb_cells_cc[MAX_NUM_GNB_CELLs];
+  uint32_t gnb_cells_id[MAX_NUM_GNB_CELLs][MAX_NUM_CCs];
+
   // Nr scc freq band and SSB absolute frequency
-  uint32_t nr_neigh_freq_band[MAX_NUM_NEIGH_CELLs][MAX_NUM_CCs];
+  uint32_t nr_gnb_freq_band[MAX_NUM_GNB_CELLs][MAX_NUM_CCs];
   int nr_scg_ssb_freq;
 
   // other RAN parameters

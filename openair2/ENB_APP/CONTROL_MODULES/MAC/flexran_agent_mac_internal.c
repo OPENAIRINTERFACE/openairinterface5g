@@ -33,6 +33,9 @@
 #include "flexran_agent_mac_internal.h"
 #include "flexran_agent_mac_slice_verification.h"
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 extern SLIST_HEAD(flexran_so_handle,
                   flexran_agent_so_handle_s) flexran_handles[NUM_MAX_ENB];
 

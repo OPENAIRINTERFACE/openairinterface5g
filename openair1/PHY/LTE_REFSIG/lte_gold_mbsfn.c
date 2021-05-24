@@ -59,7 +59,7 @@ void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_tabl
       //n = 0
       //      printf("cinit (sfn %d, l %d) => %d\n",sfn,l,x2);
       // Initializing the Sequence
-      x1 = 1+ (1<<31);
+      x1 = 1+ (1U<<31);
       x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
       // skip first 50 double words (1600 bits)
       //      printf("n=0 : x1 %x, x2 %x\n",x1,x2);
@@ -90,7 +90,7 @@ void lte_gold_mbsfn_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold
 
   for (sfn=0; sfn<10; sfn++) {
     x2 = (Nid_mbsfn) + (((1+(Nid_mbsfn<<1))*(1 + (7*(1+sfn))))<<9); //cinit
-    x1 = 1+ (1<<31);
+    x1 = 1+ (1U<<31);
     x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
 
     for (n=1; n<50; n++) {

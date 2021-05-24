@@ -972,7 +972,7 @@ typedef struct
 
 typedef struct 
 {
-  uint32_t ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
+  int ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
   uint8_t  bch_payload;//Defines option selected for generation of BCH payload, see Table 3-13 (v0.0.011 Value: 0: MAC generates the full PBCH payload 1: PHY generates the timing PBCH bits 2: PHY generates the full PBCH payload
   uint8_t  scs_common;//subcarrierSpacing for common, used for initial access and broadcast message. [38.211 sec 4.2] Value:0->3
 
@@ -1057,12 +1057,6 @@ typedef struct {
   fapi_nr_ssb_table_t ssb_table;
   fapi_nr_tdd_table_t tdd_table;
   fapi_nr_prach_config_t prach_config;
-
-  fapi_nr_dl_bwp_common_config_t     dl_bwp_common;
-  fapi_nr_dl_bwp_dedicated_config_t  dl_bwp_dedicated;
-
-  fapi_nr_ul_bwp_common_config_t     ul_bwp_common;
-  fapi_nr_ul_bwp_dedicated_config_t  ul_bwp_dedicated;
 
 } fapi_nr_config_request_t;
 

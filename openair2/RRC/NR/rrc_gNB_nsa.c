@@ -39,6 +39,7 @@
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
+#include <openair3/ocp-gtpu/gtp_itf.h>
 #include "UTIL/OSA/osa_defs.h"
 
 extern boolean_t nr_rrc_pdcp_config_asn1_req(
@@ -151,7 +152,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   ue_context_p->ue_context.reconfig->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
   ue_context_p->ue_context.reconfig->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
-  carrier->initial_csi_index[rrc->Nb_ue] = 0;
+  carrier->initial_csi_index[ue_context_p->local_uid + 1] = 0;
   ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
   if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1 || get_softmodem_params()->sa == 1){
     fill_default_rbconfig(ue_context_p->ue_context.rb_config,
@@ -244,14 +245,16 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
-                        carrier->initial_csi_index[rrc->Nb_ue]);
+                        carrier->initial_csi_index[ue_context_p->local_uid + 1],
+                        ue_context_p->local_uid);
   } else {
     fill_default_reconfig(carrier->servingcellconfigcommon,
                         NULL,
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
-                        carrier->initial_csi_index[rrc->Nb_ue]);
+                        carrier->initial_csi_index[ue_context_p->local_uid + 1],
+                        ue_context_p->local_uid);
   }
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
@@ -346,6 +349,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   rrc_mac_config_req_gNB(rrc->module_id,
                          rrc->carrier.ssb_SubcarrierOffset,
                          rrc->carrier.pdsch_AntennaPorts,
+                         rrc->carrier.pusch_AntennaPorts,
                          rrc->carrier.pusch_TargetSNRx10,
                          rrc->carrier.pucch_TargetSNRx10,
                          NULL,
@@ -424,7 +428,7 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
     ue_context->ue_context.gnb_gtp_ebi[e_rab] = 0;
   }
 
-  itti_send_msg_to_task(TASK_GTPV1_U, rrc->module_id, msg_delete_tunnels_p);
+  itti_send_msg_to_task(TASK_VARIABLE, rrc->module_id, msg_delete_tunnels_p);
 
   /* remove context */
   rrc_gNB_remove_ue_context(&ctxt, rrc, ue_context);

@@ -67,73 +67,62 @@ void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME
   LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,sco);
 }
 
-void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
+void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_dl_tti_ssb_pdu ssb_pdu) {
 
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t ssb_index, n_hf;
-  uint16_t ssb_start_symbol, rel_slot;
+  uint16_t ssb_start_symbol;
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
   uint16_t slots_per_hf = (fp->slots_per_frame)>>1;
 
-  n_hf = fp->half_frame_bit;
+  if (slot<slots_per_hf)
+    n_hf=0;
+  else
+    n_hf=1;
 
-  // if SSB periodicity is 5ms, they are transmitted in both half frames
-  if ( cfg->ssb_table.ssb_period.value == 0) {
-    if (slot<slots_per_hf)
-      n_hf=0;
-    else
-      n_hf=1;
+  ssb_index = ssb_pdu.ssb_pdu_rel15.SsbBlockIndex;
+  LOG_D(PHY,"common_signal_procedures: frame %d, slot %d ssb index %d\n",frame,slot,ssb_index);
+
+  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp,ssb_index); // computing the starting symbol for current ssb
+  ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
+
+  nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
+
+  LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
+  nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+  nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+
+  if (cfg->carrier_config.num_tx_ant.value <= 4)
+    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+  else
+    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+
+  if (T_ACTIVE(T_GNB_PHY_MIB)) {
+    unsigned char bch[3];
+    bch[0] = ssb_pdu.ssb_pdu_rel15.bchPayload & 0xff;
+    bch[1] = (ssb_pdu.ssb_pdu_rel15.bchPayload >> 8) & 0xff;
+    bch[2] = (ssb_pdu.ssb_pdu_rel15.bchPayload >> 16) & 0xff;
+    T(T_GNB_PHY_MIB, T_INT(0) /* module ID */, T_INT(frame), T_INT(slot), T_BUFFER(bch, 3));
   }
 
-  // to set a effective slot number in the half frame where the SSB is supposed to be
-  rel_slot = (n_hf)? (slot-slots_per_hf) : slot; 
-
-  LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
-
-  if(rel_slot<38 && rel_slot>=0)  { // there is no SSB beyond slot 37
-
-    for (int i=0; i<2; i++)  {  // max two SSB per frame
-      
-      ssb_index = i + SSB_Table[rel_slot]; // computing the ssb_index
-
-      if ((ssb_index<64) && ((fp->L_ssb >> (63-ssb_index)) & 0x01))  { // generating the ssb only if the bit of L_ssb at current ssb index is 1
-        fp->ssb_index = ssb_index;
-        int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp); // computing the starting symbol for current ssb
-	ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
-
-	nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
-	
-	LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
-	nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-	nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-	
-        if (cfg->carrier_config.num_tx_ant.value <= 4)
-	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-        else
-	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-
-        if (T_ACTIVE(T_GNB_PHY_MIB)) {
-          unsigned char bch[3];
-          bch[0] = gNB->ssb_pdu.ssb_pdu_rel15.bchPayload & 0xff;
-          bch[1] = (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload >> 8) & 0xff;
-          bch[2] = (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload >> 16) & 0xff;
-          T(T_GNB_PHY_MIB, T_INT(0) /* module ID */, T_INT(frame), T_INT(slot), T_BUFFER(bch, 3));
-        }
-
-	nr_generate_pbch(&gNB->pbch,
-	                 &gNB->ssb_pdu,
-	                 gNB->nr_pbch_interleaver,
-			 &txdataF[0][txdataF_offset],
-			 AMP,
-			 ssb_start_symbol,
-			 n_hf, frame, cfg, fp);
-
-      }
-    }
+  // Beam_id is currently used only for FR2
+  if (fp->freq_range==nr_FR2){
+    LOG_D(PHY,"slot %d, ssb_index %d, beam %d\n",slot,ssb_index,cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value);
+    for (int j=0;j<fp->symbols_per_slot;j++) 
+      gNB->common_vars.beam_id[0][slot*fp->symbols_per_slot+j] = cfg->ssb_table.ssb_beam_id_list[ssb_index].beam_id.value;
   }
+
+  nr_generate_pbch(&gNB->pbch,
+                   &ssb_pdu,
+                   gNB->nr_pbch_interleaver,
+                   &txdataF[0][txdataF_offset],
+                   AMP,
+                   ssb_start_symbol,
+                   n_hf, frame, cfg, fp);
 }
+
 
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                            int frame,int slot,
@@ -142,11 +131,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int offset = gNB->CC_id;
-  uint8_t ssb_frame_periodicity = 1;  // every how many frames SSB are generated
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
-  
-  if (cfg->ssb_table.ssb_period.value > 1) 
-    ssb_frame_periodicity = 1 <<(cfg->ssb_table.ssb_period.value -1) ; 
 
   if ((cfg->cell_config.frame_duplex_type.value == TDD) &&
       (nr_slot_select(cfg,frame,slot) == NR_UPLINK_SLOT)) return;
@@ -155,15 +140,20 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   if (do_meas==1) start_meas(&gNB->phy_proc_tx);
 
-  // clear the transmit data array for the current subframe
+  // clear the transmit data array and beam index for the current slot
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
     memset(&gNB->common_vars.txdataF[aa][txdataF_offset],0,fp->samples_per_slot_wCP*sizeof(int32_t));
+    memset(&gNB->common_vars.beam_id[aa][slot*fp->symbols_per_slot],255,fp->symbols_per_slot*sizeof(uint8_t));
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);
   if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { 
-    if ((!(frame%ssb_frame_periodicity)))  // generate SSB only for given frames according to SSB periodicity
-      nr_common_signal_procedures(gNB,frame, slot);
+    for (int i=0; i<fp->Lmax; i++) {
+      if (gNB->ssb[i].active) {
+        nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[i].ssb_pdu);
+        gNB->ssb[i].active = false;
+      }
+    }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,0);
 
@@ -204,10 +194,14 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
+  if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
+
   if ((frame&127) == 0) dump_pdsch_stats(gNB);
 
   //apply the OFDM symbol rotation here
-  apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[0][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14,fp->ofdm_symbol_size);
+  for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
+	  apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[aa][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14,fp->ofdm_symbol_size);
+  }
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
@@ -454,7 +448,7 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 	      (pucch->frame == frame_rx) &&
 	      (pucch->slot == slot_rx) ) {
             gNB->ulmask_symb = symbol;
-            nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch[i].pucch_pdu;
+            nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
             if ((symbol>=pucch_pdu->start_symbol_index) &&
                 (symbol<(pucch_pdu->start_symbol_index + pucch_pdu->nr_of_symbols))){
               for (rb=0; rb<pucch_pdu->prb_size; rb++) {
@@ -466,7 +460,7 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           }
         }
       }
-      for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
+      for (int ULSCH_id=0;ULSCH_id<gNB->number_of_nr_ulsch_max;ULSCH_id++) {
         NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
         int harq_pid;
         NR_UL_gNB_HARQ_t *ulsch_harq;
@@ -529,7 +523,7 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
 }
 
-void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
+int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   /* those variables to log T_GNB_PHY_PUCCH_PUSCH_IQ only when we try to decode */
   int pucch_decode_done = 0;
   int pusch_decode_done = 0;
@@ -547,6 +541,8 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
   int offset = 10*gNB->frame_parms.ofdm_symbol_size + gNB->frame_parms.first_carrier_offset;
   int power_rxF = signal_energy_nodc(&gNB->common_vars.rxdataF[0][offset],12*18);
   LOG_D(PHY,"frame %d, slot %d: UL signal energy %d\n",frame_rx,slot_rx,power_rxF);
+
+  start_meas(&gNB->phy_proc_rx);
 
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
@@ -570,6 +566,10 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
           gNB->uci_pdu_list[num_ucis].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
           gNB->uci_pdu_list[num_ucis].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
           nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu_format0 = &gNB->uci_pdu_list[num_ucis].pucch_pdu_format_0_1;
+
+          offset = pucch_pdu->start_symbol_index*gNB->frame_parms.ofdm_symbol_size + (gNB->frame_parms.first_carrier_offset+pucch_pdu->prb_start*12);
+          power_rxF = signal_energy_nodc(&gNB->common_vars.rxdataF[0][offset],12);
+          LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
           nr_decode_pucch0(gNB,
 	                   slot_rx,
@@ -603,7 +603,7 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
     }
   }
 
-  for (int ULSCH_id=0;ULSCH_id<NUMBER_OF_NR_ULSCH_MAX;ULSCH_id++) {
+  for (int ULSCH_id=0;ULSCH_id<gNB->number_of_nr_ulsch_max;ULSCH_id++) {
     NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
     int harq_pid;
     int no_sig;
@@ -652,19 +652,15 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
           pusch_decode_done = 1;
 
-          uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
-          uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,1);
-	  start_meas(&gNB->rx_pusch_stats);
-	  for(uint8_t symbol = symbol_start; symbol < symbol_end; symbol++) {
-	    no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, symbol, harq_pid);
-            if (no_sig) {
-              LOG_I(PHY, "PUSCH not detected in symbol %d\n",symbol);
-              nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
-              return;
-            }
-	  }
-	  stop_meas(&gNB->rx_pusch_stats);
+          start_meas(&gNB->rx_pusch_stats);
+          no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, harq_pid);
+          if (no_sig) {
+            LOG_I(PHY, "PUSCH not detected in frame %d, slot %d\n", frame_rx, slot_rx);
+            nr_fill_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
+            return 1;
+          }
+          stop_meas(&gNB->rx_pusch_stats);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,0);
           //LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
           //LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
@@ -676,12 +672,21 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
       }
     }
   }
+  stop_meas(&gNB->phy_proc_rx);
   // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
-  if ((frame_rx&127) == 0 && slot_rx==19) dump_pusch_stats(gNB);
+  if ((frame_rx&127) == 0 && slot_rx==19) {
+    dump_pusch_stats(gNB);
+    LOG_I(PHY, "Number of bad PUCCH received: %lu\n", gNB->bad_pucch);
+  }
+
+  if (pucch_decode_done || pusch_decode_done) {
+    T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));
+  }
 
   if (pucch_decode_done || pusch_decode_done) {
     T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,0);
+  return 0;
 }

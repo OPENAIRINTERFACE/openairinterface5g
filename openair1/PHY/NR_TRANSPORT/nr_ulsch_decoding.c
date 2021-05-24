@@ -320,7 +320,7 @@ void nr_processULSegment(void* arg) {
   Kr_bytes = Kr>>3;
   K_bits_F = Kr-ulsch_harq->F;
 
-  t_nrLDPC_time_stats procTime;
+  t_nrLDPC_time_stats procTime = {0};
   t_nrLDPC_time_stats* p_procTime     = &procTime ;
 
   //start_meas(&phy_vars_gNB->ulsch_deinterleaving_stats);

@@ -319,13 +319,15 @@ error:
 }
 
 int proto_agent_get_ack_result(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
+/* code useless in this status: return 0 anyways
   rlc_op_status_t result = 0;
-  //printf("PROTO_AGENT: handling the data_req_ack message\n");
+  printf("PROTO_AGENT: handling the data_req_ack message\n");
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
   Protocol__FspRlcDataReqAck *data_ack = input->data_req_ack;
   result = data_ack->result;
-  //printf("PROTO_AGENT: ACK RESULT IS %u\n", result);
+  printf("PROTO_AGENT: ACK RESULT IS %u\n", result);
   ack_result = result;
+*/
   return 0;
 }
 
@@ -500,6 +502,13 @@ error:
   return -1;
 }
 
+boolean_t pdcp_data_ind(
+  const protocol_ctxt_t *const  ctxt_pP,
+  const srb_flag_t srb_flagP,
+  const MBMS_flag_t MBMS_flagP,
+  const rb_id_t rb_id,
+  const sdu_size_t sdu_buffer_size,
+  mem_block_t *const sdu_buffer);
 
 int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
   boolean_t result = 0;

@@ -569,7 +569,7 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
       }
 
     // in case, send the S1SP initial context response if it is not sent with the attach complete message
-    if (ue_context_p->ue_context.Status == NR_RRC_RECONFIGURED) {
+    if (ue_context_p->ue_context.status == NR_RRC_RECONFIGURED) {
         LOG_I(NR_RRC, "Sending rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP, cause %ld\n", ue_context_p->ue_context.reestablishment_cause);
         rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(&ctxt,ue_context_p);
     }

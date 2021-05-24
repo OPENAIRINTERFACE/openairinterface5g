@@ -68,8 +68,10 @@ int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_
     *recplay_conf=NULL;
   }
 
-  if (u_sf_replay == 1) return RECPLAY_REPLAYMODE;
-  else if (u_sf_record == 1) return RECPLAY_RECORDMODE;
+  if (u_sf_replay == 1)
+    return RECPLAY_REPLAYMODE;
+  else if (u_sf_record == 1)
+    return RECPLAY_RECORDMODE;
 
   return 0;
 }
@@ -80,7 +82,7 @@ int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_
  */
 void iqrecorder_end(openair0_device *device) {
   if (device->recplay_state != NULL) { // subframes store
-    iqfile_header_t    fh = {device->type,device->openair0_cfg->tx_sample_advance, device->openair0_cfg->rx_bw,OAIIQFILE_ID};
+    iqfile_header_t    fh = {device->type,device->openair0_cfg->tx_sample_advance, device->openair0_cfg->rx_bw,0,OAIIQFILE_ID};
     recplay_state_t *rs = device->recplay_state;
     recplay_conf_t  *rc = device->openair0_cfg[0].recplay_conf;
     rs->pFile = fopen (rc->u_sf_filename,"wb+");
@@ -91,16 +93,20 @@ void iqrecorder_end(openair0_device *device) {
       unsigned int i = 0;
       unsigned int modu = 0;
 
-      if ((modu = rs->nb_samples % 10) != 0) {
-        rs->nb_samples -= modu; // store entire number of frames
+      if ((modu = rs->nbSamplesBlocks % 10) != 0) {
+        rs->nbSamplesBlocks -= modu; // store entire number of frames
       }
 
+      fh.nbSamplesBlocks=rs->nbSamplesBlocks;
       LOG_I(HW,"Writing file header to %s \n", rc->u_sf_filename );
       fwrite(&fh, sizeof(fh), 1, rs->pFile);
-      LOG_UI(HW,"Writing %u subframes to %s \n",rs->nb_samples, rc->u_sf_filename );
+      LOG_UI(HW,"Writing %u subframes to %s \n",rs->nbSamplesBlocks, rc->u_sf_filename );
+      uint8_t *ptr=(uint8_t *)rs->ms_sample;
 
-      for (i = 0; i < rs->nb_samples; i++) {
-        fwrite(rs->ms_sample+i, sizeof(unsigned char), sizeof(iqrec_t), rs->pFile);
+      for (i = 0; i < rs->nbSamplesBlocks; i++) {
+        int blockBytes=sizeof(iqrec_t)+((iqrec_t *)ptr)->nbBytes;
+        fwrite(ptr, sizeof(unsigned char), blockBytes, rs->pFile);
+        ptr+=blockBytes;
       }
 
       fclose (rs->pFile);

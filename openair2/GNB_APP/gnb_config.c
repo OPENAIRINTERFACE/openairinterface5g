@@ -35,6 +35,7 @@
 #include "assertions.h"
 #include "gnb_config.h"
 #include "gnb_paramdef.h"
+#include "enb_paramdef.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "intertask_interface.h"
@@ -53,11 +54,12 @@
 
 //#include "L1_paramdef.h"
 #include "L1_nr_paramdef.h"
-#include "MACRLC_paramdef.h"
+#include "MACRLC_nr_paramdef.h"
 #include "common/config/config_userapi.h"
 //#include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
 #include "NR_MAC_gNB/mac_proto.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "NR_asn_constant.h"
 #include "executables/thread-common.h"
@@ -123,7 +125,37 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup  = CALLOC(1,sizeof(struct NR_PDCCH_ConfigCommon));
   scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero    = CALLOC(1,sizeof(long));
   scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero           = CALLOC(1,sizeof(long));
-  //  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet  = CALLOC(1,sizeof(struct NR_ControlResourceSet));
+
+  NR_ControlResourceSet_t *coreset0 = CALLOC(1,sizeof(struct NR_ControlResourceSet));
+  coreset0->controlResourceSetId = 0;
+  // frequencyDomainResources '11111111 00000000 00000000 00000000 00000000 00000'B,
+  if(coreset0->frequencyDomainResources.buf == NULL) coreset0->frequencyDomainResources.buf = calloc(1,6);
+  coreset0->frequencyDomainResources.buf[0] = 0xff;
+  coreset0->frequencyDomainResources.buf[1] = 0;
+  coreset0->frequencyDomainResources.buf[2] = 0;
+  coreset0->frequencyDomainResources.buf[3] = 0;
+  coreset0->frequencyDomainResources.buf[4] = 0;
+  coreset0->frequencyDomainResources.buf[5] = 0;
+  coreset0->frequencyDomainResources.size = 6;
+  coreset0->frequencyDomainResources.bits_unused = 3;
+  coreset0->duration = 1;
+  coreset0->cce_REG_MappingType.present=NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved;
+  coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*coreset0->cce_REG_MappingType.choice.interleaved));
+  coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
+  coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
+  coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = scc->physCellId;
+  coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
+  if(coreset0->tci_StatesPDCCH_ToAddList == NULL) coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*coreset0->tci_StatesPDCCH_ToAddList));
+  NR_TCI_StateId_t *tci[8];
+  for (int i=0;i<8;i++) {
+    tci[i]=calloc(1,sizeof(*tci[i]));
+    *tci[i] = i;
+    ASN_SEQUENCE_ADD(&coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
+  }
+  coreset0->tci_StatesPDCCH_ToReleaseList = NULL;
+  coreset0->tci_PresentInDCI = NULL;
+  coreset0->pdcch_DMRS_ScramblingID = NULL;
+  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet = coreset0;
 
   //  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList     = CALLOC(1,sizeof(struct NR_PDCCH_ConfigCommon__commonSearchSpaceList));
   //  scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1                    = CALLOC(1,sizeof(NR_SearchSpaceId_t));
@@ -297,7 +329,7 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
 void prepare_scd(NR_ServingCellConfig_t *scd) {
   // Allocate downlink structures
 
-  scd->downlinkBWP_ToAddModList = CALLOC(1, sizeof(scd->downlinkBWP_ToAddModList));
+  scd->downlinkBWP_ToAddModList = CALLOC(1, sizeof(*scd->downlinkBWP_ToAddModList));
 
   // Downlink bandwidth part
   NR_BWP_Downlink_t *bwp = calloc(1, sizeof(*bwp));
@@ -318,29 +350,25 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   NR_DMRS_DownlinkCfg->phaseTrackingRS->present = NR_SetupRelease_PTRS_DownlinkConfig_PR_setup;
   NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup = CALLOC(1, sizeof(*NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup));
   NR_PTRS_DownlinkConfig_t *NR_PTRS_DownlinkCfg = NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup;
-  NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->frequencyDensity));
-  int *dl_rbs[2];
+  NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->frequencyDensity));
+  long *dl_rbs = CALLOC(2, sizeof(long));
   for (int i=0;i<2;i++) {
-    dl_rbs[i] = CALLOC(1, sizeof(*dl_rbs[i]));
-    *dl_rbs[i] = 0;
-    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->frequencyDensity->list, dl_rbs[i]);
+    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->frequencyDensity->list, &dl_rbs[i]);
   }
-  NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->timeDensity));
-  int *dl_mcs[3];
+  NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->timeDensity));
+  long *dl_mcs = CALLOC(3, sizeof(long));
   for (int i=0;i<3;i++) {
-    dl_mcs[i] = CALLOC(1, sizeof(*dl_mcs[i]));
-    *dl_mcs[i] = 0;
-    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->timeDensity->list, dl_mcs[i]);
+    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->timeDensity->list, &dl_mcs[i]);
   }
-  NR_PTRS_DownlinkCfg->epre_Ratio = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->epre_Ratio));
-  NR_PTRS_DownlinkCfg->resourceElementOffset = CALLOC(1, sizeof(NR_PTRS_DownlinkCfg->resourceElementOffset));
+  NR_PTRS_DownlinkCfg->epre_Ratio = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->epre_Ratio));
+  NR_PTRS_DownlinkCfg->resourceElementOffset = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->resourceElementOffset));
   *NR_PTRS_DownlinkCfg->resourceElementOffset = 0;
   ASN_SEQUENCE_ADD(&scd->downlinkBWP_ToAddModList->list,bwp);
 
   // Allocate uplink structures
 
-  scd->uplinkConfig = CALLOC(1, sizeof(NR_UplinkConfig_t));
-  scd->uplinkConfig->uplinkBWP_ToAddModList = CALLOC(1, sizeof(scd->uplinkConfig->uplinkBWP_ToAddModList));
+  scd->uplinkConfig = CALLOC(1, sizeof(*scd->uplinkConfig));
+  scd->uplinkConfig->uplinkBWP_ToAddModList = CALLOC(1, sizeof(*scd->uplinkConfig->uplinkBWP_ToAddModList));
 
   NR_PUSCH_Config_t *pusch_Config = CALLOC(1, sizeof(*pusch_Config));
 
@@ -355,20 +383,16 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   NR_PTRS_UplinkConfig_t *NR_PTRS_UplinkConfig = NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup;
   NR_PTRS_UplinkConfig->transformPrecoderDisabled = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled));
   NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity));
-  int *n_rbs[2];
+  long *n_rbs = CALLOC(2, sizeof(long));
   for (int i=0;i<2;i++) {
-    n_rbs[i] = CALLOC(1, sizeof(*n_rbs[i]));
-    *n_rbs[i] = 0;
-    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity->list, n_rbs[i]);
+    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity->list, &n_rbs[i]);
   }
   NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity));
-  int *ptrs_mcs[3];
+  long *ptrs_mcs = CALLOC(3, sizeof(long));
   for (int i = 0; i < 3; i++) {
-    ptrs_mcs[i] = CALLOC(1, sizeof(*ptrs_mcs[i]));
-    *ptrs_mcs[i] = 0;
-    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity->list, ptrs_mcs[i]);
+    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity->list, &ptrs_mcs[i]);
   }
-  NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = CALLOC(1, sizeof(NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset));
+  NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset));
   *NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = 0;
 
   // UL bandwidth part
@@ -589,15 +613,17 @@ void RCconfig_NR_L1(void) {
         RC.nb_nr_CC = (int *)malloc((1+RC.nb_nr_inst)*sizeof(int));
         RC.nb_nr_CC[0]=1;
 
-        RC.nb_nr_inst =1; // DJP - feptx_prec uses num_gNB but phy_init_RU uses nb_nr_inst
-
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_inst=1 this is because phy_init_RU() uses that to index and not RC.num_gNB - why the 2 similar variables?\n", __FUNCTION__);
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_CC[0]=%d for init_gNB_afterRU()\n", __FUNCTION__, RC.nb_nr_CC[0]);
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_macrlc_inst:%d because used by mac_top_init_gNB()\n", __FUNCTION__, RC.nb_nr_macrlc_inst);
 
         mac_top_init_gNB();
 
-        configure_nr_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr, RC.gNB[j]->eth_params_n.remote_portc, RC.gNB[j]->eth_params_n.my_addr, RC.gNB[j]->eth_params_n.my_portd, RC.gNB[j]->eth_params_n     .remote_portd);
+        configure_nr_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr,
+                               RC.gNB[j]->eth_params_n.remote_portc,
+                               RC.gNB[j]->eth_params_n.my_addr,
+                               RC.gNB[j]->eth_params_n.my_portd,
+                               RC.gNB[j]->eth_params_n.remote_portd);
       }else { // other midhaul
       } 
     }// for (j = 0; j < RC.nb_nr_L1_inst; j++)
@@ -673,6 +699,7 @@ void RCconfig_nr_macrlc() {
       }else { // other midhaul
         AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
       } 
+      RC.nrmac[j]->ulsch_max_slots_inactivity = *(MacRLC_ParamList.paramarray[j][MACRLC_ULSCH_MAX_SLOTS_INACTIVITY].uptr);
     }//  for (j=0;j<RC.nb_nr_macrlc_inst;j++)
   }else {// MacRLC_ParamList.numelt > 0
     AssertFatal (0,"No " CONFIG_STRING_MACRLC_LIST " configuration found");     
@@ -954,6 +981,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = *GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr;
         printf("pdsch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr;
+        printf("pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pusch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
         printf("pusch_TargetSNRx10 %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_TARGETPOW_X10_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pusch_TargetSNRx10 = *GNBParamList.paramarray[i][GNB_PUSCH_TARGETPOW_X10_IDX].iptr;
         printf("pucch_TargetSNRx10 %d\n",*GNBParamList.paramarray[i][GNB_PUCCH_TARGETPOW_X10_IDX].iptr);
@@ -1018,20 +1047,23 @@ int RCconfig_nr_gtpu(void ) {
       MessageDef *message;
 
       if (gnb_mode == 1) { // NSA
-        AssertFatal((message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_ENB_S1_REQ))!=NULL,"");
+        message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_ENB_S1_REQ);
+        AssertFatal(message!=NULL,"");
         // IPV4_STR_ADDR_TO_INT_NWBO ( address, RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
         // LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
         IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
         LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
         GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_S1U;
       } else {// TODO SA
-        AssertFatal((message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_GNB_NG_REQ))!=NULL,"");
+        message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_GNB_NG_REQ);
+        AssertFatal(message!=NULL,"");
         IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_GNB_NG_REQ(message).gnb_ip_address_for_NGu_up, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
         LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_GNB_NG_REQ(message).gnb_ip_address_for_NGu_up);
         GTPV1U_GNB_NG_REQ(message).gnb_port_for_NGu_up = gnb_port_for_NGU;
       }
-
-     itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+    strcpy(GTPV1U_ENB_S1_REQ(message).addrStr,address);
+    sprintf(GTPV1U_ENB_S1_REQ(message).portStr,"%d", gnb_port_for_NGU);
+     itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
     } else
     LOG_E(GTPU,"invalid address for NGU\n");
 

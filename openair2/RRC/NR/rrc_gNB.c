@@ -224,6 +224,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   rrc_mac_config_req_gNB(rrc->module_id,
                          rrc->carrier.ssb_SubcarrierOffset,
                          rrc->carrier.pdsch_AntennaPorts,
+                         rrc->carrier.pusch_AntennaPorts,
                          rrc->carrier.pusch_TargetSNRx10,
                          rrc->carrier.pucch_TargetSNRx10,
                          (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
@@ -309,6 +310,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.servingcellconfigcommon = configuration->scc;
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
+  rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
   rrc->carrier.pusch_TargetSNRx10 = configuration->pusch_TargetSNRx10;
   rrc->carrier.pucch_TargetSNRx10 = configuration->pucch_TargetSNRx10;
   /// System Information INIT
@@ -462,6 +464,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
   rrc_mac_config_req_gNB(rrc_instance_p->module_id,
                          rrc_instance_p->carrier.ssb_SubcarrierOffset,
                          rrc_instance_p->carrier.pdsch_AntennaPorts,
+                         rrc_instance_p->carrier.pusch_AntennaPorts,
                          rrc_instance_p->carrier.pusch_TargetSNRx10,
                          rrc_instance_p->carrier.pucch_TargetSNRx10,
                          (NR_ServingCellConfigCommon_t *)rrc_instance_p->carrier.servingcellconfigcommon,
@@ -559,7 +562,7 @@ rrc_gNB_process_RRCSetupComplete(
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing NR_RRCSetupComplete from UE (SRB1 Active)\n",
       PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
   ue_context_pP->ue_context.Srb1.Active = 1;
-  ue_context_pP->ue_context.Status = NR_RRC_CONNECTED;
+  ue_context_pP->ue_context.status = NR_RRC_CONNECTED;
 
   if (AMF_MODE_ENABLED) {
     rrc_gNB_send_NGAP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcSetupComplete);
@@ -1108,7 +1111,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
 
   uint8_t next_xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
   int ret = 0;
-  ue_context_pP->ue_context.Status = NR_RRC_CONNECTED;
+  ue_context_pP->ue_context.status = NR_RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
   ue_context_pP->ue_context.reestablishment_xid = next_xid;
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
@@ -1385,7 +1388,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
         break;
 
       case NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest:
-        LOG_I(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %x)\n", ctxt_pP->rnti);
+        LOG_D(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %x)\n", ctxt_pP->rnti);
         ue_context_p = rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti);
         if (ue_context_p != NULL) {
           rrc_gNB_free_mem_UE_context(ctxt_pP, ue_context_p);
@@ -1492,15 +1495,16 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                                        CC_id);
             break;
           }
-        }
 
-        if (ue_context_p != NULL) {
           ue_context_p->ue_context.establishment_cause = rrcSetupRequest->establishmentCause;
-        }
 
-        rrc_gNB_generate_RRCSetup(ctxt_pP,
-                                  rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
-                                  CC_id);
+          rrc_gNB_generate_RRCSetup(ctxt_pP,
+                                    rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
+                                    CC_id);
+
+          // FIXME: Check the best place to perform this DRB configuration
+          nr_DRB_preconfiguration(ctxt_pP->rnti);
+        }
         break;
 
       case NR_UL_CCCH_MessageType__c1_PR_rrcResumeRequest:
@@ -1598,7 +1602,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
           }
 #endif
           //c-plane not end
-          if((ue_context_p->ue_context.Status != NR_RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == NR_ReestablishmentCause_spare1)) {
+          if((ue_context_p->ue_context.status != NR_RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == NR_ReestablishmentCause_spare1)) {
             LOG_E(NR_RRC,
                   PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest (UE %x c-plane is not end), RRC establishment failed \n",
                   PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);
@@ -1610,9 +1614,9 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
             LOG_E(NR_RRC,
                   PROTOCOL_NR_RRC_CTXT_UE_FMT" RRRCReconfigurationComplete(Previous) don't receive, delete the Previous UE,\nprevious Status %d, new Status NR_RRC_RECONFIGURED\n",
                   PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-                  ue_context_p->ue_context.Status
+                  ue_context_p->ue_context.status
                   );
-            ue_context_p->ue_context.Status = NR_RRC_RECONFIGURED;
+            ue_context_p->ue_context.status = NR_RRC_RECONFIGURED;
             protocol_ctxt_t  ctxt_old_p;
             PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt_old_p,
                                           ctxt_pP->instance,

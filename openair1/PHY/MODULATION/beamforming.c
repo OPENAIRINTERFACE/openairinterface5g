@@ -44,7 +44,6 @@
  
 #include "PHY/defs_common.h"
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
@@ -145,7 +144,8 @@ int nr_beam_precoding(int32_t **txdataF,
                       int slot,
                       int symbol,
                       int aa,
-                      int nb_antenna_ports)
+                      int nb_antenna_ports,
+                      int offset)
 {
 
 
@@ -155,14 +155,14 @@ int nr_beam_precoding(int32_t **txdataF,
   memset(&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size],0,sizeof(int32_t)*(frame_parms->ofdm_symbol_size));
 
   for (p=0; p<nb_antenna_ports; p++) {
-    if ((frame_parms->L_ssb >> (63-p)) & 0x01)  {
-      multadd_cpx_vector((int16_t*)&txdataF[p][symbol*frame_parms->ofdm_symbol_size],
+    //if ((frame_parms->L_ssb >> (63-p)) & 0x01)  {
+      multadd_cpx_vector((int16_t*)&txdataF[p][(symbol*frame_parms->ofdm_symbol_size)+offset],
 			 (int16_t*)beam_weights[p][aa], 
 			 (int16_t*)&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size], 
 			 0, 
 			 frame_parms->ofdm_symbol_size, 
 			 15);
-    }
+    //}
   }
   return 0;
 }

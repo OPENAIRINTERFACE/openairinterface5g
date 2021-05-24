@@ -37,3 +37,5 @@
   - Build_Image
   - Deploy_Object
   - Undeploy_Object
+  - Cppcheck_Analysis
+  - Deploy_Run_PhySim

@@ -57,14 +57,14 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/threadPool/thread-pool.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
-#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
 #include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
 
+#include <executables/softmodem-common.h>
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
-
 //#define DEBUG_ULSIM
 
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
@@ -81,11 +81,25 @@ uint16_t sl_ahead=0;
 double cpuf;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
+THREAD_STRUCT thread_struct;
+nfapi_ue_release_request_body_t release_rntis;
+msc_interface_t msc_interface;
 
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index,
-                              const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) { return 0; }
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
+                              const int CC_id,
+                              const uint8_t gNB_index,
+                              const frame_t frame,
+                              const sub_frame_t sub_frame,
+                              const rnti_t rnti,
+                              const channel_t channel,
+                              const uint8_t* pduP,
+                              const sdu_size_t pdu_len)
+{
+  return 0;
+}
+
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
                           unsigned short *sdu_lengths,
@@ -184,6 +198,19 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
   return 0;
 }
 
+typedef struct {
+  uint64_t       optmask;   //mask to store boolean config options
+  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
+  tpool_t        Tpool;             // thread pool 
+} nrUE_params_t;
+
+void processSlotTX(void *arg) {}
+
+nrUE_params_t nrUE_params;
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
 // needed for some functions
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
@@ -194,6 +221,7 @@ double s_re0[122880],s_im0[122880],r_re0[122880],r_im0[122880];
 double s_re1[122880],s_im1[122880],r_re1[122880],r_im1[122880];
 double r_re2[122880],r_im2[122880];
 double r_re3[122880],r_im3[122880];
+
 
 int main(int argc, char **argv)
 {
@@ -276,7 +304,7 @@ int main(int argc, char **argv)
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
   }
-
+  int ul_proc_error = 0; // uplink processing checking status flag
   //logInit();
   randominit(0);
 
@@ -593,7 +621,7 @@ int main(int argc, char **argv)
                                 sampling_frequency,
                                 bandwidth,
 				DS_TDL,
-                                0, 0, 0);
+                                0, 0, 0, 0);
 
   if (UE2gNB == NULL) {
     printf("Problem generating channel model. Exiting.\n");
@@ -649,13 +677,7 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc,
-                                  scd,
-				  secondaryCellGroup,
-				  0,
-				  1,
-				  n_tx,
-				  0);
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0);
 
   // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
@@ -666,10 +688,10 @@ int main(int argc, char **argv)
 
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0,n_rx,pusch_tgt_snrx10,pucch_tgt_snrx10,scc,0,0,NULL);
+  rrc_mac_config_req_gNB(0,0,n_tx,n_rx,pusch_tgt_snrx10,pucch_tgt_snrx10,scc,0,0,NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0,1,pusch_tgt_snrx10,pucch_tgt_snrx10,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
-  phy_init_nr_gNB(gNB,0,0);
+  rrc_mac_config_req_gNB(0,0,1,1,pusch_tgt_snrx10,pucch_tgt_snrx10,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
 
 
@@ -794,7 +816,7 @@ int main(int argc, char **argv)
   }
 
   uint8_t  length_dmrs         = pusch_len1;
-  uint16_t l_prime_mask        = get_l_prime(nb_symb_sch, mapping_type, add_pos, length_dmrs);
+  uint16_t l_prime_mask        = get_l_prime(nb_symb_sch, mapping_type, add_pos, length_dmrs, start_symbol, NR_MIB__dmrs_TypeA_Position_pos2);
   uint16_t number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
   uint8_t  nb_re_dmrs          = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
 
@@ -980,7 +1002,7 @@ int main(int argc, char **argv)
       pusch_pdu->transform_precoding = transform_precoding;
       pusch_pdu->data_scrambling_id = *scc->physCellId;
       pusch_pdu->nrOfLayers = 1;
-      pusch_pdu->ul_dmrs_symb_pos = l_prime_mask << start_symbol;
+      pusch_pdu->ul_dmrs_symb_pos = l_prime_mask;
       pusch_pdu->dmrs_config_type = dmrs_config_type;
       pusch_pdu->ul_dmrs_scrambling_id =  *scc->physCellId;
       pusch_pdu->scid = 0;
@@ -1043,7 +1065,7 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.rb_start = start_rb;
       ul_config.ul_config_list[0].pusch_config_pdu.nr_of_symbols = nb_symb_sch;
       ul_config.ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol;
-      ul_config.ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask << start_symbol;
+      ul_config.ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask;
       ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
@@ -1087,6 +1109,11 @@ int main(int argc, char **argv)
 
         phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id);
 
+        /* We need to call common sending function to send signal */
+        LOG_D(PHY, "Sending Uplink data \n");
+        nr_ue_pusch_common_procedures(UE,
+                                      slot,
+                                      &UE->frame_parms,1);
 
         if (n_trials==1) {
           LOG_M("txsig0.m","txs0", UE->common_vars.txdata[0],frame_parms->samples_per_subframe*10,1,1);
@@ -1156,10 +1183,9 @@ int main(int argc, char **argv)
 	gNB->UL_INFO.rx_ind.number_of_pdus = 0;
 	gNB->UL_INFO.crc_ind.number_crcs = 0;
 
-        start_meas(&gNB->phy_proc_rx);
         phy_procedures_gNB_common_RX(gNB, frame, slot);
 
-        phy_procedures_gNB_uespec_RX(gNB, frame, slot);
+        ul_proc_error = phy_procedures_gNB_uespec_RX(gNB, frame, slot);
 
 	if (n_trials==1 && round==0) {
 	  LOG_M("rxsig0.m","rx0",&gNB->common_vars.rxdata[0][slot_offset],slot_length,1,1);
@@ -1188,11 +1214,10 @@ int main(int argc, char **argv)
 	  LOG_M("rxsigF0_llr.m","rxsF0_llr",
 		&gNB->pusch_vars[0]->llr[0],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
 	}
-        start_meas(&gNB->phy_proc_rx);
         ////////////////////////////////////////////////////////////
-	
-	if (gNB->ulsch[0][0]->last_iteration_cnt >= 
-	    gNB->ulsch[0][0]->max_ldpc_iterations+1) {
+
+	if ((gNB->ulsch[0][0]->last_iteration_cnt >=
+	    gNB->ulsch[0][0]->max_ldpc_iterations+1) || ul_proc_error == 1) {
 	  error_flag = 1; 
 	  n_errors[round]++;
 	  crc_status = 1;
