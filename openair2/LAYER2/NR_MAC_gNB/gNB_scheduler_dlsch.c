@@ -453,7 +453,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
   int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-  const uint8_t num_dmrs_cdm_grps_no_data = ps->nrOfSymbols == 2 ? 1 : 2;
+  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+  const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
 
   int rbSize = 0;
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
