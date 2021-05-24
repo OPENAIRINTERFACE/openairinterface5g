@@ -621,10 +621,11 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     } else if (*dci_format == NR_UL_DCI_FORMAT_0_1) {
 
       /* BANDWIDTH_PART_IND */
-      if (dci->bwp_indicator.val != 1) {
-        LOG_W(MAC, "bwp_indicator != 1! Possibly due to false DCI. Ignoring DCI!\n");
-        return -1;
-      }
+      //Abhi : why must BWP always be 1 ?
+      // if (dci->bwp_indicator.val != 1) {
+      //   LOG_W(MAC, "bwp_indicator != 1! Possibly due to false DCI. Ignoring DCI!\n");
+      //   return -1;
+      // }
       config_bwp_ue(mac, &dci->bwp_indicator.val, dci_format);
       target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
       ul_layers_config(mac, pusch_config_pdu, dci);

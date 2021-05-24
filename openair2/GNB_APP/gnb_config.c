@@ -326,16 +326,26 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
 }
 
 /* Function to allocate dedicated serving cell config strutures */
+//Abhi : error at this function : when adding for loop to add new elements of downlinkBWP-ToAddModList. 
 void prepare_scd(NR_ServingCellConfig_t *scd) {
   // Allocate downlink structures
-
   scd->downlinkBWP_ToAddModList = CALLOC(1, sizeof(*scd->downlinkBWP_ToAddModList));
-
+  scd->uplinkConfig = CALLOC(1, sizeof(*scd->uplinkConfig));
+  scd->bwp_InactivityTimer = CALLOC(1, sizeof(*scd->bwp_InactivityTimer));
+  scd->uplinkConfig->firstActiveUplinkBWP_Id  = CALLOC(1, sizeof(*scd->uplinkConfig->firstActiveUplinkBWP_Id));
+  scd->uplinkConfig->uplinkBWP_ToAddModList = CALLOC(1, sizeof(*scd->uplinkConfig->uplinkBWP_ToAddModList));
+  scd->firstActiveDownlinkBWP_Id = CALLOC(1, sizeof(*scd->firstActiveDownlinkBWP_Id));
+for (int j = 0 ;j < 4 ; j++)
+{
+  
   // Downlink bandwidth part
   NR_BWP_Downlink_t *bwp = calloc(1, sizeof(*bwp));
   bwp->bwp_Id = 1;
 
   // Allocate downlink dedicated bandwidth part and PDSCH structures
+  bwp->bwp_Common = calloc(1, sizeof(*bwp->bwp_Common));
+  bwp->bwp_Common->pdcch_ConfigCommon = calloc(1, sizeof(*bwp->bwp_Common->pdcch_ConfigCommon));
+  bwp->bwp_Common->pdsch_ConfigCommon = calloc(1, sizeof(*bwp->bwp_Common->pdsch_ConfigCommon));
   bwp->bwp_Dedicated = calloc(1, sizeof(*bwp->bwp_Dedicated));
   bwp->bwp_Dedicated->pdsch_Config = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config));
   bwp->bwp_Dedicated->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
@@ -353,6 +363,7 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->frequencyDensity));
   long *dl_rbs = CALLOC(2, sizeof(long));
   for (int i=0;i<2;i++) {
+    dl_rbs[i]=1;
     ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->frequencyDensity->list, &dl_rbs[i]);
   }
   NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->timeDensity));
@@ -366,9 +377,6 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   ASN_SEQUENCE_ADD(&scd->downlinkBWP_ToAddModList->list,bwp);
 
   // Allocate uplink structures
-
-  scd->uplinkConfig = CALLOC(1, sizeof(*scd->uplinkConfig));
-  scd->uplinkConfig->uplinkBWP_ToAddModList = CALLOC(1, sizeof(*scd->uplinkConfig->uplinkBWP_ToAddModList));
 
   NR_PUSCH_Config_t *pusch_Config = CALLOC(1, sizeof(*pusch_Config));
 
@@ -385,6 +393,7 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity));
   long *n_rbs = CALLOC(2, sizeof(long));
   for (int i=0;i<2;i++) {
+    n_rbs[i] = 1;
     ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity->list, &n_rbs[i]);
   }
   NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity));
@@ -398,6 +407,7 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   // UL bandwidth part
   NR_BWP_Uplink_t *ubwp = CALLOC(1, sizeof(*ubwp));
   ubwp->bwp_Id = 1;
+  ubwp->bwp_Common = CALLOC(1, sizeof(*ubwp->bwp_Common));
   ubwp->bwp_Dedicated = CALLOC(1, sizeof(*ubwp->bwp_Dedicated));
 
   ubwp->bwp_Dedicated->pusch_Config = CALLOC(1, sizeof(*ubwp->bwp_Dedicated->pusch_Config));
@@ -405,6 +415,7 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   ubwp->bwp_Dedicated->pusch_Config->choice.setup = pusch_Config;
 
   ASN_SEQUENCE_ADD(&scd->uplinkConfig->uplinkBWP_ToAddModList->list,ubwp);
+}
 }
 
 /* This function checks dedicated serving cell configuration and performs fixes as needed */ 
@@ -825,6 +836,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   memset((void*)scd,0,sizeof(NR_ServingCellConfig_t));
   prepare_scd(scd);
   paramdef_t SCDsParams[] = SCDPARAMS_DESC(scd);
+  printf("RRC BWP 0: %d", scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Id);
+  printf("RRC BWP 1: %d", scd->downlinkBWP_ToAddModList->list.array[1]->bwp_Id);
   paramlist_def_t SCDsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, NULL, 0};
    ////////// Physical parameters
 
@@ -906,13 +919,14 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
     if (SCDsParamList.numelt > 0) {    
       sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, 0);
       config_get( SCDsParams,sizeof(SCDsParams)/sizeof(paramdef_t),aprefix);  
-      LOG_I(RRC,"Read in ServingCellConfigDedicated UL (FreqDensity_0 %d, FreqDensity_1 %d, TimeDensity_0 %d, TimeDensity_1 %d, TimeDensity_2 %d, RE offset %d \n",
+      LOG_I(RRC,"Read in ServingCellConfigDedicated UL (FreqDensity_0 %d, FreqDensity_1 %d, TimeDensity_0 %d, TimeDensity_1 %d, TimeDensity_2 %d, RE offset %d, BWP_ID %d \n",
       (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->frequencyDensity->list.array[0],
       (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->frequencyDensity->list.array[1],
       (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[0],
       (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[1],
       (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[2],
-      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->resourceElementOffset);
+      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->resourceElementOffset,
+      (int)*scd->firstActiveDownlinkBWP_Id);
     }
     fix_scd(scd);
 

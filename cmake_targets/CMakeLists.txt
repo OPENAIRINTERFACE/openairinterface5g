@@ -396,7 +396,7 @@ add_definitions("-DPACKAGE_BUGREPORT=\"openair4g-devel@lists.eurecom.fr\"")
 
 # Debug related options
 #########################################
-add_boolean_option(ASN_DEBUG           False "ASN1 coder/decoder Debug")
+add_boolean_option(ASN_DEBUG           True "ASN1 coder/decoder Debug")
 add_boolean_option(EMIT_ASN_DEBUG      False "ASN1 coder/decoder Debug")
 add_boolean_option(MSG_PRINT           False "print debug messages")
 add_boolean_option(DISABLE_XER_PRINT   False "print XER Format")

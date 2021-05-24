@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set (  CMAKE_BUILD_TYPE "RelWithDebInfo" )
-set (  ASN_DEBUG False)
+set (  ASN_DEBUG True)
 set (  DEBUG_OMG False )
 set (  DISABLE_XER_PRINT False )
 set (  DRIVER2013 True )

@@ -819,8 +819,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(MAC,
-          "%4d.%2d RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d\n",
+    LOG_I(MAC,
+          "%4d.%2d RNTI %04x start %d RBs %d startSymbol %d nb_symbsol %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
           frame,
           slot,
           rnti,
@@ -952,11 +952,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_pdu_rel15_t dci_payload;
     memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
     // bwp indicator
+    
     const int n_dl_bwp = UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
-      AssertFatal(n_dl_bwp == 1,
-          "downlinkBWP_ToAddModList has %d BWP!\n",
-          n_dl_bwp);
+      // AssertFatal(n_dl_bwp == 1,
+      //     "downlinkBWP_ToAddModList has %d BWP!\n",
+      //     n_dl_bwp);
     // as per table 7.3.1.1.2-1 in 38.212
+    // Abhi :look into this
     dci_payload.bwp_indicator.val = n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1;
     AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");

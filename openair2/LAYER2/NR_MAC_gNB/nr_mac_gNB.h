@@ -72,7 +72,7 @@
 
 
 /* Defs */
-#define MAX_NUM_BWP 2
+#define MAX_NUM_BWP 4
 #define MAX_NUM_CORESET 2
 #define MAX_NUM_CCE 90
 #define MAX_HARQ_ROUNDS 4

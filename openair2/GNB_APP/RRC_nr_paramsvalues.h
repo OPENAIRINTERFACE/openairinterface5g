@@ -228,6 +228,16 @@
 #define GNB_CONFIG_STRING_ULPTRSREOFFSET_0                               "ul_ptrsReOffset_0"
 #define GNB_CONFIG_STRING_ULPTRSMAXPORTS_0                               "ul_ptrsMaxPorts_0"
 #define GNB_CONFIG_STRING_ULPTRSPOWER_0                                  "ul_ptrsPower_0"
+#define GNB_CONFIG_STRING_FIRSTACTIVEDLBWP_ID                            "firstActiveDownlinkBWP-Id"
+#define GNB_CONFIG_STRING_BWP_ID_0                                       "bwp-Id_0"
+#define GNB_CONFIG_STRING_BWP_ID_1                                       "bwp-Id_1"
+#define GNB_CONFIG_STRING_LOCATIONANDBANDWIDTH_0                         "locationAndBandwidth_0"
+#define GNB_CONFIG_STRING_LOCATIONANDBANDWIDTH_1                         "locationAndBandwidth_1"
+#define GNB_CONFIG_STRING_SCS_0                                          "subcarrierSpacing_0"
+#define GNB_CONFIG_STRING_SCS_1                                          "subcarrierSpacing_1"
+#define GNB_CONFIG_STRING_DEFAULTDLBWP_ID                                "defaultDownlinkBWP-Id"
+#define GNB_CONFIG_STRING_FIRSTACTIVEULBWP_ID                            "firstActiveUplinkBWP-Id"
+
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*                                            pdcch_ConfigSIB1 parameters                                             */
@@ -432,7 +442,11 @@
 {GNB_CONFIG_STRING_ULPTRSTIMEDENSITY2_0,NULL,0,i64ptr:scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[2],defint64val:-1,TYPE_INT64,0}, \
 {GNB_CONFIG_STRING_ULPTRSREOFFSET_0,NULL,0,i64ptr:scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->resourceElementOffset,defint64val:-1,TYPE_INT64,0}, \
 {GNB_CONFIG_STRING_ULPTRSMAXPORTS_0,NULL,0,i64ptr:&scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->maxNrofPorts,defint64val:0,TYPE_INT64,0}, \
-{GNB_CONFIG_STRING_ULPTRSPOWER_0,NULL,0,i64ptr:&scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->ptrs_Power,defint64val:0,TYPE_INT64,0}}
+{GNB_CONFIG_STRING_ULPTRSPOWER_0,NULL,0,i64ptr:&scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->ptrs_Power,defint64val:0,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_FIRSTACTIVEDLBWP_ID,NULL,0,i64ptr:scd->firstActiveDownlinkBWP_Id,defint64val:0,TYPE_INT64,0}, \
+{GNB_CONFIG_STRING_FIRSTACTIVEULBWP_ID,NULL,0,i64ptr:scd->uplinkConfig->firstActiveUplinkBWP_Id,defint64val:0,TYPE_INT64,0}} //, \
+{GNB_CONFIG_STRING_BWP_ID_0,NULL,0,i64ptr:scd->downlinkBWP_ToAddModList->list.array[0].bwp_Id,defint64val:0,TYPE_INT64,0}}//, \
+{GNB_CONFIG_STRING_BWP_ID_1,NULL,0,i64ptr:scd->downlinkBWP_ToAddModList->list.array[1]->bwp_Id,defint64val:0,TYPE_INT64,0}}
 
 
 
