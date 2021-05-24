@@ -1081,7 +1081,13 @@ pdcp_data_ind(
               pdcpHead->inst  = 1;
             }
           } // nfapi_mode
-        }
+        } else {
+	  if (UE_NAS_USE_TUN) {
+	    pdcpHead->inst  = ctxt_pP->module_id;
+	  } else if (ENB_NAS_USE_TUN) {
+	    pdcpHead->inst  = 0;
+	  }
+	}
       } else {
         pdcpHead->rb_id = rb_id + (ctxt_pP->module_id * LTE_maxDRB);
         pdcpHead->inst  = ctxt_pP->module_id;

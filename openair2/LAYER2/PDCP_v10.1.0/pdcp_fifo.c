@@ -43,6 +43,7 @@ extern int otg_enabled;
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <netinet/ip.h>
 #define rtf_put write
 #define rtf_get read
 
@@ -222,7 +223,11 @@ int pdcp_fifo_read_input_sdus_fromtun (const protocol_ctxt_t *const  ctxt_pP) {
       key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
       h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
     } else { // => ENB_NAS_USE_TUN
-      ctxt.rnti=pdcp_eNB_UE_instance_to_rnti[0];
+      /* Get the IP from a packet */
+      struct ip *ip_pack = (struct ip *) nl_rx_buf;
+      /* Use last octet of destination IP to get index of UE */
+      int ue_indx = ((ip_pack->ip_dst.s_addr >> 24) -  2) % MAX_MOBILES_PER_ENB;
+      ctxt.rnti=pdcp_eNB_UE_instance_to_rnti[ue_indx];
       ctxt.enb_flag=ENB_FLAG_YES;
       ctxt.module_id=0;
       key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
