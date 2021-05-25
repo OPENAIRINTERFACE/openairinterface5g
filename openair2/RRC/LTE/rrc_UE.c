@@ -1771,8 +1771,10 @@ rrc_ue_process_nrueCapabilityEnquiry(
                      enc_rval_nr.failed_type->name, enc_rval_nr.encoded);
         enc_rval.encoded = enc_rval.encoded + enc_rval_nr.encoded;
         xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
+        LOG_A(RRC, "%s: NR_UECapInfo LTE_RAT_Type_nr Encoded %zd bits (%zd bytes)\n",
+              __FUNCTION__, enc_rval.encoded, (enc_rval.encoded+7)/8);
     }
-    if (*cap_req->list.array[i] == LTE_RAT_Type_eutra_nr) {
+    else if (*cap_req->list.array[i] == LTE_RAT_Type_eutra_nr) {
         ASN_SEQUENCE_ADD(&ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
                          &ue_CapabilityRAT_Container_mrdc);
         ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type = LTE_RAT_Type_eutra_nr;
@@ -1781,19 +1783,17 @@ rrc_ue_process_nrueCapabilityEnquiry(
                      enc_rval_eutra_nr.failed_type->name, enc_rval_eutra_nr.encoded);
         enc_rval.encoded = enc_rval.encoded + enc_rval_eutra_nr.encoded;
         xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
+        LOG_A(RRC, "%s: NR_UECapInfo LTE_RAT_Type_eutra_nr Encoded %zd bits (%zd bytes)\n",
+              __FUNCTION__, enc_rval.encoded, (enc_rval.encoded+7)/8);
     }
-    if (enc_rval.encoded > 0) {
-      LOG_A(RRC, "%s: NR_UECapabilityInformation Encoded %zd bits (%zd bytes)\n",
-            __FUNCTION__, enc_rval.encoded, (enc_rval.encoded+7)/8);
-      rrc_data_req_ue (
-        ctxt_pP,
-        DCCH,
-        rrc_mui++,
-        SDU_CONFIRM_NO,
-        (enc_rval.encoded + 7) / 8,
-        buffer,
-        PDCP_TRANSMISSION_MODE_CONTROL);
-    }
+    rrc_data_req_ue (
+      ctxt_pP,
+      DCCH,
+      rrc_mui++,
+      SDU_CONFIRM_NO,
+      (enc_rval.encoded + 7) / 8,
+      buffer,
+      PDCP_TRANSMISSION_MODE_CONTROL);
   }
 }
 
