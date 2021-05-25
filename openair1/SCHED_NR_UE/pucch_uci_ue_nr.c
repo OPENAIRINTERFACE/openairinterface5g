@@ -937,10 +937,10 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   int N_m_c_rx = 0;
   int V_DAI_m_DL = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+  if (mac->DLbwp[dl_bwp_id-1] == NULL) return 0;
 
-  if (mac->DLbwp[0] == NULL) return 0;
-
-  if (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0] == 2) {
+  if (mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0] == 2) {
     two_transport_blocks = TRUE;
     number_of_code_word = 2;
   }
@@ -1018,7 +1018,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
    N_m_c_rx = number_harq_feedback;
    int N_SPS_c = 0; /* FFS TODO_NR multicells and SPS are not supported at the moment */
    if (mac->scg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH == NULL) {
-     int N_TB_max_DL = mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0];
+     int N_TB_max_DL = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0];
      *n_HARQ_ACK = (((V_DAI_m_DL - U_DAI_c)%4) * N_TB_max_DL) + N_m_c_rx + N_SPS_c;
      NR_TST_PHY_PRINTF("PUCCH power n(%d) = ( V(%d) - U(%d) )mod4 * N_TB(%d) + N(%d) \n", *n_HARQ_ACK, V_DAI_m_DL, U_DAI_c, N_TB_max_DL, N_m_c_rx);
    }

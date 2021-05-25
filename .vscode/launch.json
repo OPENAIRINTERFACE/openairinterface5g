@@ -9,12 +9,12 @@
                 "name": "(gdb) Launch UE PHY Simu",
                 "type": "cppdbg",
                 "request": "launch",
-                "program": "/home/spclab/SCS60/openairinterface5g/cmake_targets/ran_build/build/nr-uesoftmodem",
+                "program": "/home/spclab/SCS60/rem/openairinterface5g/cmake_targets/ran_build/build/nr-uesoftmodem",
                 "args": ["--rfsimulator.serveraddr","127.0.0.1",
                     "--rfsim",
                      "--phy-test",
                      
-                     "--rrc_config_path" ,"/home/spclab/SCS60/openairinterface5g/cmake_targets/ran_build/build"
+                     "--rrc_config_path" ,"/home/spclab/SCS60/rem/openairinterface5g/cmake_targets/ran_build/build"
                     ],
                 "stopAtEntry": false,
                 "cwd": "${workspaceFolder}",
@@ -34,12 +34,12 @@
                 "name": "(gdb) Launch UE RA",
                 "type": "cppdbg",
                 "request": "launch",
-                "program": "/home/spclab/SCS60/openairinterface5g/cmake_targets/ran_build/build/nr-uesoftmodem",
+                "program": "/home/spclab/SCS60/rem/openairinterface5g/cmake_targets/ran_build/build/nr-uesoftmodem",
                 "args": ["--rfsimulator.serveraddr","127.0.0.1",
                     "--rfsim",
                      "--do-ra",
                      
-                     "--rrc_config_path" ,"/home/spclab/SCS60/openairinterface5g/cmake_targets/ran_build/build"
+                     "--rrc_config_path" ,"/home/spclab/SCS60/rem/openairinterface5g/cmake_targets/ran_build/build"
                     ],
                 "stopAtEntry": false,
                 "cwd": "${workspaceFolder}",
@@ -59,9 +59,9 @@
                 "name": "(gdb) Launch gNB PHY Simu",
                 "type": "cppdbg",
                 "request": "launch",
-                "program": "/home/spclab/SCS60/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem",
+                "program": "/home/spclab/SCS60/rem/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem",
                 "args": ["--rfsimulator.serveraddr","server","-O",
-                    "/home/spclab/SCS60/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf",
+                    "/home/spclab/SCS60/rem/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf",
                     "--rfsim",
                     "--phy-test"
                     ],
@@ -83,9 +83,9 @@
                 "name": "(gdb) Launch gNB RA",
                 "type": "cppdbg",
                 "request": "launch",
-                "program": "/home/spclab/SCS60/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem",
+                "program": "/home/spclab/SCS60/rem/openairinterface5g/cmake_targets/ran_build/build/nr-softmodem",
                 "args": ["--rfsimulator.serveraddr","server","-O",
-                    "/home/spclab/SCS60/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf",
+                    "/home/spclab/SCS60/rem/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf",
                     "--rfsim",
                     "--do-ra"
                     ],
@@ -102,27 +102,7 @@
                         "ignoreFailures": true
                     }
                 ]
-            },
-            {
-                "name": "(gdb) dlsim",
-                "type": "cppdbg",
-                "request": "launch",
-                "program": "/home/spclab/SCS60/openairinterface5g/cmake_targets/phy_simulators/build/nr_dlsim",
-                "args": ["-n", "4", "-m", "2"
-                    ],
-                "stopAtEntry": false,
-                "cwd": "${workspaceFolder}",
-                "environment": [],
-                "externalConsole": false,
-                "MIMode": "gdb",    
-                "miDebuggerPath": "/usr/bin/gdb",
-                "setupCommands": [
-                    {
-                        "description": "Enable pretty-printing for gdb",
-                        "text": "-enable-pretty-printing",
-                        "ignoreFailures": true
-                    }
-                ]
             }
+            
     ]
 }
