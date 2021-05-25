@@ -6695,7 +6695,6 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_id,
                                            ENB_FLAG_NO, info->rnti,
                                            0, 0, eNB_index);
-            LOG_I(RRC, "Melissa this is the t_id %d\n", t_id);
             rrc_ue_generate_RRCConnectionReconfigurationComplete(&ctxt, ctxt.eNB_index, t_id, &rrcConfigurationComplete);
             break;
         }
