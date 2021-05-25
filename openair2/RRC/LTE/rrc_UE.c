@@ -853,6 +853,7 @@ rrc_ue_process_measConfig(
           LOG_D(RRC, "Adding measurement object [%d][%ld]\n", eNB_index, ind);
           ue->MeasObj[eNB_index][ind-1]=measObj;
         }
+        measConfig->measObjectToAddModList->list.array[i] = NULL;
     }
 
     LOG_I(RRC,"call rrc_mac_config_req \n");
@@ -909,6 +910,7 @@ rrc_ue_process_measConfig(
         LOG_D(RRC,"Adding ReportConfig [%d][%ld]\n", eNB_index, ind-1);
         ue->ReportConfig[eNB_index][ind-1] = measConfig->reportConfigToAddModList->list.array[i];
       }
+      measConfig->reportConfigToAddModList->list.array[i] = NULL;
     }
   }
 
@@ -922,6 +924,7 @@ rrc_ue_process_measConfig(
       LOG_D(RRC,"Adding Quantity configuration\n");
       ue->QuantityConfig[eNB_index] = measConfig->quantityConfig;
     }
+    measConfig->quantityConfig = NULL;
   }
 
   if (measConfig->measIdToRemoveList != NULL) {
@@ -946,6 +949,7 @@ rrc_ue_process_measConfig(
         LOG_I(RRC,"Adding Measurement ID [%d][%ld]\n", eNB_index, ind-1);
         ue->MeasId[eNB_index][ind-1] = measConfig->measIdToAddModList->list.array[i];
       }
+      measConfig->measIdToAddModList->list.array[i] = NULL;
     }
   }
 
@@ -957,6 +961,7 @@ rrc_ue_process_measConfig(
     } else {
       ue->measGapConfig[eNB_index] = measConfig->measGapConfig;
     }
+    measConfig->measGapConfig = NULL;
   }
 
   if (measConfig->quantityConfig != NULL) {
@@ -969,6 +974,7 @@ rrc_ue_process_measConfig(
       LOG_I(RRC,"Adding Quantity configuration\n");
       ue->QuantityConfig[eNB_index] = measConfig->quantityConfig;
     }
+    measConfig->quantityConfig = NULL;
 
     ue->filter_coeff_rsrp = 1./pow(2,
         (*ue->QuantityConfig[eNB_index]->quantityConfigEUTRA->filterCoefficientRSRP)/4);
@@ -985,6 +991,7 @@ rrc_ue_process_measConfig(
   if (measConfig->s_Measure != NULL) {
     ue->s_measure = *measConfig->s_Measure;
   }
+  measConfig->s_Measure = NULL;
 
   if (measConfig->speedStatePars != NULL) {
     if (ue->speedStatePars) {
@@ -992,6 +999,7 @@ rrc_ue_process_measConfig(
     } else {
       ue->speedStatePars = measConfig->speedStatePars;
     }
+    measConfig->speedStatePars = NULL;
 
     LOG_I(RRC,"[UE %d] Configuring mobility optimization params for UE %d \n",
           ctxt_pP->module_id,ue->Info[0].UE_index);
@@ -1205,6 +1213,7 @@ rrc_ue_process_radioResourceConfigDedicated(
       LOG_I(RRC,"Init physicalConfigDedicated UE_rrc_inst to radioResourceConfigDedicated->physicalConfigDedicated\n");
       UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index] = radioResourceConfigDedicated->physicalConfigDedicated;
     }
+    radioResourceConfigDedicated->physicalConfigDedicated = NULL;
   }
 
   // Apply macMainConfig if present
@@ -1227,6 +1236,7 @@ rrc_ue_process_radioResourceConfigDedicated(
     } else {
       UE_rrc_inst[ctxt_pP->module_id].sps_Config[eNB_index] = radioResourceConfigDedicated->sps_Config;
     }
+    radioResourceConfigDedicated->sps_Config = NULL;
   }
 
   // Establish SRBs if present
@@ -1275,7 +1285,7 @@ rrc_ue_process_radioResourceConfigDedicated(
         } else {
           UE_rrc_inst[ctxt_pP->module_id].SRB1_config[eNB_index] = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt];
           rrc_ue_establish_srb1(ctxt_pP->module_id,ctxt_pP->frame,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
-
+          radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt] = NULL;
           if (UE_rrc_inst[ctxt_pP->module_id].SRB1_config[eNB_index]->logicalChannelConfig) {
             if (UE_rrc_inst[ctxt_pP->module_id].SRB1_config[eNB_index]->logicalChannelConfig->present == LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
               SRB1_logicalChannelConfig = &UE_rrc_inst[ctxt_pP->module_id].SRB1_config[eNB_index]->logicalChannelConfig->choice.explicitValue;
@@ -1323,7 +1333,7 @@ rrc_ue_process_radioResourceConfigDedicated(
         } else {
           UE_rrc_inst[ctxt_pP->module_id].SRB2_config[eNB_index] = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt];
           rrc_ue_establish_srb2(ctxt_pP->module_id,ctxt_pP->frame,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
-
+          radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt] = NULL;
           if (UE_rrc_inst[ctxt_pP->module_id].SRB2_config[eNB_index]->logicalChannelConfig) {
             if (UE_rrc_inst[ctxt_pP->module_id].SRB2_config[eNB_index]->logicalChannelConfig->present == LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
               LOG_I(RRC,"Applying Explicit SRB2 logicalChannelConfig\n");
@@ -1432,6 +1442,7 @@ rrc_ue_process_radioResourceConfigDedicated(
               radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity,
               eNB_index,
               ctxt_pP->module_id);
+        radioResourceConfigDedicated->drb_ToAddModList->list.array[i] = NULL;
         rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
                               (LTE_RadioResourceConfigCommonSIB_t *)NULL,
                               UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
@@ -1981,6 +1992,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
         rrc_ue_process_measConfig(ctxt_pP,
                                   eNB_index,
                                   r_r8->measConfig);
+        r_r8->measConfig = NULL;
       }
 
       if (r_r8->radioResourceConfigDedicated) {
@@ -1988,6 +2000,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
         rrc_ue_process_radioResourceConfigDedicated(ctxt_pP,
                                                     eNB_index,
                                                     r_r8->radioResourceConfigDedicated);
+        r_r8->radioResourceConfigDedicated = NULL;
       }
 
       //TTN for D2D
@@ -2437,6 +2450,12 @@ rrc_ue_decode_dcch(
             send_ue_information ++;
           }
 
+          UE_RRC_INFO *info = &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_indexP];
+          if (info->dl_dcch_msg != NULL) {
+              SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, info->dl_dcch_msg, ASFM_FREE_EVERYTHING);
+          }
+          info->dl_dcch_msg = dl_dcch_msg;
+          dl_dcch_msg = NULL;
           break;
 
         case LTE_DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
@@ -6559,6 +6578,7 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
     bool received_nr_msg = true;
     protocol_ctxt_t ctxt;
     module_id_t module_id = 0;
+    eNB_index_t eNB_index = 0;
 
     switch (msg_type)
     {
@@ -6573,7 +6593,7 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             AssertFatal(msg_len <= sizeof(nrue_cap_buf->mesg), "msg_len = %d\n", msg_len);
             memcpy(nrue_cap_buf->mesg, msg_buffer, msg_len);
             nrue_cap_buf->mesg_len = msg_len;
-            UE_RRC_INFO *info = &UE_rrc_inst[module_id].Info[0];
+            UE_RRC_INFO *info = &UE_rrc_inst[module_id].Info[eNB_index];
             nrue_cap_buf->dl_dcch_msg = info->dl_dcch_msg;
             info->dl_dcch_msg = NULL;
             message_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_NRUE_CAP_INFO_IND);
@@ -6581,7 +6601,7 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             RRC_NRUE_CAP_INFO_IND (message_p).sdu_size = sizeof(*nrue_cap_buf);
             RRC_NRUE_CAP_INFO_IND (message_p).module_id = module_id;
             RRC_NRUE_CAP_INFO_IND (message_p).rnti = info->rnti;
-            RRC_NRUE_CAP_INFO_IND (message_p).eNB_index = 0;
+            RRC_NRUE_CAP_INFO_IND (message_p).eNB_index = eNB_index;
             itti_send_msg_to_task (TASK_RRC_UE, 0, message_p);
             LOG_I(RRC, "Sent itti RRC_NRUE_CAP_INFO_IND\n");
             break;
@@ -6604,7 +6624,7 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             rrc_dcch_data_copy_t *dl_dcch_buffer = itti_malloc (TASK_RRC_NSA_UE,
                                                                 TASK_RRC_UE,
                                                                 sizeof(rrc_dcch_data_copy_t));
-            UE_RRC_INFO *info = &UE_rrc_inst[module_id].Info[0];
+            UE_RRC_INFO *info = &UE_rrc_inst[module_id].Info[eNB_index];
             dl_dcch_buffer->dl_dcch_msg = info->dl_dcch_msg;
             info->dl_dcch_msg = NULL;
             message_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_DCCH_DATA_COPY_IND);
@@ -6612,7 +6632,7 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             RRC_DCCH_DATA_COPY_IND (message_p).sdu_size = sizeof(rrc_dcch_data_copy_t);
             RRC_DCCH_DATA_COPY_IND (message_p).module_id = module_id;
             RRC_DCCH_DATA_COPY_IND (message_p).rnti = info->rnti;
-            RRC_DCCH_DATA_COPY_IND (message_p).eNB_index = 0;
+            RRC_DCCH_DATA_COPY_IND (message_p).eNB_index = eNB_index;
             itti_send_msg_to_task (TASK_RRC_UE, 0, message_p);
             LOG_I(RRC, "Sent itti RRC_DCCH_DATA_COPY_IND\n");
             break;
@@ -6669,17 +6689,14 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
             OCTET_STRING_fromBuf(&rrcConfigurationComplete,
                                 (const char *)msg_buffer,
                                 msg_len);
-            #if 0 //Melissa, this is a hack. We need the transaction_id from latest dl_dcch_msg the LTE UE received. (Ln 6658)
-            LTE_RRCConnectionReconfiguration_t *rrc_saved = &UE_rrc_inst[ctxt.module_id].Info[0].dl_dcch_msg->message.
-                                                            choice.c1.choice.rrcConnectionReconfiguration;
-            uint8_t t_id = rrc_saved->rrc_TransactionIdentifier;
-            rrc_saved = NULL;
-            #endif
-            UE_RRC_INFO *info = &UE_rrc_inst[module_id].Info[0];
+            UE_RRC_INFO *info = &UE_rrc_inst[module_id].Info[eNB_index];
+            uint8_t t_id = info->dl_dcch_msg->message.choice.c1.choice.
+                           rrcConnectionReconfiguration.rrc_TransactionIdentifier;
             PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_id,
                                            ENB_FLAG_NO, info->rnti,
-                                           0, 0, 0);
-            rrc_ue_generate_RRCConnectionReconfigurationComplete(&ctxt, ctxt.eNB_index, 0, &rrcConfigurationComplete);
+                                           0, 0, eNB_index);
+            LOG_I(RRC, "Melissa this is the t_id %d\n", t_id);
+            rrc_ue_generate_RRCConnectionReconfigurationComplete(&ctxt, ctxt.eNB_index, t_id, &rrcConfigurationComplete);
             break;
         }
         default:
