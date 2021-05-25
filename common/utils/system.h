@@ -58,6 +58,14 @@ void thread_top_init(char *thread_name,
                      uint64_t deadline,
                      uint64_t period);
 
+/****************************************************
+ * Functions to check system at runtime.
+ ****************************************************/
+
+int checkIfFedoraDistribution(void);
+int checkIfGenericKernelOnFedora(void);
+int checkIfInsideContainer(void);
+
 #ifdef __cplusplus
 }
 #endif
