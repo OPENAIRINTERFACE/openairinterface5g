@@ -43,8 +43,12 @@ extern RAN_CONTEXT_t RC;
 int nrb_lut[29] = {11, 18, 24, 25, 31, 32, 38, 51, 52, 65, 66, 78, 79, 93, 106, 107, 121, 132, 133, 135, 160, 162, 189, 216, 217, 245, 264, 270, 273};
 
 int to_NRNRB(int nrb) {
-  for (int i=0;i<29;i++) if (nrb_lut[i] == nrb) return i;
-  AssertFatal(1==0,"nrb %d is not in the list of possible NRNRB\n",nrb);
+  if (RC.nrrrc) {
+    for (int i=0;i<29;i++) if (nrb_lut[i] == nrb) return i;
+    AssertFatal(1==0,"nrb %d is not in the list of possible NRNRB\n",nrb);
+  } else {
+    return nrb;
+  }
 }
 
 int DU_handle_RESET(instance_t instance,
