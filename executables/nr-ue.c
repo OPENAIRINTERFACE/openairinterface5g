@@ -97,6 +97,8 @@ typedef enum {
   si = 2
 } sync_mode_t;
 
+static void *NRUE_phy_stub_standalone_pnf_task(void *arg);
+
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
                      uint8_t UE_id,
                      uint8_t abstraction_flag)
@@ -136,12 +138,15 @@ void init_nrUE_standalone_thread(int ue_idx)
     LOG_E(NR_MAC, "pthread_create failed for calling nrue_standalone_pnf_task");
   }
   pthread_setname_np(thread, "oai:nrue-stand");
+  pthread_t phy_thread;
+  if (pthread_create(&phy_thread, NULL, NRUE_phy_stub_standalone_pnf_task, NULL) != 0) {
+    LOG_E(NR_MAC, "pthread_create failed for calling NRUE_phy_stub_standalone_pnf_task");
+  }
+  pthread_setname_np(phy_thread, "oai:nrue-stand-phy");
 }
 
-#if 0
 static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 {
-  int current_sfn_slot;
   sem_t sfn_slot_semaphore;
   int last_sfn_slot = -1;
   while (!oai_exit)
@@ -156,57 +161,41 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     if (sfn_slot == last_sfn_slot)
     {
       LOG_W(NR_MAC, "repeated sfn_sf = %d.%d\n",
-            sfn_slot >> 4, sfn_slot & 15);
+            sfn_slot >> 6, sfn_slot & 0x3F);
       continue;
     }
     last_sfn_slot = sfn_slot;
 
-    struct rx_tx_thread_data *rtd = arg;
-    if (rtd == NULL) {
-      LOG_E(MAC, "[SCHED][UE] rx_tx_thread_data *rtd: NULL pointer\n");
-      exit_fun("nothing to add");
-    }
-    UE_nr_rxtx_proc_t *proc = rtd->proc;
-    PHY_VARS_NR_UE *UE = NULL;
-    proc = &PHY_vars_UE_g[0][0]->proc;
-    int frame_tx = proc->frame_tx;
-    int nr_slot_tx = proc->nr_slot_tx;
-    uint8_t mod_id = UE->Mod_id;
-    NR_PRACH_RESOURCES_t *prach_resources = UE->prach_resources[0];
-    AssertFatal(prach_resources != NULL, "UE->prach_resources[%u] == NULL\n", 0);
-    uint8_t nr_prach = 0;
+    frame_t frame_tx = NFAPI_SFNSLOT2SFN(sfn_slot);
+    int nr_slot_tx = NFAPI_SFNSLOT2SLOT(sfn_slot);
+    NR_PRACH_RESOURCES_t *prach_resources = NULL;
+    fapi_nr_ul_config_prach_pdu *prach_pdu = NULL;
+    module_id_t mod_id = 0;
+    int CC_id = 0;
+    uint8_t gNB_id = 0;
 
-    if (UE->mac_enabled == 0)
-    {
-      prach_resources->ra_TDD_map_index = 0;
-      prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10;
-      prach_resources->ra_RNTI = 0x1234;
-      nr_prach = 1;
-      prach_resources->init_msg1 = 1;
-    }
-    else
-    {
-      LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources\n", __FUNCTION__, frame_tx, nr_slot_tx);
-      nr_prach = nr_ue_get_rach(prach_resources, &UE->prach_vars[0]->prach_pdu, mod_id, UE->CC_id, frame_tx, 0, nr_slot_tx);
+    LOG_I(NR_PHY, "Melissa In %s:[%d.%d] getting PRACH resources\n", __FUNCTION__, frame_tx, nr_slot_tx);
+    uint8_t nr_prach = nr_ue_get_rach(prach_resources, prach_pdu, mod_id, CC_id, frame_tx, gNB_id, nr_slot_tx);
+    LOG_I(NR_PHY, "In %s: [UE %d] This is nr_prach: %d\n", __FUNCTION__, mod_id, nr_prach);
 
-      if (nr_prach == 1)
-      {
-        nr_Msg1_transmitted(mod_id, UE->CC_id, frame_tx, 0); //Once rach is = 1, then call this
-      }
-      else if (nr_prach == 2)
-      {
-        LOG_D(PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
-        UE->UE_mode[0] = PUSCH;
-      }
-      else if(nr_prach == 3)
-      {
-        LOG_D(PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
-        UE->UE_mode[0] = PRACH;
-      }
+    if (nr_prach == 1)
+    {
+      LOG_I(NR_PHY, "Melissa! Calling nr_Msg1_transmitted!!!\n");
+      nr_Msg1_transmitted(mod_id, CC_id, frame_tx, gNB_id);
+    }
+    else if (nr_prach == 2)
+    {
+      LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
+      //UE->UE_mode[0] = PUSCH;
+    }
+    else if(nr_prach == 3)
+    {
+      LOG_I(NR_PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
+      //UE->UE_mode[0] = PRACH;
     }
   }
 }
-#endif
+
 
 /*!
  * It performs band scanning and synchonization.

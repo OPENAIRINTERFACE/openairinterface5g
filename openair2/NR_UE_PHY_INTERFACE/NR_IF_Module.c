@@ -44,8 +44,6 @@
 #define MAX_IF_MODULES 100
 
 const char *dl_indication_type[] = {"MIB", "SIB", "DLSCH", "DCI", "RAR"};
-int current_sfn_slot;
-sem_t sfn_slot_semaphore;
 
 queue_t dl_itti_config_req_tx_data_req_queue;
 queue_t ul_dci_config_req_queue;
@@ -202,7 +200,7 @@ void *nrue_standalone_pnf_task(void *context)
       }
       int sfn = NFAPI_SFNSLOT2SFN(sfn_slot);
       int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
-      LOG_D(NR_PHY, "Received from proxy sfn %d slot %d\n", sfn, slot);
+      LOG_I(NR_PHY, "Received from proxy sfn %d slot %d\n", sfn, slot);
     }
     else
     {
