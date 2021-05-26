@@ -318,7 +318,6 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
  
   /* encode */
-  LOG_I(F1AP, "f1ap_encode_pdu(): 4\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 DL RRC MESSAGE TRANSFER \n");
     return -1;
