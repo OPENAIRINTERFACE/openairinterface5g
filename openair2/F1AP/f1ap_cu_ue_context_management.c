@@ -151,7 +151,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-if (0) {
+
   /* mandatory */
   /* c7. Candidate_SpCell_List */
   ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
@@ -709,7 +709,7 @@ if (0) {
 
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-}
+
   /* OPTIONAL */
   /* InactivityMonitoringRequest */
   if (0) {
