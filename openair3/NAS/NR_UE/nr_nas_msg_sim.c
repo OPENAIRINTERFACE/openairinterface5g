@@ -38,7 +38,8 @@
 #include "aka_functions.h"
 #include "secu_defs.h"
 #include "PduSessionEstablishRequest.h"
-# include "intertask_interface.h"
+#include "intertask_interface.h"
+#include "openair2/RRC/NAS/nas_config.h"
 
 /*char netName[] = "5G:mnc093.mcc208.3gppnetwork.org";
 char imsi[] = "2089300007487";
@@ -57,6 +58,7 @@ const uint8_t opc[16] = {0xc4, 0x24, 0x49, 0x36, 0x3b, 0xba, 0xd0, 0x2b, 0x66, 0
 
 uint8_t  *registration_request_buf;
 uint32_t  registration_request_len;
+extern char *baseNetAddress; 
 
 static int nas_protected_security_header_encode(
   char                                       *buffer,
@@ -814,6 +816,16 @@ void *nas_nrue_task(void *args_p)
             NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pduEstablishMsg.length;
             itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
             LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
+          }
+        }
+        else if((pdu_buffer + 16) != NULL){
+          msg_type = *(pdu_buffer + 16);
+          if(msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC){
+            sprintf(baseNetAddress, "%d.%d", *(pdu_buffer + 39),*(pdu_buffer + 40));
+            int third_octet = *(pdu_buffer + 41);
+            int fourth_octet = *(pdu_buffer + 42);
+            LOG_I(NAS, "Received PDU Session Establishment Accept\n");
+            nas_config(1,third_octet,fourth_octet,"ue");
           }
         }
 
