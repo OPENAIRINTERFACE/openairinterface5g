@@ -1333,7 +1333,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
     case NR_RNTI_C:
       // indicating a UL DCI format 1bit
       pos=1;
-      //*dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
       // Freq domain assignment  max 16 bit
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       pos+=fsize;
