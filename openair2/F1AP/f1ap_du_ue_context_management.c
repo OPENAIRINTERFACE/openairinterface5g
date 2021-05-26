@@ -539,6 +539,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
   }
 
   /* encode */
+  LOG_I(F1AP, "f1ap_encode_pdu(): 14\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 UE CONTEXT SETUP RESPONSE\n");
     return -1;
@@ -622,6 +623,7 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* encode */
+  LOG_I(F1AP, "f1ap_encode_pdu(): 15\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 context release request\n");
     return -1;
@@ -842,6 +844,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
   uint8_t  *buffer;
   uint32_t  len;
 
+  LOG_I(F1AP, "f1ap_encode_pdu(): 16\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 context release complete\n");
     return -1;
@@ -1209,6 +1212,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
   }
 
   /* encode */
+  LOG_I(F1AP, "f1ap_encode_pdu(): 17\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 UE CONTEXT MODIFICATION RESPONSE\n");
     return -1;

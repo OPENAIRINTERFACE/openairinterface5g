@@ -420,6 +420,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* encode */
+  LOG_I(F1AP, "f1ap_encode_pdu(): 8\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 setup request\n");
     return -1;
@@ -1045,6 +1046,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
 
 
+  LOG_I(F1AP, "f1ap_encode_pdu(): 9\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 gNB-DU CONFIGURATION UPDATE\n");
     return -1;
@@ -1279,6 +1281,7 @@ int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* encode */
+  LOG_I(F1AP, "f1ap_encode_pdu(): 10\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode GNB-DU-Configuration-Update-Acknowledge\n");
     return -1;

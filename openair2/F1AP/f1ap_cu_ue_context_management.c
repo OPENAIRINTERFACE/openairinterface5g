@@ -151,7 +151,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-if (0) {
+
   /* mandatory */
   /* c7. Candidate_SpCell_List */
   ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
@@ -709,7 +709,7 @@ if (0) {
 
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-}
+
   /* OPTIONAL */
   /* InactivityMonitoringRequest */
   if (0) {
@@ -762,6 +762,7 @@ if (0) {
   }
 
   /* encode */
+  LOG_I(F1AP, "f1ap_encode_pdu(): 5\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 UE CONTEXT SETUP REQUEST\n");
     return -1;
@@ -978,6 +979,7 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* encode */
+  LOG_I(F1AP, "f1ap_encode_pdu(): 6\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 context release command\n");
     return -1;
@@ -1534,6 +1536,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* encode */
+  LOG_I(F1AP, "f1ap_encode_pdu(): 7\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 UE CONTEXT_MODIFICATION REQUEST\n");
     return -1;

@@ -789,6 +789,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
     }
   }
     /* encode */
+  LOG_I(F1AP, "f1ap_encode_pdu(): 11\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 UL RRC MESSAGE TRANSFER\n");
     return -1;
@@ -888,6 +889,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
   }    
 
     /* encode */
+  LOG_I(F1AP, "f1ap_encode_pdu(): 12\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 INITIAL UL RRC MESSAGE TRANSFER\n");
     return -1;
@@ -1120,6 +1122,7 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
     }
   }
     /* encode */
+  LOG_I(F1AP, "f1ap_encode_pdu(): 13\n");
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 UL RRC MESSAGE TRANSFER \n");
     return -1;
