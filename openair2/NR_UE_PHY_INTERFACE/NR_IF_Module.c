@@ -226,13 +226,13 @@ void *nrue_standalone_pnf_task(void *context)
             save_nr_measurement_info(&dl_tti_request);
             break;
           case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
-            LOG_D(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message. \n");
+            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message. \n");
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
-            LOG_D(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message. \n");
+            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message. \n");
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
-            LOG_D(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message. \n");
+            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message. \n");
             if (nfapi_nr_p7_message_unpack((void *)buffer, len, &dl_tti_request,
                                            sizeof(dl_tti_request), NULL) < 0)
             {

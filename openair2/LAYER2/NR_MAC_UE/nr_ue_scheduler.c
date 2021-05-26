@@ -1650,6 +1650,17 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
   //fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
   fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[0];
+  #if 0 //Melissa
+  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
+  fill_ul_config(ul_config, frameP, slotP, FAPI_NR_UL_CONFIG_TYPE_PRACH);
+  if (!ul_config) {
+    LOG_W(MAC, "In %s: ul_config request is NULL. "
+                "Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n",
+                __FUNCTION__, frameP, slotP);
+    return;
+  }
+  #endif
+
   fapi_nr_ul_config_prach_pdu *prach_config_pdu;
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
   fapi_nr_prach_config_t *prach_config = &cfg->prach_config;
@@ -1682,11 +1693,12 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       format = prach_occasion_info_p->format;
       format0 = format & 0xff;        // single PRACH format
       format1 = (format >> 8) & 0xff; // dual PRACH format
-
+      #if 1 //Melissa
       ul_config->sfn = frameP;
       ul_config->slot = slotP;
 
       ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PRACH;
+      #endif
       prach_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
       memset(prach_config_pdu, 0, sizeof(fapi_nr_ul_config_prach_pdu));
       ul_config->number_pdus += 1;

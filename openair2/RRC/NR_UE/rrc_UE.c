@@ -287,9 +287,9 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
           nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
         }else{
           //  after first time, update it and free the memory after.
+          SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)NR_UE_rrc_inst[module_id].cell_group_config, 0);
           NR_UE_rrc_inst[module_id].cell_group_config = cellGroupConfig;
           nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
-          SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)NR_UE_rrc_inst[module_id].cell_group_config, 0);
         }
       }
       if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->measConfig != NULL){
@@ -341,6 +341,8 @@ int8_t nr_rrc_ue_process_scg_config(const module_id_t module_id, NR_CellGroupCon
   }else{
     //  maintain list
     if(cell_group_config->spCellConfig != NULL){
+        nr_rrc_mac_config_req_ue(0, 0, 0, NULL, cell_group_config);
+        LOG_I(NR_RRC, "Melissa, we filled scc now \n");
       if(cell_group_config->spCellConfig->spCellConfigDedicated != NULL){
         //  process element of list to be add by RRC message
         if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList != NULL){

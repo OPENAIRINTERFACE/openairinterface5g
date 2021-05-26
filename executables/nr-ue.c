@@ -147,7 +147,10 @@ void init_nrUE_standalone_thread(int ue_idx)
 
 static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 {
-  sem_t sfn_slot_semaphore;
+  NR_PRACH_RESOURCES_t prach_resources;
+  memset(&prach_resources, 0, sizeof(prach_resources));
+  fapi_nr_ul_config_prach_pdu prach_pdu;
+  memset(&prach_pdu, 0, sizeof(prach_pdu));
   int last_sfn_slot = -1;
   while (!oai_exit)
   {
@@ -160,7 +163,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     int sfn_slot = current_sfn_slot;
     if (sfn_slot == last_sfn_slot)
     {
-      LOG_W(NR_MAC, "repeated sfn_sf = %d.%d\n",
+      LOG_D(NR_MAC, "repeated sfn_sf = %d.%d\n",
             sfn_slot >> 6, sfn_slot & 0x3F);
       continue;
     }
@@ -168,15 +171,11 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     frame_t frame_tx = NFAPI_SFNSLOT2SFN(sfn_slot);
     int nr_slot_tx = NFAPI_SFNSLOT2SLOT(sfn_slot);
-    NR_PRACH_RESOURCES_t *prach_resources = NULL;
-    fapi_nr_ul_config_prach_pdu *prach_pdu = NULL;
     module_id_t mod_id = 0;
     int CC_id = 0;
     uint8_t gNB_id = 0;
 
-    LOG_I(NR_PHY, "Melissa In %s:[%d.%d] getting PRACH resources\n", __FUNCTION__, frame_tx, nr_slot_tx);
-    uint8_t nr_prach = nr_ue_get_rach(prach_resources, prach_pdu, mod_id, CC_id, frame_tx, gNB_id, nr_slot_tx);
-    LOG_I(NR_PHY, "In %s: [UE %d] This is nr_prach: %d\n", __FUNCTION__, mod_id, nr_prach);
+    uint8_t nr_prach = nr_ue_get_rach(&prach_resources, &prach_pdu, mod_id, CC_id, frame_tx, gNB_id, nr_slot_tx);
 
     if (nr_prach == 1)
     {

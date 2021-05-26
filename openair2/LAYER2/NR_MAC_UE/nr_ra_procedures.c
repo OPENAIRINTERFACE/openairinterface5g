@@ -500,32 +500,15 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                        int nr_slot_tx){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  NR_CellGroupConfig_t *secondaryCellGroup = calloc(1, sizeof(*secondaryCellGroup));
-  //NR_ServingCellConfigCommon_t *scc = calloc(1, sizeof(*scc));
-
-  prepare_scc(mac->scc);
-
-  uint64_t ssb_bitmap;
-  fill_scc(mac->scc, &ssb_bitmap, 106, 106, 1, 1);
-
-  fix_scc(mac->scc, ssb_bitmap);
-
-  fill_default_secondaryCellGroup(mac->scc, secondaryCellGroup, 0, 1, 1, 0);
-
-  if (mac == NULL){
-    LOG_I(MAC, "Melissa mac is null\n");
-  }
-  if (&mac->ra == NULL){
-    LOG_I(MAC, "Melissa mac->ra is null\n");
-  }
-  if (mac->scc == NULL){
-    LOG_I(MAC, "Melissa scc is null\n");
+  RA_config_t *ra = &mac->ra;
+  uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
+  uint8_t lcid = UL_SCH_LCID_CCCH_MSG3, *payload;
+  uint16_t size_sdu = 0;
+  unsigned short post_padding;
+  NR_ServingCellConfigCommon_t *scc = mac->scc;
+  if (scc == NULL) {
     return 0;
   }
-
-  LOG_I(MAC, "Melissa got here %s: %d\n", __FUNCTION__, __LINE__);
-  RA_config_t *ra = &mac->ra;
-  NR_ServingCellConfigCommon_t *scc = mac->scc;
   AssertFatal(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup != NULL, "In %s: FATAL! nr_rach_ConfigCommon is NULL...\n", __FUNCTION__);
   NR_RACH_ConfigCommon_t *setup = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   AssertFatal(&setup->rach_ConfigGeneric != NULL, "In %s: FATAL! rach_ConfigGeneric is NULL...\n", __FUNCTION__);
@@ -534,13 +517,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
+  int TBS_bytes = 848, header_length_total=0, num_sdus, offset, mac_ce_len;
 
-  int mac_ce_len = 0;
-  unsigned short  post_padding = 1;
-  int header_length_total = 0;
-  uint16_t size_sdu = 0;
-  int TBS_bytes = 848;
-  uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
   // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
   if (!prach_resources->init_msg1) {
     if (((MAX_FRAME_NUMBER + frame - prach_resources->sync_frame) % MAX_FRAME_NUMBER) > 150){
@@ -555,25 +533,45 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
     if (ra->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
 
-      LOG_I(MAC, "RA not active. Checking for data to transmit from upper layers...\n");
+      LOG_D(MAC, "RA not active. Checking for data to transmit from upper layers...\n");
 
-      for (int i = 0; i < TBS_bytes; i++){
-        mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+      payload = (uint8_t*) &mac->CCCH_pdu.payload;
+      mac_ce_len = 0;
+      num_sdus = 1;
+      post_padding = 1;
+
+      if (0){
+        // initialisation by RRC
+        // CCCH PDU
+        // size_sdu = (uint16_t) mac_rrc_data_req_ue(mod_id,
+        //                                           CC_id,
+        //                                           frame,
+        //                                           CCCH,
+        //                                           1,
+        //                                           mac_sdus,
+        //                                           gNB_id,
+        //                                           0);
+        LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
+      } else {
+        // fill ulsch_buffer with random data
+        for (int i = 0; i < TBS_bytes; i++){
+          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+        }
+        //Sending SDUs with size 1
+        //Initialize elements of sdu_lcids and sdu_lengths
+        sdu_lcids[0] = lcid;
+        sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
+        header_length_total += 2 + (sdu_lengths[0] >= 128);
+        size_sdu += sdu_lengths[0];
       }
-
-      sdu_lcids[0] = UL_SCH_LCID_CCCH_MSG3;
-      sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
-      header_length_total += 2 + (sdu_lengths[0] >= 128);
-      size_sdu += sdu_lengths[0];
 
       if (size_sdu > 0) {
 
-        LOG_I(MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
+        LOG_D(MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
 
         ra->Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
 
         init_RA(mod_id, prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
-        uint8_t *payload = (uint8_t*) &mac->CCCH_pdu.payload;
         prach_resources->Msg3 = payload;
         nr_get_RA_window(mac);
 
@@ -581,9 +579,9 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         if (ra->generate_nr_prach == 1)
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
 
-        int offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,          // sdus buffer
+        offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
                                        (uint8_t *) payload,               // UL MAC pdu pointer
-                                       1,                                 // num sdus
+                                       num_sdus,                          // num sdus
                                        sdu_lengths,                       // sdu length
                                        sdu_lcids,                         // sdu lcid
                                        0,                                 // power headroom
@@ -602,7 +600,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       }
     } else if (ra->RA_window_cnt != -1) { // RACH is active
 
-      LOG_I(MAC, "In %s [%d.%d] RA is active: RA window count %d, RA backoff count %d\n", __FUNCTION__, frame, nr_slot_tx, ra->RA_window_cnt, ra->RA_backoff_cnt);
+      LOG_D(MAC, "In %s [%d.%d] RA is active: RA window count %d, RA backoff count %d\n", __FUNCTION__, frame, nr_slot_tx, ra->RA_window_cnt, ra->RA_backoff_cnt);
 
       if (ra->RA_BI_found){
         prach_resources->RA_PREAMBLE_BACKOFF = prach_resources->RA_SCALING_FACTOR_BI * ra->RA_backoff_indicator;
@@ -628,16 +626,21 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         // Fill in preamble and PRACH resources
         ra->RA_window_cnt--;
         nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
+        if (is_nr_UL_slot(mac->scc, nr_slot_tx)) {
+          nr_ue_scheduler(NULL, mac->ul_config_request);
+          nr_ue_prach_scheduler(mod_id, frame, nr_slot_tx, 0);
+        }
 
       } else if (ra->RA_backoff_cnt > 0) {
 
-        LOG_I(MAC, "[UE %d][%d.%d]: RAR not received yet (RA backoff count %d) \n", mod_id, frame, nr_slot_tx, ra->RA_backoff_cnt);
+        LOG_D(MAC, "[UE %d][%d.%d]: RAR not received yet (RA backoff count %d) \n", mod_id, frame, nr_slot_tx, ra->RA_backoff_cnt);
 
         ra->RA_backoff_cnt--;
 
         if ((ra->RA_backoff_cnt > 0 && ra->generate_nr_prach == 1) || ra->RA_backoff_cnt == 0){
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
         }
+
       }
     }
   }
@@ -647,6 +650,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   }
 
   return ra->generate_nr_prach;
+
 }
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
