@@ -102,8 +102,8 @@ static int baseRunTimeCommand(char* cmd) {
 
   fp = popen(cmd, "r");
 
-  memset(cmd, 1, 200);
-  retSize = fread(cmd, 1, 200, fp);
+  memset(cmd, 1, sizeof(*cmd));
+  retSize = fread(cmd, 1, sizeof(*cmd), fp);
   fclose(fp);
 
   if (retSize == 0) {
