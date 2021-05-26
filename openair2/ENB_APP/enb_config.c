@@ -3167,7 +3167,7 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
           (check_plmn_identity(carrier, resp->cells_to_activate[j].mcc, resp->cells_to_activate[j].mnc, resp->cells_to_activate[j].mnc_digit_length)>0 &&
            resp->cells_to_activate[j].nrpci == carrier->physCellId)) {
         // copy system information and decode it
-        for (si_ind=2; si_ind<resp->cells_to_activate[j].num_SI; si_ind++)  {
+        for (si_ind=2; si_ind<resp->cells_to_activate[j].num_SI + 2; si_ind++)  {
           //printf("SI %d size %d: ", si_ind, resp->SI_container_length[j][si_ind]);
           //for (int n=0;n<resp->SI_container_length[j][si_ind];n++)
           //  printf("%02x ",resp->SI_container[j][si_ind][n]);
