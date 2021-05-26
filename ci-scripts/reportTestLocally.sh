@@ -785,7 +785,7 @@ function report_test {
 
                     RRC_CHECK=`egrep -c "Received rrcSetupComplete" $SA_ENB_LOG`
                     CBRA_CHECK=`egrep -c "Received Ack of RA-Msg4\. CBRA procedure succeeded" $SA_ENB_LOG`
-                    SIB1_CHECK=`egrep -c "SIB1 decoded" $SA_UE_LOG
+                    SIB1_CHECK=`egrep -c "SIB1 decoded" $SA_UE_LOG`
 
 
                     if [ $RRC_CHECK -gt 0 ] && [ $CBRA_CHECK -gt 0 ] && [ $SIB1_CHECK -gt 0 ]
