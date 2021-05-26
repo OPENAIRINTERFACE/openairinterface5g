@@ -54,7 +54,6 @@ hash_table_t  *pdcp_coll_p;
 static uint64_t pdcp_optmask;
 
 ngran_node_t node_type = ngran_gNB;
-uint8_t first_dcch = 0;
 uint8_t proto_agent_flag = 0;
 
 /****************************************************************************/
