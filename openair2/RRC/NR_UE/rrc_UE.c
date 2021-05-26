@@ -1265,6 +1265,9 @@ nr_rrc_ue_process_masterCellGroup(
     //TODO (resume all suspended radio bearers and resume SCG transmission for all radio bearers, if suspended)
     // NSA procedures
   }
+  if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config == NULL){
+    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = malloc(sizeof(NR_CellGroupConfig_t));
+  }
  
 
   if( cellGroupConfig->rlc_BearerToReleaseList != NULL){
@@ -1273,10 +1276,24 @@ nr_rrc_ue_process_masterCellGroup(
 
   if( cellGroupConfig->rlc_BearerToAddModList != NULL){
     //TODO (perform the RLC bearer addition/modification as specified in 5.3.5.5.4)
+    if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList != NULL){
+      free(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
+    }
+    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList = calloc(1, sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
+    memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList,cellGroupConfig->rlc_BearerToAddModList,
+                 sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
   }
 
   if( cellGroupConfig->mac_CellGroupConfig != NULL){
     //TODO (configure the MAC entity of this cell group as specified in 5.3.5.5.5)
+    LOG_I(RRC, "Received mac_CellGroupConfig from gNB\n");
+    if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig != NULL){
+      LOG_E(RRC, "UE RRC instance already contains mac CellGroupConfig which will be overwritten\n");
+      free(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig);
+    }
+    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig = malloc(sizeof(struct NR_MAC_CellGroupConfig));
+    memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig,cellGroupConfig->mac_CellGroupConfig,
+                     sizeof(struct NR_MAC_CellGroupConfig));
   }
 
   if( cellGroupConfig->sCellToReleaseList != NULL){
@@ -2132,28 +2149,28 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 	 (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4));
 
        // Refresh DRBs
-       // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-       //                             NULL,
-       //                             radioBearerConfig->drb_ToAddModList,
-       //                             NULL,
-       //                             NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-       //                             (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-       //                             NULL,
-       //                             NULL,
-       //                             kUPenc,
-       //                             NULL,
-       //                             NULL,
-       //                             NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
-       //                             NULL);
+        nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                    NULL,
+                                    radioBearerConfig->drb_ToAddModList,
+                                    NULL,
+                                    NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
+                                    (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                    NULL,
+                                    NULL,
+                                    kUPenc,
+                                    NULL,
+                                    NULL,
+                                    NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
+                                    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
        // Refresh DRBs
-       // nr_rrc_rlc_config_asn1_req(ctxt_pP,
-       //                             NULL,
-       //                             radioBearerConfig->drb_ToAddModList,
-       //                             NULL,
-       //                             NULL,
-       //                             NULL
-       //                             );
-   } // drb_ToAddModList
+        nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                    NULL,
+                                    radioBearerConfig->drb_ToAddModList,
+                                    NULL,
+                                    NULL,
+                                    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList 
+                                    );
+   } // drb_ToAddModList //
 
    if (radioBearerConfig->drb_ToReleaseList != NULL) {
      for (i = 0; i < radioBearerConfig->drb_ToReleaseList->list.count; i++) {
@@ -2188,9 +2205,17 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
  //      nr_rrc_ue_process_measConfig(ctxt_pP, gNB_index, ie->measConfig);
      }
 
+     if(ie->nonCriticalExtension->masterCellGroup!=NULL) {
+       nr_rrc_ue_process_masterCellGroup(
+           ctxt_pP,
+           gNB_index,
+           ie->nonCriticalExtension->masterCellGroup);
+     }
+
+
      if (ie->radioBearerConfig != NULL) {
        LOG_I(NR_RRC, "radio Bearer Configuration is present\n");
- //      nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
+       nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
      }
 
      /* Check if there is dedicated NAS information to forward to NAS */
