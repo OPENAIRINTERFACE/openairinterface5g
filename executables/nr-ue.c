@@ -312,7 +312,7 @@ void processSlotTX(void *arg) {
       UE->if_inst->ul_indication(&ul_indication);
     }
 
-    if (UE->mode != loop_through_memory) {
+    if ((UE->mode != loop_through_memory) && (rxtxD->ue_sched_mode != NOT_PUSCH)) {
       phy_procedures_nrUE_TX(UE,proc,0);
     }
   }
