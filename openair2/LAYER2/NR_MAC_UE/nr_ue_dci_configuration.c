@@ -224,7 +224,6 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 
   RA_config_t *ra = &mac->ra;
   int ss_id;
-  //Abhi : harcoded CORSET ID here
   uint8_t bwp_id = mac->DL_BWP_Id;
   uint8_t coreset_id = 1;
   //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;

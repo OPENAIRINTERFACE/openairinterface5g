@@ -615,7 +615,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
     case NR_UL_DCI_FORMAT_0_1:
       dci_pdu_rel15->dai[0].val = 0; //TODO
       // bwp indicator as per table 7.3.1.1.2-1 in 38.212
-      dci_pdu_rel15->bwp_indicator.val = n_ubwp < 4 ? bwp_id : bwp_id - 1;
+      dci_pdu_rel15->bwp_indicator.val = n_ubwp <= 4 ? bwp_id : bwp_id - 1;
       // SRS resource indicator
       if (ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig != NULL) {
         AssertFatal(*ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig == NR_PUSCH_Config__txConfig_codebook,

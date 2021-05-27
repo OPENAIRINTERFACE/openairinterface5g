@@ -333,21 +333,20 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
 
   NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
 
-//Abhi : TODO : uncomment this when DCI based swithching is available
-  // if (bwp_ind && dci_format){
+  if (bwp_ind && dci_format){
 
-  //   switch(*dci_format){
-  //   case NR_UL_DCI_FORMAT_0_1:
-  //     mac->UL_BWP_Id = *bwp_ind;
-  //     break;
-  //   case NR_DL_DCI_FORMAT_1_1:
-  //     mac->DL_BWP_Id = *bwp_ind;
-  //     break;
-  //   default:
-  //     LOG_E(MAC, "In %s: failed to configure BWP Id from DCI with format %d \n", __FUNCTION__, *dci_format);
-  //   }
+    switch(*dci_format){
+    case NR_UL_DCI_FORMAT_0_1:
+      mac->UL_BWP_Id = *bwp_ind;
+      break;
+    case NR_DL_DCI_FORMAT_1_1:
+      mac->DL_BWP_Id = *bwp_ind;
+      break;
+    default:
+      LOG_E(MAC, "In %s: failed to configure BWP Id from DCI with format %d \n", __FUNCTION__, *dci_format);
+    }
 
-  // } else {
+  } else {
 
     if (scd->firstActiveDownlinkBWP_Id)
       mac->DL_BWP_Id = *scd->firstActiveDownlinkBWP_Id;
@@ -361,7 +360,7 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
     else
       mac->UL_BWP_Id = 1;
 
-  // }
+  }
 
   LOG_I(MAC, "In %s setting DL_BWP_Id %ld UL_BWP_Id %ld \n", __FUNCTION__, mac->DL_BWP_Id, mac->UL_BWP_Id);
 
@@ -374,12 +373,11 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
     */
 void config_control_ue(NR_UE_MAC_INST_t *mac){
 
-  //Abhi : Hardcoded CORSET ID here
   uint8_t coreset_id = 1, ss_id;
 
   NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   AssertFatal(scd->downlinkBWP_ToAddModList != NULL, "downlinkBWP_ToAddModList is null\n");
-  //AssertFatal(scd->downlinkBWP_ToAddModList->list.count == 1, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
+  AssertFatal(scd->downlinkBWP_ToAddModList->list.count <= 4, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
 
   config_bwp_ue(mac, NULL, NULL);
   NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
@@ -393,7 +391,6 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Dedicated;
   AssertFatal(dl_bwp_Dedicated != NULL, "dl_bwp_Dedicated is null\n");
 
-  //Abhi : TODO : add assert statements for UL BWP! 
   NR_SetupRelease_PDCCH_Config_t *pdcch_Config = dl_bwp_Dedicated->pdcch_Config;
   AssertFatal(pdcch_Config != NULL, "pdcch_Config is null\n");
 

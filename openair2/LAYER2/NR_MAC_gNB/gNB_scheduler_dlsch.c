@@ -954,12 +954,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
     // bwp indicator
     
     const int n_dl_bwp = UE_info->secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
-      // AssertFatal(n_dl_bwp == 1,
-      //     "downlinkBWP_ToAddModList has %d BWP!\n",
-      //     n_dl_bwp);
+      AssertFatal(n_dl_bwp <= 4,
+          "downlinkBWP_ToAddModList has %d BWP!\n",
+          n_dl_bwp);
     // as per table 7.3.1.1.2-1 in 38.212
-    // Abhi :look into this
-    dci_payload.bwp_indicator.val = n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1;
+    dci_payload.bwp_indicator.val = n_dl_bwp <= 4 ? bwp->bwp_Id : bwp->bwp_Id - 1;
     AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
     dci_payload.frequency_domain_assignment.val =
