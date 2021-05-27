@@ -3170,7 +3170,7 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
         LOG_I(ENB_APP, "Copy system information and decode it for %i number of SI\n", resp->cells_to_activate[j].num_SI);
 
         // copy system information and decode it
-        for (si_ind=2; si_ind<resp->cells_to_activate[j].num_SI + 2; si_ind++)  {
+        for (si_ind=2; si_ind<10; si_ind++)  {
           printf("SI %d size %d: ", si_ind, resp->cells_to_activate[j].SI_container_length[si_ind]);
           for (int n=0;n<resp->cells_to_activate[j].SI_container_length[si_ind];n++)
             printf("%02x ",resp->cells_to_activate[j].SI_container[si_ind][n]);
