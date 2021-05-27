@@ -211,13 +211,13 @@ typedef struct RB_INFO_TABLE_ENTRY_NB_IoT_s {
   RB_INFO_NB_IoT Rb_info;
   uint8_t Active;
   uint32_t Next_check_frame;
-  uint8_t Status;
+  uint8_t status;
 } RB_INFO_TABLE_ENTRY_NB_IoT;
 
 typedef struct SRB_INFO_TABLE_ENTRY_NB_IoT_s {
   SRB_INFO_NB_IoT Srb_info;
   uint8_t Active;
-  uint8_t Status;
+  uint8_t status;
   uint32_t Next_check_frame;
 } SRB_INFO_TABLE_ENTRY_NB_IoT;
 
@@ -269,7 +269,7 @@ typedef struct eNB_RRC_UE_NB_IoT_s {
   e_LTE_CipheringAlgorithm_r12     ciphering_algorithm; //Specs. TS 36.331 V14.1.0 pag 432 Change position of chipering enumerative w.r.t previous version
   e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
 
-  uint8_t                            Status;
+  uint8_t                            status;
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 

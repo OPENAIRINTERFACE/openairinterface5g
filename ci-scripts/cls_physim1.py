@@ -64,7 +64,7 @@ class PhySim:
 #PUBLIC Methods$
 #-----------------$
 
-	def Deploy_PhySim(self, HTML):
+	def Deploy_PhySim(self, HTML, RAN):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -88,9 +88,10 @@ class PhySim:
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
-			full_ran_repo_name = self.ranRepository
+			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
+		mySSH.command('echo ' + lPassWord + ' | sudo rm -Rf ' + lSourcePath, '\$', 30)
 		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
 		mySSH.command('cd ' + lSourcePath, '\$', 5)
 		mySSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
@@ -102,9 +103,15 @@ class PhySim:
 		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
+			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
 		if self.ranAllowMerge:
 			imageTag = "ci-temp"
+			if self.ranTargetBranch == '':
+				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
+					mySSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+			else:
+				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
+				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 		else:
 			imageTag = "develop"
 		# Check if image is exist on the Red Hat server, before pushing it to OC cluster
@@ -112,7 +119,9 @@ class PhySim:
 		if mySSH.getBefore().count('no such image') != 0:
 			logging.error('\u001B[1m No such image oai-physim\u001B[0m')
 			mySSH.close()
-			sys.exit(-1)
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.PHYSIM_IMAGE_ABSENT)
+			RAN.prematureExit = True
+			return
 		else:
 			result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
 			if result is not None:
@@ -135,14 +144,18 @@ class PhySim:
 		if mySSH.getBefore().count('Login successful.') == 0:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 			mySSH.close()
-			sys.exit(-1)
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
+			RAN.prematureExit = True
+			return
 		else:
 			logging.debug('\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
 		mySSH.command(f'oc project {ocProjectName}', '\$', 6)
 		if mySSH.getBefore().count(f'Already on project "{ocProjectName}"') == 0 and mySSH.getBefore().count(f'Now using project "{self.OCProjectName}"') == 0:
 			logging.error(f'\u001B[1m Unable to access OC project {ocProjectName}\u001B[0m')
 			mySSH.close()
-			sys.exit(-1)
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PROJECT_FAIL)
+			RAN.prematureExit = True
+			return
 		else:
 			logging.debug(f'\u001B[1m   Now using project {ocProjectName}\u001B[0m')
 
@@ -151,34 +164,53 @@ class PhySim:
 		if mySSH.getBefore().count('Login Succeeded!') == 0:
 			logging.error('\u001B[1m Podman Login to OC Cluster Registry Failed\u001B[0m')
 			mySSH.close()
-			sys.exit(-1)
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
+			RAN.prematureExit = True
+			return
 		else:
 			logging.debug('\u001B[1m Podman Login to OC Cluster Registry Successfully\u001B[0m')
+		time.sleep(2)
 		mySSH.command('oc create -f openshift/oai-physim-image-stream.yml', '\$', 6)
 		if mySSH.getBefore().count('(AlreadyExists):') == 0 and mySSH.getBefore().count('created') == 0:
 			logging.error(f'\u001B[1m Image Stream "oai-physim" Creation Failed on OC Cluster {ocProjectName}\u001B[0m')
 			mySSH.close()
-			sys.exit(-1)
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_IS_FAIL)
+			RAN.prematureExit = True
+			return
 		else:
 			logging.debug(f'\u001B[1m   Image Stream "oai-physim" created on OC project {ocProjectName}\u001B[0m')
+		time.sleep(2)
 		mySSH.command(f'sudo podman tag oai-physim:{imageTag} default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
+		time.sleep(2)
 		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag} --tls-verify=false', '\$', 30)
 		if mySSH.getBefore().count('Storing signatures') == 0:
 			logging.error('\u001B[1m Image "oai-physim" push to OC Cluster Registry Failed\u001B[0m')
 			mySSH.close()
-			sys.exit(-1)
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_IS_FAIL)
+			RAN.prematureExit = True
+			return
 		else:
 			logging.debug('\u001B[1m Image "oai-physim" push to OC Cluster Registry Successfully\u001B[0m')
 
 		# Using helm charts deployment
+		time.sleep(5)
 		mySSH.command(f'sed -i -e "s#TAG#{imageTag}#g" ./charts/physims/values.yaml', '\$', 6)
 		mySSH.command('helm install physim ./charts/physims/ | tee -a cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
 		if mySSH.getBefore().count('STATUS: deployed') == 0:
 			logging.error('\u001B[1m Deploying PhySim Failed using helm chart on OC Cluster\u001B[0m')
 			mySSH.command('helm uninstall physim >> cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
+			isFinished1 = False
+			while(isFinished1 == False):
+				time.sleep(20)
+				mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6, resync=True)
+				if re.search('No resources found', mySSH.getBefore()):
+					isFinished1 = True
+			mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
+			mySSH.command('oc delete is oai-physim', '\$', 6)
 			mySSH.close()
 			self.AnalyzeLogFile_phySim(HTML)
-			sys.exit(-1)
+			RAN.prematureExit = True
+			return
 		else:
 			logging.debug('\u001B[1m   Deployed PhySim Successfully using helm chart\u001B[0m')
 		isRunning = False
@@ -196,18 +228,28 @@ class PhySim:
 			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim 2>&1 | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 6)
 			mySSH.command('helm uninstall physim >> cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
 			self.AnalyzeLogFile_phySim(HTML)
-			sys.exit(-1)
+			isFinished1 = False
+			while(isFinished1 == False):
+				time.sleep(20)
+				mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6, resync=True)
+				if re.search('No resources found', mySSH.getBefore()):
+					isFinished1 = True
+			mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
+			mySSH.command('oc delete is oai-physim', '\$', 6)
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PHYSIM_DEPLOY_FAIL)
+			HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
+			RAN.prematureExit = True
+			return
 		# Waiting to complete the running test
 		count = 0
 		isFinished = False
 		# doing a deep copy!
 		tmpPodNames = podNames.copy()
 		while(count < 28 and isFinished == False):
-			time.sleep(58)
+			time.sleep(60)
 			for podName in tmpPodNames:
-				mySSH.command(f'oc logs --tail=1 {podName} 2>&1', '\$', 6, silent=True, resync=True)
-				time.sleep(2)
-				if mySSH.getBefore().count('FINISHED') != 0:
+				mySSH.command2(f'oc logs --tail=1 {podName} 2>&1', 6, silent=True)
+				if mySSH.cmd2Results.count('FINISHED') != 0:
 					logging.debug(podName + ' is finished')
 					tmpPodNames.remove(podName)
 			if not tmpPodNames:
@@ -237,8 +279,15 @@ class PhySim:
 		mySSH.command('oc logout', '\$', 6)
 		mySSH.close()
 		self.AnalyzeLogFile_phySim(HTML)
-		if self.testStatus == False:
-			sys.exit(-1)
+		if self.testStatus:
+			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
+			logging.info('\u001B[1m Physical Simulator Pass\u001B[0m')
+		else:
+			RAN.prematureExit = True
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
+			logging.info('\u001B[1m Physical Simulator Fail\u001B[0m')
 
 	def AnalyzeLogFile_phySim(self, HTML):
 		lIpAddr = self.eNBIPAddress
@@ -255,7 +304,6 @@ class PhySim:
 			os.mkdir(f'./physim_test_logs_{self.testCase_id}')
 		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/physim_test_log_' + self.testCase_id + '/*', './physim_test_logs_' + self.testCase_id)
 		mySSH.command('rm -rf ./physim_test_log_'+ self.testCase_id, '\$', 5)
-		mySSH.command('oc logout', '\$', 6)
 		mySSH.close()
 		# physim test log analysis
 		nextt = 0
@@ -286,7 +334,4 @@ class PhySim:
 		self.testSummary['Nbfail'] =  self.testCount[2]
 		if self.testSummary['Nbfail'] == 0:
 			self.testStatus = True
-		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-		HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
-		logging.info('\u001B[1m Physical Simulator Pass\u001B[0m')
 		return 0

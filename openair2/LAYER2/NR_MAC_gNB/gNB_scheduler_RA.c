@@ -41,6 +41,7 @@
 #include "UTIL/OPT/opt.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
+#include <executables/softmodem-common.h>
 extern RAN_CONTEXT_t RC;
 extern const uint8_t nr_slots_per_frame[5];
 extern uint16_t sl_ahead;
@@ -805,6 +806,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   int startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
   int start_symbol_index,nr_of_symbols;
   SLIV2SL(startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
+  int mappingtype = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
 
   pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_pdu->rnti = ra->rnti;
@@ -830,7 +832,10 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     pusch_pdu->transform_precoding = 0;
   pusch_pdu->data_scrambling_id = *scc->physCellId;
   pusch_pdu->nrOfLayers = 1;
-  pusch_pdu->ul_dmrs_symb_pos = 1<<start_symbol_index; // ok for now but use fill dmrs mask later
+
+  pusch_pdu->ul_dmrs_symb_pos = get_l_prime(nr_of_symbols,mappingtype,pusch_dmrs_pos2,pusch_len1,start_symbol_index, scc->dmrs_TypeA_Position);
+  LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , ul_dmrs_symb_pos:%x\n", start_symbol_index, nr_of_symbols, mappingtype, pusch_pdu->ul_dmrs_symb_pos);
+
   pusch_pdu->dmrs_config_type = 0;
   pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
@@ -945,6 +950,10 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
     AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
+    int mappingtype = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->
+        downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->
+        pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
+
     uint8_t numDmrsCdmGrpsNoData = 2;
     if (nrOfSymbols == 2) {
       numDmrsCdmGrpsNoData = 1;
@@ -1030,7 +1039,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL,
                                                     nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                                     nrOfSymbols,
-                                                    startSymbolIndex);
+                                                    startSymbolIndex,
+                                                    mappingtype);
 
     int x_Overhead = 0;
     uint8_t tb_scaling = 0;
@@ -1162,9 +1172,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     harq->is_waiting = true;
     ra->harq_pid = current_harq_pid;
 
-    nr_acknack_scheduling(module_idP, UE_id, frameP, slotP);
-    harq->feedback_slot = sched_ctrl->sched_pucch->ul_slot;
-    harq->feedback_frame = sched_ctrl->sched_pucch->frame;
+    int alloc = nr_acknack_scheduling(module_idP, UE_id, frameP, slotP);
+    AssertFatal(alloc>=0,"Couldn't find a pucch allocation for ack nack (msg4)\n");
+    NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[alloc];
+    harq->feedback_slot = pucch->ul_slot;
+    harq->feedback_frame = pucch->frame;
 
     // Bytes to be transmitted
     uint8_t *buf = (uint8_t *) harq->tb;
@@ -1187,10 +1199,15 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
     AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
+    int mappingtype = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->
+        downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->
+        pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
+
     uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL,
                                             nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                             nrOfSymbols,
-                                            startSymbolIndex);
+                                            startSymbolIndex,
+                                            mappingtype);
 
     uint16_t N_DMRS_SLOT = get_num_dmrs(dlDmrsSymbPos);
 
@@ -1361,10 +1378,10 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_payload.rv = pdsch_pdu_rel15->rvIndex[0];
     dci_payload.harq_pid = current_harq_pid;
     dci_payload.ndi = harq->ndi;
-    dci_payload.dai[0].val = (sched_ctrl->sched_pucch->dai_c-1)&3;
+    dci_payload.dai[0].val = (pucch->dai_c-1)&3;
     dci_payload.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
-    dci_payload.pucch_resource_indicator = sched_ctrl->sched_pucch->resource_indicator;
-    dci_payload.pdsch_to_harq_feedback_timing_indicator.val = sched_ctrl->sched_pucch->timing_indicator;
+    dci_payload.pucch_resource_indicator = pucch->resource_indicator;
+    dci_payload.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator;
 
     LOG_D(NR_MAC,
           "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",

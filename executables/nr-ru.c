@@ -112,6 +112,7 @@ void configure_ru(int idx, void *arg);
 void configure_rru(int idx, void *arg);
 int attach_rru(RU_t *ru);
 int connect_rau(RU_t *ru);
+static void NRRCconfig_RU(void);
 
 uint16_t sf_ahead;
 uint16_t slot_ahead;
@@ -1837,7 +1838,7 @@ void init_NR_RU(char *rf_config_file)
   pthread_cond_init(&RC.ru_cond,NULL);
   // read in configuration file)
   printf("configuring RU from file\n");
-  RCconfig_RU();
+  NRRCconfig_RU();
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_nr_L1_inst,RC.nb_RU,get_nprocs());
 
   LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);
@@ -1912,7 +1913,7 @@ void stop_RU(int nb_ru)
 
 /* --------------------------------------------------------*/
 /* from here function to use configuration module          */
-void RCconfig_RU(void)
+static void NRRCconfig_RU(void)
 {
   int i = 0, j = 0;
   paramdef_t RUParams[] = RUPARAMS_DESC;

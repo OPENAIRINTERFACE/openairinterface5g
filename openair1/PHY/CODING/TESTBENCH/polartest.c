@@ -11,16 +11,12 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
 #include "PHY/CODING/coding_defs.h"
 #include "SIMULATION/TOOLS/sim.h"
-#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 //#include "common/utils/LOG/log.h"
-
+#include "coding_unitary_defs.h"
 //#define DEBUG_DCI_POLAR_PARAMS
 //#define DEBUG_POLAR_TIMING
 //#define DEBUG_POLARTEST
 
-RAN_CONTEXT_t RC;
-PHY_VARS_UE ***PHY_vars_UE_g;
-uint16_t NB_UE_INST = 1;
 
 int main(int argc, char *argv[])
 {

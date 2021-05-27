@@ -268,6 +268,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
       bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
+  const int mapping_type = tdaList->list.array[tda]->mappingType;
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
 
@@ -291,9 +292,9 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   // if no data in dmrs cdm group is 2 both odd and even REs have no data
   ps->N_PRB_DMRS = num_dmrs_cdm_grps_no_data * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
   ps->N_DMRS_SLOT =
-      get_num_dmrs_symbols(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex);
+      get_num_dmrs_symbols(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, mapping_type);
   ps->dl_dmrs_symb_pos =
-      fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex);
+      fill_dmrs_mask(bwp->bwp_Dedicated->pdsch_Config->choice.setup, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, mapping_type);
 }
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
@@ -354,11 +355,12 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                  : *ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition);
   const pusch_maxLength_t pusch_maxLength =
       ps->NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2;
-  const uint16_t l_prime_mask = get_l_prime(ps->nrOfSymbols,
+  ps->ul_dmrs_symb_pos = get_l_prime(ps->nrOfSymbols,
                                             ps->mapping_type,
                                             additional_pos,
-                                            pusch_maxLength);
-  ps->ul_dmrs_symb_pos = l_prime_mask << ps->startSymbolIndex;
+                                            pusch_maxLength,
+                                            ps->startSymbolIndex,
+                                            scc->dmrs_TypeA_Position);
   uint8_t num_dmrs_symb = 0;
   for(int i = ps->startSymbolIndex; i < ps->startSymbolIndex + ps->nrOfSymbols; i++)
     num_dmrs_symb += (ps->ul_dmrs_symb_pos >> i) & 1;

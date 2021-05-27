@@ -133,15 +133,13 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     @param ue Pointer to PHY variables
     @param UE_id id of current UE
     @param frame Frame number
-    @param nr_tti_rx TTI number
-    @param symbol Symbol on which to act (within-in nr_TTI_rx)
+    @param slot Slot number
     @param harq_pid HARQ process ID
 */
 int nr_rx_pusch(PHY_VARS_gNB *gNB,
                 uint8_t UE_id,
                 uint32_t frame,
-                uint8_t nr_tti_rx,
-                unsigned char symbol,
+                uint8_t slot,
                 unsigned char harq_pid);
 
 /** \brief This function performs RB extraction (signal and channel estimates) (currently signal only until channel estimation and compensation are implemented)

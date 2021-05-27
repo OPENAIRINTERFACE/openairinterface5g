@@ -1736,13 +1736,13 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
     MessageDef *message_p;
     uint8_t *message_buffer;
     message_buffer = itti_malloc (TASK_RRC_NRUE,TASK_RRC_GNB_SIM,
-          NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size);
-    memcpy (message_buffer, (uint8_t*)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
-          NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size);
+          NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size);
+    memcpy (message_buffer, (uint8_t*)NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload,
+          NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size);
     message_p = itti_alloc_new_message (TASK_RRC_NRUE, 0, UE_RRC_CCCH_DATA_IND);
     GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
-    GNB_RRC_CCCH_DATA_IND (message_p).size  = NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size;
-    itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
+    GNB_RRC_CCCH_DATA_IND (message_p).size  = NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size;
+    itti_send_msg_to_task (TASK_RRC_GNB_SIM, gNB_index, message_p);
 #endif
   }
 }
@@ -1759,7 +1759,7 @@ nr_rrc_ue_establish_srb1(
 {
   // add descriptor from RRC PDU
   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Active = 1;
-  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Srb_info.Srb_id = 1;
   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB1 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH, gNB_index);
   return(0);
@@ -1777,7 +1777,7 @@ nr_rrc_ue_establish_srb2(
 {
   // add descriptor from RRC PDU
   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Active = 1;
-  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Srb_info.Srb_id = 2;
   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB2 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH1, gNB_index);
   return(0);

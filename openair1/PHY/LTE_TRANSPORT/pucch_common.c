@@ -31,7 +31,6 @@
 */
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h" 
-#include "LAYER2/MAC/mac.h"
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"

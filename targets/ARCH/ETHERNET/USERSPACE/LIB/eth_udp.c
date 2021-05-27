@@ -45,7 +45,6 @@
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
-#include "common/ran_context.h"
 
 //#define DEBUG 1
 
@@ -414,7 +413,7 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
   char *temp_rx0 = ((char *)&temp_rx[1])-APP_HEADER_SIZE_BYTES;  
 #endif
 #elif defined(__arm__) || defined(__aarch64__)
-  int nsamps2 = (payload_size>>4)+1
+  int nsamps2 = (payload_size>>4)+1;
   int16x8_t temp_rx[nsamps2];
   char *temp_rx0 = ((char *)&temp_rx[1])-APP_HEADER_SIZE_BYTES;  
 #else

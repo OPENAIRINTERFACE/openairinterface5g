@@ -37,12 +37,11 @@
 //#define DEBUG_UCI 1
 
 
-int16_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type) {
-  uint16_t i;
-  int16_t first_free_index=-1;
+int find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type) {
+  int first_free_index=-1;
   AssertFatal(eNB!=NULL,"eNB is null\n");
 
-  for (i=0; i<NUMBER_OF_UCI_VARS_MAX; i++) {
+  for (int i=0; i<NUMBER_OF_UCI_MAX; i++) {
     if ((eNB->uci_vars[i].active >0) &&
         (eNB->uci_vars[i].rnti==rnti) &&
         (eNB->uci_vars[i].frame==frame) &&
