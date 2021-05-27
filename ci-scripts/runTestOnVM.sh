@@ -2240,7 +2240,7 @@ function run_test_on_vm {
         echo "############################################################"
         #SA test, attention : has a different config file from the rest of the test
         CN_CONFIG="noS1"
-        CONF_FILE=gnb.sa.band78.fr1.106PRB.usrpb210.conf 
+        CONF_FILE=gnb.band78.sa.fr1.106PRB.usrpb210.conf 
         S1_NOS1_CFG=0
         PRB=106
         FREQUENCY=3510
