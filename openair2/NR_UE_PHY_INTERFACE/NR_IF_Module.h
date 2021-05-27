@@ -39,6 +39,12 @@
 
 typedef struct NR_UL_TIME_ALIGNMENT NR_UL_TIME_ALIGNMENT_t;
 
+typedef enum {
+  ONLY_PUSCH,
+  NOT_PUSCH,
+  SCHED_ALL,
+} NR_UE_SCHED_MODE_t;
+
 typedef struct {
     /// module id
   module_id_t module_id;
@@ -100,6 +106,9 @@ typedef struct {
 
     /// dci reception indication structure
     fapi_nr_dci_indication_t *dci_ind;
+
+    NR_UE_SCHED_MODE_t ue_sched_mode;
+
 } nr_uplink_indication_t;
 
 // Downlink subframe P7

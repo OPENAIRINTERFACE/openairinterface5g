@@ -94,7 +94,12 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  ret = nr_ue_scheduler(NULL, ul_info);
+  if (ul_info->ue_sched_mode == ONLY_PUSCH) {
+    ret = nr_ue_scheduler(NULL, ul_info);
+    return 0;
+  }
+  else if (ul_info->ue_sched_mode == SCHED_ALL)
+    ret = nr_ue_scheduler(NULL, ul_info);
 
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
 

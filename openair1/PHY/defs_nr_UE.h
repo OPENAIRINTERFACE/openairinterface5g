@@ -1084,6 +1084,7 @@ typedef struct {
 typedef struct nr_rxtx_thread_data_s {
   UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE    *UE;
+  NR_UE_SCHED_MODE_t ue_sched_mode;
   notifiedFIFO_t txFifo;
 }  nr_rxtx_thread_data_t;
 

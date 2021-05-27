@@ -307,11 +307,12 @@ void processSlotTX(void *arg) {
       ul_indication.frame_tx  = proc->frame_tx;
       ul_indication.slot_tx   = proc->nr_slot_tx;
       ul_indication.thread_id = proc->thread_id;
+      ul_indication.ue_sched_mode = rxtxD->ue_sched_mode;
 
       UE->if_inst->ul_indication(&ul_indication);
     }
 
-    if (UE->mode != loop_through_memory) {
+    if ((UE->mode != loop_through_memory) && (rxtxD->ue_sched_mode != NOT_PUSCH)) {
       phy_procedures_nrUE_TX(UE,proc,0);
     }
   }
@@ -358,6 +359,9 @@ void processSlotRX(void *arg) {
         nr_pdcp_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
       }
     }
+    // calling UL_indication to schedule things other than PUSCH (eg, PUCCH)
+    rxtxD->ue_sched_mode = NOT_PUSCH;
+    processSlotTX(rxtxD);
 
     // Wait for PUSCH processing to finish
     notifiedFIFO_elt_t *res;
@@ -365,6 +369,7 @@ void processSlotRX(void *arg) {
     delNotifiedFIFO_elt(res);
 
   } else {
+    rxtxD->ue_sched_mode = SCHED_ALL;
     processSlotTX(rxtxD);
   }
 
