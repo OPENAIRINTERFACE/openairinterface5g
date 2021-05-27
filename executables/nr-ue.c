@@ -179,6 +179,17 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     if (nr_prach == 1)
     {
+      nfapi_nr_rach_indication_t rach_ind = {
+        .header = {
+          .message_id = NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION,
+        },
+        .sfn             = frame_tx,
+        .slot            = nr_slot_tx,
+        .pdu_list        = NULL,
+        .number_of_pdus  = 0,
+      };
+      send_nsa_standalone_msg(&rach_ind);
+
       /* Fill rach indication here and send to proxy. Basically take pieces from
       L1_nr_prach_procedures() and send it to the proxy. prach from ue->gNb->gnb sends rach->ue receives rach
       The UE is basically filling the rach and proxy will receive and think that it came from the gNB. The

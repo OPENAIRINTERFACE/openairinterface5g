@@ -127,7 +127,18 @@ void nrue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
         tx_port, rx_port, addr);
 }
 
-
+void send_nsa_standalone_msg(nfapi_nr_rach_indication_t *rach_ind)
+{
+    char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
+    int encoded_size = nfapi_nr_p7_message_pack(rach_ind, buffer, sizeof(buffer), NULL);
+    LOG_I(NR_MAC, "NR_RACH_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
+          rach_ind->sfn, rach_ind->slot);
+    if (send(ue_tx_sock_descriptor, buffer, encoded_size, 0) < 0)
+    {
+        LOG_E(NR_MAC, "Send Proxy NR_UE failed\n");
+        return;
+    }
+}
 static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
 {
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
