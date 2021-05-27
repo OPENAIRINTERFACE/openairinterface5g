@@ -1172,11 +1172,10 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  nzpcsi0->qcl_InfoPeriodicCSI_RS = NULL;
  ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
 
- //csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
- csi_MeasConfig->csi_SSB_ResourceSetToAddModList = NULL;
+ csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
  csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
 
- /*NR_CSI_SSB_ResourceSet_t *ssbresset0 = calloc(1,sizeof(*ssbresset0));
+ NR_CSI_SSB_ResourceSet_t *ssbresset0 = calloc(1,sizeof(*ssbresset0));
  ssbresset0->csi_SSB_ResourceSetId=0;
 
  NR_SSB_Index_t *ssbresset[64];
@@ -1187,7 +1186,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
      ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list,ssbresset[i]);
    }
  }
- ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list,ssbresset0);*/
+ ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list,ssbresset0);
 
  csi_MeasConfig->csi_ResourceConfigToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_ResourceConfigToAddModList));
  csi_MeasConfig->csi_ResourceConfigToReleaseList = NULL;
@@ -1195,19 +1194,25 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csires0->csi_ResourceConfigId=0;
  csires0->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
  csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB = calloc(1,sizeof(*csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB));
- csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList = NULL;
  csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList = calloc(1,sizeof(*csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList));
  NR_NZP_CSI_RS_ResourceSetId_t *nzp0 = calloc(1,sizeof(*nzp0));
  *nzp0 = 0;
  ASN_SEQUENCE_ADD(&csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list,nzp0);
- /*csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList = NULL;
- csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList = calloc(1,sizeof(*csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList));
- NR_CSI_SSB_ResourceSetId_t *ssbres00 = calloc(1,sizeof(*ssbres00));
- *ssbres00 = 0;
- ASN_SEQUENCE_ADD(&csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list,ssbres00);*/
  csires0->bwp_Id = 1;
  csires0->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires0);
+
+ NR_CSI_ResourceConfig_t *csires1 = calloc(1,sizeof(*csires1));
+ csires1->csi_ResourceConfigId=1;
+ csires1->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
+ csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB = calloc(1,sizeof(*csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB));
+ csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList = calloc(1,sizeof(*csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList));
+ NR_CSI_SSB_ResourceSetId_t *ssbres00 = calloc(1,sizeof(*ssbres00));
+ *ssbres00 = 0;
+ ASN_SEQUENCE_ADD(&csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list,ssbres00);
+ csires1->bwp_Id = 1;
+ csires1->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
+ ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires1);
 
  csi_MeasConfig->csi_ReportConfigToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_ReportConfigToAddModList));
  csi_MeasConfig->csi_ReportConfigToReleaseList = NULL;
@@ -1220,18 +1225,15 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
  csirep1->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep1->reportConfigType.choice.periodic));
  csirep1->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
- csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 9 + (10 * uid) % 320;
+ csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 9 + (20 * uid) % 320;
  NR_PUCCH_CSI_Resource_t *pucchcsires1 = calloc(1,sizeof(*pucchcsires1));
  pucchcsires1->uplinkBandwidthPartId=1;
  pucchcsires1->pucch_Resource=2;
  ASN_SEQUENCE_ADD(&csirep1->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
- csirep1->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI;
- csirep1->reportQuantity.choice.cri_RI_CQI=(NULL_t)0;
- /*csirep1->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP;
- csirep1->reportQuantity.choice.ssb_Index_RSRP=(NULL_t)0;*/
+ csirep1->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP;
+ csirep1->reportQuantity.choice.cri_RSRP=(NULL_t)0;
  csirep1->reportFreqConfiguration = calloc(1,sizeof(*csirep1->reportFreqConfiguration));
- csirep1->reportFreqConfiguration->cqi_FormatIndicator = calloc(1,sizeof(*csirep1->reportFreqConfiguration->cqi_FormatIndicator));
- *csirep1->reportFreqConfiguration->cqi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI;
+ csirep1->reportFreqConfiguration->cqi_FormatIndicator = NULL;
  csirep1->reportFreqConfiguration->pmi_FormatIndicator=NULL;
  csirep1->reportFreqConfiguration->csi_ReportingBand=NULL;
  csirep1->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_configured;
@@ -1242,17 +1244,47 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->groupBasedBeamReporting.choice.disabled=calloc(1,sizeof(*csirep1->groupBasedBeamReporting.choice.disabled));
  csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS = calloc(1,sizeof(*csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS));
  *csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS=NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
- csirep1->cqi_Table = calloc(1,sizeof(*csirep1->cqi_Table));
- *csirep1->cqi_Table = NR_CSI_ReportConfig__cqi_Table_table1;
+ csirep1->cqi_Table = NULL;
  csirep1->subbandSize = NR_CSI_ReportConfig__subbandSize_value1;
- csirep1->non_PMI_PortIndication = calloc(1,sizeof(*csirep1->non_PMI_PortIndication));
- NR_PortIndexFor8Ranks_t *portindex1 = calloc(1,sizeof(*portindex1));
- portindex1->present = NR_PortIndexFor8Ranks_PR_portIndex1;
- portindex1->choice.portIndex1 = (NULL_t)0;
- ASN_SEQUENCE_ADD(&csirep1->non_PMI_PortIndication->list,portindex1);
+ csirep1->non_PMI_PortIndication = NULL;
  csirep1->ext1 = NULL;
 
  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep1);
+
+ NR_CSI_ReportConfig_t *csirep2 = calloc(1,sizeof(*csirep2));
+ csirep2->reportConfigId=1;
+ csirep2->carrier=NULL;
+ csirep2->resourcesForChannelMeasurement=1;
+ csirep2->csi_IM_ResourcesForInterference=NULL;
+ csirep2->nzp_CSI_RS_ResourcesForInterference=NULL;
+ csirep2->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
+ csirep2->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep2->reportConfigType.choice.periodic));
+ csirep2->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
+ csirep2->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 19 + (20 * uid) % 320;
+ ASN_SEQUENCE_ADD(&csirep2->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
+ csirep2->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP;
+ csirep2->reportQuantity.choice.ssb_Index_RSRP=(NULL_t)0;
+ csirep2->reportFreqConfiguration = calloc(1,sizeof(*csirep2->reportFreqConfiguration));
+ csirep2->reportFreqConfiguration->cqi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI;
+ csirep2->reportFreqConfiguration->pmi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__pmi_FormatIndicator_widebandPMI;
+ csirep2->reportFreqConfiguration->csi_ReportingBand=NULL;
+ csirep2->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_configured;
+ csirep2->timeRestrictionForInterferenceMeasurements=NR_CSI_ReportConfig__timeRestrictionForInterferenceMeasurements_configured;
+ csirep2->codebookConfig= NULL;
+
+ csirep2->dummy = NULL;
+ csirep2->groupBasedBeamReporting.present = NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled;
+ csirep2->groupBasedBeamReporting.choice.disabled=calloc(1,sizeof(*csirep2->groupBasedBeamReporting.choice.disabled));
+ csirep2->groupBasedBeamReporting.choice.disabled->nrofReportedRS = calloc(1,sizeof(*csirep2->groupBasedBeamReporting.choice.disabled->nrofReportedRS));
+ *csirep2->groupBasedBeamReporting.choice.disabled->nrofReportedRS=NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
+
+ csirep2->cqi_Table = calloc(1,sizeof(*csirep2->cqi_Table));
+ *csirep2->cqi_Table = NR_CSI_ReportConfig__cqi_Table_table1;
+ csirep2->subbandSize = NR_CSI_ReportConfig__subbandSize_value1;
+ csirep2->non_PMI_PortIndication = NULL;
+ csirep2->ext1 = NULL;
+
+ ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep2);
 
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->sCellDeactivationTimer=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig=NULL;
