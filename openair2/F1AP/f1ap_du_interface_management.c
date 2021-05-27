@@ -553,10 +553,10 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                 for (int si = 0;si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;si++) {
                   F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];
                   size_t size = sib_item->sIBmessage.size;
-                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container_length[si] = size;
-                  LOG_D(F1AP, "F1AP: SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
-                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[si] = malloc(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container_length[si]);
-                  memcpy((void*)F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[si],
+                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container_length[sib_item->sIBtype] = size;
+                  LOG_I(F1AP, "F1AP: SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
+                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[sib_item->sIBtype] = malloc(size);
+                  memcpy((void*)F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[sib_item->sIBtype],
                           (void*)sib_item->sIBmessage.buf,
                           size);
                 }
@@ -1168,10 +1168,10 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
                 for (int si = 0;si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;si++) {
                   F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];
                   size_t size = sib_item->sIBmessage.size;
-                  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container_length[si] = size;
-                  LOG_D(F1AP, "F1AP: SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
-                  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container[si] = malloc(F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container_length[si]);
-                  memcpy((void*)F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container[si],
+                  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container_length[sib_item->sIBtype] = size;
+                  LOG_I(F1AP, "F1AP: SI_container_length[%d][%d] %ld bytes\n", i, (int)sib_item->sIBtype, size);
+                  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container[sib_item->sIBtype] = malloc(size);
+                  memcpy((void*)F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container[sib_item->sIBtype],
                           (void*)sib_item->sIBmessage.buf,
                           size);
                 }
