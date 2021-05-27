@@ -3745,11 +3745,11 @@ int nfapi_nr_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packe
 			result = pack_nr_uci_indication(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
 
-		case NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION:
+		case NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION:
 			result = pack_nr_rach_indication(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
 
-		case NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION:
+		case NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION:
 			result = pack_nr_srs_indication(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
 
