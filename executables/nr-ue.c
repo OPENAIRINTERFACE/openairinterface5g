@@ -179,8 +179,13 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     if (nr_prach == 1)
     {
+      /* Fill rach indication here and send to proxy. Basically take pieces from
+      L1_nr_prach_procedures() and send it to the proxy. prach from ue->gNb->gnb sends rach->ue receives rach
+      The UE is basically filling the rach and proxy will receive and think that it came from the gNB. The
+      received rach in the proxy will trigger gNB to send back the RAR. RAR will go to proxy then goes to UE
+      and the UE will get the DCI for RAR and the payload. have to handle receving the RAR once we get it. */
       LOG_I(NR_PHY, "Melissa! Calling nr_Msg1_transmitted!!!\n");
-      nr_Msg1_transmitted(mod_id, CC_id, frame_tx, gNB_id);
+      nr_Msg1_transmitted(mod_id, CC_id, frame_tx, gNB_id); //This is called when phy layer has sent the prach
     }
     else if (nr_prach == 2)
     {

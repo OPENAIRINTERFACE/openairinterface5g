@@ -529,7 +529,10 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   }
 
   if (prach_resources->init_msg1) {
-
+    if (is_nr_UL_slot(mac->scc, nr_slot_tx)) {
+      LOG_D(MAC, "calling nr_ue_prach_scheduler\n");
+      nr_ue_prach_scheduler(mod_id, nr_slot_tx, frame, 0);
+    }
     if (ra->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
 
@@ -626,10 +629,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         // Fill in preamble and PRACH resources
         ra->RA_window_cnt--;
         nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
-        if (is_nr_UL_slot(mac->scc, nr_slot_tx)) {
-          nr_ue_scheduler(NULL, mac->ul_config_request);
-          nr_ue_prach_scheduler(mod_id, frame, nr_slot_tx, 0);
-        }
 
       } else if (ra->RA_backoff_cnt > 0) {
 
