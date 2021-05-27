@@ -1631,13 +1631,14 @@ uint16_t do_RRCReconfiguration(
     // *security_config->keyToUse = NR_SecurityConfig__keyToUse_master;
 
     ie = calloc(1, sizeof(NR_RRCReconfiguration_IEs_t));
-    ie->radioBearerConfig = calloc(1, sizeof(NR_RadioBearerConfig_t));
-    ie->radioBearerConfig->srb_ToAddModList  = SRB_configList;
-    ie->radioBearerConfig->drb_ToAddModList  = DRB_configList;
-    ie->radioBearerConfig->securityConfig    = security_config;
-    ie->radioBearerConfig->srb3_ToRelease    = NULL;
-    ie->radioBearerConfig->drb_ToReleaseList = DRB_releaseList;
-
+    if (SRB_configList || DRB_configList) {
+      ie->radioBearerConfig = calloc(1, sizeof(NR_RadioBearerConfig_t));
+      ie->radioBearerConfig->srb_ToAddModList  = SRB_configList;
+      ie->radioBearerConfig->drb_ToAddModList  = DRB_configList;
+      ie->radioBearerConfig->securityConfig    = security_config;
+      ie->radioBearerConfig->srb3_ToRelease    = NULL;
+      ie->radioBearerConfig->drb_ToReleaseList = DRB_releaseList;
+    }
     /******************** Secondary Cell Group ********************/
     // rrc_gNB_carrier_data_t *carrier = &(gnb_rrc_inst->carrier);
     // fill_default_secondaryCellGroup( carrier->servingcellconfigcommon,

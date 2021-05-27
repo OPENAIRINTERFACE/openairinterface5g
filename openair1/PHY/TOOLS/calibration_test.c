@@ -10,12 +10,17 @@ unsigned int mmapped_dma=0;
 int      single_thread_flag;
 uint32_t timing_advance;
 int8_t threequarter_fs;
-int usrp_tx_thread;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 int opp_enabled;
 static double snr_dB=20;
 THREAD_STRUCT thread_struct;
+uint32_t target_ul_mcs = 9;
+uint32_t target_dl_mcs = 9;
+uint64_t dlsch_slot_bitmap = (1<<1);
+uint64_t ulsch_slot_bitmap = (1<<8);
+uint32_t target_ul_bw = 50;
+uint32_t target_dl_bw = 50;
 #include <executables/nr-softmodem.h>
 
 int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_state) {return 0;}
@@ -302,6 +307,9 @@ int main(int argc, char **argv) {
 
   void ** samplesRx = (void **)malloc16(antennas* sizeof(struct complex16 *) );
   void ** samplesTx = (void **)malloc16(antennas* sizeof(struct complex16 *) );
+
+  int fd=open(getenv("rftestInputFile"),O_RDONLY);
+  AssertFatal(fd>=0,"%s",strerror(errno));
   
   for (int i=0; i<antennas; i++) {
     samplesRx[i] = (int32_t *)malloc16_clear( DFT*sizeof(struct complex16) );
@@ -313,14 +321,16 @@ int main(int argc, char **argv) {
   rfdevice.trx_start_func(&rfdevice);
   
   while(!oai_exit) {
+    for (int i=0; i<antennas; i++)
+      read(fd, samplesTx[i], DFT*sizeof(struct complex16));
     int readBlockSize = rfdevice.trx_read_func(&rfdevice,
 					       &timestamp,
-					       samplesTx,
+					       samplesRx,
 					       DFT,
 					       antennas);
     int txs = rfdevice.trx_write_func(&rfdevice,
 					    timestamp+TxAdvanceInDFTSize*DFT,
-					    samplesRx,
+					    samplesTx,
 					    DFT,
 					    antennas,
 					    0);

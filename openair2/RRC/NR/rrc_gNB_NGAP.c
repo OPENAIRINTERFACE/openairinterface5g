@@ -355,8 +355,8 @@ nr_rrc_pdcp_config_security(
     if (print_keys == 1 ) {
       print_keys =0;
       LOG_DUMPMSG(NR_RRC, DEBUG_SECURITY, ue_context_pP->ue_context.kgnb, 32,"\nKgNB:" );
-      LOG_DUMPMSG(NR_RRC, DEBUG_SECURITY, kRRCenc, 32,"\nKRRCenc:" );
-      LOG_DUMPMSG(NR_RRC, DEBUG_SECURITY, kRRCint, 32,"\nKRRCint:" );
+      LOG_DUMPMSG(NR_RRC, DEBUG_SECURITY, kRRCenc, 16,"\nKRRCenc:" );
+      LOG_DUMPMSG(NR_RRC, DEBUG_SECURITY, kRRCint, 16,"\nKRRCint:" );
     }
   }
 

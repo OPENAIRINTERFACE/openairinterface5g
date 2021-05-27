@@ -1003,7 +1003,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     memset(sdap_config, 0, sizeof(NR_SDAP_Config_t));
     sdap_config->pdu_Session = ue_context_pP->ue_context.pdusession[i].param.pdusession_id;
     sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
-    sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_present;
+    sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
     sdap_config->defaultDRB = TRUE;
     sdap_config->mappedQoS_FlowsToAdd = calloc(1, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
     memset(sdap_config->mappedQoS_FlowsToAdd, 0, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
@@ -1281,6 +1281,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
   NR_DRB_ToReleaseList_t             *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
   NR_DRB_Identity_t                  *drb_id_p      = NULL;
 //  uint8_t                             nr_DRB2LCHAN[8];
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
 
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
 
@@ -1321,6 +1322,15 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
   /* Refresh SRBs/DRBs */
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    rrc_mac_config_req_gNB(rrc->module_id,
+                           rrc->carrier.ssb_SubcarrierOffset,
+                           rrc->carrier.pdsch_AntennaPorts,
+                           rrc->carrier.pusch_AntennaPorts,
+                           NULL,
+                           0,
+                           ue_context_pP->ue_context.rnti,
+                           ue_context_pP->ue_context.masterCellGroup
+                           );
     LOG_I(NR_RRC,"Configuring RLC DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
     nr_rrc_rlc_config_asn1_req(ctxt_pP,
                           SRB_configList, // NULL,

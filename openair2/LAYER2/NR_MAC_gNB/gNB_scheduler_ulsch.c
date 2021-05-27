@@ -305,11 +305,11 @@ void nr_process_mac_pdu(
                   mac_subheader_len = 2;
                 }
 
-                LOG_I(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
-		int UE_id = find_nr_UE_id(module_idP, rnti);
-		RC.nrmac[module_idP]->UE_info.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
+                LOG_I(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-%s %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid<4?"DCCH":"DTCH",rx_lcid, module_idP, mac_sdu_len);
+		            int UE_id = find_nr_UE_id(module_idP, rnti);
+		            RC.nrmac[module_idP]->UE_info.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-		    log_dump(NR_MAC, pdu_ptr + mac_subheader_len, 32, LOG_DUMP_CHAR, "\n");
+		                log_dump(NR_MAC, pdu_ptr + mac_subheader_len, 32, LOG_DUMP_CHAR, "\n");
 
                 #endif
 
@@ -507,7 +507,10 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         if (UE_scheduling_control->sched_ul_bytes < 0)
           UE_scheduling_control->sched_ul_bytes = 0;
       }
-      if (ul_cqi < 128) UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt++; 
+      if (ul_cqi <= 128) {
+        UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt++;
+        UE_info->mac_stats[UE_id].ulsch_DTX++;
+      }
       if (UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
          LOG_I(NR_MAC,"Detected UL Failure on PUSCH, stopping scheduling\n");
          UE_info->UE_sched_ctrl[UE_id].ul_failure = 1;
@@ -771,7 +774,7 @@ void pf_ul(module_id_t module_id,
     sched_pusch->mcs = mcs;
     sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
     sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
-    LOG_W(NR_MAC, "Fixme: work around a NULL pointer (set in function nr_save_pusch_fields that is actually called)\n");
+    LOG_D(NR_MAC, "Fixme: work around a NULL pointer (set in function nr_save_pusch_fields that is actually called)\n");
     if (ps->pusch_Config && (ps->pusch_Config->tp_pi2BPSK
         && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6)))) {
       sched_pusch->R >>= 1;
@@ -1031,6 +1034,7 @@ void nr_schedule_ulsch(module_id_t module_id,
   const NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->ul_failure == 1) continue;
     UE_info->mac_stats[UE_id].ulsch_current_bytes = 0;
     /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in
      * every TTI are pre-populated by the preprocessor and used below */

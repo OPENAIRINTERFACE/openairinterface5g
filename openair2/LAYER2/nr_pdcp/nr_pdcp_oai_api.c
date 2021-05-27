@@ -911,6 +911,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
       //kUPenc != NULL ||
       pmch_InfoList_r9 != NULL /*||
       defaultDRB != NULL */) {
+    LOG_I(PDCP,"Releasing DRBs, oops\n");
     TODO;
   }
 
