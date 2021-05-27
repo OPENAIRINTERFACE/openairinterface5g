@@ -473,12 +473,14 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
    bwp=calloc(1,sizeof(*bwp));
     // copy common BWP size from initial BWP except for bandwdith
    bwp->bwp_Id = bwp_loop +1;
-
-   memcpy((void*)&bwp->bwp_Common->genericParameters,
+ }
+ if(bwp->bwp_Common->genericParameters.subcarrierSpacing == 0 || bwp->bwp_Common->genericParameters.locationAndBandwidth == 0)
+ {
+    memcpy((void*)&bwp->bwp_Common->genericParameters,
     &servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters,
     sizeof(bwp->bwp_Common->genericParameters));
-   bwp->bwp_Common->genericParameters.subcarrierSpacing = 1;  
-   bwp->bwp_Common->genericParameters.locationAndBandwidth=PRBalloc_to_locationandbandwidth(servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,0);
+    bwp->bwp_Common->genericParameters.subcarrierSpacing = 1;  
+    bwp->bwp_Common->genericParameters.locationAndBandwidth=PRBalloc_to_locationandbandwidth(servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,0);
  }
 
  bwp->bwp_Common->pdcch_ConfigCommon=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon));
@@ -762,10 +764,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
    ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list,bwp);
  }
 
- if (!servingcellconfigdedicated) { //TODO : check if code goes here
-  secondaryCellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id=calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id));
-  *secondaryCellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id=1; 
- }
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->bwp_InactivityTimer = NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id = NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id = calloc(1, sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id));

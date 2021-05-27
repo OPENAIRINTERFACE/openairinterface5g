@@ -326,20 +326,17 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
 }
 
 /* Function to allocate dedicated serving cell config strutures */
-void prepare_scd(NR_ServingCellConfig_t *scd, int scd_present) {
+void prepare_scd(NR_ServingCellConfig_t *scd) {
   // Allocate downlink structures
   scd->downlinkBWP_ToAddModList = CALLOC(1, sizeof(*scd->downlinkBWP_ToAddModList));
   scd->uplinkConfig = CALLOC(1, sizeof(*scd->uplinkConfig));
   scd->uplinkConfig->uplinkBWP_ToAddModList = CALLOC(1, sizeof(*scd->uplinkConfig->uplinkBWP_ToAddModList));
-
-  if(scd_present)
-  {
   scd->bwp_InactivityTimer = CALLOC(1, sizeof(*scd->bwp_InactivityTimer));
   scd->uplinkConfig->firstActiveUplinkBWP_Id  = CALLOC(1, sizeof(*scd->uplinkConfig->firstActiveUplinkBWP_Id));
   scd->firstActiveDownlinkBWP_Id = CALLOC(1, sizeof(*scd->firstActiveDownlinkBWP_Id));
   *scd->firstActiveDownlinkBWP_Id = 1;
   *scd->uplinkConfig->firstActiveUplinkBWP_Id = 1;
-  }
+  
  
 for (int j = 0 ;j < 4 ; j++)
 {
@@ -845,9 +842,10 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   // Serving Cell Config Dedicated
   NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
   memset((void*)scd,0,sizeof(NR_ServingCellConfig_t));
-  paramlist_def_t SCDsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, NULL, 0};
-  prepare_scd(scd, SCDsParamList.numelt);
+  prepare_scd(scd);
   paramdef_t SCDsParams[] = SCDPARAMS_DESC(scd);
+  paramlist_def_t SCDsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, NULL, 0};
+ 
   
    ////////// Physical parameters
 
