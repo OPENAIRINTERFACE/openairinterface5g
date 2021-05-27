@@ -265,6 +265,9 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
                        f1ap_ue_context_setup_req->mnc_digit_length,
                        &nRCGI.pLMN_Identity);
      NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+
+    LOG_I(F1AP,"(1) f1ap_ue_context_setup_req->nr_cellid = %lu (123456)\n", f1ap_ue_context_setup_req->nr_cellid);
+
      scell_toBeSetup_item.sCell_ID = nRCGI;
 
      /* 10.1.2 sCellIndex */

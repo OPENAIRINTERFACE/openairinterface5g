@@ -590,6 +590,9 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 			       &nRCGI.nRCellIdentity);
       cells_to_be_activated_list_item.nRCGI = nRCGI;
 
+      LOG_I(F1AP,"f1ap_gnb_cu_configuration_update->cells_to_activate[i].nr_cellid = %i (123456)\n", f1ap_gnb_cu_configuration_update->cells_to_activate[i].nr_cellid);
+      LOG_I(F1AP,"f1ap_gnb_cu_configuration_update->cells_to_activate[i].nrpci = %i (321)\n", f1ap_gnb_cu_configuration_update->cells_to_activate[i].nrpci);
+
       // optional
       // -nRPCI
       cells_to_be_activated_list_item.nRPCI = (F1AP_NRPCI_t *)calloc(1, sizeof(F1AP_NRPCI_t));
