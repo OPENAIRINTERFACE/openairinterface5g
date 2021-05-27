@@ -59,6 +59,7 @@
 
 // message type for 5GS session management
 #define FGS_PDU_SESSION_ESTABLISHMENT_REQ                  0b11000001 /* 193= 0xc1 */
+#define FGS_PDU_SESSION_ESTABLISHMENT_ACC                  0b11000010 /* 194= 0xc2 */
 
 #define INITIAL_REGISTRATION                               0b001
 

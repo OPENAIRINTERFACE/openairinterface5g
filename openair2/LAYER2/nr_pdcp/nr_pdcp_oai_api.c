@@ -459,7 +459,8 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   int rb_id;
   int i;
 
-  if(IS_SOFTMODEM_NOS1){
+  if(UE_NAS_USE_TUN){
+    LOG_D(PDCP, "IP packet received, to be sent to UE TUN interface"); 
     len = write(nas_sock_fd[0], buf, size);
     if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
