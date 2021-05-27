@@ -392,6 +392,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
                              (const char*)f1ap_du_data->mib[i],//f1ap_du_data->mib,
                              f1ap_du_data->mib_length[i]);
 
+        LOG_I(F1AP,"Filling SIB1_message for cell %d, length %d\n",i,f1ap_du_data->sib1_length[i]);
         OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
                              (const char*)f1ap_du_data->sib1[i],
                              f1ap_du_data->sib1_length[i]);
@@ -589,7 +590,6 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
     } // switch ie
   } // for IE
   AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
-  AssertFatal(num_cells_to_activate>0,"No cells activated\n");
   F1AP_SETUP_RESP (msg_p).num_cells_to_activate = num_cells_to_activate;
 
   for (int i=0;i<num_cells_to_activate;i++)
