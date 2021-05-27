@@ -8845,10 +8845,10 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         if (rrc->carrier[0].SIB23) {
           F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container[2+num_SI]        = rrc->carrier[0].SIB23;
           F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[2+num_SI] = rrc->carrier[0].sizeof_SIB23;
-          printf("SI %d size %d: ", 0, F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[2+num_SI]);
-          for (int n = 0; n < F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[2+num_SI]; n++)
-            printf("%02x ", F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container[2+num_SI][n]);
-          printf("\n");
+          //printf("SI %d size %d: ", 0, F1AP_SETUP_RESP(msg_p).SI_container_length[j][num_SI]);
+          //for (int n = 0; n < F1AP_SETUP_RESP(msg_p).SI_container_length[j][num_SI]; n++)
+          //  printf("%02x ", F1AP_SETUP_RESP(msg_p).SI_container[0][num_SI][n]);
+          //printf("\n");
           num_SI++;
         }
 
