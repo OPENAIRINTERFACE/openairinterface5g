@@ -529,10 +529,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   }
 
   if (prach_resources->init_msg1) {
-    if (is_nr_UL_slot(mac->scc, nr_slot_tx)) {
-      LOG_D(MAC, "calling nr_ue_prach_scheduler\n");
-      nr_ue_prach_scheduler(mod_id, nr_slot_tx, frame, 0);
-    }
+
     if (ra->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
 

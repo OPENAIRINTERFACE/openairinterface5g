@@ -145,6 +145,34 @@ void init_nrUE_standalone_thread(int ue_idx)
   pthread_setname_np(phy_thread, "oai:nrue-stand-phy");
 }
 
+static void L1_nsa_prach_procedures(nfapi_nr_rach_indication_t *rach_ind, frame_t frame, int slot)
+{
+  rach_ind->sfn = frame;
+  rach_ind->slot = slot;
+  rach_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION;
+
+  uint8_t pdu_index = 0;
+  rach_ind->pdu_list = CALLOC(1, sizeof(*rach_ind->pdu_list));
+  rach_ind->number_of_pdus  = 1;
+	rach_ind->pdu_list[pdu_index].phy_cell_id                         = 0;
+	rach_ind->pdu_list[pdu_index].symbol_index                        = 0;
+	rach_ind->pdu_list[pdu_index].slot_index                          = slot;
+	rach_ind->pdu_list[pdu_index].freq_index                          = 1;
+	rach_ind->pdu_list[pdu_index].avg_rssi                            = 128;
+	rach_ind->pdu_list[pdu_index].avg_snr                             = 0xff; // invalid for now
+
+	rach_ind->pdu_list[pdu_index].num_preamble                        = 1;
+  const int num_p = rach_ind->pdu_list[pdu_index].num_preamble;
+  rach_ind->pdu_list[pdu_index].preamble_list = calloc(num_p, sizeof(nfapi_nr_prach_indication_preamble_t));
+	rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_index     = 0;
+	rach_ind->pdu_list[pdu_index].preamble_list[0].timing_advance     = 0;
+	rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_pwr       = 0xffffffff;
+
+  send_nsa_standalone_msg(rach_ind);
+  free(rach_ind->pdu_list);
+  //free(rach_ind->pdu_list[pdu_index].preamble_list); Melissa hack maybe
+}
+
 static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 {
   NR_PRACH_RESOURCES_t prach_resources;
@@ -169,34 +197,43 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     }
     last_sfn_slot = sfn_slot;
 
-    frame_t frame_tx = NFAPI_SFNSLOT2SFN(sfn_slot);
-    int nr_slot_tx = NFAPI_SFNSLOT2SLOT(sfn_slot);
     module_id_t mod_id = 0;
+    NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+    if (mac->scc == NULL) {
+      continue;
+    }
+
+    frame_t frame = NFAPI_SFNSLOT2SFN(sfn_slot);
+    int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
+    int slots_per_frame = 2048;
+    int slots_per_subframe = 2;
+    int slot_ahead = 6;
+    nr_uplink_indication_t ul_info;
+    ul_info.frame_rx = frame;
+    ul_info.slot_rx = slot;
+    ul_info.frame_tx = (slot > slots_per_frame - 1 - (slots_per_subframe*slot_ahead)) ? frame & 1023 : frame;
+    ul_info.slot_tx = slot + slots_per_subframe*slot_ahead % slots_per_frame;
+    if (is_nr_UL_slot(mac->scc, slot)) {
+      LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", slot, __FUNCTION__);
+      nr_ue_ul_indication(&ul_info);
+    }
+
     int CC_id = 0;
     uint8_t gNB_id = 0;
-
-    uint8_t nr_prach = nr_ue_get_rach(&prach_resources, &prach_pdu, mod_id, CC_id, frame_tx, gNB_id, nr_slot_tx);
+    uint8_t nr_prach = nr_ue_get_rach(&prach_resources, &prach_pdu, mod_id, CC_id, frame, gNB_id, slot);
 
     if (nr_prach == 1)
     {
-      nfapi_nr_rach_indication_t rach_ind = {
-        .header = {
-          .message_id = NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION,
-        },
-        .sfn             = frame_tx,
-        .slot            = nr_slot_tx,
-        .pdu_list        = NULL,
-        .number_of_pdus  = 0,
-      };
-      send_nsa_standalone_msg(&rach_ind);
-
+      nfapi_nr_rach_indication_t *ind = CALLOC(1, sizeof(*ind));
+      L1_nsa_prach_procedures(ind, frame, slot);
+      free(ind);
       /* Fill rach indication here and send to proxy. Basically take pieces from
       L1_nr_prach_procedures() and send it to the proxy. prach from ue->gNb->gnb sends rach->ue receives rach
       The UE is basically filling the rach and proxy will receive and think that it came from the gNB. The
       received rach in the proxy will trigger gNB to send back the RAR. RAR will go to proxy then goes to UE
       and the UE will get the DCI for RAR and the payload. have to handle receving the RAR once we get it. */
-      LOG_I(NR_PHY, "Melissa! Calling nr_Msg1_transmitted!!!\n");
-      nr_Msg1_transmitted(mod_id, CC_id, frame_tx, gNB_id); //This is called when phy layer has sent the prach
+      LOG_I(NR_PHY, "Calling nr_Msg1_transmitted!!!\n");
+      nr_Msg1_transmitted(mod_id, CC_id, frame, gNB_id); //This is called when phy layer has sent the prach
     }
     else if (nr_prach == 2)
     {

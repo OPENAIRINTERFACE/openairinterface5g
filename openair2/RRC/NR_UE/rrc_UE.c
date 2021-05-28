@@ -3016,6 +3016,11 @@ static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
 
 void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
 {
+    if (msg_len < sizeof(msg->msg_type))
+    {
+        LOG_E(RRC, "Msg_len = %d\n", msg_len);
+        return;
+    }
     LOG_D(NR_RRC, "Processing an NSA message\n");
     Rrc_Msg_Type_t msg_type = msg->msg_type;
     uint8_t *const msg_buffer = msg->msg_buffer;

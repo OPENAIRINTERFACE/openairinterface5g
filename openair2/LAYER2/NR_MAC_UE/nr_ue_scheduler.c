@@ -138,6 +138,8 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
                 num_slots_per_tdd,
                 num_slots_ul,
                 index);
+  if(!mac->ul_config_request)
+    return NULL;
 
   return &mac->ul_config_request[index];
 }
@@ -869,10 +871,12 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     RA_config_t *ra       = &mac->ra;
 
     fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot_tx);
-
+    if (!ul_config) {
+      LOG_E(NR_MAC, "mac->ul_config is null!\n");
+    }
     // Schedule ULSCH only if the current frame and slot match those in ul_config_req
     // AND if a UL grant (UL DCI or Msg3) has been received (as indicated by num_pdus)
-    if ((ul_info->slot_tx == ul_config->slot && ul_info->frame_tx == ul_config->sfn) && ul_config->number_pdus > 0){
+    else if (ul_info->slot_tx == ul_config->slot && ul_info->frame_tx == ul_config->sfn && ul_config->number_pdus > 0) {
 
       LOG_D(MAC, "In %s:[%d.%d]: number of UL PDUs: %d with UL transmission in [%d.%d]\n", __FUNCTION__, frame_tx, slot_tx, ul_config->number_pdus, ul_config->sfn, ul_config->slot);
 

@@ -1547,6 +1547,7 @@ void vnf_handle_nr_rach_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf
 	}
 	else
 	{
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "Melissa %s: HANDLING RACH IND\n", __FUNCTION__);
 		nfapi_nr_rach_indication_t ind;
 	
 		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)

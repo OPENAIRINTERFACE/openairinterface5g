@@ -6571,6 +6571,11 @@ void init_connections_with_nr_ue(void)
 
 void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
 {
+    if (msg_len < sizeof(msg->msg_type))
+    {
+        LOG_E(RRC, "Msg_len = %d\n", msg_len);
+        return;
+    }
     LOG_D(RRC, "We are processing an NSA message %d \n", msg->msg_type);
     Rrc_Msg_Type_t msg_type = msg->msg_type;
     uint8_t *const msg_buffer = msg->msg_buffer;
