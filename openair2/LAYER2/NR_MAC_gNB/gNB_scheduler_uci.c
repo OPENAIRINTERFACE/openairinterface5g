@@ -453,10 +453,9 @@ uint16_t nr_get_csi_bitlen(int Mod_idP,
 
 void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frame,
-                           sub_frame_t slot)
-{
-  NR_ServingCellConfigCommon_t *scc =
-      RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
+                           sub_frame_t slot) {
+
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
 
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;

@@ -1260,7 +1260,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep2->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
  csirep2->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep2->reportConfigType.choice.periodic));
  csirep2->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
- csirep2->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 19 + (20 * uid) % 320;
+ csirep2->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 29 + (20 * uid) % 320;
  ASN_SEQUENCE_ADD(&csirep2->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
  csirep2->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP;
  csirep2->reportQuantity.choice.ssb_Index_RSRP=(NULL_t)0;
