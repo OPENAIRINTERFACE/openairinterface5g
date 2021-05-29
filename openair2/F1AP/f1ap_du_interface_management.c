@@ -415,15 +415,17 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
   /* mandatory */
   /* c5. RRC VERSION */
-  ie = (F1AP_F1SetupRequestIEs_t *)calloc(1, sizeof(F1AP_F1SetupRequestIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_GNB_DU_RRC_Version;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_F1SetupRequestIEs__value_PR_RRC_Version;
-  ie->value.choice.RRC_Version.latest_RRC_Version.buf=calloc(1,sizeof(char));
-  ie->value.choice.RRC_Version.latest_RRC_Version.buf[0] = 0xe0;
-  ie->value.choice.RRC_Version.latest_RRC_Version.size = 1;
-  ie->value.choice.RRC_Version.latest_RRC_Version.bits_unused = 5;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  if(RC.nrrrc) {
+    ie = (F1AP_F1SetupRequestIEs_t *) calloc(1, sizeof(F1AP_F1SetupRequestIEs_t));
+    ie->id = F1AP_ProtocolIE_ID_id_GNB_DU_RRC_Version;
+    ie->criticality = F1AP_Criticality_reject;
+    ie->value.present = F1AP_F1SetupRequestIEs__value_PR_RRC_Version;
+    ie->value.choice.RRC_Version.latest_RRC_Version.buf = calloc(1, sizeof(char));
+    ie->value.choice.RRC_Version.latest_RRC_Version.buf[0] = 0xe0;
+    ie->value.choice.RRC_Version.latest_RRC_Version.size = 1;
+    ie->value.choice.RRC_Version.latest_RRC_Version.bits_unused = 5;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
