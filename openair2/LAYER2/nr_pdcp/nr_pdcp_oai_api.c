@@ -905,7 +905,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
       //ctxt_pP->configured != 2 ||
       //srb2add_list == NULL ||
       //drb2add_list != NULL ||
-      drb2release_list != NULL ||
+      //drb2release_list != NULL ||
       //security_modeP != 255 ||
       //kRRCenc != NULL ||
       //kRRCint != NULL ||
@@ -934,6 +934,10 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
   /* update security */
   if (kRRCint != NULL) {
     /* todo */
+  }
+  
+  if (drb2release_list != NULL) {
+    // TODO
   }
 
   free(kRRCenc);
@@ -1202,6 +1206,7 @@ static boolean_t pdcp_data_req_drb(
   if (rb == NULL) {
     LOG_E(PDCP, "%s:%d:%s: no DRB found (rnti %d, rb_id %ld)\n",
           __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
+    nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
     return 0;
   }
 

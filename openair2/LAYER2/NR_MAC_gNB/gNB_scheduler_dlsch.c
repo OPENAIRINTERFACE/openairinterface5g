@@ -457,6 +457,7 @@ void pf_dl(module_id_t module_id,
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     if (UE_info->Msg4_ACKed[UE_id] != true) continue;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->ul_failure==1) continue;
     int bwp_Id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0; 
     NR_BWP_DownlinkDedicated_t *bwp_Dedicated=NULL;
     if (sched_ctrl->active_bwp) bwp_Dedicated = sched_ctrl->active_bwp->bwp_Dedicated;

@@ -633,30 +633,30 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   int16x8_t buff_tmp[2][nsamps2];
 #endif
 
-    if (cc>1) {
+    samples_received=0;
+    while (samples_received != nsamps) {
+
+      if (cc>1) {
       // receive multiple channels (e.g. RF A and RF B)
-      std::vector<void *> buff_ptrs;
+        std::vector<void *> buff_ptrs;
 
-      for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]);
+        for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]+samples_received);
 
-      samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
-    } else {
+        samples_received += s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+      } else {
       // receive a single channel (e.g. from connector RF A)
-      samples_received=0;
 
-      while (samples_received != nsamps) {
         samples_received += s->rx_stream->recv((void*)((int32_t*)buff_tmp[0]+samples_received),
                                                nsamps-samples_received, s->rx_md);
-
-        if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
-          break;
-
-        if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
-          printf("sleep...\n"); //usleep(100);
-        }
       }
-      if (samples_received == nsamps) s->wait_for_first_pps=0;
+      if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
+        break;
+
+      if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
+        printf("sleep...\n"); //usleep(100);
+      }
     }
+    if (samples_received == nsamps) s->wait_for_first_pps=0;
 
     // bring RX data into 12 LSBs for softmodem RX
     for (int i=0; i<cc; i++) {

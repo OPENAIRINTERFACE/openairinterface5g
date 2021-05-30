@@ -918,7 +918,7 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
 
   if (drb2release_listP != NULL) {
     LOG_E(RLC, "%s:%d:%s: TODO\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
+    //exit(1);
   }
 
   if (srb2add_listP != NULL) {

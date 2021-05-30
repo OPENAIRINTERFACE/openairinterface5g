@@ -788,7 +788,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
     struct rrc_gNB_ue_context_s *ue_context_p = NULL;
     protocol_ctxt_t              ctxt;
     memset(&ctxt, 0, sizeof(protocol_ctxt_t));
-    MessageDef *message_p;
 
     ue_initial_id  = NGAP_DOWNLINK_NAS (msg_p).ue_initial_id;
     gNB_ue_ngap_id = NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id;
@@ -878,6 +877,7 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         {
           // rrc_mac_config_req_gNB
 #ifdef ITTI_SIM
+        MessageDef *message_p;
         uint8_t *message_buffer;
         message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, length);
         memcpy (message_buffer, buffer, length);
@@ -1229,11 +1229,25 @@ rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(
     return -1;
   } else {
     ue_context_p->ue_context.ue_release_timer_ng = 0;
+    ue_context_p->ue_context.ue_release_timer_thres_rrc = 1000;
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+    ctxt.eNB_index = 0;
     rrc_gNB_generate_RRCRelease(&ctxt, ue_context_p);
     return 0;
   }
 }
+
+void rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(
+  instance_t instance,
+  uint32_t   gNB_ue_ngap_id) {
+  MSC_LOG_TX_MESSAGE(MSC_RRC_GNB, MSC_NGAP_GNB, NULL, 0,
+                     "0 NGAP_UE_CONTEXT_RELEASE_COMPLETE gNB_ue_ngap_id 0x%06"PRIX32" ",
+                     gNB_ue_ngap_id);
+  MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
+  NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg).gNB_ue_ngap_id = gNB_ue_ngap_id;
+  itti_send_msg_to_task(TASK_NGAP, instance, msg);
+}
+
 //------------------------------------------------------------------------------
 /*
 * Remove UE ids (ue_initial_id and ng_id) from hashtables.
