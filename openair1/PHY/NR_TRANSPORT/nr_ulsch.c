@@ -150,7 +150,7 @@ void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
                                      gNB->ulsch_stats[i].rnti,
                                      aa,gNB->ulsch_stats[i].power[aa]/10,gNB->ulsch_stats[i].power[aa]%10,
                                      aa,gNB->ulsch_stats[i].noise_power[aa]/10,gNB->ulsch_stats[i].noise_power[aa]%10);
-          else       stroff+=sprintf(output+stroff,"                  ulsch_power[%d] %d.%d, ulsch_noise_power[%d] %d.%d\n",
+          else       stroff+=sprintf(output+stroff,"                ulsch_power[%d] %d.%d ulsch_noise_power[%d] %d.%d\n", 
                                      aa,gNB->ulsch_stats[i].power[aa]/10,gNB->ulsch_stats[i].power[aa]%10,
                                      aa,gNB->ulsch_stats[i].noise_power[aa]/10,gNB->ulsch_stats[i].noise_power[aa]%10);
 

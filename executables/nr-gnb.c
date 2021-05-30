@@ -356,7 +356,7 @@ void *nrL1_stats_thread(void *param) {
   while (!oai_exit) {
     sleep(1);
     fd=fopen("nrL1_stats.log","w");
-    AssertFatal(fd!=NULL,"Cannot open ngL1_stats.log\n");
+    AssertFatal(fd!=NULL,"Cannot open nrL1_stats.log\n");
     dump_nr_I0_stats(fd,gNB);
     dump_pusch_stats(fd,gNB);
     //    nr_dump_uci_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);

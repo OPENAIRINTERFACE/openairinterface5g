@@ -2770,8 +2770,290 @@ void rrc_gNB_process_dc_overall_timeout(const module_id_t gnb_mod_idP, x2ap_ENDC
   rrc_remove_nsa_user(rrc, m->rnti);
 }
 
+unsigned int mask_flip(unsigned int x) {
+  return((((x>>8) + (x<<8))&0xffff)>>6);
+}
+
+unsigned int get_dl_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
+
+
+  int common_band = *rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  int common_scs  = rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing; 
+  for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
+     NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
+     if (bandNRinfo->bandNR == common_band) {
+       if (common_band < 257) { // FR1
+          switch (common_scs) {
+            case NR_SubcarrierSpacing_kHz15 :
+               if (bandNRinfo->channelBWs_DL && 
+                   bandNRinfo->channelBWs_DL->choice.fr1 &&
+                   bandNRinfo->channelBWs_DL->choice.fr1->scs_15kHz)
+                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr1->scs_15kHz->buf));
+ 	      break;
+            case NR_SubcarrierSpacing_kHz30 :
+               if (bandNRinfo->channelBWs_DL &&
+                   bandNRinfo->channelBWs_DL->choice.fr1 &&
+                   bandNRinfo->channelBWs_DL->choice.fr1->scs_30kHz)
+                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr1->scs_30kHz->buf));
+              break;
+            case NR_SubcarrierSpacing_kHz60 :
+               if (bandNRinfo->channelBWs_DL &&
+                   bandNRinfo->channelBWs_DL->choice.fr1 &&
+                   bandNRinfo->channelBWs_DL->choice.fr1->scs_60kHz)
+                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr1->scs_60kHz->buf));
+              break;
+          }
+       }
+       else {
+          switch (common_scs) {
+            case NR_SubcarrierSpacing_kHz60 :
+               if (bandNRinfo->channelBWs_DL && 
+                   bandNRinfo->channelBWs_DL->choice.fr2 &&
+                   bandNRinfo->channelBWs_DL->choice.fr2->scs_60kHz)
+                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr2->scs_60kHz->buf));
+              break;
+            case NR_SubcarrierSpacing_kHz120 :
+               if (bandNRinfo->channelBWs_DL &&
+                   bandNRinfo->channelBWs_DL->choice.fr2 &&
+                   bandNRinfo->channelBWs_DL->choice.fr2->scs_120kHz)
+                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr2->scs_120kHz->buf));
+              break;
+       }
+     }
+   }
+  }
+  return(0);
+}
+
+unsigned int get_ul_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
+
+
+  int common_band = *rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0];
+  int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing; 
+  for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
+     NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
+     if (bandNRinfo->bandNR == common_band) {
+       if (common_band < 257) { // FR1
+          switch (common_scs) {
+            case NR_SubcarrierSpacing_kHz15 :
+               if (bandNRinfo->channelBWs_UL && 
+                   bandNRinfo->channelBWs_UL->choice.fr1 &&
+                   bandNRinfo->channelBWs_UL->choice.fr1->scs_15kHz)
+                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr1->scs_15kHz->buf));
+ 	      break;
+            case NR_SubcarrierSpacing_kHz30 :
+               if (bandNRinfo->channelBWs_UL &&
+                   bandNRinfo->channelBWs_UL->choice.fr1 &&
+                   bandNRinfo->channelBWs_UL->choice.fr1->scs_30kHz)
+                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr1->scs_30kHz->buf));
+              break;
+            case NR_SubcarrierSpacing_kHz60 :
+               if (bandNRinfo->channelBWs_UL &&
+                   bandNRinfo->channelBWs_UL->choice.fr1 &&
+                   bandNRinfo->channelBWs_UL->choice.fr1->scs_60kHz)
+                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr1->scs_60kHz->buf));
+              break;
+          }
+       }
+       else {
+          switch (common_scs) {
+            case NR_SubcarrierSpacing_kHz60 :
+               if (bandNRinfo->channelBWs_UL && 
+                   bandNRinfo->channelBWs_UL->choice.fr2 &&
+                   bandNRinfo->channelBWs_UL->choice.fr2->scs_60kHz)
+                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr2->scs_60kHz->buf));
+              break;
+            case NR_SubcarrierSpacing_kHz120 :
+               if (bandNRinfo->channelBWs_UL &&
+                   bandNRinfo->channelBWs_UL->choice.fr2 &&
+                   bandNRinfo->channelBWs_UL->choice.fr2->scs_120kHz)
+                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr2->scs_120kHz->buf));
+              break;
+       }
+     }
+   }
+  }
+  return(0);
+}
+
+int is_dl_256QAM_supported(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
+  int common_band = *rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  int common_scs  = rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+  if (common_band>256) {
+    for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
+       NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
+       if (bandNRinfo->bandNR == common_band && !bandNRinfo->pdsch_256QAM_FR2) return (0);
+    }
+  }
+  else if (cap->phy_Parameters.phy_ParametersFR1 && !cap->phy_Parameters.phy_ParametersFR1->pdsch_256QAM_FR1) return(0);
+    
+  // check featureSet
+  NR_FeatureSets_t *fs=cap->featureSets;
+  if (fs) {
+    // go through DL feature sets and look for one with current SCS
+    for (int i=0;i<fs->featureSetsDownlinkPerCC->list.count;i++) {
+       if (fs->featureSetsDownlinkPerCC->list.array[i]->supportedSubcarrierSpacingDL == common_scs &&
+           fs->featureSetsDownlinkPerCC->list.array[i]->supportedModulationOrderDL &&
+           *fs->featureSetsDownlinkPerCC->list.array[i]->supportedModulationOrderDL == NR_ModulationOrder_qam256) return(1);
+    }
+  }
+  return(0);
+}
+
+int is_ul_256QAM_supported(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
+  int common_band = *rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0];
+  int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+  for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
+       NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
+       if (bandNRinfo->bandNR == common_band && !bandNRinfo->pusch_256QAM) return (0);
+  }
+    
+  // check featureSet
+  NR_FeatureSets_t *fs=cap->featureSets;
+  if (fs) {
+    // go through UL feature sets and look for one with current SCS
+    for (int i=0;i<fs->featureSetsUplinkPerCC->list.count;i++) {
+       if (fs->featureSetsUplinkPerCC->list.array[i]->supportedSubcarrierSpacingUL == common_scs &&
+           fs->featureSetsUplinkPerCC->list.array[i]->supportedModulationOrderUL &&
+           *fs->featureSetsUplinkPerCC->list.array[i]->supportedModulationOrderUL == NR_ModulationOrder_qam256) return(1);
+    }
+  }
+  return(0);
+}
+
+int get_ul_mimo_layersCB(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
+  int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+    
+  // check featureSet
+  NR_FeatureSets_t *fs=cap->featureSets;
+  if (fs) {
+    // go through UL feature sets and look for one with current SCS
+    for (int i=0;i<fs->featureSetsUplinkPerCC->list.count;i++) {
+       if (fs->featureSetsUplinkPerCC->list.array[i]->supportedSubcarrierSpacingUL == common_scs &&
+           fs->featureSetsUplinkPerCC->list.array[i]->mimo_CB_PUSCH &&
+           fs->featureSetsUplinkPerCC->list.array[i]->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH)
+           return(1<<*fs->featureSetsUplinkPerCC->list.array[i]->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH);
+    }
+  }
+  return(1);
+}
+
+int get_ul_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
+  int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+    
+  // check featureSet
+  NR_FeatureSets_t *fs=cap->featureSets;
+  if (fs) {
+    // go through UL feature sets and look for one with current SCS
+    for (int i=0;i<fs->featureSetsUplinkPerCC->list.count;i++) {
+       if (fs->featureSetsUplinkPerCC->list.array[i]->supportedSubcarrierSpacingUL == common_scs &&
+           fs->featureSetsUplinkPerCC->list.array[i]->maxNumberMIMO_LayersNonCB_PUSCH)
+           return(1<<*fs->featureSetsUplinkPerCC->list.array[i]->maxNumberMIMO_LayersNonCB_PUSCH);
+    }
+  }
+  return(1);
+}
+
+int get_dl_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
+  int common_scs  = rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+    
+  // check featureSet
+  NR_FeatureSets_t *fs=cap->featureSets;
+  if (fs) {
+    // go through UL feature sets and look for one with current SCS
+    for (int i=0;i<fs->featureSetsDownlinkPerCC->list.count;i++) {
+       if (fs->featureSetsUplinkPerCC->list.array[i]->supportedSubcarrierSpacingUL == common_scs &&
+           fs->featureSetsDownlinkPerCC->list.array[i]->maxNumberMIMO_LayersPDSCH)
+           return(2<<*fs->featureSetsDownlinkPerCC->list.array[i]->maxNumberMIMO_LayersPDSCH);
+    }
+  }
+  return(1);
+}
 void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   MessageDef *msg;
+
+  rrc_gNB_ue_context_t *ue_context_p = NULL;
+  FILE *fd=fopen("nrRRCstats.log","w");
+  RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(RC.nrrrc[ctxt_pP->module_id]->rrc_ue_head)) {
+    ctxt_pP->rnti = ue_context_p->ue_id_rnti;
+
+     if (fd) {
+        if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == TRUE) {
+          fprintf(fd,"NR RRC UE rnti %x: S-TMSI %x failure timer %d/8\n",
+                ue_context_p->ue_id_rnti,
+                ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.fiveg_tmsi,
+                ue_context_p->ue_context.ul_failure_timer);
+        } else {
+          fprintf(fd,"NR RRC UE rnti %x failure timer %d/8\n",
+                ue_context_p->ue_id_rnti,
+                ue_context_p->ue_context.ul_failure_timer);
+        }
+
+        if (ue_context_p->ue_context.UE_Capability_nr) {
+          fprintf(fd,"NR RRC UE cap: BW DL %x. BW UL %x, 256 QAM DL %s, 256 QAM UL %s, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
+                get_dl_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
+                get_ul_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
+                is_dl_256QAM_supported(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr) == 1 ? "yes" : "no",
+                is_ul_256QAM_supported(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr) == 1 ? "yes" : "no",
+                get_dl_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
+                get_ul_mimo_layersCB(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
+                get_ul_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr));
+        }
+    }
+    if (ue_context_p->ue_context.ul_failure_timer > 0) {
+      ue_context_p->ue_context.ul_failure_timer++;
+
+      if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
+        // remove UE after 20 seconds after MAC (or else) has indicated UL failure
+        LOG_I(RRC, "Removing UE %x instance, because of uplink failure timer timeout\n",
+              ue_context_p->ue_context.rnti);
+        if(ue_context_p->ue_context.StatusRrc >= NR_RRC_CONNECTED){
+          rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(
+                   ctxt_pP->module_id,
+                   ue_context_p,
+                   NGAP_CAUSE_RADIO_NETWORK,
+                   30);
+        }else{
+          mac_remove_nr_ue(ctxt_pP->module_id, ctxt_pP->rnti);
+          rrc_rlc_remove_ue(ctxt_pP);
+          pdcp_remove_UE(ctxt_pP);
+
+          /* remove RRC UE Context */
+          ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rnti);
+          if (ue_context_p) {
+            rrc_gNB_remove_ue_context(ctxt_pP, RC.nrrrc[ctxt_pP->module_id], ue_context_p);
+            LOG_I(NR_RRC, "remove UE %x \n", ctxt_pP->rnti);
+          }
+        }
+        break; // break RB_FOREACH
+      }
+    }
+
+    if (ue_context_p->ue_context.ue_release_timer_rrc > 0) {
+      ue_context_p->ue_context.ue_release_timer_rrc++;
+
+      if (ue_context_p->ue_context.ue_release_timer_rrc >= ue_context_p->ue_context.ue_release_timer_thres_rrc) {
+        LOG_I(NR_RRC, "Removing UE %x instance after UE_CONTEXT_RELEASE_Complete (ue_release_timer_rrc timeout)\n",
+              ue_context_p->ue_context.rnti);
+        ue_context_p->ue_context.ue_release_timer_rrc = 0;
+
+        mac_remove_nr_ue(ctxt_pP->module_id, ctxt_pP->rnti);
+        rrc_rlc_remove_ue(ctxt_pP);
+        pdcp_remove_UE(ctxt_pP);
+
+        /* remove RRC UE Context */
+        ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rnti);
+        if (ue_context_p) {
+          rrc_gNB_remove_ue_context(ctxt_pP, RC.nrrrc[ctxt_pP->module_id], ue_context_p);
+          LOG_I(NR_RRC, "remove UE %x \n", ctxt_pP->rnti);
+        }
+
+        break; // break RB_FOREACH
+      }
+    }
+  }
+
+  fclose(fd);
 
   /* send a tick to x2ap */
   if (is_x2ap_enabled()){
@@ -3210,6 +3492,8 @@ rrc_gNB_generate_RRCRelease(
   size = do_NR_RRCRelease(buffer,rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
+  ue_context_pP->ue_context.ul_failure_timer = 0;
+  ue_context_pP->ue_context.ue_release_timer_rrc = 0;
   LOG_I(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCRelease (bytes %d)\n",
         PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -3243,11 +3527,13 @@ rrc_gNB_generate_RRCRelease(
     itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
   if (NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    uint8_t *message_buffer = itti_malloc (TASK_RRC_GNB, TASK_CU_F1, size);
+    memcpy (message_buffer, buffer, size);
     MessageDef *m = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
     F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
     F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
     F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
-    F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = buffer;
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = message_buffer;
     F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = size;
     itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
   } else {
@@ -3258,6 +3544,9 @@ rrc_gNB_generate_RRCRelease(
                  size,
                  buffer,
                  PDCP_TRANSMISSION_MODE_CONTROL);
+
+    rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(ctxt_pP->instance, ue_context_pP->ue_context.gNB_ue_ngap_id);
+    ue_context_pP->ue_context.ue_release_timer_rrc = 1;
   }
 #endif
 }

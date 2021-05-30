@@ -138,8 +138,9 @@ int nr_phy_init_RU(RU_t *ru) {
 	    ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
 	    for (j=0; j<ru->nb_tx; j++) {
 	      ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+              AssertFatal(ru->bw_list[i],"ru->bw_list[%d] is null\n",i);
               for (re=0; re<fp->ofdm_symbol_size; re++) 
-		ru->beam_weights[i][p][j][re] = ru->bw_list[j][l_ind];
+		ru->beam_weights[i][p][j][re] = ru->bw_list[i][l_ind];
               //printf("Beam Weight %08x for beam %d and tx %d\n",ru->bw_list[i][l_ind],p,j);
               l_ind++; 
   	    } // for j
