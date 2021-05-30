@@ -121,11 +121,11 @@ gtpv_data_req(
     
     LOG_I(GTPU,"gtpv_data_req task_id = TASK_DATA_FORWARDING\n");
     
-    message_buffer = itti_malloc (TASK_GTPV1_U, TASK_DATA_FORWARDING, sdu_sizeP);
+    message_buffer = itti_malloc (TASK_VARIABLE, TASK_DATA_FORWARDING, sdu_sizeP);
     
     memcpy (message_buffer, buffer_pP, sdu_sizeP);
     
-    message_p = itti_alloc_new_message (TASK_GTPV1_U, 0, GTPV1U_ENB_DATA_FORWARDING_IND);
+    message_p = itti_alloc_new_message (TASK_VARIABLE, 0, GTPV1U_ENB_DATA_FORWARDING_IND);
     GTPV1U_ENB_DATA_FORWARDING_IND (message_p).frame 	= ctxt_pP->frame;
     GTPV1U_ENB_DATA_FORWARDING_IND (message_p).enb_flag	= ctxt_pP->enb_flag;
     GTPV1U_ENB_DATA_FORWARDING_IND (message_p).rb_id 	= rb_idP;
@@ -144,11 +144,11 @@ gtpv_data_req(
     
     LOG_I(GTPU,"gtpv_data_req task_id = TASK_END_MARKER\n");
     
-    message_buffer = itti_malloc (TASK_GTPV1_U, TASK_END_MARKER, sdu_sizeP);
+    message_buffer = itti_malloc (TASK_VARIABLE, TASK_END_MARKER, sdu_sizeP);
     
     memcpy (message_buffer, buffer_pP, sdu_sizeP);
     
-    message_p = itti_alloc_new_message (TASK_GTPV1_U, 0, GTPV1U_ENB_END_MARKER_IND);
+    message_p = itti_alloc_new_message (TASK_VARIABLE, 0, GTPV1U_ENB_END_MARKER_IND);
     GTPV1U_ENB_END_MARKER_IND (message_p).frame 	= ctxt_pP->frame;
     GTPV1U_ENB_END_MARKER_IND (message_p).enb_flag	= ctxt_pP->enb_flag;
     GTPV1U_ENB_END_MARKER_IND (message_p).rb_id 	= rb_idP;
@@ -201,15 +201,15 @@ boolean_t gtpv_data_req_new (
       //ue_context_p->ue_context.handover_info->state = HO_END_MARKER;
       MessageDef *msg;
       // Configure end marker
-      msg = itti_alloc_new_message(TASK_GTPV1_U, 0, GTPV1U_ENB_END_MARKER_REQ);
-      GTPV1U_ENB_END_MARKER_REQ(msg).buffer = itti_malloc(TASK_GTPV1_U, TASK_GTPV1_U, GTPU_HEADER_OVERHEAD_MAX + sdu_buffer_sizeP);
+      msg = itti_alloc_new_message(TASK_VARIABLE, 0, GTPV1U_ENB_END_MARKER_REQ);
+      GTPV1U_ENB_END_MARKER_REQ(msg).buffer = itti_malloc(TASK_VARIABLE, TASK_VARIABLE, GTPU_HEADER_OVERHEAD_MAX + sdu_buffer_sizeP);
       memcpy(&GTPV1U_ENB_END_MARKER_REQ(msg).buffer[GTPU_HEADER_OVERHEAD_MAX],  sdu_buffer_pP, sdu_buffer_sizeP);
       GTPV1U_ENB_END_MARKER_REQ(msg).length = sdu_buffer_sizeP;
       GTPV1U_ENB_END_MARKER_REQ(msg).rnti   = ctxt->rnti;
       GTPV1U_ENB_END_MARKER_REQ(msg).rab_id = rb_idP;
       GTPV1U_ENB_END_MARKER_REQ(msg).offset = GTPU_HEADER_OVERHEAD_MAX;
       LOG_I(GTPU, "Send End Marker to GTPV1-U at frame %d and subframe %d \n", ctxt->frame,ctxt->subframe);
-      itti_send_msg_to_task(TASK_GTPV1_U, ENB_MODULE_ID_TO_INSTANCE(ctxt->module_id), msg);
+      itti_send_msg_to_task(TASK_VARIABLE, ENB_MODULE_ID_TO_INSTANCE(ctxt->module_id), msg);
       return NW_GTPV1U_OK;
   }
   

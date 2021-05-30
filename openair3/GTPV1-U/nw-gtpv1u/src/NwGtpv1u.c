@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "NwTypes.h"
 #include "NwUtils.h"
@@ -641,10 +642,7 @@ nwGtpv1uHandleEchoReq(NW_IN NwGtpv1uStackT *thiz,
    * tool, I saw that there were 6 bytes accessed after bufLen in nwGtpv1uCreateAndSendMsg
    * the value "16" has been chosen arbitrarily, just bigger than 6
    */
-  ((NwGtpv1uMsgT*)hMsg)->msgBuf = itti_malloc(
-                                    TASK_GTPV1_U,
-                                    TASK_UDP,
-                                    bufLen + 16 /* CROUX - dirty +16, to be fixed! */);
+  ((NwGtpv1uMsgT*)hMsg)->msgBuf = itti_malloc(TASK_VARIABLE, TASK_UDP, bufLen + 16 /* CROUX - dirty +16, to be fixed! */);
   ((NwGtpv1uMsgT*)hMsg)->msgBufLen    = bufLen;
   NW_ASSERT(NW_GTPV1U_OK == rc);
 

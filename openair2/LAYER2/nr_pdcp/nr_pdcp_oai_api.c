@@ -481,7 +481,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       int offset=0;
       if (entity->has_sdap == 1 && entity->has_sdapULheader == 1) offset = 1; // this is the offset of the SDAP header in bytes
 
-      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
+      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_VARIABLE,
                                   size + GTPU_HEADER_OVERHEAD_MAX - offset);
       AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
       memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf+offset, size-offset);

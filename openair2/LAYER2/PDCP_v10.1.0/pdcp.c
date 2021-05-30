@@ -1012,7 +1012,7 @@ pdcp_data_ind(
         rb_id + 4,
         sdu_buffer_sizeP - payload_offset);
       //LOG_T(PDCP,"Sending to GTPV1U %d bytes\n", sdu_buffer_sizeP - payload_offset);
-      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
+      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_VARIABLE,
                                   sdu_buffer_sizeP - payload_offset + GTPU_HEADER_OVERHEAD_MAX);
       AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
       memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], &sdu_buffer_pP->data[payload_offset], sdu_buffer_sizeP - payload_offset);

@@ -8157,7 +8157,7 @@ rrc_eNB_decode_dcch(
                 }
               }
 
-              itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->instance, msg_delete_tunnels_p);
+              itti_send_msg_to_task(TASK_VARIABLE, ctxt_pP->instance, msg_delete_tunnels_p);
               //S1AP_E_RAB_RELEASE_RESPONSE
               rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(ctxt_pP,
                   ue_context_p,
