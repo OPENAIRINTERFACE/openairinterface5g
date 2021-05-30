@@ -324,12 +324,12 @@ bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
-  gNB_MAC_INST     *mac        = RC.nrmac[module_idP];
-  nfapi_nr_config_request_scf_t *cfg = &mac->config[0];
+
   protocol_ctxt_t   ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
   const int bwp_id = 1;
+
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -374,6 +374,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     const int last_slot = (slot + num_slots - 1) % num_slots;
     uint16_t *vrb_map_UL = cc[CC_id].vrb_map_UL;
     memset(&vrb_map_UL[last_slot * MAX_BWP_SIZE], 0, sizeof(uint16_t) * MAX_BWP_SIZE);
+
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
   }
 

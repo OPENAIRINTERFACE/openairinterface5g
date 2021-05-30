@@ -229,34 +229,9 @@ void rx_func(void *param) {
   if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 
   // RX processing
-  int tx_slot_type; int rx_slot_type;
-  if(NFAPI_MODE != NFAPI_MONOLITHIC) { //slot selection routines not working properly in nfapi, so temporarily hardcoding
-    if ((slot_tx==8) || (slot_tx==9) || (slot_tx==18) ||  (slot_tx==19)) { //tx slot config
-      tx_slot_type         = NR_UPLINK_SLOT;
-    }
-    else if ((slot_tx==7) || (slot_tx==17)) {
-      tx_slot_type         = NR_MIXED_SLOT;
-    }
-    else {
-      tx_slot_type         = NR_DOWNLINK_SLOT;;
-    }
+  int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
+  int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
 
-    if ((slot_rx==8) || (slot_rx==9) || (slot_rx==18) ||  (slot_rx==19)) { // rx slot config
-      rx_slot_type         = NR_UPLINK_SLOT; 
-    }
-    else if ((slot_rx==7) || (slot_rx==17)) {
-      rx_slot_type         = NR_MIXED_SLOT;
-    }
-    else {
-      rx_slot_type         = NR_DOWNLINK_SLOT;;
-    }
-
-
-  }
-  else {
-  tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
-  rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
-  }
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // UE-specific RX processing for subframe n
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
@@ -281,7 +256,8 @@ void rx_func(void *param) {
 
   // Call the scheduler
 
-  start_meas(&gNB->ul_indication_stats);
+  if (NFAPI_MODE == NFAPI_MONOLITHIC){
+      start_meas(&gNB->ul_indication_stats);
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
@@ -290,6 +266,7 @@ void rx_func(void *param) {
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
   stop_meas(&gNB->ul_indication_stats);
+  }  
   
   notifiedFIFO_elt_t *res; 
 

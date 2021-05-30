@@ -61,6 +61,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   debug_ch_est = fopen("debug_ch_est.txt","w");
 #endif
 
+  //uint16_t Nid_cell = (eNB_offset == 0) ? gNB->frame_parms.Nid_cell : gNB->measurements.adj_cell_id[eNB_offset-1];
+
   uint8_t nushift;
   int **ul_ch_estimates  = gNB->pusch_vars[ul_id]->ul_ch_estimates;
   int **rxdataF = gNB->common_vars.rxdataF;

@@ -24,6 +24,8 @@
 #define TIMEHR_USEC(_time_hr) ((uint32_t)(_time_hr) & 0xFFFFF)
 #define TIME2TIMEHR(_time) (((uint32_t)(_time.tv_sec) & 0xFFF) << 20 | ((uint32_t)(_time.tv_usec) & 0xFFFFF))
 
+
+
 typedef struct {
 	uint8_t* buffer;
 	uint16_t length;

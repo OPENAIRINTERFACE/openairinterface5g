@@ -851,15 +851,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int bwpid = sched_ctrl->active_bwp->bwp_Id;
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
-    //nfapi_nr_dl_tti_pdcch_pdu_rel15_t temp;
-    // if(NFAPI_MODE == NFAPI_MODE_VNF){
-    //   memcpy(temp,gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid],sizeof(nfapi_nr_dl_tti_pdcch_pdu_rel15_t));
-    //   pdcch_pdu = temp;
-
-    // }
-
     if (!pdcch_pdu) {
-      printf("creating pdcch pdu, pdcch_pdu = NULL. \n");
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
       dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
@@ -902,14 +894,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->mcsTable[0] = ps->mcsTableIdx;
     AssertFatal(harq->round<4,"%d",harq->round);
     pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
-    // if (NFAPI_MODE == NFAPI_MODE_VNF){ // done since uplink isnt operational yet which means harq structures dont get filled properly
-    //   pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq_rounds];
-    //   if (harq_rounds % 5 == 0 && harq_rounds!=0){
-    //     harq_rounds = 0;
-    //     harq_pid = (harq_pid + 1) % 16;
-    //   }      
-    //   harq_rounds++;
-    // }
     pdsch_pdu->TBSize[0] = TBS;
 
     pdsch_pdu->dataScramblingId = *scc->physCellId;
@@ -1018,10 +1002,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
     const int rnti_type = NR_RNTI_C;
 
-    // if (NFAPI_MODE == NFAPI_MODE_VNF){
-    //   dci_payload.harq_pid = harq_pid;
-    //   dci_payload.tpc = 2;
-    // }
     fill_dci_pdu_rel15(scc,
                        UE_info->secondaryCellGroup[UE_id],
                        dci_pdu,

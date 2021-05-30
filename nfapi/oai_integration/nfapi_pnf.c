@@ -73,6 +73,7 @@ extern pthread_mutex_t nfapi_sync_mutex;
 extern int nfapi_sync_var;
 
 extern int sync_var;
+char uecap_xer_in;
 
 extern void init_eNB_afterRU(void);
 extern void init_UE_stub(int nb_inst,int,int);
@@ -1242,7 +1243,6 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
       memcpy(dl_tti_pdu,&dl_tti_pdu_list[i],sizeof(nfapi_nr_dl_tti_request_pdu_t));
       int SFN=sfn+2;
       //if(!&dl_tti_pdu->pdcch_pdu)
-      printf("interleaversize = %d, coreset_type = %d. \n",dl_tti_pdu->pdcch_pdu.pdcch_pdu_rel15.InterleaverSize,dl_tti_pdu->pdcch_pdu.pdcch_pdu_rel15.CoreSetType);
       handle_nfapi_nr_pdcch_pdu(gNB, SFN, slot, &dl_tti_pdu->pdcch_pdu);
       //dl_tti_pdu_list[i].pdcch_pdu.pdcch_pdu_rel15.numDlDci++; // ?
       // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() pdcch_vars->num_dci:%d\n", __FUNCTION__, pdcch_vars->num_dci);
@@ -1474,7 +1474,6 @@ int pnf_phy_ul_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     switch (ul_tti_pdu_list[i].pdu_type) {
       case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
         //LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUSCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
-        //curr_sfn = curr_sfn + 3; //Gokul
         nr_fill_ulsch(gNB,curr_sfn, curr_slot, &ul_tti_pdu_list[i].pusch_pdu);
         break;
       case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
@@ -2201,7 +2200,7 @@ void configure_nr_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_add
   pnf.phys[0].udp.tx_port = vnf_p7_port;
   strcpy(pnf.phys[0].udp.tx_addr, vnf_ip_addr);
   strcpy(pnf.phys[0].local_addr, pnf_ip_addr);
-  printf("%s() VNF:%s:%d PNF_PHY[addr:%s UDP:tx_addr:%s:%u rx:%u]\n",
+  printf("%s() VNF:%s:%d PNF_PHY[addr:%s UDP:tx_addr:%s:%d rx:%d]\n",
          __FUNCTION__,config->vnf_ip_addr, config->vnf_p5_port,
          pnf.phys[0].local_addr,
          pnf.phys[0].udp.tx_addr, pnf.phys[0].udp.tx_port,
@@ -2252,7 +2251,7 @@ void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, 
   pnf.phys[0].udp.tx_port = vnf_p7_port;
   strcpy(pnf.phys[0].udp.tx_addr, vnf_ip_addr);
   strcpy(pnf.phys[0].local_addr, pnf_ip_addr);
-  printf("%s() VNF:%s:%d PNF_PHY[addr:%s UDP:tx_addr:%s:%u rx:%u]\n",
+  printf("%s() VNF:%s:%d PNF_PHY[addr:%s UDP:tx_addr:%s:%d rx:%d]\n",
          __FUNCTION__,
          config->vnf_ip_addr, config->vnf_p5_port,
          pnf.phys[0].local_addr,
@@ -2405,3 +2404,36 @@ int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind) {
   //free(ind.rx_indication_body.rx_pdu_list);
   return retval;
 }
+
+//NR UPLINK INDICATION
+
+int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) {
+  ind->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
+  ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION;
+  return nfapi_pnf_p7_nr_rx_data_ind(p7_config_g, ind);
+}
+
+int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) {
+  ind->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
+  ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION;
+  return nfapi_pnf_p7_nr_crc_ind(p7_config_g, ind);
+}
+
+int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) {
+  ind->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
+  ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION;
+  return nfapi_pnf_p7_nr_srs_ind(p7_config_g, ind);
+}
+
+int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) {
+  ind->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
+  ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
+  return nfapi_pnf_p7_nr_uci_ind(p7_config_g, ind);
+}
+
+int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) {
+  ind->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
+  ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION;
+  return nfapi_pnf_p7_nr_rach_ind(p7_config_g, ind);
+}
+

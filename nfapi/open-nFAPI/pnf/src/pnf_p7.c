@@ -937,7 +937,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 	pnf_p7->slot_start_time_hr = pnf_get_current_time_hr();
 	pnf_p7->sfn = sfn;
 	
-	pnf_p7->slot = slot;
+	pnf_p7->slot = slot; 
 
 
 
@@ -1559,6 +1559,9 @@ uint8_t is_nr_p7_request_in_window(uint16_t sfn,uint16_t slot, const char* name,
 	// 	}
 
 	// }
+	struct timespec curr_time;
+	clock_gettime(CLOCK_MONOTONIC, &curr_time);
+	printf("PNF SFN:%d, PNF slot:%d, VNF SFN:%d, VNF slot:%d, Curr time;%d.%d. \n",phy->sfn,phy->slot,sfn,slot,curr_time.tv_sec,curr_time.tv_nsec);
 	if(current_sfn_slot_dec <= recv_sfn_slot_dec + timing_window){
 		in_window = 1;
 		NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in window %d\n", current_sfn_slot_dec, name, recv_sfn_slot_dec);
@@ -1571,8 +1574,8 @@ uint8_t is_nr_p7_request_in_window(uint16_t sfn,uint16_t slot, const char* name,
 	else
 	{ 	
 		
-		NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is out of window %d (delta:%d) [max:%d]\n", current_sfn_slot_dec, name, recv_sfn_slot_dec,  (current_sfn_slot_dec - recv_sfn_slot_dec), timing_window);
-		//NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is out of window [max:%d]\n", current_sfn_slot_dec, name, recv_sfn_slot_dec,  (current_sfn_slot_dec - recv_sfn_slot_dec), timing_window);
+		//NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is out of window %d (delta:%d) [max:%d]\n", current_sfn_slot_dec, name, recv_sfn_slot_dec,  (current_sfn_slot_dec - recv_sfn_slot_dec), timing_window);
+		
 	}//Need to add more cases
 	
 
@@ -3202,6 +3205,8 @@ int pnf_p7_message_pump(pnf_p7_t* pnf_p7)
 int pnf_nr_p7_message_pump(pnf_p7_t* pnf_p7)
 {
 
+	uint16_t pnf_frame = 0;
+	uint8_t pnf_slot = 0;
 	// initialize the mutex lock
 	if(pthread_mutex_init(&(pnf_p7->mutex), NULL) != 0)
 	{
@@ -3284,8 +3289,8 @@ int pnf_nr_p7_message_pump(pnf_p7_t* pnf_p7)
 		FD_SET(pnf_p7->p7_sock, &rfds);
 
 		struct timeval timeout;
-		timeout.tv_sec = 1;
-		timeout.tv_usec = 0;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 500;
 
 		selectRetval = select(pnf_p7->p7_sock+1, &rfds, NULL, NULL, &timeout);
 
@@ -3297,7 +3302,15 @@ int pnf_nr_p7_message_pump(pnf_p7_t* pnf_p7)
 		if(selectRetval == 0)
 		{	
 			// timeout
-			continue;
+			//continue;
+			if (pnf_slot == 19)
+				pnf_frame = (pnf_frame + 1) % 1024;
+			pnf_slot = (pnf_slot + 1) % 20;	
+			pnf_p7->sfn = pnf_frame;
+			pnf_p7->slot = pnf_slot;
+			struct timespec curr_time;
+			clock_gettime(CLOCK_MONOTONIC, &curr_time);
+			//printf("SFN=%d, slot=%d, Curr_time=%d.%d \n",pnf_p7->sfn,pnf_p7->slot,curr_time.tv_sec,curr_time.tv_nsec);
 		}
 		else if (selectRetval == -1 && (errno == EINTR))
 		{
@@ -3315,7 +3328,7 @@ int pnf_nr_p7_message_pump(pnf_p7_t* pnf_p7)
 		if(FD_ISSET(pnf_p7->p7_sock, &rfds)) 
 
 		{
-			pnf_nr_nfapi_p7_read_dispatch_message(pnf_p7, now_hr_time);
+			pnf_nr_nfapi_p7_read_dispatch_message(pnf_p7, now_hr_time); 
 		}
 	}
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "PNF_P7 Terminating..\n");

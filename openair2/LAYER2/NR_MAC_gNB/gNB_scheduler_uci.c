@@ -45,6 +45,11 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
 
   nfapi_nr_ul_tti_request_t *future_ul_tti_req =
       &RC.nrmac[mod_id]->UL_tti_req_ahead[0][pucch->ul_slot];
+  if (NFAPI_MODE == NFAPI_MODE_VNF){
+    future_ul_tti_req->SFN = pucch->frame;
+    future_ul_tti_req->Slot = pucch->ul_slot;
+  }
+
   AssertFatal(future_ul_tti_req->SFN == pucch->frame
               && future_ul_tti_req->Slot == pucch->ul_slot,
               "future UL_tti_req's frame.slot %d.%d does not match PUCCH %d.%d\n",
@@ -507,9 +512,10 @@ void nr_csi_meas_reporting(int Mod_idP,
 
       // find free PUCCH that is in order with possibly existing PUCCH
       // schedulings (other CSI, SR)
-      NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[2];
-      if(NFAPI_MODE == NFAPI_MODE_VNF)
-        curr_pucch->csi_bits = 0;
+      NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[1];
+      if(NFAPI_MODE == NFAPI_MODE_VNF){
+        curr_pucch->csi_bits = 0; curr_pucch->sr_flag = 0; curr_pucch->dai_c = 0;
+      }
       AssertFatal(curr_pucch->csi_bits == 0
                   && !curr_pucch->sr_flag
                   && curr_pucch->dai_c == 0,
@@ -1000,63 +1006,51 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              frame_t frame,
                              sub_frame_t slot,
                              const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01)
-{ NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
-  UE_info->active[0] = 1;
-  UE_info->rnti[0] = uci_01->rnti;
+{
   int UE_id = find_nr_UE_id(mod_id, uci_01->rnti);
   if (UE_id < 0) {
     LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_01->rnti);
     return;
   }
-  //NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  // tpc (power control)
-  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
-                                uci_01->ul_cqi,
-                                30);
+  if (((uci_01->pduBitmap >> 1) & 0x01)) {
+    // iterate over received harq bits
+    for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
+      const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
+      const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
+      NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
+      if (!harq)
+        break;
+      DevAssert(harq->is_waiting);
+      const int8_t pid = sched_ctrl->feedback_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+      handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
+    }
+  }
 
-  // NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
-  // const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  const int num_slots = 20;
-  
-  // if (((uci_01->pduBitmap >> 1) & 0x01)) {
-  //   // iterate over received harq bits
-  //   for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
-  //     const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
-  //     const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-  //     const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-  //     /* In case of realtime problems: we can only identify a HARQ process by
-  //      * timing. If the HARQ process's feedback_slot is not the one we
-  //      * expected, we assume that processing has been aborted and we need to
-  //      * skip this HARQ process, which is what happens in the loop below. If
-  //      * you don't experience real-time problems, you might simply revert the
-  //      * commit that introduced these changes. */
-  //     int8_t pid = sched_ctrl->feedback_dl_harq.head;
-  //     DevAssert(pid >= 0);
-  //     while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
-  //       LOG_W(MAC,
-  //             "expected feedback slot %d, but found %d instead\n",
-  //             sched_ctrl->harq_processes[pid].feedback_slot,
-  //             feedback_slot);
-  //       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-  //       handle_dl_harq(mod_id, UE_id, pid, 0);
-  //       pid = sched_ctrl->feedback_dl_harq.head;
-  //       DevAssert(pid >= 0);
-  //     }
-  //     remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-  //     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
-  //     DevAssert(harq->is_waiting);
-  //     handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
-  //   }
-  // }
+  // check scheduling request result, confidence_level == 0 is good
+  if (uci_01->pduBitmap & 0x1 && uci_01->sr->sr_indication && uci_01->sr->sr_confidence_level == 0 && uci_01->ul_cqi >= 148) {
+    // SR detected with SNR >= 10dB
+    sched_ctrl->SR |= true;
+    LOG_D(MAC, "SR UE %04x ul_cqi %d\n", uci_01->rnti, uci_01->ul_cqi);
+  }
+
+  // tpc (power control) only if we received AckNack or positive SR. For a
+  // negative SR, the UE won't have sent anything, and the SNR is not valid
+  if (((uci_01->pduBitmap >> 1) & 0x1) || sched_ctrl->SR) {
+    sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10, uci_01->ul_cqi, 30);
+    sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
+  }
 }
 
 void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                frame_t frame,
                                sub_frame_t slot,
                                const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234)
-{ int UE_id = find_nr_UE_id(mod_id, uci_234->rnti);
+{
+  int UE_id = find_nr_UE_id(mod_id, uci_234->rnti);
   if (UE_id < 0) {
     LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_234->rnti);
     return;
@@ -1064,57 +1058,25 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   NR_CSI_MeasConfig_t *csi_MeasConfig = RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  if (NFAPI_MODE == NFAPI_MODE_PNF){
-  UE_info->active[0] = 1;
-  UE_info->rnti[0] = uci_234->rnti;
-  }
-  
+
   // tpc (power control)
   sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
                                 uci_234->ul_cqi,
                                 30);
   sched_ctrl->pucch_snrx10 = uci_234->ul_cqi * 5 - 640;
 
-  // NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
-  // const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  const int num_slots = 20;
-  // if ((uci_234->pduBitmap >> 1) & 0x01) {
-  //   // iterate over received harq bits
-  //   for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
-  //     const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
-  //     const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-  //     /* In case of realtime problems: we can only identify a HARQ process by
-  //      * timing. If the HARQ process's feedback_slot is not the one we
-  //      * expected, we assume that processing has been aborted and we need to
-  //      * skip this HARQ process, which is what happens in the loop below. If
-  //      * you don't experience real-time problems, you might simply revert the
-  //      * commit that introduced these changes. */
-  //     int8_t pid = sched_ctrl->feedback_dl_harq.head;
-  //     DevAssert(pid >= 0);
-  //     while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
-  //       LOG_W(MAC,
-  //             "expected feedback slot %d, but found %d instead\n",
-  //             sched_ctrl->harq_processes[pid].feedback_slot,
-  //             feedback_slot);
-  //       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-  //       handle_dl_harq(mod_id, UE_id, pid, 0);
-  //       pid = sched_ctrl->feedback_dl_harq.head;
-  //       DevAssert(pid >= 0);
-  //     }
-  //     remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-  //     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
-  //     DevAssert(harq->is_waiting);
-  //     handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
-  //   }
-  // }
-  if ((uci_234->pduBitmap >> 2) & 0x01) {
-    //API to parse the csi report and store it into sched_ctrl
-    extract_pucch_csi_report (csi_MeasConfig, uci_234, frame, slot, UE_id, mod_id);
-    //TCI handling function
-    tci_handling(mod_id, UE_id,frame, slot);
-  }
-  if ((uci_234->pduBitmap >> 3) & 0x01) {
-    //@TODO:Handle CSI Report 2
+  if ((uci_234->pduBitmap >> 1) & 0x01) {
+    // iterate over received harq bits
+    for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
+      const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
+      NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
+      if (!harq)
+        break;
+      DevAssert(harq->is_waiting);
+      const int8_t pid = sched_ctrl->feedback_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+      handle_dl_harq(mod_id, UE_id, pid, uci_234->harq.harq_crc != 1 && acknack);
+    }
   }
   if ((uci_234->pduBitmap >> 2) & 0x01) {
     //API to parse the csi report and store it into sched_ctrl
@@ -1126,7 +1088,6 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     //@TODO:Handle CSI Report 2
   }
 }
-
 
 // function to update pucch scheduling parameters in UE list when a USS DL is scheduled
 // this function returns an index to NR_sched_pucch structure
@@ -1197,7 +1158,6 @@ int nr_acknack_scheduling(int mod_id,
       nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
       memset(csi_pucch, 0, sizeof(*csi_pucch));
       pucch->frame = s >= n_slots_frame - 2 ?  (f + 1) % 1024 : f;
-      printf("pucch frame filled. \n");
       pucch->ul_slot = (s + 2) % n_slots_frame;
     }
   }
@@ -1205,6 +1165,7 @@ int nr_acknack_scheduling(int mod_id,
   /* if the UE's next PUCCH occasion is after the possible UL slots (within the
    * same frame) or wrapped around to the next frame, then we assume there is
    * no possible PUCCH allocation anymore */
+  if(NFAPI_MODE == NFAPI_MONOLITHIC)
   if ((pucch->frame == frame
        && (pucch->ul_slot >= first_ul_slot_tdd + nr_ulmix_slots))
       || (pucch->frame == frame + 1))
@@ -1216,6 +1177,8 @@ int nr_acknack_scheduling(int mod_id,
   get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
 
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
+  if(NFAPI_MODE == NFAPI_MODE_VNF)
+    return 0;
   if (pucch->dai_c > 0) {
     /* this UE already has a PUCCH occasion */
     DevAssert(pucch->frame == frame);

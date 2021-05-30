@@ -2204,43 +2204,26 @@ function run_test_on_vm {
             mkdir --parents $ARCHIVES_LOC
         fi
 
-        CN_CONFIG="noS1"
-        S1_NOS1_CFG=0
+        local try_cnt=0
+        NR_STATUS=0
 
         ######### start of RA TEST loop
-        # for the moment only TDD
-        TRANS_MODES=("tdd")
-        for TMODE in ${TRANS_MODES[@]}
+        while [ $try_cnt -lt 5 ] #5 because it hardly succeed within CI
         do
-          if [[ $TMODE =~ .*fdd.* ]]
-          then
-            CONF_FILE=gnb.band66.tm1.106PRB.usrpn300.conf
-            PRB=106
-            FREQUENCY=37000
-          else
-            CONF_FILE=gnb.band78.tm1.106PRB.usrpn300.conf
-            PRB=106
-            FREQUENCY=3510
-          fi
 
-          local try_cnt=0
-          NR_STATUS=0
-          while [ $try_cnt -lt 5 ] #5 because it hardly succeed within CI
-
-          do
             SYNC_STATUS=0
             RA_FR2_STATUS=0
             rm -f $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}*ra_fr2_test.log
 
             echo "############################################################"
-            echo "${CN_CONFIG} : Starting the gNB in ${TMODE} mode (RA TEST)"
+            echo "${CN_CONFIG} : Starting the gNB"
             echo "############################################################"
             CURRENT_GNB_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_gnb_ra_fr2_test.log
             #last argument = 1 is to enable --do-ra for RA test
             start_rf_sim_gnb $GNB_VM_CMDS "$GNB_VM_IP_ADDR" $CURRENT_GNB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG 1
 
             echo "############################################################"
-            echo "${CN_CONFIG} : Starting the NR-UE in ${TMODE} mode (RA TEST)"
+            echo "${CN_CONFIG} : Starting the NR-UE"
             echo "############################################################"
             CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue_ra_fr2_test.log
             #last argument = 1 is to enable --do-ra for RA test

@@ -623,7 +623,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           (ulsch_harq->slot == slot_rx) &&
           (ulsch_harq->handled == 0)){
 
-          LOG_I(PHY, "PUSCH detection started in frame %d slot %d\n",
+          LOG_D(PHY, "PUSCH detection started in frame %d slot %d\n",
                 frame_rx,slot_rx);
 
 #ifdef DEBUG_RXDATA
@@ -677,10 +677,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   if ((frame_rx&127) == 0 && slot_rx==19) {
     dump_pusch_stats(gNB);
     LOG_I(PHY, "Number of bad PUCCH received: %lu\n", gNB->bad_pucch);
-  }
-
-  if (pucch_decode_done || pusch_decode_done) {
-    T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));
   }
 
   if (pucch_decode_done || pusch_decode_done) {

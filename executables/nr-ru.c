@@ -97,8 +97,6 @@ static int DEFBFW[] = {0x00007fff};
 
 extern volatile int oai_exit;
 
-extern struct timespec timespec_sub(struct timespec lhs, struct timespec rhs);
-extern struct timespec timespec_add(struct timespec lhs, struct timespec rhs);
 extern void  nr_phy_free_RU(RU_t *);
 extern void  nr_phy_config_request(NR_PHY_Config_t *gNB);
 #include "executables/thread-common.h"
@@ -710,8 +708,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 }
 
 
-void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
- 
+void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) { 
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
@@ -1302,35 +1299,10 @@ void *ru_thread( void *param ) {
   }
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
-  struct timespec slot_start;
-	clock_gettime(CLOCK_MONOTONIC, &slot_start);
   
-  struct timespec slot_duration; 
-	slot_duration.tv_sec = 0;
-	//slot_duration.tv_nsec = 0.5e6;
-	slot_duration.tv_nsec = 0.5e6;
-
-  
-
   while (!oai_exit) {
     // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
     // They are set on the first rx/tx in the underly FH routines.
-    slot_start = timespec_add(slot_start,slot_duration);
-    struct timespec curr_time;
-    clock_gettime(CLOCK_MONOTONIC, &curr_time);
-
-    struct timespec sleep_time;
-
-    if((slot_start.tv_sec > curr_time.tv_sec) || (slot_start.tv_sec == curr_time.tv_sec && slot_start.tv_nsec > curr_time.tv_nsec)){
-      sleep_time = timespec_sub(slot_start,curr_time);
-      
-      usleep(sleep_time.tv_nsec * 1e-3); 
-    }
-    else{//continue
-    }
-
-   // clock_gettime(CLOCK_MONOTONIC, &curr_time);
-    //printf("sfn:%d, slot:%d, start time %d.%d slot start %d.%d \n",frame,slot,curr_time.tv_sec,curr_time.tv_nsec,slot_start.tv_sec,slot_start.tv_nsec);
     if (slot==(fp->slots_per_frame-1)) {
       slot=0;
       frame++;
@@ -1359,13 +1331,7 @@ void *ru_thread( void *param ) {
 
     // do RX front-end processing (frequency-shift, dft) if needed
 
-    //int slot_type = nr_slot_select(cfg,proc->frame_rx,proc->tti_rx);
-    //if (NFAPI_MODE == NFAPI_MODE_PNF)
-    int slot_type;
-    if (slot ==7) 
-      slot_type = NR_MIXED_SLOT;
-    if (slot == 8)
-      slot_type = NR_UPLINK_SLOT;
+    int slot_type = nr_slot_select(cfg,proc->frame_rx,proc->tti_rx);    
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
 
       if (ru->feprx) {

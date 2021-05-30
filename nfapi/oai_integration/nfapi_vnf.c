@@ -250,7 +250,7 @@ void oai_create_gnb(void) {
     RC.gNB[0] = (PHY_VARS_gNB *) calloc(1, sizeof(PHY_VARS_gNB));
     LOG_I(PHY,"[nr-gnb.c] gNB structure RC.gNB[%d] allocated @ %p\n",0,RC.gNB[0]);
   }
-
+  
   PHY_VARS_gNB *gNB = RC.gNB[0];
   RC.nb_nr_CC = (int *)malloc(sizeof(int)); // TODO: find a better function to place this in
   

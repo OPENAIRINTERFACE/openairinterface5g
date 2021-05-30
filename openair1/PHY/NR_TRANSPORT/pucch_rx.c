@@ -166,15 +166,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
-  printf("Inside nr_decode_pucch0. \n"); 
+
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
-  //Gokul
-  // printf("rxdataf buff: \n");
-  // for(int i = 1;i<=5*7*14*512;++i){
-  //   if(gNB->RU_list[0]->common.rxdataF[0][i] != 0)
-  //     printf("%d ",gNB->RU_list[0]->common.rxdataF[0][i]);
-  // }
   int nr_sequences;
   const uint8_t *mcs;
 
@@ -1092,8 +1086,7 @@ void init_pucch2_luts() {
 void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
-                      nfapi_nr_pucch_pdu_t* pucch_pdu) {
-  printf("Inside nr_decode_pucch2. \n");                     
+                      nfapi_nr_pucch_pdu_t* pucch_pdu) {                    
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   //pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);

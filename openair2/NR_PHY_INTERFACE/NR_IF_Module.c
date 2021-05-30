@@ -105,10 +105,6 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
   }
 
   UL_info->uci_ind.num_ucis = 0;
-  // if(NFAPI_MODE != NFAPI_MODE_PNF)
-  // // mark corresponding PUCCH resources as free
-  // // NOTE: we just assume it is BWP ID 1, to be revised for multiple BWPs
-  // RC.nrmac[mod_id]->pucch_index_used[1][slot] = 0;
 }
 
 
@@ -139,18 +135,18 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
               crc->tb_crc_status);
 
         /* if CRC passes, pass PDU, otherwise pass NULL as error indication */
-        //Gokul
-        // nr_rx_sdu(UL_info->module_id,
-        //           UL_info->CC_id,
-        //           UL_info->rx_ind.sfn,
-        //           UL_info->rx_ind.slot,
-        //           rx->rnti,
-        //           crc->tb_crc_status ? NULL : rx->pdu,
-        //           rx->pdu_length,
-        //           rx->timing_advance,
-        //           rx->ul_cqi,
-        //           rx->rssi);
-        //handle_nr_ul_harq(UL_info->module_id, UL_info->frame, UL_info->slot, crc);
+        
+        nr_rx_sdu(UL_info->module_id,
+                  UL_info->CC_id,
+                  UL_info->rx_ind.sfn,
+                  UL_info->rx_ind.slot,
+                  rx->rnti,
+                  crc->tb_crc_status ? NULL : rx->pdu,
+                  rx->pdu_length,
+                  rx->timing_advance,
+                  rx->ul_cqi,
+                  rx->rssi);
+        handle_nr_ul_harq(UL_info->module_id, UL_info->frame, UL_info->slot, crc);
         break;
       } //    for (j=0;j<UL_info->crc_ind.number_crcs;j++)
     } //   for (i=0;i<UL_info->rx_ind.number_of_pdus;i++)
@@ -173,7 +169,6 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
 }
 
 void NR_UL_indication(NR_UL_IND_t *UL_info) {
-  //printf("Inside NR UL Indication. \n");
   AssertFatal(UL_info!=NULL,"UL_INFO is null\n");
 #ifdef DUMP_FAPI
   dump_ul(UL_info);
@@ -183,7 +178,6 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   NR_Sched_Rsp_t   *sched_info = &NR_Sched_INFO[module_id][CC_id];
   NR_IF_Module_t   *ifi        = nr_if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
-  nfapi_nr_config_request_scf_t *cfg = &mac->config[CC_id];
   LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
         UL_info->frame,UL_info->slot,
         module_id,CC_id, UL_info->rach_ind.number_of_pdus,
@@ -216,7 +210,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
           (UL_info->frame+((UL_info->slot>(9-sl_ahead))?1:0)) % 1024,
           (UL_info->slot+sl_ahead)%10);
       */
-
+      nfapi_nr_config_request_scf_t *cfg = &mac->config[CC_id];
       int spf = get_spf(cfg);
       gNB_dlsch_ulsch_scheduler(module_id,
 				(UL_info->frame+((UL_info->slot>(spf-1-sl_ahead))?1:0)) % 1024,
@@ -245,7 +239,10 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         ifi->NR_Schedule_response(sched_info);
       }
 
-      
+    LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",
+	    sched_info->frame,
+	    sched_info->slot,
+	    sched_info->DL_req->dl_tti_request_body.nPDUs);      
     }
   }
 }

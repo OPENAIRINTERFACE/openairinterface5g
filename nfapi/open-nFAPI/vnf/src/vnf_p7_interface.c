@@ -430,18 +430,6 @@ struct timespec current_time;
 			}
 			send_mac_slot_indications(vnf_p7);
 			
-
-
-			// // Call the scheduler
-			// 	struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
-			// 	pthread_mutex_lock(&gNB->UL_INFO_mutex);
-			// 	gNB->UL_INFO.frame     = vnf_frame;
-			// 	gNB->UL_INFO.slot      = vnf_slot;
-
-			// 	gNB->UL_INFO.module_id = gNB->Mod_id;
-			// 	gNB->UL_INFO.CC_id     = gNB->CC_id;
-			// 	gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
-			// 	pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 		}
 		else if(selectRetval > 0)
 		{

@@ -62,7 +62,6 @@
 #include "common/ran_context.h"
 
 extern RAN_CONTEXT_t RC;
-uint8_t count = 0; uint8_t harq_pid_ul = -1; int flag = 0;
 
   // Note the 2 scs values in the table names represent resp. scs_common and pdcch_scs
 /// LUT for the number of symbols in the coreset indexed by coreset index (4 MSB rmsi_pdcch_config)
@@ -1365,11 +1364,6 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   case NR_UL_DCI_FORMAT_0_1:
     switch (rnti_type) {
     case NR_RNTI_C:
-    harq_pid_ul = (harq_pid_ul + 1) % 16;
-        if (harq_pid_ul == 0)
-          flag = !flag;
-        dci_pdu_rel15->ndi = flag;
-
       // Indicating a DL DCI format 1bit
       pos = 1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 0x1) << (dci_size - pos);
@@ -1402,7 +1396,6 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->rv & 0x3) << (dci_size - pos);
       // HARQ process number  4bit
       pos += 4;
-      dci_pdu_rel15->harq_pid = harq_pid_ul;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->harq_pid & 0xf) << (dci_size - pos);
       // 1st Downlink assignment index
       pos += dci_pdu_rel15->dai[0].nbits;
@@ -1816,7 +1809,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
     const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig->pdsch_ServingCellConfig->choice.setup;
     const int nrofHARQ = pdsch->nrofHARQ_ProcessesForPDSCH ?
         get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
-    printf("nrofHARQ = %d\n", nrofHARQ);
     // add all available DL HARQ processes for this UE
     create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
     for (int harq = 0; harq < nrofHARQ; harq++)

@@ -38,31 +38,6 @@
 
 //#define DEBUG_LLR_SIC
 
-void PrintIntrinsics(char *s, char *dtype, void *x) {
-  if (strcmp(dtype,"int") == 0) {
-    int *tempb = (int *)x;
-    printf("%s: [%d, %d, %d, %d]\n", s, tempb[0], tempb[1], tempb[2], tempb[3]);
-  }
-  if (strcmp(dtype,"short") == 0) {
-    short *tempb = (short *)x;
-  printf("%s: [%d, %d, %d, %d, %d, %d, %d, %d]\n", s, tempb[0], tempb[1], tempb[2], tempb[3],
-                                                      tempb[4], tempb[5], tempb[6], tempb[7]);
-  }
-  if (strcmp(dtype,"char") == 0) {
-    char *tempb = (char *)x;
-    printf("%s: [%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d]\n", s,
-                 tempb[0], tempb[1], tempb[2], tempb[3], tempb[4], tempb[5], tempb[6], tempb[7],
-                 tempb[8], tempb[9],tempb[10],tempb[11],tempb[12],tempb[13],tempb[14],tempb[15]);
-  }
-  if (strcmp(dtype,"float") == 0) {
-      float *tempb = (float *)x;
-      printf("%s: [%f, %f, %f, %f]\n", s, tempb[0], tempb[1], tempb[2], tempb[3]);
-  }
-  if (strcmp(dtype,"double") == 0) {
-      double *tempb = (double *)x;
-      printf("%s: [%f, %f]\n", s, tempb[0], tempb[1]);
-  }
-}
 
 int16_t nr_zeros[8] __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
 int16_t nr_ones[8] __attribute__ ((aligned(16))) = {0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff};
@@ -759,45 +734,20 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
   for (i=0; i<len; i++) {
 
 #if defined(__x86_64__) || defined(__i386)
-    PrintIntrinsics("rxF", "short", &rxF[i]);
-    PrintIntrinsics("ch_mag", "short", &ch_mag[i]);
-
     xmm0 = _mm_abs_epi16(rxF[i]);
-    PrintIntrinsics("xmm0", "short", &xmm0);
-
     xmm0 = _mm_subs_epi16(ch_mag[i],xmm0);
-    PrintIntrinsics("xmm0", "short", &xmm0);
 
     // lambda_1=y_R, lambda_2=|y_R|-|h|^2, lamda_3=y_I, lambda_4=|y_I|-|h|^2
     llr128[0] = _mm_unpacklo_epi32(rxF[i],xmm0);
-    PrintIntrinsics("llr128[0]", "int", &llr128[0]);
-
     llr128[1] = _mm_unpackhi_epi32(rxF[i],xmm0);
-    PrintIntrinsics("llr128[1]", "int", &llr128[1]);
-
     llr32[0] = _mm_extract_epi32(llr128[0],0); //((uint32_t *)&llr128[0])[0];
-    printf("llr32[0] = %d\n", llr32[0]);
-
     llr32[1] = _mm_extract_epi32(llr128[0],1); //((uint32_t *)&llr128[0])[1];
-    printf("llr32[1] = %d\n", llr32[1]);
-
     llr32[2] = _mm_extract_epi32(llr128[0],2); //((uint32_t *)&llr128[0])[2];
-    printf("llr32[2] = %d\n", llr32[2]);
-
     llr32[3] = _mm_extract_epi32(llr128[0],3); //((uint32_t *)&llr128[0])[3];
-    printf("llr32[3] = %d\n", llr32[3]);
-
     llr32[4] = _mm_extract_epi32(llr128[1],0); //((uint32_t *)&llr128[1])[0];
-    printf("llr32[4] = %d\n", llr32[4]);
-
     llr32[5] = _mm_extract_epi32(llr128[1],1); //((uint32_t *)&llr128[1])[1];
-    printf("llr32[5] = %d\n", llr32[5]);
-
     llr32[6] = _mm_extract_epi32(llr128[1],2); //((uint32_t *)&llr128[1])[2];
-    printf("llr32[6] = %d\n", llr32[6]);
-
     llr32[7] = _mm_extract_epi32(llr128[1],3); //((uint32_t *)&llr128[1])[3];
-    printf("llr32[7] = %d\n", llr32[7]);
     llr32+=8;
 #elif defined(__arm__)
     xmm0 = vabsq_s16(rxF[i]);
