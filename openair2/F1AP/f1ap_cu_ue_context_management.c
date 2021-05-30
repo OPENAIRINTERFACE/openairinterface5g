@@ -264,7 +264,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
                        f1ap_ue_context_setup_req->mnc,
                        f1ap_ue_context_setup_req->mnc_digit_length,
                        &nRCGI.pLMN_Identity);
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
      scell_toBeSetup_item.sCell_ID = nRCGI;
 
      /* 10.1.2 sCellIndex */
@@ -1085,8 +1085,8 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
 
   // for test
   int mcc = 208;
-  int mnc = 93;
-  int mnc_digit_length = 8;
+  int mnc = 92;
+  int mnc_digit_length = 2;
 
   /* Create */
   /* 0. Message Type */
@@ -1127,7 +1127,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
     F1AP_NRCGI_t nRCGI;
     MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                          &nRCGI.pLMN_Identity);
-    NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+    NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
     ie->value.choice.NRCGI = nRCGI;
 
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
@@ -1252,7 +1252,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
      memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
      MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                         &nRCGI.pLMN_Identity);
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
      scell_toBeSetupMod_item.sCell_ID = nRCGI;
 
      /* sCellIndex */
@@ -1292,7 +1292,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
      memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
      MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                         &nRCGI.pLMN_Identity);
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
      scell_toBeRemoved_item.sCell_ID = nRCGI;
 
      /* ADD */
