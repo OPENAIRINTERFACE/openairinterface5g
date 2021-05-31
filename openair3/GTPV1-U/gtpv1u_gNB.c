@@ -27,7 +27,6 @@
  */
 #include <stdio.h>
 #include <errno.h>
-#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "mme_config.h"
 #include "intertask_interface.h"
@@ -87,7 +86,7 @@ static NwGtpv1uRcT gtpv1u_start_timer_wrapper(
   if (tmrType == NW_GTPV1U_TMR_TYPE_ONE_SHOT) {
     timer_setup(timeoutSec,
                 timeoutUsec,
-                TASK_VARIABLE,
+                TASK_GTPV1_U,
                 INSTANCE_DEFAULT,
                 TIMER_ONE_SHOT,
                 timeoutArg,
@@ -95,7 +94,7 @@ static NwGtpv1uRcT gtpv1u_start_timer_wrapper(
   } else {
     timer_setup(timeoutSec,
                 timeoutUsec,
-                TASK_VARIABLE,
+                TASK_GTPV1_U,
                 INSTANCE_DEFAULT,
                 TIMER_PERIODIC,
                 timeoutArg,
@@ -303,7 +302,7 @@ void *gtpv1u_gNB_task(void *args) {
   int rc = 0;
   rc = gtpv1u_gNB_init();
   AssertFatal(rc == 0, "gtpv1u_eNB_init Failed");
-  itti_mark_task_ready(TASK_VARIABLE);
+  itti_mark_task_ready(TASK_GTPV1_U);
   MSC_START_USE();
 
   while(1) {
@@ -756,7 +755,7 @@ int gtpv1u_delete_ngu_tunnel(
   hashtable_rc_t           hash_rc              = HASH_TABLE_KEY_NOT_EXISTS;
   teid_t                   teid_gNB             = 0;
   int                      pdusession_index     = 0;
-  message_p = itti_alloc_new_message(TASK_VARIABLE, 0, GTPV1U_GNB_DELETE_TUNNEL_RESP);
+  message_p = itti_alloc_new_message(TASK_GTPV1_U, 0, GTPV1U_GNB_DELETE_TUNNEL_RESP);
   GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).rnti     = req_pP->rnti;
   GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).status       = 0;
   hash_rc = hashtable_get(RC.nr_gtpv1u_data_g->ue_mapping, req_pP->rnti, (void **)&gtpv1u_ue_data_p);
@@ -827,7 +826,7 @@ static int gtpv1u_gNB_send_init_udp(const Gtpv1uNGReq *req) {
   // Create and alloc new message
   MessageDef *message_p;
   struct in_addr addr= {0};
-  message_p = itti_alloc_new_message(TASK_VARIABLE, 0, UDP_INIT);
+  message_p = itti_alloc_new_message(TASK_GTPV1_U, 0, UDP_INIT);
 
   if (message_p == NULL) {
     return -1;
@@ -939,7 +938,7 @@ void *gtpv1u_gNB_process_itti_msg(void *notUsed) {
   instance_t  instance;
   MessageDef *received_message_p = NULL;
   int         rc = 0;
-  itti_receive_msg(TASK_VARIABLE, &received_message_p);
+  itti_receive_msg(TASK_GTPV1_U, &received_message_p);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_ENB_TASK, VCD_FUNCTION_IN);
   DevAssert(received_message_p != NULL);
   instance = received_message_p->ittiMsgHeader.originInstance;
@@ -1008,7 +1007,7 @@ void *nr_gtpv1u_gNB_task(void *args) {
   int rc = 0;
   rc = nr_gtpv1u_gNB_init();
   AssertFatal(rc == 0, "gtpv1u_gNB_init Failed");
-  itti_mark_task_ready(TASK_VARIABLE);
+  itti_mark_task_ready(TASK_GTPV1_U);
   MSC_START_USE();
 
   while(1) {

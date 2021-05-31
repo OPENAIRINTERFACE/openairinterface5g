@@ -59,12 +59,6 @@
 #include "NR_UE-CapabilityRAT-ContainerList.h"
 #include "f1ap_messages_types.h"
 
-#if defined(NEW_GTPU)
-#define TASK_VARIABLE            OCP_GTPV1_U
-#else
-#define TASK_VARIABLE            TASK_GTPV1_U
-#endif
-
 extern RAN_CONTEXT_t RC;
 
 /* Value to indicate an invalid UE initial id */
@@ -1428,7 +1422,7 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
         }
       }
 
-      itti_send_msg_to_task(TASK_VARIABLE, instance, msg_delete_tunnels_p);
+      itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
       //NGAP_PDUSESSION_RELEASE_RESPONSE
       rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(&ctxt, ue_context_p, xid);
       LOG_I(NR_RRC, "Send PDU Session Release Response \n");

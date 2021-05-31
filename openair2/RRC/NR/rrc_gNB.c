@@ -88,7 +88,6 @@
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 #include <openair2/X2AP/x2ap_eNB.h>
-#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "BIT_STRING.h"
 #include "assertions.h"
@@ -2271,7 +2270,7 @@ rrc_gNB_decode_dcch(
               }
             }
 
-            itti_send_msg_to_task(TASK_VARIABLE, ctxt_pP->instance, msg_delete_tunnels_p);
+            itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->instance, msg_delete_tunnels_p);
             //NGAP_PDUSESSION_RELEASE_RESPONSE
             rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(ctxt_pP, ue_context_p, xid);
           } else {
