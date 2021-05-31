@@ -1788,7 +1788,7 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
         }
       }
 
-      itti_send_msg_to_task(TASK_VARIABLE, instance, msg_delete_tunnels_p);
+      itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
       //S1AP_E_RAB_RELEASE_RESPONSE
       rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(&ctxt, ue_context_p, xid);
     }
