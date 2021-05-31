@@ -130,24 +130,27 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
            ccch_sdu_len);
   }
 
-  LOG_I(F1AP, "%s() RRCContainer (CCCH) size %ld: ", __func__,
-        ie->value.choice.RRCContainer.size);
-  for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
-    printf("%02x ", RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
-  printf("\n");
+  if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
 
-  /* DUtoCURRCContainer */
-  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
-                             F1AP_ProtocolIE_ID_id_DUtoCURRCContainer, true);
-  if (ie) {
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container = malloc(sizeof(OCTET_STRING_t));
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->size = ie->value.choice.DUtoCURRCContainer.size;
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf = malloc(ie->value.choice.DUtoCURRCContainer.size);
-    memcpy(NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf,
-	   ie->value.choice.DUtoCURRCContainer.buf,
-	   ie->value.choice.DUtoCURRCContainer.size);
+    LOG_I(F1AP, "%s() RRCContainer (CCCH) size %ld: ", __func__, ie->value.choice.RRCContainer.size);
+    for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+      printf("%02x ", RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+    printf("\n");
 
+    /* DUtoCURRCContainer */
+    F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
+                               F1AP_ProtocolIE_ID_id_DUtoCURRCContainer, true);
+    if (ie) {
+      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container = malloc(sizeof(OCTET_STRING_t));
+      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->size = ie->value.choice.DUtoCURRCContainer.size;
+      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf = malloc(
+          ie->value.choice.DUtoCURRCContainer.size);
+      memcpy(NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf,
+             ie->value.choice.DUtoCURRCContainer.buf,
+             ie->value.choice.DUtoCURRCContainer.size);
+    }
   }
+
   // Find instance from nr_cellid
   int rrc_inst = -1;
   if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
@@ -292,10 +295,12 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_dl_rrc->rrc_container, f1ap_dl_rrc->rrc_container_length);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, f1ap_dl_rrc->rrc_container_length);
-  for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
-   printf("%02x ", f1ap_dl_rrc->rrc_container[i]);
-  printf("\n");
+  if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
+    LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, f1ap_dl_rrc->rrc_container_length);
+    for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+      printf("%02x ", f1ap_dl_rrc->rrc_container[i]);
+    printf("\n");
+  }
 
   /* optional */
   /* c7. RAT_FrequencyPriorityInformation */

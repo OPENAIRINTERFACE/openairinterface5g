@@ -315,17 +315,17 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
   /* mandatory */
   /* c3. cells to be Activated list */
   int num_cells_to_activate = f1ap_setup_resp->num_cells_to_activate;
-  LOG_D(F1AP, "num_cells_to_activate = %d \n", num_cells_to_activate);
+  LOG_I(F1AP, "num_cells_to_activate = %d \n", num_cells_to_activate);
   if (num_cells_to_activate >0) {
     ie = (F1AP_F1SetupResponseIEs_t *)calloc(1, sizeof(F1AP_F1SetupResponseIEs_t));
     ie->id                        = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List;
     ie->criticality               = F1AP_Criticality_reject;
     ie->value.present             = F1AP_F1SetupResponseIEs__value_PR_Cells_to_be_Activated_List;
 
+    for (i=0; i<num_cells_to_activate; i++) {
 
-    for (i=0;
-	 i<num_cells_to_activate;
-	 i++) {
+      LOG_I(F1AP, "(%d) mcc = %d, mnc = %d, mnc_digit_length = %d\n",
+            i, f1ap_setup_resp->cells_to_activate[i].mcc, f1ap_setup_resp->cells_to_activate[i].mnc, f1ap_setup_resp->cells_to_activate[i].mnc_digit_length);
 
       F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies;
       cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemIEs_t));
@@ -379,7 +379,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
              (const char*)f1ap_setup_resp->cells_to_activate[i].SI_container[sIBtype],
              f1ap_setup_resp->cells_to_activate[i].SI_container_length[sIBtype]);
 
-          LOG_D(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_setup_resp->cells_to_activate[i].SI_container_length[sIBtype]);
+          LOG_I(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_setup_resp->cells_to_activate[i].SI_container_length[sIBtype]);
           ASN_SEQUENCE_ADD(&gNB_CUSystemInformation->sibtypetobeupdatedlist.list,sib_item);
         }
       }
@@ -569,6 +569,9 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
     for (i=0; i<f1ap_gnb_cu_configuration_update->num_cells_to_activate; i++) {
 
+      LOG_I(F1AP, "(%d) mcc = %d, mnc = %d, mnc_digit_length = %d\n",
+            i, f1ap_gnb_cu_configuration_update->cells_to_activate[i].mcc, f1ap_gnb_cu_configuration_update->cells_to_activate[i].mnc, f1ap_gnb_cu_configuration_update->cells_to_activate[i].mnc_digit_length);
+
       F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies;
       cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemIEs_t));
       cells_to_be_activated_list_item_ies->id = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item;
@@ -590,53 +593,56 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 			       &nRCGI.nRCellIdentity);
       cells_to_be_activated_list_item.nRCGI = nRCGI;
 
-      // optional
-      // -nRPCI
-      cells_to_be_activated_list_item.nRPCI = (F1AP_NRPCI_t *)calloc(1, sizeof(F1AP_NRPCI_t));
-      *cells_to_be_activated_list_item.nRPCI = f1ap_gnb_cu_configuration_update->cells_to_activate[i].nrpci;  // int 0..1007
+      if(RC.nrrrc) {
 
-      // optional
-      // 3.1.2 gNB-CUSystem Information
-      F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs;
-      cells_to_be_activated_list_itemExtIEs = (F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t));
-      cells_to_be_activated_list_itemExtIEs->id                     = F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation;
-      cells_to_be_activated_list_itemExtIEs->criticality            = F1AP_Criticality_reject;
-      cells_to_be_activated_list_itemExtIEs->extensionValue.present = F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation;
+        // optional
+        // -nRPCI
+        cells_to_be_activated_list_item.nRPCI = (F1AP_NRPCI_t *)calloc(1, sizeof(F1AP_NRPCI_t));
+        *cells_to_be_activated_list_item.nRPCI = f1ap_gnb_cu_configuration_update->cells_to_activate[i].nrpci;  // int 0..1007
 
-      if (f1ap_gnb_cu_configuration_update->cells_to_activate[i].num_SI > 0) {
-	F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)calloc(1, sizeof(F1AP_GNB_CUSystemInformation_t));
-	//LOG_I(F1AP, "%s() SI %d size %d: ", __func__, i, f1ap_setup_resp->SI_container_length[i][0]);
-	//for (int n = 0; n < f1ap_setup_resp->SI_container_length[i][0]; n++)
-	//  printf("%02x ", f1ap_setup_resp->SI_container[i][0][n]);
-	//printf("\n");
+        // optional
+        // 3.1.2 gNB-CUSystem Information
+        F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs;
+        cells_to_be_activated_list_itemExtIEs = (F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t));
+        cells_to_be_activated_list_itemExtIEs->id                     = F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation;
+        cells_to_be_activated_list_itemExtIEs->criticality            = F1AP_Criticality_reject;
+        cells_to_be_activated_list_itemExtIEs->extensionValue.present = F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation;
 
-	// for (int sIBtype=2;sIBtype<33;sIBtype++) { //21 ? 33 ?
-	for (int sIBtype=2;sIBtype<21;sIBtype++) {
-	  if (f1ap_gnb_cu_configuration_update->cells_to_activate[i].SI_container[sIBtype]!=NULL) {
-	    AssertFatal(sIBtype < 6 || sIBtype == 9, "Illegal SI type %d\n",sIBtype);
-	    F1AP_SibtypetobeupdatedListItem_t *sib_item = calloc(1,sizeof(*sib_item));
-	    memset((void*)sib_item,0,sizeof(*sib_item));
-	    sib_item->sIBtype = sIBtype;
-	    OCTET_STRING_fromBuf(&sib_item->sIBmessage,
-				 (const char*)f1ap_gnb_cu_configuration_update->cells_to_activate[i].SI_container[sIBtype],
-				 f1ap_gnb_cu_configuration_update->cells_to_activate[i].SI_container_length[sIBtype]);
+        if (f1ap_gnb_cu_configuration_update->cells_to_activate[i].num_SI > 0) {
+          F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)calloc(1, sizeof(F1AP_GNB_CUSystemInformation_t));
+          //LOG_I(F1AP, "%s() SI %d size %d: ", __func__, i, f1ap_setup_resp->SI_container_length[i][0]);
+          //for (int n = 0; n < f1ap_setup_resp->SI_container_length[i][0]; n++)
+          //  printf("%02x ", f1ap_setup_resp->SI_container[i][0][n]);
+          //printf("\n");
 
-	    LOG_D(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_gnb_cu_configuration_update->cells_to_activate[i].SI_container_length[sIBtype]);
-	    ASN_SEQUENCE_ADD(&gNB_CUSystemInformation->sibtypetobeupdatedlist.list,sib_item);
-	  }
-	}
-	cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation = *gNB_CUSystemInformation;
+          // for (int sIBtype=2;sIBtype<33;sIBtype++) { //21 ? 33 ?
+          for (int sIBtype=2;sIBtype<21;sIBtype++) {
+            if (f1ap_gnb_cu_configuration_update->cells_to_activate[i].SI_container[sIBtype]!=NULL) {
+              AssertFatal(sIBtype < 6 || sIBtype == 9, "Illegal SI type %d\n",sIBtype);
+              F1AP_SibtypetobeupdatedListItem_t *sib_item = calloc(1,sizeof(*sib_item));
+              memset((void*)sib_item,0,sizeof(*sib_item));
+              sib_item->sIBtype = sIBtype;
+              OCTET_STRING_fromBuf(&sib_item->sIBmessage,
+                                   (const char*)f1ap_gnb_cu_configuration_update->cells_to_activate[i].SI_container[sIBtype],
+                                   f1ap_gnb_cu_configuration_update->cells_to_activate[i].SI_container_length[sIBtype]);
+
+              LOG_D(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_gnb_cu_configuration_update->cells_to_activate[i].SI_container_length[sIBtype]);
+              ASN_SEQUENCE_ADD(&gNB_CUSystemInformation->sibtypetobeupdatedlist.list,sib_item);
+            }
+          }
+          cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation = *gNB_CUSystemInformation;
 
 
-	F1AP_ProtocolExtensionContainer_154P112_t p_154P112_t;
-	memset((void *)&p_154P112_t, 0, sizeof(F1AP_ProtocolExtensionContainer_154P112_t));
+          F1AP_ProtocolExtensionContainer_154P112_t p_154P112_t;
+          memset((void *)&p_154P112_t, 0, sizeof(F1AP_ProtocolExtensionContainer_154P112_t));
 
-	ASN_SEQUENCE_ADD(&p_154P112_t.list,
-			 cells_to_be_activated_list_itemExtIEs);
-	cells_to_be_activated_list_item.iE_Extensions = (struct F1AP_ProtocolExtensionContainer*)&p_154P112_t;
+          ASN_SEQUENCE_ADD(&p_154P112_t.list,
+                           cells_to_be_activated_list_itemExtIEs);
+          cells_to_be_activated_list_item.iE_Extensions = (struct F1AP_ProtocolExtensionContainer*)&p_154P112_t;
 
-	free(gNB_CUSystemInformation);
-	gNB_CUSystemInformation = NULL;
+          free(gNB_CUSystemInformation);
+          gNB_CUSystemInformation = NULL;
+        }
       }
 
       // ADD
@@ -648,251 +654,251 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
   }
 
-  /*
 
-  // c3. Cells_to_be_Deactivated_List
-  //
-  ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_Cells_to_be_Deactivated_List;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_Cells_to_be_Deactivated_List;
+  if(!RC.nrrrc) {
 
-  for (i=0;
-       i<1;
-       i++) {
+    /* mandatory */
+    /* c3. Cells_to_be_Deactivated_List */
+    ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
+    ie->id                        = F1AP_ProtocolIE_ID_id_Cells_to_be_Deactivated_List;
+    ie->criticality               = F1AP_Criticality_reject;
+    ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_Cells_to_be_Deactivated_List;
 
-       F1AP_Cells_to_be_Deactivated_List_ItemIEs_t *cells_to_be_deactivated_list_item_ies;
-       cells_to_be_deactivated_list_item_ies = (F1AP_Cells_to_be_Deactivated_List_ItemIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Deactivated_List_ItemIEs_t));
-       cells_to_be_deactivated_list_item_ies->id = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item;
-       cells_to_be_deactivated_list_item_ies->criticality = F1AP_Criticality_reject;
-       cells_to_be_deactivated_list_item_ies->value.present = F1AP_Cells_to_be_Deactivated_List_ItemIEs__value_PR_Cells_to_be_Deactivated_List_Item;
+    for (i=0;
+         i<1;
+         i++) {
 
-       // 3.1 cells to be Deactivated list item
-       F1AP_Cells_to_be_Deactivated_List_Item_t cells_to_be_deactivated_list_item;
-       memset((void *)&cells_to_be_deactivated_list_item, 0, sizeof(F1AP_Cells_to_be_Deactivated_List_Item_t));
+      F1AP_Cells_to_be_Deactivated_List_ItemIEs_t *cells_to_be_deactivated_list_item_ies;
+      cells_to_be_deactivated_list_item_ies = (F1AP_Cells_to_be_Deactivated_List_ItemIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Deactivated_List_ItemIEs_t));
+      cells_to_be_deactivated_list_item_ies->id = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item;
+      cells_to_be_deactivated_list_item_ies->criticality = F1AP_Criticality_reject;
+      cells_to_be_deactivated_list_item_ies->value.present = F1AP_Cells_to_be_Deactivated_List_ItemIEs__value_PR_Cells_to_be_Deactivated_List_Item;
 
-
-       F1AP_NRCGI_t nRCGI;
-       memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
-       MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
-                                           &nRCGI.pLMN_Identity);
-       NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
-       cells_to_be_deactivated_list_item.nRCGI = nRCGI;
-
-       cells_to_be_deactivated_list_item_ies->value.choice.Cells_to_be_Deactivated_List_Item = cells_to_be_deactivated_list_item;
-       ASN_SEQUENCE_ADD(&ie->value.choice.Cells_to_be_Deactivated_List.list,
-                        cells_to_be_deactivated_list_item_ies);
-  }  
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-*/
+      // 3.1 cells to be Deactivated list item
+      F1AP_Cells_to_be_Deactivated_List_Item_t cells_to_be_deactivated_list_item;
+      memset((void *)&cells_to_be_deactivated_list_item, 0, sizeof(F1AP_Cells_to_be_Deactivated_List_Item_t));
 
 
-  /*
-  // c4. GNB_CU_TNL_Association_To_Add_List
+      F1AP_NRCGI_t nRCGI;
+      memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
+      MCC_MNC_TO_PLMNID(f1ap_gnb_cu_configuration_update->cells_to_activate[i].mcc,
+                        f1ap_gnb_cu_configuration_update->cells_to_activate[i].mnc,
+                        f1ap_gnb_cu_configuration_update->cells_to_activate[i].mnc_digit_length,
+                        &nRCGI.pLMN_Identity);
+      NR_CELL_ID_TO_BIT_STRING(f1ap_gnb_cu_configuration_update->cells_to_activate[i].nr_cellid, &nRCGI.nRCellIdentity);
+      cells_to_be_deactivated_list_item.nRCGI = nRCGI;
 
-  ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Add_List;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_GNB_CU_TNL_Association_To_Add_List;
-
-  for (i=0;
-       i<1;
-       i++) {
-
-       F1AP_GNB_CU_TNL_Association_To_Add_ItemIEs_t *gnb_cu_tnl_association_to_add_item_ies;
-       gnb_cu_tnl_association_to_add_item_ies = (F1AP_GNB_CU_TNL_Association_To_Add_ItemIEs_t *)calloc(1, sizeof(F1AP_GNB_CU_TNL_Association_To_Add_ItemIEs_t));
-       gnb_cu_tnl_association_to_add_item_ies->id = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Add_Item;
-       gnb_cu_tnl_association_to_add_item_ies->criticality = F1AP_Criticality_reject;
-       gnb_cu_tnl_association_to_add_item_ies->value.present = F1AP_GNB_CU_TNL_Association_To_Add_ItemIEs__value_PR_GNB_CU_TNL_Association_To_Add_Item;
-
-       // 4.1 GNB_CU_TNL_Association_To_Add_Item
-       F1AP_GNB_CU_TNL_Association_To_Add_Item_t gnb_cu_tnl_association_to_add_item;
-       memset((void *)&gnb_cu_tnl_association_to_add_item, 0, sizeof(F1AP_GNB_CU_TNL_Association_To_Add_Item_t));
+      cells_to_be_deactivated_list_item_ies->value.choice.Cells_to_be_Deactivated_List_Item = cells_to_be_deactivated_list_item;
+      ASN_SEQUENCE_ADD(&ie->value.choice.Cells_to_be_Deactivated_List.list,
+                       cells_to_be_deactivated_list_item_ies);
+    }
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 
-       // 4.1.1 tNLAssociationTransportLayerAddress
-       F1AP_CP_TransportLayerAddress_t transportLayerAddress;
-       memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
-       transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address;
-       TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address);
-       
-       // memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
-       // transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address_and_port;
-       // transportLayerAddress.choice.endpoint_IP_address_and_port = (F1AP_Endpoint_IP_address_and_port_t *)calloc(1, sizeof(F1AP_Endpoint_IP_address_and_port_t));
-       // TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address_and_port.endpoint_IP_address);
+    /* mandatory */
+    /* c4. GNB_CU_TNL_Association_To_Add_List */
+    ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
+    ie->id                        = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Add_List;
+    ie->criticality               = F1AP_Criticality_reject;
+    ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_GNB_CU_TNL_Association_To_Add_List;
 
-       gnb_cu_tnl_association_to_add_item.tNLAssociationTransportLayerAddress = transportLayerAddress;
+    for (i=0;
+         i<1;
+         i++) {
 
-       // 4.1.2 tNLAssociationUsage
-       gnb_cu_tnl_association_to_add_item.tNLAssociationUsage = F1AP_TNLAssociationUsage_non_ue;
-       
+      F1AP_GNB_CU_TNL_Association_To_Add_ItemIEs_t *gnb_cu_tnl_association_to_add_item_ies;
+      gnb_cu_tnl_association_to_add_item_ies = (F1AP_GNB_CU_TNL_Association_To_Add_ItemIEs_t *)calloc(1, sizeof(F1AP_GNB_CU_TNL_Association_To_Add_ItemIEs_t));
+      gnb_cu_tnl_association_to_add_item_ies->id = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Add_Item;
+      gnb_cu_tnl_association_to_add_item_ies->criticality = F1AP_Criticality_reject;
+      gnb_cu_tnl_association_to_add_item_ies->value.present = F1AP_GNB_CU_TNL_Association_To_Add_ItemIEs__value_PR_GNB_CU_TNL_Association_To_Add_Item;
 
-
-       gnb_cu_tnl_association_to_add_item_ies->value.choice.GNB_CU_TNL_Association_To_Add_Item = gnb_cu_tnl_association_to_add_item;
-       ASN_SEQUENCE_ADD(&ie->value.choice.GNB_CU_TNL_Association_To_Add_List.list,
-                        gnb_cu_tnl_association_to_add_item_ies);
-  }  
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-  */
-
-  /*
-
-  // c5. GNB_CU_TNL_Association_To_Remove_List
-  ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Remove_List;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_GNB_CU_TNL_Association_To_Remove_List;
-  for (i=0;
-       i<1;
-       i++) {
-
-       F1AP_GNB_CU_TNL_Association_To_Remove_ItemIEs_t *gnb_cu_tnl_association_to_remove_item_ies;
-       gnb_cu_tnl_association_to_remove_item_ies = (F1AP_GNB_CU_TNL_Association_To_Remove_ItemIEs_t *)calloc(1, sizeof(F1AP_GNB_CU_TNL_Association_To_Remove_ItemIEs_t));
-       gnb_cu_tnl_association_to_remove_item_ies->id = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Remove_Item;
-       gnb_cu_tnl_association_to_remove_item_ies->criticality = F1AP_Criticality_reject;
-       gnb_cu_tnl_association_to_remove_item_ies->value.present = F1AP_GNB_CU_TNL_Association_To_Remove_ItemIEs__value_PR_GNB_CU_TNL_Association_To_Remove_Item;
-
-       // 4.1 GNB_CU_TNL_Association_To_Remove_Item
-       F1AP_GNB_CU_TNL_Association_To_Remove_Item_t gnb_cu_tnl_association_to_remove_item;
-       memset((void *)&gnb_cu_tnl_association_to_remove_item, 0, sizeof(F1AP_GNB_CU_TNL_Association_To_Remove_Item_t));
+      // 4.1 GNB_CU_TNL_Association_To_Add_Item
+      F1AP_GNB_CU_TNL_Association_To_Add_Item_t gnb_cu_tnl_association_to_add_item;
+      memset((void *)&gnb_cu_tnl_association_to_add_item, 0, sizeof(F1AP_GNB_CU_TNL_Association_To_Add_Item_t));
 
 
-       // 4.1.1 tNLAssociationTransportLayerAddress
-       F1AP_CP_TransportLayerAddress_t transportLayerAddress;
-       memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
-       transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address;
-       TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address);
-       
-       // memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
-       // transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address_and_port;
-       // transportLayerAddress.choice.endpoint_IP_address_and_port = (F1AP_Endpoint_IP_address_and_port_t *)calloc(1, sizeof(F1AP_Endpoint_IP_address_and_port_t));
-       // TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address_and_port.endpoint_IP_address);
+      // 4.1.1 tNLAssociationTransportLayerAddress
+      F1AP_CP_TransportLayerAddress_t transportLayerAddress;
+      memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
+      transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address;
+      TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address);
 
-       gnb_cu_tnl_association_to_remove_item.tNLAssociationTransportLayerAddress = transportLayerAddress;
-   
+      // memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
+      // transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address_and_port;
+      // transportLayerAddress.choice.endpoint_IP_address_and_port = (F1AP_Endpoint_IP_address_and_port_t *)calloc(1, sizeof(F1AP_Endpoint_IP_address_and_port_t));
+      // TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address_and_port.endpoint_IP_address);
 
+      gnb_cu_tnl_association_to_add_item.tNLAssociationTransportLayerAddress = transportLayerAddress;
 
-       gnb_cu_tnl_association_to_remove_item_ies->value.choice.GNB_CU_TNL_Association_To_Remove_Item = gnb_cu_tnl_association_to_remove_item;
-       ASN_SEQUENCE_ADD(&ie->value.choice.GNB_CU_TNL_Association_To_Remove_List.list,
-                        gnb_cu_tnl_association_to_remove_item_ies);
-  }  
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  */
-
-  /*
-  //c6. GNB_CU_TNL_Association_To_Update_List
-  ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Update_List;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_GNB_CU_TNL_Association_To_Update_List;
-  for (i=0;
-       i<1;
-       i++) {
-
-       F1AP_GNB_CU_TNL_Association_To_Update_ItemIEs_t *gnb_cu_tnl_association_to_update_item_ies;
-       gnb_cu_tnl_association_to_update_item_ies = (F1AP_GNB_CU_TNL_Association_To_Update_ItemIEs_t *)calloc(1, sizeof(F1AP_GNB_CU_TNL_Association_To_Update_ItemIEs_t));
-       gnb_cu_tnl_association_to_update_item_ies->id = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Update_Item;
-       gnb_cu_tnl_association_to_update_item_ies->criticality = F1AP_Criticality_reject;
-       gnb_cu_tnl_association_to_update_item_ies->value.present = F1AP_GNB_CU_TNL_Association_To_Update_ItemIEs__value_PR_GNB_CU_TNL_Association_To_Update_Item;
-
-       // 4.1 GNB_CU_TNL_Association_To_Update_Item
-       F1AP_GNB_CU_TNL_Association_To_Update_Item_t gnb_cu_tnl_association_to_update_item;
-       memset((void *)&gnb_cu_tnl_association_to_update_item, 0, sizeof(F1AP_GNB_CU_TNL_Association_To_Update_Item_t));
+      // 4.1.2 tNLAssociationUsage
+      gnb_cu_tnl_association_to_add_item.tNLAssociationUsage = F1AP_TNLAssociationUsage_non_ue;
 
 
-       // 4.1.1 tNLAssociationTransportLayerAddress
-       F1AP_CP_TransportLayerAddress_t transportLayerAddress;
-       memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
-       transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address;
-       TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address);
-       
-       // memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
-       // transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address_and_port;
-       // transportLayerAddress.choice.endpoint_IP_address_and_port = (F1AP_Endpoint_IP_address_and_port_t *)calloc(1, sizeof(F1AP_Endpoint_IP_address_and_port_t));
-       // TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address_and_port.endpoint_IP_address);
 
-       gnb_cu_tnl_association_to_update_item.tNLAssociationTransportLayerAddress = transportLayerAddress;
-   
-
-       // 4.1.2 tNLAssociationUsage
-       if (1) {
-         gnb_cu_tnl_association_to_update_item.tNLAssociationUsage = (F1AP_TNLAssociationUsage_t *)calloc(1, sizeof(F1AP_TNLAssociationUsage_t));
-         *gnb_cu_tnl_association_to_update_item.tNLAssociationUsage = F1AP_TNLAssociationUsage_non_ue;
-       }
-       
-
-       gnb_cu_tnl_association_to_update_item_ies->value.choice.GNB_CU_TNL_Association_To_Update_Item = gnb_cu_tnl_association_to_update_item;
-       ASN_SEQUENCE_ADD(&ie->value.choice.GNB_CU_TNL_Association_To_Update_List.list,
-                        gnb_cu_tnl_association_to_update_item_ies);
-  }  
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  */
-
-  /*
-  // c7. Cells_to_be_Barred_List
-  ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_Cells_to_be_Barred_List;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_Cells_to_be_Barred_List;
-  for (i=0;
-       i<1;
-       i++) {
-
-       F1AP_Cells_to_be_Barred_ItemIEs_t *cells_to_be_barred_item_ies;
-       cells_to_be_barred_item_ies = (F1AP_Cells_to_be_Barred_ItemIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Barred_ItemIEs_t));
-       cells_to_be_barred_item_ies->id = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item;
-       cells_to_be_barred_item_ies->criticality = F1AP_Criticality_reject;
-       cells_to_be_barred_item_ies->value.present = F1AP_Cells_to_be_Barred_ItemIEs__value_PR_Cells_to_be_Barred_Item;
-
-       // 7.1 cells to be Deactivated list item
-       F1AP_Cells_to_be_Barred_Item_t cells_to_be_barred_item;
-       memset((void *)&cells_to_be_barred_item, 0, sizeof(F1AP_Cells_to_be_Barred_Item_t));
-
-       // - nRCGI
-       F1AP_NRCGI_t nRCGI;
-       memset(&nRCGI,0,sizeof(F1AP_NRCGI_t));
-       MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
-                                           &nRCGI.pLMN_Identity);
-       NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
-       cells_to_be_barred_item.nRCGI = nRCGI;
-       
-       // 7.2 cellBarred
-       cells_to_be_barred_item.cellBarred = F1AP_CellBarred_not_barred;
-
-       cells_to_be_barred_item_ies->value.choice.Cells_to_be_Barred_Item = cells_to_be_barred_item;
-       ASN_SEQUENCE_ADD(&ie->value.choice.Cells_to_be_Barred_List.list,
-                        cells_to_be_barred_item_ies);
-  }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-  */
-
-  /*
-  // c8. Protected_EUTRA_Resources_List
-  ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_Protected_EUTRA_Resources_List;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_Protected_EUTRA_Resources_List;
-
-  for (i=0;
-       i<1;
-       i++) {
+      gnb_cu_tnl_association_to_add_item_ies->value.choice.GNB_CU_TNL_Association_To_Add_Item = gnb_cu_tnl_association_to_add_item;
+      ASN_SEQUENCE_ADD(&ie->value.choice.GNB_CU_TNL_Association_To_Add_List.list,
+                       gnb_cu_tnl_association_to_add_item_ies);
+    }
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 
-       F1AP_Protected_EUTRA_Resources_ItemIEs_t *protected_eutra_resources_item_ies;
+    /* mandatory */
+    /* c5. GNB_CU_TNL_Association_To_Remove_List */
+    ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
+    ie->id                        = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Remove_List;
+    ie->criticality               = F1AP_Criticality_reject;
+    ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_GNB_CU_TNL_Association_To_Remove_List;
+    for (i=0;
+         i<1;
+         i++) {
 
-       // 8.1 SpectrumSharingGroupID
-       protected_eutra_resources_item_ies = (F1AP_Protected_EUTRA_Resources_ItemIEs_t *)calloc(1, sizeof(F1AP_Protected_EUTRA_Resources_ItemIEs_t));
-       protected_eutra_resources_item_ies->id = F1AP_ProtocolIE_ID_id_Protected_EUTRA_Resources_List;
-       protected_eutra_resources_item_ies->criticality = F1AP_Criticality_reject;
-       protected_eutra_resources_item_ies->value.present = F1AP_Protected_EUTRA_Resources_ItemIEs__value_PR_Protected_EUTRA_Resources_Item;
-       ((F1AP_Protected_EUTRA_Resources_Item_t*)&protected_eutra_resources_item_ies->value.choice.Protected_EUTRA_Resources_Item)->spectrumSharingGroupID = 123L;
-       memset(&protected_eutra_resources_item_ies->value.choice.Protected_EUTRA_Resources_Item,0,
-	      sizeof(F1AP_Protected_EUTRA_Resources_Item_t));
-       ASN_SEQUENCE_ADD(&ie->value.choice.Protected_EUTRA_Resources_List.list, protected_eutra_resources_item_ies);
+      F1AP_GNB_CU_TNL_Association_To_Remove_ItemIEs_t *gnb_cu_tnl_association_to_remove_item_ies;
+      gnb_cu_tnl_association_to_remove_item_ies = (F1AP_GNB_CU_TNL_Association_To_Remove_ItemIEs_t *)calloc(1, sizeof(F1AP_GNB_CU_TNL_Association_To_Remove_ItemIEs_t));
+      gnb_cu_tnl_association_to_remove_item_ies->id = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Remove_Item;
+      gnb_cu_tnl_association_to_remove_item_ies->criticality = F1AP_Criticality_reject;
+      gnb_cu_tnl_association_to_remove_item_ies->value.present = F1AP_GNB_CU_TNL_Association_To_Remove_ItemIEs__value_PR_GNB_CU_TNL_Association_To_Remove_Item;
+
+      // 4.1 GNB_CU_TNL_Association_To_Remove_Item
+      F1AP_GNB_CU_TNL_Association_To_Remove_Item_t gnb_cu_tnl_association_to_remove_item;
+      memset((void *)&gnb_cu_tnl_association_to_remove_item, 0, sizeof(F1AP_GNB_CU_TNL_Association_To_Remove_Item_t));
 
 
+      // 4.1.1 tNLAssociationTransportLayerAddress
+      F1AP_CP_TransportLayerAddress_t transportLayerAddress;
+      memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
+      transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address;
+      TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address);
+
+      // memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
+      // transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address_and_port;
+      // transportLayerAddress.choice.endpoint_IP_address_and_port = (F1AP_Endpoint_IP_address_and_port_t *)calloc(1, sizeof(F1AP_Endpoint_IP_address_and_port_t));
+      // TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address_and_port.endpoint_IP_address);
+
+      gnb_cu_tnl_association_to_remove_item.tNLAssociationTransportLayerAddress = transportLayerAddress;
+
+
+
+      gnb_cu_tnl_association_to_remove_item_ies->value.choice.GNB_CU_TNL_Association_To_Remove_Item = gnb_cu_tnl_association_to_remove_item;
+      ASN_SEQUENCE_ADD(&ie->value.choice.GNB_CU_TNL_Association_To_Remove_List.list,
+                       gnb_cu_tnl_association_to_remove_item_ies);
+    }
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+
+    /* mandatory */
+    /* c6. GNB_CU_TNL_Association_To_Update_List */
+    ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
+    ie->id                        = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Update_List;
+    ie->criticality               = F1AP_Criticality_reject;
+    ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_GNB_CU_TNL_Association_To_Update_List;
+    for (i=0;
+         i<1;
+         i++) {
+
+      F1AP_GNB_CU_TNL_Association_To_Update_ItemIEs_t *gnb_cu_tnl_association_to_update_item_ies;
+      gnb_cu_tnl_association_to_update_item_ies = (F1AP_GNB_CU_TNL_Association_To_Update_ItemIEs_t *)calloc(1, sizeof(F1AP_GNB_CU_TNL_Association_To_Update_ItemIEs_t));
+      gnb_cu_tnl_association_to_update_item_ies->id = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Update_Item;
+      gnb_cu_tnl_association_to_update_item_ies->criticality = F1AP_Criticality_reject;
+      gnb_cu_tnl_association_to_update_item_ies->value.present = F1AP_GNB_CU_TNL_Association_To_Update_ItemIEs__value_PR_GNB_CU_TNL_Association_To_Update_Item;
+
+      // 4.1 GNB_CU_TNL_Association_To_Update_Item
+      F1AP_GNB_CU_TNL_Association_To_Update_Item_t gnb_cu_tnl_association_to_update_item;
+      memset((void *)&gnb_cu_tnl_association_to_update_item, 0, sizeof(F1AP_GNB_CU_TNL_Association_To_Update_Item_t));
+
+
+      // 4.1.1 tNLAssociationTransportLayerAddress
+      F1AP_CP_TransportLayerAddress_t transportLayerAddress;
+      memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
+      transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address;
+      TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address);
+
+      // memset((void *)&transportLayerAddress, 0, sizeof(F1AP_CP_TransportLayerAddress_t));
+      // transportLayerAddress.present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address_and_port;
+      // transportLayerAddress.choice.endpoint_IP_address_and_port = (F1AP_Endpoint_IP_address_and_port_t *)calloc(1, sizeof(F1AP_Endpoint_IP_address_and_port_t));
+      // TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress.choice.endpoint_IP_address_and_port.endpoint_IP_address);
+
+      gnb_cu_tnl_association_to_update_item.tNLAssociationTransportLayerAddress = transportLayerAddress;
+
+
+      // 4.1.2 tNLAssociationUsage
+      if (1) {
+        gnb_cu_tnl_association_to_update_item.tNLAssociationUsage = (F1AP_TNLAssociationUsage_t *)calloc(1, sizeof(F1AP_TNLAssociationUsage_t));
+        *gnb_cu_tnl_association_to_update_item.tNLAssociationUsage = F1AP_TNLAssociationUsage_non_ue;
+      }
+
+
+      gnb_cu_tnl_association_to_update_item_ies->value.choice.GNB_CU_TNL_Association_To_Update_Item = gnb_cu_tnl_association_to_update_item;
+      ASN_SEQUENCE_ADD(&ie->value.choice.GNB_CU_TNL_Association_To_Update_List.list,
+                       gnb_cu_tnl_association_to_update_item_ies);
+    }
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+
+    /* mandatory */
+    /* c7. Cells_to_be_Barred_List */
+    ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
+    ie->id                        = F1AP_ProtocolIE_ID_id_Cells_to_be_Barred_List;
+    ie->criticality               = F1AP_Criticality_reject;
+    ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_Cells_to_be_Barred_List;
+    for (i=0;
+         i<1;
+         i++) {
+
+      F1AP_Cells_to_be_Barred_ItemIEs_t *cells_to_be_barred_item_ies;
+      cells_to_be_barred_item_ies = (F1AP_Cells_to_be_Barred_ItemIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Barred_ItemIEs_t));
+      cells_to_be_barred_item_ies->id = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item;
+      cells_to_be_barred_item_ies->criticality = F1AP_Criticality_reject;
+      cells_to_be_barred_item_ies->value.present = F1AP_Cells_to_be_Barred_ItemIEs__value_PR_Cells_to_be_Barred_Item;
+
+      // 7.1 cells to be Deactivated list item
+      F1AP_Cells_to_be_Barred_Item_t cells_to_be_barred_item;
+      memset((void *)&cells_to_be_barred_item, 0, sizeof(F1AP_Cells_to_be_Barred_Item_t));
+
+      // - nRCGI
+      F1AP_NRCGI_t nRCGI;
+      memset(&nRCGI,0,sizeof(F1AP_NRCGI_t));
+      MCC_MNC_TO_PLMNID(f1ap_gnb_cu_configuration_update->cells_to_activate[i].mcc,
+                        f1ap_gnb_cu_configuration_update->cells_to_activate[i].mnc,
+                        f1ap_gnb_cu_configuration_update->cells_to_activate[i].mnc_digit_length,
+                        &nRCGI.pLMN_Identity);
+      NR_CELL_ID_TO_BIT_STRING(f1ap_gnb_cu_configuration_update->cells_to_activate[i].nr_cellid, &nRCGI.nRCellIdentity);
+      cells_to_be_barred_item.nRCGI = nRCGI;
+
+      // 7.2 cellBarred
+      cells_to_be_barred_item.cellBarred = F1AP_CellBarred_not_barred;
+
+      cells_to_be_barred_item_ies->value.choice.Cells_to_be_Barred_Item = cells_to_be_barred_item;
+      ASN_SEQUENCE_ADD(&ie->value.choice.Cells_to_be_Barred_List.list,
+                       cells_to_be_barred_item_ies);
+    }
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+
+    /* mandatory */
+    /* c8. Protected_EUTRA_Resources_List */
+    ie = (F1AP_GNBCUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBCUConfigurationUpdateIEs_t));
+    ie->id                        = F1AP_ProtocolIE_ID_id_Protected_EUTRA_Resources_List;
+    ie->criticality               = F1AP_Criticality_reject;
+    ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_Protected_EUTRA_Resources_List;
+
+    for (i=0;
+         i<1;
+         i++) {
+
+
+      F1AP_Protected_EUTRA_Resources_ItemIEs_t *protected_eutra_resources_item_ies;
+
+      // 8.1 SpectrumSharingGroupID
+      protected_eutra_resources_item_ies = (F1AP_Protected_EUTRA_Resources_ItemIEs_t *)calloc(1, sizeof(F1AP_Protected_EUTRA_Resources_ItemIEs_t));
+      protected_eutra_resources_item_ies->id = F1AP_ProtocolIE_ID_id_Protected_EUTRA_Resources_List;
+      protected_eutra_resources_item_ies->criticality = F1AP_Criticality_reject;
+      protected_eutra_resources_item_ies->value.present = F1AP_Protected_EUTRA_Resources_ItemIEs__value_PR_Protected_EUTRA_Resources_Item;
+      ((F1AP_Protected_EUTRA_Resources_Item_t*)&protected_eutra_resources_item_ies->value.choice.Protected_EUTRA_Resources_Item)->spectrumSharingGroupID = 123L;
+      memset(&protected_eutra_resources_item_ies->value.choice.Protected_EUTRA_Resources_Item,0,
+             sizeof(F1AP_Protected_EUTRA_Resources_Item_t));
+      ASN_SEQUENCE_ADD(&ie->value.choice.Protected_EUTRA_Resources_List.list, protected_eutra_resources_item_ies);
+
+      /*
        F1AP_Served_EUTRA_Cells_Information_t served_eutra_cells_information;
        memset((void *)&served_eutra_cells_information, 0, sizeof(F1AP_Served_EUTRA_Cells_Information_t));
 
@@ -923,10 +929,10 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
        ASN_SEQUENCE_ADD(&protected_eutra_resources_item_ies->value.choice.ListofEUTRACellsinGNBDUCoordination.list, &served_eutra_cells_information);
 
        ASN_SEQUENCE_ADD(&ie->value.choice.Protected_EUTRA_Resources_List.list, protected_eutra_resources_item_ies);
-
+      */
+    }
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  */
 
 
   /* encode */

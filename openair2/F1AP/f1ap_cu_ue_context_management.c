@@ -264,7 +264,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
                        f1ap_ue_context_setup_req->mnc,
                        f1ap_ue_context_setup_req->mnc_digit_length,
                        &nRCGI.pLMN_Identity);
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
      scell_toBeSetup_item.sCell_ID = nRCGI;
 
      /* 10.1.2 sCellIndex */
@@ -742,13 +742,15 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   /* OPTIONAL */
   /* RRCContainer */
-  ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
-  ie->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
-  ie->criticality                    = F1AP_Criticality_reject;
-  ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_ue_context_setup_req->rrc_container,
-                        f1ap_ue_context_setup_req->rrc_container_length);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  if(RC.nrrrc) {
+    ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
+    ie->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
+    ie->criticality                    = F1AP_Criticality_reject;
+    ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_RRCContainer;
+    OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_ue_context_setup_req->rrc_container,
+                          f1ap_ue_context_setup_req->rrc_container_length);
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
 
   /* OPTIONAL */
   /* MaskedIMEISV */
@@ -781,7 +783,9 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   LOG_D(F1AP,"F1AP UEContextSetupRequest Encoded %u bits\n", len);
 
-  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id /* BK: fix me*/ , buffer, len, 0 /* BK: fix me*/);
+  if(RC.nrrrc) {
+    cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id /* BK: fix me*/ , buffer, len, 0 /* BK: fix me*/);
+  }
 
   return 0;
 }
@@ -1081,8 +1085,8 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
 
   // for test
   int mcc = 208;
-  int mnc = 93;
-  int mnc_digit_length = 8;
+  int mnc = 92;
+  int mnc_digit_length = 2;
 
   /* Create */
   /* 0. Message Type */
@@ -1123,7 +1127,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
     F1AP_NRCGI_t nRCGI;
     MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                          &nRCGI.pLMN_Identity);
-    NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+    NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
     ie->value.choice.NRCGI = nRCGI;
 
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
@@ -1248,7 +1252,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
      memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
      MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                         &nRCGI.pLMN_Identity);
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
      scell_toBeSetupMod_item.sCell_ID = nRCGI;
 
      /* sCellIndex */
@@ -1288,7 +1292,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
      memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
      MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                         &nRCGI.pLMN_Identity);
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
      scell_toBeRemoved_item.sCell_ID = nRCGI;
 
      /* ADD */
