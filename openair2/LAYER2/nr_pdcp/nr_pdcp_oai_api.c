@@ -607,7 +607,7 @@ srb_found:
   LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, srb_id, size);
   //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
   //printf("\n");
-  if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+  if ((RC.nrrrc == NULL) || (!NODE_IS_CU(RC.nrrrc[0]->node_type))) {
     ctxt.module_id = 0;
     ctxt.enb_flag = 1;
     ctxt.instance = 0;

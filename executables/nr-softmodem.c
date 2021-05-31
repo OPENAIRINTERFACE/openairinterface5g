@@ -377,31 +377,6 @@ int create_gNB_tasks(uint32_t gnb_nb) {
     }
   }
 
-  if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==1)){
-    if (gnb_nb > 0) {
-      if(NGAP_CONF_MODE){
-        if (itti_create_task (TASK_NGAP, ngap_gNB_task, NULL) < 0) {
-          LOG_E(NGAP, "Create task for NGAP failed\n");
-          return -1;
-        }
-      } else {
-          LOG_E(NGAP, "Ngap task not created\n");
-      }
-
-      if(!emulate_rf){
-        if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
-          LOG_E(UDP_, "Create task for UDP failed\n");
-          return -1;
-        }
-      }
-
-      if (itti_create_task (TASK_GTPV1_U, &nr_gtpv1u_gNB_task, NULL) < 0) {
-        LOG_E(GTPU, "Create task for GTPV1U failed\n");
-        return -1;
-      }
-    }
-  }
-
   if (gnb_nb > 0) {
     if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
       LOG_E(GNB_APP, "Create task for gNB APP failed\n");

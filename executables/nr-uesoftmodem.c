@@ -452,10 +452,6 @@ int main( int argc, char **argv ) {
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-  RC.nrrrc = (gNB_RRC_INST **)malloc(1*sizeof(gNB_RRC_INST *));
-  RC.nrrrc[0] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
-  RC.nrrrc[0]->node_type = ngran_gNB;
-
   init_NR_UE(1,rrc_config_path);
   if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa)
 	  init_pdcp();
