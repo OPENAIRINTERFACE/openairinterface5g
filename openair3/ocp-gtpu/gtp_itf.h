@@ -9,15 +9,15 @@ extern "C" {
 
 #include <openair3/GTPV1-U/gtpv1u_eNB_defs.h>
 #if defined(NEW_GTPU)
-#define gtpv1u_create_s1u_tunnel ocp_gtpv1u_create_s1u_tunnel
-#define gtpv1u_update_s1u_tunnel ocp_gtpv1u_update_s1u_tunnel
-#define gtpv1u_delete_s1u_tunnel ocp_gtpv1u_delete_s1u_tunnel
-#define gtpv1u_create_x2u_tunnel ocp_gtpv1u_create_x2u_tunnel
-#define gtpv1u_eNB_task          ocp_gtpv1uTask
-#define nr_gtpv1u_gNB_task       ocp_gtpv1uTask
-#define TASK_VARIABLE            OCP_GTPV1_U
+#define gtpv1u_create_s1u_tunnel_var  ocp_gtpv1u_create_s1u_tunnel
+#define gtpv1u_update_s1u_tunnel_var  ocp_gtpv1u_update_s1u_tunnel
+#define gtpv1u_delete_s1u_tunnel_var  ocp_gtpv1u_delete_s1u_tunnel
+#define gtpv1u_create_x2u_tunnel_var  ocp_gtpv1u_create_x2u_tunnel
+#define gtpv1u_eNB_task_var           ocp_gtpv1uTask
+#define nr_gtpv1u_gNB_task_var        ocp_gtpv1uTask
+#define TASK_VARIABLE                 OCP_GTPV1_U
 #else
-#define TASK_VARIABLE            TASK_GTPV1_U
+#define TASK_VARIABLE                 TASK_GTPV1_U
 #endif
 
 typedef boolean_t (*gtpCallback)(

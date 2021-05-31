@@ -1023,7 +1023,7 @@ pdcp_data_ind(
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ctxt_pP->rnti;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
-      itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
+      itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
       packet_forwarded = TRUE;
     }
   } else {
