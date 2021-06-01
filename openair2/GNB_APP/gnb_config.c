@@ -368,7 +368,6 @@ for (int j = 0 ;j < 4 ; j++)
   NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->frequencyDensity));
   long *dl_rbs = CALLOC(2, sizeof(long));
   for (int i=0;i<2;i++) {
-    dl_rbs[i]=1;
     ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->frequencyDensity->list, &dl_rbs[i]);
   }
   NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->timeDensity));
@@ -398,7 +397,6 @@ for (int j = 0 ;j < 4 ; j++)
   NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity));
   long *n_rbs = CALLOC(2, sizeof(long));
   for (int i=0;i<2;i++) {
-    n_rbs[i] = 1;
     ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity->list, &n_rbs[i]);
   }
   NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity));
