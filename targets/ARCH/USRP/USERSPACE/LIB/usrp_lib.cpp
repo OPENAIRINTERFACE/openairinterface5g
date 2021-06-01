@@ -385,14 +385,14 @@ static int trx_usrp_write(openair0_device *device,
 #if defined(__x86_64) || defined(__i386__)
   #ifdef __AVX2__
       nsamps2 = (nsamps+7)>>3;
-      __m256i buff_tx[8][nsamps2];
+      __m256i buff_tx[cc<2?2:cc][nsamps2];
   #else
     nsamps2 = (nsamps+3)>>2;
-    __m128i buff_tx[8][nsamps2];
+    __m128i buff_tx[cc<2?2:cc][nsamps2];
   #endif
 #elif defined(__arm__)
     nsamps2 = (nsamps+3)>>2;
-    int16x8_t buff_tx[8][nsamps2];
+    int16x8_t buff_tx[cc<2?2:cc][nsamps2];
 #else
 #error Unsupported CPU architecture, USRP device cannot be built
 #endif
@@ -522,14 +522,14 @@ void *trx_usrp_write_thread(void * arg){
     #if defined(__x86_64) || defined(__i386__)
       #ifdef __AVX2__
         nsamps2 = (nsamps+7)>>3;
-        __m256i buff_tx[8][nsamps2];
+        __m256i buff_tx[cc<2?2:cc][nsamps2];
       #else
         nsamps2 = (nsamps+3)>>2;
-        __m128i buff_tx[8][nsamps2];
+        __m128i buff_tx[cc<2?2:cc][nsamps2];
       #endif
     #elif defined(__arm__)
       nsamps2 = (nsamps+3)>>2;
-      int16x8_t buff_tx[8][nsamps2];
+      int16x8_t buff_tx[cc<2?2:cc][nsamps2];
     #else
     #error Unsupported CPU architecture, USRP device cannot be built
     #endif
@@ -623,14 +623,14 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
   nsamps2 = (nsamps+7)>>3;
-  __m256i buff_tmp[2][nsamps2];
+  __m256i buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #else
   nsamps2 = (nsamps+3)>>2;
-  __m128i buff_tmp[2][nsamps2];
+  __m128i buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #endif
 #elif defined(__arm__)
   nsamps2 = (nsamps+3)>>2;
-  int16x8_t buff_tmp[2][nsamps2];
+  int16x8_t buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #endif
 
     samples_received=0;
