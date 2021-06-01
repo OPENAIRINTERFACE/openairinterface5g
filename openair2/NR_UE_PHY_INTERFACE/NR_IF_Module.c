@@ -426,7 +426,10 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     nr_ue_if_module_inst[module_id]->current_frame = 0;
     nr_ue_if_module_inst[module_id]->current_slot = 0;
     nr_ue_if_module_inst[module_id]->phy_config_request = nr_ue_phy_config_request;
-    nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response;
+    if (get_softmodem_params()->nsa) //Melissa, this is also a hack. Get a better flag.
+      nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response_stub;
+    else
+      nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response;
     nr_ue_if_module_inst[module_id]->dl_indication = nr_ue_dl_indication;
     nr_ue_if_module_inst[module_id]->ul_indication = nr_ue_ul_indication;
   }

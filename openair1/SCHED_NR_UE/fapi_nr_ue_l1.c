@@ -45,6 +45,15 @@ extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH"};
 const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 
+int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
+  /* Melissa, this is a hack. We are not calling nr_ue_scheduled_response
+     because it requires PHY_vars_UE_g. We are basically not using layer
+     one here so we are calling a stub version of this scheduled response.
+     The original scheduled_response sends downlink information for the DCIs.
+     The physical layer provides this information. We dont need this yet.*/
+  return 0;
+}
+
 int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
   if(scheduled_response != NULL){

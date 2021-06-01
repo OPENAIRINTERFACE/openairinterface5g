@@ -138,9 +138,10 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
                 num_slots_per_tdd,
                 num_slots_ul,
                 index);
+
   if(!mac->ul_config_request)
     return NULL;
-
+  mac->ul_config_request[index].number_pdus = 0;
   return &mac->ul_config_request[index];
 }
 
@@ -1651,9 +1652,12 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   RA_config_t *ra = &mac->ra;
+  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
+  if (!ul_config) {
+    LOG_E(NR_MAC, "mac->ul_config is null! \n");
+    return;
+  }
 
-  //fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
-  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request[0];
   fapi_nr_ul_config_prach_pdu *prach_config_pdu;
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
   fapi_nr_prach_config_t *prach_config = &cfg->prach_config;
@@ -1686,10 +1690,9 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       format = prach_occasion_info_p->format;
       format0 = format & 0xff;        // single PRACH format
       format1 = (format >> 8) & 0xff; // dual PRACH format
-      if (ul_config == NULL)
-        return;
+      AssertFatal(ul_config->number_pdus < FAPI_NR_UL_CONFIG_LIST_NUM, "Too many PDUs %d\n", ul_config->number_pdus);
       prach_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
-      memset(prach_config_pdu, 0, sizeof(fapi_nr_ul_config_prach_pdu));
+      memset(prach_config_pdu, 0, sizeof(*prach_config_pdu));
       ul_config->number_pdus += 1;
       LOG_D(PHY, "In %s: (%p) %d UL PDUs:\n", __FUNCTION__, ul_config, ul_config->number_pdus);
 

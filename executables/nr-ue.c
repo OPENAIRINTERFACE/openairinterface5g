@@ -164,7 +164,7 @@ static void L1_nsa_prach_procedures(nfapi_nr_rach_indication_t *rach_ind, frame_
 	rach_ind->pdu_list[pdu_index].num_preamble                        = 1;
   const int num_p = rach_ind->pdu_list[pdu_index].num_preamble;
   rach_ind->pdu_list[pdu_index].preamble_list = calloc(num_p, sizeof(nfapi_nr_prach_indication_preamble_t));
-	rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_index     = 0;
+	rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_index     = 63; //Melissa, need to get this out of rrc_reconfig_msg
 	rach_ind->pdu_list[pdu_index].preamble_list[0].timing_advance     = 0;
 	rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_pwr       = 0xffffffff;
 
@@ -203,16 +203,21 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       continue;
     }
 
+    mac->ra.generate_nr_prach = 0;
     frame_t frame = NFAPI_SFNSLOT2SFN(sfn_slot);
     int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
+    #if 0
     int slots_per_frame = 2048;
     int slots_per_subframe = 2;
     int slot_ahead = 6;
+    ul_info.frame_tx = frame; //Melissa, hack. (slot > slots_per_frame - 1 - (slots_per_subframe*slot_ahead)) ? frame & 1023 : frame;
+    ul_info.slot_tx = slot; // Melissa hack. slot + slots_per_subframe*slot_ahead % slots_per_frame;
+    #endif
     nr_uplink_indication_t ul_info;
     ul_info.frame_rx = frame;
     ul_info.slot_rx = slot;
-    ul_info.frame_tx = (slot > slots_per_frame - 1 - (slots_per_subframe*slot_ahead)) ? frame & 1023 : frame;
-    ul_info.slot_tx = slot + slots_per_subframe*slot_ahead % slots_per_frame;
+    ul_info.frame_tx = frame;
+    ul_info.slot_tx = slot;
     if (is_nr_UL_slot(mac->scc, slot)) {
       LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", slot, __FUNCTION__);
       nr_ue_ul_indication(&ul_info);
@@ -232,7 +237,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       The UE is basically filling the rach and proxy will receive and think that it came from the gNB. The
       received rach in the proxy will trigger gNB to send back the RAR. RAR will go to proxy then goes to UE
       and the UE will get the DCI for RAR and the payload. have to handle receving the RAR once we get it. */
-      LOG_I(NR_PHY, "Calling nr_Msg1_transmitted!!!\n");
+      LOG_I(NR_PHY, "Calling nr_Msg1_transmitted for slot %d\n", slot);
       nr_Msg1_transmitted(mod_id, CC_id, frame, gNB_id); //This is called when phy layer has sent the prach
     }
     else if (nr_prach == 2)
