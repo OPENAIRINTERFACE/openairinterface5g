@@ -39,20 +39,24 @@ def main():
   for config in data[1]["configurations"]:
     filePrefix = config["filePrefix"]
     outputfilename = config["outputfilename"]
+    print('================================================')
     print('filePrefix = ' + filePrefix)
     print('outputfilename = ' + outputfilename)
     for inputfile in dir:
       if inputfile.find(filePrefix) >=0:
-        prefix_outputfile = {"cu": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}', 
-                             "du": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
+        prefix_outputfile = {"cu.band7.tm1.25PRB": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}', 
+                             "du.band7.tm1.25PRB": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "rru.fdd": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "rru.tdd": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "enb.band7.tm1.25PRB.usrpb210": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "enb.band40.tm1.25PRB.FairScheduler.usrpb210": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "rcc.band7.tm1.nfapi": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
+                             "rcc.band7.tm1.if4p5.lo.25PRB": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
+                             "rcc.band40.tm1.25PRB": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "ue.nfapi": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "ue_sim_ci": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}'
                              }
+        print('inputfile = ' + inputfile)
         if filePrefix in prefix_outputfile:
           outputfile1 = prefix_outputfile[filePrefix]  
       
