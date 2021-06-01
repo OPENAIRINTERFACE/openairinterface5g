@@ -303,7 +303,17 @@ rx_sdu(const module_id_t enb_mod_idP,
 
     first_rb = ra->msg3_first_rb;
 
-    if (sduP == NULL) { // we've got an error on Msg3
+    bool no_sig = true;
+    if (sduP) {
+      for (int k = 0; k < sdu_lenP; k++) {
+        if(sduP[k]!=0) {
+          no_sig = false;
+          break;
+        }
+      }
+    }
+
+    if (no_sig || sduP == NULL) { // we've got an error on Msg3
       LOG_D(MAC, "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
             enb_mod_idP,
             CC_idP,
@@ -687,6 +697,19 @@ rx_sdu(const module_id_t enb_mod_idP,
                 rx_lengths[i],
                 CCCH_PAYLOAD_SIZE_MAX,
                 sdu_lenP);
+          break;
+        }
+
+        bool no_sig = true;
+        for (int k = 0; k < sdu_lenP; k++) {
+          if(sduP[k]!=0) {
+            no_sig = false;
+            break;
+          }
+        }
+
+        if(no_sig) {
+          LOG_W(MAC, "No signal\n");
           break;
         }
 
