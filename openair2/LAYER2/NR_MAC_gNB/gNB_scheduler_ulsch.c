@@ -65,7 +65,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
 {
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   const int bwp_id = ubwp->bwp_Id;
-  if (nrmac->preferred_ul_tda[bwp_id])
+  if (nrmac->preferred_ul_tda[bwp_id-1])
     return;
 
   /* there is a mixed slot only when in TDD */
@@ -151,18 +151,18 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
 
   const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
   const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
-  nrmac->preferred_ul_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_ul_tda[bwp_id]));
+  nrmac->preferred_ul_tda[bwp_id-1] = malloc(n * sizeof(*nrmac->preferred_ul_tda[bwp_id-1]));
 
   const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
   const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
   for (int slot = 0; slot < n; ++slot) {
     const int sched_slot = (slot + k2) % n;
-    nrmac->preferred_ul_tda[bwp_id][slot] = -1;
+    nrmac->preferred_ul_tda[bwp_id-1][slot] = -1;
     if (!tdd || sched_slot % nr_slots_period >= tdd->nrofDownlinkSlots + nr_mix_slots)
-      nrmac->preferred_ul_tda[bwp_id][slot] = 0;
+      nrmac->preferred_ul_tda[bwp_id-1][slot] = 0;
     else if (tdd && nr_mix_slots && sched_slot % nr_slots_period == tdd->nrofDownlinkSlots)
-      nrmac->preferred_ul_tda[bwp_id][slot] = tdaMi;
-    LOG_I(MAC, "DL slot %d UL slot %d preferred_ul_tda %d\n", slot, sched_slot, nrmac->preferred_ul_tda[bwp_id][slot]);
+      nrmac->preferred_ul_tda[bwp_id-1][slot] = tdaMi;
+    LOG_I(MAC, "DL slot %d UL slot %d preferred_ul_tda %d\n", slot, sched_slot, nrmac->preferred_ul_tda[bwp_id-1][slot]);
   }
 
   if (k2 < tdd->nrofUplinkSlots)
@@ -799,7 +799,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
       NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
-  const int tda = RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
+  const int tda = RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id-1][slot];
   if (tda == retInfo->time_domain_allocation) {
     /* Check the resource is enough for retransmission */
     while (rbStart < bwpSize && !rballoc_mask[rbStart])
@@ -986,7 +986,7 @@ void pf_ul(module_id_t module_id,
        * num_dmrs_cdm_grps_no_data has changed and only then recompute */
       const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
       const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
-      const int tda = nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
+      const int tda = nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id-1][slot];
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
@@ -1076,7 +1076,7 @@ void pf_ul(module_id_t module_id,
      * num_dmrs_cdm_grps_no_data has changed and only then recompute */
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
     const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
-    const int tda = nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
+    const int tda = nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id-1][slot];
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
@@ -1126,7 +1126,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
    * schedule now (slot + k2 is not UL slot) */
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int tda = nr_mac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
+  const int tda = nr_mac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id-1][slot];
   if (tda < 0)
     return false;
   int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
@@ -1461,7 +1461,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
      * create it */
     const int bwpid = sched_ctrl->active_bwp->bwp_Id;
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = pdcch_pdu_bwp_coreset[bwpid][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = pdcch_pdu_bwp_coreset[bwpid-1][coresetid];
     if (!pdcch_pdu) {
       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu = &ul_dci_req->ul_dci_pdu_list[ul_dci_req->numPdus];
       memset(ul_dci_request_pdu, 0, sizeof(nfapi_nr_ul_dci_request_pdus_t));
@@ -1470,7 +1470,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       pdcch_pdu = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
       nr_configure_pdcch(pdcch_pdu, sched_ctrl->search_space, sched_ctrl->coreset, scc, sched_ctrl->active_bwp);
-      pdcch_pdu_bwp_coreset[bwpid][coresetid] = pdcch_pdu;
+      pdcch_pdu_bwp_coreset[bwpid-1][coresetid] = pdcch_pdu;
     }
 
     LOG_D(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frame,slot);

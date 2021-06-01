@@ -177,9 +177,9 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 
   int *cce_list;
   if( bwp==NULL || bwp->bwp_Id == 0 ) {
-    cce_list = nr_mac->cce_list[1][0];
+    cce_list = nr_mac->cce_list[0][0];
   } else {
-    cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
+    cce_list = nr_mac->cce_list[bwp->bwp_Id-1][coreset_id];
   }
 
   int n_rb=0;
@@ -615,7 +615,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
     case NR_UL_DCI_FORMAT_0_1:
       dci_pdu_rel15->dai[0].val = 0; //TODO
       // bwp indicator as per table 7.3.1.1.2-1 in 38.212
-      dci_pdu_rel15->bwp_indicator.val = n_ubwp <= 4 ? bwp_id : bwp_id - 1;
+      dci_pdu_rel15->bwp_indicator.val = n_ubwp < 4 ? bwp_id : bwp_id - 1;
       // SRS resource indicator
       if (ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig != NULL) {
         AssertFatal(*ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig == NR_PUSCH_Config__txConfig_codebook,
@@ -632,7 +632,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
   }
 
   LOG_D(MAC,
-        "%s() ULDCI type 0 payload: freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
+        "%s() ULDCI type 0 payload: freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d UL_BWP_ID %d\n",
         __func__,
         dci_pdu_rel15->frequency_domain_assignment.val,
         dci_pdu_rel15->time_domain_assignment.val,
@@ -640,7 +640,8 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
         dci_pdu_rel15->mcs,
         dci_pdu_rel15->tpc,
         dci_pdu_rel15->ndi,
-        dci_pdu_rel15->rv);
+        dci_pdu_rel15->rv,
+        dci_pdu_rel15->bwp_indicator.val);
 }
 
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
