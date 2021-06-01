@@ -337,10 +337,10 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
 
     switch(*dci_format){
     case NR_UL_DCI_FORMAT_0_1:
-      mac->UL_BWP_Id = *bwp_ind;
+      mac->UL_BWP_Id = *bwp_ind +1 ;
       break;
     case NR_DL_DCI_FORMAT_1_1:
-      mac->DL_BWP_Id = *bwp_ind;
+      mac->DL_BWP_Id = *bwp_ind +1;
       break;
     default:
       LOG_E(MAC, "In %s: failed to configure BWP Id from DCI with format %d \n", __FUNCTION__, *dci_format);
