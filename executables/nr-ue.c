@@ -206,39 +206,34 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     mac->ra.generate_nr_prach = 0;
     frame_t frame = NFAPI_SFNSLOT2SFN(sfn_slot);
     int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
-    #if 0
-    int slots_per_frame = 2048;
-    int slots_per_subframe = 2;
-    int slot_ahead = 6;
-    ul_info.frame_tx = frame; //Melissa, hack. (slot > slots_per_frame - 1 - (slots_per_subframe*slot_ahead)) ? frame & 1023 : frame;
-    ul_info.slot_tx = slot; // Melissa hack. slot + slots_per_subframe*slot_ahead % slots_per_frame;
-    #endif
     nr_uplink_indication_t ul_info;
+    int slots_per_frame = 20; //30 kHZ subcarrier spacing
+    int slot_ahead = 6; // Melissa lets make this dynamic
     ul_info.frame_rx = frame;
     ul_info.slot_rx = slot;
-    ul_info.frame_tx = frame;
-    ul_info.slot_tx = slot;
-    if (is_nr_UL_slot(mac->scc, slot)) {
-      LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", slot, __FUNCTION__);
+    ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
+    ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
+    if (is_nr_UL_slot(mac->scc, ul_info.slot_tx)) {
+      LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", ul_info.slot_tx, __FUNCTION__);
       nr_ue_ul_indication(&ul_info);
     }
 
     int CC_id = 0;
     uint8_t gNB_id = 0;
-    uint8_t nr_prach = nr_ue_get_rach(&prach_resources, &prach_pdu, mod_id, CC_id, frame, gNB_id, slot);
+    uint8_t nr_prach = nr_ue_get_rach(&prach_resources, &prach_pdu, mod_id, CC_id, ul_info.frame_tx, gNB_id, ul_info.slot_tx);
 
     if (nr_prach == 1)
     {
       nfapi_nr_rach_indication_t *ind = CALLOC(1, sizeof(*ind));
-      L1_nsa_prach_procedures(ind, frame, slot);
+      L1_nsa_prach_procedures(ind, ul_info.frame_tx, ul_info.slot_tx);
       free(ind);
       /* Fill rach indication here and send to proxy. Basically take pieces from
       L1_nr_prach_procedures() and send it to the proxy. prach from ue->gNb->gnb sends rach->ue receives rach
       The UE is basically filling the rach and proxy will receive and think that it came from the gNB. The
       received rach in the proxy will trigger gNB to send back the RAR. RAR will go to proxy then goes to UE
       and the UE will get the DCI for RAR and the payload. have to handle receving the RAR once we get it. */
-      LOG_I(NR_PHY, "Calling nr_Msg1_transmitted for slot %d\n", slot);
-      nr_Msg1_transmitted(mod_id, CC_id, frame, gNB_id); //This is called when phy layer has sent the prach
+      LOG_I(NR_PHY, "Calling nr_Msg1_transmitted for slot %d\n", ul_info.slot_tx);
+      nr_Msg1_transmitted(mod_id, CC_id, ul_info.frame_tx, gNB_id); //This is called when phy layer has sent the prach
     }
     else if (nr_prach == 2)
     {
