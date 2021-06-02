@@ -1790,7 +1790,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
     return;
   }
 
-  LOG_I(MAC, "In %s [%d.%d]: processing PDU %d (with length %d) of %d total number of PDUs...\n", __FUNCTION__, frameP, slot, pdu_id, pdu_len, dl_info->rx_ind->number_pdus);
+  LOG_D(MAC, "In %s [%d.%d]: processing PDU %d (with length %d) of %d total number of PDUs...\n", __FUNCTION__, frameP, slot, pdu_id, pdu_len, dl_info->rx_ind->number_pdus);
 
     while (!done && pdu_len > 0){
         mac_ce_len = 0x0000;
