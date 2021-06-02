@@ -417,7 +417,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int dmrs_scrambling_id=0,data_scrambling_id=0;
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-  NR_PUCCH_Resource_t *pucch_resource;
+  NR_PUCCH_Resource_t *pucch_resource = NULL;
   uint16_t crnti = mac->crnti;
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
 
@@ -497,7 +497,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       pucch_resource_set = find_pucch_resource_set( mac, gNB_id, N_UCI);
       if (pucch_resource_set != MAX_NB_OF_PUCCH_RESOURCE_SETS) {
         pucch_resource_indicator = 0;
-        pucch_resource_id = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set]->resourceList.list.array[pucch_resource_indicator][0]; /* get the first resource of the set */
+        /* get the first resource of the set */
+        pucch_resource_id = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set]->resourceList.list.array[pucch_resource_indicator][0];
       }
       else {
         LOG_W(PHY,"PUCCH no resource set found for CSI at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
@@ -639,7 +640,6 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int O_CRC = 0;
 
   nb_symbols = nb_symbols_total; /* by default, it can be reduced due to symbols reserved for dmrs */
-  pucch_resource = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[pucch_resource_id];
 
   switch(format) {
     case pucch_format0_nr:
@@ -1122,7 +1122,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
   int current_resource_id = MAX_NB_OF_PUCCH_RESOURCES;
   pucch_format_nr_t format_pucch;
   int ready_pucch_resource_id = FALSE; /* in the case that it is already given */
-  NR_PUCCH_Resource_t *pucch_resource;
+  NR_PUCCH_Resource_t *pucch_resource = NULL;
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
 
   /* ini values to unset */
@@ -1193,6 +1193,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
     }
 
     if (resource_set_found == TRUE) {
+
       if (pucch_resource_indicator < MAX_PUCCH_RESOURCE_INDICATOR) {
         // Verify that the value of pucch_resource_indicator is valid
         if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.count <= pucch_resource_indicator)
@@ -1202,7 +1203,6 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
         }
         /* check if resource indexing by pucch_resource_indicator of this set is compatible */
         if ((ready_pucch_resource_id == TRUE) || (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id]->resourceList.list.array[pucch_resource_indicator][0] != MAX_NB_OF_PUCCH_RESOURCES)) {
-
           if (ready_pucch_resource_id == TRUE) {
             current_resource_id = *resource_id;
           }
@@ -1236,17 +1236,14 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
             }
           }
 
-          /*uint8_t pucch_resource_count = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList.list.count;
+          uint8_t pucch_resource_count = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.count;
           for (uint8_t i=0; i<pucch_resource_count; i++) {
-            if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList.list.array[i]->pucch_ResourceId == current_resource_id)
-              pucch_resource = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList.list.array[i];
-          }*/
-
-          pucch_resource = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[current_resource_id];
+            if (mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[i]->pucch_ResourceId == current_resource_id)
+              pucch_resource = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[i];
+          }
           if (pucch_resource != NULL) {
-            format_pucch = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList->list.array[current_resource_id]->format.present;
+            format_pucch = pucch_resource->format.present;
             nb_symbols_for_tx = get_nb_symbols_pucch(pucch_resource, format_pucch);
-
             if (check_pucch_format(mac, gNB_id, format_pucch, nb_symbols_for_tx, uci_size) == TRUE) {
               *resource_set_id = pucch_resource_set_id;
               *resource_id = current_resource_id;
