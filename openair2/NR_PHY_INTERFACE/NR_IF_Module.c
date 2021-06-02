@@ -52,26 +52,28 @@ extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern uint8_t nfapi_mode;
 extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
+extern NR_UL_IND_t UL_INFO;
 
 void handle_nr_rach(NR_UL_IND_t *UL_info) {
 
-  if (UL_info->rach_ind.number_of_pdus>0) {
-    LOG_I(MAC,"Melissa UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",UL_info->frame,UL_info->slot, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
-    int npdus = UL_info->rach_ind.number_of_pdus;
+  if (UL_INFO.rach_ind.number_of_pdus>0) {
+    LOG_I(MAC,"Melissa UL_INFO[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",
+          UL_INFO.frame,UL_INFO.slot, UL_INFO.rach_ind.sfn,UL_INFO.rach_ind.slot);
+    int npdus = UL_INFO.rach_ind.number_of_pdus;
     for(int i = 0; i < npdus; i++) {
-      UL_info->rach_ind.number_of_pdus--;
-      if (UL_info->rach_ind.pdu_list[i].num_preamble>0)
-      AssertFatal(UL_info->rach_ind.pdu_list[i].num_preamble==1,
+      UL_INFO.rach_ind.number_of_pdus--;
+      if (UL_INFO.rach_ind.pdu_list[i].num_preamble>0)
+      AssertFatal(UL_INFO.rach_ind.pdu_list[i].num_preamble==1,
                   "More than 1 preamble not supported\n");
     
-      nr_initiate_ra_proc(UL_info->module_id,
-                          UL_info->CC_id,
-                          UL_info->rach_ind.sfn,
-                          UL_info->rach_ind.slot,
-                          UL_info->rach_ind.pdu_list[i].preamble_list[0].preamble_index,
-                          UL_info->rach_ind.pdu_list[i].freq_index,
-                          UL_info->rach_ind.pdu_list[i].symbol_index,
-                          UL_info->rach_ind.pdu_list[i].preamble_list[0].timing_advance);
+      nr_initiate_ra_proc(UL_INFO.module_id,
+                          UL_INFO.CC_id,
+                          UL_INFO.rach_ind.sfn,
+                          UL_INFO.rach_ind.slot,
+                          UL_INFO.rach_ind.pdu_list[i].preamble_list[0].preamble_index,
+                          UL_INFO.rach_ind.pdu_list[i].freq_index,
+                          UL_INFO.rach_ind.pdu_list[i].symbol_index,
+                          UL_INFO.rach_ind.pdu_list[i].preamble_list[0].timing_advance);
     }
   }
 }

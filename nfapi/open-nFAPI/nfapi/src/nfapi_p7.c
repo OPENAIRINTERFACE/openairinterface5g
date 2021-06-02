@@ -3522,7 +3522,7 @@ static uint8_t pack_nr_rach_indication(void *msg, uint8_t **ppWritePackedMsg, ui
 
 	if (!(push16(pNfapiMsg->sfn , ppWritePackedMsg, end) &&
 		push16(pNfapiMsg->slot , ppWritePackedMsg, end) &&
-		push16(pNfapiMsg->number_of_pdus, ppWritePackedMsg, end)
+		push8(pNfapiMsg->number_of_pdus, ppWritePackedMsg, end)
 		))
 			return 0;
 
@@ -6502,9 +6502,11 @@ return 1;
 
 //NR RACH
 
-static uint8_t unpack_nr_rach_indication_body(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
+static uint8_t unpack_nr_rach_indication_body(nfapi_nr_prach_indication_pdu_t* value,
+                                              uint8_t **ppReadPackedMsg,
+                                              uint8_t *end,
+                                              nfapi_p7_codec_config_t* config)
 {
-	nfapi_nr_prach_indication_pdu_t* value = (nfapi_nr_prach_indication_pdu_t*)tlv;
 
 	if(!(pull16(ppReadPackedMsg, &value->phy_cell_id, end) &&
 	 	 pull8(ppReadPackedMsg, &value->symbol_index, end) &&
@@ -6515,14 +6517,18 @@ static uint8_t unpack_nr_rach_indication_body(void* tlv, uint8_t **ppReadPackedM
 		 pull8(ppReadPackedMsg, &value->num_preamble, end)
 		 ))
 		  return 0;
-	for(int i = 0; i < value->num_preamble; i++)
-	{
-		if(!(pull8(ppReadPackedMsg, &value->preamble_list->preamble_index, end) &&
-			pull16(ppReadPackedMsg, &value->preamble_list->timing_advance, end) &&
-			pull32(ppReadPackedMsg, &value->preamble_list->preamble_pwr, end)
-			))
-			return 0;
-	}
+
+        if (value->num_preamble > 0) {
+	        value->preamble_list = nfapi_p7_allocate(sizeof(*value->preamble_list) * value->num_preamble, config);
+                for(int i = 0; i < value->num_preamble; i++)
+                {
+                        if(!(pull8(ppReadPackedMsg, &value->preamble_list[i].preamble_index, end) &&
+                                pull16(ppReadPackedMsg, &value->preamble_list[i].timing_advance, end) &&
+                                pull32(ppReadPackedMsg, &value->preamble_list[i].preamble_pwr, end)
+                                ))
+                                return 0;
+                }
+        }
 	return 1;
 }
 
@@ -6533,15 +6539,17 @@ static uint8_t unpack_nr_rach_indication(uint8_t **ppReadPackedMsg, uint8_t *end
 		pull16(ppReadPackedMsg, &pNfapiMsg->slot , end) &&
 		pull8(ppReadPackedMsg, &pNfapiMsg->number_of_pdus, end)
 		))
-			return 0;
-
-	for(int i=0; i< pNfapiMsg->number_of_pdus;i++)	
-	{
-		if(!unpack_nr_rach_indication_body(&pNfapiMsg->pdu_list,ppReadPackedMsg,end))
 		return 0;
-	}
 
-return 1;
+        if (pNfapiMsg->number_of_pdus > 0) {
+	        pNfapiMsg->pdu_list = nfapi_p7_allocate(sizeof(*pNfapiMsg->pdu_list) * pNfapiMsg->number_of_pdus, config);
+                for(int i = 0; i < pNfapiMsg->number_of_pdus; i++)
+                {
+                        if(!unpack_nr_rach_indication_body(&pNfapiMsg->pdu_list[i], ppReadPackedMsg, end, config))
+                                return 0;
+                }
+        }
+        return 1;
 }
 
 //NR UCI 

@@ -145,32 +145,34 @@ void init_nrUE_standalone_thread(int ue_idx)
   pthread_setname_np(phy_thread, "oai:nrue-stand-phy");
 }
 
-static void L1_nsa_prach_procedures(nfapi_nr_rach_indication_t *rach_ind, frame_t frame, int slot)
+static void L1_nsa_prach_procedures(frame_t frame, int slot)
 {
-  rach_ind->sfn = frame;
-  rach_ind->slot = slot;
-  rach_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION;
+  nfapi_nr_rach_indication_t rach_ind;
+  memset(&rach_ind, 0, sizeof(rach_ind));
+  rach_ind.sfn = frame;
+  rach_ind.slot = slot;
+  rach_ind.header.message_id = NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION;
 
   uint8_t pdu_index = 0;
-  rach_ind->pdu_list = CALLOC(1, sizeof(*rach_ind->pdu_list));
-  rach_ind->number_of_pdus  = 1;
-	rach_ind->pdu_list[pdu_index].phy_cell_id                         = 0;
-	rach_ind->pdu_list[pdu_index].symbol_index                        = 0;
-	rach_ind->pdu_list[pdu_index].slot_index                          = slot;
-	rach_ind->pdu_list[pdu_index].freq_index                          = 1;
-	rach_ind->pdu_list[pdu_index].avg_rssi                            = 128;
-	rach_ind->pdu_list[pdu_index].avg_snr                             = 0xff; // invalid for now
+  rach_ind.pdu_list = CALLOC(1, sizeof(*rach_ind.pdu_list));
+  rach_ind.number_of_pdus  = 1;
+  rach_ind.pdu_list[pdu_index].phy_cell_id                         = 0;
+  rach_ind.pdu_list[pdu_index].symbol_index                        = 0;
+  rach_ind.pdu_list[pdu_index].slot_index                          = slot;
+  rach_ind.pdu_list[pdu_index].freq_index                          = 1;
+  rach_ind.pdu_list[pdu_index].avg_rssi                            = 128;
+  rach_ind.pdu_list[pdu_index].avg_snr                             = 0xff; // invalid for now
 
-	rach_ind->pdu_list[pdu_index].num_preamble                        = 1;
-  const int num_p = rach_ind->pdu_list[pdu_index].num_preamble;
-  rach_ind->pdu_list[pdu_index].preamble_list = calloc(num_p, sizeof(nfapi_nr_prach_indication_preamble_t));
-	rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_index     = 63; //Melissa, need to get this out of rrc_reconfig_msg
-	rach_ind->pdu_list[pdu_index].preamble_list[0].timing_advance     = 0;
-	rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_pwr       = 0xffffffff;
+  rach_ind.pdu_list[pdu_index].num_preamble                        = 1;
+  const int num_p = rach_ind.pdu_list[pdu_index].num_preamble;
+  rach_ind.pdu_list[pdu_index].preamble_list = calloc(num_p, sizeof(nfapi_nr_prach_indication_preamble_t));
+  rach_ind.pdu_list[pdu_index].preamble_list[0].preamble_index     = 63; //Melissa, need to get this out of rrc_reconfig_msg
+  rach_ind.pdu_list[pdu_index].preamble_list[0].timing_advance     = 0;
+  rach_ind.pdu_list[pdu_index].preamble_list[0].preamble_pwr       = 0xffffffff;
 
-  send_nsa_standalone_msg(rach_ind);
-  free(rach_ind->pdu_list);
-  //free(rach_ind->pdu_list[pdu_index].preamble_list); Melissa hack maybe
+  send_nsa_standalone_msg(&rach_ind);
+  free(rach_ind.pdu_list[pdu_index].preamble_list);
+  free(rach_ind.pdu_list);
 }
 
 static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
@@ -224,9 +226,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     if (nr_prach == 1)
     {
-      nfapi_nr_rach_indication_t *ind = CALLOC(1, sizeof(*ind));
-      L1_nsa_prach_procedures(ind, ul_info.frame_tx, ul_info.slot_tx);
-      free(ind);
+      L1_nsa_prach_procedures(ul_info.frame_tx, ul_info.slot_tx);
       /* Fill rach indication here and send to proxy. Basically take pieces from
       L1_nr_prach_procedures() and send it to the proxy. prach from ue->gNb->gnb sends rach->ue receives rach
       The UE is basically filling the rach and proxy will receive and think that it came from the gNB. The

@@ -47,6 +47,7 @@
 
 extern RAN_CONTEXT_t RC;
 extern UL_RCC_IND_t  UL_RCC_INFO;
+extern NR_UL_IND_t UL_INFO;
 
 typedef struct {
   uint8_t enabled;
@@ -699,6 +700,32 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
   return 1;
 }
 
+int phy_nr_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rach_indication_t *ind)
+{
+  if(NFAPI_MODE == NFAPI_MODE_VNF)
+  {
+    for (int i = 0; i < ind->number_of_pdus; i++) {
+      LOG_I(NR_MAC, "%s() NFAPI SFN:%d/SLOT:%d number_of_preambles:%u\n", __FUNCTION__, ind->sfn, ind->slot, ind->pdu_list[i].num_preamble);
+
+      UL_INFO.rach_ind = *ind;
+
+      const int num_p = ind->pdu_list[i].num_preamble;
+      if (num_p > 0)
+      {
+        UL_INFO.rach_ind.pdu_list[i].preamble_list = calloc(num_p, sizeof(nfapi_nr_prach_indication_preamble_t));
+        for (int j = 0; j < num_p; j++)
+        {
+          UL_INFO.rach_ind.pdu_list[i].preamble_list[j] = ind->pdu_list[i].preamble_list[j];
+        }
+      }
+    }
+  }
+  else {
+    LOG_E(NR_MAC, "NFAPI_MODE = %d not NFAPI_MODE_VNF(2)\n", nfapi_getmode());
+  }
+  return 1;
+}
+
 int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_harqs:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
@@ -1147,11 +1174,10 @@ void *vnf_nr_p7_thread_start(void *ptr) {
   p7_vnf->config->port = p7_vnf->local_port;
   p7_vnf->config->sync_indication = &phy_sync_indication;
   p7_vnf->config->slot_indication = &phy_slot_indication;
-
   p7_vnf->config->harq_indication = &phy_harq_indication;
   p7_vnf->config->crc_indication = &phy_crc_indication;
   p7_vnf->config->rx_indication = &phy_rx_indication;
-  p7_vnf->config->rach_indication = &phy_rach_indication;
+  p7_vnf->config->nr_rach_indication = &phy_nr_rach_indication;
   p7_vnf->config->srs_indication = &phy_srs_indication;
   p7_vnf->config->sr_indication = &phy_sr_indication;
   p7_vnf->config->cqi_indication = &phy_cqi_indication;
@@ -1532,6 +1558,7 @@ void configure_nr_nfapi_vnf(char *vnf_addr, int vnf_p5_port) {
   config->codec_config.allocate = &vnf_allocate;
   config->codec_config.deallocate = &vnf_deallocate;
   memset(&UL_RCC_INFO,0,sizeof(UL_RCC_IND_t));
+  memset(&UL_INFO, 0, sizeof(NR_UL_IND_t));
   NFAPI_TRACE(NFAPI_TRACE_INFO, "[VNF] Creating VNF NFAPI start thread %s\n", __FUNCTION__);
   pthread_create(&vnf_start_pthread, NULL, (void *)&vnf_nr_start_thread, config);
   NFAPI_TRACE(NFAPI_TRACE_INFO, "[VNF] Created VNF NFAPI start thread %s\n", __FUNCTION__);

@@ -131,8 +131,14 @@ void send_nsa_standalone_msg(nfapi_nr_rach_indication_t *rach_ind)
 {
     char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
     int encoded_size = nfapi_nr_p7_message_pack(rach_ind, buffer, sizeof(buffer), NULL);
-    LOG_I(NR_MAC, "NR_RACH_IND sent to Proxy, Size: %d Frame %d Subframe %d\n", encoded_size,
-          rach_ind->sfn, rach_ind->slot);
+    if (encoded_size <= 0)
+    {
+        LOG_E(NR_MAC, "nfapi_nr_p7_message_pack has failed. Encoded size = %d\n", encoded_size);
+        return;
+    }
+
+    LOG_I(NR_MAC, "NR_RACH_IND sent to Proxy, Size: %d Frame %d Slot %d Num PDUS %d\n", encoded_size,
+          rach_ind->sfn, rach_ind->slot, rach_ind->number_of_pdus);
     if (send(ue_tx_sock_descriptor, buffer, encoded_size, 0) < 0)
     {
         LOG_E(NR_MAC, "Send Proxy NR_UE failed\n");

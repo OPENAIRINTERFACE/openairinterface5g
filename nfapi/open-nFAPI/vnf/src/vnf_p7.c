@@ -1547,14 +1547,22 @@ void vnf_handle_nr_rach_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf
 	}
 	else
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "Melissa %s: HANDLING RACH IND\n", __FUNCTION__);
 		nfapi_nr_rach_indication_t ind;
 	
 		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
 		}
-		
+		else
+		{
+		        NFAPI_TRACE(NFAPI_TRACE_INFO, "%s: Handling RACH Indication\n", __FUNCTION__);
+			if(vnf_p7->_public.nr_rach_indication)
+			{
+				(vnf_p7->_public.nr_rach_indication)(&vnf_p7->_public, &ind);
+			}
+		}
+		//vnf_p7_codec_free(vnf_p7, ind.nr_rach_indication_body.preamble_list); Melissa do we need to do this?
+		//vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
 	}
 }
 

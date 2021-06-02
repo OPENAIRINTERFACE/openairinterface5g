@@ -24,6 +24,7 @@
 
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/defs_UE.h"
 #include "common/ran_context.h"
 
@@ -45,6 +46,7 @@ int16_t *primary_synch2_time;
 PHY_VARS_UE ***PHY_vars_UE_g;
 RAN_CONTEXT_t RC;
 UL_RCC_IND_t UL_RCC_INFO;
+NR_UL_IND_t UL_INFO;
 
 unsigned short rev[2048],rev_times4[8192],rev_half[1024];
 unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048],rev8192[8192];

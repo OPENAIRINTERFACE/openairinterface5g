@@ -286,7 +286,7 @@ void *pnf_p7_thread_start(void *ptr) {
 }
 
 void *pnf_nr_p7_thread_start(void *ptr) {
-  NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] P7 THREAD %s\n", __FUNCTION__);
+  NFAPI_TRACE(NFAPI_TRACE_INFO, "[NR_PNF] NR P7 THREAD %s\n", __FUNCTION__);
   pnf_set_thread_priority(79);
   nfapi_pnf_p7_config_t *config = (nfapi_pnf_p7_config_t *)ptr;
   nfapi_nr_pnf_p7_start(config);
