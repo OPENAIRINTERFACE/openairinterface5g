@@ -997,6 +997,7 @@ void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, boolean_t removeFlag) {
   free_list = &eNB_MAC->UE_free_list;
   free_list->UE_free_ctrl[free_list->tail_freelist].rnti = rnti;
   free_list->UE_free_ctrl[free_list->tail_freelist].removeContextFlg = removeFlag;
+  free_list->UE_free_ctrl[free_list->tail_freelist].raFlag = 0;
   free_list->num_UEs++;
   eNB_MAC->UE_release_req.ue_release_request_body.ue_release_request_TLVs_list[eNB_MAC->UE_release_req.ue_release_request_body.number_of_TLVs].rnti = rnti;
   eNB_MAC->UE_release_req.ue_release_request_body.number_of_TLVs++;
@@ -1046,12 +1047,12 @@ void release_UE_in_freeList(module_id_t mod_id) {
         eNB_PHY = RC.eNB[mod_id][CC_id];
         int id;
         // clean ULSCH entries for rnti
-        id = find_ulsch(rnti,eNB_PHY,SEARCH_EXIST);
+        id = find_ulsch(rnti,eNB_PHY,eNB_MAC->UE_free_list.UE_free_ctrl[ue_num].raFlag ? SEARCH_EXIST_RA : SEARCH_EXIST);
 
         if (id>=0) clean_eNb_ulsch(eNB_PHY->ulsch[id]);
 
         // clean DLSCH entries for rnti
-        id = find_dlsch(rnti,eNB_PHY,SEARCH_EXIST);
+        id = find_dlsch(rnti,eNB_PHY,eNB_MAC->UE_free_list.UE_free_ctrl[ue_num].raFlag ? SEARCH_EXIST_RA : SEARCH_EXIST);
 
         if (id>=0) clean_eNb_dlsch(eNB_PHY->dlsch[id][0]);
 
