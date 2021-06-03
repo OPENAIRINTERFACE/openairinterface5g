@@ -145,6 +145,31 @@ void send_nsa_standalone_msg(nfapi_nr_rach_indication_t *rach_ind)
         return;
     }
 }
+
+static void check_for_msg3(nfapi_nr_ul_tti_request_t *ul_tti_req)
+{
+    int num_pdus = ul_tti_req->n_pdus;
+    if (num_pdus <= 0)
+    {
+        LOG_E(NR_PHY, "%s: ul_tti_request number of PDUS <= 0\n", __FUNCTION__);
+        abort();
+    }
+    for (int i = 0; i < num_pdus; i++)
+    {
+        nfapi_nr_ul_tti_request_number_of_pdus_t *pdu_list = &ul_tti_req->pdus_list[i];
+        if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE)
+        {
+            LOG_I(NR_PHY, "Melissa in [%d, %d]. We got PUSCH PDU..this is for msg3 I think for RNTI %x\n",
+                  ul_tti_req->SFN, ul_tti_req->Slot, pdu_list->pusch_pdu.rnti);
+        }
+        if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE)
+        {
+            LOG_I(NR_PHY, "Melissa in [%d, %d]. We got PUCCH PDU..this is for Msg3 I think for RNTI %x\n",
+                  ul_tti_req->SFN, ul_tti_req->Slot, pdu_list->pucch_pdu.rnti);
+        }
+    }
+}
+
 static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
 {
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
@@ -167,6 +192,24 @@ static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
                 pdu_list->ssb_pdu.ssb_pdu_rel15.bchPayload);
             pdu_list->ssb_pdu.ssb_pdu_rel15.ssbRsrp = 60;
             LOG_D(NR_RRC, "Setting pdulist[%d].ssbRsrp to %d\n", i, pdu_list->ssb_pdu.ssb_pdu_rel15.ssbRsrp);
+        }
+        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE)
+        {
+            LOG_I(NR_PHY, "Melissa in [%d, %d], we got the PDSCH (RAR payload)for rnti %x in \n",
+                  dl_tti_request->SFN, dl_tti_request->Slot, pdu_list->pdsch_pdu.pdsch_pdu_rel15.rnti);
+            //nr_ue_process_rar()
+        }
+        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE)
+        {
+            if (pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci > 0)
+            {
+                for (int j = 0; j < pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci; j++)
+                {
+                    LOG_I(NR_PHY, "Melissa in [%d, %d], we got the PDCCH DCI (control data) for rnti %x\n",
+                          dl_tti_request->SFN, dl_tti_request->Slot, pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].RNTI);
+                }
+            }
+
         }
     }
 
@@ -257,6 +300,7 @@ void *nrue_standalone_pnf_task(void *context)
                 LOG_E(NR_PHY, "Message dl_tti_request failed to unpack\n");
                 break;
             }
+            check_for_msg3(&ul_tti_request);
             break;
           default:
             LOG_E(NR_PHY, "Case Statement has no corresponding nfapi message, this is the header ID %d\n", header.message_id);
