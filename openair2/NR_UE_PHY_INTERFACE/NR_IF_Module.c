@@ -146,6 +146,63 @@ void send_nsa_standalone_msg(nfapi_nr_rach_indication_t *rach_ind)
     }
 }
 
+static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request)
+{
+    bool filled_pdsch_pdu = false;
+    bool filled_pdcch_pdu = false;
+    int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
+    if (num_pdus <= 0)
+    {
+        LOG_E(NR_PHY, "%s: dl_tti_request number of PDUS <= 0\n", __FUNCTION__);
+        abort();
+    }
+
+    nr_downlink_indication_t dl_info;
+    for (int i = 0; i < num_pdus; i++)
+    {
+        nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request->dl_tti_request_body.dl_tti_pdu_list[i];
+        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE)
+        {
+            LOG_I(NR_PHY, "Melissa in [%d, %d], we got the PDSCH (RAR payload)for rnti %x in \n",
+                dl_tti_request->SFN, dl_tti_request->Slot, pdu_list->pdsch_pdu.pdsch_pdu_rel15.rnti);
+            // Melissa, what can I fill pdu with? dl_info.rx_ind->rx_indication_body->pdsch_pdu.pdu = pdu_list->pdsch_pdu.pdsch_pdu_rel15.
+            dl_info.rx_ind->rx_indication_body->pdsch_pdu.pdu_length = pdu_list->PDUSize;
+            filled_pdsch_pdu = true;
+        }
+        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE)
+        {
+            if (pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci > 0)
+            {
+                for (int j = 0; j < pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci; j++)
+                {
+                    nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
+                    LOG_I(NR_PHY, "Melissa in [%d, %d], we got the PDCCH DCI (control data) for rnti %x\n",
+                        dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI);
+                    for (int k = 0; k < DCI_PAYLOAD_BYTE_LEN; k++)
+                    {
+                        // Melissa, why is dl_info payload 16 elements and received dl_tti_req payload is 8 elements?
+                        dl_info.dci_ind->dci_list->payloadBits[k] = dci_pdu_list->Payload[k];
+                    }
+                    dl_info.dci_ind->dci_list->payloadSize = dci_pdu_list->PayloadSizeBits;
+                    filled_pdcch_pdu = true;
+                }
+            }
+
+        }
+    }
+
+    dl_info.slot = dl_tti_request->Slot;
+    dl_info.frame = dl_tti_request->SFN;
+     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+    if (mac->scc == NULL) {
+      return;
+    }
+    if (is_nr_UL_slot(mac->scc, dl_info.slot) && filled_pdsch_pdu && filled_pdcch_pdu) {
+      LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", dl_info.slot, __FUNCTION__);
+      nr_ue_dl_indication(&dl_info, NULL);
+    }
+}
+
 static void check_for_msg3(nfapi_nr_ul_tti_request_t *ul_tti_req)
 {
     int num_pdus = ul_tti_req->n_pdus;
@@ -192,24 +249,6 @@ static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
                 pdu_list->ssb_pdu.ssb_pdu_rel15.bchPayload);
             pdu_list->ssb_pdu.ssb_pdu_rel15.ssbRsrp = 60;
             LOG_D(NR_RRC, "Setting pdulist[%d].ssbRsrp to %d\n", i, pdu_list->ssb_pdu.ssb_pdu_rel15.ssbRsrp);
-        }
-        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE)
-        {
-            LOG_I(NR_PHY, "Melissa in [%d, %d], we got the PDSCH (RAR payload)for rnti %x in \n",
-                  dl_tti_request->SFN, dl_tti_request->Slot, pdu_list->pdsch_pdu.pdsch_pdu_rel15.rnti);
-            //nr_ue_process_rar()
-        }
-        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE)
-        {
-            if (pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci > 0)
-            {
-                for (int j = 0; j < pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci; j++)
-                {
-                    LOG_I(NR_PHY, "Melissa in [%d, %d], we got the PDCCH DCI (control data) for rnti %x\n",
-                          dl_tti_request->SFN, dl_tti_request->Slot, pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].RNTI);
-                }
-            }
-
         }
     }
 
@@ -285,6 +324,7 @@ void *nrue_standalone_pnf_task(void *context)
                 break;
             }
             save_nr_measurement_info(&dl_tti_request);
+            check_and_process_rar(&dl_tti_request);
             break;
           case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
             LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message. \n");
