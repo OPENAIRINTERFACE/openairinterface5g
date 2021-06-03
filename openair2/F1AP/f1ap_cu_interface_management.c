@@ -142,7 +142,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     /* tac */
     if (served_cells_item_p->served_Cell_Information.fiveGS_TAC) {
       OCTET_STRING_TO_INT16(served_cells_item_p->served_Cell_Information.fiveGS_TAC, F1AP_SETUP_REQ(message_p).tac[i]);
-      LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).tac[%d] %d \n", i, F1AP_SETUP_REQ(message_p).tac[i]);
+      LOG_I(F1AP, "F1AP_SETUP_REQ(message_p).tac[%d] %d \n", i, F1AP_SETUP_REQ(message_p).tac[i]);
     }
     /* - nRCGI */
     TBCD_TO_MCC_MNC(&(served_cells_item_p->served_Cell_Information.nRCGI.pLMN_Identity), F1AP_SETUP_REQ(message_p).mcc[i],
@@ -153,7 +153,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     // NR cellID
     BIT_STRING_TO_NR_CELL_IDENTITY(&served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity,
 				   F1AP_SETUP_REQ(message_p).nr_cellid[i]);
-    LOG_D(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
+    LOG_I(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
           F1AP_SETUP_REQ(message_p).mcc[i],
           F1AP_SETUP_REQ(message_p).mnc[i],
           (long long unsigned int)F1AP_SETUP_REQ(message_p).nr_cellid[i]);
@@ -324,8 +324,12 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
     for (i=0; i<num_cells_to_activate; i++) {
 
-      LOG_I(F1AP, "(%d) mcc = %d, mnc = %d, mnc_digit_length = %d\n",
-            i, f1ap_setup_resp->cells_to_activate[i].mcc, f1ap_setup_resp->cells_to_activate[i].mnc, f1ap_setup_resp->cells_to_activate[i].mnc_digit_length);
+      LOG_I(F1AP, "[c3] (cell %d) mcc = %d, mnc = %d, mnc_digit_length = %d, nr_cellid = %lu\n",
+            i,
+            f1ap_setup_resp->cells_to_activate[i].mcc,
+            f1ap_setup_resp->cells_to_activate[i].mnc,
+            f1ap_setup_resp->cells_to_activate[i].mnc_digit_length,
+            f1ap_setup_resp->cells_to_activate[i].nr_cellid);
 
       F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies;
       cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemIEs_t));
@@ -569,8 +573,12 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
     for (i=0; i<f1ap_gnb_cu_configuration_update->num_cells_to_activate; i++) {
 
-      LOG_I(F1AP, "(%d) mcc = %d, mnc = %d, mnc_digit_length = %d\n",
-            i, f1ap_gnb_cu_configuration_update->cells_to_activate[i].mcc, f1ap_gnb_cu_configuration_update->cells_to_activate[i].mnc, f1ap_gnb_cu_configuration_update->cells_to_activate[i].mnc_digit_length);
+      LOG_I(F1AP, "[c2] (cell %d) mcc = %d, mnc = %d, mnc_digit_length = %d, nr_cellid = %lu\n",
+            i,
+            f1ap_gnb_cu_configuration_update->cells_to_activate[i].mcc,
+            f1ap_gnb_cu_configuration_update->cells_to_activate[i].mnc,
+            f1ap_gnb_cu_configuration_update->cells_to_activate[i].mnc_digit_length,
+            f1ap_gnb_cu_configuration_update->cells_to_activate[i].nr_cellid);
 
       F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies;
       cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemIEs_t));
