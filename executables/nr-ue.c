@@ -227,11 +227,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     if (nr_prach == 1)
     {
       L1_nsa_prach_procedures(ul_info.frame_tx, ul_info.slot_tx);
-      /* Fill rach indication here and send to proxy. Basically take pieces from
-      L1_nr_prach_procedures() and send it to the proxy. prach from ue->gNb->gnb sends rach->ue receives rach
-      The UE is basically filling the rach and proxy will receive and think that it came from the gNB. The
-      received rach in the proxy will trigger gNB to send back the RAR. RAR will go to proxy then goes to UE
-      and the UE will get the DCI for RAR and the payload. have to handle receving the RAR once we get it. */
       LOG_I(NR_PHY, "Calling nr_Msg1_transmitted for slot %d\n", ul_info.slot_tx);
       nr_Msg1_transmitted(mod_id, CC_id, ul_info.frame_tx, gNB_id); //This is called when phy layer has sent the prach
     }

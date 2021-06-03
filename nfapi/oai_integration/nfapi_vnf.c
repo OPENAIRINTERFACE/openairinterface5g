@@ -704,21 +704,7 @@ int phy_nr_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rach_ind
 {
   if(NFAPI_MODE == NFAPI_MODE_VNF)
   {
-    for (int i = 0; i < ind->number_of_pdus; i++) {
-      LOG_I(NR_MAC, "%s() NFAPI SFN:%d/SLOT:%d number_of_preambles:%u\n", __FUNCTION__, ind->sfn, ind->slot, ind->pdu_list[i].num_preamble);
-
-      UL_INFO.rach_ind = *ind;
-
-      const int num_p = ind->pdu_list[i].num_preamble;
-      if (num_p > 0)
-      {
-        UL_INFO.rach_ind.pdu_list[i].preamble_list = calloc(num_p, sizeof(nfapi_nr_prach_indication_preamble_t));
-        for (int j = 0; j < num_p; j++)
-        {
-          UL_INFO.rach_ind.pdu_list[i].preamble_list[j] = ind->pdu_list[i].preamble_list[j];
-        }
-      }
-    }
+    UL_INFO.rach_ind = *ind;
   }
   else {
     LOG_E(NR_MAC, "NFAPI_MODE = %d not NFAPI_MODE_VNF(2)\n", nfapi_getmode());
