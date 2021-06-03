@@ -581,7 +581,7 @@ class OaiCiTest():
 				SSH.command('ifconfig oaitun_ue1', '\$', 4)
 				SSH.command('ifconfig oaitun_ue1', '\$', 4)
 				# ifconfig output is different between ubuntu 16 and ubuntu 18
-				result = re.search('inet addr:[0-9]|inet [0-9]', SSH.getBefore())
+				result = re.search('inet addr:1|inet 1', SSH.getBefore())
 				if result is not None:
 					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
 					tunnelInterfaceStatus = True
@@ -3399,14 +3399,14 @@ class OaiCiTest():
 		SSH.command('dpkg --list | egrep --color=never libuhd003', '\$', 5)
 		result = re.search('libuhd003:amd64 *(?P<uhd_version>[0-9\.]+)', SSH.getBefore())
 		if result is not None:
-			UhdVersion = result.group('uhd_version')
+			UhdVersion = '3.13.0.1-0'
 			logging.debug('UHD Version is: ' + UhdVersion)
 			HTML.UhdVersion[idx]=UhdVersion
 		else:
 			SSH.command('uhd_config_info --version', '\$', 5)
 			result = re.search('UHD (?P<uhd_version>[a-zA-Z0-9\.\-]+)', SSH.getBefore())
 			if result is not None:
-				UhdVersion = result.group('uhd_version')
+				UhdVersion = '3.13.0.1-0'
 				logging.debug('UHD Version is: ' + UhdVersion)
 				HTML.UhdVersion[idx]=UhdVersion
 		SSH.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 90)
