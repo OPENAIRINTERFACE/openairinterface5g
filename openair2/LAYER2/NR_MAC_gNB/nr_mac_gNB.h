@@ -469,10 +469,10 @@ typedef struct {
 typedef struct{
   uint8_t cri_bitlen;
   uint8_t ri_bitlen;
-  uint8_t li_bitlen;
-  uint8_t pmi_x1_bitlen;
-  uint8_t pmi_x2_bitlen;
-  uint8_t cqi_bitlen;
+  uint8_t li_bitlen[8];
+  uint8_t pmi_x1_bitlen[8];
+  uint8_t pmi_x2_bitlen[8];
+  uint8_t cqi_bitlen[8];
 } CSI_Meas_bitlen_t;
 
 typedef struct nr_csi_report {
