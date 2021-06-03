@@ -103,7 +103,11 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
               assoc_id, stream);
   }
 
-  message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
+  if(RC.nrrrc) {
+    message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
+  } else {
+    message_p = itti_alloc_new_message(TASK_RRC_ENB, 0, F1AP_SETUP_REQ);
+  }
 
   /* assoc_id */
   F1AP_SETUP_REQ(message_p).assoc_id = assoc_id;
@@ -165,7 +169,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
           served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[4]);
     /* - nRPCI */
     F1AP_SETUP_REQ(message_p).nr_pci[i] = served_cells_item_p->served_Cell_Information.nRPCI;
-    LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).nr_pci[%d] %d \n",
+    LOG_I(F1AP, "F1AP_SETUP_REQ(message_p).nr_pci[%d] %d \n",
           i, F1AP_SETUP_REQ(message_p).nr_pci[i]);
   
     // System Information
@@ -548,7 +552,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
   pdu.choice.initiatingMessage = (F1AP_InitiatingMessage_t *)calloc(1, sizeof(F1AP_InitiatingMessage_t));
   pdu.choice.initiatingMessage->procedureCode = F1AP_ProcedureCode_id_gNBCUConfigurationUpdate;
-  pdu.choice.initiatingMessage->criticality   = F1AP_Criticality_reject;
+  pdu.choice.initiatingMessage->criticality   = F1AP_Criticality_ignore;
   pdu.choice.initiatingMessage->value.present = F1AP_InitiatingMessage__value_PR_GNBCUConfigurationUpdate;
   out = &pdu.choice.initiatingMessage->value.choice.GNBCUConfigurationUpdate;
 

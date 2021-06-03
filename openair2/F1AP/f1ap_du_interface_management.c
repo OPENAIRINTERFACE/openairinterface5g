@@ -1087,6 +1087,10 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
                                 uint32_t stream,
                                 F1AP_F1AP_PDU_t *pdu) {
 
+  if(!RC.nrrrc) {
+    return 0;
+  }
+
   LOG_D(F1AP, "DU_handle_gNB_CU_CONFIGURATION_UPDATE\n");
 
   AssertFatal(pdu->present == F1AP_F1AP_PDU_PR_initiatingMessage,
@@ -1249,6 +1253,10 @@ int DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
 
 int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
 						    f1ap_gnb_cu_configuration_update_acknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
+
+  if(!RC.nrrrc) {
+    return 0;
+  }
 
   AssertFatal(GNBCUConfigurationUpdateAcknowledge->num_cells_failed_to_be_activated == 0,
 	      "%d cells failed to activate\n",
