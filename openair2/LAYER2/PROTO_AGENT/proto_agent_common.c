@@ -375,16 +375,16 @@ int proto_agent_pdcp_data_req_process(mod_id_t mod_id, const void *params, Proto
     du_rlc_data_req(&ctxt_pP, srb_flagP, flag_MBMS, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
     result = 1;
   } else {
-     result = rlc_data_req(&ctxt_pP
-                           ,srb_flagP
-                           ,flag_MBMS
-                           ,rb_idP
-                           ,muiP
-                           ,confirmP
-                           ,pdcp_pdu_size
-                           ,pdcp_pdu_p
-                           ,NULL
-                           ,NULL
+    result = rlc_data_req(&ctxt_pP
+                          ,srb_flagP
+                          ,flag_MBMS
+                          ,rb_idP
+                          ,muiP
+                          ,confirmP
+                          ,pdcp_pdu_size
+                          ,pdcp_pdu_p
+                          ,NULL
+                          ,NULL
                           );
   }
   return result;
