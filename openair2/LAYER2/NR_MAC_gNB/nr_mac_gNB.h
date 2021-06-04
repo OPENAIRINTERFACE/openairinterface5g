@@ -467,6 +467,7 @@ typedef struct {
 }L1_RSRP_bitlen_t;
 
 typedef struct{
+  uint8_t ri_restriction;
   uint8_t cri_bitlen;
   uint8_t ri_bitlen;
   uint8_t li_bitlen[8];
