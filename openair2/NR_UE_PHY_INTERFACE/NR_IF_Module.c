@@ -148,6 +148,10 @@ void send_nsa_standalone_msg(nfapi_nr_rach_indication_t *rach_ind)
 
 static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request)
 {
+    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+    if (mac->scc == NULL) {
+      return;
+    }
     bool filled_pdcch_pdu = false;
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
     if (num_pdus <= 0)
@@ -169,7 +173,6 @@ static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request)
             /* Copy from tx_req the pdu put it in the rx_ind pdsch.pdu thing and then call nr_ue_dl_indication */
         
         }
-//int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci){
 
         if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE)
         {
@@ -178,8 +181,8 @@ static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request)
                 for (int j = 0; j < pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci; j++)
                 {
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                    LOG_I(NR_PHY, "Melissa in [%d, %d], we got the PDCCH DCI (Payload) for rnti %x\n",
-                        dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI);
+                    LOG_I(NR_PHY, "Melissa in [%d, %d], we got the PDCCH DCI (Payload) for rnti %x. Ra rnti %x\n",
+                        dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI, mac->ra.ra_rnti);
                     for (int k = 0; k < DCI_PAYLOAD_BYTE_LEN; k++)
                     {
                         /* This has to happen first. Dont call nr_ue_dl_indication, instead you need to send dci_ind to mac layer
@@ -190,19 +193,17 @@ static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request)
                         dl_info.dci_ind->dci_list->payloadBits[k] = dci_pdu_list->Payload[k];
                     }
                     dl_info.dci_ind->dci_list->payloadSize = dci_pdu_list->PayloadSizeBits;
+                    dl_info.dci_ind->dci_list->rnti = dci_pdu_list->RNTI;
                     filled_pdcch_pdu = true;
                 }
             }
-            handle_dci(0, 0, 0, dl_tti_request->SFN, dl_tti_request->Slot, dl_info.dci_ind->dci_list);
+            if (filled_pdcch_pdu)
+                handle_dci(0, 0, 0, dl_tti_request->SFN, dl_tti_request->Slot, dl_info.dci_ind->dci_list);
         }
     }
 
     dl_info.slot = dl_tti_request->Slot;
     dl_info.frame = dl_tti_request->SFN;
-     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-    if (mac->scc == NULL) {
-      return;
-    }
     if (0) { //(is_nr_UL_slot(mac->scc, dl_info.slot) && filled_pdcch_pdu
       LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", dl_info.slot, __FUNCTION__);
       nr_ue_dl_indication(&dl_info, NULL);
