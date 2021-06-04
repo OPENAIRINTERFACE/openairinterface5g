@@ -419,6 +419,13 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
         compute_cqi_bitlen(csi_reportconfig, csi_report->csi_meas_bitlen.ri_restriction, csi_report);
         compute_pmi_bitlen(csi_reportconfig, csi_report->csi_meas_bitlen.ri_restriction, csi_report);
         break;
+      case (NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI):
+        csi_report->csi_meas_bitlen.cri_bitlen=ceil(log2(nb_resources));
+        csi_report->csi_meas_bitlen.ri_restriction = compute_ri_bitlen(csi_reportconfig, csi_report);
+        compute_li_bitlen(csi_reportconfig, csi_report->csi_meas_bitlen.ri_restriction, csi_report);
+        compute_cqi_bitlen(csi_reportconfig, csi_report->csi_meas_bitlen.ri_restriction, csi_report);
+        compute_pmi_bitlen(csi_reportconfig, csi_report->csi_meas_bitlen.ri_restriction, csi_report);
+        break;
     default:
       AssertFatal(1==0,"Not yet supported CSI report quantity type");
     }
@@ -1005,6 +1012,24 @@ uint8_t evaluate_pmi_report(uint8_t *payload,
 }
 
 
+int evaluate_li_report(uint8_t *payload,
+                       nr_csi_report_t *csi_report,
+                       int cumul_bits,
+                       uint8_t ri,
+                       NR_UE_sched_ctrl_t *sched_ctrl){
+
+  int idx = 0; // FIXME not sure about this index. Should it be the same as csi_report_id?
+  int li_bitlen = csi_report->csi_meas_bitlen.li_bitlen[ri];
+
+  if (li_bitlen>0) {
+    int temp_li = pickandreverse_bits(payload, li_bitlen, cumul_bits);
+    LOG_I(MAC,"LI %d\n",temp_li);
+    sched_ctrl->CSI_report[idx].choice.cri_ri_li_pmi_cqi_report.li = temp_li;
+  }
+  return li_bitlen;
+
+}
+
 void skip_zero_padding(int *cumul_bits,
                        nr_csi_report_t *csi_report,
                        uint8_t ri,
@@ -1048,6 +1073,7 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
     csi_report->nb_of_csi_ssb_report = 0;
     uint8_t cri_bitlen = 0;
     uint8_t ri_bitlen = 0;
+    uint8_t li_bitlen = 0;
     uint8_t pmi_bitlen = 0;
     NR_CSI_ReportConfig_t *csirep = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
     int period, offset;
@@ -1085,6 +1111,23 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
           if(ri_bitlen)
             r_index = evaluate_ri_report(payload,ri_bitlen,csi_report->csi_meas_bitlen.ri_restriction,cumul_bits,sched_ctrl);
           cumul_bits += ri_bitlen;
+          if (r_index != -1)
+            skip_zero_padding(&cumul_bits,csi_report,r_index,bitlen);
+          pmi_bitlen = evaluate_pmi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl);
+          cumul_bits += pmi_bitlen;
+          evaluate_cqi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl);
+          break;
+        case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI:
+          cri_bitlen = csi_report->csi_meas_bitlen.cri_bitlen;
+          if(cri_bitlen)
+            evaluate_cri_report(payload,cri_bitlen,cumul_bits,sched_ctrl);
+          cumul_bits += cri_bitlen;
+          ri_bitlen = csi_report->csi_meas_bitlen.ri_bitlen;
+          if(ri_bitlen)
+            r_index = evaluate_ri_report(payload,ri_bitlen,csi_report->csi_meas_bitlen.ri_restriction,cumul_bits,sched_ctrl);
+          cumul_bits += ri_bitlen;
+          li_bitlen = evaluate_li_report(payload,csi_report,cumul_bits,r_index,sched_ctrl);
+          cumul_bits += li_bitlen;
           if (r_index != -1)
             skip_zero_padding(&cumul_bits,csi_report,r_index,bitlen);
           pmi_bitlen = evaluate_pmi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl);
