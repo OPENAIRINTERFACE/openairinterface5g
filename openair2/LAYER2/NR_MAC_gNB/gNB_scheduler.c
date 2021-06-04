@@ -108,7 +108,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
    {
      memset(pdcch, 0, sizeof(**pdcch) * MAX_NUM_BWP * MAX_NUM_CORESET);
    }
-  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { // monolithic or PNF
+  if (1) { // Melissa. NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF
 
     DL_req[CC_idP].SFN                                   = frameP;
     DL_req[CC_idP].Slot                                  = slotP;
