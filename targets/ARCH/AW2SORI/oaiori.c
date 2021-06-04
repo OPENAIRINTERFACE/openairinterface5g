@@ -28,6 +28,7 @@
 
 #include "ori.h"
 
+#include "targets/ARCH/COMMON/common_lib.h"
 
 typedef struct eutra_bandentry_s {
   int16_t band;
@@ -210,6 +211,7 @@ int aw2s_oricleanup(openair0_device *device) {
   ORI_Disconnect(ori);
   ORI_Free(ori);
 
+  return(0);
 }
 
 int aw2s_startstreaming(openair0_device *device) {
@@ -217,7 +219,6 @@ int aw2s_startstreaming(openair0_device *device) {
   ORI_s *               ori = (ORI_s*)device->thirdparty_priv;
   ORI_Result_e  result;
   ORI_Result_e  RE_result;
-  char                  c;
 
   openair0_config_t *openair0_cfg = device->openair0_cfg;
 
@@ -326,7 +327,7 @@ int aw2s_startstreaming(openair0_device *device) {
   int Npackets=1024000;
   for (i=0;i<Npackets;i++) {
     device->trx_read_func2(device,
-                           &TS,
+                           (openair0_timestamp*)&TS,
                            (void*)temp_rx,
                            256,
                            &aid);
@@ -347,13 +348,12 @@ int aw2s_oriinit(openair0_device *device) {
   ORI_s * 		ori;
   ORI_Result_e	result;
   ORI_Result_e	RE_result;
-  char 			c;
   ORI_Object_s * 	objects[100];
   uint32_t 		numObjects;
   uint32_t		i;
 
-  eth_state_t *eth = (eth_state_t*)device->priv;
   eth_params_t *eth_params = device->eth_params;
+
   openair0_config_t *openair0_cfg = device->openair0_cfg;
 
   
@@ -707,4 +707,6 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
   device->thirdparty_init           = aw2s_oriinit;
   device->thirdparty_cleanup        = aw2s_oricleanup;
   device->thirdparty_startstreaming = aw2s_startstreaming;
+
+  return(0);
 }
