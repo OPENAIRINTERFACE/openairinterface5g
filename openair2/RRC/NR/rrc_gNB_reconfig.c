@@ -1236,7 +1236,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  *csirep1->reportFreqConfiguration->cqi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI;
  csirep1->reportFreqConfiguration->pmi_FormatIndicator = calloc(1,sizeof(*csirep1->reportFreqConfiguration->pmi_FormatIndicator));
  *csirep1->reportFreqConfiguration->pmi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__pmi_FormatIndicator_widebandPMI;
- csirep1->reportFreqConfiguration->csi_ReportingBand=NULL;
+ csirep1->reportFreqConfiguration->csi_ReportingBand = calloc(1,sizeof(*csirep1->reportFreqConfiguration->csi_ReportingBand));
+ csirep1->reportFreqConfiguration->csi_ReportingBand->present = NR_CSI_ReportConfig__reportFreqConfiguration__csi_ReportingBand_PR_subbands7;
+ csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.size=1;
+ csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands14.bits_unused=1;
+ csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands14.buf=malloc(1);
+ csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands14.buf[0]=254;
  csirep1->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_configured;
  csirep1->timeRestrictionForInterferenceMeasurements=NR_CSI_ReportConfig__timeRestrictionForInterferenceMeasurements_configured;
  csirep1->codebookConfig=calloc(1,sizeof(*csirep1->codebookConfig));
@@ -1262,7 +1267,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS = calloc(1,sizeof(*csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS));
  *csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS=NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
  csirep1->cqi_Table = NULL;
- csirep1->subbandSize = NR_CSI_ReportConfig__subbandSize_value1;
+ csirep1->subbandSize = NR_CSI_ReportConfig__subbandSize_value2;
  csirep1->non_PMI_PortIndication = NULL;
  csirep1->ext1 = NULL;
 
