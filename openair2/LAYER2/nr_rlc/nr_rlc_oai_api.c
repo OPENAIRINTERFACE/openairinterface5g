@@ -448,7 +448,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   exit(1);
 
 rb_found:
-  LOG_I(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d\n",
+  LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d",
         __FILE__, __LINE__, __FUNCTION__, ue->rnti, is_srb, rb_id, size);
 
   memblock = get_free_mem_block(size, __func__);
@@ -640,7 +640,7 @@ static void add_rlc_srb(int rnti, struct NR_SRB_ToAddMod *s, NR_RLC_BearerConfig
   int t_reassembly;
   int sn_field_length;
 
-  LOG_I(RLC,"Trying to add SRB %d\n",srb_id);
+  LOG_D(RLC,"Trying to add SRB %d\n",srb_id);
   if (srb_id != 1 && srb_id != 2) {
     LOG_E(RLC, "%s:%d:%s: fatal, bad srb id %d\n",
         __FILE__, __LINE__, __FUNCTION__, srb_id);
@@ -707,7 +707,7 @@ static void add_rlc_srb(int rnti, struct NR_SRB_ToAddMod *s, NR_RLC_BearerConfig
                                      sn_field_length);
     nr_rlc_ue_add_srb_rlc_entity(ue, srb_id, nr_rlc_am);
 
-    LOG_I(RLC, "%s:%d:%s: added srb %d to UE with RNTI 0x%x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+    LOG_D(RLC, "%s:%d:%s: added srb %d to UE with RNTI 0x%x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }

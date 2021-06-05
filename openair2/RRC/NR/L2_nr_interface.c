@@ -166,7 +166,7 @@ nr_rrc_data_req(
 //------------------------------------------------------------------------------
 {
   if(sdu_sizeP == 255) {
-    LOG_I(NR_RRC,"sdu_sizeP == 255");
+    LOG_D(RRC,"sdu_sizeP == 255");
     return FALSE;
   }
 
@@ -332,7 +332,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
 
     int sdu2_len = (enc_rval.encoded+7)/8;
     if (enc_rval.encoded == -1) {
-      LOG_I(F1AP,"Could not encoded cellGroupConfig, failed element %s\n",enc_rval.failed_type->name);
+      LOG_E(F1AP,"Could not encoded cellGroupConfig, failed element %s\n",enc_rval.failed_type->name);
       exit(-1);
     }
     /* do ITTI message */

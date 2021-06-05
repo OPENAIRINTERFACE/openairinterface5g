@@ -686,7 +686,7 @@ rrc_gNB_process_security(
   /* Save security parameters */
   ue_context_pP->ue_context.security_capabilities = *security_capabilities_pP;
   // translation
-  LOG_I(NR_RRC,
+  LOG_D(NR_RRC,
         "[gNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %lu NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
         ctxt_pP->module_id,
         ue_context_pP->ue_context.security_capabilities.nRencryption_algorithms,

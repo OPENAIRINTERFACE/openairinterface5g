@@ -84,10 +84,10 @@
 {CONFIG_STRING_MACRLC_LOCAL_S_PORTD,                     NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_REMOTE_S_PORTD,                    NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_ULSCH_MAX_SLOTS_INACTIVITY,        "Maximum number of slots before a UE is scheduled ULSCH due to inactivity", 0, uptr:NULL, defintval:200, TYPE_UINT, 0}, \
-{CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10,            NULL,   0,            iptr:NULL,   defintval:200,               TYPE_INT,       0},  \
-{CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10,            NULL,   0,            iptr:NULL,   defintval:150,               TYPE_INT,       0},  \
-{CONFIG_STRING_MACRLC_PUCCHFAILURETHRES,            NULL,   0,            iptr:NULL,   defintval:10,                TYPE_INT,       0},  \
-{CONFIG_STRING_MACRLC_PUSCHFAILURETHRES,            NULL,   0,            iptr:NULL,   defintval:10,                TYPE_INT,       0},  \
+{CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:200,             TYPE_INT,      0},        \
+{CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:150,             TYPE_INT,      0},        \
+{CONFIG_STRING_MACRLC_PUCCHFAILURETHRES,                 NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
+{CONFIG_STRING_MACRLC_PUSCHFAILURETHRES,                 NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
 }
 #define MACRLC_CC_IDX                                          0
 #define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1

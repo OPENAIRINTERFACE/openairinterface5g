@@ -397,7 +397,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
                              (const char*)f1ap_du_data->mib[i],//f1ap_du_data->mib,
                              f1ap_du_data->mib_length[i]);
 
-        LOG_I(F1AP,"Filling SIB1_message for cell %d, length %d\n",i,f1ap_du_data->sib1_length[i]);
+        LOG_D(F1AP,"Filling SIB1_message for cell %d, length %d\n",i,f1ap_du_data->sib1_length[i]);
         OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
                              (const char*)f1ap_du_data->sib1[i],
                              f1ap_du_data->sib1_length[i]);

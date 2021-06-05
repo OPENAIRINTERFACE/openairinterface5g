@@ -132,10 +132,10 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
 
   if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
 
-    LOG_I(F1AP, "%s() RRCContainer (CCCH) size %ld: ", __func__, ie->value.choice.RRCContainer.size);
-    for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
-      printf("%02x ", RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
-    printf("\n");
+    LOG_D(F1AP, "%s() RRCContainer (CCCH) size %ld: ", __func__, ie->value.choice.RRCContainer.size);
+    //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+    //  printf("%02x ", RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+    //printf("\n");
 
     /* DUtoCURRCContainer */
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,

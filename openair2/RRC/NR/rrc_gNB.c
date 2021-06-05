@@ -1261,7 +1261,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                    ue_context_pP->ue_context.rnti);
 
 #ifndef ITTI_SIM
-  LOG_I(NR_RRC,"Configuring PDCP DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
+  LOG_D(NR_RRC,"Configuring PDCP DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
 
   nr_rrc_pdcp_config_asn1_req(ctxt_pP,
                               SRB_configList, // NULL,
@@ -1277,7 +1277,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
   /* Refresh SRBs/DRBs */
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
-    LOG_I(NR_RRC,"Configuring RLC DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
+    LOG_D(NR_RRC,"Configuring RLC DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
     nr_rrc_rlc_config_asn1_req(ctxt_pP,
                           SRB_configList, // NULL,
                           DRB_configList,
@@ -2179,8 +2179,10 @@ rrc_gNB_decode_dcch(
 
   LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Decoding UL-DCCH Message\n",
                   PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-  for (int i=0;i<sdu_sizeP;i++) printf("%02x ",Rx_sdu[i]);
-  printf("\n");
+
+  //for (int i=0;i<sdu_sizeP;i++) printf("%02x ",Rx_sdu[i]);
+  //printf("\n");
+
   dec_rval = uper_decode(
                   NULL,
                   &asn_DEF_NR_UL_DCCH_Message,
@@ -2189,7 +2191,7 @@ rrc_gNB_decode_dcch(
                   sdu_sizeP,
                   0,
                   0);
-  xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
+  // xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
 
   {
     for (i = 0; i < sdu_sizeP; i++) {
@@ -2787,6 +2789,7 @@ void *rrc_gnb_task(void *args_p) {
   int                                result;
   //SRB_INFO                           *srb_info_p;
   //int                                CC_id;
+
   protocol_ctxt_t ctxt={.module_id=0,
                         .enb_flag=1,
                         .instance=0,
@@ -2797,6 +2800,7 @@ void *rrc_gnb_task(void *args_p) {
                         .configured=true,
                         .brOption=false
                        };
+
   itti_mark_task_ready(TASK_RRC_GNB);
   LOG_I(NR_RRC,"Entering main loop of NR_RRC message task\n");
 
@@ -2846,14 +2850,16 @@ void *rrc_gnb_task(void *args_p) {
       }
 
       nr_rrc_gNB_decode_ccch(&ctxt,
-			     (uint8_t *)NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
-			     NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,
-			     NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container,
-			     NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id);
+                             (uint8_t *)NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
+                             NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,
+                             NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container,
+                             NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id);
+
       if (NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container) {
-	free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container->buf);
-	free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container);
+        free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container->buf);
+        free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container);
       }
+
       break;
 
       /* Messages from PDCP */
@@ -3087,14 +3093,14 @@ rrc_gNB_generate_SecurityModeCommand(
   GNB_RRC_DCCH_DATA_IND (message_p).size	= size;
   itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
-  LOG_I(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
+  LOG_D(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
   nr_rrc_data_req(ctxt_pP,
-      DCCH,
-      rrc_gNB_mui++,
-      SDU_CONFIRM_NO,
-      size,
-      buffer,
-      PDCP_TRANSMISSION_MODE_CONTROL);
+                  DCCH,
+                  rrc_gNB_mui++,
+                  SDU_CONFIRM_NO,
+                  size,
+                  buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
       break;
 
@@ -3169,14 +3175,13 @@ rrc_gNB_generate_UECapabilityEnquiry(
   GNB_RRC_DCCH_DATA_IND (message_p).size  = size;
   itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
 #else
-  nr_rrc_data_req(
-      ctxt_pP,
-      DCCH,
-      rrc_gNB_mui++,
-      SDU_CONFIRM_NO,
-      size,
-      buffer,
-      PDCP_TRANSMISSION_MODE_CONTROL);
+  nr_rrc_data_req(ctxt_pP,
+                  DCCH,
+                  rrc_gNB_mui++,
+                  SDU_CONFIRM_NO,
+                  size,
+                  buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
   break;
 

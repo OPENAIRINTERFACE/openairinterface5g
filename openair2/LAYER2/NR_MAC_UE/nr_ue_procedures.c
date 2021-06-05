@@ -63,7 +63,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
-#define DEBUG_EXTRACT_DCI
+//#define DEBUG_EXTRACT_DCI
 //#define DEBUG_RAR
 
 extern uint32_t N_RB_DL;

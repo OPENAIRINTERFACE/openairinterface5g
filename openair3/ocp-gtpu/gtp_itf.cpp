@@ -436,7 +436,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   tmp->outgoing_port=port;
   tmp->teid_outgoing= outgoing_teid;
   pthread_mutex_unlock(&globGtp.gtp_lock);
-  LOG_I(GTPU, "Created tunnel for RNTI %x, bearer: %d/%d teid for DL: %x, teid for UL %x\n",
+  LOG_D(GTPU, "Created tunnel for RNTI %x, bearer: %d/%d teid for DL: %x, teid for UL %x\n",
         rnti,
         outgoing_bearer_id, incoming_bearer_id,
         tmp->teid_incoming,
@@ -576,8 +576,7 @@ int newGtpuDeleteTunnel(instance_t instance, rnti_t rnti) {
 
   inst->ue2te_mapping.erase(it);
   pthread_mutex_unlock(&globGtp.gtp_lock);
-  LOG_I(GTPU, "Deleted all tunnels for RNTI %d (%d tunnels deleted)\n",
-        rnti, nb);
+  LOG_I(GTPU, "Deleted all tunnels for RNTI %d (%d tunnels deleted)\n", rnti, nb);
   return !GTPNOK;
 }
 

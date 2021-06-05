@@ -1437,9 +1437,9 @@ static void build_ssb_list(NR_UE_MAC_INST_t *mac) {
     for (uint8_t bit_nb=7; bit_nb<=7; bit_nb--) {
       // If SSB is transmitted
       if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
-	ssb_list.nb_tx_ssb++;
-	ssb_list.tx_ssb[ssb_idx].transmitted = true;
-	LOG_D(NR_MAC,"SSB idx %d transmitted\n", ssb_idx);
+        ssb_list.nb_tx_ssb++;
+        ssb_list.tx_ssb[ssb_idx].transmitted = true;
+        LOG_D(NR_MAC,"SSB idx %d transmitted\n", ssb_idx);
       }
       ssb_idx++;
     }
@@ -2072,7 +2072,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                   ulsch_buffer[j] = 0;
   }
 
-  //#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
   LOG_I(NR_MAC, "Printing UL MAC payload UE side, payload_offset: %d \n", payload_offset);
   for (int i = 0; i < buflen ; i++) {
           //harq_process_ul_ue->a[i] = (unsigned char) rand();
@@ -2080,7 +2080,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
           printf("%02x ",(unsigned char)ulsch_buffer[i]);
   }
   printf("\n");
-  //#endif
+#endif
 
   return 1;
 }

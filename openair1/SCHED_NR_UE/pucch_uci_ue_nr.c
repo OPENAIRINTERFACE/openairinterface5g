@@ -558,7 +558,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     /* use of initial pucch configuration provided by system information 1 */
     /***********************************************************************/
     if (initial_pucch_id != NB_INITIAL_PUCCH_RESOURCE) {
-      LOG_I(MAC,"Selecting INITIAL PUCCH Resource\n");
+      LOG_D(MAC,"Selecting INITIAL PUCCH Resource\n");
       format = initial_pucch_resource[initial_pucch_id].format;
       starting_symbol_index = initial_pucch_resource[initial_pucch_id].startingSymbolIndex;
       nb_symbols_total = initial_pucch_resource[initial_pucch_id].nrofSymbols;
@@ -988,8 +988,6 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   int N_m_c_rx = 0;
   int V_DAI_m_DL = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-
-
 
   if (mac->DLbwp[0] &&
       mac->DLbwp[0]->bwp_Dedicated &&

@@ -416,7 +416,7 @@ int create_tasks_nrue(uint32_t ue_nb) {
       return -1;
     }
 
-    LOG_I(NR_RRC,"create TASK_NAS_NRUE\n");
+    LOG_D(NR_RRC,"create TASK_NAS_NRUE\n");
     if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
       LOG_E(NR_RRC, "Create task for NAS UE failed\n");
       return -1;

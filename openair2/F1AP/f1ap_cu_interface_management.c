@@ -146,7 +146,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     /* tac */
     if (served_cells_item_p->served_Cell_Information.fiveGS_TAC) {
       OCTET_STRING_TO_INT16(served_cells_item_p->served_Cell_Information.fiveGS_TAC, F1AP_SETUP_REQ(message_p).tac[i]);
-      LOG_I(F1AP, "F1AP_SETUP_REQ(message_p).tac[%d] %d \n", i, F1AP_SETUP_REQ(message_p).tac[i]);
+      LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).tac[%d] %d \n", i, F1AP_SETUP_REQ(message_p).tac[i]);
     }
     /* - nRCGI */
     TBCD_TO_MCC_MNC(&(served_cells_item_p->served_Cell_Information.nRCGI.pLMN_Identity), F1AP_SETUP_REQ(message_p).mcc[i],
@@ -157,7 +157,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     // NR cellID
     BIT_STRING_TO_NR_CELL_IDENTITY(&served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity,
 				   F1AP_SETUP_REQ(message_p).nr_cellid[i]);
-    LOG_I(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
+    LOG_D(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
           F1AP_SETUP_REQ(message_p).mcc[i],
           F1AP_SETUP_REQ(message_p).mnc[i],
           (long long unsigned int)F1AP_SETUP_REQ(message_p).nr_cellid[i]);
@@ -169,7 +169,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
           served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[4]);
     /* - nRPCI */
     F1AP_SETUP_REQ(message_p).nr_pci[i] = served_cells_item_p->served_Cell_Information.nRPCI;
-    LOG_I(F1AP, "F1AP_SETUP_REQ(message_p).nr_pci[%d] %d \n",
+    LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).nr_pci[%d] %d \n",
           i, F1AP_SETUP_REQ(message_p).nr_pci[i]);
   
     // System Information
@@ -319,7 +319,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
   /* mandatory */
   /* c3. cells to be Activated list */
   int num_cells_to_activate = f1ap_setup_resp->num_cells_to_activate;
-  LOG_I(F1AP, "num_cells_to_activate = %d \n", num_cells_to_activate);
+  LOG_D(F1AP, "num_cells_to_activate = %d \n", num_cells_to_activate);
   if (num_cells_to_activate >0) {
     ie = (F1AP_F1SetupResponseIEs_t *)calloc(1, sizeof(F1AP_F1SetupResponseIEs_t));
     ie->id                        = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List;
@@ -328,7 +328,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
     for (i=0; i<num_cells_to_activate; i++) {
 
-      LOG_I(F1AP, "[c3] (cell %d) mcc = %d, mnc = %d, mnc_digit_length = %d, nr_cellid = %lu\n",
+      LOG_D(F1AP, "[c3] (cell %d) mcc = %d, mnc = %d, mnc_digit_length = %d, nr_cellid = %lu\n",
             i,
             f1ap_setup_resp->cells_to_activate[i].mcc,
             f1ap_setup_resp->cells_to_activate[i].mnc,
@@ -387,7 +387,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
              (const char*)f1ap_setup_resp->cells_to_activate[i].SI_container[sIBtype],
              f1ap_setup_resp->cells_to_activate[i].SI_container_length[sIBtype]);
 
-          LOG_I(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_setup_resp->cells_to_activate[i].SI_container_length[sIBtype]);
+          LOG_D(F1AP, "f1ap_setup_resp->SI_container_length[%d][%d] = %d \n", i,sIBtype,f1ap_setup_resp->cells_to_activate[i].SI_container_length[sIBtype]);
           ASN_SEQUENCE_ADD(&gNB_CUSystemInformation->sibtypetobeupdatedlist.list,sib_item);
         }
       }
@@ -577,7 +577,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
     for (i=0; i<f1ap_gnb_cu_configuration_update->num_cells_to_activate; i++) {
 
-      LOG_I(F1AP, "[c2] (cell %d) mcc = %d, mnc = %d, mnc_digit_length = %d, nr_cellid = %lu\n",
+      LOG_D(F1AP, "[c2] (cell %d) mcc = %d, mnc = %d, mnc_digit_length = %d, nr_cellid = %lu\n",
             i,
             f1ap_gnb_cu_configuration_update->cells_to_activate[i].mcc,
             f1ap_gnb_cu_configuration_update->cells_to_activate[i].mnc,
@@ -953,9 +953,10 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
     return -1;
   }
 
-  LOG_I(F1AP, "F1AP gNB-CU CONFIGURATION UPDATE : ");
-  for (int i=0;i<len;i++) printf("%02x ",buffer[i]);
-  printf("\n");
+  LOG_D(F1AP, "F1AP gNB-CU CONFIGURATION UPDATE\n");
+  //for (int i=0;i<len;i++) printf("%02x ",buffer[i]);
+  //printf("\n");
+
   cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);
   return 0;
 }
@@ -971,7 +972,7 @@ int CU_handle_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
                                                        uint32_t assoc_id,
                                                        uint32_t stream,
                                                        F1AP_F1AP_PDU_t *pdu) {
-  LOG_I(F1AP,"Cell Configuration ok (assoc_id %d)\n",assoc_id);
+  LOG_D(F1AP,"Cell Configuration ok (assoc_id %d)\n",assoc_id);
   return(0);
 }
 

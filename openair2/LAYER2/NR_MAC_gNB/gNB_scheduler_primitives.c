@@ -1822,7 +1822,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 
   for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (UE_info->active[i]) {
-      LOG_I(NR_MAC,"UE %x is active, skipping\n",rntiP);
+      LOG_D(NR_MAC,"UE %x is active, skipping\n",rntiP);
       continue;
     }
     int UE_id = i;

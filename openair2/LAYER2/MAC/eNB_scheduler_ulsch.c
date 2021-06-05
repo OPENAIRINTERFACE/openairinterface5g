@@ -316,7 +316,7 @@ rx_sdu(const module_id_t enb_mod_idP,
     if (no_sig || sduP == NULL) { // we've got an error on Msg3
 
       if(no_sig) {
-        LOG_W(MAC,"No signal in Msg3\n");
+        LOG_D(MAC,"No signal in Msg3\n");
       }
 
       LOG_D(MAC, "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
@@ -728,7 +728,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         }
 
         if(no_sig) {
-          LOG_W(MAC, "No signal\n");
+          LOG_D(MAC, "No signal\n");
           break;
         }
 
