@@ -1128,8 +1128,10 @@ int nr_acknack_scheduling(int mod_id,
               __func__,
               pucch->csi_bits);
   /* if the currently allocated PUCCH of this UE is full, allocate it */
-  if (NFAPI_MODE == NFAPI_MODE_VNF)
-    pucch->sr_flag = 1; pucch->dai_c = 1;
+  if (NFAPI_MODE == NFAPI_MODE_VNF){
+    pucch->sr_flag = 1; 
+    pucch->dai_c = 1;
+  }
 
   if (pucch->dai_c == 2) {
     /* advance the UL slot information in PUCCH by one so we won't schedule in
