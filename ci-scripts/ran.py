@@ -388,7 +388,7 @@ class RANManagement():
 		# do not reset board twice in IF4.5 case
 		result = re.search('^rru|^enb|^du.band', str(config_file))
 		if result is not None:
-			mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 90)
+			mySSH.command2('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 90)
 			result = re.search('type: b200', mySSH.getBefore())
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')

@@ -126,7 +126,18 @@ class Module_UE:
 				logging.debug('\u001B[1;37;41m Module IP Address Not Found! \u001B[0m')
 				return -1
 
+	def EnableTrace(self):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+		#delete old artifacts
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S rm -rf ci_qlog','\$',5)
+		#start Trace
+		mySSH.command('echo $USER; nohup sudo -E QLog/QLog -s ci_qlog -f NR5G.cfg &','\$', 5)
+		mySSH.close()
 
-
-
+	def DisableTrace(self):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S killall --signal=SIGINT *QLog*', '\$',5)
+		mySSH.close()
 
