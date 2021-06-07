@@ -2435,8 +2435,7 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case X2AP_ENDC_SGNB_RECONF_COMPLETE:
-        LOG_A(NR_RRC, "[UE %x] Handling of reconfiguration complete message at RRC gNB is pending \n",
-              ctxt.rnti);
+        LOG_A(NR_RRC, "Handling of reconfiguration complete message at RRC gNB is pending \n");
         break;
 
       case NGAP_INITIAL_CONTEXT_SETUP_REQ:
