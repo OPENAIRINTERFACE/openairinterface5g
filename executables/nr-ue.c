@@ -159,7 +159,7 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot)
   rach_ind.pdu_list[pdu_index].phy_cell_id                         = 0;
   rach_ind.pdu_list[pdu_index].symbol_index                        = 0;
   rach_ind.pdu_list[pdu_index].slot_index                          = slot;
-  rach_ind.pdu_list[pdu_index].freq_index                          = 1;
+  rach_ind.pdu_list[pdu_index].freq_index                          = 0;
   rach_ind.pdu_list[pdu_index].avg_rssi                            = 128;
   rach_ind.pdu_list[pdu_index].avg_snr                             = 0xff; // invalid for now
 
@@ -218,27 +218,32 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     if (is_nr_UL_slot(mac->scc, ul_info.slot_tx)) {
       LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", ul_info.slot_tx, __FUNCTION__);
       nr_ue_ul_indication(&ul_info);
-    }
+      fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info.slot_tx);
+      if (!ul_config) {
+        LOG_E(NR_MAC, "mac->ul_config is null! \n");
+        return;
+      }
+      int CC_id = 0;
+      uint8_t gNB_id = 0;
+      prach_pdu = ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
+      uint8_t nr_prach = nr_ue_get_rach(&prach_resources, &prach_pdu, mod_id, CC_id, ul_info.frame_tx, gNB_id, ul_info.slot_tx);
 
-    int CC_id = 0;
-    uint8_t gNB_id = 0;
-    uint8_t nr_prach = nr_ue_get_rach(&prach_resources, &prach_pdu, mod_id, CC_id, ul_info.frame_tx, gNB_id, ul_info.slot_tx);
-
-    if (nr_prach == 1)
-    {
-      L1_nsa_prach_procedures(ul_info.frame_tx, ul_info.slot_tx);
-      LOG_I(NR_PHY, "Calling nr_Msg1_transmitted for slot %d\n", ul_info.slot_tx);
-      nr_Msg1_transmitted(mod_id, CC_id, ul_info.frame_tx, gNB_id); //This is called when phy layer has sent the prach
-    }
-    else if (nr_prach == 2)
-    {
-      LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
-      //UE->UE_mode[0] = PUSCH;
-    }
-    else if(nr_prach == 3)
-    {
-      LOG_I(NR_PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
-      //UE->UE_mode[0] = PRACH;
+      if (nr_prach == 1)
+      {
+        L1_nsa_prach_procedures(ul_info.frame_tx, ul_info.slot_tx);
+        LOG_I(NR_PHY, "Calling nr_Msg1_transmitted for slot %d\n", ul_info.slot_tx);
+        nr_Msg1_transmitted(mod_id, CC_id, ul_info.frame_tx, gNB_id); //This is called when phy layer has sent the prach
+      }
+      else if (nr_prach == 2)
+      {
+        LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
+        //UE->UE_mode[0] = PUSCH;
+      }
+      else if(nr_prach == 3)
+      {
+        LOG_I(NR_PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
+        //UE->UE_mode[0] = PRACH;
+      }
     }
   }
 }

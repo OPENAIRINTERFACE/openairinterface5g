@@ -511,6 +511,8 @@ void nr_initiate_ra_proc(module_id_t module_idP,
         ra_rnti = 1 + symbol + (9 /*slotP*/ * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
       else
         ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
+      LOG_I(NR_MAC, "Melissa ra_rnti %x, symbol %d, slot %d, freq_idx %d, ul_carrier_id %d\n",
+            ra_rnti, symbol, slotP, freq_index, ul_carrier_id);
 
       // This should be handled differently when we use the initialBWP for RA
       ra->bwp_id = 1;

@@ -392,8 +392,9 @@ uint16_t set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_p
   uint8_t s_id = prach_pdu->prach_start_symbol;
 
   ra->ra_rnti = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
+  //gNB: ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
 
-  LOG_D(MAC, "Computed ra_RNTI is %x \n", ra->ra_rnti);
+  LOG_I(MAC, "Computed ra_RNTI is %x, sid %d, fid %d,  tid %d \n", ra->ra_rnti, s_id, f_id, t_id);
 
   return ra->ra_rnti;
 
