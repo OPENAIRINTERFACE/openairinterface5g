@@ -306,8 +306,6 @@ int stream_check_integrity(uint8_t algorithm, stream_cipher_t *stream_cipher, ui
       return -1;
     }
 
-    // FIXME: Skip PDCP integrity verification, integrity verification is failing... to be fixed later
-    /*
     if (memcmp(result, expected, 4) != 0) {
       LOG_E(OSA, "Mismatch found in integrity for algorithm %u,\n"
             "\tgot %02x.%02x.%02x.%02x, expecting %02x.%02x.%02x.%02x\n",
@@ -315,7 +313,6 @@ int stream_check_integrity(uint8_t algorithm, stream_cipher_t *stream_cipher, ui
             expected[1], expected[2], expected[3]);
       return -1;
     }
-     */
   }
 
   /* Integrity verification succeeded */
