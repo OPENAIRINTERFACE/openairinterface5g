@@ -1159,7 +1159,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  resourceMapping.density.present = NR_CSI_RS_ResourceMapping__density_PR_one;
  resourceMapping.density.choice.one = (NULL_t)0;
  resourceMapping.freqBand.startingRB = 0;
- resourceMapping.freqBand.nrofRBs = 104;
+ resourceMapping.freqBand.nrofRBs = 108;
  nzpcsi0->resourceMapping = resourceMapping;
  nzpcsi0->powerControlOffset = 0;
  nzpcsi0->powerControlOffsetSS=calloc(1,sizeof(*nzpcsi0->powerControlOffsetSS));
@@ -1264,9 +1264,10 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->dummy = NULL;
  csirep1->groupBasedBeamReporting.present = NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled;
  csirep1->groupBasedBeamReporting.choice.disabled=calloc(1,sizeof(*csirep1->groupBasedBeamReporting.choice.disabled));
- csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS = calloc(1,sizeof(*csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS));
- *csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS=NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
- csirep1->cqi_Table = NULL;
+ //csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS = calloc(1,sizeof(*csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS));
+ //*csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS=NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
+ csirep1->cqi_Table = calloc(1,sizeof(*csirep1->cqi_Table));
+ *csirep1->cqi_Table = NR_CSI_ReportConfig__cqi_Table_table1;
  csirep1->subbandSize = NR_CSI_ReportConfig__subbandSize_value2;
  csirep1->non_PMI_PortIndication = NULL;
  csirep1->ext1 = NULL;
