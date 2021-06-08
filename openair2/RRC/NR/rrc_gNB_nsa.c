@@ -346,16 +346,25 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
   rrc->Nb_ue++;
   // configure MAC and RLC
-  rrc_mac_config_req_gNB(rrc->module_id,
-                         rrc->carrier.ssb_SubcarrierOffset,
-                         rrc->carrier.pdsch_AntennaPorts,
-                         rrc->carrier.pusch_AntennaPorts,
-                         rrc->carrier.pusch_TargetSNRx10,
-                         rrc->carrier.pucch_TargetSNRx10,
-                         NULL,
-                         1, // add_ue flag
-                         ue_context_p->ue_id_rnti,
-                         ue_context_p->ue_context.secondaryCellGroup);
+  if (NODE_IS_DU(rrc->node_type)) {
+    rrc_mac_config_req_gNB(rrc->module_id,
+                           rrc->carrier.ssb_SubcarrierOffset,
+                           rrc->carrier.pdsch_AntennaPorts,
+			                     rrc->carrier.pusch_AntennaPorts,
+                           rrc->carrier.servingcellconfigcommon,
+                           1, // add_ue flag
+                           ue_context_p->ue_id_rnti,
+                           ue_context_p->ue_context.secondaryCellGroup);
+  } else {
+    rrc_mac_config_req_gNB(rrc->module_id,
+                           rrc->carrier.ssb_SubcarrierOffset,
+                           rrc->carrier.pdsch_AntennaPorts,
+                           rrc->carrier.pusch_AntennaPorts,
+                           NULL,
+                           1, // add_ue flag
+                           ue_context_p->ue_id_rnti,
+                           ue_context_p->ue_context.secondaryCellGroup);
+  }
 
   if(m == NULL){
     LOG_W(RRC, "Calling RRC PDCP/RLC ASN1 request functions for protocol context %p with module_id %d, rnti %x, frame %d, subframe %d eNB_index %d \n", &ctxt,
@@ -368,7 +377,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
   nr_rrc_pdcp_config_asn1_req(
     &ctxt,
-    (NR_SRB_ToAddModList_t *) NULL,
+    ue_context_p->ue_context.rb_config->srb_ToAddModList,
     ue_context_p->ue_context.rb_config->drb_ToAddModList ,
     ue_context_p->ue_context.rb_config->drb_ToReleaseList,
     (ue_context_p->ue_context.integrity_algorithm << 4) | ue_context_p->ue_context.ciphering_algorithm,
@@ -381,11 +390,11 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
   nr_rrc_rlc_config_asn1_req (&ctxt,
-      (NR_SRB_ToAddModList_t *) NULL,
-      ue_context_p->ue_context.rb_config->drb_ToAddModList,
-      ue_context_p->ue_context.rb_config->drb_ToReleaseList,
-      (LTE_PMCH_InfoList_r9_t *) NULL,
-      ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
+                              ue_context_p->ue_context.rb_config->srb_ToAddModList,
+                              ue_context_p->ue_context.rb_config->drb_ToAddModList,
+                              ue_context_p->ue_context.rb_config->drb_ToReleaseList,
+                              (LTE_PMCH_InfoList_r9_t *) NULL,
+                              ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
   LOG_D(RRC, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
 

@@ -303,7 +303,22 @@ rx_sdu(const module_id_t enb_mod_idP,
 
     first_rb = ra->msg3_first_rb;
 
-    if (sduP == NULL) { // we've got an error on Msg3
+    bool no_sig = true;
+    if (sduP) {
+      for (int k = 0; k < sdu_lenP; k++) {
+        if(sduP[k]!=0) {
+          no_sig = false;
+          break;
+        }
+      }
+    }
+
+    if (no_sig || sduP == NULL) { // we've got an error on Msg3
+
+      if(no_sig) {
+        LOG_D(MAC,"No signal in Msg3\n");
+      }
+
       LOG_D(MAC, "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
             enb_mod_idP,
             CC_idP,
@@ -312,6 +327,20 @@ rx_sdu(const module_id_t enb_mod_idP,
             (int) mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
 
       if (ra->msg3_round >= mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx - 1) {
+
+        // Release RNTI of LTE PHY when RA does not succeed
+        UE_free_list_t *free_list = NULL;
+        pthread_mutex_lock(&lock_ue_freelist);
+        free_list = &mac->UE_free_list;
+        free_list->UE_free_ctrl[free_list->tail_freelist].rnti = current_rnti;
+        free_list->UE_free_ctrl[free_list->tail_freelist].removeContextFlg = 1;
+        free_list->UE_free_ctrl[free_list->tail_freelist].raFlag = 1;
+        free_list->num_UEs++;
+        mac->UE_release_req.ue_release_request_body.ue_release_request_TLVs_list[mac->UE_release_req.ue_release_request_body.number_of_TLVs].rnti = current_rnti;
+        mac->UE_release_req.ue_release_request_body.number_of_TLVs++;
+        free_list->tail_freelist = (free_list->tail_freelist + 1) % (NUMBER_OF_UE_MAX+1);
+        pthread_mutex_unlock(&lock_ue_freelist);
+
         cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
         nfapi_hi_dci0_request_t *hi_dci0_req = NULL;
         uint8_t sf_ahead_dl = ul_subframe2_k_phich(&mac->common_channels[CC_idP], subframeP);
@@ -687,6 +716,19 @@ rx_sdu(const module_id_t enb_mod_idP,
                 rx_lengths[i],
                 CCCH_PAYLOAD_SIZE_MAX,
                 sdu_lenP);
+          break;
+        }
+
+        bool no_sig = true;
+        for (int k = 0; k < sdu_lenP; k++) {
+          if(sduP[k]!=0) {
+            no_sig = false;
+            break;
+          }
+        }
+
+        if(no_sig) {
+          LOG_D(MAC, "No signal\n");
           break;
         }
 

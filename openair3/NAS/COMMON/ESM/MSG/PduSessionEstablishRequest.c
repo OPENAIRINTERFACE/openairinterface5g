@@ -54,6 +54,8 @@ int encode_pdu_session_establishment_request(pdu_session_establishment_request_m
   encoded++;
 
   IES_ENCODE_U16(buffer, encoded, pdusessionestablishrequest->maxdatarate);
+  *(buffer + encoded) = pdusessionestablishrequest->pdusessiontype;
+  encoded++;
 
   return encoded;
 }

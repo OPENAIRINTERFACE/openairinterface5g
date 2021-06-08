@@ -42,7 +42,7 @@
 
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
-const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH"};
+const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH", "SI_DLSCH", "P_DLSCH"};
 const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 
 int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
@@ -67,7 +67,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
       pdcch_vars->nb_search_space = 0;
 
       for (i = 0; i < dl_config->number_pdus; ++i){
-
+        AssertFatal(dl_config->number_pdus < FAPI_NR_DL_CONFIG_LIST_NUM,"dl_config->number_pdus %d out of bounds\n",dl_config->number_pdus);
+        AssertFatal(dl_config->dl_config_list[i].pdu_type<=FAPI_NR_DL_CONFIG_TYPES,"pdu_type %d > 2\n",dl_config->dl_config_list[i].pdu_type);
         LOG_D(PHY, "In %s: received 1 DL %s PDU of %d total DL PDUs:\n", __FUNCTION__, dl_pdu_type[dl_config->dl_config_list[i].pdu_type - 1], dl_config->number_pdus);
 
         if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DCI) {
@@ -151,6 +152,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
       for (i = 0; i < ul_config->number_pdus; ++i){
 
+        AssertFatal(ul_config->ul_config_list[i].pdu_type <= FAPI_NR_UL_CONFIG_TYPES,"pdu_type %d out of bounds\n",ul_config->ul_config_list[i].pdu_type);
         LOG_D(PHY, "In %s: processing %s PDU of %d total UL PDUs (ul_config %p) \n", __FUNCTION__, ul_pdu_type[ul_config->ul_config_list[i].pdu_type - 1], ul_config->number_pdus, ul_config);
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, pucch_resource_id, current_harq_pid, format, gNB_id = 0;
@@ -183,7 +185,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
             if (scheduled_response->tx_request){ 
               fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[i];
-
+              LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
               memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
 
               harq_process_ul_ue->status = ACTIVE;
@@ -269,9 +271,11 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
   fapi_nr_config_request_t *nrUE_config = &PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->nrUE_config;
 
-  if(phy_config != NULL)
+  if(phy_config != NULL) {
       memcpy(nrUE_config,&phy_config->config_req,sizeof(fapi_nr_config_request_t));
-
+      if (PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] == NOT_SYNCHED)
+	      PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] = PRACH;
+  }
   return 0;
 }
 

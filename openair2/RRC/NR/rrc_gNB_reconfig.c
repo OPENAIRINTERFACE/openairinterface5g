@@ -50,29 +50,9 @@
 #define true 1
 
 void fill_default_initialDownlinkBWP(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *servingcellconfigcommon) {
-
   bwp->bwp_Id = 0;
-
   bwp->bwp_Common=calloc(1,sizeof(*bwp->bwp_Common));
-  memcpy((void*)&bwp->bwp_Common,
-         &servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP,
-         sizeof(bwp->bwp_Common));
-
-  bwp->bwp_Dedicated=calloc(1,sizeof(*bwp->bwp_Dedicated));
-  bwp->bwp_Dedicated->pdsch_Config = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config));
-  bwp->bwp_Dedicated->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup));
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dataScramblingIdentityPDSCH = NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength=NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID0=NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID1=NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS=NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
-  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
+  *bwp->bwp_Common = *servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP;
 }
 
 void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellConfigCommon_t *servingcellconfigcommon) {
@@ -174,7 +154,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   memset(secondaryCellGroup,0,sizeof(NR_CellGroupConfig_t));
   secondaryCellGroup->cellGroupId = scg_id;
   NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
-  nr_rlc_bearer_init(RLC_BearerConfig);
+  nr_rlc_bearer_init(RLC_BearerConfig, NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity);
   if (get_softmodem_params()->do_ra || get_softmodem_params()->sa)
     nr_drb_config(RLC_BearerConfig->rlc_Config, NR_RLC_Config_PR_um_Bi_Directional);
   else
@@ -183,6 +163,25 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
   secondaryCellGroup->rlc_BearerToAddModList = calloc(1,sizeof(*secondaryCellGroup->rlc_BearerToAddModList));
   ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig);
+
+  NR_RLC_BearerConfig_t *RLC_BearerConfig_srb1 = calloc(1,sizeof(*RLC_BearerConfig_srb1));
+  nr_rlc_bearer_init(RLC_BearerConfig_srb1, NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity);
+  nr_drb_config(RLC_BearerConfig_srb1->rlc_Config, NR_RLC_Config_PR_am);
+  nr_rlc_bearer_init_ul_spec(RLC_BearerConfig_srb1->mac_LogicalChannelConfig);
+  // FIXME: this should be obtained in nr_rlc_bearer_init_ul_spec()
+  *RLC_BearerConfig_srb1->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = 0;
+  ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig_srb1);
+
+  NR_RLC_BearerConfig_t *RLC_BearerConfig_srb2 = calloc(1,sizeof(*RLC_BearerConfig_srb2));
+  nr_rlc_bearer_init(RLC_BearerConfig_srb2, NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity);
+  nr_drb_config(RLC_BearerConfig_srb2->rlc_Config, NR_RLC_Config_PR_am);
+  nr_rlc_bearer_init_ul_spec(RLC_BearerConfig_srb2->mac_LogicalChannelConfig);
+  // FIXME: this should be obtained in nr_rlc_bearer_init_ul_spec()
+  *RLC_BearerConfig_srb2->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = 0;
+  RLC_BearerConfig_srb2->logicalChannelIdentity = 2;
+  RLC_BearerConfig_srb2->servedRadioBearer->choice.srb_Identity = 2;
+  ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig_srb2);
+
   secondaryCellGroup->mac_CellGroupConfig=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig));
   secondaryCellGroup->mac_CellGroupConfig->drx_Config = NULL;
 
@@ -1033,7 +1032,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  long *delay[8];
  for (int i=0;i<8;i++) {
    delay[i] = calloc(1,sizeof(*delay[i]));
-   *delay[i] = i+2;
+   *delay[i] = (i<6) ? (i+2) : 0;
    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
  }
  pucch_Config->spatialRelationInfoToAddModList = calloc(1,sizeof(*pucch_Config->spatialRelationInfoToAddModList));
@@ -1239,9 +1238,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->reportFreqConfiguration->csi_ReportingBand = calloc(1,sizeof(*csirep1->reportFreqConfiguration->csi_ReportingBand));
  csirep1->reportFreqConfiguration->csi_ReportingBand->present = NR_CSI_ReportConfig__reportFreqConfiguration__csi_ReportingBand_PR_subbands7;
  csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.size=1;
- csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands14.bits_unused=1;
- csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands14.buf=malloc(1);
- csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands14.buf[0]=254;
+ csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.bits_unused=1;
+ csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.buf=malloc(1);
+ csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.buf[0]=254;
  csirep1->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_configured;
  csirep1->timeRestrictionForInterferenceMeasurements=NR_CSI_ReportConfig__timeRestrictionForInterferenceMeasurements_configured;
  csirep1->codebookConfig=calloc(1,sizeof(*csirep1->codebookConfig));
@@ -1361,7 +1360,22 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
                            e_NR_CipheringAlgorithm ciphering_algorithm,
                            e_NR_SecurityConfig__keyToUse key_to_use) {
 
-  rbconfig->srb_ToAddModList = NULL;
+  rbconfig->srb_ToAddModList = calloc(1,sizeof(*rbconfig->srb_ToAddModList));
+
+  NR_SRB_ToAddMod_t *srb1_ToAddMod = calloc(1,sizeof(*srb1_ToAddMod));
+  srb1_ToAddMod->srb_Identity = 1;
+  srb1_ToAddMod->reestablishPDCP = NULL;
+  srb1_ToAddMod->discardOnPDCP = NULL;
+  srb1_ToAddMod->pdcp_Config = NULL;
+  ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb1_ToAddMod);
+
+  NR_SRB_ToAddMod_t *srb2_ToAddMod = calloc(1,sizeof(*srb2_ToAddMod));
+  srb2_ToAddMod->srb_Identity = 2;
+  srb2_ToAddMod->reestablishPDCP = NULL;
+  srb2_ToAddMod->discardOnPDCP = NULL;
+  srb2_ToAddMod->pdcp_Config = NULL;
+  ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb2_ToAddMod);
+
   rbconfig->srb3_ToRelease = NULL;
   rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
   NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));

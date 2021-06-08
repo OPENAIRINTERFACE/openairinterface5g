@@ -39,6 +39,7 @@
 #include "proto_agent.h"
 
 extern RAN_CONTEXT_t RC;
+extern uint8_t proto_agent_flag;
 
 f1ap_setup_req_t *f1ap_du_data_from_du;
 f1ap_cudu_inst_t f1ap_cu_inst[MAX_eNB];
@@ -71,7 +72,12 @@ void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data_from_du->sctp_out_streams = sctp_new_association_resp->out_streams;
 
   /* setup parameters for F1U and start the server */
-  const cudu_params_t params = {
+  const cudu_params_t params = (RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_CU) ? (cudu_params_t){
+    .local_ipv4_address  = RC.nrrrc[instance]->eth_params_s.my_addr,
+    .local_port          = RC.nrrrc[instance]->eth_params_s.my_portd,
+    .remote_ipv4_address = RC.nrrrc[instance]->eth_params_s.remote_addr,
+    .remote_port         = RC.nrrrc[instance]->eth_params_s.remote_portd
+  } : (cudu_params_t){
     .local_ipv4_address  = RC.rrc[instance]->eth_params_s.my_addr,
     .local_port          = RC.rrc[instance]->eth_params_s.my_portd,
     .remote_ipv4_address = RC.rrc[instance]->eth_params_s.remote_addr,
@@ -79,6 +85,7 @@ void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   };
   AssertFatal(proto_agent_start(instance, &params) == 0,
               "could not start PROTO_AGENT for F1U on instance %ld!\n", instance);
+  proto_agent_flag = 1;
 }
 
 void cu_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind) {
@@ -107,7 +114,11 @@ void cu_task_send_sctp_init_req(instance_t enb_id) {
   message_p->ittiMsg.sctp_init.ipv4 = 1;
   message_p->ittiMsg.sctp_init.ipv6 = 0;
   message_p->ittiMsg.sctp_init.nb_ipv4_addr = 1;
-  message_p->ittiMsg.sctp_init.ipv4_address[0] = inet_addr(RC.rrc[enb_id]->eth_params_s.my_addr);
+  if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_CU) {
+    message_p->ittiMsg.sctp_init.ipv4_address[0] = inet_addr(RC.nrrrc[enb_id]->eth_params_s.my_addr);
+  } else{
+    message_p->ittiMsg.sctp_init.ipv4_address[0] = inet_addr(RC.rrc[enb_id]->eth_params_s.my_addr);
+  }
   /*
    * SR WARNING: ipv6 multi-homing fails sometimes for localhost.
    * * * * Disable it for now.
@@ -166,13 +177,27 @@ void *F1AP_CU_task(void *arg) {
                                                &F1AP_SETUP_RESP(received_msg));
         break;
 
-     case F1AP_DL_RRC_MESSAGE: // from rrc
+      case F1AP_GNB_CU_CONFIGURATION_UPDATE: // from rrc
+        LOG_I(F1AP, "CU Task Received F1AP_GNB_CU_CONFIGURAITON_UPDATE\n");
+        // CU_send_f1setup_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        //                                       &F1AP_SETUP_RESP(received_msg));
+        CU_send_gNB_CU_CONFIGURATION_UPDATE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+					    &F1AP_GNB_CU_CONFIGURATION_UPDATE(received_msg));
+        break;
+
+      case F1AP_DL_RRC_MESSAGE: // from rrc
         LOG_I(F1AP, "CU Task Received F1AP_DL_RRC_MESSAGE\n");
         CU_send_DL_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                                &F1AP_DL_RRC_MESSAGE(received_msg));
         break;
 
-     case F1AP_UE_CONTEXT_RELEASE_CMD: // from rrc
+      case F1AP_UE_CONTEXT_SETUP_REQ: // from rrc
+        LOG_I(F1AP, "CU Task Received F1AP_UE_CONTEXT_SETUP_REQ\n");
+        CU_send_UE_CONTEXT_SETUP_REQUEST(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+                                               &F1AP_UE_CONTEXT_SETUP_REQ(received_msg));
+        break;
+
+      case F1AP_UE_CONTEXT_RELEASE_CMD: // from rrc
         LOG_I(F1AP, "CU Task Received F1AP_UE_CONTEXT_RELEASE_CMD\n");
         CU_send_UE_CONTEXT_RELEASE_COMMAND(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                            &F1AP_UE_CONTEXT_RELEASE_CMD(received_msg));

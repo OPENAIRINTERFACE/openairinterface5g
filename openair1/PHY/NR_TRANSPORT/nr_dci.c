@@ -94,6 +94,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
      * in time: by its first slot and its first symbol*/
     const nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[d];
 
+    LOG_D(PHY,"DCI pdu %d, rnti %x, aggregation %d CCE %d Scrambling_Id %x ScramblingRNTI %x PayloadSizeBits %d\n",d,dci_pdu->RNTI,dci_pdu->AggregationLevel,dci_pdu->CceIndex,dci_pdu->ScramblingId,dci_pdu->ScramblingRNTI,dci_pdu->PayloadSizeBits);
     cset_start_symb = pdcch_pdu_rel15->StartSymbolIndex;
     cset_nsymb = pdcch_pdu_rel15->DurationSymbols;
     dci_idx = 0;
