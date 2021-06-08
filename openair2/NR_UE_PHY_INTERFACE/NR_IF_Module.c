@@ -146,68 +146,112 @@ void send_nsa_standalone_msg(nfapi_nr_rach_indication_t *rach_ind)
     }
 }
 
-static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request)
+static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request, nfapi_nr_tx_data_request_t *tx_data_request)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-    if (mac->scc == NULL) {
-      return;
-    }
-    bool filled_pdcch_pdu = false;
-    int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
-    if (num_pdus <= 0)
+    if (mac->scc == NULL)
     {
-        LOG_E(NR_PHY, "%s: dl_tti_request number of PDUS <= 0\n", __FUNCTION__);
-        abort();
+      return;
     }
 
     nr_downlink_indication_t dl_info;
-    dl_info.rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
-    dl_info.dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
-    for (int i = 0; i < num_pdus; i++)
+    if (dl_tti_request)
     {
-        nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request->dl_tti_request_body.dl_tti_pdu_list[i];
-        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE)
+        int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
+        if (num_pdus <= 0)
         {
-            LOG_I(NR_PHY, "Melissa in [%d, %d], we got the PDSCH (RAR transmission configuration)for rnti %x in \n",
-                dl_tti_request->SFN, dl_tti_request->Slot, pdu_list->pdsch_pdu.pdsch_pdu_rel15.rnti);
-            /* Copy from tx_req the pdu put it in the rx_ind pdsch.pdu thing and then call nr_ue_dl_indication */
-        
+            LOG_E(NR_PHY, "%s: dl_tti_request number of PDUS <= 0\n", __FUNCTION__);
+            abort();
         }
 
-        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE)
+        for (int i = 0; i < num_pdus; i++)
         {
-            if (pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci > 0)
+            nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request->dl_tti_request_body.dl_tti_pdu_list[i];
+            if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE)
             {
-                for (int j = 0; j < pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci; j++)
-                {
-                    nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                    LOG_I(NR_PHY, "Melissa in [%d, %d], we got the PDCCH DCI (Payload) for rnti %x. Ra rnti %x\n",
-                        dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI, mac->ra.ra_rnti);
-                    for (int k = 0; k < DCI_PAYLOAD_BYTE_LEN; k++)
-                    {
-                        /* This has to happen first. Dont call nr_ue_dl_indication, instead you need to send dci_ind to mac layer
-                           then you get back a scheduled response (the one we made a new one return 0;) and
-                           then we send up payload. Then the phy layer will receive a PDSCH and then we extract
-                           the tx_tti pdu and fill the dl_indication pdsch pdu from tx_tti and that should tell NR UE we got RAR */
+                LOG_I(NR_PHY, "[%d, %d] PDSCH (RAR transmission configuration)for rnti %x in \n",
+                    dl_tti_request->SFN, dl_tti_request->Slot, pdu_list->pdsch_pdu.pdsch_pdu_rel15.rnti);
+                /* Melissa: If we get this, then we need to count the number of pdus (count++;)
+                   that have this PDSCH type and set dl_info when we get
+                   a tx_data_req by setting dl_info.rx_ind->number_pdu = count;
+                   and setting dl_info.rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR; */
+            }
 
-                        dl_info.dci_ind->dci_list->payloadBits[k] = dci_pdu_list->Payload[k];
+            if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE)
+            {
+                uint16_t num_dcis = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
+                if (num_dcis > 0)
+                {
+                    dl_info.dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
+                    dl_info.dci_ind->number_of_dcis = num_dcis;
+                    dl_info.dci_ind->SFN = dl_tti_request->SFN;
+                    dl_info.dci_ind->slot = dl_tti_request->Slot;
+                    for (int j = 0; j < num_dcis; j++)
+                    {
+                        nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
+                        LOG_I(NR_PHY, "[%d, %d] PDCCH DCI (Payload) for rnti %x. Ra rnti %x\n",
+                            dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI, mac->ra.ra_rnti);
+                        for (int k = 0; k < DCI_PAYLOAD_BYTE_LEN; k++)
+                        {
+                            dl_info.dci_ind->dci_list->payloadBits[k] = dci_pdu_list->Payload[k];
+                        }
+                        dl_info.dci_ind->dci_list->payloadSize = dci_pdu_list->PayloadSizeBits;
+                        dl_info.dci_ind->dci_list->rnti = dci_pdu_list->RNTI;
                     }
-                    dl_info.dci_ind->dci_list->payloadSize = dci_pdu_list->PayloadSizeBits;
-                    dl_info.dci_ind->dci_list->rnti = dci_pdu_list->RNTI;
-                    filled_pdcch_pdu = true;
                 }
             }
-            if (filled_pdcch_pdu)
-                handle_dci(0, 0, 0, dl_tti_request->SFN, dl_tti_request->Slot, dl_info.dci_ind->dci_list);
         }
+        dl_info.slot = dl_tti_request->Slot;
+        dl_info.frame = dl_tti_request->SFN;
+        //dl_info.rx_ind->number_pdus = count;
+    }
+    if (tx_data_request)
+    {
+        int num_pdus = tx_data_request->Number_of_PDUs;
+        if (num_pdus <= 0)
+        {
+            LOG_E(NR_PHY, "%s: tx_data_request number of PDUS <= 0\n", __FUNCTION__);
+            abort();
+        }
+
+        dl_info.rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
+        dl_info.rx_ind->sfn = tx_data_request->SFN;
+        dl_info.rx_ind->slot = tx_data_request->Slot;
+        dl_info.rx_ind->number_pdus = tx_data_request->Number_of_PDUs; //Melissa, not sure we want this set like this
+        LOG_I(NR_PHY, "[%d, %d] PDSCH (RAR transmission configuration in TX)\n", tx_data_request->SFN, tx_data_request->Slot);
+
+        for (int i = 0; i < num_pdus; i++)
+        {
+            nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
+            for (int j = 0; j < pdu_list->num_TLV; j++)
+            {
+                if (pdu_list->TLVs[j].tag)
+                    dl_info.rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu_list->TLVs[j].value.ptr;
+                else if (!pdu_list->TLVs[j].tag)
+                    dl_info.rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu_list->TLVs[j].value.direct;
+                dl_info.rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = pdu_list->TLVs[j].length;
+                dl_info.rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
+            }
+        }
+        dl_info.slot = tx_data_request->Slot;
+        dl_info.frame = tx_data_request->SFN;
     }
 
-    dl_info.slot = dl_tti_request->Slot;
-    dl_info.frame = dl_tti_request->SFN;
-    if (0) { //(is_nr_UL_slot(mac->scc, dl_info.slot) && filled_pdcch_pdu
-      LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", dl_info.slot, __FUNCTION__);
-      nr_ue_dl_indication(&dl_info, NULL);
+    NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
+    memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
+    nr_ue_dl_indication(&dl_info, &ul_time_alignment);
+    #if 0
+    if (dl_info.dci_ind)
+    {
+        free(dl_info.dci_ind);
+        dl_info.dci_ind = NULL;
     }
+    if (dl_info.rx_ind)
+    {
+        free(dl_info.rx_ind);
+        dl_info.rx_ind = NULL;
+    }
+    #endif
 }
 
 static void check_for_msg3(nfapi_nr_ul_tti_request_t *ul_tti_req)
@@ -223,12 +267,12 @@ static void check_for_msg3(nfapi_nr_ul_tti_request_t *ul_tti_req)
         nfapi_nr_ul_tti_request_number_of_pdus_t *pdu_list = &ul_tti_req->pdus_list[i];
         if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE)
         {
-            LOG_I(NR_PHY, "Melissa in [%d, %d]. We got PUSCH PDU..this is for msg3 I think for RNTI %x\n",
+            LOG_I(NR_PHY, "[%d, %d]. PUSCH PDU..this is for Msg3 I think for RNTI %x\n",
                   ul_tti_req->SFN, ul_tti_req->Slot, pdu_list->pusch_pdu.rnti);
         }
         if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE)
         {
-            LOG_I(NR_PHY, "Melissa in [%d, %d]. We got PUCCH PDU..this is for Msg3 I think for RNTI %x\n",
+            LOG_I(NR_PHY, "[%d, %d]. PUCCH PDU..this is for Msg3 I think for RNTI %x\n",
                   ul_tti_req->SFN, ul_tti_req->Slot, pdu_list->pucch_pdu.rnti);
         }
     }
@@ -313,6 +357,7 @@ void *nrue_standalone_pnf_task(void *context)
       nfapi_p7_message_header_t header;
       nfapi_nr_dl_tti_request_t dl_tti_request;
       nfapi_nr_ul_tti_request_t ul_tti_request;
+      nfapi_nr_tx_data_request_t tx_data_request;
       if (nfapi_p7_message_header_unpack((void *)buffer, len, &header, sizeof(header), NULL) < 0)
       {
         LOG_E(NR_PHY, "Header unpack failed for nrue_standalone pnf\n");
@@ -331,10 +376,17 @@ void *nrue_standalone_pnf_task(void *context)
                 break;
             }
             save_nr_measurement_info(&dl_tti_request);
-            check_and_process_rar(&dl_tti_request);
+            check_and_process_rar(&dl_tti_request, NULL);
             break;
           case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
             LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message. \n");
+            if (nfapi_nr_p7_message_unpack((void *)buffer, len, &tx_data_request,
+                                           sizeof(tx_data_request), NULL) < 0)
+            {
+                LOG_E(NR_PHY, "Message tx_data_request failed to unpack\n");
+                break;
+            }
+            check_and_process_rar(NULL, &tx_data_request);
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
             LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message. \n");
@@ -428,8 +480,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   module_id_t module_id = dl_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-  
-  if (!dl_info->dci_ind && !dl_info->rx_ind) {
+
+  if (!dl_info->dci_ind && !dl_info->rx_ind || !def_dci_pdu_rel15) { //Melissa review this with Raymond
     // UL indication to schedule DCI reception
     nr_ue_scheduler(dl_info, NULL);
   } else {

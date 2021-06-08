@@ -342,7 +342,7 @@ int8_t nr_rrc_ue_process_scg_config(const module_id_t module_id, NR_CellGroupCon
     //  maintain list
     if(cell_group_config->spCellConfig != NULL){
         nr_rrc_mac_config_req_ue(0, 0, 0, NULL, cell_group_config);
-        LOG_I(NR_RRC, "Melissa, we filled scc now \n");
+        LOG_D(NR_RRC, "Filled scc now \n");
       if(cell_group_config->spCellConfig->spCellConfigDedicated != NULL){
         //  process element of list to be add by RRC message
         if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList != NULL){

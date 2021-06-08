@@ -159,7 +159,7 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot)
   rach_ind.pdu_list[pdu_index].phy_cell_id                         = 0;
   rach_ind.pdu_list[pdu_index].symbol_index                        = 0;
   rach_ind.pdu_list[pdu_index].slot_index                          = slot;
-  rach_ind.pdu_list[pdu_index].freq_index                          = 0;
+  rach_ind.pdu_list[pdu_index].freq_index                          = 0; //Melissa Fill these things from the prach pdu
   rach_ind.pdu_list[pdu_index].avg_rssi                            = 128;
   rach_ind.pdu_list[pdu_index].avg_snr                             = 0xff; // invalid for now
 
@@ -179,8 +179,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 {
   NR_PRACH_RESOURCES_t prach_resources;
   memset(&prach_resources, 0, sizeof(prach_resources));
-  fapi_nr_ul_config_prach_pdu prach_pdu;
-  memset(&prach_pdu, 0, sizeof(prach_pdu));
   int last_sfn_slot = -1;
   while (!oai_exit)
   {
@@ -225,8 +223,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       }
       int CC_id = 0;
       uint8_t gNB_id = 0;
-      prach_pdu = ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
-      uint8_t nr_prach = nr_ue_get_rach(&prach_resources, &prach_pdu, mod_id, CC_id, ul_info.frame_tx, gNB_id, ul_info.slot_tx);
+      fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
+      uint8_t nr_prach = nr_ue_get_rach(&prach_resources, prach_pdu, mod_id, CC_id, ul_info.frame_tx, gNB_id, ul_info.slot_tx);
 
       if (nr_prach == 1)
       {

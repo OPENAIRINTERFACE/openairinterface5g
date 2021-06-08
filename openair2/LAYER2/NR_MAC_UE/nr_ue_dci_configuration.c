@@ -232,7 +232,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 
       // Fetch configuration for searchSpaceZero
       // note: The search space with the SearchSpaceId = 0 identifies the search space configured via PBCH (MIB) and in ServingCellConfigCommon (searchSpaceZero).
-      if (pdcch_ConfigCommon->choice.setup->searchSpaceZero){
+      if (pdcch_ConfigCommon->choice.setup->searchSpaceZero && !get_softmodem_params()->nsa){
         if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 == NULL){
           pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=calloc(1,sizeof(*pdcch_ConfigCommon->choice.setup->searchSpaceSIB1));
         }
@@ -363,7 +363,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   NR_BWP_DownlinkCommon_t *bwp_Common = bwp->bwp_Common;
   NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
 
-  if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
+  if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 && !get_softmodem_params()->nsa){
 
     NR_SearchSpace_t *ss0 = mac->search_space_zero;
     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;

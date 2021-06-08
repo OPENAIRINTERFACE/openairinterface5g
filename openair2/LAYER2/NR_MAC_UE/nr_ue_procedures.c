@@ -2182,7 +2182,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
   int ret                  = 0;
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer; // RAR subheader pointer
   NR_MAC_RAR *rar          = (NR_MAC_RAR *) (dlsch_buffer + 1);   // RAR subPDU pointer
-  uint8_t preamble_index   = get_ra_PreambleIndex(mod_id, cc_id, gNB_id); //prach_resources->ra_PreambleIndex;
+  uint8_t preamble_index   = 63; //Melissa get_ra_PreambleIndex(mod_id, cc_id, gNB_id); //prach_resources->ra_PreambleIndex;
 
   LOG_D(MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
 
