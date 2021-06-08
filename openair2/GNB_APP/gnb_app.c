@@ -135,8 +135,7 @@ static uint32_t gNB_app_register_x2(uint32_t gnb_id_start, uint32_t gnb_id_end) 
 
 static void init_pdcp(void) {
   if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
-    // pdcp_layer_init();
-    // pdcp_layer_init_for_CU();
+    pdcp_layer_init();
     uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
                              (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
     if (IS_SOFTMODEM_NOS1) {
@@ -226,7 +225,6 @@ void *gNB_app_task(void *args_p)
         LOG_E(F1AP, "Create task for F1AP CU failed\n");
         AssertFatal(1==0,"exiting");
      }
-    pdcp_layer_init_for_CU();
   }
 
   if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {

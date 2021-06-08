@@ -2086,7 +2086,7 @@ void nr_read_config_and_init(void) {
   }
 
   if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-    pdcp_layer_init_for_CU();
+    pdcp_layer_init();
 //    nr_DRB_preconfiguration(0x1234);
     rrc_init_nr_global_param();
   }

@@ -369,25 +369,12 @@ void pdcp_layer_init(void)
   if (pthread_mutex_unlock(&m) != 0) abort();
 
   nr_pdcp_ue_manager = new_nr_pdcp_ue_manager(1);
-  init_nr_rlc_data_req_queue();
+
+  if ((RC.nrrrc == NULL) || (!NODE_IS_CU(RC.nrrrc[0]->node_type))) {
+    init_nr_rlc_data_req_queue();
+  }
 
   nr_pdcp_init_timer_thread(nr_pdcp_ue_manager);
-}
-
-void pdcp_layer_init_for_CU(void)
-{
-  /* hack: be sure to initialize only once */
-  static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
-  static int initialized = 0;
-  if (pthread_mutex_lock(&m) != 0) abort();
-  if (initialized) {
-    if (pthread_mutex_unlock(&m) != 0) abort();
-    return;
-  }
-  initialized = 1;
-  if (pthread_mutex_unlock(&m) != 0) abort();
-
-  nr_pdcp_ue_manager = new_nr_pdcp_ue_manager(1);
 }
 
 #include "nfapi/oai_integration/vendor_ext.h"

@@ -24,7 +24,6 @@
 #ifndef _NR_PDCP_H_
 #define _NR_PDCP_H_
 
-void pdcp_layer_init_for_CU(void);
 void nr_pdcp_layer_init_ue(void);
 void nr_DRB_preconfiguration(uint16_t crnti);
 
