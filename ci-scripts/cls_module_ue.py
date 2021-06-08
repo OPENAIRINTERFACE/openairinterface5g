@@ -101,7 +101,7 @@ class Module_UE:
 	def GetModuleIPAddress(self):
 		HOST=self.HostIPAddress
 		response= []
-		tentative = 10
+		tentative = 3 
 		while (len(response)==0) and (tentative>0):
 			COMMAND="ip a show dev " + self.UENetwork + " | grep inet | grep " + self.UENetwork
 			logging.debug(COMMAND)
@@ -140,4 +140,12 @@ class Module_UE:
 		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
 		mySSH.command('echo ' + self.HostPassword + ' | sudo -S killall --signal=SIGINT *QLog*', '\$',5)
 		mySSH.close()
+
+
+	def DisableCM(self):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S killall --signal SIGKILL *'+self.Process['Name']+'*', '\$', 5)
+		mySSH.close()
+
 

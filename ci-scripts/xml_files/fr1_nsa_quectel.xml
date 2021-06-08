@@ -30,15 +30,11 @@
  040000
  000002
  010000
+ 000001
  050000
  050001
  000001
- 070000
- 000001
- 070000
- 000001
  010002
- 000001
  080001
  080000
 	</TestCaseRequestedList>
@@ -61,7 +57,7 @@
 	<testCase id="030000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf --T_stdout 0</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>lte</air_interface>

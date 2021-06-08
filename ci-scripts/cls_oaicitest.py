@@ -388,12 +388,13 @@ class OaiCiTest():
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			is_module=Module_UE.CheckCMProcess()
 			if is_module:
+				Module_UE.EnableTrace()
+				time.sleep(5)
 				Module_UE.Command("wup")
 				logging.debug("Waiting for IP address to be assigned")
 				time.sleep(20)
 				logging.debug("Retrieve IP address")
 				status=Module_UE.GetModuleIPAddress()
-				Module_UE.EnableTrace()
 				if status==0:
 					HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
 					logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
@@ -1084,6 +1085,7 @@ class OaiCiTest():
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			Module_UE.Command("detach")
 			Module_UE.DisableTrace()
+			Module_UE.DisableCM()
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)	
 				
 							
@@ -3148,6 +3150,12 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def AutoTerminateUEandeNB(self,HTML,RAN,COTS_UE,EPC,InfraUE):
+		if self.ue_id!='':
+			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+			Module_UE.Command("detach")
+			Module_UE.DisableTrace()
+			Module_UE.DisableCM()
+
 		if (self.ADBIPAddress != 'none'):
 			self.testCase_id = 'AUTO-KILL-UE'
 			HTML.testCase_id=self.testCase_id
@@ -3181,10 +3189,6 @@ class OaiCiTest():
 			HTML.desc='Automatic Termination of FlexRan CTL'
 			self.ShowTestID()
 			self.TerminateFlexranCtrl(HTML,RAN,EPC)
-		if self.ue_id!='':
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			Module_UE.Command("detach")
-			Module_UE.DisableTrace()
 		RAN.prematureExit=True
 
 	def IdleSleep(self,HTML):
