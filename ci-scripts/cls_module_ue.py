@@ -37,7 +37,7 @@ import time
 import re
 import subprocess
 
-
+from datetime import datetime
 
 class Module_UE:
 
@@ -149,3 +149,14 @@ class Module_UE:
 		mySSH.close()
 
 
+	def LogCollect(self):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+		#archive qlog to /opt/ci_qlogs with datetime suffix
+		now=datetime.now()
+		now_string = now.strftime("%Y/%m/%d-%H:%M")
+		source='ci_qlog'
+		destination='/opt/ci_qlogs/ci_qlog_'+now_string
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S cp -r '+source+' '+destination,'\$', 20)
+		mySSH.close()
+		return destination

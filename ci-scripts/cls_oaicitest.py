@@ -1086,7 +1086,8 @@ class OaiCiTest():
 			Module_UE.Command("detach")
 			Module_UE.DisableTrace()
 			Module_UE.DisableCM()
-			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)	
+			archive_destination=Module_UE.LogCollect()
+			HTML.CreateHtmlTestRow('QLog at : '+archive_destination, 'OK', CONST.ALL_PROCESSES_OK)	
 				
 							
 
@@ -3155,7 +3156,8 @@ class OaiCiTest():
 			Module_UE.Command("detach")
 			Module_UE.DisableTrace()
 			Module_UE.DisableCM()
-
+			archive_destination=Module_UE.LogCollect()
+			HTML.CreateHtmlTestRow('QLog at : '+archive_destination, 'OK', CONST.ALL_PROCESSES_OK)	
 		if (self.ADBIPAddress != 'none'):
 			self.testCase_id = 'AUTO-KILL-UE'
 			HTML.testCase_id=self.testCase_id
