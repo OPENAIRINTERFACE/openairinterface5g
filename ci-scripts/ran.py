@@ -594,6 +594,10 @@ class RANManagement():
 				mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL -r .*-softmodem ocp-enb || true', '\$', 5)
 				time.sleep(5)
 		mySSH.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		#stopping tshark on eNB side
+		logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+		mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+		time.sleep(1)
 		mySSH.close()
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))

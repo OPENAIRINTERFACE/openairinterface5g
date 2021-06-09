@@ -154,9 +154,9 @@ class Module_UE:
 		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
 		#archive qlog to /opt/ci_qlogs with datetime suffix
 		now=datetime.now()
-		now_string = now.strftime("%Y/%m/%d-%H:%M")
+		now_string = now.strftime("%Y%m%d-%H%M")
 		source='ci_qlog'
-		destination='/opt/ci_qlogs/ci_qlog_'+now_string
-		mySSH.command('echo ' + self.HostPassword + ' | sudo -S cp -r '+source+' '+destination,'\$', 20)
+		destination='/opt/ci_qlogs/ci_qlog_'+now_string+'.zip'
+		mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S zip -r '+destination+' '+source+' &','\$', 10)
 		mySSH.close()
 		return destination
