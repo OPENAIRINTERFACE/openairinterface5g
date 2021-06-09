@@ -101,10 +101,13 @@ static int baseRunTimeCommand(char* cmd) {
   size_t retSize = 0;
 
   fp = popen(cmd, "r");
-
-  memset(cmd, 1, sizeof(*cmd));
-  retSize = fread(cmd, 1, sizeof(*cmd), fp);
-  fclose(fp);
+  if(fp) {
+    memset(cmd, 1, sizeof(*cmd));
+    retSize = fread(cmd, 1, sizeof(*cmd), fp);
+    fclose(fp);
+  } else {
+    LOG_D(HW,"%s:%d:%s: Cannot open %s\n", __FILE__, __LINE__, __FUNCTION__, cmd);
+  }
 
   if (retSize == 0) {
     return 0;
