@@ -145,7 +145,7 @@ void init_nrUE_standalone_thread(int ue_idx)
   pthread_setname_np(phy_thread, "oai:nrue-stand-phy");
 }
 
-static void L1_nsa_prach_procedures(frame_t frame, int slot)
+static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_prach_pdu *prach_pdu)
 {
   nfapi_nr_rach_indication_t rach_ind;
   memset(&rach_ind, 0, sizeof(rach_ind));
@@ -156,10 +156,10 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot)
   uint8_t pdu_index = 0;
   rach_ind.pdu_list = CALLOC(1, sizeof(*rach_ind.pdu_list));
   rach_ind.number_of_pdus  = 1;
-  rach_ind.pdu_list[pdu_index].phy_cell_id                         = 0;
-  rach_ind.pdu_list[pdu_index].symbol_index                        = 0;
-  rach_ind.pdu_list[pdu_index].slot_index                          = slot;
-  rach_ind.pdu_list[pdu_index].freq_index                          = 0; //Melissa Fill these things from the prach pdu
+  rach_ind.pdu_list[pdu_index].phy_cell_id                         = prach_pdu->phys_cell_id;
+  rach_ind.pdu_list[pdu_index].symbol_index                        = prach_pdu->prach_start_symbol;
+  rach_ind.pdu_list[pdu_index].slot_index                          = prach_pdu->prach_slot;
+  rach_ind.pdu_list[pdu_index].freq_index                          = prach_pdu->num_ra; //Melissa Fill these things from the prach pdu
   rach_ind.pdu_list[pdu_index].avg_rssi                            = 128;
   rach_ind.pdu_list[pdu_index].avg_snr                             = 0xff; // invalid for now
 
@@ -204,11 +204,16 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     }
 
     mac->ra.generate_nr_prach = 0;
+    int CC_id = 0;
+    uint8_t gNB_id = 0;
     frame_t frame = NFAPI_SFNSLOT2SFN(sfn_slot);
     int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
     nr_uplink_indication_t ul_info;
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
     int slot_ahead = 6; // Melissa lets make this dynamic
+    ul_info.cc_id = CC_id;
+    ul_info.gNB_index = gNB_id;
+    ul_info.module_id = mod_id;
     ul_info.frame_rx = frame;
     ul_info.slot_rx = slot;
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
@@ -219,23 +224,34 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info.slot_tx);
       if (!ul_config) {
         LOG_E(NR_MAC, "mac->ul_config is null! \n");
-        return;
+        continue;
       }
-      int CC_id = 0;
-      uint8_t gNB_id = 0;
+      ul_config->number_pdus = 0;
+
       fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
       uint8_t nr_prach = nr_ue_get_rach(&prach_resources, prach_pdu, mod_id, CC_id, ul_info.frame_tx, gNB_id, ul_info.slot_tx);
 
       if (nr_prach == 1)
       {
-        L1_nsa_prach_procedures(ul_info.frame_tx, ul_info.slot_tx);
+        L1_nsa_prach_procedures(ul_info.frame_tx, ul_info.slot_tx, prach_pdu);
         LOG_I(NR_PHY, "Calling nr_Msg1_transmitted for slot %d\n", ul_info.slot_tx);
-        nr_Msg1_transmitted(mod_id, CC_id, ul_info.frame_tx, gNB_id); //This is called when phy layer has sent the prach
+        nr_Msg1_transmitted(mod_id, CC_id, ul_info.frame_tx, gNB_id);
       }
       else if (nr_prach == 2)
       {
         LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
+        return NULL;
+        #if 0
+        See if we can receive DCI format 0-1; then program ulsch
+        if (ul_config....msg3 flag == 1 && frame = ulcconfig.frame && slot == ul_config.slot)
+        {
+          fill_rx_ind of the gNb(&ul_config or &txdata_req);
+          nr_Msg3_transmitted(0, 0, frame, gNB_id);
+
+        }
+        // Melissa call this in the right slot and fill rx_ind for gNB: Msg3_transmitted(0, 0, frame, 0);
         //UE->UE_mode[0] = PUSCH;
+        #endif
       }
       else if(nr_prach == 3)
       {

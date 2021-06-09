@@ -205,7 +205,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     dl_info->rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
     dl_info->rx_ind->sfn = tx_data_request->SFN;
     dl_info->rx_ind->slot = tx_data_request->Slot;
-    dl_info->rx_ind->number_pdus = tx_data_request->Number_of_PDUs; //Melissa, not sure we want this set like this
+    dl_info->rx_ind->number_pdus = num_pdus;
 
     for (int i = 0; i < num_pdus; i++)
     {
