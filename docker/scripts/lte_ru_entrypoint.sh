@@ -2,22 +2,14 @@
 
 set -euo pipefail
 
-PREFIX=/opt/oai-enb
-RRC_INACTIVITY_THRESHOLD=${RRC_INACTIVITY_THRESHOLD:-0}
+PREFIX=/opt/oai-lte-ru
 
 # Based another env var, pick one template to use
-if [[ -v USE_FDD_CU ]]; then ln -s $PREFIX/etc/cu.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_FDD_DU ]]; then ln -s $PREFIX/etc/du.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_FDD_MONO ]]; then ln -s $PREFIX/etc/enb.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_TDD_MONO ]]; then ln -s $PREFIX/etc/enb.tdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_FDD_FAPI_RCC ]]; then ln -s $PREFIX/etc/rcc.nfapi.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_FDD_IF4P5_RCC ]]; then ln -s $PREFIX/etc/rcc.if4p5.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_TDD_IF4P5_RCC ]]; then ln -s $PREFIX/etc/rcc.if4p5.tdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_FDD_RRU ]]; then ln -s $PREFIX/etc/rru.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_TDD_RRU ]]; then ln -s $PREFIX/etc/rru.tdd.conf $PREFIX/etc/enb.conf; fi
+if [[ -v USE_FDD_RRU ]]; then ln -s $PREFIX/etc/rru.fdd.conf $PREFIX/etc/rru.conf; fi
+if [[ -v USE_TDD_RRU ]]; then ln -s $PREFIX/etc/rru.tdd.conf $PREFIX/etc/rru.conf; fi
 
 # Only this template will be manipulated
-CONFIG_FILES=`ls $PREFIX/etc/enb.conf || true`
+CONFIG_FILES=`ls $PREFIX/etc/rru.conf || true`
 
 for c in ${CONFIG_FILES}; do
     # grep variable names (format: ${VAR}) from template to be rendered

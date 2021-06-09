@@ -30,8 +30,6 @@ def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
     }
 }
 
-def doFlexranCtrlTest = false
-
 // Location of the executor node
 def nodeExecutor = params.nodeExecutor
 
@@ -66,9 +64,6 @@ pipeline {
                         echo "Platform is ${env.TESTPLATFORM_OWNER}"
                     }
 
-                    if (params.FlexRanRtcGitLabRepository_Credentials != null) {
-                        doFlexranCtrlTest = true
-                    }
                     if (fileExists("flexran")) {
                         sh "rm -Rf flexran > /dev/null 2>&1"
                     }
@@ -141,15 +136,13 @@ pipeline {
                         // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
                         sh "./ci-scripts/checkCodingFormattingRules.sh"
                     }
-                    if (doFlexranCtrlTest && doMandatoryTests) {
+                    // With Mosaic 5G being part of OSA and making all it's repositories public
+                    // No need to pass credentials to clone flexran-rtc
+                    if (doMandatoryTests) {
                         sh "mkdir flexran"
                         dir ('flexran') {
-                            withCredentials([
-                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.FlexRanRtcGitLabRepository_Credentials}", usernameVariable: 'git_username', passwordVariable: 'git_password']
-                                ]) {
-                                sh "git clone https://${git_username}:${git_password}@gitlab.eurecom.fr/flexran/flexran-rtc.git . > ../git_clone.log 2>&1"
-                                sh "git checkout develop >> ../git_clone.log 2>&1"
-                            }
+                            sh "git clone https://gitlab.eurecom.fr/flexran/flexran-rtc.git . > ../git_clone.log 2>&1"
+                            sh "git checkout develop >> ../git_clone.log 2>&1"
                             sh "zip -r -qq flexran.zip ."
                         }
                     }
@@ -315,7 +308,7 @@ pipeline {
                     stages {
                         stage ("Build Flexran Controller") {
                             when {
-                                expression {doFlexranCtrlTest && doMandatoryTests}
+                                expression {doMandatoryTests}
                             }
                             steps {
                               lock (vmResource) {
