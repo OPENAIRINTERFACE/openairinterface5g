@@ -146,6 +146,85 @@ void send_nsa_standalone_msg(nfapi_nr_rach_indication_t *rach_ind)
     }
 }
 
+static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_dl_tti_request_t *dl_tti_request)
+{
+    int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
+    if (num_pdus <= 0)
+    {
+        LOG_E(NR_PHY, "%s: dl_tti_request number of PDUS <= 0\n", __FUNCTION__);
+        abort();
+    }
+
+    for (int i = 0; i < num_pdus; i++)
+    {
+        nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request->dl_tti_request_body.dl_tti_pdu_list[i];
+        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE)
+        {
+            LOG_I(NR_PHY, "[%d, %d] PDSCH (RAR transmission configuration)for rnti %x in \n",
+                dl_tti_request->SFN, dl_tti_request->Slot, pdu_list->pdsch_pdu.pdsch_pdu_rel15.rnti);
+        }
+
+        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE)
+        {
+            uint16_t num_dcis = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
+            if (num_dcis > 0)
+            {
+                dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
+                dl_info->dci_ind->number_of_dcis = num_dcis;
+                dl_info->dci_ind->SFN = dl_tti_request->SFN;
+                dl_info->dci_ind->slot = dl_tti_request->Slot;
+                for (int j = 0; j < num_dcis; j++)
+                {
+                    nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
+                    LOG_I(NR_PHY, "[%d, %d] PDCCH DCI (Payload) for rnti %x.\n",
+                        dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI);
+                    for (int k = 0; k < DCI_PAYLOAD_BYTE_LEN; k++)
+                    {
+                        dl_info->dci_ind->dci_list->payloadBits[k] = dci_pdu_list->Payload[k];
+                    }
+                    dl_info->dci_ind->dci_list->payloadSize = dci_pdu_list->PayloadSizeBits;
+                    dl_info->dci_ind->dci_list->rnti = dci_pdu_list->RNTI;
+                }
+            }
+        }
+    }
+    dl_info->slot = dl_tti_request->Slot;
+    dl_info->frame = dl_tti_request->SFN;
+    return;
+}
+
+static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_tx_data_request_t *tx_data_request)
+{
+    int num_pdus = tx_data_request->Number_of_PDUs;
+    if (num_pdus <= 0)
+    {
+        LOG_E(NR_PHY, "%s: tx_data_request number of PDUS <= 0\n", __FUNCTION__);
+        abort();
+    }
+
+    dl_info->rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
+    dl_info->rx_ind->sfn = tx_data_request->SFN;
+    dl_info->rx_ind->slot = tx_data_request->Slot;
+    dl_info->rx_ind->number_pdus = tx_data_request->Number_of_PDUs; //Melissa, not sure we want this set like this
+
+    for (int i = 0; i < num_pdus; i++)
+    {
+        nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
+        for (int j = 0; j < pdu_list->num_TLV; j++)
+        {
+            if (pdu_list->TLVs[j].tag)
+                dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu_list->TLVs[j].value.ptr;
+            else if (!pdu_list->TLVs[j].tag)
+                dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu_list->TLVs[j].value.direct;
+            dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = pdu_list->TLVs[j].length;
+            dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
+        }
+    }
+    dl_info->slot = tx_data_request->Slot;
+    dl_info->frame = tx_data_request->SFN;
+    return;
+}
+
 static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request, nfapi_nr_tx_data_request_t *tx_data_request)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
@@ -157,101 +236,25 @@ static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request, nfa
     nr_downlink_indication_t dl_info;
     if (dl_tti_request)
     {
-        int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
-        if (num_pdus <= 0)
-        {
-            LOG_E(NR_PHY, "%s: dl_tti_request number of PDUS <= 0\n", __FUNCTION__);
-            abort();
-        }
-
-        for (int i = 0; i < num_pdus; i++)
-        {
-            nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request->dl_tti_request_body.dl_tti_pdu_list[i];
-            if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE)
-            {
-                LOG_I(NR_PHY, "[%d, %d] PDSCH (RAR transmission configuration)for rnti %x in \n",
-                    dl_tti_request->SFN, dl_tti_request->Slot, pdu_list->pdsch_pdu.pdsch_pdu_rel15.rnti);
-                /* Melissa: If we get this, then we need to count the number of pdus (count++;)
-                   that have this PDSCH type and set dl_info when we get
-                   a tx_data_req by setting dl_info.rx_ind->number_pdu = count;
-                   and setting dl_info.rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR; */
-            }
-
-            if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE)
-            {
-                uint16_t num_dcis = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
-                if (num_dcis > 0)
-                {
-                    dl_info.dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
-                    dl_info.dci_ind->number_of_dcis = num_dcis;
-                    dl_info.dci_ind->SFN = dl_tti_request->SFN;
-                    dl_info.dci_ind->slot = dl_tti_request->Slot;
-                    for (int j = 0; j < num_dcis; j++)
-                    {
-                        nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                        LOG_I(NR_PHY, "[%d, %d] PDCCH DCI (Payload) for rnti %x. Ra rnti %x\n",
-                            dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI, mac->ra.ra_rnti);
-                        for (int k = 0; k < DCI_PAYLOAD_BYTE_LEN; k++)
-                        {
-                            dl_info.dci_ind->dci_list->payloadBits[k] = dci_pdu_list->Payload[k];
-                        }
-                        dl_info.dci_ind->dci_list->payloadSize = dci_pdu_list->PayloadSizeBits;
-                        dl_info.dci_ind->dci_list->rnti = dci_pdu_list->RNTI;
-                    }
-                }
-            }
-        }
-        dl_info.slot = dl_tti_request->Slot;
-        dl_info.frame = dl_tti_request->SFN;
-        //dl_info.rx_ind->number_pdus = count;
+        copy_dl_tti_req_to_dl_info(&dl_info, dl_tti_request);
     }
     if (tx_data_request)
     {
-        int num_pdus = tx_data_request->Number_of_PDUs;
-        if (num_pdus <= 0)
-        {
-            LOG_E(NR_PHY, "%s: tx_data_request number of PDUS <= 0\n", __FUNCTION__);
-            abort();
-        }
-
-        dl_info.rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
-        dl_info.rx_ind->sfn = tx_data_request->SFN;
-        dl_info.rx_ind->slot = tx_data_request->Slot;
-        dl_info.rx_ind->number_pdus = tx_data_request->Number_of_PDUs; //Melissa, not sure we want this set like this
         LOG_I(NR_PHY, "[%d, %d] PDSCH (RAR transmission configuration in TX)\n", tx_data_request->SFN, tx_data_request->Slot);
-
-        for (int i = 0; i < num_pdus; i++)
-        {
-            nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
-            for (int j = 0; j < pdu_list->num_TLV; j++)
-            {
-                if (pdu_list->TLVs[j].tag)
-                    dl_info.rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu_list->TLVs[j].value.ptr;
-                else if (!pdu_list->TLVs[j].tag)
-                    dl_info.rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu_list->TLVs[j].value.direct;
-                dl_info.rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = pdu_list->TLVs[j].length;
-                dl_info.rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
-            }
-        }
-        dl_info.slot = tx_data_request->Slot;
-        dl_info.frame = tx_data_request->SFN;
+        copy_tx_data_req_to_dl_info(&dl_info, tx_data_request);
     }
 
     NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
     memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
     nr_ue_dl_indication(&dl_info, &ul_time_alignment);
-    #if 0
-    if (dl_info.dci_ind)
-    {
-        free(dl_info.dci_ind);
-        dl_info.dci_ind = NULL;
-    }
-    if (dl_info.rx_ind)
-    {
-        free(dl_info.rx_ind);
-        dl_info.rx_ind = NULL;
-    }
+    #if 0 //Melissa may want to free this
+    free(dl_info.dci_ind);
+    dl_info.dci_ind = NULL;
+
+    free(dl_info.rx_ind);
+    dl_info.rx_ind = NULL;
     #endif
+
 }
 
 static void check_for_msg3(nfapi_nr_ul_tti_request_t *ul_tti_req)
