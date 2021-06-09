@@ -1123,9 +1123,33 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_CSI_MeasConfig_t *csi_MeasConfig = calloc(1,sizeof(*csi_MeasConfig));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup = csi_MeasConfig;
 
- csi_MeasConfig->csi_IM_ResourceToAddModList = NULL;
+ csi_MeasConfig->csi_IM_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceToAddModList));
+ NR_CSI_IM_Resource_t *imres0 = calloc(1,sizeof(*imres0));
+ imres0->csi_IM_ResourceId = 0;
+ imres0->csi_IM_ResourceElementPattern = calloc(1,sizeof(*imres0->csi_IM_ResourceElementPattern));
+ imres0->csi_IM_ResourceElementPattern->present = NR_CSI_IM_Resource__csi_IM_ResourceElementPattern_PR_pattern1;
+ imres0->csi_IM_ResourceElementPattern->choice.pattern1 = calloc(1,sizeof(*imres0->csi_IM_ResourceElementPattern->choice.pattern1));
+ imres0->csi_IM_ResourceElementPattern->choice.pattern1->subcarrierLocation_p1 = NR_CSI_IM_Resource__csi_IM_ResourceElementPattern__pattern1__subcarrierLocation_p1_s4;
+ imres0->csi_IM_ResourceElementPattern->choice.pattern1->symbolLocation_p1 = 6;
+ imres0->freqBand = calloc(1,sizeof(*imres0->freqBand));
+ imres0->freqBand->startingRB = 0;
+ imres0->freqBand->nrofRBs = 108;
+ imres0->periodicityAndOffset = calloc(1,sizeof(*imres0->periodicityAndOffset));
+ imres0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
+ imres0->periodicityAndOffset->choice.slots320 = 0;
+
+ ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_IM_ResourceToAddModList->list,imres0);
+
+ csi_MeasConfig->csi_IM_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceSetToAddModList));
+ NR_CSI_IM_ResourceSet_t *imset0 = calloc(1,sizeof(*imset0));
+ imset0->csi_IM_ResourceSetId = 0;
+ NR_CSI_IM_ResourceId_t *res0 = calloc(1,sizeof(*res0));
+ *res0 = 0;
+ ASN_SEQUENCE_ADD(&imset0->csi_IM_Resources,res0);
+
+ ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_IM_ResourceSetToAddModList->list,imset0);
+
  csi_MeasConfig->csi_IM_ResourceToReleaseList = NULL;
- csi_MeasConfig->csi_IM_ResourceSetToAddModList = NULL;
  csi_MeasConfig->csi_IM_ResourceSetToReleaseList = NULL;
 
  csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList));
@@ -1212,13 +1236,23 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csires1->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires1);
 
+ NR_CSI_ResourceConfig_t *csires2 = calloc(1,sizeof(*csires2));
+ csires2->csi_ResourceConfigId=2;
+ csires2->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_csi_IM_ResourceSetList;
+ csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList = calloc(1,sizeof(*csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList));
+ NR_CSI_IM_ResourceSetId_t *csiim00 = calloc(1,sizeof(*csiim00));
+ *csiim00 = 0;
+ ASN_SEQUENCE_ADD(&csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList->list,csiim00);
+ ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires2);
+
  csi_MeasConfig->csi_ReportConfigToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_ReportConfigToAddModList));
  csi_MeasConfig->csi_ReportConfigToReleaseList = NULL;
  NR_CSI_ReportConfig_t *csirep1 = calloc(1,sizeof(*csirep1));
  csirep1->reportConfigId=0;
  csirep1->carrier=NULL;
  csirep1->resourcesForChannelMeasurement=0;
- csirep1->csi_IM_ResourcesForInterference=NULL;
+ csirep1->csi_IM_ResourcesForInterference=calloc(1,sizeof(*csirep1->csi_IM_ResourcesForInterference));
+ *csirep1->csi_IM_ResourcesForInterference=2;
  csirep1->nzp_CSI_RS_ResourcesForInterference=NULL;
  csirep1->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
  csirep1->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep1->reportConfigType.choice.periodic));
