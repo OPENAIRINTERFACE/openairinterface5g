@@ -257,13 +257,11 @@ void nr_generate_dci_top(PHY_VARS_gNB *gNB,
 
   AssertFatal(pdcch_pdu!=NULL || ul_dci_pdu!=NULL,"At least one pointer has to be !NULL\n");
 
-  if (pdcch_pdu && ul_dci_pdu) {
+  if (pdcch_pdu) {
     nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+  }
+  if (ul_dci_pdu) {
     nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
   }
-  else if (pdcch_pdu)
-    nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
-  else
-    nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
 }
 

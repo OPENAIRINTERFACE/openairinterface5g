@@ -496,7 +496,6 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 
   symbol_offset = ue->frame_parms.ofdm_symbol_size*symbol;
 
-  k = coreset_start_subcarrier;
 
 #ifdef DEBUG_PDCCH
   printf("PDCCH Channel Estimation : ThreadId %d, gNB_id %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n",proc->thread_id, gNB_id,ch_offset,ue->frame_parms.ofdm_symbol_size,
@@ -522,6 +521,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
+    k = coreset_start_subcarrier;
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+1)];
     dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
