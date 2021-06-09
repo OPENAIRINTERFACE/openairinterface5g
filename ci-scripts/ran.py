@@ -665,7 +665,7 @@ class RANManagement():
 		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
-		mySSH.command('cp /tmp/enb_*_s1x2log.pcap .','\$',20)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S cp /tmp/enb_*_s1x2log.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 60)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 5)
