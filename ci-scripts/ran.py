@@ -93,6 +93,7 @@ class RANManagement():
 		self.epcPcapFile = ''
 		self.runtime_stats= ''
 		self.datalog_rt_stats={}
+		self.eNB_Trace = '' #if 'yes', Tshark will be launched at initialization
 
 
 
@@ -344,8 +345,9 @@ class RANManagement():
 			HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
-		#Get pcap on S1 and X2 interface always
-		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
+		#Get pcap on S1 and X2 eNB interface, if enabled in the xml 
+		#will not work for gNB at this stage
+		if ((self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb')) and self.eNB_Trace=='yes':
 			mySSH.open(lIpAddr, lUserName, lPassWord)
 			mySSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
@@ -594,7 +596,7 @@ class RANManagement():
 				mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL -r .*-softmodem ocp-enb || true', '\$', 5)
 				time.sleep(5)
 		mySSH.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
-		#stopping tshark on eNB side
+		#stopping tshark (valid if eNB and enabled in xml, will not harm otherwise)
 		logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 		mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 		time.sleep(1)
@@ -669,7 +671,7 @@ class RANManagement():
 		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S cp /tmp/enb_*_s1x2log.pcap .','\$',20)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*_s1x2log.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 60)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 5)

@@ -152,6 +152,7 @@ def GetParametersFromXML(action):
 			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 
 	elif action == 'Initialize_eNB':
+		RAN.eNB_Trace=test.findtext('eNB_Trace')
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
