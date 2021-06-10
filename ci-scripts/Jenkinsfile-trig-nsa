@@ -36,7 +36,7 @@ pipeline {
         stage ("Launcher") {
             steps {
                 script {     
-                    //retrieve MR that are opened nd with tag READY_TO_BE_MERGED             
+                    //retrieve MR that are opened nd with tag NSA             
                     MR_LIST= sh returnStdout: true, script: 'curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100&labels=NSA" | jq ".[].iid" || true '
                     echo "List of selected MR:\n${MR_LIST}" 
                     def MR_ARRAY = MR_LIST.split('\n') 
@@ -48,7 +48,7 @@ pipeline {
                         COMMIT_ID=COMMIT_ID.trim()
                         echo "Testing NSA on : ${MR} ${SRC_BRANCH} ${COMMIT_ID}"
                         //calling NSA sub job
-                        build job: "RAN-CI-NSA-B210-N310-ModuleUE", wait : false, propagate : false, parameters: [
+                        build job: "RAN-NSA-Mini-Module", wait : false, propagate : false, parameters: [
                             string(name: 'eNB_MR', value: String.valueOf(MR)),                          
                             string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
                             string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
@@ -56,13 +56,13 @@ pipeline {
                             booleanParam(name: 'eNB_AllowMergeRequestProcess', value: Boolean.valueOf(ALLOW_MERGE))
                         ]
                         //calling Benetel sub job
-                        build job: "RAN-CI-BENETEL", wait : false, propagate : false, parameters: [
-                            string(name: 'eNB_MR', value: String.valueOf(MR)),                          
-                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
-                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
-                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
-                            booleanParam(name: 'eNB_AllowMergeRequestProcess', value: Boolean.valueOf(ALLOW_MERGE))
-                        ]
+                        //build job: "RAN-CI-BENETEL", wait : false, propagate : false, parameters: [
+                        //    string(name: 'eNB_MR', value: String.valueOf(MR)),                          
+                        //    string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
+                        //    string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
+                        //    string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
+                        //    booleanParam(name: 'eNB_AllowMergeRequestProcess', value: Boolean.valueOf(ALLOW_MERGE))
+                        //]
                     }
                 }                                  
             }   
