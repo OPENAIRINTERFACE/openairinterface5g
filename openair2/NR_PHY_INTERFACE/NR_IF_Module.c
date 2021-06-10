@@ -54,8 +54,9 @@ extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
 extern NR_UL_IND_t UL_INFO;
 
-void handle_nr_rach(NR_UL_IND_t *UL_info) {
-
+void handle_nr_rach(NR_UL_IND_t *UL_info)
+{
+  // Melissa: TODO come back and differentiate between global UL_info and passed in arg
   if (UL_INFO.rach_ind.number_of_pdus>0) {
     LOG_I(MAC,"UL_INFO[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",
           UL_INFO.frame,UL_INFO.slot, UL_INFO.rach_ind.sfn,UL_INFO.rach_ind.slot);
@@ -122,7 +123,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
         // find crc_indication j corresponding rx_indication i
         const nfapi_nr_rx_data_pdu_t *rx = &UL_info->rx_ind.pdu_list[i];
         const nfapi_nr_crc_t *crc = &UL_info->crc_ind.crc_list[j];
-        LOG_D(PHY,
+        LOG_I(PHY,
               "UL_info->crc_ind.pdu_list[%d].rnti:%04x "
               "UL_info->rx_ind.pdu_list[%d].rnti:%04x\n",
               j,
@@ -171,6 +172,22 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
           UL_info->crc_ind.number_crcs,
           UL_info->rx_ind.sfn,
           UL_info->rx_ind.slot);
+  } else if (UL_INFO.rx_ind.number_of_pdus > 0) {
+
+    for (int i = 0; i < UL_INFO.rx_ind.number_of_pdus; i++)
+    {
+      nr_rx_sdu(UL_INFO.module_id,
+                UL_INFO.CC_id,
+                UL_INFO.frame,
+                UL_INFO.slot,
+                UL_INFO.rx_ind.pdu_list[i].rnti,
+                UL_INFO.rx_ind.pdu_list[i].pdu,
+                UL_INFO.rx_ind.pdu_list[i].pdu_length,
+                UL_INFO.rx_ind.pdu_list[i].timing_advance,
+                UL_INFO.rx_ind.pdu_list[i].ul_cqi,
+                UL_INFO.rx_ind.pdu_list[i].rssi);
+    }
+
   }
 }
 

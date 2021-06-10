@@ -1478,7 +1478,14 @@ void vnf_handle_nr_rx_data_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* 
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
 		}
-
+                else
+		{
+		        NFAPI_TRACE(NFAPI_TRACE_INFO, "%s: Handling RX Indication\n", __FUNCTION__);
+			if(vnf_p7->_public.nr_rx_indication)
+			{
+				(vnf_p7->_public.nr_rx_indication)(&vnf_p7->_public, &ind);
+			}
+		}
 	}
 }
 

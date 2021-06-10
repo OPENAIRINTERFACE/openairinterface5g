@@ -3387,7 +3387,6 @@ static uint8_t pack_nr_rx_data_indication_body(void* tlv, uint8_t **ppWritePacke
 	return 1;
 }
 
-
 static uint8_t pack_nr_rx_data_indication(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
 {
 	nfapi_nr_rx_data_indication_t *pNfapiMsg = (nfapi_nr_rx_data_indication_t*)msg;
@@ -3398,9 +3397,9 @@ static uint8_t pack_nr_rx_data_indication(void *msg, uint8_t **ppWritePackedMsg,
 		))
 			return 0;
 
-	for(int i=0; i<pNfapiMsg->number_of_pdus;i++)	
+	for(int i = 0; i < pNfapiMsg->number_of_pdus; i++)
 	{
-		if(!pack_nr_rx_data_indication_body(pNfapiMsg->pdu_list,ppWritePackedMsg,end))
+		if(!pack_nr_rx_data_indication_body(&(pNfapiMsg->pdu_list[i]), ppWritePackedMsg, end))
 		return 0;
 	}
 
@@ -6384,26 +6383,21 @@ static uint8_t unpack_nr_rx_data_indication_body(void* tlv, uint8_t **ppReadPack
 
 
 static uint8_t unpack_nr_rx_data_indication(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t* config)
-{	
-	// uint8_t *ptr = *ppReadPackedMsg;
-	// printf("\n Read P7 message rx data indication unpack: ");
-	// while(ptr < end){
-	// 	printf(" %d ", *ptr);
-	// 	ptr++;
-	// }
-	// printf("\n");
+{
 	nfapi_nr_rx_data_indication_t *pNfapiMsg = (nfapi_nr_rx_data_indication_t*)msg;
-	
-	printf("\n");
+
 	if (!(pull16(ppReadPackedMsg, &pNfapiMsg->sfn , end) &&
 		pull16(ppReadPackedMsg, &pNfapiMsg->slot , end) &&
 		pull16(ppReadPackedMsg, &pNfapiMsg->number_of_pdus, end)
 		))
 			return 0;
+        if (pNfapiMsg->number_of_pdus > 0) {
+                pNfapiMsg->pdu_list = nfapi_p7_allocate(sizeof(*pNfapiMsg->pdu_list) * pNfapiMsg->number_of_pdus, config);
+        }
 
-	for(int i=0; i<pNfapiMsg->number_of_pdus;i++)	
+	for(int i=0; i < pNfapiMsg->number_of_pdus; i++)
 	{
-		if(!unpack_nr_rx_data_indication_body(&pNfapiMsg->pdu_list, ppReadPackedMsg, end))
+		if(!unpack_nr_rx_data_indication_body(&pNfapiMsg->pdu_list[i], ppReadPackedMsg, end))
 		return 0;
 	}
 
