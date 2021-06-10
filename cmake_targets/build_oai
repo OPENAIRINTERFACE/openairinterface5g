@@ -946,8 +946,11 @@ function main() {
               echo_info "liboai_device.so is linked to ADRV9371_ZC706 device library for Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
           elif [ "$HW" == "OAI_AW2SORI" ] ; then
 	      compilations \
-		  $build_dir thirdparty_transpro 
-		  $build_dir oai_eth_transpro
+		  $build_dir aw2sori_transpro \
+                  libaw2sori_transpro.so $dbin/libaw2sori_transpro.so.$REL 
+
+              ln -sf libaw2sori_transpro.so libthirdparty_transpro.so
+              ln -sf $dbin/libaw2sori_transpro.so.$REL $dbin/libaw2sori_transpro.so
               echo_info "build libthirdparty_transpro.so for AW2SORI fronthaul"
           else
               echo_info "liboai_device.so is not linked to any device library"
