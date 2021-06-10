@@ -729,6 +729,8 @@ class RANManagement():
 		real_time_stats = {}
 		#count "problem receiving samples" msg
 		pb_receiving_samples_cnt = 0
+		#count "removing UE" msg
+		removing_ue = 0
 		#NSA specific log markers
 		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
 	
@@ -925,6 +927,10 @@ class RANManagement():
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
 			if result is not None:
 				pb_receiving_samples_cnt += 1
+			#count "Removing UE" msg
+			result = re.search('\[MAC\]\s+Removing UE', str(line))
+			if result is not None:
+				removing_ue += 1
 
 			#nsa markers logging
 			for k in nsa_markers:
@@ -1014,6 +1020,11 @@ class RANManagement():
 				htmleNBFailureMsg += statMsg
 
 		else:
+			#Removing UE log
+			statMsg = '[MAC] Removing UE msg count =  '+str(removing_ue)
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
 			#nsa markers
 			statMsg = 'logfile line count = ' + str(line_cnt)			
 			htmlMsg = statMsg+'\n'
