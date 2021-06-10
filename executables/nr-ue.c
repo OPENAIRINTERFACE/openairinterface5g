@@ -226,8 +226,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
         LOG_E(NR_MAC, "mac->ul_config is null! \n");
         continue;
       }
-      ul_config->number_pdus = 0;
 
+      mac->ul_config_request[2].number_pdus = 0;
       fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
       uint8_t nr_prach = nr_ue_get_rach(&prach_resources, prach_pdu, mod_id, CC_id, ul_info.frame_tx, gNB_id, ul_info.slot_tx);
 
@@ -240,18 +240,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       else if (nr_prach == 2)
       {
         LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
-        return NULL;
-        #if 0
-        See if we can receive DCI format 0-1; then program ulsch
-        if (ul_config....msg3 flag == 1 && frame = ulcconfig.frame && slot == ul_config.slot)
-        {
-          fill_rx_ind of the gNb(&ul_config or &txdata_req);
-          nr_Msg3_transmitted(0, 0, frame, gNB_id);
-
-        }
-        // Melissa call this in the right slot and fill rx_ind for gNB: Msg3_transmitted(0, 0, frame, 0);
         //UE->UE_mode[0] = PUSCH;
-        #endif
       }
       else if(nr_prach == 3)
       {

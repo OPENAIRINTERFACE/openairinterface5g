@@ -50,7 +50,63 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
      because it requires PHY_vars_UE_g. We are basically not using layer
      one here so we are calling a stub version of this scheduled response.
      The original scheduled_response sends downlink information for the DCIs.
-     The physical layer provides this information. We dont need this yet.*/
+     The physical layer provides this information. We dont need this yet.
+     if we have a tx req we need to fill it and may need to go into the ul_config
+     to get other information. Need rnti., Fill rx_ind that goes up on socket */
+  if(scheduled_response != NULL){
+
+    module_id_t module_id = scheduled_response->module_id;
+    uint8_t cc_id = scheduled_response->CC_id;
+    int slot = scheduled_response->slot;
+    int thread_id = scheduled_response->thread_id;
+
+    if (scheduled_response->ul_config != NULL){
+
+      fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
+      for (int i = 0; i < ul_config->number_pdus; ++i)
+      {
+        LOG_I(PHY, "Melissa In %s: processing %s PDU of %d total UL PDUs (ul_config %p) \n",
+              __FUNCTION__, ul_pdu_type[ul_config->ul_config_list[i].pdu_type - 1], ul_config->number_pdus, ul_config);
+
+        uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type;
+        uint8_t pucch_resource_id = 0;
+        uint8_t current_harq_pid = 0;
+        uint8_t format = 0;
+        uint8_t gNB_id = 0;
+        nfapi_nr_rx_data_indication_t rx_ind;
+
+        switch (pdu_type)
+        {
+          case (FAPI_NR_UL_CONFIG_TYPE_PUSCH):
+          {
+
+            nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
+            if (scheduled_response->tx_request) {
+              rx_ind.header.message_id = NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION;
+              rx_ind.slot = scheduled_response->tx_request->slot;
+              rx_ind.sfn = scheduled_response->tx_request->sfn;
+              rx_ind.number_of_pdus = scheduled_response->tx_request->number_of_pdus;
+
+              fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[i];
+              rx_ind.pdu_list = CALLOC(1, sizeof(*rx_ind.pdu_list));
+              rx_ind.pdu_list[i].pdu = tx_req_body->pdu;
+              rx_ind.pdu_list[i].pdu_length = tx_req_body->pdu_length;
+              rx_ind.pdu_list[i].rnti = pusch_config_pdu->rnti;
+              rx_ind.pdu_list[i].handle = pusch_config_pdu->handle;
+              scheduled_response->tx_request->number_of_pdus = 0;
+              LOG_I(PHY, "Melissa In %s: Filled rx_ind with tx_req \n", __FUNCTION__);
+            }
+
+            break;
+          }
+
+          default:
+            LOG_I(NR_MAC, "Unknown ul_config->pdu_type %d\n", pdu_type);
+          break;
+        }
+      }
+    }
+  }
   return 0;
 }
 
