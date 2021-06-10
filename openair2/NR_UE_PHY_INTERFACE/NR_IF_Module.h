@@ -39,6 +39,7 @@
 #include "fapi_nr_ue_interface.h"
 #include "openair2/PHY_INTERFACE/queue.h"
 #include "nfapi_nr_interface_scf.h"
+#include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 
 typedef struct NR_UL_TIME_ALIGNMENT NR_UL_TIME_ALIGNMENT_t;
 
@@ -218,7 +219,7 @@ typedef struct nfapi_dl_tti_config_req_tx_data_req_t
     nfapi_nr_tx_data_request_t *tx_data_req_pdu_list;
 } nfapi_dl_tti_config_req_tx_data_req_t;
 
-void send_nsa_standalone_msg(nfapi_nr_rach_indication_t *rach_ind);
+void send_nsa_standalone_msg(NR_UL_IND_t *UL_INFO, uint16_t msg_id);
 
 /**\brief done free of memory allocation by module_id and release to pointer pool.
    \param module_id module id*/

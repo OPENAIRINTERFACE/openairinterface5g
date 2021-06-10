@@ -127,23 +127,59 @@ void nrue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
         tx_port, rx_port, addr);
 }
 
-void send_nsa_standalone_msg(nfapi_nr_rach_indication_t *rach_ind)
+void send_nsa_standalone_msg(NR_UL_IND_t *UL_INFO, uint16_t msg_id)
 {
-    char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
-    int encoded_size = nfapi_nr_p7_message_pack(rach_ind, buffer, sizeof(buffer), NULL);
-    if (encoded_size <= 0)
+  switch(msg_id)
+  {
+    case NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION:
     {
-        LOG_E(NR_MAC, "nfapi_nr_p7_message_pack has failed. Encoded size = %d\n", encoded_size);
-        return;
-    }
+        char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
+        LOG_I(NR_MAC, "Melissa, this is RACH header id :%d", UL_INFO->rach_ind.header.message_id);
+        int encoded_size = nfapi_nr_p7_message_pack(&UL_INFO->rach_ind, buffer, sizeof(buffer), NULL);
+        if (encoded_size <= 0)
+        {
+                LOG_E(NR_MAC, "nfapi_nr_p7_message_pack has failed. Encoded size = %d\n", encoded_size);
+                return;
+        }
 
-    LOG_I(NR_MAC, "NR_RACH_IND sent to Proxy, Size: %d Frame %d Slot %d Num PDUS %d\n", encoded_size,
-          rach_ind->sfn, rach_ind->slot, rach_ind->number_of_pdus);
-    if (send(ue_tx_sock_descriptor, buffer, encoded_size, 0) < 0)
-    {
-        LOG_E(NR_MAC, "Send Proxy NR_UE failed\n");
-        return;
+        LOG_I(NR_MAC, "NR_RACH_IND sent to Proxy, Size: %d Frame %d Slot %d Num PDUS %d\n", encoded_size,
+                UL_INFO->rach_ind.sfn, UL_INFO->rach_ind.slot, UL_INFO->rach_ind.number_of_pdus);
+        if (send(ue_tx_sock_descriptor, buffer, encoded_size, 0) < 0)
+        {
+                LOG_E(NR_MAC, "Send Proxy NR_UE failed\n");
+                return;
+        }
+        break;
     }
+    case NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION:
+    {
+        char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
+        LOG_I(NR_MAC, "Melissa, this is RX header id :%d", UL_INFO->rx_ind.header.message_id);
+        int encoded_size = nfapi_nr_p7_message_pack(&UL_INFO->rx_ind, buffer, sizeof(buffer), NULL);
+        if (encoded_size <= 0)
+        {
+                LOG_E(NR_MAC, "nfapi_nr_p7_message_pack has failed. Encoded size = %d\n", encoded_size);
+                return;
+        }
+
+        LOG_I(NR_MAC, "NR_RX_IND sent to Proxy, Size: %d Frame %d Slot %d Num PDUS %d\n", encoded_size,
+                UL_INFO->rx_ind.sfn, UL_INFO->rx_ind.slot, UL_INFO->rx_ind.number_of_pdus);
+        if (send(ue_tx_sock_descriptor, buffer, encoded_size, 0) < 0)
+        {
+                LOG_E(NR_MAC, "Send Proxy NR_UE failed\n");
+                return;
+        }
+        break;
+    }
+    case NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION:
+    break;
+    case NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION:
+    break;
+    case NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION:
+    break;
+    default:
+    break;
+  }
 }
 
 static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_dl_tti_request_t *dl_tti_request)
