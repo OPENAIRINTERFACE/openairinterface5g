@@ -164,7 +164,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->rlc_BearerToAddModList = calloc(1,sizeof(*secondaryCellGroup->rlc_BearerToAddModList));
   ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig);
 
-  if (0) {
+  if (get_softmodem_params()->sa) {
     NR_RLC_BearerConfig_t *RLC_BearerConfig_srb1 = calloc(1,sizeof(*RLC_BearerConfig_srb1));
     nr_rlc_bearer_init(RLC_BearerConfig_srb1, NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity);
     nr_drb_config(RLC_BearerConfig_srb1->rlc_Config, NR_RLC_Config_PR_am);
@@ -1279,7 +1279,7 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
 
   rbconfig->srb_ToAddModList = NULL;
 
-  if (0) {
+  if (get_softmodem_params()->sa) {
     rbconfig->srb_ToAddModList = calloc(1,sizeof(*rbconfig->srb_ToAddModList));
     NR_SRB_ToAddMod_t *srb1_ToAddMod = calloc(1,sizeof(*srb1_ToAddMod));
     srb1_ToAddMod->srb_Identity = 1;

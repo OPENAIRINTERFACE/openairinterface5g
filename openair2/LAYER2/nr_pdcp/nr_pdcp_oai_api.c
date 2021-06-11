@@ -1015,7 +1015,6 @@ void nr_DRB_preconfiguration(uint16_t crnti)
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, crnti, 0, 0,0);
   }
 
-  // FIXME: integrity_algorithm was temporarily set to 0
   nr_rrc_pdcp_config_asn1_req(
     &ctxt,
     (NR_SRB_ToAddModList_t *) NULL,
