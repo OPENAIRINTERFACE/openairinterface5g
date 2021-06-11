@@ -159,7 +159,7 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_p
   rach_ind->pdu_list[pdu_index].phy_cell_id                         = prach_pdu->phys_cell_id;
   rach_ind->pdu_list[pdu_index].symbol_index                        = prach_pdu->prach_start_symbol;
   rach_ind->pdu_list[pdu_index].slot_index                          = prach_pdu->prach_slot;
-  rach_ind->pdu_list[pdu_index].freq_index                          = prach_pdu->num_ra; //Melissa Fill these things from the prach pdu
+  rach_ind->pdu_list[pdu_index].freq_index                          = prach_pdu->num_ra;
   rach_ind->pdu_list[pdu_index].avg_rssi                            = 128;
   rach_ind->pdu_list[pdu_index].avg_snr                             = 0xff; // invalid for now
 
@@ -226,6 +226,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
         LOG_E(NR_MAC, "mac->ul_config is null! \n");
         continue;
       }
+      if (mac->ra.ra_state == RA_SUCCEEDED)
+        continue;
 
       mac->ul_config_request[2].number_pdus = 0;
       fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;

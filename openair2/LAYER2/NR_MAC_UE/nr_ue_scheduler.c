@@ -941,7 +941,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           tx_req.tx_request_body[0].pdu_index = j;
           tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
 
-          if (ra->ra_state != RA_SUCCEEDED && !ra->cfra || get_softmodem_params()->nsa && ra->cfra && ra->ra_state==RA_SUCCEEDED){ //Melissa change this accordingly
+          if (ra->ra_state != RA_SUCCEEDED && !ra->cfra || get_softmodem_params()->nsa && ra->cfra && ra->ra_state==RA_SUCCEEDED){
             nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->gNB_index);
           }
         }
@@ -1021,7 +1021,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
 
   }
 
-  LOG_I(MAC, "Melissa Elkadi In %s: currently at [%d.%d] UL transmission in [%d.%d] (k2 %d delta %d)\n", __FUNCTION__, current_frame, current_slot, *frame_tx, *slot_tx, k2, delta);
+  LOG_I(MAC, "In %s: currently at [%d.%d] UL transmission in [%d.%d] (k2 %d delta %d)\n", __FUNCTION__, current_frame, current_slot, *frame_tx, *slot_tx, k2, delta);
 
   return 0;
 

@@ -46,13 +46,7 @@ const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH"};
 const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 
 int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
-  /* Melissa, this is a hack. We are not calling nr_ue_scheduled_response
-     because it requires PHY_vars_UE_g. We are basically not using layer
-     one here so we are calling a stub version of this scheduled response.
-     The original scheduled_response sends downlink information for the DCIs.
-     The physical layer provides this information. We dont need this yet.
-     if we have a tx req we need to fill it and may need to go into the ul_config
-     to get other information. Need rnti., Fill rx_ind that goes up on socket */
+
   if(scheduled_response != NULL){
 
     if (scheduled_response->ul_config != NULL){
@@ -71,6 +65,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
           {
             NR_UL_IND_t UL_INFO;
             nfapi_nr_rx_data_indication_t *rx_ind = &UL_INFO.rx_ind;
+            nfapi_nr_crc_indication_t *crc_ind = &UL_INFO.crc_ind;
             nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
             if (scheduled_response->tx_request)
             {
@@ -81,16 +76,41 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
 
               fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[i];
               rx_ind->pdu_list = CALLOC(1, sizeof(*rx_ind->pdu_list));
+              rx_ind->pdu_list[i].handle = pusch_config_pdu->handle;
+              rx_ind->pdu_list[i].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
               rx_ind->pdu_list[i].pdu = tx_req_body->pdu;
               rx_ind->pdu_list[i].pdu_length = tx_req_body->pdu_length;
               rx_ind->pdu_list[i].rnti = pusch_config_pdu->rnti;
-              rx_ind->pdu_list[i].handle = pusch_config_pdu->handle;
+              rx_ind->pdu_list[i].timing_advance = 0;
+              rx_ind->pdu_list[i].ul_cqi = 27;
+              LOG_I(PHY, "In %s: Filled rx_indwith tx_req \n", __FUNCTION__);
+
               scheduled_response->tx_request->number_of_pdus = 0;
-              LOG_I(PHY, "Melissa In %s: Filled rx_indwith tx_req \n", __FUNCTION__);
               send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
               free(rx_ind->pdu_list);
             }
 
+            if (scheduled_response->ul_config)
+            {
+              crc_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION;
+              crc_ind->number_crcs = scheduled_response->ul_config->number_pdus;
+              crc_ind->sfn = scheduled_response->ul_config->sfn;
+              crc_ind->slot = scheduled_response->ul_config->slot;
+
+              crc_ind->crc_list = CALLOC(1, sizeof(*crc_ind->crc_list));
+              crc_ind->crc_list[i].handle = pusch_config_pdu->handle;
+              crc_ind->crc_list[i].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
+              crc_ind->crc_list[i].num_cb = pusch_config_pdu->pusch_data.num_cb;
+              crc_ind->crc_list[i].rnti = pusch_config_pdu->rnti;
+              crc_ind->crc_list[i].tb_crc_status = 0;
+              crc_ind->crc_list[i].timing_advance = 0;
+              crc_ind->crc_list[i].ul_cqi = 27;
+              LOG_I(PHY, "In %s: Filled crc_indwith ulconfig\n", __FUNCTION__);
+
+              scheduled_response->ul_config->number_pdus = 0;
+              send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
+              free(crc_ind->crc_list);
+            }
             break;
           }
 

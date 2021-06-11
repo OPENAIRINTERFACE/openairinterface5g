@@ -134,7 +134,7 @@ void send_nsa_standalone_msg(NR_UL_IND_t *UL_INFO, uint16_t msg_id)
     case NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION:
     {
         char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
-        LOG_I(NR_MAC, "Melissa, this is RACH header id :%d", UL_INFO->rach_ind.header.message_id);
+        LOG_D(NR_MAC, "RACH header id :%d", UL_INFO->rach_ind.header.message_id);
         int encoded_size = nfapi_nr_p7_message_pack(&UL_INFO->rach_ind, buffer, sizeof(buffer), NULL);
         if (encoded_size <= 0)
         {
@@ -154,7 +154,7 @@ void send_nsa_standalone_msg(NR_UL_IND_t *UL_INFO, uint16_t msg_id)
     case NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION:
     {
         char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
-        LOG_I(NR_MAC, "Melissa, this is RX header id :%d", UL_INFO->rx_ind.header.message_id);
+        LOG_D(NR_MAC, "RX header id :%d", UL_INFO->rx_ind.header.message_id);
         int encoded_size = nfapi_nr_p7_message_pack(&UL_INFO->rx_ind, buffer, sizeof(buffer), NULL);
         if (encoded_size <= 0)
         {
@@ -172,7 +172,25 @@ void send_nsa_standalone_msg(NR_UL_IND_t *UL_INFO, uint16_t msg_id)
         break;
     }
     case NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION:
-    break;
+    {
+        char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
+        LOG_D(NR_MAC, "CRC header id :%d", UL_INFO->crc_ind.header.message_id);
+        int encoded_size = nfapi_nr_p7_message_pack(&UL_INFO->crc_ind, buffer, sizeof(buffer), NULL);
+        if (encoded_size <= 0)
+        {
+                LOG_E(NR_MAC, "nfapi_nr_p7_message_pack has failed. Encoded size = %d\n", encoded_size);
+                return;
+        }
+
+        LOG_I(NR_MAC, "NR_CRC_IND sent to Proxy, Size: %d Frame %d Slot %d Num PDUS %d\n", encoded_size,
+                UL_INFO->crc_ind.sfn, UL_INFO->crc_ind.slot, UL_INFO->crc_ind.number_crcs);
+        if (send(ue_tx_sock_descriptor, buffer, encoded_size, 0) < 0)
+        {
+                LOG_E(NR_MAC, "Send Proxy NR_UE failed\n");
+                return;
+        }
+        break;
+    }
     case NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION:
     break;
     case NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION:

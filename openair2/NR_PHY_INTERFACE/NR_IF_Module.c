@@ -117,15 +117,16 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
 
 void handle_nr_ulsch(NR_UL_IND_t *UL_info)
 {
-  if (UL_info->rx_ind.number_of_pdus > 0 && UL_info->crc_ind.number_crcs > 0) {
-    for (int i = 0; i < UL_info->rx_ind.number_of_pdus; i++) {
-      for (int j = 0; j < UL_info->crc_ind.number_crcs; j++) {
+  // Melissa: TODO come back and differentiate between global UL_info and passed in arg
+  if (UL_INFO.rx_ind.number_of_pdus > 0 && UL_INFO.crc_ind.number_crcs > 0) {
+    for (int i = 0; i < UL_INFO.rx_ind.number_of_pdus; i++) {
+      for (int j = 0; j < UL_INFO.crc_ind.number_crcs; j++) {
         // find crc_indication j corresponding rx_indication i
-        const nfapi_nr_rx_data_pdu_t *rx = &UL_info->rx_ind.pdu_list[i];
-        const nfapi_nr_crc_t *crc = &UL_info->crc_ind.crc_list[j];
-        LOG_I(PHY,
-              "UL_info->crc_ind.pdu_list[%d].rnti:%04x "
-              "UL_info->rx_ind.pdu_list[%d].rnti:%04x\n",
+        const nfapi_nr_rx_data_pdu_t *rx = &UL_INFO.rx_ind.pdu_list[i];
+        const nfapi_nr_crc_t *crc = &UL_INFO.crc_ind.crc_list[j];
+        LOG_D(NR_PHY,
+              "UL_INFO.crc_ind.pdu_list[%d].rnti:%04x "
+              "UL_INFO.rx_ind.pdu_list[%d].rnti:%04x\n",
               j,
               crc->rnti,
               i,
@@ -134,60 +135,43 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
         if (crc->rnti != rx->rnti)
           continue;
 
-        LOG_D(MAC,
+        LOG_D(NR_MAC,
               "%4d.%2d Calling rx_sdu (CRC %s/tb_crc_status %d)\n",
-              UL_info->frame,
-              UL_info->slot,
+              UL_INFO.frame,
+              UL_INFO.slot,
               crc->tb_crc_status ? "error" : "ok",
               crc->tb_crc_status);
 
         /* if CRC passes, pass PDU, otherwise pass NULL as error indication */
-        //Gokul
-        // nr_rx_sdu(UL_info->module_id,
-        //           UL_info->CC_id,
-        //           UL_info->rx_ind.sfn,
-        //           UL_info->rx_ind.slot,
-        //           rx->rnti,
-        //           crc->tb_crc_status ? NULL : rx->pdu,
-        //           rx->pdu_length,
-        //           rx->timing_advance,
-        //           rx->ul_cqi,
-        //           rx->rssi);
-        //handle_nr_ul_harq(UL_info->module_id, UL_info->frame, UL_info->slot, crc);
+        nr_rx_sdu(UL_INFO.module_id,
+                  UL_INFO.CC_id,
+                  UL_INFO.rx_ind.sfn,
+                  UL_INFO.rx_ind.slot,
+                  rx->rnti,
+                  crc->tb_crc_status ? NULL : rx->pdu,
+                  rx->pdu_length,
+                  rx->timing_advance,
+                  rx->ul_cqi,
+                  rx->rssi);
+        handle_nr_ul_harq(UL_INFO.module_id, UL_INFO.frame, UL_INFO.slot, crc);
         break;
-      } //    for (j=0;j<UL_info->crc_ind.number_crcs;j++)
-    } //   for (i=0;i<UL_info->rx_ind.number_of_pdus;i++)
+      } //    for (j=0;j<UL_INFO.crc_ind.number_crcs;j++)
+    } //   for (i=0;i<UL_INFO.rx_ind.number_of_pdus;i++)
 
-    UL_info->crc_ind.number_crcs = 0;
-    UL_info->rx_ind.number_of_pdus = 0;
-  } else if (UL_info->rx_ind.number_of_pdus != 0
-             || UL_info->crc_ind.number_crcs != 0) {
-    LOG_E(PHY,
+    UL_INFO.crc_ind.number_crcs = 0;
+    UL_INFO.rx_ind.number_of_pdus = 0;
+  } else if (UL_INFO.rx_ind.number_of_pdus != 0
+             || UL_INFO.crc_ind.number_crcs != 0) {
+    LOG_E(NR_PHY,
           "hoping not to have mis-match between CRC ind and RX ind - "
           "hopefully the missing message is coming shortly "
           "rx_ind:%d(SFN/SL:%d/%d) crc_ind:%d(SFN/SL:%d/%d) \n",
-          UL_info->rx_ind.number_of_pdus,
-          UL_info->rx_ind.sfn,
-          UL_info->rx_ind.slot,
-          UL_info->crc_ind.number_crcs,
-          UL_info->rx_ind.sfn,
-          UL_info->rx_ind.slot);
-  } else if (UL_INFO.rx_ind.number_of_pdus > 0) {
-
-    for (int i = 0; i < UL_INFO.rx_ind.number_of_pdus; i++)
-    {
-      nr_rx_sdu(UL_INFO.module_id,
-                UL_INFO.CC_id,
-                UL_INFO.frame,
-                UL_INFO.slot,
-                UL_INFO.rx_ind.pdu_list[i].rnti,
-                UL_INFO.rx_ind.pdu_list[i].pdu,
-                UL_INFO.rx_ind.pdu_list[i].pdu_length,
-                UL_INFO.rx_ind.pdu_list[i].timing_advance,
-                UL_INFO.rx_ind.pdu_list[i].ul_cqi,
-                UL_INFO.rx_ind.pdu_list[i].rssi);
-    }
-
+          UL_INFO.rx_ind.number_of_pdus,
+          UL_INFO.rx_ind.sfn,
+          UL_INFO.rx_ind.slot,
+          UL_INFO.crc_ind.number_crcs,
+          UL_INFO.rx_ind.sfn,
+          UL_INFO.rx_ind.slot);
   }
 }
 

@@ -797,6 +797,22 @@ int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_
   return 1;
 }
 
+int phy_nr_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_crc_indication_t *ind) {
+
+  LOG_I(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u\n",
+          __FUNCTION__,ind->sfn, ind->slot, ind->number_crcs);
+
+  if(NFAPI_MODE == NFAPI_MODE_VNF)
+  {
+    UL_INFO.crc_ind = *ind;
+  }
+  else
+  {
+    LOG_E(NR_MAC, "NFAPI_MODE = %d not NFAPI_MODE_VNF(2)\n", nfapi_getmode());
+  }
+  return 1;
+}
+
 int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
 
@@ -878,7 +894,7 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
 
 int phy_nr_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rx_data_indication_t *ind) {
 
-  LOG_I(MAC, "Melissa in %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u, and pdu %p\n",
+  LOG_I(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u, and pdu %p\n",
           __FUNCTION__,ind->sfn, ind->slot, ind->number_of_pdus, ind->pdu_list[0].pdu);
 
   if(NFAPI_MODE == NFAPI_MODE_VNF)
@@ -1178,7 +1194,7 @@ void *vnf_nr_p7_thread_start(void *ptr) {
   p7_vnf->config->sync_indication = &phy_sync_indication;
   p7_vnf->config->slot_indication = &phy_slot_indication;
   p7_vnf->config->harq_indication = &phy_harq_indication;
-  p7_vnf->config->crc_indication = &phy_crc_indication;
+  p7_vnf->config->nr_crc_indication = &phy_nr_crc_indication;
   p7_vnf->config->nr_rx_indication = &phy_nr_rx_indication;
   p7_vnf->config->nr_rach_indication = &phy_nr_rach_indication;
   p7_vnf->config->srs_indication = &phy_srs_indication;

@@ -729,6 +729,20 @@ typedef struct nfapi_vnf_p7_config
 	 */
 	int (*crc_indication)(struct nfapi_vnf_p7_config* config, nfapi_crc_indication_t* ind);
 
+        /*! A callback for the nrCRC.indication
+     *  \param config A pointer to the vnf p7 configuration
+	 *  \param ind A data structure for the decoded nrCRC.indication This will
+	 *              have been allocated on the stack.
+	 *  \return not currently used.
+	 *
+	 *  The ind may contain pointers to dyanmically allocated sub structures
+	 *  such as the pdu. The dyanmically allocated structure will
+	 *  be deallocated on return. If the client wishes to 'keep' the structures
+	 *  then the substructure pointers should be set to 0 and then the client should
+	 *  use the codec_config.deallocate function to release it at a future point
+	 */
+	int (*nr_crc_indication)(struct nfapi_vnf_p7_config* config, nfapi_nr_crc_indication_t* ind);
+
 	/*! A callback for the RX_ULSCH.indication
      *  \param config A pointer to the vnf p7 configuration
 	 *  \param ind A data structure for the decoded RX_ULSCH.indication This will
@@ -746,9 +760,9 @@ typedef struct nfapi_vnf_p7_config
 	 */
 	int (*rx_indication)(struct nfapi_vnf_p7_config* config, nfapi_rx_indication_t* ind);
 
-        /*! A callback for the RACH.indication
+        /*! A callback for the nrRX.indication
      *  \param config A pointer to the vnf p7 configuration
-	 *  \param ind A data structure for the decoded nrRACH.indication This will
+	 *  \param ind A data structure for the decoded nrRX.indication This will
 	 *              have been allocated on the stack.
 	 *  \return not currently used.
 	 *
@@ -774,7 +788,7 @@ typedef struct nfapi_vnf_p7_config
 	 */
 	int (*rach_indication)(struct nfapi_vnf_p7_config* config, nfapi_rach_indication_t* ind);
 
-        /*! A callback for the RACH.indication
+        /*! A callback for the nrRACH.indication
      *  \param config A pointer to the vnf p7 configuration
 	 *  \param ind A data structure for the decoded nrRACH.indication This will
 	 *              have been allocated on the stack.
