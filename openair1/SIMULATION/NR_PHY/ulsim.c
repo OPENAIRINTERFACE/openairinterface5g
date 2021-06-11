@@ -304,7 +304,7 @@ int main(int argc, char **argv)
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t ptrsRePerSymb = 0;
 
-  uint8_t transform_precoding = transform_precoder_disabled; // 0 - ENABLE, 1 - DISABLE
+  uint8_t transform_precoding = 1; // 0 - ENABLE, 1 - DISABLE
   uint8_t num_dmrs_cdm_grps_no_data = 1;
   uint8_t mcs_table = 0;
 
@@ -561,7 +561,7 @@ int main(int argc, char **argv)
 
     case 'Z':
 
-      transform_precoding = transform_precoder_enabled; 
+      transform_precoding = 0; 
       num_dmrs_cdm_grps_no_data = 2;
       mcs_table = 3;
       
@@ -835,7 +835,7 @@ int main(int argc, char **argv)
   uint16_t number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
   uint8_t  nb_re_dmrs          = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
 
-  if (transform_precoding == transform_precoder_enabled) {  
+  if (transform_precoding == 0) {
 
     AssertFatal(enable_ptrs == 0, "PTRS NOT SUPPORTED IF TRANSFORM PRECODING IS ENABLED\n");
 
@@ -1040,7 +1040,7 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
       pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
-      if (transform_precoding == transform_precoder_enabled) { 
+      if (transform_precoding == 0) {
 
         pusch_pdu->dfts_ofdm.low_papr_group_number = *scc->physCellId % 30; // U as defined in 38.211 section 6.4.1.1.1.2 
         pusch_pdu->dfts_ofdm.low_papr_sequence_number = 0;     // V as defined in 38.211 section 6.4.1.1.1.2
@@ -1100,7 +1100,7 @@ int main(int argc, char **argv)
 
       ul_config.ul_config_list[0].pusch_config_pdu.transform_precoding = transform_precoding;
 
-      if (transform_precoding == transform_precoder_enabled) { 
+      if (transform_precoding == 0) {
    
         ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_group_number = *scc->physCellId % 30;// U as defined in 38.211 section 6.4.1.1.1.2 
         ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_sequence_number = 0;// V as defined in 38.211 section 6.4.1.1.1.2
@@ -1205,7 +1205,7 @@ int main(int argc, char **argv)
 	}
 
 
-	if (n_trials == 1  && round==0) { 
+	if (n_trials == 1  && round==0) {
 #ifdef __AVX2__
 	  int off = ((nb_rb&1) == 1)? 4:0;
 #else
