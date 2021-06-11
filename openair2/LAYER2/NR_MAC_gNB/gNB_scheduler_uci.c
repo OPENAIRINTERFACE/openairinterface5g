@@ -1250,8 +1250,7 @@ void skip_zero_padding(int *cumul_bits,
                              csi_report->csi_meas_bitlen.pmi_x1_bitlen[ri]+
                              csi_report->csi_meas_bitlen.pmi_x2_bitlen[ri];
 
-  cumul_bits+=(max_bitlen-reported_bitlen);
-
+  *cumul_bits+=(max_bitlen-reported_bitlen);
 }
 
 
