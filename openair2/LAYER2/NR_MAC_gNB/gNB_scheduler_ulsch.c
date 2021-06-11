@@ -396,7 +396,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_D(MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
+    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -432,7 +432,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 #endif
 
     if (sduP != NULL){
-      LOG_D(MAC, "Received PDU at MAC gNB \n");
+      LOG_D(NR_MAC, "Received PDU at MAC gNB \n");
 
       const uint32_t tb_size = UE_scheduling_control->ul_harq_processes[harq_pid].sched_pusch.tb_size;
       UE_scheduling_control->sched_ul_bytes -= tb_size;
@@ -441,19 +441,19 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
     }
-    else {
-      NR_UE_ul_harq_t *cur_harq = &UE_scheduling_control->ul_harq_processes[harq_pid];
-      /* reduce sched_ul_bytes when cur_harq->round == 3 */
-      if (cur_harq->round == 3){
-        const uint32_t tb_size = UE_scheduling_control->ul_harq_processes[harq_pid].sched_pusch.tb_size;
-        UE_scheduling_control->sched_ul_bytes -= tb_size;
-        if (UE_scheduling_control->sched_ul_bytes < 0)
-          UE_scheduling_control->sched_ul_bytes = 0;
+  } else if(sduP) {
+
+    bool no_sig = true;
+    for (int k = 0; k < sdu_lenP; k++) {
+      if(sduP[k]!=0) {
+        no_sig = false;
+        break;
       }
     }
-  } else {
-    if (!sduP) // check that CRC passed
-      return;
+
+    if(no_sig) {
+      LOG_W(NR_MAC, "No signal\n");
+    }
 
     T(T_GNB_MAC_UL_PDU_WITH_DATA, T_INT(gnb_mod_idP), T_INT(CC_idP),
       T_INT(rntiP), T_INT(frameP), T_INT(slotP), T_INT(-1) /* harq_pid */,
@@ -467,37 +467,92 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if (ra->state != WAIT_Msg3)
         continue;
 
-      // random access pusch with TC-RNTI
-      if (ra->rnti != current_rnti) {
-        LOG_W(MAC,
-              "expected TC-RNTI %04x to match current RNTI %04x\n",
+      if(no_sig) {
+        LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
+        //nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+        nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP);
+      } else {
+
+        // random access pusch with TC-RNTI
+        if (ra->rnti != current_rnti) {
+          LOG_W(NR_MAC,
+                "expected TC_RNTI %04x to match current RNTI %04x\n",
+                ra->rnti,
+                current_rnti);
+
+          if( (frameP==ra->Msg3_frame) && (slotP==ra->Msg3_slot) ) {
+            LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
+            //nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+            nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP);
+          }
+
+          continue;
+        }
+
+        const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
+        UE_info->UE_beam_index[UE_id] = ra->beam_id;
+
+        // re-initialize ta update variables after RA procedure completion
+        UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
+
+        LOG_I(NR_MAC,
+              "reset RA state information for RA-RNTI %04x/index %d\n",
               ra->rnti,
-              current_rnti);
-        continue;
+              i);
+
+        LOG_I(NR_MAC,
+              "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
+              "adding UE MAC Context UE_id %d/RNTI %04x\n",
+              gnb_mod_idP,
+              current_rnti,
+              UE_id,
+              ra->rnti);
+
+        if(ra->cfra) {
+
+          LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CFRA procedure succeeded!\n", UE_id, ra->rnti);
+          //nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+          nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP);
+          UE_info->active[UE_id] = true;
+
+        } else {
+
+          LOG_I(NR_MAC,"[RAPROC] RA-Msg3 received (sdu_lenP %d)\n",sdu_lenP);
+          LOG_D(NR_MAC,"[RAPROC] Received Msg3:\n");
+          for (int k = 0; k < sdu_lenP; k++) {
+            LOG_D(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
+          }
+
+          // UE Contention Resolution Identity
+          // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to fill in Msg4
+          // First byte corresponds to R/LCID MAC sub-header
+          memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
+
+          nr_process_mac_pdu(gnb_mod_idP, current_rnti, CC_idP, frameP, sduP, sdu_lenP);
+
+          ra->state = Msg4;
+          ra->Msg4_frame = ( frameP +2 ) % 1024;
+          ra->Msg4_slot = 1;
+          LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
+
+        }
+        return;
+
       }
-      const int UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->secondaryCellGroup);
-      UE_info->UE_beam_index[UE_id] = ra->beam_id;
-      LOG_I(MAC,
-            "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
-            "adding UE MAC Context UE_id %d/RNTI %04x\n",
-            gnb_mod_idP,
-            current_rnti,
-            UE_id,
-            ra->rnti);
-      // re-initialize ta update variables afrer RA procedure completion
-      UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
+    }
+  } else {
+    for (int i = 0; i < NR_NB_RA_PROC_MAX; ++i) {
+      NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[i];
+      if (ra->state != WAIT_Msg3)
+        continue;
 
-      free(ra->preambles.preamble_list);
-      ra->state = RA_IDLE;
-      LOG_I(MAC,
-            "reset RA state information for RA-RNTI %04x/index %d\n",
-            ra->rnti,
-            i);
-
-      return;
+      LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
+      //nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+      nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP);
     }
   }
 }
+
 
 long get_K2(NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu) {
   DevAssert(ubwp);
@@ -810,12 +865,16 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  int startSymbolIndex, nrOfSymbols;
+  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+  const uint16_t symb = ((1 << nrOfSymbols) - 1) << startSymbolIndex;
   int st = 0, e = 0, len = 0;
   for (int i = 0; i < bwpSize; i++) {
-    while (vrb_map_UL[i] == 1)
+    while ((vrb_map_UL[i] & symb) != 0 && i < bwpSize)
       i++;
     st = i;
-    while (vrb_map_UL[i] == 0)
+    while ((vrb_map_UL[i] & symb) == 0 && i < bwpSize)
       i++;
     if (i - st > len) {
       len = i - st;
@@ -823,6 +882,7 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
     }
   }
   st = e - len + 1;
+
 
   uint8_t rballoc_mask[bwpSize];
 

@@ -454,8 +454,8 @@ void pf_dl(module_id_t module_id,
       }
       /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
        * allocation after CCE alloc fail would be more complex) */
-      const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
-      if (!alloc) {
+      const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+      if (alloc < 0) {
         LOG_W(MAC,
               "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
               __func__,
@@ -547,8 +547,8 @@ void pf_dl(module_id_t module_id,
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
-    const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
-    if (!alloc) {
+    const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+    if (alloc < 0) {
       LOG_W(MAC,
             "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
             __func__,
@@ -824,14 +824,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->mcsIndex[0] = sched_ctrl->mcs;
     pdsch_pdu->mcsTable[0] = sched_ctrl->mcsTableIdx;
     pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
-    if (NFAPI_MODE == NFAPI_MODE_VNF){ // done since uplink isnt operational yet which means harq structures dont get filled properly
-      pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq_rounds];
-      if (harq_rounds % 5 == 0 && harq_rounds!=0){
-        harq_rounds = 0;
-        harq_pid = (harq_pid + 1) % 16;
-      }      
-      harq_rounds++;
-    }
     pdsch_pdu->TBSize[0] = TBS;
 
     pdsch_pdu->dataScramblingId = *scc->physCellId;
