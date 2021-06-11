@@ -377,7 +377,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
   nr_rrc_pdcp_config_asn1_req(
     &ctxt,
-    ue_context_p->ue_context.rb_config->srb_ToAddModList,
+    (NR_SRB_ToAddModList_t *) NULL,
     ue_context_p->ue_context.rb_config->drb_ToAddModList ,
     ue_context_p->ue_context.rb_config->drb_ToReleaseList,
     (ue_context_p->ue_context.integrity_algorithm << 4) | ue_context_p->ue_context.ciphering_algorithm,
@@ -390,11 +390,11 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
   nr_rrc_rlc_config_asn1_req (&ctxt,
-                              ue_context_p->ue_context.rb_config->srb_ToAddModList,
-                              ue_context_p->ue_context.rb_config->drb_ToAddModList,
-                              ue_context_p->ue_context.rb_config->drb_ToReleaseList,
-                              (LTE_PMCH_InfoList_r9_t *) NULL,
-                              ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
+      (NR_SRB_ToAddModList_t *) NULL,
+      ue_context_p->ue_context.rb_config->drb_ToAddModList,
+      ue_context_p->ue_context.rb_config->drb_ToReleaseList,
+      (LTE_PMCH_InfoList_r9_t *) NULL,
+      ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
   LOG_D(RRC, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
 
