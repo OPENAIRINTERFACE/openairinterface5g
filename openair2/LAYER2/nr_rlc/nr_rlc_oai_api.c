@@ -598,7 +598,7 @@ static void max_retx_reached(void *_ue, nr_rlc_entity_t *entity)
   exit(1);
 
 rb_found:
-  LOG_D(RLC, "max RETX reached on %s %d\n",
+  LOG_E(RLC, "max RETX reached on %s %d\n",
         is_srb ? "SRB" : "DRB",
         rb_id);
 

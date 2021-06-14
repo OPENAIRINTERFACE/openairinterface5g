@@ -544,17 +544,17 @@ static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   LOG_E(PDCP, "%s:%d:%s: fatal, no SRB found for ue %d\n",
 	__FILE__, __LINE__, __FUNCTION__, ue->rnti);
   exit(1);
-  
+
  srb_found:
   {
-       uint8_t *rrc_buffer_p = entity->is_gnb ? 
+       uint8_t *rrc_buffer_p = entity->is_gnb ?
 					itti_malloc(TASK_PDCP_ENB, TASK_RRC_GNB, size):
                                         itti_malloc(TASK_PDCP_UE, TASK_RRC_NRUE, size);
        MessageDef  *message_p;
 
        AssertFatal(rrc_buffer_p != NULL, "OUT OF MEMORY");
        memcpy(rrc_buffer_p, buf, size);
-       message_p = entity->is_gnb ? 
+       message_p = entity->is_gnb ?
                             itti_alloc_new_message(TASK_PDCP_ENB, 0, NR_RRC_DCCH_DATA_IND):
                             itti_alloc_new_message(TASK_PDCP_UE, 0, NR_RRC_DCCH_DATA_IND);
 
@@ -563,7 +563,7 @@ static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
        NR_RRC_DCCH_DATA_IND(message_p).sdu_p = rrc_buffer_p;
        NR_RRC_DCCH_DATA_IND(message_p).sdu_size = size;
        NR_RRC_DCCH_DATA_IND(message_p).rnti = ue->rnti;
-    
+
        itti_send_msg_to_task(entity->is_gnb ? TASK_RRC_GNB : TASK_RRC_NRUE, 0, message_p);
     }
 }
@@ -603,9 +603,9 @@ srb_found:
     ctxt.eNB_index = 0;
     ctxt.configured = 1;
     ctxt.brOption = 0;
-    
+
     ctxt.rnti = ue->rnti;
-    
+
     memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
     enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock, NULL, NULL);
@@ -743,7 +743,7 @@ static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
   int t_Reordering=3000;
 
   int srb_id = s->srb_Identity;
-  if (s->pdcp_Config == NULL || 
+  if (s->pdcp_Config == NULL ||
       s->pdcp_Config->t_Reordering == NULL) t_Reordering = 3000;
   else t_Reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
 
@@ -753,7 +753,7 @@ static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
     LOG_D(PDCP, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
-    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id, 
+    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
                                   0, 0, 0, 0, // sdap parameters
                                   deliver_sdu_srb, ue, deliver_pdu_srb, ue,
                                   12, t_Reordering, -1,
@@ -776,16 +776,22 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   nr_pdcp_ue_t *ue;
 
   int drb_id = s->drb_Identity;
-  int t_reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
   int sn_size_ul = decode_sn_size_ul(*s->pdcp_Config->drb->pdcp_SN_SizeUL);
   int sn_size_dl = decode_sn_size_dl(*s->pdcp_Config->drb->pdcp_SN_SizeDL);
   int discard_timer = decode_discard_timer(*s->pdcp_Config->drb->discardTimer);
-  if ((!s->cnAssociation) || s->cnAssociation->present == NR_DRB_ToAddMod__cnAssociation_PR_NOTHING) { 
+
+  /* if pdcp_Config->t_Reordering is not present, it means infinity (-1) */
+  int t_reordering = -1;
+  if (s->pdcp_Config->t_Reordering != NULL) {
+    t_reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
+  }
+
+  if ((!s->cnAssociation) || s->cnAssociation->present == NR_DRB_ToAddMod__cnAssociation_PR_NOTHING) {
     LOG_E(PDCP,"%s:%d:%s: fatal, cnAssociation is missing or present is NR_DRB_ToAddMod__cnAssociation_PR_NOTHING\n",__FILE__,__LINE__,__FUNCTION__);
     exit(-1);
   }
-  
-  int pdusession_id; 
+
+  int pdusession_id;
   int has_sdap = 0;
   int has_sdapULheader=0;
   int has_sdapDLheader=0;
