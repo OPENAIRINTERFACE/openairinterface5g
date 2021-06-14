@@ -55,8 +55,8 @@ typedef struct nr_pdcp_entity_t {
   int rb_id;
 
   int sn_size;                  /* SN size, in bits */
-  int t_reordering;             /* unit: ms */
-  int discard_timer;            /* unit: ms */
+  int t_reordering;             /* unit: ms, -1 for infinity */
+  int discard_timer;            /* unit: ms, -1 for infinity */
 
   int sn_max;                   /* (2^SN_size) - 1 */
   int window_size;              /* 2^(SN_size - 1) */
