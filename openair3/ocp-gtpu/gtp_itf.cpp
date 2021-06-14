@@ -404,10 +404,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
 
   inst->te2ue_mapping[incoming_teid].rnti=rnti;
 
-  inst->te2ue_mapping[incoming_teid].incoming_rb_id= outgoing_teid;
-
-  LOG_I(GTPU, "incoming_bearer_id = %i\n",incoming_bearer_id);
-  LOG_I(GTPU, "outgoing_teid = %i\n",outgoing_teid);
+  inst->te2ue_mapping[incoming_teid].incoming_rb_id= incoming_bearer_id;
 
   inst->te2ue_mapping[incoming_teid].callBack=callBack;
 
