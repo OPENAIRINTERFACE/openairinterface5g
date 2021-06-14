@@ -115,9 +115,7 @@ typedef union {
   fgs_nas_message_plain_t plain;
 } fgs_nas_message_t;
 
-void generateRegistrationRequest(as_nas_info_t *initialNasMsg);
-void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype);
-void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf);
+void generateRegistrationRequest(as_nas_info_t *initialNasMsg, int Mod_id);
 void generateSecurityModeComplete(as_nas_info_t *initialNasMsg);
 void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentContainer *sortransparentcontainer);
 void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg);

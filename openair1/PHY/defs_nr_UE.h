@@ -1071,6 +1071,7 @@ typedef struct {
 #endif
   
   int dl_stats[5];
+  void * uicc;
 
 } PHY_VARS_NR_UE;
 
