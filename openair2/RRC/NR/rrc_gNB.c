@@ -1890,11 +1890,6 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                                     du_to_cu_rrc_container,
                                     gnb_rrc_inst->carrier.servingcellconfigcommon,
                                     CC_id);
-
-          // FIXME: Check the best place to perform this DRB configuration
-          if(get_softmodem_params()->sa) {
-            nr_DRB_preconfiguration(ctxt_pP->rnti);
-          }
         }
         break;
 
