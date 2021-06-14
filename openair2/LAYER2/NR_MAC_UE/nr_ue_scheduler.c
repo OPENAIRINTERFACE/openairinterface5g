@@ -61,7 +61,7 @@ void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, in
   ul_config->sfn = frame_tx;
   ul_config->number_pdus++;
 
-  LOG_I(MAC, "Melissa Elkadi In %s: Set config request for UL transmission in [%d.%d], number of UL PDUs: %d\n", __FUNCTION__, ul_config->sfn, ul_config->slot, ul_config->number_pdus);
+  LOG_I(MAC, "In %s: Set config request for UL transmission in [%d.%d], number of UL PDUs: %d\n", __FUNCTION__, ul_config->sfn, ul_config->slot, ul_config->number_pdus);
 
 }
 

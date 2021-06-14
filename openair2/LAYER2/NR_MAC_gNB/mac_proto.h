@@ -383,6 +383,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint8_t ul_cqi,
                const uint16_t rssi);
 
+void abort_nr_ul_harq(module_id_t mod_id, int UE_id, int8_t harq_pid);
+
 void handle_nr_ul_harq(module_id_t mod_id,
                        frame_t frame,
                        sub_frame_t slot,

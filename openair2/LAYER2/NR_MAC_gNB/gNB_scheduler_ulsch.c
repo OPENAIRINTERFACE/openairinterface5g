@@ -306,6 +306,24 @@ void nr_process_mac_pdu(
     }
 }
 
+void abort_nr_ul_harq(module_id_t mod_id, int UE_id, int8_t harq_pid)
+{
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_UE_ul_harq_t *harq = &sched_ctrl->ul_harq_processes[harq_pid];
+
+  harq->ndi ^= 1;
+  harq->round = 0;
+  UE_info->mac_stats[UE_id].ulsch_errors++;
+  add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
+
+  /* the transmission failed: the UE won't send the data we expected initially,
+   * so retrieve to correctly schedule after next BSR */
+  sched_ctrl->sched_ul_bytes -= harq->sched_pusch.tb_size;
+  if (sched_ctrl->sched_ul_bytes < 0)
+    sched_ctrl->sched_ul_bytes = 0;
+}
+
 void handle_nr_ul_harq(module_id_t mod_id,
                        frame_t frame,
                        sub_frame_t slot,
@@ -330,8 +348,13 @@ void handle_nr_ul_harq(module_id_t mod_id,
       return;
 
     remove_front_nr_list(&sched_ctrl->feedback_ul_harq);
-    sched_ctrl->ul_harq_processes[harq_pid].round++;
-    add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
+    sched_ctrl->ul_harq_processes[harq_pid].is_waiting = false;
+    if(sched_ctrl->ul_harq_processes[harq_pid].round >= MAX_HARQ_ROUNDS - 1) {
+      abort_nr_ul_harq(mod_id, UE_id, harq_pid);
+    } else {
+      sched_ctrl->ul_harq_processes[harq_pid].round++;
+      add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
+    }
     harq_pid = sched_ctrl->feedback_ul_harq.head;
   }
   remove_front_nr_list(&sched_ctrl->feedback_ul_harq);
@@ -347,15 +370,12 @@ void handle_nr_ul_harq(module_id_t mod_id,
           harq_pid,
           crc_pdu->rnti);
     add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
-  } else if (harq->round == MAX_HARQ_ROUNDS) {
-    harq->ndi ^= 1;
-    harq->round = 0;
+  } else if (harq->round >= MAX_HARQ_ROUNDS - 1) {
+    abort_nr_ul_harq(mod_id, UE_id, harq_pid);
     LOG_D(MAC,
           "RNTI %04x: Ulharq id %d crc failed in all rounds\n",
           crc_pdu->rnti,
           harq_pid);
-    UE_info->mac_stats[UE_id].ulsch_errors++;
-    add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
   } else {
     harq->round++;
     LOG_D(MAC,
@@ -984,6 +1004,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     NR_sched_pusch_save_t *ps = &sched_ctrl->pusch_save;
 
     /* Statistics */
+    AssertFatal(cur_harq->round < 8, "Indexing ulsch_rounds[%d] is out of bounds\n", cur_harq->round);
     UE_info->mac_stats[UE_id].ulsch_rounds[cur_harq->round]++;
     if (cur_harq->round == 0) {
       UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled += sched_pusch->tb_size;
@@ -1102,6 +1123,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->nr_of_symbols = ps->nrOfSymbols;
 
     /* PUSCH PDU */
+    AssertFatal(cur_harq->round < 4, "Indexing nr_rv_round_map[%d] is out of bounds\n", cur_harq->round);
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
     pusch_pdu->pusch_data.harq_process_id = harq_id;
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;

@@ -1153,10 +1153,12 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     }
     else if (dci_format == NR_UL_DCI_FORMAT_0_1 || dci_format == NR_DL_DCI_FORMAT_1_1) {
       // In case the sizes of formats 0_1 and 1_1 happen to be the same
+      #if 0
       if (dci_pdu_rel15->format_indicator == 0) 
         dci_format = NR_UL_DCI_FORMAT_0_1;
       else
         dci_format = NR_DL_DCI_FORMAT_1_1;
+      #endif
     }
   }
 #ifdef DEBUG_EXTRACT_DCI

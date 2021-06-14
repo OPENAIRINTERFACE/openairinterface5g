@@ -74,16 +74,19 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               rx_ind->sfn = scheduled_response->tx_request->sfn;
               rx_ind->number_of_pdus = scheduled_response->tx_request->number_of_pdus;
 
-              fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[i];
-              rx_ind->pdu_list = CALLOC(1, sizeof(*rx_ind->pdu_list));
-              rx_ind->pdu_list[i].handle = pusch_config_pdu->handle;
-              rx_ind->pdu_list[i].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
-              rx_ind->pdu_list[i].pdu = tx_req_body->pdu;
-              rx_ind->pdu_list[i].pdu_length = tx_req_body->pdu_length;
-              rx_ind->pdu_list[i].rnti = pusch_config_pdu->rnti;
-              rx_ind->pdu_list[i].timing_advance = 0;
-              rx_ind->pdu_list[i].ul_cqi = 27;
-              LOG_I(PHY, "In %s: Filled rx_indwith tx_req \n", __FUNCTION__);
+              rx_ind->pdu_list = CALLOC(1, sizeof(*rx_ind->pdu_list) * rx_ind->number_of_pdus);
+              for (int j = 0; j < rx_ind->number_of_pdus; j++)
+              {
+                fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
+                rx_ind->pdu_list[j].handle = pusch_config_pdu->handle;
+                rx_ind->pdu_list[j].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
+                rx_ind->pdu_list[j].pdu = tx_req_body->pdu;
+                rx_ind->pdu_list[j].pdu_length = tx_req_body->pdu_length;
+                rx_ind->pdu_list[j].rnti = pusch_config_pdu->rnti;
+                rx_ind->pdu_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
+                rx_ind->pdu_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
+              }
+              LOG_I(PHY, "In %s: Filled rx_ind with tx_req \n", __FUNCTION__);
 
               scheduled_response->tx_request->number_of_pdus = 0;
               send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
@@ -97,15 +100,19 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               crc_ind->sfn = scheduled_response->ul_config->sfn;
               crc_ind->slot = scheduled_response->ul_config->slot;
 
-              crc_ind->crc_list = CALLOC(1, sizeof(*crc_ind->crc_list));
-              crc_ind->crc_list[i].handle = pusch_config_pdu->handle;
-              crc_ind->crc_list[i].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
-              crc_ind->crc_list[i].num_cb = pusch_config_pdu->pusch_data.num_cb;
-              crc_ind->crc_list[i].rnti = pusch_config_pdu->rnti;
-              crc_ind->crc_list[i].tb_crc_status = 0;
-              crc_ind->crc_list[i].timing_advance = 0;
-              crc_ind->crc_list[i].ul_cqi = 27;
-              LOG_I(PHY, "In %s: Filled crc_indwith ulconfig\n", __FUNCTION__);
+              crc_ind->crc_list = CALLOC(1, sizeof(*crc_ind->crc_list) * crc_ind->number_crcs);
+              for (int j = 0; j < crc_ind->number_crcs; j++)
+              {
+                crc_ind->crc_list[j].handle = pusch_config_pdu->handle;
+                crc_ind->crc_list[j].harq_id = 1; //pusch_config_pdu->pusch_data.harq_process_id;
+                crc_ind->crc_list[j].num_cb = pusch_config_pdu->pusch_data.num_cb;
+                crc_ind->crc_list[j].rnti = pusch_config_pdu->rnti;
+                crc_ind->crc_list[j].tb_crc_status = 0;
+                crc_ind->crc_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
+                crc_ind->crc_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
+              }
+
+              LOG_I(PHY, "Melissa In %s: Filled crc_ind with ulconfig. \n", __FUNCTION__);
 
               scheduled_response->ul_config->number_pdus = 0;
               send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);

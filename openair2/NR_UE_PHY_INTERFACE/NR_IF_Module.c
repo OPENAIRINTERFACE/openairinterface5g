@@ -214,7 +214,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
         nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request->dl_tti_request_body.dl_tti_pdu_list[i];
         if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE)
         {
-            LOG_I(NR_PHY, "[%d, %d] PDSCH (RAR transmission configuration)for rnti %x in \n",
+            LOG_I(NR_PHY, "[%d, %d] PDSCH PDU for rnti %x in \n",
                 dl_tti_request->SFN, dl_tti_request->Slot, pdu_list->pdsch_pdu.pdsch_pdu_rel15.rnti);
         }
 
@@ -230,14 +230,17 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                 for (int j = 0; j < num_dcis; j++)
                 {
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                    LOG_I(NR_PHY, "[%d, %d] PDCCH DCI (Payload) for rnti %x.\n",
-                        dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI);
+                    LOG_I(NR_PHY, "[%d, %d] PDCCH DCI (Payload) for rnti %x with PayloadSizeBits %d\n",
+                        dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI, dci_pdu_list->PayloadSizeBits);
                     for (int k = 0; k < DCI_PAYLOAD_BYTE_LEN; k++)
                     {
-                        dl_info->dci_ind->dci_list->payloadBits[k] = dci_pdu_list->Payload[k];
+                        LOG_I(NR_MAC, "PDCCH DCI PDU payload[%d] = %d\n", k, dci_pdu_list->Payload[k]);
+                        dl_info->dci_ind->dci_list[j].payloadBits[k] = dci_pdu_list->Payload[k];
                     }
-                    dl_info->dci_ind->dci_list->payloadSize = dci_pdu_list->PayloadSizeBits;
-                    dl_info->dci_ind->dci_list->rnti = dci_pdu_list->RNTI;
+                    dl_info->dci_ind->dci_list[j].payloadSize = dci_pdu_list->PayloadSizeBits;
+                    dl_info->dci_ind->dci_list[j].rnti = dci_pdu_list->RNTI;
+                    if (dci_pdu_list->PayloadSizeBits != 37) //Melissa: hack. This size is for RAR
+                      dl_info->dci_ind->dci_list[j].dci_format = 7;
                 }
             }
         }
@@ -271,7 +274,12 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
             else if (!pdu_list->TLVs[j].tag)
                 dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu_list->TLVs[j].value.direct;
             dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = pdu_list->TLVs[j].length;
-            dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
+            if (tx_data_request->Slot == 7) { //Melissa this means we have an RAR, sorta hacky though
+                dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
+            }
+            else if (tx_data_request->Slot != 7 && get_softmodem_params()->nsa) {
+                dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
+            }
         }
     }
     dl_info->slot = tx_data_request->Slot;
