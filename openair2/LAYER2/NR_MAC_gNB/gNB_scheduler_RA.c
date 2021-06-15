@@ -884,7 +884,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
-    uint8_t time_domain_assignment = 3;
+    uint8_t time_domain_assignment = 1;
     uint8_t mcsIndex = 0;
     int rbStart = 0;
     int rbSize = 8;
