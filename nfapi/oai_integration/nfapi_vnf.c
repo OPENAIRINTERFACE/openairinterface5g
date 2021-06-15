@@ -596,7 +596,7 @@ extern pthread_mutex_t nfapi_sync_mutex;
 extern int nfapi_sync_var;
 
 int phy_sync_indication(struct nfapi_vnf_p7_config *config, uint8_t sync) {
-  printf("[VNF] SYNC %s\n", sync==1 ? "ACHIEVED" : "LOST");
+  //printf("[VNF] SYNC %s\n", sync==1 ? "ACHIEVED" : "LOST");
 
   if (sync==1 && nfapi_sync_var!=0) {
     
@@ -1014,6 +1014,98 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
   return 1;
 }
 
+//NR phy indication
+
+int phy_nr_crc_indication(nfapi_nr_crc_indication_t *ind) {
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+  ind->number_crcs = 1;
+  if (ind->number_crcs > 0)
+    gNB->UL_INFO.crc_ind.crc_list = malloc(sizeof(nfapi_nr_crc_t)*ind->number_crcs);
+
+  for (int i=0; i<ind->number_crcs; i++)
+    memcpy(&gNB->UL_INFO.crc_ind.crc_list[i], &ind->crc_list[i], sizeof(ind->crc_list[0]));
+
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
+  return 1;
+}
+
+int phy_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) {
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  if (ind->number_of_pdus > 0)
+    gNB->UL_INFO.rx_ind.pdu_list = malloc(sizeof(nfapi_nr_rx_data_pdu_t)*ind->number_of_pdus);
+
+  for (int i=0; i<ind->number_of_pdus; i++) 
+    memcpy(&gNB->UL_INFO.rx_ind.pdu_list[i], &ind->pdu_list[i], sizeof(ind->pdu_list[0]));
+
+
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
+  return 1;
+}
+
+int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind) {
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  if (ind->num_ucis > 0)
+    gNB->UL_INFO.uci_ind.uci_list = malloc(sizeof(nfapi_nr_uci_t)*ind->num_ucis);
+
+  for (int i=0; i<ind->num_ucis; i++)
+    memcpy(&gNB->UL_INFO.uci_ind.uci_list[i], &ind->uci_list[i], sizeof(ind->uci_list[0]));
+
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
+  return 1;
+}
+
+int phy_nr_srs_indication(nfapi_nr_srs_indication_t *ind) {
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  if (ind->number_of_pdus > 0)
+    gNB->UL_INFO.srs_ind.pdu_list = malloc(sizeof(nfapi_nr_srs_indication_pdu_t)*ind->number_of_pdus);
+
+  for (int i=0; i<ind->number_of_pdus; i++) {
+    memcpy(&gNB->UL_INFO.srs_ind.pdu_list[i], &ind->pdu_list[i], sizeof(ind->pdu_list[0]));
+
+    LOG_D(MAC, "%s() NFAPI SFN/Slot:%d.%d SRS_IND:number_of_pdus:%d UL_INFO:pdus:%d\n",
+        __FUNCTION__,
+        ind->sfn,ind->slot, ind->number_of_pdus, gNB->UL_INFO.srs_ind.number_of_pdus
+        );
+  }
+
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
+  return 1;
+}
+
+int phy_nr_rach_indication(nfapi_nr_rach_indication_t *ind) {
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  if (ind->number_of_pdus > 0)
+    gNB->UL_INFO.rach_ind.pdu_list = malloc(sizeof(nfapi_nr_prach_indication_pdu_t)*ind->number_of_pdus);
+
+  for (int i=0; i<ind->number_of_pdus; i++) {
+    memcpy(&gNB->UL_INFO.rach_ind.pdu_list[i], &ind->pdu_list[i], sizeof(ind->pdu_list[0]));
+
+    LOG_D(MAC, "%s() NFAPI SFN/Slot:%d.%d RACH_IND:number_of_pdus:%d UL_INFO:pdus:%d\n",
+        __FUNCTION__,
+        ind->sfn,ind->slot, ind->number_of_pdus, gNB->UL_INFO.rach_ind.number_of_pdus
+        );
+  }
+
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
+  return 1;
+}
+
+//end NR phy indication
+
 int phy_lbt_dl_indication(struct nfapi_vnf_p7_config *config, nfapi_lbt_dl_indication_t *ind) {
   // vnf_p7_info* p7_vnf = (vnf_p7_info*)(config->user_data);
   //mac_lbt_dl_ind(p7_vnf->mac, ind);
@@ -1179,6 +1271,11 @@ void *vnf_nr_p7_thread_start(void *ptr) {
   p7_vnf->config->lbt_dl_indication = &phy_lbt_dl_indication;
   p7_vnf->config->nb_harq_indication = &phy_nb_harq_indication;
   p7_vnf->config->nrach_indication = &phy_nrach_indication;
+  p7_vnf->config->nr_crc_indication = &phy_nr_crc_indication;
+  p7_vnf->config->nr_rx_data_indication = &phy_nr_rx_data_indication;
+  p7_vnf->config->nr_uci_indication = &phy_nr_uci_indication;
+  p7_vnf->config->nr_rach_indication = &phy_nr_rach_indication;
+  p7_vnf->config->nr_srs_indication = &phy_nr_srs_indication;
   p7_vnf->config->malloc = &vnf_allocate;
   p7_vnf->config->free = &vnf_deallocate;
   p7_vnf->config->trace = &vnf_trace;

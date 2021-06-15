@@ -422,7 +422,7 @@ struct timespec current_time;
 				vnf_frame = curr->sfn; vnf_slot = curr->slot;
 
 				struct timespec curr_time;
-			clock_gettime(CLOCK_MONOTONIC, &curr_time);
+				clock_gettime(CLOCK_MONOTONIC, &curr_time);
 				//printf("SFN=%d, slot=%d, Curr_time=%d.%d \n",vnf_frame,vnf_slot,curr_time.tv_sec,curr_time.tv_nsec);
 
 				vnf_nr_sync(vnf_p7, curr);	
