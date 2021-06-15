@@ -488,32 +488,33 @@ rrc_gNB_generate_RRCSetup(
 
       // configure MAC
       rrc_mac_config_req_gNB(rrc->module_id,
-			     rrc->carrier.ssb_SubcarrierOffset,
-			     rrc->carrier.pdsch_AntennaPorts,
-			     rrc->carrier.pusch_AntennaPorts,
-			     NULL,
-			     0,
-			     ue_context_pP->ue_context.rnti,
-			     ue_context_pP->ue_context.masterCellGroup
-			     );
+                             rrc->carrier.ssb_SubcarrierOffset,
+                             rrc->carrier.pdsch_AntennaPorts,
+                             rrc->carrier.pusch_AntennaPorts,
+                             NULL,
+                             0,
+                             ue_context_pP->ue_context.rnti,
+                             get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : (NR_CellGroupConfig_t *)NULL);
+
       nr_rrc_rlc_config_asn1_req(ctxt_pP,
-				 ue_context_pP->ue_context.SRB_configList,
-				 NULL,
-				 NULL,
-				 NULL,
-				 ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
+                                 ue_context_pP->ue_context.SRB_configList,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
+
       nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-				  ue_context_pP->ue_context.SRB_configList,
-				  NULL,
-				  NULL,
-				  0xff,
-				  NULL,
-				  NULL,
-				  NULL,
-				  NULL,
-				  NULL,
-				  NULL,
-                                  ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
+                                  ue_context_pP->ue_context.SRB_configList,
+                                  NULL,
+                                  NULL,
+                                  0xff,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
 #endif
     }
     break;
@@ -1267,23 +1268,23 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               SRB_configList, // NULL,
                               DRB_configList,
                               DRB_Release_configList2,
-                              0, // already configured during the securitymodecommand
+                              0xff, // already configured during the securitymodecommand
                               kRRCenc,
                               kRRCint,
                               kUPenc,
                               NULL,
                               NULL,
                               NULL,
-                              ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
+                              get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
   /* Refresh SRBs/DRBs */
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
     LOG_D(NR_RRC,"Configuring RLC DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
     nr_rrc_rlc_config_asn1_req(ctxt_pP,
-                          SRB_configList, // NULL,
-                          DRB_configList,
-                          DRB_Release_configList2,
-                          NULL,
-                          ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
+                               SRB_configList, // NULL,
+                               DRB_configList,
+                               DRB_Release_configList2,
+                               NULL,
+                               get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
   }
 #endif
 
@@ -1889,9 +1890,6 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                                     du_to_cu_rrc_container,
                                     gnb_rrc_inst->carrier.servingcellconfigcommon,
                                     CC_id);
-
-          // FIXME: Check the best place to perform this DRB configuration
-          nr_DRB_preconfiguration(ctxt_pP->rnti);
         }
         break;
 
