@@ -417,6 +417,18 @@ void *nrue_standalone_pnf_task(void *context)
       int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
       LOG_I(NR_PHY, "Received from proxy sfn %d slot %d\n", sfn, slot);
     }
+    else if (len == sizeof(nr_phy_channel_params_t))
+    {
+      nr_phy_channel_params_t ch_info;
+      memcpy(&ch_info, buffer, sizeof(nr_phy_channel_params_t));
+      current_sfn_slot = ch_info.sfn_slot;
+      if (sem_post(&sfn_slot_semaphore) != 0)
+      {
+        LOG_E(MAC, "sem_post() error\n");
+        abort();
+      }
+      LOG_I(MAC, "Received_SINR = %f\n", ch_info.sinr);
+    }
     else
     {
       nfapi_p7_message_header_t header;

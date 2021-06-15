@@ -43,6 +43,13 @@
 
 typedef struct NR_UL_TIME_ALIGNMENT NR_UL_TIME_ALIGNMENT_t;
 
+typedef struct nr_phy_channel_params_t
+{
+    uint16_t sfn_slot;
+    float sinr;
+    // Incomplete, need all channel parameters
+} nr_phy_channel_params_t;
+
 typedef struct {
     /// module id
   module_id_t module_id;
