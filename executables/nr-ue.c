@@ -228,13 +228,14 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       }
       if (mac->ra.ra_state == RA_SUCCEEDED)
         continue;
-
-      mac->ul_config_request[2].number_pdus = 0;
+      AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
+                  "Number of PDUS in ul_config > ul_config_list num elements");
       fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
       uint8_t nr_prach = nr_ue_get_rach(&prach_resources, prach_pdu, mod_id, CC_id, ul_info.frame_tx, gNB_id, ul_info.slot_tx);
 
       if (nr_prach == 1)
       {
+        ul_config->number_pdus = 0;
         L1_nsa_prach_procedures(ul_info.frame_tx, ul_info.slot_tx, prach_pdu);
         LOG_I(NR_PHY, "Calling nr_Msg1_transmitted for slot %d\n", ul_info.slot_tx);
         nr_Msg1_transmitted(mod_id, CC_id, ul_info.frame_tx, gNB_id);

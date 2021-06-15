@@ -52,13 +52,14 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
     if (scheduled_response->ul_config != NULL){
 
       fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
+      AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
+                  "Too many ul_config pdus %d", ul_config->number_pdus);
       for (int i = 0; i < ul_config->number_pdus; ++i)
       {
         LOG_I(PHY, "In %s: processing %s PDU of %d total UL PDUs (ul_config %p) \n",
               __FUNCTION__, ul_pdu_type[ul_config->ul_config_list[i].pdu_type - 1], ul_config->number_pdus, ul_config);
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type;
-
         switch (pdu_type)
         {
           case (FAPI_NR_UL_CONFIG_TYPE_PUSCH):
@@ -69,12 +70,14 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
             nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
             if (scheduled_response->tx_request)
             {
+              AssertFatal(scheduled_response->tx_request->number_of_pdus <
+                          sizeof(scheduled_response->tx_request->tx_request_body) / sizeof(scheduled_response->tx_request->tx_request_body[0]),
+                          "Too many tx_req pdus %d", scheduled_response->tx_request->number_of_pdus);
               rx_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION;
               rx_ind->slot = scheduled_response->tx_request->slot;
               rx_ind->sfn = scheduled_response->tx_request->sfn;
               rx_ind->number_of_pdus = scheduled_response->tx_request->number_of_pdus;
-
-              rx_ind->pdu_list = CALLOC(1, sizeof(*rx_ind->pdu_list) * rx_ind->number_of_pdus);
+              rx_ind->pdu_list = CALLOC(1, sizeof(*rx_ind->pdu_list));
               for (int j = 0; j < rx_ind->number_of_pdus; j++)
               {
                 fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
@@ -86,25 +89,16 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 rx_ind->pdu_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
                 rx_ind->pdu_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
               }
-              LOG_I(PHY, "In %s: Filled rx_ind with tx_req \n", __FUNCTION__);
 
-              scheduled_response->tx_request->number_of_pdus = 0;
-              send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
-              free(rx_ind->pdu_list);
-            }
-
-            if (scheduled_response->ul_config)
-            {
               crc_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION;
               crc_ind->number_crcs = scheduled_response->ul_config->number_pdus;
               crc_ind->sfn = scheduled_response->ul_config->sfn;
               crc_ind->slot = scheduled_response->ul_config->slot;
-
-              crc_ind->crc_list = CALLOC(1, sizeof(*crc_ind->crc_list) * crc_ind->number_crcs);
+              crc_ind->crc_list = CALLOC(1, sizeof(*crc_ind->crc_list));
               for (int j = 0; j < crc_ind->number_crcs; j++)
               {
                 crc_ind->crc_list[j].handle = pusch_config_pdu->handle;
-                crc_ind->crc_list[j].harq_id = 1; //pusch_config_pdu->pusch_data.harq_process_id;
+                crc_ind->crc_list[j].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
                 crc_ind->crc_list[j].num_cb = pusch_config_pdu->pusch_data.num_cb;
                 crc_ind->crc_list[j].rnti = pusch_config_pdu->rnti;
                 crc_ind->crc_list[j].tb_crc_status = 0;
@@ -112,10 +106,11 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 crc_ind->crc_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
               }
 
-              LOG_I(PHY, "Melissa In %s: Filled crc_ind with ulconfig. \n", __FUNCTION__);
-
-              scheduled_response->ul_config->number_pdus = 0;
+              LOG_I(PHY, "In %s: Filled rx/crc_ind with ulconfig. \n", __FUNCTION__);
+              scheduled_response->tx_request->number_of_pdus = 0;
+              send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
               send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
+              free(rx_ind->pdu_list);
               free(crc_ind->crc_list);
             }
             break;
@@ -126,6 +121,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
           break;
         }
       }
+      scheduled_response->ul_config->number_pdus = 0;
     }
   }
   return 0;

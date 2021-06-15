@@ -220,6 +220,8 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
 
         if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE)
         {
+            LOG_I(NR_PHY, "[%d, %d] PDCCH PDU \n",
+                dl_tti_request->SFN, dl_tti_request->Slot);
             uint16_t num_dcis = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
             if (num_dcis > 0)
             {
@@ -227,6 +229,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                 dl_info->dci_ind->number_of_dcis = num_dcis;
                 dl_info->dci_ind->SFN = dl_tti_request->SFN;
                 dl_info->dci_ind->slot = dl_tti_request->Slot;
+                AssertFatal(num_dcis < sizeof(dl_info->dci_ind->dci_list) / sizeof(dl_info->dci_ind->dci_list[0]), "The number of DCIs is greater than dci_list");
                 for (int j = 0; j < num_dcis; j++)
                 {
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
@@ -239,15 +242,18 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                     }
                     dl_info->dci_ind->dci_list[j].payloadSize = dci_pdu_list->PayloadSizeBits;
                     dl_info->dci_ind->dci_list[j].rnti = dci_pdu_list->RNTI;
-                    if (dci_pdu_list->PayloadSizeBits != 37) //Melissa: hack. This size is for RAR
+                    if (dci_pdu_list->PayloadSizeBits == 37) //Melissa: hack. This size is for RAR
+                      dl_info->dci_ind->dci_list[j].dci_format = 0;
+                    if (dci_pdu_list->PayloadSizeBits == 40) //Melissa: hack. This size is for UL_DCI
                       dl_info->dci_ind->dci_list[j].dci_format = 7;
+                    if (dci_pdu_list->PayloadSizeBits == 46) //Melissa: hack. This size is for DLSCH
+                      dl_info->dci_ind->dci_list[j].dci_format = 1;
                 }
             }
         }
     }
     dl_info->slot = dl_tti_request->Slot;
     dl_info->frame = dl_tti_request->SFN;
-    return;
 }
 
 static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_tx_data_request_t *tx_data_request)
@@ -267,6 +273,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
+        AssertFatal(pdu_list->num_TLV < sizeof(pdu_list->TLVs) / sizeof(pdu_list->TLVs[0]), "Num TLVs exceeds TLV array size");
         for (int j = 0; j < pdu_list->num_TLV; j++)
         {
             if (pdu_list->TLVs[j].tag)
@@ -284,10 +291,57 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     }
     dl_info->slot = tx_data_request->Slot;
     dl_info->frame = tx_data_request->SFN;
-    return;
 }
 
-static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request, nfapi_nr_tx_data_request_t *tx_data_request)
+static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_ul_dci_request_t *ul_dci_req)
+{
+    int num_pdus = ul_dci_req->numPdus;
+    if (num_pdus <= 0)
+    {
+        LOG_E(NR_PHY, "%s: ul_dci_request number of PDUS <= 0\n", __FUNCTION__);
+        abort();
+    }
+    for (int i = 0; i < num_pdus; i++)
+    {
+        nfapi_nr_ul_dci_request_pdus_t *pdu_list = &ul_dci_req->ul_dci_pdu_list[i];
+        AssertFatal(pdu_list->PDUType == 0, "ul_dci_req pdu type != PUCCH");
+        LOG_I(NR_PHY, "[%d %d] PUCCH PDU in ul_dci for rnti %x\n", ul_dci_req->SFN, ul_dci_req->SFN, pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI);
+        uint16_t num_dci = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
+        if (num_dci > 0)
+        {
+            dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
+            dl_info->dci_ind->number_of_dcis = num_dci;
+            dl_info->dci_ind->SFN = ul_dci_req->SFN;
+            dl_info->dci_ind->slot = ul_dci_req->Slot;
+            AssertFatal(num_dci < sizeof(dl_info->dci_ind->dci_list) / sizeof(dl_info->dci_ind->dci_list[0]), "The number of DCIs is greater than dci_list");
+            for (int j = 0; j < num_dci; j++)
+            {
+                nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
+                LOG_I(NR_PHY, "[%d, %d] ul_dci_req PDCCH DCI for rnti %x with PayloadSizeBits %d\n",
+                        ul_dci_req->SFN, ul_dci_req->Slot, dci_pdu_list->RNTI, dci_pdu_list->PayloadSizeBits);
+                for (int k = 0; k < DCI_PAYLOAD_BYTE_LEN; k++)
+                {
+                    LOG_I(NR_MAC, "PDCCH DCI PDU payload[%d] = %d\n", k, dci_pdu_list->Payload[k]);
+                    dl_info->dci_ind->dci_list[j].payloadBits[k] = dci_pdu_list->Payload[k];
+                }
+                dl_info->dci_ind->dci_list[j].payloadSize = dci_pdu_list->PayloadSizeBits;
+                dl_info->dci_ind->dci_list[j].rnti = dci_pdu_list->RNTI;
+                if (dci_pdu_list->PayloadSizeBits == 37) //Melissa: hack. This size is for RAR
+                    dl_info->dci_ind->dci_list[j].dci_format = 0;
+                if (dci_pdu_list->PayloadSizeBits == 40) //Melissa: hack. This size is for UL_DCI
+                    dl_info->dci_ind->dci_list[j].dci_format = 7;
+                if (dci_pdu_list->PayloadSizeBits == 46) //Melissa: hack. This size is for DLSCH
+                    dl_info->dci_ind->dci_list[j].dci_format = 1;
+            }
+        }
+    }
+    dl_info->frame = ul_dci_req->SFN;
+    dl_info->slot = ul_dci_req->Slot;
+}
+
+static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
+                                 nfapi_nr_tx_data_request_t *tx_data_request,
+                                 nfapi_nr_ul_dci_request_t *ul_dci_request)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
     if (mac->scc == NULL)
@@ -296,14 +350,21 @@ static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request, nfa
     }
 
     nr_downlink_indication_t dl_info;
+    memset(&dl_info, 0, sizeof(dl_info));
     if (dl_tti_request)
     {
+        LOG_I(NR_PHY, "[%d, %d] dl_tti_request\n", dl_tti_request->SFN, dl_tti_request->Slot);
         copy_dl_tti_req_to_dl_info(&dl_info, dl_tti_request);
     }
     if (tx_data_request)
     {
-        LOG_I(NR_PHY, "[%d, %d] PDSCH (RAR transmission configuration in TX)\n", tx_data_request->SFN, tx_data_request->Slot);
+        LOG_I(NR_PHY, "[%d, %d] PDSCH in tx_request\n", tx_data_request->SFN, tx_data_request->Slot);
         copy_tx_data_req_to_dl_info(&dl_info, tx_data_request);
+    }
+    if (ul_dci_request)
+    {
+        LOG_I(NR_PHY, "[%d, %d] ul_dci_request\n", ul_dci_request->SFN, ul_dci_request->Slot);
+        copy_ul_dci_data_req_to_dl_info(&dl_info, ul_dci_request);
     }
 
     NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
@@ -317,30 +378,6 @@ static void check_and_process_rar(nfapi_nr_dl_tti_request_t *dl_tti_request, nfa
     dl_info.rx_ind = NULL;
     #endif
 
-}
-
-static void check_for_msg3(nfapi_nr_ul_tti_request_t *ul_tti_req)
-{
-    int num_pdus = ul_tti_req->n_pdus;
-    if (num_pdus <= 0)
-    {
-        LOG_E(NR_PHY, "%s: ul_tti_request number of PDUS <= 0\n", __FUNCTION__);
-        abort();
-    }
-    for (int i = 0; i < num_pdus; i++)
-    {
-        nfapi_nr_ul_tti_request_number_of_pdus_t *pdu_list = &ul_tti_req->pdus_list[i];
-        if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE)
-        {
-            LOG_I(NR_PHY, "[%d, %d]. PUSCH PDU..this is for Msg3 I think for RNTI %x\n",
-                  ul_tti_req->SFN, ul_tti_req->Slot, pdu_list->pusch_pdu.rnti);
-        }
-        if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE)
-        {
-            LOG_I(NR_PHY, "[%d, %d]. PUCCH PDU..this is for Msg3 I think for RNTI %x\n",
-                  ul_tti_req->SFN, ul_tti_req->Slot, pdu_list->pucch_pdu.rnti);
-        }
-    }
 }
 
 static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
@@ -435,6 +472,7 @@ void *nrue_standalone_pnf_task(void *context)
       nfapi_nr_dl_tti_request_t dl_tti_request;
       nfapi_nr_ul_tti_request_t ul_tti_request;
       nfapi_nr_tx_data_request_t tx_data_request;
+      nfapi_nr_ul_dci_request_t ul_dci_request;
       if (nfapi_p7_message_header_unpack((void *)buffer, len, &header, sizeof(header), NULL) < 0)
       {
         LOG_E(NR_PHY, "Header unpack failed for nrue_standalone pnf\n");
@@ -445,38 +483,44 @@ void *nrue_standalone_pnf_task(void *context)
         switch (header.message_id)
         {
           case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
-            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST message. \n");
             if (nfapi_nr_p7_message_unpack((void *)buffer, len, &dl_tti_request,
                                            sizeof(nfapi_nr_dl_tti_request_t), NULL) < 0)
             {
                 LOG_E(NR_PHY, "Message dl_tti_request failed to unpack\n");
                 break;
             }
+            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST message in slot %d. \n", dl_tti_request.Slot);
             save_nr_measurement_info(&dl_tti_request);
-            check_and_process_rar(&dl_tti_request, NULL);
+            check_and_process_dci(&dl_tti_request, NULL, NULL);
             break;
           case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
-            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message. \n");
             if (nfapi_nr_p7_message_unpack((void *)buffer, len, &tx_data_request,
                                            sizeof(tx_data_request), NULL) < 0)
             {
                 LOG_E(NR_PHY, "Message tx_data_request failed to unpack\n");
                 break;
             }
-            check_and_process_rar(NULL, &tx_data_request);
+            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message in slot %d. \n", tx_data_request.Slot);
+            check_and_process_dci(NULL, &tx_data_request, NULL);
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
-            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message. \n");
+            if (nfapi_nr_p7_message_unpack((void *)buffer, len, &ul_dci_request,
+                                           sizeof(ul_dci_request), NULL) < 0)
+            {
+                LOG_E(NR_PHY, "Message ul_dci_request failed to unpack\n");
+                break;
+            }
+            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message in slot %d. \n", ul_dci_request.Slot);
+            check_and_process_dci(NULL, NULL, &ul_dci_request);
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
-            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message. \n");
             if (nfapi_nr_p7_message_unpack((void *)buffer, len, &ul_tti_request,
                                            sizeof(ul_tti_request), NULL) < 0)
             {
-                LOG_E(NR_PHY, "Message dl_tti_request failed to unpack\n");
+                LOG_E(NR_PHY, "Message ul_tti_request failed to unpack\n");
                 break;
             }
-            check_for_msg3(&ul_tti_request);
+            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message in slot %d. \n", ul_tti_request.Slot);
             break;
           default:
             LOG_E(NR_PHY, "Case Statement has no corresponding nfapi message, this is the header ID %d\n", header.message_id);
