@@ -2234,7 +2234,7 @@ class OaiCiTest():
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			cmd = 'echo $USER; nohup iperf -s -i 1 -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+			cmd = 'echo $USER; nohup iperf -s -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
 
 			#client side UE
@@ -2251,6 +2251,13 @@ class OaiCiTest():
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)		
 		else :
 			logging.debug("Incorrect or missing IPERF direction in XML")
+
+		SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+		cmd = 'killall --signal=SIGKILL iperf'
+		SSH.command(cmd,'\$',5)
+		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+		cmd = 'killall --signal=SIGKILL iperf'
+		SSH.command(cmd,'\$',5)
 
 		SSH.close()
 		return
