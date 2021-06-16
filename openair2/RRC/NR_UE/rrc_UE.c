@@ -133,7 +133,7 @@ uint8_t first_rrcreconfigurationcomplete = 0;
 static const char nsa_ipaddr[] = "127.0.0.1";
 static int from_lte_ue_fd = -1;
 static int to_lte_ue_fd = -1;
-uint16_t ue_id_g;
+extern uint16_t ue_id_g;
 
 static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
   return NR_UE_rrc_inst[ue_mod_idP].nrRrcState;
@@ -2909,7 +2909,7 @@ void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, MessagesIds msg_
     struct sockaddr_in sa =
     {
         .sin_family = AF_INET,
-        .sin_port = htons(6007),
+        .sin_port = htons(6007 + ue_id_g * 2),
     };
     int sent = sendto(from_lte_ue_fd, &n_msg, to_send, 0,
                       (struct sockaddr *)&sa, sizeof(sa));
@@ -2931,7 +2931,7 @@ void init_connections_with_lte_ue(void)
     struct sockaddr_in sa =
     {
         .sin_family = AF_INET,
-        .sin_port = htons(6008),
+        .sin_port = htons(6008 + ue_id_g * 2),
     };
     AssertFatal(from_lte_ue_fd == -1, "from_lte_ue_fd was assigned already");
     from_lte_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -2973,9 +2973,9 @@ static void start_oai_nrue_threads()
       LOG_E(MAC, "sem_init() error\n");
       abort();
     }
-    int node_num = get_softmodem_params()->node_number;
-    ue_id_g = (node_num == 0)? 0 : node_num-2;
+
     init_nrUE_standalone_thread(ue_id_g);
+
 }
 
 static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)

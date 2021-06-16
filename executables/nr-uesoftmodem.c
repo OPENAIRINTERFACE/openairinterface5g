@@ -456,7 +456,7 @@ void init_openair0(void) {
   }
 }
 
-void init_pdcp(void) {
+void init_pdcp(int ue_id) {
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
   /*if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
@@ -471,7 +471,7 @@ void init_pdcp(void) {
   }
   pdcp_layer_init();
   nr_DRB_preconfiguration();*/
-  nr_pdcp_module_init(pdcp_initmask, 0);
+  nr_pdcp_module_init(pdcp_initmask, ue_id);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
   LOG_I(PDCP, "Before getting out from init_pdcp() \n");
@@ -525,8 +525,23 @@ int main( int argc, char **argv ) {
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
   init_NR_UE(1,rrc_config_path);
+
+  int mode_offset = get_softmodem_params()->nsa ? NUMBER_OF_UE_MAX : 0;
+  int node_number = get_softmodem_params()->node_number;
+  ue_id_g = (node_number == 0) ? 0 : node_number - 2;
+  AssertFatal(ue_id_g >= 0, "UE id is expected to be nonnegative.\n");
+
   if(IS_SOFTMODEM_NOS1)
-	  init_pdcp();
+  {
+    if(node_number == 0)
+    {
+      init_pdcp(0);
+    }
+    else
+    {
+      init_pdcp(mode_offset + node_number - 1);
+    }
+  }
 
   NB_UE_INST=1;
   NB_INST=1;
