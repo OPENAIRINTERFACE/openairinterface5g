@@ -165,23 +165,25 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->rlc_BearerToAddModList = calloc(1,sizeof(*secondaryCellGroup->rlc_BearerToAddModList));
   ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig);
 
-  NR_RLC_BearerConfig_t *RLC_BearerConfig_srb1 = calloc(1,sizeof(*RLC_BearerConfig_srb1));
-  nr_rlc_bearer_init(RLC_BearerConfig_srb1, NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity);
-  nr_drb_config(RLC_BearerConfig_srb1->rlc_Config, NR_RLC_Config_PR_am);
-  nr_rlc_bearer_init_ul_spec(RLC_BearerConfig_srb1->mac_LogicalChannelConfig);
-  // FIXME: this should be obtained in nr_rlc_bearer_init_ul_spec()
-  *RLC_BearerConfig_srb1->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = 0;
-  ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig_srb1);
+  if (get_softmodem_params()->sa) {
+    NR_RLC_BearerConfig_t *RLC_BearerConfig_srb1 = calloc(1,sizeof(*RLC_BearerConfig_srb1));
+    nr_rlc_bearer_init(RLC_BearerConfig_srb1, NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity);
+    nr_drb_config(RLC_BearerConfig_srb1->rlc_Config, NR_RLC_Config_PR_am);
+    nr_rlc_bearer_init_ul_spec(RLC_BearerConfig_srb1->mac_LogicalChannelConfig);
+    // FIXME: this should be obtained in nr_rlc_bearer_init_ul_spec()
+    *RLC_BearerConfig_srb1->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = 0;
+    ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig_srb1);
 
-  NR_RLC_BearerConfig_t *RLC_BearerConfig_srb2 = calloc(1,sizeof(*RLC_BearerConfig_srb2));
-  nr_rlc_bearer_init(RLC_BearerConfig_srb2, NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity);
-  nr_drb_config(RLC_BearerConfig_srb2->rlc_Config, NR_RLC_Config_PR_am);
-  nr_rlc_bearer_init_ul_spec(RLC_BearerConfig_srb2->mac_LogicalChannelConfig);
-  // FIXME: this should be obtained in nr_rlc_bearer_init_ul_spec()
-  *RLC_BearerConfig_srb2->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = 0;
-  RLC_BearerConfig_srb2->logicalChannelIdentity = 2;
-  RLC_BearerConfig_srb2->servedRadioBearer->choice.srb_Identity = 2;
-  ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig_srb2);
+    NR_RLC_BearerConfig_t *RLC_BearerConfig_srb2 = calloc(1,sizeof(*RLC_BearerConfig_srb2));
+    nr_rlc_bearer_init(RLC_BearerConfig_srb2, NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity);
+    nr_drb_config(RLC_BearerConfig_srb2->rlc_Config, NR_RLC_Config_PR_am);
+    nr_rlc_bearer_init_ul_spec(RLC_BearerConfig_srb2->mac_LogicalChannelConfig);
+    // FIXME: this should be obtained in nr_rlc_bearer_init_ul_spec()
+    *RLC_BearerConfig_srb2->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = 0;
+    RLC_BearerConfig_srb2->logicalChannelIdentity = 2;
+    RLC_BearerConfig_srb2->servedRadioBearer->choice.srb_Identity = 2;
+    ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig_srb2);
+  }
 
   secondaryCellGroup->mac_CellGroupConfig=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig));
   secondaryCellGroup->mac_CellGroupConfig->drx_Config = NULL;
@@ -1476,21 +1478,24 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
                            e_NR_CipheringAlgorithm ciphering_algorithm,
                            e_NR_SecurityConfig__keyToUse key_to_use) {
 
-  rbconfig->srb_ToAddModList = calloc(1,sizeof(*rbconfig->srb_ToAddModList));
+  rbconfig->srb_ToAddModList = NULL;
 
-  NR_SRB_ToAddMod_t *srb1_ToAddMod = calloc(1,sizeof(*srb1_ToAddMod));
-  srb1_ToAddMod->srb_Identity = 1;
-  srb1_ToAddMod->reestablishPDCP = NULL;
-  srb1_ToAddMod->discardOnPDCP = NULL;
-  srb1_ToAddMod->pdcp_Config = NULL;
-  ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb1_ToAddMod);
+  if (get_softmodem_params()->sa) {
+    rbconfig->srb_ToAddModList = calloc(1,sizeof(*rbconfig->srb_ToAddModList));
+    NR_SRB_ToAddMod_t *srb1_ToAddMod = calloc(1,sizeof(*srb1_ToAddMod));
+    srb1_ToAddMod->srb_Identity = 1;
+    srb1_ToAddMod->reestablishPDCP = NULL;
+    srb1_ToAddMod->discardOnPDCP = NULL;
+    srb1_ToAddMod->pdcp_Config = NULL;
+    ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb1_ToAddMod);
 
-  NR_SRB_ToAddMod_t *srb2_ToAddMod = calloc(1,sizeof(*srb2_ToAddMod));
-  srb2_ToAddMod->srb_Identity = 2;
-  srb2_ToAddMod->reestablishPDCP = NULL;
-  srb2_ToAddMod->discardOnPDCP = NULL;
-  srb2_ToAddMod->pdcp_Config = NULL;
-  ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb2_ToAddMod);
+    NR_SRB_ToAddMod_t *srb2_ToAddMod = calloc(1,sizeof(*srb2_ToAddMod));
+    srb2_ToAddMod->srb_Identity = 2;
+    srb2_ToAddMod->reestablishPDCP = NULL;
+    srb2_ToAddMod->discardOnPDCP = NULL;
+    srb2_ToAddMod->pdcp_Config = NULL;
+    ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb2_ToAddMod);
+  }
 
   rbconfig->srb3_ToRelease = NULL;
   rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));

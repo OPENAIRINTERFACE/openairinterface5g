@@ -37,7 +37,7 @@ import time
 import re
 import subprocess
 
-
+from datetime import datetime
 
 class Module_UE:
 
@@ -101,7 +101,7 @@ class Module_UE:
 	def GetModuleIPAddress(self):
 		HOST=self.HostIPAddress
 		response= []
-		tentative = 10
+		tentative = 3 
 		while (len(response)==0) and (tentative>0):
 			COMMAND="ip a show dev " + self.UENetwork + " | grep inet | grep " + self.UENetwork
 			logging.debug(COMMAND)
@@ -126,7 +126,37 @@ class Module_UE:
 				logging.debug('\u001B[1;37;41m Module IP Address Not Found! \u001B[0m')
 				return -1
 
+	def EnableTrace(self):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+		#delete old artifacts
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S rm -rf ci_qlog','\$',5)
+		#start Trace
+		mySSH.command('echo $USER; nohup sudo -E QLog/QLog -s ci_qlog -f NR5G.cfg &','\$', 5)
+		mySSH.close()
+
+	def DisableTrace(self):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S killall --signal=SIGINT *QLog*', '\$',5)
+		mySSH.close()
 
 
+	def DisableCM(self):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S killall --signal SIGKILL *'+self.Process['Name']+'*', '\$', 5)
+		mySSH.close()
 
 
+	def LogCollect(self):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+		#archive qlog to /opt/ci_qlogs with datetime suffix
+		now=datetime.now()
+		now_string = now.strftime("%Y%m%d-%H%M")
+		source='ci_qlog'
+		destination='/opt/ci_qlogs/ci_qlog_'+now_string+'.zip'
+		mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S zip -r '+destination+' '+source+' &','\$', 10)
+		mySSH.close()
+		return destination

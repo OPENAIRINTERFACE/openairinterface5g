@@ -78,7 +78,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
   }
 
   rx_deliv_sn  = entity->rx_deliv & entity->sn_max;
-  rx_deliv_hfn = (entity->rx_deliv >> entity->sn_size) & ~entity->sn_max;
+  rx_deliv_hfn = entity->rx_deliv >> entity->sn_size;
 
   if (rcvd_sn < rx_deliv_sn - entity->window_size) {
     rcvd_hfn = rx_deliv_hfn + 1;
@@ -138,7 +138,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     entity->rx_deliv = count;
   }
 
-  if (entity->t_reordering_start != 0 && entity->rx_deliv > entity->rx_reord) {
+  if (entity->t_reordering_start != 0 && entity->rx_deliv >= entity->rx_reord) {
     /* stop and reset t-Reordering */
     entity->t_reordering_start = 0;
   }
@@ -270,6 +270,10 @@ static void nr_pdcp_entity_set_security(nr_pdcp_entity_t *entity,
 static void check_t_reordering(nr_pdcp_entity_t *entity)
 {
   uint32_t count;
+
+  /* if t_reordering is set to "infinity" (seen as -1) then do nothing */
+  if (entity->t_reordering == -1)
+    return;
 
   if (entity->t_reordering_start == 0
       || entity->t_current <= entity->t_reordering_start + entity->t_reordering)

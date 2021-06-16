@@ -32,6 +32,7 @@
 #include "lte-softmodem.h"
 
 #include "rt_wrapper.h"
+#include "system.h"
 
 #include "LAYER2/MAC/mac.h"
 #include "RRC/LTE/rrc_extern.h"
@@ -230,14 +231,23 @@ void init_thread(int sched_runtime,
   }
 
 #else
+  int settingPriority = 1;
 
-  if (CPU_COUNT(cpuset) > 0)
-    AssertFatal( 0 == pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), cpuset), "");
+  if (checkIfFedoraDistribution())
+    if (checkIfGenericKernelOnFedora())
+      if (checkIfInsideContainer())
+        settingPriority = 0;
 
-  struct sched_param sp;
-  sp.sched_priority = sched_fifo;
-  AssertFatal(pthread_setschedparam(pthread_self(),SCHED_FIFO,&sp)==0,
-              "Can't set thread priority, Are you root?\n");
+  if (settingPriority) {
+    if (CPU_COUNT(cpuset) > 0)
+      AssertFatal( 0 == pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), cpuset), "");
+
+    struct sched_param sp;
+    sp.sched_priority = sched_fifo;
+    AssertFatal(pthread_setschedparam(pthread_self(),SCHED_FIFO,&sp)==0,
+                "Can't set thread priority, Are you root?\n");
+  }
+
   /* Check the actual affinity mask assigned to the thread */
   cpu_set_t *cset=CPU_ALLOC(CPU_SETSIZE);
 

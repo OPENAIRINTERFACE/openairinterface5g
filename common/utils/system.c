@@ -96,6 +96,54 @@ static void read_pipe(int p, char *b, int size) {
   }
 }
 
+static int baseRunTimeCommand(char* cmd) {
+  FILE *fp;
+  size_t retSize = 0;
+
+  fp = popen(cmd, "r");
+  if(fp) {
+    memset(cmd, 1, sizeof(*cmd));
+    retSize = fread(cmd, 1, sizeof(*cmd), fp);
+    fclose(fp);
+  } else {
+    LOG_D(HW,"%s:%d:%s: Cannot open %s\n", __FILE__, __LINE__, __FUNCTION__, cmd);
+  }
+
+  if (retSize == 0) {
+    return 0;
+  }
+  return atoi(cmd);
+}
+
+int checkIfFedoraDistribution(void) {
+  char cmd[200];
+
+  memset(cmd, 1, 200);
+  sprintf(cmd, "cat /etc/os-release | grep ID_LIKE | grep -ic fedora || true");
+  return baseRunTimeCommand(cmd);
+}
+
+int checkIfGenericKernelOnFedora(void) {
+  char cmd[200];
+
+  memset(cmd, 1, 200);
+  sprintf(cmd, "uname -a | grep -c rt || true");
+  return (1 - baseRunTimeCommand(cmd));
+}
+
+int checkIfInsideContainer(void) {
+  char cmd[200];
+  int res = 0;
+
+  memset(cmd, 1, 200);
+  sprintf(cmd, "cat /proc/self/cgroup | egrep -c 'libpod|podman|kubepods' || true");
+  res = baseRunTimeCommand(cmd);
+  if (res > 0)
+    return 1;
+  else
+    return 0;
+}
+
 /********************************************************************/
 /* background process                                               */
 /********************************************************************/
@@ -200,29 +248,38 @@ void start_background_system(void) {
 void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name, int affinity, int priority){
   pthread_attr_t attr;
   int ret;
+  int settingPriority = 1;
   ret=pthread_attr_init(&attr);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   ret=pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
-  ret=pthread_attr_setschedpolicy(&attr, SCHED_OAI);
-  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
-  if(priority<sched_get_priority_min(SCHED_OAI) || priority>sched_get_priority_max(SCHED_FIFO)) {
-    LOG_E(TMR,"Prio not possible: %d, min is %d, max: %d, forced in the range\n", 
-              priority, 
-              sched_get_priority_min(SCHED_OAI),
-              sched_get_priority_max(SCHED_OAI));
-    if(priority<sched_get_priority_min(SCHED_OAI))
-      priority=sched_get_priority_min(SCHED_OAI);
-    if(priority>sched_get_priority_max(SCHED_OAI))
-      priority=sched_get_priority_max(SCHED_OAI);
+  if (checkIfFedoraDistribution())
+    if (checkIfGenericKernelOnFedora())
+      if (checkIfInsideContainer())
+        settingPriority = 0;
+
+  if (settingPriority) {
+    ret=pthread_attr_setschedpolicy(&attr, SCHED_OAI);
+    AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+    if(priority<sched_get_priority_min(SCHED_OAI) || priority>sched_get_priority_max(SCHED_FIFO)) {
+      LOG_E(TMR,"Prio not possible: %d, min is %d, max: %d, forced in the range\n",
+                priority,
+                sched_get_priority_min(SCHED_OAI),
+                sched_get_priority_max(SCHED_OAI));
+      if(priority<sched_get_priority_min(SCHED_OAI))
+        priority=sched_get_priority_min(SCHED_OAI);
+      if(priority>sched_get_priority_max(SCHED_OAI))
+        priority=sched_get_priority_max(SCHED_OAI);
+    }
+    AssertFatal(priority<=sched_get_priority_max(SCHED_OAI),"");
+    struct sched_param sparam={0};
+    sparam.sched_priority = priority;
+    ret=pthread_attr_setschedparam(&attr, &sparam);
+    AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   }
-  AssertFatal(priority<=sched_get_priority_max(SCHED_OAI),"");
-  struct sched_param sparam={0};
-  sparam.sched_priority = priority;
-  ret=pthread_attr_setschedparam(&attr, &sparam);
-  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+
   ret=pthread_create(t, &attr, func, param);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
 
