@@ -421,8 +421,8 @@ void init_UE_stub_single_thread(int nb_inst,
 void init_UE_standalone_thread(int ue_idx)
 {
   const char *standalone_addr = "127.0.0.1"; // these two lines go into init
-  int standalone_tx_port = 3211 + ue_idx*2;
-  int standalone_rx_port = 3212 + ue_idx*2;
+  int standalone_tx_port = 3211 + ue_idx * 2;
+  int standalone_rx_port = 3212 + ue_idx * 2;
   ue_init_standalone_socket(standalone_addr, standalone_tx_port, standalone_rx_port);
 
   pthread_t thread;

@@ -98,6 +98,7 @@ static int from_nr_ue_fd = -1;
 static int to_nr_ue_fd = -1;
 int slrb_id;
 int send_ue_information = 0;
+extern int ue_id_g;
 
 // for malloc_clear
 #include "PHY/defs_UE.h"
@@ -6515,7 +6516,7 @@ void nsa_sendmsg_to_nrue(const void *message, size_t msg_len, Rrc_Msg_Type_t msg
     struct sockaddr_in sa =
     {
         .sin_family = AF_INET,
-        .sin_port = htons(6008),
+        .sin_port = htons(6008 + ue_id_g * 2),
     };
     int sent = sendto(to_nr_ue_fd, &n_msg, to_send, 0,
                       (struct sockaddr *)&sa, sizeof(sa));
@@ -6532,12 +6533,12 @@ void nsa_sendmsg_to_nrue(const void *message, size_t msg_len, Rrc_Msg_Type_t msg
     LOG_I(RRC, "Sent a %d message to the nrUE (%d bytes) \n", msg_type, sent);
 }
 
-void init_connections_with_nr_ue(void)
+void init_connections_with_nr_ue()
 {
     struct sockaddr_in sa =
     {
         .sin_family = AF_INET,
-        .sin_port = htons(6007),
+        .sin_port = htons(6007 + ue_id_g * 2),
     };
     AssertFatal(from_nr_ue_fd == -1, "from_nr_ue_fd was assigned already");
     from_nr_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
