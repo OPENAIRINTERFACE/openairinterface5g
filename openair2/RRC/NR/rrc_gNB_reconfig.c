@@ -130,8 +130,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int servCellIndex,
                                      int dl_antenna_ports,
                                      int do_csirs,
-                                     int initial_csi_index,
                                      int uid) {
+
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
 
@@ -1236,6 +1236,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
    NR_CSI_IM_ResourceSetId_t *csiim00 = calloc(1,sizeof(*csiim00));
    *csiim00 = 0;
    ASN_SEQUENCE_ADD(&csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList->list,csiim00);
+   csires2->bwp_Id = 1;
+   csires2->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
    ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires2);
  }
 
@@ -1438,7 +1440,6 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            NR_CellGroupConfig_t *secondaryCellGroup,
                            int dl_antenna_ports,
                            int do_csirs,
-                           int initial_csi_index,
                            int uid) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(reconfig!=NULL,"reconfig is null\n");
@@ -1453,7 +1454,6 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                                   1,
                                   dl_antenna_ports,
                                   do_csirs,
-                                  initial_csi_index,
                                   uid);
 
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);

@@ -454,7 +454,6 @@ typedef struct {
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
-  int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
   int                                       p_gNB;
 
 } rrc_gNB_carrier_data_t;

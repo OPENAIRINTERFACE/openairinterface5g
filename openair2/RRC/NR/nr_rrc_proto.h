@@ -86,7 +86,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int servCellIndex,
                                      int dl_antenna_ports,
                                      int do_csirs,
-                                     int initial_csi_index,
                                      int uid);
 
 void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon, NR_CSI_MeasConfig_t *csi_MeasConfig, int dl_antenna_ports, int do_csirs);
@@ -97,7 +96,6 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            NR_CellGroupConfig_t *secondaryCellGroup,
                            int dl_antenna_ports,
                            int do_csirs,
-                           int initial_csi_index,
                            int uid);
 
 void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
