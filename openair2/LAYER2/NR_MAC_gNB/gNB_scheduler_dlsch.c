@@ -571,6 +571,7 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       sched_pdsch->mcs = 9;
+      sched_pdsch->nrOfLayers = 1;
       uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
@@ -747,8 +748,7 @@ nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id)
 
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
-                         sub_frame_t slot,
-                         uint8_t nrOfLayers) {
+                         sub_frame_t slot) {
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
     return;
@@ -783,6 +783,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const rnti_t rnti = UE_info->rnti[UE_id];
 
     /* POST processing */
+    const uint8_t nrOfLayers = sched_pdsch->nrOfLayers;
     const uint16_t R = sched_pdsch->R;
     const uint8_t Qm = sched_pdsch->Qm;
     const uint32_t TBS = sched_pdsch->tb_size;

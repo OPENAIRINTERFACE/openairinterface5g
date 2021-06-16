@@ -72,8 +72,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
  * messages, statistics, HARQ handling, CEs, ... */
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
-                         sub_frame_t slot,
-                         uint8_t nrOfLayers);
+                         sub_frame_t slot);
 
 /* \brief default FR1 DL preprocessor init routine, returns preprocessor to call */
 nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id);

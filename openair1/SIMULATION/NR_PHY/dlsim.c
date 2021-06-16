@@ -257,6 +257,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
    * configuration */
   ps->mcsTableIdx = g_mcsTableIdx;
 
+  sched_pdsch->nrOfLayers = g_nrOfLayers;
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
@@ -266,7 +267,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                                         ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        g_nrOfLayers)
+                                        sched_pdsch->nrOfLayers)
                          >> 3;
 
   /* the simulator assumes the HARQ PID is equal to the slot number */
@@ -1002,7 +1003,7 @@ int main(int argc, char **argv)
           gNB_mac->UE_info.num_pdcch_cand[0][i] = 0;
       
         if (css_flag == 0) {
-          nr_schedule_ue_spec(0, frame, slot, g_nrOfLayers);
+          nr_schedule_ue_spec(0, frame, slot);
         } else {
           nr_schedule_css_dlsch_phytest(0,frame,slot);
         }

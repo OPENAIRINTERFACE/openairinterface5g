@@ -326,7 +326,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
   const int bwp_id = 1;
-  uint8_t nrOfLayers = 1;
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
@@ -419,7 +418,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_schedule_ulsch(module_idP, frame, slot);
 
   // This schedules the DCI for Downlink and PDSCH
-  nr_schedule_ue_spec(module_idP, frame, slot, nrOfLayers);
+  nr_schedule_ue_spec(module_idP, frame, slot);
 
   nr_schedule_pucch(module_idP, frame, slot);
 
