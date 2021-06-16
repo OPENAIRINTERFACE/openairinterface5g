@@ -279,7 +279,7 @@ static void gtpv1uEndTunnel(instance_t instance, gtpv1u_enb_tunnel_data_req_t *r
   to.sin_addr.s_addr = tmp.outgoing_ip_addr;
 
   char ip4[INET_ADDRSTRLEN];
-  char ip6[INET6_ADDRSTRLEN];
+  //char ip6[INET6_ADDRSTRLEN];
   LOG_D(GTPU,"sending end packet to %s\n", inet_ntoa(to.sin_addr) );
 
   if (sendto(compatInst(instance), (void *)&msgHdr, sizeof(msgHdr), 0,(struct sockaddr *)&to, sizeof(to) ) !=  sizeof(msgHdr)) {
