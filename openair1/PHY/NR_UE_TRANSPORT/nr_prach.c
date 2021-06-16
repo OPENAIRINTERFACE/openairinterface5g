@@ -83,11 +83,11 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   mu                      = nrUE_config->prach_config.prach_sub_c_spacing;
   restricted_set          = prach_pdu->restricted_set;
   rootSequenceIndex       = prach_pdu->root_seq_id;
+  fd_occasion             = 0;
   n_ra_prb                = nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].k1,//prach_pdu->freq_msg1;
   NCS                     = prach_pdu->num_cs;
   prach_fmt_id            = prach_pdu->prach_format;
   preamble_index          = prach_resources->ra_PreambleIndex;
-  fd_occasion             = 0;
   prach_len               = 0;
   dftlen                  = 0;
   first_nonzero_root_idx  = 0;
