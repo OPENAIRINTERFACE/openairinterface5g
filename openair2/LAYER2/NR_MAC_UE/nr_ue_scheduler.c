@@ -57,7 +57,7 @@ static ssb_list_info_t ssb_list;
 void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type){
 
   AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
-              "Number of PDUS in ul_config > ul_config_list num elements");
+              "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
   ul_config->ul_config_list[ul_config->number_pdus].pdu_type = pdu_type;
   ul_config->slot = slot_tx;
   ul_config->sfn = frame_tx;
@@ -812,7 +812,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       // Type0 PDCCH search space
       if((search_space_mask & type0_pdcch) || ( mac->type0_pdcch_consecutive_slots != 0 )){
         mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_consecutive_slots - 1;
-
         dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
         dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
 
@@ -943,7 +942,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           tx_req.tx_request_body[0].pdu_index = j;
           tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
 
-          if ((ra->ra_state != RA_SUCCEEDED && !ra->cfra) || (get_softmodem_params()->nsa && ra->cfra && ra->ra_state==RA_SUCCEEDED)){
+          if ((ra->ra_state != RA_SUCCEEDED && !ra->cfra) || (get_softmodem_params()->nsa && ra->cfra && ra->ra_state == RA_SUCCEEDED)){
             nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->gNB_index);
           }
         }
@@ -1691,7 +1690,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       format0 = format & 0xff;        // single PRACH format
       format1 = (format >> 8) & 0xff; // dual PRACH format
       AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
-                  "Number of PDUS in ul_config > ul_config_list num elements");
+                  "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
       prach_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
       memset(prach_config_pdu, 0, sizeof(*prach_config_pdu));
       ul_config->number_pdus += 1;

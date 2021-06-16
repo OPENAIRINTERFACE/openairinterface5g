@@ -136,6 +136,12 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
     for (int i = 0; i < rel15->num_dci_options; i++) {
       rel15->dci_length_options[i] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15+i, rel15->dci_format_options[i], NR_RNTI_C, rel15->BWPSize, bwp_id);
+      AssertFatal(mac->dl_config_request.number_pdus <
+                  sizeof(mac->dl_config_request.dl_config_list) / sizeof(mac->dl_config_request.dl_config_list[0]),
+                  "mac->dl_config_request.number_pdus (%d) exceeds dl_config_list size\n", mac->dl_config_request.number_pdus);
+      for (int j = 0; j < mac->dl_config_request.number_pdus; j++) {
+        mac->dl_config_request.dl_config_list[j].dci_config_pdu.dci_config_rel15.dci_length_options[i] = rel15->dci_length_options[i];
+      }
     }
     break;
     case NR_RNTI_RA:
@@ -147,6 +153,12 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE); //NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
     rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
     rel15->dci_length_options[0] = nr_dci_size(scc, mac->scg, def_dci_pdu_rel15, rel15->dci_format_options[0], NR_RNTI_RA, rel15->BWPSize, bwp_id);
+    AssertFatal(mac->dl_config_request.number_pdus <
+                sizeof(mac->dl_config_request.dl_config_list) / sizeof(mac->dl_config_request.dl_config_list[0]),
+                "mac->dl_config_request.number_pdus (%d) exceeds dl_config_list size\n", mac->dl_config_request.number_pdus);
+    for (int i = 0; i < mac->dl_config_request.number_pdus; i++) {
+      mac->dl_config_request.dl_config_list[i].dci_config_pdu.dci_config_rel15.dci_length_options[0] = rel15->dci_length_options[0];
+    }
     break;
     case NR_RNTI_P:
     break;
@@ -249,6 +261,14 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
               rel15->num_dci_options = 1;
               rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
               config_dci_pdu(mac, rel15, dl_config, NR_RNTI_RA, ss_id);
+              AssertFatal(mac->dl_config_request.number_pdus <
+                          sizeof(mac->dl_config_request.dl_config_list) / sizeof(mac->dl_config_request.dl_config_list[0]),
+                          "mac->dl_config_request.number_pdus (%d) exceeds dl_config_list size\n", mac->dl_config_request.number_pdus);
+              for (int i = 0; i < mac->dl_config_request.number_pdus; i++) {
+                mac->dl_config_request.dl_config_list[i].dci_config_pdu.dci_config_rel15.num_dci_options = 1;
+                mac->dl_config_request.dl_config_list[i].dci_config_pdu.dci_config_rel15.dci_length_options[0] = rel15->dci_length_options[0];
+                mac->dl_config_request.dl_config_list[i].dci_config_pdu.dci_config_rel15.dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+              }
               fill_dci_search_candidates(ss, rel15);
               break;
               case WAIT_CONTENTION_RESOLUTION:
@@ -322,6 +342,14 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
             rel15->num_dci_options = 2;
             rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_1;
             rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_1;
+            AssertFatal(mac->dl_config_request.number_pdus <
+                          sizeof(mac->dl_config_request.dl_config_list) / sizeof(mac->dl_config_request.dl_config_list[0]),
+                          "mac->dl_config_request.number_pdus (%d) exceeds dl_config_list size\n", mac->dl_config_request.number_pdus);
+            for (int i = 0; i < mac->dl_config_request.number_pdus; i++) {
+              mac->dl_config_request.dl_config_list[i].dci_config_pdu.dci_config_rel15.num_dci_options = 2;
+              mac->dl_config_request.dl_config_list[i].dci_config_pdu.dci_config_rel15.dci_format_options[0] = NR_DL_DCI_FORMAT_1_1;
+              mac->dl_config_request.dl_config_list[i].dci_config_pdu.dci_config_rel15.dci_format_options[1] = NR_UL_DCI_FORMAT_0_1;
+            }
             config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C, ss_id);
             fill_dci_search_candidates(ss, rel15);
 

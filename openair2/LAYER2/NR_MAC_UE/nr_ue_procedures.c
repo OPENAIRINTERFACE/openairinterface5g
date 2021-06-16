@@ -508,7 +508,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
         return -1;
       }
       AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
-                  "Number of PDUS in ul_config > ul_config_list num elements");
+                  "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
 
       fill_ul_config(ul_config, frame_tx, slot_tx, FAPI_NR_UL_CONFIG_TYPE_PUSCH);
@@ -571,8 +571,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
         LOG_W(MAC, "In %s: ul_config request is NULL. Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n", __FUNCTION__, frame, slot);
         return -1;
       }
+      ul_config->number_pdus = 0;
       AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
-                  "Number of PDUS in ul_config > ul_config_list num elements");
+                  "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
 
       fill_ul_config(ul_config, frame_tx, slot_tx, FAPI_NR_UL_CONFIG_TYPE_PUSCH);
@@ -1155,12 +1156,10 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     }
     else if (dci_format == NR_UL_DCI_FORMAT_0_1 || dci_format == NR_DL_DCI_FORMAT_1_1) {
       // In case the sizes of formats 0_1 and 1_1 happen to be the same
-      #if 0
       if (dci_pdu_rel15->format_indicator == 0) 
         dci_format = NR_UL_DCI_FORMAT_0_1;
       else
         dci_format = NR_DL_DCI_FORMAT_1_1;
-      #endif
     }
   }
 #ifdef DEBUG_EXTRACT_DCI
@@ -2312,7 +2311,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
         return -1;
       }
       AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
-                  "Number of PDUS in ul_config > ul_config_list num elements");
+                  "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
 
       fill_ul_config(ul_config, frame_tx, slot_tx, FAPI_NR_UL_CONFIG_TYPE_PUSCH);
