@@ -116,6 +116,11 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
       /* some sanity check - to be refined at some point */
       if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
         X2AP_ERROR("x2ap_enb_data_p not NULL and sctp state not SCTP_STATE_ESTABLISHED, what to do?\n");
+        if (sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN){
+          RB_REMOVE(x2ap_enb_map, &instance_p->x2ap_enb_head, x2ap_enb_data_p);
+          return;
+        }
+
         exit(1);
       }
 
