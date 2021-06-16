@@ -602,6 +602,7 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       set_dl_mcs(sched_pdsch,sched_ctrl,ps->mcsTableIdx);
+      sched_pdsch->nrOfLayers = 1;
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       uint32_t tbs = nr_compute_tbs(Qm,
@@ -611,7 +612,7 @@ void pf_dl(module_id_t module_id,
                                     0, /* N_PRB_DMRS * N_DMRS_SLOT */
                                     0 /* N_PRB_oh, 0 for initialBWP */,
                                     0 /* tb_scaling */,
-                                    1 /* nrOfLayers */) >> 3;
+                                    sched_pdsch->nrOfLayers) >> 3;
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(NR_MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
             b, UE_id, thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
@@ -828,7 +829,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const rnti_t rnti = UE_info->rnti[UE_id];
 
     /* POST processing */
-    const int nrOfLayers = 1;
+    const uint8_t nrOfLayers = sched_pdsch->nrOfLayers;
     const uint16_t R = sched_pdsch->R;
     const uint8_t Qm = sched_pdsch->Qm;
     const uint32_t TBS = sched_pdsch->tb_size;
