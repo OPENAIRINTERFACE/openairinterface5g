@@ -277,12 +277,18 @@ static void gtpv1uEndTunnel(instance_t instance, gtpv1u_enb_tunnel_data_req_t *r
   to.sin_family      = AF_INET;
   to.sin_port        = htons(tmp.outgoing_port);
   to.sin_addr.s_addr = tmp.outgoing_ip_addr;
+
+  char ip4[INET_ADDRSTRLEN];
+  char ip6[INET6_ADDRSTRLEN];
   LOG_D(GTPU,"sending end packet to %s\n", inet_ntoa(to.sin_addr) );
 
   if (sendto(compatInst(instance), (void *)&msgHdr, sizeof(msgHdr), 0,(struct sockaddr *)&to, sizeof(to) ) !=  sizeof(msgHdr)) {
+    char ip4[INET_ADDRSTRLEN];
+    char ip6[INET6_ADDRSTRLEN];
+
     LOG_E(GTPU,
-          "[SD %ld] Failed to send data to " IPV4_ADDR " on port %d, buffer size %lu\n",
-          compatInst(instance), IPV4_ADDR_FORMAT(tmp.outgoing_ip_addr), tmp.outgoing_port, sizeof(msgHdr));
+          "[SD %ld] Failed to send data to %s on port %d, buffer size %lu\n",
+          compatInst(instance), inet_ntop(AF_INET, &tmp.outgoing_ip_addr, ip4, INET_ADDRSTRLEN), tmp.outgoing_port, sizeof(msgHdr));
   }
 }
 
@@ -438,10 +444,15 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int bearer_id, teid
   tmp->outgoing_port=port;
   tmp->teid_outgoing= outgoing_teid;
   pthread_mutex_unlock(&globGtp.gtp_lock);
-  LOG_I(GTPU, "Created tunnel for RNTI %x, teid for DL: %d, teid for UL %d\n",
+  char ip4[INET_ADDRSTRLEN];
+  char ip6[INET6_ADDRSTRLEN];
+
+  LOG_I(GTPU, "Created tunnel for RNTI %x, teid for DL: %d, teid for UL %d to remote IPv4: %s, IPv6 %s\n",
         rnti,
 	tmp->teid_incoming,
-        tmp->teid_outgoing);
+        tmp->teid_outgoing,
+	inet_ntop(AF_INET,(void*)&tmp->outgoing_ip_addr, ip4,INET_ADDRSTRLEN ),
+	inet_ntop(AF_INET6,(void*)&tmp->outgoing_ip6_addr.s6_addr, ip6, INET6_ADDRSTRLEN));
   return incoming_teid;
 }
 
