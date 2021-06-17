@@ -426,6 +426,7 @@ bool find_free_CCE(module_id_t module_id, sub_frame_t slot, int UE_id);
 
 bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t R,
+                   uint8_t nrOfLayers,
                    uint16_t nb_symb_sch,
                    uint16_t nb_dmrs_prb,
                    uint32_t bytes,

@@ -889,6 +889,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
                                  retInfo->R,
+                                 1, // layers
                                  temp_ps.nrOfSymbols,
                                  temp_ps.N_PRB_DMRS * temp_ps.num_dmrs_symb,
                                  retInfo->tb_size,
@@ -1146,6 +1147,7 @@ void pf_ul(module_id_t module_id,
     uint32_t TBS = 0;
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
+                  1, // layers
                   ps->nrOfSymbols,
                   ps->N_PRB_DMRS * ps->num_dmrs_symb,
                   B,

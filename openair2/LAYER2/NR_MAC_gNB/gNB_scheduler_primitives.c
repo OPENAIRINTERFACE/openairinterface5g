@@ -284,6 +284,7 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 
 bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t R,
+                   uint8_t nrOfLayers,
                    uint16_t nb_symb_sch,
                    uint16_t nb_dmrs_prb,
                    uint32_t bytes,
@@ -293,7 +294,7 @@ bool nr_find_nb_rb(uint16_t Qm,
 {
   /* is the maximum (not even) enough? */
   *nb_rb = nb_rb_max;
-  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
   /* check whether it does not fit, or whether it exactly fits. Some algorithms
    * might depend on the return value! */
   if (bytes > *tbs)
@@ -303,7 +304,7 @@ bool nr_find_nb_rb(uint16_t Qm,
 
   /* is the minimum enough? */
   *nb_rb = 1;
-  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
   if (bytes <= *tbs)
     return true;
 
@@ -312,7 +313,7 @@ bool nr_find_nb_rb(uint16_t Qm,
   int hi = nb_rb_max;
   int lo = 1;
   for (int p = (hi + lo) / 2; lo + 1 < hi; p = (hi + lo) / 2) {
-    const uint32_t TBS = nr_compute_tbs(Qm, R, p, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+    const uint32_t TBS = nr_compute_tbs(Qm, R, p, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
     if (bytes == TBS) {
       hi = p;
       break;
@@ -323,7 +324,7 @@ bool nr_find_nb_rb(uint16_t Qm,
     }
   }
   *nb_rb = hi;
-  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
+  *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
   /* return whether we could allocate all bytes and stay below nb_rb_max */
   return *tbs >= bytes && *nb_rb <= nb_rb_max;
 }
