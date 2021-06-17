@@ -1247,7 +1247,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  csi_MeasConfig->csi_ReportConfigToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_ReportConfigToAddModList));
  csi_MeasConfig->csi_ReportConfigToReleaseList = NULL;
- if (dl_antenna_ports > 1) {
+ if (do_csirs && dl_antenna_ports > 1) {
    NR_CSI_ReportConfig_t *csirep1 = calloc(1,sizeof(*csirep1));
    csirep1->reportConfigId=0;
    csirep1->carrier=NULL;
