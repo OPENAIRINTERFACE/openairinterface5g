@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+#define sizeofArray(a) (sizeof(a)/sizeof(*(a)))
 void *calloc_or_fail(size_t size);
 void *malloc_or_fail(size_t size);
 
