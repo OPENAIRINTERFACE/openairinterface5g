@@ -137,6 +137,15 @@ static inline uint8_t get_max_cces(uint8_t scs) {
 }
 
 
+void set_dl_nrOfLayers(NR_sched_pdsch_t *sched_pdsch,
+                       NR_UE_sched_ctrl_t *sched_ctrl) {
+
+  // for now this should be enough
+  // if there is not csi report RI is 0 from initialization
+  sched_pdsch->nrOfLayers = sched_ctrl->CSI_report.choice.cri_ri_li_pmi_cqi_report.ri + 1;
+
+}
+
 void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
                 NR_UE_sched_ctrl_t *sched_ctrl,
                 uint8_t mcs_table_idx) {

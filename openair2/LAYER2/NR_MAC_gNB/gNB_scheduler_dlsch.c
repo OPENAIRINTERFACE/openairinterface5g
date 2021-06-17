@@ -603,7 +603,7 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       set_dl_mcs(sched_pdsch,sched_ctrl,ps->mcsTableIdx);
-      sched_pdsch->nrOfLayers = 1;
+      set_dl_nrOfLayers(sched_pdsch,sched_ctrl);
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       uint32_t tbs = nr_compute_tbs(Qm,
