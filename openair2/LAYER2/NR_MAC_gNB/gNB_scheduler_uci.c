@@ -1183,7 +1183,7 @@ void evaluate_cqi_report(uint8_t *payload,
   else
     AssertFatal(1==0,"CQI Table not present in RRC configuration\n");
   sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb = temp_cqi;
-  LOG_I(MAC,"Wide-band CQI for the first TB %d %p\n", temp_cqi,&sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb);
+  LOG_I(MAC,"Wide-band CQI for the first TB %d\n", temp_cqi);
   if (cqi_bitlen > 4) {
     temp_cqi = pickandreverse_bits(payload, 4, cumul_bits);
     sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_2tb = temp_cqi;
