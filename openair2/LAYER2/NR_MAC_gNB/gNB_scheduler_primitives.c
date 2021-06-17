@@ -142,7 +142,7 @@ void set_dl_nrOfLayers(NR_sched_pdsch_t *sched_pdsch,
 
   // for now this should be enough
   // if there is not csi report RI is 0 from initialization
-  sched_pdsch->nrOfLayers = sched_ctrl->CSI_report.choice.cri_ri_li_pmi_cqi_report.ri + 1;
+  sched_pdsch->nrOfLayers = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.ri + 1;
 
 }
 
@@ -151,12 +151,11 @@ void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
                 uint8_t mcs_table_idx) {
 
   if (sched_ctrl->set_mcs) {
-
     // TODO for wideband case and multiple TB
-    int cqi_idx = sched_ctrl->CSI_report.choice.cri_ri_li_pmi_cqi_report.wb_cqi_1tb;
+    int cqi_idx = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb;
     uint16_t target_coderate,target_qm;
     if (cqi_idx>0) {
-      int cqi_table = sched_ctrl->CSI_report.choice.cri_ri_li_pmi_cqi_report.cqi_table;
+      int cqi_table = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.cqi_table;
       AssertFatal(cqi_table == mcs_table_idx, "Indices of MCS tables don't correspond\n");
       switch (cqi_table) {
         case 0:

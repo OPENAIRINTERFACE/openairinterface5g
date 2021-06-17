@@ -453,11 +453,8 @@ typedef struct CRI_SSB_RSRP {
 } CRI_SSB_RSRP_t;
 
 struct CSI_Report {
-  NR_CSI_Report_Config_PR present;
-  union Config_CSI_Report {
-    struct CRI_RI_LI_PMI_CQI cri_ri_li_pmi_cqi_report;
-    struct CRI_SSB_RSRP ssb_cri_report;
-  } choice;
+  struct CRI_RI_LI_PMI_CQI cri_ri_li_pmi_cqi_report;
+  struct CRI_SSB_RSRP ssb_cri_report;
 };
 
 #define MAX_SR_BITLEN 8
