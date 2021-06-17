@@ -601,7 +601,7 @@ void pf_dl(module_id_t module_id,
         continue;
 
       /* Calculate coeff */
-      sched_pdsch->mcs = 9;
+      set_dl_mcs(sched_pdsch,sched_ctrl,ps->mcsTableIdx);
       uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(NR_MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",

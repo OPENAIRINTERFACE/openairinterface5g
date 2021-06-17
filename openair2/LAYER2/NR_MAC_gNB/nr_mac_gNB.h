@@ -441,6 +441,7 @@ struct CRI_RI_LI_PMI_CQI {
   uint8_t pmi_x2;
   uint8_t wb_cqi_1tb;
   uint8_t wb_cqi_2tb;
+  uint8_t cqi_table;
 };
 
 typedef struct CRI_SSB_RSRP {
@@ -573,9 +574,9 @@ typedef struct {
   int pusch_consecutive_dtx_cnt;
   int pucch_consecutive_dtx_cnt;
   int ul_failure;
-  struct CSI_Report CSI_report[MAX_CSI_REPORTS];
+  struct CSI_Report CSI_report;
   bool SR;
-
+  bool set_mcs;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free

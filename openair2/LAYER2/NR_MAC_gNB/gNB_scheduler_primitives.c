@@ -112,6 +112,20 @@ uint8_t nr_ss_first_symb_idx_scs_120_120_mux3[4] = {4,8,2,6};
 uint8_t nr_max_number_of_candidates_per_slot[4] = {44, 36, 22, 20};
 uint8_t nr_max_number_of_cces_per_slot[4] = {56, 56, 48, 32};
 
+// CQI TABLES
+// Table 1 (38.214 5.2.2.1-2)
+uint16_t cqi_table1[16][2] = {{0,0},{2,78},{2,120},{2,193},{2,308},{2,449},{2,602},{4,378},
+                              {4,490},{4,616},{6,466},{6,567},{6,666},{6,772},{6,873},{6,948}};
+
+// Table 2 (38.214 5.2.2.1-3)
+uint16_t cqi_table2[16][2] = {{0,0},{2,78},{2,193},{2,449},{4,378},{4,490},{4,616},{6,466},
+                              {6,567},{6,666},{6,772},{6,873},{8,711},{8,797},{8,885},{8,948}};
+
+// Table 2 (38.214 5.2.2.1-4)
+uint16_t cqi_table3[16][2] = {{0,0},{2,30},{2,50},{2,78},{2,120},{2,193},{2,308},{2,449},
+                              {2,602},{4,378},{4,490},{4,616},{6,466},{6,567},{6,666},{6,772}};
+
+
 static inline uint8_t get_max_candidates(uint8_t scs) {
   AssertFatal(scs<4, "Invalid PDCCH subcarrier spacing %d\n", scs);
   return (nr_max_number_of_candidates_per_slot[scs]);
@@ -120,6 +134,55 @@ static inline uint8_t get_max_candidates(uint8_t scs) {
 static inline uint8_t get_max_cces(uint8_t scs) {
   AssertFatal(scs<4, "Invalid PDCCH subcarrier spacing %d\n", scs);
   return (nr_max_number_of_cces_per_slot[scs]);
+}
+
+
+void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
+                NR_UE_sched_ctrl_t *sched_ctrl,
+                uint8_t mcs_table_idx) {
+
+  if (sched_ctrl->set_mcs) {
+
+    // TODO for wideband case and multiple TB
+    int cqi_idx = sched_ctrl->CSI_report.choice.cri_ri_li_pmi_cqi_report.wb_cqi_1tb;
+    uint16_t target_coderate,target_qm;
+    if (cqi_idx>0) {
+      int cqi_table = sched_ctrl->CSI_report.choice.cri_ri_li_pmi_cqi_report.cqi_table;
+      AssertFatal(cqi_table == mcs_table_idx, "Indices of MCS tables don't correspond\n");
+      switch (cqi_table) {
+        case 0:
+          target_qm = cqi_table1[cqi_idx][0];
+          target_coderate = cqi_table1[cqi_idx][0];
+          break;
+        case 1:
+          target_qm = cqi_table2[cqi_idx][0];
+          target_coderate = cqi_table2[cqi_idx][0];
+          break;
+        case 2:
+          target_qm = cqi_table3[cqi_idx][0];
+          target_coderate = cqi_table3[cqi_idx][0];
+          break;
+        default:
+          AssertFatal(1==0,"Invalid cqi table index %d\n",cqi_table);
+      }
+      int max_mcs = 28;
+      int R,Qm;
+      if (mcs_table_idx == 1)
+        max_mcs = 27;
+      for (int i=0; i<=max_mcs; i++) {
+        R = nr_get_code_rate_dl(i, mcs_table_idx);
+        Qm = nr_get_Qm_dl(i, mcs_table_idx);
+        if ((Qm == target_qm) && (target_coderate <= R)) {
+          sched_pdsch->mcs = i;
+          break;
+        }
+      }
+    }
+    else // default value
+      sched_pdsch->mcs = 9;
+
+    sched_ctrl->set_mcs = FALSE;
+  }
 }
 
 NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
@@ -1839,6 +1902,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
       compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
+    sched_ctrl->set_mcs = TRUE;
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
