@@ -272,7 +272,7 @@ static int sync_to_gps(openair0_device *device) {
 */
 static int trx_usrp_start(openair0_device *device) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
-#if 0
+
   // setup GPIO for TDD, GPIO(4) = ATR_RX
   //set data direction register (DDR) to output
   s->usrp->set_gpio_attr("FP0", "DDR", 0xfff, 0xfff);
@@ -286,7 +286,6 @@ static int trx_usrp_start(openair0_device *device) {
   // set the output pins to 1
   s->usrp->set_gpio_attr("FP0", "OUT", 7<<7, 0xf80);
 
-#endif
   s->wait_for_first_pps = 1;
   s->rx_count = 0;
   s->tx_count = 0;
@@ -954,9 +953,14 @@ extern "C" {
     LOG_I(HW, "openair0_cfg[0].clock_source == '%d' (internal = %d, external = %d)\n", openair0_cfg[0].clock_source,internal,external);
     usrp_state_t *s ;
 
+    if ( device->priv == NULL) {
       s=(usrp_state_t *)calloc(sizeof(usrp_state_t),1);
       device->priv=s;
       AssertFatal( s!=NULL,"USRP device: memory allocation failure\n");
+    } else {
+      LOG_E(HW, "multiple device init detected\n");
+      return 0;
+    }
 
     device->openair0_cfg = openair0_cfg;
     device->trx_start_func = trx_usrp_start;
@@ -996,12 +1000,10 @@ extern "C" {
     if (device_adds.size() == 0) {
       LOG_E(HW,"No USRP Device Found.\n ");
       free(s);
-abort();
       return -1;
     } else if (device_adds.size() > 1) {
       LOG_E(HW,"More than one USRP Device Found. Please specify device more precisely in config file.\n");
       free(s);
-abort();
       return -1;
     }
 
