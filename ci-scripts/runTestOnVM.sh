@@ -1004,6 +1004,12 @@ function start_l2_sim_ue {
         echo "ifconfig" > $1
         ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
         rm $1
+    else
+        echo "Setting Routes for all UEs"
+        echo "cd /home/ubuntu/tmp/cmake_targets/tools" > $1
+        echo "./setup_routes.sh $LOC_NB_UES" >> $1
+        ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
+        rm $1
     fi
 }
 
