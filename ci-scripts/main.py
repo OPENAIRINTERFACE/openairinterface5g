@@ -210,11 +210,24 @@ def GetParametersFromXML(action):
 			CiTestObj.ue_id = ue_id
 
 	elif action == 'Attach_UE':
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
 		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
 		if (nbMaxUEtoAttach is None):
 			CiTestObj.nbMaxUEtoAttach = -1
 		else:
 			CiTestObj.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
+
+	elif action == 'Terminate_UE':
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
+
 
 	elif action == 'CheckStatusUE':
 		expectedNBUE = test.findtext('expectedNbOfConnectedUEs')
