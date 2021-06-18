@@ -357,7 +357,7 @@ void nr_processULSegment(void* arg) {
 
   ////////////////////////////////// pl =====> llrProcBuf //////////////////////////////////
 
-  no_iteration_ldpc = nrLDPC_decoder(p_decoderParms,
+  no_iteration_ldpc = nrLDPC_decoder_offload(p_decoderParms,
                                      (int8_t*)&pl[0],
                                      llrProcBuf,
                                      ulsch_harq->p_nrLDPC_procBuf[r],

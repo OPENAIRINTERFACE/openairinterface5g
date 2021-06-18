@@ -5050,9 +5050,9 @@ static struct unit_test_suite bbdev_interrupt_testsuite = {
 	}
 };
 
-REGISTER_TEST_COMMAND(bler, bbdev_bler_testsuite);
-REGISTER_TEST_COMMAND(throughput, bbdev_throughput_testsuite);
+//REGISTER_TEST_COMMAND(bler, bbdev_bler_testsuite);
+//REGISTER_TEST_COMMAND(throughput, bbdev_throughput_testsuite);
 REGISTER_TEST_COMMAND(validation, bbdev_validation_testsuite);
-REGISTER_TEST_COMMAND(latency, bbdev_latency_testsuite);
-REGISTER_TEST_COMMAND(offload, bbdev_offload_cost_testsuite);
-REGISTER_TEST_COMMAND(interrupt, bbdev_interrupt_testsuite);
+//REGISTER_TEST_COMMAND(latency, bbdev_latency_testsuite);
+//REGISTER_TEST_COMMAND(offload, bbdev_offload_cost_testsuite);
+//REGISTER_TEST_COMMAND(interrupt, bbdev_interrupt_testsuite);

@@ -392,11 +392,11 @@ parse_data_entry(const char *key_token, char *token,
 		printf("Unknown op type: %d!\n", type);
 		return -1;
 	}
-printf("parse data entry \n");
+//printf("parse data entry \n");
 
 	op_data = vector->entries[type].segments;
 	nb_ops = &vector->entries[type].nb_segments;
-printf("nb segments %d\n",*nb_ops);
+//printf("nb segments %d\n",*nb_ops);
 
 	if (*nb_ops >= RTE_BBDEV_TURBO_MAX_CODE_BLOCKS) {
 		printf("Too many segments (code blocks defined): %u, max %d!\n",
@@ -858,7 +858,7 @@ parse_ldpc_decoder_params(const char *key_token, char *token,
 static int
 parse_entry(char *entry, struct test_bbdev_vector *vector)
 {
-printf("parse entry \n");
+//printf("parse entry \n");
 	int ret = 0;
 	char *token, *key_token;
 	enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_NONE;
@@ -1366,7 +1366,7 @@ test_bbdev_vector_read(const char *filename,
 	FILE *fp = NULL;
 	char *line = NULL;
 	char *entry = NULL;
-
+//sprintf(filename, "/home/wang/oai/openairinterface5g/targets/ARCH/test-bbdev/test_vectors/ldpc_dec_v8480.data");
 	fp = fopen(filename, "r");
 	if (fp == NULL) {
 		printf("File %s does not exist\n", filename);

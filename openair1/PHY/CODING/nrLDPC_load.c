@@ -81,6 +81,17 @@ int load_nrLDPClib_offload(void) {
 return 0;
 }
 
+/*int load_nrLDPClib_offload(void) {
+     loader_shlibfunc_t shlib_decoffload_fdesc;
+
+     shlib_decoffload_fdesc.fname = "top_testsuite";
+     int ret=load_module_shlib("ldpc_offload",&shlib_decoffload_fdesc,1,NULL);
+     AssertFatal( (ret >= 0),"Error loading ldpc decoder offload");
+     top_testsuite = (nrLDPC_dectopfunc_t)shlib_decoffload_fdesc.fptr;
+return 0;
+}
+*/
+
 int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_encoder_ptr) {
 	loader_shlibfunc_t shlib_encoder_fdesc;
 
