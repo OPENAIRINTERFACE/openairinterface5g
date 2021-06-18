@@ -200,47 +200,6 @@ void send_nsa_standalone_msg(NR_UL_IND_t *UL_INFO, uint16_t msg_id)
   }
 }
 
-static void set_dci_format(fapi_nr_dci_indication_pdu_t *dci_list, NR_UE_MAC_INST_t *UE_mac)
-{
-    /* Melissa: If the dci_list comes in slot 7, and has a PDCCH payload then it must be the RAR.
-        If it is the RAR, we have not handled the RX_IND from the tx_data request yet, so the
-        mac->dl_config_request in the mac instance hasnt been updated with the num_pdus > 0, meaning
-        that when we try to fill this dci_format in the function call below, the num_pdus = 0 and we never
-        fill it. Since the dci_format field is initialized to zero this is not incorrectly setting the format,
-        but it is also not explicityly setting it, which I think is bad.
-        Maybe we just set dci_format = NR_DL_DCI_FORMAT_1_0 since we know this is the RAR? */
-    int num_pdus = UE_mac->dl_config_request.number_pdus;
-    if (num_pdus <= 0)
-    {
-        LOG_E(NR_PHY, "%s: dl_config_request number of PDUS (%d) <= 0\n", __FUNCTION__, num_pdus);
-        return;
-    }
-    AssertFatal(num_pdus < sizeof(UE_mac->dl_config_request.dl_config_list) / sizeof(UE_mac->dl_config_request.dl_config_list[0]),
-                "Number of PDUs (%d) exceeds dl_config_pdu list size.", num_pdus);
-    for (int i = 0; i < num_pdus; i++)
-    {
-        fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15_dci = &UE_mac->dl_config_request.dl_config_list[i].dci_config_pdu.dci_config_rel15;
-        int num_dci_options = rel15_dci->num_dci_options;
-        LOG_I(NR_MAC, "Melissa this is the num_dci_opts %d\n", rel15_dci->num_dci_options);
-        int len = sizeof(rel15_dci->dci_length_options) / sizeof(rel15_dci->dci_length_options[0]);
-        AssertFatal(len <= sizeof(rel15_dci->dci_length_options) / sizeof(rel15_dci->dci_length_options[0]),
-                    "num_dci_options %d > dci_options array\n", num_dci_options);
-        AssertFatal(len <= sizeof(rel15_dci->dci_format_options) / sizeof(rel15_dci->dci_format_options[0]),
-                    "num_dci_options %d > dci_options array\n", num_dci_options);
-        for (int j = 0; j < len; j++)
-        {
-            LOG_I(NR_PHY, "Received len %d, length options[%d] %d, format assigned %d, format options[%d] %d\n",
-                      dci_list->payloadSize, j, rel15_dci->dci_length_options[j],
-                      dci_list->dci_format, j, rel15_dci->dci_format_options[j]);
-            if (rel15_dci->dci_length_options[j] == dci_list->payloadSize)
-            {
-                dci_list->dci_format = rel15_dci->dci_format_options[j];
-            }
-        }
-
-    }
-}
-
 static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_dl_tti_request_t *dl_tti_request)
 {
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
@@ -250,7 +209,6 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
         abort();
     }
 
-    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request->dl_tti_request_body.dl_tti_pdu_list[i];
@@ -284,13 +242,6 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                     }
                     dl_info->dci_ind->dci_list[j].payloadSize = dci_pdu_list->PayloadSizeBits;
                     dl_info->dci_ind->dci_list[j].rnti = dci_pdu_list->RNTI;
-                    if (dci_pdu_list->PayloadSizeBits == 37) //Melissa: hack. This size is for RAR
-                      dl_info->dci_ind->dci_list[j].dci_format = 0;
-                    if (dci_pdu_list->PayloadSizeBits == 40) //Melissa: hack. This size is for UL_DCI
-                      dl_info->dci_ind->dci_list[j].dci_format = 7;
-                    if (dci_pdu_list->PayloadSizeBits == 46) //Melissa: hack. This size is for DLSCH
-                      dl_info->dci_ind->dci_list[j].dci_format = 1;
-                    //set_dci_format(&dl_info->dci_ind->dci_list[j], UE_mac);
                 }
             }
         }
@@ -345,7 +296,6 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
         abort();
     }
 
-    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_ul_dci_request_pdus_t *pdu_list = &ul_dci_req->ul_dci_pdu_list[i];
@@ -371,18 +321,58 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
                 }
                 dl_info->dci_ind->dci_list[j].payloadSize = dci_pdu_list->PayloadSizeBits;
                 dl_info->dci_ind->dci_list[j].rnti = dci_pdu_list->RNTI;
-                if (dci_pdu_list->PayloadSizeBits == 37) //Melissa: hack. This size is for RAR
-                    dl_info->dci_ind->dci_list[j].dci_format = 0;
-                if (dci_pdu_list->PayloadSizeBits == 40) //Melissa: hack. This size is for UL_DCI
-                    dl_info->dci_ind->dci_list[j].dci_format = 7;
-                if (dci_pdu_list->PayloadSizeBits == 46) //Melissa: hack. This size is for DLSCH
-                    dl_info->dci_ind->dci_list[j].dci_format = 1;
-                //set_dci_format(&dl_info->dci_ind->dci_list[j], UE_mac);
             }
         }
     }
     dl_info->frame = ul_dci_req->SFN;
     dl_info->slot = ul_dci_req->Slot;
+}
+
+static void fill_dci_from_dl_config(nr_downlink_indication_t*dl_ind, fapi_nr_dl_config_request_t *dl_config)
+{
+  if (!dl_ind->dci_ind)
+  {
+    return;
+  }
+
+  AssertFatal(dl_config->number_pdus < sizeof(dl_config->dl_config_list) / sizeof(dl_config->dl_config_list[0]),
+              "Too many dl_config pdus %d", dl_config->number_pdus);
+  for (int i = 0; i < dl_config->number_pdus; i++)
+  {
+    LOG_I(PHY, "In %s: filling DCI with a total of %d total DL PDUs (dl_config %p) \n",
+          __FUNCTION__, dl_config->number_pdus, dl_config);
+    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15_dci = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
+    int num_dci_options = rel15_dci->num_dci_options;
+    if (num_dci_options <= 0)
+    {
+      LOG_I(NR_MAC, "num_dci_opts = %d for %dth pdu in dl_config_list\n", rel15_dci->num_dci_options, i);
+    }
+    AssertFatal(num_dci_options <= sizeof(rel15_dci->dci_length_options) / sizeof(rel15_dci->dci_length_options[0]),
+                "num_dci_options %d > dci_length_options array\n", num_dci_options);
+    AssertFatal(num_dci_options <= sizeof(rel15_dci->dci_format_options) / sizeof(rel15_dci->dci_format_options[0]),
+                "num_dci_options %d > dci_format_options array\n", num_dci_options);
+
+    for (int j = 0; j < num_dci_options; j++)
+    {
+      int num_dcis = dl_ind->dci_ind->number_of_dcis;
+      AssertFatal(num_dcis <= sizeof(dl_ind->dci_ind->dci_list) / sizeof(dl_ind->dci_ind->dci_list[0]),
+                  "dl_config->number_pdus %d > dci_ind->dci_list array\n", num_dcis);
+      for (int k = 0; k < num_dcis; k++)
+      {
+        LOG_I(NR_PHY, "Received len %d, length options[%d] %d, format assigned %d, format options[%d] %d\n",
+                  dl_ind->dci_ind->dci_list[k].payloadSize, j, rel15_dci->dci_length_options[j],
+                  dl_ind->dci_ind->dci_list[k].dci_format, j, rel15_dci->dci_format_options[j]);
+        if (rel15_dci->dci_length_options[j] == dl_ind->dci_ind->dci_list[k].payloadSize)
+        {
+            dl_ind->dci_ind->dci_list[k].dci_format = rel15_dci->dci_format_options[j];
+        }
+        int CCEind = rel15_dci->CCE[j];
+        int L = rel15_dci->L[j];
+        dl_ind->dci_ind->dci_list[k].n_CCE = CCEind;
+        dl_ind->dci_ind->dci_list[k].N_CCE = L;
+      }
+    }
+  }
 }
 
 static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
@@ -395,27 +385,29 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
       return;
     }
 
-    nr_downlink_indication_t dl_info;
-    memset(&dl_info, 0, sizeof(dl_info));
     if (dl_tti_request)
     {
         LOG_I(NR_PHY, "[%d, %d] dl_tti_request\n", dl_tti_request->SFN, dl_tti_request->Slot);
-        copy_dl_tti_req_to_dl_info(&dl_info, dl_tti_request);
+        copy_dl_tti_req_to_dl_info(&mac->dl_info, dl_tti_request);
     }
     if (tx_data_request)
     {
         LOG_I(NR_PHY, "[%d, %d] PDSCH in tx_request\n", tx_data_request->SFN, tx_data_request->Slot);
-        copy_tx_data_req_to_dl_info(&dl_info, tx_data_request);
+        copy_tx_data_req_to_dl_info(&mac->dl_info, tx_data_request);
     }
     if (ul_dci_request)
     {
         LOG_I(NR_PHY, "[%d, %d] ul_dci_request\n", ul_dci_request->SFN, ul_dci_request->Slot);
-        copy_ul_dci_data_req_to_dl_info(&dl_info, ul_dci_request);
+        copy_ul_dci_data_req_to_dl_info(&mac->dl_info, ul_dci_request);
     }
+
 
     NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
     memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
-    nr_ue_dl_indication(&dl_info, &ul_time_alignment);
+    fill_dci_from_dl_config(&mac->dl_info, &mac->dl_config_request);
+    nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+
+
     #if 0 //Melissa may want to free this
     free(dl_info.dci_ind);
     dl_info.dci_ind = NULL;

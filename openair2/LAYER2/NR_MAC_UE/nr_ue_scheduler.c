@@ -838,6 +838,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       dcireq.slot      = rx_slot;
       dcireq.dl_config_req.number_pdus = 0;
       nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
+      mac->dl_config_request = dcireq.dl_config_req;
 
       fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
@@ -885,6 +886,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint8_t data_existing = 0;
       nr_scheduled_response_t scheduled_response;
       fapi_nr_tx_request_t tx_req;
+      memset(&tx_req, 0, sizeof(tx_req));
 
       for (int j = 0; j < ul_config->number_pdus; j++) {
 

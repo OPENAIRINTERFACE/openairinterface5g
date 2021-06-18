@@ -2614,6 +2614,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
               scheduling_info.BSR_bytes[UE_mac_inst[module_idP].
                                         scheduling_info.LCGID
                                         [lcid]]);
+        AssertFatal(num_sdus < sizeof(sdu_lengths) / sizeof(sdu_lengths[0]), "num_sdus %d > num sdu_length elements\n", num_sdus);
         sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
                                 UE_mac_inst
                                 [module_idP].

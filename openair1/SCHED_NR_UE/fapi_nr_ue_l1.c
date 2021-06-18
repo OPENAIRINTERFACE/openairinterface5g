@@ -47,10 +47,10 @@ const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 
 int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
 
-  if(scheduled_response != NULL){
-
-    if (scheduled_response->ul_config != NULL){
-
+  if(scheduled_response != NULL)
+  {
+    if (scheduled_response->ul_config != NULL)
+    {
       fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
       AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
                   "Too many ul_config pdus %d", ul_config->number_pdus);
@@ -99,6 +99,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               {
                 crc_ind->crc_list[j].handle = pusch_config_pdu->handle;
                 crc_ind->crc_list[j].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
+                LOG_I(NR_MAC, "This is the harq pid %d for crc_list[%d]\n", crc_ind->crc_list[j].harq_id, j);
                 crc_ind->crc_list[j].num_cb = pusch_config_pdu->pusch_data.num_cb;
                 crc_ind->crc_list[j].rnti = pusch_config_pdu->rnti;
                 crc_ind->crc_list[j].tb_crc_status = 0;
@@ -122,6 +123,36 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
         }
       }
       scheduled_response->ul_config->number_pdus = 0;
+    }
+    if (scheduled_response->dl_config != NULL)
+    {
+      //scheduled_response->dl_config->number_pdus = 0;
+      /* After calling nr_ue_dl_indiction then the dl_config is here.
+         We will have dl_config and a tx_req. Then we need to 
+               if(ret<dlsch0->max_ldpc_iterations+1){
+
+        switch (pdsch) {
+          case RA_PDSCH:
+            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
+            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, eNB_id, ue, dlsch0, number_pdus);
+
+            ue->UE_mode[eNB_id] = RA_RESPONSE;
+            break;
+          case PDSCH:
+            nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, eNB_id);
+            nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, eNB_id, ue, dlsch0, number_pdus);
+            break;
+          case SI_PDSCH:
+            rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_SIB;
+            break;
+          default:
+            break;
+        }
+                //  send to mac
+        if (ue->if_inst && ue->if_inst->dl_indication) {
+          ue->if_inst->dl_indication(&dl_indication, ul_time_alignment);
+        }
+        */
     }
   }
   return 0;

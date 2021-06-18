@@ -179,6 +179,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 {
   NR_PRACH_RESOURCES_t prach_resources;
   memset(&prach_resources, 0, sizeof(prach_resources));
+  NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
+  memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
   int last_sfn_slot = -1;
   while (!oai_exit)
   {
@@ -199,7 +201,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     module_id_t mod_id = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-    if (mac->scc == NULL) {
+    if (mac->scc == NULL)
+    {
       continue;
     }
 
@@ -218,11 +221,28 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     ul_info.slot_rx = slot;
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
-    if (is_nr_UL_slot(mac->scc, ul_info.slot_tx)) {
-      LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", ul_info.slot_tx, __FUNCTION__);
+
+    memset(&mac->dl_info, 0, sizeof(mac->dl_info));
+    mac->dl_info.cc_id = CC_id;
+    mac->dl_info.gNB_index = gNB_id;
+    mac->dl_info.module_id = mod_id;
+    mac->dl_info.frame = frame;
+    mac->dl_info.slot = slot;
+    mac->dl_info.thread_id = 0;
+    mac->dl_info.dci_ind = NULL;
+    mac->dl_info.rx_ind = NULL;
+
+    if (is_nr_UL_slot(mac->scc, ul_info.slot_rx))
+    {
+      nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+    }
+    if (is_nr_UL_slot(mac->scc, ul_info.slot_tx))
+    {
+      LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", ul_info.slot_tx, __FUNCTION__);
       nr_ue_ul_indication(&ul_info);
       fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info.slot_tx);
-      if (!ul_config) {
+      if (!ul_config)
+      {
         LOG_E(NR_MAC, "mac->ul_config is null! \n");
         continue;
       }
@@ -243,12 +263,10 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       else if (nr_prach == 2)
       {
         LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
-        //UE->UE_mode[0] = PUSCH;
       }
       else if(nr_prach == 3)
       {
         LOG_I(NR_PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
-        //UE->UE_mode[0] = PRACH;
       }
     }
   }

@@ -372,6 +372,8 @@ typedef struct {
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
 
+  nr_downlink_indication_t dl_info;
+
 } NR_UE_MAC_INST_t;
 
 typedef enum seach_space_mask_e {
