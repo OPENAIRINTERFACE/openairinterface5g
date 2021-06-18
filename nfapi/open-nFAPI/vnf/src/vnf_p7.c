@@ -1616,14 +1616,6 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 	// divide by 2 using shift operator
 	uint32_t latency =  (tx_2_rx - pnf_proc_time) >> 1;
 
-	if(phy->in_sync == 0)
-	{
-		//NFAPI_TRACE(NFAPI_TRACE_NOTE, "VNF P7 In Sync with phy (phy_id:%d)\n", phy->phy_id); 
-
-			if(vnf_p7->_public.sync_indication)
-				(vnf_p7->_public.sync_indication)(&(vnf_p7->_public), 1);
-	}
-	printf("t1 = %d,t2 = %d, t3 = %d, t4 = %d. \n",ind.t1, ind.t2, ind.t3, t4);
 	//phy->in_sync = 1;
 
 	if(!(phy->filtered_adjust))
@@ -1675,17 +1667,24 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
                   struct timespec ts;
                   clock_gettime(CLOCK_MONOTONIC, &ts);
 
-			//NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%1d) %d.%d PNF to VNF phy_id:%2d (t1/2/3/4:%8u, %8u, %8u, %8u) txrx:%4u procT:%3u latency(us):%4d(avg:%4d) offset(us):%8d filtered(us):%8d wrap[t1:%u t2:%u]\n", 
-			//		phy->sfn, phy->slot, ts.tv_sec, ts.tv_nsec, ind.header.phy_id,
-					// ind.t1, ind.t2, ind.t3, t4, 
-					// tx_2_rx, pnf_proc_time, latency, phy->average_latency, phy->slot_offset, phy->slot_offset_filtered,
-					// (ind.t1<phy->previous_t1), (ind.t2<phy->previous_t2));
+			// NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%1d) %d.%d PNF to VNF phy_id:%2d (t1/2/3/4:%8u, %8u, %8u, %8u) txrx:%4u procT:%3u latency(us):%4d(avg:%4d) offset(us):%8d filtered(us):%8d wrap[t1:%u t2:%u]\n", 
+			// 		phy->sfn, phy->slot, ts.tv_sec, ts.tv_nsec, ind.header.phy_id,
+			// 		ind.t1, ind.t2, ind.t3, t4, 
+			// 		tx_2_rx, pnf_proc_time, latency, phy->average_latency, phy->slot_offset, phy->slot_offset_filtered,
+			// 		(ind.t1<phy->previous_t1), (ind.t2<phy->previous_t2));
 		}
 
 	}
 
         if (phy->filtered_adjust && (phy->slot_offset_filtered > 1e6 || phy->slot_offset_filtered < -1e6))
-        {
+        {  struct timespec ts;
+           clock_gettime(CLOCK_MONOTONIC, &ts);
+			NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%1d) %d.%d PNF to VNF phy_id:%2d (t1/2/3/4:%8u, %8u, %8u, %8u) txrx:%4u procT:%3u latency(us):%4d(avg:%4d) offset(us):%8d filtered(us):%8d wrap[t1:%u t2:%u]\n", 
+					phy->sfn, phy->slot, ts.tv_sec, ts.tv_nsec, ind.header.phy_id,
+					ind.t1, ind.t2, ind.t3, t4, 
+					tx_2_rx, pnf_proc_time, latency, phy->average_latency, phy->slot_offset, phy->slot_offset_filtered,
+					(ind.t1<phy->previous_t1), (ind.t2<phy->previous_t2));
+
           phy->filtered_adjust = 0;
           phy->zero_count=0;
           phy->min_sync_cycle_count = 2;
@@ -1961,7 +1960,7 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 					phy->zero_count,
 					phy->in_sync ? "IN_SYNC" : "OUT_OF_SYNC");*/
 
-				phy->sfn = new_sfn;
+				phy->sfn = new_sfn; 
 				phy->slot = new_slot;
 			}
 		}
