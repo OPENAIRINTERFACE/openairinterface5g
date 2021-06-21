@@ -249,7 +249,7 @@ boolean_t gtpv_data_req_new (
 	return result;
       } else {  /* It is from from epc message */
 	/* in the source enb, UE in RRC_HO_EXECUTION mode */
-	MessageDef *msg;
+	//MessageDef *msg;
 	// ?????
 	return true;
       }

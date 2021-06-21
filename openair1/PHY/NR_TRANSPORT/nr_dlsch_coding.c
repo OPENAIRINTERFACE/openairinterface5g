@@ -44,6 +44,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
 #include <syscall.h>
+#include <openair2/UTIL/OPT/opt.h>
 
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
@@ -266,6 +267,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
+  if ( dlsch->rnti != SI_RNTI )
+     trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], 0, WS_C_RNTI, dlsch->rnti, frame, slot,0, 0);
 
   NR_gNB_SCH_STATS_t *stats=NULL;
   int first_free=-1;

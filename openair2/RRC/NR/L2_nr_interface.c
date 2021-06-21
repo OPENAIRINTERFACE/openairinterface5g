@@ -44,7 +44,6 @@
 #include "NR_BCCH-BCH-Message.h"
 #include "rrc_gNB_UE_context.h"
 #include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
-#include <openair2/UTIL/OPT/opt.h>
 
 
 extern RAN_CONTEXT_t RC;
@@ -208,7 +207,6 @@ nr_rrc_data_req(
     message_p);
   LOG_I(NR_RRC,"send RRC_DCCH_DATA_REQ to PDCP\n");
 
-  //trace_NRpdu(DIRECTION_DOWNLINK, message_buffer, sdu_sizeP, 0, WS_M_RNTI, ctxt_pP->rnti, ctxt_pP->frame, ctxt_pP->subframe,0, 0); 
   /* Hack: only trigger PDCP if in CU, otherwise it is triggered by RU threads
    * Ideally, PDCP would not neet to be triggered like this but react to ITTI
    * messages automatically */
