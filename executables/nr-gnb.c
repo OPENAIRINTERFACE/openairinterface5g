@@ -86,6 +86,7 @@
 #include "T.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include <nfapi/oai_integration/nfapi_pnf.h>
+#include <openair1/PHY/NR_TRANSPORT/nr_ulsch.h>
 //#define DEBUG_THREADS 1
 
 //#define USRP_DEBUG 1

@@ -44,18 +44,9 @@
 #include <openair3/NAS/COMMON/NR_NAS_defs.h>
 #include <openair1/PHY/phy_extern_nr_ue.h>
 
-
-//char netName[] = "5G:mnc099.mcc208.3gppnetwork.org";
-//char imsi[] = "2089900007487"; //"208990100001100";
-// USIM_API_K: fe c8 6b a6 eb 70 7e d0 89 05 75 7b 1b b4 4b 8f 
-//uint8_t k[16] = {0xfe, 0xc8, 0x6b, 0xa6, 0xeb, 0x70, 0x7e, 0xd0, 0x89, 0x05, 0x75, 0x7b, 0x1b, 0xb4, 0x4b, 0x8f};
-// OPC: c4 24 49 36 3b ba d0 2b 66 d1 6b c9 75 d7 7c c1
-//const uint8_t opc[16] = {0xc4, 0x24, 0x49, 0x36, 0x3b, 0xba, 0xd0, 0x2b, 0x66, 0xd1, 0x6b, 0xc9, 0x75, 0xd7, 0x7c, 0xc1};
-
 uint8_t  *registration_request_buf;
 uint32_t  registration_request_len;
 extern char *baseNetAddress;
-
 
 static int nas_protected_security_header_encode(
   char                                       *buffer,

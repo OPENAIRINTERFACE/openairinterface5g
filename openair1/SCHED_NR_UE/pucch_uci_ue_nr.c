@@ -567,7 +567,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int occ_Index = 0;
 
   NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack;
-  int BWPsize,BWPstart;
+  int BWPsize,BWPstart=INT_MAX;
   if (select_pucch_resource(ue, mac, gNB_id, N_UCI, pucch_resource_indicator, &initial_pucch_id, &pucch_resource_set,
                             &pucch_resource_id, harq_status) == TRUE) {
     /* use of initial pucch configuration provided by system information 1 */
@@ -1290,8 +1290,8 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
     if (resource_set_found == TRUE) {
       if (pucch_resource_indicator < MAX_PUCCH_RESOURCE_INDICATOR) {
         // Verify that the value of pucch_resource_indicator is valid
-        struct NR_PUCCH_Config__resourceSetToAddModList *resourceSetToAddModList;
-	struct NR_PUCCH_Config__resourceToAddModList *resourceToAddModList;
+        struct NR_PUCCH_Config__resourceSetToAddModList *resourceSetToAddModList=NULL;
+	struct NR_PUCCH_Config__resourceToAddModList *resourceToAddModList=NULL;
         if (bwp_id > 0 && mac->ULbwp[bwp_id-1]) {
            AssertFatal(mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList!=NULL,"mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList is null\n");
            resourceSetToAddModList = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList;

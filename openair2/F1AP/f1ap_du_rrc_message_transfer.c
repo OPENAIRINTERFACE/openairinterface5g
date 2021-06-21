@@ -56,13 +56,6 @@
 #include "intertask_interface.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
-// undefine C_RNTI from
-// openair1/PHY/LTE_TRANSPORT/transport_common.h which
-// replaces in ie->value.choice.C_RNTI, causing
-// a compile error
-
-#undef C_RNTI 
-
 extern f1ap_setup_req_t *f1ap_du_data;
 extern RAN_CONTEXT_t RC;
 extern f1ap_cudu_inst_t f1ap_du_inst[MAX_eNB];

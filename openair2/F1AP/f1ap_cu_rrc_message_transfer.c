@@ -38,13 +38,6 @@
 #include "common/ran_context.h"
 #include "openair3/UTILS/conversions.h"
 
-// undefine C_RNTI from
-// openair1/PHY/LTE_TRANSPORT/transport_common.h which
-// replaces in ie->value.choice.C_RNTI, causing
-// a compile error
-#undef C_RNTI 
-
-
 // Bing Kai: create CU and DU context, and put all the information there.
 uint64_t        du_ue_f1ap_id = 0;
 uint32_t        f1ap_assoc_id = 0;

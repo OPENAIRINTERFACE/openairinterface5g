@@ -85,7 +85,8 @@ void nr_process_mac_pdu(
       LOG_E(NR_MAC, "%s() UE_id == -1\n",__func__);
       return;
     }
-    trace_NRpdu(DIRECTION_UPLINK, pduP, mac_pdu_len ,UE_id, WS_C_RNTI, rnti, frameP, 0,0, 0);
+    if ( pduP[0] != UL_SCH_LCID_PADDING )
+      trace_NRpdu(DIRECTION_UPLINK, pduP, mac_pdu_len ,UE_id, WS_C_RNTI, rnti, frameP, 0,0, 0);
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     //  For both DL/UL-SCH

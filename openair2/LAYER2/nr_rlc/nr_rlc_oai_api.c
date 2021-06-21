@@ -38,7 +38,6 @@
 #include "common/ran_context.h"
 #include "NR_UL-CCCH-Message.h"
 
-#undef C_RNTI // C_RNTI is used in F1AP generated code, prevent preprocessor replace
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
 #include "openair2/LAYER2/PROTO_AGENT/proto_agent.h"
