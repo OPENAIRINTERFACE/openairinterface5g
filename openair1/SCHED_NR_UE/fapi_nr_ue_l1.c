@@ -45,72 +45,6 @@ extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH"};
 const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 
-static void nr_fill_dl_indication_stub(nr_downlink_indication_t *dl_ind,
-                                       fapi_nr_dci_indication_t *dci_ind,
-                                       fapi_nr_rx_indication_t *rx_ind,
-                                       nr_scheduled_response_t *sched_resp)
-{
-  memset((void*)dl_ind, 0, sizeof(nr_downlink_indication_t));
-
-  dl_ind->gNB_index = 0;
-  dl_ind->module_id = sched_resp->module_id;
-  dl_ind->cc_id     = sched_resp->CC_id;
-  dl_ind->frame     = sched_resp->frame
-  dl_ind->slot      = sched_resp->slot;
-
-  if (dci_ind)
-  {
-    dl_ind->rx_ind = NULL;
-    dl_ind->dci_ind = dci_ind;
-  }
-  else if (rx_ind)
-  {
-    dl_ind->rx_ind = rx_ind;
-    dl_ind->dci_ind = NULL;
-  }
-}
-
-static void nr_fill_rx_indication_stub(fapi_nr_rx_indication_t *rx_ind,
-                                       uint8_t pdu_type,
-                                       nr_scheduled_response_t sched_resp)
-{
-  #if 0
-  int harq_pid;
-  uint8_t pdu_type,
-  uint8_t gNB_id,
-  PHY_VARS_NR_UE *ue,
-  NR_UE_DLSCH_t *dlsch0,
-  uint16_t n_pdus
-  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-
-  if (n_pdus > 1){
-    LOG_E(PHY, "In %s: multiple number of DL PDUs not supported yet...\n", __FUNCTION__);
-  }
-
-  switch (pdu_type){
-    case FAPI_NR_RX_PDU_TYPE_DLSCH:
-    case FAPI_NR_RX_PDU_TYPE_RAR:
-      harq_pid = dlsch0->current_harq_pid;
-      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu = dlsch0->harq_processes[harq_pid]->b;
-      rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu_length = dlsch0->harq_processes[harq_pid]->TBS / 8;
-    break;
-    case FAPI_NR_RX_PDU_TYPE_MIB:
-      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.pdu = ue->pbch_vars[gNB_id]->decoded_output;
-      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.additional_bits = ue->pbch_vars[gNB_id]->xtra_byte;
-      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.ssb_index = frame_parms->ssb_index;
-      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.ssb_length = frame_parms->Lmax;
-      rx_ind->rx_indication_body[n_pdus - 1].mib_pdu.cell_id = frame_parms->Nid_cell;
-    break;
-    default:
-    break;
-  }
-
-  rx_ind->rx_indication_body[n_pdus -1].pdu_type = pdu_type;
-  rx_ind->number_pdus = n_pdus;
-  #endif
-
-}
-
 int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
 
   if(scheduled_response != NULL)
@@ -140,8 +74,8 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                           sizeof(scheduled_response->tx_request->tx_request_body) / sizeof(scheduled_response->tx_request->tx_request_body[0]),
                           "Too many tx_req pdus %d", scheduled_response->tx_request->number_of_pdus);
               rx_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION;
-              rx_ind->slot = scheduled_response->tx_request->slot;
-              rx_ind->sfn = scheduled_response->tx_request->sfn;
+              rx_ind->slot = scheduled_response->ul_config->slot;
+              rx_ind->sfn = scheduled_response->ul_config->sfn;
               rx_ind->number_of_pdus = scheduled_response->tx_request->number_of_pdus;
               rx_ind->pdu_list = CALLOC(1, sizeof(*rx_ind->pdu_list));
               for (int j = 0; j < rx_ind->number_of_pdus; j++)
@@ -166,6 +100,8 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 crc_ind->crc_list[j].handle = pusch_config_pdu->handle;
                 crc_ind->crc_list[j].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
                 LOG_I(NR_MAC, "This is the harq pid %d for crc_list[%d]\n", crc_ind->crc_list[j].harq_id, j);
+                LOG_I(NR_MAC, "This is sched sfn/sl [%d %d] and crc sfn/sl [%d %d]\n",
+                      scheduled_response->frame, scheduled_response->slot, crc_ind->sfn, crc_ind->slot);
                 crc_ind->crc_list[j].num_cb = pusch_config_pdu->pusch_data.num_cb;
                 crc_ind->crc_list[j].rnti = pusch_config_pdu->rnti;
                 crc_ind->crc_list[j].tb_crc_status = 0;
@@ -189,36 +125,6 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
         }
       }
       scheduled_response->ul_config->number_pdus = 0;
-    }
-    if (scheduled_response->dl_config != NULL)
-    {
-        if (scheduled_response->tx_request != NULL)
-        {
-          int num_pdus = scheduled_response->dl_config->number_pdus;
-          for (int i = 0; i < num_pdus; i++)
-          {
-            int pdu_type = scheduled_response->dl_config->dl_config_list[i].pdu_type;
-            nr_downlink_indication_t dl_indication;
-            fapi_nr_rx_indication_t rx_ind;
-            switch (pdu_type)
-            {
-              case FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH:
-                nr_fill_dl_indication_stub(&dl_indication, NULL, &rx_ind, &scheduled_response);
-                nr_fill_rx_indication_stub(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, &scheduled_response);
-                break;
-              case FAPI_NR_DL_CONFIG_TYPE_DLSCH:
-                nr_fill_dl_indication_stub(&dl_indication, NULL, &rx_ind, &scheduled_response);
-                nr_fill_rx_indication_stub(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, &scheduled_response);
-                break;
-              case FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH:
-                rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_SIB;
-                break;
-              default:
-                break;
-            }
-          }
-        }
-        nr_ue_dl_indication(&dl_indication, NULL);
     }
   }
   return 0;
