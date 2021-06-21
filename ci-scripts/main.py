@@ -197,6 +197,7 @@ def GetParametersFromXML(action):
 
 	elif action == 'Initialize_UE':
 		ue_id = test.findtext('id')
+		CiTestObj.ue_trace=test.findtext('UE_Trace')#temporary variable, to be passed to Module_UE in Initialize_UE call
 		if (ue_id is None):
 			CiTestObj.ue_id = ""
 		else:
@@ -727,9 +728,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE)
+					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE, CiTestObj.ue_trace)
 				elif action == 'Terminate_UE':
-					CiTestObj.TerminateUE(HTML,COTS_UE)
+					CiTestObj.TerminateUE(HTML,COTS_UE, InfraUE, CiTestObj.ue_trace)
 				elif action == 'Attach_UE':
 					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
 				elif action == 'Detach_UE':

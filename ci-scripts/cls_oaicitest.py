@@ -160,6 +160,7 @@ class OaiCiTest():
 		self.air_interface=''
 		self.expectedNbOfConnectedUEs = 0
 		self.ue_id = '' #used for module identification
+		self.ue_trace ='' #used to enable QLog trace for Module UE, passed to Module UE object at InitializeUE()
 
 
 	def BuildOAIUE(self,HTML):
@@ -367,7 +368,7 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def InitializeUE(self,HTML,RAN,EPC, COTS_UE, InfraUE):
+	def InitializeUE(self,HTML,RAN,EPC, COTS_UE, InfraUE,ue_trace):
 		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
 			if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 				HELP.GenericHelp(CONST.Version)
@@ -386,6 +387,7 @@ class OaiCiTest():
 		else: #if an ID is specified, it is a module from the yaml infrastructure file
 			#RH
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+			Module_UE.ue_trace=ue_trace
 			is_module=Module_UE.CheckCMProcess()
 			if is_module:
 				Module_UE.EnableTrace()
@@ -3102,7 +3104,7 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def TerminateUE(self,HTML,COTS_UE):
+	def TerminateUE(self,HTML,COTS_UE,InfraUE,ue_trace):
 		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
 			terminate_ue_flag = False
 			self.GetAllUEDevices(terminate_ue_flag)
@@ -3119,6 +3121,7 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		else: #if an ID is specified, it is a module from the yaml infrastructure file
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+			Module_UE.ue_trace=ue_trace
 			Module_UE.Command("detach")	
 			Module_UE.DisableTrace()
 			Module_UE.DisableCM()
