@@ -1055,8 +1055,9 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
               //and block this traffic from being forwarded to the upper layers at the gNB
               LOG_D(PHY, "In %s: Random data to be transmitted: TBS_bytes %d \n", __FUNCTION__, TBS_bytes);
 
-              // Make the first byte padding so that gNB ignores the PHY random
-              // data in the TB for the PHY at the MAC layer
+              //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
+              //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
+              //have a valid LCID (nr_process_mac_pdu function)
               ulsch_input_buffer[0] = UL_SCH_LCID_PADDING;
 
               for (int i = 1; i < TBS_bytes; i++) {
@@ -1964,6 +1965,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   } // if is_nr_UL_slot
 }
 
+#define MAX_LCID 8 //Fixme: also defined in LCID table
 uint8_t
 nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
            sub_frame_t subframe, uint8_t eNB_index,
@@ -1971,16 +1973,15 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   uint8_t total_rlc_pdu_header_len = 0;
   int16_t buflen_remain = 0;
   uint8_t lcid = 0;
-  uint16_t sdu_lengths[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-  uint8_t sdu_lcids[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+  uint16_t sdu_lengths[MAX_LCID] = { 0 };
+  uint8_t sdu_lcids[MAX_LCID] = { 0 };
   uint16_t payload_offset = 0, num_sdus = 0;
   uint8_t ulsch_sdus[MAX_ULSCH_PAYLOAD_BYTES];
   uint16_t sdu_length_total = 0;
   //unsigned short post_padding = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
 
-  rlc_buffer_occupancy_t lcid_buffer_occupancy_old =
-    0, lcid_buffer_occupancy_new = 0;
+  rlc_buffer_occupancy_t lcid_buffer_occupancy_new = 0;
   LOG_D(NR_MAC,
         "[UE %d] MAC PROCESS UL TRANSPORT BLOCK at frame%d subframe %d TBS=%d\n",
         module_idP, frameP, subframe, buflen);
@@ -1990,12 +1991,9 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   // Check for DCCH first
   // TO DO: Multiplex in the order defined by the logical channel prioritization
   for (lcid = UL_SCH_LCID_SRB1;
-       lcid < NR_MAX_NUM_LCID; lcid++) {
+       lcid < MAX_LCID; lcid++) {
 
-      lcid_buffer_occupancy_old = mac_rlc_get_buffer_occupancy_ind(module_idP, mac->crnti, eNB_index, frameP, subframe, ENB_FLAG_NO, lcid);
-      lcid_buffer_occupancy_new = lcid_buffer_occupancy_old;
-
-      if(lcid_buffer_occupancy_new){
+      if( mac_rlc_get_buffer_occupancy_ind(module_idP, mac->crnti, eNB_index, frameP, subframe, ENB_FLAG_NO, lcid) ) {
 
         buflen_remain =
           buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
@@ -2033,14 +2031,6 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
           num_sdus++;
         }
 
-        /* Get updated BO after multiplexing this PDU */
-        lcid_buffer_occupancy_new = mac_rlc_get_buffer_occupancy_ind(module_idP,
-                                                                     mac->crnti,
-                                                                     eNB_index,
-                                                                     frameP,
-                                                                     subframe,
-                                                                     ENB_FLAG_NO,
-                                                                     lcid);
         buflen_remain =
                   buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
         }

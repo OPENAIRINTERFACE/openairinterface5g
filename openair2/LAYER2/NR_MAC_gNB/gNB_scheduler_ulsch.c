@@ -32,6 +32,8 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
+#include <openair2/UTIL/OPT/opt.h>
+
 
 //38.321 Table 6.1.3.1-1
 const uint32_t NR_SHORT_BSR_TABLE[32] = {
@@ -189,6 +191,7 @@ void nr_process_mac_pdu(module_id_t module_idP,
     uint16_t mac_ce_len, mac_subheader_len, mac_sdu_len;
 
     NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
+    trace_NRpdu(DIRECTION_UPLINK, pduP, mac_pdu_len ,UE_id, WS_C_RNTI, UE_info->rnti[UE_id], frameP, 0,0, 0);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     //  For both DL/UL-SCH
     //  Except:
@@ -371,16 +374,16 @@ void nr_process_mac_pdu(module_id_t module_idP,
           }
           LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, *UE_info->rnti);
           mac_rlc_data_ind(module_idP,
-              *UE_info->rnti,
-              module_idP,
-              frameP,
-              ENB_FLAG_YES,
-              MBMS_FLAG_NO,
-              rx_lcid,
-              (char *) (pdu_ptr + mac_subheader_len),
-              mac_sdu_len,
-              1,
-              NULL);
+                           UE_info->rnti[UE_id],
+                           module_idP,
+                           frameP,
+                           ENB_FLAG_YES,
+                           MBMS_FLAG_NO,
+                           rx_lcid,
+                           (char *) (pdu_ptr + mac_subheader_len),
+                           mac_sdu_len,
+                           1,
+                           NULL);
           break;
         case UL_SCH_LCID_SRB3:
               // todo

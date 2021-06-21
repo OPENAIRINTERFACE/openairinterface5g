@@ -806,7 +806,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             rnti_t          rntiP,
                                             const uint8_t   *sduP,
                                             sdu_size_t      sdu_lenP,
-                                            const uint8_t   *sdu2P,
+                                            const int8_t   *sdu2P,
 					                                  sdu_size_t      sdu2_lenP) {
 
   F1AP_F1AP_PDU_t                       pdu;
@@ -993,7 +993,7 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
   if (msg->srb_id == 1 || msg->srb_id == 2) {
     struct rrc_gNB_ue_context_s* ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[instance], rnti);
 
-   
+
     NR_UL_DCCH_Message_t* ul_dcch_msg=NULL;
     asn_dec_rval_t dec_rval;
     dec_rval = uper_decode(NULL,
@@ -1001,7 +1001,7 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
          (void**)&ul_dcch_msg,
          &ie->value.choice.RRCContainer.buf[1], // buf[0] includes the pdcp header
          msg->rrc_container_length, 0, 0);
-    
+
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
       LOG_E(F1AP, " Failed to decode UL-DCCH (%zu bytes)\n",dec_rval.consumed);
       /* for rfsim, because UE send RRCSetupRequest in SRB1 */
@@ -1041,18 +1041,18 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
 
       case NR_UL_DCCH_MessageType__c1_PR_rrcReconfigurationComplete:
         LOG_I(F1AP, "[MSG] RRC UL rrcReconfigurationComplete\n");
-        
+
         /* CDRX: activated when RRC Connection Reconfiguration Complete is received */
 #if(0)
         int UE_id_mac = find_nr_UE_id(instance, rnti);
-        
+
         if (UE_id_mac == -1) {
           LOG_E(F1AP, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
           break;
         }
-        
+
         UE_sched_ctrl_t *UE_scheduling_control = &(RC.nrmac[instance]->UE_info.UE_sched_ctrl[UE_id_mac]);
-        
+
         if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
           UE_scheduling_control->cdrx_waiting_ack = FALSE;
           UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration Complete is received
@@ -1064,7 +1064,7 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
 
       case NR_UL_DCCH_MessageType__c1_PR_rrcSetupComplete:
         LOG_I(F1AP, "[MSG] RRC UL rrcSetupComplete \n");
-        
+
         if(!ue_context_p){
           LOG_E(F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", rnti);
 
@@ -1317,12 +1317,12 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 				   NULL);
 
       // This should be somewhere in the f1ap_cudu_ue_inst_t
-      /*int macrlc_instance = 0; 
+      /*int macrlc_instance = 0;
 
       rnti_t rnti = f1ap_get_rnti_by_du_id(&f1ap_du_inst[0], du_ue_f1ap_id);
       struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[macrlc_instance],rnti);
-      */  
-      gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
+      */
+      gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
       AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
 
       memcpy((void*)ue_p->Srb0.Tx_buffer.Payload,
