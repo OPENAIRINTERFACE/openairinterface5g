@@ -195,7 +195,7 @@ void *F1AP_DU_task(void *arg) {
         DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(0,0,0,msg->crnti,
                                                 msg->rrc_container,
                                                 msg->rrc_container_length,
-                                                (char*)msg->du2cu_rrc_container,
+                                                (const int8_t*)msg->du2cu_rrc_container,
                                                 msg->du2cu_rrc_container_length);
         break;
 
