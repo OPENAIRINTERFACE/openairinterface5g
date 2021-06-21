@@ -271,9 +271,9 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
         for (int j = 0; j < pdu_list->num_TLV; j++)
         {
             if (pdu_list->TLVs[j].tag)
-                dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu_list->TLVs[j].value.ptr;
+                dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = (void*) pdu_list->TLVs[j].value.ptr; // Melissa, fix me!
             else if (!pdu_list->TLVs[j].tag)
-                dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu_list->TLVs[j].value.direct;
+                dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = (void*) pdu_list->TLVs[j].value.direct; // Melissa, fix me!
             dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = pdu_list->TLVs[j].length;
             if (tx_data_request->Slot == 7) { //Melissa this means we have an RAR, sorta hacky though
                 dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
@@ -640,7 +640,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
 
-  if ((!dl_info->dci_ind && !dl_info->rx_ind) || (!def_dci_pdu_rel15)) { //Melissa review this with Raymond
+  if ((!dl_info->dci_ind && !dl_info->rx_ind) || !def_dci_pdu_rel15) { //Melissa review this with Raymond
     // UL indication to schedule DCI reception
     nr_ue_scheduler(dl_info, NULL);
   } else {
