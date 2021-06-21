@@ -591,7 +591,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
           nr_decode_pucch0(gNB,
-	                         frame_rx,
+                           frame_rx,
                            slot_rx,
                            uci_pdu_format0,
                            pucch_pdu);
