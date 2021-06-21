@@ -56,14 +56,6 @@ uint8_t  *registration_request_buf;
 uint32_t  registration_request_len;
 extern char *baseNetAddress;
 
-static uicc_t * checkUicc(int Mod_id) {
-  if (!PHY_vars_UE_g[Mod_id][0]->uicc) {
-    char uiccName[64];
-    sprintf(uiccName,"uicc%d",  Mod_id);
-    PHY_vars_UE_g[Mod_id][0]->uicc=(void*)init_uicc(uiccName);
-  }
-  return (uicc_t*) PHY_vars_UE_g[Mod_id][0]->uicc;  
-}
 
 static int nas_protected_security_header_encode(
   char                                       *buffer,

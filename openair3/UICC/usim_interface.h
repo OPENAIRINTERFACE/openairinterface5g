@@ -68,4 +68,5 @@ typedef struct {
  */
 uicc_t *init_uicc(char *sectionName);
 void uicc_milenage_generate(uint8_t * autn, uicc_t *uicc);
+uicc_t * checkUicc(int Mod_id);
 #endif

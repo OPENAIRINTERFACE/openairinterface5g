@@ -24,6 +24,7 @@
 
 #include <openair3/UICC/usim_interface.h>
 #include <openair3/NAS/COMMON/milenage.h>
+extern uint16_t NB_UE_INST;
 
 #define UICC_SECTION    "uicc"
 #define UICC_CONFIG_HELP_OPTIONS     " list of comma separated options to interface a simulated (real UICC to be developped). Available options: \n"\
@@ -42,6 +43,8 @@
     {"amf",              "USIM amf\n",           0,         strptr:&(uicc->amfStr),               defstrval:"8000",       TYPE_STRING,    0 },\
     {"sqn",              "USIM sqn\n",           0,         strptr:&(uicc->sqnStr),               defstrval:"000000",     TYPE_STRING,    0 },\
   };
+
+static uicc_t** uiccArray=NULL;
 
 const char *hexTable="0123456789abcdef";
 static inline uint8_t mkDigit(unsigned char in) {
@@ -91,3 +94,15 @@ void uicc_milenage_generate(uint8_t *autn, uicc_t *uicc) {
   log_dump(SIM,autn,sizeof(autn), LOG_DUMP_CHAR,"milenage output autn:");
 }
 
+uicc_t * checkUicc(int Mod_id) {
+  AssertFatal(Mod_id < NB_UE_INST, "Mod_id must be less than NB_UE_INST. Mod_id:%d NB_UE_INST:%d", Mod_id,NB_UE_INST);
+  if(uiccArray==NULL){
+    uiccArray=(uicc_t **)calloc(1,sizeof(uicc_t*)*NB_UE_INST);
+  }
+  if (!uiccArray[Mod_id]) {
+    char uiccName[64];
+    sprintf(uiccName,"uicc%d",  Mod_id);
+    uiccArray[Mod_id]=(void*)init_uicc(uiccName);
+  }
+  return (uicc_t*) uiccArray[Mod_id];  
+}
