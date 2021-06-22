@@ -178,6 +178,7 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
                             int32_t *avg,
                             uint8_t symbol,
                             uint32_t len,
+                            uint8_t  nrOfLayers,
                             unsigned short nb_rb);
 
 /** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
@@ -202,6 +203,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
                                 unsigned char symbol,
                                 uint8_t is_dmrs_symbol,
                                 unsigned char mod_order,
+                                uint8_t  nrOfLayers,
                                 unsigned short nb_rb,
                                 unsigned char output_shift);
 

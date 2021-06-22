@@ -149,7 +149,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int first_symb,int num_symb) {
 //
 // Todo:
 // - averaging IIR filter for RX power and noise
-void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol){
+void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol, uint8_t nrOfLayers){
 
   int rx_power_tot[NUMBER_OF_NR_ULSCH_MAX];
   int rx_power[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_RX];
@@ -169,7 +169,7 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
 
     rx_power[ulsch_id][aarx] = 0;
 
-    for (int aatx = 0; aatx < fp->nb_antennas_tx; aatx++){
+    for (int aatx = 0; aatx < nrOfLayers; aatx++){
 
       meas->rx_spatial_power[ulsch_id][aatx][aarx] = (signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][ch_offset], N_RB_UL * NR_NB_SC_PER_RB));
 
