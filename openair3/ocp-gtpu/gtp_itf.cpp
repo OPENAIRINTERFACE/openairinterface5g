@@ -409,7 +409,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int bearer_id, teid
 
   inst->te2ue_mapping[incoming_teid].rnti=rnti;
 
-  inst->te2ue_mapping[incoming_teid].rb_id= outgoing_teid;
+  inst->te2ue_mapping[incoming_teid].rb_id= bearer_id;
 
   inst->te2ue_mapping[incoming_teid].callBack=callBack;
 
@@ -545,6 +545,7 @@ int gtpv1u_update_ngu_tunnel(
   const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
   const rnti_t prior_rnti
 ) {
+  AssertFatal( false, "to be developped\n");
   return GTPNOK;
 }
 
