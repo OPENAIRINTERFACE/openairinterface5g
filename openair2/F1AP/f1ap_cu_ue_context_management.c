@@ -98,11 +98,11 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   /* - nRCGI */
   F1AP_NRCGI_t nRCGI;
   memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
-  MCC_MNC_TO_PLMNID(f1ap_ue_context_setup_req->mcc,
-                    f1ap_ue_context_setup_req->mnc,
-                    f1ap_ue_context_setup_req->mnc_digit_length,
+  MCC_MNC_TO_PLMNID(f1ap_du_data_from_du->mcc[0],//f1ap_ue_context_setup_req->mcc,
+                    f1ap_du_data_from_du->mnc[0],//f1ap_ue_context_setup_req->mnc,
+                    f1ap_du_data_from_du->mnc_digit_length[0],//f1ap_ue_context_setup_req->mnc_digit_length,
                     &nRCGI.pLMN_Identity);
-  NR_CELL_ID_TO_BIT_STRING(f1ap_ue_context_setup_req->nr_cellid, &nRCGI.nRCellIdentity);
+  NR_CELL_ID_TO_BIT_STRING(f1ap_du_data_from_du->nr_cellid[0], &nRCGI.nRCellIdentity);
 
   ie->value.choice.NRCGI = nRCGI;
 
@@ -134,7 +134,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   ie->id                             = F1AP_ProtocolIE_ID_id_CUtoDURRCInformation;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_CUtoDURRCInformation;
-  
+
   /* optional */
   /* 6.1 cG_ConfigInfo */
   ie->value.choice.CUtoDURRCInformation.cG_ConfigInfo = (F1AP_CG_ConfigInfo_t *)calloc(1, sizeof(F1AP_CG_ConfigInfo_t));
@@ -153,9 +153,10 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-if (0) {
+//if (0) {
   /* mandatory */
   /* c7. Candidate_SpCell_List */
+  if (0) {
   ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
   ie->id                             = F1AP_ProtocolIE_ID_id_Candidate_SpCell_List;  //90
   ie->criticality                    = F1AP_Criticality_ignore;
@@ -192,6 +193,7 @@ if (0) {
                     candidate_spCell_item_ies);
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
 
   /* optional */
   /* c8. DRXCycle */
@@ -240,6 +242,7 @@ if (0) {
 
   /* mandatory */
   /* c10. SCell_ToBeSetup_List */
+  if(0){
   ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
   ie->id                             = F1AP_ProtocolIE_ID_id_SCell_ToBeSetup_List;
   ie->criticality                    = F1AP_Criticality_ignore;
@@ -286,6 +289,7 @@ if (0) {
                      scell_toBeSetup_item_ies);
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
 
 
   /* mandatory */
@@ -296,7 +300,7 @@ if (0) {
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_SRBs_ToBeSetup_List;
 
   for (i=0;
-       i<0;
+       i<1;
        i++) {
     //
     F1AP_SRBs_ToBeSetup_ItemIEs_t *srbs_toBeSetup_item_ies;
@@ -314,10 +318,11 @@ if (0) {
 
     /* OPTIONAL */
     /* 11.1.2 duplicationIndication */
-    if (0) {
+
+    //if (0) {
       srbs_toBeSetup_item.duplicationIndication = (F1AP_DuplicationIndication_t *)calloc(1, sizeof(F1AP_DuplicationIndication_t));
       srbs_toBeSetup_item.duplicationIndication = F1AP_DuplicationIndication_true; // enum
-    }
+    //}
 
     /* ADD */
     srbs_toBeSetup_item_ies->value.choice.SRBs_ToBeSetup_Item = srbs_toBeSetup_item;
@@ -333,6 +338,7 @@ if (0) {
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_DRBs_ToBeSetup_List;
 
+  LOG_I(F1AP, "Length of drbs_to_be_setup: %d \n", f1ap_ue_context_setup_req->drbs_to_be_setup_length);
   for (i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; i++) {
     //
     F1AP_DRBs_ToBeSetup_ItemIEs_t *drbs_toBeSetup_item_ies;
@@ -349,7 +355,7 @@ if (0) {
     drbs_toBeSetup_item.dRBID = f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id; // 9
 
     /* 12.1.2 qoSInformation */
-    int some_decide_qos = 1; // BK: Need Check
+    int some_decide_qos = 0; // BK: Need Check
     if (some_decide_qos) {
       drbs_toBeSetup_item.qoSInformation.present = F1AP_QoSInformation_PR_eUTRANQoS;
 
@@ -710,7 +716,7 @@ if (0) {
 
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-}
+//}
   /* OPTIONAL */
   /* InactivityMonitoringRequest */
   if (0) {
@@ -743,13 +749,15 @@ if (0) {
 
   /* OPTIONAL */
   /* RRCContainer */
-  ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
-  ie->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
-  ie->criticality                    = F1AP_Criticality_reject;
-  ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_ue_context_setup_req->rrc_container,
+  if(f1ap_ue_context_setup_req->rrc_container_length > 0){
+    ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
+    ie->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
+    ie->criticality                    = F1AP_Criticality_reject;
+    ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_RRCContainer;
+    OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_ue_context_setup_req->rrc_container,
                         f1ap_ue_context_setup_req->rrc_container_length);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
 
   /* OPTIONAL */
   /* MaskedIMEISV */
@@ -762,6 +770,7 @@ if (0) {
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
+  //xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, &pdu); //(void *)pdu
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 UE CONTEXT SETUP REQUEST\n");

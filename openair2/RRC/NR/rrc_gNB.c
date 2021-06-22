@@ -1280,7 +1280,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
   NR_SRB_ToAddModList_t              *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
   NR_DRB_ToReleaseList_t             *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
   NR_DRB_Identity_t                  *drb_id_p      = NULL;
-//  uint8_t                             nr_DRB2LCHAN[8];
+  //  uint8_t                             nr_DRB2LCHAN[8];
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
 
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
@@ -1339,6 +1339,31 @@ rrc_gNB_process_RRCReconfigurationComplete(
                           NULL,
                           ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList,
                           NULL);
+  }
+  else {
+    /*gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
+    gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp;
+    memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
+    create_tunnel_req.upf_NGu_teid[0]  = 1;*/
+    if(DRB_configList!=NULL){
+      MessageDef *message_p;
+      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup = malloc(DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length = DRB_configList->list.count;
+      LOG_I(RRC, "Length of DRB list:%d, %d \n", DRB_configList->list.count, F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length);
+      for (int i = 0; i < DRB_configList->list.count; i++){
+        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
+        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].rlc_mode = RLC_MODE_AM;
+        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].gtp_teid = 1;
+        memcpy(&F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].tl_address,rrc->eth_params_s.my_addr,4);
+        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl_length = 1;
+      }
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_DU_ue_id = 0;
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).rnti = ue_context_pP->ue_context.rnti;
+      itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+      LOG_I(RRC, "Send F1AP_UE_CONTEXT_SETUP_REQ with ITTI\n");
+    }
   }
 #endif
 

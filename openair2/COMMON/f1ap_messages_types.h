@@ -316,7 +316,7 @@ typedef struct f1ap_up_tnl_s {
 } f1ap_up_tnl_t;
 
 typedef struct f1ap_drb_to_be_setup_s {
-  uint8_t        drb_id;
+  long           drb_id;
   f1ap_up_tnl_t  up_ul_tnl[2];
   uint8_t        up_ul_tnl_length;
   rlc_mode_t     rlc_mode;
