@@ -612,6 +612,19 @@ void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentCo
   }
 }
 
+void decodeDownlinkNASTransport(as_nas_info_t *initialNasMsg, uint8_t * pdu_buffer){
+  uint8_t msg_type = *(pdu_buffer + 16);
+  if(msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC){
+    sprintf(baseNetAddress, "%d.%d", *(pdu_buffer + 39),*(pdu_buffer + 40));
+    int third_octet = *(pdu_buffer + 41);
+    int fourth_octet = *(pdu_buffer + 42);
+    LOG_I(NAS, "Received PDU Session Establishment Accept\n");
+    nas_config(1,third_octet,fourth_octet,"ue");
+  } else {
+    LOG_E(NAS, "Received unexpected message in DLinformationTransfer %d\n", msg_type);
+  }
+}
+
 void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
   //wait send RegistrationComplete
   usleep(100*150);
@@ -850,8 +863,7 @@ void *nas_nrue_task(void *args_p)
                                                                             Mod_id,
                                                                             NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length,
                                                                             NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data);
-        as_nas_info_t initialNasMsg;
-        memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
+        as_nas_info_t initialNasMsg={0};
 
         pdu_buffer = NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data;
         if((pdu_buffer + 1) != NULL){
@@ -876,6 +888,10 @@ void *nas_nrue_task(void *args_p)
           case FGS_SECURITY_MODE_COMMAND:
             generateSecurityModeComplete(&initialNasMsg);
             break;
+	case FGS_DOWNLINK_NAS_TRANSPORT:
+	  decodeDownlinkNASTransport(&initialNasMsg, pdu_buffer);
+	  break;
+	    
           default:
               LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
               break;

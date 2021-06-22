@@ -2303,7 +2303,6 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    if (Srb_id != 1) {
      LOG_E(NR_RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%ld), should not have ...\n",
 	 ctxt_pP->module_id, ctxt_pP->frame, Srb_id);
-     return -1;
    } else {
      LOG_D(NR_RRC, "Received message on SRB%ld\n", Srb_id);
    }

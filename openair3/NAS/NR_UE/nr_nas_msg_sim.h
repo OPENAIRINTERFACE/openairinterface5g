@@ -56,6 +56,7 @@
 #define FGS_SECURITY_MODE_COMMAND                          0b01011101 /* 93 = 0x5d */
 #define FGS_SECURITY_MODE_COMPLETE                         0b01011110 /* 94 = 0x5e */
 #define FGS_UPLINK_NAS_TRANSPORT                           0b01100111 /* 103= 0x67 */
+#define FGS_DOWNLINK_NAS_TRANSPORT                         0b01101000 /* 104= 0x68 */
 
 // message type for 5GS session management
 #define FGS_PDU_SESSION_ESTABLISHMENT_REQ                  0b11000001 /* 193= 0xc1 */
