@@ -38,6 +38,7 @@
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "common/utils/nr/nr_common.h"
 
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
@@ -279,11 +280,12 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
 	   start_sc, rel15->StartSymbolIndex, rel15->rbSize, nb_re,rel15->nrOfLayers);
 #endif
     for (int nl=0; nl<rel15->nrOfLayers; nl++) {
-      
+
+      int dmrs_port = get_dmrs_port(nl,rel15->dmrsPorts);
       // DMRS params for this ap
-      get_Wt(Wt, nl, dmrs_Type);
-      get_Wf(Wf, nl, dmrs_Type);
-      delta = get_delta(nl, dmrs_Type);
+      get_Wt(Wt, dmrs_port, dmrs_Type);
+      get_Wf(Wf, dmrs_port, dmrs_Type);
+      delta = get_delta(dmrs_port, dmrs_Type);
       l_prime = 0; // single symbol nl 0
       l0 = get_l0(rel15->dlDmrsSymbPos);
       l_overline = l0;
