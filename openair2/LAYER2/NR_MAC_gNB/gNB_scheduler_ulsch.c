@@ -1311,6 +1311,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
   const NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->ul_failure == 1) continue;
     UE_info->mac_stats[UE_id].ulsch_current_bytes = 0;
 
     /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in
