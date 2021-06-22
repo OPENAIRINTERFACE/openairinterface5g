@@ -3126,7 +3126,10 @@ class OaiCiTest():
 			Module_UE.DisableTrace()
 			Module_UE.DisableCM()
 			archive_destination=Module_UE.LogCollect()
-			HTML.CreateHtmlTestRow('QLog at : '+archive_destination, 'OK', CONST.ALL_PROCESSES_OK)			
+			if Module_UE.ue_trace=='yes':
+				HTML.CreateHtmlTestRow('QLog at : '+archive_destination, 'OK', CONST.ALL_PROCESSES_OK)
+			else:
+				HTML.CreateHtmlTestRow('QLog trace is disabled', 'OK', CONST.ALL_PROCESSES_OK)			
 
 	def TerminateOAIUE(self,HTML,RAN,COTS_UE,EPC, InfraUE):
 		SSH = sshconnection.SSHConnection()
@@ -3183,20 +3186,13 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def AutoTerminateUEandeNB(self,HTML,RAN,COTS_UE,EPC,InfraUE):
-		if self.ue_id!='':
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			Module_UE.Command("detach")
-			Module_UE.DisableTrace()
-			Module_UE.DisableCM()
-			archive_destination=Module_UE.LogCollect()
-			HTML.CreateHtmlTestRow('QLog at : '+archive_destination, 'OK', CONST.ALL_PROCESSES_OK)	
 		if (self.ADBIPAddress != 'none'):
 			self.testCase_id = 'AUTO-KILL-UE'
 			HTML.testCase_id=self.testCase_id
 			self.desc = 'Automatic Termination of UE'
 			HTML.desc='Automatic Termination of UE'
 			self.ShowTestID()
-			self.TerminateUE(HTML,COTS_UE)
+			self.TerminateUE(HTML,COTS_UE,InfraUE,self.ue_trace)
 		if (self.Initialize_OAI_UE_args != ''):
 			self.testCase_id = 'AUTO-KILL-OAI-UE'
 			HTML.testCase_id=self.testCase_id

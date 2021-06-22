@@ -55,6 +55,7 @@
 		<class>Initialize_UE</class>
 		<desc>Initialize Quectel</desc>
 		<id>idefix</id>
+		<UE_Trace>yes</UE_Trace>
 	</testCase>
 
 
