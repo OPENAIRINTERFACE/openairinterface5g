@@ -1320,7 +1320,6 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
     NR_RRCSetup_t                                    *rrcSetup;
     NR_RRCSetup_IEs_t                                *ie;
     NR_SRB_ToAddMod_t                                *SRB1_config          = NULL;
-    NR_SRB_ToAddMod_t                                *SRB2_config          = NULL;
     NR_PDCP_Config_t                                 *pdcp_Config          = NULL;
     NR_CellGroupConfig_t                             *cellGroupConfig      = NULL;
     char masterCellGroup_buf[1000];
@@ -1360,11 +1359,6 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
     ie->radioBearerConfig.srb_ToAddModList = *SRB_configList;
     ASN_SEQUENCE_ADD(&(*SRB_configList)->list, SRB1_config);
 
-    SRB2_config = calloc(1, sizeof(NR_SRB_ToAddMod_t));
-    SRB2_config->srb_Identity = 2;
-    SRB2_config->pdcp_Config = pdcp_Config;
-    ASN_SEQUENCE_ADD(&(*SRB_configList)->list, SRB2_config);
-
     ie->radioBearerConfig.srb3_ToRelease    = NULL;
     ie->radioBearerConfig.drb_ToAddModList  = NULL;
     ie->radioBearerConfig.drb_ToReleaseList = NULL;
@@ -1387,8 +1381,6 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
       cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
       fill_initial_cellGroupConfig(ue_context_pP->ue_context.rnti,cellGroupConfig,scc);
 
-      ue_p->masterCellGroup = cellGroupConfig;
-
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
 				       NULL,
 				       (void *)cellGroupConfig,
@@ -1407,8 +1399,10 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
       }
     }
 
+    ue_p->masterCellGroup = cellGroupConfig;
+
     if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-        xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)&dl_ccch_msg);
+      xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)&dl_ccch_msg);
     }
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_CCCH_Message,
 				     NULL,
