@@ -1992,9 +1992,9 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   // TO DO: Multiplex in the order defined by the logical channel prioritization
   for (lcid = UL_SCH_LCID_SRB1;
        lcid < MAX_LCID; lcid++) {
+    lcid_buffer_occupancy_new = mac_rlc_get_buffer_occupancy_ind(module_idP, mac->crnti, eNB_index, frameP, subframe, ENB_FLAG_NO, lcid);
 
-      if( mac_rlc_get_buffer_occupancy_ind(module_idP, mac->crnti, eNB_index, frameP, subframe, ENB_FLAG_NO, lcid) ) {
-
+    if(lcid_buffer_occupancy_new) {
         buflen_remain =
           buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
         LOG_D(NR_MAC,
@@ -2004,7 +2004,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
               buflen, sdu_length_total,
               total_rlc_pdu_header_len, buflen_remain); // ,nr_ue_mac_inst->scheduling_info.BSR_bytes[nr_ue_mac_inst->scheduling_info.LCGID[lcid]]
 
-        while(buflen_remain > 0 && lcid_buffer_occupancy_new){
+      while(buflen_remain > 0 && lcid_buffer_occupancy_new){
 
         sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
                                 mac->crnti,
@@ -2031,12 +2031,13 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
           num_sdus++;
         }
 
+        /* Get updated BO after multiplexing this PDU */
+        lcid_buffer_occupancy_new = mac_rlc_get_buffer_occupancy_ind(module_idP,mac->crnti,eNB_index,frameP, subframe, ENB_FLAG_NO, lcid);
         buflen_remain =
                   buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
-        }
+      }
+    }
   }
-
-}
 
   // Generate ULSCH PDU
   if (num_sdus>0) {
@@ -2052,9 +2053,9 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                                          0, // long_bsr
                                          0, // post_padding 
                                          buflen);  // TBS in bytes
+  } else {
+    return 0;
   }
-  else
-          return 0;
 
   // Padding: fill remainder of ULSCH with 0
   if (buflen - payload_offset > 0){
