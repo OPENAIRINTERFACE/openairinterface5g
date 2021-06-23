@@ -24,21 +24,21 @@
 	<htmlTabRef>TEST-NSA-FR1-TM1</htmlTabRef>
 	<htmlTabName>NSA Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>3</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  030000
  040000
  000002
  010000
+ 000001
  050000
  050001
  000001
  070000
  000001
- 070000
+ 070001
  000001
  010002
- 000001
  080001
  080000
 	</TestCaseRequestedList>
@@ -65,13 +65,14 @@
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>lte</air_interface>
+		<eNB_Trace>yes</eNB_Trace>
 	</testCase>
 
 
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpn310.conf -q</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf -E -q</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>
@@ -109,7 +110,7 @@
 	<testCase id="070000">
 		<class>Iperf</class>
 		<desc>iperf (DL/20Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 20M -t 60 -i 1</iperf_args>
+		<iperf_args>-u -b 20M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>idefix</id>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
@@ -119,7 +120,7 @@
 	<testCase id="070001">
 		<class>Iperf</class>
 		<desc>iperf (UL/3Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 3M -t 60 -i 1</iperf_args>
+		<iperf_args>-u -b 3M -t 60</iperf_args>
 		<direction>UL</direction>
 		<id>idefix</id>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
