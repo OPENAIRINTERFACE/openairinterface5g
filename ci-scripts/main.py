@@ -483,7 +483,7 @@ elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateUE(HTML,COTS_UE)
+	CiTestObj.TerminateUE(HTML,COTS_UE,InfraUE,CiTestObj.ue_trace)
 elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '':
 		HELP.GenericHelp(CONST.Version)
