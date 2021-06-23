@@ -1264,7 +1264,7 @@ nr_rrc_ue_process_masterCellGroup(
     // NSA procedures
   }
   if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config == NULL){
-    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = malloc(sizeof(NR_CellGroupConfig_t));
+    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = calloc(1,sizeof(NR_CellGroupConfig_t));
   }
  
 
