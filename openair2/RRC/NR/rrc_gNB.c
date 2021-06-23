@@ -2189,7 +2189,10 @@ rrc_gNB_decode_dcch(
                   sdu_sizeP,
                   0,
                   0);
-  // xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
+
+  if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+    xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
+  }
 
   {
     for (i = 0; i < sdu_sizeP; i++) {
