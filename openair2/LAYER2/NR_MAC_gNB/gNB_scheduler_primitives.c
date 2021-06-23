@@ -1881,7 +1881,7 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
   if (CellGroup && CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList)
     ubwp = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
 
-  NR_SearchSpace_t *ss;
+  NR_SearchSpace_t *ss=NULL;
 
   // common search type uses DCI format 1_0
   if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) {

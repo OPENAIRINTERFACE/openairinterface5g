@@ -387,5 +387,6 @@ void processNAS(void *msg, NRUEcontext_t *UE);
 int identityRequest(void **msg, NRUEcontext_t *UE);
 int authenticationRequest(void **msg, NRUEcontext_t *UE);
 int securityModeCommand(void **msg, NRUEcontext_t *UE);
+void servingNetworkName(uint8_t *msg, char * imsiStr, int nmc_size);
 
 #endif

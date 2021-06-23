@@ -409,7 +409,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int bearer_id, teid
 
   inst->te2ue_mapping[incoming_teid].rnti=rnti;
 
-  inst->te2ue_mapping[incoming_teid].rb_id= outgoing_teid;
+  inst->te2ue_mapping[incoming_teid].rb_id= bearer_id;
 
   inst->te2ue_mapping[incoming_teid].callBack=callBack;
 
@@ -441,10 +441,15 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int bearer_id, teid
   tmp->outgoing_port=port;
   tmp->teid_outgoing= outgoing_teid;
   pthread_mutex_unlock(&globGtp.gtp_lock);
-  LOG_I(GTPU, "Created tunnel for RNTI %x, teid for DL: %d, teid for UL %d\n",
+  char ip4[INET_ADDRSTRLEN];
+  char ip6[INET6_ADDRSTRLEN];
+
+  LOG_I(GTPU, "Created tunnel for RNTI %x, teid for DL: %d, teid for UL %d to remote IPv4: %s, IPv6 %s\n",
         rnti,
 	tmp->teid_incoming,
-        tmp->teid_outgoing);
+        tmp->teid_outgoing,
+	inet_ntop(AF_INET,(void*)&tmp->outgoing_ip_addr, ip4,INET_ADDRSTRLEN ),
+	inet_ntop(AF_INET6,(void*)&tmp->outgoing_ip6_addr.s6_addr, ip6, INET6_ADDRSTRLEN));
   return incoming_teid;
 }
 
@@ -540,6 +545,7 @@ int gtpv1u_update_ngu_tunnel(
   const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
   const rnti_t prior_rnti
 ) {
+  AssertFatal( false, "to be developped\n");
   return GTPNOK;
 }
 

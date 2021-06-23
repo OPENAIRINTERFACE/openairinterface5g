@@ -38,7 +38,6 @@
 #include "common/ran_context.h"
 #include "NR_UL-CCCH-Message.h"
 
-#undef C_RNTI // C_RNTI is used in F1AP generated code, prevent preprocessor replace
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
 #include "openair2/LAYER2/PROTO_AGENT/proto_agent.h"
@@ -426,7 +425,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   int is_enb;
 
   /* is it SRB? */
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < sizeofArray(ue->srb); i++) {
     if (entity == ue->srb[i]) {
       is_srb = 1;
       rb_id = i+1;
@@ -435,7 +434,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   }
 
   /* maybe DRB? */
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < sizeofArray(ue->drb) ; i++) {
     if (entity == ue->drb[i]) {
       is_srb = 0;
       rb_id = i+1;

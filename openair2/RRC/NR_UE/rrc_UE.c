@@ -69,9 +69,7 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 #include <executables/softmodem-common.h>
 
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
 #include "nr_nas_msg_sim.h"
-#endif
 
 NR_UE_RRC_INST_t *NR_UE_rrc_inst;
 /* NAS Attach request with IMSI */
@@ -1349,14 +1347,21 @@ static void rrc_ue_generate_RRCSetupComplete(
     AssertFatal(1==0,"2 > csi_MeasConfig is not null\n");
 
  if (AMF_MODE_ENABLED) {
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
+#if defined(ITTI_SIM) 
     as_nas_info_t initialNasMsg;
-    generateRegistrationRequest(&initialNasMsg);
+    generateRegistrationRequest(&initialNasMsg, ctxt_pP->module_id);
     nas_msg = (char*)initialNasMsg.data;
     nas_msg_length = initialNasMsg.length;
 #else
-    nas_msg         = (char *) NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
-    nas_msg_length  = NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
+    if (get_softmodem_params()->sa) {
+      as_nas_info_t initialNasMsg;
+      generateRegistrationRequest(&initialNasMsg, ctxt_pP->module_id);
+      nas_msg = (char*)initialNasMsg.data;
+      nas_msg_length = initialNasMsg.length;
+    } else {
+      nas_msg         = (char *) NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
+      nas_msg_length  = NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
+    }
 #endif
   } else {
     nas_msg         = nr_nas_attach_req_imsi;
@@ -2298,7 +2303,6 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    if (Srb_id != 1) {
      LOG_E(NR_RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%ld), should not have ...\n",
 	 ctxt_pP->module_id, ctxt_pP->frame, Srb_id);
-     return -1;
    } else {
      LOG_D(NR_RRC, "Received message on SRB%ld\n", Srb_id);
    }

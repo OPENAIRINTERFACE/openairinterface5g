@@ -805,18 +805,18 @@ rrc_gNB_generate_defaultRRCReconfiguration(
 
   /* Add all NAS PDUs to the list */
   for (int i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
-    if (ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer != NULL) {
+    if (ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer != NULL) {
       dedicatedNAS_Message = CALLOC(1, sizeof(NR_DedicatedNAS_Message_t));
       memset(dedicatedNAS_Message, 0, sizeof(OCTET_STRING_t));
       OCTET_STRING_fromBuf(dedicatedNAS_Message,
-                            (char *)ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer,
-                            ue_context_pP->ue_context.pdusession[i].param.nas_pdu.length);
+                            (char *)ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer,
+                            ue_context_pP->ue_context.pduSession[i].param.nas_pdu.length);
       ASN_SEQUENCE_ADD(&dedicatedNAS_MessageList->list, dedicatedNAS_Message);
     }
 
-    ue_context_pP->ue_context.pdusession[i].status = PDU_SESSION_STATUS_DONE;
+    ue_context_pP->ue_context.pduSession[i].status = PDU_SESSION_STATUS_DONE;
     LOG_D(NR_RRC, "setting the status for the default DRB (index %d) to (%d,%s)\n",
-          i, ue_context_pP->ue_context.pdusession[i].status, "PDU_SESSION_STATUS_DONE");
+          i, ue_context_pP->ue_context.pduSession[i].status, "PDU_SESSION_STATUS_DONE");
   }
 
   if (ue_context_pP->ue_context.nas_pdu_flag == 1) {
@@ -853,9 +853,9 @@ rrc_gNB_generate_defaultRRCReconfiguration(
 
   /* Free all NAS PDUs */
   for (int i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
-    if (ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer != NULL) {
-      free(ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer);
-      ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer = NULL;
+    if (ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer != NULL) {
+      free(ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer);
+      ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer = NULL;
     }
   }
 
@@ -990,7 +990,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
       break;
     }
 
-    if (ue_context_pP->ue_context.pdusession[i].status >= PDU_SESSION_STATUS_DONE) {
+    if (ue_context_pP->ue_context.pduSession[i].status >= PDU_SESSION_STATUS_DONE) {
       continue;
     }
 
@@ -1001,15 +1001,15 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     // sdap_Config
     sdap_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
     memset(sdap_config, 0, sizeof(NR_SDAP_Config_t));
-    sdap_config->pdu_Session = ue_context_pP->ue_context.pdusession[i].param.pdusession_id;
+    sdap_config->pdu_Session = ue_context_pP->ue_context.pduSession[i].param.pdusession_id;
     sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
     sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
     sdap_config->defaultDRB = TRUE;
     sdap_config->mappedQoS_FlowsToAdd = calloc(1, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
     memset(sdap_config->mappedQoS_FlowsToAdd, 0, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
 
-    for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pdusession[i].param.nb_qos; qos_flow_index++) {
-      qfi = ue_context_pP->ue_context.pdusession[i].param.qos[qos_flow_index].qfi;
+    for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
+      qfi = ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].qfi;
       ASN_SEQUENCE_ADD(&sdap_config->mappedQoS_FlowsToAdd->list, &qfi);
     }
     sdap_config->mappedQoS_FlowsToRelease = NULL;
@@ -1039,8 +1039,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     DRB_config->pdcp_Config->ext1 = NULL;
 
     // Reference TS23501 Table 5.7.4-1: Standardized 5QI to QoS characteristics mapping
-    for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pdusession[i].param.nb_qos; qos_flow_index++) {
-      switch (ue_context_pP->ue_context.pdusession[i].param.qos[qos_flow_index].fiveQI) {
+    for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
+      switch (ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].fiveQI) {
         case 1: //100ms
         case 2: //150ms
         case 3: //50ms
@@ -1054,9 +1054,9 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
           break;
 
         default:
-          LOG_E(NR_RRC,"not supported 5qi %lu\n", ue_context_pP->ue_context.pdusession[i].param.qos[qos_flow_index].fiveQI);
-          ue_context_pP->ue_context.pdusession[i].status = PDU_SESSION_STATUS_FAILED;
-          ue_context_pP->ue_context.pdusession[i].xid = xid;
+          LOG_E(NR_RRC,"not supported 5qi %lu\n", ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].fiveQI);
+          ue_context_pP->ue_context.pduSession[i].status = PDU_SESSION_STATUS_FAILED;
+          ue_context_pP->ue_context.pduSession[i].xid = xid;
           pdu_sessions_done++;
           free(DRB_config);
           continue;
@@ -1066,18 +1066,18 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
     ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
 
-    ue_context_pP->ue_context.pdusession[i].status = PDU_SESSION_STATUS_DONE;
-    ue_context_pP->ue_context.pdusession[i].xid = xid;
+    ue_context_pP->ue_context.pduSession[i].status = PDU_SESSION_STATUS_DONE;
+    ue_context_pP->ue_context.pduSession[i].xid = xid;
 
-    if (ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer != NULL) {
+    if (ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer != NULL) {
       dedicatedNAS_Message = CALLOC(1, sizeof(NR_DedicatedNAS_Message_t));
       memset(dedicatedNAS_Message, 0, sizeof(OCTET_STRING_t));
       OCTET_STRING_fromBuf(dedicatedNAS_Message,
-                            (char *)ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer,
-                            ue_context_pP->ue_context.pdusession[i].param.nas_pdu.length);
+                            (char *)ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer,
+                            ue_context_pP->ue_context.pduSession[i].param.nas_pdu.length);
       ASN_SEQUENCE_ADD(&dedicatedNAS_MessageList->list, dedicatedNAS_Message);
 
-      LOG_I(NR_RRC,"add NAS info with size %d (pdusession id %d)\n",ue_context_pP->ue_context.pdusession[i].param.nas_pdu.length, i);
+      LOG_I(NR_RRC,"add NAS info with size %d (pdusession id %d)\n",ue_context_pP->ue_context.pduSession[i].param.nas_pdu.length, i);
     } else {
       // TODO
       LOG_E(NR_RRC,"no NAS info (pdusession id %d)\n", i);
@@ -1108,10 +1108,10 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
-    if (ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer != NULL) {
+    if (ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer != NULL) {
       /* Free the NAS PDU buffer and invalidate it */
-      free(ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer);
-      ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer = NULL;
+      free(ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer);
+      ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer = NULL;
     }
   }
 
@@ -1180,7 +1180,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 
   *DRB_Release_configList2 = CALLOC(1, sizeof(**DRB_Release_configList2));
   for(i = 0; i < NB_RB_MAX; i++) {
-    if((ue_context_pP->ue_context.pdusession[i].status == PDU_SESSION_STATUS_TORELEASE) && ue_context_pP->ue_context.pdusession[i].xid == xid) {
+    if((ue_context_pP->ue_context.pduSession[i].status == PDU_SESSION_STATUS_TORELEASE) && ue_context_pP->ue_context.pduSession[i].xid == xid) {
       DRB_release = CALLOC(1, sizeof(NR_DRB_Identity_t));
       *DRB_release = i+1;
       ASN_SEQUENCE_ADD(&(*DRB_Release_configList2)->list, DRB_release);
@@ -1671,13 +1671,13 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
     memset(&create_tunnel_req, 0, sizeof(create_tunnel_req));
 
     for ( j = 0, i = 0; i < NB_RB_MAX; i++) {
-      if (ue_context_pP->ue_context.pdusession[i].status == PDU_SESSION_STATUS_ESTABLISHED || ue_context_pP->ue_context.pdusession[i].status == PDU_SESSION_STATUS_DONE) {
-        create_tunnel_req.pdusession_id[j]   = ue_context_pP->ue_context.pdusession[i].param.pdusession_id;
-        create_tunnel_req.upf_NGu_teid[j]  = ue_context_pP->ue_context.pdusession[i].param.gtp_teid;
+      if (ue_context_pP->ue_context.pduSession[i].status == PDU_SESSION_STATUS_ESTABLISHED || ue_context_pP->ue_context.pduSession[i].status == PDU_SESSION_STATUS_DONE) {
+        create_tunnel_req.pdusession_id[j]   = ue_context_pP->ue_context.pduSession[i].param.pdusession_id;
+        create_tunnel_req.upf_NGu_teid[j]  = ue_context_pP->ue_context.pduSession[i].param.gtp_teid;
         memcpy(create_tunnel_req.upf_addr[j].buffer,
-               ue_context_pP->ue_context.pdusession[i].param.upf_addr.buffer,
+               ue_context_pP->ue_context.pduSession[i].param.upf_addr.buffer,
                 sizeof(uint8_t)*20);
-        create_tunnel_req.upf_addr[j].length = ue_context_pP->ue_context.pdusession[i].param.upf_addr.length;
+        create_tunnel_req.upf_addr[j].length = ue_context_pP->ue_context.pduSession[i].param.upf_addr.length;
         j++;
       }
     }
@@ -1737,10 +1737,10 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
 
     /* TODO parameters yet to process ... */
     /* TODO should test if pdu session are Ok before! */
-    ue_context_pP->ue_context.pdusession[i].status = PDU_SESSION_STATUS_DONE;
-    ue_context_pP->ue_context.pdusession[i].xid    = xid;
+    ue_context_pP->ue_context.pduSession[i].status = PDU_SESSION_STATUS_DONE;
+    ue_context_pP->ue_context.pduSession[i].xid    = xid;
     LOG_D(NR_RRC, "setting the status for the default DRB (index %d) to (%d,%s)\n",
-          i, ue_context_pP->ue_context.pdusession[i].status, "PDU_SESSION_STATUS_DONE");
+          i, ue_context_pP->ue_context.pduSession[i].status, "PDU_SESSION_STATUS_DONE");
   }
 
   memset(buffer, 0, RRC_BUF_SIZE);
@@ -1761,10 +1761,10 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
-    if (ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer != NULL) {
+    if (ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer != NULL) {
       /* Free the NAS PDU buffer and invalidate it */
-      free(ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer);
-      ue_context_pP->ue_context.pdusession[i].param.nas_pdu.buffer = NULL;
+      free(ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer);
+      ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer = NULL;
     }
   }
 
@@ -2097,10 +2097,10 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                 ue_context_p->ue_context.reestablishment_xid);
 
             for (uint8_t pdusessionid = 0; pdusessionid < ue_context_p->ue_context.nb_of_pdusessions; pdusessionid++) {
-              if (ue_context_p->ue_context.pdusession[pdusessionid].status == PDU_SESSION_STATUS_DONE) {
-                ue_context_p->ue_context.pdusession[pdusessionid].status = PDU_SESSION_STATUS_ESTABLISHED;
+              if (ue_context_p->ue_context.pduSession[pdusessionid].status == PDU_SESSION_STATUS_DONE) {
+                ue_context_p->ue_context.pduSession[pdusessionid].status = PDU_SESSION_STATUS_ESTABLISHED;
               } else {
-                ue_context_p->ue_context.pdusession[pdusessionid].status = PDU_SESSION_STATUS_FAILED;
+                ue_context_p->ue_context.pduSession[pdusessionid].status = PDU_SESSION_STATUS_FAILED;
               }
             }
           }
@@ -2341,7 +2341,7 @@ rrc_gNB_decode_dcch(
             GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
 
             for(i = 0; i < NB_RB_MAX; i++) {
-              if(xid == ue_context_p->ue_context.pdusession[i].xid) {
+              if(xid == ue_context_p->ue_context.pduSession[i].xid) {
                 GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).pdusession_id[GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_pdusession++] =
                   ue_context_p->ue_context.gnb_gtp_psi[i];
                 ue_context_p->ue_context.gnb_gtp_teid[i] = 0;
@@ -3058,7 +3058,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   MessageDef *msg;
   int id;
   rrc_gNB_ue_context_t *ue_context_p = NULL;
-  FILE *fd=fopen("nrRRCstats.log","w");
+  FILE *fd=NULL;//fopen("nrRRCstats.log","w");
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(RC.nrrrc[ctxt_pP->module_id]->rrc_ue_head)) {
     ctxt_pP->rnti = ue_context_p->ue_id_rnti;
 
@@ -3138,7 +3138,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
     }
   }
 
-  fclose(fd);
+  if (fd) fclose(fd);
 
   /* send a tick to x2ap */
   if (is_x2ap_enabled()){
