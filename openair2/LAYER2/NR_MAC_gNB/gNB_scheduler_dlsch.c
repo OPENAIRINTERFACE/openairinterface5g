@@ -453,8 +453,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
   int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-  const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
 
   int rbSize = 0;
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
@@ -474,9 +472,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
     }
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
-    if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
-      nr_set_pdsch_semi_static(
-          scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+    if (ps->time_domain_allocation != tda || ps->nrOfLayers != UE_info->layers[UE_id])
+      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, UE_info->layers[UE_id], sched_ctrl, ps);
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
@@ -485,13 +482,12 @@ bool allocate_dl_retransmission(module_id_t module_id,
     while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
       rbSize++;
     NR_pdsch_semi_static_t temp_ps;
-    nr_set_pdsch_semi_static(
-        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
+    nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, UE_info->layers[UE_id], sched_ctrl, &temp_ps);
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
                                  retInfo->R,
-                                 retInfo->nrOfLayers,
+                                 temp_ps.nrOfLayers,
                                  temp_ps.nrOfSymbols,
                                  temp_ps.N_PRB_DMRS * temp_ps.N_DMRS_SLOT,
                                  retInfo->tb_size,
@@ -603,7 +599,7 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       set_dl_mcs(sched_pdsch,sched_ctrl,ps->mcsTableIdx);
-      set_dl_nrOfLayers(sched_pdsch,sched_ctrl);
+      UE_info->layers[UE_id] = set_dl_nrOfLayers(sched_ctrl);
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       uint32_t tbs = nr_compute_tbs(Qm,
@@ -613,7 +609,7 @@ void pf_dl(module_id_t module_id,
                                     0, /* N_PRB_DMRS * N_DMRS_SLOT */
                                     0 /* N_PRB_oh, 0 for initialBWP */,
                                     0 /* tb_scaling */,
-                                    sched_pdsch->nrOfLayers) >> 3;
+                                    UE_info->layers[UE_id]) >> 3;
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(NR_MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
             b, UE_id, thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
@@ -691,10 +687,9 @@ void pf_dl(module_id_t module_id,
     const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
-    if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
-      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+    if (ps->nrOfLayers != UE_info->layers[UE_id] ||
+        ps->time_domain_allocation != tda)
+      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, UE_info->layers[UE_id], sched_ctrl, ps);
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->pucch_allocation = alloc;
@@ -704,7 +699,7 @@ void pf_dl(module_id_t module_id,
                  + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
     nr_find_nb_rb(sched_pdsch->Qm,
                   sched_pdsch->R,
-                  sched_pdsch->nrOfLayers,
+                  ps->nrOfLayers,
                   ps->nrOfSymbols,
                   ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                   sched_ctrl->num_total_bytes + oh,
@@ -829,16 +824,16 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     const rnti_t rnti = UE_info->rnti[UE_id];
 
-    /* POST processing */
-    const uint8_t nrOfLayers = sched_pdsch->nrOfLayers;
-    const uint16_t R = sched_pdsch->R;
-    const uint8_t Qm = sched_pdsch->Qm;
-    const uint32_t TBS = sched_pdsch->tb_size;
-
     /* pre-computed PDSCH values that only change if time domain
      * allocation/DMRS parameters change. Updated in the preprocessor through
      * nr_set_pdsch_semi_static() */
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+
+    /* POST processing */
+    const uint8_t nrOfLayers = ps->nrOfLayers;
+    const uint16_t R = sched_pdsch->R;
+    const uint8_t Qm = sched_pdsch->Qm;
+    const uint32_t TBS = sched_pdsch->tb_size;
 
     int8_t current_harq_pid = sched_pdsch->dl_harq_pid;
     if (current_harq_pid < 0) {
@@ -949,7 +944,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu->SCID = 0;
     pdsch_pdu->numDmrsCdmGrpsNoData = ps->numDmrsCdmGrpsNoData;
-    pdsch_pdu->dmrsPorts = 1;
+    pdsch_pdu->dmrsPorts = (1<<nrOfLayers)-1;  // FIXME with a better implementation
 
     // Pdsch Allocation in frequency domain
     pdsch_pdu->resourceAlloc = 1;
@@ -1031,7 +1026,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_payload.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
     dci_payload.pucch_resource_indicator = pucch->resource_indicator;
     dci_payload.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator; // PDSCH to HARQ TI
-    dci_payload.antenna_ports.val = 0;  // nb of cdm groups w/o data 1 and dmrs port 0
+    dci_payload.antenna_ports.val = ps->dmrs_ports_id;
     dci_payload.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
     LOG_D(NR_MAC,
           "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "

@@ -273,8 +273,8 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   /* the following might override the table that is mandated by RRC
    * configuration */
   ps->mcsTableIdx = g_mcsTableIdx;
+  ps->nrOfLayers = g_nrOfLayers;
 
-  sched_pdsch->nrOfLayers = g_nrOfLayers;
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,

@@ -362,12 +362,12 @@ typedef struct NR_sched_pusch {
 typedef struct NR_pdsch_semi_static {
   int time_domain_allocation;
   uint8_t numDmrsCdmGrpsNoData;
-
+  int mapping_type;
   int startSymbolIndex;
   int nrOfSymbols;
-
+  uint8_t nrOfLayers;
   uint8_t mcsTableIdx;
-
+  uint8_t dmrs_ports_id;
   uint8_t N_PRB_DMRS;
   uint8_t N_DMRS_SLOT;
   uint16_t dl_dmrs_symb_pos;
@@ -383,7 +383,6 @@ typedef struct NR_sched_pdsch {
   uint8_t mcs;
 
   /// TBS-related info
-  uint8_t nrOfLayers;
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;
@@ -626,7 +625,7 @@ typedef struct {
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
   NR_list_t list;
   int num_UEs;
-
+  int layers[MAX_MOBILES_PER_GNB];
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *CellGroup[MAX_MOBILES_PER_GNB];
