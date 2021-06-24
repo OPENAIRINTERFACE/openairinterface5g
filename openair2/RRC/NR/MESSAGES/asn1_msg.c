@@ -1176,15 +1176,11 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
 				  NR_ServingCellConfigCommon_t *scc) {
 
   NR_RLC_BearerConfig_t                            *rlc_BearerConfig     = NULL;
-  NR_RLC_BearerConfig_t                            *rlc_BearerConfig2    = NULL;
   NR_RLC_Config_t                                  *rlc_Config           = NULL;
-  NR_RLC_Config_t                                  *rlc_Config2          = NULL;
   NR_LogicalChannelConfig_t                        *logicalChannelConfig = NULL;
-  NR_LogicalChannelConfig_t                        *logicalChannelConfig2= NULL;
   NR_MAC_CellGroupConfig_t                         *mac_CellGroupConfig  = NULL;
   NR_PhysicalCellGroupConfig_t	                   *physicalCellGroupConfig = NULL;
   long *logicalChannelGroup = NULL;
-  long *logicalChannelGroup2 = NULL;
   
   cellGroupConfig->cellGroupId = 0;
   
@@ -1227,6 +1223,10 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
 
   /*
   // SRB2
+  NR_RLC_BearerConfig_t *rlc_BearerConfig2 = NULL;
+  NR_RLC_Config_t *rlc_Config2 = NULL;
+  NR_LogicalChannelConfig_t *logicalChannelConfig2= NULL;
+  long *logicalChannelGroup2 = NULL;
   rlc_BearerConfig2                                                 = calloc(1, sizeof(NR_RLC_BearerConfig_t));
   rlc_BearerConfig2->logicalChannelIdentity                         = 2;
   rlc_BearerConfig2->servedRadioBearer                              = calloc(1, sizeof(*rlc_BearerConfig2->servedRadioBearer));
