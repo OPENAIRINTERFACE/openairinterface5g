@@ -720,8 +720,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
     int8_t current_harq_pid = sched_ctrl->dl_harq_pid;
     if (current_harq_pid < 0) {
       /* PP has not selected a specific HARQ Process, get a new one */
-      if (NFAPI_MODE == NFAPI_MODE_VNF)
-        sched_ctrl->available_dl_harq.head = 0;
       current_harq_pid = sched_ctrl->available_dl_harq.head;
       AssertFatal(current_harq_pid >= 0,
                   "no free HARQ process available for UE %d\n",
@@ -738,9 +736,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
         remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
     }
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
-    if (NFAPI_MODE == NFAPI_MODE_VNF) {
-      harq->is_waiting = false;
-    }
     DevAssert(!harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
@@ -935,10 +930,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
     const int rnti_type = NR_RNTI_C;
 
-    if (NFAPI_MODE == NFAPI_MODE_VNF){
-      dci_payload.harq_pid = harq_pid;
-      dci_payload.tpc = 2;
-    }
     fill_dci_pdu_rel15(scc,
                        UE_info->secondaryCellGroup[UE_id],
                        dci_pdu,
