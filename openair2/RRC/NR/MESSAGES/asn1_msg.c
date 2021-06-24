@@ -1225,6 +1225,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   rlc_BearerConfig->mac_LogicalChannelConfig                       = logicalChannelConfig;
   ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
 
+  /*
   // SRB2
   rlc_BearerConfig2                                                 = calloc(1, sizeof(NR_RLC_BearerConfig_t));
   rlc_BearerConfig2->logicalChannelIdentity                         = 2;
@@ -1259,6 +1260,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   logicalChannelConfig2->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = 0;
   rlc_BearerConfig2->mac_LogicalChannelConfig                       = logicalChannelConfig2;
   ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig2);
+  */
   
   cellGroupConfig->rlc_BearerToReleaseList = NULL;
   
