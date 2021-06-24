@@ -698,7 +698,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 1;
     else
       dlsch_config_pdu_1_0->n_dmrs_cdm_groups = 2;
-    dlsch_config_pdu_1_0->dmrs_ports = 0;
+    dlsch_config_pdu_1_0->dmrs_ports = 1; // only port 0 in case of DCI 1_0
     /* VRB_TO_PRB_MAPPING */
     dlsch_config_pdu_1_0->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping.val == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
     /* MCS TABLE INDEX */
