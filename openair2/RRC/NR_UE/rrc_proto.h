@@ -39,6 +39,11 @@
 #include "NR_MeasConfig.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_RadioBearerConfig.h"
+#include "openair2/PHY_INTERFACE/queue.h"
+
+extern queue_t nr_rach_ind_queue;
+extern queue_t nr_rx_ind_queue;
+extern queue_t nr_crc_ind_queue;
 //
 //  main_rrc.c
 //

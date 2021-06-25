@@ -44,6 +44,8 @@ extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
 const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH"};
 const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
+queue_t nr_rx_ind_queue;
+queue_t nr_crc_ind_queue;
 
 int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
 
@@ -64,9 +66,8 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
         {
           case (FAPI_NR_UL_CONFIG_TYPE_PUSCH):
           {
-            NR_UL_IND_t UL_INFO;
-            nfapi_nr_rx_data_indication_t *rx_ind = &UL_INFO.rx_ind;
-            nfapi_nr_crc_indication_t *crc_ind = &UL_INFO.crc_ind;
+            nfapi_nr_rx_data_indication_t *rx_ind = CALLOC(1, sizeof(*rx_ind));
+            nfapi_nr_crc_indication_t *crc_ind = CALLOC(1, sizeof(*crc_ind));
             nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
             if (scheduled_response->tx_request)
             {
@@ -74,8 +75,8 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                           sizeof(scheduled_response->tx_request->tx_request_body) / sizeof(scheduled_response->tx_request->tx_request_body[0]),
                           "Too many tx_req pdus %d", scheduled_response->tx_request->number_of_pdus);
               rx_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION;
-              rx_ind->slot = scheduled_response->ul_config->slot;
               rx_ind->sfn = scheduled_response->ul_config->sfn;
+              rx_ind->slot = scheduled_response->ul_config->slot;
               rx_ind->number_of_pdus = scheduled_response->tx_request->number_of_pdus;
               rx_ind->pdu_list = CALLOC(1, sizeof(*rx_ind->pdu_list));
               for (int j = 0; j < rx_ind->number_of_pdus; j++)
@@ -109,12 +110,21 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 crc_ind->crc_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
               }
 
-              LOG_I(PHY, "In %s: Filled rx/crc_ind with ulconfig. \n", __FUNCTION__);
+              LOG_I(PHY, "In %s: Filled queue rx/crc_ind which was filled by ulconfig. \n", __FUNCTION__);
+
+              if (!put_queue(&nr_rx_ind_queue, rx_ind))
+              {
+                LOG_E(NR_MAC, "Put_queue failed for rx_ind\n");
+                free(rx_ind->pdu_list);
+                free(rx_ind);
+              }
+              if (!put_queue(&nr_crc_ind_queue, crc_ind))
+              {
+                LOG_E(NR_MAC, "Put_queue failed for crc_ind\n");
+                free(crc_ind->crc_list);
+                free(crc_ind);
+              }
               scheduled_response->tx_request->number_of_pdus = 0;
-              send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
-              send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
-              free(rx_ind->pdu_list);
-              free(crc_ind->crc_list);
             }
             break;
           }

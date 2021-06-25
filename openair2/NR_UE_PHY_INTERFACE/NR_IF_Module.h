@@ -217,9 +217,6 @@ void *nrue_standalone_pnf_task(void *context);
 extern int current_sfn_slot;
 extern sem_t sfn_slot_semaphore;
 
-extern queue_t dl_itti_config_req_tx_data_req_queue;
-extern queue_t ul_dci_config_req_queue;
-
 typedef struct nfapi_dl_tti_config_req_tx_data_req_t
 {
     nfapi_nr_dl_tti_request_pdu_t *dl_itti_config_req;

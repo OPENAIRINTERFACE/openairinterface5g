@@ -45,9 +45,6 @@
 
 const char *dl_indication_type[] = {"MIB", "SIB", "DLSCH", "DCI", "RAR"};
 
-queue_t dl_itti_config_req_tx_data_req_queue;
-queue_t ul_dci_config_req_queue;
-
 UL_IND_t *UL_INFO = NULL;
 
 

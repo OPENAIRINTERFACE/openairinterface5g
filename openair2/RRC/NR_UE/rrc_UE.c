@@ -2965,8 +2965,9 @@ void init_connections_with_lte_ue(void)
 
 static void start_oai_nrue_threads()
 {
-    init_queue(&dl_itti_config_req_tx_data_req_queue);
-    init_queue(&ul_dci_config_req_queue);
+    init_queue(&nr_rach_ind_queue);
+    init_queue(&nr_rx_ind_queue);
+    init_queue(&nr_crc_ind_queue);
 
     if (sem_init(&sfn_slot_semaphore, 0, 0) != 0)
     {
