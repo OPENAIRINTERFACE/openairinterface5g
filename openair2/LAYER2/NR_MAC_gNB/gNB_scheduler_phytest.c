@@ -282,6 +282,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   /* find largest unallocated chunk */
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  
+  target_dl_bw = (bwpSize < target_dl_bw) ?bwpSize : target_dl_bw;
   int rbStart = 0;
   int rbSize = 0;
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
@@ -295,7 +297,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
     while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && rbSize < target_dl_bw)
       rbSize++;
     /* found target_dl_bw? */
-    if (rbSize == target_dl_bw)
+    if (rbStart+ rbSize == target_dl_bw)
       break;
     /* at end and below target_dl_bw? */
     if (rbStart + rbSize >= bwpSize)
@@ -349,7 +351,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
           frame,
           slot);
     UE_info->num_pdcch_cand[UE_id][cid]--;
-    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id-1][cid];
+    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
     for (int i = 0; i < sched_ctrl->aggregation_level; i++)
       cce_list[sched_ctrl->cce_index + i] = 0;
     return;
@@ -364,7 +366,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->pucch_allocation = alloc;
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
-  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id-1][slot];
+  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot];
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
   if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
     nr_set_pdsch_semi_static(
@@ -414,7 +416,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  const int tda = RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id-1][slot];
+  const int tda = RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
   if (tda < 0)
     return false;
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
@@ -445,7 +447,16 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
     nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
 
   uint16_t rbStart = 0;
-  uint16_t rbSize = target_ul_bw;
+  uint16_t rbSize;
+
+  const int bw = NRRIV2BW(sched_ctrl->active_ubwp ?
+			  sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth :
+			  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+  if (target_ul_bw>bw)
+    rbSize = bw;
+  else
+    rbSize = target_ul_bw;
 
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];

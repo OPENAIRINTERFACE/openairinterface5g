@@ -424,7 +424,7 @@ for (int j = 0 ;j < 4 ; j++)
 /* This function checks dedicated serving cell configuration and performs fixes as needed */ 
 void fix_scd(NR_ServingCellConfig_t *scd) {
   // Check for DL PTRS parameters validity
-  for (int bwp_i = 0 ; bwp_i< MAX_NUM_BWP; bwp_i++)
+  for (int bwp_i = 0 ; bwp_i< 4; bwp_i++)
   {
     if (scd->downlinkBWP_ToAddModList->list.array[bwp_i]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS) {
       // If any of the frequencyDensity values are not set or are out of bounds, PTRS is assumed to be not present
