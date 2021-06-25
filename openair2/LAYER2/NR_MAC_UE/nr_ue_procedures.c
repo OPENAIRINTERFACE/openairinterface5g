@@ -691,7 +691,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                                                          mac->mib->dmrs_TypeA_Position,
                                                          dlsch_config_pdu_1_0->number_symbols,
                                                          dlsch_config_pdu_1_0->start_symbol,
-                                                         mappingtype);
+                                                         mappingtype, 1);
     dlsch_config_pdu_1_0->dmrsConfigType = (mac->DLbwp[0] != NULL) ? (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
     /* number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214 version 15.9.0 Release 15 */
     if (dlsch_config_pdu_1_0->number_symbols == 2)
@@ -887,12 +887,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     int mappingtype = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType : ((dlsch_config_pdu_1_1->start_symbol <= 3)? typeA: typeB);
 
-    /* dmrs symbol positions*/
-    dlsch_config_pdu_1_1->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
-							 mac->scc->dmrs_TypeA_Position,
-							 dlsch_config_pdu_1_1->number_symbols,
-               dlsch_config_pdu_1_1->start_symbol,
-               mappingtype);
     dlsch_config_pdu_1_1->dmrsConfigType = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
     /* TODO: fix number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214,
              using tables 7.3.1.2.2-1, 7.3.1.2.2-2, 7.3.1.2.2-3, 7.3.1.2.2-4 of 3GPP TS 38.212 */
@@ -964,6 +958,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     uint8_t n_codewords = 1; // FIXME!!!
     long *max_length = NULL;
     long *dmrs_type = NULL;
+    dlsch_config_pdu_1_1->n_front_load_symb = 1; // default value
     if (pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA) {
       max_length = pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength;
       dmrs_type = pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type;
@@ -1063,6 +1058,15 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	dlsch_config_pdu_1_1->n_front_load_symb = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][9];
       }
     }
+
+    /* dmrs symbol positions*/
+    dlsch_config_pdu_1_1->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
+							 mac->scc->dmrs_TypeA_Position,
+							 dlsch_config_pdu_1_1->number_symbols,
+                                                         dlsch_config_pdu_1_1->start_symbol,
+                                                         mappingtype,
+                                                         dlsch_config_pdu_1_1->n_front_load_symb);
+
     /* TCI */
     if (mac->dl_config_request.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.tci_present_in_dci == 1){
       // 0 bit if higher layer parameter tci-PresentInDCI is not enabled

@@ -362,6 +362,7 @@ typedef struct NR_sched_pusch {
 typedef struct NR_pdsch_semi_static {
   int time_domain_allocation;
   uint8_t numDmrsCdmGrpsNoData;
+  uint8_t frontloaded_symb;
   int mapping_type;
   int startSymbolIndex;
   int nrOfSymbols;

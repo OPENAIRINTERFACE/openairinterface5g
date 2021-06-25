@@ -200,22 +200,29 @@ void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
   //     and a single front loaded symbol
   //     dmrs_ports_id is the index of Tables 7.3.1.2.2-1/2/3/4
 
+  //     number of front loaded symbols need to be consistent with maxLength
+  //     when a more complete implementation is done
+
   switch (ps->nrOfLayers) {
     case 1:
       ps->dmrs_ports_id = 0;
       ps->numDmrsCdmGrpsNoData = 1;
+      ps->frontloaded_symb = 1;
       break;
     case 2:
       ps->dmrs_ports_id = 2;
       ps->numDmrsCdmGrpsNoData = 1;
+      ps->frontloaded_symb = 1;
       break;
     case 3:
       ps->dmrs_ports_id = 9;
       ps->numDmrsCdmGrpsNoData = 2;
+      ps->frontloaded_symb = 1;
       break;
     case 4:
       ps->dmrs_ports_id = 10;
       ps->numDmrsCdmGrpsNoData = 2;
+      ps->frontloaded_symb = 1;
       break;
     default:
       AssertFatal(1==0,"Number of layers %d\n not supported or not valid\n",ps->nrOfLayers);
@@ -375,6 +382,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               NR_pdsch_semi_static_t *ps)
 {
 
+  bool reset_dmrs = false;
   if (bwp &&
       bwp->bwp_Dedicated &&
       bwp->bwp_Dedicated->pdsch_Config &&
@@ -397,6 +405,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
     pdsch_Config = NULL;
 
   if (ps->time_domain_allocation != tda) {
+    reset_dmrs = true;
     ps->time_domain_allocation = tda;
     const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = bwp ?
       bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :
@@ -413,8 +422,6 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
       ps->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
     const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
     SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
-    ps->dl_dmrs_symb_pos = fill_dmrs_mask(pdsch_Config, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, ps->mapping_type);
-    ps->N_DMRS_SLOT = get_num_dmrs(ps->dl_dmrs_symb_pos);
   }
 
   const long dci_format = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
@@ -429,15 +436,21 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
         ps->numDmrsCdmGrpsNoData = 3;
     }
     ps->dmrs_ports_id = 0;
+    ps->frontloaded_symb = 1;
   }
   else {
     if (ps->nrOfLayers != layers) {
+      reset_dmrs = true;
       ps->nrOfLayers = layers;
       set_dl_dmrs_ports(ps);
     }
   }
 
   ps->N_PRB_DMRS = ps->numDmrsCdmGrpsNoData * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
+  if (reset_dmrs) {
+    ps->dl_dmrs_symb_pos = fill_dmrs_mask(pdsch_Config, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, ps->mapping_type, ps->frontloaded_symb);
+    ps->N_DMRS_SLOT = get_num_dmrs(ps->dl_dmrs_symb_pos);
+  }
 }
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,

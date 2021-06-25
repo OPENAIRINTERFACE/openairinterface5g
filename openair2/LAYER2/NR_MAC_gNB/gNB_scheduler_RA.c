@@ -1063,7 +1063,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                                     nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                                     nrOfSymbols,
                                                     startSymbolIndex,
-                                                    mappingtype);
+                                                    mappingtype, 1);
 
     int x_Overhead = 0;
     uint8_t tb_scaling = 0;
@@ -1258,7 +1258,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                             scc->dmrs_TypeA_Position,
                                             nrOfSymbols,
                                             startSymbolIndex,
-                                            mappingtype);
+                                            mappingtype, 1);
 
     uint16_t N_DMRS_SLOT = get_num_dmrs(dlDmrsSymbPos);
 
