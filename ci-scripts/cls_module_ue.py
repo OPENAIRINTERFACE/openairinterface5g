@@ -76,9 +76,10 @@ class Module_UE:
 			logging.debug('Starting ' + self.Process['Name'])
 			mySSH = sshconnection.SSHConnection()
 			mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-			mySSH.command('echo ' + self.HostPassword + ' | sudo -S ' + self.Process['Cmd'] + ' &','\$',5)
+			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S ' + self.Process['Cmd'] + ' &','\$',5)
 			mySSH.close()
 			#checking the process
+			time.sleep(5)
 			HOST=self.HostIPAddress
 			COMMAND="ps aux | grep " + self.Process['Name'] + " | grep -v grep "
 			logging.debug(COMMAND)
