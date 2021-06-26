@@ -227,7 +227,6 @@ static uint8_t pack_tpm_value(nfapi_dl_config_dci_dl_tpm_t* value, uint8_t **ppW
 	
 }
 
-
 static uint8_t pack_dl_tti_csi_rs_pdu_rel15_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
 	nfapi_nr_dl_tti_csi_rs_pdu_rel15_t* value = (nfapi_nr_dl_tti_csi_rs_pdu_rel15_t*)tlv;
@@ -307,7 +306,7 @@ static uint8_t pack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 
 static uint8_t pack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
-	printf("packing pdsch pdu. \n");
+	NFAPI_TRACE(NFAPI_TRACE_DEBUG, "packing pdsch pdu. \n");
 	nfapi_nr_dl_tti_pdsch_pdu_rel15_t* value = (nfapi_nr_dl_tti_pdsch_pdu_rel15_t*)tlv;
 
 	// TODO: resolve the packaging of array (currently sending a single element)
@@ -361,7 +360,7 @@ static uint8_t pack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 
 static uint8_t pack_dl_tti_ssb_pdu_rel15_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
-	printf("Packing ssb. \n");
+	NFAPI_TRACE(NFAPI_TRACE_DEBUG, "Packing ssb. \n");
 	nfapi_nr_dl_tti_ssb_pdu_rel15_t* value = (nfapi_nr_dl_tti_ssb_pdu_rel15_t*)tlv;
 
 	return(
@@ -377,7 +376,6 @@ static uint8_t pack_dl_tti_ssb_pdu_rel15_value(void* tlv, uint8_t **ppWritePacke
 	);
 
 }
-
 
 static uint8_t pack_dl_config_dci_dl_pdu_rel13_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
@@ -705,7 +703,6 @@ static uint8_t pack_dl_config_ndlsch_pdu_rel13_value(void* tlv, uint8_t **ppWrit
 			push8(value->nrs_antenna_ports_assumed_by_the_ue, ppWritePackedMsg, end));
 }
 
-
 static uint8_t pack_dl_tti_request_body_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
 	nfapi_nr_dl_tti_request_pdu_t* value = (nfapi_nr_dl_tti_request_pdu_t*)tlv;
@@ -899,7 +896,6 @@ static uint8_t pack_dl_config_request_body_value(void* tlv, uint8_t **ppWritePac
 	return 1;
 }
 
-
 static uint8_t pack_dl_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
 {
 	nfapi_nr_dl_tti_request_t *pNfapiMsg = (nfapi_nr_dl_tti_request_t*)msg;
@@ -912,7 +908,7 @@ static uint8_t pack_dl_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 		//pusharray8(pNfapiMsg->PduIdx[0] ,256,256, ppWritePackedMsg, end)
 		))
 			return 0;
-
+		
 	int arr[12];
 	for(int i=0;i<pNfapiMsg->dl_tti_request_body.nGroup;i++)
 	{
@@ -932,7 +928,6 @@ static uint8_t pack_dl_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 
 return 1;
 }
-
 
 static uint8_t pack_dl_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
 {
@@ -954,9 +949,6 @@ static uint8_t pack_dl_config_request(void *msg, uint8_t **ppWritePackedMsg, uin
           return x && y && z;
         }
 }
-
-
-
 
 static uint8_t pack_ul_config_request_ulsch_rel8_value(void *tlv, uint8_t **ppWritePackedMsg, uint8_t * end)
 {
@@ -1554,8 +1546,6 @@ static uint8_t pack_ul_config_request_nrach_pdu_rel13_value(void *tlv, uint8_t *
 	
 }
 
-
-
 static uint8_t pack_ul_tti_pdu_list_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
 	nfapi_nr_ul_tti_request_number_of_pdus_t* value = (nfapi_nr_ul_tti_request_number_of_pdus_t*)tlv;
@@ -1792,7 +1782,6 @@ static uint8_t pack_ul_config_request_body_value(void* tlv, uint8_t **ppWritePac
 	return 1;
 }
 
-
 static uint8_t pack_ul_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
 {
 	nfapi_nr_ul_tti_request_t *pNfapiMsg = (nfapi_nr_ul_tti_request_t*)msg;
@@ -1821,7 +1810,6 @@ static uint8_t pack_ul_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 
 	return 1;
 }
-
 
 static uint8_t pack_ul_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
 {
@@ -2104,8 +2092,6 @@ static uint8_t pack_ul_dci_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 
 
 }
-
-
 
 static uint8_t pack_hi_dci0_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
 {
@@ -2588,7 +2574,7 @@ static uint8_t pack_rx_ulsch_indication_body_value(void *tlv, uint8_t **ppWriteP
 {
 	nfapi_rx_indication_body_t* value = (nfapi_rx_indication_body_t*)tlv;
 
-        //printf("RX ULSCH BODY\n");
+        //NFAPI_TRACE(NFAPI_TRACE_DEBUG, "RX ULSCH BODY\n");
 
 	if( push16(value->number_of_pdus, ppWritePackedMsg, end) == 0)
 		return 0;
@@ -2597,7 +2583,7 @@ static uint8_t pack_rx_ulsch_indication_body_value(void *tlv, uint8_t **ppWriteP
 	uint16_t i = 0;
 	uint16_t offset = 2; // taking into account the number_of_pdus
 	uint16_t total_number_of_pdus = value->number_of_pdus;
-        //printf("ULSCH:pdus:%d\n", total_number_of_pdus);
+        //NFAPI_TRACE(NFAPI_TRACE_DEBUG, "ULSCH:pdus:%d\n", total_number_of_pdus);
 
 	assert(total_number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
 	for(i = 0; i < total_number_of_pdus; ++i)
@@ -2605,19 +2591,19 @@ static uint8_t pack_rx_ulsch_indication_body_value(void *tlv, uint8_t **ppWriteP
 		nfapi_rx_indication_pdu_t* pdu = &(value->rx_pdu_list[i]);
 		if(pdu->rx_ue_information.tl.tag == NFAPI_RX_UE_INFORMATION_TAG)
 		{
-                  //printf("NFAPI_RX_UE_INFORMATION_TAG\n");
-			offset += 4 + 6; 
+                  //NFAPI_TRACE(NFAPI_TRACE_DEBUG, "NFAPI_RX_UE_INFORMATION_TAG\n");
+			offset += 4 + 6;
 		}
 				
 		if(pdu->rx_indication_rel8.tl.tag == NFAPI_RX_INDICATION_REL8_TAG)
 		{
-                  //printf("NFAPI_RX_INDICATION_REL8_TAG\n");
+                  //NFAPI_TRACE(NFAPI_TRACE_DEBUG, "NFAPI_RX_INDICATION_REL8_TAG\n");
 			offset += 4 + 7;
 		}
 
 		if(pdu->rx_indication_rel9.tl.tag == NFAPI_RX_INDICATION_REL9_TAG)
 		{
-                  //printf("NFAPI_RX_INDICATION_REL9_TAG\n");
+                  //NFAPI_TRACE(NFAPI_TRACE_DEBUG, "NFAPI_RX_INDICATION_REL9_TAG\n");
 			offset += 4 + 2;
 		}
 	}
@@ -3325,7 +3311,7 @@ static uint8_t pack_ul_node_sync(void *msg, uint8_t **ppWritePackedMsg, uint8_t 
 static uint8_t pack_timing_info(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
 {
 	nfapi_timing_info_t *pNfapiMsg = (nfapi_timing_info_t*)msg;
-    
+
 	return (push32(pNfapiMsg->last_sfn_sf, ppWritePackedMsg, end) &&
 			push32(pNfapiMsg->time_since_last_timing_info, ppWritePackedMsg, end) &&
 			push32(pNfapiMsg->dl_config_jitter, ppWritePackedMsg, end) &&
@@ -3633,7 +3619,7 @@ static uint8_t pack_nr_uci_indication_body(void* tlv, uint8_t **ppWritePackedMsg
 	
 	switch (value->pdu_type) {
       case NFAPI_NR_UCI_PUSCH_PDU_TYPE:
-        printf("Unhandled NFAPI_NR_UCI_PUSCH_PDU_TYPE \n");
+        NFAPI_TRACE(NFAPI_TRACE_WARN, "Unhandled NFAPI_NR_UCI_PUSCH_PDU_TYPE \n");
         break;
 
       case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
@@ -3684,13 +3670,6 @@ int nfapi_nr_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packe
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "P7 Pack supplied pointers are null\n");
 		return -1;
 	}
-	/*
-	printf("\n P7 MESSAGE SENT: \n");
-	for(int i=0; i< packedBufLen; i++){
-		printf("%d", *(uint8_t *)(pMessageBuf + i));
-	}
-	printf("\n");
-	*/
 	// process the header
 	if(!(push16(pMessageHeader->phy_id, &pWritePackedMessage, end) &&
 		 push16(pMessageHeader->message_id, &pWritePackedMessage, end) &&
@@ -3713,7 +3692,7 @@ int nfapi_nr_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packe
 	{
 		case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
 			result = pack_dl_tti_request(pMessageHeader, &pWritePackedMessage, end, config);
-			NFAPI_TRACE(NFAPI_TRACE_INFO, "result of pack dl_tti_req is %d. \n", result);
+			NFAPI_TRACE(NFAPI_TRACE_DEBUG, "result of pack dl_tti_req is %d. \n",result);
 			break;
 
 		case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
@@ -3839,13 +3818,6 @@ int nfapi_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packedBu
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "P7 Pack supplied pointers are null\n");
 		return -1;
 	}
-	/*
-	printf("\n P7 MESSAGE SENT: \n");
-	for(int i=0; i< packedBufLen; i++){
-		printf("%d", *(uint8_t *)(pMessageBuf + i));
-	}
-	printf("\n");
-	*/
 	// process the header
 	if(!(push16(pMessageHeader->phy_id, &pWritePackedMessage, end) &&
 		 push16(pMessageHeader->message_id, &pWritePackedMessage, end) &&
@@ -4140,7 +4112,7 @@ static uint8_t unpack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 
 static uint8_t unpack_dl_tti_ssb_pdu_rel15_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
 {	
-	printf("ssb received and unpacked. \n");
+	NFAPI_TRACE(NFAPI_TRACE_DEBUG, "ssb received and unpacked. \n");
 	nfapi_nr_dl_tti_ssb_pdu_rel15_t* value = (nfapi_nr_dl_tti_ssb_pdu_rel15_t*)tlv;
 
 	return(
@@ -5181,8 +5153,6 @@ static uint8_t unpack_ul_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 	return 1;
 }
 
-
-
 static uint8_t unpack_dl_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t* config)
 {
 	nfapi_dl_config_request_t *pNfapiMsg = (nfapi_dl_config_request_t*)msg;
@@ -5198,9 +5168,6 @@ static uint8_t unpack_dl_config_request(uint8_t **ppReadPackedMsg, uint8_t *end,
 
 static uint8_t unpack_ul_config_ulsch_pdu_rel8_value(void *tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
 {
-
-
-	
 	nfapi_ul_config_ulsch_pdu_rel8_t* ulsch_pdu_rel8 = (nfapi_ul_config_ulsch_pdu_rel8_t*)tlv;
 	
 	return (pull32(ppReadPackedMsg, &ulsch_pdu_rel8->handle, end) &&
@@ -6048,7 +6015,7 @@ static uint8_t unpack_hi_dci0_request_body_value(void *tlv, uint8_t **ppReadPack
 		if(packedPduEnd > end)
 		{
 			// pdu end if past buffer end
-			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s pdu size too big %s %s\n", __FUNCTION__, packedPduEnd, end);
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s pdu size too big %p %p\n", __FUNCTION__, packedPduEnd, end);
 			return 0;
 		}
 
@@ -6119,6 +6086,7 @@ static uint8_t unpack_hi_dci0_request_body_value(void *tlv, uint8_t **ppReadPack
 
 	return 1;
 }
+
 //unpack_ul_dci_pdu_list_value
 
 static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg)
@@ -6397,7 +6365,6 @@ static uint8_t unpack_nr_rx_data_indication_body(nfapi_nr_rx_data_pdu_t* value,
 static uint8_t unpack_nr_rx_data_indication(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t* config)
 {
 	nfapi_nr_rx_data_indication_t *pNfapiMsg = (nfapi_nr_rx_data_indication_t*)msg;
-
 	if (!(pull16(ppReadPackedMsg, &pNfapiMsg->sfn , end) &&
 		pull16(ppReadPackedMsg, &pNfapiMsg->slot , end) &&
 		pull16(ppReadPackedMsg, &pNfapiMsg->number_of_pdus, end)
@@ -6411,7 +6378,7 @@ static uint8_t unpack_nr_rx_data_indication(uint8_t **ppReadPackedMsg, uint8_t *
 	for (int i = 0; i < pNfapiMsg->number_of_pdus; i++)
 	{
 		if(!unpack_nr_rx_data_indication_body(&pNfapiMsg->pdu_list[i], ppReadPackedMsg, end, config))
-		        return 0;
+		return 0;
 	}
 
 return 1;
@@ -6560,14 +6527,6 @@ static uint8_t unpack_nr_rach_indication(uint8_t **ppReadPackedMsg, uint8_t *end
 static uint8_t unpack_nr_uci_pucch_0_1(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end) {
 	nfapi_nr_uci_pucch_pdu_format_0_1_t* value = (nfapi_nr_uci_pucch_pdu_format_0_1_t*)tlv;
 
-	uint8_t *ptr = *ppReadPackedMsg;
-	printf("\n Read P7 message uci_0_1 indication unpack: ");
-	while(ptr < end){
-		printf(" %d ", *ptr);
-		ptr++;
-	}
-	printf("\n");
-
 	if(!(pull8(ppReadPackedMsg, &value->pduBitmap, end) &&
 	 	 pull32(ppReadPackedMsg, &value->handle, end) &&
 		 pull16(ppReadPackedMsg, &value->rnti, end) &&
@@ -6662,7 +6621,7 @@ static uint8_t unpack_nr_uci_indication_body(void* tlv, uint8_t **ppReadPackedMs
 	
 	switch (value->pdu_type) {
       case NFAPI_NR_UCI_PUSCH_PDU_TYPE:
-        printf("Unhandled NFAPI_NR_UCI_PUSCH_PDU_TYPE \n");
+        NFAPI_TRACE(NFAPI_TRACE_WARN, "Unhandled NFAPI_NR_UCI_PUSCH_PDU_TYPE \n");
         break;
 
       case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
@@ -7048,10 +7007,8 @@ static uint8_t unpack_crc_indication_body_value(void *tlv, uint8_t **ppReadPacke
 		value->crc_pdu_list = 0;
 	}
 
-	
-	uint8_t i = 0;
 	assert(value->number_of_crcs <= NFAPI_CRC_IND_MAX_PDU);
-	for(i = 0; i < value->number_of_crcs; ++i)
+	for (size_t i = 0; i < value->number_of_crcs; ++i)
 	{
 		nfapi_crc_indication_pdu_t* pdu = &(value->crc_pdu_list[i]);
 
@@ -7104,13 +7061,13 @@ static uint8_t unpack_rx_indication_rel9_value(void *tlv, uint8_t **ppReadPacked
 
 static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPackedMsg, uint8_t *end, nfapi_p7_codec_config_t *config)
 {
-	nfapi_rx_indication_body_t *value = (nfapi_rx_indication_body_t *)tlv;
+	nfapi_rx_indication_body_t *value = (nfapi_rx_indication_body_t*)tlv;
 
-	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s value->tl.length in unpack: %u \n", __FUNCTION__,
+	NFAPI_TRACE(NFAPI_TRACE_DEBUG, "%s value->tl.length in unpack: %u \n", __FUNCTION__,
 				value->tl.length);
 	uint8_t *rxBodyEnd = *ppReadPackedMsg + value->tl.length;
 
-	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s rxBodyEnd: %p end: %p\n", __FUNCTION__,
+	NFAPI_TRACE(NFAPI_TRACE_DEBUG, "%s rxBodyEnd: %p end: %p\n", __FUNCTION__,
 				rxBodyEnd, end);
 	if (rxBodyEnd > end)
 	{
@@ -7187,6 +7144,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag wrong\n", __FUNCTION__);
 			return 0;
 		}
+
 		pdu->rx_indication_rel8.tl = generic_tl;
 		if (unpack_rx_indication_rel8_value(&pdu->rx_indication_rel8, ppReadPackedMsg, end) == 0)
 		{
@@ -7211,6 +7169,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s generic_tl.tag wrong\n", __FUNCTION__);
 			return 0;
 		}
+
 		pdu->rx_indication_rel9.tl = generic_tl;
 		if (unpack_rx_indication_rel9_value(&pdu->rx_indication_rel9, ppReadPackedMsg, end) == 0)
 		{
@@ -7233,7 +7192,6 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 				NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s pullarray8 failure\n", __FUNCTION__);
 				return 0;
 			}
-
 		}
 	}
 
@@ -8149,7 +8107,7 @@ static uint8_t unpack_timing_info(uint8_t **ppReadPackedMsg, uint8_t *end, void 
 	unpack_p7_tlv_t unpack_fns[] =
 	{
 	};
-    
+
 	return (pull32(ppReadPackedMsg, &pNfapiMsg->last_sfn_sf, end) &&
 			pull32(ppReadPackedMsg, &pNfapiMsg->time_since_last_timing_info, end) &&
 			pull32(ppReadPackedMsg, &pNfapiMsg->dl_config_jitter, end) &&
@@ -8458,15 +8416,7 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "P7 unpack supplied message buffer is too small %d, %d\n", messageBufLen, unpackedBufLen);
 		return -1;
 	}
-  /*
-    uint8_t *ptr = pMessageBuf;
-	printf("\n Read P7 message unpack: ");
-	while(ptr < end){
-		printf(" %d ", *ptr);
-		ptr++;
-	}
-	printf("\n");
-*/
+
 	// clean the supplied buffer for - tag value blanking
 	(void)memset(pUnpackedBuf, 0, unpackedBufLen);
 
@@ -8498,7 +8448,7 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 
 	// look for the specific message
 	switch (pMessageHeader->message_id)
-	{   
+	{
 		case NFAPI_DL_CONFIG_REQUEST:
 			if (check_unpack_length(NFAPI_DL_CONFIG_REQUEST, unpackedBufLen))
 				result = unpack_dl_config_request(&pReadPackedMessage,  end, pMessageHeader, config);
@@ -8518,7 +8468,8 @@ int nfapi_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUn
 			else
 				return -1;
 			break;
-			case NFAPI_HI_DCI0_REQUEST:
+
+		case NFAPI_HI_DCI0_REQUEST:
 			if (check_unpack_length(NFAPI_HI_DCI0_REQUEST, unpackedBufLen))
 				result = unpack_hi_dci0_request(&pReadPackedMessage,  end, pMessageHeader, config);
 			else
@@ -8682,14 +8633,6 @@ int nfapi_nr_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "P7 unpack supplied message buffer is too small %d, %d\n", messageBufLen, unpackedBufLen);
 		return -1;
 	}
-  
-    // uint8_t *ptr = pMessageBuf;
-	// printf("\n Read P7 message unpack: ");
-	// while(ptr < end){
-	// 	printf(" %d ", *ptr);
-	// 	ptr++;
-	// }
-	// printf("\n");
 
 	// clean the supplied buffer for - tag value blanking
 	(void)memset(pUnpackedBuf, 0, unpackedBufLen);
@@ -8845,5 +8788,4 @@ int nfapi_nr_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *
 	else 
 		return 0;
 }
-
 
