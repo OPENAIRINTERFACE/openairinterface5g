@@ -839,12 +839,9 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
       nfapi_rx_indication_pdu_t *src_pdu = &ind->rx_indication_body.rx_pdu_list[i];
 
       memcpy(dest_pdu, src_pdu, sizeof(*src_pdu));
-      // DJP - TODO FIXME - intentional memory leak
       if(dest_pdu->rx_indication_rel8.length > 0){
-        dest_pdu->data = malloc(dest_pdu->rx_indication_rel8.length);
-        memcpy(dest_pdu->data, src_pdu->data, dest_pdu->rx_indication_rel8.length);
-      }else{
-        dest_pdu->data = NULL;
+        assert(dest_pdu->rx_indication_rel8.length <= NFAPI_RX_IND_DATA_MAX);
+        memcpy(dest_pdu->rx_ind_data, src_pdu->rx_ind_data, dest_pdu->rx_indication_rel8.length);
       }
 
       LOG_D(PHY, "%s() NFAPI SFN/SF:%d PDUs:%zu [PDU:%d] handle:%d rnti:%04x length:%d offset:%d ul_cqi:%d ta:%d data:%p\n",
@@ -856,7 +853,7 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
           dest_pdu->rx_indication_rel8.offset,
           dest_pdu->rx_indication_rel8.ul_cqi,
           dest_pdu->rx_indication_rel8.timing_advance,
-          dest_pdu->data
+          dest_pdu->rx_ind_data
           );
     }
   }else{
@@ -870,9 +867,10 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
     nfapi_rx_indication_pdu_t *dest_pdu = &dest_ind->rx_indication_body.rx_pdu_list[i];
     nfapi_rx_indication_pdu_t *src_pdu = &ind->rx_indication_body.rx_pdu_list[i];
     memcpy(dest_pdu, src_pdu, sizeof(*src_pdu));
-    // DJP - TODO FIXME - intentional memory leak
-    dest_pdu->data = malloc(dest_pdu->rx_indication_rel8.length);
-    memcpy(dest_pdu->data, src_pdu->data, dest_pdu->rx_indication_rel8.length);
+
+    assert(dest_pdu->rx_indication_rel8.length <= NFAPI_RX_IND_DATA_MAX);
+    memcpy(dest_pdu->rx_ind_data, src_pdu->rx_ind_data, dest_pdu->rx_indication_rel8.length);
+
     LOG_D(PHY, "%s() NFAPI SFN/SF:%d PDUs:%d [PDU:%d] handle:%d rnti:%04x length:%d offset:%d ul_cqi:%d ta:%d data:%p\n",
           __FUNCTION__,
           NFAPI_SFNSF2DEC(ind->sfn_sf), ind->rx_indication_body.number_of_pdus, i,
@@ -882,7 +880,7 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
           dest_pdu->rx_indication_rel8.offset,
           dest_pdu->rx_indication_rel8.ul_cqi,
           dest_pdu->rx_indication_rel8.timing_advance,
-          dest_pdu->data
+          dest_pdu->rx_ind_data
          );
   }
   }
