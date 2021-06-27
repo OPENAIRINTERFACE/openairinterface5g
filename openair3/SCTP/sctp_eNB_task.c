@@ -925,21 +925,14 @@ void
 sctp_eNB_read_from_socket(
     struct sctp_cnx_list_elm_s *sctp_cnx)
 {
-    int                    flags = 0, n;
-    socklen_t              from_len;
-    struct sctp_sndrcvinfo sinfo;
-
-    struct sockaddr_in addr;
-    uint8_t buffer[SCTP_RECV_BUFFER_SIZE];
-
     DevAssert(sctp_cnx != NULL);
 
-    memset((void *)&addr, 0, sizeof(struct sockaddr_in));
-    from_len = (socklen_t)sizeof(struct sockaddr_in);
-    memset((void *)&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
+    int    flags = 0;
+    struct sctp_sndrcvinfo sinfo={0};
+    uint8_t buffer[SCTP_RECV_BUFFER_SIZE];
 
-    n = sctp_recvmsg(sctp_cnx->sd, (void *)buffer, SCTP_RECV_BUFFER_SIZE,
-                     (struct sockaddr *)&addr, &from_len,
+    int n = sctp_recvmsg(sctp_cnx->sd, (void *)buffer, SCTP_RECV_BUFFER_SIZE,
+                    NULL, NULL, 
                      &sinfo, &flags);
 
     if (n < 0) {
@@ -1049,8 +1042,8 @@ sctp_eNB_read_from_socket(
                        sctp_cnx->ppid);
         }
 
-        SCTP_DEBUG("[%d][%d] Msg of length %d received from port %u, on stream %d, PPID %d\n",
-                   sinfo.sinfo_assoc_id, sctp_cnx->sd, n, ntohs(addr.sin_port),
+        SCTP_DEBUG("[%d][%d] Msg of length %d received, on stream %d, PPID %d\n",
+                   sinfo.sinfo_assoc_id, sctp_cnx->sd, n, 
                    sinfo.sinfo_stream, ntohl(sinfo.sinfo_ppid));
 
         sctp_itti_send_new_message_ind(sctp_cnx->task_id,
