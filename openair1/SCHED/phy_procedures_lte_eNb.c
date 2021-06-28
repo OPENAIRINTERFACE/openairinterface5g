@@ -1563,7 +1563,11 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,
   pdu->rx_indication_rel8.tl.tag         = NFAPI_RX_INDICATION_REL8_TAG;
   pdu->rx_indication_rel8.length         = eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS>>3;
   pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
-  pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->decodedBytes;
+  assert(pdu->rx_indication_rel8.length <= NFAPI_RX_IND_DATA_MAX);
+  memcpy(pdu->rx_ind_data,
+         eNB->ulsch[UE_id]->harq_processes[harq_pid]->decodedBytes,
+         pdu->rx_indication_rel8.length);
+
   // estimate timing advance for MAC
   sync_pos                               = lte_est_timing_advance_pusch(&eNB->frame_parms, eNB->pusch_vars[UE_id]->drs_ch_estimates_time);
   timing_advance_update                  = sync_pos; // - eNB->frame_parms.nb_prefix_samples/4; //to check

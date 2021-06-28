@@ -1273,11 +1273,6 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg)
       send_standalone_msg(UL_INFO, UL_INFO->rx_ind.header.message_id);
       sent_any = true;
 
-      assert(UL_INFO->rx_ind.rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
-      for (size_t num_pdu = 0; num_pdu < UL_INFO->rx_ind.rx_indication_body.number_of_pdus; num_pdu++) {
-        free(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list[num_pdu].data);
-      }
-
       //LOG_I(MAC, "ul_config_req_UE_MAC 2.31 \n");
       UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
     }

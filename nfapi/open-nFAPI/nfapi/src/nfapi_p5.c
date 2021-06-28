@@ -909,7 +909,7 @@ static uint8_t pack_config_response(void *msg, uint8_t **ppWritePackedMsg, uint8
 {
 	nfapi_config_response_t *pNfapiMsg = (nfapi_config_response_t*)msg;
 
-	return ( push8(pNfapiMsg->error_code, ppWritePackedMsg, end) &&
+	return ( push32(pNfapiMsg->error_code, ppWritePackedMsg, end) &&
 			 pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config) );
 }
 

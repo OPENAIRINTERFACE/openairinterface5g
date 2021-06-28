@@ -827,7 +827,7 @@ void vnf_handle_rx_ulsch_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vn
 		uint16_t i = 0;
 		for(i = 0; i < ind.rx_indication_body.number_of_pdus; ++i)
 		{
-			vnf_p7_codec_free(vnf_p7, ind.rx_indication_body.rx_pdu_list[i].data);
+			vnf_p7_codec_free(vnf_p7, ind.rx_indication_body.rx_pdu_list[i].rx_ind_data);
 		}
 		vnf_p7_codec_free(vnf_p7, ind.rx_indication_body.rx_pdu_list);
 		vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
@@ -2609,7 +2609,7 @@ void vnf_p7_release_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* header)
                                 assert(number_of_pdus <= NFAPI_RX_IND_MAX_PDU);
 				for(size_t i = 0; i < number_of_pdus; ++i)
 				{
-					vnf_p7_codec_free(vnf_p7, rx_ind->rx_indication_body.rx_pdu_list[i].data);
+					vnf_p7_codec_free(vnf_p7, rx_ind->rx_indication_body.rx_pdu_list[i].rx_ind_data);
 				}
 
 				vnf_p7_codec_free(vnf_p7, rx_ind->rx_indication_body.rx_pdu_list);

@@ -263,14 +263,10 @@ void handle_ulsch(UL_IND_t *UL_info) {
                        NFAPI_SFNSF2SFN(UL_RCC_INFO.rx_ind[k].sfn_sf), //UL_info->frame,
                        NFAPI_SFNSF2SF(UL_RCC_INFO.rx_ind[k].sfn_sf), //UL_info->subframe,
                        UL_RCC_INFO.rx_ind[k].rx_indication_body.rx_pdu_list[i].rx_ue_information.rnti,
-                       UL_RCC_INFO.rx_ind[k].rx_indication_body.rx_pdu_list[i].data,
+                       UL_RCC_INFO.rx_ind[k].rx_indication_body.rx_pdu_list[i].rx_ind_data,
                        UL_RCC_INFO.rx_ind[k].rx_indication_body.rx_pdu_list[i].rx_indication_rel8.length,
                        UL_RCC_INFO.rx_ind[k].rx_indication_body.rx_pdu_list[i].rx_indication_rel8.timing_advance,
                        UL_RCC_INFO.rx_ind[k].rx_indication_body.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
-              }
-
-              if(UL_RCC_INFO.rx_ind[k].rx_indication_body.rx_pdu_list[i].data != NULL) {
-                free(UL_RCC_INFO.rx_ind[k].rx_indication_body.rx_pdu_list[i].data);
               }
 
               break;
@@ -318,7 +314,7 @@ void handle_ulsch(UL_IND_t *UL_info) {
                      NFAPI_SFNSF2SFN(UL_info->rx_ind.sfn_sf), //UL_info->frame,
                      NFAPI_SFNSF2SF(UL_info->rx_ind.sfn_sf), //UL_info->subframe,
                      UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_ue_information.rnti,
-                     UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].data,
+                     UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_ind_data,
                      UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.length,
                      UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.timing_advance,
                      UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.ul_cqi);

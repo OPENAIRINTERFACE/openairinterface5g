@@ -2647,7 +2647,7 @@ static uint8_t pack_rx_ulsch_indication_body_value(void *tlv, uint8_t **ppWriteP
 			length = pdu->rx_indication_rel8.length;
 		}
 
-		if( pusharray8(value->rx_pdu_list[i].data, length, length, ppWritePackedMsg, end) == 0)
+		if( pusharray8(value->rx_pdu_list[i].rx_ind_data, NFAPI_RX_IND_DATA_MAX, length, ppWritePackedMsg, end) == 0)
 			return 0;
 	}
 	return 1;
@@ -7120,7 +7120,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			return 0;
 		}
 
-		assert(i <= NFAPI_RX_IND_MAX_PDU);
+		assert(i < NFAPI_RX_IND_MAX_PDU);
 		nfapi_rx_indication_pdu_t *pdu = &value->rx_pdu_list[i];
 
 		pdu->rx_ue_information.tl = generic_tl;
@@ -7185,9 +7185,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 		if (pdu->rx_indication_rel8.tl.tag == NFAPI_RX_INDICATION_REL8_TAG)
 		{
 			uint32_t length = pdu->rx_indication_rel8.length;
-			value->rx_pdu_list[i].data = nfapi_p7_allocate(length, config);
-
-			if (pullarray8(ppReadPackedMsg, pdu->data, length, length, end) == 0)
+			if (pullarray8(ppReadPackedMsg, pdu->rx_ind_data, NFAPI_RX_IND_DATA_MAX, length, end) == 0)
 			{
 				NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s pullarray8 failure\n", __FUNCTION__);
 				return 0;
