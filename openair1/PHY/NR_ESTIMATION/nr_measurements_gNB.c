@@ -171,7 +171,7 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
 
     for (int aatx = 0; aatx < nrOfLayers; aatx++){
 
-      meas->rx_spatial_power[ulsch_id][aatx][aarx] = (signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][ch_offset], N_RB_UL * NR_NB_SC_PER_RB));
+      meas->rx_spatial_power[ulsch_id][aatx][aarx] = (signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aatx*fp->nb_antennas_rx+aarx][ch_offset], N_RB_UL * NR_NB_SC_PER_RB));
 
       if (meas->rx_spatial_power[ulsch_id][aatx][aarx] < 0) {
         meas->rx_spatial_power[ulsch_id][aatx][aarx] = 0;
