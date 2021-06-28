@@ -22,7 +22,7 @@
 -->
 <testCaseList>
 	<htmlTabRef>TEST-NSA-FR1-TM1</htmlTabRef>
-	<htmlTabName>NSA Ping DL UL with QUECTEL</htmlTabName>
+	<htmlTabName>NSA Ping Attach Detach with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
@@ -32,11 +32,18 @@
  010000
  000001
  050000
- 050001
  000001
- 070000
+ 010004
  000001
- 070001
+ 010003
+ 000001
+ 050000
+ 000001
+ 010004
+ 000001
+ 010003
+ 000001
+ 050000
  000001
  010002
  080001
@@ -57,6 +64,18 @@
 		<desc>Terminate Quectel</desc>
 		<id>idefix</id>
 	</testCase>
+
+	<testCase id="010003">
+		<class>Attach_UE</class>
+		<desc>Attach Quectel</desc>
+		<id>idefix</id>
+	</testCase>
+
+	<testCase id="010004">
+		<class>Detach_UE</class>
+		<desc>Detach Quectel</desc>
+		<id>idefix</id>
+	</testCase>	
 
 
 	<testCase id="030000">
