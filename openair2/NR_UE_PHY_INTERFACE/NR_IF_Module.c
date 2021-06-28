@@ -376,7 +376,10 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
                                  nfapi_nr_tx_data_request_t *tx_data_request,
                                  nfapi_nr_ul_dci_request_t *ul_dci_request)
 {
+    frame_t frame = 0;
+    int slot = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+
     if (mac->scc == NULL)
     {
       return;
@@ -384,18 +387,28 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
 
     if (dl_tti_request)
     {
-        LOG_I(NR_PHY, "[%d, %d] dl_tti_request\n", dl_tti_request->SFN, dl_tti_request->Slot);
+        frame = dl_tti_request->SFN;
+        slot = dl_tti_request->Slot;
+        LOG_I(NR_PHY, "[%d, %d] dl_tti_request\n", frame, slot);
         copy_dl_tti_req_to_dl_info(&mac->dl_info, dl_tti_request);
     }
-    if (tx_data_request)
+    else if (tx_data_request)
     {
-        LOG_I(NR_PHY, "[%d, %d] PDSCH in tx_request\n", tx_data_request->SFN, tx_data_request->Slot);
+        frame = tx_data_request->SFN;
+        slot = tx_data_request->Slot;
+        LOG_I(NR_PHY, "[%d, %d] PDSCH in tx_request\n", frame, slot);
         copy_tx_data_req_to_dl_info(&mac->dl_info, tx_data_request);
     }
-    if (ul_dci_request)
+    else if (ul_dci_request)
     {
-        LOG_I(NR_PHY, "[%d, %d] ul_dci_request\n", ul_dci_request->SFN, ul_dci_request->Slot);
+        frame = ul_dci_request->SFN;
+        slot = ul_dci_request->Slot;
+        LOG_I(NR_PHY, "[%d, %d] ul_dci_request\n", frame, slot);
         copy_ul_dci_data_req_to_dl_info(&mac->dl_info, ul_dci_request);
+    }
+    else
+    {
+        return;
     }
 
 
@@ -403,6 +416,20 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
     fill_dci_from_dl_config(&mac->dl_info, &mac->dl_config_request);
     nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+
+    // If we filled dl_info AFTER we got the slot indication, we want to check if we should fill tx_req:
+    nr_uplink_indication_t ul_info;
+    memset(&ul_info, 0, sizeof(ul_info));
+    int slots_per_frame = 20; //30 kHZ subcarrier spacing
+    int slot_ahead = 6; // Melissa lets make this dynamic
+    ul_info.frame_rx = frame;
+    ul_info.slot_rx = slot;
+    ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
+    ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
+    if (mac->scc && is_nr_UL_slot(mac->scc, ul_info.slot_tx))
+    {
+        nr_ue_ul_indication(&ul_info);
+    }
 
 
     #if 0 //Melissa may want to free this

@@ -187,6 +187,27 @@ static void reset_queue(queue_t *q)
   }
 }
 
+static bool sfn_slot_matcher(void *wanted, void *candidate)
+{
+  nr_queue_candidate *ind = candidate;
+  int sfn_sf = *(int*)wanted;
+
+  if (NFAPI_SFNSLOT2SFN(sfn_sf) == ind->rach_ind.sfn &&  NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->rach_ind.slot)
+  {
+    return true;
+  }
+  else if (NFAPI_SFNSLOT2SFN(sfn_sf) == ind->rx_ind.sfn &&  NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->rx_ind.slot)
+  {
+    return true;
+  }
+  else if (NFAPI_SFNSLOT2SFN(sfn_sf) == ind->crc_ind.sfn &&  NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->crc_ind.slot)
+  {
+    return true;
+  }
+
+  return false;
+}
+
 static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 {
   LOG_I(MAC, "Clearing Queues\n");
@@ -286,11 +307,12 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       }
     }
 
-    if (slot == 19)
+    nfapi_nr_rach_indication_t *rach_ind = unqueue_matching(&nr_rach_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
+    nfapi_nr_rx_data_indication_t *rx_ind = unqueue_matching(&nr_rx_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
+    nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&nr_crc_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
+
+    if (rach_ind && rach_ind->number_of_pdus > 0)
     {
-      nfapi_nr_rach_indication_t *rach_ind = get_queue(&nr_rach_ind_queue);
-      if (rach_ind != NULL && rach_ind->number_of_pdus > 0 && (rach_ind->sfn == frame && rach_ind->slot == slot))
-      {
         NR_UL_IND_t UL_INFO = {
           .rach_ind = *rach_ind,
         };
@@ -301,30 +323,24 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
         }
         free(rach_ind->pdu_list);
         nr_Msg1_transmitted(mod_id, CC_id, frame, gNB_id);
-      }
     }
-    if (slot == 17)
+    if (rx_ind && rx_ind->number_of_pdus > 0)
     {
-      nfapi_nr_rx_data_indication_t *rx_ind = get_queue(&nr_rx_ind_queue);
-      if (rx_ind != NULL && rx_ind->number_of_pdus > 0 && (rx_ind->sfn == frame && rx_ind->slot == slot))
-      {
-        NR_UL_IND_t UL_INFO = {
-          .rx_ind = *rx_ind,
-        };
-        send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
-        free(rx_ind->pdu_list);
-      }
-      nfapi_nr_crc_indication_t *crc_ind = get_queue(&nr_crc_ind_queue);
-      if (crc_ind != NULL && crc_ind->number_crcs > 0 && (crc_ind->sfn == frame && crc_ind->slot == slot))
-      {
-        NR_UL_IND_t UL_INFO = {
-          .crc_ind = *crc_ind,
-        };
-        send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
-        free(crc_ind->crc_list);
-      }
+      NR_UL_IND_t UL_INFO = {
+        .rx_ind = *rx_ind,
+      };
+      send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
+      free(rx_ind->pdu_list);
     }
+    if (crc_ind && crc_ind->number_crcs > 0)
+    {
+      NR_UL_IND_t UL_INFO = {
+        .crc_ind = *crc_ind,
+      };
+      send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
+      free(crc_ind->crc_list);
 
+    }
   }
   return NULL;
 }
