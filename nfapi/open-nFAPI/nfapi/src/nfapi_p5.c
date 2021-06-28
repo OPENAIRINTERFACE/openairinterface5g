@@ -300,10 +300,6 @@ static uint8_t pack_pnf_config_request(void *msg, uint8_t **ppWritePackedMsg, ui
 {
 	nfapi_pnf_config_request_t *pNfapiMsg = (nfapi_pnf_config_request_t*)msg;
 	return (pack_tlv(NFAPI_PNF_PHY_RF_TAG, &pNfapiMsg->pnf_phy_rf_config, ppWritePackedMsg, end, &pack_pnf_phy_rf_config_value) && 
-// xxx - This next line (push8) was previously commented out and then was uncommented here:
-// commit e6bf90e2ddc96a6c0af620c80acc3c286a8c81c7
-// Author: Mahesh <maheshaithal@iisc.ac.in>
-// Date:   Wed Nov 11 15:10:32 2020 +0530
 			push8(pNfapiMsg->num_tlvs,ppWritePackedMsg,end) &&
 			pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end , config));
 }
@@ -913,24 +909,6 @@ static uint8_t pack_config_response(void *msg, uint8_t **ppWritePackedMsg, uint8
 {
 	nfapi_config_response_t *pNfapiMsg = (nfapi_config_response_t*)msg;
 
-// xxx - This function was added here:
-// commit e6bf90e2ddc96a6c0af620c80acc3c286a8c81c7
-// Author: Mahesh <maheshaithal@iisc.ac.in>
-// Date:   Wed Nov 11 15:10:32 2020 +0530
-//
-// The first expression was push8 in that commit.
-// But unpack_config_response did pull32.
-// So, the push8 seems to be wrong.
-//
-// In emane.git, this same function was added but with push32:
-// commit 045261031bac557e4cf28c41afb09e9204d0ce22
-// Author: RS <rsachdeva@episci.com>
-// Date:   Sat Feb 15 10:39:31 2020 -0800
-//
-//     Adding open-nFAPI source code
-//
-//     From: https://gitlab.eurecom.fr/oai/openairinterface5g/tree/master/nfapi/open-nFAPI
-//     Commit: 0f0b44373d1a5be572daa0dba261420a82fae9f7
 	return ( push32(pNfapiMsg->error_code, ppWritePackedMsg, end) &&
 			 pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config) );
 }

@@ -7120,7 +7120,7 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 			return 0;
 		}
 
-		assert(i <= NFAPI_RX_IND_MAX_PDU);
+		assert(i < NFAPI_RX_IND_MAX_PDU);
 		nfapi_rx_indication_pdu_t *pdu = &value->rx_pdu_list[i];
 
 		pdu->rx_ue_information.tl = generic_tl;
