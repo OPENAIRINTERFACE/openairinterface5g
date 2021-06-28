@@ -189,20 +189,32 @@ static void reset_queue(queue_t *q)
 
 static bool sfn_slot_matcher(void *wanted, void *candidate)
 {
-  nr_queue_candidate *ind = candidate;
+  nfapi_p7_message_header_t *msg = candidate;
   int sfn_sf = *(int*)wanted;
 
-  if (NFAPI_SFNSLOT2SFN(sfn_sf) == ind->rach_ind.sfn &&  NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->rach_ind.slot)
+  switch (msg->message_id)
   {
-    return true;
-  }
-  else if (NFAPI_SFNSLOT2SFN(sfn_sf) == ind->rx_ind.sfn &&  NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->rx_ind.slot)
-  {
-    return true;
-  }
-  else if (NFAPI_SFNSLOT2SFN(sfn_sf) == ind->crc_ind.sfn &&  NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->crc_ind.slot)
-  {
-    return true;
+    case NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION:
+    {
+      nfapi_nr_rach_indication_t *ind = candidate;
+      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->sfn && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->slot;
+    }
+
+    case NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION:
+    {
+      nfapi_nr_rx_data_indication_t *ind = candidate;
+      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->sfn && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->slot;
+    }
+
+    case NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION:
+    {
+      nfapi_nr_crc_indication_t *ind = candidate;
+      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->sfn && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->slot;
+    }
+
+    default:
+      LOG_E(NR_MAC, "sfn_slot_match bad ID: %d\n", msg->message_id);
+
   }
 
   return false;
