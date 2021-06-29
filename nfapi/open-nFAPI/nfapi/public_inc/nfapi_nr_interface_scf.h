@@ -1761,10 +1761,4 @@ typedef struct
 
 } nfapi_nr_rach_indication_t;
 
-typedef union {
-  nfapi_nr_rach_indication_t rach_ind;
-  nfapi_nr_rx_data_indication_t rx_ind;
-  nfapi_nr_crc_indication_t crc_ind;
-} nr_queue_candidate;
-
 #endif

@@ -351,7 +351,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       };
       send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
       free(crc_ind->crc_list);
-
     }
   }
   return NULL;

@@ -1030,7 +1030,14 @@ void nr_schedule_ulsch(module_id_t module_id,
           harq_id,
           cur_harq->round,
           cur_harq->ndi);
-
+    gNB_MAC_INST *gNB = RC.nrmac[0];
+    if (sched_pusch->frame == gNB->handled_frame && sched_pusch->slot == gNB->handled_slot) {
+      LOG_D(NR_MAC, "Dropping becasue frame %d == gNB frame %d, slot %d == gNb slot %d\n",
+            frame, gNB->handled_frame, slot, gNB->handled_slot);
+      return;
+    }
+    gNB->handled_frame = sched_pusch->frame;
+    gNB->handled_slot = sched_pusch->slot;
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_pusch->slot];
     AssertFatal(future_ul_tti_req->SFN == sched_pusch->frame
