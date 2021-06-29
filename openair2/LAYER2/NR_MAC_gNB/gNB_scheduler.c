@@ -312,6 +312,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   const int bwp_id = 1;
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  if (frame == gNB->handled_frame && slot== gNB->handled_slot) {
+    LOG_E(NR_MAC, "Dropping becasue frame %d == gNB frame %d, slot %d == gNb slot %d\n",
+          frame, gNB->handled_frame, slot, gNB->handled_slot);
+    return;
+  }
+  gNB->handled_frame = frame;
+  gNB->handled_slot = slot;
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
   NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
@@ -438,10 +445,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // This schedules the DCI for Uplink and subsequently PUSCH
   {
-    if(NFAPI_MODE == NFAPI_MODE_VNF){
-      gNB->UL_tti_req_ahead[0][7].SFN = frame;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 7
-      gNB->UL_tti_req_ahead[0][8].SFN = frame;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 8
-      gNB->UL_tti_req_ahead[0][9].SFN = frame;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 9
+    if (NFAPI_MODE == NFAPI_MODE_VNF) {
+      for (int i = 0; i < 20; i++) {
+        gNB->UL_tti_req_ahead[0][i].SFN = frame;
+      }
       gNB->UL_tti_req[0] = &gNB->UL_tti_req_ahead[0][slot];
     }
     nr_schedule_ulsch(module_idP, frame, slot, num_slots_per_tdd, nr_ulmix_slots, ulsch_in_slot_bitmap);
