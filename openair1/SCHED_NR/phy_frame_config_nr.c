@@ -315,7 +315,7 @@ int nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_slot
   if (cfg->cell_config.frame_duplex_type.value == FDD) {
     return (NR_UPLINK_SLOT | NR_DOWNLINK_SLOT );
   }
- 
+
   if (nr_frame%2 == 0) {
     for(int symbol_count=0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
       if (cfg->tdd_table.max_tdd_periodicity_list[nr_slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value==1) {

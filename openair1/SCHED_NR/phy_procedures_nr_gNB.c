@@ -532,7 +532,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
   if (gNB->frame_parms.frame_type == TDD)
-    if(NFAPI_MODE != NFAPI_MODE_VNF)
     fill_ul_rb_mask(gNB, frame_rx, slot_rx);
 
   gNB_I0_measurements(gNB);
@@ -547,8 +546,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
-      if (NFAPI_MODE == NFAPI_MODE_PNF)
-        pucch->frame = frame_rx;
       if ((pucch->active == 1) &&
 	  (pucch->frame == frame_rx) &&
 	  (pucch->slot == slot_rx) ) {
@@ -615,9 +612,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
       for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
 	ulsch_harq = ulsch->harq_processes[harq_pid];
     	AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
-      //printf("ulsch_harq->frame = %d, frame_rx = %d \n", ulsch_harq->frame, frame_rx);
-      if (NFAPI_MODE == NFAPI_MODE_PNF)
-        ulsch_harq->frame = frame_rx;
     	if ((ulsch_harq->status == NR_ACTIVE) &&
           (ulsch_harq->frame == frame_rx) &&
           (ulsch_harq->slot == slot_rx) &&

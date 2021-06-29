@@ -135,7 +135,6 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
               crc->tb_crc_status);
 
         /* if CRC passes, pass PDU, otherwise pass NULL as error indication */
-        
         nr_rx_sdu(UL_info->module_id,
                   UL_info->CC_id,
                   UL_info->rx_ind.sfn,
@@ -196,9 +195,8 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   }
 
   handle_nr_rach(UL_info);
-
+  
   handle_nr_uci(UL_info);
-
   // clear HI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);
@@ -215,7 +213,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       gNB_dlsch_ulsch_scheduler(module_id,
 				(UL_info->frame+((UL_info->slot>(spf-1-sl_ahead))?1:0)) % 1024,
 				(UL_info->slot+sl_ahead)%spf);
-
+      
       ifi->CC_mask            = 0;
       sched_info->module_id   = module_id;
       sched_info->CC_id       = CC_id;
@@ -239,10 +237,10 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         ifi->NR_Schedule_response(sched_info);
       }
 
-    LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",
+      LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",
 	    sched_info->frame,
 	    sched_info->slot,
-	    sched_info->DL_req->dl_tti_request_body.nPDUs);      
+	    sched_info->DL_req->dl_tti_request_body.nPDUs);
     }
   }
 }

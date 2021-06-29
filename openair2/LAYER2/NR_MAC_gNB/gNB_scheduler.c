@@ -121,38 +121,32 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
   nfapi_nr_tx_data_request_t   *TX_req = &gNB->TX_req[0];
 
   gNB->pdu_index[CC_idP] = 0;
-   if (NFAPI_MODE == NFAPI_MODE_VNF)
-   {
-     memset(pdcch, 0, sizeof(**pdcch) * MAX_NUM_BWP * MAX_NUM_CORESET);
-   }
-  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { // monolithic or PNF
 
-    DL_req[CC_idP].SFN                                   = frameP;
-    DL_req[CC_idP].Slot                                  = slotP;
-    DL_req[CC_idP].dl_tti_request_body.nPDUs             = 0;
-    DL_req[CC_idP].dl_tti_request_body.nGroup            = 0;
-    //DL_req[CC_idP].dl_tti_request_body.transmission_power_pcfich           = 6000;
-    memset(pdcch, 0, sizeof(**pdcch) * MAX_NUM_BWP * MAX_NUM_CORESET);
+  DL_req[CC_idP].SFN                                   = frameP;
+  DL_req[CC_idP].Slot                                  = slotP;
+  DL_req[CC_idP].dl_tti_request_body.nPDUs             = 0;
+  DL_req[CC_idP].dl_tti_request_body.nGroup            = 0;
+  //DL_req[CC_idP].dl_tti_request_body.transmission_power_pcfich           = 6000;
+  memset(pdcch, 0, sizeof(**pdcch) * MAX_NUM_BWP * MAX_NUM_CORESET);
 
-    UL_dci_req[CC_idP].SFN                         = frameP;
-    UL_dci_req[CC_idP].Slot                        = slotP;
-    UL_dci_req[CC_idP].numPdus                     = 0;
+  UL_dci_req[CC_idP].SFN                         = frameP;
+  UL_dci_req[CC_idP].Slot                        = slotP;
+  UL_dci_req[CC_idP].numPdus                     = 0;
 
-    /* advance last round's future UL_tti_req to be ahead of current frame/slot */
-    future_ul_tti_req->SFN = (slotP == 0 ? frameP : frameP + 1) % 1024;
-    /* future_ul_tti_req->Slot is fixed! */
-    future_ul_tti_req->n_pdus = 0;
-    future_ul_tti_req->n_ulsch = 0;
-    future_ul_tti_req->n_ulcch = 0;
-    future_ul_tti_req->n_group = 0;
+  /* advance last round's future UL_tti_req to be ahead of current frame/slot */
+  future_ul_tti_req->SFN = (slotP == 0 ? frameP : frameP + 1) % 1024;
+  /* future_ul_tti_req->Slot is fixed! */
+  future_ul_tti_req->n_pdus = 0;
+  future_ul_tti_req->n_ulsch = 0;
+  future_ul_tti_req->n_ulcch = 0;
+  future_ul_tti_req->n_group = 0;
 
-    /* UL_tti_req is a simple pointer into the current UL_tti_req_ahead, i.e.,
-     * it walks over UL_tti_req_ahead in a circular fashion */
-    gNB->UL_tti_req[CC_idP] = &gNB->UL_tti_req_ahead[CC_idP][slotP];
+  /* UL_tti_req is a simple pointer into the current UL_tti_req_ahead, i.e.,
+   * it walks over UL_tti_req_ahead in a circular fashion */
+  gNB->UL_tti_req[CC_idP] = &gNB->UL_tti_req_ahead[CC_idP][slotP];
 
-    TX_req[CC_idP].Number_of_PDUs                  = 0;
+  TX_req[CC_idP].Number_of_PDUs                  = 0;
 
-  }
 }
 /*
 void check_nr_ul_failure(module_id_t module_idP,

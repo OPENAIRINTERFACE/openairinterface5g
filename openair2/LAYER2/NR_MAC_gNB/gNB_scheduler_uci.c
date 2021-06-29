@@ -1141,7 +1141,7 @@ int nr_acknack_scheduling(int mod_id,
     if(NFAPI_MODE == NFAPI_MODE_VNF){
       gNB_MAC_INST *gNB = RC.nrmac[mod_id];
       gNB->UL_tti_req_ahead[0][7].SFN = f;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 7
-      gNB->UL_tti_req_ahead[0][8].SFN = f;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 8
+      gNB->[8].SFN = f;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 8
       gNB->UL_tti_req_ahead[0][9].SFN = f;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 9
       gNB->UL_tti_req[0] = &gNB->UL_tti_req_ahead[0][slot];
     }

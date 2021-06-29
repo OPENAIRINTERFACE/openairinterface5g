@@ -47,7 +47,6 @@
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "nfapi/oai_integration/vendor_ext.h"
 
 #include "T.h"
 
@@ -87,8 +86,7 @@ void nr_fill_pucch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
                    nfapi_nr_pucch_pdu_t *pucch_pdu) {
-  if (NFAPI_MODE == NFAPI_MODE_PNF)
-    gNB->pucch[0]->active = 0; //check if ture in monolithic mode 
+
   int id = nr_find_pucch(pucch_pdu->rnti,frame,slot,gNB);
   AssertFatal( (id>=0) && (id<NUMBER_OF_NR_PUCCH_MAX),
               "invalid id found for pucch !!! rnti %04x id %d\n",pucch_pdu->rnti,id);
@@ -169,6 +167,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+
   int nr_sequences;
   const uint8_t *mcs;
 
@@ -1086,7 +1085,8 @@ void init_pucch2_luts() {
 void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
-                      nfapi_nr_pucch_pdu_t* pucch_pdu) {                    
+                      nfapi_nr_pucch_pdu_t* pucch_pdu) {
+
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   //pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
