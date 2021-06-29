@@ -610,10 +610,16 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   nr_pdcp_ue_t *ue;
 
   int drb_id = s->drb_Identity;
-  int t_reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
+  int t_reordering;
   int sn_size_ul = decode_sn_size_ul(*s->pdcp_Config->drb->pdcp_SN_SizeUL);
   int sn_size_dl = decode_sn_size_dl(*s->pdcp_Config->drb->pdcp_SN_SizeDL);
   int discard_timer = decode_discard_timer(*s->pdcp_Config->drb->discardTimer);
+
+  /* if pdcp_Config->t_Reordering is not present, it means infinity (-1) */
+  if (s->pdcp_Config->t_Reordering != NULL)
+    t_reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
+  else
+    t_reordering = -1;
 
   /* TODO(?): accept different UL and DL SN sizes? */
   if (sn_size_ul != sn_size_dl) {
