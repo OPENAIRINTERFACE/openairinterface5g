@@ -97,6 +97,7 @@ static int DEFBFW[] = {0x00007fff};
 
 extern volatile int oai_exit;
 
+
 extern void  nr_phy_free_RU(RU_t *);
 extern void  nr_phy_config_request(NR_PHY_Config_t *gNB);
 #include "executables/thread-common.h"
@@ -708,7 +709,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 }
 
 
-void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) { 
+void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
@@ -1299,7 +1300,6 @@ void *ru_thread( void *param ) {
   }
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
-  
   while (!oai_exit) {
     // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
     // They are set on the first rx/tx in the underly FH routines.
@@ -1331,7 +1331,7 @@ void *ru_thread( void *param ) {
 
     // do RX front-end processing (frequency-shift, dft) if needed
 
-    int slot_type = nr_slot_select(cfg,proc->frame_rx,proc->tti_rx);    
+    int slot_type = nr_slot_select(cfg,proc->frame_rx,proc->tti_rx);
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
 
       if (ru->feprx) {

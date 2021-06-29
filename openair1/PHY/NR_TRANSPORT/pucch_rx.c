@@ -1466,7 +1466,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       }
     } // cw loop
     corr_dB = dB_fixed64((uint64_t)corr);
-    LOG_I(PHY,"cw_ML %d, metric %d dB\n",cw_ML,corr_dB);
+    LOG_D(PHY,"cw_ML %d, metric %d dB\n",cw_ML,corr_dB);
     decodedPayload[0]=(uint64_t)cw_ML;
   }
   else { // polar coded case

@@ -189,7 +189,7 @@ uint8_t pull8(uint8_t **in, uint8_t *out, uint8_t *end)
 		return 1;
 	}
 	else
-	{	
+	{
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s no space in buffer\n", __FUNCTION__);
 		return 0;
 	}
