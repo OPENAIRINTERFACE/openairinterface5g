@@ -453,7 +453,7 @@ sctp_handle_new_association_req(
                 if (((struct sockaddr_in*)ifa->ifa_addr)->sin_addr.s_addr == in.s_addr) {
                     struct sockaddr_in locaddr;
                     locaddr.sin_family = AF_INET;
-                    locaddr.sin_port = htons(sctp_new_association_req_p->port);
+                    locaddr.sin_port = 0;
                     locaddr.sin_addr.s_addr = in.s_addr;
 
                     if (sctp_bindx(sd, (struct sockaddr*)&locaddr, 1, SCTP_BINDX_ADD_ADDR) < 0) {

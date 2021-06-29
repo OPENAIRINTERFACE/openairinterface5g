@@ -407,8 +407,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
 NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
   int nr_ue;
   if(NB_NR_UE_INST > 0){
-    NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)malloc(NB_NR_UE_INST * sizeof(NR_UE_RRC_INST_t));
-    memset(NR_UE_rrc_inst, 0, NB_NR_UE_INST * sizeof(NR_UE_RRC_INST_t));
+    NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)calloc(NB_NR_UE_INST , sizeof(NR_UE_RRC_INST_t));
     for(nr_ue=0;nr_ue<NB_NR_UE_INST;nr_ue++){
       // fill UE-NR-Capability @ UE-CapabilityRAT-Container here.
       NR_UE_rrc_inst[nr_ue].selected_plmn_identity = 1;
@@ -1264,7 +1263,7 @@ nr_rrc_ue_process_masterCellGroup(
     // NSA procedures
   }
   if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config == NULL){
-    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = malloc(sizeof(NR_CellGroupConfig_t));
+    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = calloc(1,sizeof(NR_CellGroupConfig_t));
   }
  
 
@@ -1275,7 +1274,8 @@ nr_rrc_ue_process_masterCellGroup(
   if( cellGroupConfig->rlc_BearerToAddModList != NULL){
     //TODO (perform the RLC bearer addition/modification as specified in 5.3.5.5.4)
     if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList != NULL){
-      free(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
+       // Laurent: there are cases where the not NULL value is also not coming from a previous malloc
+      // so it is better to let the potential memory leak than corrupting the heap     //free(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
     }
     NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList = calloc(1, sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
     memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList,cellGroupConfig->rlc_BearerToAddModList,
@@ -1287,7 +1287,9 @@ nr_rrc_ue_process_masterCellGroup(
     LOG_I(RRC, "Received mac_CellGroupConfig from gNB\n");
     if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig != NULL){
       LOG_E(RRC, "UE RRC instance already contains mac CellGroupConfig which will be overwritten\n");
-      free(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig);
+      // Laurent: there are cases where the not NULL value is also not coming from a previous malloc
+      // so it is better to let the potential memory leak than corrupting the heap
+      //free(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig);
     }
     NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig = malloc(sizeof(struct NR_MAC_CellGroupConfig));
     memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig,cellGroupConfig->mac_CellGroupConfig,
