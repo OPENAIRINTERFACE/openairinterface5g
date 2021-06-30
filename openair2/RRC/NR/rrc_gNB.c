@@ -414,7 +414,7 @@ void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,
                                   NULL,
                                   NULL,
                                   NULL,
-                                  ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
+                                  get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
 
 }
 
@@ -3027,8 +3027,8 @@ int get_dl_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   return(1);
 }
 void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
+
   MessageDef *msg;
-  int id;
   rrc_gNB_ue_context_t *ue_context_p = NULL;
   FILE *fd=NULL;//fopen("nrRRCstats.log","w");
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(RC.nrrrc[ctxt_pP->module_id]->rrc_ue_head)) {
