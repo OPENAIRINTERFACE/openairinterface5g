@@ -66,8 +66,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     header_size = 3;
   }
   /* SRBs always have MAC-I, even if integrity is not active */
-  if ( // FIXME: DRB creation is with integrity, but we don't receive it 
-       // entity->has_integrity ||
+  if ( entity->has_integrity ||
        entity->type == NR_PDCP_SRB) {
     integrity_size = 4;
   } else {

@@ -2160,8 +2160,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
                                     NULL,
                                     radioBearerConfig->drb_ToAddModList,
                                     NULL,
-                                    NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-                                    (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                    0,
                                     NULL,
                                     NULL,
                                     kUPenc,

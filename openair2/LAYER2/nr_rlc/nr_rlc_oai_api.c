@@ -323,7 +323,8 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
      * reports '> 81338368' (table 6.1.3.1-2). Passing 100000000 is thus
      * more than enough.
      */
-    buf_stat = rb->buffer_status(rb, 100000000);
+    // Fixme : Laurent reduced size for CPU saving
+    buf_stat = rb->buffer_status(rb, 10000000);
     ret = buf_stat.status_size
         + buf_stat.retx_size
         + buf_stat.tx_size;
