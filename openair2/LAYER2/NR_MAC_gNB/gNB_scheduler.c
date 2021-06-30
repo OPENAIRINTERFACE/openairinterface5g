@@ -317,8 +317,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
           frame, gNB->handled_frame, slot, gNB->handled_slot);
     return;
   }
-  gNB->handled_frame = frame;
-  gNB->handled_slot = slot;
+
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
   NR_TDD_UL_DL_Pattern_t *tdd_pattern = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
