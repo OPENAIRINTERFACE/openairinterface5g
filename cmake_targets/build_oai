@@ -68,7 +68,6 @@ USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 NR="False"
 ITTI_SIM="False"
-RFSIM_NAS="False"
 SANITIZE_ADDRESS="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
 trap handle_ctrl_c INT
@@ -264,7 +263,6 @@ function main() {
             nrUE=1
             NR="True"
             rfsimNas=1
-            RFSIM_NAS="True"
             echo_info "Will compile NR UE"
             shift;;
        --mu)
@@ -619,7 +617,6 @@ function main() {
     echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
     echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
     echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
-    echo "set ( RFSIM_NAS $RFSIM_NAS )"                                   >> $cmake_file
     echo "set ( SANITIZE_ADDRESS $SANITIZE_ADDRESS )"                     >> $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
     cd  $DIR/$build_dir/build

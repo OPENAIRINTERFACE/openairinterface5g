@@ -1218,7 +1218,6 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                 rel15_ul);
 
     nr_gnb_measurements(gNB, ulsch_id, harq_pid, symbol);
-    int num_symb =  rel15_ul->nr_of_symbols;
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       if (symbol == rel15_ul->start_symbol_index) {
           gNB->pusch_vars[ulsch_id]->ulsch_power[aarx]=0;

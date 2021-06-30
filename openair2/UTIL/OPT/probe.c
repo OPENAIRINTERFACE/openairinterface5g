@@ -441,6 +441,10 @@ static void SendFrameNR(guint8 radioType, guint8 direction, guint8 rntiType,
   tmp16 = htons(subframe); // frame counter : this will give an expert info as wireshark expects SF and not F
   memcpy(frameBuffer+frameOffset, &tmp16, 2);
   frameOffset += 2;
+  if (direction == 0 ) { //ulink
+    frameBuffer[frameOffset++] = MAC_NR_PHR_TYPE2_OTHERCELL_TAG;
+    frameBuffer[frameOffset++] = 0;
+  }
   
   /***************************************/
   /* Now write the MAC PDU               */

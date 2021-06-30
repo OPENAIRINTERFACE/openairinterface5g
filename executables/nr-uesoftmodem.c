@@ -87,9 +87,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
 #include "nr_nas_msg_sim.h"
-#endif
 
 extern const char *duplex_mode[];
 THREAD_STRUCT thread_struct;
@@ -193,12 +191,10 @@ int create_tasks_nrue(uint32_t ue_nb) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
     }
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
   if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
     LOG_E(NR_RRC, "Create task for NAS UE failed\n");
     return -1;
   }
-#endif
   }
 
   itti_wait_ready(0);

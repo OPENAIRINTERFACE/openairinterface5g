@@ -46,6 +46,7 @@
 #include "f1ap_cu_task.h"
 #include "f1ap_du_task.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include <openair2/LAYER2/nr_pdcp/nr_pdcp.h>
 extern unsigned char NB_gNB_INST;
 
 extern RAN_CONTEXT_t RC;
