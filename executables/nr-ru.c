@@ -893,6 +893,18 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->rx_bw = 80e6;
       }
       break;
+    case 133 :
+      if (fp->threequarter_fs) {
+	AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
+      }
+      else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
+      }
+
+      break;
     case 106:
       if (fp->threequarter_fs) {
         cfg->sample_rate=46.08e6;
@@ -906,7 +918,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->tx_bw = 40e6;
         cfg->rx_bw = 40e6;
       }
-      break;
+     break;
     case 51:
       if (fp->threequarter_fs) {
         cfg->sample_rate=23.04e6;
@@ -1374,6 +1386,7 @@ void *ru_thread( void *param ) {
       }
     }
 
+
     // At this point, all information for subframe has been received on FH interface
     res = pullTpool(gNB->resp_L1, gNB->threadPool);
     syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
@@ -1385,6 +1398,7 @@ void *ru_thread( void *param ) {
     syncMsg->timestamp_tx = proc->timestamp_tx;
     res->key = proc->tti_rx;
     pushTpool(gNB->threadPool, res);
+
 
   }
 
@@ -2049,6 +2063,7 @@ static void NRRCconfig_RU(void)
       RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
       RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].u64ptr);
       RC.ru[j]->if_freq_offset                    = *(RUParamList.paramarray[j][RU_IF_FREQ_OFFSET].iptr);
+      RC.ru[j]->do_precoding                      = *(RUParamList.paramarray[j][RU_DO_PRECODING].iptr);
 
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;

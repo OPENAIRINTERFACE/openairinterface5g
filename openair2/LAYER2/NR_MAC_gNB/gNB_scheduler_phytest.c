@@ -389,6 +389,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
     vrb_map[rb + sched_pdsch->rbStart] = 1;
+
+  if ((frame&127) == 0) LOG_I(MAC,"phytest: %d.%d DL mcs %d, DL rbStart %d, DL rbSize %d\n", frame, slot, sched_pdsch->mcs, rbStart,rbSize);
 }
 
 uint32_t target_ul_mcs = 9;

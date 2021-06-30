@@ -60,6 +60,12 @@ typedef uint32_t guint32;
 typedef guint8   gboolean;
 
 #include "packet-mac-lte.h"
+#include "packet-rlc-lte.h"
+#include "packet-pdcp-lte.h"
+#include "packet-mac-nr.h"
+#include "packet-rlc-nr.h"
+#include "packet-pdcp-nr.h"
+
 #include "mac_pcap.h"
 
 /* OPT parameters definitions */
@@ -107,9 +113,10 @@ typedef enum radio_type_e {
 */
 
 extern int opt_enabled;
-#define trace_pdu(x...) if (opt_enabled) trace_pdu_implementation(x)
+#define trace_pdu(x...) if (opt_enabled) trace_pdu_implementation(0, x)
+#define trace_NRpdu(x...) if (opt_enabled) trace_pdu_implementation(1, x)
 
-void trace_pdu_implementation(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
+void trace_pdu_implementation(int nr, int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
                               int ueid, int rntiType, int rnti, uint16_t sysFrame, uint8_t subframe,
                               int oob_event, int oob_event_value);
 

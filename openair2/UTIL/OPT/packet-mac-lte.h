@@ -15,7 +15,7 @@
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
- 
+
  /* 
  this is wireshark, commit: commit eda834b6e29c36e05a63a6056afa98390ff79357 
  Date:   Wed Aug 22 14:36:20 2018 +0200
@@ -114,6 +114,7 @@ typedef struct mac_lte_info
     /* Timing info */
     guint16         sysframeNumber;
     guint16         subframeNumber;
+    gboolean        sfnSfInfoPresent;
 
     /* Optional field. More interesting for TDD (FDD is always -4 subframeNumber) */
     gboolean        subframeNumberOfGrantPresent;
@@ -197,49 +198,27 @@ typedef struct mac_lte_info
     guint16            oob_rnti[MAX_SRs];
 } mac_lte_info;
 
-
-typedef struct mac_lte_tap_info {
-    /* Info from context */
-    guint16  rnti;
-    guint16  ueid;
-    guint8   rntiType;
-    guint8   isPredefinedData;
-    gboolean crcStatusValid;
-    mac_lte_crc_status   crcStatus;
-    guint8   direction;
-
-    guint8   isPHYRetx;
-    guint16  ueInTTI;
-
-    nstime_t mac_lte_time;
-
-    /* Number of bytes (which part is used depends upon context settings) */
-    guint32  single_number_of_bytes;
-    guint32  bytes_for_lcid[11];
-    guint32  sdus_for_lcid[11];
-    guint8   number_of_rars;
-    guint8   number_of_paging_ids;
-
-    /* Number of padding bytes includes padding subheaders and trailing padding */
-    guint16  padding_bytes;
-    guint16  raw_length;
-} mac_lte_tap_info;
+ /* 0 to 10 and 32 to 38 */
+#define MAC_LTE_DATA_LCID_COUNT_MAX 18
 
 
 
-/*****************************************************************/
-/* UDP framing format                                            */
-/* -----------------------                                       */
-/* Several people have asked about dissecting MAC by framing     */
-/* PDUs over IP.  A suggested format over UDP has been created   */
-/* and implemented by this dissector, using the definitions      */
-/* below. A link to an example program showing you how to encode */
-/* these headers and send LTE MAC PDUs on a UDP socket is        */
-/* provided at https://wiki.wireshark.org/MAC-LTE                */
-/*                                                               */
-/* A heuristic dissector (enabled by a preference) will          */
-/* recognise a signature at the beginning of these frames.       */
-/*****************************************************************/
+
+/* Accessor function to check if a frame was considered to be ReTx */
+
+/**********************************************************************/
+/* UDP framing format                                                 */
+/* -----------------------                                            */
+/* Several people have asked about dissecting MAC by framing          */
+/* PDUs over IP.  A suggested format over UDP has been created        */
+/* and implemented by this dissector, using the definitions           */
+/* below. A link to an example program showing you how to encode      */
+/* these headers and send LTE MAC PDUs on a UDP socket is             */
+/* provided at https://gitlab.com/wireshark/wireshark/-/wikis/MAC-LTE */
+/*                                                                    */
+/* A heuristic dissector (enabled by a preference) will               */
+/* recognise a signature at the beginning of these frames.            */
+/**********************************************************************/
 
 
 /* Signature.  Rather than try to define a port for this, or make the
@@ -316,67 +295,5 @@ typedef struct mac_lte_tap_info {
 /* MAC PDU. Following this tag comes the actual MAC PDU (there is no length, the PDU
    continues until the end of the frame) */
 #define MAC_LTE_PAYLOAD_TAG 0x01
-
-
-/* Type to store parameters for configuring LCID->RLC channel settings for DRB */
-/* Some are optional, and may not be seen (e.g. on reestablishment) */
-typedef struct drb_mapping_t
-{
-    guint16    ueid;                /* Mandatory */
-    guint8     drbid;               /* Mandatory */
-    gboolean   lcid_present;
-    guint8     lcid;                /* Part of LogicalChannelConfig - optional */
-    gboolean   rlcMode_present;
-    guint8     rlcMode;             /* Part of RLC config - optional */
-    gboolean   rlc_ul_ext_li_field; /* Part of RLC config - optional */
-    gboolean   rlc_dl_ext_li_field; /* Part of RLC config - optional */
-    gboolean   rlc_ul_ext_am_sn;    /* Part of RLC config - optional */
-    gboolean   rlc_dl_ext_am_sn;    /* Part of RLC config - optional */
-    gboolean   um_sn_length_present;
-    guint8     um_sn_length;        /* Part of RLC config - optional */
-    gboolean   ul_priority_present;
-    guint8     ul_priority;         /* Part of LogicalChannelConfig - optional */
-    gboolean   pdcp_sn_size_present;
-    guint8     pdcp_sn_size;        /* Part of pdcp-Config - optional */
-} drb_mapping_t;
-
-
-
-/* Dedicated DRX config. Used to verify that a sensible config is given.
-   Also, beginning to configure MAC with this config and (optionally) show
-   DRX config and state (cycles/timers) attached to each UL/DL PDU! */
-typedef struct drx_config_t {
-    gboolean    configured;
-    guint32     frameNum;
-    guint32     previousFrameNum;
-
-    guint32     onDurationTimer;
-    guint32     inactivityTimer;
-    guint32     retransmissionTimer;
-    guint32     longCycle;
-    guint32     cycleOffset;
-    /* Optional Short cycle */
-    gboolean    shortCycleConfigured;
-    guint32     shortCycle;
-    guint32     shortCycleTimer;
-} drx_config_t;
-
-/* RRC can indicate whether simultaneous PUCCH/PUSCH is used */
-typedef enum {
-    SIMULT_PUCCH_PUSCH_PCELL = 0,
-    SIMULT_PUCCH_PUSCH_PSCELL
-} simult_pucch_pusch_cell_type;
-/*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
- *
- * Local variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * vi: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */
 
 #endif

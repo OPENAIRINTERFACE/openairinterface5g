@@ -445,7 +445,8 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   int rb_id;
   int i;
 
-  if(IS_SOFTMODEM_NOS1){
+  if(UE_NAS_USE_TUN){
+    LOG_D(PDCP, "IP packet received, to be sent to UE TUN interface");
     len = write(nas_sock_fd[0], buf, size);
     if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
@@ -534,7 +535,7 @@ static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   int srb_id;
   int i;
 
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < sizeofArray(ue->srb) ; i++) {
     if (entity == ue->srb[i]) {
       srb_id = i+1;
       goto srb_found;
@@ -577,7 +578,7 @@ static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   int i;
   mem_block_t *memblock;
 
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < sizeofArray(ue->srb) ; i++) {
     if (entity == ue->srb[i]) {
       srb_id = i+1;
       goto srb_found;
@@ -896,13 +897,14 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
       //ctxt_pP->configured != 2 ||
       //srb2add_list == NULL ||
       //drb2add_list != NULL ||
-      drb2release_list != NULL ||
+      //drb2release_list != NULL ||
       //security_modeP != 255 ||
       //kRRCenc != NULL ||
       //kRRCint != NULL ||
       //kUPenc != NULL ||
       pmch_InfoList_r9 != NULL /*||
       defaultDRB != NULL */) {
+    LOG_I(PDCP,"Releasing DRBs, oops\n");
     TODO;
   }
 
@@ -924,6 +926,10 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
   /* update security */
   if (kRRCint != NULL) {
     /* todo */
+  }
+
+  if (drb2release_list != NULL) {
+    // TODO
   }
 
   free(kRRCenc);
@@ -1026,7 +1032,7 @@ void nr_DRB_preconfiguration(uint16_t crnti)
     (NR_SRB_ToAddModList_t *) NULL,
     rbconfig->drb_ToAddModList ,
     rbconfig->drb_ToReleaseList,
-    0,
+    0xff,
     NULL,
     NULL,
     NULL,
@@ -1189,6 +1195,7 @@ static boolean_t pdcp_data_req_drb(
   if (rb == NULL) {
     LOG_E(PDCP, "%s:%d:%s: no DRB found (rnti %d, rb_id %ld)\n",
           __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
+    nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
     return 0;
   }
 

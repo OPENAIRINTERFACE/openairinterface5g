@@ -192,6 +192,10 @@ void nr_process_mac_pdu(module_id_t module_idP,
 
     NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+    if ( pduP[0] != UL_SCH_LCID_PADDING )
+      trace_NRpdu(DIRECTION_UPLINK, pduP, mac_pdu_len ,UE_id, WS_C_RNTI, UE_info->rnti[UE_id], frameP, 0, 0, 0);
+
     //  For both DL/UL-SCH
     //  Except:
     //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
@@ -371,7 +375,7 @@ void nr_process_mac_pdu(module_id_t module_idP,
             mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
             mac_subheader_len = 2;
           }
-          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, *UE_info->rnti);
+          LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, UE_info->rnti[UE_id]);
           mac_rlc_data_ind(module_idP,
                            UE_info->rnti[UE_id],
                            module_idP,
@@ -664,6 +668,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if (UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
          LOG_D(NR_MAC,"Detected UL Failure on PUSCH, stopping scheduling\n");
          UE_info->UE_sched_ctrl[UE_id].ul_failure = 1;
+        nr_mac_eNB_rrc_ul_failure(gnb_mod_idP,CC_idP,frameP,slotP,rntiP);
       }
     }
   } else if(sduP) {

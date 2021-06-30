@@ -38,7 +38,6 @@
 #include "common/ran_context.h"
 #include "NR_UL-CCCH-Message.h"
 
-#undef C_RNTI // C_RNTI is used in F1AP generated code, prevent preprocessor replace
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
 #include "openair2/LAYER2/PROTO_AGENT/proto_agent.h"
@@ -47,6 +46,7 @@ extern RAN_CONTEXT_t RC;
 
 #include <stdint.h>
 
+#include <executables/softmodem-common.h>
 static nr_rlc_ue_manager_t *nr_rlc_ue_manager;
 
 /* TODO: handle time a bit more properly */
@@ -324,7 +324,8 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
      * reports '> 81338368' (table 6.1.3.1-2). Passing 100000000 is thus
      * more than enough.
      */
-    buf_stat = rb->buffer_status(rb, 100000000);
+    // Fixme : Laurent reduced size for CPU saving
+    buf_stat = rb->buffer_status(rb, 10000000);
     ret = buf_stat.status_size
         + buf_stat.retx_size
         + buf_stat.tx_size;
@@ -426,7 +427,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   int is_enb;
 
   /* is it SRB? */
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < sizeofArray(ue->srb); i++) {
     if (entity == ue->srb[i]) {
       is_srb = 1;
       rb_id = i+1;
@@ -435,7 +436,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   }
 
   /* maybe DRB? */
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < sizeofArray(ue->drb) ; i++) {
     if (entity == ue->drb[i]) {
       is_srb = 0;
       rb_id = i+1;
@@ -918,7 +919,7 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
 
   if (drb2release_listP != NULL) {
     LOG_E(RLC, "%s:%d:%s: TODO\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
+    //exit(1);
   }
 
   if (srb2add_listP != NULL) {
