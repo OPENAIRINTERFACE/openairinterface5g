@@ -627,7 +627,9 @@ srb_found:
   }
   else {
     MessageDef  *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
-    F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = (uint8_t*)buf;
+    uint8_t *message_buffer = itti_malloc (TASK_RRC_GNB, TASK_CU_F1, size);
+    memcpy (message_buffer, buf, size);
+    F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = message_buffer;
     F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
     F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
     F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;

@@ -64,6 +64,10 @@
 
 #define INITIAL_REGISTRATION                               0b001
 
+#define PLAIN_5GS_NAS_MESSAGE_HEADER_LENGTH                3
+#define SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH   7
+#define PAYLOAD_CONTAINER_LENGTH_MIN                       3
+#define PAYLOAD_CONTAINER_LENGTH_MAX                       65537
 
 typedef enum fgs_protocol_discriminator_e {
   /* Protocol discriminator identifier for 5GS Mobility Management */
@@ -115,6 +119,33 @@ typedef union {
   fgs_nas_message_security_protected_t security_protected;
   fgs_nas_message_plain_t plain;
 } fgs_nas_message_t;
+
+typedef struct {
+  union {
+    mm_msg_header_t plain_nas_msg_header;
+    struct security_protected_nas_msg_header_s {
+      uint8_t  ex_protocol_discriminator;
+      uint8_t  security_header_type;
+      uint16_t message_authentication_code1;
+      uint16_t message_authentication_code2;
+      uint8_t  sequence_number;
+    } security_protected_nas_msg_header_t;
+  } choice;
+} nas_msg_header_t;
+
+typedef struct {
+  uint8_t ex_protocol_discriminator;
+  uint8_t pdu_session_id;
+  uint8_t PTI;
+  uint8_t message_type;
+} fgs_sm_nas_msg_header_t;
+
+typedef struct {
+    mm_msg_header_t         plain_nas_msg_header;
+    uint8_t                 payload_container_type;
+    uint16_t                payload_container_length;
+    fgs_sm_nas_msg_header_t sm_nas_msg_header;
+} dl_nas_transport_t;
 
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg, int Mod_id);
 void generateSecurityModeComplete(as_nas_info_t *initialNasMsg);

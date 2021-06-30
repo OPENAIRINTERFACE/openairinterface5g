@@ -713,6 +713,31 @@ void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
 }
 
 
+uint8_t get_msg_type(uint8_t *pdu_buffer, uint32_t length) {
+  uint8_t          msg_type = 0;
+  uint8_t          offset   = 0;
+  nas_msg_header_t nas_msg_header;
+
+  if ((pdu_buffer != NULL) && (length > 0)) {
+    if (((nas_msg_header_t *)(pdu_buffer))->choice.security_protected_nas_msg_header_t.security_header_type > 0) {
+      offset += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
+      if (offset < length) {
+        msg_type = ((mm_msg_header_t *)(pdu_buffer + offset))->message_type;
+
+        if (msg_type == FGS_DOWNLINK_NAS_TRANSPORT) {
+          msg_type = ((dl_nas_transport_t *)(pdu_buffer+ offset))->sm_nas_msg_header.message_type;
+        }
+      }
+    } else { // plain 5GS NAS message
+      msg_type = ((nas_msg_header_t *)(pdu_buffer))->choice.plain_nas_msg_header.message_type;
+    }
+  } else {
+    LOG_I(NAS, "[UE] Received invalid downlink message\n");
+  }
+
+  return msg_type;
+}
+
 void *nas_nrue_task(void *args_p)
 {
   MessageDef           *msg_p;
@@ -784,23 +809,8 @@ void *nas_nrue_task(void *args_p)
               NAS_CONN_ESTABLI_CNF (msg_p).errCode, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
 
         pdu_buffer = NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.data;
-        if((pdu_buffer + 1) != NULL){
-          if (*(pdu_buffer + 1) > 0 ) {
-            if((pdu_buffer + 9) != NULL){
-                msg_type = *(pdu_buffer + 9);
-            } else {
-              LOG_W(NAS, "[UE] Received invalid downlink message\n");
-              break;
-            }
-          } else {
-            if((pdu_buffer + 2) != NULL){
-              msg_type = *(pdu_buffer + 2);
-            } else {
-                LOG_W(NAS, "[UE] Received invalid downlink message\n");
-                break;
-            }
-          }
-        }
+        msg_type = get_msg_type(pdu_buffer, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
+
         if(msg_type == REGISTRATION_ACCEPT){
           LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
 
@@ -829,17 +839,38 @@ void *nas_nrue_task(void *args_p)
             itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
             LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
           }
-        }
-        else if((pdu_buffer + 16) != NULL){
-          msg_type = *(pdu_buffer + 16);
-          if(msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC){
-            sprintf(baseNetAddress, "%d.%d", *(pdu_buffer + 39),*(pdu_buffer + 40));
-            int third_octet = *(pdu_buffer + 41);
-            int fourth_octet = *(pdu_buffer + 42);
-            LOG_I(NAS, "Received PDU Session Establishment Accept\n");
-            nas_config(1,third_octet,fourth_octet,"ue");
+        } else if(msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC){
+            uint8_t offset = 0;
+            uint8_t *payload_container = NULL;
+            offset += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
+            uint16_t payload_container_length = htons(((dl_nas_transport_t *)(pdu_buffer + offset))->payload_container_length);
+            if ((payload_container_length >= PAYLOAD_CONTAINER_LENGTH_MIN) && (payload_container_length <= PAYLOAD_CONTAINER_LENGTH_MAX)) {
+              offset += (PLAIN_5GS_NAS_MESSAGE_HEADER_LENGTH + 3);
+            }
+
+            if (offset < NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length) {
+              payload_container = pdu_buffer + offset;
+            }
+            offset = 0;
+
+            while(offset < payload_container_length) {
+              if (*(payload_container + offset) == 0x29) { // PDU address IEI
+                if ((*(payload_container+offset+1) == 0x05) && (*(payload_container +offset+2) == 0x01)) { // IPV4
+                  nas_getparams();
+                  netlink_init_tun("ue", 1);
+                  sprintf(baseNetAddress, "%d.%d", *(payload_container+offset+3), *(payload_container+offset+4));
+                  int third_octet = *(payload_container+offset+5);
+                  int fourth_octet = *(payload_container+offset+6);
+                  LOG_I(NAS, "Received PDU Session Establishment Accept, UE IP: %d.%d.%d.%d\n",
+                    *(payload_container+offset+3), *(payload_container+offset+4),
+                    *(payload_container+offset+5), *(payload_container+offset+6));
+                  nas_config(1,third_octet,fourth_octet,"oaitun_ue");
+                  break;
+                }
+              }
+              offset++;
+            }
           }
-        }
 
         break;
       }
@@ -866,17 +897,7 @@ void *nas_nrue_task(void *args_p)
         as_nas_info_t initialNasMsg={0};
 
         pdu_buffer = NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data;
-        if((pdu_buffer + 1) != NULL){
-          if (*(pdu_buffer + 1) > 0 ) {
-            msg_type = *(pdu_buffer + 9);
-          } else {
-            msg_type = *(pdu_buffer + 2);
-          }
-        }
-        if((pdu_buffer + 2) == NULL){
-          LOG_W(NAS, "[UE] Received invalid downlink message\n");
-          return 0;
-        }
+        msg_type = get_msg_type(pdu_buffer, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length);
 
         switch(msg_type){
           case FGS_IDENTITY_REQUEST:

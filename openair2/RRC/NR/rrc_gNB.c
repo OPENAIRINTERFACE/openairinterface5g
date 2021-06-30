@@ -1361,6 +1361,10 @@ rrc_gNB_process_RRCReconfigurationComplete(
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_DU_ue_id = 0;
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).rnti = ue_context_pP->ue_context.rnti;
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).mcc              = RC.nrrrc[0]->configuration.mcc[0];
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).mnc              = RC.nrrrc[0]->configuration.mnc[0];
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).mnc_digit_length = RC.nrrrc[0]->configuration.mnc_digit_length[0];
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).nr_cellid        = RC.nrrrc[0]->nr_cellid;
       itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
       LOG_I(RRC, "Send F1AP_UE_CONTEXT_SETUP_REQ with ITTI\n");
     }
