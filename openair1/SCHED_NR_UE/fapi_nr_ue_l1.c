@@ -155,33 +155,50 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
           {
             nfapi_nr_uci_indication_t *uci_ind = CALLOC(1, sizeof(*uci_ind));
             uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
-            uci_ind->sfn = scheduled_response->frame == 19 ? scheduled_response->frame  + 1 % 1024 : scheduled_response->frame;
-            uci_ind->slot = (scheduled_response->slot + 6) % 20;
+            uci_ind->sfn = scheduled_response->frame;
+            uci_ind->slot = scheduled_response->slot + 6; // (+ 6) Specified by pucch->ul_slot field in gNB uci scheduler
+            if (uci_ind->slot >= 20)
+            {
+              uci_ind->slot %= 20;
+              uci_ind->sfn = (uci_ind->sfn + 1) % 1024;
+            }
             uci_ind->num_ucis = 1;
-            uci_ind->uci_list = CALLOC(1, sizeof(nfapi_nr_uci_t));
-            uci_ind->uci_list[0].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
-            uci_ind->uci_list[0].pdu_size = 46;
-            uci_ind->uci_list->pucch_pdu_format_0_1.rnti = scheduled_response->dl_config->dl_config_list[0].dlsch_config_pdu.rnti;
-            uci_ind->uci_list[0].pucch_pdu_format_0_1.pduBitmap = 2; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR
-            uci_ind->uci_list[0].pucch_pdu_format_0_1.pucch_format = 1;
-            uci_ind->uci_list[0].pucch_pdu_format_0_1.harq = CALLOC(1, sizeof(nfapi_nr_harq_pdu_0_1_t));
-            uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->harq_confidence_level = 0;
-            uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->num_harq = 1;
-            uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->harq_list = CALLOC(1, sizeof(nfapi_nr_harq_t));
-            uci_ind->uci_list->pucch_pdu_format_0_1.harq->harq_list[0].harq_value = 0;
-            LOG_I(NR_PHY, "In %s: Filled queue uci_ind which was filled by dlconfig.\n"
-                       "uci_num %d, uci_slot %d, uci_frame %d\n",
-                          __FUNCTION__, uci_ind->num_ucis, uci_ind->slot, uci_ind->sfn);
-
-              if (!put_queue(&nr_uci_ind_queue, uci_ind))
+            uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
+            for (int j = 0; j < uci_ind->num_ucis; j++)
+            {
+              nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
+              uci_ind->uci_list[j].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
+              uci_ind->uci_list[j].pdu_size = 46; //Melissa hack TODO: What should this be? Format 1_1 DCI has PayloadBitSize = 46
+              pdu_0_1->pduBitmap = 2; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR
+              pdu_0_1->handle = 0;
+              pdu_0_1->rnti = dl_config->dl_config_list[0].dlsch_config_pdu.rnti;
+              pdu_0_1->pucch_format = 1;
+              pdu_0_1->ul_cqi = 27;
+              pdu_0_1->timing_advance = 0;
+              pdu_0_1->rssi = 0;
+              pdu_0_1->harq = CALLOC(1, sizeof(*pdu_0_1->harq));
+              pdu_0_1->harq->num_harq = 1;
+              pdu_0_1->harq->harq_confidence_level = 0;
+              pdu_0_1->harq->harq_list = CALLOC(pdu_0_1->harq->num_harq, sizeof(*pdu_0_1->harq->harq_list));
+              for (int k = 0; k < pdu_0_1->harq->num_harq; k++)
               {
-                LOG_E(NR_MAC, "Put_queue failed for rx_ind\n");
-                free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->harq_list);
-                free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq);
-                free(uci_ind->uci_list);
-                free(uci_ind);
+                pdu_0_1->harq->harq_list[k].harq_value = 0;
               }
-            break; //Melissa figure out what to send to gNB when receiving format 1_1
+            }
+
+            LOG_I(NR_PHY, "In %s: Filled queue uci_ind which was filled by dlconfig.\n"
+                       "uci_num %d, uci_slot %d, uci_frame %d and num_harqs %d\n",
+                          __FUNCTION__, uci_ind->num_ucis, uci_ind->slot, uci_ind->sfn, uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->num_harq);
+
+            if (!put_queue(&nr_uci_ind_queue, uci_ind))
+            {
+              LOG_E(NR_MAC, "Put_queue failed for uci_ind\n");
+              //free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->harq_list);
+              //free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq);
+              free(uci_ind->uci_list);
+              free(uci_ind);
+            }
+            break;
           }
         }
       }

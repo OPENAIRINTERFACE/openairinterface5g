@@ -170,7 +170,7 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 	struct timespec slot_start;
 //	clock_gettime(CLOCK_MONOTONIC, &sf_start);
 	clock_gettime(CLOCK_MONOTONIC, &slot_start);
-	long millisecond = slot_start.tv_nsec / 1e6; //Check if we have to change
+	long millisecond = slot_start.tv_nsec / 0.5e6; //Check if we have to change
 	//long millisecond = slot_start.tv_nsec / 0.5e6;
 //	sf_start = timespec_add(sf_start, sf_duration);
 	slot_start = timespec_add(slot_start, slot_duration);

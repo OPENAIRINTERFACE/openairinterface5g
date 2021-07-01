@@ -3533,28 +3533,27 @@ static uint8_t pack_nr_uci_pucch_0_1(void* tlv, uint8_t **ppWritePackedMsg, uint
 		 push16(value->rnti, ppWritePackedMsg, end) &&
 		 push8(value->pucch_format, ppWritePackedMsg, end) &&
 		 push8(value->ul_cqi, ppWritePackedMsg, end) &&
-		 push16(value->timing_advance, ppWritePackedMsg, end) && 
+		 push16(value->timing_advance, ppWritePackedMsg, end) &&
 		 push16(value->rssi, ppWritePackedMsg, end)
 		 ))
 		  return 0;
 	if (value->pduBitmap & 0x01) { //SR
-		if(!(push8(value->sr->sr_indication, ppWritePackedMsg, end) &&
-	 	 push8(value->sr->sr_confidence_level, ppWritePackedMsg, end) 
+		if (!(push8(value->sr->sr_indication, ppWritePackedMsg, end) &&
+		 push8(value->sr->sr_confidence_level, ppWritePackedMsg, end)
 		 ))
 		  return 0;
 	}
 
 	if (((value->pduBitmap >> 1) & 0x01)) { //HARQ
-		if(!(push8(value->harq->num_harq, ppWritePackedMsg, end) &&
-	 	 push8(value->harq->harq_confidence_level, ppWritePackedMsg, end) 
+		if (!(push8(value->harq->num_harq, ppWritePackedMsg, end) &&
+		 push8(value->harq->harq_confidence_level, ppWritePackedMsg, end)
 		 ))
 			return 0;
-
-		for(int i=0; i<value->harq->num_harq;i++)	
+		for (int i = 0; i < value->harq->num_harq; i++)
 		{
-			if(!(push8(value->harq->harq_list[i].harq_value, ppWritePackedMsg, end)
+			if (!(push8(value->harq->harq_list[i].harq_value, ppWritePackedMsg, end)
 			))
-			return 0;
+			        return 0;
 		}
 	}
 
@@ -3618,20 +3617,22 @@ static uint8_t pack_nr_uci_indication_body(void* tlv, uint8_t **ppWritePackedMsg
 		return 0;
 	
 	switch (value->pdu_type) {
-      case NFAPI_NR_UCI_PUSCH_PDU_TYPE:
-        NFAPI_TRACE(NFAPI_TRACE_WARN, "Unhandled NFAPI_NR_UCI_PUSCH_PDU_TYPE \n");
-        break;
+                case NFAPI_NR_UCI_PUSCH_PDU_TYPE:
+                        NFAPI_TRACE(NFAPI_TRACE_WARN, "Unhandled NFAPI_NR_UCI_PUSCH_PDU_TYPE \n");
+                        break;
 
-      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
-        nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &value->pucch_pdu_format_0_1;
-        pack_nr_uci_pucch_0_1(uci_pdu, ppWritePackedMsg, end);
-        break;
-      }
-      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
-        nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &value->pucch_pdu_format_2_3_4;
-        pack_nr_uci_pucch_2_3_4(uci_pdu, ppWritePackedMsg, end);
-        break;
-    	}
+                case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
+                        nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &value->pucch_pdu_format_0_1;
+                        if (!pack_nr_uci_pucch_0_1(uci_pdu, ppWritePackedMsg, end))
+                                return 0;
+                        break;
+                }
+                case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
+                        nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &value->pucch_pdu_format_2_3_4;
+                        if (!pack_nr_uci_pucch_2_3_4(uci_pdu, ppWritePackedMsg, end))
+                                return 0;
+                        break;
+                }
 	}
 
 	return 1;
@@ -3647,10 +3648,10 @@ static uint8_t pack_nr_uci_indication(void *msg, uint8_t **ppWritePackedMsg, uin
 		))
 			return 0;
 
-	for(int i=0; i<pNfapiMsg->num_ucis;i++)	
+	for (int i = 0; i < pNfapiMsg->num_ucis; i++)
 	{
-		if(!pack_nr_uci_indication_body(&(pNfapiMsg->uci_list[i]),ppWritePackedMsg,end))
-		return 0;
+		if (!pack_nr_uci_indication_body(&(pNfapiMsg->uci_list[i]), ppWritePackedMsg, end))
+		        return 0;
 	}
 
 return 1;
@@ -6529,7 +6530,7 @@ static uint8_t unpack_nr_uci_pucch_0_1(nfapi_nr_uci_pucch_pdu_format_0_1_t *valu
                                        uint8_t *end,
                                        nfapi_p7_codec_config_t *config) {
 
-	if(!(pull8(ppReadPackedMsg, &value->pduBitmap, end) &&
+	if (!(pull8(ppReadPackedMsg, &value->pduBitmap, end) &&
 	 	 pull32(ppReadPackedMsg, &value->handle, end) &&
 		 pull16(ppReadPackedMsg, &value->rnti, end) &&
 		 pull8(ppReadPackedMsg, &value->pucch_format, end) &&
@@ -6539,21 +6540,37 @@ static uint8_t unpack_nr_uci_pucch_0_1(nfapi_nr_uci_pucch_pdu_format_0_1_t *valu
 		 ))
 		        return 0;
 	if (value->pduBitmap & 0x01) { //SR
-		if(!(pull8(ppReadPackedMsg, &value->sr->sr_indication, end) &&
-	 	 pull8(ppReadPackedMsg, &value->sr->sr_confidence_level, end)
+		if (!(pull8(ppReadPackedMsg, &value->sr->sr_indication, end) &&
+		 pull8(ppReadPackedMsg, &value->sr->sr_confidence_level, end)
 		 ))
 		        return 0;
 	}
 	if (((value->pduBitmap >> 1) & 0x01)) { //HARQ
+
                 value->harq = nfapi_p7_allocate(sizeof(*value->harq), config);
-                if (!(pull8(ppReadPackedMsg, &value->harq->harq_confidence_level, end) &&
-                        pull8(ppReadPackedMsg, &value->harq->num_harq, end)
+                if (value->harq == NULL)
+                {
+                        NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate nr_harq pdu\n", __FUNCTION__);
+                        return 0;
+                }
+                if (!(pull8(ppReadPackedMsg, &value->harq->num_harq, end) &&
+                        pull8(ppReadPackedMsg, &value->harq->harq_confidence_level, end)
                         ))
                         return 0;
-                value->harq->harq_list = nfapi_p7_allocate(sizeof(*value->harq->harq_list) * value->harq->num_harq, config);
-                for (int i = 0; i < value->harq->num_harq; i++) {
-                        if (!pull8(ppReadPackedMsg, &value->harq->harq_list[i].harq_value, end))
+                value->harq->harq_list = NULL;
+                if (value->harq->num_harq > 0) {
+                        value->harq->harq_list = nfapi_p7_allocate(sizeof(*value->harq->harq_list) * value->harq->num_harq, config);
+                        if (value->harq->harq_list == NULL)
+                        {
+                                NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate harq ind pdu list (count:%d)\n",
+                                                __FUNCTION__, value->harq->num_harq);
                                 return 0;
+                        }
+                        for (int i = 0; i < value->harq->num_harq; i++) {
+                                if (!pull8(ppReadPackedMsg, &value->harq->harq_list[i].harq_value, end)) {
+                                        return 0;
+                                }
+                        }
                 }
 	}
 
@@ -6607,33 +6624,39 @@ static uint8_t unpack_nr_uci_pucch_2_3_4(void* tlv, uint8_t **ppReadPackedMsg, u
 	return 1;
 }
 
-static uint8_t unpack_nr_uci_indication_body(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
+static uint8_t unpack_nr_uci_indication_body(nfapi_nr_uci_t *value,
+                                             uint8_t **ppReadPackedMsg,
+                                             uint8_t *end,
+                                             nfapi_p7_codec_config_t *config)
 {
-	nfapi_nr_uci_t* value = (nfapi_nr_uci_t*)tlv;
-
 	if(!(pull16(ppReadPackedMsg, &value->pdu_type, end) &&
 		pull16(ppReadPackedMsg, &value->pdu_size, end)
 		))
 		return 0;
-	
+
 	switch (value->pdu_type) {
-      case NFAPI_NR_UCI_PUSCH_PDU_TYPE:
-        NFAPI_TRACE(NFAPI_TRACE_WARN, "Unhandled NFAPI_NR_UCI_PUSCH_PDU_TYPE \n");
-        break;
+                case NFAPI_NR_UCI_PUSCH_PDU_TYPE:
+                        NFAPI_TRACE(NFAPI_TRACE_WARN, "Unhandled NFAPI_NR_UCI_PUSCH_PDU_TYPE \n");
+                        break;
 
-      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
-        nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu = &value->pucch_pdu_format_0_1;
-        unpack_nr_uci_pucch_0_1(&uci_pdu, ppReadPackedMsg, end);
-		break;
+                case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
+                        nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &value->pucch_pdu_format_0_1;
+                        if (!unpack_nr_uci_pucch_0_1(uci_pdu, ppReadPackedMsg, end, config))
+                                return 0;
+                        break;
+                }
+                case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
+                        nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &value->pucch_pdu_format_2_3_4;
+                        if (!unpack_nr_uci_pucch_2_3_4(uci_pdu, ppReadPackedMsg, end))
+                                return 0;
+                        break;
+                }
+                default:
+                        NFAPI_TRACE(NFAPI_TRACE_WARN, "Unexpected pdu type %d\n", value->pdu_type);
+                        break;
         }
-      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
-        nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &value->pucch_pdu_format_2_3_4;
-        unpack_nr_uci_pucch_2_3_4(&uci_pdu, ppReadPackedMsg, end);
-        break;
-    	}
-	}	
 
-	return 1;	
+	return 1;
 }
 
 static uint8_t unpack_nr_uci_indication(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t* config)
@@ -6646,11 +6669,11 @@ static uint8_t unpack_nr_uci_indication(uint8_t **ppReadPackedMsg, uint8_t *end,
 		))
 			return 0;
 
-        pNfapiMsg->uci_list = nfapi_p7_allocate(sizeof(*pNfapiMsg->uci_list) * pNfapiMsg->num_ucis, config);
+	pNfapiMsg->uci_list = nfapi_p7_allocate(sizeof(*pNfapiMsg->uci_list) * pNfapiMsg->num_ucis, config);
 	for (int i = 0; i < pNfapiMsg->num_ucis; i++)
 	{
 		if(!unpack_nr_uci_indication_body(&pNfapiMsg->uci_list[i], ppReadPackedMsg, end, config))
-		return 0;
+		        return 0;
 	}
 
         return 1;

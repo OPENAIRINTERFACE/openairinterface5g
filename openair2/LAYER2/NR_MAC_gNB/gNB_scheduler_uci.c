@@ -315,60 +315,78 @@ static void handle_dl_harq(module_id_t mod_id,
   }
 }
 
+static NR_UE_harq_t *find_harq(module_id_t mod_id, frame_t frame, sub_frame_t slot, int UE_id)
+{
+  /* In case of realtime problems: we can only identify a HARQ process by
+   * timing. If the HARQ process's feedback_frame/feedback_slot is not the one we
+   * expected, we assume that processing has been aborted and we need to
+   * skip this HARQ process, which is what happens in the loop below.
+   * Similarly, we might be "in advance", in which case we need to skip
+   * this result. */
+  NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
+  int8_t pid = sched_ctrl->feedback_dl_harq.head;
+  if (pid < 0)
+    return NULL;
+  NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
+  /* old feedbacks we missed: mark for retransmission */
+  while (harq->feedback_slot < slot) {
+    LOG_W(MAC,
+          "expected HARQ pid %d feedback at slot %d, but is at %d.%d instead (HARQ feedback is in the past)\n",
+          pid,
+          harq->feedback_slot,
+          frame,
+          slot);
+    remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+    handle_dl_harq(mod_id, UE_id, pid, 0);
+    pid = sched_ctrl->feedback_dl_harq.head;
+    if (pid < 0)
+      return NULL;
+    harq = &sched_ctrl->harq_processes[pid];
+  }
+  /* feedbacks that we wait for in the future: don't do anything */
+  if (harq->feedback_slot > slot) {
+    LOG_W(MAC,
+          "expected HARQ pid %d feedback at slot %d, but is at %d.%d instead (HARQ feedback is in the future)\n",
+          pid,
+          harq->feedback_slot,
+          frame,
+          slot);
+    return NULL;
+  }
+  return harq;
+}
+
 void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              frame_t frame,
                              sub_frame_t slot,
                              const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01)
-{ NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
-  UE_info->active[0] = 1;
-  UE_info->rnti[0] = uci_01->rnti;
+{
   int UE_id = find_nr_UE_id(mod_id, uci_01->rnti);
   if (UE_id < 0) {
     LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_01->rnti);
     return;
   }
-  //NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  // tpc (power control)
-  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
-                                uci_01->ul_cqi,
-                                30);
-
-  // NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
-  // const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  //const int num_slots = 20;
-  
-  // if (((uci_01->pduBitmap >> 1) & 0x01)) {
-  //   // iterate over received harq bits
-  //   for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
-  //     const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
-  //     const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-  //     const int feedback_slot = (slot - 1 + num_slots) % num_slots;
-  //     /* In case of realtime problems: we can only identify a HARQ process by
-  //      * timing. If the HARQ process's feedback_slot is not the one we
-  //      * expected, we assume that processing has been aborted and we need to
-  //      * skip this HARQ process, which is what happens in the loop below. If
-  //      * you don't experience real-time problems, you might simply revert the
-  //      * commit that introduced these changes. */
-  //     int8_t pid = sched_ctrl->feedback_dl_harq.head;
-  //     DevAssert(pid >= 0);
-  //     while (sched_ctrl->harq_processes[pid].feedback_slot != feedback_slot) {
-  //       LOG_W(MAC,
-  //             "expected feedback slot %d, but found %d instead\n",
-  //             sched_ctrl->harq_processes[pid].feedback_slot,
-  //             feedback_slot);
-  //       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-  //       handle_dl_harq(mod_id, UE_id, pid, 0);
-  //       pid = sched_ctrl->feedback_dl_harq.head;
-  //       DevAssert(pid >= 0);
-  //     }
-  //     remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-  //     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[pid];
-  //     DevAssert(harq->is_waiting);
-  //     handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
-  //   }
-  // }
+  if (((uci_01->pduBitmap >> 1) & 0x01)) {
+    // iterate over received harq bits
+    for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
+      const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
+      const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
+      NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
+      if (!harq) {
+        LOG_E(NR_MAC, "Oh no! Could not find a harq in %s!\n", __FUNCTION__);
+        break;
+      }
+      DevAssert(harq->is_waiting);
+      const int8_t pid = sched_ctrl->feedback_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+      /* Melissa: according to nfapi_nr_interface_scf.h, harq_value = 0 is a pass
+      (check below was for harq_value == 1 in develop branch) */
+      handle_dl_harq(mod_id, UE_id, pid, harq_value == 0 && harq_confidence == 0);
+    }
+  }
 }
 
 void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
@@ -497,8 +515,8 @@ int nr_acknack_scheduling(int mod_id,
       || (pucch->frame == frame + 1))
     return -1;
 
-  // this is hardcoded for now as ue specific
-  NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  // this is hardcoded for now as ue specific only if we are not on the initialBWP (to be fixed to allow ue_Specific also on initialBWP
+  NR_SearchSpace__searchSpaceType_PR ss_type = sched_ctrl->active_bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific: NR_SearchSpace__searchSpaceType_PR_common;
   uint8_t pdsch_to_harq_feedback[8];
   get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
 
@@ -601,13 +619,26 @@ int nr_acknack_scheduling(int mod_id,
 
   pucch->timing_indicator = i; // index in the list of timing indicators
 
+  LOG_I(NR_MAC,"2. DL slot %d, UL_ACK %d (index %d)\n", slot, pucch->ul_slot, i);
+
   pucch->dai_c++;
   pucch->resource_indicator = 0; // each UE has dedicated PUCCH resources
+
+  NR_PUCCH_Config_t *pucch_Config = NULL;
+  if (sched_ctrl->active_ubwp) {
+    pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
+  } else if (RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id] &&
+             RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id]->spCellConfig &&
+             RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated &&
+             RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+             RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+             RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
+    pucch_Config = RC.nrmac[mod_id]->UE_info.secondaryCellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+  }
 
   /* verify that at that slot and symbol, resources are free. We only do this
    * for initialCyclicShift 0 (we assume it always has that one), so other
    * initialCyclicShifts can overlap with ICS 0!*/
-  const NR_PUCCH_Config_t *pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
   const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[pucch->resource_indicator];
   DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
   if (resource->format.choice.format0->initialCyclicShift == 0) {
