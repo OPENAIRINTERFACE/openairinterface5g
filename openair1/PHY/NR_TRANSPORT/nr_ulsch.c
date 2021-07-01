@@ -137,12 +137,27 @@ void nr_ulsch_unscrambling_optim(int16_t* llr,
 #endif
 }
 
-void dump_pusch_stats(PHY_VARS_gNB *gNB) {
+#define STATSTRLEN 16384
+void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
-  for (int i=0;i<gNB->number_of_nr_ulsch_max;i++)
-    if (gNB->ulsch_stats[i].rnti>0) 
-      LOG_I(PHY,"ULSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, current_Qm %d, current_RI %d, total_bytes RX/SCHED %d/%d\n",
-	    gNB->ulsch_stats[i].rnti,
+  char output[16384];
+  int stroff=0;
+
+  for (int i=0;i<gNB->number_of_nr_ulsch_max;i++) {
+    if (gNB->ulsch_stats[i].rnti>0) {
+      for (int aa=0;aa<gNB->frame_parms.nb_antennas_rx;aa++)
+          if (aa==0) stroff+=sprintf(output+stroff,"ULSCH RNTI %4x: ulsch_power[%d] %d,%d ulsch_noise_power[%d] %d.%d\n",
+                                     gNB->ulsch_stats[i].rnti,
+                                     aa,gNB->ulsch_stats[i].power[aa]/10,gNB->ulsch_stats[i].power[aa]%10,
+                                     aa,gNB->ulsch_stats[i].noise_power[aa]/10,gNB->ulsch_stats[i].noise_power[aa]%10);
+          else       stroff+=sprintf(output+stroff,"                  ulsch_power[%d] %d.%d, ulsch_noise_power[%d] %d.%d\n",
+                                     aa,gNB->ulsch_stats[i].power[aa]/10,gNB->ulsch_stats[i].power[aa]%10,
+                                     aa,gNB->ulsch_stats[i].noise_power[aa]/10,gNB->ulsch_stats[i].noise_power[aa]%10);
+
+      AssertFatal(stroff<(STATSTRLEN-1000),"Increase STATSTRLEN\n");
+
+
+      stroff+=sprintf(output+stroff,"                 round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, DTX %d, current_Qm %d, current_RI %d, total_bytes RX/SCHED %d/%d\n",
 	    gNB->ulsch_stats[i].round_trials[0],
 	    (double)gNB->ulsch_stats[i].round_trials[1]/gNB->ulsch_stats[i].round_trials[0],
 	    gNB->ulsch_stats[i].round_trials[1],
@@ -150,11 +165,14 @@ void dump_pusch_stats(PHY_VARS_gNB *gNB) {
 	    gNB->ulsch_stats[i].round_trials[2],
 	    (double)gNB->ulsch_stats[i].round_trials[3]/gNB->ulsch_stats[i].round_trials[0],
 	    gNB->ulsch_stats[i].round_trials[3],
+      gNB->ulsch_stats[i].DTX,
 	    gNB->ulsch_stats[i].current_Qm,
 	    gNB->ulsch_stats[i].current_RI,
 	    gNB->ulsch_stats[i].total_bytes_rx,
 	    gNB->ulsch_stats[i].total_bytes_tx);
-  
+    }
+ }
+ fprintf(fd,"%s",output);
 }
 
 void clear_pusch_stats(PHY_VARS_gNB *gNB) {
@@ -162,3 +180,20 @@ void clear_pusch_stats(PHY_VARS_gNB *gNB) {
   for (int i=0;i<gNB->number_of_nr_ulsch_max;i++)
     memset((void*)&gNB->ulsch_stats[i],0,sizeof(gNB->ulsch_stats[i]));
 }
+
+NR_gNB_SCH_STATS_t *get_ulsch_stats(PHY_VARS_gNB *gNB,NR_gNB_ULSCH_t *ulsch) {
+   NR_gNB_SCH_STATS_t *stats=NULL;
+   int first_free=-1;
+   for (int i=0;i<gNB->number_of_nr_ulsch_max;i++) {
+       if (gNB->ulsch_stats[i].rnti == 0 && first_free == -1) {
+          first_free = i;
+          stats=&gNB->ulsch_stats[i];
+       }
+       if (gNB->ulsch_stats[i].rnti == ulsch->rnti) {
+           stats=&gNB->ulsch_stats[i];
+           break;
+       }
+   }
+   return(stats);
+}
+

@@ -1184,7 +1184,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   start_meas(&gNB->ulsch_channel_estimation_stats);
   for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
     uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
-    LOG_D(PHY,"symbol %d, dmrs_symbol_flag :%d\n", symbol, dmrs_symbol_flag);
+    LOG_D(PHY, "symbol %d, dmrs_symbol_flag :%d\n", symbol, dmrs_symbol_flag);
     if (dmrs_symbol_flag == 1) {
       if (gNB->pusch_vars[ulsch_id]->dmrs_symbol == INVALID_VALUE)
         gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
@@ -1200,10 +1200,18 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       nr_gnb_measurements(gNB, ulsch_id, harq_pid, symbol);
 
       for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
-        gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] = signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol*frame_parms->ofdm_symbol_size],
-                                                                          rel15_ul->rb_size*12);
-        if (gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] == 1)
-          return 1;
+        if (symbol == rel15_ul->start_symbol_index) {
+          gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] = 0;
+          gNB->pusch_vars[ulsch_id]->ulsch_noise_power[aarx] = 0;
+        }
+        gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] += signal_energy_nodc(
+            &gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][symbol * frame_parms->ofdm_symbol_size],
+            rel15_ul->rb_size * 12);
+        for (int rb = 0; rb < rel15_ul->rb_size; rb++) {
+          gNB->pusch_vars[ulsch_id]->ulsch_noise_power[aarx] +=
+              gNB->measurements.n0_subband_power[aarx][rel15_ul->bwp_start + rel15_ul->rb_start + rb] /
+              rel15_ul->rb_size;
+        }
       }
     }
   }

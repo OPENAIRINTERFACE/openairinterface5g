@@ -211,7 +211,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
 
   while (c > 0 ) {
     char *oneargv = strdup(config_get_if()->argv[i]);          /* we use strtok_r which modifies its string paramater, and we don't want argv to be modified */
-
+    if(!oneargv) abort();
     /* first check help options, either --help, -h or --help_<section> */
     if (strncmp(oneargv, "-h",2) == 0 || strncmp(oneargv, "--help",6) == 0 ) {
       char *tokctx = NULL;

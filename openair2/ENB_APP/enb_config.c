@@ -3161,25 +3161,25 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
       rrc_eNB_carrier_data_t *carrier =  &RC.rrc[i]->carrier[0];
       // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
       LOG_I(ENB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, resp->nr_cellid %lx\n",
-            j,i,RC.rrc[i]->nr_cellid,resp->nr_cellid[j]);
+            j,i,RC.rrc[i]->nr_cellid,resp->cells_to_activate[j].nr_cellid);
 
-      if (RC.rrc[i]->nr_cellid == resp->nr_cellid[j] &&
-          (check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
-           resp->nrpci[j] == carrier->physCellId)) {
+      if (RC.rrc[i]->nr_cellid == resp->cells_to_activate[j].nr_cellid &&
+          (check_plmn_identity(carrier, resp->cells_to_activate[j].mcc, resp->cells_to_activate[j].mnc, resp->cells_to_activate[j].mnc_digit_length)>0 &&
+           resp->cells_to_activate[j].nrpci == carrier->physCellId)) {
         // copy system information and decode it
-        for (si_ind=2; si_ind<10; si_ind++)  {
-          //printf("SI %d size %d: ", si_ind, resp->SI_container_length[j][si_ind]);
-          //for (int n=0;n<resp->SI_container_length[j][si_ind];n++)
-          //  printf("%02x ",resp->SI_container[j][si_ind][n]);
+        for (si_ind=2; si_ind<resp->cells_to_activate[j].num_SI + 2; si_ind++)  {
+          //printf("SI %d size %d: ", si_ind, resp->cells_to_activate[j].SI_container_length[si_ind]);
+          //for (int n=0;n<resp->cells_to_activate[j].SI_container_length[si_ind];n++)
+          //  printf("%02x ",resp->cells_to_activate[j].SI_container[si_ind][n]);
           //printf("\n");
           if (si_ind==6) si_ind=9;
-          if (resp->SI_container[j][si_ind] != NULL) {
-            extract_and_decode_SI(i,	
+          if (resp->cells_to_activate[j].SI_container[si_ind] != NULL) {
+            extract_and_decode_SI(i,
                                   si_ind,
-                                  resp->SI_container[j][si_ind],
-                                  resp->SI_container_length[j][si_ind]);
+                                  resp->cells_to_activate[j].SI_container[si_ind],
+                                  resp->cells_to_activate[j].SI_container_length[si_ind]);
           }
-          
+
         }
 
         // perform MAC/L1 common configuration

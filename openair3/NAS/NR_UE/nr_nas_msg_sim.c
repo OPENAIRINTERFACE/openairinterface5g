@@ -38,12 +38,21 @@
 #include "aka_functions.h"
 #include "secu_defs.h"
 #include "PduSessionEstablishRequest.h"
-char netName[] = "5G:mnc093.mcc208.3gppnetwork.org";
+# include "intertask_interface.h"
+
+/*char netName[] = "5G:mnc093.mcc208.3gppnetwork.org";
 char imsi[] = "2089300007487";
 // USIM_API_K: 5122250214c33e723a5dd523fc145fc0
 uint8_t k[16] = {0x51, 0x22, 0x25, 0x02, 0x14,0xc3, 0x3e, 0x72, 0x3a, 0x5d, 0xd5, 0x23, 0xfc, 0x14, 0x5f, 0xc0};
 // OPC: 981d464c7c52eb6e5036234984ad0bcf
-const uint8_t opc[16] = {0x98, 0x1d, 0x46, 0x4c,0x7c,0x52,0xeb, 0x6e, 0x50, 0x36, 0x23, 0x49, 0x84, 0xad, 0x0b, 0xcf};
+const uint8_t opc[16] = {0x98, 0x1d, 0x46, 0x4c,0x7c,0x52,0xeb, 0x6e, 0x50, 0x36, 0x23, 0x49, 0x84, 0xad, 0x0b, 0xcf};*/
+
+char netName[] = "5G:mnc099.mcc208.3gppnetwork.org";
+char imsi[] = "2089900007487"; //"208990100001100";
+// USIM_API_K: fe c8 6b a6 eb 70 7e d0 89 05 75 7b 1b b4 4b 8f 
+uint8_t k[16] = {0xfe, 0xc8, 0x6b, 0xa6, 0xeb, 0x70, 0x7e, 0xd0, 0x89, 0x05, 0x75, 0x7b, 0x1b, 0xb4, 0x4b, 0x8f};
+// OPC: c4 24 49 36 3b ba d0 2b 66 d1 6b c9 75 d7 7c c1
+const uint8_t opc[16] = {0xc4, 0x24, 0x49, 0x36, 0x3b, 0xba, 0xd0, 0x2b, 0x66, 0xd1, 0x6b, 0xc9, 0x75, 0xd7, 0x7c, 0xc1};
 
 uint8_t  *registration_request_buf;
 uint32_t  registration_request_len;
@@ -273,14 +282,14 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
   mm_msg->registration_request.fgsregistrationtype = INITIAL_REGISTRATION;
   mm_msg->registration_request.naskeysetidentifier.naskeysetidentifier = 1;
   size += 1;
-  if(1){
+  if(0){
     mm_msg->registration_request.fgsmobileidentity.guti.typeofidentity = FGS_MOBILE_IDENTITY_5G_GUTI;
     mm_msg->registration_request.fgsmobileidentity.guti.amfregionid = 0xca;
     mm_msg->registration_request.fgsmobileidentity.guti.amfpointer = 0;
     mm_msg->registration_request.fgsmobileidentity.guti.amfsetid = 1016;
     mm_msg->registration_request.fgsmobileidentity.guti.tmsi = 10;
     mm_msg->registration_request.fgsmobileidentity.guti.mncdigit1 = 9;
-    mm_msg->registration_request.fgsmobileidentity.guti.mncdigit2 = 3;
+    mm_msg->registration_request.fgsmobileidentity.guti.mncdigit2 = 9;
     mm_msg->registration_request.fgsmobileidentity.guti.mncdigit3 = 0xf;
     mm_msg->registration_request.fgsmobileidentity.guti.mccdigit1 = 2;
     mm_msg->registration_request.fgsmobileidentity.guti.mccdigit2 = 0;
@@ -291,7 +300,7 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg) {
   } else {
     mm_msg->registration_request.fgsmobileidentity.suci.typeofidentity = FGS_MOBILE_IDENTITY_SUCI;
     mm_msg->registration_request.fgsmobileidentity.suci.mncdigit1 = 9;
-    mm_msg->registration_request.fgsmobileidentity.suci.mncdigit2 = 3;
+    mm_msg->registration_request.fgsmobileidentity.suci.mncdigit2 = 9;
     mm_msg->registration_request.fgsmobileidentity.suci.mncdigit3 = 0xf;
     mm_msg->registration_request.fgsmobileidentity.suci.mccdigit1 = 2;
     mm_msg->registration_request.fgsmobileidentity.suci.mccdigit2 = 0;
@@ -348,7 +357,7 @@ void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype
   if(identitytype == FGS_MOBILE_IDENTITY_SUCI){
     mm_msg->fgs_identity_response.fgsmobileidentity.suci.typeofidentity = FGS_MOBILE_IDENTITY_SUCI;
     mm_msg->fgs_identity_response.fgsmobileidentity.suci.mncdigit1 = 9;
-    mm_msg->fgs_identity_response.fgsmobileidentity.suci.mncdigit2 = 3;
+    mm_msg->fgs_identity_response.fgsmobileidentity.suci.mncdigit2 = 9;
     mm_msg->fgs_identity_response.fgsmobileidentity.suci.mncdigit3 = 0xf;
     mm_msg->fgs_identity_response.fgsmobileidentity.suci.mccdigit1 = 2;
     mm_msg->fgs_identity_response.fgsmobileidentity.suci.mccdigit2 = 0;
@@ -612,14 +621,15 @@ void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
   memset(&nas_msg, 0, sizeof(fgs_nas_message_t));
 
   // setup pdu session establishment request
-  uint16_t req_length = 6;
+  uint16_t req_length = 7;
   uint8_t *req_buffer = malloc(req_length);
   pdu_session_establishment_request_msg pdu_session_establish;
   pdu_session_establish.protocoldiscriminator = FGS_SESSION_MANAGEMENT_MESSAGE;
   pdu_session_establish.pdusessionid = 10;
-  pdu_session_establish.pti = 0;
+  pdu_session_establish.pti = 1;
   pdu_session_establish.pdusessionestblishmsgtype = FGS_PDU_SESSION_ESTABLISHMENT_REQ;
   pdu_session_establish.maxdatarate = 0xffff;
+  pdu_session_establish.pdusessiontype = 0x91;
   encode_pdu_session_establishment_request(&pdu_session_establish, req_buffer);
 
 
@@ -627,9 +637,8 @@ void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
   MM_msg *mm_msg;
   nas_stream_cipher_t stream_cipher;
   uint8_t             mac[4];
-  uint8_t             nssai[]={1,1,2,3};
-  uint8_t             dnn[9]={0x8,0x69,0x6e,0x74,0x65,0x72,0x6e,0x65,0x74};
-  // set security protected header
+  uint8_t             nssai[]={1,0,0,1}; //Corresponding to SST:1, SD:1
+  uint8_t            dnn[4]={0x4,0x6f,0x61,0x69}; //Corresponding to dnn:"oai"
   nas_msg.header.protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
   nas_msg.header.security_header_type = INTEGRITY_PROTECTED_AND_CIPHERED_WITH_NEW_SECU_CTX;
   size += 7;
@@ -661,9 +670,9 @@ void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
   mm_msg->uplink_nas_transport.snssai.length = 4;
   mm_msg->uplink_nas_transport.snssai.value = nssai;
   size += (1+1+4);
-  mm_msg->uplink_nas_transport.dnn.length = 9;
+  mm_msg->uplink_nas_transport.dnn.length = 4;
   mm_msg->uplink_nas_transport.dnn.value = dnn;
-  size += (1+1+9);
+  size += (1+1+4);
 
   // encode the message
   initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));
@@ -689,4 +698,200 @@ void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
   for(int i = 0; i < 4; i++){
      initialNasMsg->data[2+i] = mac[i];
   }
+}
+
+void *nas_nrue_task(void *args_p)
+{
+  MessageDef           *msg_p;
+  instance_t            instance;
+  unsigned int          Mod_id;
+  int                   result;
+  uint8_t               msg_type = 0;
+  uint8_t              *pdu_buffer = NULL;
+
+  itti_mark_task_ready (TASK_NAS_NRUE);
+  MSC_START_USE();
+  
+  while(1) {
+    // Wait for a message or an event
+    itti_receive_msg (TASK_NAS_NRUE, &msg_p);
+
+    if (msg_p != NULL) {
+      instance = msg_p->ittiMsgHeader.originInstance;
+      Mod_id = instance ;
+      if (instance == INSTANCE_DEFAULT) {
+        printf("%s:%d: FATAL: instance is INSTANCE_DEFAULT, should not happen.\n",
+               __FILE__, __LINE__);
+        exit_fun("exit... \n");
+      }
+
+      switch (ITTI_MSG_ID(msg_p)) {
+      case INITIALIZE_MESSAGE:
+        LOG_I(NAS, "[UE %d] Received %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));
+
+        break;
+
+      case TERMINATE_MESSAGE:
+        itti_exit_task ();
+        break;
+
+      case MESSAGE_TEST:
+        LOG_I(NAS, "[UE %d] Received %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));
+        break;
+
+      case NAS_CELL_SELECTION_CNF:
+        LOG_I(NAS, "[UE %d] Received %s: errCode %u, cellID %u, tac %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
+              NAS_CELL_SELECTION_CNF (msg_p).errCode, NAS_CELL_SELECTION_CNF (msg_p).cellID, NAS_CELL_SELECTION_CNF (msg_p).tac);
+        // as_stmsi_t s_tmsi={0, 0};
+        // as_nas_info_t nas_info;
+        // plmn_t plmnID={0, 0, 0, 0};
+        // generateRegistrationRequest(&nas_info);
+        // nr_nas_itti_nas_establish_req(0, AS_TYPE_ORIGINATING_SIGNAL, s_tmsi, plmnID, nas_info.data, nas_info.length, 0);
+        break;
+
+      case NAS_CELL_SELECTION_IND:
+        LOG_I(NAS, "[UE %d] Received %s: cellID %u, tac %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
+              NAS_CELL_SELECTION_IND (msg_p).cellID, NAS_CELL_SELECTION_IND (msg_p).tac);
+
+        /* TODO not processed by NAS currently */
+        break;
+
+      case NAS_PAGING_IND:
+        LOG_I(NAS, "[UE %d] Received %s: cause %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
+              NAS_PAGING_IND (msg_p).cause);
+
+        /* TODO not processed by NAS currently */
+        break;
+
+      case NAS_CONN_ESTABLI_CNF:
+      {
+        LOG_I(NAS, "[UE %d] Received %s: errCode %u, length %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
+              NAS_CONN_ESTABLI_CNF (msg_p).errCode, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
+
+        pdu_buffer = NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.data;
+        if((pdu_buffer + 1) != NULL){
+          if (*(pdu_buffer + 1) > 0 ) {
+            if((pdu_buffer + 9) != NULL){
+                msg_type = *(pdu_buffer + 9);
+            } else {
+              LOG_W(NAS, "[UE] Received invalid downlink message\n");
+              break;
+            }
+          } else {
+            if((pdu_buffer + 2) != NULL){
+              msg_type = *(pdu_buffer + 2);
+            } else {
+                LOG_W(NAS, "[UE] Received invalid downlink message\n");
+                break;
+            }
+          }
+        }
+        if(msg_type == REGISTRATION_ACCEPT){
+          LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
+
+          as_nas_info_t initialNasMsg;
+          memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
+          generateRegistrationComplete(&initialNasMsg, NULL);
+          if(initialNasMsg.length > 0){
+            MessageDef *message_p;
+            message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
+            NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
+            NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
+            NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
+            itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
+            LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
+          }
+
+          as_nas_info_t pduEstablishMsg;
+          memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
+          generatePduSessionEstablishRequest(&pduEstablishMsg);
+          if(pduEstablishMsg.length > 0){
+            MessageDef *message_p;
+            message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
+            NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
+            NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)pduEstablishMsg.data;
+            NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pduEstablishMsg.length;
+            itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
+            LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
+          }
+        }
+
+        break;
+      }
+
+      case NAS_CONN_RELEASE_IND:
+        LOG_I(NAS, "[UE %d] Received %s: cause %u\n", Mod_id, ITTI_MSG_NAME (msg_p),
+              NAS_CONN_RELEASE_IND (msg_p).cause);
+
+        break;
+
+      case NAS_UPLINK_DATA_CNF:
+        LOG_I(NAS, "[UE %d] Received %s: UEid %u, errCode %u\n", Mod_id, ITTI_MSG_NAME (msg_p),
+              NAS_UPLINK_DATA_CNF (msg_p).UEid, NAS_UPLINK_DATA_CNF (msg_p).errCode);
+
+        break;
+
+      case NAS_DOWNLINK_DATA_IND:
+      {
+        LOG_I(NAS, "[UE %d] Received %s: UEid %u, length %u , buffer %p\n", Mod_id,
+                                                                            ITTI_MSG_NAME (msg_p),
+                                                                            Mod_id,
+                                                                            NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length,
+                                                                            NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data);
+        as_nas_info_t initialNasMsg;
+        memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
+
+        pdu_buffer = NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data;
+        if((pdu_buffer + 1) != NULL){
+          if (*(pdu_buffer + 1) > 0 ) {
+            msg_type = *(pdu_buffer + 9);
+          } else {
+            msg_type = *(pdu_buffer + 2);
+          }
+        }
+        if((pdu_buffer + 2) == NULL){
+          LOG_W(NAS, "[UE] Received invalid downlink message\n");
+          return 0;
+        }
+
+        switch(msg_type){
+          case FGS_IDENTITY_REQUEST:
+              generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3));
+              break;
+          case FGS_AUTHENTICATION_REQUEST:
+              generateAuthenticationResp(&initialNasMsg, pdu_buffer);
+              break;
+          case FGS_SECURITY_MODE_COMMAND:
+            generateSecurityModeComplete(&initialNasMsg);
+            break;
+          default:
+              LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
+              break;
+        }
+
+        if(initialNasMsg.length > 0){
+          MessageDef *message_p;
+          message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
+          NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
+          NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
+          NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
+          itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
+          LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message\n");
+        }
+
+        break;
+      }
+
+      default:
+        LOG_E(NAS, "[UE %d] Received unexpected message %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));
+        break;
+      }
+
+      result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+      AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+      msg_p = NULL;
+    }
+  }
+
+  return NULL;
 }

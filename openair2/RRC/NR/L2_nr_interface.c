@@ -28,6 +28,7 @@
  * \email: raymond.knopp@eurecom.fr, kroempa@gmail.com
  */
 
+#include <f1ap_du_rrc_message_transfer.h>
 #include "platform_types.h"
 #include "nr_rrc_defs.h"
 #include "nr_rrc_extern.h"
@@ -43,6 +44,7 @@
 #include "NR_MIB.h"
 #include "NR_BCCH-BCH-Message.h"
 #include "rrc_gNB_UE_context.h"
+#include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -164,12 +166,12 @@ nr_rrc_data_req(
 //------------------------------------------------------------------------------
 {
   if(sdu_sizeP == 255) {
-    LOG_I(RRC,"sdu_sizeP == 255");
+    LOG_D(RRC,"sdu_sizeP == 255");
     return FALSE;
   }
 
   MSC_LOG_TX_MESSAGE(
-    ctxt_pP->enb_flag ? MSC_RRC_ENB : MSC_RRC_UE,
+    ctxt_pP->enb_flag ? MSC_RRC_GNB : MSC_RRC_UE,
     ctxt_pP->enb_flag ? MSC_PDCP_ENB : MSC_PDCP_UE,
     buffer_pP,
     sdu_sizeP,
@@ -182,11 +184,11 @@ nr_rrc_data_req(
   // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
   uint8_t *message_buffer;
   message_buffer = itti_malloc (
-                     ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE,
+                     ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_UE,
                      ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
                      sdu_sizeP);
   memcpy (message_buffer, buffer_pP, sdu_sizeP);
-  message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, 0, RRC_DCCH_DATA_REQ);
+  message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_RRC_GNB : TASK_RRC_UE, 0, RRC_DCCH_DATA_REQ);
   RRC_DCCH_DATA_REQ (message_p).frame     = ctxt_pP->frame;
   RRC_DCCH_DATA_REQ (message_p).enb_flag  = ctxt_pP->enb_flag;
   RRC_DCCH_DATA_REQ (message_p).rb_id     = rb_idP;
@@ -194,7 +196,7 @@ nr_rrc_data_req(
   RRC_DCCH_DATA_REQ (message_p).confirmp  = confirmP;
   RRC_DCCH_DATA_REQ (message_p).sdu_size  = sdu_sizeP;
   RRC_DCCH_DATA_REQ (message_p).sdu_p     = message_buffer;
-  //memcpy (RRC_DCCH_DATA_REQ (message_p).sdu_p, buffer_pP, sdu_sizeP);
+  //memcpy (NR_RRC_DCCH_DATA_REQ (message_p).sdu_p, buffer_pP, sdu_sizeP);
   RRC_DCCH_DATA_REQ (message_p).mode      = modeP;
   RRC_DCCH_DATA_REQ (message_p).module_id = ctxt_pP->module_id;
   RRC_DCCH_DATA_REQ (message_p).rnti      = ctxt_pP->rnti;
@@ -203,12 +205,12 @@ nr_rrc_data_req(
     ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
     ctxt_pP->instance,
     message_p);
-  LOG_I(RRC,"sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB\n");
+  LOG_I(NR_RRC,"send RRC_DCCH_DATA_REQ to PDCP\n");
 
   /* Hack: only trigger PDCP if in CU, otherwise it is triggered by RU threads
    * Ideally, PDCP would not neet to be triggered like this but react to ITTI
    * messages automatically */
-  if (ctxt_pP->enb_flag && NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type))
+  if (ctxt_pP->enb_flag && NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type))
     pdcp_run(ctxt_pP);
 
   return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
@@ -281,6 +283,7 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
 
     LOG_D(NR_RRC,"[gNB %d] Frame %d CCCH request (Srb_id %ld)\n", Mod_idP, frameP, Srb_id);
 
+    AssertFatal(ue_context_p!=NULL,"failed to get ue_context\n");
     char payload_size = ue_context_p->ue_context.Srb0.Tx_buffer.payload_size;
 
     // check if data is there for MAC
@@ -310,6 +313,42 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
                            const sdu_size_t      sdu_lenP,
                            const boolean_t   brOption) {
 
+  if (NODE_IS_DU(RC.nrrrc[module_idP]->node_type)) {
+    LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %ld length %d for UE id %d RNTI %x \n",
+          module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
+
+    // Generate DUtoCURRCContainer
+    // call do_RRCSetup like full procedure and extract masterCellGroup
+    NR_CellGroupConfig_t cellGroupConfig;
+    NR_ServingCellConfigCommon_t *scc=RC.nrrrc[module_idP]->carrier.servingcellconfigcommon;
+    uint8_t sdu2[100];
+    memset(&cellGroupConfig,0,sizeof(cellGroupConfig));
+    fill_initial_cellGroupConfig(rntiP,&cellGroupConfig,scc);
+    asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
+						    NULL,
+						    (void *)&cellGroupConfig,
+						    sdu2,
+						    100);
+
+    int sdu2_len = (enc_rval.encoded+7)/8;
+    if (enc_rval.encoded == -1) {
+      LOG_E(F1AP,"Could not encoded cellGroupConfig, failed element %s\n",enc_rval.failed_type->name);
+      exit(-1);
+    }
+    /* do ITTI message */
+    DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
+      module_idP,
+      CC_id,
+      UE_id,
+      rntiP,
+      sduP,
+      sdu_lenP,
+      (const int8_t*)sdu2,
+      sdu2_len
+    );
+    return(0);
+  }
+
   protocol_ctxt_t ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, GNB_FLAG_YES, rntiP, frameP, sub_frameP,0);
 
@@ -317,7 +356,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
     LOG_D(NR_RRC, "[gNB %d] Received SDU for CCCH on SRB %ld\n", module_idP, srb_idP);
     ctxt.brOption = brOption;
     if (sdu_lenP > 0) {
-      nr_rrc_gNB_decode_ccch(&ctxt, sduP, sdu_lenP, CC_id);
+      nr_rrc_gNB_decode_ccch(&ctxt, sduP, sdu_lenP, NULL, CC_id);
     }
   }
 

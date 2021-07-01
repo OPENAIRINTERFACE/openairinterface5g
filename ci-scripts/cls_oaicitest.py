@@ -588,7 +588,7 @@ class OaiCiTest():
 				SSH.command('ifconfig oaitun_ue1', '\$', 4)
 				SSH.command('ifconfig oaitun_ue1', '\$', 4)
 				# ifconfig output is different between ubuntu 16 and ubuntu 18
-				result = re.search('inet addr:1|inet 1', SSH.getBefore())
+				result = re.search('inet addr:[0-9]|inet [0-9]', SSH.getBefore())
 				if result is not None:
 					logging.debug('\u001B[1m oaitun_ue1 interface is mounted and configured\u001B[0m')
 					tunnelInterfaceStatus = True
@@ -2264,7 +2264,7 @@ class OaiCiTest():
 			SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 			#send for analysis
 			filename='iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
-			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)		
+			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)
 		else :
 			logging.debug("Incorrect or missing IPERF direction in XML")
 

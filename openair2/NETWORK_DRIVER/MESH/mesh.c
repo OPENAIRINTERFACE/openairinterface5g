@@ -886,6 +886,7 @@ int nas_mesh_DC_receive(struct cx_entity *cx,struct nas_priv *gpriv)
         switch (cx->state) {
         case NAS_CX_RELEASING_FAILURE:
           cx->retry=0;
+          /* fallthrough */
 
         case NAS_CX_DCH:
           nas_mesh_DC_decode_cx_loss_ind(cx,p);   // process message
