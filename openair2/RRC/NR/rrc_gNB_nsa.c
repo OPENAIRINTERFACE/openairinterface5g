@@ -346,16 +346,25 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
   rrc->Nb_ue++;
   // configure MAC and RLC
-  rrc_mac_config_req_gNB(rrc->module_id,
-                         rrc->carrier.ssb_SubcarrierOffset,
-                         rrc->carrier.pdsch_AntennaPorts,
-                         rrc->carrier.pusch_AntennaPorts,
-                         rrc->carrier.pusch_TargetSNRx10,
-                         rrc->carrier.pucch_TargetSNRx10,
-                         NULL,
-                         1, // add_ue flag
-                         ue_context_p->ue_id_rnti,
-                         ue_context_p->ue_context.secondaryCellGroup);
+  if (NODE_IS_DU(rrc->node_type)) {
+    rrc_mac_config_req_gNB(rrc->module_id,
+                           rrc->carrier.ssb_SubcarrierOffset,
+                           rrc->carrier.pdsch_AntennaPorts,
+			                     rrc->carrier.pusch_AntennaPorts,
+                           rrc->carrier.servingcellconfigcommon,
+                           1, // add_ue flag
+                           ue_context_p->ue_id_rnti,
+                           ue_context_p->ue_context.secondaryCellGroup);
+  } else {
+    rrc_mac_config_req_gNB(rrc->module_id,
+                           rrc->carrier.ssb_SubcarrierOffset,
+                           rrc->carrier.pdsch_AntennaPorts,
+                           rrc->carrier.pusch_AntennaPorts,
+                           NULL,
+                           1, // add_ue flag
+                           ue_context_p->ue_id_rnti,
+                           ue_context_p->ue_context.secondaryCellGroup);
+  }
 
   if(m == NULL){
     LOG_W(RRC, "Calling RRC PDCP/RLC ASN1 request functions for protocol context %p with module_id %d, rnti %x, frame %d, subframe %d eNB_index %d \n", &ctxt,
@@ -366,26 +375,25 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                                                                                                                                                         ctxt.eNB_index);
   }
 
-  nr_rrc_pdcp_config_asn1_req(
-    &ctxt,
-    (NR_SRB_ToAddModList_t *) NULL,
-    ue_context_p->ue_context.rb_config->drb_ToAddModList ,
-    ue_context_p->ue_context.rb_config->drb_ToReleaseList,
-    (ue_context_p->ue_context.integrity_algorithm << 4) | ue_context_p->ue_context.ciphering_algorithm,
-    NULL,          /* kRRCenc - unused */
-    NULL,          /* kRRCint - unused */
-    kUPenc,        /* kUPenc  */
-    NULL,          /* kUPint  - unused */
-    NULL,
-    NULL,
-    ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
+  nr_rrc_pdcp_config_asn1_req(&ctxt,
+                              get_softmodem_params()->sa ? ue_context_p->ue_context.rb_config->srb_ToAddModList : (NR_SRB_ToAddModList_t *) NULL,
+                              ue_context_p->ue_context.rb_config->drb_ToAddModList ,
+                              ue_context_p->ue_context.rb_config->drb_ToReleaseList,
+                              (ue_context_p->ue_context.integrity_algorithm << 4) | ue_context_p->ue_context.ciphering_algorithm,
+                              NULL,          /* kRRCenc - unused */
+                              NULL,          /* kRRCint - unused */
+                              kUPenc,        /* kUPenc  */
+                              NULL,          /* kUPint  - unused */
+                              NULL,
+                              NULL,
+                              ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
   nr_rrc_rlc_config_asn1_req (&ctxt,
-      (NR_SRB_ToAddModList_t *) NULL,
-      ue_context_p->ue_context.rb_config->drb_ToAddModList,
-      ue_context_p->ue_context.rb_config->drb_ToReleaseList,
-      (LTE_PMCH_InfoList_r9_t *) NULL,
-      ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
+                              get_softmodem_params()->sa ? ue_context_p->ue_context.rb_config->srb_ToAddModList : (NR_SRB_ToAddModList_t *) NULL,
+                              ue_context_p->ue_context.rb_config->drb_ToAddModList,
+                              ue_context_p->ue_context.rb_config->drb_ToReleaseList,
+                              (LTE_PMCH_InfoList_r9_t *) NULL,
+                              ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
   LOG_D(RRC, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
 
@@ -394,7 +402,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
   protocol_ctxt_t      ctxt;
   rrc_gNB_ue_context_t *ue_context;
-  MessageDef           *msg_delete_tunnels_p;
   int                  e_rab;
 
   LOG_D(RRC, "calling rrc_remove_nsa_user rnti %d\n", rnti);
@@ -411,25 +418,18 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
   rrc_rlc_remove_ue(&ctxt);
 
   mac_remove_nr_ue(rrc->module_id, rnti);
-
-  /* delete gtp tunnel */
-  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, 0, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-  memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = rnti;
-  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 1;
-
-  LOG_D(RRC, "ue_context->ue_context.nb_of_e_rabs %d\n", ue_context->ue_context.nb_of_e_rabs);
+  gtpv1u_enb_delete_tunnel_req_t tmp={0};
+  tmp.rnti=rnti;
+  tmp.from_gnb=1;
+  LOG_D(RRC, "ue_context->ue_context.nb_of_e_rabs %d will be deleted for rnti %d\n", ue_context->ue_context.nb_of_e_rabs, rnti);
   for (e_rab = 0; e_rab < ue_context->ue_context.nb_of_e_rabs; e_rab++) {
-    GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
-      ue_context->ue_context.gnb_gtp_ebi[e_rab];
+    tmp.eps_bearer_id[tmp.num_erab++]= ue_context->ue_context.gnb_gtp_ebi[e_rab];
     // erase data
     ue_context->ue_context.gnb_gtp_teid[e_rab] = 0;
     memset(&ue_context->ue_context.gnb_gtp_addrs[e_rab], 0, sizeof(ue_context->ue_context.gnb_gtp_addrs[e_rab]));
     ue_context->ue_context.gnb_gtp_ebi[e_rab] = 0;
   }
-
-  itti_send_msg_to_task(TASK_VARIABLE, rrc->module_id, msg_delete_tunnels_p);
-
+  gtpv1u_delete_s1u_tunnel(rrc->module_id,  &tmp);
   /* remove context */
   rrc_gNB_remove_ue_context(&ctxt, rrc, ue_context);
 }

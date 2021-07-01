@@ -105,6 +105,9 @@ typedef struct NR_UE_RRC_INST_s {
 
     NR_MeasConfig_t        *meas_config;
     NR_CellGroupConfig_t   *cell_group_config;
+    NR_CellGroupConfig_t   *scell_group_config;
+    NR_ServingCellConfigCommonSIB_t *servingCellConfigCommonSIB;
+
     NR_RadioBearerConfig_t *radio_bearer_config;
 
     NR_MeasObjectToAddMod_t        *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
@@ -123,7 +126,7 @@ typedef struct NR_UE_RRC_INST_s {
     NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
 
     uint8_t                        MBMS_flag;
-	  OAI_NR_UECapability_t          *UECap;
+    OAI_NR_UECapability_t          *UECap;
     uint8_t 					             *UECapability;
     uint8_t                        UECapability_size;
 
@@ -209,7 +212,7 @@ typedef struct NR_UE_RRC_INST_s {
     long               selected_plmn_identity;
     Rrc_State_NR_t     nrRrcState;
     Rrc_Sub_State_NR_t nrRrcSubState;
-	as_nas_info_t      initialNasMsg;
+    as_nas_info_t      initialNasMsg;
 } NR_UE_RRC_INST_t;
 
 #endif

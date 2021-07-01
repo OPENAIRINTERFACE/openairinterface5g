@@ -392,7 +392,7 @@ rrc_rx_tx(
               current_timestamp_ms,
               ctxt_pP->frame,
               estimated_distance);
-        LOG_D(LOCALIZE, " RRC status %d\n", ue_context_p->ue_context.Status);
+        LOG_D(LOCALIZE, " RRC status %d\n", ue_context_p->ue_context.StatusRrc);
         push_front(&RC.rrc[ctxt_pP->module_id]->loc_list,
                    estimated_distance);
         RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms = current_timestamp_ms;

@@ -44,6 +44,7 @@ Our code might not work with all 5G phones yet, but we are constantly improving 
 
 *  Oppo Reno 5G
 *  Samsung A90 5G
+*  Samsung A42 5G
 *  Google Pixel 5G (note1)
 *  Simcom SIMCOM8200EA 
 *  Quectel RM500Q-GL

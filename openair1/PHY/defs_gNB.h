@@ -140,7 +140,31 @@ typedef struct {
   int total_bytes_rx;
   int current_Qm;
   int current_RI;
+  int power[NB_ANTENNAS_RX];
+  int noise_power[NB_ANTENNAS_RX];
+  int DTX;
 } NR_gNB_SCH_STATS_t;
+
+typedef struct {
+  int frame;
+  uint16_t rnti;
+  int pucch0_sr_trials;
+  int pucch0_sr_thres;
+  int current_pucch0_sr_stat0;
+  int current_pucch0_sr_stat1;
+  int pucch0_positive_SR;
+  int pucch01_trials;
+  int pucch0_n00;
+  int pucch0_n01;
+  int pucch0_thres;
+  int current_pucch0_stat0;
+  int current_pucch0_stat1;
+  int pucch01_DTX;
+  int pucch02_trials;
+  int pucch02_DTX;
+  int pucch2_trials;
+  int pucch2_DTX;
+} NR_gNB_UCI_STATS_t;
 
 typedef struct {
   /// Pointers to variables related to DLSCH harq process
@@ -472,7 +496,13 @@ typedef struct {
   /// - second index: ? [0..168*N_RB_UL[
   int32_t **ul_ch_magb1[8][8];
   /// measured RX power based on DRS
-  int ulsch_power[2];
+  int ulsch_power[8];
+  /// total signal over antennas
+  int ulsch_power_tot;
+  /// measured RX noise power
+  int ulsch_noise_power[8];
+  /// total noise over antennas
+  int ulsch_noise_power_tot;
   /// \brief llr values.
   /// - first index: ? [0..1179743] (hard coded)
   int16_t *llr;
@@ -493,6 +523,8 @@ typedef struct {
   int16_t *ul_valid_re_per_slot;
   /// flag to verify if channel level computation is done
   uint8_t cl_done;
+  /// flag to indicate DTX on reception
+  int DTX;
 } NR_gNB_PUSCH;
 
 /// Context data structure for RX/TX portion of slot processing
@@ -569,8 +601,10 @@ typedef struct gNB_L1_proc_t_s {
   pthread_t pthread_single;
   /// pthread structure for asychronous RX/TX processing thread
   pthread_t pthread_asynch_rxtx;
-  /// pthread structure for printing time meas
+  /// pthread structure for dumping L1 stats
   pthread_t L1_stats_thread;
+  /// pthread structure for printing time meas
+  pthread_t process_stats_thread;
   /// flag to indicate first RX acquisition
   int first_rx;
   /// flag to indicate first TX transmission
@@ -636,6 +670,8 @@ typedef struct {
   unsigned short n0_subband_power[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg noise power per RB per RX ant (dB)
   unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_gNB][275];
+  //! estimated avg subband noise power (dB)
+  unsigned short n0_subband_power_avg_dB;
   //! estimated avg noise power per RB (dB)
   short n0_subband_power_tot_dB[275];
   //! estimated avg noise power per RB (dBm)
@@ -741,7 +777,7 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_SCH_STATS_t dlsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
   /// statistics for ULSCH measurement collection
   NR_gNB_SCH_STATS_t ulsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
-
+  NR_gNB_UCI_STATS_t uci_stats[NUMBER_OF_NR_UCI_STATS_MAX];
   t_nrPolar_params    *uci_polarParams;
 
   uint8_t pbch_configured;
@@ -808,6 +844,8 @@ typedef struct PHY_VARS_gNB_s {
   int prach_energy_counter;
 
   int pucch0_thres;
+  int pusch_thres;
+  int prach_thres;
   uint64_t bad_pucch;
   /*
   time_stats_t phy_proc;

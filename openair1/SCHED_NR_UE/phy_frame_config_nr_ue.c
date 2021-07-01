@@ -46,6 +46,8 @@ int nr_ue_slot_select(fapi_nr_config_request_t *cfg, int nr_frame, int nr_slot) 
   if (cfg->cell_config.frame_duplex_type == FDD) {
     return (NR_UPLINK_SLOT | NR_DOWNLINK_SLOT);
   }
+  if (cfg->tdd_table.max_tdd_periodicity_list == NULL) // this happens before receiving TDD configuration
+    return (NR_DOWNLINK_SLOT);
 
   if (nr_frame%2 == 0) {
     for(int symbol_count=0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {

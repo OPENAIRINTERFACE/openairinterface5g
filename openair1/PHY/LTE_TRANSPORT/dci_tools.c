@@ -61,12 +61,17 @@ int find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
     if (eNB->dlsch[i][0] == NULL) continue;
     LOG_D(PHY,"searching for rnti %x : UE index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,eNB->dlsch[i][0]->harq_mask,eNB->dlsch[i][0]->rnti,first_free_index);
 
-    if ((eNB->dlsch[i][0]->harq_mask >0) &&
-        (eNB->dlsch[i][0]->rnti==rnti))       return i;
-    else if ((eNB->dlsch[i][0]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+    if (type == SEARCH_EXIST_RA) {
+      if (eNB->dlsch[i][0]->rnti==rnti) return i;
+    } else {
+      if ((eNB->dlsch[i][0]->harq_mask >0) &&
+          (eNB->dlsch[i][0]->rnti==rnti))       return i;
+      else if ((eNB->dlsch[i][0]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+    }
+
   }
 
-  if (type == SEARCH_EXIST)
+  if (type == SEARCH_EXIST_RA || type == SEARCH_EXIST)
     return -1;
 
   if (first_free_index != -1)
@@ -83,12 +88,16 @@ int find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
   for (int i=0; i<NUMBER_OF_ULSCH_MAX; i++) {
     if (eNB->ulsch[i]==NULL) continue;
 
-    if ((eNB->ulsch[i]->harq_mask >0) &&
-        (eNB->ulsch[i]->rnti==rnti))       return i;
-    else if ((eNB->ulsch[i]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+    if (type == SEARCH_EXIST_RA) {
+      if (eNB->ulsch[i]->rnti == rnti) return i;
+    } else {
+      if ((eNB->ulsch[i]->harq_mask >0) &&
+          (eNB->ulsch[i]->rnti==rnti))       return i;
+      else if ((eNB->ulsch[i]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+    }
   }
 
-  if (type == SEARCH_EXIST)
+  if (type == SEARCH_EXIST_RA || type == SEARCH_EXIST)
     return -1;
 
   if (first_free_index != -1)

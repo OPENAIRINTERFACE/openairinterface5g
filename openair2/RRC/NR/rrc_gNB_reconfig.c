@@ -50,29 +50,9 @@
 #define true 1
 
 void fill_default_initialDownlinkBWP(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *servingcellconfigcommon) {
-
   bwp->bwp_Id = 0;
-
   bwp->bwp_Common=calloc(1,sizeof(*bwp->bwp_Common));
-  memcpy((void*)&bwp->bwp_Common,
-         &servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP,
-         sizeof(bwp->bwp_Common));
-
-  bwp->bwp_Dedicated=calloc(1,sizeof(*bwp->bwp_Dedicated));
-  bwp->bwp_Dedicated->pdsch_Config = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config));
-  bwp->bwp_Dedicated->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup));
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dataScramblingIdentityPDSCH = NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength=NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID0=NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID1=NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS=NULL;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
-  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
+  *bwp->bwp_Common = *servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP;
 }
 
 void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellConfigCommon_t *servingcellconfigcommon) {
@@ -174,7 +154,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   memset(secondaryCellGroup,0,sizeof(NR_CellGroupConfig_t));
   secondaryCellGroup->cellGroupId = scg_id;
   NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
-  nr_rlc_bearer_init(RLC_BearerConfig);
+  nr_rlc_bearer_init(RLC_BearerConfig, NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity);
   if (get_softmodem_params()->do_ra || get_softmodem_params()->sa)
     nr_drb_config(RLC_BearerConfig->rlc_Config, NR_RLC_Config_PR_um_Bi_Directional);
   else
@@ -183,9 +163,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
   secondaryCellGroup->rlc_BearerToAddModList = calloc(1,sizeof(*secondaryCellGroup->rlc_BearerToAddModList));
   ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig);
+
   secondaryCellGroup->mac_CellGroupConfig=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig));
   secondaryCellGroup->mac_CellGroupConfig->drx_Config = NULL;
-
   secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig = calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig));
   secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));
   NR_SchedulingRequestToAddMod_t *SchedulingRequestConf = calloc(1,sizeof(*SchedulingRequestConf));
@@ -1033,7 +1013,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  long *delay[8];
  for (int i=0;i<8;i++) {
    delay[i] = calloc(1,sizeof(*delay[i]));
-   *delay[i] = i+2;
+   *delay[i] = (i<6) ? (i+2) : 0;
    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
  }
  pucch_Config->spatialRelationInfoToAddModList = calloc(1,sizeof(*pucch_Config->spatialRelationInfoToAddModList));
