@@ -46,6 +46,7 @@ const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH"};
 const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 queue_t nr_rx_ind_queue;
 queue_t nr_crc_ind_queue;
+queue_t nr_uci_ind_queue;
 
 int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
 
@@ -136,6 +137,56 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
       }
       scheduled_response->ul_config->number_pdus = 0;
     }
+
+    if (scheduled_response->dl_config != NULL)
+    {
+      fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
+      AssertFatal(dl_config->number_pdus < sizeof(dl_config->dl_config_list) / sizeof(dl_config->dl_config_list[0]),
+                  "Too many dl_config pdus %d", dl_config->number_pdus);
+      for (int i = 0; i < dl_config->number_pdus; ++i)
+      {
+        LOG_I(PHY, "In %s: processing %s PDU of %d total DL PDUs (dl_config %p) \n",
+              __FUNCTION__, dl_pdu_type[dl_config->dl_config_list[i].pdu_type - 1], dl_config->number_pdus, dl_config);
+
+        uint8_t pdu_type = dl_config->dl_config_list[i].pdu_type;
+        switch (pdu_type)
+        {
+          case (FAPI_NR_DL_CONFIG_TYPE_DLSCH):
+          {
+            nfapi_nr_uci_indication_t *uci_ind = CALLOC(1, sizeof(*uci_ind));
+            uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
+            uci_ind->sfn = scheduled_response->frame == 19 ? scheduled_response->frame  + 1 % 1024 : scheduled_response->frame;
+            uci_ind->slot = (scheduled_response->slot + 6) % 20;
+            uci_ind->num_ucis = 1;
+            uci_ind->uci_list = CALLOC(1, sizeof(nfapi_nr_uci_t));
+            uci_ind->uci_list[0].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
+            uci_ind->uci_list[0].pdu_size = 46;
+            uci_ind->uci_list->pucch_pdu_format_0_1.rnti = scheduled_response->dl_config->dl_config_list[0].dlsch_config_pdu.rnti;
+            uci_ind->uci_list[0].pucch_pdu_format_0_1.pduBitmap = 2; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR
+            uci_ind->uci_list[0].pucch_pdu_format_0_1.pucch_format = 1;
+            uci_ind->uci_list[0].pucch_pdu_format_0_1.harq = CALLOC(1, sizeof(nfapi_nr_harq_pdu_0_1_t));
+            uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->harq_confidence_level = 0;
+            uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->num_harq = 1;
+            uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->harq_list = CALLOC(1, sizeof(nfapi_nr_harq_t));
+            uci_ind->uci_list->pucch_pdu_format_0_1.harq->harq_list[0].harq_value = 0;
+            LOG_I(NR_PHY, "In %s: Filled queue uci_ind which was filled by dlconfig.\n"
+                       "uci_num %d, uci_slot %d, uci_frame %d\n",
+                          __FUNCTION__, uci_ind->num_ucis, uci_ind->slot, uci_ind->sfn);
+
+              if (!put_queue(&nr_uci_ind_queue, uci_ind))
+              {
+                LOG_E(NR_MAC, "Put_queue failed for rx_ind\n");
+                free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->harq_list);
+                free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq);
+                free(uci_ind->uci_list);
+                free(uci_ind);
+              }
+            break; //Melissa figure out what to send to gNB when receiving format 1_1
+          }
+        }
+      }
+    }
+
   }
   return 0;
 }

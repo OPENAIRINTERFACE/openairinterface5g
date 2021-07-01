@@ -3494,9 +3494,9 @@ static uint8_t pack_nr_rach_indication_body(void* tlv, uint8_t **ppWritePackedMs
 		  return 0;
 	for(int i = 0; i < value->num_preamble; i++)
 	{
-		if(!(push8(value->preamble_list->preamble_index, ppWritePackedMsg, end) &&
-			push16(value->preamble_list->timing_advance, ppWritePackedMsg, end) &&
-			push32(value->preamble_list->preamble_pwr, ppWritePackedMsg, end)
+		if(!(push8(value->preamble_list[i].preamble_index, ppWritePackedMsg, end) &&
+			push16(value->preamble_list[i].timing_advance, ppWritePackedMsg, end) &&
+			push32(value->preamble_list[i].preamble_pwr, ppWritePackedMsg, end)
 			))
 			return 0;
 	}
@@ -6524,41 +6524,38 @@ static uint8_t unpack_nr_rach_indication(uint8_t **ppReadPackedMsg, uint8_t *end
 
 //NR UCI 
 
-static uint8_t unpack_nr_uci_pucch_0_1(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end) {
-	nfapi_nr_uci_pucch_pdu_format_0_1_t* value = (nfapi_nr_uci_pucch_pdu_format_0_1_t*)tlv;
+static uint8_t unpack_nr_uci_pucch_0_1(nfapi_nr_uci_pucch_pdu_format_0_1_t *value,
+                                       uint8_t **ppReadPackedMsg,
+                                       uint8_t *end,
+                                       nfapi_p7_codec_config_t *config) {
 
 	if(!(pull8(ppReadPackedMsg, &value->pduBitmap, end) &&
 	 	 pull32(ppReadPackedMsg, &value->handle, end) &&
 		 pull16(ppReadPackedMsg, &value->rnti, end) &&
 		 pull8(ppReadPackedMsg, &value->pucch_format, end) &&
 		 pull8(ppReadPackedMsg, &value->ul_cqi, end) &&
-		 pull16(ppReadPackedMsg, &value->timing_advance, end) && 
+		 pull16(ppReadPackedMsg, &value->timing_advance, end) &&
 		 pull16(ppReadPackedMsg, &value->rssi, end)
 		 ))
-		  return 0;
+		        return 0;
 	if (value->pduBitmap & 0x01) { //SR
 		if(!(pull8(ppReadPackedMsg, &value->sr->sr_indication, end) &&
-	 	 pull8(ppReadPackedMsg, &value->sr->sr_confidence_level, end) 
+	 	 pull8(ppReadPackedMsg, &value->sr->sr_confidence_level, end)
 		 ))
-		  return 0;
+		        return 0;
 	}
-
-	// if (((value->pduBitmap >> 1) & 0x01)) { //HARQ
-	// 	uint8_t* temp; //&value->harq->num_harq &value->harq->harq_confidence_level &value->harq->harq_list[0].harq_value
-	// 	temp = (uint8_t*) malloc(sizeof(uint8_t));
-	// 	//printf("value->harq->num_harq = %d \n", value->harq->num_harq);
-	// 	// if(!(pull8(ppReadPackedMsg, temp, end) &&
-	//  	//  pull8(ppReadPackedMsg, temp, end) 
-	// 	//  ))
-	// 	// 	return 0;
-
-	// 	// for(int i=0; i<1;i++)	
-	// 	// {
-	// 	// 	if(!(pull8(ppReadPackedMsg, temp, end) //review - gokul
-	// 	// 	))
-	// 	// 	return 0;
-	// 	// }
-	// }
+	if (((value->pduBitmap >> 1) & 0x01)) { //HARQ
+                value->harq = nfapi_p7_allocate(sizeof(*value->harq), config);
+                if (!(pull8(ppReadPackedMsg, &value->harq->harq_confidence_level, end) &&
+                        pull8(ppReadPackedMsg, &value->harq->num_harq, end)
+                        ))
+                        return 0;
+                value->harq->harq_list = nfapi_p7_allocate(sizeof(*value->harq->harq_list) * value->harq->num_harq, config);
+                for (int i = 0; i < value->harq->num_harq; i++) {
+                        if (!pull8(ppReadPackedMsg, &value->harq->harq_list[i].harq_value, end))
+                                return 0;
+                }
+	}
 
 	return 1;
 }
@@ -6649,13 +6646,14 @@ static uint8_t unpack_nr_uci_indication(uint8_t **ppReadPackedMsg, uint8_t *end,
 		))
 			return 0;
 
-	for(int i=0; i<pNfapiMsg->num_ucis;i++)	
+        pNfapiMsg->uci_list = nfapi_p7_allocate(sizeof(*pNfapiMsg->uci_list) * pNfapiMsg->num_ucis, config);
+	for (int i = 0; i < pNfapiMsg->num_ucis; i++)
 	{
-		if(!unpack_nr_uci_indication_body(&pNfapiMsg->uci_list,ppReadPackedMsg,end))
+		if(!unpack_nr_uci_indication_body(&pNfapiMsg->uci_list[i], ppReadPackedMsg, end, config))
 		return 0;
 	}
 
-return 1;
+        return 1;
 }
 
 

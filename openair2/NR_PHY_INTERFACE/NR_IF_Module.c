@@ -82,11 +82,11 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
 
 void handle_nr_uci(NR_UL_IND_t *UL_info)
 {
-  const module_id_t mod_id = UL_info->module_id;
-  const frame_t frame = UL_info->frame;
-  const sub_frame_t slot = UL_info->slot;
-  int num_ucis = UL_info->uci_ind.num_ucis;
-  nfapi_nr_uci_t *uci_list = UL_info->uci_ind.uci_list;
+  const module_id_t mod_id = UL_INFO.module_id;
+  const frame_t frame = UL_INFO.frame;
+  const sub_frame_t slot = UL_INFO.slot;
+  int num_ucis = UL_INFO.uci_ind.num_ucis;
+  nfapi_nr_uci_t *uci_list = UL_INFO.uci_ind.uci_list;
 
   for (int i = 0; i < num_ucis; i++) {
     switch (uci_list[i].pdu_type) {
@@ -107,7 +107,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
     }
   }
 
-  UL_info->uci_ind.num_ucis = 0;
+  UL_INFO.uci_ind.num_ucis = 0;
   if(NFAPI_MODE != NFAPI_MODE_PNF)
   // mark corresponding PUCCH resources as free
   // NOTE: we just assume it is BWP ID 1, to be revised for multiple BWPs

@@ -712,6 +712,18 @@ int phy_nr_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rach_ind
   return 1;
 }
 
+int phy_nr_uci_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_uci_indication_t *ind)
+{
+  if(NFAPI_MODE == NFAPI_MODE_VNF)
+  {
+    UL_INFO.uci_ind = *ind;
+  }
+  else {
+    LOG_E(NR_MAC, "NFAPI_MODE = %d not NFAPI_MODE_VNF(2)\n", nfapi_getmode());
+  }
+  return 1;
+}
+
 int phy_harq_indication(struct nfapi_vnf_p7_config *config, nfapi_harq_indication_t *ind) {
   struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
   LOG_D(MAC, "%s() NFAPI SFN/SF:%d number_of_harqs:%u\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind->sfn_sf), ind->harq_indication_body.number_of_harqs);
@@ -1195,6 +1207,7 @@ void *vnf_nr_p7_thread_start(void *ptr) {
   p7_vnf->config->nr_crc_indication = &phy_nr_crc_indication;
   p7_vnf->config->nr_rx_indication = &phy_nr_rx_indication;
   p7_vnf->config->nr_rach_indication = &phy_nr_rach_indication;
+  p7_vnf->config->nr_uci_indication = &phy_nr_uci_indication;
   p7_vnf->config->srs_indication = &phy_srs_indication;
   p7_vnf->config->sr_indication = &phy_sr_indication;
   p7_vnf->config->cqi_indication = &phy_cqi_indication;

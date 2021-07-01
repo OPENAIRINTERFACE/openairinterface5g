@@ -818,6 +818,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->qamModOrder[0] = Qm;
     pdsch_pdu->mcsIndex[0] = sched_ctrl->mcs;
     pdsch_pdu->mcsTable[0] = sched_ctrl->mcsTableIdx;
+    AssertFatal (harq->round < sizeof(nr_rv_round_map) / sizeof(nr_rv_round_map[0]),
+                 "harq->round %d is larger than nv_rv_round_map\n", harq->round);
     pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
     pdsch_pdu->TBSize[0] = TBS;
 
