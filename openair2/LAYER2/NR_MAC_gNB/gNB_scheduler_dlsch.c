@@ -472,8 +472,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
     }
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
-    if (ps->time_domain_allocation != tda || ps->nrOfLayers != UE_info->layers[UE_id])
-      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, UE_info->layers[UE_id], sched_ctrl, ps);
+    if (ps->time_domain_allocation != tda)
+      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, ps->nrOfLayers, sched_ctrl, ps);
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
@@ -482,7 +482,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
     while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
       rbSize++;
     NR_pdsch_semi_static_t temp_ps;
-    nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, UE_info->layers[UE_id], sched_ctrl, &temp_ps);
+    nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -563,6 +563,7 @@ void pf_dl(module_id_t module_id,
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
+  int layers[MAX_MOBILES_PER_GNB];
   NR_list_t UE_sched = { .head = -1, .next = ue_array, .tail = -1, .len = MAX_MOBILES_PER_GNB };
 
   /* Loop UE_info->list to check retransmission */
@@ -574,6 +575,8 @@ void pf_dl(module_id_t module_id,
     if (sched_ctrl->ul_failure==1) continue;
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
+
+    layers[UE_id] = ps->nrOfLayers; // initialization of layers to the previous value in the strcuture
 
     /* Calculate Throughput */
     const float a = 0.0005f; // corresponds to 200ms window
@@ -599,7 +602,7 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       set_dl_mcs(sched_pdsch,sched_ctrl,ps->mcsTableIdx);
-      UE_info->layers[UE_id] = set_dl_nrOfLayers(sched_ctrl);
+      layers[UE_id] = set_dl_nrOfLayers(sched_ctrl);
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       uint32_t tbs = nr_compute_tbs(Qm,
@@ -609,7 +612,7 @@ void pf_dl(module_id_t module_id,
                                     0, /* N_PRB_DMRS * N_DMRS_SLOT */
                                     0 /* N_PRB_oh, 0 for initialBWP */,
                                     0 /* tb_scaling */,
-                                    UE_info->layers[UE_id]) >> 3;
+                                    layers[UE_id]) >> 3;
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(NR_MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
             b, UE_id, thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
@@ -687,9 +690,9 @@ void pf_dl(module_id_t module_id,
     const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-    if (ps->nrOfLayers != UE_info->layers[UE_id] ||
+    if (ps->nrOfLayers != layers[UE_id] ||
         ps->time_domain_allocation != tda)
-      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, UE_info->layers[UE_id], sched_ctrl, ps);
+      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, layers[UE_id], sched_ctrl, ps);
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->pucch_allocation = alloc;
