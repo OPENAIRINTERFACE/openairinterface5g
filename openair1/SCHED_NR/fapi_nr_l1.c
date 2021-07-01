@@ -178,6 +178,13 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   gNB         = RC.gNB[Mod_id];
 
+  // we wait for the L1 Tx processing to finish before copying MAC PDUs to PHY
+  {
+    notifiedFIFO_elt_t *res;
+    res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
+    pushNotifiedFIFO(gNB->resp_L1_tx,res);
+  }
+
   uint8_t number_dl_pdu             = (DL_req==NULL) ? 0 : DL_req->dl_tti_request_body.nPDUs;
   uint8_t number_ul_dci_pdu         = (UL_dci_req==NULL) ? 0 : UL_dci_req->numPdus;
   uint8_t number_ul_tti_pdu         = (UL_tti_req==NULL) ? 0 : UL_tti_req->n_pdus;
