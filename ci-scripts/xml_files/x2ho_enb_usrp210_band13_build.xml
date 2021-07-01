@@ -42,7 +42,7 @@
 	<testCase id="010102">
 		<class>Build_eNB</class>
 		<desc>Build Slave eNB (USRP)</desc>
-		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
+		<Build_eNB_args>-w USRP -c --eNB --ninja</Build_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 	</testCase>

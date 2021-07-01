@@ -80,7 +80,6 @@
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
 
-
 /*! \brief NR_list_t is a "list" (of users, HARQ processes, slices, ...).
  * Especially useful in the scheduler and to keep "classes" of users. */
 typedef struct {
@@ -391,6 +390,9 @@ typedef struct NR_sched_pdsch {
   /// DL HARQ PID to use for this UE, or -1 for "any new"
   int8_t dl_harq_pid;
 
+  // pucch format allocation
+  uint8_t pucch_allocation;
+
   /// the Time Domain Allocation used for this transmission. Note that this is
   /// only important for retransmissions; otherwise, the TDA in
   /// NR_pdsch_semi_static_t has precedence
@@ -556,6 +558,7 @@ typedef struct {
   /// per-LC status data
   mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
 
+  int lcid_mask;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
@@ -605,6 +608,7 @@ typedef struct {
   int dlsch_current_bytes;
   int ulsch_rounds[8];
   int ulsch_errors;
+  int ulsch_DTX;
   int ulsch_total_bytes_scheduled;
   int ulsch_total_bytes_rx;
   int ulsch_current_bytes;

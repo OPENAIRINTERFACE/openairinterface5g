@@ -390,11 +390,11 @@ void nr_store_dlsch_buffer(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     sched_ctrl->num_total_bytes = 0;
-    if (loop_dcch_dtch == DL_SCH_LCID_DCCH1)
+    if ((sched_ctrl->lcid_mask&(1<<4)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH1)
       loop_dcch_dtch = DL_SCH_LCID_DTCH;
-    else if (loop_dcch_dtch == DL_SCH_LCID_DTCH)
+    else if ((sched_ctrl->lcid_mask&(1<<1)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DTCH)
       loop_dcch_dtch = DL_SCH_LCID_DCCH;
-    else if (loop_dcch_dtch == DL_SCH_LCID_DCCH)
+    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH)
       loop_dcch_dtch = DL_SCH_LCID_DCCH1;
 
     const int lcid = loop_dcch_dtch;
@@ -423,10 +423,11 @@ void nr_store_dlsch_buffer(module_id_t module_id,
       return;
 
     LOG_D(NR_MAC,
-          "[%s][%d.%d], DTCH%d->DLSCH, RLC status %d bytes TA %d\n",
+          "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
           __func__,
           frame,
           slot,
+          lcid<4?"DCCH":"DTCH",
           lcid,
           sched_ctrl->rlc_status[lcid].bytes_in_buffer,
           sched_ctrl->ta_apply);
@@ -453,7 +454,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
   int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-  const uint8_t num_dmrs_cdm_grps_no_data = ps->nrOfSymbols == 2 ? 1 : 2;
+  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+  const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
 
   int rbSize = 0;
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
@@ -518,8 +520,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
    * allocation after CCE alloc fail would be more complex) */
-  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1);
-  if (!alloc) {
+  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1);
+  if (alloc<0) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
           __func__,
@@ -534,6 +536,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
       cce_list[sched_ctrl->cce_index + i] = 0;
     return false;
   }
+
+  sched_ctrl->sched_pdsch.pucch_allocation = alloc;
 
   /* just reuse from previous scheduling opportunity, set new start RB */
   sched_ctrl->sched_pdsch = *retInfo;
@@ -649,9 +653,9 @@ void pf_dl(module_id_t module_id,
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
-    const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot,-1);
-    if (!alloc) {
-      LOG_W(NR_MAC,
+    const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1);
+    if (alloc<0) {
+      LOG_D(NR_MAC,
             "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
             __func__,
             UE_id,
@@ -683,7 +687,7 @@ void pf_dl(module_id_t module_id,
           scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
-
+    sched_pdsch->pucch_allocation = alloc;
     uint32_t TBS = 0;
     uint16_t rbSize;
     const int oh = 2 + (sched_ctrl->num_total_bytes >= 256)
@@ -797,6 +801,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     UE_info->mac_stats[UE_id].dlsch_current_bytes = 0;
 
@@ -846,7 +851,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
     DevAssert(!harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
-    NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
+    NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[sched_pdsch->pucch_allocation];
     harq->feedback_frame = pucch->frame;
     harq->feedback_slot = pucch->ul_slot;
     harq->is_waiting = true;
@@ -995,9 +1000,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
     // bwp indicator
     const int n_dl_bwp = bwp ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count : 0;
-    AssertFatal(n_dl_bwp <= 1,
-		"downlinkBWP_ToAddModList has %d BWP!\n",
-		n_dl_bwp);
+    AssertFatal(n_dl_bwp <= 1, "downlinkBWP_ToAddModList has %d BWP!\n", n_dl_bwp);
+
     // as per table 7.3.1.1.2-1 in 38.212
     dci_payload.bwp_indicator.val = bwp ? (n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1) : 0;
     if (bwp) AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,

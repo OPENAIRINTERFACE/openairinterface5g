@@ -88,10 +88,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         stream,
                                       F1AP_F1AP_PDU_t *pdu) {
 
-  if (RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
+  if (RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
     LOG_I(F1AP, "node is gNB DU, call DU_handle_DL_NR_RRC_MESSAGE_TRANSFER \n");
-    DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance, assoc_id, stream, pdu);
-    return 0;
+    return DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance, assoc_id, stream, pdu);
   }
 
   LOG_D(F1AP, "DU_handle_DL_RRC_MESSAGE_TRANSFER \n");
@@ -480,36 +479,36 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                       DRB2LCHAN[i] = (uint8_t) * DRB_configList->list.array[i]->logicalChannelIdentity;
                     }
 
-                    rrc_mac_config_req_eNB(
-					   ctxt.module_id,
-					   0,0,0,0,0,0,
-					   0,
-					   ue_context_p->ue_context.rnti,
-					   (LTE_BCCH_BCH_Message_t *) NULL,
-					   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-					   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-					   physicalConfigDedicated,
-					   (LTE_SCellToAddMod_r10_t *)NULL,
-					   //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
-					   (LTE_MeasObjectToAddMod_t **) NULL,
-					   mac_MainConfig,
-					   DRB2LCHAN[i],
-					   DRB_configList->list.array[i]->logicalChannelConfig,
-					   measGapConfig,
-					   (LTE_TDD_Config_t *) NULL,
-					   NULL,
-					   (LTE_SchedulingInfoList_t *) NULL,
-					   0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
-					   , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL,
-					   (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
-					   0,
-					   (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-					   (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-					   (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-					   (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-					   (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-					   (LTE_MBSFNAreaConfiguration_r9_t*) NULL
-					   );
+                     rrc_mac_config_req_eNB(
+                     ctxt.module_id,
+                     0,0,0,0,0,0,
+                     0,
+                     ue_context_p->ue_context.rnti,
+                     (LTE_BCCH_BCH_Message_t *) NULL,
+                     (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                     (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+                     physicalConfigDedicated,
+                     (LTE_SCellToAddMod_r10_t *)NULL,
+                     //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+                     (LTE_MeasObjectToAddMod_t **) NULL,
+                     mac_MainConfig,
+                     DRB2LCHAN[i],
+                     DRB_configList->list.array[i]->logicalChannelConfig,
+                     measGapConfig,
+                     (LTE_TDD_Config_t *) NULL,
+                     NULL,
+                     (LTE_SchedulingInfoList_t *) NULL,
+                     0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
+                     , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL,
+                     (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
+                     0,
+                     (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                     (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                     (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                     (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                     (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+                     (LTE_MBSFNAreaConfiguration_r9_t*) NULL
+                     );
                   }
 
                 } else {        // remove LCHAN from MAC/PHY
@@ -747,7 +746,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
 
         } else {
           LOG_I(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
-          ue_context_p->ue_context.Status = RRC_CONNECTED;
+          ue_context_p->ue_context.StatusRrc = RRC_CONNECTED;
         }
         break;
 
@@ -807,7 +806,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             rnti_t          rntiP,
                                             const uint8_t   *sduP,
                                             sdu_size_t      sdu_lenP,
-                                            const uint8_t   *sdu2P,
+                                            const int8_t   *sdu2P,
 					                                  sdu_size_t      sdu2_lenP) {
 
   F1AP_F1AP_PDU_t                       pdu;
@@ -879,17 +878,14 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
 
   /* optional */
   /* c5. DUtoCURRCContainer */
-  if (sdu2P) {
+  if (sdu2P && RC.nrrrc) {
     ie = (F1AP_InitialULRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_InitialULRRCMessageTransferIEs_t));
     ie->id                             = F1AP_ProtocolIE_ID_id_DUtoCURRCContainer;
     ie->criticality                    = F1AP_Criticality_reject;
     ie->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_DUtoCURRCContainer;
-    OCTET_STRING_fromBuf(&ie->value.choice.DUtoCURRCContainer,
-                         (char *)sdu2P,
-                         sdu2_lenP);
+    OCTET_STRING_fromBuf(&ie->value.choice.DUtoCURRCContainer, (char *)sdu2P, sdu2_lenP);
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }    
-
 
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
@@ -897,7 +893,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
     return -1;
   }
 
-  if (RC.nrrrc[module_idP]->node_type == ngran_gNB_DU) {
+  if (RC.nrrrc && RC.nrrrc[module_idP]->node_type == ngran_gNB_DU) {
     struct rrc_gNB_ue_context_s* ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[module_idP]);
     ue_context_p->ue_id_rnti                    = rntiP; 
     ue_context_p->ue_context.rnti               = rntiP;
@@ -997,7 +993,7 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
   if (msg->srb_id == 1 || msg->srb_id == 2) {
     struct rrc_gNB_ue_context_s* ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[instance], rnti);
 
-   
+
     NR_UL_DCCH_Message_t* ul_dcch_msg=NULL;
     asn_dec_rval_t dec_rval;
     dec_rval = uper_decode(NULL,
@@ -1005,7 +1001,7 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
          (void**)&ul_dcch_msg,
          &ie->value.choice.RRCContainer.buf[1], // buf[0] includes the pdcp header
          msg->rrc_container_length, 0, 0);
-    
+
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
       LOG_E(F1AP, " Failed to decode UL-DCCH (%zu bytes)\n",dec_rval.consumed);
       /* for rfsim, because UE send RRCSetupRequest in SRB1 */
@@ -1045,18 +1041,18 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
 
       case NR_UL_DCCH_MessageType__c1_PR_rrcReconfigurationComplete:
         LOG_I(F1AP, "[MSG] RRC UL rrcReconfigurationComplete\n");
-        
+
         /* CDRX: activated when RRC Connection Reconfiguration Complete is received */
 #if(0)
         int UE_id_mac = find_nr_UE_id(instance, rnti);
-        
+
         if (UE_id_mac == -1) {
           LOG_E(F1AP, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
           break;
         }
-        
+
         UE_sched_ctrl_t *UE_scheduling_control = &(RC.nrmac[instance]->UE_info.UE_sched_ctrl[UE_id_mac]);
-        
+
         if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
           UE_scheduling_control->cdrx_waiting_ack = FALSE;
           UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration Complete is received
@@ -1068,13 +1064,13 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
 
       case NR_UL_DCCH_MessageType__c1_PR_rrcSetupComplete:
         LOG_I(F1AP, "[MSG] RRC UL rrcSetupComplete \n");
-        
+
         if(!ue_context_p){
           LOG_E(F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", rnti);
 
         } else {
           LOG_I(F1AP, "Processing RRCSetupComplete UE %x\n", rnti);
-          ue_context_p->ue_context.Status = NR_RRC_CONNECTED;
+          ue_context_p->ue_context.StatusRrc = NR_RRC_CONNECTED;
         }
         break;
 
@@ -1299,10 +1295,8 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 			       rrcSetup_ies->masterCellGroup.size,0,0);
 	AssertFatal(dec_rval.code == RC_OK, "could not decode masterCellGroup\n");
 
-#if NR
-	gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
-
 	// configure MAC
+	gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
 	rrc_mac_config_req_gNB(ctxt.module_id,
 			       rrc->carrier.ssb_SubcarrierOffset,
 			       rrc->carrier.pdsch_AntennaPorts,
@@ -1312,6 +1306,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 			       ue_context_p->ue_context.rnti,
 			       ue_context_p->ue_context.masterCellGroup
 			       );
+
 	// rrc_rlc_config_asn1_req
 	nr_rrc_rlc_config_asn1_req(&ctxt,
 				   ue_context_p->ue_context.SRB_configList,
@@ -1320,15 +1315,14 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 				   NULL,
 				   NULL,
 				   NULL);
-#endif
 
       // This should be somewhere in the f1ap_cudu_ue_inst_t
-      /*int macrlc_instance = 0; 
+      /*int macrlc_instance = 0;
 
       rnti_t rnti = f1ap_get_rnti_by_du_id(&f1ap_du_inst[0], du_ue_f1ap_id);
       struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[macrlc_instance],rnti);
-      */  
-      gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
+      */
+      gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
       AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
 
       memcpy((void*)ue_p->Srb0.Tx_buffer.Payload,

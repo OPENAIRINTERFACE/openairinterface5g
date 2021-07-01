@@ -520,6 +520,9 @@ int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *PHY_vars_eNB,
 
 void dump_ulsch(PHY_VARS_eNB *phy_vars_eNB,int frame, int subframe, uint8_t UE_id,int round);
 
+void dump_ulsch_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame);
+void dump_uci_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame);
+
 
 
 
@@ -691,13 +694,11 @@ void conv_eMTC_rballoc(uint16_t resource_block_coding,
                        uint32_t N_RB_DL,
                        uint32_t *rb_alloc);
 
-int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
+int find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 
-int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
+int find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 
-int16_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type);
-
-uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type);
+int find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type);
 
 uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
 

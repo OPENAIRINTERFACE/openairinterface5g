@@ -164,27 +164,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->rlc_BearerToAddModList = calloc(1,sizeof(*secondaryCellGroup->rlc_BearerToAddModList));
   ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig);
 
-  NR_RLC_BearerConfig_t *RLC_BearerConfig_srb1 = calloc(1,sizeof(*RLC_BearerConfig_srb1));
-  nr_rlc_bearer_init(RLC_BearerConfig_srb1, NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity);
-  nr_drb_config(RLC_BearerConfig_srb1->rlc_Config, NR_RLC_Config_PR_am);
-  nr_rlc_bearer_init_ul_spec(RLC_BearerConfig_srb1->mac_LogicalChannelConfig);
-  // FIXME: this should be obtained in nr_rlc_bearer_init_ul_spec()
-  *RLC_BearerConfig_srb1->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = 0;
-  ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig_srb1);
-
-  NR_RLC_BearerConfig_t *RLC_BearerConfig_srb2 = calloc(1,sizeof(*RLC_BearerConfig_srb2));
-  nr_rlc_bearer_init(RLC_BearerConfig_srb2, NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity);
-  nr_drb_config(RLC_BearerConfig_srb2->rlc_Config, NR_RLC_Config_PR_am);
-  nr_rlc_bearer_init_ul_spec(RLC_BearerConfig_srb2->mac_LogicalChannelConfig);
-  // FIXME: this should be obtained in nr_rlc_bearer_init_ul_spec()
-  *RLC_BearerConfig_srb2->mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = 0;
-  RLC_BearerConfig_srb2->logicalChannelIdentity = 2;
-  RLC_BearerConfig_srb2->servedRadioBearer->choice.srb_Identity = 2;
-  ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig_srb2);
-
   secondaryCellGroup->mac_CellGroupConfig=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig));
   secondaryCellGroup->mac_CellGroupConfig->drx_Config = NULL;
-
   secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig = calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig));
   secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));
   NR_SchedulingRequestToAddMod_t *SchedulingRequestConf = calloc(1,sizeof(*SchedulingRequestConf));
@@ -959,22 +940,16 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_PUCCH_ResourceSet_t *pucchresset1=calloc(1,sizeof(*pucchresset1));
  pucchresset0->pucch_ResourceSetId = 0;
  NR_PUCCH_ResourceId_t *pucchresset0id0=calloc(1,sizeof(*pucchresset0id0));
- NR_PUCCH_ResourceId_t *pucchresset0id1=calloc(1,sizeof(*pucchresset0id1));
  *pucchresset0id0=1;
  ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id0);
- *pucchresset0id1=2;
- ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id1);
  pucchresset0->maxPayloadSize=NULL;
 
  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset0);
 
  pucchresset1->pucch_ResourceSetId = 1;
  NR_PUCCH_ResourceId_t *pucchresset1id0=calloc(1,sizeof(*pucchresset1id0));
- NR_PUCCH_ResourceId_t *pucchresset1id1=calloc(1,sizeof(*pucchresset1id1));
- *pucchresset1id0=3;
+ *pucchresset1id0=2;
  ASN_SEQUENCE_ADD(&pucchresset1->resourceList.list,pucchresset1id0);
- *pucchresset1id1=4;
- ASN_SEQUENCE_ADD(&pucchresset1->resourceList.list,pucchresset1id1);
  pucchresset1->maxPayloadSize=NULL;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset1);
 
@@ -984,6 +959,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_PUCCH_Resource_t *pucchres1=calloc(1,sizeof(*pucchres1));
  NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
  NR_PUCCH_Resource_t *pucchres3=calloc(1,sizeof(*pucchres3));
+
  pucchres0->pucch_ResourceId=1;
  pucchres0->startingPRB= (8 + uid) % curr_bwp;
  pucchres0->intraSlotFrequencyHopping=NULL;
@@ -995,18 +971,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchres0->format.choice.format0->startingSymbolIndex=13;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres0);
 
- pucchres1->pucch_ResourceId=2;
- pucchres1->startingPRB= (8 + uid) % curr_bwp;
- pucchres1->intraSlotFrequencyHopping=NULL;
- pucchres1->secondHopPRB=NULL;
- pucchres1->format.present= NR_PUCCH_Resource__format_PR_format0;
- pucchres1->format.choice.format0=calloc(1,sizeof(*pucchres1->format.choice.format0));
- pucchres1->format.choice.format0->initialCyclicShift=0;
- pucchres1->format.choice.format0->nrofSymbols=1;
- pucchres1->format.choice.format0->startingSymbolIndex=12;
- ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres1);
-
- pucchres2->pucch_ResourceId=3;
+ pucchres2->pucch_ResourceId=2;
  pucchres2->startingPRB=0;
  pucchres2->intraSlotFrequencyHopping=NULL;
  pucchres2->secondHopPRB=NULL;
@@ -1017,17 +982,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchres2->format.choice.format2->startingSymbolIndex=13;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres2);
 
- pucchres3->pucch_ResourceId=4;
- pucchres3->startingPRB=0;
- pucchres3->intraSlotFrequencyHopping=NULL;
- pucchres3->secondHopPRB=NULL;
- pucchres3->format.present= NR_PUCCH_Resource__format_PR_format2;
- pucchres3->format.choice.format2=calloc(1,sizeof(*pucchres3->format.choice.format2));
- pucchres3->format.choice.format2->nrofPRBs=8;
- pucchres3->format.choice.format2->nrofSymbols=1;
- pucchres3->format.choice.format2->startingSymbolIndex=12;
- ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres3);
-
  pucch_Config->format2=calloc(1,sizeof(*pucch_Config->format2));
  pucch_Config->format2->present=NR_SetupRelease_PUCCH_FormatConfig_PR_setup;
  NR_PUCCH_FormatConfig_t *pucchfmt2 = calloc(1,sizeof(*pucchfmt2));
@@ -1035,10 +989,11 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchfmt2->interslotFrequencyHopping=NULL;
  pucchfmt2->additionalDMRS=NULL;
  pucchfmt2->maxCodeRate=calloc(1,sizeof(*pucchfmt2->maxCodeRate));
- *pucchfmt2->maxCodeRate=NR_PUCCH_MaxCodeRate_zeroDot25;
+ *pucchfmt2->maxCodeRate=NR_PUCCH_MaxCodeRate_zeroDot35;
  pucchfmt2->nrofSlots=NULL;
  pucchfmt2->pi2BPSK=NULL;
- pucchfmt2->simultaneousHARQ_ACK_CSI=NULL;
+ pucchfmt2->simultaneousHARQ_ACK_CSI=calloc(1,sizeof(*pucchfmt2->simultaneousHARQ_ACK_CSI));
+ *pucchfmt2->simultaneousHARQ_ACK_CSI=NR_PUCCH_FormatConfig__simultaneousHARQ_ACK_CSI_true;
 
  // for scheduling requestresource
  pucch_Config->schedulingRequestResourceToAddModList = calloc(1,sizeof(*pucch_Config->schedulingRequestResourceToAddModList));
@@ -1202,7 +1157,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 9 + (10 * uid) % 320;
  NR_PUCCH_CSI_Resource_t *pucchcsires1 = calloc(1,sizeof(*pucchcsires1));
  pucchcsires1->uplinkBandwidthPartId=1;
- pucchcsires1->pucch_Resource=3;
+ pucchcsires1->pucch_Resource=2;
  ASN_SEQUENCE_ADD(&csirep1->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
  csirep1->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP;
  csirep1->reportQuantity.choice.ssb_Index_RSRP=(NULL_t)0;
@@ -1301,22 +1256,7 @@ void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
                            e_NR_CipheringAlgorithm ciphering_algorithm,
                            e_NR_SecurityConfig__keyToUse key_to_use) {
 
-  rbconfig->srb_ToAddModList = calloc(1,sizeof(*rbconfig->srb_ToAddModList));
-
-  NR_SRB_ToAddMod_t *srb1_ToAddMod = calloc(1,sizeof(*srb1_ToAddMod));
-  srb1_ToAddMod->srb_Identity = 1;
-  srb1_ToAddMod->reestablishPDCP = NULL;
-  srb1_ToAddMod->discardOnPDCP = NULL;
-  srb1_ToAddMod->pdcp_Config = NULL;
-  ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb1_ToAddMod);
-
-  NR_SRB_ToAddMod_t *srb2_ToAddMod = calloc(1,sizeof(*srb2_ToAddMod));
-  srb2_ToAddMod->srb_Identity = 2;
-  srb2_ToAddMod->reestablishPDCP = NULL;
-  srb2_ToAddMod->discardOnPDCP = NULL;
-  srb2_ToAddMod->pdcp_Config = NULL;
-  ASN_SEQUENCE_ADD(&rbconfig->srb_ToAddModList->list,srb2_ToAddMod);
-
+  rbconfig->srb_ToAddModList = NULL;
   rbconfig->srb3_ToRelease = NULL;
   rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
   NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));

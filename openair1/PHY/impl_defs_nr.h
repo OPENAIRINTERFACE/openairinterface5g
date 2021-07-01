@@ -36,7 +36,6 @@
 
 #include <stdbool.h>
 #include "types.h"
-#include "NR_PDSCH-TimeDomainResourceAllocation.h"
 
 #ifdef DEFINE_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
 #define EXTERN
@@ -395,6 +394,13 @@ typedef struct{
 typedef struct{
 // to be defined FIXME!!!
 }zp_CSI_RS_Resource_t;
+
+typedef struct{
+        int   k0;    
+        int     mappingType;
+        int     startSymbolAndLength;
+
+}PDSCH_TimeDomainResourceAllocation_t;
 typedef struct {
 /*
  * resourceAllocation
@@ -447,7 +453,8 @@ typedef struct {
 */
   maxNrofCodeWordsScheduledByDCI_t maxNrofCodeWordsScheduledByDCI;
 
-  NR_PDSCH_TimeDomainResourceAllocation_t *pdsch_TimeDomainResourceAllocation[MAX_NR_OF_DL_ALLOCATIONS];
+
+  PDSCH_TimeDomainResourceAllocation_t *pdsch_TimeDomainResourceAllocation[MAX_NR_OF_DL_ALLOCATIONS];
 
 } PDSCH_Config_t;
 

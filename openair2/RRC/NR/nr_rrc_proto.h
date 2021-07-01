@@ -186,7 +186,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                            const uint8_t      *buffer,
                            int                buffer_length,
                            OCTET_STRING_t     *du_to_cu_rrc_container,
-			   const int          CC_id);
+                           const int          CC_id);
 
 void
 rrc_gNB_generate_dedicatedRRCReconfiguration_release(

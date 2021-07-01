@@ -460,7 +460,7 @@ int logInit (void)
   register_log_component("LOCALIZE","log",LOCALIZE);
   register_log_component("NAS","log",NAS);
   register_log_component("UDP","",UDP_);
-  register_log_component("GTPV1U","",GTPU);
+  register_log_component("GTPU","",GTPU);
   register_log_component("S1AP","",S1AP);
   register_log_component("F1AP","",F1AP);
   register_log_component("M2AP","",M2AP);

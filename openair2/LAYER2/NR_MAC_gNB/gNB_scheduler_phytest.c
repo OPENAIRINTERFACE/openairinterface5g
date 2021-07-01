@@ -146,15 +146,18 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     int startSymbolAndLength=0;
     int StartSymbolIndex=-1,NrOfSymbols=14;
     int StartSymbolIndex_tmp,NrOfSymbols_tmp;
+    int mappingtype_tmp, mappingtype;
 
     for (int i=0;
 	 i<scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;
 	 i++) {
       startSymbolAndLength = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
       SLIV2SL(startSymbolAndLength,&StartSymbolIndex_tmp,&NrOfSymbols_tmp);
+      mappingtype_tmp = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType;
       if (NrOfSymbols_tmp < NrOfSymbols) {
 	NrOfSymbols = NrOfSymbols_tmp;
         StartSymbolIndex = StartSymbolIndex_tmp;
+        mappingtype = mappingtype_tmp;
 	//	k0 = *scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
 	//	time_domain_assignment = i;
       }
@@ -165,7 +168,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL,
 						    scc->dmrs_TypeA_Position,
 						    NrOfSymbols,
-                StartSymbolIndex);
+                StartSymbolIndex,
+                mappingtype);
 
     /*
     AssertFatal(k0==0,"k0 is not zero for Initial DL BWP TimeDomain Alloc\n");
@@ -335,8 +339,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
 
-  const bool alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot,-1);
-  if (!alloc) {
+  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1);
+  if (alloc < 0) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
           __func__,
@@ -351,12 +355,13 @@ void nr_preprocessor_phytest(module_id_t module_id,
     return;
   }
 
-  AssertFatal(alloc,
-              "could not find uplink slot for PUCCH (RNTI %04x@%d.%d)!\n",
-              rnti, frame, slot);
+  //AssertFatal(alloc,
+  //            "could not find uplink slot for PUCCH (RNTI %04x@%d.%d)!\n",
+  //            rnti, frame, slot);
 
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+  sched_pdsch->pucch_allocation = alloc;
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;

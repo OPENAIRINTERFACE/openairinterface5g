@@ -93,7 +93,7 @@ typedef struct ru_config_s {
   uint8_t   if_compress;
 } ru_config_t;
 */
-extern void RCconfig_RU(void);
+extern void NRRCconfig_RU(void);
 extern void RCconfig_nr_flexran(void);
 extern void RCconfig_NR_L1(void);
 extern void RCconfig_nr_macrlc(void);

@@ -24,22 +24,6 @@
 #include "transport_eNB.h"
 #include "transport_proto.h"
 #include "transport_common_proto.h"
-// Mask for identifying subframe for MBMS
-#define MBSFN_TDD_SF3 0x80// for TDD
-#define MBSFN_TDD_SF4 0x40
-#define MBSFN_TDD_SF7 0x20
-#define MBSFN_TDD_SF8 0x10
-#define MBSFN_TDD_SF9 0x08
-
-
-
-#define MBSFN_FDD_SF1 0x80// for FDD
-#define MBSFN_FDD_SF2 0x40
-#define MBSFN_FDD_SF3 0x20
-#define MBSFN_FDD_SF6 0x10
-#define MBSFN_FDD_SF7 0x08
-#define MBSFN_FDD_SF8 0x04
-
 
 
 

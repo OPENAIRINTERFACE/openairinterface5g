@@ -43,6 +43,7 @@ import cls_physim               #class PhySim for physical simulators build and 
 import cls_cots_ue              #class CotsUe for Airplane mode control
 import cls_containerize         #class Containerize for all container-based operations on RAN/UE objects
 import cls_static_code_analysis #class for static code analysis
+import cls_ci_ueinfra			#class defining the multi Ue infrastrucure
 import cls_physim1          #class PhySim for physical simulators deploy and run
 
 import sshconnection 
@@ -151,6 +152,7 @@ def GetParametersFromXML(action):
 			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 
 	elif action == 'Initialize_eNB':
+		RAN.eNB_Trace=test.findtext('eNB_Trace')
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
@@ -193,12 +195,40 @@ def GetParametersFromXML(action):
 		else :
 			RAN.air_interface[RAN.eNB_instance] = 'ocp-enb'
 
+	elif action == 'Initialize_UE':
+		ue_id = test.findtext('id')
+		CiTestObj.ue_trace=test.findtext('UE_Trace')#temporary variable, to be passed to Module_UE in Initialize_UE call
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
+
+	elif action == 'Detach_UE':
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
+
 	elif action == 'Attach_UE':
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
 		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
 		if (nbMaxUEtoAttach is None):
 			CiTestObj.nbMaxUEtoAttach = -1
 		else:
 			CiTestObj.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
+
+	elif action == 'Terminate_UE':
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
+
 
 	elif action == 'CheckStatusUE':
 		expectedNBUE = test.findtext('expectedNbOfConnectedUEs')
@@ -253,9 +283,20 @@ def GetParametersFromXML(action):
 	elif (action == 'Ping') or (action == 'Ping_CatM_module'):
 		CiTestObj.ping_args = test.findtext('ping_args')
 		CiTestObj.ping_packetloss_threshold = test.findtext('ping_packetloss_threshold')
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
 
 	elif action == 'Iperf':
 		CiTestObj.iperf_args = test.findtext('iperf_args')
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
+		CiTestObj.iperf_direction = test.findtext('direction')#used for modules only	
 		CiTestObj.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
 		CiTestObj.iperf_profile = test.findtext('iperf_profile')
 		if (CiTestObj.iperf_profile is None):
@@ -370,6 +411,20 @@ with open(yaml_file,'r') as f:
 
 
 
+#loading UE infrastructure from yaml
+ue_infra_file='ci_ueinfra.yaml'
+if (os.path.isfile(ue_infra_file)):
+	yaml_file=ue_infra_file
+elif (os.path.isfile('ci-scripts/'+ue_infra_file)):
+	yaml_file='ci-scripts/'+ue_infra_file
+else:
+	logging.error("UE infrastructure yaml file cannot be found")
+	sys.exit("UE infrastructure file cannot be found")
+InfraUE=cls_ci_ueinfra.InfraUE() #initialize UE infrastructure class
+InfraUE.Get_UE_Infra(yaml_file) #read the UE infra, filename is hardcoded and unique for the moment but should be passed as parameter from the test suite
+
+
+
 mode = ''
 
 CiTestObj = cls_oaicitest.OaiCiTest()
@@ -383,7 +438,6 @@ SCA = cls_static_code_analysis.StaticCodeAnalysis()
 PHYSIM = cls_physim1.PhySim()
 
 ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
-
 
 
 #-----------------------------------------------------------
@@ -429,13 +483,13 @@ elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateUE(HTML,COTS_UE)
+	CiTestObj.TerminateUE(HTML,COTS_UE,InfraUE,CiTestObj.ue_trace)
 elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC)
+	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE)
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
@@ -674,39 +728,39 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML,COTS_UE)
+					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE, CiTestObj.ue_trace)
 				elif action == 'Terminate_UE':
-					CiTestObj.TerminateUE(HTML,COTS_UE)
+					CiTestObj.TerminateUE(HTML,COTS_UE, InfraUE, CiTestObj.ue_trace)
 				elif action == 'Attach_UE':
-					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
 				elif action == 'Detach_UE':
-					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
 				elif action == 'DataDisable_UE':
 					CiTestObj.DataDisableUE(HTML)
 				elif action == 'DataEnable_UE':
 					CiTestObj.DataEnableUE(HTML)
 				elif action == 'CheckStatusUE':
-					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE,InfraUE)
 				elif action == 'Build_OAI_UE':
 					CiTestObj.BuildOAIUE(HTML)
 				elif action == 'Initialize_OAI_UE':
-					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,InfraUE)
 				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC)
+					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE)
 				elif action == 'Initialize_CatM_module':
 					CiTestObj.InitializeCatM(HTML)
 				elif action == 'Terminate_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Attach_CatM_module':
-					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC)
+					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC,InfraUE)
 				elif action == 'Detach_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Ping_CatM_module':
-					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC)
+					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC,InfraUE)
 				elif action == 'Ping':
-					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, InfraUE)
 				elif action == 'Iperf':
-					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE, InfraUE)
 				elif action == 'Reboot_UE':
 					CiTestObj.RebootUE(HTML,RAN,EPC)
 				elif action == 'Initialize_HSS':
@@ -747,7 +801,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Cppcheck_Analysis':
 					SCA.CppCheckAnalysis(HTML)
 				elif action == 'Deploy_Run_PhySim':
-					PHYSIM.Deploy_PhySim(HTML)
+					PHYSIM.Deploy_PhySim(HTML, RAN)
 				else:
 					sys.exit('Invalid class (action) from xml')
 				if not RAN.prematureExit:

@@ -26,7 +26,7 @@
 	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>
  010101 010102 010103
- 000101 000102 000103
+ 000102 000103 000101
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -50,7 +50,7 @@
 	<testCase id="010102">
 		<class>Build_eNB</class>
 		<desc>Build Master RRU</desc>
-		<Build_eNB_args>-w USRP -c --eNB --ninja</Build_eNB_args>
+		<Build_eNB_args>-w USRP -c --RU --ninja</Build_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 		<backgroundBuild>True</backgroundBuild>
@@ -59,7 +59,7 @@
 	<testCase id="000102">
 		<class>WaitEndBuild_eNB</class>
 		<desc>Wait for end of Build Master RRU</desc>
-		<Build_eNB_args>-w USRP -c --eNB --ninja</Build_eNB_args>
+		<Build_eNB_args>-w USRP -c --RU --ninja</Build_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 	</testCase>
@@ -67,7 +67,7 @@
 	<testCase id="010103">
 		<class>Build_eNB</class>
 		<desc>Build Slave RRU</desc>
-		<Build_eNB_args>-w USRP -c --eNB --ninja</Build_eNB_args>
+		<Build_eNB_args>-w USRP -c --RU --ninja</Build_eNB_args>
 		<eNB_instance>2</eNB_instance>
 		<eNB_serverId>2</eNB_serverId>
 		<backgroundBuild>True</backgroundBuild>
@@ -76,7 +76,7 @@
 	<testCase id="000103">
 		<class>WaitEndBuild_eNB</class>
 		<desc>Wait for end of Build Slave RRU</desc>
-		<Build_eNB_args>-w USRP -c --eNB --ninja</Build_eNB_args>
+		<Build_eNB_args>-w USRP -c --RU --ninja</Build_eNB_args>
 		<eNB_instance>2</eNB_instance>
 		<eNB_serverId>2</eNB_serverId>
 	</testCase>

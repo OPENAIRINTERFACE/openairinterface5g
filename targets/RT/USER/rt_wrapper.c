@@ -43,6 +43,7 @@
 #include <getopt.h>
 #include <sys/sysinfo.h>
 #include "rt_wrapper.h"
+#include "system.h"
 #include <errno.h>
 #include <common/utils/msc/msc.h>
 
@@ -294,6 +295,7 @@ void thread_top_init(char *thread_name,
   struct sched_param sparam;
   char cpu_affinity[1024];
   cpu_set_t cpuset;
+  int settingPriority = 1;
 
   /* Set affinity mask to include CPUs 2 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
@@ -340,30 +342,37 @@ void thread_top_init(char *thread_name,
     }
   }
 
-  memset(&sparam, 0, sizeof(sparam));
-  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
-  policy = SCHED_FIFO ; 
-  
-  s = pthread_setschedparam(pthread_self(), policy, &sparam);
-  if (s != 0) {
-    perror("pthread_setschedparam : ");
-    exit_fun("Error setting thread priority");
-  }
-  
-  s = pthread_getschedparam(pthread_self(), &policy, &sparam);
-  if (s != 0) {
-    perror("pthread_getschedparam : ");
-    exit_fun("Error getting thread priority");
-  }
+  if (checkIfFedoraDistribution())
+    if (checkIfGenericKernelOnFedora())
+      if (checkIfInsideContainer())
+        settingPriority = 0;
 
-  pthread_setname_np(pthread_self(), thread_name);
+  if (settingPriority) {
+    memset(&sparam, 0, sizeof(sparam));
+    sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    policy = SCHED_FIFO;
+  
+    s = pthread_setschedparam(pthread_self(), policy, &sparam);
+    if (s != 0) {
+      perror("pthread_setschedparam : ");
+      exit_fun("Error setting thread priority");
+    }
+  
+    s = pthread_getschedparam(pthread_self(), &policy, &sparam);
+    if (s != 0) {
+      perror("pthread_getschedparam : ");
+      exit_fun("Error getting thread priority");
+    }
 
-  LOG_I(HW, "[SCHED][eNB] %s started on CPU %d, sched_policy = %s , priority = %d, CPU Affinity=%s \n",thread_name,sched_getcpu(),
-                   (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
-                   (policy == SCHED_RR)    ? "SCHED_RR" :
-                   (policy == SCHED_OTHER) ? "SCHED_OTHER" :
-                   "???",
-                   sparam.sched_priority, cpu_affinity );
+    pthread_setname_np(pthread_self(), thread_name);
+
+    LOG_I(HW, "[SCHED][eNB] %s started on CPU %d, sched_policy = %s , priority = %d, CPU Affinity=%s \n",thread_name,sched_getcpu(),
+                     (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+                     (policy == SCHED_RR)    ? "SCHED_RR" :
+                     (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+                     "???",
+                     sparam.sched_priority, cpu_affinity );
+  }
 
 #endif //LOW_LATENCY
 

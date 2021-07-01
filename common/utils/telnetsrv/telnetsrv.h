@@ -31,6 +31,7 @@
 #ifndef TELNETSRV_H
 #define TELNETSRV_H
 
+#include <common/ran_context.h> 
 #define TELNETSRV_MODNAME  "telnetsrv"
 
 #define TELNET_PORT               9090

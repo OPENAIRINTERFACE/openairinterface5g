@@ -278,6 +278,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
       bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :
       scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
+  const int mapping_type = tdaList->list.array[tda]->mappingType;
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
 
@@ -300,7 +301,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   // if no data in dmrs cdm group is 1 only even REs have no data
   // if no data in dmrs cdm group is 2 both odd and even REs have no data
   ps->N_PRB_DMRS = num_dmrs_cdm_grps_no_data * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
-  ps->dl_dmrs_symb_pos = fill_dmrs_mask(bwp ? bwp->bwp_Dedicated->pdsch_Config->choice.setup : NULL, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex);
+  ps->dl_dmrs_symb_pos = fill_dmrs_mask(bwp ? bwp->bwp_Dedicated->pdsch_Config->choice.setup : NULL, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, mapping_type);
   ps->N_DMRS_SLOT = get_num_dmrs(ps->dl_dmrs_symb_pos);
 }
 
@@ -364,11 +365,12 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 										    : *ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition)):2;
   const pusch_maxLength_t pusch_maxLength =
     ps->NR_DMRS_UplinkConfig ? (ps->NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2) : 1;
-  const uint16_t l_prime_mask = get_l_prime(ps->nrOfSymbols,
+  ps->ul_dmrs_symb_pos = get_l_prime(ps->nrOfSymbols,
                                             ps->mapping_type,
                                             additional_pos,
-                                            pusch_maxLength);
-  ps->ul_dmrs_symb_pos = l_prime_mask << ps->startSymbolIndex;
+                                            pusch_maxLength,
+                                            ps->startSymbolIndex,
+                                            scc->dmrs_TypeA_Position);
   uint8_t num_dmrs_symb = 0;
   for(int i = ps->startSymbolIndex; i < ps->startSymbolIndex + ps->nrOfSymbols; i++)
     num_dmrs_symb += (ps->ul_dmrs_symb_pos >> i) & 1;
@@ -1330,7 +1332,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
     case NR_RNTI_C:
       // indicating a UL DCI format 1bit
       pos=1;
-      //*dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
       // Freq domain assignment  max 16 bit
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       pos+=fsize;
@@ -1819,7 +1821,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 
   for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (UE_info->active[i]) {
-      LOG_I(NR_MAC,"UE %x is active, skipping\n",rntiP);
+      LOG_D(NR_MAC,"UE %x is active, skipping\n",rntiP);
       continue;
     }
     int UE_id = i;
@@ -1836,6 +1838,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
       compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
+    sched_ctrl->lcid_mask = 0;
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
@@ -1997,7 +2000,7 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
   if (CellGroup && CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList)
     ubwp = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
 
-  NR_SearchSpace_t *ss;
+  NR_SearchSpace_t *ss=NULL;
 
   // common search type uses DCI format 1_0
   if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) {

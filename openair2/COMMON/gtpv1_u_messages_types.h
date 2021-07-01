@@ -168,23 +168,23 @@ typedef struct gtpv1u_enb_end_marker_ind_s {
   uint32_t 			 sdu_size;
   uint8_t 			 *sdu_p;
   uint8_t 			 mode;
-  uint16_t     			 rnti;
-  uint8_t      			 module_id;
+  uint16_t     	 rnti;
+  uint8_t      	 module_id;
   uint8_t 			 eNB_index;
 } gtpv1u_enb_end_marker_ind_t;
 
 typedef struct {
   in_addr_t             enb_ip_address_for_S1u_S12_S4_up;
   tcp_udp_port_t        enb_port_for_S1u_S12_S4_up;
-  char addrStr[256];
-  char portStr[256];
+  char                  addrStr[256];
+  char                  portStr[256];
 } Gtpv1uS1Req;
 
 typedef struct {
   in_addr_t             gnb_ip_address_for_NGu_up;
   tcp_udp_port_t        gnb_port_for_NGu_up;
-  char addrStr[256];
-  char portStr[256];
+  char                  addrStr[256];
+  char                  portStr[256];
 } Gtpv1uNGReq;
 typedef struct gtpv1u_gnb_create_tunnel_req_s {
   rnti_t                 rnti;

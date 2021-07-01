@@ -64,6 +64,8 @@ extern uint32_t to_earfcn_UL(int eutra_bandP, uint32_t ul_CarrierFreq, uint32_t 
 extern char *parallel_config;
 extern char *worker_config;
 
+RAN_CONTEXT_t RC;
+
 void RCconfig_flexran() {
   /* get number of eNBs */
   paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
@@ -218,13 +220,26 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
     for (j = 0; j < RC.nb_macrlc_inst; j++) {
       RC.mac[j]->puSch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUSCH10xSNR_IDX ].iptr);
       RC.mac[j]->puCch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUCCH10xSNR_IDX ].iptr);
+      RC.mac[j]->ue_multiple_max = *(MacRLC_ParamList.paramarray[j][MACRLC_UE_MULTIPLE_MAX_IDX ].iptr);
+      RC.mac[j]->use_mcs_offset = *(MacRLC_ParamList.paramarray[j][MACRLC_USE_MCS_OFFSET_IDX ].iptr);
+      RC.mac[j]->bler_lower = *(MacRLC_ParamList.paramarray[j][MACRLC_BLER_TARGET_LOWER_IDX ].dblptr);
+      RC.mac[j]->bler_upper = *(MacRLC_ParamList.paramarray[j][MACRLC_BLER_TARGET_UPPER_IDX ].dblptr);
+      RC.mac[j]->max_ul_rb_index = *(MacRLC_ParamList.paramarray[j][MACRLC_MAX_UL_RB_INDEX_IDX ].iptr);
       RC.nb_mac_CC[j] = *(MacRLC_ParamList.paramarray[j][MACRLC_CC_IDX].iptr);
-
+      LOG_I(ENB_APP,"MAC instance %d parameters : pusch_snr %lf, pucch_snr %lf, ue_multiple_max %d, use_mcs_offset %d, bler_lower %lf, bler_upper %lf,max_ul_rb_index %d\n",
+	j,
+	RC.mac[j]->puSch10xSnr/10.0,
+	RC.mac[j]->puCch10xSnr/10.0,
+	RC.mac[j]->ue_multiple_max,
+	RC.mac[j]->use_mcs_offset,
+	RC.mac[j]->bler_lower,
+	RC.mac[j]->bler_upper,
+	RC.mac[j]->max_ul_rb_index);
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
         // check number of instances is same as RRC/PDCP
-        printf("Configuring local RRC for MACRLC\n");
+        LOG_I(ENB_APP,"Configuring local RRC for MACRLC\n");
       } else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0) {
-        printf("Configuring F1 interfaces for MACRLC\n");
+        LOG_I(ENB_APP,"Configuring F1 interfaces for MACRLC\n");
         RC.mac[j]->eth_params_n.local_if_name            = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_IF_NAME_IDX].strptr));
         RC.mac[j]->eth_params_n.my_addr                  = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_ADDRESS_IDX].strptr));
         RC.mac[j]->eth_params_n.remote_addr              = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_ADDRESS_IDX].strptr));
@@ -1993,7 +2008,7 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nrb                 = rrc->carrier[0].mib.message.dl_Bandwidth;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.num_frequency_bands = 1;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_band[0]          = rrc->carrier[0].sib1->freqBandIndicator;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active          = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.sul_active          = 0;
         } else {
           LOG_I(ENB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
           F1AP_SETUP_REQ (msg_p).fdd_flag = 1;
@@ -2779,12 +2794,13 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
                         "value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
                         X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
             X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
-
+            LOG_I(X2AP,"X2ParamList.numelt %d\n",X2ParamList.numelt);
             for (l = 0; l < X2ParamList.numelt; l++) {
               X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 += 1;
               strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4_address,*(X2ParamList.paramarray[l][ENB_X2_IPV4_ADDRESS_IDX].strptr));
               strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6_address,*(X2ParamList.paramarray[l][ENB_X2_IPV6_ADDRESS_IDX].strptr));
 
+              LOG_I(X2AP,"registering with ip : %s\n",*(X2ParamList.paramarray[l][ENB_X2_IPV4_ADDRESS_IDX].strptr));
               if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
                 X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
                 X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 0;
@@ -2964,7 +2980,7 @@ void extract_and_decode_SI(int inst,int si_ind,uint8_t *si_container,int si_cont
   eNB_RRC_INST *rrc = RC.rrc[inst];
   rrc_eNB_carrier_data_t *carrier = &rrc->carrier[0];
   LTE_BCCH_DL_SCH_Message_t *bcch_message ;
-  AssertFatal(si_ind==0,"Can only handle a single SI block for now\n");
+  AssertFatal(si_ind==2,"Can only handle a single SI block for now\n");
   LOG_I(ENB_APP, "rrc inst %d: Trying to decode SI block %d @ %p, length %d\n",inst,si_ind,si_container,si_container_length);
   // point to first SI block
   bcch_message = &carrier->systemInformation;
@@ -3151,15 +3167,19 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
           (check_plmn_identity(carrier, resp->cells_to_activate[j].mcc, resp->cells_to_activate[j].mnc, resp->cells_to_activate[j].mnc_digit_length)>0 &&
            resp->cells_to_activate[j].nrpci == carrier->physCellId)) {
         // copy system information and decode it
-        for (si_ind=0; si_ind<resp->cells_to_activate[j].num_SI; si_ind++)  {
-          //printf("SI %d size %d: ", si_ind, resp->SI_container_length[j][si_ind]);
-          //for (int n=0;n<resp->SI_container_length[j][si_ind];n++)
-          //  printf("%02x ",resp->SI_container[j][si_ind][n]);
+        for (si_ind=2; si_ind<resp->cells_to_activate[j].num_SI + 2; si_ind++)  {
+          //printf("SI %d size %d: ", si_ind, resp->cells_to_activate[j].SI_container_length[si_ind]);
+          //for (int n=0;n<resp->cells_to_activate[j].SI_container_length[si_ind];n++)
+          //  printf("%02x ",resp->cells_to_activate[j].SI_container[si_ind][n]);
           //printf("\n");
-          extract_and_decode_SI(i,
-                                si_ind,
-                                resp->cells_to_activate[j].SI_container[si_ind],
-                                resp->cells_to_activate[j].SI_container_length[si_ind]);
+          if (si_ind==6) si_ind=9;
+          if (resp->cells_to_activate[j].SI_container[si_ind] != NULL) {
+            extract_and_decode_SI(i,
+                                  si_ind,
+                                  resp->cells_to_activate[j].SI_container[si_ind],
+                                  resp->cells_to_activate[j].SI_container_length[si_ind]);
+          }
+
         }
 
         // perform MAC/L1 common configuration

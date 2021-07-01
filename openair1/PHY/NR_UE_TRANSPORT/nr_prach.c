@@ -66,7 +66,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
 
   uint8_t Mod_id, fd_occasion, preamble_index, restricted_set, not_found;
   uint16_t rootSequenceIndex, prach_fmt_id, NCS, *prach_root_sequence_map, preamble_offset = 0;
-  uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
+  uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start=0, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
   int16_t prach_tmp[98304*2*4] __attribute__((aligned(32)));
 
   int16_t Ncp = 0, amp, *prach, *prach2, *prachF, *Xu;
@@ -218,12 +218,12 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   k *= 2;
 
   LOG_I(PHY, "PRACH [UE %d] in slot %d, placing PRACH in position %d, msg1 frequency start %d (k1 %d), preamble_offset %d, first_nonzero_root_idx %d\n", Mod_id,
-	slot,
-	k,
-	n_ra_prb,
-	nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].k1,
-	preamble_offset,
-	first_nonzero_root_idx);
+    slot,
+    k,
+    n_ra_prb,
+    nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].k1,
+    preamble_offset,
+    first_nonzero_root_idx);
 
   Xu = (int16_t*)ue->X_u[preamble_offset-first_nonzero_root_idx];
 

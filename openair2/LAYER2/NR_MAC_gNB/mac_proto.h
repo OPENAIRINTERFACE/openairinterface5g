@@ -52,9 +52,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            NR_ServingCellConfigCommon_t *scc,
-			   int nsa_flag,
-			   uint32_t rnti,
-			   NR_CellGroupConfig_t *CellGroup
+		                  	   int nsa_flag,
+			                     uint32_t rnti,
+			                     NR_CellGroupConfig_t *CellGroup
                            );
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 
@@ -185,7 +185,7 @@ void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frameP,
                            sub_frame_t slotP);
 
-bool nr_acknack_scheduling(int Mod_idP,
+int nr_acknack_scheduling(int Mod_idP,
                            int UE_id,
                            frame_t frameP,
                            sub_frame_t slotP,

@@ -173,12 +173,12 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     
     for (i=0; i<5; i++) {
       if (i==scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
-	cfg->carrier_config.dl_grid_size[i] = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-	cfg->carrier_config.dl_k0[i] = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
+        cfg->carrier_config.dl_grid_size[i] = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+        cfg->carrier_config.dl_k0[i] = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
       }
       else {
-	cfg->carrier_config.dl_grid_size[i] = 0;
-	cfg->carrier_config.dl_k0[i] = 0;
+        cfg->carrier_config.dl_grid_size[i] = 0;
+        cfg->carrier_config.dl_k0[i] = 0;
       }
     }
     
@@ -209,7 +209,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     }
     
     uint32_t band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-    frequency_range_t  frequency_range = band<100?FR1:FR2;
+    mac->frequency_range = band<100?FR1:FR2;
     
     lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
 
@@ -232,7 +232,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     cfg->ssb_table.ssb_offset_point_a = absolute_diff/(12*scs_scaling) - 10;
     cfg->ssb_table.ssb_period = *scc->ssb_periodicityServingCell;
     cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
-    
+
     switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
       cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0]<<24;
@@ -314,13 +314,14 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     for (i=0; i<cfg->prach_config.num_prach_fd_occasions; i++) {
       cfg->prach_config.num_prach_fd_occasions_list[i].num_prach_fd_occasions = i;
       if (cfg->prach_config.prach_sequence_length)
-	cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139; 
+	      cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139;
       else
-	cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l839;
+	      cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l839;
       
       cfg->prach_config.num_prach_fd_occasions_list[i].k1 = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart;
       cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
-      cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup, nb_preambles, frame_type,frequency_range);
+      cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup,
+                                                                                                nb_preambles, frame_type,mac->frequency_range);
       //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences = ???
     }
 

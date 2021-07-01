@@ -166,7 +166,7 @@ static float RSRP_meas_mapping_nr[98]
     -43
   }
   ;
-
+  
 long
 binary_search_float_nr(
   float elements[],

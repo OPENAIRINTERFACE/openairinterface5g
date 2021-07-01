@@ -54,6 +54,87 @@ extern RAN_CONTEXT_t RC;
 extern void mac_top_init_gNB(void);
 extern uint8_t nfapi_mode;
 
+void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list,
+                             struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_bearer2release_list,
+                             NR_UE_sched_ctrl_t *sched_ctrl) {
+
+  if (rlc_bearer2add_list)
+  // keep lcids
+    for (int i=0;i<rlc_bearer2add_list->list.count;i++) {
+      sched_ctrl->lcid_mask |= (1<<rlc_bearer2add_list->list.array[i]->logicalChannelIdentity);
+      LOG_I(NR_MAC,"Adding LCID %d (%s %d)\n",
+            (int)rlc_bearer2add_list->list.array[i]->logicalChannelIdentity,
+            rlc_bearer2add_list->list.array[i]->logicalChannelIdentity<4 ? "SRB" : "DRB",
+            (int)rlc_bearer2add_list->list.array[i]->logicalChannelIdentity);
+    }
+  if (rlc_bearer2release_list)
+    for (int i=0;i<rlc_bearer2release_list->list.count;i++)
+      sched_ctrl->lcid_mask |= (1<<*rlc_bearer2release_list->list.array[i]);
+
+}
+
+
+void process_drx_Config(NR_UE_sched_ctrl_t *sched_ctrl,NR_SetupRelease_DRX_Config_t *drx_Config) {
+ if (!drx_Config) return;
+ AssertFatal(drx_Config->present != NR_SetupRelease_DRX_Config_PR_NOTHING, "Cannot have NR_SetupRelease_DRX_Config_PR_NOTHING\n");
+
+ if (drx_Config->present == NR_SetupRelease_DRX_Config_PR_setup) {
+   LOG_I(NR_MAC,"Adding DRX config\n");
+ }
+ else {
+   LOG_I(NR_MAC,"Removing DRX config\n");
+ }
+}
+
+void process_schedulingRequestConfig(NR_UE_sched_ctrl_t *sched_ctrl,NR_SchedulingRequestConfig_t *schedulingRequestConfig) {
+ if (!schedulingRequestConfig) return;
+
+   LOG_I(NR_MAC,"Adding SchedulingRequestconfig\n");
+}
+
+void process_bsrConfig(NR_UE_sched_ctrl_t *sched_ctrl,NR_BSR_Config_t *bsr_Config) {
+  if (!bsr_Config) return;
+  LOG_I(NR_MAC,"Adding BSR config\n");
+}
+
+void process_tag_Config(NR_UE_sched_ctrl_t *sched_ctrl,NR_TAG_Config_t *tag_Config) {
+  if (!tag_Config) return;
+  LOG_I(NR_MAC,"Adding TAG config\n");
+}
+
+void process_phr_Config(NR_UE_sched_ctrl_t *sched_ctrl,NR_SetupRelease_PHR_Config_t *phr_Config) {
+   if (!phr_Config) return;
+   AssertFatal(phr_Config->present != NR_SetupRelease_PHR_Config_PR_NOTHING, "Cannot have NR_SetupRelease_PHR_Config_PR_NOTHING\n");
+
+   if (phr_Config->present == NR_SetupRelease_PHR_Config_PR_setup) {
+     LOG_I(NR_MAC,"Adding PHR config\n");
+   }
+   else {
+     LOG_I(NR_MAC,"Removing PHR config\n");
+   }
+}
+
+void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl) {
+
+   AssertFatal(CellGroup, "CellGroup is null\n");
+   NR_MAC_CellGroupConfig_t   *mac_CellGroupConfig = CellGroup->mac_CellGroupConfig;
+
+
+   if (mac_CellGroupConfig) {
+     process_drx_Config(sched_ctrl,mac_CellGroupConfig->drx_Config);
+     process_schedulingRequestConfig(sched_ctrl,mac_CellGroupConfig->schedulingRequestConfig);
+     process_bsrConfig(sched_ctrl,mac_CellGroupConfig->bsr_Config);
+     process_tag_Config(sched_ctrl,mac_CellGroupConfig->tag_Config);
+     process_phr_Config(sched_ctrl,mac_CellGroupConfig->phr_Config);
+   }
+   else {
+     // apply defaults
+
+   }
+
+   process_rlcBearerConfig(CellGroup->rlc_BearerToAddModList,CellGroup->rlc_BearerToReleaseList,sched_ctrl);
+
+}
 void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
@@ -339,9 +420,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            NR_ServingCellConfigCommon_t *scc,
-                           int add_ue,
+	                         int add_ue,
                            uint32_t rnti,
-                           NR_CellGroupConfig_t *CellGroup){
+	                         NR_CellGroupConfig_t *CellGroup) {
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
@@ -427,12 +508,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     if (get_softmodem_params()->sa > 0) {
       NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[0];
       for (int n=0;n<NR_NB_RA_PROC_MAX;n++ ) {
-        cc->ra[n].cfra = false;
-        cc->ra[n].rnti = 0;
-        cc->ra[n].preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
-        cc->ra[n].preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
-        for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
-          cc->ra[n].preambles.preamble_list[i] = i;
+	       cc->ra[n].cfra = false;
+	       cc->ra[n].rnti = 0;
+	       cc->ra[n].preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
+	       cc->ra[n].preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
+	       for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
+	          cc->ra[n].preambles.preamble_list[i] = i;
       }
     }
   }
@@ -462,7 +543,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {
       const int UE_id = add_new_nr_ue(Mod_idP, rnti, CellGroup);
-      LOG_I(PHY,"Added new UE_id %d/%x with initial CellGroup\n",UE_id,rnti);
+      LOG_I(NR_MAC,"Added new UE_id %d/%x with initial CellGroup\n",UE_id,rnti);
+      process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
     } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
       const int CC_id = 0;
       NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[CC_id];
@@ -510,6 +592,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       const int UE_id = find_nr_UE_id(Mod_idP,rnti);
       UE_info->CellGroup[UE_id] = CellGroup;
       LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
+      process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);

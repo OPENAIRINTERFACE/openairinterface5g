@@ -161,7 +161,7 @@ int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
                         0,
                         0);
 
-  if (1 /*asn1_decoder_xer_print*/) {
+  if (asn1_decoder_xer_print) {
     LOG_E(F1AP, "----------------- ASN1 DECODER PRINT START----------------- \n");
     xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
     LOG_E(F1AP, "----------------- ASN1 DECODER PRINT END ----------------- \n");

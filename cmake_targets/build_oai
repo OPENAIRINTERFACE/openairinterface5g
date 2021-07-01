@@ -71,6 +71,7 @@ ITTI_SIM="False"
 RFSIM_NAS="False"
 SANITIZE_ADDRESS="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
+RU=0
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -105,6 +106,8 @@ Options
   Makes the NR softmodem
 --nrUE
   Makes the NR UE softmodem
+--RU
+  Makes the OAI RRU (without full stack)
 --UE
    Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
 --UE-conf-nvram [configuration file]
@@ -242,29 +245,38 @@ function main() {
             shift;;
        --eNB)
             eNB=1
+            RU=0
             echo_info "Will compile eNB"
             shift;;
        --eNBocp)
             eNBocp=1
+            RU=0
             echo_info "Will compile OCP eNB"
             shift;;
       --gNB)
             gNB=1
+            RU=0
             NR="True"
             echo_info "Will compile gNB"
             shift;;
+       --RU)
+	          RU=1
+            echo_info "Will compile RRU"
+	    shift;;
        -a | --agent)
             echo_info "FlexRAN support is always compiled into the eNB"
             shift;;
        --UE)
+            RU=0
             UE=1
             echo_info "Will compile UE"
             shift;;
        --nrUE)
+            RU=0
             nrUE=1
-            NR="True"
             rfsimNas=1
             RFSIM_NAS="True"
+            NR="True"
             echo_info "Will compile NR UE"
             shift;;
        --mu)
@@ -299,6 +311,7 @@ function main() {
             shift 2;;
        -P | --phy_simulators)
             SIMUS_PHY=1
+	          RU=0
             echo_info "Will compile dlsim, ulsim, ..."
             shift;;
        -S | --core_simulators)
@@ -467,7 +480,7 @@ function main() {
   ########################################################
   # to be discussed
   
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$gNB" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$gNB" = "1" -o "$RU" = "1" ] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	      echo_info "No local radio head and no transport protocol selected"
       fi
@@ -594,7 +607,7 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" -o "$rfsimNas" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" -o "$rfsimNas" = "1" ] ; then
 
     # softmodem compilation
 
@@ -618,9 +631,9 @@ function main() {
     echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
     echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
     echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
+    echo "set ( RU $RU )"                                                 >> $cmake_file
     echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
     echo "set ( RFSIM_NAS $RFSIM_NAS )"                                   >> $cmake_file
-    echo "set ( NR \"${NR}\" )"                                           >> $cmake_file
     echo "set ( SANITIZE_ADDRESS $SANITIZE_ADDRESS )"                     >> $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
     cd  $DIR/$build_dir/build
@@ -635,6 +648,9 @@ function main() {
     fi
     if [ "$gNB" = "1" ] ; then
       execlist="$execlist nr-softmodem"
+    fi
+    if [ "$RU" = "1" ] ; then
+      execlist="$execlist oairu"
     fi
     if [ "$UE" = 1 ] ; then
       execlist="$execlist lte-uesoftmodem"
@@ -664,28 +680,29 @@ function main() {
         $build_dir $config_libconfig_shlib \
         lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
 
-      compilations \
-        $build_dir coding \
-        libcoding.so $dbin/libcoding.so
-
-
-      #check if we run inside a container or not
-      #IS_CONTAINER variable is defined in build_helper file
-      #compile  nasmesh and rb_tool only if NOT running in a container
-      if [ $IS_CONTAINER -eq 0 ]
-      then
-        compilations \
-          $build_dir nasmesh \
-          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+      if [ "$RU" = "0" ] ; then
 
         compilations \
-          $build_dir rb_tool \
-          rb_tool $dbin/rb_tool
+          $build_dir coding \
+          libcoding.so $dbin/libcoding.so
 
-        cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
-      fi #IS_CONTAINER
+        #check if we run inside a container or not
+        #IS_CONTAINER variable is defined in build_helper file
+        #compile  nasmesh and rb_tool only if NOT running in a container
+        if [ $IS_CONTAINER -eq 0 ]
+        then
+          compilations \
+            $build_dir nasmesh \
+            CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+
+          compilations \
+            $build_dir rb_tool \
+            rb_tool $dbin/rb_tool
+
+          cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+        fi #IS_CONTAINER
+      fi
     fi
-
   fi
 
   if [ "$UE" = 1 ] ; then
@@ -867,7 +884,7 @@ function main() {
   ####################################################
   # Build RF device and transport protocol libraries #
   ####################################################
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1"  -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
 
       # build RF device libraries
       if [ "$HW" != "None" ] ; then

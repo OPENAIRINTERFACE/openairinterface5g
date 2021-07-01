@@ -135,12 +135,11 @@ static uint32_t gNB_app_register_x2(uint32_t gnb_id_start, uint32_t gnb_id_end) 
 
 static void init_pdcp(void) {
   if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
-    // pdcp_layer_init();
-    // pdcp_layer_init_for_CU();
+    pdcp_layer_init();
     uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
                              (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
     if (IS_SOFTMODEM_NOS1) {
-      printf("IS_SOFTMODEM_NOS1 option enabled \n");
+      LOG_I(PDCP, "IS_SOFTMODEM_NOS1 option enabled\n");
       pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT;
     }
 
@@ -176,11 +175,10 @@ void *gNB_app_task(void *args_p)
   /* for no gcc warnings */
   (void)instance;
 
-  int                             cell_to_activate = 0;
+  int cell_to_activate = 0;
   itti_mark_task_ready (TASK_GNB_APP);
 
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
-
 
   if (RC.nb_nr_macrlc_inst>0) RCconfig_nr_macrlc();
 
@@ -214,8 +212,8 @@ void *gNB_app_task(void *args_p)
   }
 
   /* For the CU case the gNB registration with the AMF might have to take place after the F1 setup, as the PLMN info
-     * can originate from the DU. */
-  if (AMF_MODE_ENABLED && !NODE_IS_DU(RC.nrrrc[0]->node_type) && !NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+     * can originate from the DU. Add check on whether x2ap is enabled to account for ENDC NSA scenario.*/
+  if ((AMF_MODE_ENABLED || is_x2ap_enabled()) && !NODE_IS_DU(RC.nrrrc[0]->node_type) && !NODE_IS_CU(RC.nrrrc[0]->node_type)) {
     /* Try to register each gNB */
     //registered_gnb = 0;
     __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);
@@ -227,7 +225,6 @@ void *gNB_app_task(void *args_p)
         LOG_E(F1AP, "Create task for F1AP CU failed\n");
         AssertFatal(1==0,"exiting");
      }
-    pdcp_layer_init_for_CU();
   }
 
   if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {

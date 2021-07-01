@@ -296,7 +296,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   for(i=0;i<nr_sequences;i++){
     for (l=0;l<pucch_pdu->nr_of_symbols;l++) {
-      corr_re[l]=0;corr_im[l]=0;
+      corr_re[l]=0;
+      corr_im[l]=0;
       seq_index = (pucch_pdu->initial_cyclic_shift+
 		   mcs[i]+
 		   gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index])%12;
@@ -345,7 +346,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #endif
 
   index=maxpos;
-
 
   // estimate CQI for MAC (from antenna port 0 only)
   int max_n0 = uci_stats->pucch0_n00>uci_stats->pucch0_n01 ? uci_stats->pucch0_n00:uci_stats->pucch0_n01;
@@ -399,7 +399,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       uci_stats->pucch0_positive_SR++;
     }
     uci_stats->pucch01_trials++;
-
   }
   else {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
@@ -1600,7 +1599,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   if (pucch_pdu->bit_len_harq>0) {
     int harq_bytes=pucch_pdu->bit_len_harq>>3;
     if ((pucch_pdu->bit_len_harq&7) > 0) harq_bytes++;
-    uci_pdu->pduBitmap|=1;
+    uci_pdu->pduBitmap|=2;
     uci_pdu->harq.harq_payload = (uint8_t*)malloc(harq_bytes);
     uci_pdu->harq.harq_crc = decoderState;
     int i=0;
@@ -1614,7 +1613,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   }
   
   if (pucch_pdu->sr_flag == 1) {
-    uci_pdu->pduBitmap|=2;
+    uci_pdu->pduBitmap|=1;
     uci_pdu->sr.sr_bit_len = 1;
     uci_pdu->sr.sr_payload = malloc(1);
     uci_pdu->sr.sr_payload[0] = decodedPayload[0]&1;
@@ -1643,8 +1642,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   }
 }
 
-
-void dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
+void nr_dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
 
    int strpos=0;
    char output[16384];

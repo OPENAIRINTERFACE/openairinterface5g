@@ -697,7 +697,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_COMBINE_SEG, VCD_FUNCTION_OUT);
 
   dlsch->last_iteration_cnt = ret;
-  //  log_dump(PHY, harq_process->b, 60, LOG_DUMP_CHAR,"nrue pdsch rx frame %d %d: ", frame, nr_slot_rx );
 
   return(ret);
 }

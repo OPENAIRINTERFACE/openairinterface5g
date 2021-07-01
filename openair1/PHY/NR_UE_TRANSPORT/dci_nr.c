@@ -142,7 +142,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
   if (reg_bundle_size_L != 0) { // interleaving will be done only if reg_bundle_size_L != 0
     coreset_interleaved = 1;
-    coreset_C = (uint32_t) ((coreset_nbr_rb * coreset_time_dur) / (coreset_interleaver_size_R * reg_bundle_size_L));
+    coreset_C = (uint32_t) (coreset_nbr_rb / (coreset_interleaver_size_R * reg_bundle_size_L));
   } else {
     reg_bundle_size_L = 6;
   }
@@ -150,7 +150,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
   int f_bundle_j_list[NR_MAX_PDCCH_AGG_LEVEL] = {};
 
-  for (int reg = 0; reg < ((coreset_nbr_rb * coreset_time_dur)); reg++) {
+  for (int reg = 0; reg < coreset_nbr_rb; reg++) {
     if ((reg % reg_bundle_size_L) == 0) {
       if (r == coreset_interleaver_size_R) {
         r = 0;
@@ -158,7 +158,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
       }
 
       bundle_j = (c * coreset_interleaver_size_R) + r;
-      f_bundle_j = ((r * coreset_C) + c + n_shift) % ((coreset_nbr_rb * coreset_time_dur) / reg_bundle_size_L);
+      f_bundle_j = ((r * coreset_C) + c + n_shift) % (coreset_nbr_rb / reg_bundle_size_L);
 
       if (coreset_interleaved == 0) f_bundle_j = bundle_j;
 
@@ -184,22 +184,28 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
     }
   }
 
-  for(int reg=0; reg<((coreset_nbr_rb*coreset_time_dur)); reg++) {
+  int rb = 0;
+  for (int c_id = 0; c_id < number_of_candidates; c_id++ ) {
+    for (int symbol_idx = 0; symbol_idx < coreset_time_dur; symbol_idx++) {
+      for (int cce_count = CCE[c_id/coreset_time_dur]+c_id%coreset_time_dur; cce_count < CCE[c_id/coreset_time_dur]+c_id%coreset_time_dur+L[c_id]; cce_count += coreset_time_dur) {
+        for (int reg_in_cce_idx = 0; reg_in_cce_idx < NR_NB_REG_PER_CCE; reg_in_cce_idx++) {
 
-    f_reg = (f_bundle_j_list_ord[reg/6]*reg_bundle_size_L)+(reg%reg_bundle_size_L);
-    index_z   = 9*reg;
-    index_llr = 9*((uint16_t)floor(f_reg/coreset_time_dur)+((f_reg%coreset_time_dur)*(coreset_nbr_rb)));
+          f_reg = (f_bundle_j_list_ord[cce_count] * reg_bundle_size_L) + reg_in_cce_idx;
+          index_z = 9 * rb;
+          index_llr = (uint16_t) (f_reg + symbol_idx * coreset_nbr_rb) * 9;
 
-    for (int i=0; i<9; i++) {
-      z[index_z + i] = llr[index_llr + i];
+          for (int i = 0; i < 9; i++) {
+            z[index_z + i] = llr[index_llr + i];
 #ifdef NR_PDCCH_DCI_DEBUG
-      LOG_D(PHY,"[reg=%d,bundle_j=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
-             reg,bundle_j,(index_z + i),*(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]),
-             f_reg,f_bundle_j,(index_llr + i),*(int16_t *) &llr[index_llr + i], *(1 + (int16_t *) &llr[index_llr + i]));
+            LOG_I(PHY,"[cce_count=%d,reg_in_cce_idx=%d,bundle_j=%d,symbol_idx=%d,candidate=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
+                  cce_count,reg_in_cce_idx,bundle_j,symbol_idx,c_id,(index_z + i),*(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]),
+                   f_reg,f_bundle_j,(index_llr + i),*(int16_t *) &llr[index_llr + i], *(1 + (int16_t *) &llr[index_llr + i]));
 #endif
+          }
+          rb++;
+        }
+      }
     }
-
-    if ((reg%reg_bundle_size_L) == 0) r++;
   }
 }
 
@@ -726,8 +732,10 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     rel15 = &pdcch_vars->pdcch_config[i];
     int n_rb,rb_offset;
     get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
+
     LOG_D(PHY,"pdcch coreset: freq %x, n_rb %d, rb_offset %d\n",
-	  rel15->coreset.frequency_domain_resource[0],n_rb,rb_offset);
+          rel15->coreset.frequency_domain_resource[0],n_rb,rb_offset);
+
     for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
       LOG_D(PHY,"in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
 

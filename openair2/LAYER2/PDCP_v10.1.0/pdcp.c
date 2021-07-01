@@ -57,7 +57,7 @@
 #include "openair2/RRC/NAS/nas_config.h"
 #include "intertask_interface.h"
 #include "openair3/S1AP/s1ap_eNB.h"
-
+#include <pthread.h>
 
 #  include "gtpv1u_eNB_task.h"
 #  include "gtpv1u.h"
@@ -135,6 +135,43 @@ notifiedFIFO_t         pdcp_sdu_list;
 
 pdcp_enb_t pdcp_enb[MAX_NUM_CCs];
 
+
+extern volatile int oai_exit;
+
+pthread_t pdcp_stats_thread_desc;
+
+void *pdcp_stats_thread(void *param) {
+
+   FILE *fd;
+   int old_byte_cnt[MAX_MOBILES_PER_ENB][NB_RB_MAX],old_byte_cnt_rx[MAX_MOBILES_PER_ENB][NB_RB_MAX];
+   for (int i=0;i<MAX_MOBILES_PER_ENB;i++)
+     for (int j=0;j<NB_RB_MAX;j++) {
+	old_byte_cnt[i][j]=0;
+	old_byte_cnt_rx[i][j]=0;
+     }
+   while (!oai_exit) {
+     sleep(1);
+
+     fd=fopen("PDCP_stats.log","w+");
+     AssertFatal(fd!=NULL,"Cannot open MAC_stats.log\n");
+     int drb_id=3;
+     for (int UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
+        if (pdcp_enb[0].rnti[UE_id]>0) {
+           fprintf(fd,"PDCP: CRNTI %x, DRB %d: tx_bytes %d, DL Throughput %e\n",
+                   pdcp_enb[0].rnti[UE_id],drb_id,
+                   Pdcp_stats_tx_bytes[0][UE_id][drb_id],
+                   (double)((Pdcp_stats_tx_bytes[0][UE_id][drb_id]-old_byte_cnt[UE_id][drb_id])<<3));
+           fprintf(fd,"                              rx_bytes %d, UL Throughput %e\n",             
+                   Pdcp_stats_rx_bytes[0][UE_id][drb_id],
+                   (double)((Pdcp_stats_rx_bytes[0][UE_id][drb_id]-old_byte_cnt_rx[UE_id][drb_id])<<3));
+           old_byte_cnt[UE_id][drb_id]=Pdcp_stats_tx_bytes[0][UE_id][drb_id];
+           old_byte_cnt_rx[UE_id][drb_id]=Pdcp_stats_rx_bytes[0][UE_id][drb_id];
+        }
+     }
+     fclose(fd);
+   }
+   return(NULL);
+}
 
 uint64_t get_pdcp_optmask(void) {
   return pdcp_params.optmask;
@@ -516,7 +553,7 @@ boolean_t pdcp_data_req(
       break;
   }
 
-  //LOG_I(PDCP,"ueid %d lcid %d tx seq num %d\n", pdcp_uid, rb_idP+rb_offset, current_sn);
+  LOG_D(PDCP,"ueid %d lcid %d tx seq num %d\n", pdcp_uid, (int)(rb_idP+rb_offset), current_sn);
   Pdcp_stats_tx[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
   Pdcp_stats_tx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
   Pdcp_stats_tx_bytes[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=sdu_buffer_sizeP;
@@ -1044,7 +1081,13 @@ pdcp_data_ind(
               pdcpHead->inst  = 1;
             }
           } // nfapi_mode
-        }
+        } else {
+	  if (UE_NAS_USE_TUN) {
+	    pdcpHead->inst  = ctxt_pP->module_id;
+	  } else if (ENB_NAS_USE_TUN) {
+	    pdcpHead->inst  = 0;
+	  }
+	}
       } else {
         pdcpHead->rb_id = rb_id + (ctxt_pP->module_id * LTE_maxDRB);
         pdcpHead->inst  = ctxt_pP->module_id;
@@ -2344,6 +2387,8 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
          }else
              LOG_E(PDCP, "ENB pdcp will not use tun interface\n");
    }
+
+  pthread_create(&pdcp_stats_thread_desc,NULL,pdcp_stats_thread,NULL);
 
   return pdcp_params.optmask ;
 }

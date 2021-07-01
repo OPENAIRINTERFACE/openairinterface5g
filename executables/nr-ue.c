@@ -612,7 +612,7 @@ void *UE_thread(void *arg) {
     thread_idx = absolute_slot % NR_RX_NB_TH;
     int slot_nr = absolute_slot % nb_slot_frame;
     notifiedFIFO_elt_t *msgToPush;
-    AssertFatal((msgToPush=pullTpool(&freeBlocks,&(get_nrUE_params()->Tpool))) != NULL,"chained list failure");
+    AssertFatal((msgToPush=pullNotifiedFIFO_nothreadSafe(&freeBlocks)) != NULL,"chained list failure");
     nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(msgToPush);
     curMsg->UE=UE;
     // update thread index for received subframe
@@ -719,11 +719,13 @@ void *UE_thread(void *arg) {
     if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
 
       uint8_t    tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
+
       int   nrofUplinkSlots = 0;
       if (mac->scc_SIB)
-	nrofUplinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+	      nrofUplinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
       else if (mac->scc)
-	nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+	      nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+
       uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSlots != 0);
       uint8_t first_tx_slot = tdd_period - num_UL_slots;
 

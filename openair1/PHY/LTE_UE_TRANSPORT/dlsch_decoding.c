@@ -78,7 +78,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_
 
   switch (N_RB_DL) {
     case 6:
-      bw_scaling =16;
+      bw_scaling =4;
       break;
 
     case 25:
@@ -276,7 +276,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
   switch (frame_parms->N_RB_DL) {
     case 6:
-      bw_scaling =16;
+      bw_scaling =4;
       break;
 
     case 25:
