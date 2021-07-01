@@ -619,9 +619,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
           mac->ULbwp[bwp_id-1] &&
           mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
           mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config &&
-          mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup)
-          pucch_Config =  mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup;
-      else if (bwp_id==0 &&
+          mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup) {
+        pucch_Config =  mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup;
+        BWPsize  =  NRRIV2BW(mac->ULbwp[bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+        BWPstart =  NRRIV2PRBOFFSET(mac->ULbwp[bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+      } else if (bwp_id==0 &&
                mac->cg &&
                mac->cg->spCellConfig &&
                mac->cg->spCellConfig->spCellConfigDedicated &&
