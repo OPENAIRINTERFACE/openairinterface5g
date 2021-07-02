@@ -63,9 +63,7 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
                                   uint32_t n_RNTI,
                                   uint32_t* out);
 
-void nr_fill_dlsch(PHY_VARS_gNB *gNB,
-                   int frame,
-                   int slot,
+void nr_fill_dlsch(processingData_L1tx_t *msgTx,
                    nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                    unsigned char *sdu); 
 

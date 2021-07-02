@@ -124,10 +124,12 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
 }
 
 
-void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
-                           int frame,int slot,
+void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
+                           int frame,
+                           int slot,
                            int do_meas) {
   int aa;
+  PHY_VARS_gNB *gNB = msgTx->gNB,
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int offset = gNB->CC_id;
@@ -138,7 +140,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,1);
 
-  if (do_meas==1) start_meas(&gNB->phy_proc_tx);
+  if (do_meas==1) start_meas(gNB->phy_proc_tx);
 
   // clear the transmit data array and beam index for the current slot
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
@@ -149,56 +151,48 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);
   if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { 
     for (int i=0; i<fp->Lmax; i++) {
-      if (gNB->ssb[i].active) {
-        nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[i].ssb_pdu);
-        gNB->ssb[i].active = false;
+      if (msgTx->ssb[i].active) {
+        nr_common_signal_procedures(gNB,frame,slot,msgTx->ssb[i].ssb_pdu);
+        msgTx->ssb[i].active = false;
       }
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,0);
 
-  int pdcch_pdu_id=find_nr_pdcch(frame,slot,gNB,SEARCH_EXIST);
-  int ul_pdcch_pdu_id=find_nr_ul_dci(frame,slot,gNB,SEARCH_EXIST);
-
   LOG_D(PHY,"[gNB %d] Frame %d slot %d, pdcch_pdu_id %d, ul_pdcch_pdu_id %d\n",
 	gNB->Mod_id,frame,slot,pdcch_pdu_id,ul_pdcch_pdu_id);
 
+  int num_ul_dci = msgTx->ul_pdcch_pdu.pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci;
+  int num_dl_dci = msgTx->pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci;
+
   if (pdcch_pdu_id >= 0 || ul_pdcch_pdu_id >= 0) {
     LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
-	  gNB->Mod_id, frame, slot,
-	  gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci,
-	  gNB->pdcch_pdu[pdcch_pdu_id].pdcch_pdu.pdcch_pdu_rel15.numDlDci);
+	  gNB->Mod_id, frame, slot, num_dl_dci, num_ul_dci);
   
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,1);
 
     nr_generate_dci_top(gNB,
-			pdcch_pdu_id>=0 ? &gNB->pdcch_pdu[pdcch_pdu_id].pdcch_pdu : NULL,
-			ul_pdcch_pdu_id>=0 ? &gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu : NULL,
+			num_dl_dci > 0 ? &msgTx->pdcch_pdu.pdcch_pdu : NULL,
+			num_ul_dci > 0 ? &msgTx->ul_pdcch_pdu.pdcch_pdu.pdcch_pdu : NULL,
 			gNB->nr_gold_pdcch_dmrs[slot],
 			&gNB->common_vars.txdataF[0][txdataF_offset],
 			AMP, fp);
 
-    // free up entry in pdcch tables
-    if (pdcch_pdu_id>=0) gNB->pdcch_pdu[pdcch_pdu_id].frame = -1;
-    if (ul_pdcch_pdu_id>=0) gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].frame = -1;
-
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,0);
-    if (pdcch_pdu_id >= 0) gNB->pdcch_pdu[pdcch_pdu_id].frame = -1;
-    if (ul_pdcch_pdu_id >= 0) gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].frame = -1;
   }
  
-  for (int i=0; i<gNB->num_pdsch_rnti[slot]; i++) {
+  for (int i=0; i<msgTx->num_pdsch_slot; i++) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
-    LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", gNB->num_pdsch_rnti[slot],frame,slot);
-    nr_generate_pdsch(gNB,frame, slot);
+    LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", msgTx->num_pdsch_slot,frame,slot);
+    nr_generate_pdsch(msgTx, frame, slot);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
   for (int i=0;i<NUMBER_OF_NR_CSIRS_MAX;i++){
     NR_gNB_CSIRS_t *csirs = &gNB->csirs_pdu[i];
     if ((csirs->active == 1) &&
-	(csirs->frame == frame) &&
-	(csirs->slot == slot) ) {
+        (csirs->frame == frame) &&
+        (csirs->slot == slot) ) {
       LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params = csirs->csirs_pdu.csi_rs_pdu_rel15;
       nr_generate_csi_rs(gNB, AMP, csi_params, gNB->gNB_config.cell_config.phy_cell_id.value, slot);
@@ -206,7 +200,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     }
   }
 
-  if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
+  if (do_meas==1) stop_meas(gNB->phy_proc_tx);
 
   if ((frame&127) == 0) dump_pdsch_stats(gNB);
 

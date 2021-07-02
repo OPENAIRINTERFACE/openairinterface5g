@@ -254,48 +254,20 @@ void nr_emulate_dlsch_payload(uint8_t* pdu, uint16_t size) {
     *(pdu+i) = (uint8_t)rand();
 }
 
-int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
- 
-   uint16_t i;
-   int16_t first_free_index=-1;
- 
-   AssertFatal(gNB!=NULL,"gNB is null\n");
-   for (i=0; i<gNB->number_of_nr_dlsch_max; i++) {
-     AssertFatal(gNB->dlsch[i]!=NULL,"gNB->dlsch[%d] is null\n",i);
-     AssertFatal(gNB->dlsch[i][0]!=NULL,"gNB->dlsch[%d][0] is null\n",i);
-     LOG_D(PHY,"searching for rnti %x : dlsch_index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,
-	   gNB->dlsch[i][0]->harq_mask,gNB->dlsch[i][0]->rnti,first_free_index);
-     if ((gNB->dlsch[i][0]->harq_mask >0) &&
-	 (gNB->dlsch[i][0]->rnti==rnti))       return i;
-     else if ((gNB->dlsch[i][0]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
-   }
-   if (type == SEARCH_EXIST) return -1;
-   if (first_free_index != -1)
-     gNB->dlsch[first_free_index][0]->rnti = 0;
-   return first_free_index;
-   
-}
-
-
-void nr_fill_dlsch(PHY_VARS_gNB *gNB,
-                   int frame,
-                   int slot,
+void nr_fill_dlsch(processingData_L1tx_t *msgTx,
                    nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                    uint8_t *sdu) {
 
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &pdsch_pdu->pdsch_pdu_rel15;
  
-  int dlsch_id = find_nr_dlsch(rel15->rnti,gNB,SEARCH_EXIST);
-  AssertFatal( (dlsch_id>=0) && (dlsch_id<gNB->number_of_nr_dlsch_max),
-              "illegal or no dlsch_id found!!! rnti %04x dlsch_id %d\n",rel15->rnti,dlsch_id);
-  NR_gNB_DLSCH_t  *dlsch = gNB->dlsch[dlsch_id][0];
+  AssertFatal(msgTx->num_pdsch_slot < NUMBER_OF_NR_DLSCH_MAX,
+              "Number of PDSCH PDUs %d exceeded the limit\n",msgTx->num_pdsch_slot);
+  NR_gNB_DLSCH_t  *dlsch = msgTx->dlsch[msgTx->num_pdsch_slot][0];
   NR_DL_gNB_HARQ_t *harq  = &dlsch->harq_process;
   /// DLSCH struct
   memcpy((void*)&harq->pdsch_pdu, (void*)pdsch_pdu, sizeof(nfapi_nr_dl_tti_pdsch_pdu));
-  gNB->num_pdsch_rnti[slot]++;
+  msgTx->num_pdsch_slot++;
   AssertFatal(sdu!=NULL,"sdu is null\n");
   harq->pdu = sdu;
-
-
 }
 

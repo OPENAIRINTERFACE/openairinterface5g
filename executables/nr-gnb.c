@@ -113,15 +113,25 @@ time_stats_t softmodem_stats_rx_sf; // total rx time
 
 void tx_func(void *param) {
 
-  processingData_L1_t *info = (processingData_L1_t *) param;
+  processingData_L1tx_t *info = (processingData_L1tx_t *) param;
   PHY_VARS_gNB *gNB = info->gNB;
   int frame_tx = info->frame_tx;
   int slot_tx = info->slot_tx;
 
-  phy_procedures_gNB_TX(gNB, frame_tx,slot_tx, 1);
+  phy_procedures_gNB_TX(info,
+                        frame_tx,
+                        slot_tx,
+                        1);
+  if ((frame_tx&127) == 0) dump_pdsch_stats(gNB);
 
-  // start FH TX processing
+  // If the later of the 2 L1 tx thread finishes first,
+  // we wait for the earlier one to finish and start the RU thread
+  // to avoid realtime issues with USRP
   notifiedFIFO_elt_t *res; 
+  res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
+  pushNotifiedFIFO(gNB->resp_L1_tx,res);
+
+  // Start RU TX processing.
   res = pullTpool(gNB->resp_RU_tx, gNB->threadPool);
   processingData_RU_t *syncMsg = (processingData_RU_t *)NotifiedFifoData(res);
   syncMsg->frame_tx = frame_tx;
@@ -257,7 +267,6 @@ void rx_func(void *param) {
   LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
 
   // Call the scheduler
-
   start_meas(&gNB->ul_indication_stats);
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
@@ -269,10 +278,9 @@ void rx_func(void *param) {
   stop_meas(&gNB->ul_indication_stats);
   
   notifiedFIFO_elt_t *res; 
-
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
     res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
-    processingData_L1_t *syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
+    processingData_L1tx_t *syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
     syncMsg->gNB = gNB;
     syncMsg->frame_rx = frame_rx;
     syncMsg->slot_rx = slot_rx;
@@ -327,7 +335,6 @@ static void *process_stats_thread(void *param) {
 
   PHY_VARS_gNB *gNB  = (PHY_VARS_gNB *)param;
 
-  reset_meas(&gNB->phy_proc_tx);
   reset_meas(&gNB->dlsch_encoding_stats);
   reset_meas(&gNB->phy_proc_rx);
   reset_meas(&gNB->ul_indication_stats);
@@ -339,7 +346,8 @@ static void *process_stats_thread(void *param) {
   while(!oai_exit)
   {
     sleep(1);
-    print_meas(&gNB->phy_proc_tx, "L1 Tx processing", NULL, NULL);
+    print_meas(gNB->phy_proc_tx_0, "L1 Tx processing thread 0", NULL, NULL);
+    print_meas(gNB->phy_proc_tx_1, "L1 Tx processing thread 1", NULL, NULL);
     print_meas(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL);
     print_meas(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL);
     print_meas(&gNB->ul_indication_stats, "UL Indication", NULL, NULL);

@@ -37,7 +37,7 @@
 #include "nfapi_nr_interface_scf.h"
 
 // added
-void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,
+void handle_nr_nfapi_ssb_pdu(processingData_L1tx_t *msgTx,
 						int frame,int slot,
 						nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu);
 
@@ -51,7 +51,7 @@ void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
 			       int frame, int subframe,
 			       nfapi_nr_dl_tti_pdcch_pdu *dcl_dl_pdu);
 
-void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
+void handle_nr_nfapi_pdsch_pdu(processingData_L1tx_t *msgTx,
 			       nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                             uint8_t *sdu);
 
