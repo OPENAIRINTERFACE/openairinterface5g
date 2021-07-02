@@ -985,7 +985,7 @@ sctp_eNB_read_from_socket(
         if (SCTP_SHUTDOWN_EVENT == snp->sn_header.sn_type) {
             itti_unsubscribe_event_fd(TASK_SCTP, sctp_cnx->sd);
 
-            SCTP_DEBUG("Received SCTP SHUTDOWN EVENT\n");
+            SCTP_WARN("Received SCTP SHUTDOWN EVENT\n");
             close(sctp_cnx->sd);
 
             sctp_itti_send_association_resp(
