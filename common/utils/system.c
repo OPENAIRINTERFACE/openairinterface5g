@@ -96,15 +96,18 @@ static void read_pipe(int p, char *b, int size) {
   }
 }
 
-static int baseRunTimeCommand(char* cmd) {
+static int baseRunTimeCommand(char* cmd, size_t cmdSize) {
   FILE *fp;
   size_t retSize = 0;
 
   fp = popen(cmd, "r");
-
-  memset(cmd, 1, sizeof(*cmd));
-  retSize = fread(cmd, 1, sizeof(*cmd), fp);
-  fclose(fp);
+  if(fp) {
+    memset(cmd, 0, cmdSize);
+    retSize = fread(cmd, 1, cmdSize, fp);
+    fclose(fp);
+  } else {
+    LOG_D(HW,"%s:%d:%s: Cannot open %s\n", __FILE__, __LINE__, __FUNCTION__, cmd);
+  }
 
   if (retSize == 0) {
     return 0;
@@ -115,26 +118,26 @@ static int baseRunTimeCommand(char* cmd) {
 int checkIfFedoraDistribution(void) {
   char cmd[200];
 
-  memset(cmd, 1, 200);
+  memset(cmd, 0, 200);
   sprintf(cmd, "cat /etc/os-release | grep ID_LIKE | grep -ic fedora || true");
-  return baseRunTimeCommand(cmd);
+  return baseRunTimeCommand(cmd, 200);
 }
 
 int checkIfGenericKernelOnFedora(void) {
   char cmd[200];
 
-  memset(cmd, 1, 200);
+  memset(cmd, 0, 200);
   sprintf(cmd, "uname -a | grep -c rt || true");
-  return (1 - baseRunTimeCommand(cmd));
+  return (1 - baseRunTimeCommand(cmd, 200));
 }
 
 int checkIfInsideContainer(void) {
   char cmd[200];
   int res = 0;
 
-  memset(cmd, 1, 200);
+  memset(cmd, 0, 200);
   sprintf(cmd, "cat /proc/self/cgroup | egrep -c 'libpod|podman|kubepods' || true");
-  res = baseRunTimeCommand(cmd);
+  res = baseRunTimeCommand(cmd, 200);
   if (res > 0)
     return 1;
   else
