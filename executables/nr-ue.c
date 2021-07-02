@@ -329,7 +329,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     nfapi_nr_rach_indication_t *rach_ind = unqueue_matching(&nr_rach_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
     nfapi_nr_rx_data_indication_t *rx_ind = unqueue_matching(&nr_rx_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
     nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&nr_crc_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
-    nfapi_nr_uci_indication_t *uci_ind = unqueue_matching(&nr_uci_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
 
     if (rach_ind && rach_ind->number_of_pdus > 0)
     {
@@ -359,14 +358,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       };
       send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
       free(crc_ind->crc_list);
-    }
-    if (uci_ind && uci_ind->num_ucis > 0)
-    {
-      NR_UL_IND_t UL_INFO = {
-        .uci_ind = *uci_ind,
-      };
-      send_nsa_standalone_msg(&UL_INFO, uci_ind->header.message_id);
-      free(uci_ind->uci_list);
     }
   }
   return NULL;

@@ -229,7 +229,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
         nfapi_nr_dl_tti_request_pdu_t *pdu_list = &dl_tti_request->dl_tti_request_body.dl_tti_pdu_list[i];
         if (pdu_list->PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE)
         {
-            LOG_I(NR_PHY, "[%d, %d] PDSCH PDU for rnti %x in \n",
+            LOG_I(NR_PHY, "[%d, %d] PDSCH PDU for rnti %x\n",
                 dl_tti_request->SFN, dl_tti_request->Slot, pdu_list->pdsch_pdu.pdsch_pdu_rel15.rnti);
         }
 
@@ -248,9 +248,14 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                 for (int j = 0; j < num_dcis; j++)
                 {
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                    LOG_I(NR_PHY, "[%d, %d] PDCCH DCI (Payload) for rnti %x with PayloadSizeBits %d\n",
-                        dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI, dci_pdu_list->PayloadSizeBits);
-                    for (int k = 0; k < DCI_PAYLOAD_BYTE_LEN; k++)
+                    int num_bytes = dci_pdu_list->PayloadSizeBits / 8;
+                    if (dci_pdu_list->PayloadSizeBits % 8 > 0)
+                    {
+                        num_bytes++;
+                    }
+                    LOG_I(NR_PHY, "[%d, %d] PDCCH DCI (Payload) for rnti %x with PayloadSizeBits %d, num_bytes %d\n",
+                        dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI, dci_pdu_list->PayloadSizeBits, num_bytes);
+                    for (int k = 0; k < num_bytes; k++)
                     {
                         LOG_I(NR_MAC, "PDCCH DCI PDU payload[%d] = %d\n", k, dci_pdu_list->Payload[k]);
                         dl_info->dci_ind->dci_list[j].payloadBits[k] = dci_pdu_list->Payload[k];
@@ -327,9 +332,14 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
             for (int j = 0; j < num_dci; j++)
             {
                 nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                LOG_I(NR_PHY, "[%d, %d] ul_dci_req PDCCH DCI for rnti %x with PayloadSizeBits %d\n",
-                        ul_dci_req->SFN, ul_dci_req->Slot, dci_pdu_list->RNTI, dci_pdu_list->PayloadSizeBits);
-                for (int k = 0; k < DCI_PAYLOAD_BYTE_LEN; k++)
+                int num_bytes = dci_pdu_list->PayloadSizeBits / 8;
+                if (dci_pdu_list->PayloadSizeBits % 8 > 0)
+                {
+                    num_bytes++;
+                }
+                LOG_I(NR_PHY, "[%d, %d] ul_dci_req PDCCH DCI for rnti %x with PayloadSizeBits %d and num_bytes %d\n",
+                        ul_dci_req->SFN, ul_dci_req->Slot, dci_pdu_list->RNTI, dci_pdu_list->PayloadSizeBits, num_bytes);
+                for (int k = 0; k < num_bytes; k++)
                 {
                     LOG_I(NR_MAC, "PDCCH DCI PDU payload[%d] = %d\n", k, dci_pdu_list->Payload[k]);
                     dl_info->dci_ind->dci_list[j].payloadBits[k] = dci_pdu_list->Payload[k];
@@ -360,9 +370,20 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
         LOG_D(NR_PHY, "This is the pdu type %d in ul_tti_req\n", pdu_list->pdu_type);
         if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE)
         {
-          LOG_I(NR_PHY, "This is the tx_sfn %d and tx_slot %d for ul_tti_req. Not doing anything here since"
-                         " the slot and frame arent actually the reception values gNB specified.\n",
-                         ul_tti_req->SFN, ul_tti_req->Slot);
+            nfapi_nr_uci_indication_t *uci_ind = unqueue(&nr_uci_ind_queue);
+            if (uci_ind && uci_ind->num_ucis > 0)
+            {
+                uci_ind->sfn = ul_tti_req->SFN;
+                uci_ind->slot = ul_tti_req->Slot;
+                LOG_I(NR_MAC, "We have unqueued the previously filled uci_ind and updated the snf/slot to %d/%d.\n",
+                    uci_ind->sfn, uci_ind->slot);
+
+                NR_UL_IND_t UL_INFO = {
+                    .uci_ind = *uci_ind,
+                };
+                send_nsa_standalone_msg(&UL_INFO, uci_ind->header.message_id);
+                free(uci_ind->uci_list);
+            }
         }
 
     }

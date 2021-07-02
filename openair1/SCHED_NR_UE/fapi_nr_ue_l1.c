@@ -156,19 +156,14 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
             nfapi_nr_uci_indication_t *uci_ind = CALLOC(1, sizeof(*uci_ind));
             uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
             uci_ind->sfn = scheduled_response->frame;
-            uci_ind->slot = scheduled_response->slot + 6; // (+ 6) Specified by pucch->ul_slot field in gNB uci scheduler
-            if (uci_ind->slot >= 20)
-            {
-              uci_ind->slot %= 20;
-              uci_ind->sfn = (uci_ind->sfn + 1) % 1024;
-            }
+            uci_ind->slot = scheduled_response->slot;
             uci_ind->num_ucis = 1;
             uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
             for (int j = 0; j < uci_ind->num_ucis; j++)
             {
               nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
               uci_ind->uci_list[j].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
-              uci_ind->uci_list[j].pdu_size = 46; //Melissa hack TODO: What should this be? Format 1_1 DCI has PayloadBitSize = 46
+              uci_ind->uci_list[j].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
               pdu_0_1->pduBitmap = 2; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR
               pdu_0_1->handle = 0;
               pdu_0_1->rnti = dl_config->dl_config_list[0].dlsch_config_pdu.rnti;

@@ -714,6 +714,9 @@ int phy_nr_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rach_ind
 
 int phy_nr_uci_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_uci_indication_t *ind)
 {
+
+  LOG_I(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u\n",
+          __FUNCTION__,ind->sfn, ind->slot, ind->num_ucis);
   if(NFAPI_MODE == NFAPI_MODE_VNF)
   {
     UL_INFO.uci_ind = *ind;
