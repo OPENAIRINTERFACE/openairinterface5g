@@ -1102,12 +1102,18 @@ void nr_schedule_ue_spec(module_id_t module_id,
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
         while (size > 3) {
-          // we do not know how much data we will get from RLC, i.e., whether it
-          // will be longer than 256B or not. Therefore, reserve space for long header, then
-          // fetch data, then fill real length
-          NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
-          buf += 3;
-          size -= 3;
+
+          // Reserve space for short or long header.
+          // Check if data from RLC is equal or longer than 256B or not.
+          // Data from RLC was checked before, in function nr_store_dlsch_buffer
+          uint8_t *header = buf;
+          if (sched_ctrl->num_total_bytes >= 256) {
+            buf += sizeof(NR_MAC_SUBHEADER_LONG);
+            size -= sizeof(NR_MAC_SUBHEADER_LONG);
+          } else {
+            buf += sizeof(NR_MAC_SUBHEADER_SHORT);
+            size -= sizeof(NR_MAC_SUBHEADER_SHORT);
+          }
 
           /* limit requested number of bytes to what preprocessor specified, or
            * such that TBS is full */
@@ -1137,19 +1143,32 @@ void nr_schedule_ue_spec(module_id_t module_id,
           if (len == 0)
             break;
 
-          header->R = 0;
-          header->F = 1;
-          header->LCID = lcid;
-          header->L1 = (len >> 8) & 0xff;
-          header->L2 = len & 0xff;
+          if (sched_ctrl->num_total_bytes >= 256) {
+            ((NR_MAC_SUBHEADER_LONG *) header)->R = 0;
+            ((NR_MAC_SUBHEADER_LONG *) header)->F = 1;
+            ((NR_MAC_SUBHEADER_LONG *) header)->LCID = lcid;
+            ((NR_MAC_SUBHEADER_LONG *) header)->L1 = (len >> 8) & 0xff;
+            ((NR_MAC_SUBHEADER_LONG *) header)->L2 = len & 0xff;
+          } else {
+            ((NR_MAC_SUBHEADER_SHORT *) header)->R = 0;
+            ((NR_MAC_SUBHEADER_SHORT *) header)->F = 0;
+            ((NR_MAC_SUBHEADER_SHORT *) header)->LCID = lcid;
+            ((NR_MAC_SUBHEADER_SHORT *) header)->L = len & 0xff;
+          }
+
           size -= len;
           buf += len;
           dlsch_total_bytes += len;
         }
         if (len == 0) {
           /* RLC did not have data anymore, mark buffer as unused */
-          buf -= 3;
-          size += 3;
+          if (sched_ctrl->num_total_bytes >= 256) {
+            buf -= sizeof(NR_MAC_SUBHEADER_LONG);
+            size += sizeof(NR_MAC_SUBHEADER_LONG);
+          } else {
+            buf -= sizeof(NR_MAC_SUBHEADER_SHORT);
+            size += sizeof(NR_MAC_SUBHEADER_SHORT);
+          }
         }
       }
       else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
