@@ -152,6 +152,9 @@ int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 
 void find_period_offest_SR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset);
 
+void csi_period_offset(const NR_CSI_ReportConfig_t *csirep,
+                       int *period, int *offset);
+
 bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
                         uint16_t rbSize, uint8_t mcsIndex, uint8_t mcsTable,
                         uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,

@@ -3240,6 +3240,57 @@ uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i
   }
 }
 
+void csi_period_offset(const NR_CSI_ReportConfig_t *csirep,
+                       int *period, int *offset) {
+
+    NR_CSI_ReportPeriodicityAndOffset_PR p_and_o = csirep->reportConfigType.choice.periodic->reportSlotConfig.present;
+
+    switch(p_and_o){
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots4:
+        *period = 4;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots4;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots5:
+        *period = 5;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots5;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots8:
+        *period = 8;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots8;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots10:
+        *period = 10;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots10;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots16:
+        *period = 16;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots16;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots20:
+        *period = 20;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots20;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots40:
+        *period = 40;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots40;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots80:
+        *period = 80;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots80;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots160:
+        *period = 160;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots160;
+        break;
+      case NR_CSI_ReportPeriodicityAndOffset_PR_slots320:
+        *period = 320;
+        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
+        break;
+    default:
+      AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
+    }
+}
+
 void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                            frame_t frameP,
                                            NR_MIB_t *mib,
