@@ -1192,6 +1192,8 @@ typedef struct {
   rnti_t rnti;
   ///remove UE context flag
   boolean_t removeContextFlg;
+  ///remove RA flag
+  boolean_t raFlag;
 } UE_free_ctrl_t;
 /*! \brief REMOVE UE list used by eNB to order UEs/CC for deleting*/
 typedef struct {

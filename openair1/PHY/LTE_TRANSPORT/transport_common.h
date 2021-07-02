@@ -93,7 +93,8 @@
 #define PMI_2A_R1_1j 2
 
 typedef enum { SEARCH_EXIST=0,
-               SEARCH_EXIST_OR_FREE
+               SEARCH_EXIST_OR_FREE,
+               SEARCH_EXIST_RA
              } find_type_t;
 
 typedef enum {

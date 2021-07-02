@@ -66,6 +66,7 @@
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfigCommon.h"
 #include "NR_EstablishmentCause.h"
+#include "NR_SIB1.h"
 //-------------------
 
 #include "intertask_interface.h"
@@ -300,6 +301,7 @@ typedef struct gNB_RRC_UE_s {
   int                                UE_MRDC_Capability_size;
 
   NR_CellGroupConfig_t               *secondaryCellGroup;
+  NR_CellGroupConfig_t               *masterCellGroup;
   NR_RRCReconfiguration_t            *reconfig;
   NR_RadioBearerConfig_t             *rb_config;
 
@@ -315,7 +317,7 @@ typedef struct gNB_RRC_UE_s {
   NR_CipheringAlgorithm_t            ciphering_algorithm;
   e_NR_IntegrityProtAlgorithm        integrity_algorithm;
 
-  uint8_t                            status;
+  uint8_t                            StatusRrc;
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 
@@ -425,10 +427,21 @@ typedef struct {
   uint8_t                                   *SIB1;
   uint8_t                                   sizeof_SIB1;
 
+  uint8_t                                   *SIB23;
+  uint8_t                                   sizeof_SIB23;
+
   uint8_t                                   *ServingCellConfigCommon;
   uint8_t                                   sizeof_servingcellconfigcommon;
 
+  int                                       physCellId;
+
   NR_BCCH_BCH_Message_t                     mib;
+  NR_BCCH_BCH_Message_t                    *mib_DU;
+  NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
+  NR_SIB1_t                                *sib1;
+  NR_SIB2_t                                *sib2;
+  NR_SIB3_t                                *sib3;
+  NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
   int ssb_SubcarrierOffset;                  
   int pdsch_AntennaPorts;
   int pusch_AntennaPorts;
@@ -441,7 +454,6 @@ typedef struct {
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
   int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
-  int                                       physCellId;
   int                                       p_gNB;
 
 } rrc_gNB_carrier_data_t;
@@ -461,6 +473,9 @@ typedef struct {
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
+  ngran_node_t                                        node_type;
+  uint32_t                                            node_id;
+  char                                               *node_name;
   int                                                 module_id;
   eth_params_t                                        eth_params_s;
   rrc_gNB_carrier_data_t                              carrier;
@@ -471,6 +486,12 @@ typedef struct gNB_RRC_INST_s {
   hash_table_t                                        *s1ap_id2_s1ap_ids   ; // key is    content is rrc_ue_s1ap_ids_t
   hash_table_t                                        *initial_id2_ngap_ids;
   hash_table_t                                        *ngap_id2_ngap_ids   ;
+
+  /// NR cell id
+  uint64_t nr_cellid;
+
+  // RRC configuration
+  gNB_RrcConfigurationReq configuration;
 
   // other PLMN parameters
   /// Mobile country code
@@ -488,6 +509,10 @@ typedef struct gNB_RRC_INST_s {
   int srb1_timer_reordering;
   int srb1_timer_status_prohibit;
   int srs_enable[MAX_NUM_CCs];
+  uint16_t sctp_in_streams;
+  uint16_t sctp_out_streams;
+  int cell_info_configured;
+  pthread_mutex_t cell_info_mutex;
 
   // security configuration (preferred algorithms)
   nr_security_configuration_t security;

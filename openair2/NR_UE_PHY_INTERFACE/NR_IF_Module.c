@@ -47,7 +47,11 @@ const char *dl_indication_type[] = {"MIB", "SIB", "DLSCH", "DCI", "RAR"};
 static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
 
 //  L2 Abstraction Layer
-int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){
+int handle_bcch_bch(module_id_t module_id, int cc_id,
+                    unsigned int gNB_index, uint8_t *pduP,
+                    unsigned int additional_bits,
+                    uint32_t ssb_index, uint32_t ssb_length,
+                    uint16_t ssb_start_subcarrier, uint16_t cell_id){
 
   return nr_ue_decode_mib(module_id,
 			  cc_id,
@@ -55,7 +59,8 @@ int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, ui
 			  additional_bits,
 			  ssb_length,  //  Lssb = 64 is not support    
 			  ssb_index,
-			  pduP, 
+			  pduP,
+			  ssb_start_subcarrier,
 			  cell_id);
 
 }
@@ -90,7 +95,9 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   ret = nr_ue_scheduler(NULL, ul_info);
 
-  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx, mac->frame_type) && get_softmodem_params()->do_ra)
+  NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
+
+  if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
 
   switch(ret){
@@ -155,14 +162,15 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 
         switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
 
-        case FAPI_NR_RX_PDU_TYPE_MIB:
+        case FAPI_NR_RX_PDU_TYPE_SSB:
 
           ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.pdu,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.additional_bits,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_index,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_length,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_MIB;
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu,
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.additional_bits,
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_index,
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_length,
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_start_subcarrier,
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_SSB;
 
           break;
 

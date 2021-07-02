@@ -1061,12 +1061,31 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_InitialContextSetupRequestIEs_t, ie, container,
                                NGAP_ProtocolIE_ID_id_AllowedNSSAI, true);
   
-  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
+  //if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
     NGAP_AllowedNSSAI_Item_t *allow_nssai_item_p = NULL;
   
-    NGAP_DEBUG("AllowedNSSAI.list.count %d\n", ie->value.choice.AllowedNSSAI.list.count);
-    DevAssert(ie->value.choice.AllowedNSSAI.list.count > 0);
-    DevAssert(ie->value.choice.AllowedNSSAI.list.count <= NGAP_maxnoofAllowedS_NSSAIs);
+    NGAP_WARN("AllowedNSSAI.list.count %d\n", ie != NULL ? ie->value.choice.AllowedNSSAI.list.count : 2);
+    //NGAP_DEBUG("AllowedNSSAI.list.count %d\n", ie->value.choice.AllowedNSSAI.list.count);
+    //DevAssert(ie->value.choice.AllowedNSSAI.list.count > 0);
+    //DevAssert(ie->value.choice.AllowedNSSAI.list.count <= NGAP_maxnoofAllowedS_NSSAIs);
+
+    if (ie == NULL) {
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nb_allowed_nssais = 2;
+
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sST = 01;
+
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD_flag = 1;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD[0] = 01;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD[1] = 02;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD[2] = 03;
+
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sST = 01;
+ 
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD_flag = 1;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD[0] = 00;//11;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD[1] = 00;//22;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD[2] = 01;//33;
+    } else {
 
     NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nb_allowed_nssais = ie->value.choice.AllowedNSSAI.list.count;
     
@@ -1082,9 +1101,10 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
         NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD[2] = allow_nssai_item_p->s_NSSAI.sD->buf[2];
       }
     }
-  } else {/* ie != NULL */
-    return -1;
-  }
+   }
+  //} else {/* ie != NULL */
+  //  return -1;
+  //}
 
   /* id-UESecurityCapabilities */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_InitialContextSetupRequestIEs_t, ie, container,
