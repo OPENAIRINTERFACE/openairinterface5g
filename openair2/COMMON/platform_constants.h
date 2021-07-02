@@ -89,6 +89,7 @@
   #define MAX_gNB                      2
 #endif
 
+#define NUMBER_OF_NR_UCI_STATS_MAX 16
 #define MAX_MANAGED_ENB_PER_MOBILE  2
 #define MAX_MANAGED_GNB_PER_MOBILE  2
 

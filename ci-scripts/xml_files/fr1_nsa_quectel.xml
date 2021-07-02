@@ -48,12 +48,13 @@
 		<class>Initialize_UE</class>
 		<desc>Initialize Quectel</desc>
 		<id>idefix</id>
+		<UE_Trace>yes</UE_Trace>
 	</testCase>
 
 
 	<testCase id="010002">
-		<class>Detach_UE</class>
-		<desc>Detach UE</desc>
+		<class>Terminate_UE</class>
+		<desc>Terminate Quectel</desc>
 		<id>idefix</id>
 	</testCase>
 

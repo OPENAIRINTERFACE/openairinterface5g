@@ -88,7 +88,7 @@ uint64_t downlink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
 msc_interface_t msc_interface;
-
+uint32_t N_RB_DL = 106;
 
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
@@ -131,6 +131,12 @@ rrc_data_ind(
 {
 }
 
+int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
+                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
+                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
+    return 0;
+}
+
 int
 gtpv1u_create_s1u_tunnel(
   const instance_t                              instanceP,
@@ -163,6 +169,10 @@ gtpv1u_update_ngu_tunnel(
   const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
   const rnti_t                                  prior_rnti
 ){
+  return 0;
+}
+
+int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
   return 0;
 }
 
@@ -204,6 +214,17 @@ int is_x2ap_enabled(void)
   return 0;
 }
 
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
+                                            int             CC_idP,
+                                            int             UE_id,
+                                            rnti_t          rntiP,
+                                            const uint8_t   *sduP,
+                                            sdu_size_t      sdu_lenP,
+                                            const uint8_t   *sdu2P,
+                                            sdu_size_t      sdu2_lenP) {
+  return 0;
+}
+
 void processSlotTX(void *arg) {}
 
 //nFAPI P7 dummy functions
@@ -217,7 +238,7 @@ int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
 openair0_config_t openair0_cfg[MAX_CARDS];
 void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex,int8_t *ptrs_arg);
 void update_dmrs_config(NR_CellGroupConfig_t *scg,PHY_VARS_NR_UE *ue, int8_t* dmrs_arg);
-extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration 
+extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
 /* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs from command line of
    dlsim, does not search for CCE/PUCCH occasion but simply sets to 0 */
@@ -228,22 +249,22 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   AssertFatal(UE_info->num_UEs == 1, "can have only a single UE\n");
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[0];
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
 
   /* manually set free CCE to 0 */
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(sched_ctrl->active_bwp, target_ss);
+  sched_ctrl->search_space = get_searchspace(scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space);
-  sched_ctrl->coreset = get_coreset(
-      sched_ctrl->active_bwp, sched_ctrl->search_space, 1 /* dedicated */);
+  sched_ctrl->coreset = get_coreset(scc, sched_ctrl->active_bwp, sched_ctrl->search_space, target_ss);
   sched_ctrl->cce_index = 0;
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
+
   nr_set_pdsch_semi_static(scc,
-                           UE_info->secondaryCellGroup[0],
+                           UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            /* tda = */ 2,
                            /* num_dmrs_cdm_grps_no_data = */ 1,
@@ -293,7 +314,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 typedef struct {
   uint64_t       optmask;   //mask to store boolean config options
   uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
-  tpool_t        Tpool;             // thread pool 
+  tpool_t        Tpool;             // thread pool
 } nrUE_params_t;
 
 nrUE_params_t nrUE_params;
@@ -367,8 +388,6 @@ int main(int argc, char **argv)
   NR_UE_MAC_INST_t *UE_mac;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
   int run_initial_sync=0;
-  int pusch_tgt_snrx10 = 200;
-  int pucch_tgt_snrx10 = 200;
   int loglvl=OAILOG_INFO;
 
   //float target_error_rate = 0.01;
@@ -754,9 +773,9 @@ int main(int argc, char **argv)
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0,n_tx,1,pusch_tgt_snrx10,pucch_tgt_snrx10,scc,0,0,NULL);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, scc, 0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0,n_tx,1,pusch_tgt_snrx10,pucch_tgt_snrx10,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, scc, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   // reset preprocessor to the one of DLSIM after it has been set during
   // rrc_mac_config_req_gNB
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
@@ -915,8 +934,7 @@ int main(int argc, char **argv)
   //Configure UE
   rrc.carrier.MIB = (uint8_t*) malloc(4);
   rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
-
-  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib,secondaryCellGroup);
+  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib, NULL, NULL, secondaryCellGroup);
 
 
   nr_dcireq_t dcireq;

@@ -982,7 +982,14 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
         break;
       } else if (first_uci_stats == NULL && eNB->uci_stats[i].rnti == 0) first_uci_stats = &eNB->uci_stats[i];
 
-    if (uci_stats == NULL) { uci_stats=first_uci_stats; uci_stats->rnti = eNB->uci_vars[UCI_id].rnti;}
+    if (uci_stats == NULL) {
+      if (first_uci_stats == NULL) {
+        LOG_E(PHY,"first_uci_stats is NULL\n");
+        return -1;
+      }
+      uci_stats=first_uci_stats;
+      uci_stats->rnti = eNB->uci_vars[UCI_id].rnti;
+    }
 
     AssertFatal(uci_stats!=NULL,"No stat index found\n");
     uci_stats->frame = frame;

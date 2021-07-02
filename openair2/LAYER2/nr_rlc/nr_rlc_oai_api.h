@@ -42,7 +42,7 @@
 struct NR_RLC_Config;
 struct NR_LogicalChannelConfig;
 
-void nr_rlc_bearer_init(NR_RLC_BearerConfig_t *RLC_BearerConfig);
+void nr_rlc_bearer_init(NR_RLC_BearerConfig_t *RLC_BearerConfig, NR_RLC_BearerConfig__servedRadioBearer_PR rb_type);
 
 void nr_drb_config(struct NR_RLC_Config *rlc_Config, NR_RLC_Config_PR rlc_config_pr);
 
