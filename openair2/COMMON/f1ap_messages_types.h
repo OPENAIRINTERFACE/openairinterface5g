@@ -71,6 +71,29 @@ typedef struct f1ap_cu_setup_req_s {
    //
 } f1ap_cu_setup_req_t;
 
+typedef struct cellIDs_s {
+
+  // Served Cell Information
+  /* Tracking area code */
+  uint32_t tac;
+
+  /* Mobile Country Codes
+   * Mobile Network Codes
+   */
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t  mnc_digit_length;
+
+  // NR Global Cell Id
+  uint64_t nr_cellid;
+  // NR Physical Cell Ids
+  uint16_t nr_pci;
+  // Number of slide support items (max 16, could be increased to as much as 1024)
+  uint16_t num_ssi;
+  uint8_t sst;
+  uint8_t sd;
+} cellIDs_t;
+
 typedef struct f1ap_setup_req_s {
 
   // Midhaul networking parameters
@@ -100,26 +123,7 @@ typedef struct f1ap_setup_req_s {
   
   /// number of DU cells available
   uint16_t num_cells_available; //0< num_cells_available <= 512;
-
-  // Served Cell Information
-  /* Tracking area code */
-  uint32_t tac[F1AP_MAX_NB_CELLS];
-
-  /* Mobile Country Codes
-   * Mobile Network Codes
-   */
-  uint16_t mcc[F1AP_MAX_NB_CELLS];//[6];
-  uint16_t mnc[F1AP_MAX_NB_CELLS];//[6];
-  uint8_t  mnc_digit_length[F1AP_MAX_NB_CELLS];//[6];
-
-  // NR Global Cell Id
-  uint64_t nr_cellid[F1AP_MAX_NB_CELLS];
-  // NR Physical Cell Ids
-  uint16_t nr_pci[F1AP_MAX_NB_CELLS];
-  // Number of slide support items (max 16, could be increased to as much as 1024)
-  uint16_t num_ssi[F1AP_MAX_NB_CELLS];//[6];
-  uint8_t sst[F1AP_MAX_NB_CELLS];//[16][6];
-  uint8_t sd[F1AP_MAX_NB_CELLS];//[16][6];
+  cellIDs_t cell[F1AP_MAX_NB_CELLS];
   // fdd_flag = 1 means FDD, 0 means TDD
   int  fdd_flag;
 

@@ -1666,20 +1666,20 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         LOG_I(GNB_APP,"F1AP: gNB_DU_id[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
         F1AP_SETUP_REQ (msg_p).gNB_DU_name      = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
         LOG_I(GNB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_name);
-        F1AP_SETUP_REQ (msg_p).tac[k]              = *GNBParamList.paramarray[i][GNB_TRACKING_AREA_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: tac[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).tac[k]);
-        F1AP_SETUP_REQ (msg_p).mcc[k]              = *PLMNParamList.paramarray[0][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: mcc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mcc[k]);
-        F1AP_SETUP_REQ (msg_p).mnc[k]              = *PLMNParamList.paramarray[0][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: mnc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc[k]);
-        F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] = *PLMNParamList.paramarray[0][GNB_MNC_DIGIT_LENGTH].u8ptr;
-        LOG_I(GNB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
-        AssertFatal((F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 2) ||
-                    (F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 3),
+        F1AP_SETUP_REQ (msg_p).cell[k].tac              = *GNBParamList.paramarray[i][GNB_TRACKING_AREA_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: tac[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].tac);
+        F1AP_SETUP_REQ (msg_p).cell[k].mcc              = *PLMNParamList.paramarray[0][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: mcc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].mcc);
+        F1AP_SETUP_REQ (msg_p).cell[k].mnc              = *PLMNParamList.paramarray[0][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: mnc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].mnc);
+        F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length = *PLMNParamList.paramarray[0][GNB_MNC_DIGIT_LENGTH].u8ptr;
+        LOG_I(GNB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length);
+        AssertFatal((F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length == 2) ||
+                    (F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length == 3),
                     "BAD MNC DIGIT LENGTH %d",
-                    F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
-        F1AP_SETUP_REQ (msg_p).nr_cellid[k] = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
-        LOG_I(GNB_APP,"F1AP: nr_cellid[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).nr_cellid[k]);
+                    F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length);
+        F1AP_SETUP_REQ (msg_p).cell[k].nr_cellid = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
+        LOG_I(GNB_APP,"F1AP: nr_cellid[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).cell[k].nr_cellid);
         LOG_I(GNB_APP,"F1AP: CU_ip4_address in DU %s\n",RC.nrmac[k]->eth_params_n.remote_addr);
         LOG_I(GNB_APP,"FIAP: CU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address,(int)strlen(RC.nrmac[k]->eth_params_n.remote_addr));
         F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6 = 0;
@@ -1709,12 +1709,12 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
           pthread_mutex_unlock(&rrc->cell_info_mutex);
         } while (cell_info_configured == 0);
 
-        rrc->configuration.mcc[0] = F1AP_SETUP_REQ (msg_p).mcc[k];
-        rrc->configuration.mnc[0] = F1AP_SETUP_REQ (msg_p).mnc[k];
-        rrc->configuration.tac    = F1AP_SETUP_REQ (msg_p).tac[k];
-        rrc->nr_cellid = F1AP_SETUP_REQ (msg_p).nr_cellid[k];
-        F1AP_SETUP_REQ (msg_p).nr_pci[k]    = *rrc->configuration.scc->physCellId;
-        F1AP_SETUP_REQ (msg_p).num_ssi[k] = 0;
+        rrc->configuration.mcc[0] = F1AP_SETUP_REQ (msg_p).cell[k].mcc;
+        rrc->configuration.mnc[0] = F1AP_SETUP_REQ (msg_p).cell[k].mnc;
+        rrc->configuration.tac    = F1AP_SETUP_REQ (msg_p).cell[k].tac;
+        rrc->nr_cellid = F1AP_SETUP_REQ (msg_p).cell[k].nr_cellid;
+        F1AP_SETUP_REQ (msg_p).cell[k].nr_pci    = *rrc->configuration.scc->physCellId;
+        F1AP_SETUP_REQ (msg_p).cell[k].num_ssi = 0;
 
         if (rrc->configuration.scc->tdd_UL_DL_ConfigurationCommon) {
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);

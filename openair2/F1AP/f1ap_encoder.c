@@ -71,8 +71,7 @@ int f1ap_encode_ue_context_release_request(
   uint32_t                              *length);
   */
 
-int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length)
-{
+int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length) {
   ssize_t    encoded;
   DevAssert(pdu != NULL);
   DevAssert(buffer != NULL);
@@ -92,7 +91,6 @@ int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length)
   }
 
   *length = encoded;
-
   return encoded;
 }
 

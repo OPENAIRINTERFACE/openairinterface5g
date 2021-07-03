@@ -102,12 +102,8 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int first_symb,int num_symb) {
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   NR_gNB_COMMON *common_vars = &gNB->common_vars;
   PHY_MEASUREMENTS_gNB *measurements = &gNB->measurements;
-  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
-  double rx_gain = openair0_cfg[0].rx_gain[0];
-  double rx_gain_offset = openair0_cfg[0].rx_gain_offset[0];
   uint32_t *rb_mask = gNB->rb_mask_ul;
   int rb, offset, offset0, nb_rb, len;
-  uint32_t n0_subband_power_temp = 0;
   int32_t *ul_ch;
   int32_t n0_power_tot;
   int64_t n0_power_tot2;

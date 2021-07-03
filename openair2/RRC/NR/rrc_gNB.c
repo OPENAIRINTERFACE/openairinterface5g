@@ -431,7 +431,6 @@ rrc_gNB_generate_RRCSetup(
 //-----------------------------------------------------------------------------
 {
   LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
-  NR_SRB_ToAddModList_t        **SRB_configList = NULL;
   MessageDef                    *message_p;
 
   // T(T_GNB_RRC_SETUP,
@@ -551,7 +550,6 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
 //-----------------------------------------------------------------------------
 {
   LOG_I(NR_RRC, "generate RRCSetup for RRCReestablishmentRequest \n");
-  NR_SRB_ToAddModList_t        **SRB_configList = NULL;
   rrc_gNB_ue_context_t         *ue_context_pP   = NULL;
   gNB_RRC_INST                 *rrc_instance_p = RC.nrrrc[ctxt_pP->module_id];
   NR_ServingCellConfigCommon_t *scc=rrc_instance_p->carrier.servingcellconfigcommon;
@@ -559,7 +557,6 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
   ue_context_pP = rrc_gNB_get_next_free_ue_context(ctxt_pP, rrc_instance_p, 0);
 
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  SRB_configList = &ue_p->SRB_configList;
   ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
 						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
 						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
@@ -2744,9 +2741,9 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
     for (int j=0; j<RC.nb_nr_inst; j++) {
       gNB_RRC_INST *rrc = RC.nrrrc[j];
 
-      if (rrc->configuration.mcc[0] == f1_setup_req->mcc[i] &&
-          rrc->configuration.mnc[0] == f1_setup_req->mnc[i] &&
-          rrc->nr_cellid == f1_setup_req->nr_cellid[i]) {
+      if (rrc->configuration.mcc[0] == f1_setup_req->cell[i].mcc &&
+          rrc->configuration.mnc[0] == f1_setup_req->cell[i].mnc &&
+          rrc->nr_cellid == f1_setup_req->cell[i].nr_cellid) {
         // check that CU rrc instance corresponds to mcc/mnc/cgi (normally cgi should be enough, but just in case)
         rrc->carrier.MIB = malloc(f1_setup_req->mib_length[i]);
         rrc->carrier.sizeof_MIB = f1_setup_req->mib_length[i];
@@ -2789,7 +2786,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         AssertFatal(bcch_message->message.choice.c1->present == NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1,
                     "bcch_message->message.choice.c1->present != NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1\n");
         rrc->carrier.sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
-        rrc->carrier.physCellId = f1_setup_req->nr_pci[i];
+        rrc->carrier.physCellId = f1_setup_req->cell[i].nr_pci;
 	if (cu_cell_ind == 0) {
 	  // prepare F1_SETUP_RESPONSE + GNB_CU_CONFIGURATION_UPDATE
 	  if (msg_p == NULL) {
@@ -2809,7 +2806,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].mnc                           = rrc->configuration.mnc[0];
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].mnc_digit_length              = rrc->configuration.mnc_digit_length[0];
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].nr_cellid                     = rrc->nr_cellid;
-	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].nrpci                         = f1_setup_req->nr_pci[i];
+	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].nrpci                         = f1_setup_req->cell[i].nr_pci;
         int num_SI= 0;
 
         if (rrc->carrier.SIB23) {
@@ -2826,9 +2823,9 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         break;
       } else {// setup_req mcc/mnc match rrc internal list element
         LOG_W(NR_RRC,"[Inst %d] No matching MCC/MNC: rrc->mcc/f1_setup_req->mcc %d/%d rrc->mnc/f1_setup_req->mnc %d/%d rrc->nr_cellid/f1_setup_req->nr_cellid %ld/%ld \n",
-              j, rrc->configuration.mcc[0], f1_setup_req->mcc[i],
-                 rrc->configuration.mnc[0], f1_setup_req->mnc[i],
-                 rrc->nr_cellid, f1_setup_req->nr_cellid[i]);
+              j, rrc->configuration.mcc[0], f1_setup_req->cell[i].mcc,
+                 rrc->configuration.mnc[0], f1_setup_req->cell[i].mnc,
+                 rrc->nr_cellid, f1_setup_req->cell[i].nr_cellid);
       }
     }// for (int j=0;j<RC.nb_inst;j++)
 
@@ -3060,7 +3057,6 @@ int get_dl_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
 }
 void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   MessageDef *msg;
-  int id;
   rrc_gNB_ue_context_t *ue_context_p = NULL;
   FILE *fd=NULL;//fopen("nrRRCstats.log","w");
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(RC.nrrrc[ctxt_pP->module_id]->rrc_ue_head)) {

@@ -34,6 +34,6 @@
 #define F1AP_HANDLERS_H_
 
 int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
-                            const uint8_t * const data, const uint32_t data_length);
+                        const uint8_t *const data, const uint32_t data_length);
 
 #endif /* F1AP_HANDLERS_H_ */

@@ -44,7 +44,7 @@ extern f1ap_setup_req_t *f1ap_du_data_from_du;
 
 /* Handlers matrix. Only f1 related procedure present here */
 f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
-  
+
 
   { 0, 0, 0 }, /* Reset */
   { CU_handle_F1_SETUP_REQUEST, DU_handle_F1_SETUP_RESPONSE, DU_handle_F1_SETUP_FAILURE }, /* F1Setup */
@@ -73,24 +73,20 @@ f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
 };
 
 const char *f1ap_direction2String(int f1ap_dir) {
-static const char *f1ap_direction_String[] = {
-  "", /* Nothing */
-  "Initiating message", /* initiating message */
-  "Successfull outcome", /* successfull outcome */
-  "UnSuccessfull outcome", /* successfull outcome */
-};
-return(f1ap_direction_String[f1ap_dir]);
+  static const char *f1ap_direction_String[] = {
+    "", /* Nothing */
+    "Initiating message", /* initiating message */
+    "Successfull outcome", /* successfull outcome */
+    "UnSuccessfull outcome", /* successfull outcome */
+  };
+  return(f1ap_direction_String[f1ap_dir]);
 }
 
 int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
-                            const uint8_t * const data, const uint32_t data_length)
-{
-  F1AP_F1AP_PDU_t pdu;
+                        const uint8_t *const data, const uint32_t data_length) {
+  F1AP_F1AP_PDU_t pdu= {0};
   int ret;
-
   DevAssert(data != NULL);
-
-  memset(&pdu, 0, sizeof(pdu));
 
   if (f1ap_decode_pdu(&pdu, data, data_length) < 0) {
     LOG_E(F1AP, "Failed to decode PDU\n");
@@ -102,7 +98,7 @@ int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
         f1ap_message_decoded_callback))
       || (pdu.present > F1AP_F1AP_PDU_PR_unsuccessfulOutcome)) {
     LOG_E(F1AP, "[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
-               assoc_id, pdu.choice.initiatingMessage->procedureCode, pdu.present);
+          assoc_id, pdu.choice.initiatingMessage->procedureCode, pdu.present);
     ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
     return -1;
   }
@@ -112,8 +108,8 @@ int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
    */
   if (f1ap_messages_callback[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1] == NULL) {
     LOG_E(F1AP, "[SCTP %d] No handler for procedureCode %ld in %s\n",
-                assoc_id, pdu.choice.initiatingMessage->procedureCode,
-               f1ap_direction2String(pdu.present - 1));
+          assoc_id, pdu.choice.initiatingMessage->procedureCode,
+          f1ap_direction2String(pdu.present - 1));
     ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
     return -1;
   }

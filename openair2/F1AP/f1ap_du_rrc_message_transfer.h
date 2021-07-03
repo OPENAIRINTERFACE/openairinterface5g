@@ -45,12 +45,12 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_messa
 int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_message_t *msg);
 
 int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
-                                            int             CC_idP,
-                                            int             UE_id,
-                                            rnti_t          rntiP,
-                                            const uint8_t   *sduP,
-                                            sdu_size_t      sdu_lenP,
-					    const int8_t   *sdu2P,
-					    sdu_size_t      sdu2_lenP);
+    int             CC_idP,
+    int             UE_id,
+    rnti_t          rntiP,
+    const uint8_t   *sduP,
+    sdu_size_t      sdu_lenP,
+    const char   *sdu2P,
+    sdu_size_t      sdu2_lenP);
 
 #endif /* F1AP_DU_RRC_MESSAGE_TRANSFER_H_ */

@@ -31,7 +31,7 @@
  */
 
 #if HAVE_CONFIG_H_
-# include "config.h"
+  #include "config.h"
 #endif
 
 #ifndef F1AP_COMMON_H_
@@ -43,7 +43,7 @@
 #define F1AP_TRANSACTION_IDENTIFIER_NUMBER 3
 
 #if defined(EMIT_ASN_DEBUG_EXTERN)
-inline void ASN_DEBUG(const char *fmt, ...);
+  inline void ASN_DEBUG(const char *fmt, ...);
 #endif
 
 #include "F1AP_RAT-FrequencyPriorityInformation.h"
@@ -360,14 +360,14 @@ inline void ASN_DEBUG(const char *fmt, ...);
 
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)
-# error "You are compiling f1ap with the wrong version of ASN1C"
+  # error "You are compiling f1ap with the wrong version of ASN1C"
 #endif
 
 #ifndef FALSE
-# define FALSE (0)
+  #define FALSE (0)
 #endif
 #ifndef TRUE
-# define TRUE  (!FALSE)
+  #define TRUE  (!FALSE)
 #endif
 
 #define F1AP_UE_ID_FMT  "0x%06"PRIX32
@@ -375,20 +375,20 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "assertions.h"
 
 #if defined(ENB_MODE)
-# include "common/utils/LOG/log.h"
-# include "f1ap_default_values.h"
-# define F1AP_ERROR(x, args...) LOG_E(F1AP, x, ##args)
-# define F1AP_WARN(x, args...)  LOG_W(F1AP, x, ##args)
-# define F1AP_TRAF(x, args...)  LOG_I(F1AP, x, ##args)
-# define F1AP_INFO(x, args...) LOG_I(F1AP, x, ##args)
-# define F1AP_DEBUG(x, args...) LOG_I(F1AP, x, ##args)
+  #include "common/utils/LOG/log.h"
+  #include "f1ap_default_values.h"
+  #define F1AP_ERROR(x, args...) LOG_E(F1AP, x, ##args)
+  #define F1AP_WARN(x, args...)  LOG_W(F1AP, x, ##args)
+  #define F1AP_TRAF(x, args...)  LOG_I(F1AP, x, ##args)
+  #define F1AP_INFO(x, args...) LOG_I(F1AP, x, ##args)
+  #define F1AP_DEBUG(x, args...) LOG_I(F1AP, x, ##args)
 #else
-//# include "mme_default_values.h"
-# define F1AP_ERROR(x, args...) do { fprintf(stdout, "[F1AP][E]"x, ##args); } while(0)
-# define F1AP_WARN(x, args...)  do { fprintf(stdout, "[F1AP][W]"x, ##args); } while(0)
-# define F1AP_TRAF(x, args...)  do { fprintf(stdout, "[F1AP][T]"x, ##args); } while(0)
-# define F1AP_INFO(x, args...) do { fprintf(stdout, "[F1AP][I]"x, ##args); } while(0)
-# define F1AP_DEBUG(x, args...) do { fprintf(stdout, "[F1AP][D]"x, ##args); } while(0)
+  //# include "mme_default_values.h"
+  #define F1AP_ERROR(x, args...) do { fprintf(stdout, "[F1AP][E]"x, ##args); } while(0)
+  #define F1AP_WARN(x, args...)  do { fprintf(stdout, "[F1AP][W]"x, ##args); } while(0)
+  #define F1AP_TRAF(x, args...)  do { fprintf(stdout, "[F1AP][T]"x, ##args); } while(0)
+  #define F1AP_INFO(x, args...) do { fprintf(stdout, "[F1AP][I]"x, ##args); } while(0)
+  #define F1AP_DEBUG(x, args...) do { fprintf(stdout, "[F1AP][D]"x, ##args); } while(0)
 #endif
 
 //Forward declaration
@@ -475,5 +475,18 @@ int f1ap_du_add_cu_ue_id(f1ap_cudu_inst_t *f1_inst,
 int f1ap_cu_add_du_ue_id(f1ap_cudu_inst_t *f1_inst,
                          module_id_t       cu_ue_f1ap_id,
                          module_id_t       du_ue_f1ap_id);
+
+#define asn1cCalloc(VaR, TyPe, lOcPtr) TyPe *lOcPtr=VaR=(TyPe*) calloc(1,sizeof(TyPe));
+#define asn1cCallocOne(VaR, TyPe, VaLue) VaR=(TyPe*) calloc(1,sizeof(TyPe)); *VaR=VaLue;
+#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) TyPe *lOcPtr=(TyPe*) calloc(1,sizeof(TyPe)); ASN_SEQUENCE_ADD(&VaR,lOcPtr);
+
+//lts: C struct type is not homogeneous, so we need macros instead of functions
+#define addnRCGI(nRCGi, servedCelL) \
+  MCC_MNC_TO_PLMNID((servedCelL)->mcc,(servedCelL)-> mnc,(servedCelL)->mnc_digit_length, \
+		    &((nRCGi).pLMN_Identity));				\
+  NR_CELL_ID_TO_BIT_STRING((servedCelL)->nr_cellid, &((nRCGi).nRCellIdentity));
+
+extern f1ap_setup_req_t *f1ap_du_data_from_du;
+extern RAN_CONTEXT_t RC;
 
 #endif /* F1AP_COMMON_H_ */
