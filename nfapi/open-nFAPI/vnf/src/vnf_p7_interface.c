@@ -181,9 +181,11 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 	slot_start = timespec_add(slot_start, slot_duration);
 
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "next slot will start at %d.%d\n", slot_start.tv_sec, slot_start.tv_nsec);
-    
+    struct timespec ref_time;
+	clock_gettime(CLOCK_MONOTONIC, &ref_time);
+	uint8_t setup_time;
 	while(vnf_p7->terminate == 0)
-	{
+	{	
 		fd_set rfds;
 		int maxSock = 0;
 		FD_ZERO(&rfds);
@@ -192,6 +194,10 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		// Add the p7 socket
 		FD_SET(vnf_p7->socket, &rfds);
 		maxSock = vnf_p7->socket;
+		
+		struct timespec curr_time;
+		clock_gettime(CLOCK_MONOTONIC, &curr_time);
+		setup_time = curr_time.tv_sec - ref_time.tv_sec;
 		
 		clock_gettime(CLOCK_MONOTONIC, &pselect_start);
 		//long millisecond = pselect_start.tv_nsec / 1e6;
@@ -404,6 +410,19 @@ struct timespec current_time;
 	clock_gettime(CLOCK_MONOTONIC, &current_time);
 			// pselect timed out
 			
+			if(setup_time > 10){
+				// Call the scheduler
+				struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+				pthread_mutex_lock(&gNB->UL_INFO_mutex);
+				gNB->UL_INFO.frame     = vnf_frame;
+				gNB->UL_INFO.slot      = vnf_slot;
+
+				gNB->UL_INFO.module_id = gNB->Mod_id;
+				gNB->UL_INFO.CC_id     = gNB->CC_id;
+				gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+				pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+			}
+
 			while(curr != 0)
 			{
 				if (curr->slot == 19)
@@ -418,13 +437,16 @@ struct timespec current_time;
 				{
 				curr->slot++;
 				}
-				//printf("Frame = %d, slot = %d in VNF main loop. \n",curr->sfn,curr->slot);
+				printf("Frame = %d, slot = %d in VNF main loop. \n",curr->sfn,curr->slot);
 				vnf_frame = curr->sfn; vnf_slot = curr->slot;
 
 				struct timespec curr_time;
 				clock_gettime(CLOCK_MONOTONIC, &curr_time);
 
-				vnf_nr_sync(vnf_p7, curr);	
+				//vnf_nr_sync(vnf_p7, curr);	
+	
+				(vnf_p7->_public.sync_indication)(&(vnf_p7->_public), 1); //hardcoded sync
+
 				curr = curr->next;	
 			}
 			send_mac_slot_indications(vnf_p7);
@@ -435,19 +457,10 @@ struct timespec current_time;
 			// have a p7 message
 			if(FD_ISSET(vnf_p7->socket, &rfds))
 			{	
-			
+				printf("P7 message received \n");
 				vnf_nr_p7_read_dispatch_message(vnf_p7); 
 
-				// Call the scheduler
-				struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
-				pthread_mutex_lock(&gNB->UL_INFO_mutex);
-				gNB->UL_INFO.frame     = vnf_frame;
-				gNB->UL_INFO.slot      = vnf_slot;
-
-				gNB->UL_INFO.module_id = gNB->Mod_id;
-				gNB->UL_INFO.CC_id     = gNB->CC_id;
-				gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
-				pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+				
 			}
 		}
 		else

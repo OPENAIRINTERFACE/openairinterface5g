@@ -149,7 +149,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   nfapi_nr_ul_dci_request_t     *UL_dci_req  = Sched_INFO->UL_dci_req;
   frame_t                       frame        = Sched_INFO->frame;
   sub_frame_t                   slot         = Sched_INFO->slot;
-
+  //printf("Inside nr_schedule_resp SFN:%d, slot:%d \n",Sched_INFO->frame, Sched_INFO->slot);
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
 

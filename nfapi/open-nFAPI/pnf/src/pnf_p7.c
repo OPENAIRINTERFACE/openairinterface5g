@@ -1561,7 +1561,7 @@ uint8_t is_nr_p7_request_in_window(uint16_t sfn,uint16_t slot, const char* name,
 	// }
 	struct timespec curr_time;
 	clock_gettime(CLOCK_MONOTONIC, &curr_time);
-	printf("PNF SFN:%d, PNF slot:%d, VNF SFN:%d, VNF slot:%d, Curr time;%d.%d. \n",phy->sfn,phy->slot,sfn,slot,curr_time.tv_sec,curr_time.tv_nsec);
+	printf("PNF SFN:%d, PNF slot:%d, VNF SFN:%d, VNF slot:%d, SFN offset:%d, Curr time;%d.%d. \n",phy->sfn,phy->slot,sfn,slot, phy->sfn - sfn,curr_time.tv_sec,curr_time.tv_nsec);
 	if(current_sfn_slot_dec <= recv_sfn_slot_dec + timing_window){
 		in_window = 1;
 		NFAPI_TRACE(NFAPI_TRACE_NOTE, "[%d] %s is in window %d\n", current_sfn_slot_dec, name, recv_sfn_slot_dec);
@@ -1578,7 +1578,7 @@ uint8_t is_nr_p7_request_in_window(uint16_t sfn,uint16_t slot, const char* name,
 		
 	}//Need to add more cases
 	
-
+	in_window = 0; // gokul
 	return in_window;
 }
 
