@@ -85,8 +85,7 @@ int CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
 /*
  * gNB-CU Configuration Update
  */
-int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_idP);
-
+int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configuration_update_t *f1ap_gnb_cu_configuration_update);
 int CU_handle_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
                                                   uint32_t assoc_id,
                                                   uint32_t stream,

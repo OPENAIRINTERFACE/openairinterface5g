@@ -83,6 +83,9 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "openair3/NAS/UE/nas_ue_task.h"
 #include <executables/split_headers.h>
 #include <executables/nr-uesoftmodem.h>
+#if ITTI_SIM
+#include "nr_nas_msg_sim.h"
+#endif
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -412,6 +415,12 @@ int create_tasks_nrue(uint32_t ue_nb) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
     }
+
+    LOG_D(NR_RRC,"create TASK_NAS_NRUE\n");
+    if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for NAS UE failed\n");
+      return -1;
+    }
   }
 
 
@@ -579,8 +588,14 @@ int main( int argc, char **argv )
     init_pdcp();
 
   if (RC.nb_nr_inst > 0)  {
+    nr_read_config_and_init();
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
+    for (int gnb_id = 0; gnb_id < RC.nb_nr_inst; gnb_id++) {
+      MessageDef *msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
+      NRRRC_CONFIGURATION_REQ(msg_p) = RC.nrrrc[gnb_id]->configuration;
+      itti_send_msg_to_task (TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
+    }
   } else {
     printf("No ITTI, Initializing L1\n");
     return 0;

@@ -165,6 +165,7 @@ int16_t idft12_im[12][12] = {
 
 
 void nr_decode_pucch0(PHY_VARS_gNB *gNB,
+                      int frame,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
@@ -181,6 +182,19 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 	      "Either bit_len_harq (%d) or sr_flag (%d) must be > 0\n",
 	      pucch_pdu->bit_len_harq,pucch_pdu->sr_flag);
 
+  NR_gNB_UCI_STATS_t *uci_stats=NULL;
+  NR_gNB_UCI_STATS_t *first_uci_stats=NULL;
+  for (int i=0;i<NUMBER_OF_NR_UCI_STATS_MAX;i++)
+     if (gNB->uci_stats[i].rnti == pucch_pdu->rnti) {
+        uci_stats = &gNB->uci_stats[i];
+        break;
+     } else if (first_uci_stats == NULL && gNB->uci_stats[i].rnti == 0) first_uci_stats = &gNB->uci_stats[i];
+
+  if (uci_stats == NULL) { uci_stats=first_uci_stats; uci_stats->rnti = pucch_pdu->rnti;}
+
+  AssertFatal(uci_stats!=NULL,"No stat index found\n");
+  uci_stats->frame = frame;
+
   if(pucch_pdu->bit_len_harq==0){
     mcs=table1_mcs;
     nr_sequences=1;
@@ -193,6 +207,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     mcs=table2_mcs;
     nr_sequences=8>>(1-pucch_pdu->sr_flag);
   }
+
+  LOG_D(PHY,"pucch0: nr_symbols %d, start_symbol %d, prb_start %d, second_hop_prb %d,  group_hop_flag %d, sequence_hop_flag %d, O_ACK %d, O_SR %d, mcs %d\n",pucch_pdu->nr_of_symbols,pucch_pdu->start_symbol_index,pucch_pdu->prb_start,pucch_pdu->second_hop_prb,pucch_pdu->group_hop_flag,pucch_pdu->sequence_hop_flag,pucch_pdu->bit_len_harq,pucch_pdu->sr_flag,mcs[0]);
 
   int cs_ind = get_pucch0_cs_lut_index(gNB,pucch_pdu);
   /*
@@ -220,178 +236,133 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
    * x(l*12+n) = r_u_v_alpha_delta(n)
    */
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
-  uint8_t u=0,v=0;//,delta=0;
-  // if frequency hopping is disabled by the higher-layer parameter PUCCH-frequency-hopping
-  //              n_hop = 0
-  // if frequency hopping is enabled by the higher-layer parameter PUCCH-frequency-hopping
-  //              n_hop = 0 for first hop
-  //              n_hop = 1 for second hop
-  uint8_t n_hop = 0;  // Frequnecy hopping not implemented FIXME!!
+  uint8_t u[2]={0,0},v[2]={0,0};
 
   // x_n contains the sequence r_u_v_alpha_delta(n)
 
   int n,i,l;
-  nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,n_hop,slot,&u,&v); // calculating u and v value
+  int prb_offset[2] = {pucch_pdu->bwp_start+pucch_pdu->prb_start, pucch_pdu->bwp_start+pucch_pdu->prb_start};
 
-  uint32_t re_offset=0;
+  nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,0,slot,&u[0],&v[0]); // calculating u and v value first hop
+  LOG_D(PHY,"pucch0: u %d, v %d\n",u[0],v[0]);
+
+
+  if (pucch_pdu->freq_hop_flag == 1) {
+    nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,1,slot,&u[1],&v[1]); // calculating u and v value second hop
+    LOG_D(PHY,"pucch0 second hop: u %d, v %d\n",u[1],v[1]);
+    prb_offset[1] = pucch_pdu->bwp_start+pucch_pdu->second_hop_prb;
+  }
+
+  AssertFatal(pucch_pdu->nr_of_symbols < 3,"nr_of_symbols %d not allowed\n",pucch_pdu->nr_of_symbols);
+  uint32_t re_offset[2]={0,0};
   uint8_t l2;
 
-#ifdef OLD_IMPL
-  int16_t x_n_re[nr_sequences][24],x_n_im[nr_sequences][24];
+  const int16_t *x_re[2],*x_im[2];
+  x_re[0] = table_5_2_2_2_2_Re[u[0]];
+  x_im[0] = table_5_2_2_2_2_Im[u[0]];
+  x_re[1] = table_5_2_2_2_2_Re[u[1]];
+  x_im[1] = table_5_2_2_2_2_Im[u[1]];
 
-  for(i=0;i<nr_sequences;i++){ 
-    // we proceed to calculate alpha according to TS 38.211 Subclause 6.3.2.2.2
-    for (l=0; l<pucch_pdu->nr_of_symbols; l++){
-      double alpha = nr_cyclic_shift_hopping(pucch_pdu->hopping_id,pucch_pdu->initial_cyclic_shift,mcs[i],l,pucch_pdu->start_symbol_index,slot);
-#ifdef DEBUG_NR_PUCCH_RX
-      printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d/%d,mcs %d)\n",u,v,alpha,l,l+pucch_pdu->start_symbol_index,mcs[i]);
-      printf("lut output %d\n",gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index]);
-#endif
-      alpha=0.0;
-      for (n=0; n<12; n++){
-        x_n_re[i][(12*l)+n] = (int16_t)((int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)
-						   - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)))); // Re part of base sequence shifted by alpha
-        x_n_im[i][(12*l)+n] =(int16_t)((int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)
-						  + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)))); // Im part of base sequence shifted by alpha
-#ifdef DEBUG_NR_PUCCH_RX
-	printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \tx_n(l=%d,n=%d)=(%d,%d) %d,%d\n",
-	       u,v,alpha,l,n,x_n_re[i][(12*l)+n],x_n_im[i][(12*l)+n],
-	       (int32_t)(round(32767*cos(alpha*n))),
-	       (int32_t)(round(32767*sin(alpha*n))));
-#endif
-      }
-    }
-  }
-  /*
-   * Implementing TS 38.211 Subclause 6.3.2.3.2 Mapping to physical resources
-   */
-
-  int16_t r_re[24],r_im[24];
-
-  for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
-
-    l2 = l+pucch_pdu->start_symbol_index;
-    re_offset = (12*pucch_pdu->prb_start) + (12*pucch_pdu->bwp_start) + frame_parms->first_carrier_offset;
-    if (re_offset>= frame_parms->ofdm_symbol_size) 
-      re_offset-=frame_parms->ofdm_symbol_size;
-
-    for (n=0; n<12; n++){
-
-      r_re[(12*l)+n]=((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[0];
-      r_im[(12*l)+n]=((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[1];
-#ifdef DEBUG_NR_PUCCH_RX
-      printf("\t [nr_generate_pucch0] mapping to RE \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \ttxptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
-	     frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,(l2*frame_parms->ofdm_symbol_size)+re_offset,
-	     l,n,((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[0],
-	     ((int16_t *)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset])[1]);
-#endif
-      re_offset++;
-      if (re_offset>= frame_parms->ofdm_symbol_size) 
-        re_offset-=frame_parms->ofdm_symbol_size;
-    }
-  }  
-  double corr[nr_sequences],corr_re[nr_sequences],corr_im[nr_sequences];
-  memset(corr,0,nr_sequences*sizeof(double));
-  memset(corr_re,0,nr_sequences*sizeof(double));
-  memset(corr_im,0,nr_sequences*sizeof(double));
-  for(i=0;i<nr_sequences;i++){
-    for(l=0;l<pucch_pdu->nr_of_symbols;l++){
-      for(n=0;n<12;n++){
-        corr_re[i]+= (double)(r_re[12*l+n])/32767*(double)(x_n_re[i][12*l+n])/32767+(double)(r_im[12*l+n])/32767*(double)(x_n_im[i][12*l+n])/32767;
-	corr_im[i]+= (double)(r_re[12*l+n])/32767*(double)(x_n_im[i][12*l+n])/32767-(double)(r_im[12*l+n])/32767*(double)(x_n_re[i][12*l+n])/32767;
-      }
-    }
-    corr[i]=corr_re[i]*corr_re[i]+corr_im[i]*corr_im[i];
-  }
-  float max_corr=corr[0];
-  uint8_t index=0;
-  for(i=1;i<nr_sequences;i++){
-    if(corr[i]>max_corr){
-      index= i;
-      max_corr=corr[i];
-    }
-  }
-#else
-
-  const int16_t *x_re = table_5_2_2_2_2_Re[u],*x_im = table_5_2_2_2_2_Im[u];
-  int16_t xr[24]  __attribute__((aligned(32)));
-  //int16_t xrt[24] __attribute__((aligned(32)));
-  int32_t xrtmag=0;
+  int16_t xr[2][24]  __attribute__((aligned(32)));
+  int64_t xrtmag=0;
   uint8_t maxpos=0;
-  int n2=0;
   uint8_t index=0;
-  memset((void*)xr,0,24*sizeof(int16_t));
+  memset((void*)xr[0],0,24*sizeof(int16_t));
+  memset((void*)xr[1],0,24*sizeof(int16_t));
+  int n2;
 
   for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
-
     l2 = l+pucch_pdu->start_symbol_index;
-    re_offset = (12*pucch_pdu->prb_start) + frame_parms->first_carrier_offset;
-    if (re_offset>= frame_parms->ofdm_symbol_size) 
-      re_offset-=frame_parms->ofdm_symbol_size;
+    re_offset[l] = (12*prb_offset[l]) + frame_parms->first_carrier_offset;
+    if (re_offset[l]>= frame_parms->ofdm_symbol_size)
+      re_offset[l]-=frame_parms->ofdm_symbol_size;
   
-    AssertFatal(re_offset+12 < frame_parms->ofdm_symbol_size,"pucch straddles DC carrier, handle this!\n");
+    AssertFatal(re_offset[l]+12 < frame_parms->ofdm_symbol_size,"pucch straddles DC carrier, handle this!\n");
 
-    int16_t *r=(int16_t*)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size+re_offset)];
+    int16_t *r=(int16_t*)&rxdataF[0][(l2*frame_parms->ofdm_symbol_size)+re_offset[l]];
+    n2=0;
     for (n=0;n<12;n++,n2+=2) {
-      xr[n2]  =(int16_t)(((int32_t)x_re[n]*r[n2]+(int32_t)x_im[n]*r[n2+1])>>15);
-      xr[n2+1]=(int16_t)(((int32_t)x_re[n]*r[n2+1]-(int32_t)x_im[n]*r[n2])>>15);
+      xr[l][n2]  =(int16_t)(((int32_t)x_re[l][n]*r[n2]+(int32_t)x_im[l][n]*r[n2+1])>>15);
+      xr[l][n2+1]=(int16_t)(((int32_t)x_re[l][n]*r[n2+1]-(int32_t)x_im[l][n]*r[n2])>>15);
 #ifdef DEBUG_NR_PUCCH_RX
-      printf("x (%d,%d), r (%d,%d), xr (%d,%d)\n",
-	     x_re[n],x_im[n],r[n2],r[n2+1],xr[n2],xr[n2+1]);
+      printf("x (%d,%d), r%d.%d (%d,%d), xr (%d,%d)\n",
+	     x_re[l][n],x_im[l][n],l2,re_offset[l],r[n2],r[n2+1],xr[l][n2],xr[l][n2+1]);
 #endif
     }
   }
-  int32_t corr_re,corr_im,temp,no_corr=0;
-  int32_t av_corr=0;
+
+  int32_t corr_re[2];
+  int32_t corr_im[2];
+  //int32_t no_corr = 0;
   int seq_index;
+  int64_t temp;
+  int64_t av_corr=0;
 
   for(i=0;i<nr_sequences;i++){
-    corr_re=0;corr_im=0;
-    n2=0;
     for (l=0;l<pucch_pdu->nr_of_symbols;l++) {
-
+      corr_re[l]=0;
+      corr_im[l]=0;
       seq_index = (pucch_pdu->initial_cyclic_shift+
 		   mcs[i]+
 		   gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index])%12;
+#ifdef DEBUG_NR_PUCCH_RX
+      printf("PUCCH symbol %d seq %d, seq_index %d, mcs %d\n",l,i,seq_index,mcs[i]);
+#endif
+      n2=0;
       for (n=0;n<12;n++,n2+=2) {
-	corr_re+=(xr[n2]*idft12_re[seq_index][n]+xr[n2+1]*idft12_im[seq_index][n])>>15;
-	corr_im+=(xr[n2]*idft12_im[seq_index][n]-xr[n2+1]*idft12_re[seq_index][n])>>15;
+	       corr_re[l]+=(xr[l][n2]*idft12_re[seq_index][n]+xr[l][n2+1]*idft12_im[seq_index][n])>>15;
+	       corr_im[l]+=(xr[l][n2]*idft12_im[seq_index][n]-xr[l][n2+1]*idft12_re[seq_index][n])>>15;
       }
     }
 
 #ifdef DEBUG_NR_PUCCH_RX
-    printf("PUCCH IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re,corr_im,10*log10(corr_re*corr_re + corr_im*corr_im));
+    LOG_I(PHY,"PUCCH IDFT = (%d,%d)=>%f\n",corr_re[0],corr_im[0],10*log10((double)corr_re[0]*corr_re[0] + (double)corr_im[0]*corr_im[0]));
+    if (l>1) LOG_I(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[1],corr_im[1],10*log10((double)corr_re[1]*corr_re[1] + (double)corr_im[1]*corr_im[1]));
 #endif
-    temp=corr_re*corr_re + corr_im*corr_im;
+    if (pucch_pdu->freq_hop_flag == 0 && l==1) // non-coherent correlation
+      temp=(int64_t)corr_re[0]*corr_re[0] + (int64_t)corr_im[0]*corr_im[0];
+    else if (pucch_pdu->freq_hop_flag == 0 && l==2) {
+      int64_t corr_re2 = (int64_t)corr_re[0]+corr_re[1];
+      int64_t corr_im2 = (int64_t)corr_im[0]+corr_im[1];
+      // coherent combining of 2 symbols and then complex modulus for single-frequency case
+      temp=corr_re2*corr_re2 + corr_im2*corr_im2;
+    }
+    else if (pucch_pdu->freq_hop_flag == 1)
+      // full non-coherent combining of 2 symbols for frequency-hopping case
+      temp = (int64_t)corr_re[0]*corr_re[0] + (int64_t)corr_im[0]*corr_im[0] + (int64_t)corr_re[1]*corr_re[1] + (int64_t)corr_im[1]*corr_im[1];
+    else AssertFatal(1==0,"shouldn't happen\n");
+
     av_corr+=temp;
     if (temp>xrtmag) {
       xrtmag=temp;
       maxpos=i;
+      uci_stats->current_pucch0_stat0 = dB_fixed64((int64_t)corr_re[0]*corr_re[0] + (int64_t)corr_im[0]*corr_im[0]);
+      if (l==2) uci_stats->current_pucch0_stat1 = dB_fixed64((int64_t)corr_re[1]*corr_re[1] + (int64_t)corr_im[1]*corr_im[1]);
     }
   }
-  if(nr_sequences>1)
-    no_corr=(av_corr-xrtmag)/(nr_sequences-1);
-  av_corr/=nr_sequences;
 
-  uint8_t xrtmag_dB = dB_fixed(xrtmag);
+  av_corr/=nr_sequences/l;
+
+  uint8_t xrtmag_dB = dB_fixed64(xrtmag);
  
 #ifdef DEBUG_NR_PUCCH_RX
   printf("PUCCH 0 : maxpos %d\n",maxpos);
 #endif
 
   index=maxpos;
-#endif
 
   // estimate CQI for MAC (from antenna port 0 only)
-  int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)) - (10*gNB->measurements.n0_power_tot_dB);
+  int max_n0 = uci_stats->pucch0_n00>uci_stats->pucch0_n01 ? uci_stats->pucch0_n00:uci_stats->pucch0_n01;
+  int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset[0]],12)) - (10*max_n0);
   int cqi;
   if (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
   else cqi=(640+SNRtimes10)/5;
 
+  uci_stats->pucch0_thres = gNB->pucch0_thres + (10*max_n0);
   bool no_conf=false;
   if (nr_sequences>1) {
-    if ((xrtmag_dB<(11+dB_fixed(no_corr))) || (dB_fixed(av_corr)<(13+gNB->measurements.n0_power_tot_dB))) //TODO  these are temporary threshold based on measurments with the phone
+    if (10*xrtmag_dB < uci_stats->pucch0_thres)
       no_conf=true;
   }
   gNB->bad_pucch += no_conf;
@@ -401,13 +372,18 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   uci_pdu->rnti = pucch_pdu->rnti;
   uci_pdu->ul_cqi = cqi;
   uci_pdu->timing_advance = 0xffff; // currently not valid
-  uci_pdu->rssi = 1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset],12)));
+  uci_pdu->rssi = 1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset[0]],12)));
+
+  uci_stats->pucch0_n00 = gNB->measurements.n0_subband_power_tot_dB[prb_offset[0]];
+  uci_stats->pucch0_n01 = gNB->measurements.n0_subband_power_tot_dB[prb_offset[1]];
   if (pucch_pdu->bit_len_harq==0) {
     uci_pdu->harq = NULL;
     uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
-    uci_pdu->sr->sr_confidence_level = (xrtmag_dB<(13+gNB->measurements.n0_power_tot_dB)) ? 1 : 0;
+    uci_pdu->sr->sr_confidence_level = no_conf ? 1 : 0;
+    uci_stats->pucch0_sr_trials++;
     if (xrtmag_dB>(gNB->measurements.n0_power_tot_dB)) {
       uci_pdu->sr->sr_indication = 1;
+      uci_stats->pucch0_positive_SR++;
     } else {
       uci_pdu->sr->sr_indication = 0;
     }
@@ -415,16 +391,18 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   else if (pucch_pdu->bit_len_harq==1) {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
     uci_pdu->harq->num_harq = 1;
-    uci_pdu->harq->harq_confidence_level = (no_conf) ? 1 : 0;
+    uci_pdu->harq->harq_confidence_level = no_conf ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
-    LOG_D(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d\n",
-          slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
+    LOG_D(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d n0 %d pucch0_thres %d\n",
+          slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB,max_n0,uci_stats->pucch0_thres);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
-      uci_pdu->sr->sr_confidence_level = (no_conf) ? 1 : 0;
+      uci_pdu->sr->sr_confidence_level = no_conf ? 1 : 0;
+      uci_stats->pucch0_positive_SR++;
     }
+    uci_stats->pucch01_trials++;
   }
   else {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
@@ -433,8 +411,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);
     uci_pdu->harq->harq_list[1].harq_value = index&0x01;
     uci_pdu->harq->harq_list[0].harq_value = (index>>1)&0x01;
-    LOG_D(PHY, "Slot %d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d\n",
-          slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level);
+    LOG_D(PHY, "Slot %d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d, xrt_mag %d\n",
+          slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
@@ -1667,4 +1645,33 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     uci_pdu->pduBitmap|=8;
   }
 }
-    
+
+void nr_dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
+
+   int strpos=0;
+   char output[16384];
+
+   for (int i=0;i<NUMBER_OF_NR_UCI_STATS_MAX;i++){
+      if (gNB->uci_stats[i].rnti>0) {
+         NR_gNB_UCI_STATS_t *uci_stats = &gNB->uci_stats[i];
+         if (uci_stats->pucch0_sr_trials > 0)
+             strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch0_sr_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_sr_thres %d dB, current pucch1_stat0 %d dB, current pucch1_stat1 %d dB, positive SR count %d\n",
+                             i,uci_stats->rnti,uci_stats->pucch0_sr_trials,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_sr_thres,dB_fixed(uci_stats->current_pucch0_sr_stat0),dB_fixed(uci_stats->current_pucch0_sr_stat1),uci_stats->pucch0_positive_SR);
+         if (uci_stats->pucch01_trials > 0)
+            strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current pucch0_stat0 %d dB, current pucch1_stat1 %d dB, pucch01_DTX %d\n",
+                            i,uci_stats->rnti,uci_stats->pucch01_trials,uci_stats->pucch0_n01,uci_stats->pucch0_n01,uci_stats->pucch0_thres,dB_fixed(uci_stats->current_pucch0_stat0),dB_fixed(uci_stats->current_pucch0_stat1),uci_stats->pucch01_DTX);
+
+         if (uci_stats->pucch02_trials > 0)
+             strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current pucch0_stat0 %d dB, current pucch0_stat1 %d dB, pucch01_DTX %d\n",
+                             i,uci_stats->rnti,uci_stats->pucch02_trials,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,dB_fixed(uci_stats->current_pucch0_stat0),dB_fixed(uci_stats->current_pucch0_stat1),uci_stats->pucch02_DTX);
+
+         if (uci_stats->pucch2_trials > 0)
+           strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch2_trials %d, pucch2_DTX %d\n",
+                           i,uci_stats->rnti,
+                           uci_stats->pucch2_trials,
+                           uci_stats->pucch2_DTX);
+       }
+    }
+    if (fd) fprintf(fd,"%s",output);
+    else    printf("%s",output);
+}

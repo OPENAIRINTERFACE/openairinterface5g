@@ -49,6 +49,11 @@ static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu)
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_F1Setup\n", __func__);
       break;
 
+    case F1AP_ProcedureCode_id_gNBCUConfigurationUpdate:
+      //res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+      LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_gNBCUConfigurationUpdate\n", __func__);
+      break;
+
     case F1AP_ProcedureCode_id_InitialULRRCMessageTransfer:
       //res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_InitialULRRCMessageTransfer\n", __func__);
@@ -68,6 +73,9 @@ static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu)
       break;
     case F1AP_ProcedureCode_id_UEContextReleaseRequest:
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_UEContextReleaseRequest\n", __func__);
+      break;
+    case F1AP_ProcedureCode_id_UEContextSetup:
+      LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_UEContextSetup\n", __func__);
       break;
     // case F1AP_ProcedureCode_id_InitialContextSetup:
     //   res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
@@ -100,6 +108,10 @@ static int f1ap_decode_successful_outcome(F1AP_F1AP_PDU_t *pdu)
   switch(pdu->choice.successfulOutcome->procedureCode) {
     case F1AP_ProcedureCode_id_F1Setup:
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_F1Setup\n", __func__);
+      break;
+
+    case F1AP_ProcedureCode_id_gNBCUConfigurationUpdate:
+      LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_gNBCUConfigurationUpdate\n", __func__);
       break;
 
     case F1AP_ProcedureCode_id_UEContextRelease:
@@ -157,7 +169,7 @@ int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
   //LOG_I(F1AP, "f1ap_decode_pdu.dec_ret.code = %d\n", dec_ret.code);
 
   if (dec_ret.code != RC_OK) {
-    LOG_E(F1AP, "Failed to decode pdu\n");
+    AssertFatal(1==0,"Failed to decode pdu\n");
     return -1;
   }
 

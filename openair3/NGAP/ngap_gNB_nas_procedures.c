@@ -932,7 +932,7 @@ int ngap_gNB_ue_capabilities(instance_t instance,
   /* mandatory */
   ie = (NGAP_UERadioCapabilityInfoIndicationIEs_t *)calloc(1, sizeof(NGAP_UERadioCapabilityInfoIndicationIEs_t));
   ie->id = NGAP_ProtocolIE_ID_id_UERadioCapability;
-  ie->criticality = NGAP_Criticality_reject;
+  ie->criticality = NGAP_Criticality_ignore;
   ie->value.present = NGAP_UERadioCapabilityInfoIndicationIEs__value_PR_UERadioCapability;
   ie->value.choice.UERadioCapability.buf = ue_cap_info_ind_p->ue_radio_cap.buffer;
   ie->value.choice.UERadioCapability.size = ue_cap_info_ind_p->ue_radio_cap.length;

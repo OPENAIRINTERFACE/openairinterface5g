@@ -33,4 +33,5 @@ MESSAGE_DEF(GTPV1U_ENB_S1_REQ,        MESSAGE_PRIORITY_MED, Gtpv1uS1Req,    gtpv
 
 MESSAGE_DEF(GTPV1U_GNB_DELETE_TUNNEL_REQ,   MESSAGE_PRIORITY_MED, gtpv1u_gnb_delete_tunnel_req_t,  NRGtpv1uDeleteTunnelReq)
 MESSAGE_DEF(GTPV1U_GNB_DELETE_TUNNEL_RESP,  MESSAGE_PRIORITY_MED, gtpv1u_gnb_delete_tunnel_resp_t, NRGtpv1uDeleteTunnelResp)
-MESSAGE_DEF(GTPV1U_GNB_NG_REQ,        MESSAGE_PRIORITY_MED, Gtpv1uNGReq,    gtpv1uNGReq)
+MESSAGE_DEF(GTPV1U_GNB_NG_REQ,              MESSAGE_PRIORITY_MED, Gtpv1uNGReq,                     gtpv1uNGReq)
+MESSAGE_DEF(GTPV1U_GNB_TUNNEL_DATA_REQ,     MESSAGE_PRIORITY_MED, gtpv1u_gnb_tunnel_data_req_t,    NRGtpv1uTunnelDataReq)

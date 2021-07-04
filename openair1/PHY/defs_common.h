@@ -869,7 +869,8 @@ typedef enum {
   RA_RESPONSE=2,
   RA_WAIT_CR=3,
   PUSCH=4,
-  RESYNCH=5
+  RESYNCH=5,
+  NUM_UE_MODE=6
 } UE_MODE_t;
 
 #define FOREACH_PARALLEL(GEN)   \

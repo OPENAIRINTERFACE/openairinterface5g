@@ -107,7 +107,6 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
   UL_info->uci_ind.num_ucis = 0;
 }
 
-
 void handle_nr_ulsch(NR_UL_IND_t *UL_info)
 {
   if (UL_info->rx_ind.number_of_pdus > 0 && UL_info->crc_ind.number_crcs > 0) {

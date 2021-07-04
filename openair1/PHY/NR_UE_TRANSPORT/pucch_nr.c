@@ -59,10 +59,11 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         int16_t amp,
                         int nr_slot_tx,
                         uint8_t m0,
-			uint8_t mcs,
+			                  uint8_t mcs,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
-                        uint16_t startingPRB) {
+                        uint16_t startingPRB,
+			                  uint16_t secondHopPRB) {
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch0] start function at slot(nr_slot_tx)=%d\n",nr_slot_tx);
 #endif
@@ -94,38 +95,35 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
    * x(l*12+n) = r_u_v_alpha_delta(n)
    */
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
-  uint8_t u=0,v=0;//,delta=0;
-  // if frequency hopping is disabled by the higher-layer parameter PUCCH-frequency-hopping
-  //              n_hop = 0
-  // if frequency hopping is enabled by the higher-layer parameter PUCCH-frequency-hopping
-  //              n_hop = 0 for first hop
-  //              n_hop = 1 for second hop
-  uint8_t n_hop = 0;
-  //uint8_t PUCCH_Frequency_Hopping; // from higher layers FIXME!!
+  uint8_t u[2]={0,0},v[2]={0,0};
+
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch0] sequence generation: variable initialization for test\n");
 #endif
   // x_n contains the sequence r_u_v_alpha_delta(n)
-  int16_t x_n_re[24],x_n_im[24];
+  int16_t x_n_re[2][24],x_n_im[2][24];
 
   // we proceed to calculate alpha according to TS 38.211 Subclause 6.3.2.2.2
+  int prb_offset[2]={startingPRB,startingPRB};
+  nr_group_sequence_hopping(pucch_GroupHopping,hoppingId,0,nr_slot_tx,&u[0],&v[0]); // calculating u and v value
+  if (startingPRB!=secondHopPRB) {
+    nr_group_sequence_hopping(pucch_GroupHopping,hoppingId,1,nr_slot_tx,&u[1],&v[1]); // calculating u and v value
+    prb_offset[1] = secondHopPRB;
+  }
   for (int l=0; l<nrofSymbols; l++) {
-    // if frequency hopping is enabled n_hop = 1 for second hop. Not sure frequency hopping concerns format 0. FIXME!!!
-    // if ((PUCCH_Frequency_Hopping == 1)&&(l == (nrofSymbols-1))) n_hop = 1;
-    nr_group_sequence_hopping(pucch_GroupHopping,hoppingId,n_hop,nr_slot_tx,&u,&v); // calculating u and v value
     alpha = nr_cyclic_shift_hopping(hoppingId,m0,mcs,l,startingSymbolIndex,nr_slot_tx);
 #ifdef DEBUG_NR_PUCCH_TX
-    printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u,v,alpha,l);
+    printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u[l],v[l],alpha,l);
 #endif
 
     for (int n=0; n<12; n++) {
-      x_n_re[(12*l)+n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)
-                                    - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15))); // Re part of base sequence shifted by alpha
-      x_n_im[(12*l)+n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)
-                                    + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15))); // Im part of base sequence shifted by alpha
+      x_n_re[l][n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u[l]][n])>>15)
+                                    - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u[l]][n])>>15))); // Re part of base sequence shifted by alpha
+      x_n_im[l][n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Im[u[l]][n])>>15)
+                                    + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u[l]][n])>>15))); // Im part of base sequence shifted by alpha
 #ifdef DEBUG_NR_PUCCH_TX
       printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \tx_n(l=%d,n=%d)=(%d,%d)\n",
-             u,v,alpha,l,n,x_n_re[(12*l)+n],x_n_im[(12*l)+n]);
+             u[l],v[l],alpha,l,n,x_n_re[l][n],x_n_im[l][n]);
 #endif
     }
   }
@@ -139,15 +137,18 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
 
   for (int l=0; l<nrofSymbols; l++) {
     l2=l+startingSymbolIndex;
-    re_offset = (12*startingPRB) + frame_parms->first_carrier_offset;
+    re_offset = (12*prb_offset[l]) + frame_parms->first_carrier_offset;
     if (re_offset>= frame_parms->ofdm_symbol_size) 
       re_offset-=frame_parms->ofdm_symbol_size;
 
     //txptr = &txdataF[0][re_offset];
+#ifdef DEBUG_NR_PUCCH_TX
+    printf("\t [nr_generate_pucch0] symbol %d PRB %d (%d)\n",l,prb_offset[l],re_offset);
+#endif    
     for (int n=0; n<12; n++) {
 
-      ((int16_t *)&txdataF[0][(l2*frame_parms->ofdm_symbol_size) + re_offset])[0] = (int16_t)(((int32_t)(amp) * x_n_re[(12*l)+n])>>15);
-      ((int16_t *)&txdataF[0][(l2*frame_parms->ofdm_symbol_size) + re_offset])[1] = (int16_t)(((int32_t)(amp) * x_n_im[(12*l)+n])>>15);
+      ((int16_t *)&txdataF[0][(l2*frame_parms->ofdm_symbol_size) + re_offset])[0] = (int16_t)(((int32_t)(amp) * x_n_re[l][n])>>15);
+      ((int16_t *)&txdataF[0][(l2*frame_parms->ofdm_symbol_size) + re_offset])[1] = (int16_t)(((int32_t)(amp) * x_n_im[l][n])>>15);
       //((int16_t *)txptr[0][re_offset])[0] = (int16_t)((int32_t)amp * x_n_re[(12*l)+n])>>15;
       //((int16_t *)txptr[0][re_offset])[1] = (int16_t)((int32_t)amp * x_n_im[(12*l)+n])>>15;
       //txptr[re_offset] = (x_n_re[(12*l)+n]<<16) + x_n_im[(12*l)+n];
