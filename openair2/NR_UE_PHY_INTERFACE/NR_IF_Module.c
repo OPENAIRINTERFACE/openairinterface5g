@@ -248,11 +248,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                 for (int j = 0; j < num_dcis; j++)
                 {
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                    int num_bytes = dci_pdu_list->PayloadSizeBits / 8;
-                    if (dci_pdu_list->PayloadSizeBits % 8 > 0)
-                    {
-                        num_bytes++;
-                    }
+                    int num_bytes = (dci_pdu_list->PayloadSizeBits + 7) / 8;
                     LOG_I(NR_PHY, "[%d, %d] PDCCH DCI (Payload) for rnti %x with PayloadSizeBits %d, num_bytes %d\n",
                         dl_tti_request->SFN, dl_tti_request->Slot, dci_pdu_list->RNTI, dci_pdu_list->PayloadSizeBits, num_bytes);
                     for (int k = 0; k < num_bytes; k++)
@@ -332,11 +328,7 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
             for (int j = 0; j < num_dci; j++)
             {
                 nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                int num_bytes = dci_pdu_list->PayloadSizeBits / 8;
-                if (dci_pdu_list->PayloadSizeBits % 8 > 0)
-                {
-                    num_bytes++;
-                }
+                int num_bytes = (dci_pdu_list->PayloadSizeBits + 7) / 8;
                 LOG_I(NR_PHY, "[%d, %d] ul_dci_req PDCCH DCI for rnti %x with PayloadSizeBits %d and num_bytes %d\n",
                         ul_dci_req->SFN, ul_dci_req->Slot, dci_pdu_list->RNTI, dci_pdu_list->PayloadSizeBits, num_bytes);
                 for (int k = 0; k < num_bytes; k++)
@@ -371,19 +363,23 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
         if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE)
         {
             nfapi_nr_uci_indication_t *uci_ind = unqueue(&nr_uci_ind_queue);
-            if (uci_ind && uci_ind->num_ucis > 0)
+            if (uci_ind)
             {
-                uci_ind->sfn = ul_tti_req->SFN;
-                uci_ind->slot = ul_tti_req->Slot;
-                LOG_I(NR_MAC, "We have unqueued the previously filled uci_ind and updated the snf/slot to %d/%d.\n",
-                    uci_ind->sfn, uci_ind->slot);
-
-                NR_UL_IND_t UL_INFO = {
-                    .uci_ind = *uci_ind,
-                };
-                send_nsa_standalone_msg(&UL_INFO, uci_ind->header.message_id);
+                if (uci_ind->num_ucis > 0)
+                {
+                    uci_ind->sfn = ul_tti_req->SFN;
+                    uci_ind->slot = ul_tti_req->Slot;
+                    LOG_I(NR_MAC, "We have unqueued the previously filled uci_ind and updated the snf/slot to %d/%d.\n",
+                          uci_ind->sfn, uci_ind->slot);
+                    NR_UL_IND_t UL_INFO = {
+                        .uci_ind = *uci_ind,
+                    };
+                    send_nsa_standalone_msg(&UL_INFO, uci_ind->header.message_id);
+                }
                 free(uci_ind->uci_list);
+                free(uci_ind);
             }
+
         }
 
     }
