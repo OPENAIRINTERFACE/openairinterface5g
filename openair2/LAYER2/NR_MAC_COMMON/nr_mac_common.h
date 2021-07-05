@@ -148,6 +148,9 @@ uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t n_symb,
                                 uint8_t n_re_ctrl);
 
+int get_measured_rsrp(uint8_t index);
+int get_diff_rsrp(uint8_t index, int strongest_rsrp);
+
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 
 void find_period_offest_SR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset);
