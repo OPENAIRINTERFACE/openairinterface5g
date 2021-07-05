@@ -36,51 +36,6 @@
 
 #define reserved 0xffff
 
-#define MIN_RSRP_VALUE -141
-
-//Measured RSRP Values Table 10.1.16.1-1 from 36.133
-//Stored all the upper limits[Max RSRP Value of corresponding index]
-//stored -1 for invalid values
-int L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[128] = {
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //0 - 9
-    -1, -1, -1, -1, -1, -1, -140, -139, -138, -137, //10 - 19
-    -136, -135, -134, -133, -132, -131, -130, -129, -128, -127, //20 - 29
-    -126, -125, -124, -123, -122, -121, -120, -119, -118, -117, //30 - 39
-    -116, -115, -114, -113, -112, -111, -110, -109, -108, -107, //40 - 49
-    -106, -105, -104, -103, -102, -101, -100, -99, -98, -97, //50 - 59
-    -96, -95, -94, -93, -92, -91, -90, -89, -88, -87, //60 - 69
-    -86, -85, -84, -83, -82, -81, -80, -79, -78, -77, //70 - 79
-    -76, -75, -74, -73, -72, -71, -70, -69, -68, -67, //80 - 89
-    -66, -65, -64, -63, -62, -61, -60, -59, -58, -57, //90 - 99
-    -56, -55, -54, -53, -52, -51, -50, -49, -48, -47, //100 - 109
-    -46, -45, -44, -44, -1, -1, -1, -1, -1, -1, //110 - 119
-    -1, -1, -1, -1, -1, -1, -1, -1//120 - 127
-  };
-
-//Differential RSRP values Table 10.1.6.1-2 from 36.133
-//Stored the upper limits[MAX RSRP Value]
-int diff_rsrp_ssb_csi_meas_10_1_6_1_2[16] = {
-  0, -2, -4, -6, -8, -10, -12, -14, -16, -18, //0 - 9
-  -20, -22, -24, -26, -28, -30 //10 - 15
-};
-
-
-//returns the measured RSRP value (upper limit)
-int get_measured_rsrp(uint8_t index) {
-  //if index is invalid returning minimum rsrp -140
-  if(index <= 15 || index >= 114)
-    return MIN_RSRP_VALUE;
-
-  return L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[index];
-}
-
-//returns the differential RSRP value (upper limit)
-int get_diff_rsrp(uint8_t index, int strongest_rsrp) {
-  if(strongest_rsrp != -1) {
-    return strongest_rsrp + diff_rsrp_ssb_csi_meas_10_1_6_1_2[index];
-  } else
-    return MIN_RSRP_VALUE;
-}
 
 void reverse_n_bits(uint8_t *value, uint16_t bitlen) {
   uint16_t j;
