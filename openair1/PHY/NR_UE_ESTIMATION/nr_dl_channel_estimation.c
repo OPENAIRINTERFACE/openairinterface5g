@@ -942,7 +942,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
     
     // check if PRB crosses DC and improve estimates around DC
     if ((bwp_start_subcarrier < ue->frame_parms.ofdm_symbol_size) && (bwp_start_subcarrier+nb_rb_pdsch*12 >= ue->frame_parms.ofdm_symbol_size)) {
-      dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
+      dl_ch = (int16_t *)&dl_ch_estimates[p*ue->frame_parms.nb_antennas_rx+aarx][ch_offset];
       uint16_t idxDC = 2*(ue->frame_parms.ofdm_symbol_size - bwp_start_subcarrier);
       uint16_t idxPil = idxDC/2;
       re_offset = k;
