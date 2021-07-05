@@ -197,6 +197,7 @@ def GetParametersFromXML(action):
 
 	elif action == 'Initialize_UE':
 		ue_id = test.findtext('id')
+		CiTestObj.ue_trace=test.findtext('UE_Trace')#temporary variable, to be passed to Module_UE in Initialize_UE call
 		if (ue_id is None):
 			CiTestObj.ue_id = ""
 		else:
@@ -210,11 +211,24 @@ def GetParametersFromXML(action):
 			CiTestObj.ue_id = ue_id
 
 	elif action == 'Attach_UE':
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
 		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
 		if (nbMaxUEtoAttach is None):
 			CiTestObj.nbMaxUEtoAttach = -1
 		else:
 			CiTestObj.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
+
+	elif action == 'Terminate_UE':
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
+
 
 	elif action == 'CheckStatusUE':
 		expectedNBUE = test.findtext('expectedNbOfConnectedUEs')
@@ -469,7 +483,7 @@ elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateUE(HTML,COTS_UE)
+	CiTestObj.TerminateUE(HTML,COTS_UE,InfraUE,CiTestObj.ue_trace)
 elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '':
 		HELP.GenericHelp(CONST.Version)
@@ -714,9 +728,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE)
+					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE, CiTestObj.ue_trace)
 				elif action == 'Terminate_UE':
-					CiTestObj.TerminateUE(HTML,COTS_UE)
+					CiTestObj.TerminateUE(HTML,COTS_UE, InfraUE, CiTestObj.ue_trace)
 				elif action == 'Attach_UE':
 					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
 				elif action == 'Detach_UE':

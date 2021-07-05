@@ -315,10 +315,13 @@ typedef struct {
 typedef struct {
 
   NR_ServingCellConfigCommon_t    *scc;
-  NR_CellGroupConfig_t            *scg;
+  NR_ServingCellConfigCommonSIB_t *scc_SIB;
+  NR_CellGroupConfig_t            *cg;
   int                             servCellIndex;
   NR_CSI_ReportConfig_t           *csirc;
+  long                            physCellId;
   ////  MAC config
+  int                             common_configuration_complete;
   NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
   NR_BSR_Config_t                 *bsr_Config;
@@ -361,7 +364,8 @@ typedef struct {
   uint8_t mib_ssb;
   /// Last NDI of UL HARQ processes
   uint8_t UL_ndi[NR_MAX_HARQ_PROCESSES];
-
+  /// first ULTX of UL HARQ processes
+  int first_ul_tx[NR_MAX_HARQ_PROCESSES];
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;
   fapi_nr_dl_config_request_t dl_config_request;
@@ -380,6 +384,7 @@ typedef struct {
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
+  frequency_range_t frequency_range;
 
   dci_pdu_rel15_t def_dci_pdu_rel15[8];
 
@@ -501,6 +506,9 @@ typedef struct ssb_list_info {
   ssb_info_t tx_ssb[MAX_NB_SSB];
   uint8_t   nb_tx_ssb;
 } ssb_list_info_t;
+
+void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id);
+void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

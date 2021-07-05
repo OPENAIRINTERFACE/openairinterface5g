@@ -54,10 +54,12 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         int16_t amp,
                         int nr_slot_tx,
                         uint8_t m0,
-			uint8_t mcs,
+			                  uint8_t mcs,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
-                        uint16_t startingPRB);
+                        uint16_t startingPRB,
+			                  uint16_t secondHopPRB);
+
 void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
@@ -72,10 +74,11 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                         uint16_t startingPRB_intraSlotHopping,
                         uint8_t timeDomainOCC,
                         uint8_t nr_bit);
+
 void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
                         uint16_t crnti,
-			uint32_t dmrs_scrambling_id,
-			uint32_t data_scrambling_id,
+			                  uint32_t dmrs_scrambling_id,
+			                  uint32_t data_scrambling_id,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
@@ -87,6 +90,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
                         uint8_t nrofPRB,
                         uint16_t startingPRB,
                         uint8_t nr_bit);
+
 void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
                           uint16_t crnti,
                           int32_t **txdataF,

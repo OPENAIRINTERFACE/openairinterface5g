@@ -66,7 +66,7 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
   NR_UE_info_t *UE_info = &gNB->UE_info;
   int num = 1;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
-    LOG_I(MAC, "UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm\n",
+    LOG_I(NR_MAC, "UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm\n",
           UE_id,
           UE_info->rnti[UE_id],
           num++,
@@ -75,32 +75,29 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
           UE_info->UE_sched_ctrl[UE_id].pcmax);
     NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
-    LOG_I(MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
+    LOG_I(NR_MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
           UE_id,
           stats->dlsch_rounds[0], stats->dlsch_rounds[1],
           stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
           avg_rsrp, stats->num_rsrp_meas);
     stats->num_rsrp_meas = 0;
     stats->cumul_rsrp = 0 ;
-    LOG_I(MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
-    const NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    LOG_I(MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_errors %d, PUSCH SNR %2.1f dB, PUCCH SNR %2.1f dB, noise rssi %2.1f dB\n",
+    LOG_I(NR_MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
+    LOG_I(NR_MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_DTX %d, ulsch_errors %d\n",
           UE_id,
           stats->ulsch_rounds[0], stats->ulsch_rounds[1],
           stats->ulsch_rounds[2], stats->ulsch_rounds[3],
-          stats->ulsch_errors,
-          (float) sched_ctrl->pusch_snrx10 / 10,
-          (float) sched_ctrl->pucch_snrx10 / 10,
-          (float) (sched_ctrl->raw_rssi - 1280) / 10);
-    LOG_I(MAC,
+          stats->ulsch_DTX,
+          stats->ulsch_errors);
+    LOG_I(NR_MAC,
           "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
           UE_id,
           stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
     for (int lc_id = 0; lc_id < 63; lc_id++) {
       if (stats->lc_bytes_tx[lc_id] > 0)
-        LOG_I(MAC, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
+        LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
       if (stats->lc_bytes_rx[lc_id] > 0)
-        LOG_I(MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
+        LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
     }
   }
   print_meas(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL);
@@ -322,14 +319,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
 
-  protocol_ctxt_t   ctxt;
+  protocol_ctxt_t   ctxt={0};
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
  
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
-  const int bwp_id = *gNB->secondaryCellGroupCommon->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
 
   if (slot==0 && (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]>=257)) {
     const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
@@ -355,8 +351,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-  memset(RC.nrmac[module_idP]->cce_list[bwp_id][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
-  memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
+  memset(RC.nrmac[module_idP]->cce_list[0][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
+  for(int i_bwp = 0; i_bwp < MAX_NUM_BWP; i_bwp++)
+    memset(RC.nrmac[module_idP]->cce_list[i_bwp][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid i
+    
   NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id])
     for (int i=0; i<MAX_NUM_CORESET; i++)
