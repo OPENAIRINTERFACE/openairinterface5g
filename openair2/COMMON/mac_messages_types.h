@@ -30,6 +30,7 @@
 #define MAC_MESSAGES_TYPES_H_
 
 #include <LTE_DRX-Config.h>
+#include "OCTET_STRING.h"
 
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
@@ -143,6 +144,7 @@ typedef struct NRRrcMacCcchDataInd_s {
   uint16_t  rnti;
   uint32_t  sdu_size;
   uint8_t   sdu[CCCH_SDU_SIZE];
+  OCTET_STRING_t *du_to_cu_rrc_container;
   uint8_t   gnb_index;
   int       CC_id;
 } NRRrcMacCcchDataInd;

@@ -29,6 +29,10 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <nr_pdcp/nr_pdcp.h>
+#include <softmodem-common.h>
+#include <split_headers.h>
+#include <proto_agent.h>
 
 #include "gnb_app.h"
 #include "gnb_config.h"
@@ -43,7 +47,9 @@
 #include "sctp_eNB_task.h"
 #include "gtpv1u_eNB_task.h"
 #include "PHY/INIT/phy_init.h" 
-
+#include "f1ap_cu_task.h"
+#include "f1ap_du_task.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 extern unsigned char NB_gNB_INST;
 
 extern RAN_CONTEXT_t RC;
@@ -61,7 +67,7 @@ static void configure_nr_rrc(uint32_t gnb_id)
   if (RC.nrrrc[gnb_id]) {
     RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
     
-
+    LOG_I(GNB_APP, "RRC starting with node type %d\n", RC.nrrrc[gnb_id]->node_type);
     LOG_I(GNB_APP,"Sending configuration message to NR_RRC task\n");
     itti_send_msg_to_task (TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
 
@@ -82,26 +88,25 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
     {
       if(NGAP_CONF_MODE){
         ngap_register_gnb_req_t *ngap_register_gNB; //Type Temporarily reuse
-        
-        // note:  there is an implicit relationship between the data structure and the message name 
+          
+        // note:  there is an implicit relationship between the data structure and the message name
         msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NGAP_REGISTER_GNB_REQ); //Message Temporarily reuse
 
         RCconfig_NR_NG(msg_p, gnb_id);
-		
+
         ngap_register_gNB = &NGAP_REGISTER_GNB_REQ(msg_p); //Message Temporarily reuse
 
-		LOG_I(GNB_APP,"default drx %d\n",ngap_register_gNB->default_drx);
+        LOG_I(GNB_APP,"default drx %d\n",ngap_register_gNB->default_drx);
 
-		itti_send_msg_to_task (TASK_NGAP, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
-	  }
-
+        itti_send_msg_to_task (TASK_NGAP, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
+      }
       if (gnb_id == 0) RCconfig_nr_gtpu();
-
-	  LOG_I(GNB_APP,"[gNB %d] gNB_app_register for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
-
-      register_gnb_pending++;
     }
-  }
+
+    LOG_I(GNB_APP,"[gNB %d] gNB_app_register for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
+
+    register_gnb_pending++;
+    }
 
   return register_gnb_pending;
 }
@@ -126,15 +131,42 @@ static uint32_t gNB_app_register_x2(uint32_t gnb_id_start, uint32_t gnb_id_end) 
   return register_gnb_x2_pending;
 }
 
+/*------------------------------------------------------------------------------*/
+
+static void init_pdcp(void) {
+  if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+    pdcp_layer_init();
+    uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+    if (IS_SOFTMODEM_NOS1) {
+      LOG_I(PDCP, "IS_SOFTMODEM_NOS1 option enabled\n");
+      pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT;
+    }
+
+    pdcp_module_init(pdcp_initmask);
+
+    if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+      LOG_I(PDCP, "node is CU, pdcp send rlc_data_req by proto_agent \n");
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+    } else {
+      LOG_I(PDCP, "node is gNB \n");
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+    }
+  } else {
+    LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
+    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+  }
+}
 
 /*------------------------------------------------------------------------------*/
+
 void *gNB_app_task(void *args_p)
 {
 
   uint32_t                        gnb_nb = RC.nb_nr_inst; 
   uint32_t                        gnb_id_start = 0;
   uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
-
   uint32_t                        gnb_id;
   MessageDef                      *msg_p           = NULL;
   const char                      *msg_name        = NULL;
@@ -143,11 +175,12 @@ void *gNB_app_task(void *args_p)
   /* for no gcc warnings */
   (void)instance;
 
+  int cell_to_activate = 0;
   itti_mark_task_ready (TASK_GNB_APP);
 
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
-  RCconfig_nr_macrlc();
+  if (RC.nb_nr_macrlc_inst>0) RCconfig_nr_macrlc();
 
   LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
 
@@ -169,19 +202,43 @@ void *gNB_app_task(void *args_p)
     configure_nr_rrc(gnb_id);
   }
 
+  if (RC.nb_nr_inst > 0)  {
+    init_pdcp();
+  }
+
   if (is_x2ap_enabled() ) { //&& !NODE_IS_DU(RC.rrc[0]->node_type)
 	  LOG_I(X2AP, "X2AP enabled \n");
 	  __attribute__((unused)) uint32_t x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
   }
 
-  if (AMF_MODE_ENABLED) {
-  /* Try to register each gNB */
-  //registered_gnb = 0;
-  __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
-  } else {
-  /* Start L2L1 task */
-    msg_p = itti_alloc_new_message(TASK_GNB_APP, 0, INITIALIZE_MESSAGE);
-    itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
+  /* For the CU case the gNB registration with the AMF might have to take place after the F1 setup, as the PLMN info
+     * can originate from the DU. Add check on whether x2ap is enabled to account for ENDC NSA scenario.*/
+  if ((AMF_MODE_ENABLED || is_x2ap_enabled()) && !NODE_IS_DU(RC.nrrrc[0]->node_type) && !NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+    /* Try to register each gNB */
+    //registered_gnb = 0;
+    __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);
+  }
+
+  if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+
+     if (itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL) < 0) {
+        LOG_E(F1AP, "Create task for F1AP CU failed\n");
+        AssertFatal(1==0,"exiting");
+     }
+  }
+
+  if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+
+    if (itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL) < 0) {
+       LOG_E(F1AP, "Create task for F1AP DU failed\n");
+       AssertFatal(1==0,"exiting");
+    }
+    // configure F1AP here for F1C
+    LOG_I(GNB_APP,"ngran_gNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
+    msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, F1AP_SETUP_REQ);
+    RCconfig_NR_DU_F1(msg_p, 0);
+    
+    itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(0), msg_p);
   }
 
   do {
@@ -245,6 +302,29 @@ void *gNB_app_task(void *args_p)
 */
       break;
 
+    case F1AP_SETUP_RESP:
+      AssertFatal(NODE_IS_DU(RC.nrrrc[0]->node_type), "Should not have received F1AP_SETUP_RESP in CU/gNB\n");
+
+      LOG_I(GNB_APP, "Received %s: associated ngran_gNB_CU %s with %d cells to activate\n", ITTI_MSG_NAME (msg_p),
+      F1AP_SETUP_RESP(msg_p).gNB_CU_name,F1AP_SETUP_RESP(msg_p).num_cells_to_activate);
+      cell_to_activate = F1AP_SETUP_RESP(msg_p).num_cells_to_activate;
+      
+      gNB_app_handle_f1ap_setup_resp(&F1AP_SETUP_RESP(msg_p));
+
+      break;
+    case F1AP_GNB_CU_CONFIGURATION_UPDATE:
+      AssertFatal(NODE_IS_DU(RC.nrrrc[0]->node_type), "Should not have received F1AP_GNB_CU_CONFIGURATION_UPDATE in CU/gNB\n");
+
+      LOG_I(GNB_APP, "Received %s: associated ngran_gNB_CU %s with %d cells to activate\n", ITTI_MSG_NAME (msg_p),
+      F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p).gNB_CU_name,F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p).num_cells_to_activate);
+      
+      cell_to_activate += F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p).num_cells_to_activate;
+      gNB_app_handle_f1ap_gnb_cu_configuration_update(&F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p));
+
+      /* Check if at least gNB is registered with one AMF */
+      AssertFatal(cell_to_activate == 1,"No cells to activate or cells > 1 %d\n",cell_to_activate);
+
+      break;
     case NGAP_DEREGISTERED_GNB_IND:
       LOG_W(GNB_APP, "[gNB %ld] Received %s: associated AMF %d\n", instance, msg_name,
             NGAP_DEREGISTERED_GNB_IND(msg_p).nb_amf);

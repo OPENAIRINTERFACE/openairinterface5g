@@ -24,10 +24,13 @@ MESSAGE_DEF(F1AP_CU_SCTP_REQ        , MESSAGE_PRIORITY_MED, f1ap_cu_setup_req_t 
 
 /* eNB_DU application layer -> F1AP messages or CU F1AP -> RRC*/
 MESSAGE_DEF(F1AP_SETUP_REQ          , MESSAGE_PRIORITY_MED, f1ap_setup_req_t          , f1ap_setup_req)
+MESSAGE_DEF(F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE         , MESSAGE_PRIORITY_MED, f1ap_gnb_cu_configuration_update_acknowledge_t          , f1ap_gnb_cu_configuration_update_acknowledge)
+MESSAGE_DEF(F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE         , MESSAGE_PRIORITY_MED, f1ap_gnb_cu_configuration_update_failure_t          , f1ap_gnb_cu_configuration_update_failure)
 
 /* F1AP -> eNB_DU or eNB_CU_RRC -> F1AP application layer messages */
 MESSAGE_DEF(F1AP_SETUP_RESP         , MESSAGE_PRIORITY_MED, f1ap_setup_resp_t          , f1ap_setup_resp)
 MESSAGE_DEF(F1AP_SETUP_FAILURE         , MESSAGE_PRIORITY_MED, f1ap_setup_failure_t          , f1ap_setup_failure)
+MESSAGE_DEF(F1AP_GNB_CU_CONFIGURATION_UPDATE         , MESSAGE_PRIORITY_MED, f1ap_gnb_cu_configuration_update_t          , f1ap_gnb_cu_configuration_update)
 
 /* MAC -> F1AP messages */
 MESSAGE_DEF(F1AP_INITIAL_UL_RRC_MESSAGE           , MESSAGE_PRIORITY_MED, f1ap_initial_ul_rrc_message_t             , f1ap_initial_ul_rrc_message)

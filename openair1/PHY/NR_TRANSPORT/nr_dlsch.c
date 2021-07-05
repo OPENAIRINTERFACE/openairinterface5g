@@ -86,7 +86,7 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
   for (int i=0; i<((size>>5)+((size&0x1f) > 0 ? 1 : 0)); i++) {
     in32=_mm256_movemask_epi8(_mm256_slli_epi16(((__m256i*)in)[i],7));
     out[i]=(in32^s);
-    //    printf("in[%d] %x => %x\n",i,in32,out[i]);
+    //printf("in[%d] %x => %x\n",i,in32,out[i]);
     s=lte_gold_generic(&x1, &x2, 0);
   }
 #elif defined(__SSE4__)

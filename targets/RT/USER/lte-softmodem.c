@@ -103,9 +103,6 @@ pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
-msc_interface_t msc_interface;
-
-
 uint16_t sf_ahead=4;
 
 pthread_cond_t sync_cond;
@@ -187,6 +184,7 @@ eth_params_t *eth_params;
 double cpuf;
 
 int oaisim_flag=0;
+uint8_t proto_agent_flag = 0;
 
 
 /* forward declarations */

@@ -272,10 +272,10 @@ void nr_preprocessor_phytest(module_id_t module_id,
 {
   if (!is_xlsch_in_slot(dlsch_slot_bitmap, slot))
     return;
-  const int CC_id = 0;
-  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   const int UE_id = 0;
+  const int CC_id = 0;
   AssertFatal(UE_info->active[UE_id],
               "%s(): expected UE %d to be active\n",
               __func__,
@@ -340,7 +340,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
 
-  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot);
+  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1);
   if (alloc < 0) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
@@ -365,11 +365,11 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->pucch_allocation = alloc;
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
-  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot];
+  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
   if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
     nr_set_pdsch_semi_static(
-        scc, UE_info->secondaryCellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
 
   sched_pdsch->nrOfLayers = target_dl_Nl;
   sched_pdsch->mcs = target_dl_mcs;
@@ -416,7 +416,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  const int tda = RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot];
+  const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 1;
   if (tda < 0)
     return false;
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
@@ -425,7 +425,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
               "time domain assignment %d >= %d\n",
               tda,
               tdaList->list.count);
-  int K2 = get_K2(sched_ctrl->active_ubwp, tda, mu);
+  int K2 = get_K2(scc,sched_ctrl->active_ubwp, tda, mu);
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   /* check if slot is UL, and that slot is 8 (assuming K2=6 because of UE
