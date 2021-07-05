@@ -1326,37 +1326,33 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->SR = false;
 
     int8_t harq_id = sched_pusch->ul_harq_pid;
-    if (NFAPI_MODE == NFAPI_MODE_VNF)
-      harq_id = 1;
-    else
-    {
-      if (harq_id < 0) {
-        /* PP has not selected a specific HARQ Process, get a new one */
-        harq_id = sched_ctrl->available_ul_harq.head;
-        // if(NFAPI_MODE == NFAPI_MODE_VNF)
-        //   harq_id = 1;
-        AssertFatal(harq_id >= 0,
-                    "no free HARQ process available for UE %d\n",
-                    UE_id);
-        remove_front_nr_list(&sched_ctrl->available_ul_harq);
-        sched_pusch->ul_harq_pid = harq_id;
-      } else {
-        /* PP selected a specific HARQ process. Check whether it will be a new
-        * transmission or a retransmission, and remove from the corresponding
-        * list */
-        if (sched_ctrl->ul_harq_processes[harq_id].round == 0)
-          remove_nr_list(&sched_ctrl->available_ul_harq, harq_id);
-        else
-          remove_nr_list(&sched_ctrl->retrans_ul_harq, harq_id);
-      }
+
+    if (harq_id < 0) {
+      /* PP has not selected a specific HARQ Process, get a new one */
+      harq_id = sched_ctrl->available_ul_harq.head;
+      // if(NFAPI_MODE == NFAPI_MODE_VNF)
+      //   harq_id = 1;
+      AssertFatal(harq_id >= 0,
+                  "no free HARQ process available for UE %d\n",
+                  UE_id);
+      remove_front_nr_list(&sched_ctrl->available_ul_harq);
+      sched_pusch->ul_harq_pid = harq_id;
+    } else {
+      /* PP selected a specific HARQ process. Check whether it will be a new
+      * transmission or a retransmission, and remove from the corresponding
+      * list */
+      if (sched_ctrl->ul_harq_processes[harq_id].round == 0)
+        remove_nr_list(&sched_ctrl->available_ul_harq, harq_id);
+      else
+        remove_nr_list(&sched_ctrl->retrans_ul_harq, harq_id);
     }
     NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[harq_id];
     DevAssert(!cur_harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_ul_harq, harq_id);
     cur_harq->feedback_slot = sched_pusch->slot;
     cur_harq->is_waiting = true;
-    if (NFAPI_MODE == NFAPI_MODE_VNF)
-      cur_harq->is_waiting = 0;
+    // if (NFAPI_MODE == NFAPI_MODE_VNF)
+    //   cur_harq->is_waiting = 0;
     
 
     int rnti_types[2] = { NR_RNTI_C, 0 };

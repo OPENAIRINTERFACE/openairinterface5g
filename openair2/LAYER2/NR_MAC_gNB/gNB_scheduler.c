@@ -57,6 +57,8 @@
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
+uint8_t first_sched_entry = 1;
+
 void clear_mac_stats(gNB_MAC_INST *gNB) {
   memset((void*)gNB->UE_info.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
 }
@@ -367,6 +369,20 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     memset(&vrb_map_UL[last_slot * MAX_BWP_SIZE], 0, sizeof(uint16_t) * MAX_BWP_SIZE);
 
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
+
+    //first entry
+    if (NFAPI_MODE == NFAPI_MODE_VNF){
+      if(first_sched_entry == 1)
+      {
+        for (int i = 0; i<num_slots; i++){
+          if(i <= slot)
+            gNB->UL_tti_req_ahead[CC_id][i].SFN = frame + 1;
+          else
+            gNB->UL_tti_req_ahead[CC_id][i].SFN = frame;
+        }
+        first_sched_entry = 0;
+      }
+    }
   }
 
 
@@ -409,13 +425,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // This schedules the DCI for Uplink and subsequently PUSCH
-  
-  if(NFAPI_MODE == NFAPI_MODE_VNF){
-    gNB->UL_tti_req_ahead[0][7].SFN = frame;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 7
-    gNB->UL_tti_req_ahead[0][8].SFN = frame;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 8
-    gNB->UL_tti_req_ahead[0][9].SFN = frame;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 9
-    gNB->UL_tti_req[0] = &gNB->UL_tti_req_ahead[0][slot];
-  }
   
   nr_schedule_ulsch(module_idP, frame, slot);
 

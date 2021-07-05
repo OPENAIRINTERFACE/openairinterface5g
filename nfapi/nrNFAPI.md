@@ -38,7 +38,3 @@ sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path
 
 To be updated.
 
-## Notes
-* If running for the first time on local branch, run in the following order - VNF then PNF. This is so that necessary files are generated for the UE to run. Stop this run (it's ok if it stops on its own due to an error). From every subsequent run follow the next bullet. 
-* In order to achieve synchronization between the VNF and PNF, and receive P7 messages within the timing window, the order in which we should run the modules on different terminals is UE->VNF->PNF.
-* Currently downlink transmission from gNB to UE is partially functional and we are working on improving this. Uplink P7 messages are disabled and we will work on uplink integration after completing downlink.

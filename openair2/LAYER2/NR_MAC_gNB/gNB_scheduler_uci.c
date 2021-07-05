@@ -46,10 +46,6 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
 
   nfapi_nr_ul_tti_request_t *future_ul_tti_req =
       &RC.nrmac[mod_id]->UL_tti_req_ahead[0][pucch->ul_slot];
-  if (NFAPI_MODE == NFAPI_MODE_VNF){
-    future_ul_tti_req->SFN = pucch->frame;
-    future_ul_tti_req->Slot = pucch->ul_slot;
-  }
 
   AssertFatal(future_ul_tti_req->SFN == pucch->frame
               && future_ul_tti_req->Slot == pucch->ul_slot,
@@ -64,7 +60,7 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
   memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
   future_ul_tti_req->n_pdus += 1;
 
-  LOG_D(MAC,
+  LOG_I(MAC,
         "%4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, ACK %d, CSI %d on res %d\n",
         frame,
         slot,
@@ -148,7 +144,7 @@ void nr_schedule_pucch(int Mod_idP,
           || frameP != curr_pucch->frame
           || slotP != curr_pucch->ul_slot)
         continue;
-      LOG_D(NR_MAC,"Scheduling PUCCH[%d] RX for UE %d in %d.%d O_ack %d\n",i,UE_id,curr_pucch->frame,curr_pucch->ul_slot,O_ack);
+      LOG_I(NR_MAC,"Scheduling PUCCH[%d] RX for UE %d in %d.%d O_ack %d\n",i,UE_id,curr_pucch->frame,curr_pucch->ul_slot,O_ack);
       nr_fill_nfapi_pucch(Mod_idP, frameP, slotP, curr_pucch, UE_id);
       memset(curr_pucch, 0, sizeof(*curr_pucch));
     }
@@ -519,9 +515,9 @@ void nr_csi_meas_reporting(int Mod_idP,
       // find free PUCCH that is in order with possibly existing PUCCH
       // schedulings (other CSI, SR)
       NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[1];
-      if(NFAPI_MODE == NFAPI_MODE_VNF){
-        curr_pucch->csi_bits = 0; curr_pucch->sr_flag = 0; curr_pucch->dai_c = 0;
-      }
+      // if(NFAPI_MODE == NFAPI_MODE_VNF){
+      //   curr_pucch->csi_bits = 0; curr_pucch->sr_flag = 0; curr_pucch->dai_c = 0;
+      // }
       AssertFatal(curr_pucch->csi_bits == 0
                   && !curr_pucch->sr_flag
                   && curr_pucch->dai_c == 0,
@@ -1141,23 +1137,16 @@ int nr_acknack_scheduling(int mod_id,
               __func__,
               pucch->csi_bits);
   /* if the currently allocated PUCCH of this UE is full, allocate it */
-  if (NFAPI_MODE == NFAPI_MODE_VNF){
-    pucch->sr_flag = 1; 
-    pucch->dai_c = 1;
-  }
+  // if (NFAPI_MODE == NFAPI_MODE_VNF){
+  //   pucch->sr_flag = 1; 
+  //   pucch->dai_c = 1;
+  // }
 
   if (pucch->dai_c == 2) {
     /* advance the UL slot information in PUCCH by one so we won't schedule in
      * the same slot again */
     const int f = pucch->frame;
     const int s = pucch->ul_slot;
-    if(NFAPI_MODE == NFAPI_MODE_VNF){
-      gNB_MAC_INST *gNB = RC.nrmac[mod_id];
-      gNB->UL_tti_req_ahead[0][7].SFN = f;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 7
-      gNB->UL_tti_req_ahead[0][8].SFN = f;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 8
-      gNB->UL_tti_req_ahead[0][9].SFN = f;//Added to set the UL_tti_req_ahead SFN in VNF mode for slot 9
-      gNB->UL_tti_req[0] = &gNB->UL_tti_req_ahead[0][slot];
-    }
     nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
     memset(pucch, 0, sizeof(*pucch));
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
@@ -1194,8 +1183,8 @@ int nr_acknack_scheduling(int mod_id,
   get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
 
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
-  if(NFAPI_MODE == NFAPI_MODE_VNF)
-    return 0;
+  // if(NFAPI_MODE == NFAPI_MODE_VNF)
+  //   return 0;
   if (pucch->dai_c > 0) {
     /* this UE already has a PUCCH occasion */
     DevAssert(pucch->frame == frame);

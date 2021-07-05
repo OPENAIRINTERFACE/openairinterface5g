@@ -218,7 +218,7 @@ void *gNB_app_task(void *args_p)
     //registered_gnb = 0;
     __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);
   }
-
+if (RC.nb_nr_inst > 0)  {
   if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
 
      if (itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL) < 0) {
@@ -240,7 +240,7 @@ void *gNB_app_task(void *args_p)
     
     itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(0), msg_p);
   }
-
+}
   do {
     // Wait for a message
     itti_receive_msg (TASK_GNB_APP, &msg_p);
