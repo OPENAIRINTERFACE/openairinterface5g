@@ -2114,6 +2114,225 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, int slotP){
   return 0;
 }
 
+
+uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
+                                frame_t frame,
+                                int slot,
+                                PUCCH_sched_t *pucch) {
+
+  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
+  NR_PUCCH_Config_t *pucch_Config = NULL;
+  int csi_bits = 0;
+
+  if(mac->cg &&
+     mac->cg->spCellConfig &&
+     mac->cg->spCellConfig->spCellConfigDedicated &&
+     mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig) {
+
+    NR_CSI_MeasConfig_t *csi_measconfig = mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+
+    for (int csi_report_id = 0; csi_report_id < csi_measconfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
+      const NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
+
+      if(csirep->reportConfigType.present == NR_CSI_ReportConfig__reportConfigType_PR_periodic){
+        int period, offset;
+        csi_period_offset(csirep, &period, &offset);
+
+        int scs;
+        NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
+        NR_BWP_UplinkCommon_t *initialUplinkBWP;
+        if (mac->scc) initialUplinkBWP = mac->scc->uplinkConfigCommon->initialUplinkBWP;
+        else          initialUplinkBWP = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
+
+        if (ubwp &&
+            mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+            mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)
+          scs = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+        else
+          scs = initialUplinkBWP->genericParameters.subcarrierSpacing;
+
+        if (bwp_id>0 &&
+            mac->ULbwp[bwp_id-1] &&
+            mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
+            mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config &&
+            mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup) {
+          pucch_Config =  mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup;
+        }
+        else if (bwp_id==0 &&
+                 mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+                 mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+                 mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config &&
+                 mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
+          pucch_Config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+        }
+
+        const int n_slots_frame = nr_slots_per_frame[scs];
+        if (((n_slots_frame*frame + slot - offset)%period) == 0 && pucch_Config) {
+
+          NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
+          NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
+          int n = pucchresset->resourceList.list.count;
+
+          int res_index;
+          for (res_index = 0; res_index < n; res_index++) {
+            if (*pucchresset->resourceList.list.array[res_index] == pucchcsires->pucch_Resource)
+              break;
+          }
+          AssertFatal(res_index < n,
+                      "CSI resource not found among PUCCH resources\n");
+
+          pucch->resource_indicator = pucchcsires->pucch_Resource;
+          csi_bits = nr_get_csi_payload(mac, pucch, csi_measconfig);
+        }
+      }
+      else
+        AssertFatal(1==0,"Only periodic CSI reporting is currently implemented\n");
+    }
+  }
+
+  return csi_bits;
+}
+
+
+uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
+                           PUCCH_sched_t *pucch,
+                           NR_CSI_MeasConfig_t *csi_MeasConfig) {
+
+  int n_csi_bits = 0;
+
+  AssertFatal(csi_MeasConfig->csi_ReportConfigToAddModList->list.count>0,"No CSI Report configuration available\n");
+
+  for (int csi_report_id=0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
+    struct NR_CSI_ReportConfig *csi_reportconfig = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
+    NR_CSI_ResourceConfigId_t csi_ResourceConfigId = csi_reportconfig->resourcesForChannelMeasurement;
+    switch(csi_reportconfig->reportQuantity.present) {
+      case NR_CSI_ReportConfig__reportQuantity_PR_none:
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP:
+        n_csi_bits +=get_ssb_rsrp_payload(mac,pucch,csi_reportconfig,csi_ResourceConfigId,csi_MeasConfig);
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP:
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI:
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1:
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI:
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI:
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI:
+        AssertFatal(1==0,"Measurement report based on CSI-RS not availalble\n");
+      default:
+        AssertFatal(1==0,"Invalid CSI report quantity type %d\n",csi_reportconfig->reportQuantity.present);
+    }
+  }
+  return (n_csi_bits);
+}
+
+
+uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
+                             PUCCH_sched_t *pucch,
+                             struct NR_CSI_ReportConfig *csi_reportconfig,
+                             NR_CSI_ResourceConfigId_t csi_ResourceConfigId,
+                             NR_CSI_MeasConfig_t *csi_MeasConfig) {
+
+  int nb_ssb = 0;  // nb of ssb in the resource
+  int nb_meas = 0; // nb of ssb to report measurements on
+  int bits = 0;
+  uint32_t temp_payload = 0;
+
+  for (int csi_resourceidx = 0; csi_resourceidx < csi_MeasConfig->csi_ResourceConfigToAddModList->list.count; csi_resourceidx++) {
+    struct NR_CSI_ResourceConfig *csi_resourceconfig = csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[csi_resourceidx];
+    if (csi_resourceconfig->csi_ResourceConfigId == csi_ResourceConfigId) {
+
+      if (csi_reportconfig->groupBasedBeamReporting.present == NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled) {
+        if (csi_reportconfig->groupBasedBeamReporting.choice.disabled->nrofReportedRS != NULL)
+          nb_meas = *(csi_reportconfig->groupBasedBeamReporting.choice.disabled->nrofReportedRS)+1;
+        else
+          nb_meas = 1;
+      } else
+        nb_meas = 2;
+
+      for (int csi_ssb_idx = 0; csi_ssb_idx < csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; csi_ssb_idx++) {
+        if (csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceSetId ==
+            *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.array[0])){
+
+          ///only one SSB resource set from spec 38.331 IE CSI-ResourceConfig
+          nb_ssb = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList.list.count;
+          break;
+        }
+      }
+
+      AssertFatal(nb_ssb>0,"No SSB found in the resource set\n");
+      int ssbri_bits = ceil(log2(nb_ssb));
+
+      //TODO measurement of multiple SSBs at PHY and indication to MAC
+      if(nb_ssb>1)
+        LOG_E(MAC, "In current implementation only the SSB of synchronization is measured at PHY. This works only for a single SSB scenario\n");
+
+      int ssb_rsrp[2][nb_meas]; // the array contains index and RSRP of each SSB to be reported (nb_meas highest RSRPs)
+
+      //TODO replace the following 2 lines with a function to order the nb_meas highest SSB RSRPs
+      ssb_rsrp[0][0] = mac->mib_ssb;
+      ssb_rsrp[1][0] = mac->ssb_rsrp_dBm;
+
+      uint8_t ssbi;
+
+      if (ssbri_bits > 0) {
+        ssbi = ssb_rsrp[0][0];
+        reverse_n_bits(&ssbi, ssbri_bits);
+        temp_payload = ssbi;
+        bits += ssbri_bits;
+      }
+
+      uint8_t rsrp_idx = get_rsrp_index(ssb_rsrp[1][0]);
+      reverse_n_bits(&rsrp_idx, 7);
+      temp_payload |= (rsrp_idx<<bits);
+      bits += 7; // 7 bits for highest RSRP
+
+      // from the second SSB, differential report
+      for (int i=1; i<nb_meas; i++){
+        ssbi = ssb_rsrp[0][i];
+        reverse_n_bits(&ssbi, ssbri_bits);
+        temp_payload = ssbi;
+        bits += ssbri_bits;
+
+        rsrp_idx = get_rsrp_diff_index(ssb_rsrp[1][0],ssb_rsrp[1][i]);
+        reverse_n_bits(&rsrp_idx, 4);
+        temp_payload |= (rsrp_idx<<bits);
+        bits += 4; // 7 bits for highest RSRP
+      }
+    }
+    break; // resorce found
+  }
+  pucch->csi_part1_payload = temp_payload;
+  return bits;
+}
+
+
+// returns index from RSRP
+// according to Table 10.1.6.1-1 in 38.133
+
+uint8_t get_rsrp_index(int rsrp) {
+
+  int index = rsrp + 157;
+  if (rsrp>-44)
+    index = 113;
+  if (rsrp<-140)
+    index = 16;
+
+  return index;
+}
+
+
+// returns index from differential RSRP
+// according to Table 10.1.6.1-2 in 38.133
+uint8_t get_rsrp_diff_index(int best_rsrp,int current_rsrp) {
+
+  int diff = best_rsrp-current_rsrp;
+  if (diff>30)
+    return 15;
+  else
+    return (diff>>1);
+
+}
+
 void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);

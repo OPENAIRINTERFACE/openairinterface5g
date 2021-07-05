@@ -820,16 +820,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   }//is-triggering_beam_switch
 }//tci handling
 
-void reverse_n_bits(uint8_t *value, uint16_t bitlen) {
-  uint16_t j;
-  uint8_t i;
-  for(j = bitlen - 1,i = 0; j > i; j--, i++) {
-    if(((*value>>j)&1) != ((*value>>i)&1)) {
-      *value ^= (1<<j);
-      *value ^= (1<<i);
-    }
-  }
-}
 
 void extract_pucch_csi_report (NR_CSI_MeasConfig_t *csi_MeasConfig,
                                const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu,

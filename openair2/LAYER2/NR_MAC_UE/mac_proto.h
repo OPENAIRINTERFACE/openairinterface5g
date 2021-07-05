@@ -137,6 +137,24 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
                                          frame_t frame,
                                          int slot);
 
+uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
+                                frame_t frame,
+                                int slot,
+                                PUCCH_sched_t *pucch);
+
+uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
+                             PUCCH_sched_t *pucch,
+                             struct NR_CSI_ReportConfig *csi_reportconfig,
+                             NR_CSI_ResourceConfigId_t csi_ResourceConfigId,
+                             NR_CSI_MeasConfig_t *csi_MeasConfig);
+
+uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
+                           PUCCH_sched_t *pucch,
+                           NR_CSI_MeasConfig_t *csi_MeasConfig);
+
+uint8_t get_rsrp_index(int rsrp);
+uint8_t get_rsrp_diff_index(int best_rsrp,int current_rsrp);
+
 /* \brief Get payload (MAC PDU) from UE PHY
 @param dl_info            pointer to dl indication
 @param ul_time_alignment  pointer to timing advance parameters

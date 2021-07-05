@@ -82,6 +82,17 @@ int get_diff_rsrp(uint8_t index, int strongest_rsrp) {
     return MIN_RSRP_VALUE;
 }
 
+void reverse_n_bits(uint8_t *value, uint16_t bitlen) {
+  uint16_t j;
+  uint8_t i;
+  for(j = bitlen - 1,i = 0; j > i; j--, i++) {
+    if(((*value>>j)&1) != ((*value>>i)&1)) {
+      *value ^= (1<<j);
+      *value ^= (1<<i);
+    }
+  }
+}
+
 
 // start symbols for SSB types A,B,C,D,E
 uint16_t symbol_ssb_AC[8]={2,8,16,22,30,36,44,50};

@@ -1842,15 +1842,16 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
   uint16_t rnti = mac->crnti;  //FIXME not sure this is valid for all pucch instances
 
   // SR
-  if(trigger_periodic_scheduling_request(mac, pucch, frameP, slotP))
+  if(trigger_periodic_scheduling_request(mac, pucch, frameP, slotP)) {
+    O_SR = 1;
     /* sr_payload = 1 means that this is a positive SR, sr_payload = 0 means that it is a negative SR */
     pucch->sr_payload = nr_ue_get_SR(module_idP,
                                      frameP,
                                      slotP);
-
+  }
 
   // CSI
-
+  O_CSI = nr_get_csi_measurements(mac, frameP, slotP, pucch);
 
   // ACKNACK
   O_ACK = get_downlink_ack(mac, frameP, slotP, pucch);
