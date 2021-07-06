@@ -159,15 +159,15 @@ void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
       switch (cqi_table) {
         case 0:
           target_qm = cqi_table1[cqi_idx][0];
-          target_coderate = cqi_table1[cqi_idx][0];
+          target_coderate = cqi_table1[cqi_idx][1];
           break;
         case 1:
           target_qm = cqi_table2[cqi_idx][0];
-          target_coderate = cqi_table2[cqi_idx][0];
+          target_coderate = cqi_table2[cqi_idx][1];
           break;
         case 2:
           target_qm = cqi_table3[cqi_idx][0];
-          target_coderate = cqi_table3[cqi_idx][0];
+          target_coderate = cqi_table3[cqi_idx][1];
           break;
         default:
           AssertFatal(1==0,"Invalid cqi table index %d\n",cqi_table);
