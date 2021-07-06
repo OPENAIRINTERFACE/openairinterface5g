@@ -100,14 +100,30 @@ if (Sched_INFO->TX_req->Number_of_PDUs > 0)
 
 ```
 
+```mermaid
+
+graph TD
+    pselect[VNF socket pselect] -- timed out : end of slot --> call_sched[Call Scheduler NR_UL_indication] -- oai_nfapi_***_req sends the DL p7 msg--> slot_inc[Increment sfn/slot];
+    pselect[VNF socket pselect] -- UL p7 xyz msg recvd --> msg_recvd[Read message vnf_nr_p7_read_dispatch_message] --> header_unpack[Unpack Header] -- switch cases on header --> unpack_msg[Handle Message vnf_handle_nr_xyz] --> fill_ul_info[Fill UL info struct with fn pointer vnf_p7->_public.nr_rx_xyz];
+    fill_ul_info -- update pselect_timeout: next_slot_start - time_xyz_msg_recvd-->pselect;
+    slot_inc -- next slot --> pselect
+
+```
+
 ## P7 DL Reception at PNF 
 
 Through the infinite loop [while(pnf_p7->terminate == 0)] running in pnf_nr_p7_message_pump(), the PNF receives and unpacks the downlink P7 message received on its socket. Based on the unpacked message, the appropriate message structures are filled in the PNF, and these are used further down the pipeline for processing. 
 
 While receiving the DL P7 message, we check whether the message was received within a timing window from which it was sent. The duration of the window can be set by the user (set as a parameter for xnf in the p5 messages). A point to note is that the DL information must be received by the PNF within a timing window at least lesser than the duration of slot_ahead variable (timing_window <= slot_ahead * slot_duration). Ideally, it should be received within a duration significantly lesser than slot_ahead so that there is adequate time for PHY processing. 
 
+```mermaid
 
+graph TB
+    pselect[PNF socket pselect] -- timed out : end of slot --> slot_inc[Increment sfn/slot];
+    pselect[PNF socket pselect] -- DL p7 xyz msg recvd --> msg_recvd[Read message pnf_nr_nfapi_p7_read_dispatch_message] --> header_unpack[Unpack Header] -- switch cases on header --> unpack_msg[Unpack Message pnf_handle_nr_xyz] --> fill_pnf_p7[Fill pnf_p7 global structure pnf_handle_nr_xyz] --Data from pnf_p7 struct copied to fapi structures using pnf_phy_***_req. Called every slot from oai_slot_ind-->pselect;
 
+    slot_inc -- next slot --> pselect
+```
 
 
 
