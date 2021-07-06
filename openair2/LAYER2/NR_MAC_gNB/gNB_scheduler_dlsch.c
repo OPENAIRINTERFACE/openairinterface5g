@@ -691,8 +691,7 @@ void pf_dl(module_id_t module_id,
     sched_pdsch->pucch_allocation = alloc;
     uint32_t TBS = 0;
     uint16_t rbSize;
-    const int oh = 2 + (sched_ctrl->num_total_bytes >= 256)
-                 + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
+    const int oh = 3 + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
     nr_find_nb_rb(sched_pdsch->Qm,
                   sched_pdsch->R,
                   ps->nrOfSymbols,
