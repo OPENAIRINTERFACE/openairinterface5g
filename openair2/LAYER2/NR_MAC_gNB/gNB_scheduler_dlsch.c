@@ -1101,21 +1101,19 @@ void nr_schedule_ue_spec(module_id_t module_id,
       int dlsch_total_bytes = 0;
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
-
-        // Check MAC header short/long format and size
-        // Check if data from RLC is equal or longer than 256B or not.
-        // Data from RLC was checked before, in function nr_store_dlsch_buffer
-        int header_size = sizeof(NR_MAC_SUBHEADER_SHORT);
-        if (sched_ctrl->num_total_bytes >= 256) {
-          header_size = sizeof(NR_MAC_SUBHEADER_LONG);
-        }
-
-        while (size > header_size) {
+        while (size > 3) {
 
           // Reserve space for short or long header.
+          // Check if data from RLC is equal or longer than 256B or not.
+          // Data from RLC was checked before, in function nr_store_dlsch_buffer
           uint8_t *header = buf;
-          buf += header_size;
-          size -= header_size;
+          if (sched_ctrl->num_total_bytes >= 256) {
+            buf += sizeof(NR_MAC_SUBHEADER_LONG);
+            size -= sizeof(NR_MAC_SUBHEADER_LONG);
+          } else {
+            buf += sizeof(NR_MAC_SUBHEADER_SHORT);
+            size -= sizeof(NR_MAC_SUBHEADER_SHORT);
+          }
 
           /* limit requested number of bytes to what preprocessor specified, or
            * such that TBS is full */
@@ -1145,7 +1143,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           if (len == 0)
             break;
 
-          if (header_size == sizeof(NR_MAC_SUBHEADER_LONG)) {
+          if (sched_ctrl->num_total_bytes >= 256) {
             ((NR_MAC_SUBHEADER_LONG *) header)->R = 0;
             ((NR_MAC_SUBHEADER_LONG *) header)->F = 1;
             ((NR_MAC_SUBHEADER_LONG *) header)->LCID = lcid;
@@ -1164,8 +1162,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
         }
         if (len == 0) {
           /* RLC did not have data anymore, mark buffer as unused */
-          buf -= header_size;
-          size += header_size;
+          if (sched_ctrl->num_total_bytes >= 256) {
+            buf -= sizeof(NR_MAC_SUBHEADER_LONG);
+            size += sizeof(NR_MAC_SUBHEADER_LONG);
+          } else {
+            buf -= sizeof(NR_MAC_SUBHEADER_SHORT);
+            size += sizeof(NR_MAC_SUBHEADER_SHORT);
+          }
         }
       }
       else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
