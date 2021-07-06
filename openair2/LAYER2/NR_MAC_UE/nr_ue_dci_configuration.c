@@ -73,7 +73,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
   AssertFatal(mac->scc == NULL || mac->scc_SIB == NULL, "both scc and scc_SIB cannot be non-null\n");
 
-  NR_BWP_Id_t bwp_id = mac->DL_BWP_Id;
+  NR_BWP_Id_t dl_bwp_id = get_softmodem_params()->sa ? 0 :  mac->DL_BWP_Id ; //SA uses initial BWP
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_ServingCellConfigCommonSIB_t *scc_SIB = mac->scc_SIB;
   NR_BWP_DownlinkCommon_t *bwp_Common=NULL;
@@ -84,14 +84,14 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     initialDownlinkBWP =  scc!=NULL ? scc->downlinkConfigCommon->initialDownlinkBWP : &scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
     initialUplinkBWP = scc!=NULL ? scc->uplinkConfigCommon->initialUplinkBWP : &scc_SIB->uplinkConfigCommon->initialUplinkBWP;
 
-    bwp_Common = bwp_id>0 ? mac->DLbwp[bwp_id-1]->bwp_Common : NULL;
+    bwp_Common = dl_bwp_id>0 ? mac->DLbwp[dl_bwp_id]->bwp_Common : NULL;
   }
 
   NR_SearchSpace_t *ss;
   NR_ControlResourceSet_t *coreset;
   if(ss_id>=0) {
-    ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
-    coreset = mac->coreset[bwp_id - 1][coreset_id - 1];
+    ss = mac->SSpace[dl_bwp_id][coreset_id - 1][ss_id];
+    coreset = mac->coreset[dl_bwp_id][coreset_id - 1];
     rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   } else {
     ss = mac->search_space_zero;
@@ -154,7 +154,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
     }
     for (int i = 0; i < rel15->num_dci_options; i++) {
-      rel15->dci_length_options[i] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[i]], rel15->dci_format_options[i], NR_RNTI_C, rel15->BWPSize, bwp_id);
+      rel15->dci_length_options[i] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[i]], rel15->dci_format_options[i], NR_RNTI_C, rel15->BWPSize, dl_bwp_id);
     }
     break;
     case NR_RNTI_RA:
@@ -169,7 +169,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     }
     rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
-    rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_RA, rel15->BWPSize, bwp_id);
+    rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_RA, rel15->BWPSize, dl_bwp_id);
     break;
     case NR_RNTI_P:
     break;
@@ -183,7 +183,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
-      rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
+      rel15->dci_length_options[0] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, dl_bwp_id);
     break;
     case NR_RNTI_SP_CSI:
     break;
@@ -246,16 +246,16 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 
   uint8_t bwp_id = (mac->cg) ? mac->DL_BWP_Id : 0, coreset_id = (mac->cg) ? 1 : 0;
   //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
-  NR_BWP_Downlink_t *bwp = (mac->cg) ? mac->DLbwp[bwp_id - 1] : NULL;
+  NR_BWP_Downlink_t *bwp = (mac->cg) ? mac->DLbwp[bwp_id] : NULL;
 
   LOG_D(MAC, "[DCI_CONFIG] ra_rnti %p (%x) crnti %p (%x) t_crnti %p (%x)\n", &ra->ra_rnti, ra->ra_rnti, &mac->crnti, mac->crnti, &ra->t_crnti, ra->t_crnti);
 
   if (mac->cg) { // do this only after we have a Master or Secondary Cell group
     // loop over all available SS for BWP ID 1, CORESET ID 1
     if (bwp) {
-      for (ss_id = 0; ss_id < FAPI_NR_MAX_SS_PER_CORESET && mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id] != NULL; ss_id++){
+      for (ss_id = 0; ss_id < FAPI_NR_MAX_SS_PER_CORESET && mac->SSpace[bwp_id][coreset_id - 1][ss_id] != NULL; ss_id++){
 	LOG_D(MAC, "[DCI_CONFIG] ss_id %d\n",ss_id);
-	NR_SearchSpace_t *ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
+	NR_SearchSpace_t *ss = mac->SSpace[bwp_id][coreset_id - 1][ss_id];
 	fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
 	NR_BWP_DownlinkCommon_t *bwp_Common = bwp->bwp_Common;
 	NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;

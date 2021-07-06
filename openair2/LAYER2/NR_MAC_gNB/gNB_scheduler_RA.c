@@ -540,7 +540,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
         ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
 
       // This should be handled differently when we use the initialBWP for RA
-      ra->bwp_id = 0;
+      ra->bwp_id = 0;//TODO
       NR_BWP_Downlink_t *bwp=NULL;
       if (ra->CellGroup && ra->CellGroup->spCellConfig && ra->CellGroup->spCellConfig->spCellConfigDedicated &&
           ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {

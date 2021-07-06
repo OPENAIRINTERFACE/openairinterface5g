@@ -60,6 +60,7 @@
 #define DEBUG_gNB_SCHEDULER 1
 
 #include "common/ran_context.h"
+#include "executables/softmodem-common.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -657,8 +658,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
         dci_pdu_rel15->mcs,
         dci_pdu_rel15->tpc,
         dci_pdu_rel15->ndi,
-        dci_pdu_rel15->rv,
-        dci_pdu_rel15->bwp_indicator.val);
+        dci_pdu_rel15->rv);
 }
 
 const int default_pucch_fmt[]       = {0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1};
@@ -1859,7 +1859,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     if (bwpList) AssertFatal(bwpList->list.count <= 4,
 			     "downlinkBWP_ToAddModList has %d BWP!\n",
 			     bwpList->list.count);
-    const int bwp_id = *servingCellConfig->firstActiveDownlinkBWP_Id;
+    const int bwp_id =  (get_softmodem_params()->sa ) ? 1 : *servingCellConfig->firstActiveDownlinkBWP_Id; // TODO
     sched_ctrl->active_bwp = bwpList ? bwpList->list.array[bwp_id - 1] : NULL;
     const int target_ss = sched_ctrl->active_bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
     sched_ctrl->search_space = get_searchspace(scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
@@ -1992,9 +1992,9 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
                                 NR_SearchSpace__searchSpaceType_PR ss_type,
                                 uint8_t *pdsch_to_harq_feedback) {
 
-  int bwp_id=1;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
+  NR_BWP_Id_t bwp_id = get_softmodem_params()->sa  ? 1 : *CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
   NR_BWP_Downlink_t *bwp=NULL;
   NR_BWP_Uplink_t *ubwp=NULL;
 
