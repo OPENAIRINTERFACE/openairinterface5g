@@ -44,31 +44,29 @@
 #include "rrc_eNB_GTPV1U.h"
 #include "openair2/RRC/NR/rrc_gNB_NGAP.h"
 
-extern f1ap_setup_req_t *f1ap_du_data_from_du;
-extern f1ap_cudu_inst_t f1ap_cu_inst[MAX_eNB];
-extern RAN_CONTEXT_t RC;
-extern uint32_t f1ap_assoc_id;
-
 static void setQos(F1AP_NonDynamic5QIDescriptor_t *toFill) {
   asn1cCalloc(toFill,F1AP_NonDynamic5QIDescriptor_t, tmp);
   /* fiveQI */
   tmp->fiveQI = 1L;
+
   /* OPTIONAL */
   /* qoSPriorityLevel */
   if (0) {
     asn1cCallocOne(toFill->qoSPriorityLevel, long, 1L);
   }
+
   /* OPTIONAL */
   /* averagingWindow */
   if (0) {
     asn1cCallocOne(toFill->averagingWindow,
-		   F1AP_AveragingWindow_t, 1L);
+                   F1AP_AveragingWindow_t, 1L);
   }
+
   /* OPTIONAL */
   /* maxDataBurstVolume */
   if (0) {
     asn1cCallocOne(toFill->maxDataBurstVolume,
-		   F1AP_MaxDataBurstVolume_t, 1L);
+                   F1AP_MaxDataBurstVolume_t, 1L);
   }
 }
 
@@ -110,8 +108,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   ie3->criticality                    = F1AP_Criticality_reject;
   ie3->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_NRCGI;
   /* - nRCGI */
-  addnRCGI(ie3->value.choice.NRCGI, f1ap_du_data_from_du->cell);
-
+  addnRCGI(ie3->value.choice.NRCGI, f1ap_ue_context_setup_req);
   /* mandatory */
   /* c4. ServCellIndex */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie4);
@@ -157,7 +154,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     ie7->id                             = F1AP_ProtocolIE_ID_id_Candidate_SpCell_List;  //90
     ie7->criticality                    = F1AP_Criticality_ignore;
     ie7->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_Candidate_SpCell_List;
-    
+
     for (int i=0;   i<0;  i++) {
       asn1cSequenceAdd(ie7->value.choice.Candidate_SpCell_List.list,F1AP_Candidate_SpCell_ItemIEs_t, candidate_spCell_item_ies);
       candidate_spCell_item_ies->id            = F1AP_ProtocolIE_ID_id_Candidate_SpCell_Item; // 91
@@ -165,14 +162,14 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
       candidate_spCell_item_ies->value.present = F1AP_Candidate_SpCell_ItemIEs__value_PR_Candidate_SpCell_Item;
       /* 7.1 Candidate_SpCell_Item */
       F1AP_Candidate_SpCell_Item_t *candidate_spCell_item=
-	&candidate_spCell_item_ies->value.choice.Candidate_SpCell_Item;
+        &candidate_spCell_item_ies->value.choice.Candidate_SpCell_Item;
       /* - candidate_SpCell_ID */
       //FixMe: first cell ???
       addnRCGI(candidate_spCell_item->candidate_SpCell_ID,f1ap_ue_context_setup_req);
       /* TODO add correct mcc/mnc */
     }
   }
-  
+
   /* optional */
   /* c8. DRXCycle */
   if (0) {
@@ -182,19 +179,19 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     ie8->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_DRXCycle;
     /* 8.1 longDRXCycleLength */
     ie8->value.choice.DRXCycle.longDRXCycleLength = F1AP_LongDRXCycleLength_ms10; // enum
-    
+
     /* optional */
     /* 8.2 shortDRXCycleLength */
     if (0) {
       asn1cCallocOne(ie6->value.choice.DRXCycle.shortDRXCycleLength,
-		     F1AP_ShortDRXCycleLength_t, F1AP_ShortDRXCycleLength_ms2); // enum
+                     F1AP_ShortDRXCycleLength_t, F1AP_ShortDRXCycleLength_ms2); // enum
     }
-    
+
     /* optional */
     /* 8.3 shortDRXCycleTimer */
     if (0) {
       asn1cCallocOne(ie8->value.choice.DRXCycle.shortDRXCycleTimer,
-		     F1AP_ShortDRXCycleTimer_t, 123L);
+                     F1AP_ShortDRXCycleTimer_t, 123L);
     }
   }
 
@@ -238,7 +235,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
       /* 10.1.3 sCellULConfigured*/
       if (0) {
         asn1cCallocOne(scell_toBeSetup_item->sCellULConfigured,
-		       F1AP_CellULConfigured_t, F1AP_CellULConfigured_ul_and_sul); // enum
+                       F1AP_CellULConfigured_t, F1AP_CellULConfigured_ul_and_sul); // enum
       }
     }
   }
@@ -264,7 +261,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     /* 11.1.2 duplicationIndication */
     //if (0) {
     asn1cCallocOne(srbs_toBeSetup_item->duplicationIndication,
-		   F1AP_DuplicationIndication_t, F1AP_DuplicationIndication_true); // enum
+                   F1AP_DuplicationIndication_t, F1AP_DuplicationIndication_true); // enum
     //}
   }
 
@@ -331,7 +328,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
           if (some_decide_qoS_characteristics) {
             DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
-	    setQos(DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI);
+            setQos(DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI);
           } else {
             DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
             asn1cCalloc(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI, F1AP_Dynamic5QIDescriptor_t, tmp);
@@ -347,21 +344,21 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
             /* delayCritical */
             if (0) {
               asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical,
-			     long, 1L);
+                             long, 1L);
             }
 
             /* OPTIONAL */
             /* averagingWindow */
             if (0) {
               asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow,
-			     F1AP_AveragingWindow_t, 1L);
+                             F1AP_AveragingWindow_t, 1L);
             }
 
             /* OPTIONAL */
             /* maxDataBurstVolume */
             if (0) {
               asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume,
-			     F1AP_MaxDataBurstVolume_t, 1L);
+                             F1AP_MaxDataBurstVolume_t, 1L);
             }
           } // if some_decide_qoS_characteristics
         } // qoS_Characteristics
@@ -385,14 +382,14 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
           /* maxPacketLossRateDownlink */
           if (0) {
             asn1cCallocOne(DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink,
-			   F1AP_MaxPacketLossRate_t, 1L);
+                           F1AP_MaxPacketLossRate_t, 1L);
           }
 
           /* OPTIONAL */
           /* maxPacketLossRateUplink */
           if (0) {
             asn1cCallocOne(DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink,
-			   F1AP_MaxPacketLossRate_t, 1L);
+                           F1AP_MaxPacketLossRate_t, 1L);
           }
         }
 
@@ -400,7 +397,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
         /* reflective_QoS_Attribute */
         if (0) {
           asn1cCallocOne(DRB_Information->dRB_QoS.reflective_QoS_Attribute,
-		      long, 1L);
+                         long, 1L);
         }
       } // dRB_QoS
       /* 12.1.2.2 sNSSAI */
@@ -422,7 +419,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
       /* 12.1.2.3 notificationControl */
       if (0) {
         asn1cCallocOne(DRB_Information->notificationControl,
-		    F1AP_NotificationControl_t, F1AP_NotificationControl_active); // enum
+                       F1AP_NotificationControl_t, F1AP_NotificationControl_active); // enum
       }
 
       /* 12.1.2.4 flows_Mapped_To_DRB_List */  // BK: need verifiy
@@ -441,8 +438,8 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
             if (some_decide_qoS_characteristics) {
               QosParams->present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
-	      setQos(QosParams->choice.non_Dynamic_5QI);
-	    } else {
+              setQos(QosParams->choice.non_Dynamic_5QI);
+            } else {
               QosParams->present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
               asn1cCalloc(QosParams->choice.dynamic_5QI, F1AP_Dynamic5QIDescriptor_t, tmp);
               /* qoSPriorityLevel */
@@ -624,7 +621,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   //   return -1;
   // }
   LOG_D(F1AP,"F1AP UEContextSetupRequest Encoded %u bits\n", len);
-  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id /* BK: fix me*/, buffer, len, 0 /* BK: fix me*/);
+  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0 /* BK: fix me*/);
   return 0;
 }
 
@@ -679,12 +676,12 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  const rnti_t rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance],
+  const rnti_t rnti = f1ap_get_rnti_by_cu_id(true, instance,
                       ie->value.choice.GNB_CU_UE_F1AP_ID);
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(&f1ap_cu_inst[instance],
+  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(true, instance,
                        ie->value.choice.GNB_DU_UE_F1AP_ID);
   AssertFatal(rnti == rnti2, "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
               rnti2, rnti);
@@ -713,13 +710,19 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
   }
   */
   LOG_I(F1AP, "Received UE CONTEXT RELEASE REQUEST: Trigger RRC for RNTI %x\n", rnti);
-  struct rrc_eNB_ue_context_s *ue_context_pP;
-  ue_context_pP = rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
-  rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(
-    instance,
-    ue_context_pP,
-    S1AP_CAUSE_RADIO_NETWORK,
-    21); // send cause 21: connection with ue lost
+
+  if (f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB) {
+    AssertFatal(false,"must be devlopped\n");
+  } else {
+    struct rrc_eNB_ue_context_s *ue_context_pP;
+    ue_context_pP = rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
+    rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(
+      instance,
+      ue_context_pP,
+      S1AP_CAUSE_RADIO_NETWORK,
+      21); // send cause 21: connection with ue lost
+  }
+
   return 0;
 }
 
@@ -744,14 +747,14 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_cu_inst[instance], cmd->rnti);
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(true, instance, cmd->rnti);
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextReleaseCommandIEs_t, ie2);
   ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_cu_inst[instance], cmd->rnti);
+  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(true, instance, cmd->rnti);
   /* mandatory */
   /* c3. Cause */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextReleaseCommandIEs_t, ie3);
@@ -801,7 +804,7 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
     return -1;
   }
 
-  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0);
   return 0;
 }
 
@@ -816,12 +819,12 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  const rnti_t rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance],
+  const rnti_t rnti = f1ap_get_rnti_by_cu_id(true, instance,
                       ie->value.choice.GNB_CU_UE_F1AP_ID);
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(&f1ap_cu_inst[instance],
+  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(true, instance,
                        ie->value.choice.GNB_DU_UE_F1AP_ID);
   AssertFatal(rnti == rnti2, "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
               rnti2, rnti);
@@ -841,7 +844,7 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
   protocol_ctxt_t ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, instance, ENB_FLAG_YES, rnti, 0, 0, instance);
 
-  if (RC.nrrrc[instance]->node_type == ngran_gNB_CU) {
+  if (f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB) {
     struct rrc_gNB_ue_context_s *ue_context_p =
       rrc_gNB_get_ue_context(RC.nrrrc[instance], rnti);
 
@@ -897,7 +900,7 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
       instance, rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
 
   LOG_I(F1AP, "Received UE CONTEXT RELEASE COMPLETE: Removing CU UE entry for RNTI %x\n", rnti);
-  f1ap_remove_ue(&f1ap_cu_inst[instance], rnti);
+  f1ap_remove_ue(true, instance, rnti);
   return 0;
 }
 
@@ -909,7 +912,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
   // for test
-  cellIDs_t hardCoded={ .mcc=208, .mnc=93, .mnc_digit_length=2};
+  cellIDs_t hardCoded= { .mcc=208, .mnc=93, .mnc_digit_length=2};
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;

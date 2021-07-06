@@ -133,8 +133,11 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     }
 
     /* - nRCGI */
-    addnRCGI(served_cells_item_p->served_Cell_Information.nRCGI, req->cell+i);
-
+    TBCD_TO_MCC_MNC(&(served_cells_item_p->served_Cell_Information.nRCGI.pLMN_Identity), req->cell[i].mcc,
+                    req->cell[i].mnc,req->cell[i].mnc_digit_length);
+    // NR cellID
+    BIT_STRING_TO_NR_CELL_IDENTITY(&served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity,
+                                   req->cell[i].nr_cellid);
     LOG_D(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
           req->cell[i].mcc,
           req->cell[i].mnc,
@@ -147,6 +150,12 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
           served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[4]);
     /* - nRPCI */
     req->cell[i].nr_pci = served_cells_item_p->served_Cell_Information.nRPCI;
+
+    // LTS: FIXME data model failure: we don't KNOW if we receive a 4G or a 5G cell
+    // Furthermore, cell_type is not a attribute of a cell in the data structure !!!!!!!!!!
+    if (RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU)
+      f1ap_req(true, instance)->cell_type=CELL_MACRO_GNB;
+
     LOG_D(F1AP, "req->nr_pci[%d] %d \n",
           i, req->cell[i].nr_pci);
     // System Information
@@ -170,7 +179,6 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
           i, req->sib1[i], req->sib1_length[i]);
   }
 
-  *f1ap_du_data_from_du = F1AP_SETUP_REQ(message_p);
   // char *measurement_timing_information[F1AP_MAX_NB_CELLS];
   // uint8_t ranac[F1AP_MAX_NB_CELLS];
   // int fdd_flag = f1ap_setup_req->fdd_flag;
@@ -222,13 +230,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     }
   } else {
     CU_send_F1_SETUP_FAILURE(instance);
-
-    if (RC.nrrrc[0]->node_type == ngran_gNB_CU) {
-      itti_free(TASK_RRC_GNB,message_p);
-    } else {
-      itti_free(TASK_RRC_ENB,message_p);
-    }
-
+    itti_free(TASK_RRC_GNB,message_p);
     return -1;
   }
 
@@ -287,7 +289,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
          i<num_cells_to_activate;
          i++) {
       asn1cSequenceAdd(ie3->value.choice.Cells_to_be_Activated_List.list,
-		       F1AP_Cells_to_be_Activated_List_ItemIEs_t, cells_to_be_activated_ies);
+                       F1AP_Cells_to_be_Activated_List_ItemIEs_t, cells_to_be_activated_ies);
       cells_to_be_activated_ies->id = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item;
       cells_to_be_activated_ies->criticality = F1AP_Criticality_reject;
       cells_to_be_activated_ies->value.present = F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item;
@@ -340,7 +342,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
   }
 
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0);
   return 0;
 }
 
@@ -394,13 +396,13 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
     ie4->criticality               = F1AP_Criticality_ignore;
     ie4->value.present             = F1AP_F1SetupFailureIEs__value_PR_CriticalityDiagnostics;
     asn1cCallocOne(ie4->value.choice.CriticalityDiagnostics.procedureCode,
-		   F1AP_ProcedureCode_t, F1AP_ProcedureCode_id_UEContextSetup);
+                   F1AP_ProcedureCode_t, F1AP_ProcedureCode_id_UEContextSetup);
     asn1cCallocOne(ie4->value.choice.CriticalityDiagnostics.triggeringMessage,
-		    F1AP_TriggeringMessage_t, F1AP_TriggeringMessage_initiating_message);
+                   F1AP_TriggeringMessage_t, F1AP_TriggeringMessage_initiating_message);
     asn1cCallocOne(ie4->value.choice.CriticalityDiagnostics.procedureCriticality,
-		   F1AP_Criticality_t, F1AP_Criticality_reject);
+                   F1AP_Criticality_t, F1AP_Criticality_reject);
     asn1cCallocOne(ie4->value.choice.CriticalityDiagnostics.transactionID,
-		   F1AP_TransactionID_t, 0);
+                   F1AP_TransactionID_t, 0);
   }
 
   /* encode */
@@ -410,7 +412,7 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
   }
 
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(true,instance, buffer, len, 0);
   return 0;
 }
 
@@ -480,7 +482,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
       cells_to_be_activated_ies->value.present = F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item;
       // 2.1 cells to be Activated list item
       F1AP_Cells_to_be_Activated_List_Item_t *cells_to_be_activated_list_item=
-	&cells_to_be_activated_ies->value.choice.Cells_to_be_Activated_List_Item;
+        &cells_to_be_activated_ies->value.choice.Cells_to_be_Activated_List_Item;
       // - nRCGI
       addnRCGI(cells_to_be_activated_list_item->nRCGI, f1ap_gnb_cu_configuration_update->cells_to_activate+i);
       // optional
@@ -499,7 +501,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
       if (f1ap_gnb_cu_configuration_update->cells_to_activate[i].num_SI > 0) {
         F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation =
-	  &cells_to_be_activated_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
+          &cells_to_be_activated_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
         //LOG_I(F1AP, "%s() SI %d size %d: ", __func__, i, f1ap_setup_resp->SI_container_length[i][0]);
         //for (int n = 0; n < f1ap_setup_resp->SI_container_length[i][0]; n++)
         //  printf("%02x ", f1ap_setup_resp->SI_container[i][0][n]);
@@ -811,7 +813,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
   LOG_DUMPMSG(F1AP, LOG_DUMP_CHAR, buffer, len, "F1AP gNB-CU CONFIGURATION UPDATE : ");
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(true,instance, buffer, len, 0);
   return 0;
 }
 

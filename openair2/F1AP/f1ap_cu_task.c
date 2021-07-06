@@ -38,13 +38,14 @@
 #include "f1ap_cu_task.h"
 #include "proto_agent.h"
 
-extern RAN_CONTEXT_t RC;
-extern uint8_t proto_agent_flag;
-
-f1ap_setup_req_t *f1ap_du_data_from_du;
-f1ap_cudu_inst_t f1ap_cu_inst[MAX_eNB];
-
 void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind) {
+  createF1inst(true, instance, NULL);
+  // save the assoc id
+  f1ap_setup_req_t *f1ap_du_data=f1ap_req(true, instance);
+  f1ap_du_data->assoc_id         = sctp_new_association_ind->assoc_id;
+  f1ap_du_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
+  f1ap_du_data->sctp_out_streams = sctp_new_association_ind->out_streams;
+  f1ap_du_data->default_sctp_stream_id = 0;
   // Nothing
 }
 
@@ -56,20 +57,12 @@ void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
           sctp_new_association_resp->sctp_state,
           instance,
           sctp_new_association_resp->ulp_cnx_id);
-
-    if (sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN)
-      proto_agent_stop(instance);
-
+    //if (sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN)
+    //proto_agent_stop(instance);
     //f1ap_handle_setup_message(instance, sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
     return; // exit -1 for debugging
   }
 
-  // go to an init func
-  f1ap_du_data_from_du = (f1ap_setup_req_t *)calloc(1, sizeof(f1ap_setup_req_t));
-  // save the assoc id
-  f1ap_du_data_from_du->assoc_id         = sctp_new_association_resp->assoc_id;
-  f1ap_du_data_from_du->sctp_in_streams  = sctp_new_association_resp->in_streams;
-  f1ap_du_data_from_du->sctp_out_streams = sctp_new_association_resp->out_streams;
   /* setup parameters for F1U and start the server */
   const cudu_params_t params = {
     .local_ipv4_address  = RC.nrrrc[instance]->eth_params_s.my_addr,
@@ -77,9 +70,8 @@ void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
     .remote_ipv4_address = RC.nrrrc[instance]->eth_params_s.remote_addr,
     .remote_port         = RC.nrrrc[instance]->eth_params_s.remote_portd
   };
-  AssertFatal(proto_agent_start(instance, &params) == 0,
-              "could not start PROTO_AGENT for F1U on instance %ld!\n", instance);
-  proto_agent_flag = 1;
+  //AssertFatal(proto_agent_start(instance, &params) == 0,
+  //          "could not start PROTO_AGENT for F1U on instance %ld!\n", instance);
 }
 
 void cu_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind) {
@@ -120,7 +112,10 @@ void cu_task_send_sctp_init_req(instance_t enb_id) {
 }
 
 
-void *F1AP_CU_task(void *arg) {
+void *
+
+
+F1AP_CU_task(void *arg) {
   MessageDef *received_msg = NULL;
   int         result;
   LOG_I(F1AP, "Starting F1AP at CU\n");
@@ -136,7 +131,7 @@ void *F1AP_CU_task(void *arg) {
       case SCTP_NEW_ASSOCIATION_IND:
         LOG_I(F1AP, "CU Task Received SCTP_NEW_ASSOCIATION_IND for instance %ld\n",
               ITTI_MSG_DESTINATION_INSTANCE(received_msg));
-        cu_task_handle_sctp_association_ind(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        cu_task_handle_sctp_association_ind(ITTI_MSG_ORIGIN_INSTANCE(received_msg),
                                             &received_msg->ittiMsg.sctp_new_association_ind);
         break;
 

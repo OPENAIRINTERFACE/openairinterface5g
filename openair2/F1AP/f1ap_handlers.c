@@ -40,8 +40,6 @@
 #include "f1ap_cu_ue_context_management.h"
 #include "f1ap_du_ue_context_management.h"
 
-extern f1ap_setup_req_t *f1ap_du_data_from_du;
-
 /* Handlers matrix. Only f1 related procedure present here */
 f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
 

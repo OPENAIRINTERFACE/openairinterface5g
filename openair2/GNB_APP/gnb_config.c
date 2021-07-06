@@ -1646,6 +1646,7 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
     AssertFatal(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr != NULL,
                 "gNB id %u is not defined in configuration file\n",i);
     F1AP_SETUP_REQ (msg_p).num_cells_available = 0;
+    F1AP_SETUP_REQ (msg_p).cell_type=CELL_MACRO_GNB;
 
     for (k=0; k <num_gnbs ; k++) {
       if (strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[k], *(GNBParamList.paramarray[i][GNB_GNB_NAME_IDX].strptr)) == 0) {

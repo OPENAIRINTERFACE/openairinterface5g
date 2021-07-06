@@ -38,11 +38,6 @@
 #include "f1ap_du_task.h"
 #include "proto_agent.h"
 
-extern RAN_CONTEXT_t RC;
-
-f1ap_setup_req_t *f1ap_du_data;
-f1ap_cudu_inst_t f1ap_du_inst[MAX_eNB];
-
 void du_task_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1ap_setup_req) {
   DevAssert(f1ap_setup_req != NULL);
   MessageDef                 *message_p                   = NULL;
@@ -62,9 +57,6 @@ void du_task_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1
   memcpy(&sctp_new_association_req_p->local_address,
          &f1ap_setup_req->DU_f1_ip_address,
          sizeof(f1ap_setup_req->DU_f1_ip_address));
-  // store data
-  f1ap_du_data = (f1ap_setup_req_t *)calloc(1, sizeof(f1ap_setup_req_t));
-  *f1ap_du_data = *f1ap_setup_req;
   //printf("sib itti message %s\n", f1ap_setup_req_t->sib1[0]);
   //printf("nr_cellid : %llx (%lld)",f1ap_setup_req->nr_cellid[0],f1ap_setup_req->nr_cellid[0]);
   //du_f1ap_register_to_sctp
@@ -84,6 +76,7 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   }
 
   // save the assoc id
+  f1ap_setup_req_t *f1ap_du_data=f1ap_req(false, instance);
   f1ap_du_data->assoc_id         = sctp_new_association_resp->assoc_id;
   f1ap_du_data->sctp_in_streams  = sctp_new_association_resp->in_streams;
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
@@ -131,13 +124,14 @@ void *F1AP_DU_task(void *arg) {
         // 1. save the itti msg so that you can use it to sen f1ap_setup_req, fill the f1ap_setup_req message,
         // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
+        createF1inst(false, ITTI_MSG_DESTINATION_INSTANCE(received_msg), &F1AP_SETUP_REQ(received_msg));
         LOG_I(F1AP, "DU Task Received F1AP_SETUP_REQ\n");
         du_task_send_sctp_association_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                           &F1AP_SETUP_REQ(received_msg));
         break;
 
       case F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE:
-        DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(ITTI_MSG_ORIGIN_INSTANCE(received_msg),
             &F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(received_msg));
         break;
 

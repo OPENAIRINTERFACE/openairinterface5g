@@ -426,6 +426,12 @@ typedef struct f1ap_cudu_ue_inst_s {
 } f1ap_cudu_ue_t;
 
 typedef struct f1ap_cudu_inst_s {
+  f1ap_setup_req_t setupReq;
+  instance_t du_ue_f1ap_id;
+  uint16_t sctp_in_streams;
+  uint16_t sctp_out_streams;
+  uint16_t default_sctp_stream_id;
+  uint64_t gNB_DU_id;
   uint16_t num_ues;
   f1ap_cudu_ue_t f1ap_ue[MAX_MOBILES_PER_ENB];
 } f1ap_cudu_inst_t;
@@ -434,59 +440,67 @@ typedef struct f1ap_cudu_inst_s {
 
 uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_t cu_mod_idP);
 
+f1ap_cudu_inst_t *getCxt(bool isCU, module_id_t module_idP);
 
-int f1ap_add_ue(f1ap_cudu_inst_t *f1_inst,
+void createF1inst(bool isCU, module_id_t module_idP, f1ap_setup_req_t *req);
+int f1ap_add_ue(bool isCu,
                 module_id_t     module_idP,
                 int             CC_idP,
                 int             UE_id,
                 rnti_t          rntiP);
 
-int f1ap_remove_ue(f1ap_cudu_inst_t *f1_inst,
+int f1ap_remove_ue(bool isCu, module_id_t module_idP,
                    rnti_t            rntiP);
 
-int f1ap_get_du_ue_f1ap_id (f1ap_cudu_inst_t *f1_inst,
+int f1ap_get_du_ue_f1ap_id (bool isCu, module_id_t module_idP,
                             rnti_t            rntiP);
 
-int f1ap_get_cu_ue_f1ap_id (f1ap_cudu_inst_t *f1_inst,
+int f1ap_get_cu_ue_f1ap_id (bool isCu, module_id_t module_idP,
                             rnti_t            rntiP);
 
 
-int f1ap_get_rnti_by_du_id(f1ap_cudu_inst_t *f1_inst,
+int f1ap_get_rnti_by_du_id(bool isCu, module_id_t module_idP,
                            module_id_t       du_ue_f1ap_id );
 
 
-int f1ap_get_rnti_by_cu_id(f1ap_cudu_inst_t *f1_inst,
+int f1ap_get_rnti_by_cu_id(bool isCu, module_id_t module_idP,
                            module_id_t       cu_ue_f1ap_id );
 
 
-int f1ap_get_du_uid(f1ap_cudu_inst_t *f1_inst,
+int f1ap_get_du_uid(bool isCu, module_id_t module_idP,
                     module_id_t       du_ue_f1ap_id );
 
-int f1ap_get_cu_uid(f1ap_cudu_inst_t *f1_inst,
+int f1ap_get_cu_uid(bool isCu, module_id_t module_idP,
                     module_id_t       cu_ue_f1ap_id );
 
-int f1ap_get_uid_by_rnti(f1ap_cudu_inst_t *f1_inst,
+int f1ap_get_uid_by_rnti(bool isCu, module_id_t module_idP,
                          rnti_t            rntiP );
 
-int f1ap_du_add_cu_ue_id(f1ap_cudu_inst_t *f1_inst,
+int f1ap_du_add_cu_ue_id(bool isCu, module_id_t module_idP,
                          module_id_t       du_ue_f1ap_id,
                          module_id_t       cu_ue_f1ap_id);
 
-int f1ap_cu_add_du_ue_id(f1ap_cudu_inst_t *f1_inst,
+int f1ap_cu_add_du_ue_id(bool isCu, module_id_t module_idP,
                          module_id_t       cu_ue_f1ap_id,
                          module_id_t       du_ue_f1ap_id);
+
+int f1ap_assoc_id(bool isCu, module_id_t module_idP);
+
+static inline f1ap_setup_req_t *f1ap_req(bool isCu, module_id_t module_idP) {
+  return &getCxt(isCu, module_idP)->setupReq;
+}
 
 #define asn1cCalloc(VaR, TyPe, lOcPtr) TyPe *lOcPtr=VaR=(TyPe*) calloc(1,sizeof(TyPe));
 #define asn1cCallocOne(VaR, TyPe, VaLue) VaR=(TyPe*) calloc(1,sizeof(TyPe)); *VaR=VaLue;
 #define asn1cSequenceAdd(VaR, TyPe, lOcPtr) TyPe *lOcPtr=(TyPe*) calloc(1,sizeof(TyPe)); ASN_SEQUENCE_ADD(&VaR,lOcPtr);
 
+#define TASK_F1APP f1ap_req(false, instance)->cell_type==CELL_MACRO_GNB?TASK_GNB_APP:TASK_ENB_APP
+
 //lts: C struct type is not homogeneous, so we need macros instead of functions
 #define addnRCGI(nRCGi, servedCelL) \
   MCC_MNC_TO_PLMNID((servedCelL)->mcc,(servedCelL)-> mnc,(servedCelL)->mnc_digit_length, \
-		    &((nRCGi).pLMN_Identity));				\
+                    &((nRCGi).pLMN_Identity));        \
   NR_CELL_ID_TO_BIT_STRING((servedCelL)->nr_cellid, &((nRCGi).nRCellIdentity));
-
-extern f1ap_setup_req_t *f1ap_du_data_from_du;
 extern RAN_CONTEXT_t RC;
 
 #endif /* F1AP_COMMON_H_ */
