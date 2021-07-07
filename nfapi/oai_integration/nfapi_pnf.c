@@ -88,10 +88,10 @@ extern void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
 extern void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
 			       int frame, int slot,
 			       nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu);
-extern void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
+extern void handle_nr_nfapi_pdsch_pdu(processingData_L1tx_t *msgTx,
                             nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                             uint8_t *sdu);
-extern void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
+extern void handle_nr_nfapi_ssb_pdu(processingData_L1tx_t *msgTx,int frame,int slot,
                              nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu);
 extern void nr_fill_ulsch(PHY_VARS_gNB *gNB,
                    int frame,
@@ -1157,7 +1157,7 @@ int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
       //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d] - NFAPI_HI_DCI0_DCI_PDU_TYPE\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
        nfapi_nr_ul_dci_request_pdus_t *ul_dci_req_pdu = &req->ul_dci_pdu_list[i]; 
        int SFN=req->SFN+2;
-      handle_nfapi_nr_ul_dci_pdu(gNB, SFN, req->Slot, ul_dci_req_pdu); 
+      //handle_nfapi_nr_ul_dci_pdu(gNB, SFN, req->Slot, ul_dci_req_pdu); 
     } 
     else {
       LOG_E(PHY,"[PNF] UL_DCI_REQ sfn_slot:%d PDU[%d] - unknown pdu type:%d\n", NFAPI_SFNSLOT2DEC(req->SFN, req->Slot), i, req->ul_dci_pdu_list[i].PDUType);
@@ -1241,12 +1241,12 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu=&dl_tti_pdu_list[i];
       memcpy(dl_tti_pdu,&dl_tti_pdu_list[i],sizeof(nfapi_nr_dl_tti_request_pdu_t));
       int SFN=sfn+2;
-      handle_nfapi_nr_pdcch_pdu(gNB, SFN, slot, &dl_tti_pdu->pdcch_pdu);
+      //handle_nfapi_nr_pdcch_pdu(gNB, SFN, slot, &dl_tti_pdu->pdcch_pdu);
       //dl_tti_pdu_list[i].pdcch_pdu.pdcch_pdu_rel15.numDlDci++; // ?
       // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() pdcch_vars->num_dci:%d\n", __FUNCTION__, pdcch_vars->num_dci);
     } else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE) {
         //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() PDU:%d BCH: pdu_index:%u pdu_length:%d sdu_length:%d BCH_SDU:%x,%x,%x\n", __FUNCTION__, i, pdu_index, bch_pdu->bch_pdu_rel8.length, tx_request_pdu[sfn][sf][pdu_index]->segments[0].segment_length, sdu[0], sdu[1], sdu[2]);
-        handle_nr_nfapi_ssb_pdu(gNB, sfn, slot, &dl_tti_pdu_list[i]);
+        //handle_nr_nfapi_ssb_pdu(gNB, sfn, slot, &dl_tti_pdu_list[i]);
         gNB->pbch_configured=1;
       //} else {
         // NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() BCH NULL TX PDU SFN/SF:%d PDU_INDEX:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), pdu_index);
@@ -1258,10 +1258,10 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
       nfapi_nr_pdu_t *tx_data = tx_data_request[sfn][slot][0];
 
       if (tx_data != NULL) {
-        int UE_id = find_nr_dlsch(rel15_pdu->rnti,gNB,SEARCH_EXIST_OR_FREE);
+        int UE_id = 0;//find_nr_dlsch(rel15_pdu->rnti,gNB,SEARCH_EXIST_OR_FREE);
         AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
         AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
-        NR_gNB_DLSCH_t *dlsch0 = gNB->dlsch[UE_id][0];
+        NR_gNB_DLSCH_t *dlsch0 = NULL;//gNB->dlsch[UE_id][0];
         int harq_pid = dlsch0->harq_ids[sfn%2][slot];
 
         if(harq_pid >= dlsch0->Mdlharq) {
@@ -1272,7 +1272,7 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
         uint8_t *dlsch_sdu = nr_tx_pdus[UE_id][harq_pid];
        memcpy(dlsch_sdu, tx_data->TLVs[0].value.direct,tx_data->PDU_length);//TODO: Check if required
         //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() DLSCH:pdu_index:%d handle_nfapi_dlsch_pdu(eNB, proc_rxtx, dlsch_pdu, transport_blocks:%d sdu:%p) eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols:%d\n", __FUNCTION__, rel8_pdu->pdu_index, rel8_pdu->transport_blocks, dlsch_sdu, eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols);
-        handle_nr_nfapi_pdsch_pdu(gNB, sfn, slot,pdsch_pdu, dlsch_sdu);
+        //handle_nr_nfapi_pdsch_pdu(gNB, sfn, slot,pdsch_pdu, dlsch_sdu);
        } else {
           NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() DLSCH NULL TX PDU SFN/SF:%d PDU_INDEX:%d\n", __FUNCTION__, NFAPI_SFNSLOT2DEC(sfn,slot), rel15_pdu->pduIndex);     }
     } else {
