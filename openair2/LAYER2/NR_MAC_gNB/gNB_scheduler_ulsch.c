@@ -847,16 +847,6 @@ bool allocate_ul_retransmission(module_id_t module_id,
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pusch_t *retInfo = &sched_ctrl->ul_harq_processes[harq_pid].sched_pusch;
-  NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-
-  // frame/slot in sched_pusch has been set previously. In the following, we
-  // overwrite the information in the retransmission information before storing
-  // as the new scheduling instruction
-  retInfo->frame = sched_ctrl->sched_pusch.frame;
-  retInfo->slot = sched_ctrl->sched_pusch.slot;
-
-  // Get previous PUSCH filed info
-  sched_ctrl->sched_pusch = *retInfo;
 
   NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
   int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
@@ -923,6 +913,15 @@ bool allocate_ul_retransmission(module_id_t module_id,
     LOG_D(MAC, "%4d.%2d no free CCE for retransmission UL DCI UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
     return false;
   }
+
+  /* frame/slot in sched_pusch has been set previously. In the following, we
+   * overwrite the information in the retransmission information before storing
+   * as the new scheduling instruction */
+  retInfo->frame = sched_ctrl->sched_pusch.frame;
+  retInfo->slot = sched_ctrl->sched_pusch.slot;
+  /* Get previous PSUCH field info */
+  sched_ctrl->sched_pusch = *retInfo;
+  NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
 
   LOG_D(MAC,
         "%4d.%2d Allocate UL retransmission UE %d/RNTI %04x sched %4d.%2d (%d RBs)\n",
