@@ -704,21 +704,24 @@ void nr_get_Msg3alloc(module_id_t module_id,
       ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList:
       scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
 
+    uint8_t k2 = 0;
     for (int i=0; i<pusch_TimeDomainAllocationList->list.count; i++) {
       startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
       SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
       // we want to transmit in the uplink symbols of mixed slot
       if (NrOfSymbols == scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols) {
-        ra->Msg3_tda_id = i;
-        break;
+        k2 = *pusch_TimeDomainAllocationList->list.array[i]->k2;
+        temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
+        ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
+        if (is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[ra->Msg3_slot / 64], ra->Msg3_slot)) {
+          ra->Msg3_tda_id = i;
+          break;
+        }
       }
     }
+
     AssertFatal(ra->Msg3_tda_id<16,"Unable to find Msg3 time domain allocation in list\n");
 
-    uint8_t k2 = *pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->k2;
-
-    temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
-    ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
     if (nr_slots_per_frame[mu]>temp_slot)
       ra->Msg3_frame = current_frame;
     else
