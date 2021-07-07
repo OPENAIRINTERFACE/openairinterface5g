@@ -45,8 +45,23 @@ extern double cpu_freq_GHz  __attribute__ ((aligned(32)));;
 #else
   #error "building on unsupported CPU architecture"
 #endif
+
+#define TIMESTAT_MSGID_START       0     /*!< \brief send time at measure starting point */
+#define TIMESTAT_MSGID_STOP        1     /*!< \brief send time at measure end  point */
+#define TIMESTAT_MSGID_ENABLE      2     /*!< \brief enable measure point */
+#define TIMESTAT_MSGID_DISABLE     3     /*!< \brief disable measure point */
+#define TIMESTAT_MSGID_DISPLAY     10    /*!< \brief display measure */
+#define TIMESTAT_MSGID_END         11    /*!< \brief stops the measure threads and free assocated resources */
 typedef struct {
-  OAI_CPUTIME_TYPE in;      /*!< \brief time at measue starting point */
+  int               msgid;                  /*!< \brief message id, as defined by TIMESTAT_MSGID_X macros */
+  int               timestat_id;            /*!< \brief points to the time_stats_t entry in cpumeas table */
+  OAI_CPUTIME_TYPE  ts;                     /*!< \brief time stamp */
+  void (*displayFunc)(void *);              /*!< \brief function to call when DISPLAY message is received*/
+} time_stats_msg_t;
+
+
+typedef struct {
+  OAI_CPUTIME_TYPE in;      /*!< \brief time at measure starting point */
   OAI_CPUTIME_TYPE diff;     /*!< \brief average difference between time at starting point and time at endpoint*/
   OAI_CPUTIME_TYPE p_time; /*!< \brief absolute process duration */
   OAI_CPUTIME_TYPE diff_square; /*!< \brief process duration square */
@@ -55,17 +70,13 @@ typedef struct {
   int meas_flag;             /*!< \brief 1: stop_meas not called (consecutive calls of start_meas) */
   char *meas_name;           /*!< \brief name to use when printing the measure (not used for PHY simulators)*/
   int meas_index;            /*!< \brief index of this measure in the measure array (not used for PHY simulators)*/
+  bool meas_enabled;         /*!< \brief per measure enablement flag. send_meas tests this flag, unused today in start_meas and stop_meas*/
+  notifiedFIFO_elt_t *tpoolmsg; /*!< \brief message pushed to the cpu measurment queue to report a measure START or STOP */
+  time_stats_msg_t *tstatptr;   /*!< \brief pointer to the time_stats_msg_t data in the tpoolmsg, stored here for perf considerations*/
 } time_stats_t;
+#define MEASURE_ENABLED(X)       (X->meas_enabled)
 
-#define TIMESTAT_MSGID_START       0
-#define TIMESTAT_MSGID_STOP         1
-#define TIMESTAT_MSGID_DISPLAY    2
-typedef struct {
-  int               msgid;                    /*!< \brief message id, as defined by TIMESTAT_MSGID_X macros */
-  int               timestat_id;            /*!< \brief points to the time_stats_t entry in cpumeas table */
-  OAI_CPUTIME_TYPE  ts;             /*!< \brief time stamp */
-   void (*displayFunc)(void *);   /*!< \brief function to call when DISPLAY message is received*/
-} time_stats_msg_t;
+
 
 
 static inline void start_meas(time_stats_t *ts) __attribute__((always_inline));
@@ -159,15 +170,18 @@ extern notifiedFIFO_t measur_fifo;
   }
 
   void init_meas(void);
-  int register_meas(char *name, time_stats_t *ts);
-
-  static inline void send_meas(int measur_idx) {
-    if (opp_enabled) {
-      notifiedFIFO_elt_t *msg =newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
-      time_stats_msg_t *tsm = (time_stats_msg_t *)NotifiedFifoData(msg);
-      tsm->ts = rdtsc_oai();
-      pushNotifiedFIFO(&measur_fifo, msg);
+  time_stats_t *register_meas(char *name);
+  #define START_MEAS(X) send_meas(X, TIMESTAT_MSGID_START)
+  #define STOP_MEAS(X)  send_meas(X, TIMESTAT_MSGID_STOP)
+  static inline void send_meas(time_stats_t *ts, int msgid) {
+    if (MEASURE_ENABLED(ts) ) {
+      ts->tstatptr->timestat_id=ts->meas_index;
+      ts->tstatptr->msgid = msgid ;
+      ts->tstatptr->ts = rdtsc_oai();
+      pushNotifiedFIFO(&measur_fifo, ts->tpoolmsg);
     }
   }
+  void end_meas(void);
+
 #endif  //ifndef PHYSIM
 #endif

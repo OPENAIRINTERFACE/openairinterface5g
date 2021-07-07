@@ -145,9 +145,11 @@ double get_time_meas_us(time_stats_t *ts)
 }
 
 #ifndef PHYSIM
+/* function for the asynchronous measurment module: cpu stat are sent to a dedicated thread
+ * which is in charge of computing the cpu time spent in a given function/algorithm...
+ */
 
-
-int register_meas(char *name, time_stats_t *dst_ts)
+time_stats_t *register_meas(char *name)
 {
   for (int i=0; i<max_cpumeasur; i++) {
     if (measur_table[i] == NULL) {
@@ -155,10 +157,23 @@ int register_meas(char *name, time_stats_t *dst_ts)
       memset(measur_table[i] ,0,sizeof(time_stats_t));
       measur_table[i]->meas_name = strdup(name);
       measur_table[i]->meas_index = i;
-      return i;
+      measur_table[i]->tpoolmsg =newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
+      measur_table[i]->tstatptr = (time_stats_msg_t *)NotifiedFifoData(measur_table[i]->tpoolmsg);
+      return measur_table[i];
     }
   }
-  return -1;
+  return NULL;
+}
+
+void free_measurtbl(void) {
+  for (int i=0; i<max_cpumeasur; i++) {
+    if (measur_table[i] != NULL) {
+	  free(measur_table[i]->meas_name);
+	  delNotifiedFIFO_elt(measur_table[i]->tpoolmsg);
+	  free(measur_table[i]);
+    }
+  }
+  //free the fifo...
 }
 
 void run_cpumeasur(void) {
@@ -183,7 +198,7 @@ void run_cpumeasur(void) {
              if ( measur_table[tsm->timestat_id]->p_time > measur_table[tsm->timestat_id]->max )
                measur_table[tsm->timestat_id]->max = measur_table[tsm->timestat_id]->p_time;
           break;
-           case TIMESTAT_MSGID_DISPLAY:
+          case TIMESTAT_MSGID_DISPLAY:
             {
             char aline[256];
             int start, stop;
@@ -204,17 +219,21 @@ void run_cpumeasur(void) {
                 }
              }
             }
-            break;
-            default:
-            break;
+          break;
+          case TIMESTAT_MSGID_END:
+            free_measurtbl();
+            delNotifiedFIFO_elt(msg);
+            pthread_exit(NULL);
+          break;
+          default:
+          break;
       }
     delNotifiedFIFO_elt(msg);
     }
 }
 
 
-void init_meas(void)
-{
+void init_meas(void) {
   pthread_t thid;
   paramdef_t cpumeasur_params[] = CPUMEASUR_PARAMS_DESC;
   int numparams=sizeof(cpumeasur_params)/sizeof(paramdef_t);
@@ -224,5 +243,12 @@ void init_meas(void)
   AssertFatal(measur_table!=NULL, "couldn't allocate %u cpu measurements entries\n",max_cpumeasur);
   rt=pthread_create(&thid,NULL, (void *(*)(void *))run_cpumeasur, NULL);
   AssertFatal(rt==0, "couldn't create cpu measurment thread: %s\n",strerror(errno));
+}
+
+void end_meas(void) {
+    notifiedFIFO_elt_t *nfe = newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
+	time_stats_msg_t *msg = (time_stats_msg_t *)NotifiedFifoData(nfe);
+    msg->msgid = TIMESTAT_MSGID_END ;
+    pushNotifiedFIFO(&measur_fifo, nfe);
 }
 #endif

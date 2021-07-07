@@ -681,9 +681,6 @@ void run_telnetclt(void) {
   struct sockaddr_in name;
   pthread_setname_np(pthread_self(), "telnetclt");
   set_sched(pthread_self(),0,telnetparams.priority);
-  sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock < 0)
-    fprintf(stderr,"[TELNETSRV] Error %s on socket call\n",strerror(errno));
   char prompt[sizeof(TELNET_PROMPT_PREFIX)+10];
   sprintf(prompt,"%s_%s> ",TELNET_PROMPT_PREFIX,get_softmodem_function(NULL));
   name.sin_family = AF_INET;
@@ -691,6 +688,10 @@ void run_telnetclt(void) {
   inet_aton("127.0.0.1", &addr) ;
   name.sin_addr.s_addr = addr.s_addr;   
   name.sin_port = htons((unsigned short)(telnetparams.listenport));
+
+  sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (sock < 0)
+    fprintf(stderr,"[TELNETSRV] Error %s on socket call\n",strerror(errno));  
   if(connect(sock, (void *) &name, sizeof(name)))
     fprintf(stderr,"[TELNETSRV] Error %s on connect call\n",strerror(errno));
  
@@ -875,7 +876,7 @@ int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmdde
 
 
 /* function which will be called by the shared lib loader, to check shared lib version
-   against main exec version. version mismatch no considered as fatal (interfaces not supposed to change)
+   against main exec version. version mismatch not considered as fatal (interfaces not supposed to change)
 */
 int  telnetsrv_checkbuildver(char *mainexec_buildversion, char **shlib_buildversion) {
 #ifndef PACKAGE_VERSION

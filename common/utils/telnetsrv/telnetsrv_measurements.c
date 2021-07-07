@@ -205,13 +205,13 @@ int measurcmd_cpustats(char *buf, int debug, telnet_printfunc_t prnt) {
   int badcmd=1;
 
   if (debug > 0)
-    prnt(" measurcmd_show received %s\n",buf);
+    prnt(" measurcmd_cpustats received %s\n",buf);
 
   int s = sscanf(buf,"%ms %i-%i\n",&subcmd, &idx1,&idx2);
 
   if (s>0) {
     if ( strcmp(subcmd,"enable") == 0) {
-      cpumeas(CPUMEAS_ENABLE);
+      
       badcmd=0;
     } else if ( strcmp(subcmd,"disable") == 0) {
       cpumeas(CPUMEAS_DISABLE);
@@ -221,6 +221,64 @@ int measurcmd_cpustats(char *buf, int debug, telnet_printfunc_t prnt) {
 
   if (badcmd) {
     prnt("Cpu measurments state: %s\n",PRINT_CPUMEAS_STATE);
+  }
+
+  free(subcmd);
+  return CMDSTATUS_FOUND;
+}
+
+void measurcmd_async_help(telnet_printfunc_t prnt) {
+}
+
+int measurcmd_async(char *buf, int debug, telnet_printfunc_t prnt) {
+  char *subcmd=NULL;
+  int idx1, idx2;
+  int okcmd=0;
+
+  if buff == NULL) {
+	  measurcmd_async_help();
+	  return CMDSTATUS_FOUND;
+  }
+  if (debug > 0)
+    prnt(" measurcmd_async received %s\n",buf);
+  
+
+  int s = sscanf(buf,"%ms %i-%i\n",&subcmd, &idx1,&idx2);
+
+  if (s==1) {
+    if ( strcmp(subcmd,"enable") == 0) {
+      init_meas();
+      okcmd=1;
+    } else if ( strcmp(subcmd,"disable") == 0) {
+      end_meas();
+      okcmd=1;
+    }
+  } else if ( s == 3 ) {
+	int msgid;
+    if ( strcmp(subcmd,"enable") == 0) {
+      msgid = TIMESTAT_MSGID_ENABLE;
+      okcmd=1;
+    } else if ( strcmp(subcmd,"disable") == 0) {
+      msgid = TIMESTAT_MSGID_DISABLE;
+      okcmd=1;
+    } else if ( strcmp(subcmd,"display") == 0) {
+      msgid = TIMESTAT_MSGID_DISPLAY;
+      okcmd=1;
+    }
+    if (okcmd) {
+      notifiedFIFO_elt_t *nfe = newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
+	  time_stats_msg_t *msg = (time_stats_msg_t *)NotifiedFifoData(nfe);
+      msg->msgid = msgid ;
+      msg->displayFunc = prnt;
+	  for(int i=idx1; i<idx2; i++) {
+		msg->timestat_id =i;
+        pushNotifiedFIFO(&measur_fifo, nfe);
+	  }
+    }	  
+  }
+
+  if (!(okcmd)) {
+    prnt("Unknown command: %s\n",buf);
   }
 
   free(subcmd);

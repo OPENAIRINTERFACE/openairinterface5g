@@ -376,7 +376,7 @@ typedef struct UE_RRC_INFO_s {
   uint32_t N310_cnt;
   uint32_t N311_cnt;
   rnti_t   rnti;
-} __attribute__ ((__packed__)) __attribute__ ((aligned (1))) UE_RRC_INFO;
+} __attribute__ ((__packed__)) UE_RRC_INFO;
 
 typedef struct UE_S_TMSI_s {
   boolean_t  presence;
