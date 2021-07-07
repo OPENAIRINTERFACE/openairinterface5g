@@ -697,7 +697,10 @@ void nr_get_Msg3alloc(module_id_t module_id,
     int mu = ubwp ?
       ubwp->bwp_Common->genericParameters.subcarrierSpacing :
       scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
-    int StartSymbolIndex, NrOfSymbols, startSymbolAndLength, temp_slot;
+    int StartSymbolIndex = 0;
+    int NrOfSymbols = 0;
+    int startSymbolAndLength = 0;
+    int temp_slot = 0;
     ra->Msg3_tda_id = 16; // initialization to a value above limit
 
     NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList= ubwp ?
