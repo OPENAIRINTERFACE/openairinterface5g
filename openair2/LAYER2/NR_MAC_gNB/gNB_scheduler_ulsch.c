@@ -1201,10 +1201,6 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot))
     return false;
 
-  // FIXME: Uplink is failing - Avoid mixed slots in initialUplinkBWP
-  if ((sched_ctrl->active_ubwp == NULL) && (sched_slot == 7 || sched_slot == 17))
-    return false;
-
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
   for (UE_id = UE_info->list.next[UE_id]; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
