@@ -1269,29 +1269,8 @@ void *ru_thread( void *param ) {
   pthread_mutex_unlock(&RC.ru_mutex);
   wait_sync("ru_thread");
 
-  notifiedFIFO_elt_t *msg = newNotifiedFIFO_elt(sizeof(processingData_L1_t),0,gNB->resp_L1,rx_func);
-  pushNotifiedFIFO(gNB->resp_L1,msg); // to unblock the process in the beginning
-
-  // we create 2 threads for L1 tx processing
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,tx_func);
-  processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
-  init_DLSCH_struct(gNB, msgDataTx);
-  reset_meas(&msgDataTx->phy_proc_tx);
-  gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
-  pushNotifiedFIFO(gNB->resp_L1_tx,msgL1Tx); // to unblock the process in the beginning
-
-  msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,tx_func);
-  msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
-  init_DLSCH_struct(gNB, msgDataTx);
-  reset_meas(&msgTx->phy_proc_tx);
-  gNB->phy_proc_tx_1 = &msgDataTx->phy_proc_tx;
-  pushNotifiedFIFO(gNB->resp_L1_tx,msgL1Tx); // to unblock the process in the beginning
-
   processingData_L1_t *syncMsg;
   notifiedFIFO_elt_t *res;
-
-  notifiedFIFO_elt_t *msgRUTx = newNotifiedFIFO_elt(sizeof(processingData_L1_t),0,gNB->resp_RU_tx,ru_tx_func);
-  pushNotifiedFIFO(gNB->resp_RU_tx,msgRUTx); // to unblock the process in the beginning
 
   if(!emulate_rf) {
     // Start RF device if any
@@ -1423,9 +1402,14 @@ void *ru_thread( void *param ) {
     else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
   }
 
-  delNotifiedFIFO_elt(msg);
-  delNotifiedFIFO_elt(msgL1Tx);
-  delNotifiedFIFO_elt(msgRUTx);
+  res = pullNotifiedFIFO(gNB->resp_L1);
+  delNotifiedFIFO_elt(res);
+  res = pullNotifiedFIFO(gNB->resp_L1_tx);
+  delNotifiedFIFO_elt(res);
+  res = pullNotifiedFIFO(gNB->resp_L1_tx);
+  delNotifiedFIFO_elt(res);
+  res = pullNotifiedFIFO(gNB->resp_RU_tx);
+  delNotifiedFIFO_elt(res);
 
   ru_thread_status = 0;
   return &ru_thread_status;

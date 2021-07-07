@@ -122,20 +122,27 @@ void tx_func(void *param) {
                         frame_tx,
                         slot_tx,
                         1);
+  info->status = NOT_FILLED;
   if ((frame_tx&127) == 0) dump_pdsch_stats(gNB);
 
   // If the later of the 2 L1 tx thread finishes first,
   // we wait for the earlier one to finish and start the RU thread
   // to avoid realtime issues with USRP
-  notifiedFIFO_elt_t *res; 
-  res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
-  pushNotifiedFIFO(gNB->resp_L1_tx,res);
 
   // Start RU TX processing.
+  notifiedFIFO_elt_t *res;
   res = pullTpool(gNB->resp_RU_tx, gNB->threadPool);
   processingData_RU_t *syncMsg = (processingData_RU_t *)NotifiedFifoData(res);
+  LOG_D(PHY,"waiting for previous tx to finish, next slot %d,%d\n",syncMsg->next_slot,slot_tx);
+  while (syncMsg->next_slot != slot_tx) {
+    pushNotifiedFIFO(gNB->resp_RU_tx, res);
+    res = pullTpool(gNB->resp_RU_tx, gNB->threadPool);
+    syncMsg = (processingData_RU_t *)NotifiedFifoData(res);
+  }
+  LOG_D(PHY,"previous tx to finished, next slot %d,%d\n",syncMsg->next_slot,slot_tx);
   syncMsg->frame_tx = frame_tx;
   syncMsg->slot_tx = slot_tx;
+  syncMsg->next_slot = get_next_downlink_slot(gNB, &gNB->gNB_config, frame_tx, slot_tx);
   syncMsg->timestamp_tx = info->timestamp_tx;
   syncMsg->ru = gNB->RU_list[0];
   res->key = slot_tx;
@@ -213,13 +220,6 @@ void rx_func(void *param) {
         }
         up_removed++;
       }
-    for (j = 0; j < NUMBER_OF_NR_DLSCH_MAX; j++)
-      if (gNB->dlsch[j][0]->rnti == rnti_to_remove[i]) {
-        gNB->dlsch[j][0]->rnti = 0;
-        gNB->dlsch[j][0]->harq_mask = 0;
-        //clean_gNB_dlsch(gNB->dlsch[j][0]);
-        down_removed++;
-      }
     for (j = 0; j < NUMBER_OF_NR_PUCCH_MAX; j++)
       if (gNB->pucch[j]->active > 0 &&
           gNB->pucch[j]->pucch_pdu.rnti == rnti_to_remove[i]) {
@@ -277,10 +277,15 @@ void rx_func(void *param) {
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
   stop_meas(&gNB->ul_indication_stats);
   
-  notifiedFIFO_elt_t *res; 
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
+    notifiedFIFO_elt_t *res;
     res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
     processingData_L1tx_t *syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
+    while (syncMsg->status == NOT_FILLED) {
+      pushNotifiedFIFO(gNB->resp_L1_tx, res);
+      res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
+      syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
+    }
     syncMsg->gNB = gNB;
     syncMsg->frame_rx = frame_rx;
     syncMsg->slot_rx = slot_rx;
@@ -400,14 +405,36 @@ void init_gNB_Tpool(int inst) {
   // L1 RX result FIFO 
   gNB->resp_L1 = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   initNotifiedFIFO(gNB->resp_L1);
+  notifiedFIFO_elt_t *msg = newNotifiedFIFO_elt(sizeof(processingData_L1_t),0,gNB->resp_L1,rx_func);
+  pushNotifiedFIFO(gNB->resp_L1,msg); // to unblock the process in the beginning
 
   // L1 TX result FIFO 
   gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   initNotifiedFIFO(gNB->resp_L1_tx);
+  // we create 2 threads for L1 tx processing
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,tx_func);
+  processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
+  init_DLSCH_struct(gNB, msgDataTx);
+  memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
+  reset_meas(&msgDataTx->phy_proc_tx);
+  gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
+  pushNotifiedFIFO(gNB->resp_L1_tx,msgL1Tx); // to unblock the process in the beginning
+
+  msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,tx_func);
+  msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
+  init_DLSCH_struct(gNB, msgDataTx);
+  memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
+  reset_meas(&msgDataTx->phy_proc_tx);
+  gNB->phy_proc_tx_1 = &msgDataTx->phy_proc_tx;
+  pushNotifiedFIFO(gNB->resp_L1_tx,msgL1Tx); // to unblock the process in the beginning
 
   // RU TX result FIFO 
   gNB->resp_RU_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   initNotifiedFIFO(gNB->resp_RU_tx);
+  notifiedFIFO_elt_t *msgRUTx = newNotifiedFIFO_elt(sizeof(processingData_RU_t),0,gNB->resp_RU_tx,ru_tx_func);
+  processingData_RU_t *msgData = (processingData_RU_t*)msgRUTx->msgData;
+  msgData->next_slot = sf_ahead*gNB->frame_parms.slots_per_subframe; // first Tx slot
+  pushNotifiedFIFO(gNB->resp_RU_tx,msgRUTx); // to unblock the process in the beginning
 
   // Stats measurement thread
   if(opp_enabled == 1) threadCreate(&proc->process_stats_thread, process_stats_thread,(void *)gNB, "time_meas", -1, OAI_PRIORITY_RT_LOW);

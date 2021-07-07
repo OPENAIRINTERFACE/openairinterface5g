@@ -100,45 +100,16 @@ void handle_nr_nfapi_ssb_pdu(processingData_L1tx_t *msgTx,int frame,int slot,
 }*/
 
 
-void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
-			       int frame, int slot,
-			       nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu) {
-
-  LOG_D(PHY,"Frame %d, Slot %d: DCI processing - proc:slot_tx:%d pdcch_pdu_rel15->numDlDci:%d\n",frame,slot, slot, pdcch_pdu->pdcch_pdu_rel15.numDlDci);
-
-  // copy dci configuration into gNB structure
-  //  gNB->pdcch_pdu = pdcch_pdu;
-
-  nr_fill_dci(gNB,frame,slot,pdcch_pdu);
-
-}
-
-
-void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
-			       int frame, int slot,
-			       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu) {
-
-  LOG_D(PHY,"Frame %d, Slot %d: UL DCI processing - proc:slot_tx:%d pdcch_pdu_rel15->numDlDci:%d\n",frame,slot, slot, ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15.numDlDci);
-
-  // copy dci configuration into gNB structure
-  //  gNB->ul_dci_pdu = ul_dci_request_pdu;
-
-  nr_fill_ul_dci(gNB,frame,slot,ul_dci_request_pdu);
-
-}
-
-void handle_nfapi_nr_csirs_pdu(PHY_VARS_gNB *gNB,
-			       int frame, int slot,
+void handle_nfapi_nr_csirs_pdu(processingData_L1tx_t *msgTx,
+             int frame,int slot,
 			       nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu) {
 
   int found = 0;
 
   for (int id=0; id<NUMBER_OF_NR_CSIRS_MAX; id++) {
-    NR_gNB_CSIRS_t *csirs = &gNB->csirs_pdu[id];
+    NR_gNB_CSIRS_t *csirs = &msgTx->csirs_pdu[id];
     if (csirs->active == 0) {
       LOG_D(PHY,"Frame %d Slot %d CSI_RS with ID %d is now active\n",frame,slot,id);
-      csirs->frame = frame;
-      csirs->slot = slot;
       csirs->active = 1;
       memcpy((void*)&csirs->csirs_pdu, (void*)csirs_pdu, sizeof(nfapi_nr_dl_tti_csi_rs_pdu));
       found = 1;
@@ -217,8 +188,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       break;
       case NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE:
         LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
-        handle_nfapi_nr_csirs_pdu(gNB,
-				  frame, slot,
+        handle_nfapi_nr_csirs_pdu(msgTx,
+          int frame,int slot,
 				  &dl_tti_pdu->csi_rs_pdu);
       break;
       case NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE:
@@ -241,6 +212,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   if(NFAPI_MODE != NFAPI_MODE_VNF)
     msgTx->ul_pdcch_pdu = UL_dci_req->ul_dci_pdu_list[number_ul_dci_pdu-1]; // copy the last pdu
 
+  msgTx->status = FILLED;
   pushNotifiedFIFO(gNB->resp_L1_tx,res);
 
   if(NFAPI_MODE != NFAPI_MODE_VNF)
