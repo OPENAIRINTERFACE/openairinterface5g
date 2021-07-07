@@ -3131,6 +3131,19 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
             break;
         }
 
+        case OAI_TUN_IFACE_NSA:
+        {
+          LOG_I(NR_RRC, "We got an OAI_TUN_IFACE_NSA!!\n");
+          char cmd_line[RRC_BUF_SIZE];
+          memcpy(cmd_line, msg_buffer, sizeof(cmd_line));
+          LOG_I(NR_RRC, "Melissa Elkadi, this is the command line we got: %s\n", cmd_line);
+          if (background_system(cmd_line) != 0)
+          {
+            LOG_E(NR_RRC, "ESM-PROC - failed command '%s'", cmd_line);
+          }
+          break;
+        }
+
         default:
             LOG_E(NR_RRC, "No NSA Message Found\n");
     }

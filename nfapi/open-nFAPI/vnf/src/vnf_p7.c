@@ -1294,7 +1294,7 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 							NFAPI_TRACE(NFAPI_TRACE_NOTE, "VNF P7 In Sync with phy (phy_id:%d)\n", phy->phy_id); 
 
 							if(vnf_p7->_public.sync_indication)
-								(vnf_p7->_public.sync_indication)(&(vnf_p7->_public), 1);
+								(vnf_p7->_public.sync_indication)(&(vnf_p7->_public), phy->in_sync);
 						}
 
 						phy->in_sync = 1;
@@ -1803,7 +1803,7 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 							NFAPI_TRACE(NFAPI_TRACE_NOTE, "VNF P7 In Sync with phy (phy_id:%d)\n", phy->phy_id); 
 
 							if(vnf_p7->_public.sync_indication)
-								(vnf_p7->_public.sync_indication)(&(vnf_p7->_public), 1);
+								(vnf_p7->_public.sync_indication)(&(vnf_p7->_public), phy->in_sync);
 						}
 
 						phy->in_sync = 1;

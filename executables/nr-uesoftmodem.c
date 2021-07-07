@@ -531,16 +531,13 @@ int main( int argc, char **argv ) {
   ue_id_g = (node_number == 0) ? 0 : node_number - 2;
   AssertFatal(ue_id_g >= 0, "UE id is expected to be nonnegative.\n");
 
-  if(IS_SOFTMODEM_NOS1)
+  if(node_number == 0)
   {
-    if(node_number == 0)
-    {
-      init_pdcp(0);
-    }
-    else
-    {
-      init_pdcp(mode_offset + node_number - 1);
-    }
+    init_pdcp(0);
+  }
+  else
+  {
+    init_pdcp(mode_offset + node_number - 1);
   }
 
   NB_UE_INST=1;

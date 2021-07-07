@@ -31,7 +31,8 @@
     {"dlsch-parallel",           CONFIG_HLP_DLSCH_PARA,  0,               iptr:(int32_t *)&nrUE_params.nr_dlsch_parallel,       defintval:0,           TYPE_UINT8,  0}, \
     {"nr-dlsch-demod-shift",     CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&nr_dlsch_demod_shift,    defintval:0,     TYPE_INT,    0}, \
     {"V" ,                       CONFIG_HLP_VCD,         PARAMFLAG_BOOL,  iptr:&vcdflag,                            defintval:0,     TYPE_INT,    0}, \
-    {"rrc_config_path",          CONFIG_HLP_RRC_CFG_PATH,0,               strptr:(char **)&rrc_config_path,         defstrval:"./",  TYPE_STRING, 0} \
+    {"rrc_config_path",          CONFIG_HLP_RRC_CFG_PATH,0,               strptr:(char **)&rrc_config_path,         defstrval:"./",  TYPE_STRING, 0}, \
+    {"ue-idx-standalone",        NULL,                   0,               u16ptr:&ue_idx_standalone,          defuintval:0xFFFF,    TYPE_UINT16,   0} \
 }
 
 

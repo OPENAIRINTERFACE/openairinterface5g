@@ -672,6 +672,8 @@ int main( int argc, char **argv )
   printf("Reading in command-line options\n");
   get_options ();
 
+  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
     exit(-1);

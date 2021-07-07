@@ -1154,7 +1154,7 @@ int nfapi_vnf_allocate_phy(nfapi_vnf_config_t* config, int p5_idx, uint16_t* phy
 
 	info->timing_window = 30;       // This seems to override what gets set by the user - why??? //TODO: Change in NR in terms of microsecends,what should be the value?
 	info->timing_info_mode = 0x03;
-	info->timing_info_period = 128; // Melissa come back to this
+	info->timing_info_period = 19; // Melissa come back to this
 
 	nfapi_vnf_phy_info_list_add(config, info);
 
