@@ -2212,7 +2212,7 @@ uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
       case NR_CSI_ReportConfig__reportQuantity_PR_none:
         break;
       case NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP:
-        n_csi_bits +=get_ssb_rsrp_payload(mac,pucch,csi_reportconfig,csi_ResourceConfigId,csi_MeasConfig);
+        n_csi_bits += get_ssb_rsrp_payload(mac,pucch,csi_reportconfig,csi_ResourceConfigId,csi_MeasConfig);
         break;
       case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP:
       case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI:
