@@ -551,7 +551,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 }
 
 float thr_ue[MAX_MOBILES_PER_GNB];
-uint32_t pf_tbs[3][28]; // pre-computed, approximate TBS values for PF coefficient
+uint32_t pf_tbs[3][29]; // pre-computed, approximate TBS values for PF coefficient
 
 void pf_dl(module_id_t module_id,
            frame_t frame,
