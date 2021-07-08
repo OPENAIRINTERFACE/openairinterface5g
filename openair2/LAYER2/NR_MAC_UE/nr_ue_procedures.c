@@ -2174,14 +2174,17 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
           int n = pucchresset->resourceList.list.count;
 
           int res_index;
+          int found = -1;
           for (res_index = 0; res_index < n; res_index++) {
-            if (*pucchresset->resourceList.list.array[res_index] == pucchcsires->pucch_Resource)
+            if (*pucchresset->resourceList.list.array[res_index] == pucchcsires->pucch_Resource) {
+              found = res_index;
               break;
+            }
           }
-          AssertFatal(res_index < n,
+          AssertFatal(found != -1,
                       "CSI resource not found among PUCCH resources\n");
 
-          pucch->resource_indicator = pucchcsires->pucch_Resource;
+          pucch->resource_indicator = found;
           csi_bits = nr_get_csi_payload(mac, pucch, csi_measconfig);
         }
       }
