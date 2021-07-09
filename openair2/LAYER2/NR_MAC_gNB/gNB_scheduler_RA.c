@@ -215,7 +215,7 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
   }
 
   cc->total_prach_occasions_per_config_period = total_RA_occasions;
-  for(int i=1; (1 << (i-1)) < max_association_period; i++) {
+  for(int i=1; (1 << (i-1)) <= max_association_period; i++) {
     cc->max_association_period = (1 <<(i-1));
     total_RA_occasions = total_RA_occasions * cc->max_association_period;
     if(total_RA_occasions >= (int) (num_active_ssb/num_ssb_per_RO)) {
