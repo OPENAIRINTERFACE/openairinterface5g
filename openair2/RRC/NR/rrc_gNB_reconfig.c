@@ -61,8 +61,15 @@ void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellC
 
   // frequencyDomainResources '11111111 00000000 00000000 00000000 00000000 00000'B,
   if(coreset0->frequencyDomainResources.buf == NULL) coreset0->frequencyDomainResources.buf = calloc(1,6);
-  coreset0->frequencyDomainResources.buf[0] = 0xff;
-  coreset0->frequencyDomainResources.buf[1] = 0;
+  int curr_bwp = NRRIV2BW(servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+  if (curr_bwp < 48)
+    coreset0->frequencyDomainResources.buf[0] = 0xf0;
+  else
+    coreset0->frequencyDomainResources.buf[0] = 0xff;
+  if (curr_bwp < 96)
+    coreset0->frequencyDomainResources.buf[1] = 0;
+  else
+    coreset0->frequencyDomainResources.buf[1] = 0xff;
   coreset0->frequencyDomainResources.buf[2] = 0;
   coreset0->frequencyDomainResources.buf[3] = 0;
   coreset0->frequencyDomainResources.buf[4] = 0;
