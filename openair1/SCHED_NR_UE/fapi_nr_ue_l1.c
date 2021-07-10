@@ -204,6 +204,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
               memcpy((void*)&(pucch_vars->pucch_pdu[j]), (void*)pucch_config_pdu, sizeof(fapi_nr_ul_config_pucch_pdu));
               pucch_vars->active[j] = true;
               found = true;
+              break;
             }
           }
           if (!found)

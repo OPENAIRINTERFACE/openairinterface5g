@@ -321,6 +321,7 @@ void pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue,
 
   for (int i=0; i<2; i++) {
     if(pucch_vars->active[i]) {
+
       pucch_pdu = &pucch_vars->pucch_pdu[i];
       uint16_t nb_of_prbs = pucch_pdu->prb_size;
       /* Generate PUCCH signal according to its format and parameters */
@@ -349,6 +350,8 @@ void pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue,
 #else
       tx_amp = AMP;
 #endif
+
+      LOG_D(PHY,"Generation of PUCCH format %d at frame.slot %d.%d\n",pucch_pdu->format_type,proc->frame_tx,nr_slot_tx);
 
       switch(pucch_pdu->format_type) {
         case 0:
