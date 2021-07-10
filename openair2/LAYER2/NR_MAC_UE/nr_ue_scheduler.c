@@ -1857,7 +1857,8 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
   O_ACK = get_downlink_ack(mac, frameP, slotP, pucch);
 
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
-  NR_PUCCH_Config_t *pucch_Config;
+  NR_PUCCH_Config_t *pucch_Config = NULL;
+
   if (bwp_id>0 &&
       mac->ULbwp[bwp_id-1] &&
       mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
@@ -1875,11 +1876,10 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
            mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
       pucch_Config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
   }
-  else AssertFatal(1==0,"no pucch_Config\n");
 
 
   // if multiplexing of HARQ and CSI is not possible, transmit only HARQ bits
-  if ((O_ACK != 0) && (O_ACK != 0) && (pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI == NULL)) {
+  if ((O_ACK != 0) && (O_ACK != 0) && pucch_Config && (pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI == NULL)) {
     O_CSI = 0;
     pucch->csi_part1_payload = 0;
     pucch->csi_part2_payload = 0;
