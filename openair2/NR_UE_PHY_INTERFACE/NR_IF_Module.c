@@ -66,8 +66,8 @@ int handle_bcch_bch(module_id_t module_id, int cc_id,
 }
 
 //  L2 Abstraction Layer
-int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len){
-  return nr_ue_decode_BCCH_DL_SCH(module_id, cc_id, gNB_index, sibs_mask, pduP, pdu_len);
+int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t ack_nack, uint8_t *pduP, uint32_t pdu_len){
+  return nr_ue_decode_BCCH_DL_SCH(module_id, cc_id, gNB_index, ack_nack, pduP, pdu_len);
 }
 
 //  L2 Abstraction Layer
@@ -170,43 +170,32 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
           dl_info->rx_ind->number_pdus);
 
         switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
+          case FAPI_NR_RX_PDU_TYPE_SSB:
+            mac->ssb_rsrp_dBm = (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.rsrp_dBm;
+            ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.additional_bits,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_index,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_length,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_start_subcarrier,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_SSB;
 
-        case FAPI_NR_RX_PDU_TYPE_SSB:
-          mac->ssb_rsrp_dBm = (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.rsrp_dBm;
-          ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.additional_bits,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_index,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_length,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_start_subcarrier,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_SSB;
-
-          break;
-
-        case FAPI_NR_RX_PDU_TYPE_SIB:
-
-          ret_mask |= (handle_bcch_dlsch(dl_info->module_id,
-                                         dl_info->cc_id, dl_info->gNB_index,
-                                         (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.sibs_mask,
-                                         (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu,
-                                         (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
-
-          break;
-
-        case FAPI_NR_RX_PDU_TYPE_DLSCH:
-
-          ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
-
-          break;
-
-        case FAPI_NR_RX_PDU_TYPE_RAR:
-
-          ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_RAR;
-
-          break;
-
-        default:
-          break;
+            break;
+          case FAPI_NR_RX_PDU_TYPE_SIB:
+            ret_mask |= (handle_bcch_dlsch(dl_info->module_id,
+                                           dl_info->cc_id, dl_info->gNB_index,
+                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.ack_nack,
+                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
+                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
+            break;
+          case FAPI_NR_RX_PDU_TYPE_DLSCH:
+            ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
+            break;
+          case FAPI_NR_RX_PDU_TYPE_RAR:
+            ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_RAR;
+            break;
+          default:
+            break;
         }
       }
     }

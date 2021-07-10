@@ -68,11 +68,11 @@ int8_t nr_ue_decode_mib(
    \param pduP           pointer to pdu
    \param pdu_length     length of pdu */
 int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
-                         int cc_id,
-                         unsigned int gNB_index,
-                         uint32_t sibs_mask,
-                         uint8_t *pduP,
-                         uint32_t pdu_len);
+                                int cc_id,
+                                unsigned int gNB_index,
+                                uint8_t ack_nack,
+                                uint8_t *pduP,
+                                uint32_t pdu_len);
 
 /**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)
    \param module_id                 module id

@@ -1165,7 +1165,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     //  send to mac
     if (ue->if_inst && ue->if_inst->dl_indication) {
       ue->if_inst->dl_indication(&dl_indication, ul_time_alignment);
-      }
+    }
 
     if (ue->mac_enabled == 1) {
 
