@@ -1032,7 +1032,7 @@ void nr_DRB_preconfiguration(uint16_t crnti)
     (NR_SRB_ToAddModList_t *) NULL,
     rbconfig->drb_ToAddModList ,
     rbconfig->drb_ToReleaseList,
-    0xff,
+    0,
     NULL,
     NULL,
     NULL,
