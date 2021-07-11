@@ -240,6 +240,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 			   rrc->carrier.pdsch_AntennaPorts,
 			   rrc->carrier.pusch_AntennaPorts,
 			   (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+			   &rrc->carrier.mib,
 			   0,
 			   0, // WIP hardcoded rnti
 			   (NR_CellGroupConfig_t *)NULL
@@ -387,6 +388,7 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
                              rrc->carrier.ssb_SubcarrierOffset,
                              rrc->carrier.pdsch_AntennaPorts,
                              rrc->carrier.pusch_AntennaPorts,
+                             NULL,
                              NULL,
                              0,
                              ue_context_pP->ue_context.rnti,
@@ -580,6 +582,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          rrc_instance_p->carrier.pdsch_AntennaPorts,
                          rrc_instance_p->carrier.pusch_AntennaPorts,
                          (NR_ServingCellConfigCommon_t *)rrc_instance_p->carrier.servingcellconfigcommon,
+                         &rrc_instance_p->carrier.mib,
                          0,
                          ue_context_pP->ue_context.rnti,
                          (NR_CellGroupConfig_t *)NULL
@@ -1326,6 +1329,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                            rrc->carrier.ssb_SubcarrierOffset,
                            rrc->carrier.pdsch_AntennaPorts,
                            rrc->carrier.pusch_AntennaPorts,
+                           NULL,
                            NULL,
                            0,
                            ue_context_pP->ue_context.rnti,

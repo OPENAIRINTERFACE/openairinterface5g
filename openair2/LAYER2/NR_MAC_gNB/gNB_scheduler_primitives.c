@@ -622,7 +622,8 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
   
   for (int i=0;i<6;i++)
     pdcch_pdu->FreqDomainResource[i] = coreset->frequencyDomainResources.buf[i];
-  
+ 
+  LOG_D(MAC,"Coreset : BWPstart %d, BWPsize %d, SCS %d, freq %x, , duration %d,  \n",pdcch_pdu->BWPStart,pdcch_pdu->BWPSize,pdcch_pdu->SubcarrierSpacing,coreset->frequencyDomainResources.buf[0],coreset->duration);
   
   //cce-REG-MappingType
   pdcch_pdu->CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
@@ -994,9 +995,9 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       pos = fsize;
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->frequency_domain_assignment.val & ((1 << fsize) - 1)) << (dci_size - pos));
-      LOG_D(NR_MAC,
-            "frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",
-            dci_pdu_rel15->frequency_domain_assignment.val,
+      LOG_I(NR_MAC,
+            "RA_RNTI, size %d frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",
+            dci_size,dci_pdu_rel15->frequency_domain_assignment.val,
             fsize,
             N_RB,
             dci_size - pos,

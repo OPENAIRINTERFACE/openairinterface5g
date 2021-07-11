@@ -1921,6 +1921,7 @@ void configure_gnb_du_mac(int inst) {
                         rrc->configuration.pdsch_AntennaPorts,
                         rrc->configuration.pusch_AntennaPorts,
                         rrc->configuration.scc,
+                        NULL,
                         0,
                         0, // rnti
                         (NR_CellGroupConfig_t *)NULL

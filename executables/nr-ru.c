@@ -831,7 +831,18 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->tx_bw = 40e6;
         cfg->rx_bw = 40e6;
       }
-      break;
+      break; 
+    case 160: //30 MHz
+    case 133: //25 MHz
+      if (fp->threequarter_fs) {
+        AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
+      }
+      else {
+        cfg->sample_rate=30.72e6;
+        cfg->samples_per_frame = 307200;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
+      }
     case 106:
       if (fp->threequarter_fs) {
         cfg->sample_rate=23.04e6;
@@ -904,6 +915,19 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->rx_bw = 80e6;
       }
       break;
+    case 162 :
+      if (fp->threequarter_fs) {
+        AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
+      }
+      else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 60e6;
+        cfg->rx_bw = 60e6;
+      }
+
+      break;
+
     case 133 :
       if (fp->threequarter_fs) {
 	AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);

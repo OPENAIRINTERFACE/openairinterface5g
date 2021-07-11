@@ -52,9 +52,10 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            NR_ServingCellConfigCommon_t *scc,
-		                  	   int nsa_flag,
-			                     uint32_t rnti,
-			                     NR_CellGroupConfig_t *CellGroup
+                           NR_BCCH_BCH_Message_t *mib,
+		           int add_ue,
+			   uint32_t rnti,
+			   NR_CellGroupConfig_t *CellGroup
                            );
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 

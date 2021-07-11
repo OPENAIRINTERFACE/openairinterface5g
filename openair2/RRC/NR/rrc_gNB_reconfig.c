@@ -73,13 +73,33 @@ void fill_default_initialDownlinkBWP(NR_BWP_Downlink_t *bwp, NR_ServingCellConfi
   *bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
 }
 
-void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellConfigCommon_t *servingcellconfigcommon) {
+void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, 
+                              NR_MIB_t *mib,
+                              int ssb_subcarrier_offset, 
+			      int ssbSubcarrierSpacing,
+			      int ssb_start_symbol,
+                              int frequency_range,
+			      int ssboffset_pointa,
+			      int physCellId) {
 
+  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
+  int num_slot_per_frame = 10*(1<<ssbSubcarrierSpacing);
+  get_type0_PDCCH_CSS_config_parameters(&type0_PDCCH_CSS_config,
+                                        0,
+                                        mib,
+                                        num_slot_per_frame,
+                                        ssb_subcarrier_offset,
+                                        ssb_start_symbol,
+                                        ssbSubcarrierSpacing,
+                                        frequency_range,
+                                        0,
+                                        ssboffset_pointa);
+                                        
   coreset0->controlResourceSetId = 0;
 
-  // frequencyDomainResources '11111111 00000000 00000000 00000000 00000000 00000'B,
   if(coreset0->frequencyDomainResources.buf == NULL) coreset0->frequencyDomainResources.buf = calloc(1,6);
-  coreset0->frequencyDomainResources.buf[0] = 0xff;
+
+  coreset0->frequencyDomainResources.buf[0] = type0_PDCCH_CSS_config.num_rbs==48 ? 0xff : 0xf;
   coreset0->frequencyDomainResources.buf[1] = 0;
   coreset0->frequencyDomainResources.buf[2] = 0;
   coreset0->frequencyDomainResources.buf[3] = 0;
@@ -87,12 +107,20 @@ void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellC
   coreset0->frequencyDomainResources.buf[5] = 0;
   coreset0->frequencyDomainResources.size = 6;
   coreset0->frequencyDomainResources.bits_unused = 3;
-  coreset0->duration = 1;
+
+  int firstrb_cs0 = ssboffset_pointa-type0_PDCCH_CSS_config.rb_offset;
+
+  LOG_I(RRC,"CS0: ssboffset_pointa %d, first_cs0_rb %d, num_cs0_rbs %d, cs0_duration %d: %x\n",ssboffset_pointa,firstrb_cs0,type0_PDCCH_CSS_config.num_rbs,type0_PDCCH_CSS_config.num_symbols,
+	coreset0->frequencyDomainResources.buf[0]);
+
+  coreset0->duration = type0_PDCCH_CSS_config.num_symbols;
+
   coreset0->cce_REG_MappingType.present=NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved;
   coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*coreset0->cce_REG_MappingType.choice.interleaved));
   coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
   coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
-  coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = servingcellconfigcommon->physCellId;
+  coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = calloc(1,sizeof(*coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex));
+  *coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = physCellId;
   coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
 
   if(coreset0->tci_StatesPDCCH_ToAddList == NULL) coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*coreset0->tci_StatesPDCCH_ToAddList));

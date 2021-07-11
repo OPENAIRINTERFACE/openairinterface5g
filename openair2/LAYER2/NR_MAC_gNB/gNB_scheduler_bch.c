@@ -316,7 +316,9 @@ void schedule_control_sib1(module_id_t module_id,
                            int num_total_bytes) {
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
+  nfapi_nr_config_request_scf_t *cfg = &gNB_mac->config[0];
   NR_ServingCellConfigCommon_t *servingcellconfigcommon = gNB_mac->common_channels[CC_id].ServingCellConfigCommon;
+  NR_MIB_t *mib=gNB_mac->common_channels[CC_id].mib->message.choice.mib;
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
 
   if (gNB_mac->sched_ctrlCommon == NULL){
@@ -326,7 +328,19 @@ void schedule_control_sib1(module_id_t module_id,
     gNB_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->coreset));
     gNB_mac->sched_ctrlCommon->active_bwp = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->active_bwp));
     fill_default_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space);
-    fill_default_coresetZero(gNB_mac->sched_ctrlCommon->coreset,servingcellconfigcommon);
+    int frequency_range=FR1;
+    if (servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA > 2016666)
+      frequency_range=FR2;
+    fill_default_coresetZero(gNB_mac->sched_ctrlCommon->coreset,
+                             mib,
+                             cfg->ssb_table.ssb_subcarrier_offset.value,
+                             cfg->ssb_config.scs_common.value,
+                             get_ssb_start_symbol(*servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
+                                                  cfg->ssb_config.scs_common.value,
+                                                  0),
+                             frequency_range,
+                             cfg->ssb_table.ssb_offset_point_a.value,
+                             cfg->cell_config.phy_cell_id.value);
     fill_default_initialDownlinkBWP(gNB_mac->sched_ctrlCommon->active_bwp,servingcellconfigcommon);
   }
 

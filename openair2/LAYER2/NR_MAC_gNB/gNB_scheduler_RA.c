@@ -884,7 +884,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
-    uint8_t time_domain_assignment = 1;
+    uint8_t time_domain_assignment = 3;
     uint8_t mcsIndex = 0;
     int rbStart = 0;
     int rbSize = 8;
@@ -1058,19 +1058,21 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_pdu->powerControlOffsetSS = 1;
 
     dci_pdu_rel15_t dci_payload;
+    int effective_BWPSize = get_softmodem_params()->sa == 1 ? (pdcch_pdu_rel15->FreqDomainResource[0]==0xFF ? 48 : 24) : pdsch_pdu_rel15->BWPSize;
     dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize,
-                                                                                    pdsch_pdu_rel15->rbStart,
-                                                                                    pdsch_pdu_rel15->BWPSize);
+     pdsch_pdu_rel15->rbStart,
+     effective_BWPSize);
+
     LOG_D(MAC,"Msg2 rbSize.rbStart.BWPsize %d.%d.%d\n",pdsch_pdu_rel15->rbSize,
 	  pdsch_pdu_rel15->rbStart,
-	  pdsch_pdu_rel15->BWPSize);
+	  effective_BWPSize);
 
     dci_payload.time_domain_assignment.val = time_domain_assignment;
     dci_payload.vrb_to_prb_mapping.val = 0;
     dci_payload.mcs = pdsch_pdu_rel15->mcsIndex[0];
     dci_payload.tb_scaling = tb_scaling;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
           dci_payload.frequency_domain_assignment.val,
           pdsch_pdu_rel15->rbStart,
@@ -1081,12 +1083,12 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
           dci_payload.mcs,
           dci_payload.tb_scaling);
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
           pdcch_pdu_rel15->dci_pdu[0].RNTI,
           NR_RNTI_RA,
           NR_DL_DCI_FORMAT_1_0,
-          (unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
+          *(unsigned long long *)pdcch_pdu_rel15->FreqDomainResource,
           pdcch_pdu_rel15->StartSymbolIndex,
           pdcch_pdu_rel15->DurationSymbols);
 
@@ -1096,7 +1098,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        &dci_payload,
                        NR_DL_DCI_FORMAT_1_0,
                        NR_RNTI_RA,
-                       pdsch_pdu_rel15->BWPSize,
+                       effective_BWPSize,
                        bwpid);
 
     // DL TX request
@@ -1157,7 +1159,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     NR_BWP_t *genericParameters = bwp ? & bwp->bwp_Common->genericParameters : &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters; 
-    long BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    long BWPSize  = coreset->frequencyDomainResources.buf[0]==0xFF ? 48 : 24; 
     long BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
     // HARQ management

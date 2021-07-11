@@ -420,9 +420,10 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            NR_ServingCellConfigCommon_t *scc,
-	                         int add_ue,
+                           NR_BCCH_BCH_Message_t *mib,
+	                   int add_ue,
                            uint32_t rnti,
-	                         NR_CellGroupConfig_t *CellGroup) {
+	                   NR_CellGroupConfig_t *CellGroup) {
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
@@ -465,7 +466,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                   ssb_SubcarrierOffset,
                   pdsch_AntennaPorts,
                   pusch_AntennaPorts,
-		              scc);
+		  scc);
+
     LOG_E(NR_MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   
     // if in nFAPI mode 
@@ -499,7 +501,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       }
     }
   }
-  
+ 
+  if (mib) RC.nrmac[Mod_idP]->common_channels[0].mib = mib; 
+ 
   if (CellGroup) {
 
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
