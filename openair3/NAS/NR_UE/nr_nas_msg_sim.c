@@ -43,6 +43,7 @@
 #include <openair3/UICC/usim_interface.h>
 #include <openair3/NAS/COMMON/NR_NAS_defs.h>
 #include <openair1/PHY/phy_extern_nr_ue.h>
+#include <openair1/SIMULATION/ETH_TRANSPORT/proto.h>
 
 uint8_t  *registration_request_buf;
 uint32_t  registration_request_len;
@@ -854,9 +855,12 @@ void *nas_nrue_task(void *args_p)
             offset = 0;
 
             while(offset < payload_container_length) {
+	      // Fixme: this is not good 'type' 0x29 searching in TLV like structure
+	      // AND fix dirsty code copy hereafter of the same!!!
               if (*(payload_container + offset) == 0x29) { // PDU address IEI
                 if ((*(payload_container+offset+1) == 0x05) && (*(payload_container +offset+2) == 0x01)) { // IPV4
                   nas_getparams();
+		  // FixME: seems wrong: pdcp_module_init has already created the interface
                   netlink_init_tun("ue", 1);
                   sprintf(baseNetAddress, "%d.%d", *(payload_container+offset+3), *(payload_container+offset+4));
                   int third_octet = *(payload_container+offset+5);
@@ -900,36 +904,65 @@ void *nas_nrue_task(void *args_p)
         msg_type = get_msg_type(pdu_buffer, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length);
 
         switch(msg_type){
-          case FGS_IDENTITY_REQUEST:
-	    generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3), uicc);
-              break;
-          case FGS_AUTHENTICATION_REQUEST:
-	    generateAuthenticationResp(&initialNasMsg, pdu_buffer, uicc);
-              break;
-          case FGS_SECURITY_MODE_COMMAND:
-            generateSecurityModeComplete(&initialNasMsg);
-            break;
+	case FGS_IDENTITY_REQUEST:
+	  generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3), uicc);
+	  break;
+	case FGS_AUTHENTICATION_REQUEST:
+	  generateAuthenticationResp(&initialNasMsg, pdu_buffer, uicc);
+	  break;
+	case FGS_SECURITY_MODE_COMMAND:
+	  generateSecurityModeComplete(&initialNasMsg);
+	  break;
 	case FGS_DOWNLINK_NAS_TRANSPORT:
 	  decodeDownlinkNASTransport(&initialNasMsg, pdu_buffer);
 	  break;
+	case FGS_PDU_SESSION_ESTABLISHMENT_ACC:
+	  {
+	    uint8_t offset = 0;
+	    uint8_t *payload_container = pdu_buffer;
+	    offset += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
+	    uint16_t payload_container_length = htons(((dl_nas_transport_t *)(pdu_buffer + offset))->payload_container_length);
+	    if ((payload_container_length >= PAYLOAD_CONTAINER_LENGTH_MIN) &&
+		(payload_container_length <= PAYLOAD_CONTAINER_LENGTH_MAX))
+	      offset += (PLAIN_5GS_NAS_MESSAGE_HEADER_LENGTH + 3);
+	    if (offset < NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length) 
+	      payload_container = pdu_buffer + offset;
 	    
-          default:
-              LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
-              break;
-        }
-
-        if(initialNasMsg.length > 0){
-          MessageDef *message_p;
-          message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
-          NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
-          NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
+	    while(offset < payload_container_length) {
+	      if (*(payload_container + offset) == 0x29) { // PDU address IEI
+		if ((*(payload_container+offset+1) == 0x05) && (*(payload_container +offset+2) == 0x01)) { // IPV4
+		  nas_getparams();
+		  sprintf(baseNetAddress, "%d.%d", *(payload_container+offset+3), *(payload_container+offset+4));
+		  int third_octet = *(payload_container+offset+5);
+		  int fourth_octet = *(payload_container+offset+6);
+		  LOG_I(NAS, "Received PDU Session Establishment Accept, UE IP: %d.%d.%d.%d\n",
+			*(payload_container+offset+3), *(payload_container+offset+4),
+			*(payload_container+offset+5), *(payload_container+offset+6));
+		  nas_config(1,third_octet,fourth_octet,"oaitun_ue");
+		  break;
+		}
+	      }
+	      offset++;
+	    }
+	  }
+	  break;
+	  
+	default:
+	  LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
+	  break;
+	}
+      
+	if(initialNasMsg.length > 0){
+	MessageDef *message_p;
+	message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
+	NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
+	NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
           NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
           itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
           LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message\n");
         }
-
-        break;
       }
+        break;
 
       default:
         LOG_E(NAS, "[UE %d] Received unexpected message %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));
