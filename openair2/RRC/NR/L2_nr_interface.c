@@ -343,7 +343,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
       rntiP,
       sduP,
       sdu_lenP,
-      sdu2,
+      (const int8_t*)sdu2,
       sdu2_len
     );
     return(0);

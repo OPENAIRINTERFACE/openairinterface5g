@@ -160,6 +160,7 @@ class OaiCiTest():
 		self.air_interface=''
 		self.expectedNbOfConnectedUEs = 0
 		self.ue_id = '' #used for module identification
+		self.ue_trace ='' #used to enable QLog trace for Module UE, passed to Module UE object at InitializeUE()
 
 
 	def BuildOAIUE(self,HTML):
@@ -367,7 +368,7 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def InitializeUE(self,HTML,RAN,EPC, COTS_UE, InfraUE):
+	def InitializeUE(self,HTML,RAN,EPC, COTS_UE, InfraUE,ue_trace):
 		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
 			if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 				HELP.GenericHelp(CONST.Version)
@@ -386,6 +387,7 @@ class OaiCiTest():
 		else: #if an ID is specified, it is a module from the yaml infrastructure file
 			#RH
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+			Module_UE.ue_trace=ue_trace
 			is_module=Module_UE.CheckCMProcess()
 			if is_module:
 				Module_UE.EnableTrace()
@@ -994,38 +996,55 @@ class OaiCiTest():
 			for job in multi_jobs:
 				job.join()
 
-		if (status_queue.empty()):
-			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE)
-			return
-		else:
-			attach_status = True
-			html_queue = SimpleQueue()
-			while (not status_queue.empty()):
-				count = status_queue.get()
-				if (count < 0):
-					attach_status = False
-				device_id = status_queue.get()
-				message = status_queue.get()
-				if (count < 0):
-					html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + '</pre>'
-				else:
-					html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + ' in ' + str(count + 2) + ' seconds</pre>'
-				html_queue.put(html_cell)
-			if (attach_status):
-				cnt = 0
-				while cnt < len(self.UEDevices):
-					if self.UEDevicesStatus[cnt] == CONST.UE_STATUS_ATTACHING:
-						self.UEDevicesStatus[cnt] = CONST.UE_STATUS_ATTACHED
-					cnt += 1
-				HTML.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
-				result = re.search('T_stdout', str(RAN.Initialize_eNB_args))
-				if result is not None:
-					logging.debug('Waiting 5 seconds to fill up record file')
-					time.sleep(5)
-			else:
-				HTML.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
+			if (status_queue.empty()):
+				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE)
+				return
+			else:
+				attach_status = True
+				html_queue = SimpleQueue()
+				while (not status_queue.empty()):
+					count = status_queue.get()
+					if (count < 0):
+						attach_status = False
+					device_id = status_queue.get()
+					message = status_queue.get()
+					if (count < 0):
+						html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + '</pre>'
+					else:
+						html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + ' in ' + str(count + 2) + ' seconds</pre>'
+					html_queue.put(html_cell)
+				if (attach_status):
+					cnt = 0
+					while cnt < len(self.UEDevices):
+						if self.UEDevicesStatus[cnt] == CONST.UE_STATUS_ATTACHING:
+							self.UEDevicesStatus[cnt] = CONST.UE_STATUS_ATTACHED
+						cnt += 1
+					HTML.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
+					result = re.search('T_stdout', str(RAN.Initialize_eNB_args))
+					if result is not None:
+						logging.debug('Waiting 5 seconds to fill up record file')
+						time.sleep(5)
+				else:
+					HTML.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
+					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE)
+
+		else: #if an ID is specified, it is a module from the yaml infrastructure file
+			#Attention, as opposed to InitializeUE, the connect manager process is not checked as it is supposed to be active already
+			#only 1- module wakeup, 2- check IP address
+			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+			Module_UE.Command("wup")
+			logging.debug("Waiting for IP address to be assigned")
+			time.sleep(20)
+			logging.debug("Retrieve IP address")
+			status=Module_UE.GetModuleIPAddress()
+			if status==0:
+				HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
+				logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
+			else: #status==-1 failed to retrieve IP address
+				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE)
+				return					
 
 	def DetachUE_common(self, device_id, idx,COTS_UE):
 		try:
@@ -1084,10 +1103,7 @@ class OaiCiTest():
 		else:#if an ID is specified, it is a module from the yaml infrastructure file
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			Module_UE.Command("detach")
-			Module_UE.DisableTrace()
-			Module_UE.DisableCM()
-			archive_destination=Module_UE.LogCollect()
-			HTML.CreateHtmlTestRow('QLog at : '+archive_destination, 'OK', CONST.ALL_PROCESSES_OK)	
+			HTML.CreateHtmlTestRow('NA', 'OK', CONST.ALL_PROCESSES_OK)	
 				
 							
 
@@ -2234,7 +2250,7 @@ class OaiCiTest():
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
-			cmd = 'echo $USER; nohup iperf -s -i 1 -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+			cmd = 'echo $USER; nohup iperf -s -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
 
 			#client side UE
@@ -2251,6 +2267,13 @@ class OaiCiTest():
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)
 		else :
 			logging.debug("Incorrect or missing IPERF direction in XML")
+
+		SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+		cmd = 'killall --signal=SIGKILL iperf'
+		SSH.command(cmd,'\$',5)
+		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+		cmd = 'killall --signal=SIGKILL iperf'
+		SSH.command(cmd,'\$',5)
 
 		SSH.close()
 		return
@@ -3081,20 +3104,32 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def TerminateUE(self,HTML,COTS_UE):
-		terminate_ue_flag = False
-		self.GetAllUEDevices(terminate_ue_flag)
-		multi_jobs = []
-		i = 0
-		for device_id in self.UEDevices:
-			p = Process(target= self.TerminateUE_common, args = (device_id,i,COTS_UE,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-			i += 1
-		for job in multi_jobs:
-			job.join()
-		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+	def TerminateUE(self,HTML,COTS_UE,InfraUE,ue_trace):
+		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
+			terminate_ue_flag = False
+			self.GetAllUEDevices(terminate_ue_flag)
+			multi_jobs = []
+			i = 0
+			for device_id in self.UEDevices:
+				p = Process(target= self.TerminateUE_common, args = (device_id,i,COTS_UE,))
+				p.daemon = True
+				p.start()
+				multi_jobs.append(p)
+				i += 1
+			for job in multi_jobs:
+				job.join()
+			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+		else: #if an ID is specified, it is a module from the yaml infrastructure file
+			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+			Module_UE.ue_trace=ue_trace
+			Module_UE.Command("detach")	
+			Module_UE.DisableTrace()
+			Module_UE.DisableCM()
+			archive_destination=Module_UE.LogCollect()
+			if Module_UE.ue_trace=='yes':
+				HTML.CreateHtmlTestRow('QLog at : '+archive_destination, 'OK', CONST.ALL_PROCESSES_OK)
+			else:
+				HTML.CreateHtmlTestRow('QLog trace is disabled', 'OK', CONST.ALL_PROCESSES_OK)			
 
 	def TerminateOAIUE(self,HTML,RAN,COTS_UE,EPC, InfraUE):
 		SSH = sshconnection.SSHConnection()
@@ -3151,20 +3186,13 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def AutoTerminateUEandeNB(self,HTML,RAN,COTS_UE,EPC,InfraUE):
-		if self.ue_id!='':
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			Module_UE.Command("detach")
-			Module_UE.DisableTrace()
-			Module_UE.DisableCM()
-			archive_destination=Module_UE.LogCollect()
-			HTML.CreateHtmlTestRow('QLog at : '+archive_destination, 'OK', CONST.ALL_PROCESSES_OK)	
 		if (self.ADBIPAddress != 'none'):
 			self.testCase_id = 'AUTO-KILL-UE'
 			HTML.testCase_id=self.testCase_id
 			self.desc = 'Automatic Termination of UE'
 			HTML.desc='Automatic Termination of UE'
 			self.ShowTestID()
-			self.TerminateUE(HTML,COTS_UE)
+			self.TerminateUE(HTML,COTS_UE,InfraUE,self.ue_trace)
 		if (self.Initialize_OAI_UE_args != ''):
 			self.testCase_id = 'AUTO-KILL-OAI-UE'
 			HTML.testCase_id=self.testCase_id

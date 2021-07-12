@@ -146,7 +146,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     int startSymbolAndLength=0;
     int StartSymbolIndex=-1,NrOfSymbols=14;
     int StartSymbolIndex_tmp,NrOfSymbols_tmp;
-    int mappingtype_tmp, mappingtype;
+    int mappingtype_tmp, mappingtype=0;
 
     for (int i=0;
 	 i<scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;

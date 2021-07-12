@@ -2190,7 +2190,10 @@ rrc_gNB_decode_dcch(
                   sdu_sizeP,
                   0,
                   0);
-  // xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
+
+  if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+    xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
+  }
 
   {
     for (i = 0; i < sdu_sizeP; i++) {
@@ -3229,11 +3232,7 @@ void *rrc_gnb_task(void *args_p) {
             ///Nothing to do. Apparently everything is done in S1AP processing
             //LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
             //instance, msg_name_p);
-            if (rrc_eNB_get_ue_context(RC.nrrrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)
-                && rrc_eNB_get_ue_context(RC.nrrrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc > 0) {
-              rrc_eNB_get_ue_context(RC.nrrrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc =
-              rrc_eNB_get_ue_context(RC.nrrrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_thres_rrc;
-            }
+            AssertFatal(false, "Removed double mechanism for same feature: now delete_tunnel() function should be called\n");
             break;
 
       #endif

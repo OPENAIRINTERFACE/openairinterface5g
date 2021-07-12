@@ -62,6 +62,7 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
+//#define DEBUG_MIB
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 //#define DEBUG_EXTRACT_DCI
 //#define DEBUG_RAR
@@ -115,9 +116,10 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   //if(mac->mib != NULL){
   uint16_t frame = (mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused);
   uint16_t frame_number_4lsb = 0;
+
   for (int i=0; i<4; i++)
     frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
-  uint8_t half_frame_bit = ( extra_bits >> 4 ) & 0x1;               //	extra bits[4]
+
   uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
   uint8_t ssb_subcarrier_offset = (uint8_t)mac->mib->ssb_SubcarrierOffset;
 
@@ -134,15 +136,20 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     }
   }
 
-  LOG_D(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
-  LOG_D(MAC,"system frame number(with LSB): %d\n", (int)frame);
-  LOG_D(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
-  LOG_D(MAC,"ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
-  LOG_D(MAC,"dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
-  LOG_D(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
-  LOG_D(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
-  LOG_D(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
-  LOG_D(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
+#ifdef DEBUG_MIB
+  uint8_t half_frame_bit = ( extra_bits >> 4 ) & 0x1; //	extra bits[4]
+  LOG_I(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
+  LOG_I(MAC,"system frame number(with LSB): %d\n", (int)frame);
+  LOG_I(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
+  LOG_I(MAC,"ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
+  LOG_I(MAC,"dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
+  LOG_I(MAC,"controlResourceSetZero: %d\n", (int)mac->mib->pdcch_ConfigSIB1.controlResourceSetZero);
+  LOG_I(MAC,"searchSpaceZero: %d\n", (int)mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
+  LOG_I(MAC,"cell barred (0=barred,1=notBarred): %d\n", (int)mac->mib->cellBarred);
+  LOG_I(MAC,"intra frequency reselection (0=allowed,1=notAllowed): %d\n", (int)mac->mib->intraFreqReselection);
+  LOG_I(MAC,"half frame bit(extra bits):    %d\n", (int)half_frame_bit);
+  LOG_I(MAC,"ssb index(extra bits):         %d\n", (int)ssb_index);
+#endif
 
   //storing ssb index in the mac structure
   mac->mib_ssb = ssb_index;

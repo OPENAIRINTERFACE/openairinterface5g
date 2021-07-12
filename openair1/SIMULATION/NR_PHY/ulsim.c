@@ -136,6 +136,10 @@ gtpv1u_create_s1u_tunnel(
   return 0;
 }
 
+int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+  return 0;
+}
+
 int
 rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   const protocol_ctxt_t *const ctxt_pP,

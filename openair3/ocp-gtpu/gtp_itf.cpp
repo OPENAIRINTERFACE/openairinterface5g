@@ -436,11 +436,16 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   tmp->outgoing_port=port;
   tmp->teid_outgoing= outgoing_teid;
   pthread_mutex_unlock(&globGtp.gtp_lock);
-  LOG_D(GTPU, "Created tunnel for RNTI %x, bearer: %d/%d teid for DL: %x, teid for UL %x\n",
+  char ip4[INET_ADDRSTRLEN];
+  char ip6[INET6_ADDRSTRLEN];
+
+  LOG_I(GTPU, "Created tunnel for RNTI %x, teid for DL: %d, teid for UL %d to remote IPv4: %s, IPv6 %s\n",
         rnti,
-        outgoing_bearer_id, incoming_bearer_id,
         tmp->teid_incoming,
-        tmp->teid_outgoing);
+        tmp->teid_outgoing,
+        inet_ntop(AF_INET,(void*)&tmp->outgoing_ip_addr, ip4,INET_ADDRSTRLEN ),
+        inet_ntop(AF_INET6,(void*)&tmp->outgoing_ip6_addr.s6_addr, ip6, INET6_ADDRSTRLEN));
+
   return incoming_teid;
 }
 
