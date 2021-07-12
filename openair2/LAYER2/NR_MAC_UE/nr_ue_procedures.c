@@ -1310,6 +1310,27 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     }
     pucch_pdu->freq_hop_flag = 1;
     pucch_pdu->time_domain_occ_idx = 0;
+
+    if (O_SR == 0 || pucch->sr_payload == 0) {  /* only ack is transmitted TS 36.213 9.2.3 UE procedure for reporting HARQ-ACK */
+      if (O_ACK == 1)
+        pucch_pdu->mcs = sequence_cyclic_shift_1_harq_ack_bit[pucch->ack_payload & 0x1];   /* only harq of 1 bit */
+      else
+        pucch_pdu->mcs = sequence_cyclic_shift_2_harq_ack_bits[pucch->ack_payload & 0x3];  /* only harq with 2 bits */
+    }
+    else { /* SR + eventually ack are transmitted TS 36.213 9.2.5.1 UE procedure for multiplexing HARQ-ACK or CSI and SR */
+      if (pucch->sr_payload == 1) {                /* positive scheduling request */
+        if (O_ACK == 1)
+          pucch_pdu->mcs = sequence_cyclic_shift_1_harq_ack_bit_positive_sr[pucch->ack_payload & 0x1];   /* positive SR and harq of 1 bit */
+        else if (O_ACK == 2)
+          pucch_pdu->mcs = sequence_cyclic_shift_2_harq_ack_bits_positive_sr[pucch->ack_payload & 0x3];  /* positive SR and harq with 2 bits */
+        else
+          pucch_pdu->mcs = 0;  /* only positive SR */
+      }
+    }
+
+    // TODO verify if SR can be transmitted in this mode
+    pucch_pdu->payload = (pucch->sr_payload << O_ACK) | pucch->ack_payload;
+
   }
   else if (pucch->pucch_resource != NULL) {
 
@@ -1522,6 +1543,10 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
   else          P_O_NOMINAL_PUCCH = *mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup->p0_nominal;
 
   struct NR_PUCCH_PowerControl *power_config = pucch_Config->pucch_PowerControl;
+
+  if (!power_config)
+    return (PUCCH_POWER_DEFAULT);
+
   int16_t P_O_UE_PUCCH;
   int16_t G_b_f_c = 0;
 
@@ -1730,7 +1755,7 @@ void select_pucch_resource(NR_UE_MAC_INST_t *mac,
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
   int n_list;
 
-  if ((bwp_id ==0 &&
+  if ((bwp_id == 0 &&
        mac->cg == NULL) ||
       (bwp_id == 0 &&
        mac->cg &&
@@ -2033,6 +2058,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   }
 
   pucch->ack_payload = o_ACK;
+
   return(number_harq_feedback);
 }
 

@@ -1879,7 +1879,10 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
 
 
   // if multiplexing of HARQ and CSI is not possible, transmit only HARQ bits
-  if ((O_ACK != 0) && (O_ACK != 0) && pucch_Config && (pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI == NULL)) {
+  if ((O_ACK != 0) && (O_CSI != 0) &&
+      pucch_Config &&
+      pucch_Config->format2 &&
+      (pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI == NULL)) {
     O_CSI = 0;
     pucch->csi_part1_payload = 0;
     pucch->csi_part2_payload = 0;
