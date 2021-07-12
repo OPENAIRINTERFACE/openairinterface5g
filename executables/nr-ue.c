@@ -220,7 +220,6 @@ static void UE_synch(void *arg) {
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
       uint64_t dl_carrier, ul_carrier;
-      double rx_gain_off = 0;
       nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
 
       if (nr_initial_sync(&syncD->proc, UE, 2) == 0) {
@@ -230,7 +229,7 @@ static void UE_synch(void *arg) {
 
         // rerun with new cell parameters and frequency-offset
         // todo: the freq_offset computed on DL shall be scaled before being applied to UL
-        nr_rf_card_config(&openair0_cfg[UE->rf_map.card], rx_gain_off, ul_carrier, dl_carrier, freq_offset);
+        nr_rf_card_config_freq(&openair0_cfg[UE->rf_map.card], ul_carrier, dl_carrier, freq_offset);
 
         LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %f (DL %f Hz, UL %f Hz)\n",
               hw_slot_offset,
@@ -264,7 +263,7 @@ static void UE_synch(void *arg) {
 
           freq_offset *= -1;
 
-          nr_rf_card_config(&openair0_cfg[UE->rf_map.card], rx_gain_off, ul_carrier, dl_carrier, freq_offset);
+          nr_rf_card_config_freq(&openair0_cfg[UE->rf_map.card], ul_carrier, dl_carrier, freq_offset);
 
           LOG_I(PHY, "Initial sync failed: trying carrier off %d Hz\n", freq_offset);
 
