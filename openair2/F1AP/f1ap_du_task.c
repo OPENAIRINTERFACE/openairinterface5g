@@ -31,7 +31,6 @@
 */
 
 #include "f1ap_common.h"
-#include "f1ap_handlers.h"
 #include "f1ap_du_interface_management.h"
 #include "f1ap_du_ue_context_management.h"
 #include "f1ap_du_rrc_message_transfer.h"

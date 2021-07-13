@@ -407,14 +407,16 @@
     if (mandatory) DevAssert(ie != NULL); \
   } while(0)
 
-/** \brief Function callback prototype.
+/** \brief Function array prototype.
  **/
-typedef int (*f1ap_message_decoded_callback)(
+typedef int (*f1ap_message_processing_t)(
   instance_t             instance,
   uint32_t               assoc_id,
   uint32_t               stream,
   F1AP_F1AP_PDU_t       *message_p
 );
+int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
+                        const uint8_t *const data, const uint32_t data_length);
 
 typedef struct f1ap_cudu_ue_inst_s {
   // used for eNB stats generation

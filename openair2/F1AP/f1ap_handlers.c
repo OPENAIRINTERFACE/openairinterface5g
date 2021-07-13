@@ -31,7 +31,6 @@
  */
 
 #include "f1ap_common.h"
-#include "f1ap_handlers.h"
 #include "f1ap_decoder.h"
 #include "f1ap_cu_interface_management.h"
 #include "f1ap_du_interface_management.h"
@@ -41,7 +40,7 @@
 #include "f1ap_du_ue_context_management.h"
 
 /* Handlers matrix. Only f1 related procedure present here */
-f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
+f1ap_message_processing_t f1ap_messages_processing[][3] = {
 
 
   { 0, 0, 0 }, /* Reset */
@@ -92,8 +91,8 @@ int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
   }
 
   /* Checking procedure Code and direction of message */
-  if (pdu.choice.initiatingMessage->procedureCode >= sizeof(f1ap_messages_callback) / (3 * sizeof(
-        f1ap_message_decoded_callback))
+  if (pdu.choice.initiatingMessage->procedureCode >= sizeof(f1ap_message_processing_t) / (3 * sizeof(
+        f1ap_message_processing_t))
       || (pdu.present > F1AP_F1AP_PDU_PR_unsuccessfulOutcome)) {
     LOG_E(F1AP, "[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
           assoc_id, pdu.choice.initiatingMessage->procedureCode, pdu.present);
@@ -101,21 +100,19 @@ int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
     return -1;
   }
 
-  /* No handler present.
-   * This can mean not implemented or no procedure for eNB (wrong direction).
-   */
-  if (f1ap_messages_callback[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1] == NULL) {
+
+  if (f1ap_messages_processing[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1] == NULL) {
+    // No handler present. This can mean not implemented or no procedure for eNB (wrong direction).
     LOG_E(F1AP, "[SCTP %d] No handler for procedureCode %ld in %s\n",
           assoc_id, pdu.choice.initiatingMessage->procedureCode,
           f1ap_direction2String(pdu.present - 1));
-    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
-    return -1;
+    ret=-1;
+  } else {
+    /* Calling the right handler */
+    LOG_I(F1AP, "Calling handler with instance %ld\n",instance);
+    ret = (*f1ap_messages_processing[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1])
+      (instance, assoc_id, stream, &pdu);
   }
-
-  /* Calling the right handler */
-  LOG_I(F1AP, "Calling handler with instance %ld\n",instance);
-  ret = (*f1ap_messages_callback[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1])
-        (instance, assoc_id, stream, &pdu);
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
   return ret;
 }

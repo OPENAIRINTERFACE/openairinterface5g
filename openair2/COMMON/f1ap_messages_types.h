@@ -303,7 +303,7 @@ typedef struct f1ap_initial_ul_rrc_message_s {
   uint16_t crnti;
   uint8_t *rrc_container;
   int      rrc_container_length;
-  char *du2cu_rrc_container;
+  char du2cu_rrc_container[100];
   int      du2cu_rrc_container_length;
 } f1ap_initial_ul_rrc_message_t;
 

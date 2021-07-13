@@ -324,7 +324,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
       {
         /* qoS_Characteristics */
         {
-          int some_decide_qoS_characteristics = 1; // BK: Need Check
+          int some_decide_qoS_characteristics = 0; // BK: Need Check
 
           if (some_decide_qoS_characteristics) {
             DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
@@ -433,7 +433,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
         {
           /* qoS_Characteristics */
           {
-            int some_decide_qoS_characteristics = 1; // BK: Need Check
+            int some_decide_qoS_characteristics = 0; // BK: Need Check
             F1AP_QoS_Characteristics_t *QosParams=&flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.qoS_Characteristics;
 
             if (some_decide_qoS_characteristics) {
