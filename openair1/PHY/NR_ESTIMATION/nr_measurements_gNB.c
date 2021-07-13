@@ -88,8 +88,6 @@ void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB) {
      if (i%25 == 24) fprintf(fd,"\n");
     }
 
-    fprintf(fd,"\nmax_I0 %d (rb %d), min_I0 %d (rb %d), avg I0 %d\n", max_I0, amax, min_I0, amin, gNB->measurements.n0_subband_power_avg_dB);
-
     fprintf(fd,"PRACH I0 = %d.%d dB\n",gNB->measurements.prach_I0/10,gNB->measurements.prach_I0%10);
 
 
