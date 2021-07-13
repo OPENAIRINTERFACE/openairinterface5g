@@ -504,6 +504,7 @@ int main(int argc, char **argv)
     pucch_tx_pdu.start_symbol_index = startingSymbolIndex;
     pucch_tx_pdu.bwp_start = 0;
     pucch_tx_pdu.prb_start = startingPRB;
+    pucch_tx_pdu.prb_size = nrofPRB;
     pucch_tx_pdu.hopping_id = hopping_id;
     pucch_tx_pdu.group_hop_flag = 0;
     pucch_tx_pdu.sequence_hop_flag = 0;
