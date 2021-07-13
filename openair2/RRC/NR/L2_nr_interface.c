@@ -365,7 +365,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
   return 0;
 }
 
-void nr_mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
+void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,
                             const int CC_idP,
                             const frame_t frameP,
                             const sub_frame_t subframeP,
@@ -376,11 +376,10 @@ void nr_mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
                    rntiP);
 
   if (ue_context_p != NULL) {
-    LOG_I(RRC,"Frame %d, Subframe %d: UE %x UL failure, activating timer\n",frameP,subframeP,rntiP);
-
+    LOG_D(RRC,"Frame %d, Subframe %d: UE %x UL failure, activating timer\n",frameP,subframeP,rntiP);
     if(ue_context_p->ue_context.ul_failure_timer == 0)
       ue_context_p->ue_context.ul_failure_timer=1;
   } else {
-    LOG_W(RRC,"Frame %d, Subframe %d: UL failure: UE %x unknown \n",frameP,subframeP,rntiP);
+    LOG_D(RRC,"Frame %d, Subframe %d: UL failure: UE %x unknown \n",frameP,subframeP,rntiP);
   }
 }
