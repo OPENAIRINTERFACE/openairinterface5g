@@ -853,7 +853,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? 1 : 2;
-  const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 1;
+  const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
   if (tda == retInfo->time_domain_allocation) {
     /* Check the resource is enough for retransmission */
     while (rbStart < bwpSize && !rballoc_mask[rbStart])
@@ -969,7 +969,7 @@ void pf_ul(module_id_t module_id,
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nrmac->UE_info;
-  const int min_rb = 20;
+  const int min_rb = 5;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
@@ -1045,7 +1045,7 @@ void pf_ul(module_id_t module_id,
       const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_ubwp ? 1 : 2;
       const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
       const int dci_format = sched_ctrl->active_ubwp ? (f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0) : NR_UL_DCI_FORMAT_0_0;
-      const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 1;
+      const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
@@ -1141,7 +1141,7 @@ void pf_ul(module_id_t module_id,
     const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_ubwp ? 1 : 2;
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
     const int dci_format = sched_ctrl->active_ubwp ? (f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0) : NR_UL_DCI_FORMAT_0_0;
-    const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 1;
+    const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
@@ -1191,13 +1191,21 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
    * schedule now (slot + k2 is not UL slot) */
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int tda = sched_ctrl->active_ubwp ? nr_mac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 1;
+  const int tda = sched_ctrl->active_ubwp ? nr_mac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
   if (tda < 0)
     return false;
   int K2 = get_K2(scc, sched_ctrl->active_ubwp, tda, mu);
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
+
   if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot))
+    return false;
+
+  bool is_mixed_slot = is_xlsch_in_slot(nr_mac->dlsch_slot_bitmap[sched_slot / 64], sched_slot) &&
+                        is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot);
+
+  // FIXME: Avoid mixed slots for initialUplinkBWP
+  if (sched_ctrl->active_ubwp==NULL && is_mixed_slot)
     return false;
 
   sched_ctrl->sched_pusch.slot = sched_slot;
