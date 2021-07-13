@@ -80,31 +80,30 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         } else {
 
+          fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
+          uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
+
           if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DLSCH){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
           }
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_ra[0];
             dlsch0->rnti_type = _RA_RNTI_;
-            dlsch0->harq_processes[dlsch0->current_harq_pid]->status = ACTIVE;
+            dlsch0->harq_processes[current_harq_pid]->status = ACTIVE;
           }
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_SI[0];
             dlsch0->rnti_type = _SI_RNTI_;
-            dlsch0->harq_processes[dlsch0->current_harq_pid]->status = ACTIVE;
+            dlsch0->harq_processes[current_harq_pid]->status = ACTIVE;
           }
-
-          fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
-          uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
-          NR_DL_UE_HARQ_t *dlsch0_harq;
 
           dlsch0->current_harq_pid = current_harq_pid;
           dlsch0->active = 1;
           dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
-          dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
 
           LOG_D(PHY,"current_harq_pid = %d\n", current_harq_pid);
 
+          NR_DL_UE_HARQ_t *dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
           if (dlsch0_harq){
 
             dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
