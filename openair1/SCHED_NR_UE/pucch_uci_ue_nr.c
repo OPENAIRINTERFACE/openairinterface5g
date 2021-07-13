@@ -989,7 +989,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   int V_DAI_m_DL = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   NR_BWP_Id_t dl_bwp_id = get_softmodem_params()->sa ? 0 :  mac->DL_BWP_Id ; //SA uses initial BWP
-  if (mac->DLbwp[dl_bwp_id] == NULL) return 0;
+
 
   if (mac->DLbwp[dl_bwp_id] &&
       mac->DLbwp[dl_bwp_id]->bwp_Dedicated &&
@@ -1375,7 +1375,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
 int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
 {
   int pucch_resource_set_id = 0;
-  NR_BWP_Id_t bwp_id = mac->DL_BWP_Id;
+  NR_BWP_Id_t bwp_id = get_softmodem_params()->sa ? 0 :  mac->DL_BWP_Id ; //SA uses initial BWP
 
   //long *pucch_max_pl_bits = NULL;
 

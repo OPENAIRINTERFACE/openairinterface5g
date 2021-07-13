@@ -244,7 +244,8 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   RA_config_t *ra = &mac->ra;
   int ss_id;
 
-  uint8_t bwp_id = (mac->cg) ? mac->DL_BWP_Id : 0, coreset_id = (mac->cg) ? 1 : 0;
+  NR_BWP_Id_t bwp_id = get_softmodem_params()->sa ? 0 : ((mac->cg) ? mac->DL_BWP_Id : 0) ; //SA uses initial BWP
+  uint8_t coreset_id = (mac->cg) ? 1 : 0;
   //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   NR_BWP_Downlink_t *bwp = (mac->cg) ? mac->DLbwp[bwp_id] : NULL;
 
