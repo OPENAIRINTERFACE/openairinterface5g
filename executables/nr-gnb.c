@@ -115,14 +115,14 @@ void tx_func(void *param) {
 
   processingData_L1tx_t *info = (processingData_L1tx_t *) param;
   PHY_VARS_gNB *gNB = info->gNB;
-  int frame_tx = info->frame_tx;
-  int slot_tx = info->slot_tx;
+  int frame_tx = info->frame;
+  int slot_tx = info->slot;
 
   phy_procedures_gNB_TX(info,
                         frame_tx,
                         slot_tx,
                         1);
-  info->status = NOT_FILLED;
+  info->slot = -1;
   if ((frame_tx&127) == 0) dump_pdsch_stats(gNB);
 
   // If the later of the 2 L1 tx thread finishes first,
@@ -281,16 +281,13 @@ void rx_func(void *param) {
     notifiedFIFO_elt_t *res;
     res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
     processingData_L1tx_t *syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
-    while (syncMsg->status == NOT_FILLED) {
+    while (syncMsg->slot != slot_tx) {
       pushNotifiedFIFO(gNB->resp_L1_tx, res);
       res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
       syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
     }
     syncMsg->gNB = gNB;
-    syncMsg->frame_rx = frame_rx;
-    syncMsg->slot_rx = slot_rx;
-    syncMsg->frame_tx = frame_tx;
-    syncMsg->slot_tx = slot_tx;
+    AssertFatal(syncMsg->slot == slot_tx, "Thread message slot and logical slot number do not match\n");
     syncMsg->timestamp_tx = info->timestamp_tx;
     res->key = slot_tx;
     pushTpool(gNB->threadPool, res);
@@ -415,6 +412,7 @@ void init_gNB_Tpool(int inst) {
   notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,tx_func);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   init_DLSCH_struct(gNB, msgDataTx);
+  msgDataTx->slot = -1;
   memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
   reset_meas(&msgDataTx->phy_proc_tx);
   gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
@@ -423,6 +421,7 @@ void init_gNB_Tpool(int inst) {
   msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,tx_func);
   msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   init_DLSCH_struct(gNB, msgDataTx);
+  msgDataTx->slot = -1;
   memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
   reset_meas(&msgDataTx->phy_proc_tx);
   gNB->phy_proc_tx_1 = &msgDataTx->phy_proc_tx;

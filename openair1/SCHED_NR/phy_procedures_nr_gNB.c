@@ -164,7 +164,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
 
   if (num_dl_dci > 0 || num_ul_dci > 0) {
     LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
-	  gNB->Mod_id, frame, slot, num_dl_dci, num_ul_dci);
+	  gNB->Mod_id, frame, slot, num_ul_dci, num_dl_dci);
   
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,1);
 
@@ -178,10 +178,12 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,0);
   }
  
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
-  LOG_D(PHY, "PDSCH generation started (%d) in frame %d.%d\n", msgTx->num_pdsch_slot,frame,slot);
-  nr_generate_pdsch(msgTx, frame, slot);
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
+  if (msgTx->num_pdsch_slot > 0) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
+    LOG_I(PHY, "PDSCH generation started (%d) in frame %d.%d\n", msgTx->num_pdsch_slot,frame,slot);
+    nr_generate_pdsch(msgTx, frame, slot);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
+  }
 
   for (int i=0;i<NUMBER_OF_NR_CSIRS_MAX;i++){
     NR_gNB_CSIRS_t *csirs = &msgTx->csirs_pdu[i];

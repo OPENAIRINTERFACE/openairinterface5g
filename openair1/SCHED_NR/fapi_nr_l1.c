@@ -165,6 +165,10 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   int pdcch_received=0;
   msgTx->num_pdsch_slot=0;
+  msgTx->pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
+  msgTx->ul_pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
+  msgTx->slot = slot;
+  msgTx->frame = frame;
 
   for (int i=0;i<number_dl_pdu;i++) {
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_request_body.dl_tti_pdu_list[i];
@@ -212,7 +216,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   if(NFAPI_MODE != NFAPI_MODE_VNF)
     msgTx->ul_pdcch_pdu = UL_dci_req->ul_dci_pdu_list[number_ul_dci_pdu-1]; // copy the last pdu
 
-  msgTx->status = FILLED;
   pushNotifiedFIFO(gNB->resp_L1_tx,res);
 
   if(NFAPI_MODE != NFAPI_MODE_VNF)

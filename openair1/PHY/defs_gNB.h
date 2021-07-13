@@ -945,10 +945,8 @@ typedef enum {
 } msgStatus_t;
 
 typedef struct processingData_L1tx {
-  int frame_rx;
-  int frame_tx;
-  int slot_rx;
-  int slot_tx;
+  int frame;
+  int slot;
   openair0_timestamp timestamp_tx;
   PHY_VARS_gNB *gNB;
   nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu;
@@ -958,7 +956,6 @@ typedef struct processingData_L1tx {
   NR_gNB_SSB_t ssb[64];
   uint16_t num_pdsch_slot;
   time_stats_t phy_proc_tx;
-  msgStatus_t status;
 } processingData_L1tx_t;
 
 #endif
