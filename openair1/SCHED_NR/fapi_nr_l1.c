@@ -214,7 +214,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   }
 
   if(NFAPI_MODE != NFAPI_MODE_VNF)
-    msgTx->ul_pdcch_pdu = UL_dci_req->ul_dci_pdu_list[number_ul_dci_pdu-1]; // copy the last pdu
+    if (number_ul_dci_pdu > 0)
+      msgTx->ul_pdcch_pdu = UL_dci_req->ul_dci_pdu_list[number_ul_dci_pdu-1]; // copy the last pdu
 
   pushNotifiedFIFO(gNB->resp_L1_tx,res);
 

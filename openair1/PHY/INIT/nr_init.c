@@ -563,9 +563,7 @@ void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg) {
 
 void init_nr_transport(PHY_VARS_gNB *gNB) {
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
-  nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   LOG_I(PHY, "Initialise nr transport\n");
-  uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
 
   memset(gNB->num_pdsch_rnti, 0, sizeof(uint16_t)*80);
 
