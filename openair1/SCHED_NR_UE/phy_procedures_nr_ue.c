@@ -1179,32 +1179,50 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
         NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
-        NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
         NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
-        if (mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList)
-          pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
-        else if (mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList)
-          pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-        long mapping_type_ul = pusch_TimeDomainAllocationList->list.array[0]->mappingType;
-
-        NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
-        NR_PDSCH_Config_t *pdsch_Config = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup;
-        NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
-        if (pdsch_Config->pdsch_TimeDomainAllocationList) {
-          pdsch_TimeDomainAllocationList = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
-        } else if (mac->DLbwp[dl_bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList) {
-          pdsch_TimeDomainAllocationList = mac->DLbwp[dl_bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+        if (mac->ULbwp[0] &&
+            mac->ULbwp[0]->bwp_Dedicated &&
+            mac->ULbwp[0]->bwp_Dedicated->pusch_Config &&
+            mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup &&
+            mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
+          pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
         }
-        long mapping_type_dl = pdsch_TimeDomainAllocationList->list.array[0]->mappingType;
+        else if (mac->ULbwp[0] &&
+                 mac->ULbwp[0]->bwp_Common &&
+                 mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon &&
+                 mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup &&
+                 mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+          pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+        }
+        else if (mac->scc_SIB &&
+                 mac->scc_SIB->uplinkConfigCommon &&
+                 mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon &&
+                 mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup &&
+                 mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+          pusch_TimeDomainAllocationList = mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+        }
+        long mapping_type_ul = pusch_TimeDomainAllocationList ? pusch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA;
 
-        NR_DMRS_DownlinkConfig_t *NR_DMRS_dlconfig;
-        if (mapping_type_dl == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA)
-          NR_DMRS_dlconfig = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
-        else
-          NR_DMRS_dlconfig = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+        NR_PDSCH_Config_t *pdsch_Config = (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup) ? mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
+        NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
+        if (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
+          pdsch_TimeDomainAllocationList = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
+        else if (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
+          pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+        else if (mac->scc_SIB && mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup)
+          pdsch_TimeDomainAllocationList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+        long mapping_type_dl = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+
+        NR_DMRS_DownlinkConfig_t *NR_DMRS_dlconfig = NULL;
+        if (pdsch_Config) {
+          if (mapping_type_dl == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA)
+            NR_DMRS_dlconfig = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
+          else
+            NR_DMRS_dlconfig = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+        }
 
         pdsch_dmrs_AdditionalPosition_t add_pos_dl = pdsch_dmrs_pos2;
-        if (NR_DMRS_dlconfig->dmrs_AdditionalPosition)
+        if (NR_DMRS_dlconfig && NR_DMRS_dlconfig->dmrs_AdditionalPosition)
           add_pos_dl = *NR_DMRS_dlconfig->dmrs_AdditionalPosition;
 
         /* PDSCH decoding time N_1 for processing capability 1 */
