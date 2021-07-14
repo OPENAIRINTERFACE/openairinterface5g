@@ -152,6 +152,7 @@ def GetParametersFromXML(action):
 			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 
 	elif action == 'Initialize_eNB':
+		RAN.eNB_Trace=test.findtext('eNB_Trace')
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
@@ -196,6 +197,7 @@ def GetParametersFromXML(action):
 
 	elif action == 'Initialize_UE':
 		ue_id = test.findtext('id')
+		CiTestObj.ue_trace=test.findtext('UE_Trace')#temporary variable, to be passed to Module_UE in Initialize_UE call
 		if (ue_id is None):
 			CiTestObj.ue_id = ""
 		else:
@@ -209,11 +211,24 @@ def GetParametersFromXML(action):
 			CiTestObj.ue_id = ue_id
 
 	elif action == 'Attach_UE':
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
 		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
 		if (nbMaxUEtoAttach is None):
 			CiTestObj.nbMaxUEtoAttach = -1
 		else:
 			CiTestObj.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
+
+	elif action == 'Terminate_UE':
+		ue_id = test.findtext('id')
+		if (ue_id is None):
+			CiTestObj.ue_id = ""
+		else:
+			CiTestObj.ue_id = ue_id
+
 
 	elif action == 'CheckStatusUE':
 		expectedNBUE = test.findtext('expectedNbOfConnectedUEs')
@@ -468,13 +483,13 @@ elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateUE(HTML,COTS_UE)
+	CiTestObj.TerminateUE(HTML,COTS_UE,InfraUE,CiTestObj.ue_trace)
 elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC)
+	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE)
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
@@ -713,11 +728,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE)
+					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE, CiTestObj.ue_trace)
 				elif action == 'Terminate_UE':
-					CiTestObj.TerminateUE(HTML,COTS_UE)
+					CiTestObj.TerminateUE(HTML,COTS_UE, InfraUE, CiTestObj.ue_trace)
 				elif action == 'Attach_UE':
-					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
 				elif action == 'Detach_UE':
 					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
 				elif action == 'DataDisable_UE':
@@ -725,23 +740,23 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'DataEnable_UE':
 					CiTestObj.DataEnableUE(HTML)
 				elif action == 'CheckStatusUE':
-					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE,InfraUE)
 				elif action == 'Build_OAI_UE':
 					CiTestObj.BuildOAIUE(HTML)
 				elif action == 'Initialize_OAI_UE':
-					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE)
+					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,InfraUE)
 				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC)
+					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE)
 				elif action == 'Initialize_CatM_module':
 					CiTestObj.InitializeCatM(HTML)
 				elif action == 'Terminate_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Attach_CatM_module':
-					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC)
+					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC,InfraUE)
 				elif action == 'Detach_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Ping_CatM_module':
-					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC)
+					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC,InfraUE)
 				elif action == 'Ping':
 					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, InfraUE)
 				elif action == 'Iperf':

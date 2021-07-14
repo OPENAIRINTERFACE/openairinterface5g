@@ -68,6 +68,7 @@ USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 NR="False"
 ITTI_SIM="False"
+RFSIM_NAS="False"
 SANITIZE_ADDRESS="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
 RU=0
@@ -106,7 +107,7 @@ Options
 --nrUE
   Makes the NR UE softmodem
 --RU
-  Makes the OAI RRU (without full stack) 
+  Makes the OAI RRU (without full stack)
 --UE
    Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
 --UE-conf-nvram [configuration file]
@@ -259,7 +260,7 @@ function main() {
             echo_info "Will compile gNB"
             shift;;
        --RU)
-	    RU=1
+	          RU=1
             echo_info "Will compile RRU"
 	    shift;;
        -a | --agent)
@@ -273,6 +274,8 @@ function main() {
        --nrUE)
             RU=0
             nrUE=1
+            rfsimNas=1
+            RFSIM_NAS="True"
             NR="True"
             echo_info "Will compile NR UE"
             shift;;
@@ -308,7 +311,7 @@ function main() {
             shift 2;;
        -P | --phy_simulators)
             SIMUS_PHY=1
-	    RU=0
+	          RU=0
             echo_info "Will compile dlsim, ulsim, ..."
             shift;;
        -S | --core_simulators)
@@ -604,7 +607,7 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" -o "$rfsimNas" = "1" ] ; then
 
     # softmodem compilation
 
@@ -630,6 +633,7 @@ function main() {
     echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
     echo "set ( RU $RU )"                                                 >> $cmake_file
     echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
+    echo "set ( RFSIM_NAS $RFSIM_NAS )"                                   >> $cmake_file
     echo "set ( SANITIZE_ADDRESS $SANITIZE_ADDRESS )"                     >> $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
     cd  $DIR/$build_dir/build

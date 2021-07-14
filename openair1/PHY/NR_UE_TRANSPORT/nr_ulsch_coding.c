@@ -264,21 +264,24 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   LOG_D(PHY,"ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
   LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
+  LOG_D(PHY,"harq_pid %d harq_process->ndi %d, pusch_data.new_data_indicator %d\n",
+        harq_pid,harq_process->ndi,harq_process->pusch_pdu.pusch_data.new_data_indicator);
 
-  if (harq_process->ndi != harq_process->pusch_pdu.pusch_data.new_data_indicator) {  // this is a new packet
+  if (harq_process->first_tx == 1 ||
+      harq_process->ndi != harq_process->pusch_pdu.pusch_data.new_data_indicator) {  // this is a new packet
 #ifdef DEBUG_ULSCH_CODING
   printf("encoding thinks this is a new packet \n");
 #endif
-
+  harq_process->first_tx = 0;
 ///////////////////////// a---->| add CRC |---->b /////////////////////////
 ///////////
-    /*
+   /* 
     int i;
     printf("ulsch (tx): \n");
     for (i=0;i<(A>>3);i++)
-      printf("%02x.",a[i]);
+      printf("%02x.",harq_process->a[i]);
     printf("\n");
-    */
+   */ 
 
     if (A > 3824) {
       // Add 24-bit crc (polynomial A) to payload
@@ -412,6 +415,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
 ///////////
 ///////////////////////////////////////////////////////////////////////////////
+    LOG_D(PHY,"setting ndi to %d from pusch_data\n", harq_process->pusch_pdu.pusch_data.new_data_indicator);
     harq_process->ndi = harq_process->pusch_pdu.pusch_data.new_data_indicator;
   }
   F = harq_process->F;

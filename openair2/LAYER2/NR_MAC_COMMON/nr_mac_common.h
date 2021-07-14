@@ -49,16 +49,16 @@ uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, ui
 
 int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol,int mappingtype_fromDCI);
 
-int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slotP);
+int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slot_t slotP);
 
-int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc, slot_t slotP, lte_frame_type_t frame_type);
+int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, slot_t slotP, lte_frame_type_t frame_type);
 
-uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
-                     const NR_CellGroupConfig_t *secondaryCellGroup,
+uint16_t nr_dci_size(const NR_BWP_UplinkCommon_t *initialULBWP,
+                     const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
-		     nr_rnti_type_t rnti_type,
-		     uint16_t N_RB,
+                     nr_rnti_type_t rnti_type,
+                     uint16_t N_RB,
                      int bwp_id);
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
@@ -113,7 +113,7 @@ int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig,long transformPreco
 
 int get_format0(uint8_t index, uint8_t unpaired,frequency_range_t);
 
-int64_t *get_prach_config_info(uint32_t pointa,
+int64_t *get_prach_config_info(frequency_range_t freq_range,
                                uint8_t index,
                                uint8_t unpaired);
 
@@ -162,7 +162,7 @@ uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Posi
 @param    rnti_type        rnti type
 @param    configuredGrant  indicates whether a configured grant was received or not
 @returns                   transformPrecoding value */
-uint8_t get_transformPrecoding(const NR_ServingCellConfigCommon_t *scc,
+uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
                                const NR_PUSCH_Config_t *pusch_config,
                                const NR_BWP_Uplink_t *ubwp,
                                uint8_t *dci_format,

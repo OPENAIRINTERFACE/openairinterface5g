@@ -997,6 +997,7 @@ void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, boolean_t removeFlag) {
   free_list = &eNB_MAC->UE_free_list;
   free_list->UE_free_ctrl[free_list->tail_freelist].rnti = rnti;
   free_list->UE_free_ctrl[free_list->tail_freelist].removeContextFlg = removeFlag;
+  free_list->UE_free_ctrl[free_list->tail_freelist].raFlag = 0;
   free_list->num_UEs++;
   eNB_MAC->UE_release_req.ue_release_request_body.ue_release_request_TLVs_list[eNB_MAC->UE_release_req.ue_release_request_body.number_of_TLVs].rnti = rnti;
   eNB_MAC->UE_release_req.ue_release_request_body.number_of_TLVs++;
@@ -1046,12 +1047,12 @@ void release_UE_in_freeList(module_id_t mod_id) {
         eNB_PHY = RC.eNB[mod_id][CC_id];
         int id;
         // clean ULSCH entries for rnti
-        id = find_ulsch(rnti,eNB_PHY,SEARCH_EXIST);
+        id = find_ulsch(rnti,eNB_PHY,eNB_MAC->UE_free_list.UE_free_ctrl[ue_num].raFlag ? SEARCH_EXIST_RA : SEARCH_EXIST);
 
         if (id>=0) clean_eNb_ulsch(eNB_PHY->ulsch[id]);
 
         // clean DLSCH entries for rnti
-        id = find_dlsch(rnti,eNB_PHY,SEARCH_EXIST);
+        id = find_dlsch(rnti,eNB_PHY,eNB_MAC->UE_free_list.UE_free_ctrl[ue_num].raFlag ? SEARCH_EXIST_RA : SEARCH_EXIST);
 
         if (id>=0) clean_eNb_dlsch(eNB_PHY->dlsch[id][0]);
 
@@ -7614,7 +7615,7 @@ rrc_eNB_decode_ccch(
 
 #define NCE nonCriticalExtension
 
-static void 
+static void
 get_ue_Category(
   LTE_UE_EUTRA_Capability_t *c,
   long *catDL,
@@ -7650,7 +7651,7 @@ get_ue_Category(
                                       if (c125->ue_CategoryUL_r12) *catUL=*c125->ue_CategoryUL_r12;
                                       struct LTE_UE_EUTRA_Capability_v1260_IEs *c126=c125->NCE;
                                       if (c126 != NULL) { // v12.6
-                                         if (c126->ue_CategoryDL_v1260) *catDL=*c126->ue_CategoryDL_v1260; 
+                                         if (c126->ue_CategoryDL_v1260) *catDL=*c126->ue_CategoryDL_v1260;
                                          struct LTE_UE_EUTRA_Capability_v1270_IEs *c127=c126->NCE;
                                          if (c127 != NULL) { // v12.7
                                             struct LTE_UE_EUTRA_Capability_v1280_IEs *c128=c127->NCE;
@@ -7740,7 +7741,7 @@ is_ul_64QAM_supported(
          && c->NCE->NCE->NCE->NCE != NULL // R106
          && c->NCE->NCE->NCE->NCE->NCE != NULL // R109
          && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R113
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117 
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R118
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R11a
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R125
@@ -7764,7 +7765,7 @@ is_dl_256QAM_supported(
          && c->NCE->NCE->NCE->NCE != NULL // R106
          && c->NCE->NCE->NCE->NCE->NCE != NULL // R109
          && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R113
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117 
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R118
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R11a
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R125
@@ -7778,7 +7779,7 @@ is_dl_256QAM_supported(
 static int
 is_ul_256QAM_supported(
   LTE_UE_EUTRA_Capability_t *c
-) 
+)
 //-----------------------------------------------------------------------------
 {
   return c != NULL  // R8
@@ -7788,14 +7789,14 @@ is_ul_256QAM_supported(
          && c->NCE->NCE->NCE->NCE != NULL // R106
          && c->NCE->NCE->NCE->NCE->NCE != NULL // R109
          && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R113
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117 
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R118
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R11a
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R125
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R126
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // 127
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // 128
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //131 
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //131
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //132
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //133
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //134
@@ -7804,7 +7805,7 @@ is_ul_256QAM_supported(
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //143
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430 != NULL
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430 != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430->list.array != NULL 
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430->list.array != NULL
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430->list.array[0]->bandParameterList_v1430 != NULL
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430->list.array[0]->bandParameterList_v1430->list.array != NULL
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430->list.array[0]->bandParameterList_v1430->list.array[0]->ul_256QAM_r14!=NULL
@@ -7827,14 +7828,14 @@ is_en_dc_supported(
          && c->NCE->NCE->NCE->NCE != NULL // R106
          && c->NCE->NCE->NCE->NCE->NCE != NULL // R109
          && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R113
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117 
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R118
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R11a
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R125
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R126
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // 127
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // 128
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //131 
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //131
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //132
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //133
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //134
@@ -7842,7 +7843,7 @@ is_en_dc_supported(
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //136
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //143
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //144
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //145 
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //145
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //146
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //151
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15 != NULL
@@ -7869,7 +7870,7 @@ int to_nr_rsrpq(long rsrpq_result,int nr_band) {
        return((rsrpq_result*10)-1175);
       case 77:  // C
       case 78:
-      case 79: 
+      case 79:
        return((rsrpq_result*10)-1170);
       case 28:  // D
        return((rsrpq_result*10)-1165);
@@ -8837,23 +8838,23 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         }
 
         F1AP_SETUP_RESP (msg_p).gNB_CU_name                                = rrc->node_name;
-        F1AP_SETUP_RESP (msg_p).mcc[cu_cell_ind]                           = rrc->configuration.mcc[0];
-        F1AP_SETUP_RESP (msg_p).mnc[cu_cell_ind]                           = rrc->configuration.mnc[0];
-        F1AP_SETUP_RESP (msg_p).mnc_digit_length[cu_cell_ind]              = rrc->configuration.mnc_digit_length[0];
-        F1AP_SETUP_RESP (msg_p).nr_cellid[cu_cell_ind]                     = rrc->nr_cellid;
-        F1AP_SETUP_RESP (msg_p).nrpci[cu_cell_ind]                         = f1_setup_req->nr_pci[i];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].mcc                           = rrc->configuration.mcc[0];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].mnc                           = rrc->configuration.mnc[0];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].mnc_digit_length              = rrc->configuration.mnc_digit_length[0];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].nr_cellid                     = rrc->nr_cellid;
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].nrpci                         = f1_setup_req->nr_pci[i];
         int num_SI= 0;
         if (rrc->carrier[0].SIB23) {
-          F1AP_SETUP_RESP (msg_p).SI_container[cu_cell_ind][2+num_SI]        = rrc->carrier[0].SIB23;
-          F1AP_SETUP_RESP (msg_p).SI_container_length[cu_cell_ind][2+num_SI] = rrc->carrier[0].sizeof_SIB23;
-          printf("SI %d size %d: ", 0, F1AP_SETUP_RESP(msg_p).SI_container_length[j][2+num_SI]);
-          for (int n = 0; n < F1AP_SETUP_RESP(msg_p).SI_container_length[j][2+num_SI]; n++)
-            printf("%02x ", F1AP_SETUP_RESP(msg_p).SI_container[0][2+num_SI][n]);
-          printf("\n");
+          F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container[2+num_SI]        = rrc->carrier[0].SIB23;
+          F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[2+num_SI] = rrc->carrier[0].sizeof_SIB23;
+          //printf("SI %d size %d: ", 0, F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[2+num_SI]);
+          //for (int n = 0; n < F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[2+num_SI]; n++)
+          //  printf("%02x ", F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container[2+num_SI][n]);
+          //printf("\n");
           num_SI++;
         }
 
-        F1AP_SETUP_RESP (msg_p).num_SI[cu_cell_ind] = num_SI;
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].num_SI = num_SI;
         cu_cell_ind++;
         found_cell=1;
         F1AP_SETUP_RESP (msg_p).num_cells_to_activate = cu_cell_ind;
@@ -9060,7 +9061,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
 
   // check for UL failure or for UE to be released
   FILE *fd=NULL;
-  if ((ctxt_pP->frame&127) == 0 && ctxt_pP->subframe ==0) 
+  if ((ctxt_pP->frame&127) == 0 && ctxt_pP->subframe ==0)
     fd=fopen("RRC_stats.log","w+");
 
   RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
@@ -9092,15 +9093,15 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
         if (ue_context_p->ue_context.measResults) {
            fprintf(fd, "RRC PCell RSRP %ld, RSRQ %ld\n", ue_context_p->ue_context.measResults->measResultPCell.rsrpResult-140,
                                                          ue_context_p->ue_context.measResults->measResultPCell.rsrqResult/2 - 20);
-          if (ue_context_p->ue_context.measResults->measResultNeighCells && 
-              ue_context_p->ue_context.measResults->measResultNeighCells->present == LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15) { 
+          if (ue_context_p->ue_context.measResults->measResultNeighCells &&
+              ue_context_p->ue_context.measResults->measResultNeighCells->present == LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15) {
 
             fprintf(fd,"NR_pci %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15);
             if(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15)
               fprintf(fd,"NR_rsrp %f dB\n",to_nr_rsrpq(*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15,RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0])/10.0);
-            if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15) 
+            if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15)
               fprintf(fd,"NR_rsrq %f dB\n",to_nr_rsrpq(*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15,RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0])/10.0);
-            if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15) 
+            if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15)
               fprintf(fd,"NR_ssb_index %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15);
            }
         }

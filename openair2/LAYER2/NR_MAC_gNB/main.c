@@ -81,6 +81,8 @@ void mac_top_init_gNB(void)
         
       RC.nrmac[i]->ul_handle = 0;
 
+      RC.nrmac[i]->first_MIB = true;
+
       if (get_softmodem_params()->phy_test) {
         RC.nrmac[i]->pre_processor_dl = nr_preprocessor_phytest;
         RC.nrmac[i]->pre_processor_ul = nr_ul_preprocessor_phytest;
@@ -96,12 +98,12 @@ void mac_top_init_gNB(void)
     // These should be out of here later
     pdcp_layer_init();
 
-    if(IS_SOFTMODEM_NOS1 && !(get_softmodem_params()->do_ra || get_softmodem_params()->sa) )
+    if(IS_SOFTMODEM_NOS1 && get_softmodem_params()->phy_test)
       nr_DRB_preconfiguration(0x1234);
 
     rrc_init_nr_global_param();
 
-  }else {
+  } else {
     RC.nrmac = NULL;
   }
 

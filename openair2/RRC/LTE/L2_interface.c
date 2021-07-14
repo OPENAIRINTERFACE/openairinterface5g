@@ -316,8 +316,9 @@ mac_rrc_data_ind(
       UE_id,
       rntiP,
       sduP,
-      sdu_lenP
-    );
+      sdu_lenP,
+      NULL,
+      0);
     return(0);
   }
 

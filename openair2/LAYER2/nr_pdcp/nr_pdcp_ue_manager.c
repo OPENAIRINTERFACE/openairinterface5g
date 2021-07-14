@@ -85,7 +85,7 @@ nr_pdcp_ue_t *nr_pdcp_manager_get_ue(nr_pdcp_ue_manager_t *_m, int rnti)
     if (m->ue_list[i]->rnti == rnti)
       return m->ue_list[i];
 
-  LOG_D(PDCP, "%s:%d:%s: new UE %d\n", __FILE__, __LINE__, __FUNCTION__, rnti);
+  LOG_D(PDCP, "%s:%d:%s: new UE 0x%x\n", __FILE__, __LINE__, __FUNCTION__, rnti);
 
   m->ue_count++;
   m->ue_list = realloc(m->ue_list, sizeof(nr_pdcp_ue_t *) * m->ue_count);
