@@ -2188,7 +2188,7 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
         ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
         ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = sdu_lcids[i];
         ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = (unsigned char) sdu_lengths[i];
-	mac_pdu_ptr += sizeof(NR_MAC_SUBHEADER_SHORT); 
+        mac_pdu_ptr += sizeof(NR_MAC_SUBHEADER_SHORT);
       } else {
         ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->R = 0;
         ((NR_MAC_SUBHEADER_LONG *) mac_pdu_ptr)->F = 1;
@@ -2276,7 +2276,9 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
 
   if(buflen > 0) // If the buflen is provided
     padding_bytes = buflen + pdu - (unsigned char *) mac_pdu_ptr;
+
   AssertFatal(padding_bytes>=0,"");
+
   // Compute final offset for padding
   if (post_padding || padding_bytes>0) {
     ((NR_MAC_SUBHEADER_FIXED *) mac_pdu_ptr)->R = 0;
