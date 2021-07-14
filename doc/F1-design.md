@@ -24,7 +24,7 @@ https://gitlab.eurecom.fr/oai/openairinterface5g/-/wikis/f1-interface
 
 # 2. Common multi-threading architecture #
 
-The CU and DU interfaces are based on ITTI threads (see oai/common/utils/ocp_itti/itti.md when it will be written, draft available: https://docbox.etsi.org/Workshop/2018/201812_ETSI_OAI/TRAINING/OPENCELLS_THOMAS.pdf)
+The CU and DU interfaces are based on ITTI threads (see oai/common/utils/ocp_itti/itti.md)
 
 All OAI upper layers use the ITTI framework to run isolated threads dedicated to one feature.
 The lower layers adopt case by case specific software architecture.
