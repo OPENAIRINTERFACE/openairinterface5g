@@ -2207,6 +2207,10 @@ void nr_csirs_scheduling(int Mod_idP,
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
+
+    if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
+	      !CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig) continue;
+
     NR_CSI_MeasConfig_t *csi_measconfig = CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
 
     if (csi_measconfig->nzp_CSI_RS_ResourceToAddModList != NULL) {
