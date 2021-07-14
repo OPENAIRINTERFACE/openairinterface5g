@@ -48,6 +48,8 @@
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
+#include <executables/softmodem-common.h>
+
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac);
 
 // Random Access procedure initialization as per 5.1.1 and initialization of variables specific
@@ -532,7 +534,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   else          setup = mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
   AssertFatal(&setup->rach_ConfigGeneric != NULL, "In %s: FATAL! rach_ConfigGeneric is NULL...\n", __FUNCTION__);
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
-  //NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = ra->rach_ConfigDedicated;
 
   uint8_t sdu_lcids[NB_RB_MAX] = {0};
@@ -542,16 +543,15 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
   if (!prach_resources->init_msg1) {
-    if (/*(((MAX_FRAME_NUMBER + frame - prach_resources->sync_frame) % MAX_FRAME_NUMBER) > 150) &&*/
-	mac->common_configuration_complete > 0){
+    if ( (mac->common_configuration_complete>0 || get_softmodem_params()->do_ra==1) && ((MAX_FRAME_NUMBER+frame-prach_resources->sync_frame)%MAX_FRAME_NUMBER)>150 ){
       prach_resources->init_msg1 = 1;
     } else {
-      LOG_I(PHY,"PRACH Condition not met: frame %d, prach_resources->sync_frame %d\n",frame,prach_resources->sync_frame);
+      LOG_D(NR_MAC,"PRACH Condition not met: frame %d, prach_resources->sync_frame %d\n",frame,prach_resources->sync_frame);
       return 0;
     }
   }
 
-  LOG_I(PHY,"frame %d prach_resources->init_msg1 %d, ra->ra_state %d, ra->RA_active %d\n",
+  LOG_D(NR_MAC,"frame %d prach_resources->init_msg1 %d, ra->ra_state %d, ra->RA_active %d\n",
 	frame,prach_resources->init_msg1,ra->ra_state,ra->RA_active);
 
   if (prach_resources->init_msg1 && ra->ra_state != RA_SUCCEEDED) {
@@ -559,7 +559,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
     if (ra->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
 
-      LOG_I(MAC, "RA not active. Checking for data to transmit from upper layers...\n");
+      LOG_D(NR_MAC, "RA not active. Checking for data to transmit from upper layers...\n");
 
       uint8_t TBS_max = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
       payload = (uint8_t*) mac->CCCH_pdu.payload;
@@ -580,7 +580,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       sdu_lengths[0] = size_sdu;
 
-      LOG_I(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
+      LOG_D(NR_MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
 
       if (size_sdu > 0) {
 
@@ -589,7 +589,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         // Random Access Procedure has been successful after reception of Msg4
         memcpy(ra->cont_res_id, mac_sdus, sizeof(uint8_t) * 6);
 
-        LOG_I(MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
+        LOG_D(NR_MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
 
         ra->Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
 
@@ -653,6 +653,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         } else {
           ra->generate_nr_prach = GENERATE_IDLE;
         }
+
       } else if (ra->RA_window_cnt == 0 && !ra->RA_RAPID_found) {
 
         LOG_I(MAC, "[UE %d][%d:%d] RAR reception failed \n", mod_id, frame, nr_slot_tx);
@@ -665,9 +666,9 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
         // Fill in preamble and PRACH resources
         ra->RA_window_cnt--;
-	if (ra->generate_nr_prach == GENERATE_PREAMBLE) {
+        if (ra->generate_nr_prach == GENERATE_PREAMBLE) {
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
-	}
+        }
       } else if (ra->RA_backoff_cnt > 0) {
 
         LOG_D(MAC, "[UE %d][%d.%d]: RAR not received yet (RA backoff count %d) \n", mod_id, frame, nr_slot_tx, ra->RA_backoff_cnt);

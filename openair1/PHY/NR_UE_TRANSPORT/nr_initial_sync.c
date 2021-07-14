@@ -311,12 +311,15 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         // every 7*(1<<mu) symbols there is a different prefix length (38.211 5.3.1)
         int n_symb_prefix0 = (ue->symbol_offset/(7*(1<<mu)))+1;
         sync_pos_frame = n_symb_prefix0*(fp->ofdm_symbol_size + fp->nb_prefix_samples0)+(ue->symbol_offset-n_symb_prefix0)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
-        if (ue->ssb_offset < sync_pos_frame)
+        // for a correct computation of frame number to sync with the one decoded at MIB we need to take into account in which of the n_frames we got sync
+        ue->init_sync_frame = n_frames - 1 - is;
+        // we also need to take into account the shift by samples_per_frame in case the if is true
+        if (ue->ssb_offset < sync_pos_frame){
           ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;
+          ue->init_sync_frame += 1;
+        }
         else
           ue->rx_offset = ue->ssb_offset - sync_pos_frame;
-
-        ue->init_sync_frame = is;
       }   
 
     /*

@@ -239,13 +239,13 @@ typedef struct RB_INFO_TABLE_ENTRY_NR_s {
   NR_RB_INFO                                          Rb_info;
   uint8_t                                             Active;
   uint32_t                                            Next_check_frame;
-  uint8_t                                             Status;
+  uint8_t                                             status;
 } NR_RB_INFO_TABLE_ENTRY;
 
 typedef struct SRB_INFO_TABLE_ENTRY_NR_s {
   NR_SRB_INFO                                         Srb_info;
   uint8_t                                             Active;
-  uint8_t                                             Status;
+  uint8_t                                             status;
   uint32_t                                            Next_check_frame;
 } NR_SRB_INFO_TABLE_ENTRY;
 
@@ -317,7 +317,7 @@ typedef struct gNB_RRC_UE_s {
   NR_CipheringAlgorithm_t            ciphering_algorithm;
   e_NR_IntegrityProtAlgorithm        integrity_algorithm;
 
-  uint8_t                            Status;
+  uint8_t                            StatusRrc;
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 
@@ -356,7 +356,7 @@ typedef struct gNB_RRC_UE_s {
   /* list of e_rab to be setup by RRC layers */
   /* list of pdu session to be setup by RRC layers */
   e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
-  pdu_session_param_t                pdusession[NR_NB_RB_MAX];//[NGAP_MAX_PDU_SESSION];
+  pdu_session_param_t                pduSession[NR_NB_RB_MAX];//[NGAP_MAX_PDU_SESSION];
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];

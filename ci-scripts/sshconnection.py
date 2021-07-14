@@ -35,6 +35,7 @@ import pexpect          # pexpect
 import logging
 import time             # sleep
 import re
+import subprocess
 import sys
 
 #-----------------------------------------------------------
@@ -44,6 +45,9 @@ class SSHConnection():
 	def __init__(self):
 		self.ssh = ''
 		self.picocom_closure = False
+		self.ipaddress = ''
+		self.username = ''
+		self.cmd2Results = ''
 
 	def disablePicocomClosure(self):
 		self.picocom_closure = False
@@ -98,6 +102,8 @@ class SSHConnection():
 			pass
 		else:
 			sys.exit('SSH Connection Failed')
+		self.ipaddress = ipaddress
+		self.username = username
 
 
 
@@ -111,11 +117,20 @@ class SSHConnection():
 		self.sshresponse = self.ssh.expect(expected)
 		return self.sshresponse
 
-	def command(self, commandline, expectedline, timeout):
-		logging.debug(commandline)
+	def command(self, commandline, expectedline, timeout, silent=False, resync=False):
+		if not silent:
+			logging.debug(commandline)
 		self.ssh.timeout = timeout
-		self.ssh.sendline(commandline)
-		self.sshresponse = self.ssh.expect([expectedline, pexpect.EOF, pexpect.TIMEOUT])
+		# Nasty patch when pexpect output is out of sync.
+		# Much pronounced when running back-to-back-back oc commands
+		if resync:
+			self.ssh.send(commandline)
+			self.ssh.expect([commandline, pexpect.TIMEOUT])
+			self.ssh.send('\r\n')
+			self.sshresponse = self.ssh.expect([expectedline, pexpect.EOF, pexpect.TIMEOUT])
+		else:
+			self.ssh.sendline(commandline)
+			self.sshresponse = self.ssh.expect([expectedline, pexpect.EOF, pexpect.TIMEOUT])
 		if self.sshresponse == 0:
 			return 0
 		elif self.sshresponse == 1:
@@ -137,10 +152,23 @@ class SSHConnection():
 			logging.debug('Expected Line : ' + expectedline)
 			sys.exit(self.sshresponse)
 
+	def command2(self, commandline, timeout, silent=False):
+		if not silent:
+			logging.debug(commandline)
+		self.cmd2Results = ''
+		myHost = self.username + '@' + self.ipaddress
+		# CAUTION: THIS METHOD IMPLIES THAT THERE ARE VALID SSH KEYS
+		# BETWEEN THE PYTHON EXECUTOR NODE AND THE REMOTE HOST
+		# OTHERWISE IT WON'T WORK
+		lSsh = subprocess.Popen(["ssh", "%s" % myHost, commandline],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		self.cmd2Results = str(lSsh.stdout.readlines())
+
 	def close(self):
 		self.ssh.timeout = 5
 		self.ssh.sendline('exit')
 		self.sshresponse = self.ssh.expect([pexpect.EOF, pexpect.TIMEOUT])
+		self.ipaddress = ''
+		self.username = ''
 		if self.sshresponse == 0:
 			pass
 		elif self.sshresponse == 1:

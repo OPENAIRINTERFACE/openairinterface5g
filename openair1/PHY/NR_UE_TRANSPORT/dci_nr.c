@@ -889,6 +889,33 @@ void nr_pdcch_unscrambling(int16_t *z,
 
 
 #ifdef NR_PDCCH_DCI_RUN
+/* This function compares the received DCI bits with
+ * re-encoded DCI bits and returns the number of mismatched bits
+ */
+uint16_t nr_dci_false_detection(uint64_t *dci,
+                            int16_t *soft_in,
+                            const t_nrPolar_params *polar_param,
+                            int encoded_length,
+                            int rnti) {
+
+  uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
+  polar_encoder_fast(dci, (void*)encoder_output, rnti, 1, (t_nrPolar_params *)polar_param);
+  uint8_t *enout_p = (uint8_t*)encoder_output;
+  uint16_t x = 0;
+
+  for (int i=0; i<encoded_length/8; i++) {
+    x += ( enout_p[i] & 1 ) ^ ( ( soft_in[i*8] >> 15 ) & 1);
+    x += ( ( enout_p[i] >> 1 ) & 1 ) ^ ( ( soft_in[i*8+1] >> 15 ) & 1 );
+    x += ( ( enout_p[i] >> 2 ) & 1 ) ^ ( ( soft_in[i*8+2] >> 15 ) & 1 );
+    x += ( ( enout_p[i] >> 3 ) & 1 ) ^ ( ( soft_in[i*8+3] >> 15 ) & 1 );
+    x += ( ( enout_p[i] >> 4 ) & 1 ) ^ ( ( soft_in[i*8+4] >> 15 ) & 1 );
+    x += ( ( enout_p[i] >> 5 ) & 1 ) ^ ( ( soft_in[i*8+5] >> 15 ) & 1 );
+    x += ( ( enout_p[i] >> 6 ) & 1 ) ^ ( ( soft_in[i*8+6] >> 15 ) & 1 );
+    x += ( ( enout_p[i] >> 7 ) & 1 ) ^ ( ( soft_in[i*8+7] >> 15 ) & 1 );
+  }
+  return x;
+}
+
 uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                   UE_nr_rxtx_proc_t *proc,
                                   fapi_nr_dci_indication_t *dci_ind,
@@ -931,17 +958,25 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
       n_rnti = rel15->rnti;
 
       if (crc == n_rnti) {
-        LOG_D(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
+        LOG_D(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d,payload %llx)\n",
               proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length,*(unsigned long long*)dci_estimation);
-        dci_ind->SFN = proc->frame_rx;
-        dci_ind->slot = proc->nr_slot_rx;
-        dci_ind->dci_list[dci_ind->number_of_dcis].rnti        = n_rnti;
-        dci_ind->dci_list[dci_ind->number_of_dcis].n_CCE       = CCEind;
-        dci_ind->dci_list[dci_ind->number_of_dcis].dci_format  = rel15->dci_format_options[k];
-        dci_ind->dci_list[dci_ind->number_of_dcis].payloadSize = dci_length;
-        memcpy((void*)dci_ind->dci_list[dci_ind->number_of_dcis].payloadBits,(void*)dci_estimation,8);
-        dci_ind->number_of_dcis++;
-        break;    // If DCI is found, no need to check for remaining DCI lengths
+        uint16_t mb = nr_dci_false_detection(dci_estimation,tmp_e,currentPtrDCI,L*108,n_rnti);
+        ue->dci_thres = (ue->dci_thres + mb) / 2;
+        if (mb > (ue->dci_thres+20)) {
+          LOG_W(PHY,"DCI false positive. Dropping DCI index %d. Mismatched bits: %d/%d. Current DCI threshold: %d\n",j,mb,L*108,ue->dci_thres);
+          continue;
+        }
+        else {
+          dci_ind->SFN = proc->frame_rx;
+          dci_ind->slot = proc->nr_slot_rx;
+          dci_ind->dci_list[dci_ind->number_of_dcis].rnti        = n_rnti;
+          dci_ind->dci_list[dci_ind->number_of_dcis].n_CCE       = CCEind;
+          dci_ind->dci_list[dci_ind->number_of_dcis].dci_format  = rel15->dci_format_options[k];
+          dci_ind->dci_list[dci_ind->number_of_dcis].payloadSize = dci_length;
+          memcpy((void*)dci_ind->dci_list[dci_ind->number_of_dcis].payloadBits,(void*)dci_estimation,8);
+          dci_ind->number_of_dcis++;
+          break;    // If DCI is found, no need to check for remaining DCI lengths
+        }
       } else {
         LOG_D(PHY,"(%i.%i) Decoded crc %x does not match rnti %x for DCI format %d\n", proc->frame_rx, proc->nr_slot_rx, crc, n_rnti, rel15->dci_format_options[k]);
       }

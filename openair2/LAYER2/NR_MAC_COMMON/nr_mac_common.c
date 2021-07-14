@@ -1876,6 +1876,47 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
   }
 }
 
+// TS 38.211 Table 7.4.1.1.2-3: PDSCH DMRS positions l' within a slot for single-symbol DMRS and intra-slot frequency hopping disabled.
+// The first 4 colomns are PDSCH mapping type A and the last 4 colomns are PDSCH mapping type B.
+// When l' = l0, it is represented by 1
+// E.g. when symbol duration is 12 in colomn 7, value 1057 ('10000100001') which means l' =  l0, 5, 10.
+
+int32_t table_7_4_1_1_2_3_pdsch_dmrs_positions_l [13][8] = {                             // Duration in symbols
+{-1,          -1,          -1,         -1,          1,          1,         1,         1},       //2              // (DMRS l' position)
+{0,            0,           0,          0,          1,          1,         1,         1},       //3              // (DMRS l' position)
+{0,            0,           0,          0,          1,          1,         1,         1},       //4               // (DMRS l' position)
+{0,            0,           0,          0,          1,          17,        17,       17},       //5               // (DMRS l' position)
+{0,            0,           0,          0,          1,          17,        17,       17},       //6               // (DMRS l' position)
+{0,            0,           0,          0,          1,          17,        17,       17},       //7               // (DMRS l' position)
+{0,          128,         128,        128,          1,          65,        73,       73},       //8               // (DMRS l' position)
+{0,          128,         128,        128,          1,         129,       145,      145},       //9               // (DMRS l' position)
+{0,          512,         576,        576,          1,         129,       145,      145},       //10              // (DMRS l' position)
+{0,          512,         576,        576,          1,         257,       273,      585},       //11              // (DMRS l' position)
+{0,          512,         576,       2336,          1,         513,       545,      585},       //12              // (DMRS l' position)
+{0,         2048,        2176,       2336,          1,         513,       545,      585},       //13              // (DMRS l' position)
+{0,         2048,        2176,       2336,         -1,          -1,       -1,        -1},       //14              // (DMRS l' position)
+};
+
+
+// TS 38.211 Table 7.4.1.1.2-4: PDSCH DMRS positions l' within a slot for double-symbol DMRS and intra-slot frequency hopping disabled.
+// The first 4 colomns are PDSCH mapping type A and the last 4 colomns are PDSCH mapping type B.
+// When l' = l0, it is represented by 1
+
+int32_t table_7_4_1_1_2_4_pdsch_dmrs_positions_l [12][8] = {                             // Duration in symbols
+{-1,          -1,          -1,         -1,         -1,         -1,        -1,         -1},       //<4              // (DMRS l' position)
+{0,            0,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //5               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //6               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //7               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //8               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //9               // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //10              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //11              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        771,        -1,         -1},       //12              // (DMRS l' position)
+{0,         3072,          -1,         -1,          3,        771,        -1,         -1},       //13              // (DMRS l' position)
+{0,         3072,          -1,         -1,          -1,        -1,        -1,         -1},       //14              // (DMRS l' position)
+};
+
 // TS 38.211 Table 6.4.1.1.3-3: PUSCH DMRS positions l' within a slot for single-symbol DMRS and intra-slot frequency hopping disabled.
 // The first 4 colomns are PUSCH mapping type A and the last 4 colomns are PUSCH mapping type B.
 // When l' = l0, it is represented by 1
@@ -1883,17 +1924,17 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
 
 int32_t table_6_4_1_1_3_3_pusch_dmrs_positions_l [12][8] = {                             // Duration in symbols
 {-1,          -1,          -1,         -1,          1,          1,         1,         1},       //<4              // (DMRS l' position)
-{1,            1,           1,          1,          1,          1,         1,         1},       //4               // (DMRS l' position)
-{1,            1,           1,          1,          1,          5,         5,         5},       //5               // (DMRS l' position)
-{1,            1,           1,          1,          1,          5,         5,         5},       //6               // (DMRS l' position)
-{1,            1,           1,          1,          1,          5,         5,         5},       //7               // (DMRS l' position)
-{1,          129,         129,        129,          1,         65,        73,        73},       //8               // (DMRS l' position)
-{1,          129,         129,        129,          1,         65,        73,        73},       //9               // (DMRS l' position)
-{1,          513,         577,        577,          1,        257,       273,       585},       //10              // (DMRS l' position)
-{1,          513,         577,        577,          1,        257,       273,       585},       //11              // (DMRS l' position)
-{1,          513,         577,       2337,          1,       1025,      1057,       585},       //12              // (DMRS l' position)
-{1,         2049,        2177,       2337,          1,       1025,      1057,       585},       //13              // (DMRS l' position)
-{1,         2049,        2177,       2337,          1,       1025,      1057,       585},       //14              // (DMRS l' position)
+{0,            0,           0,          0,          1,          1,         1,         1},       //4               // (DMRS l' position)
+{0,            0,           0,          0,          1,         17,        17,        17},       //5               // (DMRS l' position)
+{0,            0,           0,          0,          1,         17,        17,        17},       //6               // (DMRS l' position)
+{0,            0,           0,          0,          1,         17,        17,        17},       //7               // (DMRS l' position)
+{0,          128,         128,        128,          1,         65,        73,        73},       //8               // (DMRS l' position)
+{0,          128,         128,        128,          1,         65,        73,        73},       //9               // (DMRS l' position)
+{0,          512,         576,        576,          1,        257,       273,       585},       //10              // (DMRS l' position)
+{0,          512,         576,        576,          1,        257,       273,       585},       //11              // (DMRS l' position)
+{0,          512,         576,       2336,          1,       1025,      1057,       585},       //12              // (DMRS l' position)
+{0,         2048,        2176,       2336,          1,       1025,      1057,       585},       //13              // (DMRS l' position)
+{0,         2048,        2176,       2336,          1,       1025,      1057,       585},       //14              // (DMRS l' position)
 };
 
 
@@ -1903,17 +1944,17 @@ int32_t table_6_4_1_1_3_3_pusch_dmrs_positions_l [12][8] = {                    
 
 int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                             // Duration in symbols
 {-1,          -1,          -1,         -1,         -1,         -1,        -1,         -1},       //<4              // (DMRS l' position)
-{1,            1,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //5               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //6               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //7               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //8               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //9               // (DMRS l' position)
-{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //10              // (DMRS l' position)
-{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //11              // (DMRS l' position)
-{1,          257,          -1,         -1,          1,        513,        -1,         -1},       //12              // (DMRS l' position)
-{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //13              // (DMRS l' position)
-{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //14              // (DMRS l' position)
+{0,            0,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //5               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //6               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //7               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //8               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //9               // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //10              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //11              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,       1539,        -1,         -1},       //12              // (DMRS l' position)
+{0,         3072,          -1,         -1,          3,       1539,        -1,         -1},       //13              // (DMRS l' position)
+{0,         3072,          -1,         -1,          3,       1539,        -1,         -1},       //14              // (DMRS l' position)
 };
 
 // Returns the corresponding row index of the NR table
@@ -2459,8 +2500,8 @@ int get_num_dmrs(uint16_t dmrs_mask ) {
   return(num_dmrs);
 }
 /* returns the total DMRS symbols in a slot*/
-uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol){
-  return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols,startSymbol));
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols, int startSymbol, int mappingtype){
+  return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols, startSymbol, mappingtype));
 }
 
 // Table 5.1.2.2.1-1 38.214
@@ -2524,29 +2565,46 @@ uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position) {
 
 }
 
-int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength) {
+int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength, uint8_t start_symbol, uint8_t dmrs_typeA_position) {
 
   uint8_t row, colomn;
   int32_t l_prime;
+
+  LOG_D(MAC, "PUSCH: NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", duration_in_symbols, start_symbol, mapping_type, dmrs_typeA_position);
+
+  // Section 6.4.1.1.3 in Spec 38.211
+  // For PDSCH Mapping TypeA, ld is duration between first OFDM of the slot and last OFDM symbol of the scheduled PUSCH resources
+  // For TypeB, ld is the duration of the scheduled PUSCH resources
+  uint8_t ld = (mapping_type == typeA) ? (duration_in_symbols + start_symbol) : duration_in_symbols;
+  uint8_t l0 = (dmrs_typeA_position == NR_MIB__dmrs_TypeA_Position_pos2) ? 2 : 3 ;
 
   colomn = additional_pos;
 
   if (mapping_type == typeB)
     colomn += 4;
 
-  if (duration_in_symbols < 4)
+  if (ld < 4)
     row = 0;
   else
-    row = duration_in_symbols - 3;
+    row = ld - 3;
 
-  if (pusch_maxLength == pusch_len1)
+  if (pusch_maxLength == pusch_len1) {
     l_prime = table_6_4_1_1_3_3_pusch_dmrs_positions_l[row][colomn];
-  else
+    l0 = 1 << l0;
+  }
+  else {
     l_prime = table_6_4_1_1_3_4_pusch_dmrs_positions_l[row][colomn];
+    l0 = 1<<l0 | 1<<(l0+1);
+  }
 
-  AssertFatal(l_prime>0,"invalid l_prime < 0\n");
+  LOG_D(MAC, "PUSCH - l0:%d, ld:%d,row:%d, column:%d, addpos:%d, maxlen:%d\n", l0, ld, row, colomn, additional_pos, pusch_maxLength);
+  AssertFatal(l_prime>=0,"invalid l_prime < 0\n");
+
+  l_prime = (mapping_type == typeA) ? (l_prime | l0) : (l_prime << start_symbol);
+  LOG_D(MAC, " PUSCH DMRS MASK in HEX:%x\n", l_prime);
 
   return l_prime;
+
 }
 
 /*******************************************************************
@@ -3053,7 +3111,7 @@ int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slo
 			       
   if (tdd_UL_DL_ConfigurationCommon->pattern2) {
     if (tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
-	tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
+        tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
       period2 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
     else
       period2 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
@@ -3085,7 +3143,7 @@ int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t	*tdd_UL_DL_ConfigurationCommon, sl
 			       
   if (tdd_UL_DL_ConfigurationCommon->pattern2) {
     if (tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
-	tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
+	      tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
       period2 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
     else
       period2 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
@@ -3099,92 +3157,90 @@ int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t	*tdd_UL_DL_ConfigurationCommon, sl
   else return(slot_in_period >= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
 }
 
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol) {
+int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols, int startSymbol, int mappingtype_fromDCI) {
 
-  int l0;
-  int ld = NrOfSymbols+startSymbol;
+  int l0;int dmrs_AdditionalPosition = 0;int maxLength = 0;
+  NR_DMRS_DownlinkConfig_t *dmrs_config = NULL;
+
+  LOG_D(MAC, "NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", NrOfSymbols, startSymbol, mappingtype_fromDCI, dmrs_TypeA_Position);
+
   if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0=2;
   else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0=3;
   else AssertFatal(1==0,"Illegal dmrs_TypeA_Position %d\n",(int)dmrs_TypeA_Position);
-  if (pdsch_Config == NULL) { // Initial BWP
-    if (ld <= 7) return(1<<l0);
-    else if (ld <= 9) 	  return(1<<l0 | 1<<7);
-    else if (ld <= 12)   return(1<<l0 | 1<<6 | 1<<9);
-    else if (ld <= 14)   return(1<<l0 | 1<<7 | 1<<11);
+
+  // in case of DCI FORMAT 1_0 or dedicated pdsch config not received additionposition = pos2, len1 should be used
+  // referred to section 5.1.6.2 in 38.214
+  dmrs_AdditionalPosition = 2;
+  maxLength = 1;
+
+  if (pdsch_Config != NULL) {
+    if (mappingtype_fromDCI == typeA) { // Type A
+      if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA && pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup)
+        dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
+    } else if (mappingtype_fromDCI == typeB) {
+      if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB && pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup)
+        dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+    } else {
+      AssertFatal(1==0,"Incorrect Mappingtype\n");
+    }
+
+    AssertFatal(dmrs_config != NULL," DMRS configs not present in PDSCH DMRS Downlink config\n");
+
+    // default values of maxlength = len2, additionalposition is pos2
+    if (dmrs_config->maxLength != NULL) maxLength = 2;
+    if (dmrs_config->dmrs_AdditionalPosition != NULL) dmrs_AdditionalPosition = *dmrs_config->dmrs_AdditionalPosition;
+  }
+
+  uint8_t ld, row, column;
+  int32_t l_prime = -1;
+
+  // columns 0-3 for TypeA, 4-7 for TypeB
+  column = (mappingtype_fromDCI == typeA) ? dmrs_AdditionalPosition : (dmrs_AdditionalPosition + 4);
+
+  // Section 7.4.1.1.2 in Spec 38.211
+  // For PDSCH Mapping TypeA, ld is duration between first OFDM of the slot and last OFDM symbol of the scheduled PDSCH resources
+  // For TypeB, ld is the duration of the scheduled PDSCH resources
+  ld = (mappingtype_fromDCI == typeA) ? (NrOfSymbols + startSymbol) : NrOfSymbols;
+
+  // Section 7.4.1.1.2 in Spec 38.211
+  //For PDSCH Mapping typeB, if PDSCH duration ld <=4, only single symbol DMRS is supported
+  if (mappingtype_fromDCI == typeB && ld <= 4)
+    maxLength = 1;
+
+  AssertFatal(ld > 2 && ld < 15,"Illegal NrOfSymbols according to Table 5.1.2.1-1 Spec 38.214 %d\n",ld);
+  AssertFatal((NrOfSymbols + startSymbol) < 15,"Illegal S+L according to Table 5.1.2.1-1 Spec 38.214 S:%d L:%d\n",startSymbol, NrOfSymbols);
+
+  if (mappingtype_fromDCI == typeA) {
+
+    // Section 7.4.1.1.2 in Spec 38.211
+    AssertFatal((l0 == 2) || (l0 == 3 && dmrs_AdditionalPosition != 3),"Wrong config, If dmrs_TypeA_Position POS3, ADD POS cannot be POS3 \n");
+
+    // Table 5.1.2.1-1 in Spec 38.214
+    AssertFatal(startSymbol <= l0, "Wrong config, Start symbol %d cannot be later than dmrs_TypeA_Position %d \n", startSymbol, l0);
+
+    // Section 7.4.1.1.2 in Spec 38.211
+    AssertFatal(l0 == 2 || (l0 == 3 && (ld != 3 || ld != 4)), "ld 3 or 4 symbols only possible with dmrs_TypeA_Position POS2 \n");
+
+  }
+
+  if (maxLength == 1) {
+    row = ld - 2;
+    l_prime = table_7_4_1_1_2_3_pdsch_dmrs_positions_l[row][column];
+    l0 = 1 << l0;
   }
   else {
-    if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA &&
-	pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
-      // Relative to start of slot
-      NR_DMRS_DownlinkConfig_t *dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
-      AssertFatal(ld>1 && ld < 15,"Illegal l_d %d\n",ld);
-      int pos2=0;
-      if (dmrs_config->maxLength == NULL) {
-	// this is Table 7.4.1.1.2-3: PDSCH DM-RS positions l for single-symbol DM-RS
-	if (dmrs_config->dmrs_AdditionalPosition == NULL) pos2=1;
-	else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition == NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0 )
-	  return(1<<l0);
-	
-	
-	switch (ld) {
-	case 2 :
-	case 3 :
-	case 4 :
-	case 5 :
-	case 6 :
-	case 7 :
-    return(1<<l0);
-	  break;
-	case 8 :
-	case 9:
-	  return(1<<l0 | 1<<7);
-	  break;
-	case 10:
-	case 11:
-	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<9);
-	  else
-	    return(1<<l0 | 1<<6 | 1<<9);
-	  break;
-	case 12:
-	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<9);
-	  else if (pos2==1)
-	    return(1<<l0 | 1<<6 | 1<<9);
-	  else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
-	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
-	  break;
-	case 13:
-	case 14:
-	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<11);
-	  else if (pos2==1)
-	    return(1<<l0 | 1<<7 | 1<<11);
-	  else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
-	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
-	  break;
-	}
-      }
-      else {
-	// Table 7.4.1.1.2-4: PDSCH DM-RS positions l for double-symbol DM-RS.
-	AssertFatal(ld>3,"Illegal l_d %d for len2 DMRS\n",ld);
-	if (ld < 10) return(1<<l0);
-	if (ld < 13 && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (ld < 13 && *dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0 | 1<<8);
-	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
-        if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
-      }
-    }
-    else if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB &&
-	     pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
-      // Relative to start of PDSCH resource
-      AssertFatal(1==0,"TypeB DMRS not supported yet\n");
-    }
+    row = (ld < 4) ? 0 : (ld - 3);
+    l_prime = table_7_4_1_1_2_4_pdsch_dmrs_positions_l[row][column];
+    l0 = 1<<l0 | 1<<(l0+1);
   }
-  AssertFatal(1==0,"Shouldn't get here\n");
-  return(-1);
+
+  LOG_D(MAC, "l0:%d, ld:%d,row:%d, column:%d, addpos:%d, maxlen:%d\n", l0, ld, row, column, dmrs_AdditionalPosition, maxLength);
+  AssertFatal(l_prime>=0,"ERROR in configuration.Check Time Domain allocation of this Grant. l_prime < 1. row:%d, column:%d\n", row, column);
+
+  l_prime = (mappingtype_fromDCI == typeA) ? (l_prime | l0) : (l_prime << startSymbol);
+  LOG_D(MAC, " PDSCH DMRS MASK in HEX:%x\n", l_prime);
+
+  return l_prime;
 }
 
 uint8_t get_pusch_mcs_table(long *mcs_Table,

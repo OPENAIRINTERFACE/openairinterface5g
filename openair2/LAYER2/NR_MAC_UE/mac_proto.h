@@ -169,6 +169,10 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
                                     unsigned short post_padding,
                                     uint16_t buflen);
 
+void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
+
+void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id);
+
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot);
 
 uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,

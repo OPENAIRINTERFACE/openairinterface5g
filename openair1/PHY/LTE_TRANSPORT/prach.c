@@ -31,7 +31,7 @@
  */
 #include "PHY/sse_intrin.h"
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
+//#include "PHY/phy_extern.h"
 //#include "prach.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 
@@ -40,6 +40,7 @@
 #include "prach_extern.h"
 #include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 #include <executables/split_headers.h>
+#include "common/utils/lte/prach_utils.h"
 
 void rx_prach0(PHY_VARS_eNB *eNB,
                RU_t *ru,
@@ -84,7 +85,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   uint8_t aa;
   int32_t lev;
   int16_t levdB;
-  int fft_size,log2_ifft_size;
+  int fft_size=0,log2_ifft_size;
   int16_t prach_ifft_tmp[2048*2] __attribute__((aligned(32)));
   int32_t *prach_ifft=(int32_t *)NULL;
   int32_t **prach_ifftp=(int32_t **)NULL;
@@ -112,7 +113,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     prach_ConfigIndex   = fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[ce_level];
     Ncs_config          = fp->prach_emtc_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
     restricted_set      = fp->prach_emtc_config_common.prach_ConfigInfo.highSpeedFlag;
-    n_ra_prb            = get_prach_prb_offset(fp,prach_ConfigIndex,
+    n_ra_prb            = get_prach_prb_offset(fp->frame_type,fp->tdd_config,fp->N_RB_UL,fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[ce_level],
                           fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[ce_level],
                           tdd_mapindex,Nf);
     // update pointers to results for ce_level
@@ -124,7 +125,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     prach_ConfigIndex   = fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
     Ncs_config          = fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
     restricted_set      = fp->prach_config_common.prach_ConfigInfo.highSpeedFlag;
-    n_ra_prb            = get_prach_prb_offset(fp,prach_ConfigIndex,
+    n_ra_prb            = get_prach_prb_offset(fp->frame_type,fp->tdd_config,fp->N_RB_UL,fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
                           fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
                           tdd_mapindex,Nf);
   }
@@ -140,7 +141,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       rxsigF              = eNB->prach_vars_br.rxsigF[ce_level];
 
       if (LOG_DEBUGFLAG(PRACH)) {
-        if (((frame_prach)&1023) < 20) LOG_I(PHY,
+        if (((frame_prach)&1023) < 20) LOG_D(PHY,
               "PRACH (eNB) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d, rootSequenceIndex %d, repetition number %d,numRepetitionsPrePreambleAttempt %d\n",
               br_flag,ce_level,frame_prach,subframe,
               fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[ce_level],
@@ -153,24 +154,24 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       prachF            = eNB->prach_vars.prachF;
       rxsigF            = eNB->prach_vars.rxsigF[0];
 
-      if (LOG_DEBUGFLAG(PRACH)) {
-        if (((frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d , rootSequenceIndex %d\n", subframe,
+      //if (LOG_DEBUGFLAG(PRACH)) {
+        if (((frame_prach)&1023) < 20) LOG_D(PHY,"PRACH (eNB) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d , rootSequenceIndex %d\n", subframe,
               fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,prach_ConfigIndex,rootSequenceIndex);
-      }
+      //}
     }
   } else {
     if (br_flag == 1) {
       rxsigF            = ru->prach_rxsigF_br[ce_level];
 
       if (LOG_DEBUGFLAG(PRACH)) {
-        if (((frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (RU) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d\n",
+        if (((frame_prach)&1023) < 20) LOG_D(PHY,"PRACH (RU) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d\n",
               br_flag,ce_level,frame_prach,subframe,fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[ce_level],prach_ConfigIndex);
       }
     } else {
       rxsigF            = ru->prach_rxsigF[0];
 
       if (LOG_DEBUGFLAG(PRACH)) {
-        if (((frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (RU) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d\n",
+        if (((frame_prach)&1023) < 20) LOG_D(PHY,"PRACH (RU) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d\n",
               subframe,fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,prach_ConfigIndex);
       }
     }
@@ -299,11 +300,13 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         case 6:
           if (prach_fmt == 4) {
             dft(DFT_256,prach2,rxsigF[aa],1);
+            fft_size=256;
           } else {
             dft(DFT_1536,prach2,rxsigF[aa],1);
 
             if (prach_fmt>1)
               dft(DFT_1536,prach2+3072,rxsigF[aa]+3072,1);
+            fft_size=1536;
           }
 
           break;
@@ -311,13 +314,14 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         case 15:
           if (prach_fmt == 4) {
             dft(DFT_256,prach2,rxsigF[aa],1);
+            fft_size=256;
           } else {
             dft(DFT_3072,prach2,rxsigF[aa],1);
 
             if (prach_fmt>1)
               dft(DFT_3072,prach2+6144,rxsigF[aa]+6144,1);
           }
-
+          fft_size=3072;
           break;
 
         case 25:
@@ -339,11 +343,13 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         case 50:
           if (prach_fmt == 4) {
             dft(DFT_2048,prach2,rxsigF[aa],1);
+            fft_size=2048;
           } else {
             dft(DFT_12288,prach2,rxsigF[aa],1);
 
             if (prach_fmt>1)
               dft(DFT_12288,prach2+24576,rxsigF[aa]+24576,1);
+            fft_size=12288;
           }
 
           break;
@@ -351,11 +357,13 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         case 75:
           if (prach_fmt == 4) {
             dft(DFT_3072,prach2,rxsigF[aa],1);
+            fft_size=3072;
           } else {
             dft(DFT_18432,prach2,rxsigF[aa],1);
 
             if (prach_fmt>1)
               dft(DFT_18432,prach2+36864,rxsigF[aa]+36864,1);
+            fft_size=18432;
           }
 
           break;
@@ -364,20 +372,24 @@ void rx_prach0(PHY_VARS_eNB *eNB,
           if (fp->threequarter_fs==0) {
             if (prach_fmt == 4) {
               dft(DFT_4096,prach2,rxsigF[aa],1);
+              fft_size=2048;
             } else {
               dft(DFT_24576,prach2,rxsigF[aa],1);
 
               if (prach_fmt>1)
                 dft(DFT_24576,prach2+49152,rxsigF[aa]+49152,1);
+              fft_size=24576;
             }
           } else {
             if (prach_fmt == 4) {
               dft(DFT_3072,prach2,rxsigF[aa],1);
+              fft_size=3072;
             } else {
               dft(DFT_18432,prach2,rxsigF[aa],1);
 
               if (prach_fmt>1)
                 dft(DFT_18432,prach2+36864,rxsigF[aa]+36864,1);
+              fft_size=18432;
             }
           }
 
@@ -547,7 +559,6 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     }
 
     log2_ifft_size = 10;
-    fft_size = 6144;
 
     if (new_dft == 1) {
       new_dft = 0;

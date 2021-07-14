@@ -24,7 +24,7 @@
         <htmlTabRef>gNB-PHY-Test</htmlTabRef>
         <htmlTabName>Run-gNB-PHY-Test</htmlTabName>
         <htmlTabIcon>tasks</htmlTabIcon>	
-	<repeatCount>2</repeatCount>
+	<repeatCount>3</repeatCount>
 	<TestCaseRequestedList>
 090101 000001 090109
 	</TestCaseRequestedList>
@@ -40,7 +40,7 @@
 	<testCase id="000001">
 		<class>IdleSleep</class>
 		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>180</idle_sleep_time_in_sec>
+		<idle_sleep_time_in_sec>300</idle_sleep_time_in_sec>
 	</testCase>
 
 

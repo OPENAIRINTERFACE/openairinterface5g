@@ -493,8 +493,8 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
   }
 
   ind = (index_k0[BG-1][rvidx]*Ncb/N)*Z;
-//  AssertFatal(Foffset <= E,"Foffset %d > E %d\n",Foffset,E); 
-//  AssertFatal(Foffset <= Ncb,"Foffset %d > Ncb %d\n",Foffset,Ncb); 
+  AssertFatal(Foffset <= E,"Foffset %d > E %d\n",Foffset,E);
+  AssertFatal(Foffset <= Ncb,"Foffset %d > Ncb %d\n",Foffset,Ncb);
 
 #ifdef RM_DEBUG
   printf("nr_rate_matching_ldpc_rx: Clear %d, E %d, k0 %d, Ncb %d, rvidx %d\n", clear, E, ind, Ncb, rvidx);

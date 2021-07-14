@@ -29,6 +29,10 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <nr_pdcp/nr_pdcp.h>
+#include <softmodem-common.h>
+#include <split_headers.h>
+#include <proto_agent.h>
 
 #include "gnb_app.h"
 #include "gnb_config.h"
@@ -46,6 +50,7 @@
 #include "f1ap_cu_task.h"
 #include "f1ap_du_task.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include <openair2/LAYER2/nr_pdcp/nr_pdcp.h>
 extern unsigned char NB_gNB_INST;
 
 extern RAN_CONTEXT_t RC;
@@ -128,6 +133,35 @@ static uint32_t gNB_app_register_x2(uint32_t gnb_id_start, uint32_t gnb_id_end) 
 }
 
 /*------------------------------------------------------------------------------*/
+
+static void init_pdcp(void) {
+  if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+    pdcp_layer_init();
+    uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+    if (IS_SOFTMODEM_NOS1) {
+      LOG_I(PDCP, "IS_SOFTMODEM_NOS1 option enabled\n");
+      pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT;
+    }
+
+    pdcp_module_init(pdcp_initmask);
+
+    if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+      LOG_I(PDCP, "node is CU, pdcp send rlc_data_req by proto_agent \n");
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+    } else {
+      LOG_I(PDCP, "node is gNB \n");
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+    }
+  } else {
+    LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
+    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+  }
+}
+
+/*------------------------------------------------------------------------------*/
+
 void *gNB_app_task(void *args_p)
 {
 
@@ -142,11 +176,10 @@ void *gNB_app_task(void *args_p)
   /* for no gcc warnings */
   (void)instance;
 
-  int                             cell_to_activate = 0;
+  int cell_to_activate = 0;
   itti_mark_task_ready (TASK_GNB_APP);
 
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
-
 
   if (RC.nb_nr_macrlc_inst>0) RCconfig_nr_macrlc();
 
@@ -170,25 +203,18 @@ void *gNB_app_task(void *args_p)
     configure_nr_rrc(gnb_id);
   }
 
-  for (int gnb_id = 0; gnb_id < RC.nb_nr_inst; gnb_id++) {
-    MessageDef *msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
-    NRRRC_CONFIGURATION_REQ(msg_p) = RC.nrrrc[gnb_id]->configuration;
-    LOG_I(GNB_APP, "Sending configuration message to NR_RRC task\n");
-    itti_send_msg_to_task (TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
-  }
-
   if (RC.nb_nr_inst > 0)  {
     init_pdcp();
-    
   }
+
   if (is_x2ap_enabled() ) { //&& !NODE_IS_DU(RC.rrc[0]->node_type)
 	  LOG_I(X2AP, "X2AP enabled \n");
 	  __attribute__((unused)) uint32_t x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
   }
 
   /* For the CU case the gNB registration with the AMF might have to take place after the F1 setup, as the PLMN info
-     * can originate from the DU. */
-  if (AMF_MODE_ENABLED && !NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+     * can originate from the DU. Add check on whether x2ap is enabled to account for ENDC NSA scenario.*/
+  if ((AMF_MODE_ENABLED || is_x2ap_enabled()) && !NODE_IS_DU(RC.nrrrc[0]->node_type) && !NODE_IS_CU(RC.nrrrc[0]->node_type)) {
     /* Try to register each gNB */
     //registered_gnb = 0;
     __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);
@@ -200,7 +226,6 @@ void *gNB_app_task(void *args_p)
         LOG_E(F1AP, "Create task for F1AP CU failed\n");
         AssertFatal(1==0,"exiting");
      }
-    pdcp_layer_init_for_CU();
   }
 
   if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {

@@ -34,7 +34,7 @@
 #include "PHY/phy_extern.h"
 #include "PHY/phy_extern_ue.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-
+#include "common/utils/lte/prach_utils.h"
 
 uint16_t NCS_unrestricted[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};
 uint16_t NCS_restricted[15]   = {15,18,22,26,32,38,46,55,68,82,100,128,158,202,237}; // high-speed case
@@ -44,6 +44,9 @@ int16_t ru[2*839]; // quantized roots of unity
 uint32_t ZC_inv[839]; // multiplicative inverse for roots u
 uint16_t du[838];
 
+extern PRACH_TDD_PREAMBLE_MAP tdd_preamble_map[64][7];
+
+/*
 // This is table 5.7.1-4 from 36.211
 PRACH_TDD_PREAMBLE_MAP tdd_preamble_map[64][7] = {
   // TDD Configuration Index 0
@@ -254,7 +257,7 @@ PRACH_TDD_PREAMBLE_MAP tdd_preamble_map[64][7] = {
   }
 };
 
-
+*/
 
 uint16_t prach_root_sequence_map0_3[838] = { 129, 710, 140, 699, 120, 719, 210, 629, 168, 671, 84, 755, 105, 734, 93, 746, 70, 769, 60, 779,
                                              2, 837, 1, 838,
@@ -378,192 +381,13 @@ uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index) {
   return(tdd_preamble_map[fp->prach_config_common.prach_ConfigInfo.prach_ConfigIndex][fp->tdd_config].map[tdd_map_index].f_ra);
 }
 
-uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type) {
-  if (frame_type == FDD) // FDD
-    return(prach_ConfigIndex>>4);
-  else {
-    if (prach_ConfigIndex < 20)
-      return (0);
-
-    if (prach_ConfigIndex < 30)
-      return (1);
-
-    if (prach_ConfigIndex < 40)
-      return (2);
-
-    if (prach_ConfigIndex < 48)
-      return (3);
-    else
-      return (4);
-  }
-}
-
-uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
-                             uint8_t prach_ConfigIndex,
-                             uint8_t n_ra_prboffset,
-                             uint8_t tdd_mapindex, uint16_t Nf) {
-  lte_frame_type_t frame_type         = frame_parms->frame_type;
-  uint8_t tdd_config         = frame_parms->tdd_config;
-  uint8_t n_ra_prb;
-  uint8_t f_ra,t1_ra;
-  uint8_t prach_fmt = get_prach_fmt(prach_ConfigIndex,frame_type);
-  uint8_t Nsp=2;
-
-  if (frame_type == TDD) { // TDD
-    if (tdd_preamble_map[prach_ConfigIndex][tdd_config].num_prach==0) {
-      LOG_E(PHY, "Illegal prach_ConfigIndex %"PRIu8"", prach_ConfigIndex);
-      return(-1);
-    }
-
-    // adjust n_ra_prboffset for frequency multiplexing (p.36 36.211)
-    f_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[tdd_mapindex].f_ra;
-
-    if (prach_fmt < 4) {
-      if ((f_ra&1) == 0) {
-        n_ra_prb = n_ra_prboffset + 6*(f_ra>>1);
-      } else {
-        n_ra_prb = frame_parms->N_RB_UL - 6 - n_ra_prboffset + 6*(f_ra>>1);
-      }
-    } else {
-      if ((tdd_config >2) && (tdd_config<6))
-        Nsp = 2;
-
-      t1_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t1_ra;
-
-      if ((((Nf&1)*(2-Nsp)+t1_ra)&1) == 0) {
-        n_ra_prb = 6*f_ra;
-      } else {
-        n_ra_prb = frame_parms->N_RB_UL - 6*(f_ra+1);
-      }
-    }
-  } else { //FDD
-    n_ra_prb = n_ra_prboffset;
-  }
-
-  return(n_ra_prb);
-}
-
-int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex,uint32_t frame, uint8_t subframe) {
-  //  uint8_t prach_ConfigIndex  = frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
-  uint8_t tdd_config         = frame_parms->tdd_config;
-  uint8_t t0_ra;
-  uint8_t t1_ra;
-  uint8_t t2_ra;
-  int prach_mask = 0;
-
-  if (frame_parms->frame_type == FDD) { //FDD
-    //implement Table 5.7.1-2 from 36.211 (Rel-10, p.41)
-    if ((((frame&1) == 1) && (subframe < 9)) ||
-        (((frame&1) == 0) && (subframe == 9)))  // This is an odd frame, ignore even-only PRACH frames
-      if (((prach_ConfigIndex&0xf)<3) || // 0,1,2,16,17,18,32,33,34,48,49,50
-          ((prach_ConfigIndex&0x1f)==18) || // 18,50
-          ((prach_ConfigIndex&0xf)==15))   // 15,47
-        return(0);
-
-    switch (prach_ConfigIndex&0x1f) {
-      case 0:
-      case 3:
-        if (subframe==1) prach_mask = 1;
-
-        break;
-
-      case 1:
-      case 4:
-        if (subframe==4) prach_mask = 1;
-
-        break;
-
-      case 2:
-      case 5:
-        if (subframe==7) prach_mask = 1;
-
-        break;
-
-      case 6:
-        if ((subframe==1) || (subframe==6)) prach_mask=1;
-
-        break;
-
-      case 7:
-        if ((subframe==2) || (subframe==7)) prach_mask=1;
-
-        break;
-
-      case 8:
-        if ((subframe==3) || (subframe==8)) prach_mask=1;
-
-        break;
-
-      case 9:
-        if ((subframe==1) || (subframe==4) || (subframe==7)) prach_mask=1;
-
-        break;
-
-      case 10:
-        if ((subframe==2) || (subframe==5) || (subframe==8)) prach_mask=1;
-
-        break;
-
-      case 11:
-        if ((subframe==3) || (subframe==6) || (subframe==9)) prach_mask=1;
-
-        break;
-
-      case 12:
-        if ((subframe&1)==0) prach_mask=1;
-
-        break;
-
-      case 13:
-        if ((subframe&1)==1) prach_mask=1;
-
-        break;
-
-      case 14:
-        prach_mask=1;
-        break;
-
-      case 15:
-        if (subframe==9) prach_mask=1;
-
-        break;
-    }
-  } else { // TDD
-    AssertFatal(prach_ConfigIndex<64,
-                "Illegal prach_ConfigIndex %d for ",prach_ConfigIndex);
-    AssertFatal(tdd_preamble_map[prach_ConfigIndex][tdd_config].num_prach>0,
-                "Illegal prach_ConfigIndex %d for ",prach_ConfigIndex);
-    t0_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t0_ra;
-    t1_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t1_ra;
-    t2_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t2_ra;
-#ifdef PRACH_DEBUG
-    LOG_I(PHY,"[PRACH] Checking for PRACH format (ConfigIndex %d) in TDD subframe %d (%d,%d,%d)\n",
-          prach_ConfigIndex,
-          subframe,
-          t0_ra,t1_ra,t2_ra);
-#endif
-
-    if ((((t0_ra == 1) && ((frame &1)==0))||  // frame is even and PRACH is in even frames
-         ((t0_ra == 2) && ((frame &1)==1))||  // frame is odd and PRACH is in odd frames
-         (t0_ra == 0)) &&                                // PRACH is in all frames
-        (((subframe<5)&&(t1_ra==0)) ||                   // PRACH is in 1st half-frame
-         (((subframe>4)&&(t1_ra==1))))) {                // PRACH is in 2nd half-frame
-      if ((prach_ConfigIndex<48) &&                          // PRACH only in normal UL subframe
-          (((subframe%5)-2)==t2_ra)) prach_mask=1;
-      else if ((prach_ConfigIndex>47) && (((subframe%5)-1)==t2_ra)) prach_mask=1;      // PRACH can be in UpPTS
-    }
-  }
-
-  return(prach_mask);
-}
-
 int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t subframe) {
   uint8_t prach_ConfigIndex  = frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
-  int prach_mask             = is_prach_subframe0(frame_parms, prach_ConfigIndex, frame, subframe);
+  int prach_mask             = is_prach_subframe0(frame_parms->tdd_config,frame_parms->frame_type, prach_ConfigIndex, frame, subframe);
 
   for (int i=0; i<4; i++) {
     if (frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i] == 1)
-      prach_mask |= (is_prach_subframe0(frame_parms, frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i],
+      prach_mask |= (is_prach_subframe0(frame_parms->tdd_config,frame_parms->frame_type, frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i],
                                         frame, subframe) << (i+1));
   }
 

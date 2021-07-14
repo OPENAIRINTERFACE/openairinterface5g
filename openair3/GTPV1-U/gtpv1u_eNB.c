@@ -281,7 +281,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
             (ue_context_p->ue_context.handover_info->state < HO_FORWARDING_COMPLETE)) {
           if(msgType == NW_GTP_END_MARKER) {
             /* in the source enb, UE in RRC_HO_EXECUTION mode */
-            if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION && ue_context_p->ue_context.handover_info->state == HO_COMPLETE) {
+            if (ue_context_p->ue_context.StatusRrc == RRC_HO_EXECUTION && ue_context_p->ue_context.handover_info->state == HO_COMPLETE) {
               /* set handover state */
               //ue_context_p->ue_context.handover_info->state = HO_END_MARKER;
               MessageDef *msg;
@@ -299,10 +299,10 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
             }
           }
 
-          if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION || ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
+          if (ue_context_p->ue_context.StatusRrc == RRC_HO_EXECUTION || ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED) {
             int msgsrc = gtpv1u_eNB_get_msgsource(ue_context_p, teid);
             LOG_D(GTPU,"UE INFO.ueStatus %d, handover state %d, forwarding state %d, from %s. message type %s\n",
-                  ue_context_p->ue_context.Status,
+                  ue_context_p->ue_context.StatusRrc,
                   ue_context_p->ue_context.handover_info->state,
                   ue_context_p->ue_context.handover_info->forwarding_state,
                   msgsrc == GTPV1U_MSG_FROM_SOURCE_ENB?"Source eNB":"EPC",

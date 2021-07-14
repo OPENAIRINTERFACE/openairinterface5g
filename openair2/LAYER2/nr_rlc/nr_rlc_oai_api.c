@@ -38,7 +38,6 @@
 #include "common/ran_context.h"
 #include "NR_UL-CCCH-Message.h"
 
-#undef C_RNTI // C_RNTI is used in F1AP generated code, prevent preprocessor replace
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
 #include "openair2/LAYER2/PROTO_AGENT/proto_agent.h"
@@ -90,7 +89,8 @@ void nr_rlc_bearer_init_ul_spec(struct NR_LogicalChannelConfig *mac_LogicalChann
 
   mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup                = calloc(1,sizeof(*mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup));
   *mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup               = 1;
-  mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID                = NULL;
+  mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID                = calloc(1,sizeof(*mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID));
+  *mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID               = 0;
   mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask              = false;
   mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = false;
   mac_LogicalChannelConfig->ul_SpecificParameters->bitRateQueryProhibitTimer          = NULL;
@@ -324,7 +324,8 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
      * reports '> 81338368' (table 6.1.3.1-2). Passing 100000000 is thus
      * more than enough.
      */
-    buf_stat = rb->buffer_status(rb, 100000000);
+    // Fixme : Laurent reduced size for CPU saving
+    buf_stat = rb->buffer_status(rb, 10000000);
     ret = buf_stat.status_size
         + buf_stat.retx_size
         + buf_stat.tx_size;
@@ -426,7 +427,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   int is_enb;
 
   /* is it SRB? */
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < sizeofArray(ue->srb); i++) {
     if (entity == ue->srb[i]) {
       is_srb = 1;
       rb_id = i+1;
@@ -435,7 +436,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   }
 
   /* maybe DRB? */
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < sizeofArray(ue->drb) ; i++) {
     if (entity == ue->drb[i]) {
       is_srb = 0;
       rb_id = i+1;
@@ -448,7 +449,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   exit(1);
 
 rb_found:
-  LOG_I(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d\n",
+  LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d",
         __FILE__, __LINE__, __FUNCTION__, ue->rnti, is_srb, rb_id, size);
 
   memblock = get_free_mem_block(size, __func__);
@@ -598,7 +599,7 @@ static void max_retx_reached(void *_ue, nr_rlc_entity_t *entity)
   exit(1);
 
 rb_found:
-  LOG_D(RLC, "max RETX reached on %s %d\n",
+  LOG_E(RLC, "max RETX reached on %s %d\n",
         is_srb ? "SRB" : "DRB",
         rb_id);
 
@@ -640,7 +641,7 @@ static void add_rlc_srb(int rnti, struct NR_SRB_ToAddMod *s, NR_RLC_BearerConfig
   int t_reassembly;
   int sn_field_length;
 
-  LOG_I(RLC,"Trying to add SRB %d\n",srb_id);
+  LOG_D(RLC,"Trying to add SRB %d\n",srb_id);
   if (srb_id != 1 && srb_id != 2) {
     LOG_E(RLC, "%s:%d:%s: fatal, bad srb id %d\n",
         __FILE__, __LINE__, __FUNCTION__, srb_id);
@@ -707,7 +708,7 @@ static void add_rlc_srb(int rnti, struct NR_SRB_ToAddMod *s, NR_RLC_BearerConfig
                                      sn_field_length);
     nr_rlc_ue_add_srb_rlc_entity(ue, srb_id, nr_rlc_am);
 
-    LOG_I(RLC, "%s:%d:%s: added srb %d to UE with RNTI 0x%x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+    LOG_D(RLC, "%s:%d:%s: added srb %d to UE with RNTI 0x%x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
@@ -918,21 +919,21 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
 
   if (drb2release_listP != NULL) {
     LOG_E(RLC, "%s:%d:%s: TODO\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
+    //exit(1);
   }
 
   if (srb2add_listP != NULL) {
     for (i = 0; i < srb2add_listP->list.count; i++) {
       if (rlc_bearer2add_list != NULL) {
-      for(j = 0; j < rlc_bearer2add_list->list.count; j++){
-        if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
-          if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity){  
-            if(srb2add_listP->list.array[i]->srb_Identity == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.srb_Identity){
-              add_rlc_srb(rnti, srb2add_listP->list.array[i], rlc_bearer2add_list->list.array[j]);
+        for(j = 0; j < rlc_bearer2add_list->list.count; j++){
+          if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
+            if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity){
+              if(srb2add_listP->list.array[i]->srb_Identity == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.srb_Identity){
+                add_rlc_srb(rnti, srb2add_listP->list.array[i], rlc_bearer2add_list->list.array[j]);
+              }
             }
-          }  
+          }
         }
-      }
       }
 
     }

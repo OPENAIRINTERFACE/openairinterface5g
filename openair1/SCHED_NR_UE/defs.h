@@ -115,14 +115,17 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   @param proc           Pointer to proc information
   @param gNB_id         Local id of eNB on which to act
   @param dlsch_parallel use multithreaded dlsch processing
+  @param txFifo         Result fifo if PDSCH is run in parallel
 */
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           uint8_t dlsch_parallel);
+                           uint8_t dlsch_parallel,
+                           notifiedFIFO_t *txFifo);
 
 int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id, uint8_t abstraction_flag, uint8_t do_pdcch_flag, relaying_type_t r_type);
 
+void processSlotTX(void *arg);
 
 #ifdef UE_SLOT_PARALLELISATION
   void *UE_thread_slot1_dl_processing(void *arg);

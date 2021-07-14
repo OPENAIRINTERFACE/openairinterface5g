@@ -86,6 +86,8 @@
 #include "T.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include <nfapi/oai_integration/nfapi_pnf.h>
+#include <openair1/PHY/NR_TRANSPORT/nr_ulsch.h>
+#include <PHY/NR_ESTIMATION/nr_ul_estimation.h>
 //#define DEBUG_THREADS 1
 
 //#define USRP_DEBUG 1
@@ -354,10 +356,10 @@ void *nrL1_stats_thread(void *param) {
   while (!oai_exit) {
     sleep(1);
     fd=fopen("nrL1_stats.log","w");
-    AssertFatal(fd!=NULL,"Cannot open ngL1_stats.log\n");
+    AssertFatal(fd!=NULL,"Cannot open nrL1_stats.log\n");
     dump_nr_I0_stats(fd,gNB);
     dump_pusch_stats(fd,gNB);
-    //    dump_uci_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
+    //    nr_dump_uci_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
     fclose(fd);
   }
   return(NULL);
@@ -371,7 +373,9 @@ void init_gNB_Tpool(int inst) {
   // ULSCH decoding threadpool
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
+  LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->pusch_proc_threads,numCPU);
   int threadCnt = min(numCPU, gNB->pusch_proc_threads);
+  if (threadCnt < 2) LOG_E(PHY,"Number of threads for gNB should be more than 1. Allocated only %d\n",threadCnt);
   char ul_pool[80];
   sprintf(ul_pool,"-1");
   int s_offset = 0;
@@ -400,7 +404,6 @@ void init_gNB_Tpool(int inst) {
   // Stats measurement thread
   if(opp_enabled == 1) threadCreate(&proc->process_stats_thread, process_stats_thread,(void *)gNB, "time_meas", -1, OAI_PRIORITY_RT_LOW);
   threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
-
 
 }
 
@@ -489,8 +492,6 @@ printf("after %p\n", gNB->common_vars.rxdataF[aa]);
   }
 
 }
-
-
 
 void init_gNB(int single_thread_flag,int wait_for_sync) {
 

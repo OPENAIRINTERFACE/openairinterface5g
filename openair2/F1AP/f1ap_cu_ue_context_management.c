@@ -39,8 +39,10 @@
 
 #include "rrc_extern.h"
 #include "rrc_eNB_UE_context.h"
+#include "openair2/RRC/NR/rrc_gNB_UE_context.h"
 #include "rrc_eNB_S1AP.h"
 #include "rrc_eNB_GTPV1U.h"
+#include "openair2/RRC/NR/rrc_gNB_NGAP.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 extern f1ap_cudu_inst_t f1ap_cu_inst[MAX_eNB];
@@ -151,7 +153,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-if (0) {
+
   /* mandatory */
   /* c7. Candidate_SpCell_List */
   ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
@@ -264,7 +266,7 @@ if (0) {
                        f1ap_ue_context_setup_req->mnc,
                        f1ap_ue_context_setup_req->mnc_digit_length,
                        &nRCGI.pLMN_Identity);
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
      scell_toBeSetup_item.sCell_ID = nRCGI;
 
      /* 10.1.2 sCellIndex */
@@ -476,7 +478,7 @@ if (0) {
         /* OPTIONAL */
         /* gBR_QoS_Flow_Information */
         if (0) {
-          DRB_Information->dRB_QoS.gBR_QoS_Flow_Information = (F1AP_GBR_QoSFlowInformation_t *)calloc(1, sizeof(F1AP_GBR_QoSFlowInformation_t)); 
+          DRB_Information->dRB_QoS.gBR_QoS_Flow_Information = (F1AP_GBR_QoSFlowInformation_t *)calloc(1, sizeof(F1AP_GBR_QoSFlowInformation_t));
           asn_long2INTEGER(&DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxFlowBitRateDownlink, 1L);
           asn_long2INTEGER(&DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxFlowBitRateUplink, 1L);
           asn_long2INTEGER(&DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->guaranteedFlowBitRateDownlink, 1L);
@@ -485,14 +487,14 @@ if (0) {
           /* OPTIONAL */
           /* maxPacketLossRateDownlink */
           if (0) {
-            DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
+            DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t));
             *DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = 1L;
           }
 
           /* OPTIONAL */
           /* maxPacketLossRateUplink */
           if (0) {
-            DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
+            DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t));
             *DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = 1L;
           }
 
@@ -501,7 +503,7 @@ if (0) {
         /* OPTIONAL */
         /* reflective_QoS_Attribute */
         if (0) {
-          DRB_Information->dRB_QoS.reflective_QoS_Attribute = (long *)calloc(1, sizeof(long)); 
+          DRB_Information->dRB_QoS.reflective_QoS_Attribute = (long *)calloc(1, sizeof(long));
           *DRB_Information->dRB_QoS.reflective_QoS_Attribute = 1L;
         }
 
@@ -582,8 +584,9 @@ if (0) {
 
               /* packetErrorRate */
               flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Scalar = 1L;
-	      flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Exponent = 6L;
-              /* OPTIONAL */
+	            flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->packetErrorRate.pER_Exponent = 6L;
+
+	            /* OPTIONAL */
               /* delayCritical */
               if (0) {
                 flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->delayCritical = (long *)calloc(1, sizeof(long));
@@ -708,7 +711,7 @@ if (0) {
 
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-}
+
   /* OPTIONAL */
   /* InactivityMonitoringRequest */
   if (0) {
@@ -728,7 +731,7 @@ if (0) {
     ie->criticality                    = F1AP_Criticality_reject;
     ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_RAT_FrequencyPriorityInformation;
 
-    int endc = 1; // RK: Get this from somewhere ... 
+    int endc = 1; // RK: Get this from somewhere ...
     if (endc) {
       ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_eNDC;
       ie->value.choice.RAT_FrequencyPriorityInformation.choice.eNDC = 11L;
@@ -741,13 +744,15 @@ if (0) {
 
   /* OPTIONAL */
   /* RRCContainer */
-  ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
-  ie->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
-  ie->criticality                    = F1AP_Criticality_reject;
-  ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_ue_context_setup_req->rrc_container,
-                        f1ap_ue_context_setup_req->rrc_container_length);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  if(RC.nrrrc) {
+    ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
+    ie->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
+    ie->criticality                    = F1AP_Criticality_reject;
+    ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_RRCContainer;
+    OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_ue_context_setup_req->rrc_container,
+                          f1ap_ue_context_setup_req->rrc_container_length);
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
 
   /* OPTIONAL */
   /* MaskedIMEISV */
@@ -780,7 +785,9 @@ if (0) {
 
   LOG_D(F1AP,"F1AP UEContextSetupRequest Encoded %u bits\n", len);
 
-  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id /* BK: fix me*/ , buffer, len, 0 /* BK: fix me*/);
+  if(RC.nrrrc) {
+    cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id /* BK: fix me*/ , buffer, len, 0 /* BK: fix me*/);
+  }
 
   return 0;
 }
@@ -1024,35 +1031,55 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
     // F1AP_CriticalityDiagnostics_IE_List
   }
 
-  struct rrc_eNB_ue_context_s *ue_context_p =
-      rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
   protocol_ctxt_t ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, instance, ENB_FLAG_YES, rnti, 0, 0, instance);
 
-  if (ue_context_p) {
-    /* The following is normally done in the function rrc_rx_tx() */
-    rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(instance,
-        ue_context_p->ue_context.eNB_ue_s1ap_id);
+  if (RC.nrrrc[instance]->node_type == ngran_gNB_CU) {
+    struct rrc_gNB_ue_context_s *ue_context_p =
+        rrc_gNB_get_ue_context(RC.nrrrc[instance], rnti);
 
-    rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(instance, ue_context_p);
-    // erase data of GTP tunnels in UE context
-    for (int e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-      ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
-      memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab],
-             0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
-      ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
+    if (ue_context_p) {
+      MessageDef *msg = itti_alloc_new_message(TASK_CU_F1, 0, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
+      NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg).gNB_ue_ngap_id = ue_context_p->ue_context.gNB_ue_ngap_id;
+      itti_send_msg_to_task(TASK_NGAP, instance, msg);
+
+      rrc_gNB_remove_ue_context(&ctxt, RC.nrrrc[instance], ue_context_p);
+    } else {
+      LOG_E(F1AP, "could not find ue_context of UE RNTI %x\n", rnti);
     }
+#ifdef ITTI_SIM
+    return 0;
+#endif
 
-    struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids =
-        rrc_eNB_S1AP_get_ue_ids(RC.rrc[instance], 0,
-                                ue_context_p->ue_context.eNB_ue_s1ap_id);
-    if (rrc_ue_s1ap_ids)
-        rrc_eNB_S1AP_remove_ue_ids(RC.rrc[instance], rrc_ue_s1ap_ids);
-
-    /* trigger UE release in RRC */
-    rrc_eNB_remove_ue_context(&ctxt, RC.rrc[instance], ue_context_p);
   } else {
-    LOG_E(F1AP, "could not find ue_context of UE RNTI %x\n", rnti);
+    struct rrc_eNB_ue_context_s *ue_context_p =
+        rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
+
+    if (ue_context_p) {
+      /* The following is normally done in the function rrc_rx_tx() */
+      rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(instance,
+          ue_context_p->ue_context.eNB_ue_s1ap_id);
+
+      rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(instance, ue_context_p);
+      // erase data of GTP tunnels in UE context
+      for (int e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+        ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
+        memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab],
+              0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
+        ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
+      }
+
+      struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids =
+          rrc_eNB_S1AP_get_ue_ids(RC.rrc[instance], 0,
+                                  ue_context_p->ue_context.eNB_ue_s1ap_id);
+      if (rrc_ue_s1ap_ids)
+          rrc_eNB_S1AP_remove_ue_ids(RC.rrc[instance], rrc_ue_s1ap_ids);
+
+      /* trigger UE release in RRC */
+      rrc_eNB_remove_ue_context(&ctxt, RC.rrc[instance], ue_context_p);
+    } else {
+      LOG_E(F1AP, "could not find ue_context of UE RNTI %x\n", rnti);
+    }
   }
 
   pdcp_remove_UE(&ctxt);
@@ -1080,8 +1107,8 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
 
   // for test
   int mcc = 208;
-  int mnc = 93;
-  int mnc_digit_length = 8;
+  int mnc = 92;
+  int mnc_digit_length = 2;
 
   /* Create */
   /* 0. Message Type */
@@ -1122,7 +1149,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
     F1AP_NRCGI_t nRCGI;
     MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                          &nRCGI.pLMN_Identity);
-    NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+    NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
     ie->value.choice.NRCGI = nRCGI;
 
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
@@ -1247,7 +1274,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
      memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
      MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                         &nRCGI.pLMN_Identity);
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
      scell_toBeSetupMod_item.sCell_ID = nRCGI;
 
      /* sCellIndex */
@@ -1287,7 +1314,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
      memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
      MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                         &nRCGI.pLMN_Identity);
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(12345678, &nRCGI.nRCellIdentity);
      scell_toBeRemoved_item.sCell_ID = nRCGI;
 
      /* ADD */

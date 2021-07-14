@@ -32,6 +32,9 @@
 #include "s1ap_eNB_management_procedures.h"
 #include "openair2/LAYER2/MAC/slicing/slicing.h"
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 static inline int phy_is_present(mid_t mod_id, uint8_t cc_id) {
   return RC.eNB && RC.eNB[mod_id] && RC.eNB[mod_id][cc_id];
 }
@@ -885,7 +888,7 @@ uint8_t flexran_get_rrc_status(mid_t mod_id, rnti_t rnti) {
 
   if (!ue_context_p) return RRC_INACTIVE;
 
-  return ue_context_p->ue_context.Status;
+  return ue_context_p->ue_context.StatusRrc;
 }
 
 uint64_t flexran_get_ue_aggregated_max_bitrate_dl(mid_t mod_id, mid_t ue_id) {

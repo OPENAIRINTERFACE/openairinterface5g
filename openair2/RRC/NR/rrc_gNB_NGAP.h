@@ -129,6 +129,10 @@ rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(
   instance_t instance
 );
 
+void rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(
+  instance_t instance,
+  uint32_t   gNB_ue_ngap_id);
+
 void
 rrc_gNB_NGAP_remove_ue_ids(
   gNB_RRC_INST *const rrc_instance_pP,

@@ -28,6 +28,7 @@
  * \email: raymond.knopp@eurecom.fr, kroempa@gmail.com
  */
 
+#include <f1ap_du_rrc_message_transfer.h>
 #include "platform_types.h"
 #include "nr_rrc_defs.h"
 #include "nr_rrc_extern.h"
@@ -44,7 +45,7 @@
 #include "NR_BCCH-BCH-Message.h"
 #include "rrc_gNB_UE_context.h"
 #include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
-#include <openair2/UTIL/OPT/opt.h>
+#include <openair2/F1AP/f1ap_du_rrc_message_transfer.h>
 
 
 extern RAN_CONTEXT_t RC;
@@ -167,7 +168,7 @@ nr_rrc_data_req(
 //------------------------------------------------------------------------------
 {
   if(sdu_sizeP == 255) {
-    LOG_I(NR_RRC,"sdu_sizeP == 255");
+    LOG_D(RRC,"sdu_sizeP == 255");
     return FALSE;
   }
 
@@ -208,7 +209,6 @@ nr_rrc_data_req(
     message_p);
   LOG_I(NR_RRC,"send RRC_DCCH_DATA_REQ to PDCP\n");
 
-  //trace_NRpdu(DIRECTION_DOWNLINK, message_buffer, sdu_sizeP, 0, WS_M_RNTI, ctxt_pP->rnti, ctxt_pP->frame, ctxt_pP->subframe,0, 0); 
   /* Hack: only trigger PDCP if in CU, otherwise it is triggered by RU threads
    * Ideally, PDCP would not neet to be triggered like this but react to ITTI
    * messages automatically */
@@ -334,7 +334,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
 
     int sdu2_len = (enc_rval.encoded+7)/8;
     if (enc_rval.encoded == -1) {
-      LOG_I(F1AP,"Could not encoded cellGroupConfig, failed element %s\n",enc_rval.failed_type->name);
+      LOG_E(F1AP,"Could not encoded cellGroupConfig, failed element %s\n",enc_rval.failed_type->name);
       exit(-1);
     }
     /* do ITTI message */
@@ -345,7 +345,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
       rntiP,
       sduP,
       sdu_lenP,
-      sdu2,
+      (const int8_t*)sdu2,
       sdu2_len
     );
     return(0);
@@ -363,4 +363,23 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
   }
 
   return 0;
+}
+
+void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,
+                            const int CC_idP,
+                            const frame_t frameP,
+                            const sub_frame_t subframeP,
+                            const rnti_t rntiP) {
+  struct rrc_gNB_ue_context_s *ue_context_p = NULL;
+  ue_context_p = rrc_gNB_get_ue_context(
+                   RC.nrrrc[Mod_instP],
+                   rntiP);
+
+  if (ue_context_p != NULL) {
+    LOG_D(RRC,"Frame %d, Subframe %d: UE %x UL failure, activating timer\n",frameP,subframeP,rntiP);
+    if(ue_context_p->ue_context.ul_failure_timer == 0)
+      ue_context_p->ue_context.ul_failure_timer=1;
+  } else {
+    LOG_D(RRC,"Frame %d, Subframe %d: UL failure: UE %x unknown \n",frameP,subframeP,rntiP);
+  }
 }

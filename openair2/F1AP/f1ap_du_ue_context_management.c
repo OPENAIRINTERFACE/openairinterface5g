@@ -38,13 +38,8 @@
 
 #include "rrc_extern.h"
 #include "rrc_eNB_UE_context.h"
-
-// undefine C_RNTI from
-// openair1/PHY/LTE_TRANSPORT/transport_common.h which
-// replaces in ie->value.choice.C_RNTI, causing
-// a compile error
-
-#undef C_RNTI
+#include "openair2/RRC/NR/rrc_gNB_UE_context.h"
+#include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 
 extern f1ap_setup_req_t *f1ap_du_data;
 extern f1ap_cudu_inst_t f1ap_du_inst[MAX_eNB];
@@ -108,22 +103,52 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     f1ap_ue_context_setup_req->cellULConfigured = NULL;
   }
 
-  /* CUtoDURRCInformation */
-  /* Candidate_SpCell_List */
-  /* optional */
-  /* DRXCycle */
-  /* optional */
-  /* ResourceCoordinationTransferContainer */
-  /* SCell_ToBeSetup_List */
-  /* SRBs_ToBeSetup_List */
-  /* DRBs_ToBeSetup_List */
-  /* Decode DRBs_ToBeSetup_List */
-  if(0) {
+  if (RC.nrrrc) {
+    /* RRCContainer */
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
-                              F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_List, true);
+                               F1AP_ProtocolIE_ID_id_RRCContainer, false);
+    if (ie) {
+      /* correct here */
+      f1ap_ue_context_setup_req->rrc_container = malloc(ie->value.choice.RRCContainer.size);
+      memcpy(f1ap_ue_context_setup_req->rrc_container, ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
+    } else {
+      LOG_E(F1AP, "can't find RRCContainer in UEContextSetupRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
+    }
+
+    // AssertFatal(0, "check configuration, send to appropriate handler\n");
+
+    protocol_ctxt_t ctxt;
+    // ctxt.rnti      = f1ap_get_rnti_by_du_id(&f1ap_du_inst[instance], ie->value.choice.GNB_DU_UE_F1AP_ID);
+    ctxt.rnti = 0x1234;
+    ctxt.module_id = instance;
+    ctxt.instance  = instance;
+    ctxt.enb_flag  = 1;
+
+    mem_block_t *pdcp_pdu_p = NULL;
+    pdcp_pdu_p = get_free_mem_block(ie->value.choice.RRCContainer.size, __func__);
+    if (pdcp_pdu_p != NULL) {
+      memset(pdcp_pdu_p->data, 0, ie->value.choice.RRCContainer.size);
+      memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
+
+      /* for rfsim */
+      du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, ie->value.choice.RRCContainer.size, pdcp_pdu_p);
+    }
+  } else {
+    /* CUtoDURRCInformation */
+    /* Candidate_SpCell_List */
+    /* optional */
+    /* DRXCycle */
+    /* optional */
+    /* ResourceCoordinationTransferContainer */
+    /* SCell_ToBeSetup_List */
+    /* SRBs_ToBeSetup_List */
+    /* DRBs_ToBeSetup_List */
+    /* Decode DRBs_ToBeSetup_List */
+    F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
+                               F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_List, true);
     f1ap_ue_context_setup_req->drbs_to_be_setup_length = ie->value.choice.DRBs_ToBeSetup_List.list.count;
     f1ap_ue_context_setup_req->drbs_to_be_setup = calloc(f1ap_ue_context_setup_req->drbs_to_be_setup_length,
-        sizeof(f1ap_drb_to_be_setup_t));
+                                                         sizeof(f1ap_drb_to_be_setup_t));
     AssertFatal(f1ap_ue_context_setup_req->drbs_to_be_setup,
                 "could not allocate memory for f1ap_ue_context_setup_req->drbs_to_be_setup\n");
 
@@ -153,35 +178,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       }
     }
   }
-  /* RRCContainer */
-  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
-                             F1AP_ProtocolIE_ID_id_RRCContainer, false);
-  if (ie) {
-    /* correct here */
-    f1ap_ue_context_setup_req->rrc_container = malloc(ie->value.choice.RRCContainer.size);
-    memcpy(f1ap_ue_context_setup_req->rrc_container, ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
-  } else {
-    LOG_E(F1AP, "can't find RRCContainer in UEContextSetupRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
-  }
 
-  // AssertFatal(0, "check configuration, send to appropriate handler\n");
-
-  protocol_ctxt_t ctxt;
-  // ctxt.rnti      = f1ap_get_rnti_by_du_id(&f1ap_du_inst[instance], ie->value.choice.GNB_DU_UE_F1AP_ID);
-  ctxt.rnti = 0x1234;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
-
-  mem_block_t *pdcp_pdu_p = NULL; 
-  pdcp_pdu_p = get_free_mem_block(ie->value.choice.RRCContainer.size, __func__);
-  if (pdcp_pdu_p != NULL) {
-    memset(pdcp_pdu_p->data, 0, ie->value.choice.RRCContainer.size);
-    memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
-
-    /* for rfsim */
-    du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, ie->value.choice.RRCContainer.size, pdcp_pdu_p);
-  }
   return 0;
 }
 
@@ -662,11 +659,21 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
               rnti, ctxt.rnti);
   int UE_out_of_sync = 0;
 
-  for (int n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
-    if (RC.mac[instance]->UE_info.active[n] == TRUE
-        && rnti == UE_RNTI(instance, n)) {
-      UE_out_of_sync = RC.mac[instance]->UE_info.UE_sched_ctrl[n].ul_out_of_sync;
-      break;
+  if (RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
+    for (int n = 0; n < MAX_MOBILES_PER_GNB; ++n) {
+      if (RC.nrmac[instance]->UE_info.active[n] == TRUE
+          && rnti == RC.nrmac[instance]->UE_info.rnti[n]) {
+        UE_out_of_sync = 0;
+        break;
+      }
+    }
+  } else {
+    for (int n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
+      if (RC.mac[instance]->UE_info.active[n] == TRUE
+          && rnti == UE_RNTI(instance, n)) {
+        UE_out_of_sync = RC.mac[instance]->UE_info.UE_sched_ctrl[n].ul_out_of_sync;
+        break;
+      }
     }
   }
 
@@ -714,6 +721,15 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
               "the order to send some data (Status Code:%d)\n", rlc_status);
         break;
     }
+  }
+
+  if (RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
+    // struct rrc_gNB_ue_context_s *ue_context_p;
+
+    f1ap_ue_context_release_cplt_t cplt;
+    cplt.rnti = ctxt.rnti;
+    DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance, &cplt);
+    return 0;
   }
 
   struct rrc_eNB_ue_context_s *ue_context_p;

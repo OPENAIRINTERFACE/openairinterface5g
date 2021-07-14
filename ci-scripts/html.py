@@ -47,7 +47,7 @@ import constants as CONST
 class HTMLManagement():
 
 	def __init__(self):
-	
+
 		self.htmlFile = ''
 		self.htmlHeaderCreated = False
 		self.htmlFooterCreated = False
@@ -86,13 +86,13 @@ class HTMLManagement():
 #-----------------------------------------------------------
 # Setters and Getters
 #-----------------------------------------------------------
-	
+
 	def SethtmlUEConnected(self, nbUEs):
 		if nbUEs > 0:
 			self.htmlUEConnected = nbUEs
 		else:
 			self.htmlUEConnected = 1
-	
+
 
 
 #-----------------------------------------------------------
@@ -365,6 +365,16 @@ class HTMLManagement():
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - SPGW process not found</td>\n')
 			elif (processesStatus == CONST.UE_IP_ADDRESS_ISSUE):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - Could not retrieve UE IP address</td>\n')
+			elif (processesStatus == CONST.PHYSIM_IMAGE_ABSENT):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - No such image oai-physim</td>\n')
+			elif (processesStatus == CONST.OC_LOGIN_FAIL):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - Could not log onto cluster</td>\n')
+			elif (processesStatus == CONST.OC_PROJECT_FAIL):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - Could not register into cluster project</td>\n')
+			elif (processesStatus == CONST.OC_IS_FAIL):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - Could not create Image Stream</td>\n')
+			elif (processesStatus == CONST.OC_PHYSIM_DEPLOY_FAIL):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - Could not properly deploy physim on cluster</td>\n')
 			else:
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
 		else:
@@ -412,7 +422,12 @@ class HTMLManagement():
 			for image in collectInfo:
 				files = collectInfo[image]
         		# TabHeader for image logs on built shared and target images
-				self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
+				if allImagesSize[image].count('unknown') > 0:
+					self.htmlFile.write('      <tr bgcolor = "orange" >\n')
+				elif allImagesSize[image].count('Build Failed') > 0:
+					self.htmlFile.write('      <tr bgcolor = "red" >\n')
+				else:
+					self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
 				self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- ' + image  + ' IMAGE STATUS ----> Size ' + allImagesSize[image] + ' </b></td>\n')
 				self.htmlFile.write('      </tr>\n')
 				self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
@@ -431,20 +446,53 @@ class HTMLManagement():
 						self.htmlFile.write('        <td bgcolor = "green" >' + str(parameters['errors'])  + '</td>\n')
 					else:
 						self.htmlFile.write('        <td bgcolor = "red" >' + str(parameters['errors'])  + '</td>\n')
-					if (parameters['warnings'] == 0):
+					if (parameters['errors'] > 0):
+						self.htmlFile.write('        <td bgcolor = "red" >' + str(parameters['warnings'])  + '</td>\n')
+					elif (parameters['warnings'] == 0):
 						self.htmlFile.write('        <td bgcolor = "green" >' + str(parameters['warnings'])  + '</td>\n')
 					elif ((parameters['warnings'] > 0) and (parameters['warnings'] <= 20)):
 						self.htmlFile.write('        <td bgcolor = "orange" >' + str(parameters['warnings'])  + '</td>\n')
 					else:
-						self.htmlFile.write('        <td bgcolor = "red" >' + str(parameters['warnings'])  + '</td>\n')	
+						self.htmlFile.write('        <td bgcolor = "red" >' + str(parameters['warnings'])  + '</td>\n')
 					if (parameters['errors'] == 0) and (parameters['warnings'] == 0):
 						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "green" ><font color="white">OK </font></th>\n')
 					elif (parameters['errors'] == 0) and ((parameters['warnings'] > 0) and (parameters['warnings'] <= 20)):
 						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "orange" ><font color="white">OK </font></th>\n')
 					else:
-						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "red" > NOT OK  </th>\n')	
+						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "red" > NOT OK  </th>\n')
 					self.htmlFile.write('      </tr>\n')
 		self.htmlFile.close()
+
+	#for the moment it is limited to 4 columns, to be made generic later
+	def CreateHtmlDataLogTable(self, DataLog):
+		if (self.htmlFooterCreated or (not self.htmlHeaderCreated)):
+			return
+		self.htmlFile = open('test_results.html', 'a')
+		
+        # TabHeader 
+		self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
+		self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- ' + DataLog['Title'] + ' ---- </b></td>\n')
+		self.htmlFile.write('      </tr>\n')
+		self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
+		self.htmlFile.write('        <th colspan="3">'+ DataLog['ColNames'][0] +'</th>\n')
+		self.htmlFile.write('        <th>' + DataLog['ColNames'][1] + '</th>\n')
+		self.htmlFile.write('        <th>' + DataLog['ColNames'][2] + '</th>\n')
+		self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + '>'+ DataLog['ColNames'][3] +'</th>\n')
+		self.htmlFile.write('      </tr>\n')
+
+		for k in DataLog['Data']:
+			# TestRow 
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td colspan="3" bgcolor = "lightcyan" >' + k  + ' </td>\n')				
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + DataLog['Data'][k][0]  + ' </td>\n')
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + DataLog['Data'][k][1]  + ' </td>\n')
+			if float(DataLog['Data'][k][2])> DataLog['Threshold'][k]:
+				self.htmlFile.write('        <th bgcolor = "red" >' + DataLog['Data'][k][2]  + ' (Ref = ' + str(DataLog['Ref'][k]) + ' ; Thres = '   +str(DataLog['Threshold'][k])+') ' + '</th>\n')
+			else:
+				self.htmlFile.write('        <th bgcolor = "green" ><font color="white">' + DataLog['Data'][k][2]  + ' (Ref = ' + str(DataLog['Ref'][k]) + ' ; Thres = '   +str(DataLog['Threshold'][k])+') ' + '</th>\n')					
+			self.htmlFile.write('      </tr>\n')
+		self.htmlFile.close()
+
 
 	def CreateHtmlTestRowQueue(self, options, status, ue_status, ue_queue):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
@@ -562,5 +610,57 @@ class HTMLManagement():
 			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbWrongScanfArg[vId]) + '</td>\n')
 			self.htmlFile.write('      </tr>\n')
 			vId += 1
-            
+
+	def CreateHtmlTestRowPhySimTestResult(self, testSummary, testResult):
+		if (self.htmlFooterCreated or (not self.htmlHeaderCreated)):
+			return
+		self.htmlFile = open('test_results.html', 'a')
+		if bool(testResult) == False and bool(testSummary) == False:
+			self.htmlFile.write('      <tr bgcolor = "red" >\n')
+			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ----PHYSIM TESTING FAILED - Unable to recover the test logs ---- </b></td>\n')
+			self.htmlFile.write('      </tr>\n')
+		else:
+		# Tab header
+			self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
+			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- PHYSIM TEST SUMMARY---- </b></td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
+			self.htmlFile.write('        <th colspan="2">LogFile Name</th>\n')
+			self.htmlFile.write('        <th colspan="2">Nb Tests</th>\n')
+			self.htmlFile.write('        <th>Nb Failure</th>\n')
+			self.htmlFile.write('        <th>Nb Pass</th>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" > physim_test.txt  </td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + str(testSummary['Nbtests']) + ' </td>\n')
+			if testSummary['Nbfail'] == 0:
+				self.htmlFile.write('        <td bgcolor = "lightcyan" >' + str(testSummary['Nbfail']) + ' </td>\n')
+			else:
+				self.htmlFile.write('        <td bgcolor = "red" >' + str(testSummary['Nbfail']) + ' </td>\n')
+			self.htmlFile.write('        <td gcolor = "lightcyan" >' + str(testSummary['Nbpass']) + ' </td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
+			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- PHYSIM TEST DETAIL INFO---- </b></td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
+			self.htmlFile.write('        <th colspan="2">Test Name</th>\n')
+			self.htmlFile.write('        <th colspan="2">Test Description</th>\n')
+			self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + '>Result</th>\n')
+			self.htmlFile.write('      </tr>\n')
+			y = ''
+			for key, value in testResult.items():
+				x = key.split(".")
+				if x[0] != y:
+					self.htmlFile.write('      <tr bgcolor = "lightgreen" >\n')
+					self.htmlFile.write('        <td style="text-align: center;" colspan=' + str(5+self.htmlUEConnected) + '><b>"' + x[0] + '" series </b></td>\n')
+					self.htmlFile.write('      </tr>\n')
+					y = x[0]
+				self.htmlFile.write('      <tr>\n')
+				self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + key  + ' </td>\n')
+				self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + value[0]  + '</td>\n')
+				if 'PASS' in value:
+					self.htmlFile.write('        <td colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "green" >' + value[1]  + '</td>\n')
+				else:
+					self.htmlFile.write('        <td colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "red" >' + value[1]  + '</td>\n')
+
 		self.htmlFile.close()

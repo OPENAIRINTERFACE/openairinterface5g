@@ -47,7 +47,7 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair1/PHY/MODULATION/nr_modulation.h"
-
+#include <executables/softmodem-common.h>
 //#define DEBUG_NR_PBCHSIM
 
 PHY_VARS_gNB *gNB;
@@ -69,6 +69,31 @@ uint64_t get_softmodem_optmask(void) {return 0;}
 softmodem_params_t *get_softmodem_params(void) {return 0;}
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
+
+int nr_ue_pdcch_procedures(uint8_t gNB_id,
+			   PHY_VARS_NR_UE *ue,
+			   UE_nr_rxtx_proc_t *proc,
+                           int n_ss) {
+  return 0;
+}
+
+int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
+                           UE_nr_rxtx_proc_t *proc,
+                           int eNB_id, PDSCH_t pdsch,
+                           NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1) {
+  return 0;
+}
+
+bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
+                            UE_nr_rxtx_proc_t *proc,
+                            int gNB_id,
+                            PDSCH_t pdsch,
+                            NR_UE_DLSCH_t *dlsch0,
+                            NR_UE_DLSCH_t *dlsch1,
+                            int *dlsch_errors,
+                            uint8_t dlsch_parallel) {
+  return false;
+}
 
 void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
                                int N_RB_DL,
@@ -415,7 +440,7 @@ int main(int argc, char **argv)
   frame_parms->ssb_type = nr_ssb_type_C;
 
   nr_phy_config_request_sim_pbchsim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
-  phy_init_nr_gNB(gNB,0,0);
+  phy_init_nr_gNB(gNB,0,1);
   nr_set_ssb_first_subcarrier(&gNB->gNB_config,frame_parms);
 
   uint8_t n_hf = 0;

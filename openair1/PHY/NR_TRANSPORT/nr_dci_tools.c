@@ -239,7 +239,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu[i].Payload;
 
     int dlsch_id = find_nr_dlsch(pdcch_pdu_rel15->dci_pdu[i].RNTI,gNB,SEARCH_EXIST_OR_FREE);
-    if( (dlsch_id<0) || (dlsch_id>=NUMBER_OF_NR_DLSCH_MAX) ){
+    if( (dlsch_id<0) || (dlsch_id>=gNB->number_of_nr_dlsch_max) ){
       LOG_E(PHY,"illegal dlsch_id found!!! rnti %04x dlsch_id %d\n",(unsigned int)pdcch_pdu_rel15->dci_pdu[i].RNTI,dlsch_id);
       return;
     }
@@ -255,10 +255,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     dlsch->harq_mask                |= (1<<harq_pid);
     dlsch->rnti                      = pdcch_pdu_rel15->dci_pdu[i].RNTI;
     
-    //    nr_fill_cce_list(gNB,0);  
-    
-    
-
+    //    nr_fill_cce_list(gNB,0);
   }
 
 }

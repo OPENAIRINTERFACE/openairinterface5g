@@ -391,6 +391,8 @@ typedef struct {
   uint16_t nr_band;
   uint8_t ssb_subcarrier_offset;
 
+  dci_pdu_rel15_t def_dci_pdu_rel15[8];
+
 } NR_UE_MAC_INST_t;
 
 typedef enum seach_space_mask_e {

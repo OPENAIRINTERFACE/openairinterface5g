@@ -69,9 +69,7 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 #include <executables/softmodem-common.h>
 
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
 #include "nr_nas_msg_sim.h"
-#endif
 
 NR_UE_RRC_INST_t *NR_UE_rrc_inst;
 /* NAS Attach request with IMSI */
@@ -201,6 +199,7 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const NR_DRB_ToReleaseList_t  * const drb2release_listP,
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
     const module_id_t module_id,
@@ -565,9 +564,9 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
                                                    (void **)&bcch_message,
                                                    (const void *)bufferP,
                                                    buffer_len );
-      
+
     if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
-      LOG_I(NR_RRC,"NR_BCCH_BCH decode error\n");
+      LOG_E(NR_RRC,"NR_BCCH_BCH decode error\n");
       // free the memory
       SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
       return -1;
@@ -582,9 +581,9 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
 
       nr_rrc_mac_config_req_ue( 0, 0, 0, NR_UE_rrc_inst[module_id].mib, NULL, NULL, NULL);
     }
+
     return 0;
 }
-
 
 const char  siWindowLength[10][5] = {"5s", "10s", "20s", "40s", "80s", "160s", "320s", "640s", "1280s","ERR"};// {"1ms","2ms","5ms","10ms","15ms","20ms","40ms","80ms","ERR"};
 const short siWindowLength_int[9] = {5,10,20,40,80,160,320,640,1280};//{1,2,5,10,15,20,40,80};
@@ -1175,7 +1174,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
           if(sib1 != NULL){
             SEQUENCE_free(&asn_DEF_NR_SIB1, (void *)sib1, 1 );
           }
-	  NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus|=1;
+	        NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus|=1;
           sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
           if (*(int64_t*)sib1 != 1) {
             NR_UE_rrc_inst[module_id].sib1[gNB_index] = sib1;
@@ -1184,19 +1183,19 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
             }
             LOG_I(NR_RRC, "SIB1 decoded\n");
 
-	    ///	    dump_SIB1();
+            ///	    dump_SIB1();
             // FIXME: improve condition for the RA trigger
             // Check for on-demand not broadcasted SI
             check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
             if( nr_rrc_get_state(module_id) <= RRC_STATE_IDLE_NR ) {
               NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
-	      LOG_I(NR_RRC,"Setting state to NR_RRC_SI_RECEIVED\n");
-	      nr_rrc_set_state (module_id, NR_RRC_SI_RECEIVED);
+              LOG_D(PHY,"Setting state to NR_RRC_SI_RECEIVED\n");
+              nr_rrc_set_state (module_id, NR_RRC_SI_RECEIVED);
             }
-	    // take ServingCellConfigCommon and configure L1/L2
-	    NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
-	    nr_rrc_mac_config_req_ue(module_id,0,0,NULL,sib1->servingCellConfigCommon,NULL,NULL);
-	    nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
+            // take ServingCellConfigCommon and configure L1/L2
+            NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
+            nr_rrc_mac_config_req_ue(module_id,0,0,NULL,sib1->servingCellConfigCommon,NULL,NULL);
+            nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
           } else {
             LOG_E(NR_RRC, "SIB1 not decoded\n");
           }
@@ -1251,17 +1250,21 @@ nr_rrc_ue_process_masterCellGroup(
 {
   NR_CellGroupConfig_t *cellGroupConfig=NULL;
   uper_decode(NULL,
-	      &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
-	      (void **)&cellGroupConfig,
-	      (uint8_t *)masterCellGroup->buf,
-	      masterCellGroup->size, 0, 0);
+              &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+              (void **)&cellGroupConfig,
+              (uint8_t *)masterCellGroup->buf,
+              masterCellGroup->size, 0, 0);
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
+
   if( cellGroupConfig->spCellConfig != NULL &&  cellGroupConfig->spCellConfig->reconfigurationWithSync != NULL){
     //TODO (perform Reconfiguration with sync according to 5.3.5.5.2)
     //TODO (resume all suspended radio bearers and resume SCG transmission for all radio bearers, if suspended)
     // NSA procedures
   }
- 
+
+  if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config == NULL){
+    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = calloc(1,sizeof(NR_CellGroupConfig_t));
+  }
 
   if( cellGroupConfig->rlc_BearerToReleaseList != NULL){
     //TODO (perform RLC bearer release as specified in 5.3.5.5.3)
@@ -1269,10 +1272,24 @@ nr_rrc_ue_process_masterCellGroup(
 
   if( cellGroupConfig->rlc_BearerToAddModList != NULL){
     //TODO (perform the RLC bearer addition/modification as specified in 5.3.5.5.4)
+    if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList != NULL){
+      free(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
+    }
+    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList = calloc(1, sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
+    memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList,cellGroupConfig->rlc_BearerToAddModList,
+                 sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
   }
 
   if( cellGroupConfig->mac_CellGroupConfig != NULL){
     //TODO (configure the MAC entity of this cell group as specified in 5.3.5.5.5)
+    LOG_I(RRC, "Received mac_CellGroupConfig from gNB\n");
+    if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig != NULL){
+      LOG_E(RRC, "UE RRC instance already contains mac CellGroupConfig which will be overwritten\n");
+      free(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig);
+    }
+    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig = malloc(sizeof(struct NR_MAC_CellGroupConfig));
+    memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig,cellGroupConfig->mac_CellGroupConfig,
+                     sizeof(struct NR_MAC_CellGroupConfig));
   }
 
   if( cellGroupConfig->sCellToReleaseList != NULL){
@@ -1281,16 +1298,16 @@ nr_rrc_ue_process_masterCellGroup(
 
   if( cellGroupConfig->spCellConfig != NULL){
     if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config &&
-	NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig) {
+	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig) {
       memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig,cellGroupConfig->spCellConfig,
              sizeof(struct NR_SpCellConfig));
     } else {
       if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config)
-	NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
-      else 
-	NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = cellGroupConfig;
+	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
+      else
+	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = cellGroupConfig;
     }
-    LOG_I(RRC,"Sending CellGroupConfig to MAC\n");
+    LOG_D(RRC,"Sending CellGroupConfig to MAC\n");
     nr_rrc_mac_config_req_ue(ctxt_pP->module_id,0,0,NULL,NULL,cellGroupConfig,NULL);
     //TODO (configure the SpCell as specified in 5.3.5.5.7)
   }
@@ -1328,14 +1345,21 @@ static void rrc_ue_generate_RRCSetupComplete(
     AssertFatal(1==0,"2 > csi_MeasConfig is not null\n");
 
  if (AMF_MODE_ENABLED) {
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
+#if defined(ITTI_SIM)
     as_nas_info_t initialNasMsg;
-    generateRegistrationRequest(&initialNasMsg);
+    generateRegistrationRequest(&initialNasMsg, ctxt_pP->module_id);
     nas_msg = (char*)initialNasMsg.data;
     nas_msg_length = initialNasMsg.length;
 #else
-    nas_msg         = (char *) NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
-    nas_msg_length  = NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
+    if (get_softmodem_params()->sa) {
+      as_nas_info_t initialNasMsg;
+      generateRegistrationRequest(&initialNasMsg, ctxt_pP->module_id);
+      nas_msg = (char*)initialNasMsg.data;
+      nas_msg_length = initialNasMsg.length;
+    } else {
+      nas_msg         = (char *) NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
+      nas_msg_length  = NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
+    }
 #endif
   } else {
     nas_msg         = nr_nas_attach_req_imsi;
@@ -1348,17 +1372,18 @@ static void rrc_ue_generate_RRCSetupComplete(
        "[FRAME %05d][RRC_UE][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (RRCSetupComplete to gNB %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
        ctxt_pP->frame, ctxt_pP->module_id+NB_RN_INST, size, gNB_index, nr_rrc_mui, ctxt_pP->module_id+NB_eNB_INST, DCCH);
 
-  for (int i=0;i<size;i++) printf("%02x ",buffer[i]);
-  printf("\n");
+  //for (int i=0;i<size;i++) printf("%02x ",buffer[i]);
+  //printf("\n");
+
    // ctxt_pP_local.rnti = ctxt_pP->rnti;
-  rrc_data_req_ue(
-      ctxt_pP,
-      DCCH,
-      nr_rrc_mui++,
-      SDU_CONFIRM_NO,
-      size,
-      buffer,
-      PDCP_TRANSMISSION_MODE_CONTROL);
+  rrc_data_req_ue(ctxt_pP,
+                  DCCH,
+                  nr_rrc_mui++,
+                  SDU_CONFIRM_NO,
+                  size,
+                  buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
+
 #ifdef ITTI_SIM
   MessageDef *message_p;
   uint8_t *message_buffer;
@@ -1378,7 +1403,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
   asn_dec_rval_t dec_rval;
   int rval=0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_IN);
-  LOG_I(RRC,"[NR UE%d] Decoding DL-CCCH message (%d bytes), State %d\n",ctxt_pP->module_id,Srb_info->Rx_buffer.payload_size,
+  LOG_D(RRC,"[NR UE%d] Decoding DL-CCCH message (%d bytes), State %d\n",ctxt_pP->module_id,Srb_info->Rx_buffer.payload_size,
       NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State);
    dec_rval = uper_decode(NULL,
 			  &asn_DEF_NR_DL_CCCH_Message,
@@ -1386,9 +1411,9 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 			  (uint8_t *)Srb_info->Rx_buffer.Payload,
 			  100,0,0);
 
-	 //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+	 if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
      xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);
-	 //}
+	 }
 
    if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
      LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",ctxt_pP->module_id,ctxt_pP->frame,dec_rval.consumed);
@@ -1471,7 +1496,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    MessageDef *msg_p;
 
    asn_dec_rval_t dec_rval = uper_decode(  NULL,
-					   &asn_DEF_NR_DL_DCCH_Message,    
+					   &asn_DEF_NR_DL_DCCH_Message,
 					   (void**)&nr_dl_dcch_msg,
 					   (uint8_t *)bufferP,
 					   buffer_len, 0, 0);
@@ -1486,7 +1511,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    }
 
    if(nr_dl_dcch_msg != NULL){
-     switch(nr_dl_dcch_msg->message.present){            
+     switch(nr_dl_dcch_msg->message.present){
        case NR_DL_DCCH_MessageType_PR_c1:
 	 switch(nr_dl_dcch_msg->message.choice.c1->present){
 	   case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
@@ -1588,19 +1613,19 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    {
      switch (*securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm) {
        case NR_IntegrityProtAlgorithm_nia1:
-	 LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia1\n",ctxt_pP->module_id);
-	 securityMode |= 1 << 5;
-	 break;
+         LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia1\n",ctxt_pP->module_id);
+         securityMode |= 1 << 5;
+         break;
 
        case NR_IntegrityProtAlgorithm_nia2:
-	 LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia2\n",ctxt_pP->module_id);
-	 securityMode |= 1 << 6;
-	 break;
+         LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia2\n",ctxt_pP->module_id);
+         securityMode |= 1 << 6;
+         break;
 
        default:
-	 LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to none\n",ctxt_pP->module_id);
-	 securityMode |= 0x70 ;
-	 break;
+         LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to none\n",ctxt_pP->module_id);
+         securityMode |= 0x70 ;
+         break;
      }
 
      NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm =
@@ -1629,8 +1654,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    pdcp_t *pdcp_p = NULL;
    hash_key_t key = HASHTABLE_NOT_A_KEY_VALUE;
    hashtable_rc_t h_rc;
-   key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti,
-			     ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
+   key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
    h_rc = hashtable_get(pdcp_coll_p, key, (void **) &pdcp_p);
 
    if (h_rc == HASH_TABLE_OK) {
@@ -1658,12 +1682,11 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 
      if (securityMode != 0xff) {
        pdcp_config_set_security(ctxt_pP, pdcp_p, 0, 0,
-				NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm
-				| (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-				kRRCenc, kRRCint, kUPenc);
+                                NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm
+                                | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                                kRRCenc, kRRCint, kUPenc);
      } else {
-       LOG_I(NR_RRC, "skipped pdcp_config_set_security() as securityMode == 0x%02x",
-	     securityMode);
+       LOG_I(NR_RRC, "skipped pdcp_config_set_security() as securityMode == 0x%02x", securityMode);
      }
    } else {
      LOG_I(NR_RRC, "Could not get PDCP instance where key=0x%ld\n", key);
@@ -1678,10 +1701,10 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
      LOG_I(NR_RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (gNB %d), rrc_TransactionIdentifier: %ld\n",
 	   ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, gNB_index, securityModeCommand->rrc_TransactionIdentifier);
      enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
-				      NULL,
-				      (void *)&ul_dcch_msg,
-				      buffer,
-				      100);
+                                      NULL,
+                                      (void *)&ul_dcch_msg,
+                                      buffer,
+                                      100);
      AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
 		  enc_rval.failed_type->name, enc_rval.encoded);
 
@@ -1709,14 +1732,13 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
      GNB_RRC_DCCH_DATA_IND (message_p).size    = (enc_rval.encoded + 7) / 8;
      itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
  #else
-     rrc_data_req_ue (
-       ctxt_pP,
-       DCCH,
-       nr_rrc_mui++,
-       SDU_CONFIRM_NO,
-       (enc_rval.encoded + 7) / 8,
-       buffer,
-       PDCP_TRANSMISSION_MODE_CONTROL);
+     rrc_data_req_ue (ctxt_pP,
+                      DCCH,
+                      nr_rrc_mui++,
+                      SDU_CONFIRM_NO,
+                      (enc_rval.encoded + 7) / 8,
+                      buffer,
+                      PDCP_TRANSMISSION_MODE_CONTROL);
  #endif
    } else
      LOG_W(NR_RRC,"securityModeCommand->criticalExtensions.present (%d) != NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand\n",
@@ -1753,79 +1775,66 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 	   module_id, NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size, gNB_index);
 
      for (i=0; i<NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size; i++) {
-       //LOG_T(NR_RRC,"%x.",NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
-       printf("%x.",NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
+       LOG_T(NR_RRC,"%x.",NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
+       //printf("%x.",NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
 
      }
 
- //    LOG_T(NR_RRC,"\n");
-     printf("\n");
+     LOG_T(NR_RRC,"\n");
+     //printf("\n");
      /*UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.Payload[i] = taus()&0xff;
      UE_rrc_inst[ue_mod_idP].Srb0[Idx].Tx_buffer.payload_size =i; */
 
-     /*
-     log_dump(RRC,NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size,
-     LOG_DUMP_CHAR,"RRCSetupRequest :\n");
-     rrc_data_req_ue (
-       ctxt_pP,
-       DCCH,
-       nr_rrc_mui++,
-       SDU_CONFIRM_NO,
-       NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size,
-       (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
-       PDCP_TRANSMISSION_MODE_CONTROL);
-       */
+#ifdef ITTI_SIM
+    MessageDef *message_p;
+    uint8_t *message_buffer;
+    message_buffer = itti_malloc (TASK_RRC_NRUE,TASK_RRC_GNB_SIM,
+          NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size);
+    memcpy (message_buffer, (uint8_t*)NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload,
+          NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size);
+    message_p = itti_alloc_new_message (TASK_RRC_NRUE, 0, UE_RRC_CCCH_DATA_IND);
+    GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
+    GNB_RRC_CCCH_DATA_IND (message_p).size  = NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size;
+    itti_send_msg_to_task (TASK_RRC_GNB_SIM, gNB_index, message_p);
+#endif
+  }
+}
 
- #ifdef ITTI_SIM
-     MessageDef *message_p;
-     uint8_t *message_buffer;
-     message_buffer = itti_malloc (TASK_RRC_NRUE,TASK_RRC_GNB_SIM,
-	   NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size);
-     memcpy (message_buffer, (uint8_t*)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
-	   NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size);
-     message_p = itti_alloc_new_message (TASK_RRC_NRUE, 0, UE_RRC_CCCH_DATA_IND);
-     GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
-     GNB_RRC_CCCH_DATA_IND (message_p).size  = NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size;
-     itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
- #endif
-   }
- }
+//-----------------------------------------------------------------------------
+int32_t
+nr_rrc_ue_establish_srb1(
+    module_id_t       ue_mod_idP,
+    frame_t           frameP,
+    uint8_t           gNB_index,
+    NR_SRB_ToAddMod_t *SRB_config
+)
+//-----------------------------------------------------------------------------
+{
+  // add descriptor from RRC PDU
+  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Active = 1;
+  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
+  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Srb_info.Srb_id = 1;
+  LOG_I(NR_RRC, "[UE %d], CONFIG_SRB1 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH, gNB_index);
+  return(0);
+}
 
- //-----------------------------------------------------------------------------
- int32_t
- nr_rrc_ue_establish_srb1(
-     module_id_t       ue_mod_idP,
-     frame_t           frameP,
-     uint8_t           gNB_index,
-     NR_SRB_ToAddMod_t *SRB_config
- )
- //-----------------------------------------------------------------------------
- {
-   // add descriptor from RRC PDU
-   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Active = 1;
-   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
-   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Srb_info.Srb_id = 1;
-   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB1 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH, gNB_index);
-   return(0);
- }
-
- //-----------------------------------------------------------------------------
- int32_t
- nr_rrc_ue_establish_srb2(
-     module_id_t       ue_mod_idP,
-     frame_t           frameP,
-     uint8_t           gNB_index,
-     NR_SRB_ToAddMod_t *SRB_config
- )
- //-----------------------------------------------------------------------------
- {
-   // add descriptor from RRC PDU
-   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Active = 1;
-   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
-   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Srb_info.Srb_id = 2;
-   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB2 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH1, gNB_index);
-   return(0);
- }
+//-----------------------------------------------------------------------------
+int32_t
+nr_rrc_ue_establish_srb2(
+    module_id_t       ue_mod_idP,
+    frame_t           frameP,
+    uint8_t           gNB_index,
+    NR_SRB_ToAddMod_t *SRB_config
+)
+//-----------------------------------------------------------------------------
+{
+  // add descriptor from RRC PDU
+  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Active = 1;
+  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
+  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Srb_info.Srb_id = 2;
+  LOG_I(NR_RRC, "[UE %d], CONFIG_SRB2 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH1, gNB_index);
+  return(0);
+}
 
  //-----------------------------------------------------------------------------
  int32_t
@@ -1891,8 +1900,8 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 
    if (measConfig->measObjectToRemoveList != NULL) {
      for (i = 0; i < measConfig->measObjectToRemoveList->list.count; i++) {
-	 ind = *measConfig->measObjectToRemoveList->list.array[i];
-	 free(NR_UE_rrc_inst[ctxt_pP->module_id].MeasObj[gNB_index][ind-1]);
+       ind = *measConfig->measObjectToRemoveList->list.array[i];
+       free(NR_UE_rrc_inst[ctxt_pP->module_id].MeasObj[gNB_index][ind-1]);
      }
    }
 
@@ -1903,10 +1912,10 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
        ind     = measConfig->measObjectToAddModList->list.array[i]->measObjectId;
 
        if (NR_UE_rrc_inst[ctxt_pP->module_id].MeasObj[gNB_index][ind-1]) {
-	 LOG_D(NR_RRC, "Modifying measurement object %ld\n",ind);
-	 memcpy((char *)NR_UE_rrc_inst[ctxt_pP->module_id].MeasObj[gNB_index][ind-1],
-		 (char *)measObj,
-		 sizeof(NR_MeasObjectToAddMod_t));
+         LOG_D(NR_RRC, "Modifying measurement object %ld\n",ind);
+         memcpy((char *)NR_UE_rrc_inst[ctxt_pP->module_id].MeasObj[gNB_index][ind-1],
+           (char *)measObj,
+           sizeof(NR_MeasObjectToAddMod_t));
        } else {
 	 LOG_I(NR_RRC, "Adding measurement object %ld\n", ind);
 
@@ -1922,8 +1931,8 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 
    if (measConfig->reportConfigToRemoveList != NULL) {
      for (i = 0; i < measConfig->reportConfigToRemoveList->list.count; i++) {
-	 ind = *measConfig->reportConfigToRemoveList->list.array[i];
-	 free(NR_UE_rrc_inst[ctxt_pP->module_id].ReportConfig[gNB_index][ind-1]);
+       ind = *measConfig->reportConfigToRemoveList->list.array[i];
+       free(NR_UE_rrc_inst[ctxt_pP->module_id].ReportConfig[gNB_index][ind-1]);
      }
    }
 
@@ -1934,23 +1943,23 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
        reportConfig = measConfig->reportConfigToAddModList->list.array[i];
 
        if (NR_UE_rrc_inst[ctxt_pP->module_id].ReportConfig[gNB_index][ind-1]) {
-	   LOG_I(NR_RRC, "Modifying Report Configuration %ld\n", ind-1);
-	   memcpy((char *)NR_UE_rrc_inst[ctxt_pP->module_id].ReportConfig[gNB_index][ind-1],
-		   (char *)measConfig->reportConfigToAddModList->list.array[i],
-		   sizeof(NR_ReportConfigToAddMod_t));
+         LOG_I(NR_RRC, "Modifying Report Configuration %ld\n", ind-1);
+         memcpy((char *)NR_UE_rrc_inst[ctxt_pP->module_id].ReportConfig[gNB_index][ind-1],
+                 (char *)measConfig->reportConfigToAddModList->list.array[i],
+                 sizeof(NR_ReportConfigToAddMod_t));
        } else {
-	 LOG_D(NR_RRC,"Adding Report Configuration %ld %p \n", ind-1, measConfig->reportConfigToAddModList->list.array[i]);
-	 if (reportConfig->reportConfig.present == NR_ReportConfigToAddMod__reportConfig_PR_reportConfigNR) {
-	     NR_UE_rrc_inst[ctxt_pP->module_id].ReportConfig[gNB_index][ind-1] = measConfig->reportConfigToAddModList->list.array[i];
-	 }
+         LOG_D(NR_RRC,"Adding Report Configuration %ld %p \n", ind-1, measConfig->reportConfigToAddModList->list.array[i]);
+         if (reportConfig->reportConfig.present == NR_ReportConfigToAddMod__reportConfig_PR_reportConfigNR) {
+             NR_UE_rrc_inst[ctxt_pP->module_id].ReportConfig[gNB_index][ind-1] = measConfig->reportConfigToAddModList->list.array[i];
+         }
        }
      }
    }
 
    if (measConfig->measIdToRemoveList != NULL) {
      for (i = 0; i < measConfig->measIdToRemoveList->list.count; i++) {
-	 ind = *measConfig->measIdToRemoveList->list.array[i];
-	 free(NR_UE_rrc_inst[ctxt_pP->module_id].MeasId[gNB_index][ind-1]);
+       ind = *measConfig->measIdToRemoveList->list.array[i];
+       free(NR_UE_rrc_inst[ctxt_pP->module_id].MeasId[gNB_index][ind-1]);
      }
    }
 
@@ -1959,13 +1968,13 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
        ind = measConfig->measIdToAddModList->list.array[i]->measId;
 
        if (NR_UE_rrc_inst[ctxt_pP->module_id].MeasId[gNB_index][ind-1]) {
-	 LOG_D(NR_RRC, "Modifying Measurement ID %ld\n",ind-1);
-	 memcpy((char *)NR_UE_rrc_inst[ctxt_pP->module_id].MeasId[gNB_index][ind-1],
-	     (char *)measConfig->measIdToAddModList->list.array[i],
-	     sizeof(NR_MeasIdToAddMod_t));
+         LOG_D(NR_RRC, "Modifying Measurement ID %ld\n",ind-1);
+         memcpy((char *)NR_UE_rrc_inst[ctxt_pP->module_id].MeasId[gNB_index][ind-1],
+                 (char *)measConfig->measIdToAddModList->list.array[i],
+                 sizeof(NR_MeasIdToAddMod_t));
        } else {
-	 LOG_D(NR_RRC, "Adding Measurement ID %ld %p\n", ind-1, measConfig->measIdToAddModList->list.array[i]);
-	 NR_UE_rrc_inst[ctxt_pP->module_id].MeasId[gNB_index][ind-1] = measConfig->measIdToAddModList->list.array[i];
+         LOG_D(NR_RRC, "Adding Measurement ID %ld %p\n", ind-1, measConfig->measIdToAddModList->list.array[i]);
+         NR_UE_rrc_inst[ctxt_pP->module_id].MeasId[gNB_index][ind-1] = measConfig->measIdToAddModList->list.array[i];
        }
      }
    }
@@ -2020,10 +2029,8 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    if (radioBearerConfig->srb_ToAddModList != NULL) {
      if (radioBearerConfig->securityConfig != NULL) {
        if (*radioBearerConfig->securityConfig->keyToUse == NR_SecurityConfig__keyToUse_master) {
-	 NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm =
-	     radioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm;
-	 NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm =
-	     *radioBearerConfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm;
+	      NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm = radioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm;
+	      NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm = *radioBearerConfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm;
        }
      }
 
@@ -2062,7 +2069,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
        if (SRB_id == 1) {
 	 if (NR_UE_rrc_inst[ctxt_pP->module_id].SRB1_config[gNB_index]) {
 	   memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].SRB1_config[gNB_index],
-		  radioBearerConfig->srb_ToAddModList->list.array[cnt], 
+		  radioBearerConfig->srb_ToAddModList->list.array[cnt],
 		  sizeof(NR_SRB_ToAddMod_t));
 	 } else {
 	   NR_UE_rrc_inst[ctxt_pP->module_id].SRB1_config[gNB_index] = radioBearerConfig->srb_ToAddModList->list.array[cnt];
@@ -2128,28 +2135,27 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 	 (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4));
 
        // Refresh DRBs
-       // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-       //                             NULL,
-       //                             radioBearerConfig->drb_ToAddModList,
-       //                             NULL,
-       //                             NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-       //                             (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-       //                             NULL,
-       //                             NULL,
-       //                             kUPenc,
-       //                             NULL,
-       //                             NULL,
-       //                             NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
-       //                             NULL);
+        nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                    NULL,
+                                    radioBearerConfig->drb_ToAddModList,
+                                    NULL,
+                                    0,
+                                    NULL,
+                                    NULL,
+                                    kUPenc,
+                                    NULL,
+                                    NULL,
+                                    NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
+                                    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
        // Refresh DRBs
-       // nr_rrc_rlc_config_asn1_req(ctxt_pP,
-       //                             NULL,
-       //                             radioBearerConfig->drb_ToAddModList,
-       //                             NULL,
-       //                             NULL,
-       //                             NULL
-       //                             );
-   } // drb_ToAddModList
+        nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                    NULL,
+                                    radioBearerConfig->drb_ToAddModList,
+                                    NULL,
+                                    NULL,
+                                    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList
+                                    );
+   } // drb_ToAddModList //
 
    if (radioBearerConfig->drb_ToReleaseList != NULL) {
      for (i = 0; i < radioBearerConfig->drb_ToReleaseList->list.count; i++) {
@@ -2184,9 +2190,17 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
  //      nr_rrc_ue_process_measConfig(ctxt_pP, gNB_index, ie->measConfig);
      }
 
+     if(ie->nonCriticalExtension->masterCellGroup!=NULL) {
+       nr_rrc_ue_process_masterCellGroup(
+           ctxt_pP,
+           gNB_index,
+           ie->nonCriticalExtension->masterCellGroup);
+     }
+
+
      if (ie->radioBearerConfig != NULL) {
        LOG_I(NR_RRC, "radio Bearer Configuration is present\n");
- //      nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
+       nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
      }
 
      /* Check if there is dedicated NAS information to forward to NAS */
@@ -2268,8 +2282,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 
    if (Srb_id != 1) {
      LOG_E(NR_RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%ld), should not have ...\n",
-	 ctxt_pP->module_id, ctxt_pP->frame, Srb_id);
-     return -1;
+           ctxt_pP->module_id, ctxt_pP->frame, Srb_id);
    } else {
      LOG_D(NR_RRC, "Received message on SRB%ld\n", Srb_id);
    }
@@ -2327,40 +2340,39 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 		  itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
 		  break;
 	     case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
-		 LOG_I(NR_RRC, "[UE %d] Received Capability Enquiry (gNB %d)\n",
-		       ctxt_pP->module_id,gNB_indexP);
-		 nr_rrc_ue_process_ueCapabilityEnquiry(
-		   ctxt_pP,
-		   dl_dcch_msg->message.choice.c1->choice.ueCapabilityEnquiry,
-		   gNB_indexP);
-		  break;
+         LOG_I(NR_RRC, "[UE %d] Received Capability Enquiry (gNB %d)\n", ctxt_pP->module_id,gNB_indexP);
+         nr_rrc_ue_process_ueCapabilityEnquiry(
+           ctxt_pP,
+           dl_dcch_msg->message.choice.c1->choice.ueCapabilityEnquiry,
+           gNB_indexP);
+         break;
 	     case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
-		 LOG_I(NR_RRC,
-		     "[UE%d] Frame %d : Logical Channel DL-DCCH (SRB1), Received RRCReestablishment\n",
-		     ctxt_pP->module_id,
-		     ctxt_pP->frame);
-		 nr_rrc_ue_generate_rrcReestablishmentComplete(
-		   ctxt_pP,
-		   dl_dcch_msg->message.choice.c1->choice.rrcReestablishment,
-		   gNB_indexP);
-		 break;
+         LOG_I(NR_RRC,
+             "[UE%d] Frame %d : Logical Channel DL-DCCH (SRB1), Received RRCReestablishment\n",
+             ctxt_pP->module_id,
+             ctxt_pP->frame);
+         nr_rrc_ue_generate_rrcReestablishmentComplete(
+           ctxt_pP,
+           dl_dcch_msg->message.choice.c1->choice.rrcReestablishment,
+           gNB_indexP);
+		     break;
 	     case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
 	     {
-		 NR_DLInformationTransfer_t *dlInformationTransfer = dl_dcch_msg->message.choice.c1->choice.dlInformationTransfer;
+         NR_DLInformationTransfer_t *dlInformationTransfer = dl_dcch_msg->message.choice.c1->choice.dlInformationTransfer;
 
-		 if (dlInformationTransfer->criticalExtensions.present
-		       == NR_DLInformationTransfer__criticalExtensions_PR_dlInformationTransfer) {
-		   /* This message hold a dedicated info NAS payload, forward it to NAS */
-		   NR_DedicatedNAS_Message_t *dedicatedNAS_Message =
-		       dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message;
+         if (dlInformationTransfer->criticalExtensions.present
+               == NR_DLInformationTransfer__criticalExtensions_PR_dlInformationTransfer) {
+               /* This message hold a dedicated info NAS payload, forward it to NAS */
+               NR_DedicatedNAS_Message_t *dedicatedNAS_Message =
+                   dlInformationTransfer->criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message;
 
-		   MessageDef *msg_p;
-		   msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_DOWNLINK_DATA_IND);
-		   NAS_DOWNLINK_DATA_IND(msg_p).UEid = ctxt_pP->module_id; // TODO set the UEid to something else ?
-		   NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length = dedicatedNAS_Message->size;
-		   NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data = dedicatedNAS_Message->buf;
-		   itti_send_msg_to_task(TASK_NAS_NRUE, ctxt_pP->instance, msg_p);
-	       }
+               MessageDef *msg_p;
+               msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_DOWNLINK_DATA_IND);
+               NAS_DOWNLINK_DATA_IND(msg_p).UEid = ctxt_pP->module_id; // TODO set the UEid to something else ?
+               NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length = dedicatedNAS_Message->size;
+               NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data = dedicatedNAS_Message->buf;
+               itti_send_msg_to_task(TASK_NAS_NRUE, ctxt_pP->instance, msg_p);
+             }
 	     }
 
 	       break;
@@ -2375,15 +2387,15 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 	     case NR_DL_DCCH_MessageType__c1_PR_counterCheck:
 		 break;
 	     case NR_DL_DCCH_MessageType__c1_PR_securityModeCommand:
-		 LOG_I(NR_RRC, "[UE %d] Received securityModeCommand (gNB %d)\n",
-		       ctxt_pP->module_id, gNB_indexP);
-		 nr_rrc_ue_process_securityModeCommand(
-		     ctxt_pP,
-		     dl_dcch_msg->message.choice.c1->choice.securityModeCommand,
-		     gNB_indexP);
+         LOG_I(NR_RRC, "[UE %d] Received securityModeCommand (gNB %d)\n",
+               ctxt_pP->module_id, gNB_indexP);
+         nr_rrc_ue_process_securityModeCommand(
+             ctxt_pP,
+             dl_dcch_msg->message.choice.c1->choice.securityModeCommand,
+             gNB_indexP);
 
-		 break;
-	 }
+         break;
+	    }
      }
    return 0;
  }
@@ -2406,48 +2418,48 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 
      switch (ITTI_MSG_ID(msg_p)) {
        case TERMINATE_MESSAGE:
-	 LOG_W(NR_RRC, " *** Exiting RRC thread\n");
-	 itti_exit_task ();
-	 break;
+         LOG_W(NR_RRC, " *** Exiting RRC thread\n");
+         itti_exit_task ();
+         break;
 
        case MESSAGE_TEST:
-	 LOG_D(NR_RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
-	 break;
+         LOG_D(NR_RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
+         break;
 
        case NR_RRC_MAC_BCCH_DATA_IND:
-	 LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, gNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
-	       NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
-	 PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NOT_A_RNTI, NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
-	 nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message (ctxt.module_id,
-				    NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index,
-				    NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu,
-				    NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,
-				    NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
-				    NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
-	 break;
+         LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, gNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
+               NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
+         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NOT_A_RNTI, NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
+         nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message (ctxt.module_id,
+                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index,
+                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu,
+                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,
+                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
+                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
+         break;
 
        case NR_RRC_MAC_CCCH_DATA_IND:
-	 LOG_I(NR_RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
-	       ue_mod_id,
-	       NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti,
-	       ITTI_MSG_NAME (msg_p),
-	       NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame,
-	       NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
-	 srb_info_p = &NR_UE_rrc_inst[ue_mod_id].Srb0[NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index];
-	 memcpy (srb_info_p->Rx_buffer.Payload, NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu,
-		 NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu_size);
-	 srb_info_p->Rx_buffer.payload_size = NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu_size;
-	 PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_NO, NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti, NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame, 0);
-        // PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti, NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame, 0, NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
-        nr_rrc_ue_decode_ccch (&ctxt,
-                            srb_info_p,
-                            NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
-        break;
+         LOG_D(NR_RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
+               ue_mod_id,
+               NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti,
+               ITTI_MSG_NAME (msg_p),
+               NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame,
+               NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
+         srb_info_p = &NR_UE_rrc_inst[ue_mod_id].Srb0[NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index];
+         memcpy (srb_info_p->Rx_buffer.Payload, NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu,
+           NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu_size);
+         srb_info_p->Rx_buffer.payload_size = NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu_size;
+         PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_NO, NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti, NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame, 0);
+              // PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti, NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame, 0, NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
+              nr_rrc_ue_decode_ccch (&ctxt,
+                                  srb_info_p,
+                                  NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
+         break;
 
       /* PDCP messages */
       case NR_RRC_DCCH_DATA_IND:
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, NR_RRC_DCCH_DATA_IND (msg_p).module_id, GNB_FLAG_NO, NR_RRC_DCCH_DATA_IND (msg_p).rnti, NR_RRC_DCCH_DATA_IND (msg_p).frame, 0,NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
-        LOG_I(NR_RRC, "[UE %d] Received %s: frameP %d, DCCH %d, gNB %d\n",
+        LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, DCCH %d, gNB %d\n",
               NR_RRC_DCCH_DATA_IND (msg_p).module_id,
               ITTI_MSG_NAME (msg_p),
               NR_RRC_DCCH_DATA_IND (msg_p).frame,
