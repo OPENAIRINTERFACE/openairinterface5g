@@ -2200,7 +2200,6 @@ nr_rrc_ue_establish_srb2(
            ie->nonCriticalExtension->masterCellGroup);
      }
 
-
      if (ie->radioBearerConfig != NULL) {
        LOG_I(NR_RRC, "radio Bearer Configuration is present\n");
        nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);

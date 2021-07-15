@@ -47,6 +47,7 @@ extern RAN_CONTEXT_t RC;
 #include <stdint.h>
 
 #include <executables/softmodem-common.h>
+
 static nr_rlc_ue_manager_t *nr_rlc_ue_manager;
 
 /* TODO: handle time a bit more properly */
