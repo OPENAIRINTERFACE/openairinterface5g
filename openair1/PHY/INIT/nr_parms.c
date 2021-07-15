@@ -87,7 +87,7 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, int N_RB_DL)
       if (fp->nr_band == 5 || fp->nr_band == 66) 
         fp->ssb_type = nr_ssb_type_B;
       else{  
-      	if (fp->nr_band == 41 || ( fp->nr_band > 76 && fp->nr_band < 80) )
+      	if (fp->nr_band == 41 || fp->nr_band == 38 || ( fp->nr_band > 76 && fp->nr_band < 80) )
 	  fp->ssb_type = nr_ssb_type_C;
 	else
 	  AssertFatal(1==0,"NR Operating Band n%d not available for SS block SCS with mu=%d\n", fp->nr_band, mu);
