@@ -1257,10 +1257,7 @@ nr_rrc_ue_process_masterCellGroup(
               (void **)&cellGroupConfig,
               (uint8_t *)masterCellGroup->buf,
               masterCellGroup->size, 0, 0);
-
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) cellGroupConfig);
-  }
+  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
 
   if( cellGroupConfig->spCellConfig != NULL &&  cellGroupConfig->spCellConfig->reconfigurationWithSync != NULL){
     //TODO (perform Reconfiguration with sync according to 5.3.5.5.2)
@@ -2306,9 +2303,9 @@ nr_rrc_ue_establish_srb2(
      return -1;
    }
 
-   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+   // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
        xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message,(void *)dl_dcch_msg);
-   }
+   // }
 
      if (dl_dcch_msg->message.present == NR_DL_DCCH_MessageType_PR_c1) {
 	 switch (dl_dcch_msg->message.choice.c1->present) {
