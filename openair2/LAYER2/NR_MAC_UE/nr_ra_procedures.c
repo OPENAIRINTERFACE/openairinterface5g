@@ -157,7 +157,7 @@ void init_RA(module_id_t mod_id,
   }
 
   if (nr_rach_ConfigCommon->ext1) {
-    if (nr_rach_ConfigCommon->ext1->ra_PrioritizationForAccessIdentity){
+    if (nr_rach_ConfigCommon->ext1->ra_PrioritizationForAccessIdentity_r16){
       LOG_D(MAC, "In %s:%d: Missing implementation for Access Identity initialization procedures\n", __FUNCTION__, __LINE__);
     }
   }
