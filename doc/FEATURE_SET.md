@@ -279,7 +279,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  Generation of NR-PDSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
    - Single symbol DMRS, DMRS-TypeA-Position Pos2,  DMRS configuration type 1
    - PDSCH mapping type A
-*  NR-CSI Generation of sequence at PHY (**under integration**)
+*  NR-CSIRS Generation of sequence at PHY
 *  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
 *  NR-PUCCH 
    - Format 0 (2 bits, mainly for ACK/NACK)
@@ -309,6 +309,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 - MAC <-> PHY data interface using FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
 - Scheduler procedures for SIB1
 - Scheduler procedures for RA
+- Scheduler procedures for CSI-RS
 - MAC downlink scheduler (fixed allocations)
 - MAC header generation (including timing advance)
 - ACK / NACK handling and HARQ procedures for downlink
@@ -339,7 +340,6 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  Generation of NR-PDSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
    - Single symbol DMRS, DMRS-TypeA-Position Pos2,  DMRS configuration type 1
    - PDSCH mapping type A
-*  NR-CSI Generation of sequence at PHY (**under integration**)
 *  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
 *  NR-PUCCH 
    - Format 0 (2 bits, mainly for ACK/NACK)
