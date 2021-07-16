@@ -66,7 +66,7 @@
 {CONFIG_STRING_L1_REMOTE_N_PORTD,                    NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PUSCH_PROC_THREADS,                NULL,      0,         uptr:NULL,           defintval:1,               TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PUCCH0_DTX_THRESHOLD,              NULL,      0,         uptr:NULL,           defintval:100,             TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_PRACH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:250,             TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_PRACH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:200,             TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PUSCH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:50,              TYPE_UINT,     0}          \
 }
 #define L1_CC_IDX                                          0
