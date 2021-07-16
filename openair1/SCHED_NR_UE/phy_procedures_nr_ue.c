@@ -354,12 +354,11 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
   LOG_D(PHY,"[UE  %d] Frame %d Slot %d, Trying PBCH (NidCell %d, gNB_id %d)\n",ue->Mod_id,frame_rx,nr_slot_rx,ue->frame_parms.Nid_cell,gNB_id);
 
   ret = nr_rx_pbch(ue, proc,
-		   ue->pbch_vars[gNB_id],
-		   &ue->frame_parms,
-		   gNB_id,
-		   (ue->frame_parms.ssb_index)&7,
-		   SISO,
-		   ue->high_speed_flag);
+                   ue->pbch_vars[gNB_id],
+                   &ue->frame_parms,
+                   gNB_id,
+                   (ue->frame_parms.ssb_index)&7,
+                   SISO);
 
   if (ret==0) {
 
@@ -788,8 +787,6 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_
           }
 #endif
         }
-        if ( ue->high_speed_flag == 0 ) //for slow speed case only estimate the channel once per slot
-          break;
       }
     }
 
