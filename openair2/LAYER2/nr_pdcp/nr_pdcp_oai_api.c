@@ -494,7 +494,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).offset              = GTPU_HEADER_OVERHEAD_MAX;
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti                = ue->rnti;
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id       = entity->pdusession_id;
-      if (offset==1) LOG_I(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
+      if (offset==1) LOG_D(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
       LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size-offset);
       itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
    }
@@ -536,7 +536,7 @@ rb_found:
   memblock = get_free_mem_block(size, __FUNCTION__);
   memcpy(memblock->data, buf, size);
 
-  LOG_I(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
+  LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
   //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
   //printf("\n");
   enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
@@ -720,7 +720,7 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
     }
     switch (ITTI_MSG_ID(msg_p)) {
     case RRC_DCCH_DATA_REQ:
-      LOG_I(PDCP, "Received RRC_DCCH_DATA_REQ type at PDCP task \n");
+      LOG_D(PDCP, "Received RRC_DCCH_DATA_REQ type at PDCP task \n");
       PROTOCOL_CTXT_SET_BY_MODULE_ID(
           &ctxt,
           RRC_DCCH_DATA_REQ(msg_p).module_id,

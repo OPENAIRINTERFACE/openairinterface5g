@@ -251,17 +251,17 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   // if all segments are done 
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
-      LOG_I(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
+      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
             gNB->Mod_id,ulsch_harq->slot,ulsch_harq->TBS);
       ulsch_harq->status = SCH_IDLE;
       ulsch_harq->round  = 0;
       ulsch->harq_mask &= ~(1 << rdata->harq_pid);
 
-      LOG_I(PHY, "ULSCH received ok \n");
+      LOG_D(PHY, "ULSCH received ok \n");
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0);
       //log_dump(PHY, ulsch_harq->b, 16, LOG_DUMP_CHAR,"gnb pusch rx frame %d %d: ", ulsch_harq->frame, ulsch_harq->slot);
     } else {
-      LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
+      LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
             gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
             rdata->harq_pid,ulsch_harq->status, ulsch_harq->round,ulsch_harq->TBS,r);
       if (ulsch_harq->round >= ulsch->Mlimit) {
@@ -274,6 +274,40 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
 
       LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 1);
+/*
+#ifdef __AVX2__
+      int off = ((ulsch_harq->ulsch_pdu.rb_size&1) == 1)? 4:0;
+#else
+      int off = 0;
+#endif
+
+      LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
+      nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 1);
+      LOG_M("rxsigF0_ext.m","rxsF0_ext",
+             &gNB->pusch_vars[0]->rxdataF_ext[0][ulsch_harq->ulsch_pdu.start_symbol_index*NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size],ulsch_harq->ulsch_pdu.nr_of_symbols*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size)),1,1);
+      LOG_M("chestF0.m","chF0",
+            &gNB->pusch_vars[0]->ul_ch_estimates[0][ulsch_harq->ulsch_pdu.start_symbol_index*gNB->frame_parms.ofdm_symbol_size],gNB->frame_parms.ofdm_symbol_size,1,1);
+      LOG_M("chestF0_ext.m","chF0_ext",
+            &gNB->pusch_vars[0]->ul_ch_estimates_ext[0][(ulsch_harq->ulsch_pdu.start_symbol_index+1)*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size))],
+            (ulsch_harq->ulsch_pdu.nr_of_symbols-1)*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size)),1,1);
+      LOG_M("rxsigF0_comp.m","rxsF0_comp",
+            &gNB->pusch_vars[0]->rxdataF_comp[0][ulsch_harq->ulsch_pdu.start_symbol_index*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size))],ulsch_harq->ulsch_pdu.nr_of_symbols*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size)),1,1);
+      LOG_M("rxsigF0_llr.m","rxsF0_llr",
+            &gNB->pusch_vars[0]->llr[0],(ulsch_harq->ulsch_pdu.nr_of_symbols-1)*NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size * ulsch_harq->ulsch_pdu.qam_mod_order,1,0);
+      if (gNB->frame_parms.nb_antennas_rx > 1) {
+
+        LOG_M("rxsigF1_ext.m","rxsF0_ext",
+               &gNB->pusch_vars[0]->rxdataF_ext[1][ulsch_harq->ulsch_pdu.start_symbol_index*NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size],ulsch_harq->ulsch_pdu.nr_of_symbols*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size)),1,1);
+        LOG_M("chestF1.m","chF1",
+              &gNB->pusch_vars[0]->ul_ch_estimates[1][ulsch_harq->ulsch_pdu.start_symbol_index*gNB->frame_parms.ofdm_symbol_size],gNB->frame_parms.ofdm_symbol_size,1,1);
+        LOG_M("chestF1_ext.m","chF1_ext",
+              &gNB->pusch_vars[0]->ul_ch_estimates_ext[1][(ulsch_harq->ulsch_pdu.start_symbol_index+1)*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size))],
+              (ulsch_harq->ulsch_pdu.nr_of_symbols-1)*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size)),1,1);
+        LOG_M("rxsigF1_comp.m","rxsF1_comp",
+              &gNB->pusch_vars[0]->rxdataF_comp[1][ulsch_harq->ulsch_pdu.start_symbol_index*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size))],ulsch_harq->ulsch_pdu.nr_of_symbols*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size)),1,1);
+      }
+      exit(-1);
+*/
     }
     ulsch->last_iteration_cnt = rdata->decodeIterations;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,0);
@@ -380,14 +414,14 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   if (timing_advance_update < 0)  timing_advance_update = 0;
   if (timing_advance_update > 63) timing_advance_update = 63;
 
-  LOG_I(PHY, "%d.%d : Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", frame,slot_rx,sync_pos,timing_advance_update);
+  LOG_D(PHY, "%d.%d : Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", frame,slot_rx,sync_pos,timing_advance_update);
 
   // estimate UL_CQI for MAC 
 
   int SNRtimes10 = dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot) - 
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot);
 
-  LOG_I(PHY, "Estimated SNR for PUSCH is = %f dB (ulsch_power %f, noise %f)\n", SNRtimes10/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot)/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot)/10.0);
+  LOG_D(PHY, "Estimated SNR for PUSCH is = %f dB (ulsch_power %f, noise %f)\n", SNRtimes10/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot)/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot)/10.0);
 
   if      (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;

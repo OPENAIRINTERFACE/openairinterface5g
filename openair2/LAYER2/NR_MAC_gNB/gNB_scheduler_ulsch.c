@@ -310,7 +310,7 @@ void nr_process_mac_pdu(
                   mac_subheader_len = 2;
                 }
 
-                LOG_I(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-%s %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid<4?"DCCH":"DTCH",rx_lcid, module_idP, mac_sdu_len);
+                LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-%s %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid<4?"DCCH":"DTCH",rx_lcid, module_idP, mac_sdu_len);
 		            int UE_id = find_nr_UE_id(module_idP, rnti);
 		            RC.nrmac[module_idP]->UE_info.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
@@ -456,7 +456,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_I(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d TA %d sduP %p\n",
+    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d TA %d sduP %p\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
