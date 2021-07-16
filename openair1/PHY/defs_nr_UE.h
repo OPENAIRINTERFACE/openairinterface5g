@@ -761,8 +761,6 @@ typedef struct {
   int UE_fo_compensation;
   /// \brief Indicator that UE is synchronized to a gNB
   int is_synchronized;
-  /// \brief Indicates on which frame is synchronized in a two frame synchronization
-  int is_synchronized_on_frame;
   /// \brief Indicator that UE lost frame synchronization
   int lost_sync;
   /// Data structure for UE process scheduling
