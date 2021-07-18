@@ -339,10 +339,10 @@ void set_channeldesc_name(channel_desc_t *cdesc,char *modelname);
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
 
 /**\fn void multipath_channel(channel_desc_t *desc,
-           double tx_sig_re[2],
-           double tx_sig_im[2],
-           double rx_sig_re[2],
-           double rx_sig_im[2],
+           double tx_sig_re[NB_ANTENNAS_TX],
+           double tx_sig_im[NB_ANTENANS_TX],
+           double rx_sig_re[NB_ANTENNAS_RX],
+           double rx_sig_im[NB_ANTENNAS_RX],
            uint32_t length,
            uint8_t keep_channel,
 	   int log_channel)
@@ -359,10 +359,10 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
 */
 
 void multipath_channel(channel_desc_t *desc,
-                       double *tx_sig_re[2],
-                       double *tx_sig_im[2],
-                       double *rx_sig_re[2],
-                       double *rx_sig_im[2],
+                       double *tx_sig_re[NB_ANTENNAS_TX],
+                       double *tx_sig_im[NB_ANTENNAS_TX],
+                       double *rx_sig_re[NB_ANTENNAS_RX],
+                       double *rx_sig_im[NB_ANTENNAS_RX],
                        uint32_t length,
                        uint8_t keep_channel,
 		       int log_channel);
@@ -510,7 +510,6 @@ double N_RB2channel_bandwidth(uint16_t N_RB);
 void InitSinLUT( void );
 void phase_noise(double ts, int16_t * InRe, int16_t * InIm);
 
-#include "targets/RT/USER/rfsim.h"
 
 void do_DL_sig(sim_t *sim,
                uint16_t subframe,

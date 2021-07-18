@@ -67,8 +67,10 @@ fill_rar(const module_id_t module_idP,
   rar[5] = (uint8_t) (ra->rnti & 0xff);
   //ra->timing_offset = 0;
   ra->timing_offset /= 16;  //T_A = N_TA/16, where N_TA should be on a 30.72Msps
-  rar[0] = (uint8_t) (ra->timing_offset >> (2 + 4));  // 7 MSBs of timing advance + divide by 4
-  rar[1] = (uint8_t) (ra->timing_offset << (4 - 2)) & 0xf0; // 4 LSBs of timing advance + divide by 4
+  //rar[0] = (uint8_t) (ra->timing_offset >> (2 + 4));  // 7 MSBs of timing advance + divide by 4
+  //rar[1] = (uint8_t) (ra->timing_offset << (4 - 2)) & 0xf0; // 4 LSBs of timing advance + divide by 4
+  rar[0] = (uint8_t) (ra->timing_offset >> (4));  // 7 MSBs of timing advance + divide by 4
+  rar[1] = (uint8_t) (ra->timing_offset << (4)) & 0xf0; // 4 LSBs of timing advance + divide by 4
   COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
 
   if(N_RB_UL == 25) {

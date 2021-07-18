@@ -47,6 +47,7 @@ extern RAN_CONTEXT_t RC;
 #include <stdint.h>
 
 #include <executables/softmodem-common.h>
+
 static nr_rlc_ue_manager_t *nr_rlc_ue_manager;
 
 /* TODO: handle time a bit more properly */
@@ -89,7 +90,8 @@ void nr_rlc_bearer_init_ul_spec(struct NR_LogicalChannelConfig *mac_LogicalChann
 
   mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup                = calloc(1,sizeof(*mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup));
   *mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelGroup               = 1;
-  mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID                = NULL;
+  mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID                = calloc(1,sizeof(*mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID));
+  *mac_LogicalChannelConfig->ul_SpecificParameters->schedulingRequestID               = 0;
   mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask              = false;
   mac_LogicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = false;
   mac_LogicalChannelConfig->ul_SpecificParameters->bitRateQueryProhibitTimer          = NULL;
@@ -598,7 +600,7 @@ static void max_retx_reached(void *_ue, nr_rlc_entity_t *entity)
   exit(1);
 
 rb_found:
-  LOG_D(RLC, "max RETX reached on %s %d\n",
+  LOG_E(RLC, "max RETX reached on %s %d\n",
         is_srb ? "SRB" : "DRB",
         rb_id);
 
@@ -640,7 +642,7 @@ static void add_rlc_srb(int rnti, struct NR_SRB_ToAddMod *s, NR_RLC_BearerConfig
   int t_reassembly;
   int sn_field_length;
 
-  LOG_I(RLC,"Trying to add SRB %d\n",srb_id);
+  LOG_D(RLC,"Trying to add SRB %d\n",srb_id);
   if (srb_id != 1 && srb_id != 2) {
     LOG_E(RLC, "%s:%d:%s: fatal, bad srb id %d\n",
         __FILE__, __LINE__, __FUNCTION__, srb_id);
@@ -707,7 +709,7 @@ static void add_rlc_srb(int rnti, struct NR_SRB_ToAddMod *s, NR_RLC_BearerConfig
                                      sn_field_length);
     nr_rlc_ue_add_srb_rlc_entity(ue, srb_id, nr_rlc_am);
 
-    LOG_I(RLC, "%s:%d:%s: added srb %d to UE with RNTI 0x%x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+    LOG_D(RLC, "%s:%d:%s: added srb %d to UE with RNTI 0x%x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
@@ -924,15 +926,15 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
   if (srb2add_listP != NULL) {
     for (i = 0; i < srb2add_listP->list.count; i++) {
       if (rlc_bearer2add_list != NULL) {
-      for(j = 0; j < rlc_bearer2add_list->list.count; j++){
-        if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
-          if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity){  
-            if(srb2add_listP->list.array[i]->srb_Identity == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.srb_Identity){
-              add_rlc_srb(rnti, srb2add_listP->list.array[i], rlc_bearer2add_list->list.array[j]);
+        for(j = 0; j < rlc_bearer2add_list->list.count; j++){
+          if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
+            if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity){
+              if(srb2add_listP->list.array[i]->srb_Identity == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.srb_Identity){
+                add_rlc_srb(rnti, srb2add_listP->list.array[i], rlc_bearer2add_list->list.array[j]);
+              }
             }
-          }  
+          }
         }
-      }
       }
 
     }

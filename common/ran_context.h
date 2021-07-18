@@ -39,7 +39,7 @@
 #include "PHY/types.h"
 #include "PHY/impl_defs_top.h"
 
-#include "ENB_APP/enb_config.h"
+//#include "ENB_APP/enb_config.h"
 #include "flexran_agent_defs.h"
 
 #include "gtpv1u.h"
@@ -122,5 +122,5 @@ typedef struct {
   pthread_cond_t ru_cond;
 } RAN_CONTEXT_t;
 
-
+extern RAN_CONTEXT_t RC;
 #endif

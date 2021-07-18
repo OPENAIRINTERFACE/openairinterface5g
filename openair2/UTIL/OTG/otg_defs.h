@@ -34,13 +34,8 @@
 # define __OTG_DEFS_H__
 
 /* \brief To define the NUMBER_OF_eNB_MAX and MAX_MOBILES_PER_ENB */
-#if STANDALONE==1
-	#include "openairinterface5g_limits.h"
-#else
-	// impl_defs_top.h includes openairinterface5g_limits.h
-	#include "PHY/impl_defs_top.h"
-#endif
-
+#include "openairinterface5g_limits.h"
+#include <openair2/COMMON/platform_constants.h>
 #include "otg_config.h"
 
 /**

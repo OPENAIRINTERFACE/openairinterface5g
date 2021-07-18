@@ -40,9 +40,9 @@
 #include "assertions.h"
 
 int8_t polar_decoder(double *input,
-					 uint32_t *out,
-					 t_nrPolar_params *polarParams,
-					 uint8_t listSize)
+                     uint32_t *out,
+                     const t_nrPolar_params *polarParams,
+                     uint8_t listSize)
 {
   //Assumes no a priori knowledge.
   uint8_t ***bit = nr_alloc_uint8_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
@@ -299,7 +299,7 @@ int8_t polar_decoder(double *input,
 
 int8_t polar_decoder_dci(double *input,
                          uint32_t *out,
-                         t_nrPolar_params *polarParams,
+                         const t_nrPolar_params *polarParams,
                          uint8_t listSize,
                          uint16_t n_RNTI) {
   uint8_t ***bit = nr_alloc_uint8_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);

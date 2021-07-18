@@ -174,15 +174,14 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
 
-
   AssertFatal(pucch_pdu->bit_len_harq > 0 || pucch_pdu->sr_flag > 0,
 	      "Either bit_len_harq (%d) or sr_flag (%d) must be > 0\n",
 	      pucch_pdu->bit_len_harq,pucch_pdu->sr_flag);
 
   NR_gNB_UCI_STATS_t *uci_stats=NULL;
   NR_gNB_UCI_STATS_t *first_uci_stats=NULL;
-  for (int i=0;i<NUMBER_OF_NR_UCI_STATS_MAX;i++) 
-     if (gNB->uci_stats[i].rnti == pucch_pdu->rnti) { 
+  for (int i=0;i<NUMBER_OF_NR_UCI_STATS_MAX;i++)
+     if (gNB->uci_stats[i].rnti == pucch_pdu->rnti) {
         uci_stats = &gNB->uci_stats[i];
         break;
      } else if (first_uci_stats == NULL && gNB->uci_stats[i].rnti == 0) first_uci_stats = &gNB->uci_stats[i];
@@ -205,7 +204,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     nr_sequences=8>>(1-pucch_pdu->sr_flag);
   }
 
-  LOG_D(PHY,"pucch0: nr_symbols %d, start_symbol %d, prb_start %d, second_hop_prb %d,  group_hop_flag %d, sequence_hop_flag %d, O_ACK %d, O_SR %d, mcs %d\n",pucch_pdu->nr_of_symbols,pucch_pdu->start_symbol_index,pucch_pdu->prb_start,pucch_pdu->second_hop_prb,pucch_pdu->group_hop_flag,pucch_pdu->sequence_hop_flag,pucch_pdu->bit_len_harq,pucch_pdu->sr_flag,mcs[0]); 
+  LOG_D(PHY,"pucch0: nr_symbols %d, start_symbol %d, prb_start %d, second_hop_prb %d,  group_hop_flag %d, sequence_hop_flag %d, O_ACK %d, O_SR %d, mcs %d\n",pucch_pdu->nr_of_symbols,pucch_pdu->start_symbol_index,pucch_pdu->prb_start,pucch_pdu->second_hop_prb,pucch_pdu->group_hop_flag,pucch_pdu->sequence_hop_flag,pucch_pdu->bit_len_harq,pucch_pdu->sr_flag,mcs[0]);
 
   int cs_ind = get_pucch0_cs_lut_index(gNB,pucch_pdu);
   /*
@@ -271,7 +270,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
     l2 = l+pucch_pdu->start_symbol_index;
     re_offset[l] = (12*prb_offset[l]) + frame_parms->first_carrier_offset;
-    if (re_offset[l]>= frame_parms->ofdm_symbol_size) 
+    if (re_offset[l]>= frame_parms->ofdm_symbol_size)
       re_offset[l]-=frame_parms->ofdm_symbol_size;
   
     AssertFatal(re_offset[l]+12 < frame_parms->ofdm_symbol_size,"pucch straddles DC carrier, handle this!\n");
@@ -287,12 +286,18 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #endif
     }
   }
-  int32_t corr_re[2],corr_im[2],no_corr=0;
+
+  int32_t corr_re[2];
+  int32_t corr_im[2];
+  //int32_t no_corr = 0;
   int seq_index;
-  int64_t temp,av_corr=0;
+  int64_t temp;
+  int64_t av_corr=0;
+
   for(i=0;i<nr_sequences;i++){
     for (l=0;l<pucch_pdu->nr_of_symbols;l++) {
-      corr_re[l]=0;corr_im[l]=0;
+      corr_re[l]=0;
+      corr_im[l]=0;
       seq_index = (pucch_pdu->initial_cyclic_shift+
 		   mcs[i]+
 		   gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index])%12;
@@ -331,8 +336,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       if (l==2) uci_stats->current_pucch0_stat1 = dB_fixed64((int64_t)corr_re[1]*corr_re[1] + (int64_t)corr_im[1]*corr_im[1]);
     }
   }
-  if(nr_sequences>1)
-    no_corr=(av_corr-xrtmag)/(nr_sequences-1)/l;
+
   av_corr/=nr_sequences/l;
 
   uint8_t xrtmag_dB = dB_fixed64(xrtmag);
@@ -343,7 +347,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   index=maxpos;
 
-
   // estimate CQI for MAC (from antenna port 0 only)
   int max_n0 = uci_stats->pucch0_n00>uci_stats->pucch0_n01 ? uci_stats->pucch0_n00:uci_stats->pucch0_n01;
   int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset[0]],12)) - (10*max_n0);
@@ -352,12 +355,13 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   else if (SNRtimes10 >  635) cqi=255;
   else cqi=(640+SNRtimes10)/5;
 
-  uci_stats->pucch0_thres = gNB->pucch0_thres + (10*max_n0);  
+  uci_stats->pucch0_thres = gNB->pucch0_thres + (10*max_n0);
   bool no_conf=false;
   if (nr_sequences>1) {
-    if (10*xrtmag_dB < uci_stats->pucch0_thres) 
+    if (10*xrtmag_dB < uci_stats->pucch0_thres)
       no_conf=true;
   }
+  gNB->bad_pucch += no_conf;
   // first bit of bitmap for sr presence and second bit for acknack presence
   uci_pdu->pduBitmap = pucch_pdu->sr_flag | ((pucch_pdu->bit_len_harq>0)<<1);
   uci_pdu->pucch_format = 0; // format 0
@@ -395,7 +399,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       uci_stats->pucch0_positive_SR++;
     }
     uci_stats->pucch01_trials++;
-   
   }
   else {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
@@ -1596,7 +1599,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   if (pucch_pdu->bit_len_harq>0) {
     int harq_bytes=pucch_pdu->bit_len_harq>>3;
     if ((pucch_pdu->bit_len_harq&7) > 0) harq_bytes++;
-    uci_pdu->pduBitmap|=1;
+    uci_pdu->pduBitmap|=2;
     uci_pdu->harq.harq_payload = (uint8_t*)malloc(harq_bytes);
     uci_pdu->harq.harq_crc = decoderState;
     int i=0;
@@ -1610,7 +1613,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   }
   
   if (pucch_pdu->sr_flag == 1) {
-    uci_pdu->pduBitmap|=2;
+    uci_pdu->pduBitmap|=1;
     uci_pdu->sr.sr_bit_len = 1;
     uci_pdu->sr.sr_payload = malloc(1);
     uci_pdu->sr.sr_payload[0] = decodedPayload[0]&1;
@@ -1638,9 +1641,8 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     uci_pdu->pduBitmap|=8;
   }
 }
-   
 
-void dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
+void nr_dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
 
    int strpos=0;
    char output[16384];
@@ -1654,12 +1656,12 @@ void dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
          if (uci_stats->pucch01_trials > 0)
             strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current pucch0_stat0 %d dB, current pucch1_stat1 %d dB, pucch01_DTX %d\n",
                             i,uci_stats->rnti,uci_stats->pucch01_trials,uci_stats->pucch0_n01,uci_stats->pucch0_n01,uci_stats->pucch0_thres,dB_fixed(uci_stats->current_pucch0_stat0),dB_fixed(uci_stats->current_pucch0_stat1),uci_stats->pucch01_DTX);
-      
+
          if (uci_stats->pucch02_trials > 0)
              strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current pucch0_stat0 %d dB, current pucch0_stat1 %d dB, pucch01_DTX %d\n",
                              i,uci_stats->rnti,uci_stats->pucch02_trials,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,dB_fixed(uci_stats->current_pucch0_stat0),dB_fixed(uci_stats->current_pucch0_stat1),uci_stats->pucch02_DTX);
 
-         if (uci_stats->pucch2_trials > 0) 
+         if (uci_stats->pucch2_trials > 0)
            strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch2_trials %d, pucch2_DTX %d\n",
                            i,uci_stats->rnti,
                            uci_stats->pucch2_trials,
@@ -1667,5 +1669,5 @@ void dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
        }
     }
     if (fd) fprintf(fd,"%s",output);
-    else    printf("%s",output);  
+    else    printf("%s",output);
 }

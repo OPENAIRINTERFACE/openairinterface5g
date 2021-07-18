@@ -54,11 +54,11 @@ extern RAN_CONTEXT_t RC;
 extern void mac_top_init_gNB(void);
 extern uint8_t nfapi_mode;
 
-void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list, 
+void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list,
                              struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_bearer2release_list,
                              NR_UE_sched_ctrl_t *sched_ctrl) {
 
-  if (rlc_bearer2add_list) 
+  if (rlc_bearer2add_list)
   // keep lcids
     for (int i=0;i<rlc_bearer2add_list->list.count;i++) {
       sched_ctrl->lcid_mask |= (1<<rlc_bearer2add_list->list.array[i]->logicalChannelIdentity);
@@ -67,10 +67,10 @@ void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *
             rlc_bearer2add_list->list.array[i]->logicalChannelIdentity<4 ? "SRB" : "DRB",
             (int)rlc_bearer2add_list->list.array[i]->logicalChannelIdentity);
     }
-  if (rlc_bearer2release_list) 
+  if (rlc_bearer2release_list)
     for (int i=0;i<rlc_bearer2release_list->list.count;i++)
       sched_ctrl->lcid_mask |= (1<<*rlc_bearer2release_list->list.array[i]);
-    
+
 }
 
 
@@ -118,7 +118,7 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
 
    AssertFatal(CellGroup, "CellGroup is null\n");
    NR_MAC_CellGroupConfig_t   *mac_CellGroupConfig = CellGroup->mac_CellGroupConfig;
-   
+
 
    if (mac_CellGroupConfig) {
      process_drx_Config(sched_ctrl,mac_CellGroupConfig->drx_Config);
@@ -134,7 +134,7 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
 
    process_rlcBearerConfig(CellGroup->rlc_BearerToAddModList,CellGroup->rlc_BearerToReleaseList,sched_ctrl);
 
-}  
+}
 void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
@@ -452,14 +452,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL,
                 "could not allocate memory for RC.nrmac[]->common_channels[0].vrb_map_UL\n");
 
-    for (int i = 0; i < MAX_NUM_BWP; ++i) {
-      RC.nrmac[Mod_idP]->pucch_index_used[i] =
-        calloc(n, sizeof(*RC.nrmac[Mod_idP]->pucch_index_used));
-      AssertFatal(RC.nrmac[Mod_idP]->pucch_index_used[i],
-                  "could not allocate memory for RC.nrmac[]->pucch_index_used[%d]\n",
-                  i);
-    }
-
     LOG_I(NR_MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
     config_common(Mod_idP,
@@ -467,8 +459,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                   pdsch_AntennaPorts,
                   pusch_AntennaPorts,
 		  scc);
-
-    LOG_E(NR_MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
+    LOG_D(NR_MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   
     // if in nFAPI mode 
     if ( (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
@@ -489,6 +480,32 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     find_SSB_and_RO_available(Mod_idP);
 
+    const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+    const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
+    const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
+    const int nr_dlmix_slots = tdd->nrofDownlinkSlots + (tdd->nrofDownlinkSymbols != 0);
+    const int nr_ulstart_slot = tdd->nrofDownlinkSlots + (tdd->nrofUplinkSymbols == 0);
+
+    for (int slot = 0; slot < n; ++slot) {
+      /* FIXME: it seems there is a problem with slot 0/10/slots right after UL:
+       * we just get retransmissions. Thus, do not schedule such slots in DL */
+      if (slot % nr_slots_period != 0)
+        RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dlmix_slots) << (slot % 64);
+      RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);
+      LOG_D(NR_MAC, "slot %d DL %d UL %d\n",
+            slot,
+            (RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] & ((uint64_t)1 << (slot % 64))) != 0,
+            (RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] & ((uint64_t)1 << (slot % 64))) != 0);
+    }
+
+    if (get_softmodem_params()->phy_test) {
+      RC.nrmac[Mod_idP]->pre_processor_dl = nr_preprocessor_phytest;
+      RC.nrmac[Mod_idP]->pre_processor_ul = nr_ul_preprocessor_phytest;
+    } else {
+      RC.nrmac[Mod_idP]->pre_processor_dl = nr_init_fr1_dlsch_preprocessor(Mod_idP, 0);
+      RC.nrmac[Mod_idP]->pre_processor_ul = nr_init_fr1_ulsch_preprocessor(Mod_idP, 0);
+    }
+
     if (get_softmodem_params()->sa > 0) {
       NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[0];
       for (int n=0;n<NR_NB_RA_PROC_MAX;n++ ) {
@@ -506,10 +523,30 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
  
   if (CellGroup) {
 
+    const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
+
+    const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
+    if(bwpList) {
+      AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
+      for (int i = 0; i < bwpList->list.count; ++i) {
+        const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
+        calculate_preferred_dl_tda(Mod_idP, bwp);
+      }
+    }
+
+    const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
+    if(ubwpList) {
+      AssertFatal(ubwpList->list.count > 0, "downlinkBWP_ToAddModList no BWPs!\n");
+      for (int i = 0; i < ubwpList->list.count; ++i) {
+        const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
+        calculate_preferred_ul_tda(Mod_idP, ubwp);
+      }
+    }
+
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {
       const int UE_id = add_new_nr_ue(Mod_idP, rnti, CellGroup);
-      LOG_I(PHY,"Added new UE_id %d/%x with initial CellGroup\n",UE_id,rnti);
+      LOG_I(NR_MAC,"Added new UE_id %d/%x with initial CellGroup\n",UE_id,rnti);
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
     } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
       const int CC_id = 0;

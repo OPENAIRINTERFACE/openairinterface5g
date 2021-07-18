@@ -263,11 +263,11 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 
   LOG_I(PHY, "Initializing frame parms: set nb_antenna_ports_gNB %d, tdd_config, %d, Nid_cell %d\n", fp->nb_antenna_ports_gNB, fp->tdd_config, fp->Nid_cell);
 
-
   uint64_t dl_bw_khz = (12*config->carrier_config.dl_grid_size[config->ssb_config.scs_common])*(15<<config->ssb_config.scs_common);
-  LOG_I(PHY,"dl_bw_kHz %lu\n",dl_bw_khz);
   fp->dl_CarrierFreq = ((dl_bw_khz>>1) + config->carrier_config.dl_frequency)*1000 ;
-  LOG_I(PHY,"dl_CarrierFreq %lu\n",fp->dl_CarrierFreq);
+
+  LOG_D(PHY,"dl_bw_kHz %lu\n",dl_bw_khz);
+  LOG_D(PHY,"dl_CarrierFreq %lu\n",fp->dl_CarrierFreq);
 
   uint64_t ul_bw_khz = (12*config->carrier_config.ul_grid_size[config->ssb_config.scs_common])*(15<<config->ssb_config.scs_common);
   fp->ul_CarrierFreq = ((ul_bw_khz>>1) + config->carrier_config.uplink_frequency)*1000 ;

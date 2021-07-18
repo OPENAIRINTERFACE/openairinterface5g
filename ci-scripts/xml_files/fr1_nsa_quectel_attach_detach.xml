@@ -1,0 +1,168 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>TEST-NSA-FR1-TM1</htmlTabRef>
+	<htmlTabName>NSA Ping Attach Detach with QUECTEL</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>1</repeatCount>
+	<TestCaseRequestedList>
+ 030000
+ 040000
+ 000002
+ 010000
+ 000001
+ 050000
+ 000001
+ 010004
+ 000001
+ 010003
+ 000001
+ 050000
+ 000001
+ 010004
+ 000001
+ 010003
+ 000001
+ 050000
+ 000001
+ 010002
+ 080001
+ 080000
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="010000">
+		<class>Initialize_UE</class>
+		<desc>Initialize Quectel</desc>
+		<id>idefix</id>
+		<UE_Trace>yes</UE_Trace>
+	</testCase>
+
+
+	<testCase id="010002">
+		<class>Terminate_UE</class>
+		<desc>Terminate Quectel</desc>
+		<id>idefix</id>
+	</testCase>
+
+	<testCase id="010003">
+		<class>Attach_UE</class>
+		<desc>Attach Quectel</desc>
+		<id>idefix</id>
+	</testCase>
+
+	<testCase id="010004">
+		<class>Detach_UE</class>
+		<desc>Detach Quectel</desc>
+		<id>idefix</id>
+	</testCase>	
+
+
+	<testCase id="030000">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+		<air_interface>lte</air_interface>
+		<eNB_Trace>yes</eNB_Trace>
+	</testCase>
+
+
+	<testCase id="040000">
+		<class>Initialize_eNB</class>
+		<desc>Initialize gNB</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf -E -q</Initialize_eNB_args>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+		<air_interface>nr</air_interface>
+	</testCase>
+
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="000002">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>20</idle_sleep_time_in_sec>
+	</testCase>
+
+
+	<testCase id="050000">
+		<class>Ping</class>
+		<desc>Ping: 20pings in 20sec</desc>
+		<id>idefix</id>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>50</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="050001">
+		<class>Ping</class>
+		<desc>Ping: 100pings in 20sec</desc>
+		<id>idefix</id>
+		<ping_args>-c 100 -i 0.2</ping_args>
+		<ping_packetloss_threshold>50</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="070000">
+		<class>Iperf</class>
+		<desc>iperf (DL/20Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 20M -t 60</iperf_args>
+		<direction>DL</direction>
+		<id>idefix</id>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="070001">
+		<class>Iperf</class>
+		<desc>iperf (UL/3Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 3M -t 60</iperf_args>
+		<direction>UL</direction>
+		<id>idefix</id>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+
+	<testCase id="080000">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+		<air_interface>lte</air_interface>
+	</testCase>
+
+	<testCase id="080001">
+		<class>Terminate_eNB</class>
+		<desc>Terminate gNB</desc>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
+		<air_interface>nr</air_interface>
+	</testCase>
+
+</testCaseList>
+

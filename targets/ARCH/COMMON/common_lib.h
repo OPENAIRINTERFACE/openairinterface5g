@@ -561,7 +561,10 @@ extern int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **r
 extern void iqrecorder_end(openair0_device *device);
 
 
+#include <unistd.h>
+#ifndef gettid
 #define gettid() syscall(__NR_gettid)
+#endif
 /*@}*/
 
 

@@ -301,7 +301,7 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg, int Mod_id) {
     mm_msg->registration_request.fgsmobileidentity.suci.mncdigit3 =
       uicc->nmc_size==2 ? 0xf : uicc->imsiStr[3]-'0';
     mm_msg->registration_request.fgsmobileidentity.suci.mccdigit1 = uicc->imsiStr[0]-'0';
-    mm_msg->registration_request.fgsmobileidentity.suci.mccdigit2 = uicc->imsiStr[1]-'0'; 
+    mm_msg->registration_request.fgsmobileidentity.suci.mccdigit2 = uicc->imsiStr[1]-'0';
     mm_msg->registration_request.fgsmobileidentity.suci.mccdigit3 = uicc->imsiStr[2]-'0';
     memcpy(mm_msg->registration_request.fgsmobileidentity.suci.schemeoutput, uicc->imsiStr+3+uicc->nmc_size, strlen(uicc->imsiStr) - (3+uicc->nmc_size));
     size += sizeof(Suci5GSMobileIdentity_t);
@@ -733,7 +733,7 @@ void *nas_nrue_task(void *args_p)
       instance = msg_p->ittiMsgHeader.originInstance;
       Mod_id = instance ;
       uicc_t *uicc=checkUicc(Mod_id);
-      
+
       if (instance == INSTANCE_DEFAULT) {
         printf("%s:%d: FATAL: instance is INSTANCE_DEFAULT, should not happen.\n",
                __FILE__, __LINE__);
@@ -880,18 +880,18 @@ void *nas_nrue_task(void *args_p)
 
         switch(msg_type){
           case FGS_IDENTITY_REQUEST:
-	    generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3), uicc);
+	            generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3), uicc);
               break;
           case FGS_AUTHENTICATION_REQUEST:
-	    generateAuthenticationResp(&initialNasMsg, pdu_buffer, uicc);
+	            generateAuthenticationResp(&initialNasMsg, pdu_buffer, uicc);
               break;
           case FGS_SECURITY_MODE_COMMAND:
             generateSecurityModeComplete(&initialNasMsg);
             break;
-	case FGS_DOWNLINK_NAS_TRANSPORT:
-	  decodeDownlinkNASTransport(&initialNasMsg, pdu_buffer);
-	  break;
-	    
+          case FGS_DOWNLINK_NAS_TRANSPORT:
+            decodeDownlinkNASTransport(&initialNasMsg, pdu_buffer);
+            break;
+
           default:
               LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
               break;

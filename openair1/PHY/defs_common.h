@@ -945,6 +945,23 @@ extern int sync_var;
 #define DECODE_NUM_FPTR              13
 
 
+// Mask for identifying subframe for MBMS
+#define MBSFN_TDD_SF3 0x80// for TDD
+#define MBSFN_TDD_SF4 0x40
+#define MBSFN_TDD_SF7 0x20
+#define MBSFN_TDD_SF8 0x10
+#define MBSFN_TDD_SF9 0x08
+
+
+
+#define MBSFN_FDD_SF1 0x80// for FDD
+#define MBSFN_FDD_SF2 0x40
+#define MBSFN_FDD_SF3 0x20
+#define MBSFN_FDD_SF6 0x10
+#define MBSFN_FDD_SF7 0x08
+#define MBSFN_FDD_SF8 0x04
+
+
 typedef uint8_t(decoder_if_t)(int16_t *y,
                               int16_t *y2,
                               uint8_t *decoded_bytes,

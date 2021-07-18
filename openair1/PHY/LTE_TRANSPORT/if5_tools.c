@@ -33,10 +33,11 @@
 #include <time.h>
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_gNB.h"
+#include <stdio.h>
+#include "PHY/defs_RU.h"
 #include "PHY/TOOLS/alaw_lut.h"
 //#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
-#include <intertask_interface.h>
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 const uint8_t lin2alaw_if5[65536] = {213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 213, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 212, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 215, 214, 214, 214, 214, 
@@ -1369,7 +1370,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
         // HYPOTHESIS: first packet per subframe has lowest timestamp of subframe
         // should detect out of order and act accordingly ....
         AssertFatal(aid==0 || aid==1,"aid %d != 0 or 1\n",aid);
-        //LOG_I(PHY,"rxp[%d] %p, dest %p, offset %d (%lld,%lld)\n",aid,rxp[aid],rxp[aid]+(timestamp[packet_id]-timestamp[0]),(timestamp[packet_id]-timestamp[0]),timestamp[packet_id],timestamp[0]);
+        LOG_D(PHY,"rxp[%d] %p, dest %p, offset %d (%llu,%llu)\n",aid,rxp[aid],rxp[aid]+(timestamp[packet_id]-timestamp[0]),(int)(timestamp[packet_id]-timestamp[0]),(long long unsigned int)timestamp[packet_id],(long long unsigned int)timestamp[0]);
         memcpy((void*)(rxp[aid]+(timestamp[packet_id]-timestamp[0])),
                (void*)temp_rx,
                spp_eth<<2);

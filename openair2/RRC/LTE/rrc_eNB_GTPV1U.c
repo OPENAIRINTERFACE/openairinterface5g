@@ -188,7 +188,7 @@ boolean_t gtpv_data_req_new (
   
   struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt->module_id], ctxt->rnti);
   if(ue_context_p == NULL || ue_context_p->ue_context.handover_info == NULL ||
-     ue_context_p->ue_context.Status != RRC_HO_EXECUTION) {
+     ue_context_p->ue_context.StatusRrc != RRC_HO_EXECUTION) {
     LOG_E(RRC,"incoming GTP-U for X2 in non HO context\n");
     return false;
   }
@@ -215,7 +215,7 @@ boolean_t gtpv_data_req_new (
   
   /* target enb */
   //  We have 2*2=4 cases (data or end marker) * (from source, from EPC)
-  if (ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
+  if (ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED) {
     // It should come from remote eNB
     // case end marker by EPC is not possible ?
     if (task==TASK_END_MARKER) { 
@@ -249,7 +249,6 @@ boolean_t gtpv_data_req_new (
 	return result;
       } else {  /* It is from from epc message */
 	/* in the source enb, UE in RRC_HO_EXECUTION mode */
-	//MessageDef *msg;
 	// ?????
 	return true;
       }

@@ -128,6 +128,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
               // dlsch0_harq->status not ACTIVE may be due to false retransmission. Reset the 
               // following flag to skip PDSCH procedures in that case.
               dlsch0->active = 0;
+              dlsch0_harq->harq_ack.ack = 1;
+              dlsch0_harq->harq_ack.send_harq_status = 1;
             }
             dlsch0_harq->harq_ack.vDAI_DL = dlsch_config_pdu->dai;
             /* PTRS */
@@ -272,7 +274,7 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
   if(phy_config != NULL) {
       memcpy(nrUE_config,&phy_config->config_req,sizeof(fapi_nr_config_request_t));
       if (PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] == NOT_SYNCHED)
-	PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] = PRACH; 
+	      PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] = PRACH;
   }
   return 0;
 }

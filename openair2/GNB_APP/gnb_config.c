@@ -35,6 +35,7 @@
 #include "assertions.h"
 #include "gnb_config.h"
 #include "gnb_paramdef.h"
+#include "enb_paramdef.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "intertask_interface.h"
@@ -723,9 +724,10 @@ void RCconfig_nr_macrlc() {
       }else { // other midhaul
         AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
       } 
+      RC.nrmac[j]->ulsch_max_slots_inactivity = *(MacRLC_ParamList.paramarray[j][MACRLC_ULSCH_MAX_SLOTS_INACTIVITY].uptr);
     }//  for (j=0;j<RC.nb_nr_macrlc_inst;j++)
   }else {// MacRLC_ParamList.numelt > 0
-    printf("No %s configuration found \n", CONFIG_STRING_MACRLC_LIST);
+    LOG_E(PHY,"No %s configuration found\n", CONFIG_STRING_MACRLC_LIST);
     // AssertFatal (0,"No " CONFIG_STRING_MACRLC_LIST " configuration found");     
   }
 
@@ -1299,13 +1301,14 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
                 NGAP_REGISTER_GNB_REQ (msg_p).amf_ip_address[j].ipv4 = 1;
                 NGAP_REGISTER_GNB_REQ (msg_p).amf_ip_address[j].ipv6 = 1;
               }
-/* not in configuration yet ...
 
+              /* not in configuration yet ...
               if (NGParamList.paramarray[l][GNB_AMF_BROADCAST_PLMN_INDEX].iptr)
                 NGAP_REGISTER_GNB_REQ(msg_p).broadcast_plmn_num[l] = NGParamList.paramarray[l][GNB_AMF_BROADCAST_PLMN_INDEX].numelt;
               else
                 NGAP_REGISTER_GNB_REQ(msg_p).broadcast_plmn_num[l] = 0;
-*/
+              */
+
               AssertFatal(NGAP_REGISTER_GNB_REQ(msg_p).broadcast_plmn_num[l] <= NGAP_REGISTER_GNB_REQ(msg_p).num_plmn,
                           "List of broadcast PLMN to be sent to AMF can not be longer than actual "
                           "PLMN list (max %d, but is %d)\n",
@@ -1950,8 +1953,8 @@ int gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
 
           du_extract_and_decode_SI(i,
                                    si_ind,
-                                   resp->cells_to_activate[j].SI_container[si_ind],
-                                   resp->cells_to_activate[j].SI_container_length[si_ind]);
+                                   resp->cells_to_activate[j].SI_container[2+si_ind],
+                                   resp->cells_to_activate[j].SI_container_length[2+si_ind]);
         }
 
         // perform MAC/L1 common configuration
@@ -1985,8 +1988,8 @@ int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_up
 
           du_extract_and_decode_SI(i,
                                    si_ind,
-                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container[si_ind],
-                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container_length[si_ind]);
+                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container[2+si_ind],
+                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container_length[2+si_ind]);
         }
 
         // perform MAC/L1 common configuration
@@ -2084,7 +2087,7 @@ void nr_read_config_and_init(void) {
   }
 
   if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-    pdcp_layer_init_for_CU();
+    pdcp_layer_init();
 //    nr_DRB_preconfiguration(0x1234);
     rrc_init_nr_global_param();
   }

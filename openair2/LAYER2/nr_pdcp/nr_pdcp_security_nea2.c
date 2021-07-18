@@ -27,12 +27,21 @@
 #include <nettle/aes.h>
 #include <nettle/ctr.h>
 
+#ifndef NETTLE_VERSION_MAJOR
+/* hack: include bignum.h, not version.h because version.h does not exist
+ *       in old versions and bignum.h includes version.h (as of today).
+ *       May completely fail to work... maybe we should skip support of old
+ *       versions of nettle.
+ */
+#include <nettle/bignum.h>
+#endif
+
 void *nr_pdcp_security_nea2_init(unsigned char *ciphering_key)
 {
   void *ctx = calloc(1, nettle_aes128.context_size);
   if (ctx == NULL) exit(1);
 
-#if NETTLE_VERSION_MAJOR < 3
+#if !defined(NETTLE_VERSION_MAJOR) || NETTLE_VERSION_MAJOR < 3
   nettle_aes128.set_encrypt_key(ctx, 16, ciphering_key);
 #else
   nettle_aes128.set_encrypt_key(ctx, ciphering_key);

@@ -91,14 +91,16 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int scg_id,
                                      int servCellIndex,
                                      int n_physical_antenna_ports,
-                                     int initial_csi_index);
+                                     int initial_csi_index,
+                                     int uid);
 
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                            NR_ServingCellConfig_t *servingcellconfigdedicated,
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
                            int n_physical_antenna_ports,
-                           int initial_csi_index);
+                           int initial_csi_index,
+                           int uid);
 
 void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
                            int eps_bearer_id, int rb_id,
@@ -197,7 +199,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                            const uint8_t      *buffer,
                            int                buffer_length,
                            OCTET_STRING_t     *du_to_cu_rrc_container,
-			   const int          CC_id);
+                           const int          CC_id);
 
 void
 rrc_gNB_generate_dedicatedRRCReconfiguration_release(

@@ -83,7 +83,7 @@
 
 #define MAX_MAC_INST 16
 #define BCCH_PAYLOAD_SIZE_MAX 128
-#define CCCH_PAYLOAD_SIZE_MAX 128
+#define CCCH_PAYLOAD_SIZE_MAX 512 
 #define PCCH_PAYLOAD_SIZE_MAX 128
 #define RAR_PAYLOAD_SIZE_MAX 128
 
@@ -143,7 +143,10 @@
 #define MAX_SUPPORTED_BW  4
 /*!\brief CQI values range from 1 to 15 (4 bits) */
 #define CQI_VALUE_RANGE 16
-
+/*!\brief Hysteresis of PUSCH power control loop */
+#define PUSCH_PCHYST 1
+/*!\brief Hysteresis of PUCCH power control loop */
+#define PUCCH_PCHYST 1
 /*!\brief value for indicating BSR Timer is not running */
 #define MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 
@@ -615,6 +618,8 @@ typedef struct {
 
   // here for RX
   //
+
+  uint32_t ulsch_rounds[4];
   uint32_t ulsch_bitrate;
   //
   uint32_t ulsch_bytes_rx;
@@ -683,6 +688,17 @@ typedef struct {
   unsigned char lcid_sdu[NB_RB_MAX];
   // Length of SDU Got from LC DL
   uint32_t sdu_length_tx[NB_RB_MAX];
+
+  int lc_bytes_tx[64];
+  int dlsch_rounds[8];
+  int dlsch_errors;
+  int dlsch_total_bytes;
+
+  int lc_bytes_rx[64];
+  int ulsch_rounds[8];
+  int ulsch_errors;
+  int ulsch_total_bytes_scheduled;
+  int ulsch_total_bytes_rx;
 
 
   /// overall
@@ -776,7 +792,6 @@ typedef struct {
   uint32_t num_mac_sdu_rx;
   // Length of SDU Got from LC UL - Size array can be refined
   uint32_t      sdu_length_rx[NB_RB_MAX];
-
 } eNB_UE_STATS;
 /*! \brief eNB template for UE context information  */
 
@@ -982,7 +997,8 @@ typedef struct {
   uint16_t feedback_cnt[NFAPI_CC_MAX];
   uint16_t timing_advance;
   uint16_t timing_advance_r9;
-  uint8_t tpc_accumulated[NFAPI_CC_MAX];
+  int8_t pusch_tpc_accumulated[NFAPI_CC_MAX];
+  int8_t pucch_tpc_accumulated[NFAPI_CC_MAX];
   uint8_t periodic_wideband_cqi[NFAPI_CC_MAX];
   uint8_t periodic_wideband_spatial_diffcqi[NFAPI_CC_MAX];
   uint8_t periodic_wideband_pmi[NFAPI_CC_MAX];
@@ -1176,6 +1192,8 @@ typedef struct {
   rnti_t rnti;
   ///remove UE context flag
   boolean_t removeContextFlg;
+  ///remove RA flag
+  boolean_t raFlag;
 } UE_free_ctrl_t;
 /*! \brief REMOVE UE list used by eNB to order UEs/CC for deleting*/
 typedef struct {
@@ -1342,6 +1360,7 @@ typedef struct {
   uint8_t FeMBMS_flag;
 } COMMON_channels_t;
 /*! \brief top level eNB MAC structure */
+
 typedef struct eNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
   eth_params_t eth_params_n;
@@ -1435,6 +1454,17 @@ typedef struct eNB_MAC_INST_s {
 
   int32_t puSch10xSnr;
   int32_t puCch10xSnr;
+
+  int max_ul_rb_index;
+
+  int ue_multiple_max;
+
+  int use_mcs_offset;
+
+  double bler_lower;
+
+  double bler_upper;
+  pthread_t mac_stats_thread;
 } eNB_MAC_INST;
 
 /*

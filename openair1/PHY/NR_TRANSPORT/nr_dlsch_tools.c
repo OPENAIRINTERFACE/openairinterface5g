@@ -260,7 +260,7 @@ int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
    int16_t first_free_index=-1;
  
    AssertFatal(gNB!=NULL,"gNB is null\n");
-   for (i=0; i<NUMBER_OF_NR_DLSCH_MAX; i++) {
+   for (i=0; i<gNB->number_of_nr_dlsch_max; i++) {
      AssertFatal(gNB->dlsch[i]!=NULL,"gNB->dlsch[%d] is null\n",i);
      AssertFatal(gNB->dlsch[i][0]!=NULL,"gNB->dlsch[%d][0] is null\n",i);
      LOG_D(PHY,"searching for rnti %x : dlsch_index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,
@@ -286,7 +286,7 @@ void nr_fill_dlsch(PHY_VARS_gNB *gNB,
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &pdsch_pdu->pdsch_pdu_rel15;
  
   int dlsch_id = find_nr_dlsch(rel15->rnti,gNB,SEARCH_EXIST);
-  AssertFatal( (dlsch_id>=0) && (dlsch_id<NUMBER_OF_NR_DLSCH_MAX),
+  AssertFatal( (dlsch_id>=0) && (dlsch_id<gNB->number_of_nr_dlsch_max),
               "illegal or no dlsch_id found!!! rnti %04x dlsch_id %d\n",rel15->rnti,dlsch_id);
   NR_gNB_DLSCH_t  *dlsch = gNB->dlsch[dlsch_id][0];
   NR_DL_gNB_HARQ_t *harq  = &dlsch->harq_process;

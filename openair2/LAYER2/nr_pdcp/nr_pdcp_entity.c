@@ -49,8 +49,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     return;
   }
 
-  if (entity->type != NR_PDCP_SRB &&
-      !(buffer[0] & 0x80)) {
+  if (entity->type != NR_PDCP_SRB && !(buffer[0] & 0x80)) {
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
@@ -65,9 +64,9 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
                 buffer[2];
     header_size = 3;
   }
+
   /* SRBs always have MAC-I, even if integrity is not active */
-  if ( entity->has_integrity ||
-       entity->type == NR_PDCP_SRB) {
+  if (entity->has_integrity || entity->type == NR_PDCP_SRB) {
     integrity_size = 4;
   } else {
     integrity_size = 0;
@@ -79,7 +78,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
   }
 
   rx_deliv_sn  = entity->rx_deliv & entity->sn_max;
-  rx_deliv_hfn = (entity->rx_deliv >> entity->sn_size) & ~entity->sn_max;
+  rx_deliv_hfn = entity->rx_deliv >> entity->sn_size;
 
   if (rcvd_sn < rx_deliv_sn - entity->window_size) {
     rcvd_hfn = rx_deliv_hfn + 1;
@@ -139,7 +138,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     entity->rx_deliv = count;
   }
 
-  if (entity->t_reordering_start != 0 && entity->rx_deliv > entity->rx_reord) {
+  if (entity->t_reordering_start != 0 && entity->rx_deliv >= entity->rx_reord) {
     /* stop and reset t-Reordering */
     entity->t_reordering_start = 0;
   }
@@ -182,8 +181,7 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
   }
 
   /* SRBs always have MAC-I, even if integrity is not active */
-  if (entity->has_integrity
-      || entity->type == NR_PDCP_SRB) {
+  if (entity->has_integrity || entity->type == NR_PDCP_SRB) {
     integrity_size = 4;
   } else {
     integrity_size = 0;
@@ -196,8 +194,9 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
                       (unsigned char *)buf + header_size + size,
                       (unsigned char *)buf, header_size + size,
                       entity->rb_id, count, entity->is_gnb ? 1 : 0);
+
+  // set MAC-I to 0 for SRBs with integrity not active
   else if (integrity_size == 4)
-    /* set MAC-I to 0 for SRBs with integrity not active */
     memset(buf + header_size + size, 0, 4);
 
   if (entity->has_ciphering)
@@ -271,6 +270,10 @@ static void nr_pdcp_entity_set_security(nr_pdcp_entity_t *entity,
 static void check_t_reordering(nr_pdcp_entity_t *entity)
 {
   uint32_t count;
+
+  /* if t_reordering is set to "infinity" (seen as -1) then do nothing */
+  if (entity->t_reordering == -1)
+    return;
 
   if (entity->t_reordering_start == 0
       || entity->t_current <= entity->t_reordering_start + entity->t_reordering)

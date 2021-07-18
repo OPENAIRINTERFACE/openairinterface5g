@@ -771,7 +771,10 @@ int ngap_gNB_initial_ctxt_resp(
       //item->pDUSessionResourceSetupResponseTransfer.buf = res.buffer;
       //item->pDUSessionResourceSetupResponseTransfer.size = res.result.encoded;
 
-      xer_fprint(stdout, &asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
+      if (asn1_xer_print) {
+        xer_fprint(stdout, &asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
+      }
+
       memset(pdusessionTransfer_buffer, 0, 1000);
       asn_enc_rval_t  enc_rval = aper_encode_to_buffer(&asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, 
           NULL, 
@@ -858,7 +861,9 @@ int ngap_gNB_initial_ctxt_resp(
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
-  xer_fprint(stdout, &asn_DEF_NGAP_NGAP_PDU, &pdu);
+  if (asn1_xer_print) {
+    xer_fprint(stdout, &asn_DEF_NGAP_NGAP_PDU, &pdu);
+  }
 
   if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     NGAP_ERROR("Failed to encode InitialContextSetupResponse\n");

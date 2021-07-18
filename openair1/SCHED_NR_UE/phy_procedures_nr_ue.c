@@ -142,7 +142,7 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
     case FAPI_NR_RX_PDU_TYPE_SSB:
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.pdu = ue->pbch_vars[gNB_id]->decoded_output;
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.additional_bits = ue->pbch_vars[gNB_id]->xtra_byte;
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_index = frame_parms->ssb_index;
+      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_index = (frame_parms->ssb_index)&0x7;
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_length = frame_parms->Lmax;
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.cell_id = frame_parms->Nid_cell;
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_start_subcarrier = frame_parms->ssb_start_subcarrier;
@@ -276,23 +276,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
         nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, proc->thread_id, gNB_id);
     }
 
-    if (get_softmodem_params()->usim_test==0) {
-      pucch_procedures_ue_nr(ue,
-                             gNB_id,
-                             proc,
-                             FALSE);
-    }
-
-    nr_ue_pusch_common_procedures(ue,
-                                  slot_tx,
-                                  &ue->frame_parms,1);
-
   }
-
-  if (ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH) {
-    nr_ue_prach_procedures(ue, proc, gNB_id);
-  }
-  LOG_D(PHY,"****** end TX-Chain (%s) for AbsSubframe %d.%d ******\n", nr_mode_string[ue->UE_mode[gNB_id]],frame_tx, slot_tx);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
@@ -367,7 +351,7 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
-  LOG_D(PHY,"[UE  %d] Frame %d, Trying PBCH (NidCell %d, gNB_id %d)\n",ue->Mod_id,frame_rx,ue->frame_parms.Nid_cell,gNB_id);
+  LOG_D(PHY,"[UE  %d] Frame %d Slot %d, Trying PBCH (NidCell %d, gNB_id %d)\n",ue->Mod_id,frame_rx,nr_slot_rx,ue->frame_parms.Nid_cell,gNB_id);
 
   ret = nr_rx_pbch(ue, proc,
 		   ue->pbch_vars[gNB_id],
@@ -434,8 +418,13 @@ void nr_ue_pbch_procedures(uint8_t gNB_id,
     ue->pbch_vars[gNB_id]->pdu_errors++;
 
     if (ue->pbch_vars[gNB_id]->pdu_errors_conseq>=100) {
-      LOG_E(PHY,"More that 100 consecutive PBCH errors! Exiting!\n");
-      exit_fun("More that 100 consecutive PBCH errors! Exiting!\n");
+      if (get_softmodem_params()->non_stop) {
+        LOG_E(PHY,"More that 100 consecutive PBCH errors! Going back to Sync mode!\n");
+        ue->lost_sync = 1;
+      } else {
+        LOG_E(PHY,"More that 100 consecutive PBCH errors! Exiting!\n");
+        exit_fun("More that 100 consecutive PBCH errors! Exiting!\n");
+      }
     }
   }
 
@@ -1614,7 +1603,8 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           uint8_t dlsch_parallel
+                           uint8_t dlsch_parallel,
+                           notifiedFIFO_t *txFifo
                            )
 {                                         
   int frame_rx = proc->frame_rx;
@@ -1772,6 +1762,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
 #endif //NR_PDCCH_SCHED
 
+  // Start PUSCH processing here. It runs in parallel with PDSCH processing
+  notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), proc->nr_slot_tx,txFifo,processSlotTX);
+  nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(newElt);
+  curMsg->proc = *proc;
+  curMsg->UE = ue;
+  pushTpool(&(get_nrUE_params()->Tpool), newElt);
+
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat);
 #endif
@@ -1903,6 +1900,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
 
  }
+
 #if UE_TIMING_TRACE
 start_meas(&ue->generic_stat);
 #endif
@@ -2063,7 +2061,6 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     prach_resources->init_msg1 = 1;
 
   } else {
-
 
     nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
     LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources : %d\n", __FUNCTION__, frame_tx, nr_slot_tx,nr_prach);

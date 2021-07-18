@@ -28,6 +28,7 @@
  * \email: raymond.knopp@eurecom.fr, kroempa@gmail.com
  */
 
+#include <f1ap_du_rrc_message_transfer.h>
 #include "platform_types.h"
 #include "nr_rrc_defs.h"
 #include "nr_rrc_extern.h"
@@ -167,7 +168,7 @@ nr_rrc_data_req(
 //------------------------------------------------------------------------------
 {
   if(sdu_sizeP == 255) {
-    LOG_I(NR_RRC,"sdu_sizeP == 255");
+    LOG_D(RRC,"sdu_sizeP == 255");
     return FALSE;
   }
 
@@ -333,7 +334,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
 
     int sdu2_len = (enc_rval.encoded+7)/8;
     if (enc_rval.encoded == -1) {
-      LOG_I(F1AP,"Could not encoded cellGroupConfig, failed element %s\n",enc_rval.failed_type->name);
+      LOG_E(F1AP,"Could not encoded cellGroupConfig, failed element %s\n",enc_rval.failed_type->name);
       exit(-1);
     }
     /* do ITTI message */
@@ -344,7 +345,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
       rntiP,
       sduP,
       sdu_lenP,
-      sdu2,
+      (const int8_t*)sdu2,
       sdu2_len
     );
     return(0);
@@ -364,7 +365,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
   return 0;
 }
 
-void nr_mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
+void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,
                             const int CC_idP,
                             const frame_t frameP,
                             const sub_frame_t subframeP,
@@ -375,11 +376,10 @@ void nr_mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
                    rntiP);
 
   if (ue_context_p != NULL) {
-    LOG_I(RRC,"Frame %d, Subframe %d: UE %x UL failure, activating timer\n",frameP,subframeP,rntiP);
-
+    LOG_D(RRC,"Frame %d, Subframe %d: UE %x UL failure, activating timer\n",frameP,subframeP,rntiP);
     if(ue_context_p->ue_context.ul_failure_timer == 0)
       ue_context_p->ue_context.ul_failure_timer=1;
   } else {
-    LOG_W(RRC,"Frame %d, Subframe %d: UL failure: UE %x unknown \n",frameP,subframeP,rntiP);
+    LOG_D(RRC,"Frame %d, Subframe %d: UL failure: UE %x unknown \n",frameP,subframeP,rntiP);
   }
 }

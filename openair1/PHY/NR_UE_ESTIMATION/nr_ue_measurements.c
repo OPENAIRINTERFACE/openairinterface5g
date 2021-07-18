@@ -180,11 +180,11 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
     ue->measurements.wideband_cqi_avg[gNB_id] = dB_fixed2(ue->measurements.rx_power_avg[gNB_id], ue->measurements.n0_power_avg);
     ue->measurements.rx_rssi_dBm[gNB_id] = ue->measurements.rx_power_avg_dB[gNB_id] + 30 - 10*log10(pow(2, 30)) - ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) - dB_fixed(ue->frame_parms.ofdm_symbol_size);
 
-    LOG_I(PHY, "[gNB %d] Slot %d, RSSI %d dBm/RE, RSSI (digital) %d dB, WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d \n",
+    LOG_D(PHY, "[gNB %d] Slot %d, RSSI %d dB (%d dBm/RE), WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d\n",
       gNB_id,
       slot,
-      ue->measurements.rx_rssi_dBm[gNB_id],
       ue->measurements.rx_power_avg_dB[gNB_id],
+      ue->measurements.rx_rssi_dBm[gNB_id],
       ue->measurements.wideband_cqi_avg[gNB_id],
       ue->measurements.rx_power_avg[gNB_id],
       ue->measurements.n0_power_tot);

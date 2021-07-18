@@ -464,6 +464,7 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHI
       write_package[end].buff[i]    = buff[i];
     write_thread->count_write++;
     write_thread->end = (write_thread->end + 1)% MAX_WRITE_THREAD_PACKAGE;
+    LOG_D(HW,"Signaling TX TS %llu\n",(unsigned long long)timestamp);
     pthread_cond_signal(&write_thread->cond_write);
     pthread_mutex_unlock(&write_thread->mutex_write);
     return 0;
@@ -633,6 +634,19 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   int16x8_t buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #endif
 
+  int rxshift;
+  switch (device->type) {
+     case USRP_B200_DEV:
+        rxshift=4;
+        break;
+     case USRP_X300_DEV:
+     case USRP_N300_DEV:
+        rxshift=2;
+        break;
+     default:
+       AssertFatal(1==0,"Shouldn't be here\n");
+  }
+
     samples_received=0;
     while (samples_received != nsamps) {
 
@@ -666,17 +680,17 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
 
         if ((((uintptr_t) buff[i])&0x1F)==0) {
-          ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
+          ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
         } else {
-          ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],4);
-          ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],4);
+          ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],rxshift);
+          ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],rxshift);
         }
 
 #else
-        ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
+        ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
 #endif
 #elif defined(__arm__)
-        ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],4);
+        ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
 #endif
       }
     }
@@ -1239,10 +1253,14 @@ extern "C" {
       set_rx_gain_offset(&openair0_cfg[0],i,bw_gain_adjust);
       ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(i);
       // limit to maximum gain
-      AssertFatal( openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] <= gain_range.stop(),
-                   "RX Gain too high, lower by %f dB\n",
-                   openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] - gain_range.stop());
-      s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],i);
+      double gain=openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i];
+      if ( gain > gain_range.stop())  {
+                   LOG_E(HW,"RX Gain too high, lower by %f dB\n",
+                   gain - gain_range.stop());
+               gain=gain_range.stop();
+      }
+
+      s->usrp->set_rx_gain(gain,i);
       LOG_I(HW,"RX Gain %d %f (%f) => %f (max %f)\n",i,
             openair0_cfg[0].rx_gain[i],openair0_cfg[0].rx_gain_offset[i],
             openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],gain_range.stop());
@@ -1284,8 +1302,10 @@ extern "C" {
   LOG_I(HW,"rx_max_num_samps %zu\n",
         s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
 
-  for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++)
+  for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++) {
+    LOG_I(HW,"setting rx channel %d\n",i);
     stream_args_rx.channels.push_back(i);
+  }
 
   s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
   uhd::stream_args_t stream_args_tx("sc16", "sc16");

@@ -83,7 +83,7 @@ nr_mac_rrc_data_ind_ue(
 
       case CCCH:
         if (pdu_len>0) {
-          LOG_I(NR_RRC,"[UE %d] Received SDU for CCCH on SRB %u from gNB %d\n",module_id,channel & RAB_OFFSET,gNB_index);
+          LOG_T(NR_RRC,"[UE %d] Received SDU for CCCH on SRB %u from gNB %d\n",module_id,channel & RAB_OFFSET,gNB_index);
 
           MessageDef *message_p;
           int msg_sdu_size = CCCH_SDU_SIZE;
@@ -129,13 +129,12 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
       //NR_UE_rrc_inst[Mod_idP].Info[gNB_id].T300_active = 1;
       //NR_UE_rrc_inst[Mod_idP].Info[gNB_id].T300_cnt = 0;
 
-      LOG_I(NR_RRC, "nr_mac_rrc_data_req_ue: Payload size = %i\n", NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size);
+      LOG_D(NR_RRC, "nr_mac_rrc_data_req_ue: Payload size = %i\n", NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size);
       memcpy(buffer_pP, (uint8_t*)NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.Payload, NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size);
       for(int i = 0; i<NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size; i++) {
-        //LOG_I(NR_RRC,"(%i): %i\n", i, buffer_pP[i]);
-	printf("%02x ",buffer_pP[i]);
+        LOG_D(NR_RRC,"(%i): %i\n", i, buffer_pP[i]);
       }
-      printf("\n");
+
       return NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size;
 
     case DCCH:
@@ -163,11 +162,8 @@ rrc_data_req_ue(
     MessageDef *message_p;
     // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
     uint8_t *message_buffer;
-    message_buffer = itti_malloc (
-                       TASK_RRC_UE,
-                       TASK_PDCP_UE,
-                       sdu_sizeP);
-    LOG_I(RRC,"Sending RRC message for SRB %ld, sdu_size %d\n",rb_idP,sdu_sizeP); 
+    message_buffer = itti_malloc (TASK_RRC_UE, TASK_PDCP_UE, sdu_sizeP);
+    LOG_D(RRC,"Sending RRC message for SRB %ld, sdu_size %d\n",rb_idP, sdu_sizeP);
     memcpy (message_buffer, buffer_pP, sdu_sizeP);
     message_p = itti_alloc_new_message ( TASK_RRC_UE, 0, RRC_DCCH_DATA_REQ);
     RRC_DCCH_DATA_REQ (message_p).frame     = ctxt_pP->frame;

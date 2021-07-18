@@ -109,7 +109,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
   AssertFatal(ie!=NULL,"RRCContainer is missing\n");
   // create an ITTI message and copy SDU
-  if (RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
+  if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
     message_p = itti_alloc_new_message (TASK_CU_F1, 0, NR_RRC_MAC_CCCH_DATA_IND);
     memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
     ccch_sdu_len = ie->value.choice.RRCContainer.size;
@@ -123,32 +123,35 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
            ccch_sdu_len);
   }
 
-  LOG_I(F1AP, "%s() RRCContainer (CCCH) size %ld: ", __func__,
-        ie->value.choice.RRCContainer.size);
-  for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
-    printf("%02x ", RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
-  printf("\n");
+  if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
 
-  /* DUtoCURRCContainer */
-  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
-                             F1AP_ProtocolIE_ID_id_DUtoCURRCContainer, true);
-  if (ie) {
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container = malloc(sizeof(OCTET_STRING_t));
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->size = ie->value.choice.DUtoCURRCContainer.size;
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf = malloc(ie->value.choice.DUtoCURRCContainer.size);
-    memcpy(NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf,
-	   ie->value.choice.DUtoCURRCContainer.buf,
-	   ie->value.choice.DUtoCURRCContainer.size);
+    LOG_D(F1AP, "%s() RRCContainer (CCCH) size %ld: ", __func__, ie->value.choice.RRCContainer.size);
+    //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+    //  printf("%02x ", RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+    //printf("\n");
 
+    /* DUtoCURRCContainer */
+    F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
+                               F1AP_ProtocolIE_ID_id_DUtoCURRCContainer, true);
+    if (ie) {
+      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container = malloc(sizeof(OCTET_STRING_t));
+      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->size = ie->value.choice.DUtoCURRCContainer.size;
+      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf = malloc(
+          ie->value.choice.DUtoCURRCContainer.size);
+      memcpy(NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf,
+             ie->value.choice.DUtoCURRCContainer.buf,
+             ie->value.choice.DUtoCURRCContainer.size);
+    }
   }
+
   // Find instance from nr_cellid
   int rrc_inst = -1;
-  if (RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
+  if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
     for (int i=0;i<RC.nb_nr_inst;i++) {
       // first get RRC instance (note, no the ITTI instance)
       gNB_RRC_INST *rrc = RC.nrrrc[i];
       if (rrc->nr_cellid == nr_cellid) {
-        rrc_inst = i; 
+        rrc_inst = i;
         break;
       }
     }
@@ -157,12 +160,11 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
           // first get RRC instance (note, no the ITTI instance)
       eNB_RRC_INST *rrc = RC.rrc[i];
       if (rrc->nr_cellid == nr_cellid) {
-        rrc_inst = i; 
+        rrc_inst = i;
         break;
       }
     }
   }
-
   AssertFatal(rrc_inst>=0,"couldn't find an RRC instance for nr_cell %llu\n",(unsigned long long int)nr_cellid);
 
   int f1ap_uid = f1ap_add_ue(&f1ap_cu_inst[rrc_inst], rrc_inst, CC_id, 0, rnti);
@@ -173,21 +175,21 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   }
   f1ap_cu_inst[rrc_inst].f1ap_ue[f1ap_uid].du_ue_f1ap_id = du_ue_f1ap_id;
 
-  if (RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0; 
+  if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0;
     NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = 0;
     NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = ccch_sdu_len;
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = rrc_inst; // CU instance 
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = rrc_inst; // CU instance
     NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id     = CC_id; 
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id     = CC_id;
     itti_send_msg_to_task (TASK_RRC_GNB, instance, message_p);
   } else {
-    RRC_MAC_CCCH_DATA_IND (message_p).frame      = 0; 
+    RRC_MAC_CCCH_DATA_IND (message_p).frame      = 0;
     RRC_MAC_CCCH_DATA_IND (message_p).sub_frame  = 0;
     RRC_MAC_CCCH_DATA_IND (message_p).sdu_size   = ccch_sdu_len;
-    RRC_MAC_CCCH_DATA_IND (message_p).enb_index  = rrc_inst; // CU instance 
+    RRC_MAC_CCCH_DATA_IND (message_p).enb_index  = rrc_inst; // CU instance
     RRC_MAC_CCCH_DATA_IND (message_p).rnti       = rnti;
-    RRC_MAC_CCCH_DATA_IND (message_p).CC_id      = CC_id; 
+    RRC_MAC_CCCH_DATA_IND (message_p).CC_id      = CC_id;
     itti_send_msg_to_task (TASK_RRC_ENB, instance, message_p);
   }
 
@@ -205,7 +207,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
                                     {
 
   LOG_D(F1AP, "CU send DL_RRC_MESSAGE_TRANSFER \n");
-  F1AP_F1AP_PDU_t                 pdu; 
+  F1AP_F1AP_PDU_t                 pdu;
   F1AP_DLRRCMessageTransfer_t    *out;
   F1AP_DLRRCMessageTransferIEs_t *ie;
 
@@ -286,33 +288,33 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_dl_rrc->rrc_container, f1ap_dl_rrc->rrc_container_length);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, f1ap_dl_rrc->rrc_container_length);
-  for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
-   printf("%02x ", f1ap_dl_rrc->rrc_container[i]);
-  printf("\n");
+  if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU) {
+    LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, f1ap_dl_rrc->rrc_container_length);
+    for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+      printf("%02x ", f1ap_dl_rrc->rrc_container[i]);
+    printf("\n");
+  }
 
   /* optional */
   /* c7. RAT_FrequencyPriorityInformation */
   /* TODO */ 
-  if (0) {
-    int endc=1;
-    ie = (F1AP_DLRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_DLRRCMessageTransferIEs_t));
-    ie->id                            = F1AP_ProtocolIE_ID_id_RAT_FrequencyPriorityInformation;
-    ie->criticality                   = F1AP_Criticality_reject;
-    ie->value.present                 = F1AP_DLRRCMessageTransferIEs__value_PR_RAT_FrequencyPriorityInformation;
-    if (endc==1) {
-      ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_eNDC;
-      ie->value.choice.RAT_FrequencyPriorityInformation.choice.eNDC = 123L;
-    }
-    else {
-      ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_nGRAN;
-      ie->value.choice.RAT_FrequencyPriorityInformation.choice.nGRAN = 11L;
-    }
-      //ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_rAT_FrequencySelectionPriority;
-      //ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority = 123L;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  int endc=1;
+  ie = (F1AP_DLRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_DLRRCMessageTransferIEs_t));
+  ie->id                            = F1AP_ProtocolIE_ID_id_RAT_FrequencyPriorityInformation;
+  ie->criticality                   = F1AP_Criticality_reject;
+  ie->value.present                 = F1AP_DLRRCMessageTransferIEs__value_PR_RAT_FrequencyPriorityInformation;
+  if (endc==1) {
+    ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_eNDC;
+    ie->value.choice.RAT_FrequencyPriorityInformation.choice.eNDC = 123L;
   }
-
+  else {
+    ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_nGRAN;
+    ie->value.choice.RAT_FrequencyPriorityInformation.choice.nGRAN = 11L;
+  }
+    //ie->value.choice.RAT_FrequencyPriorityInformation.present = F1AP_RAT_FrequencyPriorityInformation_PR_rAT_FrequencySelectionPriority;
+    //ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority = 123L;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+ 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 DL RRC MESSAGE TRANSFER \n");
@@ -337,7 +339,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   
   F1AP_ULRRCMessageTransfer_t    *container;
   F1AP_ULRRCMessageTransferIEs_t *ie;
-  
+
   uint64_t        cu_ue_f1ap_id;
   uint64_t        du_ue_f1ap_id;
   uint64_t        srb_id;
