@@ -69,6 +69,7 @@
 #define CONFIG_HLP_EXMCAL        "Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n"
 #define CONFIG_HLP_ITTIL         "Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n"
 #define CONFIG_HLP_DLMCS_PHYTEST "Set the downlink MCS for PHYTEST mode\n"
+#define CONFIG_HLP_DLNL_PHYTEST "Set the downlink nrOfLayers for PHYTEST mode\n"
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
 #define CONFIG_HLP_PRB           "Set the PRB, valid values: 6, 25, 50, 100  \n"
 #define CONFIG_HLP_MSLOTS        "Skip the missed slots/subframes \n"
