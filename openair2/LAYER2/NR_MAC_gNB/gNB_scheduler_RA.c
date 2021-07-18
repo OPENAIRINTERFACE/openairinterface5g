@@ -1180,7 +1180,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     NR_BWP_Downlink_t *bwp = NULL;
     NR_ControlResourceSet_t *coreset = NULL;
-    NR_BWP_t *genericParameters = NULL;
     NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList=NULL;
 
     if (ra->CellGroup &&
@@ -1189,11 +1188,9 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
         ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList &&
         ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]) {
       bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
-      genericParameters = &bwp->bwp_Common->genericParameters;
       pdsch_TimeDomainAllocationList = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     }
     else {
-      genericParameters= &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     }
     coreset = get_coreset(scc,bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);

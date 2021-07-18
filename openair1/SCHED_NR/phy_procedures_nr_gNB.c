@@ -737,10 +737,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     }
   }
   stop_meas(&gNB->phy_proc_rx);
-  // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
-  if ((frame_rx&127) == 0 && slot_rx==19) {
-    LOG_I(PHY, "Number of bad PUCCH received: %lu\n", gNB->bad_pucch);
-  }
 
   if (pucch_decode_done || pusch_decode_done) {
     T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));

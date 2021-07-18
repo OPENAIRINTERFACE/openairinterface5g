@@ -45,7 +45,7 @@
 #include "SIMULATION/TOOLS/sim.h"
 #include "executables/softmodem-common.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
-
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #define false 0
 #define true 1
 
@@ -66,6 +66,8 @@ void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0,
 
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
   int num_slot_per_frame = 10*(1<<ssbSubcarrierSpacing);
+  LOG_I(NR_RRC,"num_slot_per_frame %d, ssb_subcarrier_offset %d,ssb_start_symbol %d, ssbSubcarrierSpacing %d, frequency_range %d, ssboffset_pointa %d\n",
+	num_slot_per_frame,ssb_subcarrier_offset,ssb_start_symbol,ssbSubcarrierSpacing,frequency_range,ssboffset_pointa);
   get_type0_PDCCH_CSS_config_parameters(&type0_PDCCH_CSS_config,
                                         0,
                                         mib,

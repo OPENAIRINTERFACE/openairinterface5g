@@ -3281,10 +3281,10 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
   type0_PDCCH_CSS_config->num_rbs = -1;
   type0_PDCCH_CSS_config->num_symbols = -1;
   type0_PDCCH_CSS_config->rb_offset = -1;
-  LOG_D(NR_MAC,"scs_ssb %d, scs_pdcch %d\n",scs_ssb,scs_pdcch);
+  LOG_D(NR_MAC,"NR_SubcarrierSpacing_kHz30 %d, scs_ssb %d, scs_pdcch %d, min_chan_bw %d\n",(int)NR_SubcarrierSpacing_kHz30,(int)scs_ssb,(int)scs_pdcch,min_channel_bw);
 
   //  type0-pdcch coreset
-  switch( (scs_ssb << 3) | scs_pdcch ){
+  switch( ((int)scs_ssb << 3) | (int)scs_pdcch ){
     case (NR_SubcarrierSpacing_kHz15 << 5) | NR_SubcarrierSpacing_kHz15:
       AssertFatal(index_4msb < 15, "38.213 Table 13-1 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3317,7 +3317,7 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
       }else{ ; }
 
       break;
-
+ 
     case (NR_SubcarrierSpacing_kHz30 << 3) | NR_SubcarrierSpacing_kHz30:
       if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3394,13 +3394,14 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
       break;
 
     default:
+      LOG_E(NR_MAC,"NR_SubcarrierSpacing_kHz30 %d, scs_ssb %d, scs_pdcch %d, min_chan_bw %d\n",NR_SubcarrierSpacing_kHz30,(int)scs_ssb,(int)scs_pdcch,min_channel_bw);
       break;
   }
 
   LOG_D(NR_MAC,"Coreset0: index_4msb=%d, num_rbs=%d, num_symb=%d, rb_offset=%d\n",
         index_4msb,type0_PDCCH_CSS_config->num_rbs,type0_PDCCH_CSS_config->num_symbols,type0_PDCCH_CSS_config->rb_offset );
 
-  AssertFatal(type0_PDCCH_CSS_config->num_rbs != -1, "Type0 PDCCH coreset num_rbs undefined");
+  AssertFatal(type0_PDCCH_CSS_config->num_rbs != -1, "Type0 PDCCH coreset num_rbs undefined, index_4msb=%d, min_channel_bw %d, scs_ssb %d, scs_pdcch %d\n",index_4msb,min_channel_bw,(int)scs_ssb,(int)scs_pdcch);
   AssertFatal(type0_PDCCH_CSS_config->num_symbols != -1, "Type0 PDCCH coreset num_symbols undefined");
   AssertFatal(type0_PDCCH_CSS_config->rb_offset != -1, "Type0 PDCCH coreset rb_offset undefined");
 
