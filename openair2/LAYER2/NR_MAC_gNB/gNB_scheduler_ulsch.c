@@ -1575,7 +1575,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       n_ubwp = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
 
     config_uldci(sched_ctrl->active_ubwp,
-		             scc,
+                 scc,
                  pusch_pdu,
                  &uldci_payload,
                  ps->dci_format,

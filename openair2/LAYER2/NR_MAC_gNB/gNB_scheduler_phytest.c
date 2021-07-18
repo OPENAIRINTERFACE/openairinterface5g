@@ -284,6 +284,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = 0;
   int rbSize = 0;
+  if (target_dl_bw>bwpSize)
+    target_dl_bw = bwpSize;
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   /* loop ensures that we allocate exactly target_dl_bw, or return */
   while (true) {
@@ -445,7 +447,16 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
     nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
 
   uint16_t rbStart = 0;
-  uint16_t rbSize = target_ul_bw;
+  uint16_t rbSize;
+
+  const int bw = NRRIV2BW(sched_ctrl->active_ubwp ?
+			  sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth :
+			  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+  if (target_ul_bw>bw)
+    rbSize = bw;
+  else
+    rbSize = target_ul_bw;
 
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
