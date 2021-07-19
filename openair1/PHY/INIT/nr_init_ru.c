@@ -142,8 +142,8 @@ int nr_phy_init_RU(RU_t *ru) {
             AssertFatal(ru->bw_list[i],"ru->bw_list[%d] is null\n",i);
             for (re=0; re<fp->ofdm_symbol_size; re++)
               ru->beam_weights[i][p][j][re] = ru->bw_list[i][l_ind];
-              //printf("Beam Weight %08x for beam %d and tx %d\n",ru->bw_list[i][l_ind],p,j);
-              l_ind++;
+            //printf("Beam Weight %08x for beam %d and tx %d\n",ru->bw_list[i][l_ind],p,j);
+            l_ind++;
           } // for j
           //}
         } // for p
