@@ -13,6 +13,21 @@ idefix:
   HostUsername : oaicicd
   HostPassword : oaicicd
   HostSourceCodePath : none
+nrmodule2_quectel:
+  ID: nrmodule2_quectel
+  State : enabled
+  Kind : quectel
+  Process :
+    Name : quectel-CM
+    Cmd : /home/nrmodule2/quectel-CM/quectel-CM -s oai.ipv4 -4
+  WakeupScript : ci_ctl_qtel.py /dev/ttyUSB7 wup
+  DetachScript : ci_ctl_qtel.py /dev/ttyUSB7 detach
+  PLMN : 20899 
+  UENetwork : wwan1
+  HostIPAddress : 192.168.18.189
+  HostUsername : nrmodule2 
+  HostPassword : linux 
+  HostSourceCodePath : none
 dummy:
   ID: ''
   State : ''
