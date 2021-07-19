@@ -52,7 +52,8 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
                      int32_t *output,
                      unsigned short p,
                      unsigned char lp,
-                     unsigned short nb_pdsch_rb);
+                     unsigned short nb_pdsch_rb,
+                     uint8_t config_type);
 
 void nr_gold_pbch(PHY_VARS_NR_UE* ue);
 

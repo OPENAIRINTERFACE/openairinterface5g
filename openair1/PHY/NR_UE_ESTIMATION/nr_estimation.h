@@ -34,17 +34,14 @@
 
 /*!
 \brief This function performs channel estimation including frequency and temporal interpolation
-\param phy_vars_ue Pointer to UE PHY variables
-\param eNB_id Index of target eNB
-\param eNB_offset Offset for interfering eNB (in terms cell ID mod 3)
+\param ue Pointer to UE PHY variables
+\param gNB_id Index of target gNB
 \param Ns slot number (0..19)
-\param p antenna port
-\param l symbol within slot
-\param symbol symbol within frame
+\param symbol symbol within slot
 */
 int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 UE_nr_rxtx_proc_t *proc,
-                                uint8_t eNB_offset,
+                                uint8_t gNB_id,
                                 unsigned char Ns,
                                 unsigned char symbol,
                                 unsigned short coreset_start_subcarrier,
@@ -52,7 +49,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              UE_nr_rxtx_proc_t *proc,
-                             uint8_t eNB_offset,
+                             uint8_t gNB_id,
                              unsigned char Ns,
                              unsigned char symbol,
                              int dmrss,
@@ -60,7 +57,7 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                UE_nr_rxtx_proc_t *proc,
-                               uint8_t eNB_offset,
+                               uint8_t gNB_id,
                                unsigned char Ns,
                                unsigned char symbol,
                                int dmrss,
@@ -69,7 +66,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 UE_nr_rxtx_proc_t *proc,
-                                uint8_t eNB_offset,
+                                uint8_t gNB_id,
                                 bool is_SI,
                                 unsigned char Ns,
                                 unsigned short p,
@@ -80,7 +77,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                         PHY_VARS_NR_UE *ue,
-                        module_id_t eNB_id,
+                        module_id_t gNB_id,
                         uint8_t frame,
                         uint8_t subframe,
                         unsigned char clear,
@@ -102,7 +99,7 @@ void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
 
 void phy_adjust_gain_nr(PHY_VARS_NR_UE *ue,
                         uint32_t rx_power_fil_dB,
-                        uint8_t eNB_id);
+                        uint8_t gNB_id);
 
 int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
 
@@ -111,11 +108,10 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
                               NR_DL_FRAME_PARMS *frame_parms,
                               NR_DL_UE_HARQ_t *dlsch0_harq,
                               NR_DL_UE_HARQ_t *dlsch1_harq,
-                              uint8_t eNB_id,
+                              uint8_t gNB_id,
                               uint8_t nr_slot_rx,
                               unsigned char symbol,
                               uint32_t nb_re_pdsch,
-                              unsigned char harq_pid,
                               uint16_t rnti,
                               RX_type_t rx_type);
 

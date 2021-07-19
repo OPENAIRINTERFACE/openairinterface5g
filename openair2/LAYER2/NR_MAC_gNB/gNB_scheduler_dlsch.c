@@ -603,6 +603,7 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       sched_pdsch->mcs = 9;
+      sched_pdsch->nrOfLayers = 1;
       uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(NR_MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
@@ -820,7 +821,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const rnti_t rnti = UE_info->rnti[UE_id];
 
     /* POST processing */
-    const int nrOfLayers = 1;
+    const uint8_t nrOfLayers = sched_pdsch->nrOfLayers;
     const uint16_t R = sched_pdsch->R;
     const uint8_t Qm = sched_pdsch->Qm;
     const uint32_t TBS = sched_pdsch->tb_size;
