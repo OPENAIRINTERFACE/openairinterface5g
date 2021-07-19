@@ -165,4 +165,37 @@ Depending on the content, adds UE context in DU low layers and/or send data to t
 
 # F1-U messages 
 
-To be completed
+The data path by itself doesn't make any difficulty:
+1. for UL, rlc calls pdcp_data_ind (DRB) or sends a message to RRC (SRB). So, we can replace pdcp_data_ind() by du_pdcp_data_ind() that will push the message in the GTP tunnel. In CU, assuming the tunnel is in place, the right call back decapsulate the transport (cu_ul_recv()), then calls pdcp_data_ind() in CU
+The SRB are sent in DU RRC tasks via itti F1AP_UL_RRC_MESSAGE (see above the processing)
+2. For DL, pdcp (in CU for DRBs) calls rlc_data_req (by a decoupling queue and thread rlc_data_req_thread, so function du_rlc_data_req() or enqueue_rlc_data_req()). in DU, assuming the gtp-u tunnel exists, a reception call back (du_dl_recv()) decapsulate the gtp-u packet and calls du_rlc_data_req()  
+
+Hereafter the processing design, that doesn't require to setup a new context storage, as we can use the GTP-U internal tables: rnti+rb=>teid for outgoing gtp-u packets and teid=>rnti+rb for incoming gtp-u packets 
+
+## tunnels setup
+In GTP-U, TS 29.281 specifies a option header (NR RAN Container This extension header may be transmitted in a G-PDU over the X2-U, Xn-U and F1-U user plane interfaces), but it is not mandatory optional header (as is the N3 one).
+
+So, we can use this header a something reliable with other vendors implementation.
+
+In DL, we need to associate the packet with: rnti, rb (radio bearer) and "mui" (a OAI internal id that is optional and may be removed soon) to call rlc_data_req()
+
+In UL, we need also the RNTI, the rb
+
+So, we need to create a gtp-u tunnel for each rb over F1, then manage in CU and DU the association between a uniq TEid and the pair(rnti, rb). This is already what we have in existing OAI GTP-U layer interface.
+
+In F1AP, for each "DRB to Be Setup Item IEs", we have a field TNL (transport network layer) to set a specific GTP tunnel (@IP, TEid, udp port is always 2152). This is the same for each message related to DRBs. (F1AP carries the SRB payload inside F1AP).
+
+So, For each F1AP containing DRB setup/modification/deletion, the related GTP-U tunnels will be modified one to one.
+The exception is the intialisation of new tunnel: in the call to tunnel creation, we need to send the remote TEID, but we don't know yet if we are the initial source. In this case, we issue a dummy (0xFFFF) remote teid; when we receive the remote answer, we get the source teid, that we can inform GTP-U with (using update tunnel).
+
+## processing on GTP-U incoming message
+
+Du_dl_recv() or cu_ul_recv() are called because we have set this callbacks in creat/update tunnel calls to gtp-u. As gtp-u maintains a pair(rnti,rbid) associated to each tunnel, the functions can be very simple stateless callback that calls pdcp_data_ind() or rlc_data_req() to get back in normal processing path
+
+## CU/DU outgoing 
+
+DU rlc north output goes to du_pdcp_data_ind() that push a outgoing packet request to gtp-u, using the rnti+rb as ids. GTP-U must have the tunnel existing, then it simply implement the same as in N3 for exemple.
+
+CU pdcp south output calls cu_rlc_data_ind() that do the same symetric processing.
+
+
