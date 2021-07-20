@@ -953,7 +953,7 @@ void update_ul_ue_R_Qm(NR_sched_pusch_t *sched_pusch, const NR_pusch_semi_static
 }
 
 float ul_thr_ue[MAX_MOBILES_PER_GNB];
-uint32_t ul_pf_tbs[3][28]; // pre-computed, approximate TBS values for PF coefficient
+uint32_t ul_pf_tbs[3][29]; // pre-computed, approximate TBS values for PF coefficient
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -1582,7 +1582,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       n_ubwp = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
 
     config_uldci(sched_ctrl->active_ubwp,
-		             scc,
+                 scc,
                  pusch_pdu,
                  &uldci_payload,
                  ps->dci_format,

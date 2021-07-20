@@ -111,9 +111,10 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
                      int32_t *output,
                      unsigned short p,
                      unsigned char lp,
-                     unsigned short nb_pdsch_rb)
+                     unsigned short nb_pdsch_rb,
+                     uint8_t config_type)
 {
-  int8_t w,config_type;
+  int8_t w;
   short *mod_table;
   unsigned char idx=0;
 
@@ -121,18 +122,16 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
   array_of_w *wf;
   array_of_w *wt;
 
-  config_type = ue->dmrs_DownlinkConfig.pdsch_dmrs_type;
-
-  wf = (config_type==pdsch_dmrs_type1) ? wf1 : wf2;
-  wt = (config_type==pdsch_dmrs_type1) ? wt1 : wt2;
+  wf = (config_type==NFAPI_NR_DMRS_TYPE1) ? wf1 : wf2;
+  wt = (config_type==NFAPI_NR_DMRS_TYPE1) ? wt1 : wt2;
 
   if (config_type > 1)
     LOG_E(PHY,"Bad PDSCH DMRS config type %d\n", config_type);
 
-  if ((p>=1000) && (p<((config_type==pdsch_dmrs_type1) ? 1008 : 1012))) {
+  if ((p>=1000) && (p<((config_type==NFAPI_NR_DMRS_TYPE1) ? 1008 : 1012))) {
       if (ue->frame_parms.Ncp == NORMAL) {
 
-        for (int i=0; i<nb_pdsch_rb*((config_type==pdsch_dmrs_type1) ? 6:4); i++) {
+        for (int i=0; i<nb_pdsch_rb*((config_type==NFAPI_NR_DMRS_TYPE1) ? 6:4); i++) {
 
         	w = (wf[p-1000][i&1])*(wt[p-1000][lp]);
         	mod_table = (w==1) ? nr_rx_mod_table : nr_rx_nmod_table;
