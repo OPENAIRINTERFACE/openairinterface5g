@@ -141,7 +141,7 @@ void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0) {
 
   ss0->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
 }
-
+static int unique_preamble_index_gNB;
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                                      NR_CellGroupConfig_t *secondaryCellGroup,
                                      int scg_id,

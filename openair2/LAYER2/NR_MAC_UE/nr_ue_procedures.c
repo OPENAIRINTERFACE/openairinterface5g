@@ -69,7 +69,7 @@
 int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
 
     RA_config_t *ra = &mac->ra;
-    int rnti_type;
+    int rnti_type = NR_RNTI_C;
 
     if (rnti == ra->ra_rnti) {
       rnti_type = NR_RNTI_RA;
@@ -82,7 +82,7 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
     } else if (rnti == 0xFFFF) {
       rnti_type = NR_RNTI_SI;
     } else {
-      AssertFatal(1 == 0, "In %s: Not identified/handled rnti %d \n", __FUNCTION__, rnti);
+      //AssertFatal(1 == 0, "In %s: Not identified/handled rnti %x \n", __FUNCTION__, rnti);
     }
 
     LOG_D(MAC, "In %s: returning rnti_type %s \n", __FUNCTION__, rnti_types[rnti_type]);
@@ -446,7 +446,7 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
+  LOG_I(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
 
   uint32_t dci_format = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15);
@@ -2187,8 +2187,13 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
   NR_MAC_RAR *rar          = (NR_MAC_RAR *) (dlsch_buffer + 1);   // RAR subPDU pointer
   uint8_t preamble_index   = mac->ra.rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[0]->ra_PreambleIndex;
 
-  LOG_D(MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
+  LOG_I(MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
 
+  if( mac->crnti == ra->t_crnti )
+  {
+    LOG_I(MAC, "Discarding the received RAR.\n");
+    return -1;
+  }
   while (1) {
     n_subheaders++;
     if (rarh->T == 1) {
@@ -2201,7 +2206,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       LOG_D(MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d\n", mod_id, ra->RA_backoff_indicator);
     }
     if (rarh->RAPID == preamble_index) {
-      LOG_I(MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
+      LOG_I(MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d, CRNTI %x, t_crnti = %x\n", mod_id, frame, slot, rarh->RAPID, mac->crnti, ra->t_crnti);
       rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
       ra->RA_RAPID_found = 1;
       break;
@@ -2229,7 +2234,16 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 #endif
 
   // TC-RNTI
+  LOG_I(MAC, "Found RAR_01 with t_crnti %x\n", ra->t_crnti);
+  //if (ra->t_crnti ==  mac->crnti )
+  //  return -1;
+
+  //rar->TCRNTI_1 = (uint8_t) (mac->crnti >> 8);        // 8 MSBs of rnti
+  //rar->TCRNTI_2 = (uint8_t) (mac->crnti & 0xff);      // 8 LSBs of rnti
+
   ra->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
+  LOG_I(MAC, "Found RAR_02 with t_crnti %x\n", rar->TCRNTI_2 + (rar->TCRNTI_1 << 8));
+
 
   // TA command
   ul_time_alignment->apply_ta = 1;
@@ -2318,13 +2332,16 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 
       // Config Msg3 PDU
       nr_config_pusch_pdu(mac, pusch_config_pdu, NULL, &rar_grant, rnti, NULL);
+      LOG_I(MAC, "Found RAR_0 with t_crnti %x\n", ra->t_crnti);
 
     }
+    LOG_I(MAC, "Found RAR_1 with t_crnti %x\n", ra->t_crnti);
 
   } else {
 
     ra->t_crnti = 0;
     ul_time_alignment->ta_command = (0xffff);
+    LOG_I(MAC, "Found RAR_2 with t_crnti %x\n", ra->t_crnti);
 
   }
 

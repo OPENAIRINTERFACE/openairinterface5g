@@ -1501,7 +1501,7 @@ typedef enum {
 //section 3.4.7 rx_data_indication
 
 //table 3-61
-
+#define NFAPI_NR_RX_DATA_IND_MAX_PDU 100
 typedef struct 
 {
   uint32_t handle;
@@ -1528,6 +1528,7 @@ typedef struct
 
 //3.4.8 crc_indication
 //table 3-62
+#define NFAPI_NR_CRC_IND_MAX_PDU 100
 typedef struct
 {
   uint32_t handle;
@@ -1669,6 +1670,7 @@ typedef enum {
   NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE = 2,
 } nfapi_nr_uci_pdu_type_e;
 
+#define NFAPI_NR_UCI_IND_MAX_PDU 100
 typedef struct
 {
   uint16_t pdu_type;  // 0 for PDU on PUSCH, 1 for PUCCH format 0 or 1, 2 for PUCCH format 2 to 4
@@ -1705,7 +1707,7 @@ typedef struct
   nfapi_nr_srs_indication_reported_symbol_resource_block_t* rb_list;
 }nfapi_nr_srs_indication_reported_symbol_t;
 
-
+#define NFAPI_NR_SRS_IND_MAX_PDU 100
 typedef struct
 {
   uint32_t handle;

@@ -16,6 +16,15 @@ void init_queue(queue_t *q)
     pthread_mutex_init(&q->mutex, NULL);
 }
 
+void reset_queue(queue_t *q)
+{
+  void *p;
+  while ((p = get_queue(q)) != NULL)
+  {
+    free(p);
+  }
+}
+
 bool put_queue(queue_t *q, void *item)
 {
     assert(item != NULL);

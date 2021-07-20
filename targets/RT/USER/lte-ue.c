@@ -974,16 +974,6 @@ uint64_t clock_usec(void)
     }
     return (uint64_t)t.tv_sec * 1000000 + (t.tv_nsec / 1000);
 }
-
-static void reset_queue(queue_t *q)
-{
-  void *p;
-  while ((p = get_queue(q)) != NULL)
-  {
-    free(p);
-  }
-}
-
 /*!
  * \brief This is the UE thread for RX subframe n and TX subframe n+4.
  * This thread performs the phy_procedures_UE_RX() on every received slot.

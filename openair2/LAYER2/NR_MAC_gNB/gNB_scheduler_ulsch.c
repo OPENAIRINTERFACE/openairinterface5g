@@ -405,6 +405,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   const int current_rnti = rntiP;
   const int UE_id = find_nr_UE_id(gnb_mod_idP, current_rnti);
   const int target_snrx10 = gNB_mac->pusch_target_snrx10;
+  LOG_I(NR_MAC, "nr_rx_sdu entered\n");
 
   if (UE_id != -1) {
     NR_UE_sched_ctrl_t *UE_scheduling_control = &UE_info->UE_sched_ctrl[UE_id];
@@ -416,7 +417,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
+    LOG_I(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -484,8 +485,11 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
      * it. */
     for (int i = 0; i < NR_NB_RA_PROC_MAX; ++i) {
       NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[i];
-      if (ra->state != WAIT_Msg3)
+      if (ra->state != WAIT_Msg3 || ra->rnti == 0)
+      {
+        LOG_I(NR_MAC, "Notice ra->state = %d (if it is 2, it is WAIT_Msg3. Else we continue), ra->rnti %x\n", ra->state, ra->rnti);
         continue;
+      }
 
       if(no_sig) {
         LOG_W(NR_MAC, "Random Access %i failed at state %i\n", i, ra->state);
@@ -493,8 +497,13 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP);
       } else {
 
+        LOG_I(NR_MAC,
+                "expected TC_RNTI %04x to match current RNTI %04x\n",
+                ra->rnti,
+                current_rnti);
         // random access pusch with TC-RNTI
         if (ra->rnti != current_rnti) {
+          //ra->rnti = current_rnti;
           LOG_W(NR_MAC,
                 "expected TC_RNTI %04x to match current RNTI %04x\n",
                 ra->rnti,
@@ -961,6 +970,7 @@ void nr_schedule_ulsch(module_id_t module_id,
       continue;
 
     uint16_t rnti = UE_info->rnti[UE_id];
+    LOG_D(NR_MAC, "nr_schedule_ulsch  UE_id_checking UE_id = %d, rnti = %x \n", UE_id,  rnti);
 
     int8_t harq_id = sched_pusch->ul_harq_pid;
     if (harq_id < 0) {

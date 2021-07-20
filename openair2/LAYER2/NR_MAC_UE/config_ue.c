@@ -538,7 +538,7 @@ int nr_rrc_mac_config_req_ue(
         mac->ul_config_request = calloc(num_slots, sizeof(*mac->ul_config_request));
 	config_common_ue(mac,module_id,cc_idP);
 	mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
-	LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
+	LOG_I(MAC,"Configuring CRNTI %x, with module_id = %d\n",mac->crnti, (int)module_id);
       }
 
       // Setup the SSB to Rach Occasions mapping according to the config

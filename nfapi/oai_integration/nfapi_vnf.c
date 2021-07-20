@@ -42,12 +42,12 @@
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 
 #include "common/ran_context.h"
+#include "openair2/PHY_INTERFACE/queue.h"
 
 #define TEST
 
 extern RAN_CONTEXT_t RC;
 extern UL_RCC_IND_t  UL_RCC_INFO;
-extern NR_UL_IND_t UL_INFO;
 
 typedef struct {
   uint8_t enabled;
@@ -170,6 +170,11 @@ typedef struct {
   vnf_p7_info p7_vnfs[2];
 
 } vnf_info;
+
+queue_t gnb_rach_ind_queue;
+queue_t gnb_rx_ind_queue;
+queue_t gnb_crc_ind_queue;
+queue_t gnb_uci_ind_queue;
 
 int vnf_pack_vendor_extension_tlv(void *ve, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t *codec) {
   //NFAPI_TRACE(NFAPI_TRACE_INFO, "vnf_pack_vendor_extension_tlv\n");
@@ -704,7 +709,43 @@ int phy_nr_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rach_ind
 {
   if(NFAPI_MODE == NFAPI_MODE_VNF)
   {
-    UL_INFO.rach_ind = *ind;
+    //UL_INFO.rach_ind = *ind;
+    nfapi_nr_rach_indication_t *rach_ind = CALLOC(1, sizeof(*rach_ind));
+    rach_ind->header.message_id = ind->header.message_id;
+    rach_ind->number_of_pdus = ind->number_of_pdus;
+    rach_ind->sfn = ind->sfn;
+    rach_ind->slot = ind->slot;
+    rach_ind->pdu_list = CALLOC(1, sizeof(*rach_ind->pdu_list));
+    if (rach_ind->pdu_list == NULL) {
+        LOG_I(NR_MAC, "Memory not allocated for rach_ind->pdu_list of phy_nr_rach_indication in nfapi_vnf.c.\n");
+        exit(0);
+    }
+    for (int i = 0; i < ind->number_of_pdus; i++)
+    {
+      rach_ind->pdu_list[i].num_preamble = ind->pdu_list[i].num_preamble;
+      rach_ind->pdu_list[i].freq_index = ind->pdu_list[i].freq_index;
+      rach_ind->pdu_list[i].symbol_index = ind->pdu_list[i].symbol_index;
+      rach_ind->pdu_list[i].preamble_list = CALLOC(ind->pdu_list[i].num_preamble, sizeof(nfapi_nr_prach_indication_preamble_t));
+      if (rach_ind->pdu_list[i].preamble_list == NULL) {
+          LOG_I(NR_MAC, "Memory not allocated for rach_ind->pdu_list[i].preamble_list of phy_nr_rach_indication in nfapi_vnf.c.\n");
+          exit(0);
+      }
+      for (int j = 0; j < ind->number_of_pdus; j++)
+      {
+        rach_ind->pdu_list[i].preamble_list[j].preamble_index = ind->pdu_list[i].preamble_list[j].preamble_index;
+        rach_ind->pdu_list[i].preamble_list[j].timing_advance = ind->pdu_list[i].preamble_list[j].timing_advance;
+      }
+    }
+    if (!put_queue(&gnb_rach_ind_queue, rach_ind))
+    {
+      LOG_E(NR_MAC, "Put_queue failed for rach_ind\n");
+      for (int i = 0; i < ind->number_of_pdus; i++)
+      {
+        free(rach_ind->pdu_list[i].preamble_list);
+      }
+      free(rach_ind->pdu_list);
+      free(rach_ind);
+    }
   }
   else {
     LOG_E(NR_MAC, "NFAPI_MODE = %d not NFAPI_MODE_VNF(2)\n", nfapi_getmode());
@@ -719,7 +760,104 @@ int phy_nr_uci_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_uci_indic
           __FUNCTION__,ind->sfn, ind->slot, ind->num_ucis);
   if(NFAPI_MODE == NFAPI_MODE_VNF)
   {
-    UL_INFO.uci_ind = *ind;
+    nfapi_nr_uci_indication_t *uci_ind = CALLOC(1, sizeof(*uci_ind));
+    if (uci_ind == NULL) {
+        LOG_E(NR_MAC,"Memory not allocated for uci_ind of phy_nr_uci_indication in nfapi_vnf.c.\n");
+        exit(0);
+    }
+
+    *uci_ind = *ind;
+
+    uci_ind->uci_list = CALLOC(NFAPI_NR_UCI_IND_MAX_PDU, sizeof(nfapi_nr_uci_t));
+    if (uci_ind->uci_list == NULL) {
+        LOG_E(NR_MAC,"Memory not allocated for uci_ind->uci_list of phy_nr_uci_indication in nfapi_vnf.c.\n");
+        exit(0);
+    }
+
+    for (int i = 0; i < ind->num_ucis; i++)
+    {
+      uci_ind->uci_list[i] = ind->uci_list[i];
+
+      switch (uci_ind->uci_list[i].pdu_type) {
+        case NFAPI_NR_UCI_PUSCH_PDU_TYPE:
+          LOG_E(MAC, "%s(): unhandled NFAPI_NR_UCI_PUSCH_PDU_TYPE\n", __func__);
+          break;
+
+        case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
+          nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_ind_pdu = &uci_ind->uci_list[i].pucch_pdu_format_0_1;
+          nfapi_nr_uci_pucch_pdu_format_0_1_t *ind_pdu = &ind->uci_list[i].pucch_pdu_format_0_1;
+          
+          uci_ind_pdu->harq = CALLOC(1, sizeof(*uci_ind_pdu->harq));
+          if (uci_ind_pdu->harq == NULL) {
+              LOG_E(NR_MAC,"Memory not allocated for uci_ind_pdu->harq of phy_nr_uci_indication in nfapi_vnf.c.\n");
+              exit(0);
+          }
+
+          *uci_ind_pdu->harq = *ind_pdu->harq;
+
+          uci_ind_pdu->harq->harq_list = CALLOC(uci_ind_pdu->harq->num_harq, sizeof(*uci_ind_pdu->harq->harq_list));
+          if (uci_ind_pdu->harq->harq_list == NULL) {
+              LOG_E(NR_MAC,"Memory not allocated for uci_ind_pdu->harq->harq_list of phy_nr_uci_indication in nfapi_vnf.c.\n");
+              exit(0);
+          }
+          for (int j = 0; j < uci_ind_pdu->harq->num_harq; j++)
+              uci_ind_pdu->harq->harq_list[j].harq_value =  ind_pdu->harq->harq_list[j].harq_value;
+          
+          break;
+        }
+
+        case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
+          nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_ind_pdu = &uci_ind->uci_list[i].pucch_pdu_format_2_3_4;
+          nfapi_nr_uci_pucch_pdu_format_2_3_4_t *ind_pdu = &ind->uci_list[i].pucch_pdu_format_2_3_4;
+          
+          uci_ind_pdu->harq.harq_payload = CALLOC(1, sizeof(*uci_ind_pdu->harq.harq_payload));
+          if (uci_ind_pdu->harq.harq_payload == NULL) {
+              LOG_E(NR_MAC,"Memory not allocated for uci_ind_pdu->harq.harq_payload of phy_nr_uci_indication in nfapi_vnf.c.\n");
+              exit(0);
+          }
+          *uci_ind_pdu->harq.harq_payload =  *ind_pdu->harq.harq_payload;
+
+
+          uci_ind_pdu->csi_part1.csi_part1_payload = CALLOC(1, sizeof(*uci_ind_pdu->csi_part1.csi_part1_payload));
+          if (uci_ind_pdu->csi_part1.csi_part1_payload == NULL) {
+              LOG_E(NR_MAC,"Memory not allocated for uci_ind_pdu->csi_part1->csi_part1_payload of phy_nr_uci_indication in nfapi_vnf.c.\n");
+              exit(0);
+          }
+          *uci_ind_pdu->csi_part1.csi_part1_payload =  *ind_pdu->csi_part1.csi_part1_payload;
+
+
+          uci_ind_pdu->csi_part2.csi_part2_payload = CALLOC(1, sizeof(*uci_ind_pdu->csi_part2.csi_part2_payload));
+          if (uci_ind_pdu->csi_part2.csi_part2_payload == NULL) {
+              LOG_E(NR_MAC,"Memory not allocated for uci_ind_pdu->csi_part2->csi_part2_payload of phy_nr_uci_indication in nfapi_vnf.c.\n");
+              exit(0);
+          }
+          *uci_ind_pdu->csi_part2.csi_part2_payload =  *ind_pdu->csi_part2.csi_part2_payload;
+
+          break;
+        }
+      }
+    }
+
+    if (!put_queue(&gnb_uci_ind_queue, uci_ind))
+    {
+      LOG_E(NR_MAC, "Put_queue failed for uci_ind\n");
+      for (int i = 0; i < ind->num_ucis; i++)
+      {
+          if (uci_ind->uci_list[i].pdu_type == NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE)
+          {
+            free(uci_ind->uci_list[i].pucch_pdu_format_0_1.harq->harq_list);
+            free(uci_ind->uci_list[i].pucch_pdu_format_0_1.harq);
+          }
+          if (uci_ind->uci_list[i].pdu_type == NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE)
+          {
+            free(uci_ind->uci_list[i].pucch_pdu_format_2_3_4.harq.harq_payload);
+            free(uci_ind->uci_list[i].pucch_pdu_format_2_3_4.csi_part1.csi_part1_payload);
+            free(uci_ind->uci_list[i].pucch_pdu_format_2_3_4.csi_part2.csi_part2_payload);
+          }
+      }
+      free(uci_ind->uci_list);
+      free(uci_ind);
+    }
   }
   else {
     LOG_E(NR_MAC, "NFAPI_MODE = %d not NFAPI_MODE_VNF(2)\n", nfapi_getmode());
@@ -819,7 +957,34 @@ int phy_nr_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_crc_indic
 
   if(NFAPI_MODE == NFAPI_MODE_VNF)
   {
-    UL_INFO.crc_ind = *ind;
+    nfapi_nr_crc_indication_t *crc_ind = CALLOC(1, sizeof(*crc_ind));
+    crc_ind->header.message_id = ind->header.message_id;
+    crc_ind->number_crcs = ind->number_crcs;
+    crc_ind->sfn = ind->sfn;
+    crc_ind->slot = ind->slot;
+    if (ind->number_crcs > 0) {
+      crc_ind->crc_list = CALLOC(NFAPI_NR_CRC_IND_MAX_PDU, sizeof(nfapi_nr_crc_t));
+      if (crc_ind->crc_list == NULL) {
+          LOG_I(NR_MAC, "Memory not allocated for crc_ind->crc_list of phy_nr_crc_indication in nfapi_vnf.c.\n");
+          exit(0);
+      }
+    }
+    for (int j = 0; j < ind->number_crcs; j++)
+    {
+      crc_ind->crc_list[j].handle = ind->crc_list[j].handle;
+      crc_ind->crc_list[j].harq_id = ind->crc_list[j].harq_id;
+      crc_ind->crc_list[j].num_cb = ind->crc_list[j].num_cb;
+      crc_ind->crc_list[j].rnti = ind->crc_list[j].rnti;
+      crc_ind->crc_list[j].tb_crc_status = ind->crc_list[j].tb_crc_status;
+      crc_ind->crc_list[j].timing_advance = ind->crc_list[j].timing_advance;
+      crc_ind->crc_list[j].ul_cqi = ind->crc_list[j].ul_cqi;
+    }
+    if (!put_queue(&gnb_crc_ind_queue, crc_ind))
+    {
+      LOG_E(NR_MAC, "Put_queue failed for crc_ind\n");
+      free(crc_ind->crc_list);
+      free(crc_ind);
+    }
   }
   else
   {
@@ -912,7 +1077,35 @@ int phy_nr_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rx_data_in
 
   if(NFAPI_MODE == NFAPI_MODE_VNF)
   {
-    UL_INFO.rx_ind = *ind;
+    nfapi_nr_rx_data_indication_t *rx_ind = CALLOC(1, sizeof(*rx_ind));
+    rx_ind->header.message_id = ind->header.message_id;
+    rx_ind->sfn = ind->sfn;
+    rx_ind->slot = ind->slot;
+    rx_ind->number_of_pdus = ind->number_of_pdus;
+
+    if (ind->number_of_pdus > 0) {
+      rx_ind->pdu_list = CALLOC(NFAPI_NR_RX_DATA_IND_MAX_PDU, sizeof(nfapi_nr_rx_data_pdu_t));
+      if (rx_ind->pdu_list == NULL) {
+          LOG_I(NR_MAC,"Memory not allocated for rx_ind->pdu_list of phy_nr_rx_indication in nfapi_vnf.c.\n");
+          exit(0);
+      }
+    }
+    for (int j = 0; j < ind->number_of_pdus; j++)
+    {
+      rx_ind->pdu_list[j].handle = ind->pdu_list[j].handle;
+      rx_ind->pdu_list[j].harq_id = ind->pdu_list[j].harq_id;
+      rx_ind->pdu_list[j].pdu = ind->pdu_list[j].pdu;
+      rx_ind->pdu_list[j].pdu_length = ind->pdu_list[j].pdu_length;
+      rx_ind->pdu_list[j].rnti = ind->pdu_list[j].rnti;
+      rx_ind->pdu_list[j].timing_advance = ind->pdu_list[j].timing_advance;
+      rx_ind->pdu_list[j].ul_cqi = ind->pdu_list[j].ul_cqi;
+    }
+    if (!put_queue(&gnb_rx_ind_queue, rx_ind))
+    {
+      LOG_E(NR_MAC, "Put_queue failed for rx_ind\n");
+      free(rx_ind->pdu_list);
+      free(rx_ind);
+    }
   }
   else
   {
@@ -1202,6 +1395,12 @@ void set_thread_priority(int priority);
 
 void *vnf_nr_p7_thread_start(void *ptr) {
   set_thread_priority(79);
+  LOG_I(MAC, "Clearing Queues\n");
+  reset_queue(&gnb_rach_ind_queue);
+  reset_queue(&gnb_rx_ind_queue);
+  reset_queue(&gnb_crc_ind_queue);
+  reset_queue(&gnb_uci_ind_queue);
+
   vnf_p7_info *p7_vnf = (vnf_p7_info *)ptr;
   p7_vnf->config->port = p7_vnf->local_port;
   p7_vnf->config->sync_indication = &phy_sync_indication;
@@ -1591,7 +1790,6 @@ void configure_nr_nfapi_vnf(char *vnf_addr, int vnf_p5_port) {
   config->codec_config.allocate = &vnf_allocate;
   config->codec_config.deallocate = &vnf_deallocate;
   memset(&UL_RCC_INFO,0,sizeof(UL_RCC_IND_t));
-  memset(&UL_INFO, 0, sizeof(NR_UL_IND_t));
   NFAPI_TRACE(NFAPI_TRACE_INFO, "[VNF] Creating VNF NFAPI start thread %s\n", __FUNCTION__);
   pthread_create(&vnf_start_pthread, NULL, (void *)&vnf_nr_start_thread, config);
   NFAPI_TRACE(NFAPI_TRACE_INFO, "[VNF] Created VNF NFAPI start thread %s\n", __FUNCTION__);

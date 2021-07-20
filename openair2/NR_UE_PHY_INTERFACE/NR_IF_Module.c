@@ -284,6 +284,18 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     {
         nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
         AssertFatal(pdu_list->num_TLV < sizeof(pdu_list->TLVs) / sizeof(pdu_list->TLVs[0]), "Num TLVs exceeds TLV array size");
+
+        if (tx_data_request->Slot == 7) { //Melissa this means we have an RAR, sorta hacky though
+            if( get_mac_inst(dl_info->module_id)->crnti == get_mac_inst(dl_info->module_id)->ra.t_crnti )
+            {  LOG_I(MAC, "Discarding tx_data_requested since it includes useless RAR.\n");
+                continue;
+            }
+            dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
+        }
+        else if (tx_data_request->Slot != 7 && get_softmodem_params()->nsa) {
+            dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
+        }
+
         for (int j = 0; j < pdu_list->num_TLV; j++)
         {
             if (pdu_list->TLVs[j].tag)
@@ -291,12 +303,6 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
             else if (!pdu_list->TLVs[j].tag)
                 dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = (void*) pdu_list->TLVs[j].value.direct; // Melissa, fix me!
             dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = pdu_list->TLVs[j].length;
-            if (tx_data_request->Slot == 7) { //Melissa this means we have an RAR, sorta hacky though
-                dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
-            }
-            else if (tx_data_request->Slot != 7 && get_softmodem_params()->nsa) {
-                dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
-            }
         }
     }
     dl_info->slot = tx_data_request->Slot;
@@ -316,6 +322,8 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     {
         nfapi_nr_ul_dci_request_pdus_t *pdu_list = &ul_dci_req->ul_dci_pdu_list[i];
         AssertFatal(pdu_list->PDUType == 0, "ul_dci_req pdu type != PUCCH");
+        if( pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI != get_mac_inst(0)->crnti)
+          continue;
         LOG_I(NR_PHY, "[%d %d] PUCCH PDU in ul_dci for rnti %x\n", ul_dci_req->SFN, ul_dci_req->Slot, pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI);
         uint16_t num_dci = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
         if (num_dci > 0)

@@ -434,7 +434,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
           }
         }
       }
-      LOG_I(PHY,"Added new RA process for UE RNTI %04x with initial secondaryCellGroup\n", rnti);
+      LOG_I(PHY,"Added new RA process for UE RNTI %04x with initial secondaryCellGroup, ra_index %u, rnti %x\n", 
+        rnti, 
+        ra_index,
+        cc->ra[ra_index].rnti
+        );
     } else { // secondaryCellGroup has been updated
       const int UE_id = find_nr_UE_id(Mod_idP,rnti);
       UE_info->secondaryCellGroup[UE_id] = secondaryCellGroup;

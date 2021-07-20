@@ -178,15 +178,6 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_p
   LOG_I(NR_MAC, "Melissa, We have successfully filled the rach_ind queue with the recently filled rach ind\n");
 }
 
-static void reset_queue(queue_t *q)
-{
-  void *p;
-  while ((p = get_queue(q)) != NULL)
-  {
-    free(p);
-  }
-}
-
 static bool sfn_slot_matcher(void *wanted, void *candidate)
 {
   nfapi_p7_message_header_t *msg = candidate;

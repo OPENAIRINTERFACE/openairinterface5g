@@ -1542,6 +1542,7 @@ void add_front_nr_list(NR_list_t *listP, int id)
  */
 void remove_front_nr_list(NR_list_t *listP)
 {
+  if (listP->head < 0 ) return;
   AssertFatal(listP->head >= 0, "Nothing to remove\n");
   const int ohead = listP->head;
   listP->head = listP->next[ohead];
@@ -1630,6 +1631,9 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
         UE_info->num_UEs);
   dump_nr_list(&UE_info->list);
 
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++)
+    LOG_I(MAC, "add_new_nr_ue    UE_info->active[%d] = %d\n", i, UE_info->active[i]);
+
   for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (UE_info->active[i])
       continue;
@@ -1696,7 +1700,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *secon
   }
 
   // printf("MAC: cannot add new UE for rnti %x\n", rntiP);
-  LOG_E(MAC, "error in add_new_ue(), could not find space in UE_info, Dumping UE list\n");
+  LOG_E(MAC, "error in add_new_nr_ue(), could not find space in UE_info, Dumping UE list\n");
   dump_nr_list(&UE_info->list);
   return -1;
 }
