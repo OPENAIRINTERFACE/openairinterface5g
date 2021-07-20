@@ -824,10 +824,10 @@ include_directories ("/usr/local/include")
 
 set(HWLIB_LDPC_OFFLOAD_SOURCE
    ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c
-   ${OPENAIR_TARGETS}/ARCH/test-bbdev/test_bbdev.c
+#   ${OPENAIR_TARGETS}/ARCH/test-bbdev/test_bbdev.c
 #   ${OPENAIR_TARGETS}/ARCH/test-bbdev/main.c
 #   ${OPENAIR_TARGETS}/ARCH/test-bbdev/test_bbdev_perf.c
-   ${OPENAIR_TARGETS}/ARCH/test-bbdev/test_bbdev_vector.c
+#   ${OPENAIR_TARGETS}/ARCH/test-bbdev/test_bbdev_vector.c
   )
 add_library(ldpc_offload MODULE ${HWLIB_LDPC_OFFLOAD_SOURCE} )
 
