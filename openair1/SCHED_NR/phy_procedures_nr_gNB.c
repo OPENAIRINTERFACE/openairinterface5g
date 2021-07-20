@@ -176,7 +176,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 			ul_pdcch_pdu_id>=0 ? &gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu : NULL,
 			gNB->nr_gold_pdcch_dmrs[slot],
 			&gNB->common_vars.txdataF[0][txdataF_offset],
-			AMP, *fp);
+			AMP, fp);
 
     // free up entry in pdcch tables
     if (pdcch_pdu_id>=0) gNB->pdcch_pdu[pdcch_pdu_id].frame = -1;

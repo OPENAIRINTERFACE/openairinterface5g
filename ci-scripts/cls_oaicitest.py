@@ -2222,6 +2222,24 @@ class OaiCiTest():
 
 	def Iperf_Module(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC, Module_UE):
 		SSH = sshconnection.SSHConnection()
+		#RH temporary quick n dirty for test
+		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+		cmd = 'echo ' + EPC.Password + ' | sudo -S ip link set dev tun5 mtu 1358'
+		SSH.command(cmd,'\$',5)	
+		SSH.close()
+			
+
+		#kill iperf processes before (in case there are still some remaining)
+		SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+		cmd = 'killall --signal=SIGKILL iperf'
+		SSH.command(cmd,'\$',5)
+		SSH.close()
+		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+		cmd = 'killall --signal=SIGKILL iperf'
+		SSH.command(cmd,'\$',5)
+		SSH.close()
+
+
 		iperf_time = self.Iperf_ComputeTime()	
 		if self.iperf_direction=="DL":
 			logging.debug("Iperf for Module in DL mode detected")
@@ -2231,12 +2249,14 @@ class OaiCiTest():
 			SSH.command(cmd,'\$',5)
 			cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',5)
+			SSH.close()
 			#client side EPC
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
 			cmd = 'iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
 			SSH.command(cmd,'\$',int(iperf_time)*5.0)
+			SSH.close()
 			#copy the 2 resulting files locally
 			SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 			SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
@@ -2252,29 +2272,32 @@ class OaiCiTest():
 			SSH.command(cmd,'\$',5)
 			cmd = 'echo $USER; nohup iperf -s -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
+			SSH.close()
 
 			#client side UE
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 			SSH.command(cmd,'\$',5)
 			SSH.command('/opt/iperf-2.0.10/iperf -c 192.172.0.1 ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', int(iperf_time)*5.0)
+			SSH.close()
 
 			#copy the 2 resulting files locally
 			SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 			SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 			#send for analysis
-			filename='iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+			filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)
 		else :
 			logging.debug("Incorrect or missing IPERF direction in XML")
 
+		#kill iperf processes after to be clean
 		SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 		cmd = 'killall --signal=SIGKILL iperf'
 		SSH.command(cmd,'\$',5)
+		SSH.close()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 		cmd = 'killall --signal=SIGKILL iperf'
 		SSH.command(cmd,'\$',5)
-
 		SSH.close()
 		return
 
