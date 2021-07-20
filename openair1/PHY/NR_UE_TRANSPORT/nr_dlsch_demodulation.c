@@ -793,7 +793,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
   unsigned short rb;
   unsigned char aatx,aarx,atx;
   __m128i *dl_ch128,*dl_ch128_2,*dl_ch_mag128,*dl_ch_mag128b,*dl_ch_mag128r,*rxdataF128,*rxdataF_comp128,*rho128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b,QAM_amp128r;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0},QAM_amp128r={0};
   QAM_amp128b = _mm_setzero_si128();
 
   for (aatx=0; aatx<nb_aatx; aatx++) {
@@ -1314,7 +1314,7 @@ void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
   int length_mod8 = 0;
   int length2;
   __m128i *dl_ch128,*dl_ch_mag128,*dl_ch_mag128b, *dl_ch128_2, *rxdataF128,*rxdataF_comp128,*rho128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0};
   int aatx = 0, aarx = 0;
 
   for (aatx=0; aatx<n_tx; aatx++) {
@@ -2823,7 +2823,7 @@ uint8_t nr_zero_forcing_rx_2layers(int **rxdataF_comp,
      *
      **************************************************************************/
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*dl_ch_mag128_0,*dl_ch_mag128b_0,*dl_ch_mag128_1,*dl_ch_mag128b_1,*determ_fin_128;
-  __m128i mmtmpD2,mmtmpD3,mmtmpD0,mmtmpD1,QAM_amp128,QAM_amp128b;
+  __m128i mmtmpD2,mmtmpD3,mmtmpD0,mmtmpD1,QAM_amp128={0},QAM_amp128b={0};
   __m128i *after_mf_a_128,*after_mf_b_128, *after_mf_c_128, *after_mf_d_128;
 
   determ_fin_128      = (__m128i *)&determ_fin[0];
