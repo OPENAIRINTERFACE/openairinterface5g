@@ -148,8 +148,8 @@ uint8_t count_initdev =0;
 #define K0_3_1 56 /* K0 fraction numerator for rv 3 and BG 1 */
 #define K0_3_2 43 /* K0 fraction numerator for rv 3 and BG 2 */
 
-static struct test_bbdev_vector test_vector;
-static struct test_bbdev_vector test_vector_dec;
+struct test_bbdev_vector test_vector;
+struct test_bbdev_vector test_vector_dec;
 int8_t ldpc_output[22*384];
 /* Switch between PMD and Interrupt for throughput TC */
 static bool intr_enabled;
@@ -833,31 +833,32 @@ static int
 read_test_vector(void)
 {
 	int ret;
-	memset(&test_vector, 0, sizeof(test_vector));
-
-ret= init_entry(&test_vector, 0);
-ret= init_entry(&test_vector, 2);
-
-
+	memset(&test_vector, 0, sizeof(struct test_bbdev_vector));
 struct rte_bbdev_op_ldpc_dec *ldpc_dec = &test_vector.ldpc_dec;
+struct rte_bbdev_op_ldpc_dec *ldpc_dec_ref = &test_vector_dec.ldpc_dec;
 test_vector.op_type = RTE_BBDEV_OP_LDPC_DEC; //vector->op_type;
 test_vector.expected_status = 0;
 //printf("test vector expected status %d\n",test_vector.expected_status);
+//uint8_t *rv_index = &ldpc_dec_ref->rv_index; 
+//rv_index = ldpc_dec_ref->rv_index;
 
- ldpc_dec->cb_params.e = 2760; //ldpc_dec->cb_params.e;
-ldpc_dec->iter_count = 3; 
-                ldpc_dec->basegraph = 2; //ldpc_dec->basegraph;
-                ldpc_dec->z_c = 72; //ldpc_dec->z_c;
-                ldpc_dec->q_m = 2; //ldpc_dec->q_m;
-                ldpc_dec->n_filler = 176; //ldpc_dec->n_filler;
-                ldpc_dec->n_cb = 3600; //ldpc_dec->n_cb;
-                ldpc_dec->iter_max = 8; //ldpc_dec->iter_max;
-                ldpc_dec->rv_index = 0; //ldpc_dec->rv_index;
- 
-               ldpc_dec->op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE; //ldpc_dec->op_flags;
-                ldpc_dec->code_block_mode = 1; //ldpc_dec->code_block_mode;
+                ldpc_dec->rv_index = 0; //*rv_index;
+                ldpc_dec->cb_params.e = ldpc_dec_ref->cb_params.e;
+                ldpc_dec->iter_count = 3; 
+                ldpc_dec->basegraph = ldpc_dec_ref->basegraph;
+                ldpc_dec->z_c = ldpc_dec_ref->z_c;
+                ldpc_dec->q_m = ldpc_dec_ref->q_m;
+                ldpc_dec->n_filler = ldpc_dec_ref->n_filler;
+                ldpc_dec->n_cb = ldpc_dec_ref->n_cb;
+                ldpc_dec->iter_max = ldpc_dec_ref->iter_max;
+//                ldpc_dec->rv_index = ldpc_dec_ref->rv_index;
+                ldpc_dec->op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE;
+                ldpc_dec->code_block_mode = 1;
 
-//printf("reference bg %d zc %d qm %d nfiller %d, n_cb %d iter max %d rv %d\n", ldpc_dec->basegraph, ldpc_dec->z_c, ldpc_dec->q_m,ldpc_dec->n_filler,ldpc_dec->n_cb,ldpc_dec->iter_max,ldpc_dec->rv_index);
+ret= init_entry(&test_vector, 0, ldpc_dec->cb_params.e);
+ret= init_entry(&test_vector, 2, ldpc_dec->cb_params.e);
+//printf("read test reference bg %d zc %d qm %d nfiller %d, n_cb %d iter max %d rv %d\n", ldpc_dec_ref->basegraph, ldpc_dec_ref->z_c, ldpc_dec_ref->q_m,ldpc_dec_ref->n_filler,ldpc_dec_ref->n_cb,ldpc_dec_ref->iter_max,rv_index);
+//printf("read test reference bg %d zc %d qm %d nfiller %d, n_cb %d iter max %d rv %d\n", ldpc_dec_ref->basegraph, ldpc_dec_ref->z_c, ldpc_dec->q_m,ldpc_dec->n_filler,ldpc_dec->n_cb,ldpc_dec->iter_max,ldpc_dec->rv_index);
 
 struct op_data_entries *ref_entries =
                                 &test_vector.entries[0];
@@ -869,12 +870,10 @@ struct op_data_buf *seg_dec = &ref_entries_dec->segments[0];
 //printf("before seg addr %p seg dec addr %p nb segments %d\n",seg->addr,seg_dec->addr,ref_entries->nb_segments); 
 
 memcpy(seg->addr, seg_dec->addr, seg->length);
+//memcpy(ldpc_dec, ldpc_dec_ref, sizeof(struct rte_bbdev_op_ldpc_dec));
 
 //printf("seg addr %p length %d seg dec addr %p \n",seg->addr,seg->length, seg_dec->addr); 
 //printf("seg addr %p seg dec addr %p llr %x llr dec %x\n",seg->addr,seg_dec->addr,*(seg->addr), *(seg_dec->addr)); 
-
-	TEST_ASSERT_SUCCESS(ret, "Failed to parse file %s\n",
-			get_vector_filename());
 
 	return TEST_SUCCESS;
 }
@@ -1725,18 +1724,18 @@ copy_reference_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 					ldpc_dec->tb_params.r;
 					printf("code block ea %d eb %d c %d cab %d r %d\n",ldpc_dec->tb_params.ea,ldpc_dec->tb_params.eb,ldpc_dec->tb_params.c, ldpc_dec->tb_params.cab, ldpc_dec->tb_params.r);
 		} else {
-			ops[i]->ldpc_dec.cb_params.e = 2760; //ldpc_dec->cb_params.e;
+			ops[i]->ldpc_dec.cb_params.e = ldpc_dec->cb_params.e;
 		}
 
-		ops[i]->ldpc_dec.basegraph = 2; //ldpc_dec->basegraph;
-		ops[i]->ldpc_dec.z_c = 72; //ldpc_dec->z_c;
-		ops[i]->ldpc_dec.q_m = 2; //ldpc_dec->q_m;
-		ops[i]->ldpc_dec.n_filler = 176; //ldpc_dec->n_filler;
-		ops[i]->ldpc_dec.n_cb = 3600; //ldpc_dec->n_cb;
-		ops[i]->ldpc_dec.iter_max = 8; //ldpc_dec->iter_max;
-		ops[i]->ldpc_dec.rv_index = 0; //ldpc_dec->rv_index;
+		ops[i]->ldpc_dec.basegraph = ldpc_dec->basegraph;
+		ops[i]->ldpc_dec.z_c = ldpc_dec->z_c;
+		ops[i]->ldpc_dec.q_m = ldpc_dec->q_m;
+		ops[i]->ldpc_dec.n_filler = ldpc_dec->n_filler;
+		ops[i]->ldpc_dec.n_cb = ldpc_dec->n_cb;
+		ops[i]->ldpc_dec.iter_max = ldpc_dec->iter_max;
+		ops[i]->ldpc_dec.rv_index = ldpc_dec->rv_index;
 		ops[i]->ldpc_dec.op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE; //ldpc_dec->op_flags;
-		ops[i]->ldpc_dec.code_block_mode = 1; //ldpc_dec->code_block_mode;
+		ops[i]->ldpc_dec.code_block_mode = ldpc_dec->code_block_mode;
 		
 		//printf("reference bg %d zc %d qm %d nfiller n_filler, n_cb %d iter max %d rv %d\n", ldpc_dec->basegraph, ldpc_dec->z_c, ldpc_dec->q_m,ldpc_dec->n_filler,ldpc_dec->n_cb,ldpc_dec->iter_max,ldpc_dec->rv_index);
 /*char *data;
@@ -5142,7 +5141,7 @@ REGISTER_TEST_COMMAND(throughput, bbdev_throughput_testsuite);
 #define TEST_REPETITIONS 1000
 /* Switch between PMD and Interrupt for throughput TC */
 static bool intr_enabled;
-static struct test_bbdev_vector test_vector;
+//static struct test_bbdev_vector test_vector;
 /* LLR arithmetic representation for numerical conversion */
 static int ldpc_llr_decimals;
 static int ldpc_llr_size;
@@ -5464,7 +5463,7 @@ run_parsed_tests(struct test_params *tp)
 }
 
 static int
-init_input(uint32_t **data, uint32_t *data_length)
+init_input(uint32_t **data, uint32_t data_length)
 {
         uint32_t n_values = 0;
         uint32_t data_size = 32;
@@ -5479,11 +5478,10 @@ init_input(uint32_t **data, uint32_t *data_length)
         values_resized = NULL;
 
 
-*data_length = 2760; 
-n_values = 690;
+        n_values = data_length>>2;
 //printf("data len %d n %d\n",*data_length,n_values);
         values_resized = (uint32_t *) rte_realloc(values,
-                sizeof(uint32_t) * (n_values), 0);
+                sizeof(uint32_t) * (n_values+1), 0);
 
 //printf("resized values addr %p\n",values_resized);
         if (values_resized == NULL) {
@@ -5497,7 +5495,7 @@ n_values = 690;
 }
 
 static int
-init_output(uint32_t **data, uint32_t *data_length)
+init_output(uint32_t **data, uint32_t data_length)
 {
         uint32_t n_values = 0;
         uint32_t data_size = 32;
@@ -5512,11 +5510,10 @@ init_output(uint32_t **data, uint32_t *data_length)
         values_resized = NULL;
 
 
-*data_length = 2760; 
-n_values = 690;
+n_values = data_length>>2; 
 //printf("data len %d n %d\n",*data_length,n_values);
         values_resized = (uint32_t *) rte_realloc(values,
-                sizeof(uint32_t) * (n_values), 0);
+                sizeof(uint32_t) * (n_values+1), 0);
 
 //printf("resized values addr %p\n",values_resized);
         if (values_resized == NULL) {
@@ -5530,10 +5527,9 @@ n_values = 690;
 }
 
 int
-init_entry(struct test_bbdev_vector *vector, enum op_data_type type)
+init_entry(struct test_bbdev_vector *vector, enum op_data_type type, uint32_t data_length)
 {
 	int ret;
-	uint32_t data_length = 0;
 	uint32_t *data = NULL;
 	unsigned int id;
 	struct op_data_buf *op_data;
@@ -5557,9 +5553,9 @@ init_entry(struct test_bbdev_vector *vector, enum op_data_type type)
 	/* Clear new op data struct */
 	memset(op_data + *nb_ops, 0, sizeof(struct op_data_buf));
 if (type == 0)
-	ret = init_input(&data, &data_length);
+	ret = init_input(&data, data_length);
 else
-	ret = init_output(&data, &data_length);
+	ret = init_output(&data, data_length);
 
 	if (!ret) {
 		op_data[*nb_ops].addr = data;
@@ -5571,8 +5567,8 @@ else
 }
 int count_init = 0;
 
-int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, t_nrLDPC_procBuf* p_procBuf, t_nrLDPC_time_stats* p_profiler)
-//int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_t rv, uint32_t F, int8_t* w, int8_t* p_out)
+//int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, t_nrLDPC_procBuf* p_procBuf, t_nrLDPC_time_stats* p_profiler)
+int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_t rv, uint16_t F, uint32_t E, uint8_t Qm, int8_t* p_llr, int8_t* p_out)
 {
     uint32_t numIter = 0;
     struct thread_params *t_params_tp;
@@ -5629,6 +5625,28 @@ argv_re[2] = "../../../targets/ARCH/test-bbdev/test_vectors/ldpc_dec_v8480.data"
                 return 1;
         }
 */
+
+	memset(&test_vector_dec, 0, sizeof(struct test_bbdev_vector));
+
+struct rte_bbdev_op_ldpc_dec *ldpc_dec = &test_vector_dec.ldpc_dec;
+test_vector.op_type = RTE_BBDEV_OP_LDPC_DEC; //vector->op_type;
+test_vector.expected_status = 0;
+//printf("test vector expected status %d\n",test_vector.expected_status);
+
+ ldpc_dec->cb_params.e = E; 
+ldpc_dec->iter_count = 3;
+                ldpc_dec->basegraph = p_decParams->BG; 
+                ldpc_dec->z_c = p_decParams->Z; 
+                ldpc_dec->q_m = Qm;
+                ldpc_dec->n_filler = F; 
+                ldpc_dec->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z); 
+                ldpc_dec->iter_max = 8; 
+                ldpc_dec->rv_index = rv; 
+                ldpc_dec->op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE;
+                ldpc_dec->code_block_mode = 1; 
+
+printf("reference bg %d zc %d qm %d nfiller %d, n_cb %d iter max %d rv %d\n", ldpc_dec->basegraph, ldpc_dec->z_c, ldpc_dec->q_m,ldpc_dec->n_filler,ldpc_dec->n_cb,ldpc_dec->iter_max,ldpc_dec->rv_index);
+
 struct op_data_entries *ref_entries =
 				&test_vector_dec.entries[0];
 ref_entries->segments[0].addr = (int32_t *)p_llr;
@@ -5649,7 +5667,7 @@ test_params.num_lcores=1;
 test_params.num_tests = 1;
 run_all_tests();
 char *data = ldpc_output;
-memcpy(&p_out[0], data, 2760);
+memcpy(&p_out[0], data, E);
 
 //p_out = ldpc_output;
 

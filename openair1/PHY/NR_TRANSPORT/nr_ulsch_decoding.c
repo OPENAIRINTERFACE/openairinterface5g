@@ -384,15 +384,24 @@ printf("input addr p @ %p data %d\n", (pl_ol128), *(pl_ol128));
   //////////////////////////////////////////////////////////////////////////////////////////
 
   ////////////////////////////////// pl =====> llrProcBuf //////////////////////////////////
-
-  no_iteration_ldpc = nrLDPC_decoder_offload(p_decoderParms,
+/*  no_iteration_ldpc = nrLDPC_decoder_offload(p_decoderParms,
                                      (int8_t*)&pl_ol128[0], //pl_ol,
                                      llrProcBuf,
                                      ulsch_harq->p_nrLDPC_procBuf[r],// 3
                                      p_procTime);
+*/
+  no_iteration_ldpc = nrLDPC_decoder_offload(p_decoderParms,
+					ulsch_harq->C, 
+					(uint8_t)rv_index,
+					ulsch_harq->F,
+					E,
+					Qm,
+					(int8_t*)&pl_ol128[0],
+					llrProcBuf);
 
+/*
 
-/*no_iteration_ldpc = nrLDPC_decoder(p_decoderParms,
+no_iteration_ldpc = nrLDPC_decoder(p_decoderParms,
                                      (int8_t*)&pl[0],
                                      llrProcBuf,
                                      ulsch_harq->p_nrLDPC_procBuf[r],
@@ -415,12 +424,11 @@ printf("input addr p @ %p data %d\n", (pl_ol128), *(pl_ol128));
     ulsch_harq->c[r][m]= (uint8_t) llrProcBuf[m];
   }
 /*for (int k=0;k<16;k++)
-{          
+     {          
         printf("output decoder [%d] =  0x%02x \n", k, ulsch_harq->c[r][k]);
-        printf("llrprocbuf [%d] =  %x adr %p\n", k, llrProcBuf[k+128], llrProcBuf+k+128);
+        printf("llrprocbuf [%d] =  %x adr %p\n", k, llrProcBuf[k], llrProcBuf+k);
      }   
    printf("no_iterations_ldpc %d \n",no_iteration_ldpc);
-}
 */
 }
 
