@@ -836,7 +836,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
       /* PP has not selected a specific HARQ Process, get a new one */
       // if (NFAPI_MODE == NFAPI_MODE_VNF)
       //   sched_ctrl->available_dl_harq.head = 0;
-      remove_front_nr_list(&sched_ctrl->available_dl_harq);
       current_harq_pid = sched_ctrl->available_dl_harq.head;
       AssertFatal(current_harq_pid >= 0,
                   "no free HARQ process available for UE %d\n",
