@@ -143,8 +143,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   uint16_t N_n_scid[2] = {0,1}; // [HOTFIX] This is a temporary implementation of scramblingID0 and scramblingID1 which are given by DMRS-UplinkConfig
   int n_scid;
   abstraction_flag = 0;
-  // dmrs_UplinkConfig_t *dmrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig;
-  // ptrs_UplinkConfig_t *ptrs_Uplink_Config = &ue->pusch_config.dmrs_UplinkConfig.ptrs_UplinkConfig;
   LOG_I(PHY, "Initializing UE vars (abstraction %u) for gNB TXant %u, UE RXant %u\n", abstraction_flag, fp->nb_antennas_tx, fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_gNB_INST);
   phy_init_nr_top(ue);
@@ -198,29 +196,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
   /////////////////////////PUSCH DMRS init/////////////////////////
   ///////////
-
-  // default values until overwritten by RRCConnectionReconfiguration
-
-  for (i=0; i<MAX_NR_OF_UL_ALLOCATIONS; i++) {
-    ue->pusch_config.pusch_TimeDomainResourceAllocation[i] = (PUSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PUSCH_TimeDomainResourceAllocation_t));
-    ue->pusch_config.pusch_TimeDomainResourceAllocation[i]->mappingType = typeB;
-  }
-
-  for (i=0;i<MAX_NR_OF_DL_ALLOCATIONS;i++){
-    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i] = (PDSCH_TimeDomainResourceAllocation_t *)malloc16(sizeof(PDSCH_TimeDomainResourceAllocation_t));
-    ue->PDSCH_Config.pdsch_TimeDomainResourceAllocation[i]->mappingType = typeA;
-  }
-
-  //------------- config DMRS parameters--------------//
-  // dmrs_Uplink_Config->pusch_dmrs_type = pusch_dmrs_type1;
-  // dmrs_Uplink_Config->pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
-  // dmrs_Uplink_Config->pusch_maxLength = pusch_len1;
-  //-------------------------------------------------//
-  ue->dmrs_DownlinkConfig.pdsch_dmrs_type = pdsch_dmrs_type1;
-  ue->dmrs_DownlinkConfig.pdsch_dmrs_AdditionalPosition = pdsch_dmrs_pos0;
-  ue->dmrs_DownlinkConfig.pdsch_maxLength = pdsch_len1;
-  //-------------------------------------------------//
-
   ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
   pusch_dmrs             = ue->nr_gold_pusch_dmrs;
   n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization

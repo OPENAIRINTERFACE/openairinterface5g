@@ -2515,7 +2515,7 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
 *
 * NAME :         get_K_ptrs
 *
-* PARAMETERS :   ptrs_UplinkConfig      PTRS uplink configuration
+* PARAMETERS :   nrb0, nrb1             PTRS uplink configuration
 *                N_RB                   number of RBs scheduled for PUSCH
 *
 * RETURN :       the parameter K_ptrs
