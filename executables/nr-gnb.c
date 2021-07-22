@@ -86,7 +86,7 @@
 #include "T.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include <nfapi/oai_integration/nfapi_pnf.h>
-#include <PHY/NR_TRANSPORT/nr_ulsch.h>
+#include <openair1/PHY/NR_TRANSPORT/nr_ulsch.h>
 #include <PHY/NR_ESTIMATION/nr_ul_estimation.h>
 //#define DEBUG_THREADS 1
 
@@ -356,7 +356,7 @@ void *nrL1_stats_thread(void *param) {
   while (!oai_exit) {
     sleep(1);
     fd=fopen("nrL1_stats.log","w");
-    AssertFatal(fd!=NULL,"Cannot open ngL1_stats.log\n");
+    AssertFatal(fd!=NULL,"Cannot open nrL1_stats.log\n");
     dump_nr_I0_stats(fd,gNB);
     dump_pusch_stats(fd,gNB);
     //    nr_dump_uci_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
@@ -383,6 +383,7 @@ void init_gNB_Tpool(int inst) {
     sprintf(ul_pool+2+s_offset,",-1");
     s_offset += 3;
   }
+  if (getenv("noThreads")) strcpy(ul_pool, "n");
   initTpool(ul_pool, gNB->threadPool, false);
   // ULSCH decoder result FIFO
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));

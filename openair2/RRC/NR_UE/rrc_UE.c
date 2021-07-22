@@ -69,9 +69,7 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 #include <executables/softmodem-common.h>
 
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
 #include "nr_nas_msg_sim.h"
-#endif
 
 NR_UE_RRC_INST_t *NR_UE_rrc_inst;
 /* NAS Attach request with IMSI */
@@ -1267,16 +1265,34 @@ nr_rrc_ue_process_masterCellGroup(
     // NSA procedures
   }
 
+  if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config == NULL){
+    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = calloc(1,sizeof(NR_CellGroupConfig_t));
+  }
+
   if( cellGroupConfig->rlc_BearerToReleaseList != NULL){
     //TODO (perform RLC bearer release as specified in 5.3.5.5.3)
   }
 
   if( cellGroupConfig->rlc_BearerToAddModList != NULL){
     //TODO (perform the RLC bearer addition/modification as specified in 5.3.5.5.4)
+    if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList != NULL){
+      free(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
+    }
+    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList = calloc(1, sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
+    memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList,cellGroupConfig->rlc_BearerToAddModList,
+                 sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
   }
 
   if( cellGroupConfig->mac_CellGroupConfig != NULL){
     //TODO (configure the MAC entity of this cell group as specified in 5.3.5.5.5)
+    LOG_I(RRC, "Received mac_CellGroupConfig from gNB\n");
+    if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig != NULL){
+      LOG_E(RRC, "UE RRC instance already contains mac CellGroupConfig which will be overwritten\n");
+      free(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig);
+    }
+    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig = malloc(sizeof(struct NR_MAC_CellGroupConfig));
+    memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->mac_CellGroupConfig,cellGroupConfig->mac_CellGroupConfig,
+                     sizeof(struct NR_MAC_CellGroupConfig));
   }
 
   if( cellGroupConfig->sCellToReleaseList != NULL){
@@ -1332,14 +1348,21 @@ static void rrc_ue_generate_RRCSetupComplete(
     AssertFatal(1==0,"2 > csi_MeasConfig is not null\n");
 
  if (AMF_MODE_ENABLED) {
-#if defined(ITTI_SIM) || defined(RFSIM_NAS)
+#if defined(ITTI_SIM)
     as_nas_info_t initialNasMsg;
-    generateRegistrationRequest(&initialNasMsg);
+    generateRegistrationRequest(&initialNasMsg, ctxt_pP->module_id);
     nas_msg = (char*)initialNasMsg.data;
     nas_msg_length = initialNasMsg.length;
 #else
-    nas_msg         = (char *) NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
-    nas_msg_length  = NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
+    if (get_softmodem_params()->sa) {
+      as_nas_info_t initialNasMsg;
+      generateRegistrationRequest(&initialNasMsg, ctxt_pP->module_id);
+      nas_msg = (char*)initialNasMsg.data;
+      nas_msg_length = initialNasMsg.length;
+    } else {
+      nas_msg         = (char *) NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
+      nas_msg_length  = NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
+    }
 #endif
   } else {
     nas_msg         = nr_nas_attach_req_imsi;
@@ -2115,28 +2138,27 @@ nr_rrc_ue_establish_srb2(
 	 (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4));
 
        // Refresh DRBs
-       // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-       //                             NULL,
-       //                             radioBearerConfig->drb_ToAddModList,
-       //                             NULL,
-       //                             NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-       //                             (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-       //                             NULL,
-       //                             NULL,
-       //                             kUPenc,
-       //                             NULL,
-       //                             NULL,
-       //                             NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
-       //                             NULL);
+        nr_rrc_pdcp_config_asn1_req(ctxt_pP,
+                                    NULL,
+                                    radioBearerConfig->drb_ToAddModList,
+                                    NULL,
+                                    0,
+                                    NULL,
+                                    NULL,
+                                    kUPenc,
+                                    NULL,
+                                    NULL,
+                                    NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
+                                    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
        // Refresh DRBs
-       // nr_rrc_rlc_config_asn1_req(ctxt_pP,
-       //                             NULL,
-       //                             radioBearerConfig->drb_ToAddModList,
-       //                             NULL,
-       //                             NULL,
-       //                             NULL
-       //                             );
-   } // drb_ToAddModList
+        nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                                    NULL,
+                                    radioBearerConfig->drb_ToAddModList,
+                                    NULL,
+                                    NULL,
+                                    NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList
+                                    );
+   } // drb_ToAddModList //
 
    if (radioBearerConfig->drb_ToReleaseList != NULL) {
      for (i = 0; i < radioBearerConfig->drb_ToReleaseList->list.count; i++) {
@@ -2171,9 +2193,16 @@ nr_rrc_ue_establish_srb2(
  //      nr_rrc_ue_process_measConfig(ctxt_pP, gNB_index, ie->measConfig);
      }
 
+     if(ie->nonCriticalExtension->masterCellGroup!=NULL) {
+       nr_rrc_ue_process_masterCellGroup(
+           ctxt_pP,
+           gNB_index,
+           ie->nonCriticalExtension->masterCellGroup);
+     }
+
      if (ie->radioBearerConfig != NULL) {
        LOG_I(NR_RRC, "radio Bearer Configuration is present\n");
- //      nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
+       nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
      }
 
      /* Check if there is dedicated NAS information to forward to NAS */
@@ -2255,8 +2284,7 @@ nr_rrc_ue_establish_srb2(
 
    if (Srb_id != 1) {
      LOG_E(NR_RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%ld), should not have ...\n",
-	 ctxt_pP->module_id, ctxt_pP->frame, Srb_id);
-     return -1;
+           ctxt_pP->module_id, ctxt_pP->frame, Srb_id);
    } else {
      LOG_D(NR_RRC, "Received message on SRB%ld\n", Srb_id);
    }
