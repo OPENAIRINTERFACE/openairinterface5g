@@ -2004,7 +2004,7 @@ void dlsch_channel_compensation_TM56(int **rxdataF_ext,
   __m128i *dl_ch0_128,*dl_ch1_128,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128;
   unsigned char aarx=0,symbol_mod,pilots=0;
   int precoded_signal_strength=0;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0};
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))

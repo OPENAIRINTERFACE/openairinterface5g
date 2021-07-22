@@ -53,6 +53,7 @@
 #include "PHY_INTERFACE/phy_interface_vars.h"
 #include "gnb_config.h"
 #include "SIMULATION/TOOLS/sim.h"
+#include <targets/RT/USER/lte-softmodem.h>
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -179,7 +180,6 @@ void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
-extern void init_eNB_afterRU(void);
 extern void *udp_eNB_task(void *args_p);
 
 int transmission_mode=1;
