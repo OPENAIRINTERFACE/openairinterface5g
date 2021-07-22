@@ -1539,8 +1539,10 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t
   ra->state = RA_IDLE;
   ra->timing_offset = 0;
   ra->RRC_timer = 20;
-  ra->rnti = 0;
   ra->msg3_round = 0;
+  if(ra->cfra == false) {
+    ra->rnti = 0;
+  }
 }
 
 
