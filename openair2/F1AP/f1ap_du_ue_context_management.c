@@ -38,13 +38,8 @@
 
 #include "rrc_extern.h"
 #include "rrc_eNB_UE_context.h"
-
-// undefine C_RNTI from
-// openair1/PHY/LTE_TRANSPORT/transport_common.h which
-// replaces in ie->value.choice.C_RNTI, causing
-// a compile error
-
-#undef C_RNTI
+#include "openair2/RRC/NR/rrc_gNB_UE_context.h"
+#include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 
 extern f1ap_setup_req_t *f1ap_du_data;
 extern f1ap_cudu_inst_t f1ap_du_inst[MAX_eNB];
@@ -664,11 +659,21 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
               rnti, ctxt.rnti);
   int UE_out_of_sync = 0;
 
-  for (int n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
-    if (RC.mac[instance]->UE_info.active[n] == TRUE
-        && rnti == UE_RNTI(instance, n)) {
-      UE_out_of_sync = RC.mac[instance]->UE_info.UE_sched_ctrl[n].ul_out_of_sync;
-      break;
+  if (RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
+    for (int n = 0; n < MAX_MOBILES_PER_GNB; ++n) {
+      if (RC.nrmac[instance]->UE_info.active[n] == TRUE
+          && rnti == RC.nrmac[instance]->UE_info.rnti[n]) {
+        UE_out_of_sync = 0;
+        break;
+      }
+    }
+  } else {
+    for (int n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
+      if (RC.mac[instance]->UE_info.active[n] == TRUE
+          && rnti == UE_RNTI(instance, n)) {
+        UE_out_of_sync = RC.mac[instance]->UE_info.UE_sched_ctrl[n].ul_out_of_sync;
+        break;
+      }
     }
   }
 
@@ -716,6 +721,15 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
               "the order to send some data (Status Code:%d)\n", rlc_status);
         break;
     }
+  }
+
+  if (RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
+    // struct rrc_gNB_ue_context_s *ue_context_p;
+
+    f1ap_ue_context_release_cplt_t cplt;
+    cplt.rnti = ctxt.rnti;
+    DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance, &cplt);
+    return 0;
   }
 
   struct rrc_eNB_ue_context_s *ue_context_p;

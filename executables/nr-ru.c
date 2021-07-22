@@ -744,7 +744,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       int beam=0;
 
       if (slot%10==0) {
-        if (ru->common.beam_id[0][slot*fp->symbols_per_slot] < 8) {
+        if ( ru->common.beam_id && (ru->common.beam_id[0][slot*fp->symbols_per_slot] < 8)) {
           beam = ru->common.beam_id[0][slot*fp->symbols_per_slot] | 8;
         }
       }
@@ -869,83 +869,89 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     }
   } else if (mu == NR_MU_1) {
     switch(N_RB) {
-      case 273:
-        if (fp->threequarter_fs) {
-          cfg->sample_rate=184.32e6;
-          cfg->samples_per_frame = 1843200;
-          cfg->tx_bw = 100e6;
-          cfg->rx_bw = 100e6;
-        } else {
-          cfg->sample_rate=122.88e6;
-          cfg->samples_per_frame = 1228800;
-          cfg->tx_bw = 100e6;
-          cfg->rx_bw = 100e6;
-        }
 
-        break;
+    case 273:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=184.32e6;
+        cfg->samples_per_frame = 1843200;
+        cfg->tx_bw = 100e6;
+        cfg->rx_bw = 100e6;
+      } else {
+        cfg->sample_rate=122.88e6;
+        cfg->samples_per_frame = 1228800;
+        cfg->tx_bw = 100e6;
+        cfg->rx_bw = 100e6;
+      }
+      break;
+    case 217:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=92.16e6;
+        cfg->samples_per_frame = 921600;
+        cfg->tx_bw = 80e6;
+        cfg->rx_bw = 80e6;
+      } else {
+        cfg->sample_rate=122.88e6;
+        cfg->samples_per_frame = 1228800;
+        cfg->tx_bw = 80e6;
+        cfg->rx_bw = 80e6;
+      }
+      break;
+    case 133 :
+      if (fp->threequarter_fs) {
+	AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
+      }
+      else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
+      }
 
-      case 217:
-        if (fp->threequarter_fs) {
-          cfg->sample_rate=92.16e6;
-          cfg->samples_per_frame = 921600;
-          cfg->tx_bw = 80e6;
-          cfg->rx_bw = 80e6;
-        } else {
-          cfg->sample_rate=122.88e6;
-          cfg->samples_per_frame = 1228800;
-          cfg->tx_bw = 80e6;
-          cfg->rx_bw = 80e6;
-        }
-
-        break;
-
-      case 106:
-        if (fp->threequarter_fs) {
-          cfg->sample_rate=46.08e6;
-          cfg->samples_per_frame = 460800;
-          cfg->tx_bw = 40e6;
-          cfg->rx_bw = 40e6;
-        } else {
-          cfg->sample_rate=61.44e6;
-          cfg->samples_per_frame = 614400;
-          cfg->tx_bw = 40e6;
-          cfg->rx_bw = 40e6;
-        }
-
-        break;
-
-      case 51:
-        if (fp->threequarter_fs) {
-          cfg->sample_rate=23.04e6;
-          cfg->samples_per_frame = 230400;
-          cfg->tx_bw = 20e6;
-          cfg->rx_bw = 20e6;
-        } else {
-          cfg->sample_rate=30.72e6;
-          cfg->samples_per_frame = 307200;
-          cfg->tx_bw = 20e6;
-          cfg->rx_bw = 20e6;
-        }
-
-        break;
-
-      case 24:
-        if (fp->threequarter_fs) {
-          cfg->sample_rate=11.52e6;
-          cfg->samples_per_frame = 115200;
-          cfg->tx_bw = 10e6;
-          cfg->rx_bw = 10e6;
-        } else {
-          cfg->sample_rate=15.36e6;
-          cfg->samples_per_frame = 153600;
-          cfg->tx_bw = 10e6;
-          cfg->rx_bw = 10e6;
-        }
-
-        break;
-
-      default:
-        AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
+      break;
+    case 106:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=46.08e6;
+        cfg->samples_per_frame = 460800;
+        cfg->tx_bw = 40e6;
+        cfg->rx_bw = 40e6;
+      }
+      else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 40e6;
+        cfg->rx_bw = 40e6;
+      }
+     break;
+    case 51:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=23.04e6;
+        cfg->samples_per_frame = 230400;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
+      }
+      else {
+        cfg->sample_rate=30.72e6;
+        cfg->samples_per_frame = 307200;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
+      }
+      break;
+    case 24:
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=11.52e6;
+        cfg->samples_per_frame = 115200;
+        cfg->tx_bw = 10e6;
+        cfg->rx_bw = 10e6;
+      }
+      else {
+        cfg->sample_rate=15.36e6;
+        cfg->samples_per_frame = 153600;
+        cfg->tx_bw = 10e6;
+        cfg->rx_bw = 10e6;
+      }
+      break;
+    default:
+      AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
     }
   } else if (mu == NR_MU_3) {
     switch(N_RB) {
@@ -2045,6 +2051,7 @@ static void NRRCconfig_RU(void) {
       RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
       RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].u64ptr);
       RC.ru[j]->if_freq_offset                    = *(RUParamList.paramarray[j][RU_IF_FREQ_OFFSET].iptr);
+      RC.ru[j]->do_precoding                      = *(RUParamList.paramarray[j][RU_DO_PRECODING].iptr);
 
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;

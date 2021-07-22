@@ -434,6 +434,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 0);} while(0)
 #    define LOG_VAR(A,B) A B
+#    define T_ACTIVE(a) (0) 
 #  endif /* T_TRACER */
 /* avoid warnings for variables only used in LOG macro's but set outside debug section */
 #define GCC_NOTUSED   __attribute__((unused))

@@ -194,23 +194,23 @@ static int encode_guti_5gs_mobile_identity(Guti5GSMobileIdentity_t *guti, uint8_
 static int encode_suci_5gs_mobile_identity(Suci5GSMobileIdentity_t *suci, uint8_t *buffer)
 {
   uint32_t encoded = 0;
-  *(buffer + encoded) = 0x00 | (suci->supiformat << 4) | (suci->typeofidentity);
+  *(buffer + encoded) = (suci->supiformat << 4) | (suci->typeofidentity);
   encoded++;
-  *(buffer + encoded) = 0x00 | ((suci->mccdigit2 & 0xf) << 4) |
+  *(buffer + encoded) = ((suci->mccdigit2 & 0xf) << 4) |
                         (suci->mccdigit1 & 0xf);
   encoded++;
-  *(buffer + encoded) = 0x00 | ((suci->mncdigit3 & 0xf) << 4) |
+  *(buffer + encoded) = ((suci->mncdigit3 & 0xf) << 4) |
                         (suci->mccdigit3 & 0xf);
   encoded++;
-  *(buffer + encoded) = 0x00 | ((suci->mncdigit2 & 0xf) << 4) |
+  *(buffer + encoded) = ((suci->mncdigit2 & 0xf) << 4) |
                         (suci->mncdigit1 & 0xf);
   encoded++;
 
-  *(buffer + encoded) = 0x00 | ((suci->routingindicatordigit2 & 0xf) << 4) |
+  *(buffer + encoded) = ((suci->routingindicatordigit2 & 0xf) << 4) |
                         (suci->routingindicatordigit1 & 0xf);
   encoded++;
 
-  *(buffer + encoded) = 0x00 | ((suci->routingindicatordigit4 & 0xf) << 4) |
+  *(buffer + encoded) = ((suci->routingindicatordigit4 & 0xf) << 4) |
                         (suci->routingindicatordigit3 & 0xf);
   encoded++;
 
@@ -220,8 +220,15 @@ static int encode_suci_5gs_mobile_identity(Suci5GSMobileIdentity_t *suci, uint8_
   *(buffer + encoded) = suci->homenetworkpki;
   encoded++;
 
-  IES_ENCODE_U32(buffer, encoded, suci->schemeoutput);
+  char *ptr=suci->schemeoutput;
+  while ( ptr < suci->schemeoutput+strlen(suci->schemeoutput) ) {
+    buffer[encoded]=((*(ptr+1)-'0')<<4) | (*(ptr) -'0');
+    encoded++;
+    ptr+=2;
+  }
 
+  if (strlen(suci->schemeoutput)%2 == 1)
+    buffer[encoded++]=((*(ptr-1)-'0')) | 0xF0;
   return encoded;
 }
 
