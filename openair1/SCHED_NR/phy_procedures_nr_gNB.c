@@ -196,7 +196,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
 
-  if ((frame&127) == 0) dump_pdsch_stats(gNB);
+//  if ((frame&127) == 0) dump_pdsch_stats(gNB);
 
   //apply the OFDM symbol rotation here
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {

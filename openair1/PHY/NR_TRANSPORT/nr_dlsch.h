@@ -98,7 +98,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 void init_dlsch_tpool(uint8_t nun_dlsch_threads);
 void nr_emulate_dlsch_payload(uint8_t* payload, uint16_t size);
 
-void dump_pdsch_stats(PHY_VARS_gNB *gNB);
+void dump_pdsch_stats(FILE *fd,PHY_VARS_gNB *gNB);
 
 void clear_pdsch_stats(PHY_VARS_gNB *gNB);
 

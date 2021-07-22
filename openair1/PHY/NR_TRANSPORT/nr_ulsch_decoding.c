@@ -556,6 +556,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     }
   }
   if (stats) {
+    stats->frame = frame;
     stats->rnti = ulsch->rnti;
     stats->round_trials[harq_process->round]++;
     for (int aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {

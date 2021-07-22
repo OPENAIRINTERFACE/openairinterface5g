@@ -1034,28 +1034,29 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   pucchres0->format.choice.format0->startingSymbolIndex=13;
   ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres0);
   
+  if (0) {
   // configure Scheduling request
   // 40 slot period 
-  pucch_Config->schedulingRequestResourceToAddModList = calloc(1,sizeof(*pucch_Config->schedulingRequestResourceToAddModList));
-  NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig = calloc(1,sizeof(*schedulingRequestResourceConfig));
-  schedulingRequestResourceConfig->schedulingRequestResourceId = 1;
-  schedulingRequestResourceConfig->schedulingRequestID= 0;
-  schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
-  schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40;
-  // note: make sure that there is no issue here. Later choose the RNTI accordingly. 
-  //       Here we would be limited to 8 UEs on this resource (2 Frames 30 kHz SCS, 5 ms TDD periodicity => slots 8,9,18,19,28,29,38,39). 
-  //       This should be a temporary resource until the first RRCReconfiguration gives new pucch resources.
-  // Check for above configuration and exit for now if it is not the case
-  AssertFatal(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing==NR_SubcarrierSpacing_kHz30,
-	      "SCS != 30kHz\n");
-  AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity==NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5,
-	      "TDD period != 5ms : %ld\n",scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+    pucch_Config->schedulingRequestResourceToAddModList = calloc(1,sizeof(*pucch_Config->schedulingRequestResourceToAddModList));
+    NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig = calloc(1,sizeof(*schedulingRequestResourceConfig));
+    schedulingRequestResourceConfig->schedulingRequestResourceId = 1;
+    schedulingRequestResourceConfig->schedulingRequestID= 0;
+    schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
+    schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40;
+    // note: make sure that there is no issue here. Later choose the RNTI accordingly. 
+    //       Here we would be limited to 3 UEs on this resource (1 1/2 Frames 30 kHz SCS, 5 ms TDD periodicity => slots 7,8,9). 
+    //       This should be a temporary resource until the first RRCReconfiguration gives new pucch resources.
+    // Check for above configuration and exit for now if it is not the case
+    AssertFatal(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing==NR_SubcarrierSpacing_kHz30,
+  	      "SCS != 30kHz\n");
+    AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity==NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5,
+  	      "TDD period != 5ms : %ld\n",scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
   
-  schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 = 10*((rnti>>1)&3) + (rnti&2);
-  schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
-  *schedulingRequestResourceConfig->resource = 0;
-  ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
-
+    schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 =  (10*(rnti&3));//(10*((rnti>>1)&3)) + (rnti&1);
+    schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
+    *schedulingRequestResourceConfig->resource = 0;
+    ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
+  }
   SpCellConfig->spCellConfigDedicated->initialDownlinkBWP = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->initialDownlinkBWP));
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
   bwp_Dedicated->pdcch_Config=calloc(1,sizeof(*bwp_Dedicated->pdcch_Config));
@@ -1241,15 +1242,17 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   /* mac CellGroup Config */
   if (1) {
     mac_CellGroupConfig                                                     = calloc(1, sizeof(*mac_CellGroupConfig));
-    mac_CellGroupConfig->schedulingRequestConfig                            = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
-    mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = CALLOC(1,sizeof(*mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));
-    struct NR_SchedulingRequestToAddMod *schedulingrequestlist;
-    schedulingrequestlist = CALLOC(1,sizeof(*schedulingrequestlist));
-    schedulingrequestlist->schedulingRequestId  = 0;
-    schedulingrequestlist->sr_ProhibitTimer = CALLOC(1,sizeof(*schedulingrequestlist->sr_ProhibitTimer));
-    *(schedulingrequestlist->sr_ProhibitTimer) = 0;
-    schedulingrequestlist->sr_TransMax      = 0;
-    ASN_SEQUENCE_ADD(&(mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList->list),schedulingrequestlist);
+    if (0) {
+      mac_CellGroupConfig->schedulingRequestConfig                            = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
+      mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = CALLOC(1,sizeof(*mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));
+      struct NR_SchedulingRequestToAddMod *schedulingrequestlist;
+      schedulingrequestlist = CALLOC(1,sizeof(*schedulingrequestlist));
+      schedulingrequestlist->schedulingRequestId  = 0;
+      schedulingrequestlist->sr_ProhibitTimer = CALLOC(1,sizeof(*schedulingrequestlist->sr_ProhibitTimer));
+      *(schedulingrequestlist->sr_ProhibitTimer) = 0;
+      schedulingrequestlist->sr_TransMax      = 0;
+      ASN_SEQUENCE_ADD(&(mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList->list),schedulingrequestlist);
+    }
     mac_CellGroupConfig->bsr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->bsr_Config));
     mac_CellGroupConfig->bsr_Config->periodicBSR_Timer                      = NR_BSR_Config__periodicBSR_Timer_sf10;
     mac_CellGroupConfig->bsr_Config->retxBSR_Timer                          = NR_BSR_Config__retxBSR_Timer_sf80;

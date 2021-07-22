@@ -127,6 +127,8 @@ typedef struct {
 } NR_gNB_UL_PDCCH_t;
 
 typedef struct {
+  int frame;
+  int dump_frame;
   uint16_t rnti;
   int round_trials[8];
   int total_bytes_tx;

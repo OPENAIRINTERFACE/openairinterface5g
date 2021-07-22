@@ -526,15 +526,17 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
   return 0;
 }
 
-void dump_pdsch_stats(PHY_VARS_gNB *gNB) {
+void dump_pdsch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
   for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++)
-    if (gNB->dlsch_stats[i].rnti > 0)
-      LOG_D(PHY,"DLSCH RNTI %x: current_Qm %d, current_RI %d, total_bytes TX %d\n",
+    if (gNB->dlsch_stats[i].rnti > 0 && gNB->dlsch_stats[i].frame != gNB->dlsch_stats[i].dump_frame) {
+      gNB->dlsch_stats[i].dump_frame = gNB->dlsch_stats[i].frame;
+      fprintf(fd,"DLSCH RNTI %x: current_Qm %d, current_RI %d, total_bytes TX %d\n",
 	    gNB->dlsch_stats[i].rnti,
 	    gNB->dlsch_stats[i].current_Qm,
 	    gNB->dlsch_stats[i].current_RI,
 	    gNB->dlsch_stats[i].total_bytes_tx);
+    }
 
 }
 
