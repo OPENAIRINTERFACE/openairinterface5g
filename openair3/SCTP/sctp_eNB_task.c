@@ -1027,7 +1027,14 @@ sctp_eNB_read_from_socket(
             break;
 
             default:
-                SCTP_WARN("unhandled: SCTP_ASSOC_CHANGE to %d\n", sctp_assoc_changed->sac_state);
+                if ( sctp_assoc_changed->sac_state == SCTP_SHUTDOWN_COMP) 
+                    SCTP_WARN("SCTP_ASSOC_CHANGE to SSCTP_SHUTDOWN_COMP\n");
+                if ( sctp_assoc_changed->sac_state == SCTP_RESTART) 
+                    SCTP_WARN("SCTP_ASSOC_CHANGE to SCTP_RESTART\n");
+                if ( sctp_assoc_changed->sac_state == SCTP_CANT_STR_ASSOC) 
+                    SCTP_ERROR("SCTP_ASSOC_CHANGE to SCTP_CANT_STR_ASSOC\n");
+                if ( sctp_assoc_changed->sac_state == SCTP_COMM_LOST) 
+                    SCTP_ERROR("SCTP_ASSOC_CHANGE to SCTP_COMM_LOST\n");
                 break;
             }
         }

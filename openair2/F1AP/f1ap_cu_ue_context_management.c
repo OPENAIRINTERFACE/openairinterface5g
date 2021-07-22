@@ -39,8 +39,10 @@
 
 #include "rrc_extern.h"
 #include "rrc_eNB_UE_context.h"
+#include "openair2/RRC/NR/rrc_gNB_UE_context.h"
 #include "rrc_eNB_S1AP.h"
 #include "rrc_eNB_GTPV1U.h"
+#include "openair2/RRC/NR/rrc_gNB_NGAP.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 extern f1ap_cudu_inst_t f1ap_cu_inst[MAX_eNB];
@@ -1029,35 +1031,55 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
     // F1AP_CriticalityDiagnostics_IE_List
   }
 
-  struct rrc_eNB_ue_context_s *ue_context_p =
-      rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
   protocol_ctxt_t ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, instance, ENB_FLAG_YES, rnti, 0, 0, instance);
 
-  if (ue_context_p) {
-    /* The following is normally done in the function rrc_rx_tx() */
-    rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(instance,
-        ue_context_p->ue_context.eNB_ue_s1ap_id);
+  if (RC.nrrrc[instance]->node_type == ngran_gNB_CU) {
+    struct rrc_gNB_ue_context_s *ue_context_p =
+        rrc_gNB_get_ue_context(RC.nrrrc[instance], rnti);
 
-    rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(instance, ue_context_p);
-    // erase data of GTP tunnels in UE context
-    for (int e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-      ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
-      memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab],
-             0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
-      ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
+    if (ue_context_p) {
+      MessageDef *msg = itti_alloc_new_message(TASK_CU_F1, 0, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
+      NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg).gNB_ue_ngap_id = ue_context_p->ue_context.gNB_ue_ngap_id;
+      itti_send_msg_to_task(TASK_NGAP, instance, msg);
+
+      rrc_gNB_remove_ue_context(&ctxt, RC.nrrrc[instance], ue_context_p);
+    } else {
+      LOG_E(F1AP, "could not find ue_context of UE RNTI %x\n", rnti);
     }
+#ifdef ITTI_SIM
+    return 0;
+#endif
 
-    struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids =
-        rrc_eNB_S1AP_get_ue_ids(RC.rrc[instance], 0,
-                                ue_context_p->ue_context.eNB_ue_s1ap_id);
-    if (rrc_ue_s1ap_ids)
-        rrc_eNB_S1AP_remove_ue_ids(RC.rrc[instance], rrc_ue_s1ap_ids);
-
-    /* trigger UE release in RRC */
-    rrc_eNB_remove_ue_context(&ctxt, RC.rrc[instance], ue_context_p);
   } else {
-    LOG_E(F1AP, "could not find ue_context of UE RNTI %x\n", rnti);
+    struct rrc_eNB_ue_context_s *ue_context_p =
+        rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
+
+    if (ue_context_p) {
+      /* The following is normally done in the function rrc_rx_tx() */
+      rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(instance,
+          ue_context_p->ue_context.eNB_ue_s1ap_id);
+
+      rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(instance, ue_context_p);
+      // erase data of GTP tunnels in UE context
+      for (int e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+        ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
+        memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab],
+              0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
+        ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
+      }
+
+      struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids =
+          rrc_eNB_S1AP_get_ue_ids(RC.rrc[instance], 0,
+                                  ue_context_p->ue_context.eNB_ue_s1ap_id);
+      if (rrc_ue_s1ap_ids)
+          rrc_eNB_S1AP_remove_ue_ids(RC.rrc[instance], rrc_ue_s1ap_ids);
+
+      /* trigger UE release in RRC */
+      rrc_eNB_remove_ue_context(&ctxt, RC.rrc[instance], ue_context_p);
+    } else {
+      LOG_E(F1AP, "could not find ue_context of UE RNTI %x\n", rnti);
+    }
   }
 
   pdcp_remove_UE(&ctxt);

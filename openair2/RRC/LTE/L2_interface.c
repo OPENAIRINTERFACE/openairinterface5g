@@ -49,8 +49,6 @@
 #include "intertask_interface.h"
 
 #include "flexran_agent_extern.h"
-#undef C_RNTI // C_RNTI is used in F1AP generated code, prevent preprocessor replace
-//#include "f1ap_du_rrc_message_transfer.h"
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
 extern RAN_CONTEXT_t RC;

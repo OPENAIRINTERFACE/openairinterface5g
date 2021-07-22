@@ -1021,7 +1021,6 @@ add_boolean_option(PHY_TX_THREAD            False         "enable UE_EXPANSION w
 add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION with max 256 UE")
 add_boolean_option(UESIM_EXPANSION          False         "enable UESIM_EXPANSION with max 256 UE")
 add_boolean_option(ITTI_SIM                 False         "enable itti simulator")
-add_boolean_option(RFSIM_NAS                False         "enable rfsim nas")
 
 ########################
 # Include order
@@ -2464,108 +2463,6 @@ set (libnas_utils_OBJS
   ${NAS_SRC}COMMON/UTIL/OctetString.c
 )
 
-if(NAS_UE)
-  set(libnas_ue_api_OBJS
-    ${NAS_SRC}UE/API/USER/at_command.c
-    ${NAS_SRC}UE/API/USER/at_error.c
-    ${NAS_SRC}UE/API/USER/at_response.c
-    ${NAS_SRC}UE/API/USER/user_api.c
-    ${NAS_SRC}UE/API/USER/user_indication.c
-    ${NAS_SRC}UE/API/USIM/aka_functions.c
-    ${NAS_SRC}UE/API/USIM/usim_api.c
-  )
-  set(libnas_ue_emm_OBJS
-    ${NAS_SRC}UE/EMM/Attach.c
-    ${NAS_SRC}UE/EMM/Authentication.c
-    ${NAS_SRC}UE/EMM/Detach.c
-    ${NAS_SRC}UE/EMM/emm_main.c
-    ${NAS_SRC}UE/EMM/EmmStatusHdl.c
-    ${NAS_SRC}UE/EMM/Identification.c
-    ${NAS_SRC}UE/EMM/IdleMode.c
-    ${NAS_SRC}UE/EMM/LowerLayer.c
-    ${NAS_SRC}UE/EMM/SecurityModeControl.c
-    ${NAS_SRC}UE/EMM/ServiceRequestHdl.c
-    ${NAS_SRC}UE/EMM/TrackingAreaUpdate.c
-  )
-  set(libnas_ue_emm_sap_OBJS
-    ${NAS_SRC}UE/EMM/SAP/emm_as.c
-    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredAttachNeeded.c
-    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredAttemptingToAttach.c
-    ${NAS_SRC}UE/EMM/SAP/EmmDeregistered.c
-    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredInitiated.c
-    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredLimitedService.c
-    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredNoCellAvailable.c
-    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredNoImsi.c
-    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredNormalService.c
-    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredPlmnSearch.c
-    ${NAS_SRC}UE/EMM/SAP/emm_esm.c
-    ${NAS_SRC}UE/EMM/SAP/emm_fsm.c
-    ${NAS_SRC}UE/EMM/SAP/EmmNull.c
-    ${NAS_SRC}UE/EMM/SAP/emm_recv.c
-    ${NAS_SRC}UE/EMM/SAP/emm_reg.c
-    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredAttemptingToUpdate.c
-    ${NAS_SRC}UE/EMM/SAP/EmmRegistered.c
-    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredImsiDetachInitiated.c
-    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredInitiated.c
-    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredLimitedService.c
-    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredNoCellAvailable.c
-    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredNormalService.c
-    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredPlmnSearch.c
-    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredUpdateNeeded.c
-    ${NAS_SRC}UE/EMM/SAP/emm_sap.c
-    ${NAS_SRC}UE/EMM/SAP/emm_send.c
-    ${NAS_SRC}UE/EMM/SAP/EmmServiceRequestInitiated.c
-    ${NAS_SRC}UE/EMM/SAP/EmmTrackingAreaUpdatingInitiated.c
-  )
-  set (libnas_ue_esm_OBJS
-    ${NAS_SRC}UE/ESM/DedicatedEpsBearerContextActivation.c
-    ${NAS_SRC}UE/ESM/DefaultEpsBearerContextActivation.c
-    ${NAS_SRC}UE/ESM/EpsBearerContextDeactivation.c
-    ${NAS_SRC}UE/ESM/esm_ebr.c
-    ${NAS_SRC}UE/ESM/esm_ebr_context.c
-    ${NAS_SRC}UE/ESM/esm_ip.c
-    ${NAS_SRC}UE/ESM/esm_main.c
-    ${NAS_SRC}UE/ESM/esm_pt.c
-    ${NAS_SRC}UE/ESM/EsmStatusHdl.c
-    ${NAS_SRC}UE/ESM/PdnConnectivity.c
-    ${NAS_SRC}UE/ESM/PdnDisconnect.c
-  )
-  set(libnas_ue_esm_sap_OBJS
-    ${NAS_SRC}UE/ESM/SAP/esm_recv.c
-    ${NAS_SRC}UE/ESM/SAP/esm_send.c
-    ${NAS_SRC}UE/ESM/SAP/esm_sap.c
-  )
-  add_library(LIB_NAS_UE
-    ${NAS_SRC}UE/nas_itti_messaging.c
-    ${NAS_SRC}UE/nas_network.c
-    ${NAS_SRC}UE/nas_parser.c
-    ${NAS_SRC}UE/nas_proc.c
-    ${NAS_SRC}UE/nas_user.c
-    ${libnas_api_OBJS}
-    ${libnas_ue_api_OBJS}
-    ${libnas_emm_msg_OBJS}
-    ${libnas_esm_msg_OBJS}
-    ${libnas_ies_OBJS}
-    ${libnas_utils_OBJS}
-    ${libnas_ue_emm_OBJS}
-    ${libnas_ue_emm_sap_OBJS}
-    ${libnas_ue_esm_OBJS}
-    ${libnas_ue_esm_sap_OBJS}
-  )
-  add_dependencies(LIB_NAS_UE rrc_flag)
-  set(NAS_UE_LIB LIB_NAS_UE)
-
-  include_directories(${NAS_SRC}UE)
-  include_directories(${NAS_SRC}UE/API/USER)
-  include_directories(${NAS_SRC}UE/API/USIM)
-  include_directories(${NAS_SRC}UE/EMM)
-  include_directories(${NAS_SRC}UE/EMM/SAP)
-  include_directories(${NAS_SRC}UE/ESM)
-  include_directories(${NAS_SRC}UE/ESM/SAP)
-endif()
-
-
-if(ITTI_SIM OR RFSIM_NAS)
   set(libnas_ue_api_OBJS
     ${NAS_SRC}UE/API/USER/at_command.c
     ${NAS_SRC}UE/API/USER/at_error.c
@@ -2683,6 +2580,27 @@ if(ITTI_SIM OR RFSIM_NAS)
   add_dependencies(LIB_NAS_SIMUE rrc_flag)
   set(NAS_SIM_LIB LIB_NAS_SIMUE)
 
+  add_library(LIB_NAS_UE
+    ${NAS_SRC}UE/nas_itti_messaging.c
+    ${NAS_SRC}UE/nas_network.c
+    ${NAS_SRC}UE/nas_parser.c
+    ${NAS_SRC}UE/nas_proc.c
+    ${NAS_SRC}UE/nas_user.c
+    ${libnas_api_OBJS}
+    ${libnas_ue_api_OBJS}
+    ${libnas_emm_msg_OBJS}
+    ${libnas_esm_msg_OBJS}
+    ${libnas_ies_OBJS}
+    ${libnas_utils_OBJS}
+    ${libnas_ue_emm_OBJS}
+    ${libnas_ue_emm_sap_OBJS}
+    ${libnas_ue_esm_OBJS}
+    ${libnas_ue_esm_sap_OBJS}
+  )
+  add_dependencies(LIB_NAS_UE rrc_flag)
+  set(NAS_UE_LIB LIB_NAS_UE)
+
+
   include_directories(${NAS_SRC}NR_UE)
   include_directories(${NAS_SRC}UE)
   include_directories(${NAS_SRC}UE/API/USER)
@@ -2691,7 +2609,6 @@ if(ITTI_SIM OR RFSIM_NAS)
   include_directories(${NAS_SRC}UE/EMM/SAP)
   include_directories(${NAS_SRC}UE/ESM)
   include_directories(${NAS_SRC}UE/ESM/SAP)
-endif()
 
 # nbiot
 add_definitions("-DNUMBER_OF_UE_MAX_NB_IoT=16")
