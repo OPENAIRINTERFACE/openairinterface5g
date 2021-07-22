@@ -467,6 +467,7 @@ void nr_csi_meas_reporting(int Mod_idP,
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     const NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
     if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
 	      !CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig) continue;
     const NR_CSI_MeasConfig_t *csi_measconfig = CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
