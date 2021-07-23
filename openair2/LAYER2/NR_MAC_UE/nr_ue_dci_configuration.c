@@ -73,7 +73,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
   AssertFatal(mac->scc == NULL || mac->scc_SIB == NULL, "both scc and scc_SIB cannot be non-null\n");
 
-  NR_BWP_Id_t dl_bwp_id = get_softmodem_params()->sa ? 0 :  mac->DL_BWP_Id ; //SA uses initial BWP
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id ; //Changed
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_ServingCellConfigCommonSIB_t *scc_SIB = mac->scc_SIB;
   NR_BWP_DownlinkCommon_t *bwp_Common=NULL;
@@ -244,7 +244,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   RA_config_t *ra = &mac->ra;
   int ss_id;
 
-  NR_BWP_Id_t bwp_id = get_softmodem_params()->sa ? 0 : ((mac->cg) ? mac->DL_BWP_Id : 0) ; //SA uses initial BWP
+  NR_BWP_Id_t bwp_id = (mac->cg) ? mac->DL_BWP_Id : 0; //Changed
   uint8_t coreset_id = (mac->cg) ? 1 : 0;
   //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   NR_BWP_Downlink_t *bwp = (mac->cg) ? mac->DLbwp[bwp_id] : NULL;

@@ -601,8 +601,8 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   AssertFatal(scd->downlinkBWP_ToAddModList->list.count <= 4, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
 
   config_bwp_ue(mac, NULL, NULL);
-  NR_BWP_Id_t dl_bwp_id = get_softmodem_params()->sa ? 0 :  mac->DL_BWP_Id ; //SA uses initial BWP
-  NR_BWP_Id_t ul_bwp_id = get_softmodem_params()->sa ? 0 :  mac->UL_BWP_Id ;//SA uses initial BWP
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id ; //Changed
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id ;//Changed
   AssertFatal(dl_bwp_id != 0, "DL_BWP_Id is 0!");
   AssertFatal(ul_bwp_id != 0, "UL_BWP_Id is 0!");
 

@@ -1996,7 +1996,11 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
 
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
-  NR_BWP_Id_t bwp_id = get_softmodem_params()->sa  ? 1 : *CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
+  NR_BWP_Id_t bwp_id; //Changed
+  if (CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id)
+    bwp_id = *CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
+  else
+    bwp_id = 1;
   NR_BWP_Downlink_t *bwp=NULL;
   NR_BWP_Uplink_t *ubwp=NULL;
 

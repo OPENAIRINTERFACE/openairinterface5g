@@ -280,8 +280,8 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
   uint8_t sliv_S=0;
   uint8_t sliv_L=0;
   uint8_t mu_pusch = 1;
-  NR_BWP_Id_t dl_bwp_id = get_softmodem_params()->sa ? 0 :  mac->DL_BWP_Id ; //SA uses initial BWP
-  NR_BWP_Id_t ul_bwp_id = get_softmodem_params()->sa ? 0 :  mac->UL_BWP_Id ;//SA uses initial BWP
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id; //SA uses initial BWP
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;//SA uses initial BWP
 
   // definition table j Table 6.1.2.1.1-4
   uint8_t j = (mu_pusch==3)?3:(mu_pusch==2)?2:1;
@@ -459,8 +459,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   RA_config_t *ra = &mac->ra;
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   uint8_t is_Msg3 = 0;
-  NR_BWP_Id_t dl_bwp_id = get_softmodem_params()->sa ? 0 :  mac->DL_BWP_Id ; //SA uses initial BWP
-  NR_BWP_Id_t ul_bwp_id = get_softmodem_params()->sa ? 0 :  mac->UL_BWP_Id ;//SA uses initial BWP
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id; //SA uses initial BWP
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;//SA uses initial BWP
 
   uint16_t n_RB_DLBWP;
   if (mac->DLbwp[dl_bwp_id]) n_RB_DLBWP = NRRIV2BW(mac->DLbwp[dl_bwp_id]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -1169,7 +1169,7 @@ void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *u
 int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
 
   int N_RB = 0, start_RB;
-  NR_BWP_Id_t dl_bwp_id = get_softmodem_params()->sa ? 0 :  mac->DL_BWP_Id ; //SA uses initial BWP
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id; //SA uses initial BWP
   switch(rnti_type) {
     case NR_RNTI_RA:
     case NR_RNTI_TC:
@@ -1206,8 +1206,8 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   int fsize = 0;
 
   int rnti_type = get_rnti_type(mac, rnti);
-  NR_BWP_Id_t ul_bwp_id = get_softmodem_params()->sa ? 0 :  mac->UL_BWP_Id ; //SA uses initial BWP
-  NR_BWP_Id_t dl_bwp_id = get_softmodem_params()->sa ? 0 :  mac->DL_BWP_Id ; //SA uses initial BWP
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id; //SA uses initial BWP
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id; //SA uses initial BWP
 
   int N_RB_UL = 0;
   if(mac->scc_SIB) {
