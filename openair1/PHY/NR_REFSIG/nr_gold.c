@@ -145,7 +145,7 @@ void nr_init_csi_rs(PHY_VARS_gNB* gNB, uint32_t Nid)
       reset = 1;
       x2 = ((1<<10) * (fp->symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
 
-      for (uint32_t n=0; n<NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD; n++) {
+      for (uint32_t n=0; n<NR_MAX_CSI_RS_INIT_LENGTH_DWORD; n++) {
         csi_rs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
