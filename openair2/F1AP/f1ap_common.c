@@ -65,6 +65,10 @@ uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_
 }
 
 f1ap_cudu_inst_t *getCxt(bool isCU, module_id_t module_idP) {
+  static pid_t t=-1;
+  pid_t tNew=gettind();
+  AssertFatal ( t==-1 || t==tNew, ""This is not thread safe\n");
+  t=tNew;
   AssertFatal( module_idP < sizeofArray(f1_cu_inst), "");
   return isCU? f1_cu_inst[ module_idP]:  f1_du_inst[ module_idP];
 }
