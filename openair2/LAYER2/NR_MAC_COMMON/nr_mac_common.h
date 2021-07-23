@@ -185,4 +185,9 @@ uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
                                int rnti_type,
                                uint8_t configuredGrant);
 
+void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,
+                            const int CC_idP,
+                            const frame_t frameP,
+                            const sub_frame_t subframeP,
+                            const rnti_t rntiP) ;
 #endif
