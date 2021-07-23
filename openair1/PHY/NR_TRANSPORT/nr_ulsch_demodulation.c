@@ -1286,7 +1286,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
           for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
             avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
 
-        gNB->pusch_vars[ulsch_id]->log2_maxh = (log2_approx(avgs)/2)+3;
+        gNB->pusch_vars[ulsch_id]->log2_maxh = (log2_approx(avgs)/2)+2;
         gNB->pusch_vars[ulsch_id]->cl_done = 1;
       }
 

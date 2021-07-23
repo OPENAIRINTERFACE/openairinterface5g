@@ -641,7 +641,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         break;
      case USRP_X300_DEV:
      case USRP_N300_DEV:
-        rxshift=2;
+        rxshift=4;
         break;
      default:
        AssertFatal(1==0,"Shouldn't be here\n");
