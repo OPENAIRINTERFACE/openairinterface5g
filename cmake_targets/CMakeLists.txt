@@ -309,48 +309,39 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86")
 endif()
 
 #
-set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -pipe -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC")
 # add autotools definitions that were maybe used!
-if (CUDA_FOUND)
-	set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
-    set(CUDA_CMAKE_C_FLAGS
-           "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D CUDA_FLAG"
-    )
-    set(CUDA_CMAKE_CXX_FLAGS
-	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D CUDA_FLAG"
-    )
+set(legacyAutoTools "-DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP")
 
-	set(CMAKE_C_FLAGS
-           "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER} -D CUDA_FLAG"
-    )
-    set(CMAKE_CXX_FLAGS
-	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER} -D CUDA_FLAG"
-    )
-else (CUDA_FOUND)
-    set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
-    set(CMAKE_C_FLAGS
-           "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D${MKVER}"
-    )
-    set(CMAKE_CXX_FLAGS
-	"${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11 -D${MKVER}"
-    )
-endif ()
+set(CMAKE_C_FLAGS
+  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -pipe -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC ${legacyAutoTools}" )
+set(CUDA_CMAKE_CXX_FLAGS
+  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic -std=c++11")
+
+set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D${MKVER} " )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D${MKVER} " )
+
+if (CUDA_FOUND)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -D CUDA_FLAG" )
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D CUDA_FLAG" )
+endif()
+
 
 if (SANITIZE_ADDRESS)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-common")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-common")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-common")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-common")
 endif ()
 
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -ggdb3 -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
 #########################
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -ggdb3  -ggnu-pubnames -fvar-tracking-assignments -feliminate-dwarf2-dups  -Og -DMALLOC_CHECK_=3")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -ggdb3  -ggnu-pubnames -fvar-tracking-assignments -feliminate-dwarf2-dups -DMALLOC_CHECK_=3 -O2 -fno-delete-null-pointer-checks")
+set(debOpt "-ggdb3 -feliminate-dwarf2-dups -DMALLOC_CHECK_=3 -fno-delete-null-pointer-checks")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} ${debOpt} -Og")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} ${debOpt} -O2")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS}  -O3")
 
 set(GIT_BRANCH        "UNKNOWN")
@@ -3201,14 +3192,6 @@ target_link_libraries(smallblocktest
   m pthread ${ATLAS_LIBRARIES} dl
   )
 
-
-# temp_C_flag = CMAKE_C_FLAGS
-#set(CMAKE_C_FLAGS " ")
-set (TEMP_C_FLAG ${CMAKE_C_FLAGS})
-set (CMAKE_C_FLAGS ${CUDA_CMAKE_C_FLAGS})
-
-set (TEMP_CXX_FLAG ${CMAKE_CXX_FLAGS})
-set (CMAKE_CXX_FLAGS ${CUDA_CMAKE_CXX_FLAGS})
 if (CUDA_FOUND)
 ###################################################
 # For CUDA library
@@ -3239,8 +3222,6 @@ else (CUDA_FOUND)
        )
 
 endif ()
-set (CMAKE_C_FLAGS ${TEMP_C_FLAG})
-set (CMAKE_CXX_FLAGS ${TEMP_CXX_FLAG})
 
 
 # add_executable(ldpctest

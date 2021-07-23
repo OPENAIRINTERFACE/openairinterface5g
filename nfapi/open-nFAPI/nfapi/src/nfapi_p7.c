@@ -2656,7 +2656,7 @@ static uint8_t pack_cqi_indication_body_value(void *tlv, uint8_t **ppWritePacked
 static uint8_t pack_cqi_indication(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t *config) {
   nfapi_cqi_indication_t *pNfapiMsg = (nfapi_cqi_indication_t *)msg;
   //Fixme: allocate some mem to fix pure bug, need to find out proper size
-  pNfapiMsg->vendor_extension=(nfapi_vendor_extension_tlv_t)malloc( sizeof(* pNfapiMsg->vendor_extension));
+  pNfapiMsg->vendor_extension=NULL;//(nfapi_vendor_extension_tlv_t)malloc( sizeof(* pNfapiMsg->vendor_extension));
   return ( push16(pNfapiMsg->sfn_sf, ppWritePackedMsg, end) &&
            pack_tlv(NFAPI_CQI_INDICATION_BODY_TAG, &pNfapiMsg->cqi_indication_body, ppWritePackedMsg, end, pack_cqi_indication_body_value) &&
            pack_p7_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
