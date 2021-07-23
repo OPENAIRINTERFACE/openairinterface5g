@@ -163,12 +163,12 @@ class Module_UE:
 			now=datetime.now()
 			now_string = now.strftime("%Y%m%d-%H%M")
 			source='ci_qlog'
-			destination='/media/usb-drive/ci_qlogs/ci_qlog_'+now_string+'.zip'
+			destination= self.LogStore + '/ci_qlog_'+now_string+'.zip'
 			#qlog artifact is zipped into the target folder
 			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S zip -r '+destination+' '+source+' &','\$', 10)
 			mySSH.close()
 			#post action : log cleaning to make sure enough space is reserved for the next run
-			Log_Mgt=cls_log_mgt.Log_Mgt(self.HostIPAddress, self.HostPassword, "/media/usb-drive/ci_qlogs")
+			Log_Mgt=cls_log_mgt.Log_Mgt(self.HostIPAddress, self.HostPassword, self.LogStore)
 			Log_Mgt.LogRotation()
 		else:
 			destination=""
