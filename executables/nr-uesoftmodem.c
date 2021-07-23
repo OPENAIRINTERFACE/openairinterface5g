@@ -356,8 +356,8 @@ void init_openair0(void) {
     openair0_cfg[card].num_rb_dl = frame_parms->N_RB_DL;
     openair0_cfg[card].clock_source = get_softmodem_params()->clock_source;
     openair0_cfg[card].time_source = get_softmodem_params()->timing_source;
-    openair0_cfg[card].tx_num_channels = min(2, frame_parms->nb_antennas_tx);
-    openair0_cfg[card].rx_num_channels = min(2, frame_parms->nb_antennas_rx);
+    openair0_cfg[card].tx_num_channels = min(4, frame_parms->nb_antennas_tx);
+    openair0_cfg[card].rx_num_channels = min(4, frame_parms->nb_antennas_rx);
 
     LOG_I(PHY, "HW: Configuring card %d, sample_rate %f, tx/rx num_channels %d/%d, duplex_mode %s\n",
       card,
