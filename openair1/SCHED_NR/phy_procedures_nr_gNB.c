@@ -257,10 +257,10 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       ulsch_harq->round  = 0;
       ulsch->harq_mask &= ~(1 << rdata->harq_pid);
 
-      LOG_D(PHY, "ULSCH received ok \n");
+      LOG_I(PHY, "ULSCH received ok \n");
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0);
     } else {
-      LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
+      LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
             gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
             rdata->harq_pid,ulsch_harq->status, ulsch_harq->round,ulsch_harq->TBS,r);
       if (ulsch_harq->round >= ulsch->Mlimit) {
@@ -273,15 +273,15 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
 
       LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 1);
-/*
+    }
+    /*
+    if (ulsch_harq->ulsch_pdu.mcs_index == 9) {
 #ifdef __AVX2__
       int off = ((ulsch_harq->ulsch_pdu.rb_size&1) == 1)? 4:0;
 #else
       int off = 0;
 #endif
 
-      LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
-      nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 1);
       LOG_M("rxsigF0_ext.m","rxsF0_ext",
              &gNB->pusch_vars[0]->rxdataF_ext[0][ulsch_harq->ulsch_pdu.start_symbol_index*NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size],ulsch_harq->ulsch_pdu.nr_of_symbols*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size)),1,1);
       LOG_M("chestF0.m","chF0",
@@ -306,8 +306,8 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
               &gNB->pusch_vars[0]->rxdataF_comp[1][ulsch_harq->ulsch_pdu.start_symbol_index*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size))],ulsch_harq->ulsch_pdu.nr_of_symbols*(off+(NR_NB_SC_PER_RB * ulsch_harq->ulsch_pdu.rb_size)),1,1);
       }
       exit(-1);
-*/
-    }
+
+    } */
     ulsch->last_iteration_cnt = rdata->decodeIterations;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,0);
   }
@@ -413,14 +413,14 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   if (timing_advance_update < 0)  timing_advance_update = 0;
   if (timing_advance_update > 63) timing_advance_update = 63;
 
-  LOG_D(PHY, "%d.%d : Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", frame,slot_rx,sync_pos,timing_advance_update);
+  LOG_I(PHY, "%d.%d : Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", frame,slot_rx,sync_pos,timing_advance_update);
 
   // estimate UL_CQI for MAC
 
   int SNRtimes10 = dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot) -
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot);
 
-  LOG_D(PHY, "Estimated SNR for PUSCH is = %f dB (ulsch_power %f, noise %f)\n", SNRtimes10/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot)/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot)/10.0);
+  LOG_I(PHY, "Estimated SNR for PUSCH is = %f dB (ulsch_power %f, noise %f)\n", SNRtimes10/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot)/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot)/10.0);
 
   if      (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
@@ -610,7 +610,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
           offset = pucch_pdu->start_symbol_index*gNB->frame_parms.ofdm_symbol_size + (gNB->frame_parms.first_carrier_offset+pucch_pdu->prb_start*12);
           power_rxF = signal_energy_nodc(&gNB->common_vars.rxdataF[0][offset],12);
-          LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
+          LOG_I(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
           nr_decode_pucch0(gNB,
 	                         frame_rx,
@@ -710,7 +710,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
              gNB->pusch_vars[ULSCH_id]->ulsch_noise_power[aarx]/=num_dmrs;
              gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot += gNB->pusch_vars[ULSCH_id]->ulsch_noise_power[aarx];
           }
-          if (dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot) <
+          /*if (dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot) <
               dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot) + gNB->pusch_thres) {
              NR_gNB_SCH_STATS_t *stats=get_ulsch_stats(gNB,ulsch);
 
@@ -722,7 +722,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
              gNB->pusch_vars[ULSCH_id]->DTX=1;
              if (stats) stats->DTX++;
              return 1;
-          } else gNB->pusch_vars[ULSCH_id]->DTX=0;
+          } else*/ gNB->pusch_vars[ULSCH_id]->DTX=0;
 
           stop_meas(&gNB->rx_pusch_stats);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH,0);
