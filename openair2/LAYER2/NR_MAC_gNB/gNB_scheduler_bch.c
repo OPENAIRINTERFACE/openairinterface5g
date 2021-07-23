@@ -157,9 +157,13 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
     dl_req = &dl_tti_request->dl_tti_request_body;
 
     // get MIB every 8 frames
-    if((slotP == 0) && (frameP & 7) == 0) {
+    if(((slotP == 0) && (frameP & 7) == 0) ||
+       gNB->first_MIB) {
 
       mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 0, 1, &cc->MIB_pdu.payload[0]);
+
+      // flag to avoid sending an empty MIB in the first frames of execution since gNB doesn't get at the beginning in frame 0 slot 0
+      gNB->first_MIB = false;
 
       LOG_D(MAC,
             "[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",

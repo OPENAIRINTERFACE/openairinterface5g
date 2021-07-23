@@ -1051,7 +1051,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
           AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
                       PLMNParamList.numelt);
 
-        RRC_CONFIGURATION_REQ(msg_p).num_plmn = PLMNParamList.numelt;
+        NRRRC_CONFIGURATION_REQ(msg_p).num_plmn = PLMNParamList.numelt;
 
         for (int l = 0; l < PLMNParamList.numelt; ++l) {
 	

@@ -10,15 +10,15 @@ ColNames :
 Ref : 
   feprx : 60.0
   feptx_prec : 8.0
-  feptx_ofdm : 85.0
+  feptx_ofdm : 50.0
   feptx_total : 75.0
   L1 Tx processing : 300.0
   DLSCH encoding : 230.0
   L1 Rx processing : 175.0
   PUSCH inner-receiver : 100.0
   PUSCH decoding : 140.0 
-  DL & UL scheduling timing stats : 15.0
-  UL Indication : 20.0
+  DL & UL scheduling timing stats : 37.0
+  UL Indication : 38.0
 Threshold :
   feprx : 1.25
   feptx_prec : 1.25

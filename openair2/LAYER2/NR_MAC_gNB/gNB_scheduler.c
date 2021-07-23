@@ -55,33 +55,58 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "executables/nr-softmodem.h"
 
+#include <errno.h>
+#include <string.h>
+
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
 void clear_mac_stats(gNB_MAC_INST *gNB) {
   memset((void*)gNB->UE_info.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
 }
-
+#define MACSTATSSTRLEN 16384
 void dump_mac_stats(gNB_MAC_INST *gNB)
 {
   NR_UE_info_t *UE_info = &gNB->UE_info;
   int num = 1;
+  FILE *fd=fopen("nrMAC_stats.log","w");
+  AssertFatal(fd!=NULL,"Cannot open nrMAC_stats.log, error %s\n",strerror(errno));
+  char output[MACSTATSSTRLEN];
+  memset(output,0,MACSTATSSTRLEN);
+  int stroff=0;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+    stroff = sprintf(output,"UE ID %d RNTI %04x (%d/%d)\n", UE_id, UE_info->rnti[UE_id], num++, UE_info->num_UEs);
     LOG_I(NR_MAC, "UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm\n",
-          UE_id,
-          UE_info->rnti[UE_id],
-          num++,
-          UE_info->num_UEs,
-          UE_info->UE_sched_ctrl[UE_id].ph,
-          UE_info->UE_sched_ctrl[UE_id].pcmax);
+      UE_id,
+      UE_info->rnti[UE_id],
+      num++,
+      UE_info->num_UEs,
+      UE_info->UE_sched_ctrl[UE_id].ph,
+      UE_info->UE_sched_ctrl[UE_id].pcmax);
     NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
-    LOG_I(NR_MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
+    stroff+=sprintf(output+stroff,"UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
           UE_id,
           stats->dlsch_rounds[0], stats->dlsch_rounds[1],
           stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
           avg_rsrp, stats->num_rsrp_meas);
+    LOG_I(NR_MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
+      UE_id,
+      stats->dlsch_rounds[0], stats->dlsch_rounds[1],
+      stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
+      avg_rsrp, stats->num_rsrp_meas);
     stats->num_rsrp_meas = 0;
     stats->cumul_rsrp = 0 ;
+    stroff+=sprintf(output+stroff,"UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
+    stroff+=sprintf(output+stroff,"UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_DTX %d, ulsch_errors %d\n",
+                    UE_id,
+                    stats->ulsch_rounds[0], stats->ulsch_rounds[1],
+                    stats->ulsch_rounds[2], stats->ulsch_rounds[3],
+                    stats->ulsch_DTX,
+                    stats->ulsch_errors);
+    stroff+=sprintf(output+stroff,
+                    "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
+                    UE_id,
+                    stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
     LOG_I(NR_MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
     LOG_I(NR_MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_DTX %d, ulsch_errors %d\n",
           UE_id,
@@ -95,12 +120,16 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
           stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
     for (int lc_id = 0; lc_id < 63; lc_id++) {
       if (stats->lc_bytes_tx[lc_id] > 0)
+        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
         LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
       if (stats->lc_bytes_rx[lc_id] > 0)
+        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
         LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
     }
   }
   print_meas(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL);
+  if (stroff>0) fprintf(fd,"%s",output);
+  fclose(fd);
 }
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
@@ -311,7 +340,7 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
-  if (slot>64) return false; //quickfix for FR2 where there are more than 64 slots (bitmap to be removed)
+  if (slot>=64) return false; //quickfix for FR2 where there are more than 64 slots (bitmap to be removed)
   return (bitmap >> slot) & 0x01;
 }
 

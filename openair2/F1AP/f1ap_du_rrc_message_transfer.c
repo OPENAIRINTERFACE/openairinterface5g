@@ -56,13 +56,6 @@
 #include "intertask_interface.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
-// undefine C_RNTI from
-// openair1/PHY/LTE_TRANSPORT/transport_common.h which
-// replaces in ie->value.choice.C_RNTI, causing
-// a compile error
-
-#undef C_RNTI 
-
 extern f1ap_setup_req_t *f1ap_du_data;
 extern RAN_CONTEXT_t RC;
 extern f1ap_cudu_inst_t f1ap_du_inst[MAX_eNB];
@@ -990,135 +983,6 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
                        msg->rrc_container_length);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  if (msg->srb_id == 1 || msg->srb_id == 2) {
-    struct rrc_gNB_ue_context_s* ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[instance], rnti);
-
-
-    NR_UL_DCCH_Message_t* ul_dcch_msg=NULL;
-    asn_dec_rval_t dec_rval;
-    dec_rval = uper_decode(NULL,
-         &asn_DEF_NR_UL_DCCH_Message,
-         (void**)&ul_dcch_msg,
-         &ie->value.choice.RRCContainer.buf[1], // buf[0] includes the pdcp header
-         msg->rrc_container_length, 0, 0);
-
-    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-      LOG_E(F1AP, " Failed to decode UL-DCCH (%zu bytes)\n",dec_rval.consumed);
-      /* for rfsim, because UE send RRCSetupRequest in SRB1 */
-      // NR_UL_CCCH_Message_t *ul_ccch_msg;
-      // dec_rval = uper_decode(NULL,
-      //    &asn_DEF_NR_UL_CCCH_Message,
-      //    (void**)&ul_ccch_msg,
-      //    &ie->value.choice.RRCContainer.buf[1], // buf[0] includes the pdcp header
-      //    msg->rrc_container_length, 0, 0);
-      // if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-      //   LOG_E(F1AP, " Failed to decode UL-CCCH (%zu bytes)\n",dec_rval.consumed);
-      // } else {
-      //   LOG_I(F1AP, "decode UL-CCCH success \n");
-      //   LOG_I(F1AP, "Received message: present %d and c1 present %d\n",
-      //       ul_ccch_msg->message.present, ul_ccch_msg->message.choice.c1->present);
-
-      //   if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
-      //     if (ul_ccch_msg->message.choice.c1->present == NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest) {
-      //       LOG_I(F1AP, "[MSG] RRC Setup Request\n");
-
-      //     }
-      //   }
-      // }
-    }
-    else
-      LOG_I(F1AP, "Received message: present %d and c1 present %d\n",
-            ul_dcch_msg->message.present, ul_dcch_msg->message.choice.c1->present);
-
-    if (ul_dcch_msg->message.present == NR_UL_DCCH_MessageType_PR_c1) {
-
-      switch (ul_dcch_msg->message.choice.c1->present) {
-      case NR_UL_DCCH_MessageType__c1_PR_NOTHING:   /* No components present */
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_measurementReport:
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_rrcReconfigurationComplete:
-        LOG_I(F1AP, "[MSG] RRC UL rrcReconfigurationComplete\n");
-
-        /* CDRX: activated when RRC Connection Reconfiguration Complete is received */
-#if(0)
-        int UE_id_mac = find_nr_UE_id(instance, rnti);
-
-        if (UE_id_mac == -1) {
-          LOG_E(F1AP, "Can't find UE_id(MAC) of UE rnti %x\n", rnti);
-          break;
-        }
-
-        UE_sched_ctrl_t *UE_scheduling_control = &(RC.nrmac[instance]->UE_info.UE_sched_ctrl[UE_id_mac]);
-
-        if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
-          UE_scheduling_control->cdrx_waiting_ack = FALSE;
-          UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration Complete is received
-          LOG_I(F1AP, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
-        }
-        /* End of CDRX processing */
-#endif
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_rrcSetupComplete:
-        LOG_I(F1AP, "[MSG] RRC UL rrcSetupComplete \n");
-
-        if(!ue_context_p){
-          LOG_E(F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", rnti);
-
-        } else {
-          LOG_I(F1AP, "Processing RRCSetupComplete UE %x\n", rnti);
-          ue_context_p->ue_context.StatusRrc = NR_RRC_CONNECTED;
-        }
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_rrcReestablishmentComplete:
-        LOG_I(F1AP, "[MSG] RRC ReestablishmentComplete \n");
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_rrcResumeComplete:
-        LOG_I(F1AP, "[MSG] RRC ResumeComplete \n");
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_securityModeComplete:
-        LOG_I(F1AP, "[MSG] RRC securityModeComplete \n");
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_securityModeFailure:
-        LOG_I(F1AP, "[MSG] RRC securityModeFailure \n");
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
-        LOG_I(F1AP, "[MSG] RRC UL Information Transfer \n");
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_locationMeasurementIndication:
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
-        LOG_I(F1AP, "[MSG] RRC ueCapabilityInformation \n");
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_ueAssistanceInformation:
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_failureInformation:
-       break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_scgFailureInformation:
-        break;
-
-      case NR_UL_DCCH_MessageType__c1_PR_scgFailureInformationEUTRA:
-       break;
-
-      default:
-        LOG_E(NR_RRC, "Unknown UL DCCH message type, present %d \n", ul_dcch_msg->message.choice.c1->present);
-       break;
-      }
-    }
-  }
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 UL RRC MESSAGE TRANSFER \n");
@@ -1252,6 +1116,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 								     RC.nrrrc[ctxt.module_id],
 								     ctxt.rnti);
 
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   if (srb_id == 0) {
     NR_DL_CCCH_Message_t* dl_ccch_msg=NULL;
     asn_dec_rval_t dec_rval;
@@ -1295,47 +1160,17 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 			       rrcSetup_ies->masterCellGroup.size,0,0);
 	AssertFatal(dec_rval.code == RC_OK, "could not decode masterCellGroup\n");
 
-	// configure MAC
-	gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
-	rrc_mac_config_req_gNB(ctxt.module_id,
-			       rrc->carrier.ssb_SubcarrierOffset,
-			       rrc->carrier.pdsch_AntennaPorts,
-			       rrc->carrier.pusch_AntennaPorts,
-			       NULL,
-			       0,
-			       ue_context_p->ue_context.rnti,
-			       ue_context_p->ue_context.masterCellGroup
-			       );
+        apply_macrlc_config(rrc,ue_context_p,&ctxt);
 
-	// rrc_rlc_config_asn1_req
-	nr_rrc_rlc_config_asn1_req(&ctxt,
-				   ue_context_p->ue_context.SRB_configList,
-				   NULL,
-				   NULL,
-				   NULL,
-				   NULL,
-				   NULL);
+        gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
+        AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
 
-      // This should be somewhere in the f1ap_cudu_ue_inst_t
-      /*int macrlc_instance = 0;
+        memcpy((void*)ue_p->Srb0.Tx_buffer.Payload,
+               (void*)ie->value.choice.RRCContainer.buf,
+               rrc_dl_sdu_len); // ie->value.choice.RRCContainer.size
 
-      rnti_t rnti = f1ap_get_rnti_by_du_id(&f1ap_du_inst[0], du_ue_f1ap_id);
-      struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[macrlc_instance],rnti);
-      */
-      gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
-      AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
+        ue_p->Srb0.Tx_buffer.payload_size = rrc_dl_sdu_len;
 
-      memcpy((void*)ue_p->Srb0.Tx_buffer.Payload,
-             (void*)ie->value.choice.RRCContainer.buf,
-             rrc_dl_sdu_len); // ie->value.choice.RRCContainer.size
-
-      ue_p->Srb0.Tx_buffer.payload_size = rrc_dl_sdu_len;
-
-      // NR_MAC_CellGroupConfig_t *mac_CellGroupConfig  = NULL;
-      // if (cellGroupConfig->mac_CellGroupConfig)
-      //   mac_CellGroupConfig = cellGroupConfig->mac_CellGroupConfig;
-
-      // rrc_mac_config_req_gNB
           break;
       } // case
 

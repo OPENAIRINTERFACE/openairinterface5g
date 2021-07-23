@@ -122,36 +122,39 @@ int nr_phy_init_RU(RU_t *ru) {
 		ru->num_gNB,NUMBER_OF_gNB_MAX);
 
     LOG_I(PHY,"[INIT] %s() ru->num_gNB:%d \n", __FUNCTION__, ru->num_gNB);
+
+    if (ru->do_precoding == 1) {
+      int beam_count = 0;
+      if (ru->nb_tx>1) {//Enable beamforming when nb_tx > 1
+        for (p=0;p<ru->nb_log_antennas;p++) {
+          //if ((fp->L_ssb >> (63-p)) & 0x01)//64 bit-map with the MSB @2⁶³ corresponds to SSB ssb_index 0
+            beam_count++;
+        }
+        AssertFatal(ru->nb_bfw==(beam_count*ru->nb_tx),"Number of beam weights from config file is %d while the expected number is %d",ru->nb_bfw,(beam_count*ru->nb_tx));
     
-    int beam_count = 0;
-    if (ru->nb_tx>1) {//Enable beamforming when nb_tx > 1
-      for (p=0;p<ru->nb_log_antennas;p++) {
-        //if ((fp->L_ssb >> (63-p)) & 0x01)//64 bit-map with the MSB @2⁶³ corresponds to SSB ssb_index 0
-          beam_count++;
-      }
-      AssertFatal(ru->nb_bfw==(beam_count*ru->nb_tx),"Number of beam weights from config file is %d while the expected number is %d",ru->nb_bfw,(beam_count*ru->nb_tx));
-    
-      int l_ind = 0;
       for (i=0; i<ru->num_gNB; i++) {
+        int l_ind = 0;
         for (p=0;p<ru->nb_log_antennas;p++) {
           //if ((fp->L_ssb >> (63-p)) & 0x01)  {
-	    ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
-	    for (j=0; j<ru->nb_tx; j++) {
-	      ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-              for (re=0; re<fp->ofdm_symbol_size; re++) 
-		ru->beam_weights[i][p][j][re] = ru->bw_list[j][l_ind];
-              //printf("Beam Weight %08x for beam %d and tx %d\n",ru->bw_list[i][l_ind],p,j);
-              l_ind++; 
-  	    } // for j
-	  //}
+          ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
+          for (j=0; j<ru->nb_tx; j++) {
+            ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+            AssertFatal(ru->bw_list[i],"ru->bw_list[%d] is null\n",i);
+            for (re=0; re<fp->ofdm_symbol_size; re++)
+              ru->beam_weights[i][p][j][re] = ru->bw_list[i][l_ind];
+            //printf("Beam Weight %08x for beam %d and tx %d\n",ru->bw_list[i][l_ind],p,j);
+            l_ind++;
+          } // for j
+          //}
         } // for p
       } //for i
-    }
+      }
 
-    ru->common.beam_id = (uint8_t**)malloc16_clear(ru->nb_tx*sizeof(uint8_t*));
-    for(i=0; i< ru->nb_tx; ++i) {
-      ru->common.beam_id[i] = (uint8_t*)malloc16_clear(fp->symbols_per_slot*fp->slots_per_frame*sizeof(uint8_t));
-      memset(ru->common.beam_id[i],255,fp->symbols_per_slot*fp->slots_per_frame);
+      ru->common.beam_id = (uint8_t**)malloc16_clear(ru->nb_tx*sizeof(uint8_t*));
+      for(i=0; i< ru->nb_tx; ++i) {
+        ru->common.beam_id[i] = (uint8_t*)malloc16_clear(fp->symbols_per_slot*fp->slots_per_frame*sizeof(uint8_t));
+        memset(ru->common.beam_id[i],255,fp->symbols_per_slot*fp->slots_per_frame);
+      }
     }
   } // !=IF5
 

@@ -146,7 +146,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     int startSymbolAndLength=0;
     int StartSymbolIndex=-1,NrOfSymbols=14;
     int StartSymbolIndex_tmp,NrOfSymbols_tmp;
-    int mappingtype_tmp, mappingtype;
+    int mappingtype_tmp, mappingtype=0;
 
     for (int i=0;
 	 i<scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;
@@ -262,6 +262,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 extern int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda);
 extern uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData);
 uint32_t target_dl_mcs = 9;
+uint32_t target_dl_Nl = 1;
 uint32_t target_dl_bw = 50;
 uint64_t dlsch_slot_bitmap = (1<<1);
 /* schedules whole bandwidth for first user, all the time */
@@ -286,6 +287,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   target_dl_bw = (bwpSize < target_dl_bw) ?bwpSize : target_dl_bw;
   int rbStart = 0;
   int rbSize = 0;
+  if (target_dl_bw>bwpSize)
+    target_dl_bw = bwpSize;
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   /* loop ensures that we allocate exactly target_dl_bw, or return */
   while (true) {
@@ -372,6 +375,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
     nr_set_pdsch_semi_static(
         scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
 
+  sched_pdsch->nrOfLayers = target_dl_Nl;
   sched_pdsch->mcs = target_dl_mcs;
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -382,7 +386,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                         ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        1 /* nrOfLayers */)
+                                        sched_pdsch->nrOfLayers)
                          >> 3;
 
   /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
@@ -391,6 +395,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
     vrb_map[rb + sched_pdsch->rbStart] = 1;
+
+  if ((frame&127) == 0) LOG_D(MAC,"phytest: %d.%d DL mcs %d, DL rbStart %d, DL rbSize %d\n", frame, slot, sched_pdsch->mcs, rbStart,rbSize);
 }
 
 uint32_t target_ul_mcs = 9;

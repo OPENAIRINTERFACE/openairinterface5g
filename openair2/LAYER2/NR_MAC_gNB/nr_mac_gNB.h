@@ -383,6 +383,7 @@ typedef struct NR_sched_pdsch {
   uint8_t mcs;
 
   /// TBS-related info
+  uint8_t nrOfLayers;
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;
@@ -747,6 +748,7 @@ typedef struct gNB_MAC_INST_s {
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
+  bool first_MIB;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

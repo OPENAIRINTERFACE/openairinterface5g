@@ -192,13 +192,14 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     AssertFatal(harq->d[r], "cannot allocate harq->d[%d]\n", r); // max size for coded output
     bzero(harq->c[r], 8448);
     bzero(harq->d[r], (3 * 8448));
-    harq->e = malloc16(14 * N_RB * 12 * 8);
-    AssertFatal(harq->e, "cannot allocate harq->e\n");
-    bzero(harq->e, 14 * N_RB * 12 * 8);
-    harq->f = malloc16(14 * N_RB * 12 * 8);
-    AssertFatal(harq->f, "cannot allocate harq->f\n");
-    bzero(harq->f, 14 * N_RB * 12 * 8);
   }
+
+  harq->e = malloc16(N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+  AssertFatal(harq->e, "cannot allocate harq->e\n");
+  bzero(harq->e, N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+  harq->f = malloc16(N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+  AssertFatal(harq->f, "cannot allocate harq->f\n");
+  bzero(harq->f, N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
 
   return(dlsch);
 }
@@ -267,6 +268,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
+  if ( dlsch->rnti != SI_RNTI )
+     trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], 0, WS_C_RNTI, dlsch->rnti, frame, slot,0, 0);
 
   NR_gNB_SCH_STATS_t *stats=NULL;
   int first_free=-1;

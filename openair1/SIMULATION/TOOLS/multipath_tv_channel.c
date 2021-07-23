@@ -40,9 +40,9 @@ void multipath_tv_channel(channel_desc_t *desc,
                           uint8_t keep_channel)
 {
 
-  double complex **tx,**rx,***H_t,*rx_temp;//, *tv_H_t;
+  double complex **tx,**rx,***H_t;
   double path_loss = pow(10,desc->path_loss_dB/20);
-  int i,j,k,dd;
+  int i,j,dd;
   dd = abs(desc->channel_offset);
 #ifdef DEBUG_CH
   printf("[TV CHANNEL] keep = %d : path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %d, len %d max_doppler %g\n",keep_channel,path_loss,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length,
@@ -51,8 +51,6 @@ void multipath_tv_channel(channel_desc_t *desc,
   tx = (double complex **)malloc(desc->nb_tx*sizeof(double complex *));
   rx = (double complex **)malloc(desc->nb_rx*sizeof(double complex *));
   H_t= (double complex ***) malloc(desc->nb_tx*desc->nb_rx*sizeof(double complex **));
-  //  tv_H_t = (double complex *) malloc(length*sizeof(double complex));
-  rx_temp= (double complex *) calloc(length,sizeof(double complex));
 
   for(i=0; i<desc->nb_tx; i++) {
     tx[i] = (double complex *)calloc(length,sizeof(double complex));
@@ -84,11 +82,7 @@ void multipath_tv_channel(channel_desc_t *desc,
 
   for(i=0; i<desc->nb_rx; i++) {
     for(j=0; j<desc->nb_tx; j++) {
-      tv_conv(H_t[i+(j*desc->nb_rx)],tx[j],rx_temp,length,desc->nb_taps,dd);
-
-      for(k=0; k<length; k++) {
-        rx[i][k] += rx_temp[k];
-      }
+      tv_conv(H_t[i+(j*desc->nb_rx)],tx[j],rx[i],length,desc->nb_taps,dd);
     }
   }
 
@@ -98,10 +92,6 @@ void multipath_tv_channel(channel_desc_t *desc,
       rx_sig_im[i][j] = cimag(rx[i][j])*path_loss;
     }
   }
-
-  /*  for(k=0;k<length;k++) {
-      tv_H_t[k] = H_t[0][k][0];
-      }*/
 
   for(i=0; i<desc->nb_tx; i++) {
     free(tx[i]);
@@ -124,7 +114,6 @@ void multipath_tv_channel(channel_desc_t *desc,
   }
 
   free(H_t);
-  free(rx_temp);
 }
 
 //TODO: make phi_rad a parameter of this function
@@ -177,7 +166,7 @@ void tv_channel(channel_desc_t *desc,double complex ***H,uint32_t length){
             H[i+(j*desc->nb_rx)][k][l] += sqrt(desc->amps[k])*alpha[p]*cexp(I*(2*pi*w_Hz[i+(j*desc->nb_rx)][k][p]*l*(1/(desc->sampling_rate*1e6))+phi_rad[i+(j*desc->nb_rx)][k][p]));
           }
         }
-        //printf("H[tx%d][rx%d][k%d] = %f+j%f \n",j,i,k,creal(H[i+(j*desc->nb_rx)][k][0]),cimag(H[i+(j*desc->nb_rx)][k][0]));
+        //printf("H[tx%d][rx%d][k%d][l%d] = %f+j%f \n",j,i,k,0,creal(H[i+(j*desc->nb_rx)][k][0]),cimag(H[i+(j*desc->nb_rx)][k][0]));
       }
     }
   }
@@ -201,14 +190,12 @@ void tv_channel(channel_desc_t *desc,double complex ***H,uint32_t length){
 }
 
 // time varying convolution
-void tv_conv(double complex **h, double complex *x, double complex *y, uint32_t nb_samples, uint8_t nb_taps, int dd){
-
-  int i,j;
-
-  for(i=0; i<((int)nb_samples-dd); i++) {
-    for(j=0; j<nb_taps; j++) {
-      if(i>j)
-        y[i+dd] += creal(h[j][i])*creal(x[i-j])-cimag(h[j][i])*cimag(x[i-j]) + I*(creal(h[j][i])*cimag(x[i-j])+cimag(h[j][i])*creal(x[i-j]));
+void tv_conv(double complex **h, double complex *x, double complex *y, uint32_t nb_samples, uint8_t nb_taps, int dd)
+{
+  for(int i = 0; i < ((int)nb_samples-dd); i++) {
+    for(int j = 0; j < nb_taps; j++) {
+      if(i >= j)
+        y[i+dd] += h[j][i] * x[i-j];
     }
   }
 }

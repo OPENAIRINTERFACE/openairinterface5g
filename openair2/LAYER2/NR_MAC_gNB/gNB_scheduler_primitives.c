@@ -600,7 +600,7 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 }
 
 void config_uldci(const NR_BWP_Uplink_t *ubwp,
-		              const NR_ServingCellConfigCommon_t *scc,
+                  const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int dci_format,
@@ -611,6 +611,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
   const int bw = NRRIV2BW(ubwp ?
 			  ubwp->bwp_Common->genericParameters.locationAndBandwidth :
 			  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
   dci_pdu_rel15->frequency_domain_assignment.val =
       PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bw);
   dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
@@ -673,6 +674,7 @@ int nr_get_default_pucch_res(int pucch_ResourceCommon) {
 
   return(default_pucch_csset[pucch_ResourceCommon]);
 }
+
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
@@ -739,15 +741,15 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
 
 // This function configures pucch pdu fapi structure
 void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
-			                  NR_ServingCellConfigCommon_t *scc,
-			                  NR_CellGroupConfig_t *CellGroup,
-			                  NR_BWP_Uplink_t *bwp,
+                        NR_ServingCellConfigCommon_t *scc,
+                        NR_CellGroupConfig_t *CellGroup,
+                        NR_BWP_Uplink_t *bwp,
                         uint16_t rnti,
                         uint8_t pucch_resource,
                         uint16_t O_csi,
                         uint16_t O_ack,
                         uint8_t O_sr,
-			                  int r_pucch) {
+                        int r_pucch) {
 
   NR_PUCCH_Config_t *pucch_Config;
   NR_PUCCH_Resource_t *pucchres;
