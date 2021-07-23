@@ -339,7 +339,7 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -ggdb3 -Wl,-rpath -Wl,${C
 #########################
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
-set(debOpt "-ggdb3 -feliminate-dwarf2-dups -DMALLOC_CHECK_=3 -fno-delete-null-pointer-checks")
+set(debOpt "-ggdb3 -DMALLOC_CHECK_=3 -fno-delete-null-pointer-checks")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} ${debOpt} -Og")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} ${debOpt} -O2")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS}  -O3")
