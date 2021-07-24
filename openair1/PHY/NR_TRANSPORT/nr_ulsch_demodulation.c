@@ -1188,7 +1188,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
     if (dmrs_symbol_flag == 1) {
       if (gNB->pusch_vars[ulsch_id]->dmrs_symbol == INVALID_VALUE)
         gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
-z
+
       nr_pusch_channel_estimation(gNB,
                                   slot,
                                   0, // p
