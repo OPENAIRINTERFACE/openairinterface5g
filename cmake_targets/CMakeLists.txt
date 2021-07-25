@@ -89,8 +89,8 @@ if ("${NETTLE_VERSION_MAJOR}" STREQUAL "" OR "${NETTLE_VERSION_MINOR}" STREQUAL 
   message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
 endif()
 
-add_compile_definitions("NETTLE_VERSION_MAJOR=${NETTLE_VERSION_MAJOR}")
-add_compile_definitions("NETTLE_VERSION_MINOR=${NETTLE_VERSION_MINOR}")
+add_definitions("-DNETTLE_VERSION_MAJOR=${NETTLE_VERSION_MAJOR}")
+add_definitions("-DNETTLE_VERSION_MINOR=${NETTLE_VERSION_MINOR}")
 
 pkg_search_module(XPM xpm)
 if(NOT ${XPM_FOUND})
@@ -163,7 +163,7 @@ if (CUDA_FOUND)
     message ("cuda include ${CUDA_INCLUDE_DIRS}")
     message ("cuda library ${CUDA_LIBRARY_DIRS}")
 
-    add_compile_definitions("-L/usr/local/cuda/lib64")
+    add_definitions("-L/usr/local/cuda/lib64")
 
     SET(CUDA_NVCC_FLAGS
       "${CUDA_NVCC_FLAGS};-arch=sm_60;")
@@ -190,7 +190,7 @@ macro(add_option name val helpstr)
     set(value ${val})
   endif()
   set(${name} ${value} CACHE STRING "${helpstr}")
-  add_compile_definitions("${name}=${value}")
+  add_definitions("-D${name}=${value}")
 endmacro(add_option)
 
 macro(add_boolean_option name val helpstr)
@@ -202,7 +202,7 @@ macro(add_boolean_option name val helpstr)
   set(${name} ${value} CACHE STRING "${helpstr}")
   set_property(CACHE ${name} PROPERTY TYPE BOOL)
   if (${value})
-    add_compile_definitions("${name}")
+    add_definitions("-D${name}")
   endif (${value})
 endmacro(add_boolean_option)
 
@@ -213,7 +213,7 @@ macro(add_integer_option name val helpstr)
     set(value ${val})
   endif()
   set(${name} ${value} CACHE STRING "${helpstr}")
-  add_compile_definitions("${name}=${value}")
+  add_definitions("-D${name}=${value}")
 endmacro(add_integer_option)
 
 macro(add_list1_option name val helpstr)
@@ -225,7 +225,7 @@ macro(add_list1_option name val helpstr)
   set(${name} ${value} CACHE STRING "${helpstr}")
   set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
   if(NOT "${value}" STREQUAL "False")
-    add_compile_definitions("${name}=${value}")
+    add_definitions("-D${name}=${value}")
   endif()
 endmacro(add_list1_option)
 
@@ -238,7 +238,7 @@ macro(add_list2_option name val helpstr)
   set(${name} ${value} CACHE STRING "${helpstr}")
   set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
   if(NOT "${value}" STREQUAL "False")
-    add_compile_definitions("${value}=1")
+    add_definitions("-D${value}=1")
   endif()
 endmacro(add_list2_option)
 
@@ -251,7 +251,7 @@ macro(add_list_string_option name val helpstr)
   set(${name} ${value} CACHE STRING "${helpstr}")
   set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
   if(NOT "${value}" STREQUAL "False")
-    add_compile_definitions("${name}=\"${value}\"")
+    add_definitions("-D${name}=\"${value}\"")
   endif()
 endmacro(add_list_string_option)
 
@@ -308,18 +308,18 @@ endif()
 
 #
 # add autotools definitions that were maybe used!
-add_compile_definitions(STDC_HEADERS=1 HAVE_SYS_TYPES_H=1 HAVE_SYS_STAT_H=1 HAVE_STRING_H=1 HAVE_MEMORY_H=1 HAVE_STRINGS_H=1 HAVE_INTTYPES_H=1 HAVE_STDINT_H=1 HAVE_UNISTD_H=1 HAVE_FCNTL_H=1 HAVE_ARPA_INET_H=1 HAVE_SYS_TIME_H=1 HAVE_SYS_SOCKET_H=1 HAVE_STRERROR=1 HAVE_SOCKET=1 HAVE_MEMSET=1 HAVE_GETTIMEOFDAY=1 HAVE_STDLIB_H=1 HAVE_MALLOC=1 HAVE_LIBSCTP=1)
+add_definitions("-DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP")
 
-add_compile_options(-pipe -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic)
+set(commonOpts "-pipe -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic")
 set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
 
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -std=gnu99 -funroll-loops -D${MKVER}")
+  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} ${commonOpts} -std=gnu99 -funroll-loops -D${MKVER}")
 set(CMAKE_CXX_FLAGS
-  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 -D${MKVER}")
+  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}  ${commonOpts} -std=c++11 -D${MKVER}")
 
 if (CUDA_FOUND)
-  add_compile_definitions(CUDA_FLAG )
+  add_definitions(-D CUDA_FLAG )
 endif()
 
 if (SANITIZE_ADDRESS)
@@ -327,7 +327,7 @@ if (SANITIZE_ADDRESS)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-common")
 endif ()
 
-add_compile_definitions("ASN_DISABLE_OER_SUPPORT")
+add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -ggdb3 -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
@@ -373,10 +373,11 @@ endif()
 
 # Below is a hard-coded info
 set (FIRMWARE_VERSION "No svn information")
-add_compile_definitions("FIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"")
-add_compile_definitions("PACKAGE_VERSION=\"Branch: ${GIT_BRANCH} Abrev. Hash: ${GIT_COMMIT_HASH} Date: ${GIT_COMMIT_DATE}\"")
-add_compile_definitions("PACKAGE_BUGREPORT=\"openair4g-devel@lists.eurecom.fr\"")
-#add_compile_definitions("EMIT_ASN_DEBUG=1")
+add_definitions("-DFIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"")
+add_definitions("-DPACKAGE_VERSION=\"Branch: ${GIT_BRANCH} Abrev. Hash: ${GIT_COMMIT_HASH} Date: ${GIT_COMMIT_DATE}\"")
+add_definitions("-DPACKAGE_BUGREPORT=\"openair4g-devel@lists.eurecom.fr\"")
+#add_definitions("-DEMIT_ASN_DEBUG=1")
+
 
 # Debug related options
 #########################################
@@ -424,7 +425,7 @@ set (RRC_ASN1_VERSION "Rel15")
 make_version(LTE_RRC_VERSION 15 6 0)
 set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-15.6.0.asn1)
 
-add_compile_definitions(LTE_RRC_VERSION=${LTE_RRC_VERSION})
+add_definitions(-DLTE_RRC_VERSION=${LTE_RRC_VERSION})
 set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
@@ -456,7 +457,7 @@ include_directories ("${RRC_FULL_DIR}")
 set (NR_RRC_ASN1_VERSION "NR_Rel16" )
 make_version(NR_RRC_VERSION 16 1 0)
 set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-16.1.0.asn1)
-add_compile_definitions(NR_RRC_VERSION=${NR_RRC_VERSION})
+add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/RRC_${NR_RRC_ASN1_VERSION})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
@@ -491,7 +492,7 @@ set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
 make_version(S1AP_VERSION 15 6 0)
 set(S1AP_ASN_FILES "s1ap-15.6.0.asn1")
 
-add_compile_definitions(S1AP_VERSION=${S1AP_VERSION})
+add_definitions(-DS1AP_VERSION=${S1AP_VERSION})
 set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${S1AP_RELEASE})
 set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${S1AP_RELEASE})
 
@@ -548,7 +549,7 @@ set(NGAP_DIR ${OPENAIR3_DIR}/NGAP)
 make_version(NGAP_VERSION 15 8 0)
 set(NGAP_ASN_FILES "ngap-15.8.0.asn1")
 
-add_compile_definitions(NGAP_VERSION=${NGAP_VERSION})
+add_definitions(-DNGAP_VERSION=${NGAP_VERSION})
 set(NGAP_ASN_DIR ${NGAP_DIR}/MESSAGES/ASN1/ASN1_files)
 set(NGAP_C_DIR ${asn1_generated_dir}/NGAP_${NGAP_RELEASE})
 
@@ -615,7 +616,7 @@ elseif (${M2AP_RELEASE} STREQUAL "R15")
   make_version(M2AP_VERSION 15 1 0)
   set(M2AP_ASN_FILES m2ap-15.1.0.asn1)
 endif(${M2AP_RELEASE} STREQUAL "R8")
-add_compile_definitions(M2AP_VERSION=${M2AP_VERSION})
+add_definitions(-DM2AP_VERSION=${M2AP_VERSION})
 set(M2AP_ASN_DIR ${M2AP_DIR}/MESSAGES/ASN1/${M2AP_RELEASE})
 set(M2AP_C_DIR ${asn1_generated_dir}/M2AP_${M2AP_RELEASE})
 
@@ -688,7 +689,7 @@ elseif (${M3AP_RELEASE} STREQUAL "R15")
   make_version(M3AP_VERSION 15 1 0)
   set(M3AP_ASN_FILES m3ap-15.1.0.asn1)
 endif(${M3AP_RELEASE} STREQUAL "R8")
-add_compile_definitions(M3AP_VERSION=${M3AP_VERSION})
+add_definitions(-DM3AP_VERSION=${M3AP_VERSION})
 set(M3AP_ASN_DIR ${M3AP_DIR}/MESSAGES/ASN1/${M3AP_RELEASE})
 set(M3AP_C_DIR ${asn1_generated_dir}/M3AP_${M3AP_RELEASE})
 
@@ -746,7 +747,7 @@ set(X2AP_DIR ${OPENAIR2_DIR}/X2AP)
 make_version(X2AP_VERSION 15 6 0)
 set(X2AP_ASN_FILES x2ap-15.6.0.asn1)
 
-add_compile_definitions(X2AP_VERSION=${X2AP_VERSION})
+add_definitions(-DX2AP_VERSION=${X2AP_VERSION})
 set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${X2AP_RELEASE})
 set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${X2AP_RELEASE})
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
@@ -799,7 +800,7 @@ if (${F1AP_RELEASE} STREQUAL "R16")
   make_version(F1AP_VERSION 16 3 1)
   set (ASN1RELDIR R16.3.1)
 endif(${F1AP_RELEASE} STREQUAL "R16")
-add_compile_definitions(F1AP_VERSION=${F1AP_VERSION})
+add_definitions(-DF1AP_VERSION=${F1AP_VERSION})
 set(F1AP_ASN_DIR ${F1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
 set(F1AP_ASN_FILES
   ${F1AP_ASN_DIR}/F1AP-CommonDataTypes.asn
@@ -2582,7 +2583,7 @@ include_directories(${NAS_SRC}UE/ESM)
 include_directories(${NAS_SRC}UE/ESM/SAP)
 
 # nbiot
-add_compile_definitions("NUMBER_OF_UE_MAX_NB_IoT=16")
+add_definitions("-DNUMBER_OF_UE_MAX_NB_IoT=16")
 set (NBIOT_SOURCES
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_config.c
   )
@@ -2761,7 +2762,7 @@ add_custom_target (
 )
 
 # Hack on a test of asn1c version (already dirty)
-add_compile_definitions(ASN1_MINIMUM_VERSION=924)
+add_definitions(-DASN1_MINIMUM_VERSION=924)
 
 #################################
 # add executables for operation
