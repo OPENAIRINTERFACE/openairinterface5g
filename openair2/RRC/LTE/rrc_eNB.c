@@ -104,9 +104,6 @@ static int is_en_dc_supported(LTE_UE_EUTRA_Capability_t *c);
 
 extern RAN_CONTEXT_t RC;
 
-#ifdef PHY_EMUL
-  extern EMULATION_VARS              *Emul_vars;
-#endif
 extern eNB_MAC_INST                *eNB_mac_inst;
 extern UE_MAC_INST                 *UE_mac_inst;
 
