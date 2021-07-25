@@ -283,7 +283,7 @@ The following features are valid for the gNB and the 5G-NR UE.
    - PTRS support
    - Support for 1, 2 and 4 TX antennas
    - Support for up to 2 layers (currently limited to DMRS configuration type 2)
-*  NR-CSI Generation of sequence at PHY (**under integration**)
+*  NR-CSIRS Generation of sequence at PHY
 *  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
    - PUSCH mapping type A and B
    - DMRS configuration type 1 and 2
@@ -319,6 +319,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 - MAC <-> PHY data interface using FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
 - Scheduler procedures for SIB1
 - Scheduler procedures for RA
+- Scheduler procedures for CSI-RS
 - MAC downlink scheduler (fixed allocations)
 - MAC header generation (including timing advance)
 - ACK / NACK handling and HARQ procedures for downlink
@@ -349,7 +350,6 @@ The following features are valid for the gNB and the 5G-NR UE.
    - PTRS support
    - Support for 1, 2 and 4 RX antennas
    - Support for up to 2 layers (currently limited to DMRS configuration type 2)
-*  NR-CSI Generation of sequence at PHY (**under integration**)
 *  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
    - PUSCH mapping type A and B
    - DMRS configuration type 1 and 2
