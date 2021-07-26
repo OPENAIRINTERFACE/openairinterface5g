@@ -368,7 +368,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     mac->frequency_range = band<100?FR1:FR2;
     
     lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
-
+    
     // cell config
     
     cfg->cell_config.phy_cell_id = *scc->physCellId;
@@ -667,26 +667,12 @@ int nr_rrc_mac_config_req_ue(
       // Setup the SSB to Rach Occasions mapping according to the config
       build_ssb_to_ro_map(mac);
     }
-    else if (cell_group_config != NULL){
+    else if (cell_group_config != NULL ){
       LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
       mac->cg = cell_group_config;
       mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
-      if(get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1) {
-        config_control_ue(mac);
-        if (cell_group_config->spCellConfig->reconfigurationWithSync) {
-          if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
-            ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
-          }
-          mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-          config_common_ue(mac,module_id,cc_idP);
-          mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
-          LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
-        }
-
-        // Setup the SSB to Rach Occasions mapping according to the config
-        build_ssb_to_ro_map(mac);
-      }
-
+      //      config_control_ue(mac);
+      //      config_common_ue(mac,module_id,cc_idP);
       /*      
       if(mac_cell_group_configP != NULL){
 	if(mac_cell_group_configP->drx_Config != NULL ){
