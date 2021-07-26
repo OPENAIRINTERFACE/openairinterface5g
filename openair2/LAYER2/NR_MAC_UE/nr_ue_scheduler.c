@@ -1851,7 +1851,8 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
   }
 
   // CSI
-  O_CSI = nr_get_csi_measurements(mac, frameP, slotP, pucch);
+  if (mac->ra.ra_state == RA_SUCCEEDED)
+    O_CSI = nr_get_csi_measurements(mac, frameP, slotP, pucch);
 
   // ACKNACK
   O_ACK = get_downlink_ack(mac, frameP, slotP, pucch);

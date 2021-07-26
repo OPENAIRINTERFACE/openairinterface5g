@@ -1204,6 +1204,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csires1->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires1);
 
+
  csi_MeasConfig->csi_ReportConfigToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_ReportConfigToAddModList));
  csi_MeasConfig->csi_ReportConfigToReleaseList = NULL;
  NR_CSI_ReportConfig_t *csirep1 = calloc(1,sizeof(*csirep1));

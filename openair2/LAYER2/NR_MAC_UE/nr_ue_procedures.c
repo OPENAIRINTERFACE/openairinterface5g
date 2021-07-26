@@ -2331,8 +2331,8 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
         temp_payload |= (rsrp_idx<<bits);
         bits += 4; // 7 bits for highest RSRP
       }
+      break; // resorce found
     }
-    break; // resorce found
   }
   pucch->csi_part1_payload = temp_payload;
   return bits;
