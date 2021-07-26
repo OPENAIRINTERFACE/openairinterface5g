@@ -201,42 +201,38 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
-int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
-    const module_id_t module_id,
-    const uint8_t *buffer,
-    const uint32_t size ){
+int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id,
+                                                   const uint8_t *buffer,
+                                                   const uint32_t size){
     
-    NR_CellGroupConfig_t *cell_group_config = NULL;
-    uint32_t i;
+  NR_CellGroupConfig_t *cell_group_config = NULL;
+  uint32_t i;
 
-    asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-                                                    &asn_DEF_NR_CellGroupConfig,
-                                                    (void **)&cell_group_config,
-                                                    (uint8_t *)buffer,
-                                                    size ); 
+  asn_dec_rval_t dec_rval = uper_decode(NULL,
+                                        &asn_DEF_NR_CellGroupConfig,
+                                        (void **)&cell_group_config,
+                                        (uint8_t *)buffer,
+                                        size, 0, 0);
 
-    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-            printf("NR_CellGroupConfig decode error\n");
-            for (i=0; i<size; i++){
-                printf("%02x ",buffer[i]);
-            }
-            printf("\n");
-            // free the memory
-            SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 1 );
-            return -1;
-    }
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+    printf("NR_CellGroupConfig decode error\n");
+    for (i=0; i<size; i++)
+      printf("%02x ",buffer[i]);
+    printf("\n");
+    // free the memory
+    SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 1 );
+    return -1;
+  }
 
-    if(NR_UE_rrc_inst[module_id].scell_group_config == NULL){
-        NR_UE_rrc_inst[module_id].scell_group_config = cell_group_config;
-        nr_rrc_ue_process_scg_config(module_id,cell_group_config);
-    }else{
-        nr_rrc_ue_process_scg_config(module_id,cell_group_config);
-        SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 0);
-    }
+  if(NR_UE_rrc_inst[module_id].scell_group_config == NULL){
+    NR_UE_rrc_inst[module_id].scell_group_config = cell_group_config;
+    nr_rrc_ue_process_scg_config(module_id,cell_group_config);
+  }else{
+    nr_rrc_ue_process_scg_config(module_id,cell_group_config);
+    SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 0);
+  }
 
-    //nr_rrc_mac_config_req_ue( 0,0,0,NULL, cell_group_config->mac_CellGroupConfig, cell_group_config->physicalCellGroupConfig, cell_group_config->spCellConfig );
-
-    return 0;
+  return 0;
 }
 
 int8_t nr_rrc_ue_process_RadioBearerConfig(NR_RadioBearerConfig_t *RadioBearerConfig){
@@ -262,25 +258,33 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
         }
       }
       if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup != NULL){
-        NR_CellGroupConfig_t *cellGroupConfig = NULL;
-        uper_decode(NULL,
-                    &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
-                    (void **)&cellGroupConfig,
-                    (uint8_t *)rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->buf,
-                    rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->size, 0, 0); 
 
-        xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
+        if(get_softmodem_params()->sa) {
 
-        if(NR_UE_rrc_inst[module_id].cell_group_config == NULL){
-          //  first time receive the configuration, just use the memory allocated from uper_decoder. TODO this is not good implementation, need to maintain RRC_INST own structure every time.
-          NR_UE_rrc_inst[module_id].cell_group_config = cellGroupConfig;
-          nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
-        }else{
-          //  after first time, update it and free the memory after.
-          SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)NR_UE_rrc_inst[module_id].cell_group_config, 0);
-          NR_UE_rrc_inst[module_id].cell_group_config = cellGroupConfig;
-          nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
+          NR_CellGroupConfig_t *cellGroupConfig = NULL;
+          uper_decode(NULL,
+                      &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+                      (void **)&cellGroupConfig,
+                      (uint8_t *)rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->buf,
+                      rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->size, 0, 0);
+
+          xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
+
+          if(NR_UE_rrc_inst[module_id].cell_group_config == NULL){
+            //  first time receive the configuration, just use the memory allocated from uper_decoder. TODO this is not good implementation, need to maintain RRC_INST own structure every time.
+            NR_UE_rrc_inst[module_id].cell_group_config = cellGroupConfig;
+            nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
+          }else{
+            //  after first time, update it and free the memory after.
+            SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)NR_UE_rrc_inst[module_id].cell_group_config, 0);
+            NR_UE_rrc_inst[module_id].cell_group_config = cellGroupConfig;
+            nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
+          }
         }
+        else
+          nr_rrc_ue_decode_secondary_cellgroup_config(module_id,
+                                                      rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->buf,
+                                                      rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->size);
       }
       if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->measConfig != NULL){
         if(NR_UE_rrc_inst[module_id].meas_config == NULL){
@@ -317,7 +321,7 @@ int8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config){
 
 int8_t nr_rrc_ue_process_scg_config(const module_id_t module_id, NR_CellGroupConfig_t *cell_group_config){
   int i;
-  if(NR_UE_rrc_inst[module_id].cell_group_config==NULL){
+  if(cell_group_config==NULL){
     //  initial list
     if(cell_group_config->spCellConfig != NULL){
       if(cell_group_config->spCellConfig->spCellConfigDedicated != NULL){
