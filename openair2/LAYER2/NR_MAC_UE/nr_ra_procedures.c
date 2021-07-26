@@ -82,20 +82,32 @@ void init_RA(module_id_t mod_id,
   prach_resources->RA_SCALING_FACTOR_BI = 1;
 
   struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList;
-  NR_SearchSpaceId_t ss_id = 0;
+  NR_SearchSpaceId_t *ra_ss;
+  NR_SearchSpaceId_t ss_id = -1;
   NR_SearchSpace_t *ss = NULL;
-  if(mac->scc) {
-    commonSearchSpaceList = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-    ss_id = *mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+
+  if(mac->scc_SIB) {
+    commonSearchSpaceList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+    ss_id = *mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
   }
-  else {
-    if(mac->scc_SIB) {
-      commonSearchSpaceList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-      ss_id = *mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+  else{
+    if (mac->scc) {
+      NR_SearchSpaceId_t *ra_ss = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      if (ra_ss) {
+        commonSearchSpaceList = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+        ss_id = *mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      }
     }
-    else
-      AssertFatal(1==0,"Both scc and scc_SIB are null\n");
+    if (ss_id < 0) {
+      ra_ss = mac->DLbwp[0]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      if (ra_ss) {
+        commonSearchSpaceList = mac->DLbwp[0]->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+        ss_id = *mac->DLbwp[0]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      }
+    }
   }
+
+  AssertFatal(ss_id>-1,"Didn't find ra-SearchSpace\n");
   AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
   // Common searchspace list
   for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
