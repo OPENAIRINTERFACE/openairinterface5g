@@ -989,7 +989,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     frame_t frame_tx      = ul_info->frame_tx;
     slot_t slot_tx        = ul_info->slot_tx;
     module_id_t mod_id    = ul_info->module_id;
-    uint8_t access_mode   = SCHEDULED_ACCESS;
+    uint32_t gNB_index    = ul_info->gNB_index;
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
     RA_config_t *ra       = &mac->ra;
@@ -1036,19 +1036,18 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
               // Getting IP traffic to be transmitted
               data_existing = nr_ue_get_sdu(mod_id,
-                                            cc_id,
                                             frame_tx,
                                             slot_tx,
-                                            0,
+                                            gNB_index,
                                             ulsch_input_buffer,
-                                            TBS_bytes,
-                                            &access_mode);
+                                            TBS_bytes);
             }
 
             LOG_D(NR_MAC,"Flipping NDI for harq_id %d\n",ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
             mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
             mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
 
+            // TBR use the proper function !
             //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
             if (!data_existing) {
               //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
@@ -1965,114 +1964,174 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   } // if is_nr_UL_slot
 }
 
-#define MAX_LCID 8 //Fixme: also defined in LCID table
-uint8_t
-nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-           sub_frame_t subframe, uint8_t eNB_index,
-           uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) {
-  uint8_t total_rlc_pdu_header_len = 0;
+#define MAX_LCID 8 // NR_MAX_NUM_LCID shall be used but the mac_rlc_data_req function can fetch data for max 8 LCID
+
+/**
+ * Function:      to fetch data to be transmitted from RLC, place it in the ULSCH PDU buffer
+                  to generate the complete MAC PDU with sub-headers and MAC CEs according to ULSCH MAC PDU generation (6.1.2 TS 38.321)
+                  the selected sub-header for the payload sub-PDUs is NR_MAC_SUBHEADER_LONG
+ * @module_idP    Module ID
+ * @frameP        current UL frame
+ * @subframe      current UL slot
+ * @gNB_index     gNB index
+ * @ulsch_buffer  Pointer to ULSCH PDU
+ * @buflen        TBS
+ */
+uint8_t nr_ue_get_sdu(module_id_t module_idP,
+                      frame_t frameP,
+                      sub_frame_t subframe,
+                      uint8_t gNB_index,
+                      uint8_t *ulsch_buffer,
+                      uint16_t buflen) {
+
   int16_t buflen_remain = 0;
   uint8_t lcid = 0;
   uint16_t sdu_lengths[MAX_LCID] = { 0 };
-  uint8_t sdu_lcids[MAX_LCID] = { 0 };
-  uint16_t payload_offset = 0, num_sdus = 0;
-  uint8_t ulsch_sdus[MAX_ULSCH_PAYLOAD_BYTES];
+  uint16_t num_sdus = 0;
   uint16_t sdu_length_total = 0;
-  //unsigned short post_padding = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  uint8_t sh_size = sizeof(NR_MAC_SUBHEADER_LONG);
 
-  rlc_buffer_occupancy_t lcid_buffer_occupancy_new = 0;
-  LOG_D(NR_MAC,
-        "[UE %d] MAC PROCESS UL TRANSPORT BLOCK at frame%d subframe %d TBS=%d\n",
-        module_idP, frameP, subframe, buflen);
-  AssertFatal(CC_id == 0,
-              "Transmission on secondary CCs is not supported yet\n");
+  // Pointer used to build the MAC PDU by placing the RLC SDUs in the ULSCH buffer
+  uint8_t *pdu = ulsch_buffer;
+
+  // Preparing the MAC CEs sub-PDUs and get the total size
+  unsigned char mac_header_control_elements[16] = {0};
+  NR_UE_MAC_CE_t nr_ue_mac_ce = {.crnti = mac->crnti};
+  int tot_mac_ce_len = nr_write_ce_ulsch_pdu(&mac_header_control_elements[0], &nr_ue_mac_ce);
+  uint8_t total_mac_pdu_header_len = tot_mac_ce_len;
+
+  LOG_D(NR_MAC, "In %s: [UE %d] [%d.%d] process UL transport block at with size TBS = %d bytes \n", __FUNCTION__, module_idP, frameP, subframe, buflen);
 
   // Check for DCCH first
   // TO DO: Multiplex in the order defined by the logical channel prioritization
   for (lcid = UL_SCH_LCID_SRB1;
        lcid < MAX_LCID; lcid++) {
-    lcid_buffer_occupancy_new = mac_rlc_get_buffer_occupancy_ind(module_idP, mac->crnti, eNB_index, frameP, subframe, ENB_FLAG_NO, lcid);
 
-    if(lcid_buffer_occupancy_new) {
-        buflen_remain =
-          buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
-        LOG_D(NR_MAC,
-              "[UE %d] Frame %d : UL-DXCH -> ULSCH, RLC %d has %d bytes to "
-              "send (Transport Block size %d SDU Length Total %d , mac header len %d, buflen_remain %d )\n", //BSR byte before Tx=%d
-              module_idP, frameP, lcid, lcid_buffer_occupancy_new,
-              buflen, sdu_length_total,
-              total_rlc_pdu_header_len, buflen_remain); // ,nr_ue_mac_inst->scheduling_info.BSR_bytes[nr_ue_mac_inst->scheduling_info.LCGID[lcid]]
+    buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
 
-      while(buflen_remain > 0 && lcid_buffer_occupancy_new){
+    LOG_D(NR_MAC, "In %s: [UE %d] [%d.%d] UL-DXCH -> ULSCH, RLC with LCID 0x%02x (TBS %d bytes, sdu_length_total %d bytes, MAC header len %d bytes, buflen_remain %d bytes)\n",
+          __FUNCTION__,
+          module_idP,
+          frameP,
+          subframe,
+          lcid,
+          buflen,
+          sdu_length_total,
+          tot_mac_ce_len,
+          buflen_remain);
 
-        sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
-                                mac->crnti,
-                                eNB_index,
-                                frameP,
-                                ENB_FLAG_NO,
-                                MBMS_FLAG_NO,
-                                lcid,
-                                buflen_remain-MAX_RLC_SDU_SUBHEADER_SIZE,
-                                //Fixme: Laurent I removed MAX_RLC_SDU_SUBHEADER_SIZE because else we get out the buffer silently
-                                // the interface with nr_generate_ulsch_pdu() looks over complex and not CPU optimized
-                                (char *)&ulsch_sdus[sdu_length_total],0,
-                                0);
+    while (buflen_remain > 0){
 
-        AssertFatal(buflen_remain >= sdu_lengths[num_sdus],
-                    "LCID=%d RLC has segmented %d bytes but MAC has max=%d\n",
-                    lcid, sdu_lengths[num_sdus], buflen_remain);
+      // Pointer used to build the MAC sub-PDU headers in the ULSCH buffer for each SDU
+      NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) pdu;
 
-        if (sdu_lengths[num_sdus]) {
-          sdu_length_total += sdu_lengths[num_sdus];
-          sdu_lcids[num_sdus] = lcid;
+      pdu += sh_size;
 
-          total_rlc_pdu_header_len += MAX_RLC_SDU_SUBHEADER_SIZE; //rlc_pdu_header_len_last;
+      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
+                                               mac->crnti,
+                                               gNB_index,
+                                               frameP,
+                                               ENB_FLAG_NO,
+                                               MBMS_FLAG_NO,
+                                               lcid,
+                                               buflen_remain,
+                                               (char *)pdu,
+                                               0,
+                                               0);
 
-          //Update number of SDU
-          num_sdus++;
-        }
+      AssertFatal(buflen_remain >= sdu_lengths[num_sdus], "In %s: LCID = 0x%02x RLC has segmented %d bytes but MAC has max %d remaining bytes\n",
+                  __FUNCTION__,
+                  lcid,
+                  sdu_lengths[num_sdus],
+                  buflen_remain);
 
-        /* Get updated BO after multiplexing this PDU */
-        lcid_buffer_occupancy_new = mac_rlc_get_buffer_occupancy_ind(module_idP,mac->crnti,eNB_index,frameP, subframe, ENB_FLAG_NO, lcid);
-        buflen_remain = buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
+      if (sdu_lengths[num_sdus]) {
+
+        LOG_D(MAC, "In %s: Generating UL MAC sub-PDU for SDU %d, length %d bytes, RB with LCID 0x%02x (buflen (TBS) %d bytes)\n", __FUNCTION__,
+          num_sdus + 1,
+          sdu_lengths[num_sdus],
+          lcid,
+          buflen);
+
+        header->R = 0;
+        header->F = 1;
+        header->LCID = lcid;
+        header->L1 = ((unsigned short) sdu_lengths[num_sdus] >> 8) & 0x7f;
+        header->L2 = (unsigned short) sdu_lengths[num_sdus] & 0xff;
+
+        #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+        LOG_I(NR_MAC, "In %s: dumping MAC sub-header with length %d: \n", __FUNCTION__, sh_size);
+        log_dump(NR_MAC, header, sh_size, LOG_DUMP_CHAR, "\n");
+        LOG_I(NR_MAC, "In %s: dumping MAC SDU with length %d \n", __FUNCTION__, sdu_lengths[num_sdus]);
+        log_dump(NR_MAC, pdu, sdu_lengths[num_sdus], LOG_DUMP_CHAR, "\n");
+        #endif
+
+        pdu += sdu_lengths[num_sdus];
+        sdu_length_total += sdu_lengths[num_sdus];
+        total_mac_pdu_header_len += sh_size;
+
+        num_sdus++;
+
+      } else {
+        pdu -= sh_size;
+        LOG_D(MAC, "In %s: no data to transmit for RB with LCID 0x%02x\n", __FUNCTION__, lcid);
+        break;
       }
+
+      buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
+
     }
   }
 
-  // Generate ULSCH PDU
-  if (num_sdus>0) {
-  payload_offset = nr_generate_ulsch_pdu(ulsch_sdus,
-                                         ulsch_buffer,  // mac header
-                                         num_sdus,  // num sdus
-                                         sdu_lengths, // sdu length
-                                         sdu_lcids, // sdu lcid
-                                         0, // power_headroom
-                                         mac->crnti, // crnti
-                                         0, // truncated_bsr
-                                         0, // short_bsr
-                                         0, // long_bsr
-                                         0, // post_padding 
-                                         buflen);  // TBS in bytes
-  } else {
-    return 0;
+  if (num_sdus > 0) {
+
+    if (tot_mac_ce_len > 0) {
+
+      LOG_D(NR_MAC, "In %s copying %d bytes of MAC CEs to the UL PDU \n", __FUNCTION__, tot_mac_ce_len);
+      memcpy((void *) pdu, (void *) mac_header_control_elements, tot_mac_ce_len);
+      buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total);
+      pdu += (unsigned char) tot_mac_ce_len;
+
+      #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+      LOG_I(NR_MAC, "In %s: dumping MAC CE with length tot_mac_ce_len %d: \n", __FUNCTION__, tot_mac_ce_len);
+      log_dump(NR_MAC, mac_header_control_elements, tot_mac_ce_len, LOG_DUMP_CHAR, "\n");
+      #endif
+
+    }
+
+    // Compute final offset for padding and fill remainder of ULSCH with 0
+    if (buflen_remain > 0) {
+
+      ((NR_MAC_SUBHEADER_FIXED *) pdu)->R = 0;
+      ((NR_MAC_SUBHEADER_FIXED *) pdu)->LCID = UL_SCH_LCID_PADDING;
+
+      #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+      LOG_I(NR_MAC, "In %s: padding MAC sub-header with length %ld bytes \n", __FUNCTION__, sizeof(NR_MAC_SUBHEADER_FIXED));
+      log_dump(NR_MAC, pdu, sizeof(NR_MAC_SUBHEADER_FIXED), LOG_DUMP_CHAR, "\n");
+      #endif
+
+      pdu++;
+      buflen_remain--;
+
+      for (int j = 0; j < buflen_remain; j++) {
+        pdu[j] = 0;
+      }
+
+      #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+      LOG_I(NR_MAC, "In %s: MAC padding sub-PDU with length %d bytes \n", __FUNCTION__, buflen_remain);
+      log_dump(NR_MAC, pdu, buflen_remain, LOG_DUMP_CHAR, "\n");
+      #endif
+
+    }
+
+    #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+    LOG_I(NR_MAC, "In %s: dumping MAC PDU with length %d: \n", __FUNCTION__, buflen);
+    log_dump(NR_MAC, ulsch_buffer, buflen, LOG_DUMP_CHAR, "\n");
+    #endif
+
   }
 
-  // Padding: fill remainder of ULSCH with 0
-  if (buflen - payload_offset > 0){
-          for (int j = payload_offset; j < buflen; j++)
-                  ulsch_buffer[j] = 0;
-  }
+  return num_sdus > 0 ? 1 : 0;
 
-#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-  LOG_I(NR_MAC, "Printing UL MAC payload UE side, payload_offset: %d \n", payload_offset);
-  for (int i = 0; i < buflen ; i++) {
-          //harq_process_ul_ue->a[i] = (unsigned char) rand();
-          //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-          printf("%02x ",(unsigned char)ulsch_buffer[i]);
-  }
-  printf("\n");
-#endif
-
-  return 1;
 }

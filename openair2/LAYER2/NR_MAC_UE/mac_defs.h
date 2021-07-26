@@ -390,6 +390,16 @@ typedef struct {
 
 } NR_UE_MAC_INST_t;
 
+typedef struct {
+
+  uint8_t power_headroom;
+  uint16_t crnti;
+  uint16_t truncated_bsr;
+  uint16_t short_bsr;
+  uint16_t long_bsr;
+
+} NR_UE_MAC_CE_t;
+
 typedef enum seach_space_mask_e {
     type0_pdcch  = 0x1, 
     type0a_pdcch = 0x2,

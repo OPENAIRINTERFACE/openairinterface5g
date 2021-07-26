@@ -474,23 +474,19 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
 
 }
 
-/////////////////////////////////////////////////////////////////////////
-// This function handles:
-// - Random Access Preamble Initialization (5.1.1 TS 38.321)
-// - Random Access Response reception (5.1.4 TS 38.321)
-/// In the current implementation, RA is 4-step contention free only
-/////////////////////////////////////////////////////////////////////////
-// todo TS 38.321:
-// - BWP operation (subclause 5.15 TS 38.321)
-// - beam failure recovery
-// - handle initialization by handover
-// - handle DL assignment on PDCCH for RA-RNTI
-// - transmission on DCCH using PRACH (during handover, or sending SR for example)
-// - take into account MAC CEs in size_sdu (currently hardcoded size to 1 MAC subPDU and 1 padding subheader)
-// - fix rrc data req logic
-// - retrieve TBS
-// - add mac_rrc_nr_data_req_ue, etc ...
-// - Msg3 Retransmissions to be scheduled by DCI 0_0
+/**
+ * Function:            handles Random Access Preamble Initialization (5.1.1 TS 38.321)
+ *                      handles Random Access Response reception (5.1.4 TS 38.321)
+ * Note:                In the current implementation, RA is 4-step contention free only
+ *
+ * @prach_resources     pointer to PRACH resources
+ * @prach_pdu           pointer to FAPI UL PRACH PDU
+ * @mod_id              module ID
+ * @CC_id               CC ID
+ * @frame               current UL TX frame
+ * @gNB_id              gNB ID
+ * @nr_slot_tx          current UL TX slot
+ */
 uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                        fapi_nr_ul_config_prach_pdu *prach_pdu,
                        module_id_t mod_id,
@@ -501,22 +497,16 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
-  uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
   uint8_t lcid = UL_SCH_LCID_CCCH;
-  uint8_t *payload;
-  uint16_t size_sdu = 0;
-  unsigned short post_padding;
+  uint8_t sh_size = sizeof(NR_MAC_SUBHEADER_SHORT);
+  int8_t size_sdu = 0;
+
   NR_RACH_ConfigCommon_t *setup;
   if (mac->scc) setup = mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   else          setup = mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
   AssertFatal(&setup->rach_ConfigGeneric != NULL, "In %s: FATAL! rach_ConfigGeneric is NULL...\n", __FUNCTION__);
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = ra->rach_ConfigDedicated;
-
-  uint8_t sdu_lcids[NB_RB_MAX] = {0};
-  uint16_t sdu_lengths[NB_RB_MAX] = {0};
-  int num_sdus = 0;
-  int offset = 0;
 
   // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
   if (!prach_resources->init_msg1) {
@@ -528,22 +518,26 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
     }
   }
 
-  LOG_D(NR_MAC,"frame %d prach_resources->init_msg1 %d, ra->ra_state %d, ra->RA_active %d\n",
-	frame,prach_resources->init_msg1,ra->ra_state,ra->RA_active);
+  LOG_D(NR_MAC, "In %s: [UE %d][%d.%d]: init_msg1 %d, ra_state %d, RA_active %d\n",
+    __FUNCTION__,
+    mod_id,
+    frame,
+    nr_slot_tx,
+    prach_resources->init_msg1,
+    ra->ra_state,
+    ra->RA_active);
 
   if (prach_resources->init_msg1 && ra->ra_state != RA_SUCCEEDED) {
 
     if (ra->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
 
-      LOG_D(NR_MAC, "RA not active. Checking for data to transmit from upper layers...\n");
+      LOG_D(NR_MAC, "In %s: RA not active. Checking for data to transmit from upper layers...\n", __FUNCTION__);
 
-      uint8_t TBS_max = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
-      payload = (uint8_t*) mac->CCCH_pdu.payload;
-
-      num_sdus = 1;
-      post_padding = 1;
-      sdu_lcids[0] = lcid;
+      uint8_t TBS_max = 8 + 2 * sh_size;
+      uint8_t *pdu = (uint8_t*) mac->CCCH_pdu.payload;
+      NR_MAC_SUBHEADER_SHORT *header = (NR_MAC_SUBHEADER_SHORT *) pdu;
+      pdu += sh_size;
 
       // initialisation by RRC
 
@@ -553,57 +547,56 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       }
 
       // CCCH PDU
-      size_sdu = (uint16_t) nr_mac_rrc_data_req_ue(mod_id, CC_id, gNB_id, frame, CCCH, mac_sdus);
+      size_sdu = nr_mac_rrc_data_req_ue(mod_id, CC_id, gNB_id, frame, CCCH, pdu);
 
-      sdu_lengths[0] = size_sdu;
-
-      LOG_D(NR_MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
+      LOG_D(NR_MAC, "In %s: [UE %d][%d.%d]: Requested RRCConnectionRequest, got %d bytes for LCID 0x%02x \n", __FUNCTION__, mod_id, frame, nr_slot_tx, size_sdu, lcid);
 
       if (size_sdu > 0) {
 
         // UE Contention Resolution Identity
         // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to determine whether or not the
         // Random Access Procedure has been successful after reception of Msg4
-        memcpy(ra->cont_res_id, mac_sdus, sizeof(uint8_t) * 6);
+        memcpy(ra->cont_res_id, pdu, sizeof(uint8_t) * 6);
 
-        LOG_D(NR_MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
+        pdu += size_sdu;
 
-        ra->Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
+        LOG_D(NR_MAC, "In %s: [UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", __FUNCTION__, mod_id, frame, nr_slot_tx);
+
+        ra->Msg3_size = size_sdu + sh_size;
+
+        AssertFatal(TBS_max > ra->Msg3_size, "In %s: allocated resources are not enough for Msg3!\n", __FUNCTION__);
 
         init_RA(mod_id, prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
-        prach_resources->Msg3 = payload;
+        prach_resources->Msg3 = (uint8_t*) mac->CCCH_pdu.payload;
         nr_get_RA_window(mac);
 
         // Fill in preamble and PRACH resources
         if (ra->generate_nr_prach == GENERATE_PREAMBLE) {
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
         }
-        offset = nr_generate_ulsch_pdu((uint8_t *) mac_sdus,              // sdus buffer
-                                       (uint8_t *) payload,               // UL MAC pdu pointer
-                                       num_sdus,                          // num sdus
-                                       sdu_lengths,                       // sdu length
-                                       sdu_lcids,                         // sdu lcid
-                                       0,                                 // power headroom
-                                       0,                                 // crnti
-                                       0,                                 // truncated bsr
-                                       0,                                 // short bsr
-                                       0,                                 // long_bsr
-                                       post_padding,
-                                       0);
 
-        AssertFatal(TBS_max > offset, "Frequency resources are not enough for Msg3!\n");
+        header->R = 0;
+        header->F = 0;
+        header->LCID = lcid;
+        header->L = (unsigned char) size_sdu;
 
         // Padding: fill remainder with 0
-        if (post_padding > 0){
-          for (int j = 0; j < (TBS_max - offset); j++)
-            payload[offset + j] = 0;
+        if (TBS_max - ra->Msg3_size > 0) {
+          LOG_D(NR_MAC, "In %s: remaining %d bytes, filling with padding\n", __FUNCTION__, TBS_max - ra->Msg3_size);
+          ((NR_MAC_SUBHEADER_FIXED *) pdu)->R = 0;
+          ((NR_MAC_SUBHEADER_FIXED *) pdu)->LCID = UL_SCH_LCID_PADDING;
+          pdu += sizeof(NR_MAC_SUBHEADER_FIXED);
+          for (int j = 0; j < TBS_max - ra->Msg3_size - sizeof(NR_MAC_SUBHEADER_FIXED); j++) {
+            pdu[j] = 0;
+          }
         }
+      } else {
+        pdu -= sh_size;
       }
 
-      LOG_D(MAC,"size_sdu = %i\n", size_sdu);
-      LOG_D(MAC,"offset = %i\n", offset);
+      LOG_D(NR_MAC, "In %s: dumping UL Msg3 MAC PDU with length %d: \n", __FUNCTION__, TBS_max);
       for(int k = 0; k < TBS_max; k++) {
-        LOG_D(MAC,"(%i): %i\n", k, prach_resources->Msg3[k]);
+        LOG_D(NR_MAC,"(%i): %i\n", k, prach_resources->Msg3[k]);
       }
 
       // Msg3 was initialized with TBS_max bytes because the RA_Msg3_size will only be known after

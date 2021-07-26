@@ -156,18 +156,8 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                            NR_UL_TIME_ALIGNMENT_t *ul_time_alignment,
                            int pdu_id);
 
-uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
-                                    uint8_t *pdu,
-                                    uint8_t num_sdus,
-                                    uint16_t *sdu_lengths,
-                                    uint8_t *sdu_lcids,
-                                    uint8_t power_headroom,
-                                    uint16_t crnti,
-                                    uint16_t truncated_bsr,
-                                    uint16_t short_bsr,
-                                    uint16_t long_bsr,
-                                    unsigned short post_padding,
-                                    uint16_t buflen);
+int nr_write_ce_ulsch_pdu(unsigned char *mac_ce,
+                          NR_UE_MAC_CE_t *nr_ue_mac_ce);
 
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
@@ -188,10 +178,12 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
                                                       uint8_t time_domain_ind,
                                                       bool use_default);
 
-uint8_t
-nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-           sub_frame_t subframe, uint8_t eNB_index,
-           uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) ;
+uint8_t nr_ue_get_sdu(module_id_t module_idP,
+                      frame_t frameP,
+                      sub_frame_t subframe,
+                      uint8_t gNB_index,
+                      uint8_t *ulsch_buffer,
+                      uint16_t buflen);
 
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
                          int nrofDownlinkSlots, int nrofDownlinkSymbols,
