@@ -88,6 +88,7 @@ class Containerize():
 		self.host = ''
 		self.allImagesSize = {}
 		self.collectInfo = {}
+
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
@@ -149,6 +150,8 @@ class Containerize():
 					imageNames.append(('oai-nr-ue', 'nrUE'))
 					if self.host == 'Red Hat':
 						imageNames.append(('oai-physim', 'phySim'))
+					if self.host == 'Ubuntu':
+						imageNames.append(('oai-lte-ru', 'lteRU'))
 		if len(imageNames) == 0:
 			imageNames.append(('oai-enb', 'eNB'))
 		
@@ -161,7 +164,7 @@ class Containerize():
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
-			full_ran_repo_name = self.ranRepository
+			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
 		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
@@ -175,7 +178,7 @@ class Containerize():
 		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
+			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
 		imageTag = 'develop'
@@ -335,6 +338,31 @@ class Containerize():
 					errorandwarnings['warnings'] = warningsNo
 					errorandwarnings['status'] = status
 				files[fil] = errorandwarnings
+			# Let analyze the target image creation part
+			if os.path.isfile('build_log_{}/{}.log'.format(self.testCase_id,image)):
+				errorandwarnings = {}
+				with open('build_log_{}/{}.log'.format(self.testCase_id,image), mode='r') as inputfile:
+					startOfTargetImageCreation = False
+					buildStatus = False
+					for line in inputfile:
+						result = re.search('FROM .* [aA][sS] ' + image + '$', str(line))
+						if result is not None:
+							startOfTargetImageCreation = True
+						if startOfTargetImageCreation:
+							result = re.search('Successfully tagged ' + image + ':', str(line))
+							if result is not None:
+								buildStatus = True
+							result = re.search('COMMIT ' + image + ':', str(line))
+							if result is not None:
+								buildStatus = True
+					inputfile.close()
+					if buildStatus:
+						errorandwarnings['errors'] = 0
+					else:
+						errorandwarnings['errors'] = 1
+					errorandwarnings['warnings'] = 0
+					errorandwarnings['status'] = buildStatus
+					files['Target Image Creation'] = errorandwarnings
 			self.collectInfo[image] = files
 		
 		if status:

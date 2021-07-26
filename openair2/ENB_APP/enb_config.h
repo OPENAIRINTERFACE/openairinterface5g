@@ -100,7 +100,6 @@ typedef struct ru_config_s {
   uint8_t   if_compress;
 } ru_config_t;
 
-extern void RCconfig_RU(void);
 extern void RCconfig_flexran(void);
 extern void RCconfig_L1(void);
 extern void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]);

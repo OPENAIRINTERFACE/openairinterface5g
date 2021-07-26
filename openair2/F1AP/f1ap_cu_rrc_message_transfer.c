@@ -165,11 +165,9 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   return 0;
 }
 
-
 /*
     DL RRC Message Transfer.
 */
-
 //void CU_send_DL_RRC_MESSAGE_TRANSFER(F1AP_DLRRCMessageTransfer_t *DLRRCMessageTransfer) {
 int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
                                     f1ap_dl_rrc_message_t    *f1ap_dl_rrc) {
@@ -275,7 +273,6 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
 /*
     UL RRC Message Transfer
 */
-
 int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         assoc_id,
                                       uint32_t         stream,

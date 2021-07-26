@@ -134,22 +134,24 @@ With the RF simulator (on the same machine):
 
 ## SA setup with OAI
 
-The sa flag is used to run gNB in standalone mode. Currently OAI in NR standalone mode transmits and receives SIB1 and triggers the RA procedure for initial access.
+The sa flag is used to run gNB in standalone mode.
 
-In order to run gNB in standalone mode, the following flag is needed at gNB:
+In order to run gNB and UE in standalone mode, the following flag is needed:
 
 `--sa`
 
-### Run OAI in sa mode
-
-At the gNB the --sa flag does the following
-- it reads the RRC configuration from the configuration file
-- it encodes the RRCConfiguration and the RBconfig message and stores them in the binary files rbconfig.raw and reconfig.raw
-- the RRC encodes SIB1 according the configuration file and transmits it through PDSCH
+At the gNB the --sa flag does the following:
+- The RRC encodes SIB1 according to the configuration file and transmits it through NR-BCCH-DL-SCH.
 
 At the UE the --sa flag will:
-- Read the binary files rbconfig.raw and reconfig.raw from the current directory (a different directory can be specified with the flag --rrc_config_path) and process them
-- After the successful decoding of a SIB1 at RRC, the UE will start the 5G NR Initial Access Procedure by triggering the RA procedure.
+- Decode SIB1 and starts the 5G NR Initial Access Procedure for SA:
+  1) 5G-NR RRC Connection Setup
+  2) NAS Authentication and Security
+  3) 5G-NR AS Security Procedure
+  4) 5G-NR RRC Reconfiguration
+  5) Start Downlink and Uplink Data Transfer
+
+### Run OAI in SA mode
 
 From the `cmake_targets/ran_build/build` folder:
 
@@ -159,13 +161,13 @@ gNB on machine 1:
 
 UE on machine 2:
 
-`sudo ./nr-uesoftmodem --rrc_config_path . --sa`
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --sa`
 
 With the RF simulator (on the same machine):
 
 `sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --rfsim --sa`
 
-`sudo ./nr-uesoftmodem --rrc_config_path . --rfsim --sa`
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa`
 
 ## IF setup with OAI
 

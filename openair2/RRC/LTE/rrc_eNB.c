@@ -997,6 +997,7 @@ void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, boolean_t removeFlag) {
   free_list = &eNB_MAC->UE_free_list;
   free_list->UE_free_ctrl[free_list->tail_freelist].rnti = rnti;
   free_list->UE_free_ctrl[free_list->tail_freelist].removeContextFlg = removeFlag;
+  free_list->UE_free_ctrl[free_list->tail_freelist].raFlag = 0;
   free_list->num_UEs++;
   eNB_MAC->UE_release_req.ue_release_request_body.ue_release_request_TLVs_list[eNB_MAC->UE_release_req.ue_release_request_body.number_of_TLVs].rnti = rnti;
   eNB_MAC->UE_release_req.ue_release_request_body.number_of_TLVs++;
@@ -1046,17 +1047,17 @@ void release_UE_in_freeList(module_id_t mod_id) {
         eNB_PHY = RC.eNB[mod_id][CC_id];
         int id;
         // clean ULSCH entries for rnti
-        id = find_ulsch(rnti,eNB_PHY,SEARCH_EXIST);
+        id = find_ulsch(rnti,eNB_PHY,eNB_MAC->UE_free_list.UE_free_ctrl[ue_num].raFlag ? SEARCH_EXIST_RA : SEARCH_EXIST);
 
         if (id>=0) clean_eNb_ulsch(eNB_PHY->ulsch[id]);
 
         // clean DLSCH entries for rnti
-        id = find_dlsch(rnti,eNB_PHY,SEARCH_EXIST);
+        id = find_dlsch(rnti,eNB_PHY,eNB_MAC->UE_free_list.UE_free_ctrl[ue_num].raFlag ? SEARCH_EXIST_RA : SEARCH_EXIST);
 
         if (id>=0) clean_eNb_dlsch(eNB_PHY->dlsch[id][0]);
 
         // clean UCI entries for rnti
-        for (i=0; i<NUMBER_OF_UCI_VARS_MAX; i++) {
+        for (i=0; i<NUMBER_OF_UCI_MAX; i++) {
           if(eNB_PHY->uci_vars[i].rnti == rnti) {
             LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n",i, rnti);
             memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
@@ -1090,7 +1091,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
                 clean_eNb_ulsch(ulsch);
               }
 
-              for (i=0; i<NUMBER_OF_UCI_VARS_MAX; i++) {
+              for (i=0; i<NUMBER_OF_UCI_MAX; i++) {
                 if(eNB_PHY->uci_vars[i].rnti == rnti) {
                   LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n",i, rnti);
                   memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
@@ -1202,7 +1203,7 @@ rrc_eNB_process_RRCConnectionSetupComplete(
   LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing LTE_RRCConnectionSetupComplete from UE (SRB1 Active)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
   ue_context_pP->ue_context.Srb1.Active = 1;
-  ue_context_pP->ue_context.Status = RRC_CONNECTED;
+  ue_context_pP->ue_context.StatusRrc = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity timer when UE goes into RRC_CONNECTED
   T(T_ENB_RRC_CONNECTION_SETUP_COMPLETE,
     T_INT(ctxt_pP->module_id),
@@ -1578,7 +1579,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   int                                    measurements_enabled;
   uint8_t next_xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);
   int ret = 0;
-  ue_context_pP->ue_context.Status = RRC_CONNECTED;
+  ue_context_pP->ue_context.StatusRrc = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
   ue_context_pP->ue_context.reestablishment_xid = next_xid;
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
@@ -2208,7 +2209,7 @@ rrc_eNB_generate_RRCConnectionRelease(
 #if 0
 
   if(ue_context_pP != NULL) {
-    if(ue_context_pP->ue_context.Status == RRC_NR_NSA) {
+    if(ue_context_pP->ue_context.StatusRrc == RRC_NR_NSA) {
       //rrc_eNB_generate_SgNBReleaseRequest(ctxt_pP,ue_context_pP);
     }
   }
@@ -3442,6 +3443,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   ASN_SEQUENCE_ADD(&ReportConfig_list->list, ReportConfig_A5);
 
   if (ue_context_pP->ue_context.does_nr) {
+    LOG_I(RRC,"Configuring measurement for NR cell\n");
     ReportConfig_NR->reportConfigId = 7;
     ReportConfig_NR->reportConfig.present = LTE_ReportConfigToAddMod__reportConfig_PR_reportConfigInterRAT;
     ReportConfig_NR->reportConfig.choice.reportConfigInterRAT.triggerType.present = LTE_ReportConfigInterRAT__triggerType_PR_event;
@@ -4568,7 +4570,6 @@ rrc_eNB_process_MeasurementReport(
 
       case 7:
         LOG_D(RRC, "NR event frame %d subframe %d\n", ctxt_pP->frame, ctxt_pP->subframe);
-        printf("NR event frame %d subframe %d\n", ctxt_pP->frame, ctxt_pP->subframe);
         break;
 
       default:
@@ -4586,13 +4587,16 @@ rrc_eNB_process_MeasurementReport(
 
   /* TODO: improve NR triggering */
   if (measResults2->measId == 7) {
-    if ((ue_context_pP->ue_context.Status != RRC_NR_NSA) && (ue_context_pP->ue_context.Status != RRC_NR_NSA_RECONFIGURED)) {
+    if ((ue_context_pP->ue_context.StatusRrc != RRC_NR_NSA) && (ue_context_pP->ue_context.StatusRrc != RRC_NR_NSA_RECONFIGURED)) {
       MessageDef      *msg;
-      ue_context_pP->ue_context.Status = RRC_NR_NSA;
+      ue_context_pP->ue_context.StatusRrc = RRC_NR_NSA;
       ue_context_pP->ue_context.gnb_rnti = -1;         // set when receiving X2AP_ENDC_SGNB_ADDITION_REQ_ACK
       ue_context_pP->ue_context.gnb_x2_assoc_id = -1;  // set when receiving X2AP_ENDC_SGNB_ADDITION_REQ_ACK
 
       if(is_en_dc_supported(ue_context_pP->ue_context.UE_Capability)) {
+
+        AssertFatal(measResults2->measResultNeighCells!=NULL,"no measResultNeighCells, shouldn't happen!\n");
+        AssertFatal(measResults2->measResultNeighCells->present==LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15,"field is not LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15");
         /** to add gNB as Secondary node CG-ConfigInfo to be added as per 36.423 r15 **/
         if(encode_CG_ConfigInfo(enc_buf,sizeof(enc_buf),ue_context_pP,&enc_size) == RRC_OK)
           LOG_I(RRC,"CG-ConfigInfo encoded successfully\n");
@@ -4611,6 +4615,7 @@ rrc_eNB_process_MeasurementReport(
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = enc_size;
 
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
+          //= measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15;
           = measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId;
 
         //For the moment we have a single E-RAB which will be the one to be added to the gNB
@@ -4632,6 +4637,32 @@ rrc_eNB_process_MeasurementReport(
         itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
         return;
       }
+    }
+
+    if (!ue_context_pP->ue_context.measResults->measResultNeighCells) {
+      ue_context_pP->ue_context.measResults->measResultNeighCells = calloc(1,sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells));
+      ue_context_pP->ue_context.measResults->measResultNeighCells->present = LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
+      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array = calloc(1, sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array));
+      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0] = calloc(1, sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]));
+      ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.count = 1;
+    }
+    struct LTE_MeasResultCellNR_r15 *ueCtxtMeasResultCellNR_r15 = ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0];
+    const struct LTE_MeasResultCellNR_r15 *measNeighCellNR0 = measResults2->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0];
+    ueCtxtMeasResultCellNR_r15->pci_r15 = measNeighCellNR0->pci_r15;
+    if (!ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrpResult_r15)
+      ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrpResult_r15 = calloc(1, sizeof(*ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrpResult_r15));
+    if (!ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrqResult_r15)
+      ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrqResult_r15 = calloc(1, sizeof(*ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrqResult_r15));
+    *ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrpResult_r15 = *measNeighCellNR0->measResultCell_r15.rsrpResult_r15;
+    *ueCtxtMeasResultCellNR_r15->measResultCell_r15.rsrqResult_r15 = *measNeighCellNR0->measResultCell_r15.rsrqResult_r15;
+    if (measNeighCellNR0->measResultRS_IndexList_r15) {
+       if (!ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15) {
+          ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15 = calloc(1,sizeof(*ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15));
+          ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.array = calloc(1, sizeof(ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.array));
+          ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.array[0] = calloc(1, sizeof(*ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.array));
+          ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.count = 1;
+       }
+      ueCtxtMeasResultCellNR_r15->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15 = measNeighCellNR0->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15;
     }
   }
 
@@ -4694,12 +4725,12 @@ rrc_eNB_process_MeasurementReport(
   LOG_D(RRC, "A3 event is triggered...\n");
 
   /* if the UE is not in handover mode, start handover procedure */
-  if (ue_context_pP->ue_context.Status != RRC_HO_EXECUTION) {
+  if (ue_context_pP->ue_context.StatusRrc != RRC_HO_EXECUTION) {
     MessageDef      *msg;
     LOG_I(RRC, "Send HO preparation message at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
     /* HO info struct may not be needed anymore */
     ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
-    ue_context_pP->ue_context.Status = RRC_HO_EXECUTION;
+    ue_context_pP->ue_context.StatusRrc = RRC_HO_EXECUTION;
     ue_context_pP->ue_context.handover_info->state = HO_REQUEST;
     /* HO Preparation message */
     msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_HANDOVER_REQ);
@@ -4831,7 +4862,7 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
   RB_INSERT(rrc_ue_tree_s, &RC.rrc[mod_id]->rrc_ue_head, ue_context_target_p);
   LOG_D(RRC, "eNB %d: Created new UE context uid %u\n", mod_id, ue_context_target_p->local_uid);
   ue_context_target_p->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_target_p->ue_context.handover_info)));
-  //ue_context_target_p->ue_context.Status = RRC_HO_EXECUTION;
+  //ue_context_target_p->ue_context.StatusRrc = RRC_HO_EXECUTION;
   //ue_context_target_p->ue_context.handover_info->state = HO_ACK;
   ue_context_target_p->ue_context.handover_info->x2_id = m->x2_id;
   ue_context_target_p->ue_context.handover_info->assoc_id = m->target_assoc_id;
@@ -4906,7 +4937,7 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
   }
 
   rrc_eNB_process_X2AP_TUNNEL_SETUP_REQ(mod_id, ue_context_target_p);
-  ue_context_target_p->ue_context.Status = RRC_HO_EXECUTION;
+  ue_context_target_p->ue_context.StatusRrc = RRC_HO_EXECUTION;
   ue_context_target_p->ue_context.handover_info->state = HO_ACK;
 }
 
@@ -5021,7 +5052,7 @@ flexran_rrc_eNB_trigger_handover (int mod_id,
   LOG_D(RRC, "Handover is triggered by FlexRAN controller...\n");
 
   /* if the UE is not in handover mode, start handover procedure */
-  if (ue_context_pP->ue_context.Status != RRC_HO_EXECUTION) {
+  if (ue_context_pP->ue_context.StatusRrc != RRC_HO_EXECUTION) {
     MessageDef      *msg;
     LOG_I(RRC, "Send HO preparation message at frame %d and subframe %d \n", ctxt_pP->frame, ctxt_pP->subframe);
     /* Check memory leakage for handover info */
@@ -5029,7 +5060,7 @@ flexran_rrc_eNB_trigger_handover (int mod_id,
     //free(ue_context_pP->ue_context.handover_info);
     //}
     ue_context_pP->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_pP->ue_context.handover_info)));
-    ue_context_pP->ue_context.Status = RRC_HO_EXECUTION;
+    ue_context_pP->ue_context.StatusRrc = RRC_HO_EXECUTION;
     ue_context_pP->ue_context.handover_info->state = HO_REQUEST;
     /* HO Preparation message */
     msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_HANDOVER_REQ);
@@ -5090,7 +5121,7 @@ check_handovers(
   RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
     ctxt_pP->rnti  = ue_context_p->ue_id_rnti;
 
-    if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION && ue_context_p->ue_context.handover_info != NULL) {
+    if (ue_context_p->ue_context.StatusRrc == RRC_HO_EXECUTION && ue_context_p->ue_context.handover_info != NULL) {
       /* in the source, UE in HO_PREPARE mode */
       if (ue_context_p->ue_context.handover_info->state == HO_PREPARE) {
         LOG_D(RRC,
@@ -5141,7 +5172,7 @@ check_handovers(
       }
     }
 
-    if (ue_context_p->ue_context.Status == RRC_RECONFIGURED
+    if (ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED
         && ue_context_p->ue_context.handover_info != NULL &&
         ue_context_p->ue_context.handover_info->forwarding_state == FORWARDING_NO_EMPTY ) {
       MessageDef   *msg_p;
@@ -5207,7 +5238,7 @@ check_handovers(
       ue_context_p->ue_context.handover_info->forwarding_state = FORWARDING_EMPTY;
     }
 
-    if( ue_context_p->ue_context.Status == RRC_RECONFIGURED &&
+    if( ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED &&
         ue_context_p->ue_context.handover_info != NULL &&
         ue_context_p->ue_context.handover_info->forwarding_state == FORWARDING_EMPTY &&
         ue_context_p->ue_context.handover_info->endmark_state == ENDMARK_NO_EMPTY &&
@@ -5710,7 +5741,7 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   //SchedulingRequestConfig__setup__dsr_TransMax_n4);
   //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax =
-    LTE_SchedulingRequestConfig__setup__dsr_TransMax_n4;
+    LTE_SchedulingRequestConfig__setup__dsr_TransMax_n64;
   LOG_D(RRC,
         "handover_config [FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 UE %x) --->][MAC_eNB][MOD %02d][]\n",
         ctxt_pP->frame, ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ctxt_pP->module_id);
@@ -7198,7 +7229,7 @@ rrc_eNB_decode_ccch(
           }
 
           //c-plane not end
-          if((ue_context_p->ue_context.Status != RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == LTE_ReestablishmentCause_spare1)) {
+          if((ue_context_p->ue_context.StatusRrc != RRC_RECONFIGURED) && (ue_context_p->ue_context.reestablishment_cause == LTE_ReestablishmentCause_spare1)) {
             LOG_E(RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" LTE_RRCConnectionReestablishmentRequest (UE %x c-plane is not end), let's reject the UE\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);
@@ -7210,9 +7241,9 @@ rrc_eNB_decode_ccch(
             LOG_E(RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" RRRCConnectionReconfigurationComplete(Previous) don't receive, delete the Previous UE,\nprevious Status %d, new Status RRC_RECONFIGURED\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-                  ue_context_p->ue_context.Status
+                  ue_context_p->ue_context.StatusRrc
                  );
-            ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+            ue_context_p->ue_context.StatusRrc = RRC_RECONFIGURED;
             protocol_ctxt_t  ctxt_old_p;
             PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt_old_p,
                                           ctxt_pP->instance,
@@ -7581,7 +7612,205 @@ rrc_eNB_decode_ccch(
   return rval;
 }
 
+#define NCE nonCriticalExtension
+
+static void
+get_ue_Category(
+  LTE_UE_EUTRA_Capability_t *c,
+  long *catDL,
+  long *catUL
+)
+{
+  if (c != NULL) { // v8.6
+     *catDL=c->ue_Category; *catUL=c->ue_Category;
+     struct LTE_UE_EUTRA_Capability_v920_IEs *c92=c->NCE;
+     if (c92 != NULL) { // v9.2
+        struct LTE_UE_EUTRA_Capability_v940_IEs *c94=c92->NCE;
+        if (c94 != NULL) { // v9.4
+           struct LTE_UE_EUTRA_Capability_v1020_IEs *c102=c94->NCE;
+           if (c102 != NULL) { // v10.2
+              if (c102->ue_Category_v1020) {*catDL=*c102->ue_Category_v1020;*catUL=*c102->ue_Category_v1020;}
+              struct LTE_UE_EUTRA_Capability_v1060_IEs *c106=c102->NCE;
+                 if (c106 != NULL) { // v10.6
+                    struct LTE_UE_EUTRA_Capability_v1090_IEs *c109=c106->NCE;
+                    if (c109 != NULL) { // v10.9
+                       struct LTE_UE_EUTRA_Capability_v1130_IEs *c113=c109->NCE;
+                       if (c113 != NULL) { // v11.3
+                          struct LTE_UE_EUTRA_Capability_v1170_IEs *c117=c113->NCE;
+                          if (c117 != NULL) { // v11.7
+                             if (c117->ue_Category_v1170) {*catDL=*c117->ue_Category_v1170;
+                             struct LTE_UE_EUTRA_Capability_v1180_IEs *c118=c117->NCE;
+                             if (c118 != NULL) { // v11.8
+                                struct LTE_UE_EUTRA_Capability_v11a0_IEs *c11a=c118->NCE;
+                                if (c11a != NULL) { // v11.a
+                                   if (c11a->ue_Category_v11a0) {*catDL=*c11a->ue_Category_v11a0;*catUL=*c11a->ue_Category_v11a0;}
+                                   struct LTE_UE_EUTRA_Capability_v1250_IEs *c125=c11a->NCE;
+                                   if (c125 != NULL) { // v12.5
+                                      if (c125->ue_CategoryDL_r12) *catDL=*c125->ue_CategoryDL_r12;
+                                      if (c125->ue_CategoryUL_r12) *catUL=*c125->ue_CategoryUL_r12;
+                                      struct LTE_UE_EUTRA_Capability_v1260_IEs *c126=c125->NCE;
+                                      if (c126 != NULL) { // v12.6
+                                         if (c126->ue_CategoryDL_v1260) *catDL=*c126->ue_CategoryDL_v1260;
+                                         struct LTE_UE_EUTRA_Capability_v1270_IEs *c127=c126->NCE;
+                                         if (c127 != NULL) { // v12.7
+                                            struct LTE_UE_EUTRA_Capability_v1280_IEs *c128=c127->NCE;
+                                            if (c128 != NULL) { // v12.8
+                                               struct LTE_UE_EUTRA_Capability_v1310_IEs *c131=c128->NCE;
+                                               if (c131 != NULL) { // v13.1
+                                                  if (c131->ue_CategoryDL_v1310 && *c131->ue_CategoryDL_v1310 == 0) *catDL=17;
+                                                  if (c131->ue_CategoryDL_v1310 && *c131->ue_CategoryDL_v1310 == 1) *catDL=-1;
+                                                  if (c131->ue_CategoryUL_v1310 && *c131->ue_CategoryUL_v1310 == 0) *catUL=14;
+                                                  if (c131->ue_CategoryUL_v1310 && *c131->ue_CategoryUL_v1310 == 1) *catUL=-1;
+                                                  struct LTE_UE_EUTRA_Capability_v1320_IEs *c132=c131->NCE;
+                                                  if (c132 != NULL) { //v13.2
+                                                     struct LTE_UE_EUTRA_Capability_v1330_IEs *c133=c132->NCE;
+                                                     if (c133 != NULL) { // v13.3
+                                                        if (c133->ue_CategoryDL_v1330) *catDL=*c133->ue_CategoryDL_v1330;
+                                                        struct LTE_UE_EUTRA_Capability_v1340_IEs *c134=c133->NCE;
+                                                        if (c134 != NULL) { // v13.4
+                                                           if (c134->ue_CategoryUL_v1340) *catUL=*c134->ue_CategoryUL_v1340;
+                                                           struct LTE_UE_EUTRA_Capability_v1350_IEs *c135=c134->NCE;
+                                                           if (c135 != NULL) { // v13.5
+                                                              if (c135->ue_CategoryDL_v1350) *catDL=99; // Cat 1Bis
+                                                              if (c135->ue_CategoryUL_v1350) *catUL=99; // Cat 1Bis
+                                                              struct LTE_UE_EUTRA_Capability_v1360_IEs *c136=c135->NCE;
+                                                              if (c136 != NULL) { // v13.6
+                                                                 struct LTE_UE_EUTRA_Capability_v1430_IEs *c143=c136->NCE;
+                                                                 if (c143 != NULL) { // v14.3
+                                                                    if (c143->ue_CategoryDL_v1430 && *c143->ue_CategoryDL_v1430 == LTE_UE_EUTRA_Capability_v1430_IEs__ue_CategoryDL_v1430_m2) *catDL=-2;
+                                                                    if (c143->ue_CategoryUL_v1430 && *c143->ue_CategoryUL_v1430 == LTE_UE_EUTRA_Capability_v1430_IEs__ue_CategoryDL_v1430_m2) *catUL=-2;
+                                                                    if (c143->ue_CategoryUL_v1430) *catUL=16+*c143->ue_CategoryUL_v1430;
+                                                                    if (c143->ue_CategoryUL_v1430b)*catUL=21;
+                                                                    struct LTE_UE_EUTRA_Capability_v1440_IEs *c144=c143->NCE;
+                                                                    if (c144 != NULL) { // v14.4
+                                                                       struct LTE_UE_EUTRA_Capability_v1450_IEs *c145=c144->NCE;
+                                                                       if (c145 != NULL) { // v14.5
+                                                                          if (c145->ue_CategoryDL_v1450) *catDL=*c145->ue_CategoryDL_v1450;
+                                                                          struct LTE_UE_EUTRA_Capability_v1460_IEs *c146=c145->NCE;
+                                                                          if (c146 != NULL) { // v14.6
+                                                                             if (c146->ue_CategoryDL_v1460) *catDL=*c146->ue_CategoryDL_v1460;
+                                                                             struct LTE_UE_EUTRA_Capability_v1510_IEs *c151=c146->NCE;
+                                                                             if (c151 != NULL) { // v15.1
+                                                                                struct LTE_UE_EUTRA_Capability_v1520_IEs *c152=c151->NCE;
+                                                                                if (c152 != NULL) { // v15.20
+                                                                                   struct LTE_UE_EUTRA_Capability_v1530_IEs *c153=c152->NCE;
+                                                                                   if (c153 != NULL) { // v15.30
+                                                                                      if (c153->ue_CategoryDL_v1530) *catDL=*c153->ue_CategoryDL_v1530;
+                                                                                      if (c153->ue_CategoryUL_v1530) *catUL=*c153->ue_CategoryUL_v1530;
+                                                                                   }
+                                                                                }
+                                                                             }
+                                                                          }
+                                                                       }
+                                                                    }
+                                                                 }
+                                                              }
+                                                           }
+                                                        }
+                                                     }
+                                                  }
+                                               }
+                                            }
+                                         }
+                                      }
+                                   }
+                                }
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        }
+     }
+  }
+}
+
+static int
+is_ul_64QAM_supported(
+  LTE_UE_EUTRA_Capability_t *c
+)
 //-----------------------------------------------------------------------------
+{
+  return c != NULL  // R8
+         && c->NCE != NULL // R92
+         && c->NCE->NCE != NULL // R94
+         && c->NCE->NCE->NCE != NULL // R102
+         && c->NCE->NCE->NCE->NCE != NULL // R106
+         && c->NCE->NCE->NCE->NCE->NCE != NULL // R109
+         && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R113
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R118
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R11a
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R125
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1250 != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1250->supportedBandListEUTRA_v1250 != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1250->supportedBandListEUTRA_v1250->list.array != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1250->supportedBandListEUTRA_v1250->list.array[0]->ul_64QAM_r12 != NULL
+         && *c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1250->supportedBandListEUTRA_v1250->list.array[0]->ul_64QAM_r12==LTE_SupportedBandEUTRA_v1250__ul_64QAM_r12_supported;
+}
+
+static int
+is_dl_256QAM_supported(
+  LTE_UE_EUTRA_Capability_t *c
+)
+//-----------------------------------------------------------------------------
+{
+  return c != NULL  // R8
+         && c->NCE != NULL // R92
+         && c->NCE->NCE != NULL // R94
+         && c->NCE->NCE->NCE != NULL // R102
+         && c->NCE->NCE->NCE->NCE != NULL // R106
+         && c->NCE->NCE->NCE->NCE->NCE != NULL // R109
+         && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R113
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R118
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R11a
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R125
+	 && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1250 != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1250->supportedBandListEUTRA_v1250 != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1250->supportedBandListEUTRA_v1250->list.array != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1250->supportedBandListEUTRA_v1250->list.array[0]->dl_256QAM_r12 != NULL
+         && *c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1250->supportedBandListEUTRA_v1250->list.array[0]->dl_256QAM_r12==LTE_SupportedBandEUTRA_v1250__dl_256QAM_r12_supported;
+
+}
+static int
+is_ul_256QAM_supported(
+  LTE_UE_EUTRA_Capability_t *c
+)
+//-----------------------------------------------------------------------------
+{
+  return c != NULL  // R8
+         && c->NCE != NULL // R92
+         && c->NCE->NCE != NULL // R94
+         && c->NCE->NCE->NCE != NULL // R102
+         && c->NCE->NCE->NCE->NCE != NULL // R106
+         && c->NCE->NCE->NCE->NCE->NCE != NULL // R109
+         && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R113
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R118
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R11a
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R125
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R126
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // 127
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // 128
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //131
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //132
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //133
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //134
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //135
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //136
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //143
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430 != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430 != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430->list.array != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430->list.array[0]->bandParameterList_v1430 != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430->list.array[0]->bandParameterList_v1430->list.array != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430->list.array[0]->bandParameterList_v1430->list.array[0]->ul_256QAM_r14!=NULL
+         && *c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->rf_Parameters_v1430->supportedBandCombination_v1430->list.array[0]->bandParameterList_v1430->list.array[0]->ul_256QAM_r14==LTE_BandParameters_v1430__ul_256QAM_r14_supported;
+}
+
 static int
 is_en_dc_supported(
   LTE_UE_EUTRA_Capability_t *c
@@ -7591,37 +7820,75 @@ is_en_dc_supported(
   /* to be refined - check that the bands supported by the UE include
    * the band of the gNB
    */
-#define NCE nonCriticalExtension
-  return c != NULL
-         && c->NCE != NULL
-         && c->NCE->NCE != NULL
-         && c->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
-         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+  return c != NULL  // R8
+         && c->NCE != NULL // R92
+         && c->NCE->NCE != NULL // R94
+         && c->NCE->NCE->NCE != NULL // R102
+         && c->NCE->NCE->NCE->NCE != NULL // R106
+         && c->NCE->NCE->NCE->NCE->NCE != NULL // R109
+         && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R113
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R117
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R118
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R11a
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R125
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // R126
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // 127
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL // 128
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //131
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //132
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //133
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //134
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //135
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //136
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //143
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //144
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //145
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //146
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL //151
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15 != NULL
          && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 != NULL
          && *c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 ==
          LTE_IRAT_ParametersNR_r15__en_DC_r15_supported;
 #undef NCE
+}
+
+int to_nr_rsrpq(long rsrpq_result,int nr_band) {
+
+    switch(nr_band) {
+      case 1:  // A
+      case 70:
+      case 74:
+      case 34:
+      case 38:
+      case 39:
+      case 40:
+      case 50:
+      case 51:
+       return((rsrpq_result*10)-1180);
+      case 66:  // B
+       return((rsrpq_result*10)-1175);
+      case 77:  // C
+      case 78:
+      case 79:
+       return((rsrpq_result*10)-1170);
+      case 28:  // D
+       return((rsrpq_result*10)-1165);
+      case 2:
+      case 5:
+      case 7:
+      case 41:  // E
+       return((rsrpq_result*10)-1160);
+      case 3:   // G
+      case 8:
+      case 12:
+      case 20:
+      case 71:
+       return((rsrpq_result*10)-1150);
+      case 25:  // H
+       return((rsrpq_result*10)-1145);
+      default:
+       AssertFatal(1==0,"Illegal NR band %d\n",nr_band);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -7748,7 +8015,7 @@ rrc_eNB_decode_dcch(
           int flexran_agent_handover = 0;
 
           if (EPC_MODE_ENABLED) {
-            if (ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
+            if (ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED) {
               dedicated_DRB = 1;
               LOG_I(RRC,
                     PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
@@ -7773,7 +8040,7 @@ rrc_eNB_decode_dcch(
                 dedicated_DRB = 2;
                 RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
               }
-            } else if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION) {
+            } else if (ue_context_p->ue_context.StatusRrc == RRC_HO_EXECUTION) {
               int16_t UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
 
               if(UE_id == -1) {
@@ -7787,7 +8054,7 @@ rrc_eNB_decode_dcch(
               RC.rrc[ctxt_pP->module_id]->Nb_ue++;
               dedicated_DRB = 3;
               RC.mac[ctxt_pP->module_id]->UE_info.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
-              ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+              ue_context_p->ue_context.StatusRrc = RRC_RECONFIGURED;
 
               if(ue_context_p->ue_context.handover_info) {
                 ue_context_p->ue_context.handover_info->state = HO_CONFIGURED;
@@ -7796,7 +8063,7 @@ rrc_eNB_decode_dcch(
               LOG_I(RRC,
                     PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_HO_EXECUTION (xid %ld)\n",
                     PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-            } else if(ue_context_p->ue_context.Status == RRC_NR_NSA) {
+            } else if(ue_context_p->ue_context.StatusRrc == RRC_NR_NSA) {
               //Looking for a condition to trigger S1AP E-RAB-Modification-indication, based on the reception of RRCConnectionReconfigurationComplete
               //including NR specific elements.
               if(ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.
@@ -7815,7 +8082,7 @@ rrc_eNB_decode_dcch(
                               nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension
                               ->scg_ConfigResponseNR_r15!=NULL) {
                             dedicated_DRB = -1;     /* put a value that does not run anything below */
-                            ue_context_p->ue_context.Status = RRC_NR_NSA_RECONFIGURED;
+                            ue_context_p->ue_context.StatusRrc = RRC_NR_NSA_RECONFIGURED;
                             /*Trigger E-RAB Modification Indication */
                             rrc_eNB_send_E_RAB_Modification_Indication(ctxt_pP, ue_context_p);
                             /* send reconfiguration complete to gNB */
@@ -7829,7 +8096,7 @@ rrc_eNB_decode_dcch(
               }
             } else {
               dedicated_DRB = 0;
-              ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+              ue_context_p->ue_context.StatusRrc = RRC_RECONFIGURED;
               LOG_I(RRC,
                     PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %ld)\n",
                     PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
@@ -7838,7 +8105,7 @@ rrc_eNB_decode_dcch(
             ue_context_p->ue_context.reestablishment_xid = -1;
           } else {
             dedicated_DRB = 1;
-            ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+            ue_context_p->ue_context.StatusRrc = RRC_RECONFIGURED;
             LOG_I(RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
@@ -8193,7 +8460,7 @@ rrc_eNB_decode_dcch(
               ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability,ue_context_p->ue_context.UE_Capability_nr);
               ue_context_p->ue_context.UE_Capability_nr = 0;
             }
-
+            LOG_I(RRC,"Received NR_UE_Capabilities\n");
             dec_rval = uper_decode(NULL,
                                    &asn_DEF_NR_UE_NR_Capability,
                                    (void **)&ue_context_p->ue_context.UE_Capability_nr,
@@ -8218,6 +8485,8 @@ rrc_eNB_decode_dcch(
 
           if (ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type ==
               LTE_RAT_Type_eutra_nr) {
+            LOG_I(RRC,"Received UE_Capabilities_MRDC\n");
+
             if(ue_context_p->ue_context.UE_Capability_MRDC) {
               ASN_STRUCT_FREE(asn_DEF_NR_UE_MRDC_Capability,ue_context_p->ue_context.UE_Capability_MRDC);
               ue_context_p->ue_context.UE_Capability_MRDC = 0;
@@ -8574,13 +8843,12 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].nr_cellid                     = rrc->nr_cellid;
         F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].nrpci                         = f1_setup_req->cell[i].nr_pci;
         int num_SI= 0;
-
         if (rrc->carrier[0].SIB23) {
-          F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container[num_SI]        = rrc->carrier[0].SIB23;
-          F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[num_SI] = rrc->carrier[0].sizeof_SIB23;
-          //printf("SI %d size %d: ", 0, F1AP_SETUP_RESP(msg_p).SI_container_length[j][num_SI]);
-          //for (int n = 0; n < F1AP_SETUP_RESP(msg_p).SI_container_length[j][num_SI]; n++)
-          //  printf("%02x ", F1AP_SETUP_RESP(msg_p).SI_container[0][num_SI][n]);
+          F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container[2+num_SI]        = rrc->carrier[0].SIB23;
+          F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[2+num_SI] = rrc->carrier[0].sizeof_SIB23;
+          //printf("SI %d size %d: ", 0, F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[2+num_SI]);
+          //for (int n = 0; n < F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container_length[2+num_SI]; n++)
+          //  printf("%02x ", F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container[2+num_SI][n]);
           //printf("\n");
           num_SI++;
         }
@@ -8780,10 +9048,6 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   struct rrc_eNB_ue_context_s *ue_to_be_removed[NUMBER_OF_UE_MAX];
   int removed_ue_count = 0;
   int cur_ue;
-#ifdef LOCALIZATION
-  double estimated_distance = 0;
-  protocol_ctxt_t                     ctxt;
-#endif
   MessageDef *msg;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_IN);
 
@@ -8795,22 +9059,53 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   }
 
   // check for UL failure or for UE to be released
+  FILE *fd=NULL;
+  if ((ctxt_pP->frame&127) == 0 && ctxt_pP->subframe ==0)
+    fd=fopen("RRC_stats.log","w+");
+
   RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
     ctxt_pP->rnti = ue_context_p->ue_id_rnti;
 
-    if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe == 0)) {
-      if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
-        LOG_I(RRC, "UE rnti %x: S-TMSI %x failure timer %d/8\n",
-              ue_context_p->ue_context.rnti,
-              ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
-              ue_context_p->ue_context.ul_failure_timer);
-      } else {
-        LOG_I(RRC, "UE rnti %x failure timer %d/8\n",
-              ue_context_p->ue_context.rnti,
-              ue_context_p->ue_context.ul_failure_timer);
+    if ((ctxt_pP->frame&127) == 0 && ctxt_pP->subframe ==0) {
+      if (fd) {
+        if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
+          fprintf(fd,"RRC UE rnti %x: S-TMSI %x failure timer %d/8\n",
+                ue_context_p->ue_context.rnti,
+                ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
+                ue_context_p->ue_context.ul_failure_timer);
+        } else {
+          fprintf(fd,"RRC UE rnti %x failure timer %d/8\n",
+                ue_context_p->ue_context.rnti,
+                ue_context_p->ue_context.ul_failure_timer);
+        }
+
+        if (ue_context_p->ue_context.UE_Capability) {
+          long catDL,catUL;
+          get_ue_Category(ue_context_p->ue_context.UE_Capability,&catDL,&catUL);
+          fprintf(fd,"RRC UE cap: CatDL %ld, CatUL %ld, 64QAM UL %s, 256 QAM DL %s, 256 QAM UL %s, ENDC %s,\n",
+                catDL,catUL,
+		is_ul_64QAM_supported(ue_context_p->ue_context.UE_Capability) == 1 ? "yes" : "no",
+		is_dl_256QAM_supported(ue_context_p->ue_context.UE_Capability) == 1 ? "yes" : "no",
+                is_ul_256QAM_supported(ue_context_p->ue_context.UE_Capability) == 1 ? "yes" : "no",
+                is_en_dc_supported(ue_context_p->ue_context.UE_Capability) == 1 ? "yes" : "no");
+        }
+        if (ue_context_p->ue_context.measResults) {
+           fprintf(fd, "RRC PCell RSRP %ld, RSRQ %ld\n", ue_context_p->ue_context.measResults->measResultPCell.rsrpResult-140,
+                                                         ue_context_p->ue_context.measResults->measResultPCell.rsrqResult/2 - 20);
+          if (ue_context_p->ue_context.measResults->measResultNeighCells &&
+              ue_context_p->ue_context.measResults->measResultNeighCells->present == LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15) {
+
+            fprintf(fd,"NR_pci %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->pci_r15);
+            if(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15)
+              fprintf(fd,"NR_rsrp %f dB\n",to_nr_rsrpq(*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15,RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0])/10.0);
+            if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15)
+              fprintf(fd,"NR_rsrq %f dB\n",to_nr_rsrpq(*ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15,RC.rrc[ctxt_pP->module_id]->nr_gnb_freq_band[0][0])/10.0);
+            if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15)
+              fprintf(fd,"NR_ssb_index %ld\n",ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultRS_IndexList_r15->list.array[0]->ssb_Index_r15);
+           }
+        }
       }
     }
-
     if (ue_context_p->ue_context.ul_failure_timer > 0) {
       ue_context_p->ue_context.ul_failure_timer++;
 
@@ -8978,8 +9273,8 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
     }
 
     /* remove UE from gNB if UE is in NSA mode */
-    if (ue_to_be_removed[cur_ue]->ue_context.Status == RRC_NR_NSA ||
-        ue_to_be_removed[cur_ue]->ue_context.Status == RRC_NR_NSA_RECONFIGURED) {
+    if (ue_to_be_removed[cur_ue]->ue_context.StatusRrc == RRC_NR_NSA ||
+        ue_to_be_removed[cur_ue]->ue_context.StatusRrc == RRC_NR_NSA_RECONFIGURED) {
       MessageDef *message_p;
       message_p = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_RELEASE_REQUEST);
       X2AP_ENDC_SGNB_RELEASE_REQUEST(message_p).rnti = ue_to_be_removed[cur_ue]->ue_context.gnb_rnti;
@@ -8987,7 +9282,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
       X2AP_ENDC_SGNB_RELEASE_REQUEST(message_p).cause = X2AP_CAUSE_RADIO_CONNECTION_WITH_UE_LOST;
       itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, message_p);
       /* set state to RRC_NR_NSA_DELETED to avoid sending X2AP_ENDC_SGNB_RELEASE_REQUEST again later */
-      ue_to_be_removed[cur_ue]->ue_context.Status = RRC_NR_NSA_DELETED;
+      ue_to_be_removed[cur_ue]->ue_context.StatusRrc = RRC_NR_NSA_DELETED;
     }
 
     rrc_eNB_free_UE(ctxt_pP->module_id, ue_to_be_removed[cur_ue]);
@@ -9002,31 +9297,9 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
     }
   }
 
-#ifdef RRC_LOCALIZATION
-  /* for the localization, only primary CC_id might be relevant*/
-  gettimeofday(&ts, NULL);
-  current_timestamp_ms = ts.tv_sec * 1000 + ts.tv_usec / 1000;
-  ref_timestamp_ms = RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms;
-  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
-    ctxt = *ctxt_pP;
-    ctxt.rnti = ue_context_p->ue_context.rnti;
-    estimated_distance = rrc_get_estimated_ue_distance(&ctxt, CC_id, RC.rrc[ctxt_pP->module_id]->loc_type);
+  if (fd!=NULL) fclose(fd);
 
-    if ((current_timestamp_ms - ref_timestamp_ms > RC.rrc[ctxt_pP->module_id]->aggregation_period_ms) &&
-        estimated_distance != -1) {
-      LOG_D(LOCALIZE, "RRC [UE/id %d -> eNB/id %d] timestamp %d frame %d estimated r = %f\n",
-            ctxt.rnti,
-            ctxt_pP->module_id,
-            current_timestamp_ms,
-            ctxt_pP->frame,
-            estimated_distance);
-      LOG_D(LOCALIZE, "RRC status %d\n",
-            ue_context_p->ue_context.Status);
-      push_front(&RC.rrc[ctxt_pP->module_id]->loc_list, estimated_distance);
-      RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms = current_timestamp_ms;
-    } // end if
-  } // end RB_FOREACH
-#endif
+
   (void)ts; /* remove gcc warning "unused variable" */
   (void)ref_timestamp_ms; /* remove gcc warning "unused variable" */
   (void)current_timestamp_ms; /* remove gcc warning "unused variable" */
@@ -9179,13 +9452,13 @@ void rrc_eNB_process_ENDC_DC_prep_timeout(module_id_t module_id, x2ap_ENDC_dc_pr
     return;
   }
 
-  if (ue_context->ue_context.Status != RRC_NR_NSA) {
+  if (ue_context->ue_context.StatusRrc != RRC_NR_NSA) {
     LOG_E(RRC, "receiving DC prep timeout for UE rnti %d not in state RRC_NR_NSA\n", m->rnti);
     return;
   }
 
   LOG_I(RRC, "DC prep timeout for UE rnti %d, put back to RRC_RECONFIGURED mode\n", m->rnti);
-  ue_context->ue_context.Status = RRC_RECONFIGURED;
+  ue_context->ue_context.StatusRrc = RRC_RECONFIGURED;
 }
 
 void rrc_eNB_process_ENDC_sgNB_release_required(module_id_t module_id, x2ap_ENDC_sgnb_release_required_t *m)
@@ -9206,7 +9479,7 @@ void rrc_eNB_process_ENDC_sgNB_release_required(module_id_t module_id, x2ap_ENDC
   ue_context->ue_context.ue_release_timer_thres_rrc = 100;
   ue_context->ue_context.ue_release_timer_rrc = 1;
 
-  ue_context->ue_context.Status = RRC_NR_NSA_DELETED;
+  ue_context->ue_context.StatusRrc = RRC_NR_NSA_DELETED;
 
   PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
                                 module_id,  /* TODO: should be 'instance' */
@@ -9472,7 +9745,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
         if (X2AP_HANDOVER_CANCEL(msg_p).cause == X2AP_T_RELOC_PREP_TIMEOUT) {
           /* for prep timeout, simply return to normal state */
           /* TODO: be sure that it's correct to set Status to RRC_RECONFIGURED */
-          ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+          ue_context_p->ue_context.StatusRrc = RRC_RECONFIGURED;
           /* TODO: be sure free is enough here (check memory leaks) */
           free(ue_context_p->ue_context.handover_info);
           ue_context_p->ue_context.handover_info = NULL;

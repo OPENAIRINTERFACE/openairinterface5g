@@ -47,7 +47,7 @@ uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, uint32_t bw);
 
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol);
+int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol,int mappingtype_fromDCI);
 
 int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slot_t slotP);
 
@@ -57,8 +57,8 @@ uint16_t nr_dci_size(const NR_BWP_UplinkCommon_t *initialULBWP,
                      const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
-		     nr_rnti_type_t rnti_type,
-		     uint16_t N_RB,
+                     nr_rnti_type_t rnti_type,
+                     uint16_t N_RB,
                      int bwp_id);
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
@@ -113,7 +113,7 @@ int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig,long transformPreco
 
 int get_format0(uint8_t index, uint8_t unpaired,frequency_range_t);
 
-int64_t *get_prach_config_info(int fr2_flag,
+int64_t *get_prach_config_info(frequency_range_t freq_range,
                                uint8_t index,
                                uint8_t unpaired);
 
@@ -121,7 +121,7 @@ uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
 
 int get_num_dmrs(uint16_t dmrs_mask );
 uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position);
-int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength);
+int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength, uint8_t start_symbolt, uint8_t dmrs_typeA_position);
 
 uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table);
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
@@ -153,7 +153,7 @@ bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
                         uint8_t *reOffset, uint8_t *maxNumPorts, uint8_t *ulPower,
                         uint8_t NrOfSymbols);
 
-uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol);
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol,int mappingtype);
 
 /* \brief Set the transform precoding according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16
 @param    *pusch_config,   pointer to pusch config
@@ -169,7 +169,7 @@ uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
                                int rnti_type,
                                uint8_t configuredGrant);
 
-void nr_mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
+void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,
                             const int CC_idP,
                             const frame_t frameP,
                             const sub_frame_t subframeP,

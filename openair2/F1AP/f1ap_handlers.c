@@ -100,7 +100,6 @@ int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
     return -1;
   }
 
-
   if (f1ap_messages_processing[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1] == NULL) {
     // No handler present. This can mean not implemented or no procedure for eNB (wrong direction).
     LOG_E(F1AP, "[SCTP %d] No handler for procedureCode %ld in %s\n",
@@ -111,8 +110,9 @@ int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
     /* Calling the right handler */
     LOG_I(F1AP, "Calling handler with instance %ld\n",instance);
     ret = (*f1ap_messages_processing[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1])
-      (instance, assoc_id, stream, &pdu);
+          (instance, assoc_id, stream, &pdu);
   }
+
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
   return ret;
 }

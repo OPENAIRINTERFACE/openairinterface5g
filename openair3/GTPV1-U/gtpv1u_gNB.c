@@ -925,6 +925,8 @@ static int gtpv1u_gnb_tunnel_data_req(gtpv1u_gnb_tunnel_data_req_t *gnb_tunnel_d
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_PROCESS_TUNNEL_DATA_REQ, VCD_FUNCTION_OUT);
   /* Buffer still needed, do not free it */
   //itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), data_req_p->buffer);
+
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

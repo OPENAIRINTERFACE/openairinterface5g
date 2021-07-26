@@ -86,7 +86,6 @@
 #include "lte-softmodem.h"
 
 
-msc_interface_t msc_interface;
 /* temporary compilation wokaround (UE/eNB split */
 uint16_t sf_ahead;
 
@@ -193,6 +192,9 @@ int oaisim_flag=0;
  */
 uint8_t abstraction_flag=0;
 
+// needed for pdcp.c
+RAN_CONTEXT_t RC;
+
 /* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
@@ -286,7 +288,6 @@ static void get_options(void) {
   int dumpframe=0;
   int timingadv=0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
-  int simL1flag =0;
 
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
@@ -300,8 +301,6 @@ static void get_options(void) {
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
   nfapi_setmode(nfapi_mode);
 
-  if (simL1flag)
-    set_softmodem_optmask(SOFTMODEM_SIML1_BIT);
 
   if (loopfile != NULL) {
     printf("Input file for hardware emulation: %s",loopfile);
@@ -525,7 +524,7 @@ int restart_L1L2(module_id_t enb_id) {
   return 0;
 }
 
-void init_pdcp(void) {
+static void init_pdcp(void) {
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
   if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
@@ -573,11 +572,6 @@ int main( int argc, char **argv ) {
 
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
   printf("Running with %d UE instances\n",NB_UE_INST);
-
-  if (NB_UE_INST > 1 && (!IS_SOFTMODEM_SIML1)  && NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
-    printf("Running with more than 1 UE instance and simL1 is not active, this will result in undefined behaviour for now, exiting.\n");
-    abort();
-  }
 
   // Checking option of nums_ue_thread.
   if(NB_THREAD_INST < 1) {
@@ -649,9 +643,6 @@ int main( int argc, char **argv ) {
     }
   } else init_openair0(frame_parms[0],(int)rx_gain[0][0]);
 
-  if (IS_SOFTMODEM_SIML1 ) {
-    RCConfig_sim();
-  }
 
   cpuf=get_cpu_freq_GHz();
   
@@ -753,10 +744,6 @@ int main( int argc, char **argv ) {
 
   //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
 
-  if (IS_SOFTMODEM_SIML1 )  {
-    init_ocm();
-    PHY_vars_UE_g[0][0]->no_timing_correction = 1;
-  }
 
   if(IS_SOFTMODEM_DOSCOPE)
     load_softscope("ue",NULL);

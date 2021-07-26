@@ -315,7 +315,7 @@ typedef struct {
 typedef struct {
 
   NR_ServingCellConfigCommon_t    *scc;
-  NR_ServingCellConfigCommonSIB_t    *scc_SIB;
+  NR_ServingCellConfigCommonSIB_t *scc_SIB;
   NR_CellGroupConfig_t            *cg;
   int                             servCellIndex;
   NR_CSI_ReportConfig_t           *csirc;
@@ -384,6 +384,9 @@ typedef struct {
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
+  frequency_range_t frequency_range;
+
+  dci_pdu_rel15_t def_dci_pdu_rel15[8];
 
 } NR_UE_MAC_INST_t;
 

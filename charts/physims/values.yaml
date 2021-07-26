@@ -1,0 +1,84 @@
+# Default values for oai-physim.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  serviceAccountName: oai-physim-sa
+  namespace: "oaicicd-ran-tmp"
+  image:
+    repository: image-registry.openshift-image-registry.svc:5000/oaicicd-ran-tmp/oai-physim
+    version: TAG
+
+## Declaring values specific to coressponding physim to overwrite
+
+dlsim:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+ulsim:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+ldpctest:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+polartest:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-pbchsim:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-dlsim:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-dlschsim:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+smallblocktest:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-ulschsim:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-pucchsim:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-ulsim:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-prachsim:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80

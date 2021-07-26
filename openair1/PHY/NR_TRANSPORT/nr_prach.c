@@ -872,24 +872,36 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 	
 	       // Now do IFFT of size 1024 (N_ZC=839) or 256 (N_ZC=139)
 	       if (N_ZC == 839) {
-	         log2_ifft_size = 10;
 	         idft(IDFT_1024,prachF,prach_ifft_tmp,1);
 	         // compute energy and accumulate over receive antennas
-	         for (i=0;i<2048;i++)
-	           prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[i<<1] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])/nb_rx;
+	         for (i=0;i<1024;i++)
+	           prach_ifft[i] += (int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[i<<1] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)];
 	       } else {
 	         idft(IDFT_256,prachF,prach_ifft_tmp,1);
 	         log2_ifft_size = 8;
-	  // compute energy and accumulate over receive antennas and repetitions for BR
-	  for (i=0;i<256;i++)
-	    prach_ifft[i] += ((int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[(i<<1)] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)])/nb_rx;
-	}
+           // compute energy and accumulate over receive antennas and repetitions for BR
+           for (i=0;i<256;i++)
+             prach_ifft[i] += (int32_t)prach_ifft_tmp[i<<1]*(int32_t)prach_ifft_tmp[(i<<1)] + (int32_t)prach_ifft_tmp[1+(i<<1)]*(int32_t)prach_ifft_tmp[1+(i<<1)];
+         }
 
-	if (LOG_DUMPFLAG(PRACH)) {	
-	  if (aa==0) LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
-    if (aa==1) LOG_M("prach_rxF_comp1.m","prach_rxF_comp1",prachF,1024,1,1);
-	}
+        if (LOG_DUMPFLAG(PRACH)) {
+          if (aa==0) LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
+          if (aa==1) LOG_M("prach_rxF_comp1.m","prach_rxF_comp1",prachF,1024,1,1);
+        }
+
       }// antennas_rx
+
+      // Normalization of energy over ifft and receive antennas
+      if (N_ZC == 839) {
+        log2_ifft_size = 10;
+        for (i=0;i<1024;i++)
+          prach_ifft[i] = (prach_ifft[i]>>log2_ifft_size)/nb_rx;
+      } else {
+        log2_ifft_size = 8;
+        for (i=0;i<256;i++)
+          prach_ifft[i] = (prach_ifft[i]>>log2_ifft_size)/nb_rx;
+      }
+
     } // new dft
     
     // check energy in nth time shift, for 

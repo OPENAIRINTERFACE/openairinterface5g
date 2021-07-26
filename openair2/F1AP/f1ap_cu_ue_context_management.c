@@ -211,32 +211,30 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   /* mandatory */
   /* c10. SCell_ToBeSetup_List */
-  if(0) {
-    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie10);
-    ie10->id                             = F1AP_ProtocolIE_ID_id_SCell_ToBeSetup_List;
-    ie10->criticality                    = F1AP_Criticality_ignore;
-    ie10->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_SCell_ToBeSetup_List;
+  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie10);
+  ie10->id                             = F1AP_ProtocolIE_ID_id_SCell_ToBeSetup_List;
+  ie10->criticality                    = F1AP_Criticality_ignore;
+  ie10->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_SCell_ToBeSetup_List;
 
-    for (int i=0; i<0; i++) {
-      //
-      asn1cSequenceAdd(ie10->value.choice.SCell_ToBeSetup_List.list, F1AP_SCell_ToBeSetup_ItemIEs_t, scell_toBeSetup_item_ies);
-      scell_toBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_SCell_ToBeSetup_Item; //53
-      scell_toBeSetup_item_ies->criticality   = F1AP_Criticality_ignore;
-      scell_toBeSetup_item_ies->value.present = F1AP_SCell_ToBeSetup_ItemIEs__value_PR_SCell_ToBeSetup_Item;
-      /* 10.1 SCell_ToBeSetup_Item */
-      F1AP_SCell_ToBeSetup_Item_t *scell_toBeSetup_item=&scell_toBeSetup_item_ies->value.choice.SCell_ToBeSetup_Item;
-      /* 10.1.1 sCell_ID */
-      addnRCGI(scell_toBeSetup_item->sCell_ID, f1ap_ue_context_setup_req);
-      /* TODO correct MCC/MNC */
-      /* 10.1.2 sCellIndex */
-      scell_toBeSetup_item->sCellIndex = 3;  // issue here
+  for (int i=0; i<0; i++) {
+    //
+    asn1cSequenceAdd(ie10->value.choice.SCell_ToBeSetup_List.list, F1AP_SCell_ToBeSetup_ItemIEs_t, scell_toBeSetup_item_ies);
+    scell_toBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_SCell_ToBeSetup_Item; //53
+    scell_toBeSetup_item_ies->criticality   = F1AP_Criticality_ignore;
+    scell_toBeSetup_item_ies->value.present = F1AP_SCell_ToBeSetup_ItemIEs__value_PR_SCell_ToBeSetup_Item;
+    /* 10.1 SCell_ToBeSetup_Item */
+    F1AP_SCell_ToBeSetup_Item_t *scell_toBeSetup_item=&scell_toBeSetup_item_ies->value.choice.SCell_ToBeSetup_Item;
+    /* 10.1.1 sCell_ID */
+    addnRCGI(scell_toBeSetup_item->sCell_ID, f1ap_ue_context_setup_req);
+    /* TODO correct MCC/MNC */
+    /* 10.1.2 sCellIndex */
+    scell_toBeSetup_item->sCellIndex = 3;  // issue here
 
-      /* OPTIONAL */
-      /* 10.1.3 sCellULConfigured*/
-      if (0) {
-        asn1cCallocOne(scell_toBeSetup_item->sCellULConfigured,
-                       F1AP_CellULConfigured_t, F1AP_CellULConfigured_ul_and_sul); // enum
-      }
+    /* OPTIONAL */
+    /* 10.1.3 sCellULConfigured*/
+    if (0) {
+      asn1cCallocOne(scell_toBeSetup_item->sCellULConfigured,
+                     F1AP_CellULConfigured_t, F1AP_CellULConfigured_ul_and_sul); // enum
     }
   }
 
@@ -554,7 +552,6 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     }
   }
 
-  //}
   /* OPTIONAL */
   /* InactivityMonitoringRequest */
   if (0) {
@@ -663,7 +660,6 @@ int CU_handle_UE_CONTEXT_SETUP_FAILURE(instance_t       instance,
                                        F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
-
 
 int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
     uint32_t         assoc_id,
@@ -807,7 +803,6 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0);
   return 0;
 }
-
 int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
     uint32_t         assoc_id,
     uint32_t         stream,
@@ -903,8 +898,6 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
   f1ap_remove_ue(true, instance, rnti);
   return 0;
 }
-
-
 //void CU_send_UE_CONTEXT_MODIFICATION_REQUEST(F1AP_UEContextModificationRequest_t *UEContextModificationRequest) {
 int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
   F1AP_F1AP_PDU_t                        pdu= {0};

@@ -20,7 +20,7 @@
  */
 
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
+//#include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 //#define DEBUG_CH
 #include "common/utils/LOG/log.h"
@@ -34,12 +34,18 @@ static int16_t ru_90c[2*128] = {32767, 0,32766, -402,32758, -804,32746, -1206,32
 
 #define SCALE 0x3FFF
 
+static const short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+//static const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
+
+extern unsigned short dftsizes[34];
+extern int16_t *ul_ref_sigs_rx[30][2][34];
+
 int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
                                   L1_rxtx_proc_t *proc,
-				  LTE_eNB_ULSCH_t * ulsch,
-				  int32_t **ul_ch_estimates,
-				  int32_t **ul_ch_estimates_time,
-				  int32_t **rxdataF_ext,
+                        				  LTE_eNB_ULSCH_t * ulsch,
+				                          int32_t **ul_ch_estimates,
+				                          int32_t **ul_ch_estimates_time,
+				                          int32_t **rxdataF_ext,
                                   module_id_t UE_id,
                                   unsigned char l,
                                   unsigned char Ns) {

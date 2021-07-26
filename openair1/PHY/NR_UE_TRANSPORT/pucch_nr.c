@@ -59,11 +59,11 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         int16_t amp,
                         int nr_slot_tx,
                         uint8_t m0,
-			uint8_t mcs,
+			                  uint8_t mcs,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
                         uint16_t startingPRB,
-			uint16_t secondHopPRB) {
+			                  uint16_t secondHopPRB) {
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch0] start function at slot(nr_slot_tx)=%d\n",nr_slot_tx);
 #endif
@@ -112,9 +112,9 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   }
   for (int l=0; l<nrofSymbols; l++) {
     alpha = nr_cyclic_shift_hopping(hoppingId,m0,mcs,l,startingSymbolIndex,nr_slot_tx);
-//#ifdef DEBUG_NR_PUCCH_TX
+#ifdef DEBUG_NR_PUCCH_TX
     printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u[l],v[l],alpha,l);
-//#endif
+#endif
 
     for (int n=0; n<12; n++) {
       x_n_re[l][n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u[l]][n])>>15)

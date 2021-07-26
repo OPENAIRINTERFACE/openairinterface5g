@@ -81,6 +81,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "RRC/NR_UE/rrc_proto.h"
 #include "RRC/NR_UE/rrc_vars.h"
 #include "openair3/NAS/UE/nas_ue_task.h"
+#include <executables/split_headers.h>
+#include <executables/nr-uesoftmodem.h>
 #if ITTI_SIM
 #include "nr_nas_msg_sim.h"
 #endif
@@ -89,7 +91,6 @@ pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
-uint8_t nfapi_mode = 0; // Default to monolithic mode
 uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0;
 
@@ -97,7 +98,18 @@ int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
   AssertFatal(false, "Must not be called in this context\n");
 }
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
 
+nrUE_params_t nrUE_params;
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+
+void processSlotTX(void *arg) {}
+
+THREAD_STRUCT thread_struct;
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
@@ -375,7 +387,7 @@ void terminate_task(task_id_t task_id, module_id_t mod_id) {
 //extern void  free_transport(PHY_VARS_gNB *);
 extern void  nr_phy_free_RU(RU_t *);
 
-void init_pdcp(void) {
+statis void init_pdcp(void) {
   //if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
   pdcp_layer_init();
   uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
@@ -404,7 +416,7 @@ int create_tasks_nrue(uint32_t ue_nb) {
       return -1;
     }
 
-    printf("create TASK_NAS_NRUE\n");
+    LOG_D(NR_RRC,"create TASK_NAS_NRUE\n");
     if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
       LOG_E(NR_RRC, "Create task for NAS UE failed\n");
       return -1;

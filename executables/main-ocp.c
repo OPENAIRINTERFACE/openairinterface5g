@@ -203,7 +203,6 @@ void init_eNB_afterRU(void) {
   for (int inst=0; inst<RC.nb_inst; inst++) {
     for (int CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
       PHY_VARS_eNB *eNB = RC.eNB[inst][CC_id];
-      phy_init_lte_eNB(eNB,0,0);
       eNB->frame_parms.nb_antennas_rx       = 0;
       eNB->frame_parms.nb_antennas_tx       = 0;
       eNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
@@ -229,12 +228,26 @@ void init_eNB_afterRU(void) {
           for (int ce_level=0; ce_level<4; ce_level++)
             eNB->prach_vars_br.rxsigF[ce_level][aa] = eNB->RU_list[ru_id]->prach_rxsigF_br[ce_level][i];
 
-          eNB->common_vars.rxdataF[aa]     =  eNB->RU_list[ru_id]->common.rxdataF[i];
         }
       }
 
-      AssertFatal( eNB->frame_parms.nb_antennas_rx > 0 && eNB->frame_parms.nb_antennas_rx < 4, "");
-      AssertFatal( eNB->frame_parms.nb_antennas_tx > 0 && eNB->frame_parms.nb_antennas_rx < 4, "");
+
+      AssertFatal( eNB->frame_parms.nb_antennas_rx > 0 && eNB->frame_parms.nb_antennas_rx < 5, "");
+      AssertFatal( eNB->frame_parms.nb_antennas_tx > 0 && eNB->frame_parms.nb_antennas_rx < 5, "");
+
+      phy_init_lte_eNB(eNB,0,0);
+
+      // need to copy rxdataF after L1 variables are allocated
+      for (int inst=0; inst<RC.nb_inst; inst++) {
+         for (int CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
+           PHY_VARS_eNB *eNB = RC.eNB[inst][CC_id];
+           for (int ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) {
+              for (int i=0; i<eNB->RU_list[ru_id]->nb_rx; aa++,i++) 
+                eNB->common_vars.rxdataF[aa]     =  eNB->RU_list[ru_id]->common.rxdataF[i];
+           }
+         }
+      }
+
       LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
       init_transport(eNB);
       //init_precoding_weights(RC.eNB[inst][CC_id]);
@@ -801,7 +814,7 @@ int init_rf(RU_t *ru) {
   pthread_setname_np(pthread_self(),name);
   return ret;
 }
-
+ 
 void ocp_init_RU(RU_t *ru, char *rf_config_file, int send_dmrssync) {
   PHY_VARS_eNB *eNB0= (PHY_VARS_eNB *)NULL;
   int i;

@@ -61,9 +61,9 @@ void nas_getparams(void) {
     /*                                            configuration parameters for netlink, includes network parameters when running in noS1 mode                             */
     /*   optname                     helpstr                paramflags           XXXptr                               defXXXval               type                 numelt */
     /*--------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-    {"NetworkPrefix",    NASHLP_NETPREFIX,       0,              strptr:&baseNetAddress,        defstrval:"60.60",            TYPE_STRING,  0 },
+    {"NetworkPrefix",    NASHLP_NETPREFIX,       0,              strptr:&baseNetAddress,        defstrval:"10.0",            TYPE_STRING,  0 },
     {"NetworkMask",      NASHLP_NETMASK,         0,              strptr:&netMask,               defstrval:"255.255.255.0",   TYPE_STRING,  0 },
-    {"BroadcastAddr",    NASHLP_BROADCASTADDR,   0,              strptr:&broadcastAddr,         defstrval:"60.60.255.255",    TYPE_STRING,  0 },
+    {"BroadcastAddr",    NASHLP_BROADCASTADDR,   0,              strptr:&broadcastAddr,         defstrval:"10.0.255.255",    TYPE_STRING,  0 },
   };
   config_get( nasoptions,sizeof(nasoptions)/sizeof(paramdef_t),"nas.noS1");
 }

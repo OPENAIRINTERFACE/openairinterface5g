@@ -35,9 +35,9 @@
 #include "dci.h"
 #include "mdci.h"
 //#include "uci.h"
-#ifndef STANDALONE_COMPILE
-  #include "UTIL/LISTS/list.h"
-#endif
+//#ifndef STANDALONE_COMPILE
+//  #include "UTIL/LISTS/list.h"
+//#endif
 
 #define MOD_TABLE_QPSK_OFFSET 1
 #define MOD_TABLE_16QAM_OFFSET 5
@@ -57,7 +57,7 @@
 
 // maximum of 3 segments before each coding block if data length exceeds 6144 bits.
 
-#define MAX_NUM_DLSCH_SEGMENTS 16
+#define MAX_NUM_DLSCH_SEGMENTS 13
 #define MAX_NUM_ULSCH_SEGMENTS MAX_NUM_DLSCH_SEGMENTS
 #define MAX_DLSCH_PAYLOAD_BYTES (MAX_NUM_DLSCH_SEGMENTS*768)
 #define MAX_ULSCH_PAYLOAD_BYTES (MAX_NUM_ULSCH_SEGMENTS*768)
@@ -77,7 +77,8 @@
 #define PMI_2A_R1_1j 2
 
 typedef enum { SEARCH_EXIST=0,
-               SEARCH_EXIST_OR_FREE
+               SEARCH_EXIST_OR_FREE,
+               SEARCH_EXIST_RA
              } find_type_t;
 
 typedef enum {

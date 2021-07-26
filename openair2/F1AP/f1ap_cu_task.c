@@ -110,10 +110,7 @@ void cu_task_send_sctp_init_req(instance_t enb_id) {
   itti_send_msg_to_task(TASK_SCTP, enb_id, message_p);
 }
 
-
 void *
-
-
 F1AP_CU_task(void *arg) {
   MessageDef *received_msg = NULL;
   int         result;

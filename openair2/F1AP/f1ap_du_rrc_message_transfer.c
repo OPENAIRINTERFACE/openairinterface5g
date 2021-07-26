@@ -56,6 +56,7 @@
 #include "intertask_interface.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
+
 int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
     uint32_t         assoc_id,
     uint32_t         stream,
@@ -66,10 +67,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         assoc_id,
                                       uint32_t         stream,
                                       F1AP_F1AP_PDU_t *pdu) {
-  if (RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
+  if (RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
     LOG_I(F1AP, "node is gNB DU, call DU_handle_DL_NR_RRC_MESSAGE_TRANSFER \n");
-    DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance, assoc_id, stream, pdu);
-    return 0;
+    return DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance, assoc_id, stream, pdu);
   }
 
   LOG_D(F1AP, "DU_handle_DL_RRC_MESSAGE_TRANSFER \n");
@@ -699,7 +699,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
             LOG_E(F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", rnti);
           } else {
             LOG_I(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
-            ue_context_p->ue_context.Status = RRC_CONNECTED;
+            ue_context_p->ue_context.StatusRrc = RRC_CONNECTED;
           }
 
           break;
@@ -831,7 +831,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
     return -1;
   }
 
-  if (RC.nrrrc[module_idP]->node_type == ngran_gNB_DU) {
+  if (RC.nrrrc && RC.nrrrc[module_idP]->node_type == ngran_gNB_DU) {
     struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[module_idP]);
     ue_context_p->ue_id_rnti                    = rntiP;
     ue_context_p->ue_context.rnti               = rntiP;

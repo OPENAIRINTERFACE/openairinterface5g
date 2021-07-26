@@ -168,7 +168,7 @@ void *F1AP_DU_task(void *arg) {
       case F1AP_UL_RRC_MESSAGE: // to rrc
         LOG_I(F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
 
-        if (RC.nrrrc[0]->node_type == ngran_gNB_DU) {
+        if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_DU) {
           DU_send_UL_NR_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                              &F1AP_UL_RRC_MESSAGE(received_msg));
         } else {

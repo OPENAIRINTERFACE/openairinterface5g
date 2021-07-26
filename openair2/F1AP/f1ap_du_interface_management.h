@@ -104,6 +104,7 @@ int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
     f1ap_gnb_cu_configuration_update_acknowledge_t *GNBCUConfigurationUpdateAcknowledge);
 
 
+
 /*
  * gNB-DU Resource Coordination
  */

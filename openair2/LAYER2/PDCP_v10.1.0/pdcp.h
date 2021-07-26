@@ -544,7 +544,6 @@ extern notifiedFIFO_t         pdcp_sdu_list;
    (((hash_key_t)(0x0000000000000001))  << 63))
 
 extern hash_table_t  *pdcp_coll_p;
-void init_pdcp(void);
 
 #endif
 /*@}*/

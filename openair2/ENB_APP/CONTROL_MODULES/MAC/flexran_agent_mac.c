@@ -42,6 +42,9 @@
 
 #include <dlfcn.h>
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 /*Array containing the Agent-MAC interfaces*/
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
 

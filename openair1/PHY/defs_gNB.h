@@ -751,7 +751,6 @@ typedef struct PHY_VARS_gNB_s {
   
   //  nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
   //  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
-
   uint16_t num_pdsch_rnti[80];
   NR_gNB_SSB_t       ssb[64];
   NR_gNB_PBCH        pbch;
@@ -886,6 +885,8 @@ typedef struct PHY_VARS_gNB_s {
   tpool_t *threadPool;
   int nbDecode;
   uint8_t pusch_proc_threads;
+  int number_of_nr_dlsch_max;
+  int number_of_nr_ulsch_max;
   void * scopeData;
 } PHY_VARS_gNB;
 

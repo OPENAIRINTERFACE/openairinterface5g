@@ -82,7 +82,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 #include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
-#define NRUE_MAIN
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
@@ -91,6 +90,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 extern const char *duplex_mode[];
 THREAD_STRUCT thread_struct;
+nrUE_params_t nrUE_params;
 
 // Thread variables
 pthread_cond_t nfapi_sync_cond;
@@ -151,8 +151,9 @@ int     transmission_mode = 1;
 int            numerology = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
-uint32_t       N_RB_DL=106;
-char uecap_xer[1024],uecap_xer_in=0;
+uint32_t       N_RB_DL    = 106;
+char         uecap_xer_in = 0;
+char         uecap_xer[1024];
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -181,6 +182,7 @@ struct timespec clock_difftime(struct timespec start, struct timespec end) {
 void print_difftimes(void) {
   LOG_I(HW,"difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
 }
+
 int create_tasks_nrue(uint32_t ue_nb) {
   LOG_D(NR_RRC, "%s(ue_nb:%d)\n", __FUNCTION__, ue_nb);
   itti_wait_ready(1);
@@ -235,9 +237,16 @@ nrUE_params_t *get_nrUE_params(void) {
 }
 /* initialie thread pools used for NRUE processing paralleliation */ 
 void init_tpools(uint8_t nun_dlsch_threads) {
-  char *params=calloc(1,(RX_NB_TH*3)+1);
-  for (int i=0; i<RX_NB_TH; i++) {
-    memcpy(params+(i*3),"-1,",3);
+  char *params = NULL;
+  if (IS_SOFTMODEM_RFSIM) {
+    params = calloc(1,2);
+    memcpy(params,"N",1);
+  }
+  else {
+    params = calloc(1,(NR_RX_NB_TH*NR_NB_TH_SLOT*3)+1);
+    for (int i=0; i<NR_RX_NB_TH*NR_NB_TH_SLOT; i++) {
+      memcpy(params+(i*3),"-1,",3);
+    }
   }
   initTpool(params, &(nrUE_params.Tpool), false);
   free(params);
@@ -261,7 +270,6 @@ static void get_options(void) {
     printf("%s\n",uecap_xer);
     uecap_xer_in=1;
   } /* UE with config file  */
-    init_tpools(nrUE_params.nr_dlsch_parallel);
 }
 
 // set PHY vars from command line
@@ -324,8 +332,9 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
     LOG_I(PHY, "Set UE frame_type %d\n", fp->frame_type);
   }
 
-  LOG_I(PHY, "Set UE N_RB_DL %d\n", N_RB_DL);
   fp->N_RB_DL = N_RB_DL;
+
+  LOG_I(PHY, "Set UE N_RB_DL %d\n", N_RB_DL);
   LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs);
 
 }
@@ -351,8 +360,8 @@ void init_openair0(void) {
     openair0_cfg[card].num_rb_dl = frame_parms->N_RB_DL;
     openair0_cfg[card].clock_source = get_softmodem_params()->clock_source;
     openair0_cfg[card].time_source = get_softmodem_params()->timing_source;
-    openair0_cfg[card].tx_num_channels = min(2, frame_parms->nb_antennas_tx);
-    openair0_cfg[card].rx_num_channels = min(2, frame_parms->nb_antennas_rx);
+    openair0_cfg[card].tx_num_channels = min(4, frame_parms->nb_antennas_tx);
+    openair0_cfg[card].rx_num_channels = min(4, frame_parms->nb_antennas_rx);
 
     LOG_I(PHY, "HW: Configuring card %d, sample_rate %f, tx/rx num_channels %d/%d, duplex_mode %s\n",
       card,
@@ -372,7 +381,7 @@ void init_openair0(void) {
   }
 }
 
-void init_pdcp(void) {
+static void init_pdcp(void) {
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
   /*if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
@@ -418,6 +427,7 @@ int main( int argc, char **argv ) {
   get_options (); //Command-line options specific for NRUE
 
   get_common_options(SOFTMODEM_5GUE_BIT );
+  init_tpools(nrUE_params.nr_dlsch_parallel);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 #if T_TRACER
   T_Config_Init();
@@ -439,10 +449,6 @@ int main( int argc, char **argv ) {
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-
-  RC.nrrrc = (gNB_RRC_INST **)malloc(1*sizeof(gNB_RRC_INST *));
-  RC.nrrrc[0] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
-  RC.nrrrc[0]->node_type = ngran_gNB;
 
   init_NR_UE(1,rrc_config_path);
   if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa)
@@ -479,10 +485,12 @@ int main( int argc, char **argv ) {
       nrUE_config->carrier_config.ul_grid_size[nrUE_config->ssb_config.scs_common] = UE[CC_id]->frame_parms.N_RB_DL;
       nrUE_config->carrier_config.dl_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
       nrUE_config->carrier_config.uplink_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
-      nrUE_config->cell_config.frame_duplex_type = TDD; 
       nrUE_config->ssb_table.ssb_offset_point_a = (UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
 
-
+      // Initialize values, will be updated upon SIB1 reception
+      nrUE_config->cell_config.frame_duplex_type = TDD;
+      nrUE_config->ssb_table.ssb_mask_list[0].ssb_mask = 0xFFFFFFFF;
+      nrUE_config->ssb_table.ssb_period = 1;
     }
     
     nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, 
@@ -519,14 +527,6 @@ int main( int argc, char **argv ) {
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
 
-  //Don't understand why generation of RRCSetupRequest is called here. It seems wrong
-  protocol_ctxt_t ctxt_pP = {0};
-  ctxt_pP.enb_flag = ENB_FLAG_NO;
-  ctxt_pP.rnti = 0x1234;
-  RC.nrrrc = (gNB_RRC_INST **)malloc(1*sizeof(gNB_RRC_INST *));
-  RC.nrrrc[0] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
-  RC.nrrrc[0]->node_type = ngran_gNB;
-  nr_rrc_ue_generate_RRCSetupRequest(ctxt_pP.module_id, 0);
   if (create_tasks_nrue(1) < 0) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode

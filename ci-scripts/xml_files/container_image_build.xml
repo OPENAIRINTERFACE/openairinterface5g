@@ -35,6 +35,7 @@
 		<kind>all</kind>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
+		<forced_workspace_cleanup>True</forced_workspace_cleanup>
 	</testCase>
 
 </testCaseList>

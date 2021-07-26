@@ -763,6 +763,8 @@ typedef struct {
   int is_synchronized;
   /// \brief Indicates on which frame is synchronized in a two frame synchronization
   int is_synchronized_on_frame;
+  /// \brief Indicator that UE lost frame synchronization
+  int lost_sync;
   /// Data structure for UE process scheduling
   UE_nr_proc_t proc;
   /// Flag to indicate the UE shouldn't do timing correction at all
@@ -789,6 +791,8 @@ typedef struct {
   uint8_t ho_initiated;
   /// \brief indicator that Handover procedure has been triggered
   uint8_t ho_triggered;
+  /// threshold for false dci detection
+  int dci_thres;
   /// \brief Measurement variables.
   PHY_NR_MEASUREMENTS measurements;
   NR_DL_FRAME_PARMS  frame_parms;
@@ -959,25 +963,9 @@ typedef struct {
 
   //#if defined(UPGRADE_RAT_NR)
 #if 1
-
   SystemInformationBlockType1_nr_t systemInformationBlockType1_nr;
-
-  CellGroupConfig_t          cell_group_config;
-  PDSCH_ServingCellConfig_t  PDSCH_ServingCellConfig;
-  PDSCH_Config_t             PDSCH_Config;
-
   PUCCH_ConfigCommon_nr_t    pucch_config_common_nr[NUMBER_OF_CONNECTED_gNB_MAX];
   PUCCH_Config_t             pucch_config_dedicated_nr[NUMBER_OF_CONNECTED_gNB_MAX];
-
-  PUSCH_Config_t             pusch_config;
-  SRS_NR                     srs;
-
-  crossCarrierSchedulingConfig_t crossCarrierSchedulingConfig;
-  supplementaryUplink_t supplementaryUplink;
-  dmrs_DownlinkConfig_t dmrs_DownlinkConfig;
-  csi_MeasConfig_t csi_MeasConfig;
-  PUSCH_ServingCellConfig_t PUSCH_ServingCellConfig;
-
 #endif
 
   uint8_t ncs_cell[20][7];
@@ -1080,6 +1068,7 @@ typedef struct {
 typedef struct nr_rxtx_thread_data_s {
   UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE    *UE;
+  notifiedFIFO_t txFifo;
 }  nr_rxtx_thread_data_t;
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"

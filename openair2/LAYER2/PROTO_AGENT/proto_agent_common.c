@@ -33,10 +33,9 @@
 #include "PHY/phy_extern.h"
 #include "proto_agent_common.h"
 #include "common/utils/LOG/log.h"
+#include "common/ran_context.h"
 
-#include "RRC/LTE/rrc_extern.h"
-#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-#include "rrc_eNB_UE_context.h"
+extern RAN_CONTEXT_t RC;
 
 /*
  * message primitives
@@ -364,34 +363,23 @@ int proto_agent_pdcp_data_req_process(mod_id_t mod_id, const void *params, Proto
   pdcp_pdu_size = rlc_data->fsp_pdu->fsp_pdu_data.len;
   pdcp_pdu_p = get_free_mem_block(pdcp_pdu_size, __func__);
 
-  if (!pdcp_pdu_p) goto error;
+  if (!pdcp_pdu_p) {
+    LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
+    return -1;
+  }
 
   memcpy(pdcp_pdu_p->data, rlc_data->fsp_pdu->fsp_pdu_data.data, pdcp_pdu_size);
-  // result = rlc_data_req(&ctxt_pP
-  //                       ,srb_flagP
-  //                       ,flag_MBMS
-  //                       ,rb_idP
-  //                       ,muiP
-  //                       ,confirmP
-  //                       ,pdcp_pdu_size
-  //                       ,pdcp_pdu_p
-  //                       ,NULL
-  //                       ,NULL
-  //                      );
-  LOG_D(PROTO_AGENT, "proto_agent received pdcp_data_req \n");
-  // for (int i = 0; i < pdcp_pdu_size; i++)
-  //   printf(" %2.2x", (unsigned char)pdcp_pdu_p->data[i]);
-  // printf("\n");
-  du_rlc_data_req(&ctxt_pP, srb_flagP, flag_MBMS, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
-  result = 1;
+  if (RC.nrrrc) {
+    LOG_D(PROTO_AGENT, "proto_agent received pdcp_data_req \n");
+    // for (int i = 0; i < pdcp_pdu_size; i++)
+    //   printf(" %2.2x", (unsigned char)pdcp_pdu_p->data[i]);
+    // printf("\n");
+    du_rlc_data_req(&ctxt_pP, srb_flagP, flag_MBMS, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+    result = 1;
+  } else {
+    result = rlc_data_req(&ctxt_pP, srb_flagP, flag_MBMS, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p, NULL, NULL);
+  }
   return result;
-error:
-
-  if (pdcp_pdu_p)
-    free_mem_block(pdcp_pdu_p, __func__);
-
-  LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
-  return -1;
 }
 
 int proto_agent_destroy_pdcp_data_ind(Protocol__FlexsplitMessage *msg) {
@@ -508,6 +496,13 @@ error:
   return -1;
 }
 
+boolean_t pdcp_data_ind(
+  const protocol_ctxt_t *const  ctxt_pP,
+  const srb_flag_t srb_flagP,
+  const MBMS_flag_t MBMS_flagP,
+  const rb_id_t rb_id,
+  const sdu_size_t sdu_buffer_size,
+  mem_block_t *const sdu_buffer);
 
 int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
   boolean_t result = 0;

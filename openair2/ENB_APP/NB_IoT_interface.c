@@ -35,6 +35,9 @@
 #define NBIOT_INTERFACE_SOURCE
 #include "NB_IoT_interface.h"
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 
 
 

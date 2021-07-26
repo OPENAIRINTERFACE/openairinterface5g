@@ -651,7 +651,7 @@ schedule_ue_spec(module_id_t module_idP,
     eNB_UE_stats->rrc_status = mac_eNB_get_rrc_status(module_idP, rnti);
     eNB_UE_stats->harq_pid = harq_pid;
     eNB_UE_stats->harq_round = round_DL;
-
+    eNB_UE_stats->dlsch_rounds[round_DL&7]++;
     if (eNB_UE_stats->rrc_status < RRC_RECONFIGURED) {
       ue_sched_ctrl->uplane_inactivity_timer = 0;
     }
@@ -792,7 +792,6 @@ schedule_ue_spec(module_id_t module_idP,
           // No TX request for retransmission (check if null request for FAPI)
       }
 
-      //eNB_UE_stats->dlsch_trials[round]++;
       eNB_UE_stats->num_retransmission += 1;
       eNB_UE_stats->rbs_used_retx = nb_rb;
       eNB_UE_stats->total_rbs_used_retx += nb_rb;
@@ -1065,20 +1064,23 @@ schedule_ue_spec(module_id_t module_idP,
             ue_template->pucch_tpc_tx_frame = frameP;
             ue_template->pucch_tpc_tx_subframe = subframeP;
 
-            if (snr > target_snr + 4) {
+            if (snr > target_snr + PUCCH_PCHYST) {
               tpc = 0;  //-1
-            } else if (snr < target_snr - 4) {
+	      ue_sched_ctrl->pucch_tpc_accumulated[CC_id]--;
+            } else if (snr < target_snr - PUCCH_PCHYST) {
               tpc = 2;  //+1
+              ue_sched_ctrl->pucch_tpc_accumulated[CC_id]--;
             } else {
               tpc = 1;  //0
             }
 
-            LOG_D(MAC, "[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, snr/target snr %d/%d (normal case)\n",
+            LOG_D(MAC, "[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d (accumulated %d), snr/target snr %d/%d (normal case)\n",
                   module_idP,
                   frameP,
                   subframeP,
                   harq_pid,
                   tpc,
+		  ue_sched_ctrl->pucch_tpc_accumulated[CC_id],
                   snr,
                   target_snr);
           } // Po_PUCCH has been updated
@@ -1700,9 +1702,9 @@ schedule_ue_spec_br(module_id_t module_idP,
               UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_frame = frameP;
               UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe = subframeP;
 
-              if (snr > target_snr + 4) {
+              if (snr > target_snr + PUCCH_PCHYST) {
                 tpc = 0; //-1
-              } else if (snr < target_snr - 4) {
+              } else if (snr < target_snr - PUCCH_PCHYST) {
                 tpc = 2; //+1
               } else {
                 tpc = 1; //0

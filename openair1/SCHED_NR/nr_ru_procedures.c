@@ -31,15 +31,12 @@
  */
 
 #include "PHY/defs_gNB.h"
-#include "PHY/phy_extern.h"
 #include "sched_nr.h"
 #include "PHY/MODULATION/modulation_common.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
-#include "LAYER2/MAC/mac.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/system.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -309,16 +306,16 @@ static void *nr_feptx_thread(void *param) {
 
       if (ru->do_precoding == 1) {
         for(i=0; i<ru->nb_log_antennas; ++i) {
-	   memcpy((void*) &ru->common.beam_id[i][slot*fp->symbols_per_slot+l],
-	          (void*) &ru->gNB_list[0]->common_vars.beam_id[i][slot*fp->symbols_per_slot+l],
-	          (fp->symbols_per_slot>>1)*sizeof(uint8_t));
+          memcpy((void*) &ru->common.beam_id[i][slot*fp->symbols_per_slot+l],
+                 (void*) &ru->gNB_list[0]->common_vars.beam_id[i][slot*fp->symbols_per_slot+l],
+                 (fp->symbols_per_slot>>1)*sizeof(uint8_t));
          }
       }
 
       if (ru->nb_tx == 1 && ru->nb_log_antennas == 1) {
-	memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
-	       (void*)&ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset + l*fp->ofdm_symbol_size],
-	       (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
+        memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
+               (void*)&ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset + l*fp->ofdm_symbol_size],
+               (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
       }
       else if (ru->do_precoding == 0) {
         int gNB_tx = ru->gNB_list[0]->frame_parms.nb_antennas_tx;

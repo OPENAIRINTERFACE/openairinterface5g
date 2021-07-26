@@ -48,9 +48,9 @@
 #include "OCG_vars.h"
 #include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
+#include <executables/softmodem-common.h>
 #include <openair2/RRC/NR_UE/rrc_defs.h>
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
-
 
 #define NR_PRACH_DEBUG 1
 #define PRACH_WRITE_OUTPUT_DEBUG 1
@@ -66,8 +66,10 @@ double cpuf;
 extern uint16_t prach_root_sequence_map0_3[838];
 openair0_config_t openair0_cfg[MAX_CARDS];
 //uint8_t nfapi_mode=0;
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
 uint16_t sl_ahead = 0;
 msc_interface_t msc_interface;
+uint32_t N_RB_DL = 106;
 
 //void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
@@ -88,6 +90,12 @@ rrc_data_ind(
   const uint8_t   *const       buffer_pP
 )
 {
+}
+
+int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
+                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
+                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
+    return 0;
 }
 
 int
@@ -122,6 +130,10 @@ gtpv1u_update_ngu_tunnel(
   const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
   const rnti_t                                  prior_rnti
 ){
+  return 0;
+}
+
+int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
   return 0;
 }
 
@@ -173,6 +185,31 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
 {
   return 0;
 }
+
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
+                                            int             CC_idP,
+                                            int             UE_id,
+                                            rnti_t          rntiP,
+                                            const uint8_t   *sduP,
+                                            sdu_size_t      sdu_lenP,
+                                            const uint8_t   *sdu2P,
+                                            sdu_size_t      sdu2_lenP) {
+  return 0;
+}
+
+typedef struct {
+  uint64_t       optmask;   //mask to store boolean config options
+  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
+  tpool_t        Tpool;             // thread pool
+} nrUE_params_t;
+
+nrUE_params_t nrUE_params;
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+
+void processSlotTX(void *arg) {}
 
 int main(int argc, char **argv){
 
@@ -508,7 +545,8 @@ int main(int argc, char **argv){
   ru->if_south       = LOCAL_RF;
   ru->nb_tx          = n_tx;
   ru->nb_rx          = n_rx;
-
+  ru->num_gNB        = 1;
+  ru->gNB_list[0]    = gNB;
   gNB->gNB_config.carrier_config.num_tx_ant.value = 1;
   gNB->gNB_config.carrier_config.num_rx_ant.value = 1;
   if (mu==1)
@@ -609,7 +647,7 @@ int main(int argc, char **argv){
 
   memcpy((void*)&ru->config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru->config));
   RC.nb_nr_L1_inst=1;
-  phy_init_nr_gNB(gNB,0,0);
+  phy_init_nr_gNB(gNB,0,1); //lowmem
   nr_phy_init_RU(ru);
   gNB->common_vars.rxdata = ru->common.rxdata;
   set_tdd_config_nr(&gNB->gNB_config, mu, 7, 6, 2, 4);

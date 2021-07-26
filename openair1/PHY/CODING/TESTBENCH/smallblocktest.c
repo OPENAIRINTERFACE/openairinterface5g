@@ -1,13 +1,10 @@
 #include <getopt.h>
 #include "SIMULATION/TOOLS/sim.h"
 #include "PHY/CODING/nrSmallBlock/nr_small_block_defs.h"
-#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+#include "coding_unitary_defs.h"
 
 //#define DEBUG_SMALLBLOCKTEST
 
-RAN_CONTEXT_t RC;
-PHY_VARS_UE ***PHY_vars_UE_g;
-uint16_t NB_UE_INST = 1;
 
 int main(int argc, char *argv[])
 {
