@@ -2162,11 +2162,11 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
     NR_CSI_MeasConfig_t *csi_measconfig = mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
 
     for (int csi_report_id = 0; csi_report_id < csi_measconfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
-      const NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
+      NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
 
       if(csirep->reportConfigType.present == NR_CSI_ReportConfig__reportConfigType_PR_periodic){
         int period, offset;
-        csi_period_offset(csirep, &period, &offset);
+        csi_period_offset(csirep, NULL, &period, &offset);
 
         int scs;
         NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];

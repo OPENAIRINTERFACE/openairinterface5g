@@ -3253,8 +3253,75 @@ uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i
   }
 }
 
-void csi_period_offset(const NR_CSI_ReportConfig_t *csirep,
+
+void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
+                       NR_NZP_CSI_RS_Resource_t *nzpcsi,
                        int *period, int *offset) {
+
+  if(nzpcsi != NULL) {
+
+    NR_CSI_ResourcePeriodicityAndOffset_PR p_and_o = nzpcsi->periodicityAndOffset->present;
+
+    switch(p_and_o){
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots4:
+        *period = 4;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots4;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots5:
+        *period = 5;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots5;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots8:
+        *period = 8;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots8;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots10:
+        *period = 10;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots10;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots16:
+        *period = 16;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots16;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots20:
+        *period = 20;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots20;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots32:
+        *period = 32;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots32;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots40:
+        *period = 40;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots40;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots64:
+        *period = 64;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots64;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots80:
+        *period = 80;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots80;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots160:
+        *period = 160;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots160;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots320:
+        *period = 320;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots320;
+        break;
+      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots640:
+        *period = 640;
+        *offset = nzpcsi->periodicityAndOffset->choice.slots640;
+        break;
+    default:
+      AssertFatal(1==0,"No periodicity and offset found in CSI resource");
+    }
+
+  }
+
+  if(csirep != NULL) {
 
     NR_CSI_ReportPeriodicityAndOffset_PR p_and_o = csirep->reportConfigType.choice.periodic->reportSlotConfig.present;
 
@@ -3302,7 +3369,9 @@ void csi_period_offset(const NR_CSI_ReportConfig_t *csirep,
     default:
       AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
     }
+  }
 }
+
 
 void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                            frame_t frameP,

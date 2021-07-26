@@ -453,9 +453,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   else
     ue->pdsch_config_dedicated->p_a = dB0;
 
-  // set channel estimation to do linear interpolation in time
-  ue->high_speed_flag = 1;
-  ue->ch_est_alpha    = 24576;
   // enable MIB/SIB decoding by default
   ue->decode_MIB = 1;
   ue->decode_SIB = 1;
