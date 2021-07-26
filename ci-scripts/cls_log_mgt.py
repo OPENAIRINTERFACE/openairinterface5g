@@ -72,12 +72,15 @@ class Log_Mgt:
 		COMMAND="ls -rtl "+ self.path
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		result = ssh.stdout.readlines()
-		total_size=0
-		for i in range(1,len(result)):
-			s=result[i].decode('utf-8').rstrip()
-			tmp=s.split()
-			total_size+=int(tmp[4]) #get filesize
-		return math.floor(total_size/(len(result)-1)) #compute average file/artifact size
+		if len(result)>1: #at least 1 file present
+			total_size=0
+			for i in range(1,len(result)):
+				s=result[i].decode('utf-8').rstrip()
+				tmp=s.split()
+				total_size+=int(tmp[4]) #get filesize
+			return math.floor(total_size/(len(result)-1)) #compute average file/artifact size
+		else:#empty,no files
+			return 0
 
 
 #-----------------$
