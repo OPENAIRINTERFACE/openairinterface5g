@@ -240,21 +240,15 @@ void nr_processULSegment(void* arg) {
   uint32_t Tbslbrm = rdata->Tbslbrm;
   short* ulsch_llr = rdata->ulsch_llr;
   int max_ldpc_iterations = p_decoderParms->numMaxIter;
-  int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR]; // __attribute__ ((aligned(32)));
+  int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
 
   int16_t  z [68*384 + 16] __attribute__ ((aligned(16)));
   int8_t   l [68*384 + 16] __attribute__ ((aligned(16)));
 
-  int16_t  z_ol [68*384];
-  int8_t   l_ol [68*384];
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
-  __m128i *pv_ol128 = (__m128i*)&z_ol;
-  __m128i *pl_ol128 = (__m128i*)&l_ol;
   
-//  int16_t *pv = &z;
   uint8_t  Ilbrm    = 0;
- // int8_t *pl = &l;
 
   Kr = ulsch_harq->K;
   Kr_bytes = Kr>>3;
@@ -282,13 +276,15 @@ void nr_processULSegment(void* arg) {
   stop_meas(&phy_vars_gNB->ulsch_deinterleaving_stats);
 
 
-  printf(" segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, rv %d, round %d)...\n",
-        r, A,
+  /*LOG_D(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rv %d, round %d)...\n",
+        harq_pid,r, G,
         Kr*3,
         ulsch_harq->TBS,
         Qm,
-        rv_index,
-        ulsch_harq->round);
+        nb_rb,
+        n_layers,
+        pusch_pdu->pusch_data.rv_index,
+        ulsch_harq->round);*/
   //////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -336,13 +332,6 @@ void nr_processULSegment(void* arg) {
     crc_type = CRC24_B;
     length_dec = (ulsch_harq->B+24*ulsch_harq->C)/ulsch_harq->C;
   }
-/*LOG_I(PHY,"decoder input(segment %u) :",r);
-    for (int i=0;i<16;i++)
-      LOG_I(PHY,"%d : %d\n",i,ulsch_harq->d[r][i]);
-    LOG_I(PHY,"\n");
-printf("LDPC lifting size Z %d F %d E %d\n",ulsch_harq->Z,ulsch_harq->F,E);
-*/
-//printf("input data %x\n",pl+ulsch_harq->Z);
 
   //start_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
 
@@ -359,23 +348,6 @@ printf("LDPC lifting size Z %d F %d E %d\n",ulsch_harq->Z,ulsch_harq->F,E);
   {
     pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
   }
-
-
-  //memcpy((&z_ol[0]+2*ulsch_harq->Z),ulsch_harq->d[r],(K_bits_F-2*ulsch_harq->Z)*sizeof(int16_t));
-  //memcpy((&z_ol[0]),ulsch_harq->e[r],(kc*ulsch_harq->Z)*sizeof(int16_t));
-  memcpy((&z_ol[0]),ulsch_llr,E*sizeof(int16_t));
-for (i=0, j=0; j < ((kc*ulsch_harq->Z)>>4)+1;  i+=2, j++)
-  {
-    pl_ol128[j] = _mm_packs_epi16(pv_ol128[i],pv_ol128[i+1]);
-  }
-
-
-//int8_t *pl_ol=(int8_t*)&z_ol[0];
-/*for (i=0;i<8;i++){
-printf("input addr z @ %p data %d \n", (&z[0]+2*ulsch_harq->Z+i), *(&z[0]+2*ulsch_harq->Z+i));
-printf("input addr p @ %p data %d\n", (pl_ol128), *(pl_ol128));
-}
-*/
   //////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -384,29 +356,13 @@ printf("input addr p @ %p data %d\n", (pl_ol128), *(pl_ol128));
   //////////////////////////////////////////////////////////////////////////////////////////
 
   ////////////////////////////////// pl =====> llrProcBuf //////////////////////////////////
-/*  no_iteration_ldpc = nrLDPC_decoder_offload(p_decoderParms,
-                                     (int8_t*)&pl_ol128[0], //pl_ol,
-                                     llrProcBuf,
-                                     ulsch_harq->p_nrLDPC_procBuf[r],// 3
-                                     p_procTime);
-*/
-  no_iteration_ldpc = nrLDPC_decoder_offload(p_decoderParms,
-					ulsch_harq->C, 
-					(uint8_t)rv_index,
-					ulsch_harq->F,
-					E,
-					Qm,
-					(int8_t*)&pl_ol128[0],
-					llrProcBuf);
 
-/*
-
-no_iteration_ldpc = nrLDPC_decoder(p_decoderParms,
+  no_iteration_ldpc = nrLDPC_decoder(p_decoderParms,
                                      (int8_t*)&pl[0],
                                      llrProcBuf,
                                      ulsch_harq->p_nrLDPC_procBuf[r],
                                      p_procTime);
-*/
+
   if (check_crc((uint8_t*)llrProcBuf,length_dec,ulsch_harq->F,crc_type)) {
 #ifdef PRINT_CRC_CHECK
       LOG_I(PHY, "Segment %d CRC OK, iterations %d/%d\n",r,no_iteration_ldpc,max_ldpc_iterations);
@@ -423,13 +379,8 @@ no_iteration_ldpc = nrLDPC_decoder(p_decoderParms,
   for (int m=0; m < Kr>>3; m ++) {
     ulsch_harq->c[r][m]= (uint8_t) llrProcBuf[m];
   }
-/*for (int k=0;k<16;k++)
-     {          
-        printf("output decoder [%d] =  0x%02x \n", k, ulsch_harq->c[r][k]);
-        printf("llrprocbuf [%d] =  %x adr %p\n", k, llrProcBuf[k], llrProcBuf+k);
-     }   
-   printf("no_iterations_ldpc %d \n",no_iteration_ldpc);
-*/
+
+  //stop_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
 }
 
 uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
@@ -449,7 +400,17 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   int kc;
   int Tbslbrm;
   int E;
-
+  int8_t llrProcBuf[22*384];
+  int ret = 0;
+  int i,j;
+  int8_t enable_ldpc_offload = 1;
+  int16_t  z_ol [68*384];
+  int8_t   l_ol [68*384];
+  __m128i *pv_ol128 = (__m128i*)&z_ol;
+  __m128i *pl_ol128 = (__m128i*)&l_ol;
+  int no_iteration_ldpc;
+  int length_dec;
+  uint8_t crc_type;
 #ifdef PRINT_CRC_CHECK
   prnt_crc_cnt++;
 #endif
@@ -613,12 +574,82 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   Kr = harq_process->K;
   Kr_bytes = Kr>>3;
   offset = 0;
+
+  if (enable_ldpc_offload) {
+  memset(harq_process->c[0],0,Kr_bytes);
+
+  if (harq_process->C == 1) {
+    if (A > 3824)
+      crc_type = CRC24_A;
+    else
+      crc_type = CRC16;
+
+    length_dec = harq_process->B;
+  }
+  else {
+    crc_type = CRC24_B;
+    length_dec = (harq_process->B+24*harq_process->C)/harq_process->C;
+  }
+
+
+  E = nr_get_E(G, harq_process->C, Qm, n_layers, 0);
+
+  memcpy((&z_ol[0]),ulsch_llr,G*sizeof(int16_t));
+  
+  for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++)
+  {
+    pl_ol128[j] = _mm_packs_epi16(pv_ol128[i],pv_ol128[i+1]);
+  }
+ 
+  ret = nrLDPC_decoder_offload(p_decParams,
+			harq_process->C, 
+			pusch_pdu->pusch_data.rv_index,
+			harq_process->F,
+			E,
+			Qm,
+ 			(int8_t*)&pl_ol128[0],
+			llrProcBuf);
+
+     for (r=0; r<harq_process->C; r++) {
+        
+        for (int m=0; m < Kr>>3; m ++) {
+	    harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
+  	}
+
+  if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
+#ifdef PRINT_CRC_CHECK
+      LOG_I(PHY, "Segment %d CRC OK\n",r);
+#endif
+    no_iteration_ldpc = 2;
+  } else {
+#ifdef PRINT_CRC_CHECK
+      LOG_I(PHY, "CRC NOK\n");
+#endif
+    no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
+  }
+      	for (int k=0;k<8;k++)
+        {
+        printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
+        printf("llrprocbuf [%d] =  %x adr %p\n", k, llrProcBuf[k], llrProcBuf+k);
+        }
+   
+
+        memcpy(harq_process->b+offset,
+               harq_process->c[r],
+               Kr_bytes - (harq_process->F>>3) -((harq_process->C>1)?3:0));
+        offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
+
+     }
+
+ 
+  } 
+  else { 
   void (*nr_processULSegment_ptr)(void*) = &nr_processULSegment;
 
   for (r=0; r<harq_process->C; r++) {
 
     E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
-
+printf("rm length %d seg %d\n", E,r);
     union ldpcReqUnion id = {.s={ulsch->rnti,frame,nr_tti_rx,0,0}};
     notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(ldpcDecode_t), id.p, phy_vars_gNB->respDecode, nr_processULSegment_ptr);
     ldpcDecode_t * rdata=(ldpcDecode_t *) NotifiedFifoData(req);
@@ -648,5 +679,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
     //////////////////////////////////////////////////////////////////////////////////////////
   }
+  } 
   return 1;
 }

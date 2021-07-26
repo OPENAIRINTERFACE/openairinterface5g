@@ -841,9 +841,18 @@ test_vector.expected_status = 0;
 //printf("test vector expected status %d\n",test_vector.expected_status);
 //uint8_t *rv_index = &ldpc_dec_ref->rv_index; 
 //rv_index = ldpc_dec_ref->rv_index;
-
-                ldpc_dec->rv_index = 0; //*rv_index;
+                ldpc_dec->code_block_mode = 1; //ldpc_dec_ref->code_block_mode;
+if (ldpc_dec->code_block_mode == 0) {
+   ldpc_dec->tb_params.ea = ldpc_dec_ref->tb_params.ea;
+   ldpc_dec->tb_params.eb = ldpc_dec_ref->tb_params.eb;
+   ldpc_dec->tb_params.c = ldpc_dec_ref->tb_params.c;
+   ldpc_dec->tb_params.cab = ldpc_dec_ref->tb_params.cab;
+   ldpc_dec->tb_params.r = ldpc_dec_ref->tb_params.r;               
+} else {
                 ldpc_dec->cb_params.e = ldpc_dec_ref->cb_params.e;
+}
+
+ ldpc_dec->rv_index = 0; //*rv_index;
                 ldpc_dec->iter_count = 3; 
                 ldpc_dec->basegraph = ldpc_dec_ref->basegraph;
                 ldpc_dec->z_c = ldpc_dec_ref->z_c;
@@ -853,23 +862,35 @@ test_vector.expected_status = 0;
                 ldpc_dec->iter_max = ldpc_dec_ref->iter_max;
 //                ldpc_dec->rv_index = ldpc_dec_ref->rv_index;
                 ldpc_dec->op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE;
-                ldpc_dec->code_block_mode = 1;
+   //             ldpc_dec->code_block_mode = 1; //ldpc_dec_ref->code_block_mode;
+
+struct op_data_entries *ref_entries =
+                                &test_vector.entries[0];
+
+struct op_data_entries *ref_entries_dec =
+                                &test_vector_dec.entries[0];
+
+//ref_entries->nb_segments = ref_entries_dec->nb_segments;
 
 ret= init_entry(&test_vector, 0, ldpc_dec->cb_params.e);
 ret= init_entry(&test_vector, 2, ldpc_dec->cb_params.e);
 //printf("read test reference bg %d zc %d qm %d nfiller %d, n_cb %d iter max %d rv %d\n", ldpc_dec_ref->basegraph, ldpc_dec_ref->z_c, ldpc_dec_ref->q_m,ldpc_dec_ref->n_filler,ldpc_dec_ref->n_cb,ldpc_dec_ref->iter_max,rv_index);
 //printf("read test reference bg %d zc %d qm %d nfiller %d, n_cb %d iter max %d rv %d\n", ldpc_dec_ref->basegraph, ldpc_dec_ref->z_c, ldpc_dec->q_m,ldpc_dec->n_filler,ldpc_dec->n_cb,ldpc_dec->iter_max,ldpc_dec->rv_index);
 
-struct op_data_entries *ref_entries =
-                                &test_vector.entries[0];
-struct op_data_entries *ref_entries_dec =
-                                &test_vector_dec.entries[0];
-struct op_data_buf *seg = &ref_entries->segments[0];                          
-struct op_data_buf *seg_dec = &ref_entries_dec->segments[0];
+printf("read test nb segments %d ref %d\n",ref_entries->nb_segments, ref_entries_dec->nb_segments);
+uint8_t nbs = 1;
+if (ldpc_dec->code_block_mode ==0) nbs =2; 
+//for (int i=0;i<ref_entries_dec->nb_segments;i++) {
+for (int i=0;i<nbs;i++) {
+
+struct op_data_buf *seg = &ref_entries->segments[i];                          
+struct op_data_buf *seg_dec = &ref_entries_dec->segments[i];
+memcpy(seg->addr, seg_dec->addr, seg->length);
+}
+
 
 //printf("before seg addr %p seg dec addr %p nb segments %d\n",seg->addr,seg_dec->addr,ref_entries->nb_segments); 
 
-memcpy(seg->addr, seg_dec->addr, seg->length);
 //memcpy(ldpc_dec, ldpc_dec_ref, sizeof(struct rte_bbdev_op_ldpc_dec));
 
 //printf("seg addr %p length %d seg dec addr %p \n",seg->addr,seg->length, seg_dec->addr); 
@@ -1877,11 +1898,13 @@ validate_op_chain(struct rte_bbdev_op_data *op,
 	struct rte_mbuf *m = op->data;
 	uint8_t nb_dst_segments = orig_op->nb_segments;
 	uint32_t total_data_size = 0;
-char *data = m->buf_addr;
-memcpy(ldpc_output, data+128, (rte_pktmbuf_data_len(m) - op->offset));
+
+        uint32_t r_offset = 0;	 
+char *data; // = m->buf_addr;
+//memcpy(ldpc_output, data+128, (rte_pktmbuf_data_len(m) - op->offset));
 //ldpc_output = (int8_t *)(m->buf_addr);
-/*printf("validate op chain nb segs %d offset %d data off %d\n",m->nb_segs, op->offset, m->data_off);
-	
+printf("validate op chain nb segs %d offset %d data off %d\n",m->nb_segs, op->offset, m->data_off);
+/*	
 int l=0;
 for (l=0;l<16;l++)
 {
@@ -1898,17 +1921,20 @@ printf(" data[%d] =  %x\n",l, *(data+l+128));
 		/* Apply offset to the first mbuf segment */
 		uint16_t offset = (i == 0) ? op->offset : 0;
 		uint16_t data_len = rte_pktmbuf_data_len(m) - offset;
-		total_data_size += orig_op->segments[i].length;
+                total_data_size += orig_op->segments[i].length;
 
-//printf("segment %d offset %d length %d\n",i, offset,total_data_size);
+                data = m->buf_addr;
+                memcpy(ldpc_output+r_offset, data+m->data_off, data_len);
+		r_offset +=data_len;
+printf("segment %d offset %d length %d data length %d\n",i, offset,total_data_size,data_len);
 //		TEST_ASSERT(orig_op->segments[i].length == data_len,
 //				"Length of segment differ in original (%u) and filled (%u) op",
 //				orig_op->segments[i].length, data_len);
-	/*	TEST_ASSERT_BUFFERS_ARE_EQUAL(orig_op->segments[i].addr,
+		TEST_ASSERT_BUFFERS_ARE_EQUAL(orig_op->segments[i].addr,
 				rte_pktmbuf_mtod_offset(m, uint32_t *, offset),
 				data_len,
 			"Output buffers (CB=%u) are not equal", i);
-*/
+
 		m = m->next;
 	}
 
@@ -3990,7 +4016,7 @@ throughput_test(struct active_device *ad,
 		t_params[used_cores].queue_id = ad->queue_ids[used_cores];
 		t_params[used_cores].iter_count = 0;
 
-		rte_eal_remote_launch(throughput_function,
+		rte_eal_remote_launch(throughput_pmd_lcore_ldpc_dec,
 				&t_params[used_cores++], lcore_id);
 	}
 
@@ -5542,25 +5568,30 @@ init_entry(struct test_bbdev_vector *vector, enum op_data_type type, uint32_t da
 
 	op_data = vector->entries[type].segments;
 	nb_ops = &vector->entries[type].nb_segments;
-
+printf("init entry nb segs %d\n",*nb_ops);
 	if (*nb_ops >= RTE_BBDEV_TURBO_MAX_CODE_BLOCKS) {
 		printf("Too many segments (code blocks defined): %u, max %d!\n",
 				*nb_ops, RTE_BBDEV_TURBO_MAX_CODE_BLOCKS);
 		return -1;
 	}
 
-
+//(*nb_ops)--;
 	/* Clear new op data struct */
 	memset(op_data + *nb_ops, 0, sizeof(struct op_data_buf));
+//for (int i=0; i<nb_ops; i++) {
 if (type == 0)
 	ret = init_input(&data, data_length);
 else
 	ret = init_output(&data, data_length);
 
 	if (!ret) {
-		op_data[*nb_ops].addr = data;
-		op_data[*nb_ops].length = data_length;
+		op_data[0].addr = data;
+		op_data[0].length = data_length;
 		++(*nb_ops);
+//	ret = init_input(&data, data_length);
+//		op_data[1].addr = data;
+//		op_data[1].length = data_length;
+//		++(*nb_ops);
 	}
 
 	return ret;
@@ -5582,8 +5613,8 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
    */ 
     uint16_t enq, deq;
 	const uint16_t queue_id = 1; //tp->queue_id;
-	const uint16_t burst_sz = 32; //tp->op_params->burst_sz;
-	const uint16_t num_ops = 32; //tp->op_params->num_to_process;
+	const uint16_t burst_sz = 2; //tp->op_params->burst_sz;
+	const uint16_t num_ops = 2; //tp->op_params->num_to_process;
 	struct rte_bbdev_dec_op *ops_enq[num_ops];
 	struct rte_bbdev_dec_op *ops_deq[num_ops];
         struct thread_params *tp=&t_params_tp[0];
@@ -5593,6 +5624,9 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 	int i, j, ret;
 	struct rte_bbdev_info info;
 	uint16_t num_to_enq;
+        uint32_t offset=0;
+	uint32_t data_len=0;
+
 //        bufs->inputs->data->buf_addr  = p_llr;	
 //        ops_enq[i]->ldpc_dec.input.data->buf_addr = p_llr;
 
@@ -5643,14 +5677,22 @@ ldpc_dec->iter_count = 3;
                 ldpc_dec->iter_max = 8; 
                 ldpc_dec->rv_index = rv; 
                 ldpc_dec->op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE;
-                ldpc_dec->code_block_mode = 1; 
+                ldpc_dec->code_block_mode = (C>1)?1:0; 
+ldpc_dec->tb_params.ea = E;
+ldpc_dec->tb_params.eb = E;
+ldpc_dec->tb_params.c = C;
+ldpc_dec->tb_params.r = 0;
 
 printf("reference bg %d zc %d qm %d nfiller %d, n_cb %d iter max %d rv %d\n", ldpc_dec->basegraph, ldpc_dec->z_c, ldpc_dec->q_m,ldpc_dec->n_filler,ldpc_dec->n_cb,ldpc_dec->iter_max,ldpc_dec->rv_index);
 
 struct op_data_entries *ref_entries =
 				&test_vector_dec.entries[0];
-ref_entries->segments[0].addr = (int32_t *)p_llr;
+ref_entries->nb_segments = C;
+for (i=0;i<C;i++) {
 
+ref_entries->segments[i].addr = (int32_t *)(p_llr+offset);
+offset += E;
+}
 //memcpy(ref_entries->segments[0].addr, p_llr, 8448);
 
 /*printf("ref seg addr %p +384 %p data %x\n", ref_entries->segments[0].addr,(ref_entries->segments[0].addr+384), *(ref_entries->segments[0].addr+384));
@@ -5661,14 +5703,14 @@ printf("ref seg addr +384 %p data %x\n", (ref_entries->segments[0].addr+384+l), 
 
 snprintf(test_params.test_vector_filename,sizeof(test_params.test_vector_filename),"%s", argv_re[2]); 
 
-test_params.num_ops=32; 
-test_params.burst_sz=32;
+test_params.num_ops=2; 
+test_params.burst_sz=2;
 test_params.num_lcores=1;		
 test_params.num_tests = 1;
 run_all_tests();
 char *data = ldpc_output;
-memcpy(&p_out[0], data, E);
-
+data_len = (p_decParams->BG==1)?(22*p_decParams->Z):(10*p_decParams->Z);
+memcpy(&p_out[0], data, C*data_len);
 //p_out = ldpc_output;
 
 //for (i=0;i<8;i++)   

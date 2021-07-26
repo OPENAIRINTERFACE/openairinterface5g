@@ -308,7 +308,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   uint8_t l, number_dmrs_symbols = 0;
   uint32_t G;
   uint16_t start_symbol, number_symbols, nb_re_dmrs;
-
+  uint8_t enable_ldpc_offload = 1;
   start_symbol = pusch_pdu->start_symbol_index;
   number_symbols = pusch_pdu->nr_of_symbols;
 
@@ -365,12 +365,13 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                     slot_rx,
                     harq_pid,
                     G);
-
-  while (gNB->nbDecode > 0) {
+  if (enable_ldpc_offload ==0) {
+   while (gNB->nbDecode > 0) {
     notifiedFIFO_elt_t *req=pullTpool(gNB->respDecode, gNB->threadPool);
     nr_postDecode(gNB, req);
     delNotifiedFIFO_elt(req);
-  }
+   }
+  } 
   stop_meas(&gNB->ulsch_decoding_stats);
 }
 
