@@ -49,7 +49,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
 void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB);
 
-void gNB_I0_measurements(PHY_VARS_gNB *gNB,int first_symb,int num_symb);
+void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot,int first_symb,int num_symb);
 
 void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol);
 

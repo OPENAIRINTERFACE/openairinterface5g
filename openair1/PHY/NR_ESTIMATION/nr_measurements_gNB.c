@@ -96,7 +96,7 @@ void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
 
 
-void gNB_I0_measurements(PHY_VARS_gNB *gNB,int first_symb,int num_symb) {
+void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb) {
 
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   NR_gNB_COMMON *common_vars = &gNB->common_vars;
@@ -111,7 +111,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int first_symb,int num_symb) {
   n0_power_tot2=0;
   for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
     n0_power_tot=0;
-    offset0 = (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
+    offset0 = (slot&3)*(frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size) + (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
     if ((rb_mask[rb>>5]&(1<<(rb&31))) == 0) {  // check that rb was not used in this subframe
       nb_rb++;
       for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {

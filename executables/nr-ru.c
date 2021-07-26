@@ -1371,11 +1371,12 @@ void *ru_thread( void *param ) {
       //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
 
       LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
-      LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
+     /* LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
       
       for (aa=0;aa<ru->nb_rx;aa++)
 	memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
+    */
       if (IS_SOFTMODEM_DOSCOPE && RC.gNB[0]->scopeData) 
          ((scopeData_t*)RC.gNB[0]->scopeData)->slotFunc(ru->common.rxdataF[0],proc->tti_rx, RC.gNB[0]->scopeData);
       // Do PRACH RU processing

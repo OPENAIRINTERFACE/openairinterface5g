@@ -648,7 +648,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
       AssertFatal(0, "Valid UL formats are 0_0 and 0_1\n");
   }
 
-  LOG_D(NR_MAC,
+  LOG_I(NR_MAC,
         "%s() ULDCI type 0 payload: freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
         __func__,
         dci_pdu_rel15->frequency_domain_assignment.val,
@@ -2053,7 +2053,7 @@ bool find_free_CCE(module_id_t module_id,
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid][slot];
   const int m = RC.nrmac[module_id]->UE_info.num_pdcch_cand[UE_id][cid];
-  if (UE_id >= 0) LOG_I(NR_MAC,"calling allocate_nr_CCEs with L %d, nr_of_candidates %d, Y %x\n",sched_ctrl->aggregation_level,nr_of_candidates,Y);
+  if (UE_id >= 0) LOG_D(NR_MAC,"calling allocate_nr_CCEs with L %d, nr_of_candidates %d, Y %x\n",sched_ctrl->aggregation_level,nr_of_candidates,Y);
   sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
                                            sched_ctrl->active_bwp,
                                            sched_ctrl->coreset,
