@@ -25,7 +25,7 @@
 #---------------------------------------------------------------------
 
 #USAGE: 
-#	log=Log_Mgt(IPAddress,Password,Path)
+#	log=Log_Mgt(Username,IPAddress,Password,Path)
 #	log.LogRotation()
 
 
@@ -38,7 +38,8 @@ import math
 
 class Log_Mgt:
 
-	def __init__(self,IPAddress,Password,Path):
+	def __init__(self,Username, IPAddress,Password,Path):
+		self.Username=Username
 		self.IPAddress=IPAddress
 		self.Password=Password
 		self.path=Path
@@ -49,7 +50,7 @@ class Log_Mgt:
 
 
 	def __CheckAvailSpace(self):
-		HOST=self.IPAddress
+		HOST=self.Username+'@'+self.IPAddress
 		COMMAND="df "+ self.path
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		result = ssh.stdout.readlines()
@@ -58,7 +59,7 @@ class Log_Mgt:
 		return tmp[3] #return avail space from the line
 
 	def __GetOldestFile(self):
-		HOST=self.IPAddress
+		HOST=self.Username+'@'+self.IPAddress
 		COMMAND="ls -rtl "+ self.path #-rtl will bring oldest file on top
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		result = ssh.stdout.readlines()
@@ -68,7 +69,7 @@ class Log_Mgt:
 
 
 	def __AvgSize(self):
-		HOST=self.IPAddress
+		HOST=self.Username+'@'+self.IPAddress
 		COMMAND="ls -rtl "+ self.path
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		result = ssh.stdout.readlines()
@@ -94,7 +95,7 @@ class Log_Mgt:
 		logging.debug("Avail Space : " + str(avail_space) + " / Artifact Avg Size : " + str(avg_size))
 		if avail_space < 2*avg_size: #reserved space is 2x artifact file ; oldest file will be deleted
 			oldestfile=self.__GetOldestFile()
-			HOST=self.IPAddress
+			HOST=self.Username+'@'+self.IPAddress
 			COMMAND="echo " + self.Password + " | sudo -S rm "+ self.path + "/" + oldestfile
 			logging.debug(COMMAND)
 			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)

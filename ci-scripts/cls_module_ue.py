@@ -168,7 +168,7 @@ class Module_UE:
 			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S zip -r '+destination+' '+source+' &','\$', 10)
 			mySSH.close()
 			#post action : log cleaning to make sure enough space is reserved for the next run
-			Log_Mgt=cls_log_mgt.Log_Mgt(self.HostIPAddress, self.HostPassword, self.LogStore)
+			Log_Mgt=cls_log_mgt.Log_Mgt(self.HostUsername,self.HostIPAddress, self.HostPassword, self.LogStore)
 			Log_Mgt.LogRotation()
 		else:
 			destination=""
