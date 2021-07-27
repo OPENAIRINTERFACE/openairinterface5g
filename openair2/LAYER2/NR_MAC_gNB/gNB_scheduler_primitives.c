@@ -122,6 +122,36 @@ static inline uint8_t get_max_cces(uint8_t scs) {
   return (nr_max_number_of_cces_per_slot[scs]);
 }
 
+void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
+
+  //TODO first basic implementation of dmrs port selection
+  //     only vaild for a single codeword
+  //     for now it assumes a selection of Nl consecutive dmrs ports
+  //     and a single front loaded symbol
+  //     dmrs_ports_id is the index of Tables 7.3.1.2.2-1/2/3/4
+
+  switch (ps->nrOfLayers) {
+    case 1:
+      ps->dmrs_ports_id = 0;
+      ps->numDmrsCdmGrpsNoData = 1;
+      break;
+    case 2:
+      ps->dmrs_ports_id = 2;
+      ps->numDmrsCdmGrpsNoData = 1;
+      break;
+    case 3:
+      ps->dmrs_ports_id = 9;
+      ps->numDmrsCdmGrpsNoData = 2;
+      break;
+    case 4:
+      ps->dmrs_ports_id = 10;
+      ps->numDmrsCdmGrpsNoData = 2;
+      break;
+    default:
+      AssertFatal(1==0,"Number of layers %d\n not supported or not valid\n",ps->nrOfLayers);
+  }
+}
+
 NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
                                      NR_BWP_Downlink_t *bwp,
                                      NR_SearchSpace_t *ss,
@@ -295,7 +325,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   }
   else ps->mcsTableIdx = 0;
 
-  ps->numDmrsCdmGrpsNoData = num_dmrs_cdm_grps_no_data;
+  set_dl_dmrs_ports(ps);
   ps->dmrsConfigType = bwp!=NULL ? (bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
 
   // if no data in dmrs cdm group is 1 only even REs have no data
