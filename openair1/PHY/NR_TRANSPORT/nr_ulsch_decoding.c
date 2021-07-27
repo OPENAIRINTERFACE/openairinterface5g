@@ -627,12 +627,12 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #endif
     no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
   }
-      	for (int k=0;k<8;k++)
+      	/*for (int k=0;k<8;k++)
         {
         printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
         printf("llrprocbuf [%d] =  %x adr %p\n", k, llrProcBuf[k], llrProcBuf+k);
         }
-   
+  */ 
 
         memcpy(harq_process->b+offset,
                harq_process->c[r],
