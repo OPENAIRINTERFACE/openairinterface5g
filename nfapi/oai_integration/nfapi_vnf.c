@@ -596,7 +596,7 @@ extern pthread_mutex_t nfapi_sync_mutex;
 extern int nfapi_sync_var;
 
 int phy_sync_indication(struct nfapi_vnf_p7_config *config, uint8_t sync) {
-  printf("[VNF] SYNC %s\n", sync==1 ? "ACHIEVED" : "LOST");
+  //printf("[VNF] SYNC %s\n", sync==1 ? "ACHIEVED" : "LOST");
 
   if (sync==1 && nfapi_sync_var!=0) {
     
@@ -1019,7 +1019,9 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
 int phy_nr_crc_indication(nfapi_nr_crc_indication_t *ind) {
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
-  ind->number_crcs = 1;
+
+  gNB->UL_INFO.crc_ind = *ind;
+
   if (ind->number_crcs > 0)
     gNB->UL_INFO.crc_ind.crc_list = malloc(sizeof(nfapi_nr_crc_t)*ind->number_crcs);
 
@@ -1034,6 +1036,8 @@ int phy_nr_crc_indication(nfapi_nr_crc_indication_t *ind) {
 int phy_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) {
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  gNB->UL_INFO.rx_ind = *ind;
 
   if (ind->number_of_pdus > 0)
     gNB->UL_INFO.rx_ind.pdu_list = malloc(sizeof(nfapi_nr_rx_data_pdu_t)*ind->number_of_pdus);
@@ -1051,12 +1055,14 @@ int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind) {
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
+  gNB->UL_INFO.uci_ind = *ind;
+
   if (ind->num_ucis > 0)
     gNB->UL_INFO.uci_ind.uci_list = malloc(sizeof(nfapi_nr_uci_t)*ind->num_ucis);
 
   for (int i=0; i<ind->num_ucis; i++)
     memcpy(&gNB->UL_INFO.uci_ind.uci_list[i], &ind->uci_list[i], sizeof(ind->uci_list[0]));
-
+  //printf("UCI ind written to UL_info: num_ucis: %d, PDU_type : %d. \n", ind->num_ucis, ind->uci_list[0].pdu_type);
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 
   return 1;
@@ -1065,6 +1071,8 @@ int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind) {
 int phy_nr_srs_indication(nfapi_nr_srs_indication_t *ind) {
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  gNB->UL_INFO.srs_ind = *ind;
 
   if (ind->number_of_pdus > 0)
     gNB->UL_INFO.srs_ind.pdu_list = malloc(sizeof(nfapi_nr_srs_indication_pdu_t)*ind->number_of_pdus);
@@ -1086,6 +1094,8 @@ int phy_nr_srs_indication(nfapi_nr_srs_indication_t *ind) {
 int phy_nr_rach_indication(nfapi_nr_rach_indication_t *ind) {
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  gNB->UL_INFO.rach_ind = *ind;
 
   if (ind->number_of_pdus > 0)
     gNB->UL_INFO.rach_ind.pdu_list = malloc(sizeof(nfapi_nr_prach_indication_pdu_t)*ind->number_of_pdus);

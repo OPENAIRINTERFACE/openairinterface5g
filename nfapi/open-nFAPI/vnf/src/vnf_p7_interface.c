@@ -97,7 +97,7 @@ struct timespec timespec_sub(struct timespec lhs, struct timespec rhs)
 // send indications to mac
 int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 {
-	uint16_t vnf_frame; uint8_t vnf_slot;
+	uint16_t vnf_frame; uint8_t vnf_slot; uint16_t slot_scheduled;
 	if(config == 0)
 		return -1;
 
@@ -265,6 +265,21 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 			}
 			*/
 			
+			if(setup_time > 10 && slot_scheduled == 0){
+
+				// Call the scheduler
+				struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+				pthread_mutex_lock(&gNB->UL_INFO_mutex);
+				gNB->UL_INFO.frame     = vnf_frame;
+				gNB->UL_INFO.slot      = vnf_slot;
+
+				gNB->UL_INFO.module_id = gNB->Mod_id;
+				gNB->UL_INFO.CC_id     = gNB->CC_id;
+				gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+				pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+				//printf("Scheduler called at SFN/slot %d.%d. \n",vnf_frame,vnf_slot);
+				slot_scheduled = 1;
+			}
 
 //long wraps = pselect_timeout.tv_nsec % 1e9;
 
@@ -410,18 +425,18 @@ struct timespec current_time;
 	clock_gettime(CLOCK_MONOTONIC, &current_time);
 			// pselect timed out
 			
-			if(setup_time > 10){
-				// Call the scheduler
-				struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
-				pthread_mutex_lock(&gNB->UL_INFO_mutex);
-				gNB->UL_INFO.frame     = vnf_frame;
-				gNB->UL_INFO.slot      = vnf_slot;
+			// if(setup_time > 10){
+			// 	// Call the scheduler
+			// 	struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+			// 	pthread_mutex_lock(&gNB->UL_INFO_mutex);
+			// 	gNB->UL_INFO.frame     = vnf_frame;
+			// 	gNB->UL_INFO.slot      = vnf_slot;
 
-				gNB->UL_INFO.module_id = gNB->Mod_id;
-				gNB->UL_INFO.CC_id     = gNB->CC_id;
-				gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
-				pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-			}
+			// 	gNB->UL_INFO.module_id = gNB->Mod_id;
+			// 	gNB->UL_INFO.CC_id     = gNB->CC_id;
+			// 	gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+			// 	pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+			// }
 
 			while(curr != 0)
 			{
@@ -437,7 +452,7 @@ struct timespec current_time;
 				{
 				curr->slot++;
 				}
-				printf("Frame = %d, slot = %d in VNF main loop. \n",curr->sfn,curr->slot);
+				//printf("Frame = %d, slot = %d in VNF main loop. \n",curr->sfn,curr->slot);
 				vnf_frame = curr->sfn; vnf_slot = curr->slot;
 
 				struct timespec curr_time;
@@ -450,17 +465,14 @@ struct timespec current_time;
 				curr = curr->next;	
 			}
 			send_mac_slot_indications(vnf_p7);
-			
+			slot_scheduled = 0;
 		}
 		else if(selectRetval > 0)
 		{
 			// have a p7 message
 			if(FD_ISSET(vnf_p7->socket, &rfds))
 			{	
-				printf("P7 message received \n");
-				vnf_nr_p7_read_dispatch_message(vnf_p7); 
-
-				
+				vnf_nr_p7_read_dispatch_message(vnf_p7); 				
 			}
 		}
 		else
@@ -902,7 +914,6 @@ int nfapi_vnf_p7_ul_tti_req(nfapi_vnf_p7_config_t* config, nfapi_nr_ul_tti_reque
 {
 	if(config == 0 || req == 0)
 		return -1;
-
 	vnf_p7_t* vnf_p7 = (vnf_p7_t*)config;
 	return vnf_nr_p7_pack_and_send_p7_msg(vnf_p7, &req->header);
 }

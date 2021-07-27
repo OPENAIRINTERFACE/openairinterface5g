@@ -1330,8 +1330,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     if (harq_id < 0) {
       /* PP has not selected a specific HARQ Process, get a new one */
       harq_id = sched_ctrl->available_ul_harq.head;
-      // if(NFAPI_MODE == NFAPI_MODE_VNF)
-      //   harq_id = 1;
+      //printf("SFN/slot %d.%d harq id = %d \n", frame, slot, harq_id);
       AssertFatal(harq_id >= 0,
                   "no free HARQ process available for UE %d\n",
                   UE_id);
@@ -1351,8 +1350,6 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     add_tail_nr_list(&sched_ctrl->feedback_ul_harq, harq_id);
     cur_harq->feedback_slot = sched_pusch->slot;
     cur_harq->is_waiting = true;
-    // if (NFAPI_MODE == NFAPI_MODE_VNF)
-    //   cur_harq->is_waiting = 0;
     
 
     int rnti_types[2] = { NR_RNTI_C, 0 };

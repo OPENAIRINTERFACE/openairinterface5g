@@ -88,8 +88,8 @@ void nr_fill_pucch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
                    nfapi_nr_pucch_pdu_t *pucch_pdu) {
-  if (NFAPI_MODE == NFAPI_MODE_PNF)
-    gNB->pucch[0]->active = 0;
+  // if (NFAPI_MODE == NFAPI_MODE_PNF)
+  //   gNB->pucch[0]->active = 0;
 
   int id = nr_find_pucch(pucch_pdu->rnti,frame,slot,gNB);
   AssertFatal( (id>=0) && (id<NUMBER_OF_NR_PUCCH_MAX),

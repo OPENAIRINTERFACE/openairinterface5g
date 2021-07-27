@@ -4126,7 +4126,7 @@ static uint8_t unpack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 
 static uint8_t unpack_dl_tti_ssb_pdu_rel15_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
 {	
-	printf("ssb received and unpacked. \n");
+	//printf("ssb received and unpacked. \n");
 	nfapi_nr_dl_tti_ssb_pdu_rel15_t* value = (nfapi_nr_dl_tti_ssb_pdu_rel15_t*)tlv;
 
 	return(
@@ -6429,7 +6429,6 @@ static uint8_t unpack_nr_crc_indication(uint8_t **ppReadPackedMsg, uint8_t *end,
 		return 0;
 	}
 
-	printf("Done \n");
 return 1;
 }
 

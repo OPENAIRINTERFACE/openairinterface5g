@@ -1150,14 +1150,13 @@ int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
   if (proc ==NULL) 
     proc = &gNB->proc.L1_proc;
-
+  //int slot_tx = req->Slot + 6; //Ref for PNF is slot_rx, so align slot number with tx thread before passing UL_DCI info
   for (int i=0; i<req->numPdus; i++) {
     //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d]\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
     if (req->ul_dci_pdu_list[i].PDUType == 0) {
       //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d] - NFAPI_HI_DCI0_DCI_PDU_TYPE\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
        nfapi_nr_ul_dci_request_pdus_t *ul_dci_req_pdu = &req->ul_dci_pdu_list[i]; 
-       int SFN=req->SFN+2;
-      handle_nfapi_nr_ul_dci_pdu(gNB, SFN, req->Slot, ul_dci_req_pdu); 
+      handle_nfapi_nr_ul_dci_pdu(gNB, req->SFN, req->Slot, ul_dci_req_pdu); 
     } 
     else {
       LOG_E(PHY,"[PNF] UL_DCI_REQ sfn_slot:%d PDU[%d] - unknown pdu type:%d\n", NFAPI_SFNSLOT2DEC(req->SFN, req->Slot), i, req->ul_dci_pdu_list[i].PDUType);
@@ -1217,21 +1216,21 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
 
   int sfn = req->SFN;
   int slot =  req->Slot;
-
+  //int slot_tx = slot + 6; // ref for PNF is slot_rx, so increment by slot ahead
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
   if (proc==NULL)
      proc = &gNB->proc.L1_proc;
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu_list = req->dl_tti_request_body.dl_tti_pdu_list;
 
   if (req->dl_tti_request_body.nPDUs)
-    NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() TX:%d/%d RX:%d/%d; sfn:%d, slot:%d, nGroup:%u, nPDUs: %u, nUE: %u, PduIdx: %u,\n",
-                __FUNCTION__, proc->frame_tx, proc->slot_tx, proc->frame_rx, proc->slot_rx, // TODO: change subframes to slot
-                req->SFN,
-                req->Slot,
-                req->dl_tti_request_body.nGroup,
-                req->dl_tti_request_body.nPDUs,
-                req->dl_tti_request_body.nUe,
-                req->dl_tti_request_body.PduIdx);
+    // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() TX:%d/%d RX:%d/%d; sfn:%d, slot:%d, nGroup:%u, nPDUs: %u, nUE: %u, PduIdx: %u,\n",
+    //             __FUNCTION__, proc->frame_tx, proc->slot_tx, proc->frame_rx, proc->slot_rx, // TODO: change subframes to slot
+    //             req->SFN,
+    //             req->Slot,
+    //             req->dl_tti_request_body.nGroup,
+    //             req->dl_tti_request_body.nPDUs,
+    //             req->dl_tti_request_body.nUe,
+    //             req->dl_tti_request_body.PduIdx);
 
   for (int i=0; i<req->dl_tti_request_body.nPDUs; i++) {
     // TODO: enable after adding gNB PDCCH:
@@ -1435,13 +1434,10 @@ int pnf_phy_tx_req(nfapi_pnf_p7_config_t *pnf_p7, nfapi_tx_request_t *req) {
 
 
 int pnf_phy_ul_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_ul_tti_request_t *req) {
-  // if (0)LOG_D(PHY,"[PNF] UL_CONFIG_REQ %s() sfn_sf:%d pdu:%d rach_prach_frequency_resources:%d srs_present:%u\n",
-  //               __FUNCTION__,
-  //               NFAPI_SFNSF2DEC(req->sfn_sf),
-  //               req->ul_config_request_body.number_of_pdus,
-  //               req->ul_config_request_body.rach_prach_frequency_resources,
-  //               req->ul_config_request_body.srs_present
-  //              );
+  LOG_D(PHY,"[PNF] UL_TTI_REQ recvd, writing into structs, SFN/slot:%d.%d pdu:%d \n",
+                req->SFN,req->Slot,
+                req->n_pdus
+               );
 
   if (RC.ru == 0) {
     return -1;

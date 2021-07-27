@@ -133,7 +133,7 @@ void tx_func(void *param) {
 }
 
 void rx_func(void *param) {
-
+  
   processingData_L1_t *info = (processingData_L1_t *) param;
   PHY_VARS_gNB *gNB = info->gNB;
   int frame_rx = info->frame_rx;
@@ -146,15 +146,12 @@ void rx_func(void *param) {
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************
-  // NFAPI not yet supported for NR - this code has to be revised
+
   if (NFAPI_MODE == NFAPI_MODE_PNF) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
-    //add_subframe(&frame, &subframe, 4);
-    //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
-    //LOG_D(PHY, "oai_subframe_ind(frame:%u, subframe:%d) - NOT CALLED ********\n", frame, subframe);
+    //LOG_D(PHY, "oai_slot_ind(frame:%u, slot:%d) ********\n", frame_rx, slot_rx);
     start_meas(&nfapi_meas);
-    // oai_subframe_ind(frame_rx, slot_rx);
-    oai_slot_ind(frame_rx, slot_rx);
+    oai_slot_ind(frame_tx, slot_tx);
     stop_meas(&nfapi_meas);
 
     /*if (gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus||
@@ -217,6 +214,7 @@ void rx_func(void *param) {
         gNB->pucch[j]->pucch_pdu.rnti = 0;
         pucch_removed++;
       }
+
 #if 0
     for (j = 0; j < NUMBER_OF_NR_PDCCH_MAX; j++)
       gNB->pdcch_pdu[j].frame = -1;
@@ -258,8 +256,7 @@ void rx_func(void *param) {
 
   // Call the scheduler
 
-  if (NFAPI_MODE == NFAPI_MONOLITHIC){
-      start_meas(&gNB->ul_indication_stats);
+  start_meas(&gNB->ul_indication_stats);
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
@@ -268,7 +265,7 @@ void rx_func(void *param) {
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
   stop_meas(&gNB->ul_indication_stats);
-  }  
+ 
   
   notifiedFIFO_elt_t *res; 
 

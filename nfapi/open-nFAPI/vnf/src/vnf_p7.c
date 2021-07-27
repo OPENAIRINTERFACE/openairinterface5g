@@ -457,7 +457,7 @@ int send_mac_subframe_indications(vnf_p7_t* vnf_p7)
 int vnf_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* p7_info, uint8_t* msg, const uint32_t len)
 {
 	int sendto_result = sendto(vnf_p7->socket, msg, len, 0, (struct sockaddr*)&(p7_info->remote_addr), sizeof(p7_info->remote_addr)); 
-	//printf("\nSending p7 message sfn=%d,slot=%d\n",vnf_p7->p7_connections->sfn,vnf_p7->p7_connections->slot);
+	//printf("P7 msg sent \n");
 	if(sendto_result != len)
 	{
 		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() sendto_result %d %d\n", __FUNCTION__, sendto_result, errno);
@@ -534,7 +534,7 @@ int vnf_nr_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* 
 				nfapi_p7_update_transmit_timestamp(buffer, calculate_transmit_timestamp(p7_connection->sfn, p7_connection->slot, vnf_p7->slot_start_time_hr));	
 
 				send_result = vnf_send_p7_msg(vnf_p7, p7_connection,  &tx_buffer[0], segment_size);
-				//printf("segment %d \n", segment);
+
 			}
 		}
 		else
@@ -551,7 +551,6 @@ int vnf_nr_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* 
 		}
 
 		p7_connection->sequence_number++;
-
 		return send_result;
 	}
 	else
