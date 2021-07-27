@@ -306,16 +306,22 @@ static void *nr_feptx_thread(void *param) {
 
       if (ru->do_precoding == 1) {
         for(i=0; i<ru->nb_log_antennas; ++i) {
-	   memcpy((void*) &ru->common.beam_id[i][slot*fp->symbols_per_slot+l],
-	          (void*) &ru->gNB_list[0]->common_vars.beam_id[i][slot*fp->symbols_per_slot+l],
-	          (fp->symbols_per_slot>>1)*sizeof(uint8_t));
+          memcpy((void*) &ru->common.beam_id[i][slot*fp->symbols_per_slot+l],
+                 (void*) &ru->gNB_list[0]->common_vars.beam_id[i][slot*fp->symbols_per_slot+l],
+                 (fp->symbols_per_slot>>1)*sizeof(uint8_t));
          }
       }
 
       if (ru->nb_tx == 1 && ru->nb_log_antennas == 1) {
-	memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
-	       (void*)&ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset + l*fp->ofdm_symbol_size],
-	       (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
+        memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
+               (void*)&ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset + l*fp->ofdm_symbol_size],
+               (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
+      }
+      else if (ru->do_precoding == 0) {
+        int gNB_tx = ru->gNB_list[0]->frame_parms.nb_antennas_tx;
+        memcpy((void*)&ru->common.txdataF_BF[aa][l*fp->ofdm_symbol_size],
+               (void*)&ru->gNB_list[0]->common_vars.txdataF[aa%gNB_tx][txdataF_offset + l*fp->ofdm_symbol_size],
+               (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
       }
       else if (ru->do_precoding == 0) {
         int gNB_tx = ru->gNB_list[0]->frame_parms.nb_antennas_tx;

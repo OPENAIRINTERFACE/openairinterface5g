@@ -158,12 +158,13 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue,
     }
   }
 
-  int k2;
-
   if (power_config->twoPUCCH_PC_AdjustmentStates > 1) {
     LOG_E(PHY,"PUCCH power control adjustment states with 2 states not yet implemented : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
     return (PUCCH_POWER_DEFAULT);
   }
+
+#if 0
+  int k2;
 
   /* response to a detection by the UE of a DCI format 1_0 or DCI format 1_1 */
   //int K_PUCCH = 0;
@@ -201,6 +202,7 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue,
     }
     //K_PUCCH = N_SYMB_SLOT * k2; /* the product of a number of symbols per slot and the minimum of the values provided by higher layer parameter k2 */
   }
+#endif
 
   int contributor = (10 * log10((double)(pow(2,(ue->frame_parms.numerology_index)) * nb_of_prbs)));
 

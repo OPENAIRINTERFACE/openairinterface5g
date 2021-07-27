@@ -445,7 +445,8 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   int rb_id;
   int i;
 
-  if(IS_SOFTMODEM_NOS1){
+  if(IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN){
+    LOG_D(PDCP, "IP packet received, to be sent to TUN interface");
     len = write(nas_sock_fd[0], buf, size);
     if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
@@ -534,7 +535,7 @@ static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   int srb_id;
   int i;
 
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < sizeofArray(ue->srb) ; i++) {
     if (entity == ue->srb[i]) {
       srb_id = i+1;
       goto srb_found;
@@ -577,7 +578,7 @@ static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   int i;
   mem_block_t *memblock;
 
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < sizeofArray(ue->srb) ; i++) {
     if (entity == ue->srb[i]) {
       srb_id = i+1;
       goto srb_found;
@@ -903,6 +904,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
       //kUPenc != NULL ||
       pmch_InfoList_r9 != NULL /*||
       defaultDRB != NULL */) {
+    LOG_I(PDCP,"Releasing DRBs, oops\n");
     TODO;
   }
 
@@ -926,6 +928,10 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
     /* todo */
   }
   
+  if (drb2release_list != NULL) {
+    // TODO
+  }
+
   if (drb2release_list != NULL) {
     // TODO
   }

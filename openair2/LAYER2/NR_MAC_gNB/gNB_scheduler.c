@@ -88,7 +88,7 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
     stroff+=sprintf(output+stroff,"UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_DTX %d, ulsch_errors %d\n",
                     UE_id,
                     stats->ulsch_rounds[0], stats->ulsch_rounds[1],
-                    stats->ulsch_rounds[2], stats->ulsch_rounds[3], 
+                    stats->ulsch_rounds[2], stats->ulsch_rounds[3],
                     stats->ulsch_DTX,
                     stats->ulsch_errors);
     stroff+=sprintf(output+stroff,
@@ -315,7 +315,7 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
-  if (slot>64) return false; //quickfix for FR2 where there are more than 64 slots (bitmap to be removed)
+  if (slot>=64) return false; //quickfix for FR2 where there are more than 64 slots (bitmap to be removed)
   return (bitmap >> slot) & 0x01;
 }
 

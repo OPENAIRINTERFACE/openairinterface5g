@@ -450,7 +450,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
                      (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + txdataF_offset+ k)],
                      NR_NB_SC_PER_RB*sizeof(int32_t));
             else
-              memset((void*)&txdataF[ap][rel15->StartSymbolIndex*frame_parms->ofdm_symbol_size + txdataF_offset +k],
+              memset((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
                      0,
                      NR_NB_SC_PER_RB*sizeof(int32_t));
             k += NR_NB_SC_PER_RB;

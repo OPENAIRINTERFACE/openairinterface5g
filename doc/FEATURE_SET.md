@@ -257,7 +257,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  FDD
 *  Normal CP
 *  30 kHz subcarrier spacing
-*  Bandwidths up to 80MHz (217 Physical Resource Blocks)
+*  Bandwidths: 10, 20, 40, 80, 100MHz (273 Physical Resource Blocks)
 *  Intermediate downlink and uplink frequencies to interface with IF equipment
 *  Single antenna port (single beam)
 *  Slot format: 14 OFDM symbols in UL or DL
@@ -277,10 +277,20 @@ The following features are valid for the gNB and the 5G-NR UE.
    - user-specific search space configured by RRC
    - DCI formats: 00, 10 (01 and 11 **under integration**)
 *  Generation of NR-PDSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
-   - Single symbol DMRS, DMRS-TypeA-Position Pos2,  DMRS configuration type 1
-   - PDSCH mapping type A
-*  NR-CSI Generation of sequence at PHY (**under integration**)
+   - PDSCH mapping type A and B
+   - DMRS configuration type 1 and 2
+   - Single and multiple DMRS symbols
+   - PTRS support
+   - Support for 1, 2 and 4 TX antennas
+   - Support for up to 2 layers (currently limited to DMRS configuration type 2)
+*  NR-CSIRS Generation of sequence at PHY
 *  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
+   - PUSCH mapping type A and B
+   - DMRS configuration type 1 and 2
+   - Single and multiple DMRS symbols
+   - PTRS support
+   - Support for 1 RX antenna
+   - Support for 1 layer
 *  NR-PUCCH 
    - Format 0 (2 bits, mainly for ACK/NACK)
    - Format 2 (up to 64 bits, mainly for CSI feedback)
@@ -309,6 +319,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 - MAC <-> PHY data interface using FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
 - Scheduler procedures for SIB1
 - Scheduler procedures for RA
+- Scheduler procedures for CSI-RS
 - MAC downlink scheduler (fixed allocations)
 - MAC header generation (including timing advance)
 - ACK / NACK handling and HARQ procedures for downlink
@@ -320,27 +331,32 @@ The following features are valid for the gNB and the 5G-NR UE.
 - Creates TUN interface to PDCP to inject and receive user-place traffic
 - Will only work with OAI gNB configured in the same mode
 
-##  UE PHY Layer ##
+##  NR UE PHY Layer ##
 
 *  Initial synchronization
 *  Time tracking based on PBCH DMRS
-*  Time tracking based on PBCH DMRS
 *  Frequency offset estimation
-*  PBCH RX
-*  PDCCH RX
-*  PDSCH RX, including a first version of dual stream receiver for PDSCH  
 *  30KHz SCS for FR1 and 120 KHz SCS for FR2
-*  Generation of NR-PSS/NR-SSS
+*  Reception of NR-PSS/NR-SSS
 *  NR-PBCH supports multiple SSBs and flexible periodicity
-*  Generation of NR-PDCCH for SIB1 (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc)
+*  Reception of NR-PDCCH for SIB1 (including reception of DCI, polar decoding, de-scrambling, de-modulation, RB de-mapping, etc)
    - common search space configured by MIB
    - user-specific search space configured by RRC
    - DCI formats: 00, 10 (01 and 11 **under integration**)
-*  Generation of NR-PDSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
-   - Single symbol DMRS, DMRS-TypeA-Position Pos2,  DMRS configuration type 1
-   - PDSCH mapping type A
-*  NR-CSI Generation of sequence at PHY (**under integration**)
+*  Reception of NR-PDSCH (including Segmentation, LDPC decoding, rate de-matching, de-scrambling, de-modulation, RB de-mapping, etc).
+   - PDSCH mapping type A and B
+   - DMRS configuration type 1 and 2
+   - Single and multiple DMRS symbols
+   - PTRS support
+   - Support for 1, 2 and 4 RX antennas
+   - Support for up to 2 layers (currently limited to DMRS configuration type 2)
 *  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
+   - PUSCH mapping type A and B
+   - DMRS configuration type 1 and 2
+   - Single and multiple DMRS symbols
+   - PTRS support
+   - Support for 1 TX antenna
+   - Support for 1 layer
 *  NR-PUCCH 
    - Format 0 (2 bits, mainly for ACK/NACK)
    - Format 2 (up to 64 bits, mainly for CSI feedback)
@@ -351,7 +367,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  Encoder and decoder for short block
 
 
-## UE Higher Layers ##
+## NR UE Higher Layers ##
 
 **UE MAC**
 *  Minimum system information (MSI)

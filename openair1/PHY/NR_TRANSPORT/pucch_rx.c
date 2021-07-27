@@ -286,8 +286,10 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #endif
     }
   }
+
   int32_t corr_re[2];
   int32_t corr_im[2];
+
   int seq_index;
   int64_t temp;
   int64_t av_corr=0;

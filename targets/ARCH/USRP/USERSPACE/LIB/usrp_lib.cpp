@@ -582,7 +582,6 @@ void *trx_usrp_write_thread(void * arg){
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_USRP_SEND_RETURN, ret );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_THREAD, 0 );
 
-    if(0) break;
   }
 
   return NULL;
@@ -645,7 +644,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         rxshift=2;
         break;
      default:
-	AssertFatal(1==0,"Shouldn't be here\n");
+       AssertFatal(1==0,"Shouldn't be here\n");
   }	
 
   samples_received=0;
@@ -1259,7 +1258,7 @@ extern "C" {
                    gain - gain_range.stop());
                gain=gain_range.stop();
       }
-          
+
       s->usrp->set_rx_gain(gain,i);
       LOG_I(HW,"RX Gain %d %f (%f) => %f (max %f)\n",i,
             openair0_cfg[0].rx_gain[i],openair0_cfg[0].rx_gain_offset[i],
@@ -1301,12 +1300,12 @@ extern "C" {
 
   LOG_I(HW,"rx_max_num_samps %zu\n",
         s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
-  
+
   for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++) {
     LOG_I(HW,"setting rx channel %d\n",i);
     stream_args_rx.channels.push_back(i);
   }
-  
+
   s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
   uhd::stream_args_t stream_args_tx("sc16", "sc16");
 

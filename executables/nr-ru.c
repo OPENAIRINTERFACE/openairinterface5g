@@ -746,9 +746,9 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       // currently we switch beams every 10 slots (should = 1 TDD period in FR2) and we take the beam index of the first symbol of the first slot of this period
       int beam=0;
       if (slot%10==0) {
-	if (ru->common.beam_id[0][slot*fp->symbols_per_slot] < 8) {
-	  beam = ru->common.beam_id[0][slot*fp->symbols_per_slot] | 8;
-	}
+        if ( ru->common.beam_id && (ru->common.beam_id[0][slot*fp->symbols_per_slot] < 8)) {
+          beam = ru->common.beam_id[0][slot*fp->symbols_per_slot] | 8;
+        }
       }
       /*
       if (slot==0 || slot==40) beam=0|8;
@@ -893,6 +893,18 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->rx_bw = 80e6;
       }
       break;
+    case 133 :
+      if (fp->threequarter_fs) {
+	AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
+      }
+      else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
+      }
+
+      break;
     case 106:
       if (fp->threequarter_fs) {
         cfg->sample_rate=46.08e6;
@@ -906,7 +918,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->tx_bw = 40e6;
         cfg->rx_bw = 40e6;
       }
-      break;
+     break;
     case 51:
       if (fp->threequarter_fs) {
         cfg->sample_rate=23.04e6;

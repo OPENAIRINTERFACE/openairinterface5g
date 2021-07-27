@@ -758,6 +758,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
   const int bw = NRRIV2BW(ubwp ?
 			  ubwp->bwp_Common->genericParameters.locationAndBandwidth :
 			  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
   dci_pdu_rel15->frequency_domain_assignment.val =
       PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bw);
   dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
@@ -820,6 +821,7 @@ int nr_get_default_pucch_res(int pucch_ResourceCommon) {
 
   return(default_pucch_csset[pucch_ResourceCommon]);
 }
+
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,

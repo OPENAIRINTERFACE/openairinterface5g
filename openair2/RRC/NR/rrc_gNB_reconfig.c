@@ -61,8 +61,15 @@ void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellC
 
   // frequencyDomainResources '11111111 00000000 00000000 00000000 00000000 00000'B,
   if(coreset0->frequencyDomainResources.buf == NULL) coreset0->frequencyDomainResources.buf = calloc(1,6);
-  coreset0->frequencyDomainResources.buf[0] = 0xff;
-  coreset0->frequencyDomainResources.buf[1] = 0;
+  int curr_bwp = NRRIV2BW(servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, 275);
+  if (curr_bwp < 48)
+    coreset0->frequencyDomainResources.buf[0] = 0xf0;
+  else
+    coreset0->frequencyDomainResources.buf[0] = 0xff;
+  if (curr_bwp < 96)
+    coreset0->frequencyDomainResources.buf[1] = 0;
+  else
+    coreset0->frequencyDomainResources.buf[1] = 0xff;
   coreset0->frequencyDomainResources.buf[2] = 0;
   coreset0->frequencyDomainResources.buf[3] = 0;
   coreset0->frequencyDomainResources.buf[4] = 0;
@@ -625,7 +632,10 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  }
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dataScramblingIdentityPDSCH = NULL;
 
- bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=NULL;//calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type));
+ if (dl_antenna_ports > 1)// for MIMO, we use DMRS Config Type 2
+   bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type));
+ else
+   bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID0=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID1=NULL;

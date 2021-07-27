@@ -41,13 +41,6 @@
 #include "openair2/RRC/NR/rrc_gNB_UE_context.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 
-// undefine C_RNTI from
-// openair1/PHY/LTE_TRANSPORT/transport_common.h which
-// replaces in ie->value.choice.C_RNTI, causing
-// a compile error
-
-#undef C_RNTI
-
 extern f1ap_setup_req_t *f1ap_du_data;
 extern f1ap_cudu_inst_t f1ap_du_inst[MAX_eNB];
 extern RAN_CONTEXT_t RC;
