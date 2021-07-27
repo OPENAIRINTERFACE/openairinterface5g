@@ -94,6 +94,7 @@ class RANManagement():
 		self.runtime_stats= ''
 		self.datalog_rt_stats={}
 		self.eNB_Trace = '' #if 'yes', Tshark will be launched at initialization
+		self.USRPIPAddress = ''
 
 
 
@@ -341,6 +342,17 @@ class RANManagement():
 		self.testCase_id = HTML.testCase_id
 		mySSH = SSH.SSHConnection()
 		
+		#reboot USRP if requested in xml
+		if self.USRPIPAddress!='':
+			logging.debug('USRP '+ self.USRPIPAddress +'reboot request')
+			mySSH.open(lIpAddr, lUserName, lPassWord)
+			cmd2usrp='ssh root@'+self.USRPIPAddress+' reboot'
+			mySSH.command2(cmd2usrp,1)
+			mySSH.close()
+			logging.debug('Waiting for USRP to be ready')
+			time.sleep(120)
+
+
 		if (self.pStatus < 0):
 			HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
 			HTML.CreateHtmlTabFooter(False)
