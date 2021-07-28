@@ -406,7 +406,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   const int current_rnti = rntiP;
   const int UE_id = find_nr_UE_id(gnb_mod_idP, current_rnti);
   const int target_snrx10 = gNB_mac->pusch_target_snrx10;
-  LOG_I(NR_MAC, "nr_rx_sdu entered\n");
 
   if (UE_id != -1) {
     NR_UE_sched_ctrl_t *UE_scheduling_control = &UE_info->UE_sched_ctrl[UE_id];
@@ -418,7 +417,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_I(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
+    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d sduP %p\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -498,13 +497,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP);
       } else {
 
-        LOG_I(NR_MAC,
+        LOG_D(NR_MAC,
                 "expected TC_RNTI %04x to match current RNTI %04x\n",
                 ra->rnti,
                 current_rnti);
         // random access pusch with TC-RNTI
         if (ra->rnti != current_rnti) {
-          //ra->rnti = current_rnti;
           LOG_W(NR_MAC,
                 "expected TC_RNTI %04x to match current RNTI %04x\n",
                 ra->rnti,
@@ -947,7 +945,7 @@ typedef struct _sched_info
   struct timespec ts;
 } sched_info;
 
-sched_info prev_sched[MAX_MOBILES_PER_GNB]; 
+sched_info prev_sched[MAX_MOBILES_PER_GNB];
 
 void nr_schedule_ulsch(module_id_t module_id,
                        frame_t frame,
@@ -1022,14 +1020,14 @@ void nr_schedule_ulsch(module_id_t module_id,
       int time_diff_in_ms = timespec_diff_in_milliseconds (&ts, &prev_sched[UE_id].ts);
 
       // The sched tx duration between ul dci req is assumed between 4 ms to 6 ms.
-      if (vnf_pnf_sfnslot_delta < 0 || time_diff_in_ms < 4 * (sfnslot_delta / 10) 
+      if (vnf_pnf_sfnslot_delta < 0 || time_diff_in_ms < 4 * (sfnslot_delta / 10)
                                     || time_diff_in_ms > 6 * (sfnslot_delta / 10))
       {
         LOG_D(PHY, "%s() SFN/SLOT DELTA between Proxy and gNB. UEID %d, rnti %x Delta %3d. gNB:%4d.%-2d "
                   "slot_diff %4d  time_diff %d : %lu.%06lu vs %lu.%06lu --> Skip\n\n\n\n\n\n\n\n\n",
-                  __FUNCTION__, UE_id, UE_info->rnti[UE_id], 
+                  __FUNCTION__, UE_id, UE_info->rnti[UE_id],
                   vnf_pnf_sfnslot_delta,
-                  frame, slot, sfnslot_delta, time_diff_in_ms, 
+                  frame, slot, sfnslot_delta, time_diff_in_ms,
                   ts.tv_sec, ts.tv_nsec / 1000,
                   prev_sched[UE_id].ts.tv_sec, prev_sched[UE_id].ts.tv_nsec / 1000);
         continue;

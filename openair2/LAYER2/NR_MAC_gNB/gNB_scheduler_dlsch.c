@@ -721,12 +721,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
     if (current_harq_pid < 0) {
       /* PP has not selected a specific HARQ Process, get a new one */
       current_harq_pid = sched_ctrl->available_dl_harq.head;
-      //AssertFatal(current_harq_pid >= 0,
-      //            "no free HARQ process available for UE %d\n",
-      //            UE_id);
+      AssertFatal(current_harq_pid >= 0,
+                  "no free HARQ process available for UE %d\n",
+                  UE_id);
       remove_front_nr_list(&sched_ctrl->available_dl_harq);
       sched_ctrl->dl_harq_pid = current_harq_pid;
-      return;
     } else {
       /* PP selected a specific HARQ process. Check whether it will be a new
        * transmission or a retransmission, and remove from the corresponding

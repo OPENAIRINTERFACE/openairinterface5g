@@ -982,8 +982,8 @@ int phy_nr_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_crc_indic
       crc_ind->crc_list[j].tb_crc_status = ind->crc_list[j].tb_crc_status;
       crc_ind->crc_list[j].timing_advance = ind->crc_list[j].timing_advance;
       crc_ind->crc_list[j].ul_cqi = ind->crc_list[j].ul_cqi;
-      LOG_I(NR_MAC, "Received crc_ind.harq_id = %d for %d index SFN SLot %u %u with rnti %x\n", 
-                    ind->crc_list[j].harq_id, j, ind->sfn, ind->slot, ind->crc_list[j].rnti);  
+      LOG_I(NR_MAC, "Received crc_ind.harq_id = %d for %d index SFN SLot %u %u with rnti %x\n",
+                    ind->crc_list[j].harq_id, j, ind->sfn, ind->slot, ind->crc_list[j].rnti);
     }
     if (!put_queue(&gnb_crc_ind_queue, crc_ind))
     {

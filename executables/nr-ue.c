@@ -242,7 +242,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       abort();
     }
     sfn_slot_p = get_queue(&nr_sfn_slot_queue);
-    if (sfn_slot_p == NULL) 
+    if (sfn_slot_p == NULL)
       continue;
 
     sfn_slot = *sfn_slot_p;
@@ -359,7 +359,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       for (int j = 0; j < crc_ind->number_crcs; j++)
       {
         LOG_I(NR_PHY, "Sending crc_ind.harq_id = %d for %d index SFN SLot %u %u with rnti %x\n",
-         crc_ind->crc_list[j].harq_id, j, crc_ind->sfn, crc_ind->slot, crc_ind->crc_list[j].rnti);  
+         crc_ind->crc_list[j].harq_id, j, crc_ind->sfn, crc_ind->slot, crc_ind->crc_list[j].rnti);
       }
       send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
       free(crc_ind->crc_list);

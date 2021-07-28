@@ -224,7 +224,7 @@ void  handle_nr_ulsch(NR_UL_IND_t *UL_info)
         // find crc_indication j corresponding rx_indication i
         const nfapi_nr_rx_data_pdu_t *rx = &UL_INFO.rx_ind.pdu_list[i];
         const nfapi_nr_crc_t *crc = &UL_INFO.crc_ind.crc_list[j];
-        LOG_I(NR_PHY,
+        LOG_D(NR_PHY,
               "UL_INFO.crc_ind.pdu_list[%d].rnti:%04x "
               "UL_INFO.rx_ind.pdu_list[%d].rnti:%04x\n",
               j,
@@ -245,7 +245,7 @@ void  handle_nr_ulsch(NR_UL_IND_t *UL_info)
               crc->tb_crc_status ? "error" : "ok",
               crc->tb_crc_status);
 
-        // if CRC passes, pass PDU, otherwise pass NULL as error indication 
+        /* if CRC passes, pass PDU, otherwise pass NULL as error indication */
         nr_rx_sdu(UL_INFO.module_id,
                   UL_INFO.CC_id,
                   UL_INFO.rx_ind.sfn,
@@ -282,7 +282,6 @@ void  handle_nr_ulsch(NR_UL_IND_t *UL_info)
   }
 }
 
-
 void NR_UL_indication(NR_UL_IND_t *UL_info) {
   AssertFatal(UL_info!=NULL,"UL_INFO is null\n");
 #ifdef DUMP_FAPI
@@ -293,7 +292,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   NR_Sched_Rsp_t   *sched_info = &Sched_INFO[module_id][CC_id];
   NR_IF_Module_t   *ifi        = if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
-  LOG_I(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
+  LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
         UL_info->frame,UL_info->slot,
         module_id,CC_id, UL_info->rach_ind.number_of_pdus,
         UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);

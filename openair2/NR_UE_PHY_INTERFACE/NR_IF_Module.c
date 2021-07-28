@@ -554,8 +554,8 @@ static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
     nsa_sendmsg_to_lte_ue(buffer, pack_len, NR_UE_RRC_MEASUREMENT);
     LOG_A(NR_RRC, "Populated NR_UE_RRC_MEASUREMENT information and sent to LTE UE\n");
 }
-uint16_t sfn_slot_pool[512]; 
-uint16_t sfn_slot_id ; 
+uint16_t sfn_slot_pool[512];
+uint16_t sfn_slot_id;
 
 void *nrue_standalone_pnf_task(void *context)
 {
@@ -593,7 +593,7 @@ void *nrue_standalone_pnf_task(void *context)
         LOG_I(NR_MAC, "put_queue failed for sfn slot.\n");
       }
       LOG_D(NR_MAC, "We have successfully queued snf slot %d.%d, with id %u, qsize %zu\n",
-                    sfn_slot_pool[sfn_slot_id]>> 6, sfn_slot_pool[sfn_slot_id] & 0x3F, 
+                    sfn_slot_pool[sfn_slot_id]>> 6, sfn_slot_pool[sfn_slot_id] & 0x3F,
                     sfn_slot_id, nr_sfn_slot_queue.num_items);
 
       sfn_slot_id = (sfn_slot_id + 1) % 512;
@@ -672,7 +672,7 @@ void *nrue_standalone_pnf_task(void *context)
             {
               delta += NFAPI_SFNSLOT2DEC(1024, 0);
             }
-            AssertFatal(delta < 6, "Slot delta %d < 6 is required. sfn slot %u %u vs ul_dci_request sfn slot %u %u\n", 
+            AssertFatal(delta < 6, "Slot delta %d < 6 is required. sfn slot %u %u vs ul_dci_request sfn slot %u %u\n",
                         delta, sfn, slot, ul_dci_request.SFN, ul_dci_request.Slot);
             check_and_process_dci(NULL, NULL, &ul_dci_request, NULL);
             break;
