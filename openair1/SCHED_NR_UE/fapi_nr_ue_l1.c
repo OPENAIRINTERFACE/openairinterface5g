@@ -47,6 +47,7 @@ const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 queue_t nr_rx_ind_queue;
 queue_t nr_crc_ind_queue;
 queue_t nr_uci_ind_queue;
+queue_t nr_sfn_slot_queue;
 
 int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
 
@@ -101,17 +102,16 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               {
                 crc_ind->crc_list[j].handle = pusch_config_pdu->handle;
                 crc_ind->crc_list[j].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
-                LOG_I(NR_MAC, "This is the harq pid %d for crc_list[%d]\n", crc_ind->crc_list[j].harq_id, j);
-                LOG_I(NR_MAC, "This is sched sfn/sl [%d %d] and crc sfn/sl [%d %d]\n",
-                      scheduled_response->frame, scheduled_response->slot, crc_ind->sfn, crc_ind->slot);
                 crc_ind->crc_list[j].num_cb = pusch_config_pdu->pusch_data.num_cb;
                 crc_ind->crc_list[j].rnti = pusch_config_pdu->rnti;
                 crc_ind->crc_list[j].tb_crc_status = 0;
                 crc_ind->crc_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
                 crc_ind->crc_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
+                LOG_D(NR_MAC, "This is the harq pid %d for crc_list[%d] rnti %x "
+                              "sched sfn/sl [%d %d] and crc sfn/sl [%d %d]\n",
+                              crc_ind->crc_list[j].harq_id, j, pusch_config_pdu->rnti,
+                              scheduled_response->frame, scheduled_response->slot, crc_ind->sfn, crc_ind->slot);
               }
-
-              LOG_I(PHY, "In %s: Filled queue rx/crc_ind which was filled by ulconfig. \n", __FUNCTION__);
 
               if (!put_queue(&nr_rx_ind_queue, rx_ind))
               {
@@ -125,6 +125,9 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 free(crc_ind->crc_list);
                 free(crc_ind);
               }
+
+              LOG_I(PHY, "In %s: Filled queue rx/crc_ind which was filled by ulconfig. \n", __FUNCTION__);
+
               scheduled_response->tx_request->number_of_pdus = 0;
             }
             break;

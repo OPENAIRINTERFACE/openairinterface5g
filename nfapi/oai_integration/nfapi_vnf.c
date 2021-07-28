@@ -604,6 +604,8 @@ int phy_sync_indication(struct nfapi_vnf_p7_config *config, uint8_t sync) {
   return(0);
 }
 
+uint16_t pnf_frame;
+uint16_t pnf_slot;
 
 int phy_slot_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id, uint16_t sfn, uint16_t slot) {
   static uint8_t first_time = 1;
@@ -616,7 +618,9 @@ int phy_slot_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id, uin
   if (RC.gNB && RC.gNB[0]->configured) {
     // uint16_t sfn = NFAPI_SFNSF2SFN(sfn_sf);
     // uint16_t sf = NFAPI_SFNSF2SF(sfn_sf);
-    LOG_D(PHY,"[VNF] slot indication sfn:%d sf:%d\n", sfn, slot);
+    pnf_frame = sfn;
+    pnf_slot = slot;
+    LOG_D(PHY,"[VNF] slot indication sfn:%d slot:%d\n", sfn, slot);
     wake_gNB_rxtx(RC.gNB[0], sfn, slot); // DONE: find NR equivalent
   } else {
     printf("[VNF] %s() RC.gNB:%p\n", __FUNCTION__, RC.gNB);
@@ -978,6 +982,8 @@ int phy_nr_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_crc_indic
       crc_ind->crc_list[j].tb_crc_status = ind->crc_list[j].tb_crc_status;
       crc_ind->crc_list[j].timing_advance = ind->crc_list[j].timing_advance;
       crc_ind->crc_list[j].ul_cqi = ind->crc_list[j].ul_cqi;
+      LOG_I(NR_MAC, "Received crc_ind.harq_id = %d for %d index SFN SLot %u %u with rnti %x\n", 
+                    ind->crc_list[j].harq_id, j, ind->sfn, ind->slot, ind->crc_list[j].rnti);  
     }
     if (!put_queue(&gnb_crc_ind_queue, crc_ind))
     {

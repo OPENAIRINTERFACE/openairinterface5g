@@ -65,7 +65,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
   if (gnb_rach_ind_queue.num_items ==0)
     return; 
   LOG_I(NR_MAC, "gnb_rach_ind_queue size = %zu\n", gnb_rach_ind_queue.num_items);
-  nfapi_nr_rach_indication_t *rach_ind = unqueue(&gnb_rach_ind_queue);
+  nfapi_nr_rach_indication_t *rach_ind = get_queue(&gnb_rach_ind_queue);
   NR_UL_IND_t UL_INFO;
   UL_INFO.rach_ind = *rach_ind;
   UL_INFO.frame = rach_ind->sfn;
@@ -108,7 +108,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
   if (gnb_uci_ind_queue.num_items ==0)
     return; 
   LOG_I(NR_MAC, "gnb_uci_ind_queue size = %zu\n", gnb_uci_ind_queue.num_items);
-  nfapi_nr_uci_indication_t *uci_ind = unqueue(&gnb_uci_ind_queue);
+  nfapi_nr_uci_indication_t *uci_ind = get_queue(&gnb_uci_ind_queue);
   NR_UL_IND_t UL_INFO;
   UL_INFO.uci_ind = *uci_ind;
 
@@ -191,7 +191,7 @@ void  handle_nr_ulsch(NR_UL_IND_t *UL_info)
                   gnb_rx_ind_queue.num_items, 
                   gnb_crc_ind_queue.num_items
                   );
-  nfapi_nr_rx_data_indication_t *rx_ind = unqueue(&gnb_rx_ind_queue);
+  nfapi_nr_rx_data_indication_t *rx_ind = get_queue(&gnb_rx_ind_queue);
   int sfn_slot = NFAPI_SFNSLOT2HEX(rx_ind->sfn, rx_ind->slot); 
   
   nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&gnb_crc_ind_queue,
@@ -354,7 +354,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         ifi->NR_Schedule_response(sched_info);
       }
 
-      LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",
+      LOG_D(PHY,"NR_Schedule_response: SFN SLOT:%d %d dl_pdus:%d\n",
 	    sched_info->frame,
 	    sched_info->slot,
 	    sched_info->DL_req->dl_tti_request_body.nPDUs);

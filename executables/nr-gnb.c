@@ -443,8 +443,7 @@ static void *gNB_L1_thread( void *param ) {
       if (gNB->CC_id==0) {
         int next_slot;
         next_slot = (slot_rx + 1) % 20;
-        LOG_I(PHY, "Calling rxtx1\n");
-        if (rxtx(gNB,frame_rx,next_slot,frame_tx,next_slot,thread_name) < 0) break;
+        if (rxtx(gNB,(frame_rx + ((slot_rx + 1) % 20 == 0))%1024,next_slot,(frame_tx + ((slot_rx + 1) % 20 == 0)) % 1024,next_slot,thread_name) < 0) break;
       }
     if (wait_on_condition(&L1_proc->mutex,&L1_proc->cond,&L1_proc->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
@@ -458,7 +457,6 @@ static void *gNB_L1_thread( void *param ) {
     if (oai_exit) break;
 
     if (gNB->CC_id==0) {
-      LOG_I(PHY, "Calling rxtx2\n");
       if (rxtx(gNB,frame_rx,slot_rx,frame_tx,slot_tx,thread_name) < 0) break;
     }
 

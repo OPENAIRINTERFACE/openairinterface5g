@@ -224,12 +224,15 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   reset_queue(&nr_rx_ind_queue);
   reset_queue(&nr_crc_ind_queue);
   reset_queue(&nr_uci_ind_queue);
+  reset_queue(&nr_sfn_slot_queue);
 
   NR_PRACH_RESOURCES_t prach_resources;
   memset(&prach_resources, 0, sizeof(prach_resources));
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
   memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
   int last_sfn_slot = -1;
+  uint16_t *sfn_slot_p;
+  int sfn_slot;
 
   while (!oai_exit)
   {
@@ -238,8 +241,14 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       LOG_E(NR_MAC, "sem_wait() error\n");
       abort();
     }
+    sfn_slot_p = get_queue(&nr_sfn_slot_queue);
+    if (sfn_slot_p == NULL) 
+      continue;
 
-    int sfn_slot = current_sfn_slot;
+    sfn_slot = *sfn_slot_p;
+    LOG_D(NR_MAC, "We have successfully dequeued snf slot = %d.%d, qsize = %zu\n",
+          NFAPI_SFNSLOT2SFN(sfn_slot), NFAPI_SFNSLOT2SLOT(sfn_slot), nr_sfn_slot_queue.num_items);
+
     if (sfn_slot == last_sfn_slot)
     {
       LOG_D(NR_MAC, "repeated sfn_sf = %d.%d\n",
@@ -320,7 +329,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     nfapi_nr_rach_indication_t *rach_ind = unqueue_matching(&nr_rach_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
     nfapi_nr_rx_data_indication_t *rx_ind = unqueue_matching(&nr_rx_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
     nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&nr_crc_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
-
+    LOG_D(NR_MAC, "Checking queues with crc_ind  = %p\n", crc_ind);
     if (rach_ind && rach_ind->number_of_pdus > 0)
     {
         NR_UL_IND_t UL_INFO = {
@@ -347,9 +356,15 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       NR_UL_IND_t UL_INFO = {
         .crc_ind = *crc_ind,
       };
+      for (int j = 0; j < crc_ind->number_crcs; j++)
+      {
+        LOG_I(NR_PHY, "Sending crc_ind.harq_id = %d for %d index SFN SLot %u %u with rnti %x\n",
+         crc_ind->crc_list[j].harq_id, j, crc_ind->sfn, crc_ind->slot, crc_ind->crc_list[j].rnti);  
+      }
       send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
       free(crc_ind->crc_list);
     }
+    LOG_D(NR_MAC, "Ready for handling next SFN SLOT\n");
   }
   return NULL;
 }

@@ -251,6 +251,7 @@ extern void set_softmodem_sighandler(void);
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 extern uint8_t nfapi_mode;
+extern int16_t vnf_pnf_sfnslot_delta;
 #ifdef __cplusplus
 }
 #endif

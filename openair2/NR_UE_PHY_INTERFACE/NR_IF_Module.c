@@ -370,14 +370,14 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
         LOG_D(NR_PHY, "This is the pdu type %d in ul_tti_req\n", pdu_list->pdu_type);
         if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE)
         {
-            nfapi_nr_uci_indication_t *uci_ind = unqueue(&nr_uci_ind_queue);
+            nfapi_nr_uci_indication_t *uci_ind = get_queue(&nr_uci_ind_queue);
             if (uci_ind)
             {
                 if (uci_ind->num_ucis > 0)
                 {
                     uci_ind->sfn = ul_tti_req->SFN;
                     uci_ind->slot = ul_tti_req->Slot;
-                    LOG_I(NR_MAC, "We have unqueued the previously filled uci_ind and updated the snf/slot to %d/%d.\n",
+                    LOG_I(NR_MAC, "We have dequeued the previously filled uci_ind and updated the snf/slot to %d/%d.\n",
                           uci_ind->sfn, uci_ind->slot);
                     NR_UL_IND_t UL_INFO = {
                         .uci_ind = *uci_ind,
@@ -554,12 +554,15 @@ static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
     nsa_sendmsg_to_lte_ue(buffer, pack_len, NR_UE_RRC_MEASUREMENT);
     LOG_A(NR_RRC, "Populated NR_UE_RRC_MEASUREMENT information and sent to LTE UE\n");
 }
+uint16_t sfn_slot_pool[512]; 
+uint16_t sfn_slot_id ; 
 
 void *nrue_standalone_pnf_task(void *context)
 {
   struct sockaddr_in server_address;
   socklen_t addr_len = sizeof(server_address);
   char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
+  int sfn, slot, delta;
   int sd = ue_rx_sock_descriptor;
   assert(sd > 0);
   LOG_I(NR_RRC, "Sucessfully started %s.\n", __FUNCTION__);
@@ -583,13 +586,25 @@ void *nrue_standalone_pnf_task(void *context)
       memcpy((void *)&sfn_slot, buffer, sizeof(sfn_slot));
       current_sfn_slot = sfn_slot;
 
+      sfn_slot_pool[sfn_slot_id] = sfn_slot;
+
+      if (!put_queue(&nr_sfn_slot_queue, &sfn_slot_pool[sfn_slot_id]))
+      {
+        LOG_I(NR_MAC, "put_queue failed for sfn slot.\n");
+      }
+      LOG_D(NR_MAC, "We have successfully queued snf slot %d.%d, with id %u, qsize %zu\n",
+                    sfn_slot_pool[sfn_slot_id]>> 6, sfn_slot_pool[sfn_slot_id] & 0x3F, 
+                    sfn_slot_id, nr_sfn_slot_queue.num_items);
+
+      sfn_slot_id = (sfn_slot_id + 1) % 512;
+
       if (sem_post(&sfn_slot_semaphore) != 0)
       {
         LOG_E(NR_PHY, "sem_post() error\n");
         abort();
       }
-      int sfn = NFAPI_SFNSLOT2SFN(sfn_slot);
-      int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
+      sfn = NFAPI_SFNSLOT2SFN(sfn_slot);
+      slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
       LOG_I(NR_PHY, "Received from proxy sfn %d slot %d\n", sfn, slot);
     }
     else if (len == sizeof(nr_phy_channel_params_t))
@@ -652,6 +667,13 @@ void *nrue_standalone_pnf_task(void *context)
             }
             LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message in SFN/slot %d %d. \n",
                   ul_dci_request.SFN, ul_dci_request.Slot);
+            delta = NFAPI_SFNSLOT2DEC(sfn, slot) - NFAPI_SFNSLOT2DEC(ul_dci_request.SFN, ul_dci_request.Slot);
+            if (delta < -NFAPI_SFNSLOT2DEC(512, 0))
+            {
+              delta += NFAPI_SFNSLOT2DEC(1024, 0);
+            }
+            AssertFatal(delta < 6, "Slot delta %d < 6 is required. sfn slot %u %u vs ul_dci_request sfn slot %u %u\n", 
+                        delta, sfn, slot, ul_dci_request.SFN, ul_dci_request.Slot);
             check_and_process_dci(NULL, NULL, &ul_dci_request, NULL);
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:

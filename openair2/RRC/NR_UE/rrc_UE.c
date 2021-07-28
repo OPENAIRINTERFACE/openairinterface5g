@@ -2969,6 +2969,7 @@ static void start_oai_nrue_threads()
     init_queue(&nr_rx_ind_queue);
     init_queue(&nr_crc_ind_queue);
     init_queue(&nr_uci_ind_queue);
+    init_queue(&nr_sfn_slot_queue);
 
     if (sem_init(&sfn_slot_semaphore, 0, 0) != 0)
     {

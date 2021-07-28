@@ -338,9 +338,10 @@ void handle_nr_ul_harq(module_id_t mod_id,
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   int8_t harq_pid = sched_ctrl->feedback_ul_harq.head;
+  LOG_D(NR_MAC, "Comparing crc_pdu->harq_id vs feedback harq_pid = %d %d\n",crc_pdu->harq_id, harq_pid);
   while (crc_pdu->harq_id != harq_pid || harq_pid < 0) {
     LOG_W(MAC,
-          "Unexpected ULSCH HARQ PID %d (have %d) for RNTI %04x (ignore this warning for RA)\n",
+          "Unexpected ULSCH HARQ PID in crc pdu %d (feedback have %d) for RNTI %04x (ignore this warning for RA)\n",
           crc_pdu->harq_id,
           harq_pid,
           crc_pdu->rnti);
@@ -931,6 +932,23 @@ bool nr_simple_ulsch_preprocessor(module_id_t module_id,
   return true;
 }
 
+static inline int timespec_diff_in_milliseconds(struct timespec *a, struct timespec *b)
+{
+    int diff_in_ms = (a->tv_sec - b->tv_sec) * 1000 + a->tv_nsec /1000000 - b->tv_nsec / 1000000;
+    return diff_in_ms;
+}
+
+typedef struct _sched_info
+{
+  uint16_t rnti;
+  uint16_t sfn;
+  uint16_t slot;
+  int8_t harq_id;
+  struct timespec ts;
+} sched_info;
+
+sched_info prev_sched[MAX_MOBILES_PER_GNB]; 
+
 void nr_schedule_ulsch(module_id_t module_id,
                        frame_t frame,
                        sub_frame_t slot,
@@ -968,6 +986,62 @@ void nr_schedule_ulsch(module_id_t module_id,
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     if (sched_pusch->rbSize <= 0)
       continue;
+
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
+        abort();
+
+    if (prev_sched[UE_id].rnti != 0)
+    {
+      uint16_t prev_frame = prev_sched[UE_id].sfn;
+      uint16_t prev_slot = prev_sched[UE_id].slot;
+      int sfnslot_delta = NFAPI_SFNSLOT2DEC(frame, slot) - NFAPI_SFNSLOT2DEC(prev_frame, prev_slot);
+      if (sfnslot_delta < 0)
+      {
+        sfnslot_delta += NFAPI_SFNSLOT2DEC(1024,0);
+      }
+      // If diff is more than half of maximum frame: we ignore it.
+      if (sfnslot_delta > NFAPI_SFNSLOT2DEC(512, 0))
+      {
+        LOG_D(PHY, "%s() SFN/SLOT DELTA between Sched and Previous. UEID %d, rnti %x Delta %d. "
+                  "Current:%d.%d Prev(%d):%d.%d --> Skip\n\n\n\n\n\n\n\n\n",
+                  __FUNCTION__, UE_id, UE_info->rnti[UE_id], sfnslot_delta - NFAPI_SFNSLOT2DEC(1024,0),
+                  frame, slot,
+                  prev_sched[UE_id].harq_id, prev_frame, prev_slot);
+        continue;
+      }
+      else
+      {
+        LOG_D(PHY, "%s() SFN/SLOT DELTA between Sched and Previous. UEID %d, rnti %x Delta %d. "
+                  "Current:%d.%d Prev(%d):%d.%d\n\n\n\n\n\n\n\n\n",
+                  __FUNCTION__, UE_id, UE_info->rnti[UE_id], sfnslot_delta,
+                  frame, slot,
+                  prev_sched[UE_id].harq_id, prev_frame, prev_slot);
+      }
+
+      int time_diff_in_ms = timespec_diff_in_milliseconds (&ts, &prev_sched[UE_id].ts);
+
+      // The sched tx duration between ul dci req is assumed between 4 ms to 6 ms.
+      if (vnf_pnf_sfnslot_delta < 0 || time_diff_in_ms < 4 * (sfnslot_delta / 10) 
+                                    || time_diff_in_ms > 6 * (sfnslot_delta / 10))
+      {
+        LOG_D(PHY, "%s() SFN/SLOT DELTA between Proxy and gNB. UEID %d, rnti %x Delta %3d. gNB:%4d.%-2d "
+                  "slot_diff %4d  time_diff %d : %lu.%06lu vs %lu.%06lu --> Skip\n\n\n\n\n\n\n\n\n",
+                  __FUNCTION__, UE_id, UE_info->rnti[UE_id], 
+                  vnf_pnf_sfnslot_delta,
+                  frame, slot, sfnslot_delta, time_diff_in_ms, 
+                  ts.tv_sec, ts.tv_nsec / 1000,
+                  prev_sched[UE_id].ts.tv_sec, prev_sched[UE_id].ts.tv_nsec / 1000);
+        continue;
+      }
+      else
+      {
+        LOG_D(PHY, "%s() SFN/SLOT DELTA between Proxy and gNB. UEID %d, rnti %x Delta %3d. "
+                  "gNB:%4d.%-2d slot_diff %4d  time_diff %d\n\n\n\n\n\n\n\n\n",
+                  __FUNCTION__, UE_id, UE_info->rnti[UE_id], vnf_pnf_sfnslot_delta,
+                  frame, slot, sfnslot_delta, time_diff_in_ms);
+      }
+    }
 
     uint16_t rnti = UE_info->rnti[UE_id];
     LOG_D(NR_MAC, "nr_schedule_ulsch  UE_id_checking UE_id = %d, rnti = %x \n", UE_id,  rnti);
@@ -1049,6 +1123,11 @@ void nr_schedule_ulsch(module_id_t module_id,
     }
     gNB->handled_frame = frame;
     gNB->handled_slot = slot;
+    prev_sched[UE_id].rnti = rnti;
+    prev_sched[UE_id].sfn = frame;
+    prev_sched[UE_id].slot = slot;
+    prev_sched[UE_id].harq_id = harq_id;
+    prev_sched[UE_id].ts = ts;
 
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_pusch->slot];
@@ -1138,6 +1217,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
     pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
+    LOG_D(MAC,"Setting harq_id pusch_pdu->pusch_data.harq_process_id  %d  for UE_id(%d), rnti %x\n", harq_id, UE_id, rnti);
 
     /* TRANSFORM PRECODING --------------------------------------------------------*/
 
