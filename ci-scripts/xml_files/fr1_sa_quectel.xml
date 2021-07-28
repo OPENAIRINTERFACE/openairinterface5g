@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-NSA-FR1-TM1</htmlTabRef>
-	<htmlTabName>NSA Ping DL UL with QUECTEL</htmlTabName>
+	<htmlTabRef>TEST-SA-FR1-TM1</htmlTabRef>
+	<htmlTabName>SA Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
@@ -55,10 +55,11 @@
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.nsa_2x2.106PRB.usrpn310.conf -q</Initialize_eNB_args>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf --sa -q</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
 		<air_interface>nr</air_interface>
+		<eNB_Trace>yes</eNB_Trace>
 		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
 	</testCase>
 
@@ -115,8 +116,8 @@
 	<testCase id="080000">
 		<class>Terminate_eNB</class>
 		<desc>Terminate gNB</desc>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
 		<air_interface>nr</air_interface>
 	</testCase>
 
