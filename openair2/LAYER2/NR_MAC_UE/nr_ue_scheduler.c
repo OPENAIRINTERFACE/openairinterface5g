@@ -1990,7 +1990,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
   uint16_t num_sdus = 0;
   uint16_t sdu_length_total = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
-  uint8_t sh_size = sizeof(NR_MAC_SUBHEADER_LONG);
+  const uint8_t sh_size = sizeof(NR_MAC_SUBHEADER_LONG);
 
   // Pointer used to build the MAC PDU by placing the RLC SDUs in the ULSCH buffer
   uint8_t *pdu = ulsch_buffer;

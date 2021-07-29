@@ -497,8 +497,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
-  uint8_t lcid = UL_SCH_LCID_CCCH;
-  uint8_t sh_size = sizeof(NR_MAC_SUBHEADER_SHORT);
   int8_t size_sdu = 0;
 
   NR_RACH_ConfigCommon_t *setup;
@@ -534,7 +532,9 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       LOG_D(NR_MAC, "In %s: RA not active. Checking for data to transmit from upper layers...\n", __FUNCTION__);
 
-      uint8_t TBS_max = 8 + 2 * sh_size;
+      const uint8_t lcid = UL_SCH_LCID_CCCH;
+      const uint8_t sh_size = sizeof(NR_MAC_SUBHEADER_SHORT);
+      const uint8_t TBS_max = 8 + 2 * sh_size;
       uint8_t *pdu = (uint8_t*) mac->CCCH_pdu.payload;
       NR_MAC_SUBHEADER_SHORT *header = (NR_MAC_SUBHEADER_SHORT *) pdu;
       pdu += sh_size;
