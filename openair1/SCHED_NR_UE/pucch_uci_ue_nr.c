@@ -837,9 +837,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   /* Generate PUCCH signal according to its format and parameters */
   ue->generate_ul_signal[gNB_id] = 1;
 
-  int16_t pucch_tx_power = get_pucch_tx_power_ue( ue, gNB_id, proc, format,
-                                                  nb_of_prbs, N_sc_ctrl_RB, nb_symbols, N_UCI, O_SR, O_CSI, O_ACK,
-                                                  O_CRC, n_HARQ_ACK);
+  int16_t pucch_tx_power = get_pucch_tx_power_ue(ue, gNB_id, proc, format,
+                                                 nb_of_prbs, N_sc_ctrl_RB, nb_symbols, N_UCI, O_SR, O_CSI, O_ACK,
+                                                 O_CRC, n_HARQ_ACK);
 
   /* set tx power */
   ue->tx_power_dBm[nr_slot_tx] = pucch_tx_power;
@@ -847,15 +847,12 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
   int tx_amp;
 
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-
   tx_amp = nr_get_tx_amp(pucch_tx_power,
-                      ue->tx_power_max_dBm,
-                      ue->frame_parms.N_RB_UL,
-                      nb_of_prbs);
-#else
-  tx_amp = AMP;
-#endif
+                         ue->tx_power_max_dBm,
+                         ue->frame_parms.N_RB_UL,
+                         nb_of_prbs);
+  if (tx_amp == 0)
+    tx_amp = AMP;
 
   switch(format) {
     case pucch_format0_nr:
