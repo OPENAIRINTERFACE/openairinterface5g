@@ -252,7 +252,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint8_t u = 0, v = 0;
   int16_t *dmrs_seq = NULL;
 
-  // enbaled
+  // if  transform precoding is enbaled (value 0)
   if (pusch_pdu->transform_precoding == 0) {
 
     uint32_t nb_re_pusch=nb_rb * NR_NB_SC_PER_RB;
@@ -354,7 +354,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       if ((ul_dmrs_symb_pos >> l) & 0x01) {
         is_dmrs_sym = 1;
 
-        // disabled
+        // transform precoding disabled (value 1)
         if (pusch_pdu->transform_precoding == 1){
         
           if (dmrs_type == pusch_dmrs_type1)
@@ -405,7 +405,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         }
 
         if (is_dmrs == 1) {
-          // if enabled
+          // if transform precoding is enabled
           if (pusch_pdu->transform_precoding == 0) {
           
             ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[2*dmrs_idx]) >> 15;

@@ -1317,6 +1317,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                              rel15_ul->rb_size);
       stop_meas(&gNB->ulsch_mrc_stats);
 
+      // transform precoding = 0 means enabled
       if (rel15_ul->transform_precoding == 0) {
 
       #ifdef __AVX2__
