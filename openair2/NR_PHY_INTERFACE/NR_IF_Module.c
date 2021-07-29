@@ -183,7 +183,7 @@ static bool crc_sfn_slot_matcher(void *wanted, void *candidate)
   return false;
 }
 
-void  handle_nr_ulsch(NR_UL_IND_t *UL_info)
+void handle_nr_ulsch(NR_UL_IND_t *UL_info)
 {
   if (gnb_rx_ind_queue.num_items == 0 || gnb_crc_ind_queue.num_items == 0)
     return; 

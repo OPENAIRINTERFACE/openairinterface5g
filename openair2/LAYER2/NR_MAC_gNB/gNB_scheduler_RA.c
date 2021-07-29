@@ -939,7 +939,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     NR_BWP_Uplink_t *ubwp=ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
 
-    LOG_I(MAC, "[RAPROC] Scheduling common search space DCI type 1 dlBWP BW %d, rnit %x\n", dci10_bw, ra->rnti);
+    LOG_I(MAC, "[RAPROC] Scheduling common search space DCI type 1 dlBWP BW %d, rnti %x\n", dci10_bw, ra->rnti);
 
     // Qm>2 not allowed for RAR
     if (get_softmodem_params()->do_ra)

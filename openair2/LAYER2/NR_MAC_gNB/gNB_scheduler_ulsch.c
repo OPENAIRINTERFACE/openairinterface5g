@@ -298,9 +298,9 @@ void nr_process_mac_pdu(
         if (pdu_len < 0) {
           LOG_E(MAC, "%s() residual mac pdu length < 0!, pdu_len: %d\n", __func__, pdu_len);
           LOG_E(MAC, "MAC PDU ");
-          for (int i = 0; i < 20; i++) // Only printf 1st - 20nd bytes
-            printf("%02x ", pdu_ptr[i]);
-          printf("\n");
+          //for (int i = 0; i < 20; i++) // Only printf 1st - 20nd bytes
+          //  printf("%02x ", pdu_ptr[i]);
+          //printf("\n");
           return;
         }
     }
@@ -1001,18 +1001,18 @@ void nr_schedule_ulsch(module_id_t module_id,
       // If diff is more than half of maximum frame: we ignore it.
       if (sfnslot_delta > NFAPI_SFNSLOT2DEC(512, 0))
       {
-        LOG_D(PHY, "%s() SFN/SLOT DELTA between Sched and Previous. UEID %d, rnti %x Delta %d. "
+        LOG_D(NR_MAC, "%s() SFN/SLOT DELTA between Sched and Previous. UEID %d, rnti %x Delta %d. "
                   "Current:%d.%d Prev(%d):%d.%d --> Skip\n\n\n\n\n\n\n\n\n",
-                  __FUNCTION__, UE_id, UE_info->rnti[UE_id], sfnslot_delta - NFAPI_SFNSLOT2DEC(1024,0),
+                  __func__, UE_id, UE_info->rnti[UE_id], sfnslot_delta - NFAPI_SFNSLOT2DEC(1024,0),
                   frame, slot,
                   prev_sched[UE_id].harq_id, prev_frame, prev_slot);
         continue;
       }
       else
       {
-        LOG_D(PHY, "%s() SFN/SLOT DELTA between Sched and Previous. UEID %d, rnti %x Delta %d. "
+        LOG_D(NR_MAC, "%s() SFN/SLOT DELTA between Sched and Previous. UEID %d, rnti %x Delta %d. "
                   "Current:%d.%d Prev(%d):%d.%d\n\n\n\n\n\n\n\n\n",
-                  __FUNCTION__, UE_id, UE_info->rnti[UE_id], sfnslot_delta,
+                  __func__, UE_id, UE_info->rnti[UE_id], sfnslot_delta,
                   frame, slot,
                   prev_sched[UE_id].harq_id, prev_frame, prev_slot);
       }
@@ -1023,9 +1023,9 @@ void nr_schedule_ulsch(module_id_t module_id,
       if (vnf_pnf_sfnslot_delta < 0 || time_diff_in_ms < 4 * (sfnslot_delta / 10)
                                     || time_diff_in_ms > 6 * (sfnslot_delta / 10))
       {
-        LOG_D(PHY, "%s() SFN/SLOT DELTA between Proxy and gNB. UEID %d, rnti %x Delta %3d. gNB:%4d.%-2d "
+        LOG_D(NR_MAC, "%s() SFN/SLOT DELTA between Proxy and gNB. UEID %d, rnti %x Delta %3d. gNB:%4d.%-2d "
                   "slot_diff %4d  time_diff %d : %lu.%06lu vs %lu.%06lu --> Skip\n\n\n\n\n\n\n\n\n",
-                  __FUNCTION__, UE_id, UE_info->rnti[UE_id],
+                  __func__, UE_id, UE_info->rnti[UE_id],
                   vnf_pnf_sfnslot_delta,
                   frame, slot, sfnslot_delta, time_diff_in_ms,
                   ts.tv_sec, ts.tv_nsec / 1000,
@@ -1034,9 +1034,9 @@ void nr_schedule_ulsch(module_id_t module_id,
       }
       else
       {
-        LOG_D(PHY, "%s() SFN/SLOT DELTA between Proxy and gNB. UEID %d, rnti %x Delta %3d. "
+        LOG_D(NR_MAC, "%s() SFN/SLOT DELTA between Proxy and gNB. UEID %d, rnti %x Delta %3d. "
                   "gNB:%4d.%-2d slot_diff %4d  time_diff %d\n\n\n\n\n\n\n\n\n",
-                  __FUNCTION__, UE_id, UE_info->rnti[UE_id], vnf_pnf_sfnslot_delta,
+                  __func__, UE_id, UE_info->rnti[UE_id], vnf_pnf_sfnslot_delta,
                   frame, slot, sfnslot_delta, time_diff_in_ms);
       }
     }
@@ -1085,7 +1085,7 @@ void nr_schedule_ulsch(module_id_t module_id,
       cur_harq->sched_pusch = *sched_pusch;
       sched_ctrl->sched_ul_bytes += sched_pusch->tb_size;
     } else {
-      LOG_D(MAC,
+      LOG_D(NR_MAC,
             "%d.%2d UL retransmission RNTI %04x sched %d.%2d HARQ PID %d round %d NDI %d\n",
             frame,
             slot,
@@ -1098,7 +1098,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     }
     UE_info->mac_stats[UE_id].ulsch_current_bytes = sched_pusch->tb_size;
 
-    LOG_D(MAC,
+    LOG_D(NR_MAC,
           "%4d.%2d RNTI %04x UL sched %4d.%2d start %d RBS %d MCS %d TBS %d HARQ PID %d round %d NDI %d\n",
           frame,
           slot,
@@ -1143,7 +1143,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
     future_ul_tti_req->n_pdus += 1;
 
-    LOG_D(MAC, "%4d.%2d Scheduling UE specific PUSCH\n", frame, slot);
+    LOG_D(NR_MAC, "%4d.%2d Scheduling UE specific PUSCH\n", frame, slot);
 
     pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
     pusch_pdu->rnti = rnti;
@@ -1215,7 +1215,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
     pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
-    LOG_D(MAC,"Setting harq_id pusch_pdu->pusch_data.harq_process_id  %d  for UE_id(%d), rnti %x\n", harq_id, UE_id, rnti);
+    LOG_D(NR_MAC,"Setting harq_id pusch_pdu->pusch_data.harq_process_id  %d  for UE_id(%d), rnti %x\n", harq_id, UE_id, rnti);
 
     /* TRANSFORM PRECODING --------------------------------------------------------*/
 
@@ -1271,7 +1271,7 @@ void nr_schedule_ulsch(module_id_t module_id,
       pdcch_pdu_bwp_coreset[bwpid][coresetid] = pdcch_pdu;
     }
 
-    LOG_D(MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frame,slot);
+    LOG_D(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frame,slot);
 
     /* Fill PDCCH DL DCI PDU */
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci];

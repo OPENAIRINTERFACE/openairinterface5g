@@ -322,7 +322,7 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     {
         nfapi_nr_ul_dci_request_pdus_t *pdu_list = &ul_dci_req->ul_dci_pdu_list[i];
         AssertFatal(pdu_list->PDUType == 0, "ul_dci_req pdu type != PUCCH");
-        if( pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI != get_mac_inst(0)->crnti)
+        if (pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI != get_mac_inst(0)->crnti)
           continue;
         LOG_I(NR_PHY, "[%d %d] PUCCH PDU in ul_dci for rnti %x\n", ul_dci_req->SFN, ul_dci_req->Slot, pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI);
         uint16_t num_dci = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
