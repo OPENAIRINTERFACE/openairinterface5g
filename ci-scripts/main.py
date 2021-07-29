@@ -155,7 +155,11 @@ def GetParametersFromXML(action):
 		RAN.eNB_Trace=test.findtext('eNB_Trace')
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
-		RAN.USRPIPAddress=test.findtext('USRP_IPAddress')
+		USRPIPAddress=test.findtext('USRP_IPAddress')
+		if USRPIPAddress is None:
+			RAN.USRPIPAddress=''
+		else:
+			RAN.USRPIPAddress=USRPIPAddress
 		if (eNB_instance is None):
 			RAN.eNB_instance=0
 		else:
