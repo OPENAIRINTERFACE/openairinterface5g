@@ -224,7 +224,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   reset_queue(&nr_rx_ind_queue);
   reset_queue(&nr_crc_ind_queue);
   reset_queue(&nr_uci_ind_queue);
-  reset_queue(&nr_sfn_slot_queue);
 
   NR_PRACH_RESOURCES_t prach_resources;
   memset(&prach_resources, 0, sizeof(prach_resources));

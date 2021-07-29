@@ -521,9 +521,10 @@ int nr_acknack_scheduling(int mod_id,
   get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
 
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
+  //TODO:: The 2nd condition should be removed.
   if (pucch->dai_c > 0 && pucch->frame == frame) {
     /* this UE already has a PUCCH occasion */
-
+    DevAssert(pucch->frame == frame);
     // Find the right timing_indicator value.
     int i = 0;
     while (i < 8) {
@@ -556,12 +557,15 @@ int nr_acknack_scheduling(int mod_id,
    * scheduled a lot and used all AckNacks, pucch->frame might have been
    * wrapped around to next frame */
   if (frame != pucch->frame || pucch->ul_slot < first_ul_slot_tdd) {
+   //TODO:: This comment should be removed later.
+   /*
     AssertFatal(pucch->sr_flag + pucch->dai_c == 0,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
     AssertFatal(frame + 1 != pucch->frame,
                 "frame wrap around not handled in %s() yet\n",
                 __func__);
+   */
     pucch->frame = frame;
     pucch->ul_slot = first_ul_slot_tdd;
   }

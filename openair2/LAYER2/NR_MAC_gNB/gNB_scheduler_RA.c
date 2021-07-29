@@ -1165,7 +1165,8 @@ void nr_fill_rar(uint8_t Mod_idP,
   // TC-RNTI
   rar->TCRNTI_1 = (uint8_t) (ra->rnti >> 8);        // 8 MSBs of rnti
   rar->TCRNTI_2 = (uint8_t) (ra->rnti & 0xff);      // 8 LSBs of rnti
-
+  LOG_D(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u TA command %d with rnti = %x\n",
+             ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index, ra->timing_offset, ra->rnti);
   // UL grant
 
   ra->msg3_TPC = tpc_command;
