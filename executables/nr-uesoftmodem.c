@@ -466,10 +466,9 @@ void init_pdcp(int ue_id) {
   if (IS_SOFTMODEM_NOKRNMOD)
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
 
-  /*if (rlc_module_init() != 0) {
+  if (rlc_module_init(0) != 0) {
     LOG_I(RLC, "Problem at RLC initiation \n");
   }
-  nr_DRB_preconfiguration();*/
   pdcp_layer_init();
   nr_pdcp_module_init(pdcp_initmask, ue_id);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);

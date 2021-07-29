@@ -1930,7 +1930,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                     LOG_T(MAC, "\n");
                 #endif
 
-                if (IS_SOFTMODEM_NOS1){
+                if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->nsa){
                   if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DTCH) {
 
                     mac_rlc_data_ind(module_idP,
