@@ -420,7 +420,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   NR_PUCCH_Resource_t *pucch_resource = NULL;
   uint16_t crnti = mac->crnti;
-  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;//SA uses initial BWP
+  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
 
   /* update current context */
 
@@ -991,7 +991,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   int N_m_c_rx = 0;
   int V_DAI_m_DL = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id; //SA uses initial BWP
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id; 
 
 
   if (mac->DLbwp[dl_bwp_id] &&
@@ -1183,7 +1183,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
   pucch_format_nr_t format_pucch;
   int ready_pucch_resource_id = FALSE; /* in the case that it is already given */
   NR_PUCCH_Resource_t *pucch_resource = NULL;
-  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;//SA uses initial BWP
+  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
 
   /* ini values to unset */
   *initial_pucch_id = NB_INITIAL_PUCCH_RESOURCE;
@@ -1378,7 +1378,7 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8
 int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
 {
   int pucch_resource_set_id = 0;
-  NR_BWP_Id_t bwp_id = mac->DL_BWP_Id; //SA uses initial BWP
+  NR_BWP_Id_t bwp_id = mac->DL_BWP_Id;
 
   //long *pucch_max_pl_bits = NULL;
 

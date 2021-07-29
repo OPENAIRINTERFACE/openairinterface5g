@@ -60,7 +60,6 @@
 #define DEBUG_gNB_SCHEDULER 1
 
 #include "common/ran_context.h"
-#include "executables/softmodem-common.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -1861,7 +1860,9 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     if (bwpList) AssertFatal(bwpList->list.count <= 4,
 			     "downlinkBWP_ToAddModList has %d BWP!\n",
 			     bwpList->list.count);
-    const int bwp_id =  (get_softmodem_params()->sa ) ? 1 : *servingCellConfig->firstActiveDownlinkBWP_Id; // TODO
+           
+    const int bwp_id = servingCellConfig ? *servingCellConfig->firstActiveDownlinkBWP_Id : 1; // TODO
+
     sched_ctrl->active_bwp = bwpList ? bwpList->list.array[bwp_id - 1] : NULL;
     const int target_ss = sched_ctrl->active_bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
     sched_ctrl->search_space = get_searchspace(scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
@@ -1996,7 +1997,7 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
 
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
-  NR_BWP_Id_t bwp_id; //Changed
+  NR_BWP_Id_t bwp_id;
   if (CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id)
     bwp_id = *CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
   else

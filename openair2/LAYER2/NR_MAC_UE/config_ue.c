@@ -601,8 +601,8 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   AssertFatal(scd->downlinkBWP_ToAddModList->list.count <= 4, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
 
   config_bwp_ue(mac, NULL, NULL);
-  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id ; //Changed
-  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id ;//Changed
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   AssertFatal(dl_bwp_id != 0, "DL_BWP_Id is 0!");
   AssertFatal(ul_bwp_id != 0, "UL_BWP_Id is 0!");
 
@@ -644,10 +644,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     mac->DLbwp[num_BWP] = scd->downlinkBWP_ToAddModList->list.array[num_BWP-1];
     mac->ULbwp[num_BWP] = uplinkBWP_ToAddModList->list.array[num_BWP-1];
   }
-  
   mac->coreset[dl_bwp_id][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
-
-  
   
   AssertFatal(mac->ULbwp[ul_bwp_id]->bwp_Dedicated != NULL, "UL bwp_Dedicated is null\n");
 

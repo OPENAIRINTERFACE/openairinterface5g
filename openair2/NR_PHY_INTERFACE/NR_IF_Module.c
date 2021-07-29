@@ -105,7 +105,6 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
   }
 
   UL_info->uci_ind.num_ucis = 0;
-
 }
 
 void handle_nr_ulsch(NR_UL_IND_t *UL_info)

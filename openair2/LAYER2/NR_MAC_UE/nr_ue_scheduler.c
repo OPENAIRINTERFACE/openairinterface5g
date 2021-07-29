@@ -95,7 +95,7 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
 long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
   long k2 = -1;
 
-  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;//SA uses initial BWP
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   // Get K2 from RRC configuration
   NR_PUSCH_Config_t *pusch_config=mac->ULbwp[ul_bwp_id] ? mac->ULbwp[ul_bwp_id]->bwp_Dedicated->pusch_Config->choice.setup : NULL;
   NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
@@ -136,7 +136,7 @@ long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
  */
 fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot)
 {
-  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;//SA uses initial BWP
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->scc==NULL ? mac->scc_SIB->tdd_UL_DL_ConfigurationCommon : mac->scc->tdd_UL_DL_ConfigurationCommon;
 
   //Check if request to access ul_config is for a UL slot
@@ -167,7 +167,7 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
 void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci) {
 
   NR_ServingCellConfigCommon_t *scc = mac->scc;
-  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;//SA uses initial BWP
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[ul_bwp_id]->bwp_Dedicated->pusch_Config->choice.setup;
 
   long	transformPrecoder;
@@ -306,7 +306,7 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
 
   /* ANTENNA_PORTS */
   uint8_t rank = 0; // We need to initialize rank FIXME!!!
-  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;//SA uses initial BWP
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[ul_bwp_id]->bwp_Dedicated->pusch_Config->choice.setup;
 
@@ -513,7 +513,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   int                N_PRB_oh  = 0;
 
   int rnti_type = get_rnti_type(mac, rnti);
-  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;//SA uses initial BWP
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
 
   // Common configuration
   pusch_config_pdu->dmrs_config_type = pusch_dmrs_type1;
@@ -668,7 +668,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
       config_bwp_ue(mac, &dci->bwp_indicator.val, dci_format);
 
-      ul_bwp_id = mac->UL_BWP_Id;//SA uses initial BWP
+      ul_bwp_id = mac->UL_BWP_Id;
 
       target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
       ul_layers_config(mac, pusch_config_pdu, dci);
@@ -1121,7 +1121,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
                           uint8_t tda_id){
 
   int delta = 0;
-  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;//SA uses initial BWP
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   NR_BWP_Uplink_t *ubwp = mac->ULbwp[ul_bwp_id];
 
   // Get the numerology to calculate the Tx frame and slot
