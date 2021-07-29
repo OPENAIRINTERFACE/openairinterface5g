@@ -60,6 +60,7 @@ RUN apt-get update && \
         net-tools \
         iputils-ping \
         iproute2 \
+        iperf \
         libyaml-0-2 && \
     # Install UHD driver from ettus ppa 
     # At time of writing, it is 3.14

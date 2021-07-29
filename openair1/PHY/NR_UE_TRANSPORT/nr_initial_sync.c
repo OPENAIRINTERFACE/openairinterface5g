@@ -161,13 +161,12 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
 #endif
 
     ret = nr_rx_pbch(ue,
-	             proc,
-		     ue->pbch_vars[0],
-		     frame_parms,
-		     0,
-		     temp_ptr->i_ssb,
-                     SISO,
-                     ue->high_speed_flag);
+                     proc,
+                     ue->pbch_vars[0],
+                     frame_parms,
+                     0,
+                     temp_ptr->i_ssb,
+                     SISO);
 
     temp_ptr=temp_ptr->next_ssb;
   }

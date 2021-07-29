@@ -27,6 +27,8 @@
   - Terminate_MME
   - Initialize_SPGW
   - Terminate_SPGW
+  - Initialize_5GCN
+  - Terminate_5GCN
   - Initialize_CatM_module
   - Terminate_CatM_module
   - Attach_CatM_module

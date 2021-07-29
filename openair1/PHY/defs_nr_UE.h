@@ -857,9 +857,9 @@ typedef struct {
 
   uint32_t X_u[64][839];
 
-  uint32_t high_speed_flag;
+
   uint32_t perfect_ce;
-  int16_t ch_est_alpha;
+
   int generate_ul_signal[NUMBER_OF_CONNECTED_gNB_MAX];
 
   UE_NR_SCAN_INFO_t scan_info[NB_BANDS_MAX];
