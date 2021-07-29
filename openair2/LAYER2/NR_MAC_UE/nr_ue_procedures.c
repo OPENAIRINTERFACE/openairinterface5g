@@ -1414,6 +1414,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     pucch_pdu->prb_start = pucchres->startingPRB;
     pucch_pdu->freq_hop_flag = pucchres->intraSlotFrequencyHopping!= NULL ?  1 : 0;
     pucch_pdu->second_hop_prb = pucchres->secondHopPRB!= NULL ?  *pucchres->secondHopPRB : 0;
+    pucch_pdu->prb_size = 1; // format 0 or 1
 
     if ((O_SR+O_CSI+O_SR) > (sizeof(uint64_t)*8)) {
       LOG_E(MAC,"PUCCH number of UCI bits exceeds payload size : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
