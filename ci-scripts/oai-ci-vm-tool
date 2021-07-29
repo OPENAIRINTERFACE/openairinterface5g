@@ -170,20 +170,20 @@ function setvar_usage {
 # for compatibility reasons  
 
 function variant__v1__enb_usrp {
-    NB_PATTERN_FILES=9
+    NB_PATTERN_FILES=7
     BUILD_OPTIONS="--eNB -w USRP --mu"
     VM_MEMORY=3072
 }
     
 function variant__v2__basic_sim {
-    NB_PATTERN_FILES=13
+    NB_PATTERN_FILES=11
     BUILD_OPTIONS="--eNB --UE"
     VM_MEMORY=8192
     RUN_OPTIONS="complex"
 }
 
 function variant__v3__phy_sim {
-    NB_PATTERN_FILES=13
+    NB_PATTERN_FILES=11
     BUILD_OPTIONS="--phy_simulators"
     VM_MEMORY=8192
     VM_DISK=20
@@ -200,28 +200,28 @@ function variant__v4__cppcheck {
 function variant__v5__gnb_usrp {
     VM_MEMORY=10240
     VM_CPU=8
-    NB_PATTERN_FILES=9
+    NB_PATTERN_FILES=7
     BUILD_OPTIONS="--gNB -w USRP"
 }
 
 function variant__v6__nr_ue_usrp {
     VM_MEMORY=4096
     VM_CPU=4
-    NB_PATTERN_FILES=9
+    NB_PATTERN_FILES=7
     BUILD_OPTIONS="--nrUE -w USRP"
 }
 
 function variant__v7__enb_ethernet {
     VM_MEMORY=4096
     ARCHIVES_LOC=enb_eth
-    NB_PATTERN_FILES=9
+    NB_PATTERN_FILES=7
     BUILD_OPTIONS="--eNB -w USRP"
 }
 
 function variant__v8__ue_ethernet {
     VM_MEMORY=4096
     ARCHIVES_LOC=ue_eth
-    NB_PATTERN_FILES=13
+    NB_PATTERN_FILES=11
     BUILD_OPTIONS="--UE -w USRP"
 }
 
