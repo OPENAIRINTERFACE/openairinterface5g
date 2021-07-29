@@ -319,7 +319,8 @@ set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}  ${commonOpts} -std=c++11 -D${MKVER}")
 
 if (CUDA_FOUND)
-  add_definitions(-D CUDA_FLAG )
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCUDA_FLAG")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCUDA_FLAG")
 endif()
 
 if (SANITIZE_ADDRESS)
