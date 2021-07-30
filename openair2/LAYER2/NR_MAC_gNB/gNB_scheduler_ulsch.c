@@ -298,9 +298,6 @@ void nr_process_mac_pdu(
         if (pdu_len < 0) {
           LOG_E(MAC, "%s() residual mac pdu length < 0!, pdu_len: %d\n", __func__, pdu_len);
           LOG_E(MAC, "MAC PDU ");
-          //for (int i = 0; i < 20; i++) // Only printf 1st - 20nd bytes
-          //  printf("%02x ", pdu_ptr[i]);
-          //printf("\n");
           return;
         }
     }
@@ -487,7 +484,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[i];
       if (ra->state != WAIT_Msg3 || ra->rnti == 0)
       {
-        LOG_I(NR_MAC, "Notice ra->state = %d (if it is 2, it is WAIT_Msg3. Else we continue), ra->rnti %x\n", ra->state, ra->rnti);
+        LOG_D(NR_MAC, "Notice ra->state = %d (if it is 2, it is WAIT_Msg3. Else we continue), ra->rnti %x\n", ra->state, ra->rnti);
         continue;
       }
 

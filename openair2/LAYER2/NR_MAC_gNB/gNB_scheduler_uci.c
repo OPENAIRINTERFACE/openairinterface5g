@@ -525,6 +525,7 @@ int nr_acknack_scheduling(int mod_id,
   if (pucch->dai_c > 0 && pucch->frame == frame) {
     /* this UE already has a PUCCH occasion */
     DevAssert(pucch->frame == frame);
+
     // Find the right timing_indicator value.
     int i = 0;
     while (i < 8) {

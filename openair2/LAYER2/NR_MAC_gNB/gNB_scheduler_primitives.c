@@ -1452,7 +1452,7 @@ int extract_length(int startSymbolAndLength) {
 void dump_nr_list(NR_list_t *listP)
 {
   for (int j = listP->head; j >= 0; j = listP->next[j])
-    LOG_T(MAC, "NR list node %d => %d\n", j, listP->next[j]);
+    LOG_I(MAC, "NR list node %d => %d\n", j, listP->next[j]);
 }
 
 /*

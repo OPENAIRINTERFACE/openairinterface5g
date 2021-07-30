@@ -721,6 +721,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
     if (current_harq_pid < 0) {
       /* PP has not selected a specific HARQ Process, get a new one */
       current_harq_pid = sched_ctrl->available_dl_harq.head;
+      //TODO:: Need to remove this if condition after debug.
+      if (current_harq_pid < 0)
+      {
+        LOG_D(MAC,"no free dl HARQ process available for UE %d\n",UE_id);
+        return;
+      }
       AssertFatal(current_harq_pid >= 0,
                   "no free HARQ process available for UE %d\n",
                   UE_id);

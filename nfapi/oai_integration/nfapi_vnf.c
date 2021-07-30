@@ -713,27 +713,20 @@ int phy_nr_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rach_ind
 {
   if(NFAPI_MODE == NFAPI_MODE_VNF)
   {
-    //UL_INFO.rach_ind = *ind;
     nfapi_nr_rach_indication_t *rach_ind = CALLOC(1, sizeof(*rach_ind));
     rach_ind->header.message_id = ind->header.message_id;
     rach_ind->number_of_pdus = ind->number_of_pdus;
     rach_ind->sfn = ind->sfn;
     rach_ind->slot = ind->slot;
-    rach_ind->pdu_list = CALLOC(1, sizeof(*rach_ind->pdu_list));
-    if (rach_ind->pdu_list == NULL) {
-        LOG_I(NR_MAC, "Memory not allocated for rach_ind->pdu_list of phy_nr_rach_indication in nfapi_vnf.c.\n");
-        exit(0);
-    }
+    rach_ind->pdu_list = CALLOC(rach_ind->number_of_pdus, sizeof(*rach_ind->pdu_list));
+    AssertFatal(rach_ind->pdu_list != NULL, "Memory not allocated for rach_ind->pdu_list in phy_nr_rach_indication.");
     for (int i = 0; i < ind->number_of_pdus; i++)
     {
       rach_ind->pdu_list[i].num_preamble = ind->pdu_list[i].num_preamble;
       rach_ind->pdu_list[i].freq_index = ind->pdu_list[i].freq_index;
       rach_ind->pdu_list[i].symbol_index = ind->pdu_list[i].symbol_index;
       rach_ind->pdu_list[i].preamble_list = CALLOC(ind->pdu_list[i].num_preamble, sizeof(nfapi_nr_prach_indication_preamble_t));
-      if (rach_ind->pdu_list[i].preamble_list == NULL) {
-          LOG_I(NR_MAC, "Memory not allocated for rach_ind->pdu_list[i].preamble_list of phy_nr_rach_indication in nfapi_vnf.c.\n");
-          exit(0);
-      }
+      AssertFatal(rach_ind->pdu_list[i].preamble_list != NULL, "Memory not allocated for rach_ind->pdu_list[i].preamble_list  in phy_nr_rach_indication.");
       for (int j = 0; j < ind->number_of_pdus; j++)
       {
         rach_ind->pdu_list[i].preamble_list[j].preamble_index = ind->pdu_list[i].preamble_list[j].preamble_index;
@@ -765,19 +758,11 @@ int phy_nr_uci_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_uci_indic
   if(NFAPI_MODE == NFAPI_MODE_VNF)
   {
     nfapi_nr_uci_indication_t *uci_ind = CALLOC(1, sizeof(*uci_ind));
-    if (uci_ind == NULL) {
-        LOG_E(NR_MAC,"Memory not allocated for uci_ind of phy_nr_uci_indication in nfapi_vnf.c.\n");
-        exit(0);
-    }
-
+    AssertFatal(uci_ind != NULL, "Memory not allocated for uci_ind in phy_nr_uci_indication.");
     *uci_ind = *ind;
 
     uci_ind->uci_list = CALLOC(NFAPI_NR_UCI_IND_MAX_PDU, sizeof(nfapi_nr_uci_t));
-    if (uci_ind->uci_list == NULL) {
-        LOG_E(NR_MAC,"Memory not allocated for uci_ind->uci_list of phy_nr_uci_indication in nfapi_vnf.c.\n");
-        exit(0);
-    }
-
+    AssertFatal(uci_ind->uci_list != NULL, "Memory not allocated for uci_ind->uci_list in phy_nr_uci_indication.");
     for (int i = 0; i < ind->num_ucis; i++)
     {
       uci_ind->uci_list[i] = ind->uci_list[i];
@@ -792,18 +777,12 @@ int phy_nr_uci_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_uci_indic
           nfapi_nr_uci_pucch_pdu_format_0_1_t *ind_pdu = &ind->uci_list[i].pucch_pdu_format_0_1;
           
           uci_ind_pdu->harq = CALLOC(1, sizeof(*uci_ind_pdu->harq));
-          if (uci_ind_pdu->harq == NULL) {
-              LOG_E(NR_MAC,"Memory not allocated for uci_ind_pdu->harq of phy_nr_uci_indication in nfapi_vnf.c.\n");
-              exit(0);
-          }
+          AssertFatal(uci_ind_pdu->harq != NULL, "Memory not allocated for uci_ind_pdu->harq in phy_nr_uci_indication.");
 
           *uci_ind_pdu->harq = *ind_pdu->harq;
 
           uci_ind_pdu->harq->harq_list = CALLOC(uci_ind_pdu->harq->num_harq, sizeof(*uci_ind_pdu->harq->harq_list));
-          if (uci_ind_pdu->harq->harq_list == NULL) {
-              LOG_E(NR_MAC,"Memory not allocated for uci_ind_pdu->harq->harq_list of phy_nr_uci_indication in nfapi_vnf.c.\n");
-              exit(0);
-          }
+          AssertFatal(uci_ind_pdu->harq->harq_list != NULL, "Memory not allocated for uci_ind_pdu->harq->harq_list in phy_nr_uci_indication.");
           for (int j = 0; j < uci_ind_pdu->harq->num_harq; j++)
               uci_ind_pdu->harq->harq_list[j].harq_value =  ind_pdu->harq->harq_list[j].harq_value;
           
@@ -815,26 +794,17 @@ int phy_nr_uci_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_uci_indic
           nfapi_nr_uci_pucch_pdu_format_2_3_4_t *ind_pdu = &ind->uci_list[i].pucch_pdu_format_2_3_4;
           
           uci_ind_pdu->harq.harq_payload = CALLOC(1, sizeof(*uci_ind_pdu->harq.harq_payload));
-          if (uci_ind_pdu->harq.harq_payload == NULL) {
-              LOG_E(NR_MAC,"Memory not allocated for uci_ind_pdu->harq.harq_payload of phy_nr_uci_indication in nfapi_vnf.c.\n");
-              exit(0);
-          }
+          AssertFatal(uci_ind_pdu->harq.harq_payload != NULL, "Memory not allocated for uci_ind_pdu->harq.harq_payload in phy_nr_uci_indication.");
           *uci_ind_pdu->harq.harq_payload =  *ind_pdu->harq.harq_payload;
 
 
           uci_ind_pdu->csi_part1.csi_part1_payload = CALLOC(1, sizeof(*uci_ind_pdu->csi_part1.csi_part1_payload));
-          if (uci_ind_pdu->csi_part1.csi_part1_payload == NULL) {
-              LOG_E(NR_MAC,"Memory not allocated for uci_ind_pdu->csi_part1->csi_part1_payload of phy_nr_uci_indication in nfapi_vnf.c.\n");
-              exit(0);
-          }
+          AssertFatal(uci_ind_pdu->csi_part1.csi_part1_payload != NULL, "Memory not allocated for uci_ind_pdu->csi_part1.csi_part1_payload in phy_nr_uci_indication.");
           *uci_ind_pdu->csi_part1.csi_part1_payload =  *ind_pdu->csi_part1.csi_part1_payload;
 
 
           uci_ind_pdu->csi_part2.csi_part2_payload = CALLOC(1, sizeof(*uci_ind_pdu->csi_part2.csi_part2_payload));
-          if (uci_ind_pdu->csi_part2.csi_part2_payload == NULL) {
-              LOG_E(NR_MAC,"Memory not allocated for uci_ind_pdu->csi_part2->csi_part2_payload of phy_nr_uci_indication in nfapi_vnf.c.\n");
-              exit(0);
-          }
+          AssertFatal(uci_ind_pdu->csi_part2.csi_part2_payload != NULL, "Memory not allocated for uci_ind_pdu->csi_part2.csi_part2_payload in phy_nr_uci_indication.");
           *uci_ind_pdu->csi_part2.csi_part2_payload =  *ind_pdu->csi_part2.csi_part2_payload;
 
           break;
@@ -968,10 +938,7 @@ int phy_nr_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_crc_indic
     crc_ind->slot = ind->slot;
     if (ind->number_crcs > 0) {
       crc_ind->crc_list = CALLOC(NFAPI_NR_CRC_IND_MAX_PDU, sizeof(nfapi_nr_crc_t));
-      if (crc_ind->crc_list == NULL) {
-          LOG_I(NR_MAC, "Memory not allocated for crc_ind->crc_list of phy_nr_crc_indication in nfapi_vnf.c.\n");
-          exit(0);
-      }
+      AssertFatal(crc_ind->crc_list != NULL, "Memory not allocated for crc_ind->crc_list in phy_nr_crc_indication.");
     }
     for (int j = 0; j < ind->number_crcs; j++)
     {
@@ -1091,10 +1058,7 @@ int phy_nr_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rx_data_in
 
     if (ind->number_of_pdus > 0) {
       rx_ind->pdu_list = CALLOC(NFAPI_NR_RX_DATA_IND_MAX_PDU, sizeof(nfapi_nr_rx_data_pdu_t));
-      if (rx_ind->pdu_list == NULL) {
-          LOG_I(NR_MAC,"Memory not allocated for rx_ind->pdu_list of phy_nr_rx_indication in nfapi_vnf.c.\n");
-          exit(0);
-      }
+      AssertFatal(rx_ind->pdu_list != NULL, "Memory not allocated for rx_ind->pdu_list in phy_nr_rx_indication.");
     }
     for (int j = 0; j < ind->number_of_pdus; j++)
     {

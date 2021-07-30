@@ -60,7 +60,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                   "Too many ul_config pdus %d", ul_config->number_pdus);
       for (int i = 0; i < ul_config->number_pdus; ++i)
       {
-        LOG_D(PHY, "In %s: processing type-%d PDU of %d total UL PDUs (ul_config %p) \n",
+        LOG_D(PHY, "In %s: processing type %d PDU of %d total UL PDUs (ul_config %p) \n",
               __FUNCTION__, ul_config->ul_config_list[i].pdu_type, ul_config->number_pdus, ul_config);
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type;

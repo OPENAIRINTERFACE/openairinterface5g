@@ -287,7 +287,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
 
         if (tx_data_request->Slot == 7) { //Melissa this means we have an RAR, sorta hacky though
             if( get_mac_inst(dl_info->module_id)->crnti == get_mac_inst(dl_info->module_id)->ra.t_crnti )
-            {  LOG_I(MAC, "Discarding tx_data_requested since it includes useless RAR.\n");
+            {  LOG_D(MAC, "Discarding tx_data_requested since it includes useless RAR.\n");
                 continue;
             }
             dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
@@ -590,7 +590,7 @@ void *nrue_standalone_pnf_task(void *context)
 
       if (!put_queue(&nr_sfn_slot_queue, &sfn_slot_pool[sfn_slot_id]))
       {
-        LOG_I(NR_MAC, "put_queue failed for sfn slot.\n");
+        LOG_D(NR_MAC, "put_queue failed for sfn slot.\n");
       }
       LOG_D(NR_MAC, "We have successfully queued snf slot %d.%d, with id %u, qsize %zu\n",
                     sfn_slot_pool[sfn_slot_id]>> 6, sfn_slot_pool[sfn_slot_id] & 0x3F,

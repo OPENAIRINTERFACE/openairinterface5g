@@ -185,13 +185,12 @@ static bool crc_sfn_slot_matcher(void *wanted, void *candidate)
 
 void handle_nr_ulsch(NR_UL_IND_t *UL_info)
 {
-  if (gnb_rx_ind_queue.num_items == 0 || gnb_crc_ind_queue.num_items == 0)
-    return; 
-  LOG_I(NR_MAC, "gnb_rx_ind_queue size and gnb_crc_ind_queue size = %zu and %zu\n", 
-                  gnb_rx_ind_queue.num_items, 
-                  gnb_crc_ind_queue.num_items
-                  );
   nfapi_nr_rx_data_indication_t *rx_ind = get_queue(&gnb_rx_ind_queue);
+  if (!rx_ind)
+  {
+    LOG_D(NR_PHY, "No rx data indication (empty gnb_rx_ind_queue)\n");
+    return;
+  }
   int sfn_slot = NFAPI_SFNSLOT2HEX(rx_ind->sfn, rx_ind->slot); 
   
   nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&gnb_crc_ind_queue,
@@ -200,7 +199,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
                                                         &sfn_slot);
   if (!crc_ind)
   {
-    LOG_I(NR_PHY, "No crc indication with the same SFN SLOT of rx indication %u %u\n", rx_ind->sfn, rx_ind->slot);
+    LOG_D(NR_PHY, "No crc indication with the same SFN SLOT of rx indication %u %u\n", rx_ind->sfn, rx_ind->slot);
     requeue(&gnb_rx_ind_queue, rx_ind);
     return;
   }
@@ -234,7 +233,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
 
         if (crc->rnti != rx->rnti)
         {
-          LOG_I(NR_MAC, "mis-match between CRC rnti %04x and RX rnit %04x\n",  crc->rnti,  rx->rnti);
+          LOG_D(NR_MAC, "mis-match between CRC rnti %04x and RX rnit %04x\n",  crc->rnti,  rx->rnti);
           continue;
         }
 
