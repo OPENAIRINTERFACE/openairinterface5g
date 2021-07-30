@@ -43,8 +43,6 @@
 
 #define MAX_IF_MODULES 100
 
-const char *dl_indication_type[] = {"MIB", "SIB", "DLSCH", "DCI", "RAR"};
-
 UL_IND_t *UL_INFO = NULL;
 
 
@@ -612,6 +610,19 @@ void *nrue_standalone_pnf_task(void *context)
       nr_phy_channel_params_t ch_info;
       memcpy(&ch_info, buffer, sizeof(nr_phy_channel_params_t));
       current_sfn_slot = ch_info.sfn_slot;
+
+      sfn_slot_pool[sfn_slot_id] = ch_info.sfn_slot;
+
+      if (!put_queue(&nr_sfn_slot_queue, &sfn_slot_pool[sfn_slot_id]))
+      {
+        LOG_D(NR_MAC, "put_queue failed for sfn slot.\n");
+      }
+      LOG_D(NR_MAC, "We have successfully queued snf slot %d.%d, with id %u, qsize %zu\n",
+                    sfn_slot_pool[sfn_slot_id]>> 6, sfn_slot_pool[sfn_slot_id] & 0x3F,
+                    sfn_slot_id, nr_sfn_slot_queue.num_items);
+
+      sfn_slot_id = (sfn_slot_id + 1) % 512;
+
       if (sem_post(&sfn_slot_semaphore) != 0)
       {
         LOG_E(MAC, "sem_post() error\n");
@@ -798,9 +809,9 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 
       for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
 
-        LOG_D(MAC, "In %s sending DL indication to MAC. 1 PDU type %s of %d total number of PDUs \n",
+        LOG_D(MAC, "In %s sending DL indication to MAC. 1 PDU type %d of %d total number of PDUs \n",
           __FUNCTION__,
-          dl_indication_type[dl_info->rx_ind->rx_indication_body[i].pdu_type - 1],
+          dl_info->rx_ind->rx_indication_body[i].pdu_type,
           dl_info->rx_ind->number_pdus);
 
         switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
