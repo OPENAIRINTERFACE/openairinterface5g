@@ -655,6 +655,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   if (enc_rval.encoded==-1) {
     return(-1);
   }
+  sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonControlResourceSet=coreset0;
 
   return((enc_rval.encoded+7)/8);
 }

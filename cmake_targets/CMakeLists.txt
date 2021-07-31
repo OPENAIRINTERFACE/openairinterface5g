@@ -463,7 +463,6 @@ add_custom_target (
   DEPENDS ${RRC_GRAMMAR}
   )
 
-set_source_files_properties(${rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
 add_library(RRC_LIB ${rrc_source}
     ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1_msg.c
     ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1_msg_NB_IoT.c)
