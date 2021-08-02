@@ -1552,7 +1552,7 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
   int16_t G_b_f_c = 0;
 
   if (pucch_Config->spatialRelationInfoToAddModList != NULL) {  /* FFS TODO NR */
-    LOG_E(MAC,"PUCCH Spatial relation infos are not yet implemented : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
+    LOG_D(MAC,"PUCCH Spatial relation infos are not yet implemented : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
     return (PUCCH_POWER_DEFAULT);
   }
 
