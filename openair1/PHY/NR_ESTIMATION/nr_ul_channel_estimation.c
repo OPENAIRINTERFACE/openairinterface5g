@@ -82,7 +82,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   uint16_t nb_rb_pusch = pusch_pdu->rb_size;
 
 #ifdef DEBUG_CH
-  LOG_D(PHY, "In %s: ch_offset %d, symbol_offset %d OFDM size %d, Ns = %d, k = %d symbol %d\n",
+  LOG_I(PHY, "In %s: ch_offset %d, symbol_offset %d OFDM size %d, Ns = %d, k = %d symbol %d\n",
         __FUNCTION__,
         ch_offset,
         symbol_offset,

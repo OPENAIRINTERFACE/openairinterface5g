@@ -255,12 +255,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     dlsch->harq_mask                |= (1<<harq_pid);
     dlsch->rnti                      = pdcch_pdu_rel15->dci_pdu[i].RNTI;
     
-    //    nr_fill_cce_list(gNB,0);  
-    /*
-    LOG_D(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
-    LOG_D(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
-    */
-
+    //    nr_fill_cce_list(gNB,0);
   }
 
 }

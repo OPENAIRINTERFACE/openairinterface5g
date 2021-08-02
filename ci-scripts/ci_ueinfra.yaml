@@ -8,7 +8,7 @@ idefix:
   WakeupScript : ci_ctl_qtel.py /dev/ttyUSB2 wup
   DetachScript : ci_ctl_qtel.py /dev/ttyUSB2 detach
   PLMN : 22201
-  UENetwork : enxb22a941dbf00 
+  UENetwork : wwan0 
   HostIPAddress : 192.168.18.188
   HostUsername : oaicicd
   HostPassword : oaicicd

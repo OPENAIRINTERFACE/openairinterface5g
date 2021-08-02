@@ -87,6 +87,8 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "executables/softmodem-common.h"
 #include <nfapi/oai_integration/nfapi_pnf.h>
+#include <openair1/PHY/NR_TRANSPORT/nr_ulsch.h>
+#include <PHY/NR_ESTIMATION/nr_ul_estimation.h>
 //#define DEBUG_THREADS 1
 
 //#define USRP_DEBUG 1
@@ -348,6 +350,22 @@ static void *process_stats_thread(void *param) {
   return(NULL);
 }
 
+void *nrL1_stats_thread(void *param) {
+  PHY_VARS_gNB     *gNB      = (PHY_VARS_gNB *)param;
+  wait_sync("L1_stats_thread");
+  FILE *fd;
+  while (!oai_exit) {
+    sleep(1);
+    fd=fopen("nrL1_stats.log","w");
+    AssertFatal(fd!=NULL,"Cannot open nrL1_stats.log\n");
+    dump_nr_I0_stats(fd,gNB);
+    dump_pusch_stats(fd,gNB);
+    //    nr_dump_uci_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
+    fclose(fd);
+  }
+  return(NULL);
+}
+
 void init_gNB_Tpool(int inst) {
   PHY_VARS_gNB *gNB;
   gNB = RC.gNB[inst];
@@ -366,6 +384,7 @@ void init_gNB_Tpool(int inst) {
     sprintf(ul_pool+2+s_offset,",-1");
     s_offset += 3;
   }
+  if (getenv("noThreads")) strcpy(ul_pool, "n");
   initTpool(ul_pool, gNB->threadPool, false);
   // ULSCH decoder result FIFO
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
@@ -384,7 +403,9 @@ void init_gNB_Tpool(int inst) {
   initNotifiedFIFO(gNB->resp_RU_tx);
 
   // Stats measurement thread
-  if(opp_enabled == 1) threadCreate(&proc->L1_stats_thread, process_stats_thread,(void *)gNB, "time_meas", -1, OAI_PRIORITY_RT_LOW);
+  if(opp_enabled == 1) threadCreate(&proc->process_stats_thread, process_stats_thread,(void *)gNB, "time_meas", -1, OAI_PRIORITY_RT_LOW);
+  threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
+
 }
 
 

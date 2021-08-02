@@ -14,7 +14,7 @@ extern "C" {
 #define gtpv1u_delete_s1u_tunnel ocp_gtpv1u_delete_s1u_tunnel
 #define gtpv1u_create_x2u_tunnel ocp_gtpv1u_create_x2u_tunnel
 #define gtpv1u_eNB_task          ocp_gtpv1uTask
-#define gtpv1u_gNB_task          ocp_gtpv1uTask
+#define nr_gtpv1u_gNB_task       ocp_gtpv1uTask
 #define TASK_VARIABLE            OCP_GTPV1_U
 #else
 #define TASK_VARIABLE            TASK_GTPV1_U
@@ -60,7 +60,7 @@ int ocp_gtpv1u_create_x2u_tunnel(
 
 
 // New API
-teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int bearer_id, teid_t teid,
+teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_rb_id, teid_t teid,
                            transport_layer_addr_t remoteAddr, int port, gtpCallback callBack);
 instance_t ocp_gtpv1Init(openAddr_t context);
 void *ocp_gtpv1uTask(void *args);

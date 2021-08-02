@@ -98,6 +98,7 @@ typedef enum {
 #define CONFIG_STRING_RU_BF_WEIGHTS_LIST          "bf_weights"
 #define CONFIG_STRING_RU_IF_FREQUENCY             "if_freq"
 #define CONFIG_STRING_RU_IF_FREQ_OFFSET           "if_offset"
+#define CONFIG_STRING_RU_DO_PRECODING             "do_precoding"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -127,7 +128,7 @@ typedef enum {
 #define RU_BF_WEIGHTS_LIST_IDX        25
 #define RU_IF_FREQUENCY               26
 #define RU_IF_FREQ_OFFSET             27
-
+#define RU_DO_PRECODING               28
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
 /*   optname                                   helpstr   paramflags    XXXptr          defXXXval                   type      numelt        */
@@ -160,7 +161,8 @@ typedef enum {
     {CONFIG_STRING_RU_OTA_SYNC_ENABLE,             NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_BF_WEIGHTS_LIST,             NULL,       0,       iptr:NULL,       defintarrayval:DEFBFW,   TYPE_INTARRAY,    0}, \
     {CONFIG_STRING_RU_IF_FREQUENCY,                NULL,       0,       u64ptr:NULL,     defuintval:0,            TYPE_UINT64,      0}, \
-    {CONFIG_STRING_RU_IF_FREQ_OFFSET,              NULL,       0,       iptr:NULL,     defintval:0,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_IF_FREQ_OFFSET,              NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_DO_PRECODING,                NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
   }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/

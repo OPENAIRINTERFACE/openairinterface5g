@@ -385,14 +385,14 @@ static int trx_usrp_write(openair0_device *device,
 #if defined(__x86_64) || defined(__i386__)
   #ifdef __AVX2__
       nsamps2 = (nsamps+7)>>3;
-      __m256i buff_tx[8][nsamps2];
+      __m256i buff_tx[cc<2?2:cc][nsamps2];
   #else
     nsamps2 = (nsamps+3)>>2;
-    __m128i buff_tx[8][nsamps2];
+    __m128i buff_tx[cc<2?2:cc][nsamps2];
   #endif
 #elif defined(__arm__)
     nsamps2 = (nsamps+3)>>2;
-    int16x8_t buff_tx[8][nsamps2];
+    int16x8_t buff_tx[cc<2?2:cc][nsamps2];
 #else
 #error Unsupported CPU architecture, USRP device cannot be built
 #endif
@@ -523,14 +523,14 @@ void *trx_usrp_write_thread(void * arg){
     #if defined(__x86_64) || defined(__i386__)
       #ifdef __AVX2__
         nsamps2 = (nsamps+7)>>3;
-        __m256i buff_tx[8][nsamps2];
+        __m256i buff_tx[cc<2?2:cc][nsamps2];
       #else
         nsamps2 = (nsamps+3)>>2;
-        __m128i buff_tx[8][nsamps2];
+        __m128i buff_tx[cc<2?2:cc][nsamps2];
       #endif
     #elif defined(__arm__)
       nsamps2 = (nsamps+3)>>2;
-      int16x8_t buff_tx[8][nsamps2];
+      int16x8_t buff_tx[cc<2?2:cc][nsamps2];
     #else
     #error Unsupported CPU architecture, USRP device cannot be built
     #endif
@@ -582,7 +582,6 @@ void *trx_usrp_write_thread(void * arg){
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_USRP_SEND_RETURN, ret );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_THREAD, 0 );
 
-    if(0) break;
   }
 
   return NULL;
@@ -625,14 +624,14 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
   nsamps2 = (nsamps+7)>>3;
-  __m256i buff_tmp[4][nsamps2];
+  __m256i buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #else
   nsamps2 = (nsamps+3)>>2;
-  __m128i buff_tmp[4][nsamps2];
+  __m128i buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #endif
 #elif defined(__arm__)
   nsamps2 = (nsamps+3)>>2;
-  int16x8_t buff_tmp[4][nsamps2];
+  int16x8_t buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #endif
 
   int rxshift;
@@ -645,44 +644,33 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         rxshift=2;
         break;
      default:
-	AssertFatal(1==0,"Shouldn't be here\n");
-  }	
-  if (cc>1) {
+       AssertFatal(1==0,"Shouldn't be here\n");
+  }
+
+    samples_received=0;
+    while (samples_received != nsamps) {
+
+      if (cc>1) {
       // receive multiple channels (e.g. RF A and RF B)
-      std::vector<void *> buff_ptrs;
+        std::vector<void *> buff_ptrs;
 
-     samples_received=0;
-
-      while (samples_received != nsamps) {
         for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]+samples_received);
-        samples_received += s->rx_stream->recv(buff_ptrs,nsamps-samples_received, s->rx_md);
 
-
-         if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
-          break;
-
-        if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
-          printf("sleep...\n"); //usleep(100);
-        }
-      }
-      if (samples_received == nsamps) s->wait_for_first_pps=0;
-   } else {
+        samples_received += s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+      } else {
       // receive a single channel (e.g. from connector RF A)
-      samples_received=0;
 
-      while (samples_received != nsamps) {
         samples_received += s->rx_stream->recv((void*)((int32_t*)buff_tmp[0]+samples_received),
                                                nsamps-samples_received, s->rx_md);
-
-        if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
-          break;
-
-        if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
-          printf("sleep...\n"); //usleep(100);
-        }
       }
-      if (samples_received == nsamps) s->wait_for_first_pps=0;
+      if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
+        break;
+
+      if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
+        printf("sleep...\n"); //usleep(100);
+      }
     }
+    if (samples_received == nsamps) s->wait_for_first_pps=0;
 
     // bring RX data into 12 LSBs for softmodem RX
     for (int i=0; i<cc; i++) {
@@ -949,8 +937,8 @@ int trx_usrp_reset_stats(openair0_device *device) {
 
 extern "C" {
   int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
-    LOG_D(HW, "openair0_cfg[0].sdr_addrs == '%s'\n", openair0_cfg[0].sdr_addrs);
-    LOG_D(HW, "openair0_cfg[0].clock_source == '%d'\n", openair0_cfg[0].clock_source);
+    LOG_I(HW, "openair0_cfg[0].sdr_addrs == '%s'\n", openair0_cfg[0].sdr_addrs);
+    LOG_I(HW, "openair0_cfg[0].clock_source == '%d' (internal = %d, external = %d)\n", openair0_cfg[0].clock_source,internal,external);
     usrp_state_t *s ;
 
     if ( device->priv == NULL) {
@@ -1041,15 +1029,15 @@ extern "C" {
     if (args.find("clock_source")==std::string::npos) {
 	if (openair0_cfg[0].clock_source == internal) {
 	  s->usrp->set_clock_source("internal");
-	  LOG_D(HW,"Setting clock source to internal\n");
+	  LOG_I(HW,"Setting clock source to internal\n");
 	}
 	else if (openair0_cfg[0].clock_source == external ) {
 	  s->usrp->set_clock_source("external");
-	  LOG_D(HW,"Setting clock source to external\n");
+	  LOG_I(HW,"Setting clock source to external\n");
 	}
 	else if (openair0_cfg[0].clock_source==gpsdo) {
 	  s->usrp->set_clock_source("gpsdo");
-	  LOG_D(HW,"Setting clock source to gpsdo\n");
+	  LOG_I(HW,"Setting clock source to gpsdo\n");
 	}
 	else {
 	  LOG_W(HW,"Clock source set neither in usrp_args nor on command line, using default!\n");
@@ -1064,15 +1052,15 @@ extern "C" {
     if (args.find("time_source")==std::string::npos) {
 	if (openair0_cfg[0].time_source == internal) {
 	  s->usrp->set_time_source("internal");
-	  LOG_D(HW,"Setting time source to internal\n");
+	  LOG_I(HW,"Setting time source to internal\n");
 	}
 	else if (openair0_cfg[0].time_source == external ) {
 	  s->usrp->set_time_source("external");
-	  LOG_D(HW,"Setting time source to external\n");
+	  LOG_I(HW,"Setting time source to external\n");
 	}
 	else if (openair0_cfg[0].time_source==gpsdo) {
 	  s->usrp->set_time_source("gpsdo");
-	  LOG_D(HW,"Setting time source to gpsdo\n");
+	  LOG_I(HW,"Setting time source to gpsdo\n");
 	}
 	else {
 	  LOG_W(HW,"Time source set neither in usrp_args nor on command line, using default!\n");
@@ -1265,10 +1253,14 @@ extern "C" {
       set_rx_gain_offset(&openair0_cfg[0],i,bw_gain_adjust);
       ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(i);
       // limit to maximum gain
-      AssertFatal( openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] <= gain_range.stop(),
-                   "RX Gain too high, lower by %f dB\n",
-                   openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] - gain_range.stop());
-      s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],i);
+      double gain=openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i];
+      if ( gain > gain_range.stop())  {
+                   LOG_E(HW,"RX Gain too high, lower by %f dB\n",
+                   gain - gain_range.stop());
+               gain=gain_range.stop();
+      }
+
+      s->usrp->set_rx_gain(gain,i);
       LOG_I(HW,"RX Gain %d %f (%f) => %f (max %f)\n",i,
             openair0_cfg[0].rx_gain[i],openair0_cfg[0].rx_gain_offset[i],
             openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],gain_range.stop());
@@ -1309,12 +1301,12 @@ extern "C" {
 
   LOG_I(HW,"rx_max_num_samps %zu\n",
         s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
-  
+
   for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++) {
     LOG_I(HW,"setting rx channel %d\n",i);
     stream_args_rx.channels.push_back(i);
   }
-  
+
   s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
   uhd::stream_args_t stream_args_tx("sc16", "sc16");
 

@@ -37,7 +37,10 @@ import time
 import re
 import subprocess
 
+from datetime import datetime
 
+#for log rotation mgt
+import cls_log_mgt
 
 class Module_UE:
 
@@ -47,7 +50,8 @@ class Module_UE:
 			setattr(self, k, v)
 		self.UEIPAddress = ""
 		#dictionary linking command names and related module scripts
-		self.cmd_dict= {"wup": self.WakeupScript,"detach":self.DetachScript}#dictionary of function scripts		
+		self.cmd_dict= {"wup": self.WakeupScript,"detach":self.DetachScript}#dictionary of function scripts
+		self.ue_trace=''		
 
 
 
@@ -72,9 +76,10 @@ class Module_UE:
 			logging.debug('Starting ' + self.Process['Name'])
 			mySSH = sshconnection.SSHConnection()
 			mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-			mySSH.command('echo ' + self.HostPassword + ' | sudo -S ' + self.Process['Cmd'] + ' &','\$',5)
+			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S ' + self.Process['Cmd'] + ' &','\$',5)
 			mySSH.close()
 			#checking the process
+			time.sleep(5)
 			HOST=self.HostIPAddress
 			COMMAND="ps aux | grep " + self.Process['Name'] + " | grep -v grep "
 			logging.debug(COMMAND)
@@ -101,7 +106,7 @@ class Module_UE:
 	def GetModuleIPAddress(self):
 		HOST=self.HostIPAddress
 		response= []
-		tentative = 10
+		tentative = 3 
 		while (len(response)==0) and (tentative>0):
 			COMMAND="ip a show dev " + self.UENetwork + " | grep inet | grep " + self.UENetwork
 			logging.debug(COMMAND)
@@ -126,7 +131,45 @@ class Module_UE:
 				logging.debug('\u001B[1;37;41m Module IP Address Not Found! \u001B[0m')
 				return -1
 
+	def EnableTrace(self):
+		if self.ue_trace=="yes":
+			mySSH = sshconnection.SSHConnection()
+			mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+			#delete old artifacts
+			mySSH.command('echo ' + self.HostPassword + ' | sudo -S rm -rf ci_qlog','\$',5)
+			#start Trace, artifact is created in home dir
+			mySSH.command('echo $USER; nohup sudo -E QLog/QLog -s ci_qlog -f NR5G.cfg &','\$', 5)
+			mySSH.close()
+
+	def DisableTrace(self):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S killall --signal=SIGINT *QLog*', '\$',5)
+		mySSH.close()
 
 
+	def DisableCM(self):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+		mySSH.command('echo ' + self.HostPassword + ' | sudo -S killall --signal SIGKILL *'+self.Process['Name']+'*', '\$', 5)
+		mySSH.close()
 
 
+	def LogCollect(self):
+		if self.ue_trace=="yes":
+			mySSH = sshconnection.SSHConnection()
+			mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+			#archive qlog to USB stick in /media/usb-drive/ci_qlogs with datetime suffix
+			now=datetime.now()
+			now_string = now.strftime("%Y%m%d-%H%M")
+			source='ci_qlog'
+			destination='/media/usb-drive/ci_qlogs/ci_qlog_'+now_string+'.zip'
+			#qlog artifact is zipped into the target folder
+			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S zip -r '+destination+' '+source+' &','\$', 10)
+			mySSH.close()
+			#post action : log cleaning to make sure enough space is reserved for the next run
+			Log_Mgt=cls_log_mgt.Log_Mgt(self.HostIPAddress, self.HostPassword, "/media/usb-drive/ci_qlogs")
+			Log_Mgt.LogRotation()
+		else:
+			destination=""
+		return destination

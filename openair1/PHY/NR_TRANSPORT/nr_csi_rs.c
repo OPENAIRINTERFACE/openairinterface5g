@@ -22,17 +22,22 @@
 
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "PHY/NR_REFSIG/nr_refsig.h"
 
 //#define NR_CSIRS_DEBUG
 
-int nr_generate_csi_rs(uint32_t **gold_csi_rs,
-                       int32_t** txdataF,
-                       int16_t amp,
-                       NR_DL_FRAME_PARMS frame_parms,
-                       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params)
-{
 
-  int16_t mod_csi[frame_parms.symbols_per_slot][NR_MAX_CSI_RS_LENGTH>>1];
+void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
+                        int16_t amp,
+                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
+                        uint16_t cell_id,
+                        int slot){
+
+  NR_DL_FRAME_PARMS frame_parms=gNB->frame_parms;
+  int32_t **txdataF = gNB->common_vars.txdataF;
+  int txdataF_offset = (slot%2)*frame_parms.samples_per_slot_wCP;
+  uint32_t **gold_csi_rs = gNB->nr_gold_csi_rs[slot];
+  int16_t mod_csi[frame_parms.symbols_per_slot][NR_MAX_CSI_RS_LENGTH>>1] __attribute__((aligned(16)));;
   uint16_t b = csi_params.freq_domain;
   uint16_t n, csi_bw, csi_start, p, k, l, mprime, na, kpn, csi_length;
   uint8_t size, ports, kprime, lprime, i, gs;
@@ -44,6 +49,22 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
   uint32_t beta = amp;
 
   AssertFatal(b!=0, "Invalid CSI frequency domain mapping: no bit selected in bitmap\n");
+
+  // pre-computed for scrambling id equel to cell id
+  // if the scrambling id is not the cell id we need to re-initialize the rs
+  if (csi_params.scramb_id != cell_id) {
+    uint8_t reset;
+    uint32_t x1, x2;
+    uint32_t Nid = csi_params.scramb_id;
+    for (uint8_t symb=0; symb<frame_parms.symbols_per_slot; symb++) {
+      reset = 1;
+      x2 = ((1<<10) * (frame_parms.symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
+      for (uint32_t n=0; n<NR_MAX_CSI_RS_INIT_LENGTH_DWORD; n++) {
+        gold_csi_rs[symb][n] = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
+      }
+    }
+  }
 
   switch (csi_params.row) {
   // implementation of table 7.4.1.5.3-1 of 38.211
@@ -495,12 +516,12 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
 
   if (rho < 1) {
     if (csi_params.freq_density == 0)
-      csi_length = (((csi_bw + csi_start)>>1)<<kprime)<<1; 
+      csi_length = (((csi_bw + csi_start)>>1)<<kprime)<<1;
     else
       csi_length = ((((csi_bw + csi_start)>>1)<<kprime)+1)<<1;
   }
   else
-    csi_length = (((uint16_t) rho*(csi_bw + csi_start))<<kprime)<<1; 
+    csi_length = (((uint16_t) rho*(csi_bw + csi_start))<<kprime)<<1;
 
 #ifdef NR_CSIRS_DEBUG
     printf(" start rb %d, n. rbs %d, csi length %d\n",csi_start,csi_bw,csi_length);
@@ -514,41 +535,36 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
 
   // NZP CSI RS
   if (csi_params.csi_type == 1) {
-   // assuming amp is the amplitude of SSB channels
-   switch (csi_params.power_control_offset_ss) {
-   case 0:
-    beta = (amp*ONE_OVER_SQRT2_Q15)>>15;
-    break;
-  
-   case 1:
-    beta = amp;
-    break;
+    // assuming amp is the amplitude of SSB channels
+    switch (csi_params.power_control_offset_ss) {
+    case 0:
+      beta = (amp*ONE_OVER_SQRT2_Q15)>>15;
+      break;
+    case 1:
+      beta = amp;
+      break;
+    case 2:
+      beta = (amp*ONE_OVER_SQRT2_Q15)>>14;
+      break;
+    case 3:
+      beta = amp<<1;
+      break;
+    default:
+      AssertFatal(0==1, "Invalid SS power offset density index for CSI\n");
+    }
 
-   case 2:
-    beta = (amp*ONE_OVER_SQRT2_Q15)>>14;
-    break;
-
-   case 3:
-    beta = amp<<1;
-    break;
-
-  default:
-    AssertFatal(0==1, "Invalid SS power offset density index for CSI\n");
-   }
-
-   for (lp=0; lp<=lprime; lp++){
-     symb = csi_params.symb_l0;
-     nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
-     if ((csi_params.row == 5) || (csi_params.row == 7) || (csi_params.row == 11) || (csi_params.row == 13) || (csi_params.row == 16))
-       nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]); 
-     if ((csi_params.row == 14) || (csi_params.row == 13) || (csi_params.row == 16) || (csi_params.row == 17)) {
-       symb = csi_params.symb_l1;
-       nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
-       if ((csi_params.row == 13) || (csi_params.row == 16))
-         nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]); 
-     }
-   }
-      
+    for (lp=0; lp<=lprime; lp++){
+      symb = csi_params.symb_l0;
+      nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
+      if ((csi_params.row == 5) || (csi_params.row == 7) || (csi_params.row == 11) || (csi_params.row == 13) || (csi_params.row == 16))
+        nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]);
+      if ((csi_params.row == 14) || (csi_params.row == 13) || (csi_params.row == 16) || (csi_params.row == 17)) {
+        symb = csi_params.symb_l1;
+        nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
+        if ((csi_params.row == 13) || (csi_params.row == 16))
+          nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]);
+      }
+    }
   }
 
   uint16_t start_sc = frame_parms.first_carrier_offset;
@@ -586,16 +602,17 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
             }
             // ZP CSI RS
             if (csi_params.csi_type == 2) {
-              ((int16_t*)txdataF[p])[(l*frame_parms.ofdm_symbol_size + k)<<1] = 0;
-              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = 0;
+              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*txdataF_offset)] = 0;
+              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*txdataF_offset)] = 0;
             }
             else {
-              ((int16_t*)txdataF[p])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (beta*wt*wf*mod_csi[l][mprime<<1]) >> 15;
-              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
+              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*txdataF_offset)] = (beta*wt*wf*mod_csi[l][mprime<<1]) >> 15;
+              ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*txdataF_offset)] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
             }
 #ifdef NR_CSIRS_DEBUG
-            printf("l,k (%d %d)  seq. index %d \t port %d \t (%d,%d)\n",l,k-start_sc,mprime,p+3000,((int16_t*)txdataF[p])[(l*frame_parms.ofdm_symbol_size + k)<<1],
-               ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
+            printf("l,k (%d %d)  seq. index %d \t port %d \t (%d,%d)\n",l,k,mprime,p+3000,
+                   ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*txdataF_offset)],
+                   ((int16_t*)txdataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*txdataF_offset)]);
 #endif
           }
         }
@@ -603,6 +620,4 @@ int nr_generate_csi_rs(uint32_t **gold_csi_rs,
     }
    }
   } 
-
-  return 0;
 }

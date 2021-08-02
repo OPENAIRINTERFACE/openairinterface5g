@@ -326,11 +326,11 @@ void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
 
-int nr_generate_csi_rs(uint32_t **gold_csi_rs,
-                       int32_t **txdataF,
-                       int16_t amp,
-                       NR_DL_FRAME_PARMS frame_parms,
-                       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params);
+void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
+                        int16_t amp,
+                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
+                        uint16_t cell_id,
+                        int slot);
 
 void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
 
@@ -355,6 +355,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
 
 void nr_decode_pucch0(PHY_VARS_gNB *gNB,
+                      int frame,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);

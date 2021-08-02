@@ -33,4 +33,5 @@ MESSAGE_DEF(RRC_DCCH_DATA_IND,          MESSAGE_PRIORITY_MED_PLUS, RrcDcchDataIn
 MESSAGE_DEF(RRC_PCCH_DATA_REQ,          MESSAGE_PRIORITY_MED_PLUS, RrcPcchDataReq,              rrc_pcch_data_req)
 
 // gNB
+MESSAGE_DEF(NR_RRC_DCCH_DATA_REQ,       MESSAGE_PRIORITY_MED_PLUS, NRRrcDcchDataReq,           nr_rrc_dcch_data_req)
 MESSAGE_DEF(NR_RRC_DCCH_DATA_IND,       MESSAGE_PRIORITY_MED_PLUS, NRRrcDcchDataInd,           nr_rrc_dcch_data_ind)

@@ -44,6 +44,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
 #include <syscall.h>
+#include <openair2/UTIL/OPT/opt.h>
 
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
@@ -191,13 +192,14 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     AssertFatal(harq->d[r], "cannot allocate harq->d[%d]\n", r); // max size for coded output
     bzero(harq->c[r], 8448);
     bzero(harq->d[r], (3 * 8448));
-    harq->e = malloc16(14 * N_RB * 12 * 8);
-    AssertFatal(harq->e, "cannot allocate harq->e\n");
-    bzero(harq->e, 14 * N_RB * 12 * 8);
-    harq->f = malloc16(14 * N_RB * 12 * 8);
-    AssertFatal(harq->f, "cannot allocate harq->f\n");
-    bzero(harq->f, 14 * N_RB * 12 * 8);
   }
+
+  harq->e = malloc16(N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+  AssertFatal(harq->e, "cannot allocate harq->e\n");
+  bzero(harq->e, N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+  harq->f = malloc16(N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+  AssertFatal(harq->f, "cannot allocate harq->f\n");
+  bzero(harq->f, N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
 
   return(dlsch);
 }
@@ -266,6 +268,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15->TBSize[0]<<3;
+  if ( dlsch->rnti != SI_RNTI )
+     trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], 0, WS_C_RNTI, dlsch->rnti, frame, slot,0, 0);
 
   NR_gNB_SCH_STATS_t *stats=NULL;
   int first_free=-1;
@@ -288,7 +292,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   }
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
 
-  LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
+  LOG_D(NR_PHY,"dlsch coding A %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n", A,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,mod_order);
 
   if (A > 3824) {
     // Add 24-bit crc (polynomial A) to payload
@@ -406,7 +410,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     E = nr_get_E(G, harq->C, mod_order, rel15->nrOfLayers, r);
 
     //#ifdef DEBUG_DLSCH_CODING
-    LOG_D(PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
+    LOG_D(NR_PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
 	  r,
 	  harq->C,
 	  G,

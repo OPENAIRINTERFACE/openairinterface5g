@@ -139,8 +139,7 @@ void schedule_ssb(frame_t frame, sub_frame_t slot,
 
 }
 
-void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
-{
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc;
   nfapi_nr_dl_tti_request_t      *dl_tti_request;
@@ -158,9 +157,13 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
     dl_req = &dl_tti_request->dl_tti_request_body;
 
     // get MIB every 8 frames
-    if((slotP == 0) && (frameP & 7) == 0) {
+    if(((slotP == 0) && (frameP & 7) == 0) ||
+       gNB->first_MIB) {
 
       mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 0, 1, &cc->MIB_pdu.payload[0]);
+
+      // flag to avoid sending an empty MIB in the first frames of execution since gNB doesn't get at the beginning in frame 0 slot 0
+      gNB->first_MIB = false;
 
       LOG_D(MAC,
             "[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",
@@ -380,14 +383,13 @@ void schedule_control_sib1(module_id_t module_id,
   uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex, mappingtype);
   uint16_t dmrs_length = get_num_dmrs(dlDmrsSymbPos);
 
+  LOG_D(MAC,"dlDmrsSymbPos %x\n",dlDmrsSymbPos);
   int rbSize = 0;
   uint32_t TBS = 0;
   do {
     rbSize++;
-    TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs,
-                                      gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
-                         nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs,
-                                             gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
+    TBS = nr_compute_tbs(nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
+                         nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, gNB_mac->sched_ctrlCommon->pdsch_semi_static.mcsTableIdx),
                          rbSize, nrOfSymbols, N_PRB_DMRS * dmrs_length,0, 0,1) >> 3;
   } while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize] && TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
 
@@ -398,6 +400,8 @@ void schedule_control_sib1(module_id_t module_id,
   LOG_D(MAC,"nrOfSymbols = %i\n", nrOfSymbols);
   LOG_D(MAC, "rbSize = %i\n", gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize);
   LOG_D(MAC,"TBS = %i\n", TBS);
+  LOG_D(MAC,"dmrs_length %d\n",dmrs_length);
+  LOG_D(MAC,"N_PRB_DMRS = %d\n",N_PRB_DMRS);
   LOG_D(MAC,"mappingtype = %d\n", mappingtype);
 
   // Mark the corresponding RBs as used
@@ -417,7 +421,6 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   gNB_MAC_INST *gNB_mac = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t *cc = gNB_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  NR_CellGroupConfig_t *secondaryCellGroup = gNB_mac->secondaryCellGroupCommon;
   NR_BWP_Downlink_t *bwp = gNB_mac->sched_ctrlCommon->active_bwp;
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
@@ -524,7 +527,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   int rnti_type = NR_RNTI_SI;
 
   fill_dci_pdu_rel15(scc,
-                     secondaryCellGroup,
+                     NULL,
                      &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
                      &dci_payload,
                      dci_format,

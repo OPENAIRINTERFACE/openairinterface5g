@@ -220,16 +220,19 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
     memset(&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int32_t));
 
     int16_t *rxdata_ptr;
+    rx_offset%=frame_length_samples*2;
 
-    if (frame_length_samples - rx_offset < frame_parms->ofdm_symbol_size) {
+    if (rx_offset+frame_parms->ofdm_symbol_size > frame_length_samples*2 ) {
+      // rxdata is 2 frames len
+      // we have to wrap on the end
 
       memcpy((void *)&tmp_dft_in[0],
              (void *)&common_vars->rxdata[aa][rx_offset],
-             (frame_length_samples - rx_offset) * sizeof(int32_t));
-      memcpy((void *)&tmp_dft_in[frame_length_samples - rx_offset],
+             (frame_length_samples*2 - rx_offset) * sizeof(int32_t));
+      memcpy((void *)&tmp_dft_in[frame_length_samples*2 - rx_offset],
              (void *)&common_vars->rxdata[aa][0],
-             (frame_parms->ofdm_symbol_size - (frame_length_samples - rx_offset)) * sizeof(int32_t));
-      rxdata_ptr = (int16_t *)&tmp_dft_in[0];
+             (frame_parms->ofdm_symbol_size - (frame_length_samples*2 - rx_offset)) * sizeof(int32_t));
+      rxdata_ptr = (int16_t *)tmp_dft_in;
 
     } else if ((rx_offset & 7) != 0) {
 
@@ -237,7 +240,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
       memcpy((void *)&tmp_dft_in[0],
              (void *)&common_vars->rxdata[aa][rx_offset],
              frame_parms->ofdm_symbol_size * sizeof(int32_t));
-      rxdata_ptr = (int16_t *)&tmp_dft_in[0];
+      rxdata_ptr = (int16_t *)tmp_dft_in;
 
     } else {
 
@@ -318,7 +321,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
     memcpy((void *)&tmp_dft_in[sample_offset - rxdata_offset],
            (void *)&rxdata[0],
            (frame_parms->ofdm_symbol_size - sample_offset + rxdata_offset) * sizeof(int32_t));
-    rxdata_ptr = (int16_t *)&tmp_dft_in[0];
+    rxdata_ptr = (int16_t *)tmp_dft_in;
 
   } else if (((rxdata_offset - sample_offset) & 7) != 0) {
 
@@ -326,7 +329,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
     memcpy((void *)&tmp_dft_in[0],
            (void *)&rxdata[rxdata_offset - sample_offset],
            (frame_parms->ofdm_symbol_size) * sizeof(int32_t));
-    rxdata_ptr = (int16_t *)&tmp_dft_in[0];
+    rxdata_ptr = (int16_t *)tmp_dft_in;
 
   } else {
 

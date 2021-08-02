@@ -50,6 +50,16 @@
 #include "assertions.h"
 #include "T.h"
 
+char nr_dci_format_string[8][30] = {
+  "NR_DL_DCI_FORMAT_1_0",
+  "NR_DL_DCI_FORMAT_1_1",
+  "NR_DL_DCI_FORMAT_2_0",
+  "NR_DL_DCI_FORMAT_2_1",
+  "NR_DL_DCI_FORMAT_2_2",
+  "NR_DL_DCI_FORMAT_2_3",
+  "NR_UL_DCI_FORMAT_0_0",
+  "NR_UL_DCI_FORMAT_0_1"};
+
 //#define DEBUG_DCI_DECODING 1
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
@@ -722,6 +732,10 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     rel15 = &pdcch_vars->pdcch_config[i];
     int n_rb,rb_offset;
     get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
+
+    LOG_D(PHY,"pdcch coreset: freq %x, n_rb %d, rb_offset %d\n",
+          rel15->coreset.frequency_domain_resource[0],n_rb,rb_offset);
+
     for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
       LOG_D(PHY,"in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
 
@@ -747,7 +761,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
       for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++)
         avgs = cmax(avgs, avgP[aarx]);
 
-      log2_maxh = (log2_approx(avgs) / 2) + 5;  //+frame_parms->nb_antennas_rx;
+      log2_maxh = (log2_approx(avgs) / 2) + 1;  //+frame_parms->nb_antennas_rx;
 #ifdef UE_DEBUG_TRACE
       LOG_D(PHY,"slot %d: pdcch log2_maxh = %d (%d,%d)\n",slot,log2_maxh,avgP[0],avgs);
 #endif
@@ -890,7 +904,7 @@ uint16_t nr_dci_false_detection(uint64_t *dci,
                             int rnti) {
 
   uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
-  polar_encoder_fast(dci, (void*)encoder_output, rnti, 1, polar_param);
+  polar_encoder_fast(dci, (void*)encoder_output, rnti, 1, (t_nrPolar_params *)polar_param);
   uint8_t *enout_p = (uint8_t*)encoder_output;
   uint16_t x = 0;
 
@@ -949,10 +963,10 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                           currentPtrDCI);
 
         n_rnti = rel15->rnti;
-
+	      LOG_D(PHY, "(%i.%i) dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d)\n", proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length);
         if (crc == n_rnti) {
-          LOG_D(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
-                proc->frame_rx, proc->nr_slot_rx,n_rnti,rel15->dci_format_options[k],CCEind,dci_length,*(unsigned long long*)dci_estimation);
+          LOG_D(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d,payload %llx)\n",
+                proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length,*(unsigned long long*)dci_estimation);
           uint16_t mb = nr_dci_false_detection(dci_estimation,tmp_e,currentPtrDCI,L*108,n_rnti);
           ue->dci_thres = (ue->dci_thres + mb) / 2;
           if (mb > (ue->dci_thres+20)) {

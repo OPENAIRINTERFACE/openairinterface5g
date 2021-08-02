@@ -70,7 +70,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
                         uint32_t **gold_pdcch_dmrs,
                         int32_t *txdataF,
                         int16_t amp,
-                        NR_DL_FRAME_PARMS frame_parms) {
+                        NR_DL_FRAME_PARMS *frame_parms) {
 
   int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1] __attribute__((aligned(16))); // 3 for the max coreset duration
   uint16_t cset_start_sc;
@@ -85,7 +85,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
   // compute rb_offset and n_prb based on frequency allocation
   nr_fill_cce_list(gNB,0,pdcch_pdu_rel15);
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
-  cset_start_sc = frame_parms.first_carrier_offset + (pdcch_pdu_rel15->BWPStart + rb_offset) * NR_NB_SC_PER_RB;
+  cset_start_sc = frame_parms->first_carrier_offset + (pdcch_pdu_rel15->BWPStart + rb_offset) * NR_NB_SC_PER_RB;
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
     /*The coreset is initialised
@@ -164,8 +164,8 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 
     /// Resource mapping
 
-    if (cset_start_sc >= frame_parms.ofdm_symbol_size)
-      cset_start_sc -= frame_parms.ofdm_symbol_size;
+    if (cset_start_sc >= frame_parms->ofdm_symbol_size)
+      cset_start_sc -= frame_parms->ofdm_symbol_size;
 
     // Get cce_list indices by reg_idx in ascending order
     int reg_list_index = 0;
@@ -190,8 +190,8 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 
           k = cset_start_sc + gNB->cce_list[d][cce_idx].reg_list[reg_in_cce_idx].start_sc_idx;
 
-          if (k >= frame_parms.ofdm_symbol_size)
-            k -= frame_parms.ofdm_symbol_size;
+          if (k >= frame_parms->ofdm_symbol_size)
+            k -= frame_parms->ofdm_symbol_size;
 
           l = cset_start_symb + symbol_idx;
 
@@ -205,26 +205,26 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 
           for (int m = 0; m < NR_NB_SC_PER_RB; m++) {
             if (m == (k_prime << 2) + 1) { // DMRS if not already mapped
-              ((int16_t *) txdataF)[(l * frame_parms.ofdm_symbol_size + k) << 1] =
+              ((int16_t *) txdataF)[(l * frame_parms->ofdm_symbol_size + k) << 1] =
                   (amp * mod_dmrs[l][dmrs_idx << 1]) >> 15;
-              ((int16_t *) txdataF)[((l * frame_parms.ofdm_symbol_size + k) << 1) + 1] =
+              ((int16_t *) txdataF)[((l * frame_parms->ofdm_symbol_size + k) << 1) + 1] =
                   (amp * mod_dmrs[l][(dmrs_idx << 1) + 1]) >> 15;
 
 #ifdef DEBUG_PDCCH_DMRS
-              printf("PDCCH DMRS: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
-               ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
+              printf("PDCCH DMRS: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+               ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
 
               dmrs_idx++;
               k_prime++;
 
             } else { // DCI payload
-              ((int16_t *) txdataF)[(l * frame_parms.ofdm_symbol_size + k) << 1] = (amp * mod_dci[dci_idx << 1]) >> 15;
-              ((int16_t *) txdataF)[((l * frame_parms.ofdm_symbol_size + k) << 1) + 1] =
+              ((int16_t *) txdataF)[(l * frame_parms->ofdm_symbol_size + k) << 1] = (amp * mod_dci[dci_idx << 1]) >> 15;
+              ((int16_t *) txdataF)[((l * frame_parms->ofdm_symbol_size + k) << 1) + 1] =
                   (amp * mod_dci[(dci_idx << 1) + 1]) >> 15;
 #ifdef DEBUG_DCI
-              printf("PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1],
-               ((int16_t *)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
+              printf("PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+               ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
 
               dci_idx++;
@@ -232,8 +232,8 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 
             k++;
 
-            if (k >= frame_parms.ofdm_symbol_size)
-              k -= frame_parms.ofdm_symbol_size;
+            if (k >= frame_parms->ofdm_symbol_size)
+              k -= frame_parms->ofdm_symbol_size;
 
           } // m
         } // reg_in_cce_idx
@@ -253,17 +253,15 @@ void nr_generate_dci_top(PHY_VARS_gNB *gNB,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t *txdataF,
                             int16_t amp,
-                            NR_DL_FRAME_PARMS frame_parms) {
+                            NR_DL_FRAME_PARMS *frame_parms) {
 
   AssertFatal(pdcch_pdu!=NULL || ul_dci_pdu!=NULL,"At least one pointer has to be !NULL\n");
 
-  if (pdcch_pdu && ul_dci_pdu) {
+  if (pdcch_pdu) {
     nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+  }
+  if (ul_dci_pdu) {
     nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
   }
-  else if (pdcch_pdu)
-    nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
-  else
-    nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
 }
 

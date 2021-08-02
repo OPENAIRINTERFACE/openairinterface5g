@@ -106,7 +106,7 @@ Options
 --nrUE
   Makes the NR UE softmodem
 --RU
-  Makes the OAI RRU (without full stack) 
+  Makes the OAI RRU (without full stack)
 --UE
    Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
 --UE-conf-nvram [configuration file]
@@ -259,7 +259,7 @@ function main() {
             echo_info "Will compile gNB"
             shift;;
        --RU)
-	    RU=1
+	          RU=1
             echo_info "Will compile RRU"
 	    shift;;
        -a | --agent)
@@ -273,6 +273,7 @@ function main() {
        --nrUE)
             RU=0
             nrUE=1
+            rfsimNas=1
             NR="True"
             echo_info "Will compile NR UE"
             shift;;
@@ -308,7 +309,7 @@ function main() {
             shift 2;;
        -P | --phy_simulators)
             SIMUS_PHY=1
-	    RU=0
+	          RU=0
             echo_info "Will compile dlsim, ulsim, ..."
             shift;;
        -S | --core_simulators)
@@ -604,7 +605,7 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" -o "$rfsimNas" = "1" ] ; then
 
     # softmodem compilation
 

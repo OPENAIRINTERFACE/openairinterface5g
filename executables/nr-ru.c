@@ -24,14 +24,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/mman.h>
 #include <sched.h>
 #include <linux/sched.h>
-#include <signal.h>
-#include <execinfo.h>
-#include <getopt.h>
 #include <sys/sysinfo.h>
 #include <math.h>
 
@@ -39,7 +33,6 @@
 
 #include "common/utils/assertions.h"
 #include "common/utils/system.h"
-#include "msc.h"
 
 #include "../../ARCH/COMMON/common_lib.h"
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
@@ -50,20 +43,15 @@
 #include "PHY/types.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/phy_extern.h"
-#include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/INIT/phy_init.h"
-#include "SCHED/sched_eNB.h"
 #include "SCHED_NR/sched_nr.h"
 
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
-#include "RRC/LTE/rrc_extern.h"
-#include "PHY_INTERFACE/phy_interface.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
-#include "enb_config.h"
 #include <executables/softmodem-common.h>
 
 #ifdef SMBV
@@ -758,9 +746,9 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       // currently we switch beams every 10 slots (should = 1 TDD period in FR2) and we take the beam index of the first symbol of the first slot of this period
       int beam=0;
       if (slot%10==0) {
-	if (ru->common.beam_id[0][slot*fp->symbols_per_slot] < 8) {
-	  beam = ru->common.beam_id[0][slot*fp->symbols_per_slot] | 8;
-	}
+        if ( ru->common.beam_id && (ru->common.beam_id[0][slot*fp->symbols_per_slot] < 8)) {
+          beam = ru->common.beam_id[0][slot*fp->symbols_per_slot] | 8;
+        }
       }
       /*
       if (slot==0 || slot==40) beam=0|8;
@@ -905,6 +893,18 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->rx_bw = 80e6;
       }
       break;
+    case 133 :
+      if (fp->threequarter_fs) {
+	AssertFatal(1==0,"N_RB %d cannot use 3/4 sampling\n",N_RB);
+      }
+      else {
+        cfg->sample_rate=61.44e6;
+        cfg->samples_per_frame = 614400;
+        cfg->tx_bw = 50e6;
+        cfg->rx_bw = 50e6;
+      }
+
+      break;
     case 106:
       if (fp->threequarter_fs) {
         cfg->sample_rate=46.08e6;
@@ -918,7 +918,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         cfg->tx_bw = 40e6;
         cfg->rx_bw = 40e6;
       }
-      break;
+     break;
     case 51:
       if (fp->threequarter_fs) {
         cfg->sample_rate=23.04e6;
@@ -1948,39 +1948,41 @@ static void NRRCconfig_RU(void)
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_CLK_SRC)) {
         if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "internal") == 0) {
           RC.ru[j]->openair0_cfg.clock_source = internal;
-          LOG_D(PHY, "RU clock source set as internal\n");
+          LOG_I(PHY, "RU clock source set as internal\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "external") == 0) {
           RC.ru[j]->openair0_cfg.clock_source = external;
-          LOG_D(PHY, "RU clock source set as external\n");
+          LOG_I(PHY, "RU clock source set as external\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "gpsdo") == 0) {
           RC.ru[j]->openair0_cfg.clock_source = gpsdo;
-          LOG_D(PHY, "RU clock source set as gpsdo\n");
+          LOG_I(PHY, "RU clock source set as gpsdo\n");
         } else {
           LOG_E(PHY, "Erroneous RU clock source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
         }
       }
       else {
-        RC.ru[j]->openair0_cfg.clock_source = unset;
+        LOG_I(PHY,"Setting clock source to internal\n");
+        RC.ru[j]->openair0_cfg.clock_source = internal;
       }
 
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_TME_SRC)) {
         if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "internal") == 0) {
           RC.ru[j]->openair0_cfg.time_source = internal;
-          LOG_D(PHY, "RU time source set as internal\n");
+          LOG_I(PHY, "RU time source set as internal\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "external") == 0) {
           RC.ru[j]->openair0_cfg.time_source = external;
-          LOG_D(PHY, "RU time source set as external\n");
+          LOG_I(PHY, "RU time source set as external\n");
         } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_TME_SRC].strptr), "gpsdo") == 0) {
           RC.ru[j]->openair0_cfg.time_source = gpsdo;
-          LOG_D(PHY, "RU time source set as gpsdo\n");
+          LOG_I(PHY, "RU time source set as gpsdo\n");
         } else {
           LOG_E(PHY, "Erroneous RU time source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
         }
       }
       else {
-	RC.ru[j]->openair0_cfg.time_source = unset;
+        LOG_I(PHY,"Setting time source to internal\n");
+	      RC.ru[j]->openair0_cfg.time_source = internal;
       }
-      
+
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
         if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
           RC.ru[j]->if_south                        = LOCAL_RF;
@@ -2050,7 +2052,7 @@ static void NRRCconfig_RU(void)
           RC.ru[j]->if_south                     = REMOTE_IF4p5;
           RC.ru[j]->function                     = NGFI_RAU_IF4p5;
           RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF4p5_MODE;
-        } 
+        }
       }  /* strcmp(local_rf, "yes") != 0 */
 
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
@@ -2059,6 +2061,7 @@ static void NRRCconfig_RU(void)
       RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
       RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].u64ptr);
       RC.ru[j]->if_freq_offset                    = *(RUParamList.paramarray[j][RU_IF_FREQ_OFFSET].iptr);
+      RC.ru[j]->do_precoding                      = *(RUParamList.paramarray[j][RU_DO_PRECODING].iptr);
 
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;

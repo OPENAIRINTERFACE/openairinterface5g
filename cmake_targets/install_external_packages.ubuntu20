@@ -154,21 +154,13 @@ install_protobuf_from_source(){
 	cd /tmp || exit
 	echo "Downloading protobuf"
 	#rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
-	#wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+	#wget https://github.com/protocolbuffers/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
 	#tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
 	#cd protobuf-2.6.1/
 	rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-	wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
-      tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $(id -u) --group $(id -g) --no-same-owner
-      cd protobuf-3.3.0/
-    else
-      export LD_LIBRARY_PATH=/usr/local/lib #protoc needs to know where toclook for shared libs
-      rm -rf /tmp/protobuf
-      git clone --depth=1 --branch=v3.3.0 https://github.com/protocolbuffers/protobuf.git /tmp/protobuf
-      cd /tmp/protobuf
-      git submodule update --init --recursive
-      ./autogen.sh
-    fi
+	wget --tries=3 --retry-connrefused https://github.com/protocolbuffers/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+	tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner "$USER" --group "$(groups | cut -d" " -f1)" --no-same-owner
+	cd protobuf-3.3.0/ || exit
 	./configure
 	echo "Compiling protobuf"
 	make -j"$(nproc)"
@@ -339,6 +331,10 @@ check_install_ubuntu_packages() {
 	$SUDO apt install -y software-properties-common
 	case "$(get_distribution_release)" in
             "ubuntu20.04")
+		specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
+		LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+		LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+		;;
             "ubuntu21.04")
 		specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
 		LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"

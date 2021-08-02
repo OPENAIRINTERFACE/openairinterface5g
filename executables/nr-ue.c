@@ -290,6 +290,7 @@ void processSlotTX(void *arg) {
   int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_slot_tx);
   uint8_t gNB_id = 0;
 
+  LOG_D(PHY,"%d.%d => slot type %d\n",proc->frame_tx,proc->nr_slot_tx,tx_slot_type);
   if (tx_slot_type == NR_UPLINK_SLOT || tx_slot_type == NR_MIXED_SLOT){
 
     // trigger L2 to run ue_scheduler thru IF module
@@ -343,7 +344,7 @@ void processSlotRX(void *arg) {
     LOG_D(PHY, "In %s: slot %d, time %lu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc()-a)/3500);
 #endif
 
-    if(IS_SOFTMODEM_NOS1){
+    if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa){
       NR_UE_MAC_INST_t *mac = get_mac_inst(0);
       protocol_ctxt_t ctxt;
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO, mac->crnti, proc->frame_rx, proc->nr_slot_rx, 0);
@@ -607,7 +608,7 @@ void *UE_thread(void *arg) {
     thread_idx = absolute_slot % NR_RX_NB_TH;
     int slot_nr = absolute_slot % nb_slot_frame;
     notifiedFIFO_elt_t *msgToPush;
-    AssertFatal((msgToPush=pullTpool(&freeBlocks,&(get_nrUE_params()->Tpool))) != NULL,"chained list failure");
+    AssertFatal((msgToPush=pullNotifiedFIFO_nothreadSafe(&freeBlocks)) != NULL,"chained list failure");
     nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(msgToPush);
     curMsg->UE=UE;
     // update thread index for received subframe
@@ -714,7 +715,13 @@ void *UE_thread(void *arg) {
     if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
 
       uint8_t    tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
-      int   nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+
+      int   nrofUplinkSlots = 0;
+      if (mac->scc_SIB)
+	      nrofUplinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+      else if (mac->scc)
+	      nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+
       uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSlots != 0);
       uint8_t first_tx_slot = tdd_period - num_UL_slots;
 

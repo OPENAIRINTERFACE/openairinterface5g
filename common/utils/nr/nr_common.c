@@ -111,8 +111,6 @@ const size_t nr_bandtable_size = sizeof(nr_bandtable) / sizeof(nr_bandentry_t);
 int NRRIV2BW(int locationAndBandwidth,int N_RB) {
   int tmp = locationAndBandwidth/N_RB;
   int tmp2 = locationAndBandwidth%N_RB;
-
-
   if (tmp <= ((N_RB>>1)+1) && (tmp+tmp2)<N_RB) return(tmp+1);
   else                      return(N_RB+1-tmp);
 
@@ -121,8 +119,6 @@ int NRRIV2BW(int locationAndBandwidth,int N_RB) {
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB) {
   int tmp = locationAndBandwidth/N_RB;
   int tmp2 = locationAndBandwidth%N_RB;
-
-
   if (tmp <= ((N_RB>>1)+1) && (tmp+tmp2)<N_RB) return(tmp2);
   else                      return(N_RB-1-tmp2);
 }

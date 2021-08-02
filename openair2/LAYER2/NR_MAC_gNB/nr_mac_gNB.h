@@ -160,8 +160,8 @@ typedef struct {
   NR_SearchSpace_t *ra_ss;
   // Beam index
   uint8_t beam_id;
-  /// secondaryCellGroup for UE in NSA that is to come
-  NR_CellGroupConfig_t *secondaryCellGroup;
+  /// CellGroup for UE that is to come (NSA is non-null, null for SA)
+  NR_CellGroupConfig_t *CellGroup;
   /// Preambles for contention-free access
   NR_preamble_ue_t preambles;
   /// NSA: the UEs C-RNTI to use
@@ -303,6 +303,7 @@ typedef struct NR_sched_pucch {
   uint8_t dai_c;
   uint8_t timing_indicator;
   uint8_t resource_indicator;
+  int r_pucch;
 } NR_sched_pucch_t;
 
 /* PUSCH semi-static configuration: as long as the TDA and DCI format remain
@@ -382,6 +383,7 @@ typedef struct NR_sched_pdsch {
   uint8_t mcs;
 
   /// TBS-related info
+  uint8_t nrOfLayers;
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;
@@ -438,7 +440,8 @@ struct CRI_RI_LI_PMI_CQI {
   uint8_t li;
   uint8_t pmi_x1;
   uint8_t pmi_x2;
-  uint8_t cqi;
+  uint8_t wb_cqi_1tb;
+  uint8_t wb_cqi_2tb;
 };
 
 typedef struct CRI_SSB_RSRP {
@@ -557,6 +560,7 @@ typedef struct {
   /// per-LC status data
   mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
 
+  int lcid_mask;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
@@ -565,7 +569,11 @@ typedef struct {
   int raw_rssi;
   int pusch_snrx10;
   int pucch_snrx10;
-
+  uint16_t ul_rssi;
+  uint8_t current_harq_pid;
+  int pusch_consecutive_dtx_cnt;
+  int pucch_consecutive_dtx_cnt;
+  int ul_failure;
   struct CSI_Report CSI_report[MAX_CSI_REPORTS];
   bool SR;
 
@@ -602,6 +610,7 @@ typedef struct {
   int dlsch_current_bytes;
   int ulsch_rounds[8];
   int ulsch_errors;
+  int ulsch_DTX;
   int ulsch_total_bytes_scheduled;
   int ulsch_total_bytes_rx;
   int ulsch_current_bytes;
@@ -622,13 +631,14 @@ typedef struct {
 
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
-  NR_CellGroupConfig_t *secondaryCellGroup[MAX_MOBILES_PER_GNB];
+  NR_CellGroupConfig_t *CellGroup[MAX_MOBILES_PER_GNB];
   /// CCE indexing
   int Y[MAX_MOBILES_PER_GNB][3][160];
   int m[MAX_MOBILES_PER_GNB];
   int num_pdcch_cand[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET];
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
+  bool Msg4_ACKed[MAX_MOBILES_PER_GNB];
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
@@ -654,6 +664,10 @@ typedef struct gNB_MAC_INST_s {
   int                             pusch_target_snrx10;
   /// Pucch target SNR
   int                             pucch_target_snrx10;
+  /// PUCCH Failure threshold (compared to consecutive PUCCH DTX)
+  int                             pucch_failure_thres;
+  /// PUSCH Failure threshold (compared to consecutive PUSCH DTX)
+  int                             pusch_failure_thres;
   /// Subcarrier Offset
   int                             ssb_SubcarrierOffset;
   /// Common cell resources
@@ -733,9 +747,9 @@ typedef struct gNB_MAC_INST_s {
   nr_pp_impl_ul pre_processor_ul;
 
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
-  NR_CellGroupConfig_t *secondaryCellGroupCommon;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
+  bool first_MIB;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

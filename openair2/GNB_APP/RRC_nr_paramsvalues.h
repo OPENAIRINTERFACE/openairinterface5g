@@ -141,6 +141,7 @@
 #define GNB_CONFIG_STRING_PUCCHGROUPHOPPING                     "pucchGroupHopping"
 #define GNB_CONFIG_STRING_HOPPINGID                             "hoppingId"
 #define GNB_CONFIG_STRING_P0NOMINAL                             "p0_nominal"
+#define GNB_CONFIG_STRING_PUCCHRES                              "pucch_ResourceCommon"
 #define GNB_CONFIG_STRING_INITIALULBWPK2_0                      "initialULBWPk2_0"
 #define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_0             "initialULBWPmappingType_0"
 #define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_0    "initialULBWPstartSymbolAndLength_0"
@@ -397,6 +398,7 @@
 {GNB_CONFIG_STRING_PUCCHGROUPHOPPING, NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_GroupHopping,defint64val:NR_PUCCH_ConfigCommon__pucch_GroupHopping_neither,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_HOPPINGID, NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId,defint64val:40,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_P0NOMINAL, NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal,defint64val:1,TYPE_INT64,0},\
+{GNB_CONFIG_STRING_PUCCHRES, NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon,defint64val:0,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_SSBPOSITIONSINBURSTPR,NULL,0,uptr:&scc->ssb_PositionsInBurst->present,defuintval:NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap,TYPE_UINT,0/*140*/}, \
 {GNB_CONFIG_STRING_SSBPOSITIONSINBURST,NULL,0,u64ptr:&ssb_bitmap,defintval:0xff,TYPE_UINT64,0}, \
 {GNB_CONFIG_STRING_REFERENCESUBCARRIERSPACING,NULL,0,i64ptr:&scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing,defint64val:NR_SubcarrierSpacing_kHz30,TYPE_INT64,0},\

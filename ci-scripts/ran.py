@@ -93,6 +93,7 @@ class RANManagement():
 		self.epcPcapFile = ''
 		self.runtime_stats= ''
 		self.datalog_rt_stats={}
+		self.eNB_Trace = '' #if 'yes', Tshark will be launched at initialization
 
 
 
@@ -344,6 +345,22 @@ class RANManagement():
 			HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
+		#Get pcap on S1 and X2 eNB interface, if enabled in the xml 
+		#will not work for gNB at this stage
+		if ((self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb')) and self.eNB_Trace=='yes':
+			mySSH.open(lIpAddr, lUserName, lPassWord)
+			mySSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
+			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
+			if result is not None:
+				eth_interface = result.group('eth_interface')
+				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
+				pcapfile = 'enb_' + self.testCase_id + '_s1x2log.pcap'
+				mySSH.command('echo ' + lPassWord + ' | sudo -S rm -f /tmp/' + pcapfile , '\$', 5)
+				mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -w /tmp/' + pcapfile + ' 2>&1 &','\$', 5)
+			mySSH.close()
+			
+
+
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if (result is not None):
@@ -579,6 +596,10 @@ class RANManagement():
 				mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL -r .*-softmodem ocp-enb || true', '\$', 5)
 				time.sleep(5)
 		mySSH.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		#stopping tshark (valid if eNB and enabled in xml, will not harm otherwise)
+		logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+		mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+		time.sleep(1)
 		mySSH.close()
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
@@ -597,6 +618,7 @@ class RANManagement():
 			mySSH.close()
 			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
 			mySSH.open(lIpAddr, lUserName, lPassWord)
+			mySSH.command('killall --signal SIGKILL record', '\$', 5)
 			mySSH.command('cd ' + lSourcePath + '/common/utils/T/tracer/', '\$', 5)
 			enbLogFile = self.eNBLogFiles[int(self.eNB_instance)]
 			raw_record_file = enbLogFile.replace('.log', '_record.raw')
@@ -650,9 +672,10 @@ class RANManagement():
 		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*_s1x2log.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log', '\$', 60)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 5)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 5)
 		mySSH.close()
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML):
@@ -707,6 +730,8 @@ class RANManagement():
 		real_time_stats = {}
 		#count "problem receiving samples" msg
 		pb_receiving_samples_cnt = 0
+		#count "removing UE" msg
+		removing_ue = 0
 		#NSA specific log markers
 		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
 	
@@ -903,6 +928,10 @@ class RANManagement():
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
 			if result is not None:
 				pb_receiving_samples_cnt += 1
+			#count "Removing UE" msg
+			result = re.search('\[MAC\]\s+Removing UE', str(line))
+			if result is not None:
+				removing_ue += 1
 
 			#nsa markers logging
 			for k in nsa_markers:
@@ -992,6 +1021,11 @@ class RANManagement():
 				htmleNBFailureMsg += statMsg
 
 		else:
+			#Removing UE log
+			statMsg = '[MAC] Removing UE msg count =  '+str(removing_ue)
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
 			#nsa markers
 			statMsg = 'logfile line count = ' + str(line_cnt)			
 			htmlMsg = statMsg+'\n'

@@ -84,6 +84,7 @@ uint64_t downlink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
 msc_interface_t msc_interface;
+uint32_t N_RB_DL = 106;
 
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
@@ -120,12 +121,22 @@ rrc_data_ind(
 {
 }
 
+int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
+                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
+                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
+    return 0;
+}
+
 int
 gtpv1u_create_s1u_tunnel(
   const instance_t                              instanceP,
   const gtpv1u_enb_create_tunnel_req_t *const  create_tunnel_req_pP,
   gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP
 ) {
+  return 0;
+}
+
+int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
   return 0;
 }
 
@@ -182,6 +193,17 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
                               const rb_id_t     Srb_id,
                               uint8_t           *buffer_pP)
 {
+  return 0;
+}
+
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
+                                            int             CC_idP,
+                                            int             UE_id,
+                                            rnti_t          rntiP,
+                                            const uint8_t   *sduP,
+                                            sdu_size_t      sdu_lenP,
+                                            const uint8_t   *sdu2P,
+                                            sdu_size_t      sdu2_lenP) {
   return 0;
 }
 
@@ -297,8 +319,6 @@ int main(int argc, char **argv)
   int file_offset = 0;
 
   double DS_TDL = .03;
-  int pusch_tgt_snrx10 = 200;
-  int pucch_tgt_snrx10 = 200;
   int ibwps=24;
   int ibwp_rboffset=41;
   int params_from_file = 0;
@@ -699,9 +719,9 @@ int main(int argc, char **argv)
 
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0,n_tx,n_rx,pusch_tgt_snrx10,pucch_tgt_snrx10,scc,0,0,NULL);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, scc, 0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0,1,1,pusch_tgt_snrx10,pucch_tgt_snrx10,NULL,1,secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, scc, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
 
@@ -759,7 +779,7 @@ int main(int argc, char **argv)
   rrc.carrier.MIB = (uint8_t*) malloc(4);
   rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
 
-  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib,secondaryCellGroup);
+  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib, NULL, NULL, secondaryCellGroup);
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
 
@@ -1330,7 +1350,8 @@ int main(int argc, char **argv)
 	   (double)errors_scrambling[3]/available_bits/round_trials[0],
 	   roundStats[snrRun],effRate,effRate/TBS*100,TBS);
 
-    dump_pusch_stats(gNB);
+    FILE *fd=fopen("nr_ulsim.log","w");
+    dump_pusch_stats(fd,gNB);
 
     printf("*****************************************\n");
     printf("\n");
