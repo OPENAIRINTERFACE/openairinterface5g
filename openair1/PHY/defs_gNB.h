@@ -804,6 +804,9 @@ typedef struct PHY_VARS_gNB_s {
   /// PDSCH DMRS sequence
   uint32_t ****nr_gold_pdsch_dmrs;
 
+  /// PDSCH codebook I precoding LUTs
+  int32_t **nr_mimo_precoding_matrix;
+
   /// PUSCH DMRS
   uint32_t ****nr_gold_pusch_dmrs;
 
