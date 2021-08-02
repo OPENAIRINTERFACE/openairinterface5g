@@ -1003,7 +1003,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       LOG_D(NR_MAC, "In %s:[%d.%d]: number of UL PDUs: %d with UL transmission in [%d.%d]\n", __FUNCTION__, frame_tx, slot_tx, ul_config->number_pdus, ul_config->sfn, ul_config->slot);
 
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
-      uint8_t data_existing = 0;
       nr_scheduled_response_t scheduled_response;
       fapi_nr_tx_request_t tx_req;
 
@@ -1035,44 +1034,14 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
                     mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id]==1)){
 
               // Getting IP traffic to be transmitted
-              data_existing = nr_ue_get_sdu(mod_id,
-                                            frame_tx,
-                                            slot_tx,
-                                            gNB_index,
-                                            ulsch_input_buffer,
-                                            TBS_bytes);
+              nr_ue_get_sdu(mod_id, frame_tx, slot_tx, gNB_index, ulsch_input_buffer, TBS_bytes);
             }
 
             LOG_D(NR_MAC,"Flipping NDI for harq_id %d\n",ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
             mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
             mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
 
-            // TBR use the proper function !
-            //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-            if (!data_existing) {
-              //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
-              //and block this traffic from being forwarded to the upper layers at the gNB
-              LOG_D(PHY, "In %s: Random data to be transmitted: TBS_bytes %d \n", __FUNCTION__, TBS_bytes);
-
-              //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-              //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
-              //have a valid LCID (nr_process_mac_pdu function)
-              ulsch_input_buffer[0] = UL_SCH_LCID_PADDING;
-
-              for (int i = 1; i < TBS_bytes; i++) {
-                ulsch_input_buffer[i] = (unsigned char) rand();
-              }
-            }
           }
-
-          #ifdef DEBUG_MAC_PDU
-          LOG_D(PHY, "Is data existing ?: %d \n", data_existing);
-          LOG_I(PHY, "Printing MAC PDU to be encoded, TBS is: %d \n", TBS_bytes);
-          for (i = 0; i < TBS_bytes; i++) {
-            printf("%02x", ulsch_input_buffer[i]);
-          }
-          printf("\n");
-          #endif
 
           // Config UL TX PDU
           tx_req.slot = slot_tx;
@@ -2084,53 +2053,53 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
     }
   }
 
-  if (num_sdus > 0) {
+  if (tot_mac_ce_len > 0) {
 
-    if (tot_mac_ce_len > 0) {
-
-      LOG_D(NR_MAC, "In %s copying %d bytes of MAC CEs to the UL PDU \n", __FUNCTION__, tot_mac_ce_len);
-      memcpy((void *) pdu, (void *) mac_header_control_elements, tot_mac_ce_len);
-      buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total);
-      pdu += (unsigned char) tot_mac_ce_len;
-
-      #ifdef ENABLE_MAC_PAYLOAD_DEBUG
-      LOG_I(NR_MAC, "In %s: dumping MAC CE with length tot_mac_ce_len %d: \n", __FUNCTION__, tot_mac_ce_len);
-      log_dump(NR_MAC, mac_header_control_elements, tot_mac_ce_len, LOG_DUMP_CHAR, "\n");
-      #endif
-
-    }
-
-    // Compute final offset for padding and fill remainder of ULSCH with 0
-    if (buflen_remain > 0) {
-
-      ((NR_MAC_SUBHEADER_FIXED *) pdu)->R = 0;
-      ((NR_MAC_SUBHEADER_FIXED *) pdu)->LCID = UL_SCH_LCID_PADDING;
-
-      #ifdef ENABLE_MAC_PAYLOAD_DEBUG
-      LOG_I(NR_MAC, "In %s: padding MAC sub-header with length %ld bytes \n", __FUNCTION__, sizeof(NR_MAC_SUBHEADER_FIXED));
-      log_dump(NR_MAC, pdu, sizeof(NR_MAC_SUBHEADER_FIXED), LOG_DUMP_CHAR, "\n");
-      #endif
-
-      pdu++;
-      buflen_remain--;
-
-      for (int j = 0; j < buflen_remain; j++) {
-        pdu[j] = 0;
-      }
-
-      #ifdef ENABLE_MAC_PAYLOAD_DEBUG
-      LOG_I(NR_MAC, "In %s: MAC padding sub-PDU with length %d bytes \n", __FUNCTION__, buflen_remain);
-      log_dump(NR_MAC, pdu, buflen_remain, LOG_DUMP_CHAR, "\n");
-      #endif
-
-    }
+    LOG_D(NR_MAC, "In %s copying %d bytes of MAC CEs to the UL PDU \n", __FUNCTION__, tot_mac_ce_len);
+    memcpy((void *) pdu, (void *) mac_header_control_elements, tot_mac_ce_len);
+    buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total);
+    pdu += (unsigned char) tot_mac_ce_len;
 
     #ifdef ENABLE_MAC_PAYLOAD_DEBUG
-    LOG_I(NR_MAC, "In %s: dumping MAC PDU with length %d: \n", __FUNCTION__, buflen);
-    log_dump(NR_MAC, ulsch_buffer, buflen, LOG_DUMP_CHAR, "\n");
+    LOG_I(NR_MAC, "In %s: dumping MAC CE with length tot_mac_ce_len %d: \n", __FUNCTION__, tot_mac_ce_len);
+    log_dump(NR_MAC, mac_header_control_elements, tot_mac_ce_len, LOG_DUMP_CHAR, "\n");
     #endif
 
   }
+
+  // Compute final offset for padding and fill remainder of ULSCH with 0
+  if (buflen_remain > 0) {
+
+    ((NR_MAC_SUBHEADER_FIXED *) pdu)->R = 0;
+    ((NR_MAC_SUBHEADER_FIXED *) pdu)->LCID = UL_SCH_LCID_PADDING;
+
+    #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+    LOG_I(NR_MAC, "In %s: padding MAC sub-header with length %ld bytes \n", __FUNCTION__, sizeof(NR_MAC_SUBHEADER_FIXED));
+    log_dump(NR_MAC, pdu, sizeof(NR_MAC_SUBHEADER_FIXED), LOG_DUMP_CHAR, "\n");
+    #endif
+
+    pdu++;
+    buflen_remain--;
+
+    if (IS_SOFTMODEM_RFSIM) {
+      for (int j = 0; j < buflen_remain; j++) {
+        pdu[j] = (unsigned char) rand();
+      }
+    } else {
+      memset(pdu, 0, buflen_remain);
+    }
+
+    #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+    LOG_I(NR_MAC, "In %s: MAC padding sub-PDU with length %d bytes \n", __FUNCTION__, buflen_remain);
+    log_dump(NR_MAC, pdu, buflen_remain, LOG_DUMP_CHAR, "\n");
+    #endif
+
+  }
+
+  #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+  LOG_I(NR_MAC, "In %s: dumping MAC PDU with length %d: \n", __FUNCTION__, buflen);
+  log_dump(NR_MAC, ulsch_buffer, buflen, LOG_DUMP_CHAR, "\n");
+  #endif
 
   return num_sdus > 0 ? 1 : 0;
 
