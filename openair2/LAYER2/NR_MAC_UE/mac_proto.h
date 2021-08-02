@@ -156,8 +156,8 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                            NR_UL_TIME_ALIGNMENT_t *ul_time_alignment,
                            int pdu_id);
 
-int nr_write_ce_ulsch_pdu(unsigned char *mac_ce,
-                          NR_UE_MAC_CE_t *nr_ue_mac_ce);
+int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
+                          NR_UE_MAC_INST_t *mac);
 
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 

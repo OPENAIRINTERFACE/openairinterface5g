@@ -2141,22 +2141,22 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
     }
 }
 
-// about:     generating MAC CEs (MAC CE and subheader) for the ULSCH PDU
-// returns:   number of written bytes
 /**
  * Function:      generating MAC CEs (MAC CE and subheader) for the ULSCH PDU
+ * Notes:         TODO: PHR and BSR reporting
+ * Parameters:
  * @mac_ce        pointer to the MAC sub-PDUs including the MAC CEs
- * @nr_ue_mac_ce  pointer to the MAC CEs to be transmitted
+ * @mac           pointer to the MAC instance
+ * Return:        number of written bytes
  */
-int nr_write_ce_ulsch_pdu(unsigned char *mac_ce,
-                          NR_UE_MAC_CE_t *nr_ue_mac_ce) {
+int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
+                          NR_UE_MAC_INST_t *mac) {
 
   int      mac_ce_len = 0;
   uint8_t mac_ce_size = 0;
+  NR_UE_MAC_CE_t *nr_ue_mac_ce = &mac->nr_ue_mac_ce;
 
-  if (nr_ue_mac_ce->power_headroom) {
-
-    LOG_D(NR_MAC, "In %s: generating PHR MAC CE with command %d\n", __FUNCTION__, nr_ue_mac_ce->power_headroom);
+  if (nr_ue_mac_ce->phr_reporting && mac->phr_Config != NULL) {
 
     // MAC CE fixed subheader
     ((NR_MAC_SUBHEADER_FIXED *) mac_ce)->R = 0;
@@ -2164,9 +2164,9 @@ int nr_write_ce_ulsch_pdu(unsigned char *mac_ce,
     mac_ce++;
 
     // PHR MAC CE (1 octet)
-    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->PH = nr_ue_mac_ce->power_headroom;
+    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->PH = 0;
     ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->R1 = 0;
-    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->PCMAX = 0; // todo
+    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->PCMAX = 0;
     ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->R2 = 0;
 
     // update pointer and length
@@ -2176,9 +2176,9 @@ int nr_write_ce_ulsch_pdu(unsigned char *mac_ce,
 
   }
 
-  if (nr_ue_mac_ce->crnti) {
+  if (!get_softmodem_params()->sa && mac->ra.ra_state == WAIT_RAR) {
 
-    LOG_D(NR_MAC, "In %s: generating C-RNTI MAC CE with C-RNTI %x\n", __FUNCTION__, nr_ue_mac_ce->crnti);
+    LOG_D(NR_MAC, "In %s: generating C-RNTI MAC CE with C-RNTI %x\n", __FUNCTION__, mac->crnti);
 
     // MAC CE fixed subheader
     ((NR_MAC_SUBHEADER_FIXED *) mac_ce)->R = 0;
@@ -2186,7 +2186,7 @@ int nr_write_ce_ulsch_pdu(unsigned char *mac_ce,
     mac_ce++;
 
     // C-RNTI MAC CE (2 octets)
-    *(uint16_t *) mac_ce = nr_ue_mac_ce->crnti;
+    *(uint16_t *) mac_ce = mac->crnti;
 
     // update pointer and length
     mac_ce_size = sizeof(uint16_t);
@@ -2197,7 +2197,7 @@ int nr_write_ce_ulsch_pdu(unsigned char *mac_ce,
 
   if (nr_ue_mac_ce->truncated_bsr) {
 
-    LOG_D(NR_MAC, "In %s: generating Truncated BSR MAC CE with command %x\n", __FUNCTION__, nr_ue_mac_ce->truncated_bsr);
+    LOG_D(NR_MAC, "In %s: generating short truncated BSR MAC CE with command %x\n", __FUNCTION__, nr_ue_mac_ce->truncated_bsr);
 
     // MAC CE fixed subheader
     ((NR_MAC_SUBHEADER_FIXED *) mac_ce)->R = 0;
@@ -2205,7 +2205,7 @@ int nr_write_ce_ulsch_pdu(unsigned char *mac_ce,
     mac_ce++;
 
     // Short truncated BSR MAC CE (1 octet)
-    ((NR_BSR_SHORT_TRUNCATED *) mac_ce)-> Buffer_size = nr_ue_mac_ce->truncated_bsr;
+    ((NR_BSR_SHORT_TRUNCATED *) mac_ce)-> Buffer_size = 0;
     ((NR_BSR_SHORT_TRUNCATED *) mac_ce)-> LcgID = 0;
 
     // update pointer and length
@@ -2215,7 +2215,7 @@ int nr_write_ce_ulsch_pdu(unsigned char *mac_ce,
 
   } else if (nr_ue_mac_ce->short_bsr) {
 
-    LOG_D(NR_MAC, "In %s: generating Truncated short BSR MAC CE with command %x\n", __FUNCTION__, nr_ue_mac_ce->short_bsr);
+    LOG_D(NR_MAC, "In %s: generating short BSR MAC CE with command %x\n", __FUNCTION__, nr_ue_mac_ce->short_bsr);
 
     // MAC CE fixed subheader
     ((NR_MAC_SUBHEADER_FIXED *) mac_ce)->R = 0;

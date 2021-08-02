@@ -1966,8 +1966,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
 
   // Preparing the MAC CEs sub-PDUs and get the total size
   unsigned char mac_header_control_elements[16] = {0};
-  NR_UE_MAC_CE_t nr_ue_mac_ce = {.crnti = mac->crnti};
-  int tot_mac_ce_len = nr_write_ce_ulsch_pdu(&mac_header_control_elements[0], &nr_ue_mac_ce);
+  int tot_mac_ce_len = nr_write_ce_ulsch_pdu(&mac_header_control_elements[0], mac);
   uint8_t total_mac_pdu_header_len = tot_mac_ce_len;
 
   LOG_D(NR_MAC, "In %s: [UE %d] [%d.%d] process UL transport block at with size TBS = %d bytes \n", __FUNCTION__, module_idP, frameP, subframe, buflen);
