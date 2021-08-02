@@ -1891,6 +1891,10 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
 
   N_UCI = O_SR + O_ACK + O_CSI;
 
+  // do no transmit pucch if only SR scheduled and it is negative
+  if ((O_ACK + O_CSI) == 0 && pucch->sr_payload == 0)
+    return;
+
   if (N_UCI > 0) {
 
     pucch->resource_set_id = find_pucch_resource_set(mac, N_UCI);
