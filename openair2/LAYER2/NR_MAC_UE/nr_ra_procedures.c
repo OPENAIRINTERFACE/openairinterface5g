@@ -760,7 +760,6 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
     LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CF-RA: RAR successfully received.\n", mod_id, frame, slot);
 
     ra->RA_window_cnt = -1;
-    mac->crnti = ra->t_crnti;
 
   } else {
 

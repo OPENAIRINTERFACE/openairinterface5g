@@ -2299,7 +2299,6 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
   uint8_t is_Msg3          = 1;
   frame_t frame_tx         = 0;
   int slot_tx              = 0;
-  uint16_t rnti            = 0;
   int ret                  = 0;
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer; // RAR subheader pointer
   NR_MAC_RAR *rar          = (NR_MAC_RAR *) (dlsch_buffer + 1);   // RAR subPDU pointer
@@ -2351,9 +2350,6 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     unsigned char csi_req;
 #endif
 
-  // TC-RNTI
-  ra->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
-
   // TA command
   ul_time_alignment->apply_ta = 1;
   ul_time_alignment->ta_command = 31 + rar->TA2 + (rar->TA1 << 5);
@@ -2399,12 +2395,6 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     rar_grant.Msg3_f_alloc = (uint16_t) ((rar->UL_GRANT_3 >> 4) | (rar->UL_GRANT_2 << 4) | ((rar->UL_GRANT_1 & 0x03) << 12));
     // frequency hopping
     rar_grant.freq_hopping = (unsigned char) (rar->UL_GRANT_1 >> 2);
-    // TC-RNTI
-    if (ra->t_crnti) {
-      rnti = ra->t_crnti;
-    } else {
-      rnti = mac->crnti;
-    }
 
 #ifdef DEBUG_RAR
     LOG_I(NR_MAC, "rarh->E = 0x%x\n", rarh->E);
@@ -2444,10 +2434,17 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     if (ret != -1){
 
       fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot_tx);
+      uint16_t rnti = mac->crnti;
 
       if (!ul_config) {
         LOG_W(MAC, "In %s: ul_config request is NULL. Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n", __FUNCTION__, frame, slot);
         return -1;
+      }
+
+      // Upon successful reception, set the T-CRNTI to the RAR value if the RA preamble is selected among the contention-based RA Preambles
+      if (!ra->cfra) {
+        ra->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
+        rnti = ra->t_crnti;
       }
 
       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
