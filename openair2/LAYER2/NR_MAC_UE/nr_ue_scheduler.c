@@ -1955,7 +1955,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
 
   int16_t buflen_remain = 0;
   uint8_t lcid = 0;
-  uint16_t sdu_lengths[MAX_LCID] = { 0 };
+  uint16_t sdu_length = 0;
   uint16_t num_sdus = 0;
   uint16_t sdu_length_total = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
@@ -1996,47 +1996,47 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
 
       pdu += sh_size;
 
-      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
-                                               mac->crnti,
-                                               gNB_index,
-                                               frameP,
-                                               ENB_FLAG_NO,
-                                               MBMS_FLAG_NO,
-                                               lcid,
-                                               buflen_remain,
-                                               (char *)pdu,
-                                               0,
-                                               0);
+      sdu_length = mac_rlc_data_req(module_idP,
+                                    mac->crnti,
+                                    gNB_index,
+                                    frameP,
+                                    ENB_FLAG_NO,
+                                    MBMS_FLAG_NO,
+                                    lcid,
+                                    buflen_remain,
+                                    (char *)pdu,
+                                    0,
+                                    0);
 
-      AssertFatal(buflen_remain >= sdu_lengths[num_sdus], "In %s: LCID = 0x%02x RLC has segmented %d bytes but MAC has max %d remaining bytes\n",
+      AssertFatal(buflen_remain >= sdu_length, "In %s: LCID = 0x%02x RLC has segmented %d bytes but MAC has max %d remaining bytes\n",
                   __FUNCTION__,
                   lcid,
-                  sdu_lengths[num_sdus],
+                  sdu_length,
                   buflen_remain);
 
-      if (sdu_lengths[num_sdus]) {
+      if (sdu_length > 0) {
 
         LOG_D(MAC, "In %s: Generating UL MAC sub-PDU for SDU %d, length %d bytes, RB with LCID 0x%02x (buflen (TBS) %d bytes)\n", __FUNCTION__,
           num_sdus + 1,
-          sdu_lengths[num_sdus],
+          sdu_length,
           lcid,
           buflen);
 
         header->R = 0;
         header->F = 1;
         header->LCID = lcid;
-        header->L1 = ((unsigned short) sdu_lengths[num_sdus] >> 8) & 0x7f;
-        header->L2 = (unsigned short) sdu_lengths[num_sdus] & 0xff;
+        header->L1 = ((unsigned short) sdu_length >> 8) & 0x7f;
+        header->L2 = (unsigned short) sdu_length & 0xff;
 
         #ifdef ENABLE_MAC_PAYLOAD_DEBUG
         LOG_I(NR_MAC, "In %s: dumping MAC sub-header with length %d: \n", __FUNCTION__, sh_size);
         log_dump(NR_MAC, header, sh_size, LOG_DUMP_CHAR, "\n");
-        LOG_I(NR_MAC, "In %s: dumping MAC SDU with length %d \n", __FUNCTION__, sdu_lengths[num_sdus]);
-        log_dump(NR_MAC, pdu, sdu_lengths[num_sdus], LOG_DUMP_CHAR, "\n");
+        LOG_I(NR_MAC, "In %s: dumping MAC SDU with length %d \n", __FUNCTION__, sdu_length);
+        log_dump(NR_MAC, pdu, sdu_length, LOG_DUMP_CHAR, "\n");
         #endif
 
-        pdu += sdu_lengths[num_sdus];
-        sdu_length_total += sdu_lengths[num_sdus];
+        pdu += sdu_length;
+        sdu_length_total += sdu_length;
         total_mac_pdu_header_len += sh_size;
 
         num_sdus++;
