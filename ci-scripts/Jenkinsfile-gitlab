@@ -384,6 +384,26 @@ pipeline {
                               }
                             }
                         }
+                        stage ("Test 5G RF simulator") {
+                            when {
+                                expression {doMandatoryTests}
+                            }
+                            steps {
+                              lock (vmResource) {
+                                script {
+                                    timeout (time: 40, unit: 'MINUTES') {
+                                        try {
+                                            gitlabCommitStatus(name: "Test 5G RF-sim") {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant rf5g-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                            }
+                                        } catch (Exception e) {
+                                            currentBuild.result = 'FAILURE'
+                                        }
+                                    }
+                                }
+                              }
+                            }
+                        }
                         stage ("Test L2 simulator") {
                             when {
                                 expression {doFullTestsuite}

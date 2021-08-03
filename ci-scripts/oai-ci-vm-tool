@@ -247,6 +247,11 @@ function variant__v22__l2_sim {
     RUN_OPTIONS="complex"
 }
 
+function variant__v23__rf5g_sim {
+    ARCHIVES_LOC=rf5g_sim
+    RUN_OPTIONS="complex"
+}
+
 # Following function lists all variant__v<n>__<variant name> functions
 # and set the VARIANTS_SHORT and VARIANTS_LONG arrays from
 # the function names
