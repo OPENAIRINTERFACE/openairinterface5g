@@ -2176,7 +2176,7 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
 
   }
 
-  if (!get_softmodem_params()->sa && mac->ra.ra_state == WAIT_RAR) {
+  if (!get_softmodem_params()->sa && get_softmodem_params()->do_ra && mac->ra.ra_state != RA_SUCCEEDED) {
 
     LOG_D(NR_MAC, "In %s: generating C-RNTI MAC CE with C-RNTI %x\n", __FUNCTION__, mac->crnti);
 
