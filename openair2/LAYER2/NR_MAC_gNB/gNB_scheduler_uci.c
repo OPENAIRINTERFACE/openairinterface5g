@@ -46,7 +46,6 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
 
   nfapi_nr_ul_tti_request_t *future_ul_tti_req =
       &RC.nrmac[mod_id]->UL_tti_req_ahead[0][pucch->ul_slot];
-
   AssertFatal(future_ul_tti_req->SFN == pucch->frame
               && future_ul_tti_req->Slot == pucch->ul_slot,
               "future UL_tti_req's frame.slot %d.%d does not match PUCCH %d.%d\n",
@@ -1140,10 +1139,6 @@ int nr_acknack_scheduling(int mod_id,
               __func__,
               pucch->csi_bits);
   /* if the currently allocated PUCCH of this UE is full, allocate it */
-  // if (NFAPI_MODE == NFAPI_MODE_VNF){
-  //   pucch->sr_flag = 1; 
-  //   pucch->dai_c = 1;
-  // }
 
   if (pucch->dai_c == 2) {
     /* advance the UL slot information in PUCCH by one so we won't schedule in
@@ -1174,7 +1169,7 @@ int nr_acknack_scheduling(int mod_id,
   /* if the UE's next PUCCH occasion is after the possible UL slots (within the
    * same frame) or wrapped around to the next frame, then we assume there is
    * no possible PUCCH allocation anymore */
-  if(NFAPI_MODE == NFAPI_MONOLITHIC)
+
   if ((pucch->frame == frame
        && (pucch->ul_slot >= first_ul_slot_tdd + nr_ulmix_slots))
       || (pucch->frame == frame + 1))
@@ -1186,10 +1181,10 @@ int nr_acknack_scheduling(int mod_id,
   get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
 
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
-  // if(NFAPI_MODE == NFAPI_MODE_VNF)
-  //   return 0;
+
   if (pucch->dai_c > 0) {
     /* this UE already has a PUCCH occasion */
+    LOG_I(MAC,"pucch->frame = %d,frame=%d \n",pucch->frame,frame);
     DevAssert(pucch->frame == frame);
 
     // Find the right timing_indicator value.

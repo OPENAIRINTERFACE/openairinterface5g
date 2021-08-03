@@ -780,11 +780,11 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
 
   for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 #ifdef DEBUG_DLSCH_CODING
-    printf("Rate Matching, Code segment %u (coded bits (G) %u,unpunctured/repeated bits per code segment %u,mod_order %d, nb_rb %d)...\n",
-           r,
-           G,
-           Kr*3,
-           mod_order,nb_rb);
+    // printf("Rate Matching, Code segment %u (coded bits (G) %u,unpunctured/repeated bits per code segment %u,mod_order %d, nb_rb %d)...\n",
+    //        r,
+    //        G,
+    //        Kr*3,
+    //        mod_order,nb_rb);
 #endif
     start_meas(rm_stats);
 #ifdef DEBUG_DLSCH_CODING

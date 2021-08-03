@@ -88,7 +88,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
 { 
   if(NFAPI_MODE == NFAPI_MODE_PNF) {
     if (UL_info->uci_ind.num_ucis>0) {
-      LOG_I(PHY,"PNF Sending UL_info->num_ucis:%d PDU_type: %d, SFN/SF:%d.%d \n", UL_info->uci_ind.num_ucis, UL_info->uci_ind.uci_list[0].pdu_type ,UL_info->frame, UL_info->slot);
+      LOG_D(PHY,"PNF Sending UL_info->num_ucis:%d PDU_type: %d, SFN/SF:%d.%d \n", UL_info->uci_ind.num_ucis, UL_info->uci_ind.uci_list[0].pdu_type ,UL_info->frame, UL_info->slot);
       oai_nfapi_nr_uci_indication(&UL_info->uci_ind);
       UL_info->uci_ind.num_ucis = 0;
     }
@@ -99,7 +99,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
     const sub_frame_t slot = UL_info->slot;
     int num_ucis = UL_info->uci_ind.num_ucis;
     nfapi_nr_uci_t *uci_list = UL_info->uci_ind.uci_list;
-    //printf("handling UCI SFN/slot: %d.%d, num_ucis: %d \n", frame,slot, num_ucis);
+    LOG_I(MAC,"handling UCI SFN/slot: %d.%d, num_ucis: %d \n", frame,slot, num_ucis);
     for (int i = 0; i < num_ucis; i++) {
       switch (uci_list[i].pdu_type) {
         case NFAPI_NR_UCI_PUSCH_PDU_TYPE:
@@ -120,6 +120,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
           break;
         }
       }
+      LOG_D(MAC, "UCI handled \n");
     }
   }
 

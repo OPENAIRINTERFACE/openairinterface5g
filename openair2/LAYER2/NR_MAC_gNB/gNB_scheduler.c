@@ -134,6 +134,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   /* advance last round's future UL_tti_req to be ahead of current frame/slot */
   future_ul_tti_req->SFN = (slotP == 0 ? frameP : frameP + 1) % 1024;
+  LOG_D(MAC,"Future_ul_tti SFN = %d for slot %d \n", future_ul_tti_req->SFN, (slotP + num_slots - 1) % num_slots);
   /* future_ul_tti_req->Slot is fixed! */
   future_ul_tti_req->n_pdus = 0;
   future_ul_tti_req->n_ulsch = 0;
@@ -374,9 +375,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     if (NFAPI_MODE == NFAPI_MODE_VNF){
       if(first_sched_entry == 1)
       {
+        printf("First sched entry at slot %d \n", slot);
         for (int i = 0; i<num_slots; i++){
           if(i <= slot)
-            gNB->UL_tti_req_ahead[CC_id][i].SFN = frame + 1;
+            gNB->UL_tti_req_ahead[CC_id][i].SFN = (frame + 1) % 1024;
           else
             gNB->UL_tti_req_ahead[CC_id][i].SFN = frame;
         }

@@ -151,7 +151,7 @@ void rx_func(void *param) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
     //LOG_D(PHY, "oai_slot_ind(frame:%u, slot:%d) ********\n", frame_rx, slot_rx);
     start_meas(&nfapi_meas);
-    oai_slot_ind(frame_tx, slot_tx);
+    oai_slot_ind(frame_rx, slot_rx);
     stop_meas(&nfapi_meas);
 
     /*if (gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus||

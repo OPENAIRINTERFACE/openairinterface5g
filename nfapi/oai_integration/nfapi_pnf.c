@@ -1253,8 +1253,8 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     } else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE) {
       nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu = &dl_tti_pdu_list[i].pdsch_pdu;
       nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15_pdu = &pdsch_pdu->pdsch_pdu_rel15;
-      //nfapi_nr_tx_data_request_t *tx_data = tx_data_request[sfn][slot][rel15_pdu->pduIndex];
-      nfapi_nr_pdu_t *tx_data = tx_data_request[sfn][slot][0];
+      //nfapi_nr_tx_data_request_t *tx_data = tx_data_request[sfn][slot][rel15_pdu->pduIndex];      
+      nfapi_nr_pdu_t *tx_data = tx_data_request[sfn][slot][rel15_pdu->pduIndex];
 
       if (tx_data != NULL) {
         int UE_id = find_nr_dlsch(rel15_pdu->rnti,gNB,SEARCH_EXIST_OR_FREE);
