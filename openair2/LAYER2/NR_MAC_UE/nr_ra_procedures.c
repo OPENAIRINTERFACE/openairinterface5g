@@ -531,8 +531,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       LOG_D(NR_MAC, "In %s: RA not active. Checking for data to transmit from upper layers...\n", __FUNCTION__);
 
       const uint8_t lcid = UL_SCH_LCID_CCCH;
-      const uint8_t sh_size = sizeof(NR_MAC_SUBHEADER_SHORT);
-      const uint8_t TBS_max = 8 + 2 * sh_size;
+      const uint8_t sh_size = sizeof(NR_MAC_SUBHEADER_FIXED);
+      const uint8_t TBS_max = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // Note: unclear the reason behind the selection of such TBS_max
       int8_t size_sdu = 0;
       uint8_t mac_ce[16] = {0};
       uint8_t *pdu = get_softmodem_params()->sa ? mac->CCCH_pdu.payload : mac_ce;
@@ -542,7 +542,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       // Therefore it has been assumed that this event only occurs only when RA is done and it is not SA mode.
       if (get_softmodem_params()->sa) {
 
-        NR_MAC_SUBHEADER_SHORT *header = (NR_MAC_SUBHEADER_SHORT *) pdu;
+        NR_MAC_SUBHEADER_FIXED *header = (NR_MAC_SUBHEADER_FIXED *) pdu;
         pdu += sh_size;
 
         // initialisation by RRC
@@ -564,9 +564,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
           // Build header
           header->R = 0;
-          header->F = 0;
           header->LCID = lcid;
-          header->L = (unsigned char) size_sdu;
 
         } else {
           pdu -= sh_size;
