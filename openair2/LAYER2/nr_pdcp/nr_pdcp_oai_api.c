@@ -444,7 +444,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
-      LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
+      LOG_I(PDCP, "Melissa Elkadi %s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
       //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
       //printf("\n");
       itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
@@ -627,9 +627,11 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
   if (ue->drb[drb_id-1] != NULL) {
-    LOG_D(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
+    LOG_I(PDCP, "Melissa Elkadi %s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
+    LOG_I(PDCP, "%s:%d:%s: Melissa Elkadi, we will call deliver_sdu_drb\n", __FILE__, __LINE__, __FUNCTION__);
+
     pdcp_drb = new_nr_pdcp_entity_drb_am(is_gnb, drb_id,
                                          deliver_sdu_drb, ue, deliver_pdu_drb, ue,
                                          sn_size_dl, t_reordering, discard_timer,

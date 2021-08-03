@@ -1919,7 +1919,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                   mac_subheader_len = 2;
                 }
 
-                LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_sdu_len);
+                LOG_I(MAC, "Melissa Elkadi [UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_sdu_len);
 
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
                     LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
@@ -1992,7 +1992,8 @@ uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
   // Generating UL MAC subPDUs including MAC SDU and subheader
 
   for (i = 0; i < num_sdus; i++) {
-    LOG_D(MAC, "[UE] Generating UL MAC subPDUs for SDU with lenght %d ( num_sdus %d )\n", sdu_lengths[i], num_sdus);
+    LOG_I(MAC, "Melissa Elkadi [UE] Generating UL MAC subPDUs for SDU with length %d ( num_sdus %d ) and LCID %d\n",
+          sdu_lengths[i], num_sdus, sdu_lcids[i]);
 
     if (sdu_lcids[i] != UL_SCH_LCID_CCCH){
       if (sdu_lengths[i] < 128) {

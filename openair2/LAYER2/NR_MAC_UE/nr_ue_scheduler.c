@@ -1816,8 +1816,8 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 
         buflen_remain =
           buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
-        LOG_D(MAC,
-              "[UE %d] Frame %d : UL-DXCH -> ULSCH, RLC %d has %d bytes to "
+        LOG_I(MAC,
+              "Melissa Elkadi [UE %d] Frame %d : UL-DXCH -> ULSCH, RLC %d has %d bytes to "
               "send (Transport Block size %d SDU Length Total %d , mac header len %d, buflen_remain %d )\n", //BSR byte before Tx=%d
               module_idP, frameP, lcid, lcid_buffer_occupancy_new,
               buflen, sdu_length_total,
