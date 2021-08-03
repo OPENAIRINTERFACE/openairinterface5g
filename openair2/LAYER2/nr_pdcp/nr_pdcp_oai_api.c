@@ -411,9 +411,11 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   uint8_t     *gtpu_buffer_p;
   int rb_id;
   int i;
+  LOG_I(PDCP, "Melissa Elkadi we got here %s\n", __FUNCTION__);
 
-  if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->nsa){
+  if(!IS_SOFTMODEM_NOS1 || get_softmodem_params()->nsa){
     len = write(nas_sock_fd[0], buf, size);
+    LOG_I(PDCP, "Melissa Elkadi Writing %d bytes to tunnel interface\n", len);
     if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     }

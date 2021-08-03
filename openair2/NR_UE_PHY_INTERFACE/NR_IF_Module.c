@@ -286,13 +286,14 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
         {
             if (pdu_list->TLVs[j].tag)
                 dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = (void*) pdu_list->TLVs[j].value.ptr; // Melissa, fix me!
-            else if (!pdu_list->TLVs[j].tag)
+            else
                 dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = (void*) pdu_list->TLVs[j].value.direct; // Melissa, fix me!
             dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = pdu_list->TLVs[j].length;
+            LOG_D(NR_PHY, "%s: num_tlv %d and length %d\n", __FUNCTION__, pdu_list->num_TLV, pdu_list->TLVs[j].length);
             if (tx_data_request->Slot == 7) { //Melissa this means we have an RAR, sorta hacky though
                 dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
             }
-            else if (tx_data_request->Slot != 7 && get_softmodem_params()->nsa) {
+            else {
                 dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
             }
         }
