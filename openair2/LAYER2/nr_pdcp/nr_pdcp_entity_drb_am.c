@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common/utils/LOG/log.h"
+#include "assertions.h"
 
 void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *_entity, char *buffer, int size)
 {
