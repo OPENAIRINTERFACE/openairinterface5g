@@ -32,7 +32,10 @@ void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *_entity, char *buffer, int
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
   int sn;
 
-  AssertFatal(size >= 3, "Size < 3. Size = %d", size);
+  if (size < 3) {
+    LOG_I(PDCP, "Size < 3. Size = %d. No data, so discarding.", size);
+    return;
+  }
 
   if (!(buffer[0] & 0x80))
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
