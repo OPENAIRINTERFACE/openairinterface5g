@@ -1176,8 +1176,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   gNB->pusch_vars[ulsch_id]->cl_done = 0;
 
   bwp_start_subcarrier = ((rel15_ul->rb_start + rel15_ul->bwp_start)*NR_NB_SC_PER_RB + frame_parms->first_carrier_offset) % frame_parms->ofdm_symbol_size;
-  LOG_I(PHY,"pusch %d.%d : bwp_start_subcarrier %d, rb_start %d, first_carrier_offset %d\n", frame,slot,bwp_start_subcarrier, rel15_ul->rb_start, frame_parms->first_carrier_offset);
-  LOG_I(PHY,"pusch %d.%d : ul_dmrs_symb_pos %x\n",frame,slot,rel15_ul->ul_dmrs_symb_pos);
+  LOG_D(PHY,"pusch %d.%d : bwp_start_subcarrier %d, rb_start %d, first_carrier_offset %d\n", frame,slot,bwp_start_subcarrier, rel15_ul->rb_start, frame_parms->first_carrier_offset);
+  LOG_D(PHY,"pusch %d.%d : ul_dmrs_symb_pos %x\n",frame,slot,rel15_ul->ul_dmrs_symb_pos);
 
   //----------------------------------------------------------
   //--------------------- Channel estimation ---------------------
@@ -1296,7 +1296,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       //--------------------- Channel Compensation ---------------
       //----------------------------------------------------------
       start_meas(&gNB->ulsch_channel_compensation_stats);
-      LOG_I(PHY,"Doing channel compensations log2_maxh %d, avgs %d (%d,%d)\n",gNB->pusch_vars[ulsch_id]->log2_maxh,avgs,avg[0],avg[1]);
+      LOG_D(PHY,"Doing channel compensations log2_maxh %d, avgs %d (%d,%d)\n",gNB->pusch_vars[ulsch_id]->log2_maxh,avgs,avg[0],avg[1]);
       nr_ulsch_channel_compensation(gNB->pusch_vars[ulsch_id]->rxdataF_ext,
                                     gNB->pusch_vars[ulsch_id]->ul_ch_estimates_ext,
                                     gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
