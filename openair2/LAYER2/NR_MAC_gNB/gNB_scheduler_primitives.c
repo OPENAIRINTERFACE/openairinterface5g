@@ -520,6 +520,8 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
   dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
   dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
   dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
+  LOG_D(MAC,"config_uldci harq id check dci_pdu_rel15->harq_pid  %d  pusch_pdu->pusch_data.harq_process_id  %d\n", 
+                dci_pdu_rel15->harq_pid, pusch_pdu->pusch_data.harq_process_id);
   dci_pdu_rel15->tpc = tpc;
   AssertFatal(ubwp->bwp_Dedicated->pusch_Config->choice.setup->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
               "Only frequency resource allocation type 1 is currently supported\n");
@@ -1249,10 +1251,12 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   case NR_UL_DCI_FORMAT_0_1:
     switch (rnti_type) {
     case NR_RNTI_C:
+#if 0
     harq_pid_ul = (harq_pid_ul + 1) % 16;
         if (harq_pid_ul == 0)
           flag = !flag;
         dci_pdu_rel15->ndi = flag;
+#endif
 
       // Indicating a DL DCI format 1bit
       pos = 1;
@@ -1286,8 +1290,11 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->rv & 0x3) << (dci_size - pos);
       // HARQ process number  4bit
       pos += 4;
-      dci_pdu_rel15->harq_pid = harq_pid_ul;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->harq_pid & 0xf) << (dci_size - pos);
+      LOG_D(MAC,"fill_dci_pdu_rel15  dci_format %d  shift %d  hard_pid_ul %d\n", 
+                 dci_format, dci_size - pos, dci_pdu_rel15->harq_pid );
+      LOG_D(MAC,"fill_dci_pdu_rel15  dci_size, pos, shift, harq_id = %u %u %d  %lu\n", 
+                 dci_size, pos, dci_size - pos, (*dci_pdu >> (dci_size - pos)) & 0xf);
       // 1st Downlink assignment index
       pos += dci_pdu_rel15->dai[0].nbits;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->dai[0].val & ((1 << dci_pdu_rel15->dai[0].nbits) - 1)) << (dci_size - pos);

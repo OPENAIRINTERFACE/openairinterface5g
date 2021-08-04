@@ -82,7 +82,8 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
     } else if (rnti == 0xFFFF) {
       rnti_type = NR_RNTI_SI;
     } else {
-      AssertFatal(1 == 0, "In %s: Not identified/handled rnti %d \n", __FUNCTION__, rnti);
+      AssertFatal(1 == 0, "In %s: Not identified/handled rnti %x  [ra->ra_rnti %x, mac->crnti %x, ra->t_crnti %x]\n", 
+                          __FUNCTION__, rnti, ra->ra_rnti, mac->crnti, ra->t_crnti);    
     }
 
     LOG_D(MAC, "In %s: returning rnti_type %s \n", __FUNCTION__, rnti_types[rnti_type]);
@@ -446,11 +447,22 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
+  LOG_D(MAC,"Received dci indication (rnti %4x, dci format %d,n_CCE %d, payloadSize %d, payload %llx)\n\n\n\n",
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
-
-  uint32_t dci_format = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15);
-  return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci->rnti, dci_format));
+  
+  if ((dci->rnti == mac->crnti) || (dci->rnti == mac->ra.ra_rnti))
+  {
+    LOG_D(MAC,"Received dci indication rnti %4x  mac->crnti %4x  frame slot %4d.%2d  RA state %d\n", 
+              dci->rnti, mac->crnti, frame, slot, mac->ra.ra_state);
+    uint32_t dci_format = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15);
+    return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci->rnti, dci_format));
+  }
+  else
+  {
+    LOG_D(MAC,"We skip for the received dci indication rnti %4x != mac->crnti %4x  frame slot %4d.%2d\n", 
+              dci->rnti, mac->crnti, frame, slot);
+    return 0; 
+  }
 }
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint8_t dci_format){

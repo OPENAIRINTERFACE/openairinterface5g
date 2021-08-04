@@ -338,10 +338,12 @@ void handle_nr_ul_harq(module_id_t mod_id,
   LOG_D(NR_MAC, "Comparing crc_pdu->harq_id vs feedback harq_pid = %d %d\n",crc_pdu->harq_id, harq_pid);
   while (crc_pdu->harq_id != harq_pid || harq_pid < 0) {
     LOG_W(MAC,
-          "Unexpected ULSCH HARQ PID in crc pdu %d (feedback have %d) for RNTI %04x (ignore this warning for RA)\n",
+          "Unexpected ULSCH HARQ PID in crc pdu %d (feedback have %d) for RNTI %04x  SFN/SLOT  %4d.%2d  (ignore this warning for RA)\n",
           crc_pdu->harq_id,
           harq_pid,
-          crc_pdu->rnti);
+          crc_pdu->rnti,
+          frame, slot
+          );
     if (harq_pid < 0)
       return;
 
@@ -364,7 +366,7 @@ void handle_nr_ul_harq(module_id_t mod_id,
     harq->ndi ^= 1;
     harq->round = 0;
     LOG_D(MAC,
-          "Ulharq id %d crc passed for RNTI %04x\n",
+          "Ulharq id %d crc passed for RNTI %4x\n",
           harq_pid,
           crc_pdu->rnti);
     add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
@@ -980,7 +982,11 @@ void nr_schedule_ulsch(module_id_t module_id,
      * every TTI are pre-populated by the preprocessor and used below */
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     if (sched_pusch->rbSize <= 0)
+    {
+      LOG_D(NR_MAC, "UE id %d was skipped due to sched_pusch->rbSize <= 0\n", UE_id);
       continue;
+    }
+
 
     struct timespec ts;
     if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
@@ -1039,8 +1045,11 @@ void nr_schedule_ulsch(module_id_t module_id,
     }
 
     uint16_t rnti = UE_info->rnti[UE_id];
-    LOG_D(NR_MAC, "nr_schedule_ulsch  UE_id_checking UE_id = %d, rnti = %x \n", UE_id,  rnti);
+    LOG_D(NR_MAC, "nr_schedule_ulsch  UE_id_checking UE_id = %d, rnti = %x, sfn slot = %d.%d \n", 
+                   UE_id, rnti, frame, slot);
 
+    LOG_D(NR_MAC, "Before consume harq id:");
+    dump_nr_list(&sched_ctrl->available_ul_harq);
     int8_t harq_id = sched_pusch->ul_harq_pid;
     if (harq_id < 0) {
       /* PP has not selected a specific HARQ Process, get a new one */
@@ -1049,21 +1058,32 @@ void nr_schedule_ulsch(module_id_t module_id,
                   "no free HARQ process available for UE %d\n",
                   UE_id);
       remove_front_nr_list(&sched_ctrl->available_ul_harq);
+      LOG_D(NR_MAC, "Consumed harq id -------------------------> %d", harq_id);
       sched_pusch->ul_harq_pid = harq_id;
     } else {
       /* PP selected a specific HARQ process. Check whether it will be a new
        * transmission or a retransmission, and remove from the corresponding
        * list */
       if (sched_ctrl->ul_harq_processes[harq_id].round == 0)
+      {
         remove_nr_list(&sched_ctrl->available_ul_harq, harq_id);
+        LOG_D(NR_MAC, "Consumed harq id%d", harq_id);
+      }
       else
+      {
         remove_nr_list(&sched_ctrl->retrans_ul_harq, harq_id);
+        LOG_D(NR_MAC, "Retran harq id %d for round %d\n", harq_id, sched_ctrl->ul_harq_processes[harq_id].round);
+      }
     }
+    LOG_D(NR_MAC, "After consume harq id:");
+    dump_nr_list(&sched_ctrl->available_ul_harq);
     NR_UE_ul_harq_t *cur_harq = &sched_ctrl->ul_harq_processes[harq_id];
     DevAssert(!cur_harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_ul_harq, harq_id);
     cur_harq->feedback_slot = sched_pusch->slot;
     cur_harq->is_waiting = true;
+    LOG_D(NR_MAC, "Updated Feedback ul harq id list:");
+    dump_nr_list(&sched_ctrl->feedback_ul_harq);
 
     int rnti_types[2] = { NR_RNTI_C, 0 };
 
@@ -1212,7 +1232,7 @@ void nr_schedule_ulsch(module_id_t module_id,
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
     pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
-    LOG_D(NR_MAC,"Setting harq_id pusch_pdu->pusch_data.harq_process_id  %d  for UE_id(%d), rnti %x\n", harq_id, UE_id, rnti);
+    LOG_D(NR_MAC,"Setting harq_id pusch_pdu->pusch_data.harq_process_id  %2d  for UE_id(%d)  rnti  %4x  sfn slot  %4d.%2d\n", harq_id, UE_id, rnti, frame, slot);
 
     /* TRANSFORM PRECODING --------------------------------------------------------*/
 
@@ -1268,7 +1288,8 @@ void nr_schedule_ulsch(module_id_t module_id,
       pdcch_pdu_bwp_coreset[bwpid][coresetid] = pdcch_pdu;
     }
 
-    LOG_D(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d\n", frame,slot);
+    LOG_D(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d  rnti %x  UE id  %d  pusch harq_id  %d  sched_pusch->ul_harq_pid  %d\n", 
+                  frame,slot, rnti, UE_id, pusch_pdu->pusch_data.harq_process_id, sched_pusch->ul_harq_pid);
 
     /* Fill PDCCH DL DCI PDU */
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci];
@@ -1299,6 +1320,9 @@ void nr_schedule_ulsch(module_id_t module_id,
                  UE_info->UE_sched_ctrl[UE_id].tpc0,
                  n_ubwp,
                  sched_ctrl->active_bwp->bwp_Id);
+
+    LOG_D(NR_MAC,"After config_uldci in %d.%d  rnti %x  UE id  %d  uldci payload harq_id  %d  pusch harq_id  %d  sched_pusch->ul_harq_pid  %d\n", 
+                  frame,slot, rnti, UE_id, uldci_payload.harq_pid, pusch_pdu->pusch_data.harq_process_id, sched_pusch->ul_harq_pid);
     fill_dci_pdu_rel15(scc,
                        secondaryCellGroup,
                        dci_pdu,

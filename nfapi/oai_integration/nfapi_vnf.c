@@ -1366,10 +1366,10 @@ void set_thread_priority(int priority);
 void *vnf_nr_p7_thread_start(void *ptr) {
   set_thread_priority(79);
   LOG_I(MAC, "Clearing Queues\n");
-  reset_queue(&gnb_rach_ind_queue);
-  reset_queue(&gnb_rx_ind_queue);
-  reset_queue(&gnb_crc_ind_queue);
-  reset_queue(&gnb_uci_ind_queue);
+  init_queue(&gnb_rach_ind_queue);
+  init_queue(&gnb_rx_ind_queue);
+  init_queue(&gnb_crc_ind_queue);
+  init_queue(&gnb_uci_ind_queue);
 
   vnf_p7_info *p7_vnf = (vnf_p7_info *)ptr;
   p7_vnf->config->port = p7_vnf->local_port;

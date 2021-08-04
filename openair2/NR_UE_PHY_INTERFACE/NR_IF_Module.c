@@ -316,12 +316,13 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
         abort();
     }
 
+    NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_ul_dci_request_pdus_t *pdu_list = &ul_dci_req->ul_dci_pdu_list[i];
         AssertFatal(pdu_list->PDUType == 0, "ul_dci_req pdu type != PUCCH");
-        if (pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI != get_mac_inst(0)->crnti)
-          continue;
+        //if (pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI != get_mac_inst(0)->crnti)
+        //  continue;
         LOG_I(NR_PHY, "[%d %d] PUCCH PDU in ul_dci for rnti %x\n", ul_dci_req->SFN, ul_dci_req->Slot, pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI);
         uint16_t num_dci = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
         if (num_dci > 0)
@@ -334,9 +335,20 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
             for (int j = 0; j < num_dci; j++)
             {
                 nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
+                if (dci_pdu_list->RNTI != mac->crnti)
+                {
+                  LOG_I(NR_MAC, "ul_dci_req Skip: dci_pdu_list->RNTI %x != mac->crnti %x\n", dci_pdu_list->RNTI, get_mac_inst(dl_info->module_id)->crnti);
+                  continue;
+                }
                 int num_bytes = (dci_pdu_list->PayloadSizeBits + 7) / 8;
-                LOG_I(NR_PHY, "[%d, %d] ul_dci_req PDCCH DCI for rnti %x with PayloadSizeBits %d and num_bytes %d\n",
-                        ul_dci_req->SFN, ul_dci_req->Slot, dci_pdu_list->RNTI, dci_pdu_list->PayloadSizeBits, num_bytes);
+                uint64_t *dci_pdu_payload = (uint64_t *)dci_pdu_list->Payload;
+                int harq_pid = (*dci_pdu_payload >> 11) & 0xf;
+                LOG_I(NR_PHY, "[%d, %d] ul_dci_req PDCCH DCI for rnti %x with PayloadSizeBits %d and num_bytes %d  harq_id %lu\n",
+                        ul_dci_req->SFN, ul_dci_req->Slot, 
+                        dci_pdu_list->RNTI, 
+                        dci_pdu_list->PayloadSizeBits, num_bytes,
+                        harq_pid
+                        );
                 for (int k = 0; k < num_bytes; k++)
                 {
                     LOG_I(NR_MAC, "PDCCH DCI PDU payload[%d] = %d\n", k, dci_pdu_list->Payload[k]);
