@@ -222,10 +222,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   unsigned int  ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
   if (ssb_offset>= ue->frame_parms.ofdm_symbol_size) ssb_offset-=ue->frame_parms.ofdm_symbol_size;
 
-  if (ue->high_speed_flag == 0) // use second channel estimate position for temporary storage
-    ch_offset     = ue->frame_parms.ofdm_symbol_size ;
-  else
-    ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
+  ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
   AssertFatal(dmrss >= 0 && dmrss < 3,
 	      "symbol %d is illegal for PBCH DM-RS \n",
@@ -283,10 +280,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
     dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
 
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
-    if (ue->high_speed_flag==0) // multiply previous channel estimate by ch_est_alpha
-      multadd_complex_vector_real_scalar(dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
-                                         ue->ch_est_alpha,dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
-                                         1,ue->frame_parms.ofdm_symbol_size);
+
 #ifdef DEBUG_CH
     printf("pbch ch est pilot addr %p RB_DL %d\n",&pilot[0], ue->frame_parms.N_RB_DL);
     printf("k %d, first_carrier %d\n",k,ue->frame_parms.first_carrier_offset);
@@ -488,11 +482,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   int **dl_ch_estimates  =ue->pdcch_vars[proc->thread_id][gNB_id]->dl_ch_estimates;
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
-
-  if (ue->high_speed_flag == 0) // use second channel estimate position for temporary storage
-    ch_offset     = ue->frame_parms.ofdm_symbol_size ;
-  else
-    ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
+  ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
   symbol_offset = ue->frame_parms.ofdm_symbol_size*symbol;
 
@@ -527,10 +517,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
 
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
-    if (ue->high_speed_flag==0) // multiply previous channel estimate by ch_est_alpha
-      multadd_complex_vector_real_scalar(dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
-                                         ue->ch_est_alpha,dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
-                                         1,ue->frame_parms.ofdm_symbol_size);
+
 #ifdef DEBUG_PDCCH
     printf("pdcch ch est pilot addr %p RB_DL %d\n",&pilot[0], ue->frame_parms.N_RB_DL);
     printf("k %d, first_carrier %d\n",k,ue->frame_parms.first_carrier_offset);
@@ -677,10 +664,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int **dl_ch_estimates  =ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates;
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
-  if (ue->high_speed_flag == 0)
-    ch_offset     = ue->frame_parms.ofdm_symbol_size;
-  else
-    ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
+  ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
   symbol_offset = ue->frame_parms.ofdm_symbol_size*symbol;
 
@@ -798,10 +782,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
     dl_ch = (int16_t *)&dl_ch_estimates[p*ue->frame_parms.nb_antennas_rx+aarx][ch_offset];
 
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
-    if (ue->high_speed_flag==0) // multiply previous channel estimate by ch_est_alpha
-      multadd_complex_vector_real_scalar(dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
-                                         ue->ch_est_alpha,dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
-                                         1,ue->frame_parms.ofdm_symbol_size);
+
 #ifdef DEBUG_PDSCH
     printf("ch est pilot addr %p RB_DL %d\n",&pilot[0], ue->frame_parms.N_RB_DL);
     printf("k %d, first_carrier %d\n",k,ue->frame_parms.first_carrier_offset);

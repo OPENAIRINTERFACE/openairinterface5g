@@ -68,7 +68,6 @@ USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 NR="False"
 ITTI_SIM="False"
-RFSIM_NAS="False"
 SANITIZE_ADDRESS="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
 RU=0
@@ -275,7 +274,6 @@ function main() {
             RU=0
             nrUE=1
             rfsimNas=1
-            RFSIM_NAS="True"
             NR="True"
             echo_info "Will compile NR UE"
             shift;;
@@ -633,7 +631,6 @@ function main() {
     echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
     echo "set ( RU $RU )"                                                 >> $cmake_file
     echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
-    echo "set ( RFSIM_NAS $RFSIM_NAS )"                                   >> $cmake_file
     echo "set ( SANITIZE_ADDRESS $SANITIZE_ADDRESS )"                     >> $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
     cd  $DIR/$build_dir/build
@@ -686,21 +683,7 @@ function main() {
           $build_dir coding \
           libcoding.so $dbin/libcoding.so
 
-        #check if we run inside a container or not
-        #IS_CONTAINER variable is defined in build_helper file
-        #compile  nasmesh and rb_tool only if NOT running in a container
-        if [ $IS_CONTAINER -eq 0 ]
-        then
-          compilations \
-            $build_dir nasmesh \
-            CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
 
-          compilations \
-            $build_dir rb_tool \
-            rb_tool $dbin/rb_tool
-
-          cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
-        fi #IS_CONTAINER
       fi
     fi
   fi

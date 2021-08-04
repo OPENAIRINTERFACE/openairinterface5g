@@ -194,6 +194,18 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
+  for (int i=0;i<NUMBER_OF_NR_CSIRS_MAX;i++){
+    NR_gNB_CSIRS_t *csirs = &gNB->csirs_pdu[i];
+    if ((csirs->active == 1) &&
+	(csirs->frame == frame) &&
+	(csirs->slot == slot) ) {
+      LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
+      nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params = csirs->csirs_pdu.csi_rs_pdu_rel15;
+      nr_generate_csi_rs(gNB, AMP, csi_params, gNB->gNB_config.cell_config.phy_cell_id.value, slot);
+      csirs->active = 0;
+    }
+  }
+
   if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
 
   if ((frame&127) == 0) dump_pdsch_stats(gNB);
@@ -202,7 +214,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
 	  apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[aa][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14,fp->ofdm_symbol_size);
   }
-  
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
 
@@ -690,7 +702,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
              gNB->pusch_vars[ULSCH_id]->ulsch_power_tot = gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot;
              nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1);
              gNB->pusch_vars[ULSCH_id]->DTX=1;
-             stats->DTX++;
+             if (stats) stats->DTX++;
              return 1;
           } else gNB->pusch_vars[ULSCH_id]->DTX=0;
 

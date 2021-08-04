@@ -66,6 +66,8 @@ typedef struct {
 /*
  * Read the configuration file, section name variable to be able to manage several UICC
  */
+uicc_t *checkUicc(int Mod_id);
 uicc_t *init_uicc(char *sectionName);
 void uicc_milenage_generate(uint8_t * autn, uicc_t *uicc);
+uicc_t * checkUicc(int Mod_id);
 #endif

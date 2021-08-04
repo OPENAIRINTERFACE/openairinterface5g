@@ -1573,8 +1573,7 @@ typedef struct
 {
   uint8_t  csi_part1_crc;
   uint16_t csi_part1_bit_len;
-  //! fixme
-  uint8_t*  csi_part1_payload;//uint8_t[ceil(csiPart1BitLen/8)]
+  uint8_t*  csi_part1_payload;
   
 } nfapi_nr_csi_part1_pdu_t;
 
@@ -1583,8 +1582,7 @@ typedef struct
 {
   uint8_t  csi_part2_crc;
   uint16_t csi_part2_bit_len;
-  //! fixme
-  uint8_t*  csi_part2_payload;//uint8_t[ceil(csiPart2BitLen/8)]
+  uint8_t*  csi_part2_payload;
 } nfapi_nr_csi_part2_pdu_t;
 
 //table 3-63

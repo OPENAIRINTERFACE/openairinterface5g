@@ -73,7 +73,6 @@ int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 volatile int oai_exit = 0;
 double cpuf;
-msc_interface_t msc_interface;
 THREAD_STRUCT thread_struct;
 
 uint16_t sf_ahead=4;

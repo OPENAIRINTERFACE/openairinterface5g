@@ -2013,7 +2013,9 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                                 ENB_FLAG_NO,
                                 MBMS_FLAG_NO,
                                 lcid,
-                                buflen_remain,
+                                buflen_remain-MAX_RLC_SDU_SUBHEADER_SIZE,
+                                //Fixme: Laurent I removed MAX_RLC_SDU_SUBHEADER_SIZE because else we get out the buffer silently
+                                // the interface with nr_generate_ulsch_pdu() looks over complex and not CPU optimized
                                 (char *)&ulsch_sdus[sdu_length_total],0,
                                 0);
 
@@ -2033,8 +2035,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 
         /* Get updated BO after multiplexing this PDU */
         lcid_buffer_occupancy_new = mac_rlc_get_buffer_occupancy_ind(module_idP,mac->crnti,eNB_index,frameP, subframe, ENB_FLAG_NO, lcid);
-        buflen_remain =
-                  buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
+        buflen_remain = buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
       }
     }
   }
