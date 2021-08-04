@@ -54,6 +54,7 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         software-properties-common \
         libsctp1 \
+        procps \
         libnettle6 \
         liblapacke \
         libatlas3-base \

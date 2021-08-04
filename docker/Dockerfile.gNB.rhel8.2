@@ -47,6 +47,7 @@ FROM registry.access.redhat.com/ubi8/ubi:latest as oai-gnb
 RUN yum repolist --disablerepo=* && \
     yum update -y && \
     yum install -y --enablerepo="ubi-8-codeready-builder" \
+        procps-ng \
         libXpm \
         libX11 \
         atlas \
