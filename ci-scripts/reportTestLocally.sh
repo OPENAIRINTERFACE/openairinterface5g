@@ -717,7 +717,11 @@ function report_test {
         done
         echo "   </table>" >> ./test_simulator_results.html
         echo "   </div>" >> ./test_simulator_results.html
+    fi
 
+    ARCHIVES_LOC=archives/rf5g_sim/test
+    if [ -d $ARCHIVES_LOC ]
+    then
         echo "   <h3>5G NR RF Simulator Check</h3>" >> ./test_simulator_results.html
 
         if [ -f $ARCHIVES_LOC/test_final_status.log ]
@@ -762,9 +766,9 @@ function report_test {
                 echo "      <tr bgcolor = \"#8FBC8F\" >" >> ./test_simulator_results.html
                 if [[ $CN_CONFIG =~ .*wS1.* ]]
                 then
-                    echo "          <td align = \"center\" colspan = 4 >Test with EPC (aka withS1): ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
+                    echo "          <td align = \"center\" colspan = 4 >Test with CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
                 else
-                    echo "          <td align = \"center\" colspan = 4 >Test without EPC (aka noS1): ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
+                    echo "          <td align = \"center\" colspan = 4 >Test without CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
                 fi
                 echo "      </tr>" >> ./test_simulator_results.html
 
@@ -837,9 +841,9 @@ function report_test {
                 echo "      <tr bgcolor = \"#8FBC8F\" >" >> ./test_simulator_results.html
                 if [[ $CN_CONFIG =~ .*wS1.* ]]
                 then
-                    echo "          <td align = \"center\" colspan = 4 >Test with EPC (aka withS1): ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
+                    echo "          <td align = \"center\" colspan = 4 >Test with CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
                 else
-                    echo "          <td align = \"center\" colspan = 4 >Test without EPC (aka noS1): ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
+                    echo "          <td align = \"center\" colspan = 4 >Test without CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
                 fi
                 echo "      </tr>" >> ./test_simulator_results.html
 
@@ -907,9 +911,9 @@ function report_test {
                 echo "      <tr bgcolor = \"#8FBC8F\" >" >> ./test_simulator_results.html
                 if [[ $CN_CONFIG =~ .*wS1.* ]]
                 then
-                    echo "          <td align = \"center\" colspan = 4 >Test with EPC (aka withS1): ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
+                    echo "          <td align = \"center\" colspan = 4 >Test with CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
                 else
-                    echo "          <td align = \"center\" colspan = 4 >Test without EPC (aka noS1): ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
+                    echo "          <td align = \"center\" colspan = 4 >Test without CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
                 fi
                 echo "      </tr>" >> ./test_simulator_results.html
 

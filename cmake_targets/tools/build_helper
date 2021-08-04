@@ -256,14 +256,14 @@ install_protobuf_from_source(){
     cd /tmp
     echo "Downloading protobuf"
     #rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
-    #wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+    #wget https://github.com/protocolbuffers/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
     #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
     #cd protobuf-2.6.1/
 
     if [ $IS_CONTAINER -eq 0 ]
     then
       rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-      wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+      wget --tries=3 --retry-connrefused https://github.com/protocolbuffers/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
       tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $(id -u) --group $(id -g) --no-same-owner
       cd protobuf-3.3.0/
     else

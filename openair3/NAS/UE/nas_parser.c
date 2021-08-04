@@ -86,10 +86,7 @@ static parser_command_line_t nasParserCommandLine = {
       "-trace", "<mask>", "Logging trace level\t\t",
       NAS_PARSER_DEFAULT_TRACE_LEVEL
     },
-    {
-      "-uhost", "<uhost>", "User app layer's hostname\t",
-      NAS_PARSER_DEFAULT_USER_HOSTNAME
-    },
+    {"-uhost", "<uhost>", "User app layer's hostname\t", "NULL"},
     {
       "-nhost", "<nhost>", "Network layer's hostname\t",
       NAS_PARSER_DEFAULT_NETWORK_HOSTNAME
