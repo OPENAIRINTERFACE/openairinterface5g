@@ -251,7 +251,7 @@ void *nas_ue_task(void *args_p)
         break;
 
       case NAS_CONN_ESTABLI_CNF:
-        LOG_I(NAS, "[UE %d] Received %s: errCode %u, length %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
+        LOG_I(NAS, "Melissa Elkadi [UE %d] Received %s: errCode %u, length %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_CONN_ESTABLI_CNF (msg_p).errCode, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
 
         if ((NAS_CONN_ESTABLI_CNF (msg_p).errCode == AS_SUCCESS)

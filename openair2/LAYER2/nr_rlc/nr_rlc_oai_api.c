@@ -461,7 +461,7 @@ rb_found:
       T_INT(0 /*ctxt_pP->module_id*/),
       T_INT(ue->rnti), T_INT(rb_id), T_INT(size));
   }
-
+  LOG_I(PDCP, "Melissa Elkadi we are calling PDCP layer from RLC in %s\n", __FUNCTION__);
   if (!pdcp_data_ind(&ctx, is_srb, 0, rb_id, size, memblock)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
     /* what to do in case of failure? for the moment: nothing */

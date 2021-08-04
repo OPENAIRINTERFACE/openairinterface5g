@@ -50,6 +50,7 @@
 #include "assertions.h"
 #include "asn1_conversions.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
+#include "utils.h"
 
 static prach_association_pattern_t prach_assoc_pattern;
 static ssb_list_info_t ssb_list;
@@ -897,7 +898,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           uint16_t TBS_bytes = ulcfg_pdu->pusch_config_pdu.pusch_data.tb_size;
 
           // Push data from MAC to PHY only when NDI toggles
-          if (IS_SOFTMODEM_NOS1 && (mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator)){
+          if (mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator){
             // Getting IP traffic to be transmitted
             data_existing = nr_ue_get_sdu(mod_id,
                                           cc_id,
@@ -911,7 +912,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
           mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
           //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-          if (!IS_SOFTMODEM_NOS1 || !data_existing) {
+          if (IS_SOFTMODEM_NOS1 || !data_existing) {
             //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
             //and block this traffic from being forwarded to the upper layers at the gNB
             LOG_D(PHY, "In %s: Random data to be transmitted: TBS_bytes %d \n", __FUNCTION__, TBS_bytes);
@@ -943,6 +944,11 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           tx_req.tx_request_body[0].pdu_length = TBS_bytes;
           tx_req.tx_request_body[0].pdu_index = j;
           tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
+
+          char buffer[1024];
+          hexdump(tx_req.tx_request_body[0].pdu, tx_req.tx_request_body[0].pdu_length, buffer, sizeof(buffer));
+          LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s in the tx_req with num pdus %d\n",
+                buffer, tx_req.number_of_pdus);
 
           if ((ra->ra_state != RA_SUCCEEDED && !ra->cfra) ||
               (ra->ra_state == RA_SUCCEEDED && ra->cfra && get_softmodem_params()->nsa)) {
@@ -1816,8 +1822,8 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 
         buflen_remain =
           buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
-        LOG_D(MAC,
-              "[UE %d] Frame %d : UL-DXCH -> ULSCH, RLC %d has %d bytes to "
+        LOG_I(MAC,
+              "Melissa Elkadi [UE %d] Frame %d : UL-DXCH -> ULSCH, RLC %d has %d bytes to "
               "send (Transport Block size %d SDU Length Total %d , mac header len %d, buflen_remain %d )\n", //BSR byte before Tx=%d
               module_idP, frameP, lcid, lcid_buffer_occupancy_new,
               buflen, sdu_length_total,
@@ -1832,7 +1838,7 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                                 ENB_FLAG_NO,
                                 MBMS_FLAG_NO,
                                 lcid,
-                                buflen_remain,
+                                buflen_remain-MAX_RLC_SDU_SUBHEADER_SIZE,
                                 (char *)&ulsch_sdus[sdu_length_total],0,
                                 0);
 
@@ -1861,6 +1867,9 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
         buflen_remain =
                   buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
         }
+        char buffer[1024];
+        hexdump(&ulsch_sdus[sdu_length_total], lcid_buffer_occupancy_new, buffer, sizeof(buffer));
+        LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s \n", buffer);
   }
 
 }

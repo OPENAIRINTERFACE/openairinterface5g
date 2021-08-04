@@ -1038,8 +1038,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                  0,
                                  0);
 
-          LOG_D(MAC,
-                "%4d.%2d RNTI %04x: %d bytes from DTCH %d (ndata %d, remaining size %d)\n",
+          LOG_I(MAC,
+                "Melissa Elkadi %4d.%2d RNTI %04x: %d bytes from DTCH %d (ndata %d, remaining size %d)\n",
                 frame,
                 slot,
                 rnti,

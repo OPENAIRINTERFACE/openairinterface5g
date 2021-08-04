@@ -39,6 +39,7 @@
 
 #include "PHY/defs_nr_UE.h"
 #include "PHY/impl_defs_nr.h"
+#include "utils.h"
 
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
@@ -91,6 +92,10 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 rx_ind->pdu_list[j].rnti = pusch_config_pdu->rnti;
                 rx_ind->pdu_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
                 rx_ind->pdu_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
+                char buffer[1024];
+                hexdump(rx_ind->pdu_list[j].pdu, rx_ind->pdu_list[j].pdu_length, buffer, sizeof(buffer));
+                LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s before queuing rx_ind\n",
+                      buffer);
               }
 
               crc_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION;

@@ -377,10 +377,10 @@ uint64_t nr_pdcp_module_init(uint64_t _pdcp_optmask, int id)
     nas_getparams();
 
     if(UE_NAS_USE_TUN) {
-      /* TODO: Brute force changes made below to allow nr-UE to have unique tunnel interfaces.
+      /* Melissa TODO: Brute force changes made below to allow nr-UE to have unique tunnel interfaces.
          When the NODE_NUMBER param is not used to determine functionality and LTE tunnel
          interfaces, we should update the netlink_init_tun() and nas_config() calls below as well. */
-      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )? MAX_MOBILES_PER_ENB : 1;
+      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF)? MAX_MOBILES_PER_ENB : 1;
       netlink_init_tun("nrue", num_if, id);
       //Add --nr-ip-over-lte option check for next line
       if (IS_SOFTMODEM_NOS1)
@@ -411,9 +411,11 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   uint8_t     *gtpu_buffer_p;
   int rb_id;
   int i;
+  LOG_I(PDCP, "Melissa Elkadi we got here %s\n", __FUNCTION__);
 
-  if(IS_SOFTMODEM_NOS1){
+  if (IS_SOFTMODEM_NOS1) {
     len = write(nas_sock_fd[0], buf, size);
+    LOG_D(PDCP, "Writing %d bytes to tunnel interface\n", len);
     if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     }
@@ -442,7 +444,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ue->rnti;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
-      LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
+      LOG_I(PDCP, "Melissa Elkadi %s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
       //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)buf[i]);
       //printf("\n");
       itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
@@ -625,9 +627,11 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
   if (ue->drb[drb_id-1] != NULL) {
-    LOG_D(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
+    LOG_I(PDCP, "Melissa Elkadi %s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
+    LOG_I(PDCP, "%s:%d:%s: Melissa Elkadi, we will call deliver_sdu_drb\n", __FILE__, __LINE__, __FUNCTION__);
+
     pdcp_drb = new_nr_pdcp_entity_drb_am(is_gnb, drb_id,
                                          deliver_sdu_drb, ue, deliver_pdu_drb, ue,
                                          sn_size_dl, t_reordering, discard_timer,

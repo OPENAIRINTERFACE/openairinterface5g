@@ -25,13 +25,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common/utils/LOG/log.h"
+#include "assertions.h"
 
 void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *_entity, char *buffer, int size)
 {
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
   int sn;
 
-  if (size < 3) abort();
+  if (size < 3) {
+    LOG_I(PDCP, "Size < 3. Size = %d. No data, so discarding.", size);
+    return;
+  }
 
   if (!(buffer[0] & 0x80))
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
@@ -43,7 +47,7 @@ void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *_entity, char *buffer, int
   if (entity->common.has_ciphering)
     entity->common.cipher(entity->common.security_context, (unsigned char *)buffer+3, size-3,
                           entity->rb_id, sn, entity->common.is_gnb ? 0 : 1);
-
+  LOG_I(RLC, "Melissa Elkadi, calling deliver SDU to send to PDCP from RLC %s\n", __FUNCTION__);
   entity->common.deliver_sdu(entity->common.deliver_sdu_data,
                              (nr_pdcp_entity_t *)entity, buffer+3, size-3);
 }

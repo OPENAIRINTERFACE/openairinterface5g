@@ -672,6 +672,8 @@ int main( int argc, char **argv )
   printf("Reading in command-line options\n");
   get_options ();
 
+  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
     exit(-1);
@@ -708,7 +710,7 @@ int main( int argc, char **argv )
 
 
 #ifdef PDCP_USE_NETLINK
-if(!IS_SOFTMODEM_NOS1)
+if(IS_SOFTMODEM_NOS1)
   netlink_init();
 #if defined(PDCP_USE_NETLINK_QUEUES)
   pdcp_netlink_init();
@@ -720,7 +722,7 @@ if(!IS_SOFTMODEM_NOS1)
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-  if(IS_SOFTMODEM_NOS1)
+  if(!IS_SOFTMODEM_NOS1)
     init_pdcp();
 
   if (RC.nb_nr_L1_inst > 0)

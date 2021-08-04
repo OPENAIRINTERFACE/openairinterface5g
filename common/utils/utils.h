@@ -9,6 +9,7 @@ extern "C" {
 
 void *calloc_or_fail(size_t size);
 void *malloc_or_fail(size_t size);
+const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len);
 
 // Converts an hexadecimal ASCII coded digit into its value. **
 int hex_char_to_hex_value (char c);

@@ -27,6 +27,7 @@
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -317,6 +318,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
         else if (nr_prach == 2)
         {
           LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
+          nr_DRB_preconfiguration(mac->crnti);
         }
         else if(nr_prach == 3)
         {

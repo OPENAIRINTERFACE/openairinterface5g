@@ -106,11 +106,16 @@ void nr_rlc_pdu_decoder_init(nr_rlc_pdu_decoder_t *decoder,
 static int get_bit(nr_rlc_pdu_decoder_t *decoder)
 {
   int ret;
-
+  LOG_I(RLC, "Melissa Elkadi, in %s():. bytes = %d size = %d,  bit %d, shifted bit %d \n",
+        __FUNCTION__, decoder->byte, decoder->size, decoder->bit, (7-decoder->bit));
   if (decoder->byte >= decoder->size) {
     decoder->error = 1;
     return 0;
   }
+  LOG_I(RLC, "Melissa Elkadi, in %s():. (%d >> (7 - decoder->bit)) & 1 = %d (returned val) \n",
+        __FUNCTION__,
+        decoder->buffer[decoder->byte],
+        ((decoder->buffer[decoder->byte] >> (7 - decoder->bit)) & 1));
 
   ret = (decoder->buffer[decoder->byte] >> (7 - decoder->bit)) & 1;
 

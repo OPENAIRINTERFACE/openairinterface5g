@@ -22,6 +22,32 @@ void *malloc_or_fail(size_t size) {
   return ptr;
 }
 
+const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len)
+{
+    char *p = out;
+    char *endp = out + out_len;
+    const uint8_t *q = data;
+    snprintf(p, endp - p, "[%zu]", data_len);
+    p += strlen(p);
+    for (size_t i = 0; i < data_len; ++i)
+    {
+        if (p >= endp)
+        {
+            static const char ellipses[] = "...";
+            char *s = endp - sizeof(ellipses);
+            if (s >= p)
+            {
+                strcpy(s, ellipses);
+            }
+            break;
+        }
+        snprintf(p, endp - p, " %02X", *q++);
+        p += strlen(p);
+    }
+    return out;
+}
+
+
 /****************************************************************************
  **                                                                        **
  ** Name:        hex_char_to_hex_value()                                   **

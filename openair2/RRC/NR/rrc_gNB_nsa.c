@@ -280,18 +280,18 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       create_tunnel_req.num_tunnels    = m->nb_e_rabs_tobeadded;
       RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[rrc->module_id]->rrc_ue_head, ue_context_p);
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_id_rnti, 0, 0,rrc->module_id);
-      #if 1 //Melissa this is a hack: we are bypassing the EPC functionality.
       memset(&create_tunnel_resp, 0, sizeof(create_tunnel_resp));
-      #else
-      gtpv1u_create_s1u_tunnel(
-        ctxt.instance,
-        &create_tunnel_req,
-        &create_tunnel_resp);
-      rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-        &ctxt,
-        &create_tunnel_resp,
-        &inde_list[0]);
-      #endif
+      if (!IS_SOFTMODEM_NOS1) {
+        LOG_I(RRC, "Melissa Elkadi calling gtpv1u_create_s1u_tunnel()\n");
+        gtpv1u_create_s1u_tunnel(
+          ctxt.instance,
+          &create_tunnel_req,
+          &create_tunnel_resp);
+        rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+          &ctxt,
+          &create_tunnel_resp,
+          &inde_list[0]);
+      }
       X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).nb_e_rabs_admitted_tobeadded = m->nb_e_rabs_tobeadded;
       X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).target_assoc_id = m->target_assoc_id;
 

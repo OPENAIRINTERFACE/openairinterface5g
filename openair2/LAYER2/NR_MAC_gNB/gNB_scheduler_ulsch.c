@@ -33,6 +33,7 @@
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "utils.h"
 
 //38.321 Table 6.1.3.1-1
 const uint32_t NR_SHORT_BSR_TABLE[32] = {
@@ -259,14 +260,17 @@ void nr_process_mac_pdu(
                   mac_subheader_len = 2;
                 }
 
-                LOG_D(MAC, "[UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len);
+                LOG_I(MAC, "Melissa Elkadi [UE %d] Frame %d : ULSCH -> UL-DTCH %d (gNB %d, %d bytes, header_len %d)\n",
+                      module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, mac_subheader_len);
 		int UE_id = find_nr_UE_id(module_idP, rnti);
 		RC.nrmac[module_idP]->UE_info.mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_sdu_len;
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
 		    log_dump(MAC, pdu_ptr + mac_subheader_len, 32, LOG_DUMP_CHAR, "\n");
 
                 #endif
-
+                char buffer[1024];
+                hexdump(pdu_ptr, mac_sdu_len, buffer, sizeof(buffer));
+                LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s \n", buffer);
                 mac_rlc_data_ind(module_idP,
                                  rnti,
                                  module_idP,
@@ -278,7 +282,9 @@ void nr_process_mac_pdu(
                                  mac_sdu_len,
                                  1,
                                  NULL);
-
+                char buf[1024];
+                hexdump((char *) (pdu_ptr + mac_subheader_len), mac_sdu_len, buff, sizeof(buf));
+                LOG_I(MAC, "Melissa Elkadi, after passing to rlc this is hexdump of pdu %s \n", buf);
                 /* Updated estimated buffer when receiving data */
                 if (sched_ctrl->estimated_ul_buffer >= mac_sdu_len)
                   sched_ctrl->estimated_ul_buffer -= mac_sdu_len;

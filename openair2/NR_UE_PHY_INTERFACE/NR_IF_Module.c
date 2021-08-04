@@ -282,25 +282,31 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     {
         nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
         AssertFatal(pdu_list->num_TLV < sizeof(pdu_list->TLVs) / sizeof(pdu_list->TLVs[0]), "Num TLVs exceeds TLV array size");
-
-        if (tx_data_request->Slot == 7) { //Melissa this means we have an RAR, sorta hacky though
-            if( get_mac_inst(dl_info->module_id)->crnti == get_mac_inst(dl_info->module_id)->ra.t_crnti )
-            {  LOG_D(MAC, "Discarding tx_data_requested since it includes useless RAR.\n");
-                continue;
-            }
-            dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
-        }
-        else if (tx_data_request->Slot != 7 && get_softmodem_params()->nsa) {
-            dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
-        }
-
+        int length = 0;
         for (int j = 0; j < pdu_list->num_TLV; j++)
         {
+            length += pdu_list->TLVs[j].length;
+        }
+        LOG_I(NR_PHY, "%s: num_tlv %d and length %d, pdu index %d\n",
+              __FUNCTION__, pdu_list->num_TLV, length, i);
+        uint8_t *pdu = malloc(length);
+        dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu;
+        for (int j = 0; j < pdu_list->num_TLV; j++)
+        {
+            const uint32_t *ptr;
             if (pdu_list->TLVs[j].tag)
-                dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = (void*) pdu_list->TLVs[j].value.ptr; // Melissa, fix me!
-            else if (!pdu_list->TLVs[j].tag)
-                dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = (void*) pdu_list->TLVs[j].value.direct; // Melissa, fix me!
-            dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = pdu_list->TLVs[j].length;
+                ptr = pdu_list->TLVs[j].value.ptr;
+            else
+                ptr = pdu_list->TLVs[j].value.direct;
+            memcpy(pdu, ptr, pdu_list->TLVs[j].length);
+            pdu += pdu_list->TLVs[j].length;
+        }
+        dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = length;
+        if (tx_data_request->Slot == 7) { //Melissa this means we have an RAR, sorta hacky though
+            dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
+        }
+        else {
+            dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
         }
     }
     dl_info->slot = tx_data_request->Slot;
@@ -343,7 +349,7 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
                 int num_bytes = (dci_pdu_list->PayloadSizeBits + 7) / 8;
                 uint64_t *dci_pdu_payload = (uint64_t *)dci_pdu_list->Payload;
                 int harq_pid = (*dci_pdu_payload >> 11) & 0xf;
-                LOG_I(NR_PHY, "[%d, %d] ul_dci_req PDCCH DCI for rnti %x with PayloadSizeBits %d and num_bytes %d  harq_id %lu\n",
+                LOG_I(NR_PHY, "[%d, %d] ul_dci_req PDCCH DCI for rnti %x with PayloadSizeBits %d and num_bytes %d  harq_id %d\n",
                         ul_dci_req->SFN, ul_dci_req->Slot, 
                         dci_pdu_list->RNTI, 
                         dci_pdu_list->PayloadSizeBits, num_bytes,
@@ -572,7 +578,9 @@ void *nrue_standalone_pnf_task(void *context)
   struct sockaddr_in server_address;
   socklen_t addr_len = sizeof(server_address);
   char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
-  int sfn, slot, delta;
+  int sfn = 0;
+  int slot = 0;
+  int delta = 0;
   int sd = ue_rx_sock_descriptor;
   assert(sd > 0);
   LOG_I(NR_RRC, "Sucessfully started %s.\n", __FUNCTION__);
@@ -640,7 +648,9 @@ void *nrue_standalone_pnf_task(void *context)
         LOG_E(MAC, "sem_post() error\n");
         abort();
       }
-      LOG_I(MAC, "Received_SINR = %f\n", ch_info.sinr);
+      sfn = NFAPI_SFNSLOT2SFN(ch_info.sfn_slot);
+      slot = NFAPI_SFNSLOT2SLOT(ch_info.sfn_slot);
+      LOG_I(MAC, "Received_SINR = %f, sfn:slot %d:%d\n", ch_info.sinr, sfn, slot);
     }
     else
     {
@@ -695,9 +705,10 @@ void *nrue_standalone_pnf_task(void *context)
             {
               delta += NFAPI_SFNSLOT2DEC(1024, 0);
             }
-            AssertFatal(delta < 6, "Slot delta %d < 6 is required. sfn slot %u %u vs ul_dci_request sfn slot %u %u\n",
-                        delta, sfn, slot, ul_dci_request.SFN, ul_dci_request.Slot);
-            check_and_process_dci(NULL, NULL, &ul_dci_request, NULL);
+            if (delta < 6)
+            {
+              check_and_process_dci(NULL, NULL, &ul_dci_request, NULL);
+            }
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
             if (nfapi_nr_p7_message_unpack((void *)buffer, len, &ul_tti_request,
