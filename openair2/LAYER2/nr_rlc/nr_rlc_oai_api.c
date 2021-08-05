@@ -263,7 +263,8 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
      * reports '> 81338368' (table 6.1.3.1-2). Passing 100000000 is thus
      * more than enough.
      */
-    buf_stat = rb->buffer_status(rb, 100000000);
+    // Fix me: temproary reduction meanwhile cpu cost of this computation is optimized
+    buf_stat = rb->buffer_status(rb, 1000*1000);
     ret.bytes_in_buffer = buf_stat.status_size
                         + buf_stat.retx_size
                         + buf_stat.tx_size;
@@ -326,7 +327,8 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
      * more than enough.
      */
     // Fixme : Laurent reduced size for CPU saving
-    buf_stat = rb->buffer_status(rb, 10000000);
+    // Fix me: temproary reduction meanwhile cpu cost of this computation is optimized
+    buf_stat = rb->buffer_status(rb, 1000*1000);
     ret = buf_stat.status_size
         + buf_stat.retx_size
         + buf_stat.tx_size;

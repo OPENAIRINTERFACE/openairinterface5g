@@ -49,6 +49,9 @@ typedef struct {
   char *opcStr;
   char *amfStr;
   char *sqnStr;
+  char *dnnStr;
+  int  nssai_st;
+  int  nssai_sd;
   uint8_t key[16];
   uint8_t opc[16];
   uint8_t amf[2];

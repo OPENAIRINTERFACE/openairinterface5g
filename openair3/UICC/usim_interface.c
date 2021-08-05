@@ -37,11 +37,14 @@ extern uint16_t NB_UE_INST;
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define UICC_PARAMS_DESC {\
     {"imsi",             "USIM IMSI\n",          0,         strptr:&(uicc->imsiStr),              defstrval:"2089900007487",           TYPE_STRING,    0 },\
-    {"nmc_size"          "number of digits in NMC", 0,      iptr:&(uicc->nmc_size),               defintval:2,            TYPE_INT,       0 },\
+    {"nmc_size"          "number of digits in NMC", 0,      iptr:&(uicc->nmc_size),               defintval:2,         TYPE_INT,       0 },\
     {"key",              "USIM Ki\n",            0,         strptr:&(uicc->keyStr),               defstrval:"fec86ba6eb707ed08905757b1bb44b8f", TYPE_STRING,    0 },\
     {"opc",              "USIM OPc\n",           0,         strptr:&(uicc->opcStr),               defstrval:"c42449363bbad02b66d16bc975d77cc1", TYPE_STRING,    0 },\
-    {"amf",              "USIM amf\n",           0,         strptr:&(uicc->amfStr),               defstrval:"8000",       TYPE_STRING,    0 },\
-    {"sqn",              "USIM sqn\n",           0,         strptr:&(uicc->sqnStr),               defstrval:"000000",     TYPE_STRING,    0 },\
+    {"amf",              "USIM amf\n",           0,         strptr:&(uicc->amfStr),               defstrval:"8000",    TYPE_STRING,    0 },\
+    {"sqn",              "USIM sqn\n",           0,         strptr:&(uicc->sqnStr),               defstrval:"000000",  TYPE_STRING,    0 },\
+    {"dnn",              "UE dnn (apn)\n",       0,         strptr:&(uicc->dnnStr),               defstrval:"oai",     TYPE_STRING,    0 },\
+      {"nssai_st",            "UE nssai\n",           0,         iptr:&(uicc->nssai_st),             defintval:1,    TYPE_INT,    0 }, \
+      {"nssai_sd",            "UE nssai\n",           0,         iptr:&(uicc->nssai_sd),             defintval:1,    TYPE_INT,    0 }, \
   };
 
 static uicc_t** uiccArray=NULL;
