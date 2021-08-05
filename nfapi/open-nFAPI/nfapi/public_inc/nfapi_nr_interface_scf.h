@@ -673,6 +673,7 @@ typedef struct {
 #define NFAPI_NR_SLOT_INDICATION_PERIOD_NUMEROLOGY_3 125 //us
 
 typedef struct {
+  nfapi_p7_message_header_t header;
 	uint16_t sfn; //0->1023   
   uint16_t slot;//0->319
   

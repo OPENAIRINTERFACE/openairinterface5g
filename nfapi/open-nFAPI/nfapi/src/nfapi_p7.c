@@ -3355,6 +3355,20 @@ static uint8_t pack_nr_timing_info(void *msg, uint8_t **ppWritePackedMsg, uint8_
 
 //NR UPLINK indication function packing
 
+//SLOT INDICATION
+
+static uint8_t pack_nr_slot_indication(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
+{
+	nfapi_nr_slot_indication_scf_t *pNfapiMsg = (nfapi_nr_slot_indication_scf_t*)msg;
+
+	if (!(push16((uint16_t)pNfapiMsg->sfn , ppWritePackedMsg, end) &&
+		push16((uint16_t)pNfapiMsg->slot , ppWritePackedMsg, end)
+		))
+			return 0;
+
+return 1;
+}
+
 //RX DATA INDICATION 
 
 static uint8_t pack_nr_rx_data_indication_body(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
@@ -3696,18 +3710,19 @@ int nfapi_nr_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packe
 	// look for the specific message
 	uint8_t result = 0;
 	switch (pMessageHeader->message_id)
-	{
+	{	
 		case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
 			result = pack_dl_tti_request(pMessageHeader, &pWritePackedMessage, end, config);
-			//printf("result of pack dl_tti_req is %d. \n",result);
 			break;
 
 		case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
 			result = pack_ul_tti_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
+
 		case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
 			result = pack_tx_data_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
+
 		case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
 			result = pack_ul_dci_request(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
@@ -3719,6 +3734,9 @@ int nfapi_nr_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packe
 		case NFAPI_UE_RELEASE_RESPONSE:
 			result =pack_ue_release_response(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
+
+		case NFAPI_NR_PHY_MSG_TYPE_SLOT_INDICATION:
+			result = pack_nr_slot_indication(pMessageHeader, &pWritePackedMessage, end, config);
 
 		case NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION:
 			result = pack_nr_rx_data_indication(pMessageHeader, &pWritePackedMessage, end, config);
@@ -6350,6 +6368,21 @@ static uint8_t unpack_tx_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *
 
 //UNPACK NR UPLINK INDICATION FUNCTIONS 
 
+//SLOT INDICATION
+
+static uint8_t unpack_nr_slot_indication(uint8_t **ppReadPackedMsg, uint8_t *end, nfapi_nr_rx_data_indication_t *msg, nfapi_p7_codec_config_t* config)
+{	
+	nfapi_nr_slot_indication_scf_t *pNfapiMsg = (nfapi_nr_slot_indication_scf_t*)msg;
+	
+	printf("\n");
+	if (!(pull16(ppReadPackedMsg, &pNfapiMsg->sfn , end) &&
+		pull16(ppReadPackedMsg, &pNfapiMsg->slot , end)
+		))
+			return 0;
+
+return 1;
+}
+
 //RX DATA INDICATION 
 
 static uint8_t unpack_nr_rx_data_indication_body(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
@@ -8704,6 +8737,14 @@ int nfapi_nr_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *
 		case NFAPI_UE_RELEASE_REQUEST:
 			if (check_nr_unpack_length(NFAPI_UE_RELEASE_REQUEST, unpackedBufLen))
 				result = unpack_ue_release_request(&pReadPackedMessage,  end, pMessageHeader, config);
+			else
+				return -1;
+			break;
+		case NFAPI_NR_PHY_MSG_TYPE_SLOT_INDICATION:
+			if (check_nr_unpack_length(NFAPI_NR_PHY_MSG_TYPE_SLOT_INDICATION, unpackedBufLen)){
+				nfapi_nr_slot_indication_scf_t* msg = (nfapi_nr_slot_indication_scf_t*) pMessageHeader;
+				result = unpack_nr_slot_indication(&pReadPackedMessage,  end, msg, config);
+			}
 			else
 				return -1;
 			break;

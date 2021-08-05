@@ -99,7 +99,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
     const sub_frame_t slot = UL_info->slot;
     int num_ucis = UL_info->uci_ind.num_ucis;
     nfapi_nr_uci_t *uci_list = UL_info->uci_ind.uci_list;
-    LOG_I(MAC,"handling UCI SFN/slot: %d.%d, num_ucis: %d \n", frame,slot, num_ucis);
+    LOG_D(MAC,"handling UCI SFN/slot: %d.%d, num_ucis: %d \n", frame,slot, num_ucis);
     for (int i = 0; i < num_ucis; i++) {
       switch (uci_list[i].pdu_type) {
         case NFAPI_NR_UCI_PUSCH_PDU_TYPE:

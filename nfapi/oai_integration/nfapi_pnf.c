@@ -2304,50 +2304,24 @@ void oai_subframe_ind(uint16_t sfn, uint16_t sf) {
   }
 }
 
+void handle_nr_slot_ind(uint16_t sfn, uint16_t slot) {
 
-long shift_ns,prev_ts_nsec,shift_us;
-void oai_slot_ind(uint16_t sfn, uint16_t slot) {
-  
-  //slow down PNF
-  
-  LOG_D(PHY,"%s(sfn:%d, slot:%d)\n", __FUNCTION__, sfn, slot);
-  struct timespec ts;
-      clock_gettime(CLOCK_MONOTONIC, &ts);
-  
-  // if (!(sfn == 0 && slot == 0) && ts.tv_nsec > prev_ts_nsec){
-  //   shift_ns = ts.tv_nsec - prev_ts_nsec;
-  //   shift_us = shift_ns/1000;
-  //   printf("previous: %d, current: %d, shift: %d", prev_ts_nsec, ts.tv_nsec, shift_us);
-  //   if(500-shift_us > 0)
-  //     usleep(500-shift_us);
-  //  // usleep(50);
-  // }
-  prev_ts_nsec = ts.tv_nsec;
-  
-  
-//NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s %d.%d (sfn:%u slot:%u) SFN/SLOT(TX):%u\n", __FUNCTION__, ts.tv_sec, ts.tv_nsec, sfn, slot, NFAPI_SFNSLOT2DEC(sfn, slot));
-  //TODO FIXME - HACK - DJP - using a global to bodge it in
-  if (p7_config_g != NULL && sync_var==0) {
-    // DONE: changed for NR  x x   x x x x   x x x x  x x x x  - - - - - - : x (Frame), - (Slot) (max_numer =2)
-    uint16_t sfn_slot_tx = sfn<<6 | slot; 
-    // if ((sfn % 100 == 0) && slot==0) { // DOUBT: Why 100?
-    //   struct timespec ts;
-    //   clock_gettime(CLOCK_MONOTONIC, &ts);
-    //   NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s %d.%d (sfn:%u slot:%u) SFN/SLOT(TX):%u\n", __FUNCTION__, ts.tv_sec, ts.tv_nsec, sfn, slot, NFAPI_SFNSLOT2DEC(sfn, slot));
-    // }
-    
-    //TODO: send p7_config instead of p7_config_g
+    //send VNF slot indication, which is aligned with TX thread, so that it can call the scheduler
+    nfapi_nr_slot_indication_scf_t *ind;
+    ind = (nfapi_nr_slot_indication_scf_t *) malloc(sizeof(nfapi_nr_slot_indication_scf_t));
+    uint8_t slot_ahead = 6;
+    uint32_t sfn_slot_tx = sfnslot_add_slot(sfn, slot, slot_ahead);
+    uint16_t sfn_tx = NFAPI_SFNSLOT2SFN(sfn_slot_tx);
+    uint8_t slot_tx = NFAPI_SFNSLOT2SLOT(sfn_slot_tx);
+
+    ind->sfn = sfn_tx;
+    ind->slot = slot_tx;
+    oai_nfapi_nr_slot_indication(ind); 
+
+    //copy data from appropriate p7 slot buffers into channel structures for PHY processing
     int slot_ret = nfapi_pnf_p7_slot_ind(p7_config_g, p7_config_g->phy_id, sfn, slot); 
 
-    // if (subframe_ret) {
-    if (slot_ret) { 
-      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s(frame:%u slot:%u) SFN/SLOT(TX):%u - PROBLEM with pnf_p7_slot_ind()\n", __FUNCTION__, sfn, slot, sfn_slot_tx, NFAPI_SFNSLOT2DEC(sfn, slot));
-      // printing anything causes error: probably because there isn't enough time to accomodate a print statement
-    } else {
-      //NFAPI_TRACE(NFAPI_TRACE_INFO, "***NFAPI subframe handler finished *** \n");
-    }
-  } else {
-  }
+    return;
 }
 
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {
@@ -2400,6 +2374,12 @@ int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind) {
 }
 
 //NR UPLINK INDICATION
+
+int oai_nfapi_nr_slot_indication(nfapi_nr_slot_indication_scf_t *ind) {
+  ind->header.phy_id = 1;
+  ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_SLOT_INDICATION;
+  return nfapi_pnf_p7_nr_slot_ind(p7_config_g, ind);
+}
 
 int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) {
   ind->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!

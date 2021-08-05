@@ -854,7 +854,7 @@ typedef struct nfapi_vnf_p7_config
 	int (*nrach_indication)(struct nfapi_vnf_p7_config* config, nfapi_nrach_indication_t* ind);		
 
 	//The NR indication functions below copy uplink information received at the VNF into the UL info struct
-
+	int (*nr_slot_indication)(nfapi_nr_slot_indication_scf_t* ind);
 	int (*nr_crc_indication)(nfapi_nr_crc_indication_t* ind);
 	int (*nr_rx_data_indication)(nfapi_nr_rx_data_indication_t* ind);
 	int (*nr_uci_indication)(nfapi_nr_uci_indication_t* ind);

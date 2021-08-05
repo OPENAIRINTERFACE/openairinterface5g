@@ -406,7 +406,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       {
         printf("First sched entry at slot %d \n", slot);
         for (int i = 0; i<num_slots; i++){
-          if(i <= slot)
+          if(i < slot)
             gNB->UL_tti_req_ahead[CC_id][i].SFN = (frame + 1) % 1024;
           else
             gNB->UL_tti_req_ahead[CC_id][i].SFN = frame;

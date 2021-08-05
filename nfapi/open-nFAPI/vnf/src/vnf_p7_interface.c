@@ -25,6 +25,7 @@
 #include <errno.h>
 
 #include "vnf_p7.h"
+#include "nfapi_vnf.h"
 
 #include "common/ran_context.h"
 
@@ -96,8 +97,10 @@ struct timespec timespec_sub(struct timespec lhs, struct timespec rhs)
 // monitor the p7 endpoints and the timing loop and 
 // send indications to mac
 int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
-{
-	uint16_t vnf_frame; uint8_t vnf_slot; uint16_t slot_scheduled;
+{	
+	struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+	uint8_t temp_slot;
+	uint16_t vnf_frame; uint8_t vnf_slot;
 	if(config == 0)
 		return -1;
 
@@ -150,8 +153,8 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 
 	//struct timespec original_pselect_timeout;
 	struct timespec pselect_timeout;
-	pselect_timeout.tv_sec = 0; 
-	pselect_timeout.tv_nsec = 500000; // ns in a 0.5 ms
+	pselect_timeout.tv_sec = 100; 
+	pselect_timeout.tv_nsec = 0; // ns in a 0.5 ms
 	//pselect_timeout.tv_nsec = 500000;
 
 	struct timespec pselect_start;
@@ -213,19 +216,15 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 			pselect_timeout = timespec_sub(slot_start, pselect_start);
 		}
 
-		if(setup_time > 10 && slot_scheduled == 0){
+		if(setup_time > 10 && temp_slot != gNB->UL_INFO.slot){
 
-			// Call the scheduler
-			struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+			//Call the scheduler
 			pthread_mutex_lock(&gNB->UL_INFO_mutex);
-			gNB->UL_INFO.frame     = vnf_frame;
-			gNB->UL_INFO.slot      = vnf_slot;
-
 			gNB->UL_INFO.module_id = gNB->Mod_id;
 			gNB->UL_INFO.CC_id     = gNB->CC_id;
 			gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
 			pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-			slot_scheduled = 1;
+			temp_slot = gNB->UL_INFO.slot;
 		}
 
 		selectRetval = pselect(maxSock+1, &rfds, NULL, NULL, &pselect_timeout, NULL);
@@ -277,7 +276,6 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 				curr = curr->next;	
 			}
 			send_mac_slot_indications(vnf_p7);
-			slot_scheduled = 0;
 
 		}
 		else if(selectRetval > 0)

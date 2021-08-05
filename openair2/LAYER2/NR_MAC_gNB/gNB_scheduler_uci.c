@@ -502,9 +502,6 @@ void nr_csi_meas_reporting(int Mod_idP,
       // find free PUCCH that is in order with possibly existing PUCCH
       // schedulings (other CSI, SR)
       NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[1];
-      // if(NFAPI_MODE == NFAPI_MODE_VNF){
-      //   curr_pucch->csi_bits = 0; curr_pucch->sr_flag = 0; curr_pucch->dai_c = 0;
-      // }
       AssertFatal(curr_pucch->csi_bits == 0
                   && !curr_pucch->sr_flag
                   && curr_pucch->dai_c == 0,

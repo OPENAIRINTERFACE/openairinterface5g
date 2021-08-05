@@ -33,10 +33,10 @@
 
 #include "nfapi_nr_interface_scf.h"
 #include "nfapi_vnf_interface.h"
+#include "nfapi_vnf.h"
 #include "nfapi.h"
 #include "vendor_ext.h"
 
-#include "nfapi_vnf.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
@@ -1014,7 +1014,46 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
   return 1;
 }
 
+// void add_slot(uint16_t *frameP, uint16_t *slotP, int offset)
+// {
+// 	uint16_t num_slots = 20; // set based on numerlogy (fixing for 1)
+
+//     *frameP    = (*frameP + ((*slotP + offset) / num_slots))%1024; 
+
+//     *slotP = ((*slotP + offset) % num_slots);
+// }
+
+// uint32_t sfnslot_add_slot(uint16_t sfn, uint16_t slot, int offset)
+// {
+//   uint32_t new_sfnslot;
+// //   uint16_t sfn = NFAPI_SFNSLOT2SFN(sfnslot);
+// //   uint16_t slot  = NFAPI_SFNSLOT2SLOT(sfnslot);
+
+//   //printf("%s() sfn:%u sf:%u\n", __FUNCTION__, sfn, sf);
+//   add_slot(&sfn, &slot, offset);
+
+//   new_sfnslot = sfn<<6|slot;
+
+//   //printf("%s() sfn:%u sf:%u offset:%d sfnsf:%d(DEC:%d) new:%d(DEC:%d)\n", __FUNCTION__, sfn, sf, offset, sfnsf, NFAPI_SFNSF2DEC(sfnsf), new_sfnsf, NFAPI_SFNSF2DEC(new_sfnsf));
+
+//   return new_sfnslot;
+// }
+
 //NR phy indication
+
+int phy_nr_slot_indication(nfapi_nr_slot_indication_scf_t *ind) {
+  
+  uint8_t vnf_slot_ahead = 2;
+  uint32_t vnf_sfn_slot = sfnslot_add_slot(ind->sfn, ind->slot, vnf_slot_ahead);
+	uint16_t vnf_sfn = NFAPI_SFNSLOT2SFN(vnf_sfn_slot);
+	uint8_t vnf_slot = NFAPI_SFNSLOT2SLOT(vnf_sfn_slot); //offsetting the vnf from pnf by vnf_slot_head slots
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+  gNB->UL_INFO.frame     = vnf_sfn;
+	gNB->UL_INFO.slot      = vnf_slot;	
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+  LOG_D(MAC, "VNF SFN/Slot %d.%d \n", gNB->UL_INFO.frame, gNB->UL_INFO.slot);
+}
 
 int phy_nr_crc_indication(nfapi_nr_crc_indication_t *ind) {
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
@@ -1282,6 +1321,7 @@ void *vnf_nr_p7_thread_start(void *ptr) {
   p7_vnf->config->nb_harq_indication = &phy_nb_harq_indication;
   p7_vnf->config->nrach_indication = &phy_nrach_indication;
   p7_vnf->config->nr_crc_indication = &phy_nr_crc_indication;
+  p7_vnf->config->nr_slot_indication = &phy_nr_slot_indication;  
   p7_vnf->config->nr_rx_data_indication = &phy_nr_rx_data_indication;
   p7_vnf->config->nr_uci_indication = &phy_nr_uci_indication;
   p7_vnf->config->nr_rach_indication = &phy_nr_rach_indication;
@@ -1739,7 +1779,7 @@ int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req)
   //LOG_I(PHY, "sfn:%d,slot:%d\n",dl_config_req->SFN,dl_config_req->Slot);
   //printf("\nEntering oai_nfapi_nr_dl_config_req sfn:%d,slot:%d\n",dl_config_req->SFN,dl_config_req->Slot);
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
-   dl_config_req->header.message_id= NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST;
+  dl_config_req->header.message_id= NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST;
   dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
 
   int retval = nfapi_vnf_p7_nr_dl_config_req(p7_config, dl_config_req);

@@ -142,16 +142,16 @@ void rx_func(void *param) {
   int slot_tx = info->slot_tx;
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
-
+  LOG_I(PHY,"slot rx %d \n", slot_rx);
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************
 
   if (NFAPI_MODE == NFAPI_MODE_PNF) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
-    //LOG_D(PHY, "oai_slot_ind(frame:%u, slot:%d) ********\n", frame_rx, slot_rx);
+    //LOG_D(PHY, "oai_nfapi_slot_ind(frame:%u, slot:%d) ********\n", frame_rx, slot_rx);
     start_meas(&nfapi_meas);
-    oai_slot_ind(frame_rx, slot_rx);
+    handle_nr_slot_ind(frame_rx, slot_rx);
     stop_meas(&nfapi_meas);
 
     /*if (gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus||

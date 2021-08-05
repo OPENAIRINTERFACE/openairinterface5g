@@ -27,5 +27,5 @@ void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, 
 void configure_nr_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port);
 
 void oai_subframe_ind(uint16_t sfn, uint16_t sf);
-void oai_slot_ind(uint16_t sfn, uint16_t slot);
+void handle_nr_slot_ind(uint16_t sfn, uint16_t slot);
 #endif

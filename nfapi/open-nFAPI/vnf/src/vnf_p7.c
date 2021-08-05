@@ -23,7 +23,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
-
 #include "vnf_p7.h"
 
 #define SYNC_CYCLE_COUNT 2
@@ -1455,7 +1454,31 @@ void vnf_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 }
 
 //NR HANDLES FOR UPLINK MESSAGES
+void vnf_handle_nr_slot_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
+{
+	// ensure it's valid
+	if (pRecvMsg == NULL || vnf_p7 == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: NULL parameters\n", __FUNCTION__);
+	}
+	else
+	{
+		nfapi_nr_slot_indication_scf_t ind;
+	
+		if(nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, &ind, sizeof(ind), &vnf_p7->_public.codec_config) < 0)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
+		}
+		else
+		{
+			if(vnf_p7->_public.nr_slot_indication)
+			{
+				(vnf_p7->_public.nr_slot_indication)(&ind); //gokul
+			}
+		}
 
+	}
+}
 void vnf_handle_nr_rx_data_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 {
 	// ensure it's valid
@@ -2179,7 +2202,11 @@ void vnf_nr_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 		case NFAPI_TIMING_INFO:
 			vnf_nr_handle_timing_info(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
-			
+		
+		case NFAPI_NR_PHY_MSG_TYPE_SLOT_INDICATION:
+			vnf_handle_nr_slot_indication(pRecvMsg, recvMsgLen, vnf_p7);
+			break;
+		
 		case NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION:
 			vnf_handle_nr_rx_data_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;

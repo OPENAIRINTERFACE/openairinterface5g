@@ -268,7 +268,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   //printf("Inside NR schedule response SFN/slot %d.%d. \n",frame,slot);
   if(NFAPI_MODE != NFAPI_MONOLITHIC && number_ul_tti_pdu>0)
   { 
-    //printf("SFN/slot %d.%d Sending ul tti req \n",frame,slot);
+    LOG_I(MAC,"SFN/slot %d.%d Sending ul tti req \n",frame,slot);
     oai_nfapi_ul_tti_req(UL_tti_req);
   }
   
