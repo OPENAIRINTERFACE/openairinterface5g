@@ -216,8 +216,10 @@ tbs_size_t mac_rlc_data_req(
     maxsize = tb_sizeP;
     ret = rb->generate_pdu(rb, buffer_pP, maxsize);
   } else {
-    LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB, channel_idP: %d\n", __FILE__, __LINE__, __FUNCTION__, channel_idP);
-    exit(1);
+    // Laurent: the query loop was checking all possible RB, but by  mac_rlc_get_buffer_occupancy_ind
+    // so it is more straitforward to try to get data
+    //LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB, channel_idP: %d\n", __FILE__, __LINE__, __FUNCTION__, channel_idP);
+    //exit(1);
     ret = 0;
   }
 

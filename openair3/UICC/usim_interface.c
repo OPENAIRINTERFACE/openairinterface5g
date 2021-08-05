@@ -43,7 +43,7 @@ extern uint16_t NB_UE_INST;
     {"amf",              "USIM amf\n",           0,         strptr:&(uicc->amfStr),               defstrval:"8000",    TYPE_STRING,    0 },\
     {"sqn",              "USIM sqn\n",           0,         strptr:&(uicc->sqnStr),               defstrval:"000000",  TYPE_STRING,    0 },\
     {"dnn",              "UE dnn (apn)\n",       0,         strptr:&(uicc->dnnStr),               defstrval:"oai",     TYPE_STRING,    0 },\
-      {"nssai_st",            "UE nssai\n",           0,         iptr:&(uicc->nssai_st),             defintval:1,    TYPE_INT,    0 }, \
+      {"nssai_sst",            "UE nssai\n",           0,         iptr:&(uicc->nssai_sst),             defintval:1,    TYPE_INT,    0 }, \
       {"nssai_sd",            "UE nssai\n",           0,         iptr:&(uicc->nssai_sd),             defintval:1,    TYPE_INT,    0 }, \
   };
 

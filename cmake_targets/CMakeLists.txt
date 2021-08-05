@@ -255,6 +255,7 @@ macro(add_list_string_option name val helpstr)
   endif()
 endmacro(add_list_string_option)
 
+# this function should produce the same value as the macro MAKE_VERSION defined in the C code (file types.h)
 function(make_version VERSION_VALUE)
   math(EXPR RESULT "0")
   foreach (ARG ${ARGN})
@@ -311,13 +312,13 @@ endif()
 add_definitions("-DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP")
 
 set(commonOpts "-pipe -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic")
-set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
 
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} ${commonOpts} -std=gnu99 -funroll-loops -D${MKVER}")
+  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} ${commonOpts} -std=gnu99 -funroll-loops")
 set(CMAKE_CXX_FLAGS
-  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}  ${commonOpts} -std=c++11 -D${MKVER}")
+  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}  ${commonOpts} -std=c++11")
 
+# cuda compiler bug (limitation) on complex macro definition
 if (CUDA_FOUND)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCUDA_FLAG")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCUDA_FLAG")
@@ -336,7 +337,7 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -ggdb3 -Wl,-rpath -Wl,${C
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
 set(debugOpt "-ggdb3 -DMALLOC_CHECK_=3 -fno-delete-null-pointer-checks")
-set(CMAKE_C_FLAGS_DEBUG "${debugOpt} -Og")
+set(CMAKE_C_FLAGS_DEBUG "${debugOpt} -O0")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${debugOpt} -O2")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 
@@ -3491,7 +3492,7 @@ endfunction(make_driver name dir src)
 # nashmesh module
 ################
 list(APPEND nasmesh_src device.c common.c ioctl.c classifier.c tool.c mesh.c)
-set(module_cc_opt "${module_cc_opt} -DNAS_NETLINK -DPDCP_USE_NETLINK -D${MKVER}")
+set(module_cc_opt "${module_cc_opt} -DNAS_NETLINK -DPDCP_USE_NETLINK")
 # legacy Makefile was using NAS_NETLINK flag, but other drivers the hereafter flag
 # so, this cmake use OAI_NW_DRIVER_USE_NETLINK everywhere
 if (OAI_NW_DRIVER_USE_NETLINK)
