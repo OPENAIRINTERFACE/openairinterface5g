@@ -639,14 +639,14 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
 
   // check pdcch_Config, pdcch_ConfigCommon and DL BWP
   // Check dedicated UL BWP and pass to MAC
-  for (int num_BWP = 1; num_BWP < MAX_NUM_BWP ;num_BWP++)
+  for (int num_BWP = 0; num_BWP < MAX_NUM_BWP ;num_BWP++)
   {
-    mac->DLbwp[num_BWP] = scd->downlinkBWP_ToAddModList->list.array[num_BWP-1];
-    mac->ULbwp[num_BWP] = uplinkBWP_ToAddModList->list.array[num_BWP-1];
+    mac->DLbwp[num_BWP] = scd->downlinkBWP_ToAddModList->list.array[num_BWP];
+    mac->ULbwp[num_BWP] = uplinkBWP_ToAddModList->list.array[num_BWP];
   }
-  mac->coreset[dl_bwp_id][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
+  mac->coreset[dl_bwp_id-1][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
   
-  AssertFatal(mac->ULbwp[ul_bwp_id]->bwp_Dedicated != NULL, "UL bwp_Dedicated is null\n");
+  AssertFatal(mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated != NULL, "UL bwp_Dedicated is null\n");
 
   // check available Search Spaces in the searchSpacesToAddModList and pass to MAC
   // note: the network configures at most 10 Search Spaces per BWP per cell (including UE-specific and common Search Spaces).
@@ -654,10 +654,10 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     NR_SearchSpace_t *ss = searchSpacesToAddModList->list.array[ss_id];
     AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
-    AssertFatal(*ss->controlResourceSetId == mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
+    AssertFatal(*ss->controlResourceSetId == mac->coreset[dl_bwp_id-1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id][0][ss_id] = ss;
+    mac->SSpace[dl_bwp_id-1][0][ss_id] = ss;
   }
 
   // Check available CSSs in the commonSearchSpaceList (list of additional common search spaces)
@@ -665,11 +665,11 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   for (int css_id = 0; css_id < commonSearchSpaceList->list.count; css_id++) {
     NR_SearchSpace_t *css = commonSearchSpaceList->list.array[css_id];
     AssertFatal(css->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
-    AssertFatal(*css->controlResourceSetId == mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
+    AssertFatal(*css->controlResourceSetId == mac->coreset[dl_bwp_id-1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id][coreset_id -1][ss_id] = css;
+    mac->SSpace[dl_bwp_id-1][coreset_id -1][ss_id] = css;
     ss_id++;
   }
 

@@ -84,14 +84,14 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     initialDownlinkBWP =  scc!=NULL ? scc->downlinkConfigCommon->initialDownlinkBWP : &scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
     initialUplinkBWP = scc!=NULL ? scc->uplinkConfigCommon->initialUplinkBWP : &scc_SIB->uplinkConfigCommon->initialUplinkBWP;
 
-    bwp_Common = dl_bwp_id>0 ? mac->DLbwp[dl_bwp_id]->bwp_Common : NULL;
+    bwp_Common = dl_bwp_id>0 ? mac->DLbwp[dl_bwp_id-1]->bwp_Common : NULL;
   }
 
   NR_SearchSpace_t *ss;
   NR_ControlResourceSet_t *coreset;
   if(ss_id>=0) {
-    ss = mac->SSpace[dl_bwp_id][coreset_id - 1][ss_id];
-    coreset = mac->coreset[dl_bwp_id][coreset_id - 1];
+    ss = mac->SSpace[dl_bwp_id-1][coreset_id - 1][ss_id];
+    coreset = mac->coreset[dl_bwp_id-1][coreset_id - 1];
     rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   } else {
     ss = mac->search_space_zero;
@@ -244,19 +244,19 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   RA_config_t *ra = &mac->ra;
   int ss_id;
 
-  NR_BWP_Id_t bwp_id = (mac->cg) ? mac->DL_BWP_Id : 0;
+  NR_BWP_Id_t bwp_id = (mac->cg) ? ((mac->DL_BWP_Id == 0 ) ? 1: mac->DL_BWP_Id ): 0;
   uint8_t coreset_id = (mac->cg) ? 1 : 0;
   //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
-  NR_BWP_Downlink_t *bwp = (mac->cg) ? mac->DLbwp[bwp_id] : NULL;
+  NR_BWP_Downlink_t *bwp = (mac->cg) ? mac->DLbwp[bwp_id-1] : NULL;
 
   LOG_D(MAC, "[DCI_CONFIG] ra_rnti %p (%x) crnti %p (%x) t_crnti %p (%x)\n", &ra->ra_rnti, ra->ra_rnti, &mac->crnti, mac->crnti, &ra->t_crnti, ra->t_crnti);
 
   if (mac->cg) { // do this only after we have a Master or Secondary Cell group
     // loop over all available SS for BWP ID 1, CORESET ID 1
     if (bwp) {
-      for (ss_id = 0; ss_id < FAPI_NR_MAX_SS_PER_CORESET && mac->SSpace[bwp_id][coreset_id - 1][ss_id] != NULL; ss_id++){
+      for (ss_id = 0; ss_id < FAPI_NR_MAX_SS_PER_CORESET && mac->SSpace[bwp_id-1][coreset_id - 1][ss_id] != NULL; ss_id++){
 	LOG_D(MAC, "[DCI_CONFIG] ss_id %d\n",ss_id);
-	NR_SearchSpace_t *ss = mac->SSpace[bwp_id][coreset_id - 1][ss_id];
+	NR_SearchSpace_t *ss = mac->SSpace[bwp_id-1][coreset_id - 1][ss_id];
 	fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
 	NR_BWP_DownlinkCommon_t *bwp_Common = bwp->bwp_Common;
 	NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
