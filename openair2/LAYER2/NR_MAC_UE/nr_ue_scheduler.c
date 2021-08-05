@@ -1976,7 +1976,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
   for (lcid = UL_SCH_LCID_SRB1;
        lcid < MAX_LCID; lcid++) {
 
-    buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
+    buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total + sh_size);
 
     LOG_D(NR_MAC, "In %s: [UE %d] [%d.%d] UL-DXCH -> ULSCH, RLC with LCID 0x%02x (TBS %d bytes, sdu_length_total %d bytes, MAC header len %d bytes, buflen_remain %d bytes)\n",
           __FUNCTION__,
@@ -2047,7 +2047,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
         break;
       }
 
-      buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
+      buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total + sh_size);
 
     }
   }
@@ -2056,7 +2056,6 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
 
     LOG_D(NR_MAC, "In %s copying %d bytes of MAC CEs to the UL PDU \n", __FUNCTION__, tot_mac_ce_len);
     memcpy((void *) pdu, (void *) mac_header_control_elements, tot_mac_ce_len);
-    buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total);
     pdu += (unsigned char) tot_mac_ce_len;
 
     #ifdef ENABLE_MAC_PAYLOAD_DEBUG
@@ -2065,6 +2064,8 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
     #endif
 
   }
+
+  buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total);
 
   // Compute final offset for padding and fill remainder of ULSCH with 0
   if (buflen_remain > 0) {
