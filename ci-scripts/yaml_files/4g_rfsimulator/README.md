@@ -52,6 +52,9 @@ $ docker pull rdefosseoai/oai-hss:latest
 $ docker pull rdefosseoai/oai-mme:latest
 $ docker pull rdefosseoai/oai-spgwc:latest
 $ docker pull rdefosseoai/oai-spgwu-tiny:latest
+
+$ docker pull rdefosseoai/oai-enb:develop
+$ docker pull rdefosseoai/oai-lte-ue:develop
 ```
 
 And **re-tag** them for tutorials' docker-compose file to work.
@@ -61,6 +64,9 @@ $ docker image tag rdefosseoai/oai-spgwc:latest oai-spgwc:latest
 $ docker image tag rdefosseoai/oai-hss:latest oai-hss:latest
 $ docker image tag rdefosseoai/oai-spgwu-tiny:latest oai-spgwu-tiny:latest 
 $ docker image tag rdefosseoai/oai-mme:latest oai-mme:latest
+
+$ docker image tag rdefosseoai/oai-enb:develop oai-enb:develop
+$ docker image tag rdefosseoai/oai-lte-ue:develop oai-lte-ue:develop
 ```
 
 ```bash
@@ -68,8 +74,6 @@ $ docker logout
 ```
 
 How to build the Traffic-Generator image is explained [here](https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master/docs/GENERATE_TRAFFIC.md#1-build-a-traffic-generator-image).
-
-I will soon push also RAN images.
 
 # 2. Deploy containers #
 
@@ -100,6 +104,23 @@ OK
 ```bash
 $ docker rm rfsim4g-db-init
 ```
+
+At this point, you can prepare a capture on the newly-created public docker bridge:
+
+```bash
+$ ifconfig rfsim4g-public
+        inet 192.168.61.1  netmask 255.255.255.192  broadcast 192.168.61.63
+        ether 02:42:8f:dd:ba:5a  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+$ sudo tshark -i rfsim4g-public -f 'port 3868 or port 2123 or port 36412 or port 36422 or port 46520 or port 8805' -w /tmp/my-oai-control-plane.pcap
+```
+
+**BE CAREFUL: please use that filter or you will also capture the data-plane with IQ samples between `eNB` and `LTE-UE`.**
+
+**and your capture WILL become huge (10s of Gbytes).**
 
 ## 2.2. Deploy OAI CN4G containers ##
 

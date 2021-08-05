@@ -261,9 +261,12 @@ networks:
         ipam:
             config:
                 - subnet: 192.168.68.0/26
+        driver_opts:
+            com.docker.network.bridge.name: "rfsim4g-private"
     public_net:
         name: rfsim4g-oai-public-net
         ipam:
             config:
                 - subnet: 192.168.61.0/26
-
+        driver_opts:
+            com.docker.network.bridge.name: "rfsim4g-public"
