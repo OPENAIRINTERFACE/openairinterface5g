@@ -576,7 +576,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   offset = 0;
 
   if (enable_ldpc_offload) {
-  memset(harq_process->c[0],0,Kr_bytes);
 
   if (harq_process->C == 1) {
     if (A > 3824)
@@ -594,7 +593,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   E = nr_get_E(G, harq_process->C, Qm, n_layers, 0);
 
-  memcpy((&z_ol[0]),ulsch_llr,G*sizeof(int16_t));
+  for (r=0; r<harq_process->C; r++) {
+  memset(harq_process->c[r],0,Kr_bytes);
+
+  memcpy((&z_ol[0]),ulsch_llr+r*E,E*sizeof(int16_t));
   
   for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++)
   {
@@ -602,7 +604,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   }
  
   ret = nrLDPC_decoder_offload(p_decParams,
-			harq_process->C, 
+			1, //harq_process->C, 
 			pusch_pdu->pusch_data.rv_index,
 			harq_process->F,
 			E,
@@ -610,8 +612,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
  			(int8_t*)&pl_ol128[0],
 			llrProcBuf);
 
-     for (r=0; r<harq_process->C; r++) {
-        
         for (int m=0; m < Kr>>3; m ++) {
 	    harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
   	}
@@ -627,12 +627,12 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #endif
     no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
   }
-      	/*for (int k=0;k<8;k++)
+      	for (int k=0;k<8;k++)
         {
         printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
         printf("llrprocbuf [%d] =  %x adr %p\n", k, llrProcBuf[k], llrProcBuf+k);
         }
-  */ 
+   
 
         memcpy(harq_process->b+offset,
                harq_process->c[r],
@@ -649,7 +649,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   for (r=0; r<harq_process->C; r++) {
 
     E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
-printf("rm length %d seg %d\n", E,r);
     union ldpcReqUnion id = {.s={ulsch->rnti,frame,nr_tti_rx,0,0}};
     notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(ldpcDecode_t), id.p, phy_vars_gNB->respDecode, nr_processULSegment_ptr);
     ldpcDecode_t * rdata=(ldpcDecode_t *) NotifiedFifoData(req);
