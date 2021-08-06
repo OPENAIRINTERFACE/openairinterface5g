@@ -625,9 +625,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     LOG_D(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
         phy_vars_ue->Mod_id, frame, nr_slot_rx, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
 
-    harq_process->harq_ack.ack = 0;
-    harq_process->harq_ack.harq_id = harq_pid;
-    harq_process->harq_ack.send_harq_status = 1;
+    harq_process->ack = 0;
     harq_process->errors[harq_process->round]++;
 
     if (harq_process->round >= dlsch->Mlimit) {
@@ -650,9 +648,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;
-    harq_process->harq_ack.ack = 1;
-    harq_process->harq_ack.harq_id = harq_pid;
-    harq_process->harq_ack.send_harq_status = 1;
+    harq_process->ack = 1;
     
     //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d)\n",
       //  phy_vars_ue->Mod_id, frame, subframe, harq_pid, harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs);
@@ -1170,9 +1166,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
       LOG_I(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
         phy_vars_ue->Mod_id, frame, nr_slot_rx, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
-    harq_process->harq_ack.ack = 0;
-    harq_process->harq_ack.harq_id = harq_pid;
-    harq_process->harq_ack.send_harq_status = 1;
+    harq_process->ack = 0;
     harq_process->errors[harq_process->round]++;
     harq_process->round++;
 
@@ -1194,9 +1188,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 
     harq_process->status = SCH_IDLE;
     harq_process->round  = 0;
-    harq_process->harq_ack.ack = 1;
-    harq_process->harq_ack.harq_id = harq_pid;
-    harq_process->harq_ack.send_harq_status = 1;
+    harq_process->ack = 1;
     //LOG_I(PHY,"[UE %d] DLSCH: Setting ACK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d)\n",
       //  phy_vars_ue->Mod_id, frame, subframe, harq_pid, harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs);
 
