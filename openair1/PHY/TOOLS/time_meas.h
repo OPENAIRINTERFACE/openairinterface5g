@@ -52,11 +52,12 @@ extern double cpu_freq_GHz  __attribute__ ((aligned(32)));;
 #define TIMESTAT_MSGID_DISABLE     3     /*!< \brief disable measure point */
 #define TIMESTAT_MSGID_DISPLAY     10    /*!< \brief display measure */
 #define TIMESTAT_MSGID_END         11    /*!< \brief stops the measure threads and free assocated resources */
+typedef void(*meas_printfunc_t)(const char* format, ...);
 typedef struct {
   int               msgid;                  /*!< \brief message id, as defined by TIMESTAT_MSGID_X macros */
   int               timestat_id;            /*!< \brief points to the time_stats_t entry in cpumeas table */
   OAI_CPUTIME_TYPE  ts;                     /*!< \brief time stamp */
-  void              *displayFunc;           /*!< \brief function to call when DISPLAY message is received*/
+  meas_printfunc_t  displayFunc;            /*!< \brief function to call when DISPLAY message is received*/
 } time_stats_msg_t;
 
 
@@ -70,9 +71,11 @@ typedef struct {
   int meas_flag;             /*!< \brief 1: stop_meas not called (consecutive calls of start_meas) */
   char *meas_name;           /*!< \brief name to use when printing the measure (not used for PHY simulators)*/
   int meas_index;            /*!< \brief index of this measure in the measure array (not used for PHY simulators)*/
-  bool meas_enabled;         /*!< \brief per measure enablement flag. send_meas tests this flag, unused today in start_meas and stop_meas*/
+  int meas_enabled;         /*!< \brief per measure enablement flag. send_meas tests this flag, unused today in start_meas and stop_meas*/
+#ifndef PHYSIM
   notifiedFIFO_elt_t *tpoolmsg; /*!< \brief message pushed to the cpu measurment queue to report a measure START or STOP */
   time_stats_msg_t *tstatptr;   /*!< \brief pointer to the time_stats_msg_t data in the tpoolmsg, stored here for perf considerations*/
+#endif
 } time_stats_t;
 #define MEASURE_ENABLED(X)       (X->meas_enabled)
 
