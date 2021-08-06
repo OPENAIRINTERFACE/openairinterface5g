@@ -191,15 +191,13 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
+  nr_init_csi_rs(gNB, cfg->cell_config.phy_cell_id.value);
+
   /* Generate low PAPR type 1 sequences for PUSCH DMRS, these are used if transform precoding is enabled.  */
   generate_lowpapr_typ1_refsig_sequences(SHRT_MAX);
-  
-
-  nr_init_csi_rs(gNB, 0); // TODO scramblingID currently hardcoded to 0, to be taken from higher layer parameter scramblingID when implemented
 
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
-
 
   gNB->first_run_I0_measurements = 1;
 

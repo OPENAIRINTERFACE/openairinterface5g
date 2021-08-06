@@ -731,13 +731,12 @@ int main(int argc, char **argv)
         }
 
         ret = nr_rx_pbch(UE,
-	                 &proc,
-		         UE->pbch_vars[0],
-		         frame_parms,
-		         0,
-		         ssb_index%8,
-                         SISO,
-                         UE->high_speed_flag);
+                         &proc,
+                         UE->pbch_vars[0],
+                         frame_parms,
+                         0,
+                         ssb_index%8,
+                         SISO);
 
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically

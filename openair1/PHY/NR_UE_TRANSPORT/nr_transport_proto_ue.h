@@ -1166,13 +1166,12 @@ int rx_sss(PHY_VARS_NR_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uin
   \returns number of tx antennas or -1 if error
 */
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
-		     UE_nr_rxtx_proc_t *proc,
-		     NR_UE_PBCH *nr_ue_pbch_vars,
-		     NR_DL_FRAME_PARMS *frame_parms,
-		     uint8_t eNB_id,
-                     uint8_t i_ssb,
-		     MIMO_mode_t mimo_mode,
-		     uint32_t high_speed_flag);
+                UE_nr_rxtx_proc_t *proc,
+                NR_UE_PBCH *nr_ue_pbch_vars,
+                NR_DL_FRAME_PARMS *frame_parms,
+                uint8_t eNB_id,
+                uint8_t i_ssb,
+                MIMO_mode_t mimo_mode);
 
 int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
 		      PHY_VARS_NR_UE *ue,

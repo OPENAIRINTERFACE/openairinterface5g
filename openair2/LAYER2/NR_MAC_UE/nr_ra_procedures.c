@@ -824,46 +824,35 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
 
 }
 
-// Handlig failure of RA procedure @ MAC layer
+// Handling failure of RA procedure @ MAC layer
 // according to section 5 of 3GPP TS 38.321 version 16.2.1 Release 16
 // todo:
 // - complete handling of received contention-based RA preamble
-// - 2-step RA implementation
 void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_resources, frame_t frame, int slot) {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
 
   ra->first_Msg3 = 1;
-  ra->ra_PreambleIndex     = -1;
+  ra->ra_PreambleIndex = -1;
   ra->generate_nr_prach = RA_FAILED;
   ra->ra_state = RA_UE_IDLE;
 
   prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER++;
 
-  if(prach_resources->RA_TYPE == RA_4STEP){
+  if (prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER == ra->preambleTransMax + 1){
 
-    if (prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER == ra->preambleTransMax + 1){
+    LOG_D(MAC, "In %s: [UE %d][%d.%d] Maximum number of RACH attempts (%d) reached, selecting backoff time...\n",
+          __FUNCTION__, mod_id, frame, slot, ra->preambleTransMax);
 
-      LOG_D(MAC, "In %s: [UE %d][%d.%d] Maximum number of RACH attempts (%d) reached, selecting backoff time...\n", __FUNCTION__, mod_id, frame, slot, ra->preambleTransMax);
+    ra->RA_backoff_cnt = rand() % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
+    prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
+    prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP += 2; // 2 dB increment
+    prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
 
-      ra->RA_backoff_cnt = rand() % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
-
-      prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
-      prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP += 2; // 2 dB increment
-      prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
-
-    } else {
-
-      // Resetting RA window
-      nr_get_RA_window(mac);
-
-    }
-
-  } else if (prach_resources->RA_TYPE == RA_2STEP){
-
-    LOG_E(MAC, "Missing implementation of RA failure handling for 2-step RA...\n");
-
+  } else {
+    // Resetting RA window
+    nr_get_RA_window(mac);
   }
 
 }

@@ -711,7 +711,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                 current_rnti);
 
           if( (frameP==ra->Msg3_frame) && (slotP==ra->Msg3_slot) ) {
-            LOG_W(NR_MAC, "Random Access %i failed at state %i (TC_RNTI %04x RNTI %04x\n", i, ra->state,ra->rnti,current_rnti);
+            LOG_W(NR_MAC, "Random Access %i failed at state %i (TC_RNTI %04x RNTI %04x)\n", i, ra->state,ra->rnti,current_rnti);
             nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
             nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           }
@@ -722,6 +722,13 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         int UE_id=-1;
 
         UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->CellGroup);
+        if (UE_id<0) {
+          LOG_W(NR_MAC, "Random Access %i discarded at state %i (TC_RNTI %04x RNTI %04x): max number of users achieved!\n", i, ra->state,ra->rnti,current_rnti);
+          nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+          nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+          return;
+        }
+
         UE_info->UE_beam_index[UE_id] = ra->beam_id;
 
         // re-initialize ta update variables after RA procedure completion

@@ -392,11 +392,11 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
   stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
 #if DISABLE_LOG_X
-  printf("[AbsSFN %u.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction %5.2f \n",
-	 frame,nr_slot_rx,slot,symbol,ue->high_speed_flag,type,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+  printf("[AbsSFN %u.%d] Slot%d Symbol %d type %d: Pilot/Data extraction %5.2f \n",
+	 frame,nr_slot_rx,slot,symbol,type,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #else
-  LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d Flag %d type %d: Pilot/Data extraction %5.2f \n",
-	frame,nr_slot_rx,slot,symbol,ue->high_speed_flag,type,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+  LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d type %d: Pilot/Data extraction %5.2f \n",
+	frame,nr_slot_rx,slot,symbol,type,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
   

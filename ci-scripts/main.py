@@ -659,6 +659,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	if (EPC.IPAddress != '') and (EPC.IPAddress != 'none'):
 		CiTestObj.CheckFlexranCtrlInstallation(RAN,EPC,CONTAINERS)
 		EPC.SetMmeIPAddress()
+		EPC.SetAmfIPAddress()
 
 	#get the list of tests to be done
 	todo_tests=[]
@@ -775,6 +776,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					EPC.InitializeSPGW(HTML)
 				elif action == 'Terminate_SPGW':
 					EPC.TerminateSPGW(HTML)
+				elif action == 'Initialize_5GCN':
+					EPC.Initialize5GCN(HTML)
+				elif action == 'Terminate_5GCN':
+					EPC.Terminate5GCN(HTML)
 				elif action == 'Deploy_EPC':
 					EPC.DeployEpc(HTML)
 				elif action == 'Undeploy_EPC':
