@@ -483,7 +483,7 @@ typedef struct {
     uint8_t status;
     PC5SignallingMessage pc5_signalling_message;
   } pc5sPrimitive;
-} __attribute__((__packed__, aligned (__alignof__(char)))) sidelink_pc5s_element;
+} __attribute__((__packed__)) sidelink_pc5s_element;
 
 
 /*

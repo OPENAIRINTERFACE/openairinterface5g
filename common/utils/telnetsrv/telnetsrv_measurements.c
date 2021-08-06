@@ -235,8 +235,8 @@ int measurcmd_async(char *buf, int debug, telnet_printfunc_t prnt) {
   int idx1, idx2;
   int okcmd=0;
 
-  if buff == NULL) {
-	  measurcmd_async_help();
+  if (buf == NULL) {
+	  measurcmd_async_help(prnt);
 	  return CMDSTATUS_FOUND;
   }
   if (debug > 0)

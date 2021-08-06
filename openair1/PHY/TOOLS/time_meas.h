@@ -56,7 +56,7 @@ typedef struct {
   int               msgid;                  /*!< \brief message id, as defined by TIMESTAT_MSGID_X macros */
   int               timestat_id;            /*!< \brief points to the time_stats_t entry in cpumeas table */
   OAI_CPUTIME_TYPE  ts;                     /*!< \brief time stamp */
-  void (*displayFunc)(void *);              /*!< \brief function to call when DISPLAY message is received*/
+  void              *displayFunc;           /*!< \brief function to call when DISPLAY message is received*/
 } time_stats_msg_t;
 
 

@@ -421,7 +421,7 @@ typedef struct NRRrcConfigurationReq_s {
 
 // UE: NAS -> RRC messages
 typedef kenb_refresh_req_t      NasKenbRefreshReq;
-typedef cell_info_req_t         NasCellSelectionReq __attribute__ (( aligned (__alignof__(char)) ));
+typedef cell_info_req_t         NasCellSelectionReq;
 typedef nas_establish_req_t     NasConnEstabliReq;
 typedef ul_info_transfer_req_t  NasUlDataReq;
 
