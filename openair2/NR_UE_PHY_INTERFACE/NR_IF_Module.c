@@ -285,7 +285,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
 
         if (tx_data_request->Slot == 7) { //Melissa this means we have an RAR, sorta hacky though
             if( get_mac_inst(dl_info->module_id)->crnti == get_mac_inst(dl_info->module_id)->ra.t_crnti )
-            {  LOG_D(MAC, "Discarding tx_data_requested since it includes useless RAR.\n");
+            {  
                 continue;
             }
             dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
@@ -321,8 +321,6 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     {
         nfapi_nr_ul_dci_request_pdus_t *pdu_list = &ul_dci_req->ul_dci_pdu_list[i];
         AssertFatal(pdu_list->PDUType == 0, "ul_dci_req pdu type != PUCCH");
-        //if (pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI != get_mac_inst(0)->crnti)
-        //  continue;
         LOG_I(NR_PHY, "[%d %d] PUCCH PDU in ul_dci for rnti %x\n", ul_dci_req->SFN, ul_dci_req->Slot, pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI);
         uint16_t num_dci = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
         if (num_dci > 0)
@@ -337,18 +335,11 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
                 nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
                 if (dci_pdu_list->RNTI != mac->crnti)
                 {
-                  LOG_I(NR_MAC, "ul_dci_req Skip: dci_pdu_list->RNTI %x != mac->crnti %x\n", dci_pdu_list->RNTI, get_mac_inst(dl_info->module_id)->crnti);
                   continue;
                 }
                 int num_bytes = (dci_pdu_list->PayloadSizeBits + 7) / 8;
-                uint64_t *dci_pdu_payload = (uint64_t *)dci_pdu_list->Payload;
-                int harq_pid = (*dci_pdu_payload >> 11) & 0xf;
-                LOG_I(NR_PHY, "[%d, %d] ul_dci_req PDCCH DCI for rnti %x with PayloadSizeBits %d and num_bytes %d  harq_id %lu\n",
-                        ul_dci_req->SFN, ul_dci_req->Slot, 
-                        dci_pdu_list->RNTI, 
-                        dci_pdu_list->PayloadSizeBits, num_bytes,
-                        harq_pid
-                        );
+                LOG_I(NR_PHY, "[%d, %d] ul_dci_req PDCCH DCI for rnti %x with PayloadSizeBits %d and num_bytes %d\n",
+                        ul_dci_req->SFN, ul_dci_req->Slot, dci_pdu_list->RNTI, dci_pdu_list->PayloadSizeBits, num_bytes);
                 for (int k = 0; k < num_bytes; k++)
                 {
                     LOG_I(NR_MAC, "PDCCH DCI PDU payload[%d] = %d\n", k, dci_pdu_list->Payload[k]);
@@ -572,7 +563,9 @@ void *nrue_standalone_pnf_task(void *context)
   struct sockaddr_in server_address;
   socklen_t addr_len = sizeof(server_address);
   char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
-  int sfn, slot, delta;
+  int sfn = 0;
+  int slot = 0;
+  int delta = 0;
   int sd = ue_rx_sock_descriptor;
   assert(sd > 0);
   LOG_I(NR_RRC, "Sucessfully started %s.\n", __FUNCTION__);
@@ -600,11 +593,8 @@ void *nrue_standalone_pnf_task(void *context)
 
       if (!put_queue(&nr_sfn_slot_queue, &sfn_slot_pool[sfn_slot_id]))
       {
-        LOG_D(NR_MAC, "put_queue failed for sfn slot.\n");
+        LOG_E(NR_PHY, "put_queue failed for sfn slot.\n");
       }
-      LOG_D(NR_MAC, "We have successfully queued snf slot %d.%d, with id %u, qsize %zu\n",
-                    sfn_slot_pool[sfn_slot_id]>> 6, sfn_slot_pool[sfn_slot_id] & 0x3F,
-                    sfn_slot_id, nr_sfn_slot_queue.num_items);
 
       sfn_slot_id = (sfn_slot_id + 1) % 512;
 
@@ -627,11 +617,8 @@ void *nrue_standalone_pnf_task(void *context)
 
       if (!put_queue(&nr_sfn_slot_queue, &sfn_slot_pool[sfn_slot_id]))
       {
-        LOG_D(NR_MAC, "put_queue failed for sfn slot.\n");
+        LOG_E(NR_PHY, "put_queue failed for sfn slot.\n");
       }
-      LOG_D(NR_MAC, "We have successfully queued snf slot %d.%d, with id %u, qsize %zu\n",
-                    sfn_slot_pool[sfn_slot_id]>> 6, sfn_slot_pool[sfn_slot_id] & 0x3F,
-                    sfn_slot_id, nr_sfn_slot_queue.num_items);
 
       sfn_slot_id = (sfn_slot_id + 1) % 512;
 
@@ -640,7 +627,9 @@ void *nrue_standalone_pnf_task(void *context)
         LOG_E(MAC, "sem_post() error\n");
         abort();
       }
-      LOG_I(MAC, "Received_SINR = %f\n", ch_info.sinr);
+      sfn = NFAPI_SFNSLOT2SFN(ch_info.sfn_slot);
+      slot = NFAPI_SFNSLOT2SLOT(ch_info.sfn_slot);
+      LOG_I(NR_PHY, "Received_SINR = %f, sfn:slot %d:%d\n", ch_info.sinr, sfn, slot);
     }
     else
     {
@@ -693,11 +682,12 @@ void *nrue_standalone_pnf_task(void *context)
             delta = NFAPI_SFNSLOT2DEC(sfn, slot) - NFAPI_SFNSLOT2DEC(ul_dci_request.SFN, ul_dci_request.Slot);
             if (delta < -NFAPI_SFNSLOT2DEC(512, 0))
             {
-              delta += NFAPI_SFNSLOT2DEC(1024, 0);
+                delta += NFAPI_SFNSLOT2DEC(1024, 0);
             }
-            AssertFatal(delta < 6, "Slot delta %d < 6 is required. sfn slot %u %u vs ul_dci_request sfn slot %u %u\n",
-                        delta, sfn, slot, ul_dci_request.SFN, ul_dci_request.Slot);
-            check_and_process_dci(NULL, NULL, &ul_dci_request, NULL);
+            if (delta < 6)
+            {
+                check_and_process_dci(NULL, NULL, &ul_dci_request, NULL);
+            }
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
             if (nfapi_nr_p7_message_unpack((void *)buffer, len, &ul_tti_request,
