@@ -57,7 +57,6 @@
 #include <rte_lcore.h>
 #include "nrLDPC_offload.h"
 
-uint8_t count_initdev =0; 
 #include <math.h>
 
 #include <rte_dev.h>
@@ -580,13 +579,10 @@ populate_active_devices(void)
 static int
 device_setup(void)
 {
-if (count_initdev ==0) {
-count_initdev++;
 	if (populate_active_devices() == 0) {
 		printf("No suitable devices found!\n");
 		return TEST_SKIPPED;
 	}
-}
 	return TEST_SUCCESS;
 }
 
@@ -1445,8 +1441,6 @@ pmd_lcore_ldpc_dec(void *arg, t_nrLDPCoffload_params *p_offloadParams, int8_t* p
 
 	bufs = &tp->op_params->q_bufs[GET_SOCKET(info.socket_id)][queue_id];
 	
-	//&op_params->q_bufs[socket_id][queue_id].inputs
-//printf("bufs len %d\n",bufs->input.data->data_len);
 	while (rte_atomic16_read(&tp->op_params->sync) == SYNC_WAIT)
 		rte_pause();
 
@@ -1492,19 +1486,12 @@ pmd_lcore_ldpc_dec(void *arg, t_nrLDPCoffload_params *p_offloadParams, int8_t* p
 			if (unlikely(num_ops - enq < num_to_enq))
 				num_to_enq = num_ops - enq;
 				
-				//printf("pmd lcore ldpc dec data %x\n", *ops_enq[enq]->ldpc_dec.input.addr);
-
 			enq += rte_bbdev_enqueue_ldpc_dec_ops(tp->dev_id,
 					queue_id, &ops_enq[enq], num_to_enq);
 
 			deq += rte_bbdev_dequeue_ldpc_dec_ops(tp->dev_id,
 					queue_id, &ops_deq[deq], enq - deq);
 
-/*			ops_td = &ops_deq[enq]->ldpc_dec;
-                        hard_output = &ops_td->hard_output;
- struct rte_mbuf *m = hard_output->data;	
-	 printf("deq nb segs %d\n", m->nb_segs);
-*/ 
                 }
 
 		/* dequeue the remaining */
@@ -1782,9 +1769,8 @@ get_init_device(void)
 	return test_params.init_device;
 }
 
-int count_init = 0;
-
-int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_t rv, uint16_t F, uint32_t E, uint8_t Qm, int8_t* p_llr, int8_t* p_out)
+int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_t rv, uint16_t F, 
+			uint32_t E, uint8_t Qm, int8_t* p_llr, int8_t* p_out, uint8_t mode)
 {
     	t_nrLDPCoffload_params offloadParams;
     	t_nrLDPCoffload_params* p_offloadParams    = &offloadParams;
@@ -1792,55 +1778,24 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
     	uint32_t numIter = 0;
 	int ret;
 
-int argc_re=4;
-char *argv_re[15];
-argv_re[0] = "/home/wang/dpdk2005/dpdk-20.05/build/app/testbbdev";
-argv_re[1] = "--"; //./build/app/testbbdev"; 
-//argv_re[2] = "-c";
-//argv_re[3] = "throughput";
-argv_re[2] = "-v";
-argv_re[3] = "../../../targets/ARCH/test-bbdev/test_vectors/ldpc_dec_v8480.data";
-if (count_init == 0) {
-
-printf("argcre %d argvre %s %s %s %s\n", argc_re, argv_re[0], argv_re[1], argv_re[2], argv_re[3]);
-count_init++;
-        ret = rte_eal_init(argc_re, argv_re);
-}
-argc_re = 3;
-argv_re[0] = "--";  
-argv_re[1] = "-v";
-argv_re[2] = "../../../targets/ARCH/test-bbdev/test_vectors/ldpc_dec_v8480.data";
-
-
-	memset(&test_vector_dec, 0, sizeof(struct test_bbdev_vector));
-
-struct rte_bbdev_op_ldpc_dec *ldpc_dec = &test_vector_dec.ldpc_dec;
-test_vector.op_type = RTE_BBDEV_OP_LDPC_DEC; //vector->op_type;
-test_vector.expected_status = 0;
-
- ldpc_dec->cb_params.e = E; 
-ldpc_dec->iter_count = 3;
-                ldpc_dec->basegraph = p_decParams->BG; 
-                ldpc_dec->z_c = p_decParams->Z; 
-                ldpc_dec->q_m = Qm;
-                ldpc_dec->n_filler = F; 
-                ldpc_dec->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z); 
-                ldpc_dec->iter_max = 8; 
-                ldpc_dec->rv_index = rv; 
-                ldpc_dec->op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE;
-                ldpc_dec->code_block_mode = (C>1)?1:0; 
-ldpc_dec->tb_params.ea = E;
-ldpc_dec->tb_params.eb = E;
-ldpc_dec->tb_params.r = 0;
-
+	int argc_re=2;
+	char *argv_re[2];
+	argv_re[0] = "/home/wang/dpdk2005/dpdk-20.05/build/app/testbbdev";
+	argv_re[1] = "--"; 
 
 	test_params.num_ops=1; 
 	test_params.burst_sz=1;
 	test_params.num_lcores=1;		
 	test_params.num_tests = 1;
 
-	device_setup();
-	ut_setup();
+	if (mode==0){
+		printf("offload mode %d\n", mode);
+		ret = rte_eal_init(argc_re, argv_re);
+
+		device_setup();
+		ut_setup();
+	}
+	else{
 
 	p_offloadParams->E = E;
 	p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
@@ -1850,7 +1805,7 @@ ldpc_dec->tb_params.r = 0;
 	p_offloadParams->F = F;
 	p_offloadParams->Qm = Qm;
 	ldpc_decod_ut(p_llr, p_offloadParams, p_out);
-
+	}
 	//ut_teardown();
 
     return numIter;

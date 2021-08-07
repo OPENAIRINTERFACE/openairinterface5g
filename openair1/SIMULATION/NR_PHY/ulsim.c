@@ -260,6 +260,7 @@ channel_desc_t *UE2gNB[NUMBER_OF_UE_MAX][NUMBER_OF_gNB_MAX];
 
 int main(int argc, char **argv)
 {
+
   char c;
   int i;
   double SNR, snr0 = -2.0, snr1 = 2.0;
@@ -641,6 +642,22 @@ int main(int argc, char **argv)
   get_softmodem_params()->usim_test = 1;
 
   load_nrLDPClib_offload();
+
+  t_nrLDPC_dec_params decParams;
+  t_nrLDPC_dec_params* p_decParams    = &decParams;
+  int8_t   l_ol [68*384];
+  __m128i *pl_ol128 = (__m128i*)&l_ol;
+  int8_t llrProcBuf[22*384];
+ 
+  nrLDPC_decoder_offload(p_decParams,
+                        1,  
+                        0,
+                        0,
+                        0,
+                        2, 
+                        (int8_t*)&pl_ol128[0],
+                        llrProcBuf, 0);
+
 
   if (snr1set == 0)
     snr1 = snr0 + 10;
