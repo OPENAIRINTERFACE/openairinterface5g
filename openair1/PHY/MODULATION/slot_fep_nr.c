@@ -348,15 +348,15 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 
 			  
   int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-
+  int soffset = (slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
   for (int symbol=0;symbol<nsymb;symbol++) {
     
     uint32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation[1])[symbol + symb_offset];
     ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
     LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",slot,symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
-    rotate_cpx_vector((int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
+    rotate_cpx_vector((int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
 		      (int16_t*)&rot2,
-		      (int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
+		      (int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
 		      length,
 		      15);
   }

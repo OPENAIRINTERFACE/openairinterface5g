@@ -1331,7 +1331,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   case NR_UL_DCI_FORMAT_0_0:
     switch (rnti_type) {
     case NR_RNTI_C:
-      LOG_I(NR_MAC,"Filling format 0_0 DCI for CRNTI (size %d bits)\n",dci_size);
+      LOG_D(NR_MAC,"Filling format 0_0 DCI for CRNTI (size %d bits)\n",dci_size);
       // indicating a UL DCI format 1bit
       pos=1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
@@ -2053,7 +2053,7 @@ bool find_free_CCE(module_id_t module_id,
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid][slot];
   const int m = RC.nrmac[module_id]->UE_info.num_pdcch_cand[UE_id][cid];
-  if (UE_id >= 0) LOG_I(NR_MAC,"calling allocate_nr_CCEs with L %d, nr_of_candidates %d, Y %x\n",sched_ctrl->aggregation_level,nr_of_candidates,Y);
+  if (UE_id >= 0) LOG_D(NR_MAC,"calling allocate_nr_CCEs with L %d, nr_of_candidates %d, Y %x\n",sched_ctrl->aggregation_level,nr_of_candidates,Y);
   sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
                                            sched_ctrl->active_bwp,
                                            sched_ctrl->coreset,

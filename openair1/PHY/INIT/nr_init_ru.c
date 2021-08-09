@@ -100,8 +100,8 @@ int nr_phy_init_RU(RU_t *ru) {
     // allocate FFT output buffers (RX)
     ru->common.rxdataF     = (int32_t**)malloc16(ru->nb_rx*sizeof(int32_t*) );
     for (i=0; i<ru->nb_rx; i++) {    
-      // allocate 2 subframes of I/Q signal data (frequency)
-      ru->common.rxdataF[i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(2*fp->samples_per_subframe_wCP) ); 
+      // allocate 4 slots of I/Q signal data (frequency)
+      ru->common.rxdataF[i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(4*fp->symbols_per_slot*fp->ofdm_symbol_size) ); 
       LOG_I(PHY,"rxdataF[%d] %p for RU %d\n",i,ru->common.rxdataF[i],ru->idx);
     }
 

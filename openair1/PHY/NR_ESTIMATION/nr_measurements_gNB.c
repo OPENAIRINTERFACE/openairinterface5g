@@ -88,15 +88,21 @@ void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB) {
      if (i%25 == 24) fprintf(fd,"\n");
     }
     fprintf(fd,"\n");
-    fprintf(fd,"max_IO = %d (%d), min_I0 = %d (%d), avg_I0 = %d dB\n",max_I0,amax,min_I0,amin,gNB->measurements.n0_subband_power_avg_dB);
-    fprintf(fd,"PRACH I0 = %d.%d dB\n",gNB->measurements.prach_I0/10,gNB->measurements.prach_I0%10);
+    fprintf(fd,"max_IO = %d (%d), min_I0 = %d (%d), avg_I0 = %d dB",max_I0,amax,min_I0,amin,gNB->measurements.n0_subband_power_avg_dB);
+    if (gNB->frame_parms.nb_antennas_rx>1) {
+       fprintf(fd,"(");
+       for (int aarx=0;aarx<gNB->frame_parms.nb_antennas_rx;aarx++)
+         fprintf(fd,"%d.",gNB->measurements.n0_subband_power_avg_perANT_dB[aarx]);
+       fprintf(fd,")");
+    }
+    fprintf(fd,"\nPRACH I0 = %d.%d dB\n",gNB->measurements.prach_I0/10,gNB->measurements.prach_I0%10);
 
 
 }
 
 
 
-void gNB_I0_measurements(PHY_VARS_gNB *gNB,int first_symb,int num_symb) {
+void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb) {
 
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   NR_gNB_COMMON *common_vars = &gNB->common_vars;
@@ -112,7 +118,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int first_symb,int num_symb) {
         n0_power_tot[rb]=0;
         nb_symb[rb]=0;
       }
-      offset0 = (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
+      offset0 = (slot&3)*(frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size) + (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
       if ((gNB->rb_mask_ul[s][rb>>5]&(1<<(rb&31))) == 0) {  // check that rb was not used in this subframe
         nb_symb[rb]++;          
         for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -134,23 +140,31 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int first_symb,int num_symb) {
   int nb_rb=0;
   int32_t n0_subband_tot=0;
   int32_t n0_subband_tot_perPRB=0;
+  int32_t n0_subband_tot_perANT[1+frame_parms->nb_antennas_rx];
+
   for (int rb = 0 ; rb<frame_parms->N_RB_UL;rb++) {
     n0_subband_tot_perPRB=0;
     if (nb_symb[rb] > 0) {
       for (int aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
         measurements->n0_subband_power[aarx][rb]/=nb_symb[rb];
         n0_subband_tot_perPRB+=measurements->n0_subband_power[aarx][rb];
+        if (rb==0) n0_subband_tot_perANT[aarx]=measurements->n0_subband_power[aarx][rb];
+        else       n0_subband_tot_perANT[aarx]+=measurements->n0_subband_power[aarx][rb];
       }
       n0_subband_tot_perPRB/=frame_parms->nb_antennas_rx;
       measurements->n0_subband_power_tot_dB[rb] = dB_fixed(n0_subband_tot_perPRB);
       measurements->n0_subband_power_tot_dBm[rb] = measurements->n0_subband_power_tot_dB[rb] - gNB->rx_total_gain_dB - dB_fixed(frame_parms->N_RB_UL);
       //printf("n0_subband_power_tot_dB[%d] => %d, over %d symbols\n",rb,measurements->n0_subband_power_tot_dB[rb],nb_symb[rb]);
-      n0_subband_tot += n0_subband_tot;
+      n0_subband_tot += n0_subband_tot_perPRB;
       nb_rb++;
     }
   }
-  if (nb_rb>0) measurements->n0_subband_power_avg_dB = dB_fixed(n0_subband_tot/nb_rb);
-
+  if (nb_rb>0) {
+     measurements->n0_subband_power_avg_dB = dB_fixed(n0_subband_tot/nb_rb);
+     for (int aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
+       measurements->n0_subband_power_avg_perANT_dB[aarx] = dB_fixed(n0_subband_tot_perANT[aarx]/nb_rb);
+     }
+  }
 }
 
 

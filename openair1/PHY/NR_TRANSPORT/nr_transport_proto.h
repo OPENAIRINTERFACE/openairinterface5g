@@ -153,6 +153,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 */
 void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  NR_gNB_PUSCH *pusch_vars,
+                                 int slot,
                                  unsigned char symbol,
                                  uint8_t is_dmrs_symbol,
                                  nfapi_nr_pusch_pdu_t *pusch_pdu,
