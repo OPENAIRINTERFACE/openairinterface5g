@@ -1772,7 +1772,7 @@ void pnf_handle_ul_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
                         struct timespec t;
                         clock_gettime(CLOCK_MONOTONIC, &t);
 
-                        NFAPI_TRACE(NFAPI_TRACE_INFO,"%s() %ld.%09ld POPULATE UL_TTI_REQ current tx sfn/slot:%d.%d p7 msg sfn/slot: %d.%d buffer_index:%d\n", __FUNCTION__, t.tv_sec, t.tv_nsec, pnf_p7->sfn,pnf_p7->slot, req->SFN, req->Slot, buffer_index);
+                        //NFAPI_TRACE(NFAPI_TRACE_INFO,"%s() %ld.%09ld POPULATE UL_TTI_REQ current tx sfn/slot:%d.%d p7 msg sfn/slot: %d.%d buffer_index:%d\n", __FUNCTION__, t.tv_sec, t.tv_nsec, pnf_p7->sfn,pnf_p7->slot, req->SFN, req->Slot, buffer_index);
 
 			if(pnf_p7->slot_buffer[buffer_index].ul_tti_req != 0)
 			{

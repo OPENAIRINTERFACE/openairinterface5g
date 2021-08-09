@@ -216,7 +216,15 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         module_id,CC_id, UL_info->rach_ind.number_of_pdus,
         UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
 
+  handle_nr_rach(UL_info);
+  
+  handle_nr_uci(UL_info);
+  // clear UL DCI prior to handling ULSCH
+  mac->UL_dci_req[CC_id].numPdus = 0;
+  handle_nr_ulsch(UL_info);
+
   if (NFAPI_MODE != NFAPI_MODE_PNF) {
+
     if (ifi->CC_mask==0) {
       ifi->current_frame    = UL_info->frame;
       ifi->current_slot = UL_info->slot;
@@ -226,16 +234,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
     }
 
     ifi->CC_mask |= (1<<CC_id);
-  }
 
-  handle_nr_rach(UL_info);
-  
-  handle_nr_uci(UL_info);
-  // clear HI prior to handling ULSCH
-  mac->UL_dci_req[CC_id].numPdus = 0;
-  handle_nr_ulsch(UL_info);
-
-  if (NFAPI_MODE != NFAPI_MODE_PNF) {
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
       /*
       eNB_dlsch_ulsch_scheduler(module_id,

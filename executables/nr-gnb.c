@@ -142,7 +142,7 @@ void rx_func(void *param) {
   int slot_tx = info->slot_tx;
   sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
-  LOG_I(PHY,"slot rx %d \n", slot_rx);
+  LOG_D(PHY,"slot rx %d \n", slot_rx);
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************
@@ -253,7 +253,7 @@ void rx_func(void *param) {
 
   stop_meas( &softmodem_stats_rxtx_sf );
   LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
-
+   
   // Call the scheduler
 
   start_meas(&gNB->ul_indication_stats);
@@ -265,8 +265,7 @@ void rx_func(void *param) {
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
   stop_meas(&gNB->ul_indication_stats);
- 
-  
+   
   notifiedFIFO_elt_t *res; 
 
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {

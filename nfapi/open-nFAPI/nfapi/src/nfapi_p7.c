@@ -3815,10 +3815,10 @@ int nfapi_nr_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packe
 
 	// Update the message length in the header
 	pMessageHeader->message_length = packedMsgLen16;
-	
+
 	if(!push16(packedMsgLen16, &pPackedLengthField, end))
 		return -1;
-		
+
 	if(1)
 	{
 		//quick test
@@ -6370,11 +6370,10 @@ static uint8_t unpack_tx_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *
 
 //SLOT INDICATION
 
-static uint8_t unpack_nr_slot_indication(uint8_t **ppReadPackedMsg, uint8_t *end, nfapi_nr_rx_data_indication_t *msg, nfapi_p7_codec_config_t* config)
+static uint8_t unpack_nr_slot_indication(uint8_t **ppReadPackedMsg, uint8_t *end, nfapi_nr_slot_indication_scf_t *msg, nfapi_p7_codec_config_t* config)
 {	
 	nfapi_nr_slot_indication_scf_t *pNfapiMsg = (nfapi_nr_slot_indication_scf_t*)msg;
 	
-	printf("\n");
 	if (!(pull16(ppReadPackedMsg, &pNfapiMsg->sfn , end) &&
 		pull16(ppReadPackedMsg, &pNfapiMsg->slot , end)
 		))
@@ -6406,7 +6405,6 @@ static uint8_t unpack_nr_rx_data_indication(uint8_t **ppReadPackedMsg, uint8_t *
 {	
 	nfapi_nr_rx_data_indication_t *pNfapiMsg = (nfapi_nr_rx_data_indication_t*)msg;
 	
-	printf("\n");
 	if (!(pull16(ppReadPackedMsg, &pNfapiMsg->sfn , end) &&
 		pull16(ppReadPackedMsg, &pNfapiMsg->slot , end) &&
 		pull16(ppReadPackedMsg, &pNfapiMsg->number_of_pdus, end)
