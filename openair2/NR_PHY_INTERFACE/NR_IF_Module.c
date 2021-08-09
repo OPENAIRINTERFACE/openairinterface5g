@@ -73,7 +73,14 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
   UL_INFO.module_id = UL_info->module_id;
   UL_INFO.CC_id = UL_info->CC_id;
 
-  if (UL_INFO.rach_ind.number_of_pdus>0) {
+  int frame_diff = UL_info->frame -  rach_ind->sfn;
+  if (frame_diff < 0)
+  {
+    frame_diff += 1024;
+  }
+  bool in_timewindow = frame_diff == 0 || (frame_diff == 1 && UL_info->slot < 7);
+
+  if (UL_INFO.rach_ind.number_of_pdus>0 && in_timewindow) {
     LOG_I(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",
           UL_info->frame, UL_info->slot, UL_INFO.rach_ind.sfn, UL_INFO.rach_ind.slot);
     int npdus = UL_INFO.rach_ind.number_of_pdus;

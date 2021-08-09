@@ -558,15 +558,13 @@ int nr_acknack_scheduling(int mod_id,
    * scheduled a lot and used all AckNacks, pucch->frame might have been
    * wrapped around to next frame */
   if (frame != pucch->frame || pucch->ul_slot < first_ul_slot_tdd) {
-   //TODO:: This comment should be removed later.
-   /*
+    pucch->dai_c = 0;
     AssertFatal(pucch->sr_flag + pucch->dai_c == 0,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
     AssertFatal(frame + 1 != pucch->frame,
                 "frame wrap around not handled in %s() yet\n",
                 __func__);
-   */
     pucch->frame = frame;
     pucch->ul_slot = first_ul_slot_tdd;
   }

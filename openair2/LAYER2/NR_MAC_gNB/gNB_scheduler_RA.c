@@ -531,14 +531,12 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
 
       LOG_I(MAC,
-            "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Initiating RA procedure for preamble index %d, rnti %x, ra_index %d\n",
+            "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Initiating RA procedure for preamble index %d\n",
             module_idP,
             CC_id,
             frameP,
             slotP,
-            preamble_index,
-            ra->rnti,
-            i);
+            preamble_index);
 
       uint8_t beam_index = ssb_index_from_prach(module_idP, frameP, slotP, preamble_index, freq_index, symbol);
 
@@ -729,7 +727,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     vrb_map_UL[i + ra->msg3_first_rb] = 1;
   }
 
-  LOG_I(MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d), crnti %x\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot, ra->rnti);
+  LOG_I(MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
 
   nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_idP]->UL_tti_req_ahead[CC_id][ra->Msg3_slot];
   AssertFatal(future_ul_tti_req->SFN == ra->Msg3_frame
@@ -751,7 +749,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   AssertFatal(ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
     "downlinkBWP_ToAddModList has %d BWP!\n", ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
   NR_BWP_Uplink_t *ubwp = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
-  LOG_D(MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d,%d) for rnti: %x\n",
+  LOG_D(MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d,%d) for rnti: %d\n",
     frameP,
     slotP,
     ra->Msg3_frame,
@@ -928,18 +926,11 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dl_req->nPDUs+=1;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
 
-    LOG_I(MAC,"[gNB %d] [RAPROC] CC_id %d Frame %d, slotP %d: Generating RAR DCI, state %d, rnti %x\n",
-    module_idP, 
-    CC_id, 
-    frameP, 
-    slotP, 
-    ra->state, 
-    ra->rnti
-    );
+    LOG_I(MAC,"[gNB %d] [RAPROC] CC_id %d Frame %d, slotP %d: Generating RAR DCI, state %d\n", module_idP, CC_id, frameP, slotP, ra->state);
 
     NR_BWP_Uplink_t *ubwp=ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
 
-    LOG_I(MAC, "[RAPROC] Scheduling common search space DCI type 1 dlBWP BW %d, rnti %x\n", dci10_bw, ra->rnti);
+    LOG_I(MAC, "[RAPROC] Scheduling common search space DCI type 1 dlBWP BW %d\n", dci10_bw);
 
     // Qm>2 not allowed for RAR
     if (get_softmodem_params()->do_ra)
@@ -1042,14 +1033,13 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     const int rnti_type = NR_RNTI_RA;
 
     LOG_I(MAC,
-          "[RAPROC] DCI params: RA rnti %x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d, crnti %x\n",
+          "[RAPROC] DCI params: rnti %d, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
           pdcch_pdu_rel15->dci_pdu[0].RNTI,
           rnti_type,
           dci_format,
           (unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
           pdcch_pdu_rel15->StartSymbolIndex,
-          pdcch_pdu_rel15->DurationSymbols,
-          ra->rnti);
+          pdcch_pdu_rel15->DurationSymbols);
 
     fill_dci_pdu_rel15(scc,
                        ra->secondaryCellGroup,
@@ -1072,10 +1062,10 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // Program UL processing for Msg3
     nr_get_Msg3alloc(module_idP, CC_id, scc, ubwp, slotP, frameP, ra);
-    LOG_I(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d, crnti %x\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot, ra->rnti);
+    LOG_I(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot);
     nr_add_msg3(module_idP, CC_id, frameP, slotP, ra, (uint8_t *) &tx_req->TLVs[0].value.direct[0]);
     ra->state = WAIT_Msg3;
-    LOG_I(MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d, crnti %x\n", module_idP, frameP, slotP, ra->state, ra->rnti);
+    LOG_I(MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
 
     x_Overhead = 0;
     nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, dci_payload.tb_scaling);
@@ -1165,8 +1155,7 @@ void nr_fill_rar(uint8_t Mod_idP,
   // TC-RNTI
   rar->TCRNTI_1 = (uint8_t) (ra->rnti >> 8);        // 8 MSBs of rnti
   rar->TCRNTI_2 = (uint8_t) (ra->rnti & 0xff);      // 8 LSBs of rnti
-  LOG_D(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u TA command %d with rnti = %x\n",
-             ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index, ra->timing_offset, ra->rnti);
+
   // UL grant
 
   ra->msg3_TPC = tpc_command;
