@@ -156,7 +156,7 @@ void multipath_channel(channel_desc_t *desc,
 {
 
   int i,ii,j,l;
-  struct complex rx_tmp,tx;
+  struct complexd rx_tmp,tx;
 
   double path_loss = pow(10,desc->path_loss_dB/20);
   int dd;
