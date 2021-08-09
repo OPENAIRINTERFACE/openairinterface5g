@@ -51,6 +51,7 @@ Description Defines functions used to handle EPS bearer contexts.
 #include "assertions.h"
 #include "pdcp.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "executables/softmodem-common.h"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -262,8 +263,7 @@ int esm_ebr_context_create(
                 netmask = 32;
                 strcpy(broadcast, ipv4_addr);
               }
-
-              res = sprintf(command_line,
+              LOG_I(NAS, "Melissa Elkadi setting commandline string: "
                             "ip address add %s/%d broadcast %s dev %s%d && "
                             "ip link set %s%d up && "
                             "ip rule add from %s/32 table %d && "
@@ -276,26 +276,67 @@ int esm_ebr_context_create(
                             ipv4_addr, ueid + 10000,
                             UE_NAS_USE_TUN ? "oaitun_ue" : "oip",
                             ueid + 1, ueid + 10000);
+              if (get_softmodem_params()->nsa == 0)
+              {
+                res = sprintf(command_line,
+                              "ip address add %s/%d broadcast %s dev %s%d && "
+                              "ip link set %s%d up && "
+                              "ip rule add from %s/32 table %d && "
+                              "ip rule add to %s/32 table %d && "
+                              "ip route add default dev %s%d table %d",
+                              ipv4_addr, netmask, broadcast,
+                              UE_NAS_USE_TUN ? "oaitun_ue" : "oip", ueid + 1,
+                              UE_NAS_USE_TUN ? "oaitun_ue" : "oip", ueid + 1,
+                              ipv4_addr, ueid + 10000,
+                              ipv4_addr, ueid + 10000,
+                              UE_NAS_USE_TUN ? "oaitun_ue" : "oip",
+                              ueid + 1, ueid + 10000);
 
-              if ( res<0 ) {
-                LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
-              }
+                if ( res<0 ) {
+                  LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
+                }
 
-              LOG_TRACE(INFO, "ESM-PROC  - executing %s ",
+                /* Calling system() here disrupts UE's realtime processing in some cases.
+                * This may be because of the call to fork(), which, for some
+                * unidentified reason, interacts badly with other (realtime) threads.
+                * background_system() is a replacement mechanism relying on a
+                * background process that does the system() and reports result to
+                * the parent process (lte-softmodem, oaisim, ...). The background
+                * process is created very early in the life of the parent process.
+                * The processes interact through standard pipes. See
+                * common/utils/system.c for details.
+                */
+
+                LOG_TRACE(INFO, "Melissa Elkadi ESM-PROC  - executing %s ",
                         command_line);
+                if (background_system(command_line) != 0)
+                {
+                  LOG_TRACE(ERROR, "ESM-PROC - failed command '%s'", command_line);
+                }
+              }
+              else if (get_softmodem_params()->nsa) {
+                res = sprintf(command_line,
+                              "ip address add %s/%d broadcast %s dev %s%d && "
+                              "ip link set %s%d up && "
+                              "ip rule add from %s/32 table %d && "
+                              "ip rule add to %s/32 table %d && "
+                              "ip route add default dev %s%d table %d",
+                              ipv4_addr, netmask, broadcast,
+                              UE_NAS_USE_TUN ? "oaitun_nru" : "oip", ueid + 1,
+                              UE_NAS_USE_TUN ? "oaitun_nru" : "oip", ueid + 1,
+                              ipv4_addr, ueid + 10000,
+                              ipv4_addr, ueid + 10000,
+                              UE_NAS_USE_TUN ? "oaitun_nru" : "oip",
+                              ueid + 1, ueid + 10000);
 
-              /* Calling system() here disrupts UE's realtime processing in some cases.
-               * This may be because of the call to fork(), which, for some
-               * unidentified reason, interacts badly with other (realtime) threads.
-               * background_system() is a replacement mechanism relying on a
-               * background process that does the system() and reports result to
-               * the parent process (lte-softmodem, oaisim, ...). The background
-               * process is created very early in the life of the parent process.
-               * The processes interact through standard pipes. See
-               * common/utils/system.c for details.
-               */
-              if (background_system(command_line) != 0)
-                LOG_TRACE(ERROR, "ESM-PROC - failed command '%s'", command_line);
+                if ( res<0 ) {
+                  LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
+                }
+                LOG_I(NAS, "Melissa Elkadi, sending NAS_OAI_TUN_NSA msg to LTE UE via itti\n");
+                MessageDef *msg_p = itti_alloc_new_message(TASK_NAS_UE, 0, NAS_OAI_TUN_NSA);
+                memcpy(NAS_OAI_TUN_NSA(msg_p).buffer, command_line, sizeof(NAS_OAI_TUN_NSA(msg_p).buffer));
+                itti_send_msg_to_task(TASK_RRC_UE, 0, msg_p);
+              }
 
               break;
 

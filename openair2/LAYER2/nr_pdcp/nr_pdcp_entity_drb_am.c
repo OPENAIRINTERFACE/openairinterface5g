@@ -25,13 +25,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common/utils/LOG/log.h"
+#include "assertions.h"
 
 void nr_pdcp_entity_drb_am_recv_pdu(nr_pdcp_entity_t *_entity, char *buffer, int size)
 {
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
   int sn;
 
-  if (size < 3) abort();
+  if (size < 3) {
+    LOG_I(PDCP, "Size < 3. Size = %d. No data, so discarding.", size);
+    return;
+  }
 
   if (!(buffer[0] & 0x80))
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);

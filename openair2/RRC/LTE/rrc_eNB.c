@@ -4606,10 +4606,10 @@ rrc_eNB_process_MeasurementReport(
 
         memcpy(X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer,enc_buf,enc_size);
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).rrc_buffer_size = enc_size;
-        #if 0 //Melissa: We hacked this:
+
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId
           = measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId;
-        #endif
+
         X2AP_ENDC_SGNB_ADDITION_REQ(msg).target_physCellId = 0;
         //For the moment we have a single E-RAB which will be the one to be added to the gNB
         //Not sure how to select bearers to be added if there are multiple.
@@ -7703,7 +7703,7 @@ rrc_eNB_decode_dcch(
           /*FK: left the condition as is for the case MME is used (S1 mode) but setting  dedicated_DRB = 1 otherwise (noS1 mode) so that no second RRCReconfiguration message activationg more DRB is sent as this causes problems with the nasmesh driver.*/
           int flexran_agent_handover = 0;
 
-          if (1) { //Melissa: This is a hack. We are bypassing EPC mode here.
+          if (1) { //Melissa: This is a hack. We are bypassing EPC mode here. if(EPC_MODE_ENABLED)
             if (ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
               dedicated_DRB = 1;
               LOG_I(RRC,

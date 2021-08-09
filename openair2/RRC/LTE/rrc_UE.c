@@ -2057,6 +2057,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
           NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.data = pdu_buffer;
           itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
         }
+        LOG_I(RRC, "Melissa Elkadi, we have sent NAS_CONN_ESTABLI_CNF to NAS layer via itti!\n");
 
         free (r_r8->dedicatedInfoNASList);
       }
@@ -2513,7 +2514,8 @@ rrc_ue_decode_dcch(
                 // Save ueCapabilityEnquiry so we can use in nsa mode after nrUE response is received
                 UE_RRC_INFO *info = &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_indexP];
                 if (info->dl_dcch_msg != NULL) {
-                  SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, info->dl_dcch_msg, ASFM_FREE_EVERYTHING);
+                  info->dl_dcch_msg = NULL;
+                  //SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, info->dl_dcch_msg, ASFM_FREE_EVERYTHING); Melissa
                 }
                 info->dl_dcch_msg = dl_dcch_msg;
                 dl_dcch_msg = NULL;
@@ -2528,7 +2530,8 @@ rrc_ue_decode_dcch(
               // Save ueCapabilityEnquiry so we can use in nsa mode after nrUE response is received
               UE_RRC_INFO *info = &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_indexP];
               if (info->dl_dcch_msg != NULL) {
-                SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, info->dl_dcch_msg, ASFM_FREE_EVERYTHING);
+                info->dl_dcch_msg = NULL;
+                //SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, info->dl_dcch_msg, ASFM_FREE_EVERYTHING); Melissa
               }
               info->dl_dcch_msg = dl_dcch_msg;
               dl_dcch_msg = NULL;
@@ -4621,7 +4624,7 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
             if (is_state_connected && is_t304_inactive && have_meas_flag) {
               LOG_I(RRC,"[UE %d] Frame %d: Triggering generation of Meas Report for NR_r15. count = %d\n",
                     ctxt_pP->module_id, ctxt_pP->frame, ue->subframeCount);
-
+              usleep(200000);
               if (ue->measReportList[i][j] == NULL) {
                 ue->measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
               }
@@ -5060,6 +5063,16 @@ void *rrc_ue_task( void *args_p ) {
         AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
         break;
       }
+      case NAS_OAI_TUN_NSA:
+      {
+        LOG_I(NAS, "Melissa Elkadi Received %s: length %lu. About to send this to the NR UE\n", ITTI_MSG_NAME (msg_p),
+              sizeof(NAS_OAI_TUN_NSA (msg_p).buffer));
+        char buffer[RRC_BUF_SIZE];
+        memcpy(buffer, NAS_OAI_TUN_NSA(msg_p).buffer, sizeof(buffer));
+        nsa_sendmsg_to_nrue(buffer, sizeof(buffer), OAI_TUN_IFACE_NSA);
+        break;
+      }
+
 
       case NAS_KENB_REFRESH_REQ:
         memcpy((void *)UE_rrc_inst[ue_mod_id].kenb, (void *)NAS_KENB_REFRESH_REQ(msg_p).kenb, sizeof(UE_rrc_inst[ue_mod_id].kenb));
