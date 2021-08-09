@@ -894,7 +894,7 @@ void phy_scope_nrUE(OAI_phy_scope_t *form,
 static void *nrUEscopeThread(void *arg) {
   PHY_VARS_NR_UE *ue=(PHY_VARS_NR_UE *)arg;
   size_t stksize;
-  pthread_attr_t atr;
+  pthread_attr_t atr={0};
   pthread_attr_getstacksize(&atr, &stksize);
   pthread_attr_setstacksize(&atr,32*1024*1024 );
   int fl_argc=1;

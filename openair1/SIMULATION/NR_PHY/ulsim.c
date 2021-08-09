@@ -83,7 +83,6 @@ double cpuf;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
-msc_interface_t msc_interface;
 uint32_t N_RB_DL = 106;
 
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
@@ -286,7 +285,7 @@ int main(int argc, char **argv)
   int gNB_id = 0;
   int ap;
   int tx_offset;
-  int32_t txlev;
+  int32_t txlev=0;
   int start_rb = 0;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
   float target_error_rate = 0.01;

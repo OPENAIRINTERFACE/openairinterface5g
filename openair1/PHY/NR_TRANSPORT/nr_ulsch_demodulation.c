@@ -630,7 +630,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
   unsigned short rb;
   unsigned char aatx,aarx;
   __m128i *ul_ch128,*ul_ch128_2,*ul_ch_mag128,*ul_ch_mag128b,*rxdataF128,*rxdataF_comp128,*rho128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0};
   QAM_amp128b = _mm_setzero_si128();
 
   for (aatx=0; aatx<nrOfLayers; aatx++) {

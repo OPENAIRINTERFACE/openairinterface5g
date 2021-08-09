@@ -87,7 +87,6 @@ uint16_t sl_ahead=0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
-msc_interface_t msc_interface;
 uint32_t N_RB_DL = 106;
 
 // dummy functions

@@ -105,8 +105,6 @@ int config_sync_var=-1;
 
 
 RAN_CONTEXT_t RC;
-volatile int             start_eNB = 0;
-volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
 

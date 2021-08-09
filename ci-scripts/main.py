@@ -799,7 +799,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CiTestObj.Perform_X2_Handover(HTML,RAN,EPC)
 				elif action == 'Build_PhySim':
 					HTML=ldpc.Build_PhySim(HTML,CONST)
-					if ldpc.exitStatus==1:sys.exit()
+					if ldpc.exitStatus==1:
+						RAN.prematureExit = False
 				elif action == 'Run_PhySim':
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				elif action == 'Build_Image':

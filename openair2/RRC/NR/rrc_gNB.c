@@ -1644,6 +1644,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
     for ( j = 0, i = 0; i < NB_RB_MAX; i++) {
       if (ue_context_pP->ue_context.pduSession[i].status == PDU_SESSION_STATUS_ESTABLISHED || ue_context_pP->ue_context.pduSession[i].status == PDU_SESSION_STATUS_DONE) {
         create_tunnel_req.pdusession_id[j]   = ue_context_pP->ue_context.pduSession[i].param.pdusession_id;
+        create_tunnel_req.incoming_rb_id[j]  = i+1;
         create_tunnel_req.upf_NGu_teid[j]  = ue_context_pP->ue_context.pduSession[i].param.gtp_teid;
         memcpy(create_tunnel_req.upf_addr[j].buffer,
                ue_context_pP->ue_context.pduSession[i].param.upf_addr.buffer,

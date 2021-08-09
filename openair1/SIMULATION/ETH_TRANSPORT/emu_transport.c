@@ -231,7 +231,6 @@ void clear_UE_transport_info(uint8_t nb_UE)
 
   for (UE_id=0; UE_id<nb_UE; UE_id++)
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      UE_transport_info_TB_index[UE_id][CC_id]=0;
       memset((void *)&UE_transport_info[UE_id][CC_id].cntl,0,sizeof(UE_cntl));
     }
 

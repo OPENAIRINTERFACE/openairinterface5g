@@ -54,7 +54,6 @@
 #   define X2AP_ENB_REGISTER_RETRY_DELAY   10
 
 #include "openair1/PHY/INIT/phy_init.h"
-extern unsigned char NB_MCE_INST;
 
 extern RAN_CONTEXT_t RC;
 
