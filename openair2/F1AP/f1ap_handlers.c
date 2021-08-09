@@ -91,8 +91,9 @@ int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
   }
 
   /* Checking procedure Code and direction of message */
-  if (pdu.choice.initiatingMessage->procedureCode >= sizeof(f1ap_message_processing_t) / (3 * sizeof(
-        f1ap_message_processing_t))
+  if (pdu.choice.initiatingMessage->procedureCode >=
+      sizeof(f1ap_messages_processing) /
+      (3 * sizeof(f1ap_message_processing_t))
       || (pdu.present > F1AP_F1AP_PDU_PR_unsuccessfulOutcome)) {
     LOG_E(F1AP, "[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
           assoc_id, pdu.choice.initiatingMessage->procedureCode, pdu.present);

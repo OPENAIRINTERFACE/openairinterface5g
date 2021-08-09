@@ -300,16 +300,14 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
   /* mandatory */
   /* c5. RRC VERSION */
-  if(RC.nrrrc) {
-    asn1cSequenceAdd(f1Setup->protocolIEs.list, F1AP_F1SetupRequestIEs_t, ie2);
-    ie2->id                        = F1AP_ProtocolIE_ID_id_GNB_DU_RRC_Version;
-    ie2->criticality               = F1AP_Criticality_reject;
-    ie2->value.present             = F1AP_F1SetupRequestIEs__value_PR_RRC_Version;
-    ie2->value.choice.RRC_Version.latest_RRC_Version.buf=calloc(1,sizeof(char));
-    ie2->value.choice.RRC_Version.latest_RRC_Version.buf[0] = 0xe0;
-    ie2->value.choice.RRC_Version.latest_RRC_Version.size = 1;
-    ie2->value.choice.RRC_Version.latest_RRC_Version.bits_unused = 5;
-  }
+  asn1cSequenceAdd(f1Setup->protocolIEs.list, F1AP_F1SetupRequestIEs_t, ie2);
+  ie2->id                        = F1AP_ProtocolIE_ID_id_GNB_DU_RRC_Version;
+  ie2->criticality               = F1AP_Criticality_reject;
+  ie2->value.present             = F1AP_F1SetupRequestIEs__value_PR_RRC_Version;
+  ie2->value.choice.RRC_Version.latest_RRC_Version.buf=calloc(1,sizeof(char));
+  ie2->value.choice.RRC_Version.latest_RRC_Version.buf[0] = 0xe0;
+  ie2->value.choice.RRC_Version.latest_RRC_Version.size = 1;
+  ie2->value.choice.RRC_Version.latest_RRC_Version.bits_unused = 5;
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
@@ -474,6 +472,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
   } // for IE
 
   AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
+  LOG_D(F1AP,"F1AP: num_cells_to_activate %d\n",num_cells_to_activate);
   F1AP_SETUP_RESP (msg_p).num_cells_to_activate = num_cells_to_activate;
 
   // tmp
@@ -481,10 +480,19 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
   for (int i=0; i<num_cells_to_activate; i++)
     AssertFatal(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI > 0, "System Information %d is missing",i);
 
+  MSC_LOG_RX_MESSAGE(
+    MSC_F1AP_DU,
+    MSC_F1AP_CU,
+    0,
+    0,
+    MSC_AS_TIME_FMT" DU_handle_F1_SETUP_RESPONSE successfulOutcome assoc_id %d",
+    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+    assoc_id);
   LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message\n");
   itti_send_msg_to_task(TASK_F1APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
   return 0;
 }
+
 // SETUP FAILURE
 int DU_handle_F1_SETUP_FAILURE(instance_t instance,
                                uint32_t assoc_id,
@@ -509,9 +517,12 @@ int DU_handle_F1_SETUP_FAILURE(instance_t instance,
 
   return 0;
 }
+
+
 /*
     gNB-DU Configuration Update
 */
+
 //void DU_send_gNB_DU_CONFIGURATION_UPDATE(F1AP_GNBDUConfigurationUpdate_t *GNBDUConfigurationUpdate) {
 int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
                                         instance_t du_mod_idP,
@@ -749,14 +760,16 @@ int DU_handle_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
     F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
+
 int DU_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
     uint32_t assoc_id,
     uint32_t stream,
     F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
-int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
 
+
+int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
     uint32_t assoc_id,
     uint32_t stream,
     F1AP_F1AP_PDU_t *pdu) {
@@ -894,6 +907,14 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
   AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
   LOG_D(F1AP,"F1AP: num_cells_to_activate %d\n",num_cells_to_activate);
   F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).num_cells_to_activate = num_cells_to_activate;
+  MSC_LOG_RX_MESSAGE(
+    MSC_F1AP_DU,
+    MSC_F1AP_CU,
+    0,
+    0,
+    MSC_AS_TIME_FMT" DU_handle_GNB_CU_CONFIGURATION_UPDATE initiatingMessage assoc_id %d",
+    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+    assoc_id);
   LOG_D(F1AP, "Sending F1AP_GNB_CU_CONFIGURATION_UPDATE ITTI message \n");
   itti_send_msg_to_task(TASK_F1APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
   return 0;
@@ -904,6 +925,7 @@ int DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
   AssertFatal(1==0,"received gNB CU CONFIGURATION UPDATE FAILURE with cause %d\n",
               GNBCUConfigurationUpdateFailure->cause);
 }
+
 int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
     f1ap_gnb_cu_configuration_update_acknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
   AssertFatal(GNBCUConfigurationUpdateAcknowledge->num_cells_failed_to_be_activated == 0,
@@ -947,10 +969,13 @@ int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
   f1ap_itti_send_sctp_data_req(false, instance, buffer, len, 0);
   return 0;
 }
+
+
 int DU_send_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
     F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest) {
   AssertFatal(0, "Not implemented yet\n");
 }
+
 int DU_handle_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
     uint32_t assoc_id,
     uint32_t stream,
