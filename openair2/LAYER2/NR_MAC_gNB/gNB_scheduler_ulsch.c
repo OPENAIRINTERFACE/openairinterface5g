@@ -32,7 +32,6 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
-#include "nfapi/oai_integration/vendor_ext.h"
 #include <openair2/UTIL/OPT/opt.h>
 
 
@@ -1346,11 +1345,9 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->SR = false;
 
     int8_t harq_id = sched_pusch->ul_harq_pid;
-
     if (harq_id < 0) {
       /* PP has not selected a specific HARQ Process, get a new one */
       harq_id = sched_ctrl->available_ul_harq.head;
-      //printf("SFN/slot %d.%d harq id = %d \n", frame, slot, harq_id);
       AssertFatal(harq_id >= 0,
                   "no free HARQ process available for UE %d\n",
                   UE_id);
@@ -1358,8 +1355,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       sched_pusch->ul_harq_pid = harq_id;
     } else {
       /* PP selected a specific HARQ process. Check whether it will be a new
-      * transmission or a retransmission, and remove from the corresponding
-      * list */
+       * transmission or a retransmission, and remove from the corresponding
+       * list */
       if (sched_ctrl->ul_harq_processes[harq_id].round == 0)
         remove_nr_list(&sched_ctrl->available_ul_harq, harq_id);
       else
@@ -1370,7 +1367,6 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     add_tail_nr_list(&sched_ctrl->feedback_ul_harq, harq_id);
     cur_harq->feedback_slot = sched_pusch->slot;
     cur_harq->is_waiting = true;
-    
 
     int rnti_types[2] = { NR_RNTI_C, 0 };
 

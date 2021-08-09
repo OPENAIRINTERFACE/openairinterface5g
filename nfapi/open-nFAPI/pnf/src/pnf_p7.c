@@ -940,7 +940,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 
 	//We align the pnf_p7 sfn/slot with tx sfn/slot, and vnf is synced with pnf_p7 sfn/slot. This is so that the scheduler runs slot_ahead from rx thread.
 
-	pnf_p7->sfn = sfn_tx; //gokul
+	pnf_p7->sfn = sfn_tx;
 	pnf_p7->slot = slot_tx; 
 
 	uint32_t rx_slot_dec = NFAPI_SFNSLOT2DEC(sfn, slot);
@@ -1142,7 +1142,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 		else
 		{
 			pnf_p7->timing_info_ms_counter++;
-		} //gokul
+		}
 
 	}
 
@@ -1772,7 +1772,7 @@ void pnf_handle_ul_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
                         struct timespec t;
                         clock_gettime(CLOCK_MONOTONIC, &t);
 
-                        //NFAPI_TRACE(NFAPI_TRACE_INFO,"%s() %ld.%09ld POPULATE UL_TTI_REQ current tx sfn/slot:%d.%d p7 msg sfn/slot: %d.%d buffer_index:%d\n", __FUNCTION__, t.tv_sec, t.tv_nsec, pnf_p7->sfn,pnf_p7->slot, req->SFN, req->Slot, buffer_index);
+                        NFAPI_TRACE(NFAPI_TRACE_INFO,"%s() %ld.%09ld POPULATE UL_TTI_REQ current tx sfn/slot:%d.%d p7 msg sfn/slot: %d.%d buffer_index:%d\n", __FUNCTION__, t.tv_sec, t.tv_nsec, pnf_p7->sfn,pnf_p7->slot, req->SFN, req->Slot, buffer_index);
 
 			if(pnf_p7->slot_buffer[buffer_index].ul_tti_req != 0)
 			{

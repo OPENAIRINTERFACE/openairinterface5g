@@ -99,8 +99,7 @@ struct timespec timespec_sub(struct timespec lhs, struct timespec rhs)
 int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 {	
 	struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
-	uint8_t temp_slot;
-	uint16_t vnf_frame; uint8_t vnf_slot;
+	uint8_t prev_slot = 0;
 	if(config == 0)
 		return -1;
 
@@ -174,7 +173,6 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 	struct timespec slot_start;
 //	clock_gettime(CLOCK_MONOTONIC, &sf_start);
 	clock_gettime(CLOCK_MONOTONIC, &slot_start);
-	long millisecond = slot_start.tv_nsec / 1e6; //Check if we have to change
 	//long millisecond = slot_start.tv_nsec / 0.5e6;
 //	sf_start = timespec_add(sf_start, sf_duration);
 	slot_start = timespec_add(slot_start, slot_duration);
@@ -216,7 +214,7 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 			pselect_timeout = timespec_sub(slot_start, pselect_start);
 		}
 
-		if(setup_time > 10 && temp_slot != gNB->UL_INFO.slot){
+		if(setup_time > 10 && prev_slot != gNB->UL_INFO.slot){
 
 			//Call the scheduler
 			pthread_mutex_lock(&gNB->UL_INFO_mutex);
@@ -224,7 +222,7 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 			gNB->UL_INFO.CC_id     = gNB->CC_id;
 			gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
 			pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-			temp_slot = gNB->UL_INFO.slot;
+			prev_slot = gNB->UL_INFO.slot;
 		}
 
 		selectRetval = pselect(maxSock+1, &rfds, NULL, NULL, &pselect_timeout, NULL);
@@ -266,8 +264,6 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 				curr->slot++;
 				}
 				//printf("Frame = %d, slot = %d in VNF main loop. \n",curr->sfn,curr->slot);
-				vnf_frame = curr->sfn; 
-				vnf_slot = curr->slot;
 
 				//vnf_nr_sync(vnf_p7, curr);	
 	

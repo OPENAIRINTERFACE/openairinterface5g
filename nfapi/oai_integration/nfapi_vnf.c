@@ -1014,31 +1014,6 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
   return 1;
 }
 
-// void add_slot(uint16_t *frameP, uint16_t *slotP, int offset)
-// {
-// 	uint16_t num_slots = 20; // set based on numerlogy (fixing for 1)
-
-//     *frameP    = (*frameP + ((*slotP + offset) / num_slots))%1024; 
-
-//     *slotP = ((*slotP + offset) % num_slots);
-// }
-
-// uint32_t sfnslot_add_slot(uint16_t sfn, uint16_t slot, int offset)
-// {
-//   uint32_t new_sfnslot;
-// //   uint16_t sfn = NFAPI_SFNSLOT2SFN(sfnslot);
-// //   uint16_t slot  = NFAPI_SFNSLOT2SLOT(sfnslot);
-
-//   //printf("%s() sfn:%u sf:%u\n", __FUNCTION__, sfn, sf);
-//   add_slot(&sfn, &slot, offset);
-
-//   new_sfnslot = sfn<<6|slot;
-
-//   //printf("%s() sfn:%u sf:%u offset:%d sfnsf:%d(DEC:%d) new:%d(DEC:%d)\n", __FUNCTION__, sfn, sf, offset, sfnsf, NFAPI_SFNSF2DEC(sfnsf), new_sfnsf, NFAPI_SFNSF2DEC(new_sfnsf));
-
-//   return new_sfnslot;
-// }
-
 //NR phy indication
 
 int phy_nr_slot_indication(nfapi_nr_slot_indication_scf_t *ind) {
@@ -1053,6 +1028,8 @@ int phy_nr_slot_indication(nfapi_nr_slot_indication_scf_t *ind) {
 	gNB->UL_INFO.slot      = vnf_slot;	
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
   LOG_D(MAC, "VNF SFN/Slot %d.%d \n", gNB->UL_INFO.frame, gNB->UL_INFO.slot);
+
+  return 1;
 }
 
 int phy_nr_crc_indication(nfapi_nr_crc_indication_t *ind) {

@@ -1475,7 +1475,7 @@ typedef enum {
 
 //section 3.4.7 rx_data_indication
 
-///table 3-61
+//table 3-61
 
 typedef struct 
 {

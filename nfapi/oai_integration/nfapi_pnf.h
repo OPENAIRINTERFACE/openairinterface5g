@@ -19,8 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#if !defined(NFAPI_PNF_H__)
-#define NFAPI_PNF_H__
+
 extern nfapi_ue_release_request_body_t release_rntis;
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port);
@@ -28,4 +27,12 @@ void configure_nr_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_add
 
 void oai_subframe_ind(uint16_t sfn, uint16_t sf);
 void handle_nr_slot_ind(uint16_t sfn, uint16_t slot);
-#endif
+uint32_t sfnslot_add_slot(uint16_t sfn, uint16_t slot, int offset);
+
+int oai_nfapi_nr_slot_indication(nfapi_nr_slot_indication_scf_t *ind);
+int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind);
+int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind);
+int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind);
+int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind);
+int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind);
+

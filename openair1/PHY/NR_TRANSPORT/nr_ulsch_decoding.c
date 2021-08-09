@@ -431,7 +431,7 @@ void nr_processULSegment(void* arg) {
 
   if (check_crc((uint8_t*)llrProcBuf,length_dec,ulsch_harq->F,crc_type)) {
 #ifdef PRINT_CRC_CHECK
-      LOG_D(PHY, "Segment %d CRC OK\n",r);
+      LOG_I(PHY, "Segment %d CRC OK\n",r);
 #endif
     rdata->decodeIterations = no_iteration_ldpc;
   } else {

@@ -1036,7 +1036,6 @@ static NR_UE_harq_t *find_harq(module_id_t mod_id, frame_t frame, sub_frame_t sl
           harq->feedback_slot,
           frame,
           slot);
-    //printf("handling harq \n");
     remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
     handle_dl_harq(mod_id, UE_id, pid, 0);
     pid = sched_ctrl->feedback_dl_harq.head;
@@ -1076,14 +1075,12 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-      //printf("handle uci 0_1 find harq SFN/slot %d.%d \n",frame,slot);
       NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
       if (!harq)
         break;
       DevAssert(harq->is_waiting);
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      //printf("handling harq \n");
       handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
     }
   }
@@ -1152,6 +1149,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   }
 }
 
+
 // function to update pucch scheduling parameters in UE list when a USS DL is scheduled
 // this function returns an index to NR_sched_pucch structure
 // currently this structure contains PUCCH0 at index 0 and PUCCH2 at index 1
@@ -1193,7 +1191,6 @@ int nr_acknack_scheduling(int mod_id,
               __func__,
               pucch->csi_bits);
   /* if the currently allocated PUCCH of this UE is full, allocate it */
-
   if (pucch->dai_c == 2) {
     /* advance the UL slot information in PUCCH by one so we won't schedule in
      * the same slot again */
@@ -1223,7 +1220,6 @@ int nr_acknack_scheduling(int mod_id,
   /* if the UE's next PUCCH occasion is after the possible UL slots (within the
    * same frame) or wrapped around to the next frame, then we assume there is
    * no possible PUCCH allocation anymore */
-
   if ((pucch->frame == frame
        && (pucch->ul_slot >= first_ul_slot_tdd + nr_ulmix_slots))
       || (pucch->frame == frame + 1))
@@ -1235,10 +1231,8 @@ int nr_acknack_scheduling(int mod_id,
   get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
 
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
-
   if (pucch->dai_c > 0) {
     /* this UE already has a PUCCH occasion */
-    LOG_I(MAC,"pucch->frame = %d,frame=%d \n",pucch->frame,frame);
     DevAssert(pucch->frame == frame);
 
     // Find the right timing_indicator value.

@@ -1473,7 +1473,7 @@ void vnf_handle_nr_slot_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf
 		{
 			if(vnf_p7->_public.nr_slot_indication)
 			{
-				(vnf_p7->_public.nr_slot_indication)(&ind); //gokul
+				(vnf_p7->_public.nr_slot_indication)(&ind);
 			}
 		}
 
@@ -1982,7 +1982,7 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 					phy->zero_count,
 					phy->in_sync ? "IN_SYNC" : "OUT_OF_SYNC");*/
 
-				phy->sfn = new_sfn; 
+				phy->sfn = new_sfn;
 				phy->slot = new_slot;
 			}
 		}
@@ -1998,7 +1998,7 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 		phy->previous_t1 = ind.t1;
 		phy->previous_t2 = ind.t2;
 	}
- }
+}
 
 void vnf_handle_timing_info(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 {
@@ -2034,9 +2034,7 @@ void vnf_handle_timing_info(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
 
 
 void vnf_nr_handle_timing_info(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
-{	
-	uint8_t uplink_slots[6] = {7,8,9,17,18,19};
-	uint8_t is_uplink_slot = 0;
+{
 	if (pRecvMsg == NULL || vnf_p7 == NULL)
 	{
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "vnf_handle_timing_info: NULL parameters\n");
@@ -2055,20 +2053,16 @@ void vnf_nr_handle_timing_info(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7)
           //int16_t vnf_pnf_sfnsf_delta = NFAPI_SFNSF2DEC(vnf_p7->p7_connections[0].sfn_sf) - NFAPI_SFNSF2DEC(ind.last_sfn_sf);
             int16_t vnf_pnf_sfnslot_delta = NFAPI_SFNSLOT2DEC(vnf_p7->p7_connections[0].sfn,vnf_p7->p7_connections[0].slot) - NFAPI_SFNSLOT2DEC(ind.last_sfn,ind.last_slot);
           //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() PNF:SFN/SF:%d VNF:SFN/SF:%d deltaSFNSF:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(ind.last_sfn_sf), NFAPI_SFNSF2DEC(vnf_p7->p7_connections[0].sfn_sf), vnf_pnf_sfnsf_delta);
+
           // Panos: Careful here!!! Modification of the original nfapi-code
           //if (vnf_pnf_sfnsf_delta>1 || vnf_pnf_sfnsf_delta < -1)
 		  //printf("VNF-PNF delta - %d", vnf_pnf_sfnslot_delta);
-		  for (int i = 0; i < 6; i++){
-			  if (vnf_p7->p7_connections[0].slot == uplink_slots[i])
-				is_uplink_slot = 1;
-		  }
-          if ((vnf_pnf_sfnslot_delta>0 || vnf_pnf_sfnslot_delta < 0) && is_uplink_slot == 0)
+          if (vnf_pnf_sfnslot_delta>0 || vnf_pnf_sfnslot_delta < 0)
           {
             NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() LARGE SFN/SF DELTA between PNF and VNF delta:%d VNF:%d PNF:%d\n\n\n\n\n\n\n\n\n", __FUNCTION__, vnf_pnf_sfnslot_delta,NFAPI_SFNSLOT2DEC(vnf_p7->p7_connections[0].sfn,vnf_p7->p7_connections[0].slot),NFAPI_SFNSLOT2DEC(ind.last_sfn,ind.last_slot)) ;
             // Panos: Careful here!!! Modification of the original nfapi-code
-              vnf_p7->p7_connections[0].sfn = ind.last_sfn;
-			  vnf_p7->p7_connections[0].slot = ind.last_slot;
-			  //printf("VNF SFN/slot modified");
+            //  vnf_p7->p7_connections[0].sfn = ind.last_sfn;
+			//  vnf_p7->p7_connections[0].slot = ind.last_slot;
           }
         }
 }

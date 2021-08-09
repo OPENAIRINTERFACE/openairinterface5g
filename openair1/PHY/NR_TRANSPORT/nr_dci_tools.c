@@ -211,8 +211,8 @@ int16_t find_nr_pdcch(int frame,int slot, PHY_VARS_gNB *gNB,find_type_t type) {
   for (i=0; i<NUMBER_OF_NR_PDCCH_MAX; i++) {
     LOG_D(PHY,"searching for frame.slot %d.%d : pdcch_index %d frame.slot %d.%d, first_free_index %d\n", frame,slot,i,gNB->pdcch_pdu[i].frame,gNB->pdcch_pdu[i].slot,first_free_index);
     if ((gNB->pdcch_pdu[i].frame == frame) &&
-        (gNB->pdcch_pdu[i].slot==slot))       {return i;}
-    else if ( gNB->pdcch_pdu[i].frame==-1 && first_free_index==-1) {first_free_index=i;}
+        (gNB->pdcch_pdu[i].slot==slot))       return i;
+    else if ( gNB->pdcch_pdu[i].frame==-1 && first_free_index==-1) first_free_index=i;
   }
   if (type == SEARCH_EXIST) return -1;
 
@@ -227,7 +227,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
 
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu_rel15;
   NR_gNB_DLSCH_t *dlsch; 
-  //printf("find pdcch from nr_fill_dci \n");
+
   int pdcch_id = find_nr_pdcch(frame,slot,gNB,SEARCH_EXIST_OR_FREE);
   AssertFatal(pdcch_id>=0 && pdcch_id<NUMBER_OF_NR_PDCCH_MAX,"Cannot find space for PDCCH, exiting\n");
   memcpy((void*)&gNB->pdcch_pdu[pdcch_id].pdcch_pdu,(void*)pdcch_pdu,sizeof(*pdcch_pdu));
@@ -285,7 +285,7 @@ void nr_fill_ul_dci(PHY_VARS_gNB *gNB,
 		    nfapi_nr_ul_dci_request_pdus_t *pdcch_pdu) {
 
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-  //printf("find ul dci from fill_ul_dci \n");
+
   int pdcch_id = find_nr_ul_dci(frame,slot,gNB,SEARCH_EXIST_OR_FREE);
   AssertFatal(pdcch_id>=0 && pdcch_id<NUMBER_OF_NR_PDCCH_MAX,"Cannot find space for UL PDCCH, exiting\n");
   memcpy((void*)&gNB->ul_pdcch_pdu[pdcch_id].pdcch_pdu,(void*)pdcch_pdu,sizeof(*pdcch_pdu));

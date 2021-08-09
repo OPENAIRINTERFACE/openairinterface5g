@@ -37,8 +37,6 @@
 #include "nfapi_pnf.h"
 #include "common/ran_context.h"
 #include "openair2/PHY_INTERFACE/phy_stub_UE.h"
-//#include "openair1/PHY/vars.h"
-extern RAN_CONTEXT_t RC;
 
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -67,6 +65,7 @@ extern RAN_CONTEXT_t RC;
 
 extern void phy_init_RU(RU_t *);
 extern int config_sync_var;
+extern RAN_CONTEXT_t RC;
 
 extern pthread_cond_t nfapi_sync_cond;
 extern pthread_mutex_t nfapi_sync_mutex;
@@ -110,8 +109,12 @@ extern void nr_fill_prach_ru(RU_t *ru,
                       int Slot,
                       nfapi_nr_prach_pdu_t *prach_pdu);
 
-
-
+int nfapi_pnf_p7_nr_slot_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_slot_indication_scf_t* ind);
+int nfapi_pnf_p7_nr_rx_data_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_rx_data_indication_t* ind);
+int nfapi_pnf_p7_nr_crc_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_crc_indication_t* ind);
+int nfapi_pnf_p7_nr_srs_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_srs_indication_t* ind);
+int nfapi_pnf_p7_nr_uci_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_uci_indication_t* ind);
+int nfapi_pnf_p7_nr_rach_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_rach_indication_t* ind);
 
 nfapi_tx_request_pdu_t *tx_request_pdu[1023][10][10]; // [frame][subframe][max_num_pdus]
 uint8_t nr_tx_pdus[32][16][4096];
@@ -1146,16 +1149,13 @@ int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
   
   //   LOG_D(PHY,"[PNF] HI_DCI0_REQUEST SFN/SF:%05d dci:%d hi:%d\n", NFAPI_SFNSF2DEC(req->sfn_sf), req->hi_dci0_request_body.number_of_dci, req->hi_dci0_request_body.number_of_hi);
 
-  //phy_info* phy = (phy_info*)(pnf_p7->user_data);
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
   if (proc ==NULL) 
     proc = &gNB->proc.L1_proc;
-  //int slot_tx = req->Slot + 6; //Ref for PNF is slot_rx, so align slot number with tx thread before passing UL_DCI info
+
   for (int i=0; i<req->numPdus; i++) {
-    //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d]\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
     if (req->ul_dci_pdu_list[i].PDUType == 0) {
-      //LOG_D(PHY,"[PNF] HI_DCI0_REQ sfn_sf:%d PDU[%d] - NFAPI_HI_DCI0_DCI_PDU_TYPE\n", NFAPI_SFNSF2DEC(req->sfn_sf), i);
-       nfapi_nr_ul_dci_request_pdus_t *ul_dci_req_pdu = &req->ul_dci_pdu_list[i]; 
+      nfapi_nr_ul_dci_request_pdus_t *ul_dci_req_pdu = &req->ul_dci_pdu_list[i]; 
       handle_nfapi_nr_ul_dci_pdu(gNB, req->SFN, req->Slot, ul_dci_req_pdu); 
     } 
     else {
@@ -2318,7 +2318,7 @@ void handle_nr_slot_ind(uint16_t sfn, uint16_t slot) {
     oai_nfapi_nr_slot_indication(ind); 
 
     //copy data from appropriate p7 slot buffers into channel structures for PHY processing
-    int slot_ret = nfapi_pnf_p7_slot_ind(p7_config_g, p7_config_g->phy_id, sfn, slot); 
+    nfapi_pnf_p7_slot_ind(p7_config_g, p7_config_g->phy_id, sfn, slot); 
 
     return;
 }

@@ -60,7 +60,7 @@
 
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
-uint8_t first_sched_entry = 1;
+uint8_t vnf_first_sched_entry = 1;
 
 void clear_mac_stats(gNB_MAC_INST *gNB) {
   memset((void*)gNB->UE_info.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
@@ -400,18 +400,19 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
 
-    //first entry
+    /*VNF first entry into scheduler. Since frame numbers for future_ul_tti_req of some future slots 
+    will not be set before we encounter them, set them here */
+
     if (NFAPI_MODE == NFAPI_MODE_VNF){
-      if(first_sched_entry == 1)
+      if(vnf_first_sched_entry == 1)
       {
-        printf("First sched entry at slot %d \n", slot);
         for (int i = 0; i<num_slots; i++){
           if(i < slot)
             gNB->UL_tti_req_ahead[CC_id][i].SFN = (frame + 1) % 1024;
           else
             gNB->UL_tti_req_ahead[CC_id][i].SFN = frame;
         }
-        first_sched_entry = 0;
+        vnf_first_sched_entry = 0;
       }
     }
   }
@@ -442,7 +443,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_prach(module_idP, f, s);
   }
 
-  // This schedule SR
+    // This schedule SR
   nr_sr_reporting(module_idP, frame, slot);
 
   // Schedule CSI-RS transmission
@@ -459,7 +460,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // This schedules the DCI for Uplink and subsequently PUSCH
-  
   nr_schedule_ulsch(module_idP, frame, slot);
 
   // This schedules the DCI for Downlink and PDSCH

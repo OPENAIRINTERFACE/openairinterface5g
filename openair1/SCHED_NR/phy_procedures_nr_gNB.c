@@ -148,15 +148,15 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);
 
-    for (int i=0; i<fp->Lmax; i++) {
-      if (gNB->ssb[i].active) {
-        nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[i].ssb_pdu);
-        gNB->ssb[i].active = false;
-      }
+  for (int i=0; i<fp->Lmax; i++) {
+    if (gNB->ssb[i].active) {
+      nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[i].ssb_pdu);
+      gNB->ssb[i].active = false;
     }
+  }
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,0);
-  //printf("find pdcch from TX func \n");
+
   int pdcch_pdu_id=find_nr_pdcch(frame,slot,gNB,SEARCH_EXIST);
   int ul_pdcch_pdu_id=find_nr_ul_dci(frame,slot,gNB,SEARCH_EXIST);
 
@@ -568,7 +568,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
-      LOG_D(PHY, "SFN/slot = %d.%d, pucch[%d]->active = %d \n", frame_rx, slot_rx, i,pucch->active);
       if ((pucch->active == 1) &&
 	       (pucch->frame == frame_rx) &&
 	       (pucch->slot == slot_rx) ) {
@@ -598,9 +597,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                            pucch_pdu);
 
           gNB->UL_INFO.uci_ind.num_ucis += 1;
-          //printf("SFN/slot %d.%d pucch active of index %d set to 0. \n", frame_rx, slot_rx, i);
           pucch->active = 0;
-          //printf("Decode pucch num ucis +=1 in %d.%d \n",frame_rx,slot_rx);
 	        break;
         case 2:
           num_ucis = gNB->UL_INFO.uci_ind.num_ucis;
@@ -617,7 +614,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                            pucch_pdu);
 
           gNB->UL_INFO.uci_ind.num_ucis += 1;
-          //printf("SFN/slot %d.%d pucch active of index %d set to 0. \n", frame_rx, slot_rx, i);
           pucch->active = 0;
           break;
         default:

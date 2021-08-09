@@ -60,7 +60,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
 
 ## P7 UL reception at VNF
 
-Through the infinite loop [while(vnf_p7->terminate == 0)] running in nfapi_nr_vnf_p7_start(), the VNF receives and unpacks the uplink indication message received on its socket. Based on the unpacked message, UL_INFO struct on the VNF side gets populated. The NR_UL_indication() function is then called at the VNF, which uses UL_INFO. 
+Through the infinite loop [while(vnf_p7->terminate == 0)] running in nfapi_nr_vnf_p7_start(), the VNF receives and unpacks the uplink indication message received on its socket. Based on the unpacked messages, UL_INFO struct on the VNF side gets populated. 
 
 ```
 
@@ -68,17 +68,6 @@ Through the infinite loop [while(vnf_p7->terminate == 0)] running in nfapi_nr_vn
 			if(FD_ISSET(vnf_p7->socket, &rfds))
 			{
 				vnf_nr_p7_read_dispatch_message(vnf_p7); 
-
-				// Call the scheduler
-				struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
-				pthread_mutex_lock(&gNB->UL_INFO_mutex);
-				gNB->UL_INFO.frame     = vnf_frame;
-				gNB->UL_INFO.slot      = vnf_slot;
-
-				gNB->UL_INFO.module_id = gNB->Mod_id;
-				gNB->UL_INFO.CC_id     = gNB->CC_id;
-				gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
-				pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 			}
 
 ```
@@ -87,7 +76,7 @@ vnf_nr_dispatch_p7_message() is the function that contains the switch on various
 
 ## P7 DL Transmission by VNF 
 
-DL messages are scheduled at the VNF, through NR_UL_indication() after processing of UL_INFO. The function performing the scheduling of channels (and consequently p7 messages in nFAPI) is gNB_dlsch_ulsch_scheduler(). 
+DL messages are scheduled at the VNF, through NR_UL_indication(). NR_UL_indication() is called when the SFN/slot in the UL_info structure changes (this acts as a trigger for next slot processing, instead of running a separate clock at the VNF). The SFN/slot at the VNF in UL_info is updated using the slot_indication uplink p7 message, which is sent at the beginning of every slot by the PNF. The slot_indication message contains SFN/slot of the TX_thread, so that the scheduler operates slot_ahead slots ahead of the RX thread. This ensures that UL_tti_req is received before RX slot processing at the PNF. 
 
 The function NR_schedule_response calls oai_nfapi_[DL P7 msg]_req(), which contains the routines for packing + transmission of scheduled messages through the socket to the PNF. For example, to send the 'TX_data_req' p7 message 
 
@@ -109,12 +98,15 @@ graph TD
     slot_inc -- next slot --> pselect
 
 ```
+Note that since DL P7 message reception and TX/RX processing are done on separate threads, there is the issue of the L1 processing threads trying to do their job before the required P7 message is received. In the case of RX processing, since the scheduler operates slot_ahead slots ahead of the RX thread, the required messages conveniently arrive earlier than they are required. However, in the case of TX processing, this cannot be ensured if the scheduler is exactly in sync with the TX thread.  
+
+Therefore, we operate the VNF vnf_slot_ahead (which is currently 2) slots ahead of the PNF. This is to ensure that the DL fapi structures for a particular TX slot are all received before TX processing for that slot.
 
 ## P7 DL Reception at PNF 
 
 Through the infinite loop [while(pnf_p7->terminate == 0)] running in pnf_nr_p7_message_pump(), the PNF receives and unpacks the downlink P7 message received on its socket. Based on the unpacked message, the appropriate message structures are filled in the PNF, and these are used further down the pipeline for processing. 
 
-While receiving the DL P7 message, we check whether the message was received within a timing window from which it was sent. The duration of the window can be set by the user (set as a parameter for xnf in the p5 messages). A point to note is that the DL information must be received by the PNF within a timing window at least lesser than the duration of slot_ahead variable (timing_window <= slot_ahead * slot_duration). Ideally, it should be received within a duration significantly lesser than slot_ahead so that there is adequate time for PHY processing. 
+While receiving the DL P7 message, we check whether the message was received within a timing window from which it was sent. The duration of the window can be set by the user (set as a parameter for xnf in the p5 messages). Note that the DL information must be received by the PNF within a timing window at least lesser than the duration of slot_ahead variable (timing_window <= slot_ahead * slot_duration).
 
 ```mermaid
 
@@ -124,7 +116,8 @@ graph TB
 
     slot_inc -- next slot --> pselect
 ```
-
+Once the messages are received, they are filled into slot buffers, and are stored until the processing of the slot that they were meant for. 
+ 
 
 
 

@@ -175,7 +175,17 @@ int nfapi_pnf_p7_rach_ind(nfapi_pnf_p7_config_t* config, nfapi_rach_indication_t
 	pnf_p7_t* _this = (pnf_p7_t*)(config);
 	return pnf_p7_pack_and_send_p7_message(_this, (nfapi_p7_message_header_t*)ind, sizeof(nfapi_rach_indication_t));
 }
+int nfapi_pnf_p7_srs_ind(nfapi_pnf_p7_config_t* config, nfapi_srs_indication_t* ind)
+{
+	if(config == NULL || ind == NULL)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: invalid input params\n", __FUNCTION__);
+		return -1;
+	}
 
+	pnf_p7_t* _this = (pnf_p7_t*)(config);
+	return pnf_p7_pack_and_send_p7_message(_this, (nfapi_p7_message_header_t*)ind, sizeof(nfapi_srs_indication_t));
+}
 int nfapi_pnf_p7_sr_ind(nfapi_pnf_p7_config_t* config, nfapi_sr_indication_t* ind)
 {
 	if(config == NULL || ind == NULL)

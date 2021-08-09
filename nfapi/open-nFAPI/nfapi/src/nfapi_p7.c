@@ -3636,16 +3636,13 @@ static uint8_t pack_nr_uci_indication_body(void* tlv, uint8_t **ppWritePackedMsg
         printf("Unhandled NFAPI_NR_UCI_PUSCH_PDU_TYPE \n");
         break;
 
-      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
-        nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &value->pucch_pdu_format_0_1;
+      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: 
         pack_nr_uci_pucch_0_1(&value->pucch_pdu_format_0_1, ppWritePackedMsg, end);
         break;
-      }
-      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
-        nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &value->pucch_pdu_format_2_3_4;
-        pack_nr_uci_pucch_2_3_4(uci_pdu, ppWritePackedMsg, end);
+      
+      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: 
+        pack_nr_uci_pucch_2_3_4(&value->pucch_pdu_format_2_3_4, ppWritePackedMsg, end);
         break;
-    	}
 	}
 
 	return 1;
@@ -6556,7 +6553,7 @@ return 1;
 static uint8_t unpack_nr_uci_pucch_0_1(nfapi_nr_uci_pucch_pdu_format_0_1_t* tlv, uint8_t **ppReadPackedMsg, uint8_t *end) {
 	nfapi_nr_uci_pucch_pdu_format_0_1_t* value = (nfapi_nr_uci_pucch_pdu_format_0_1_t*)tlv;
 
-	uint8_t *ptr = *ppReadPackedMsg;
+	// uint8_t *ptr = *ppReadPackedMsg;
 	// printf("\n Read P7 message uci_0_1 indication unpack: ");
 	// while(ptr < end){
 	// 	printf(" %d ", *ptr);
