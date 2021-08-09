@@ -82,8 +82,7 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
     } else if (rnti == 0xFFFF) {
       rnti_type = NR_RNTI_SI;
     } else {
-      AssertFatal(1 == 0, "In %s: Not identified/handled rnti %x  [ra->ra_rnti %x, mac->crnti %x, ra->t_crnti %x]\n", 
-                          __FUNCTION__, rnti, ra->ra_rnti, mac->crnti, ra->t_crnti);    
+      AssertFatal(1 == 0, "In %s: Not identified/handled rnti %d \n", __FUNCTION__, rnti);
     }
 
     LOG_D(MAC, "In %s: returning rnti_type %s \n", __FUNCTION__, rnti_types[rnti_type]);
@@ -447,22 +446,15 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  LOG_D(MAC,"Received dci indication (rnti %4x, dci format %d,n_CCE %d, payloadSize %d, payload %llx)\n\n\n\n",
+  LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
   
   if ((dci->rnti == mac->crnti) || (dci->rnti == mac->ra.ra_rnti))
   {
-    LOG_D(MAC,"Received dci indication rnti %4x  mac->crnti %4x  frame slot %4d.%2d  RA state %d\n", 
-              dci->rnti, mac->crnti, frame, slot, mac->ra.ra_state);
     uint32_t dci_format = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15);
     return (nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci->rnti, dci_format));
   }
-  else
-  {
-    LOG_D(MAC,"We skip for the received dci indication rnti %4x != mac->crnti %4x  frame slot %4d.%2d\n", 
-              dci->rnti, mac->crnti, frame, slot);
-    return 0; 
-  }
+  return 0; 
 }
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint8_t dci_format){
@@ -483,10 +475,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
   const uint16_t n_RB_DLBWP = (ra->ra_state == WAIT_RAR) ? NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE) : NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
-  LOG_I(MAC, "In %s: Processing received DCI format %s (DL BWP %d) harq_pid %d\n", 
-             __FUNCTION__, dci_formats[dci_format], n_RB_DLBWP, dci->harq_pid);
-
-
+  LOG_I(MAC, "In %s: Processing received DCI format %s (DL BWP %d)\n", __FUNCTION__, dci_formats[dci_format], n_RB_DLBWP);
 
   switch(dci_format){
   case NR_UL_DCI_FORMAT_0_0: {
@@ -2170,7 +2159,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 
   if( mac->crnti == ra->t_crnti )
   {
-    LOG_I(MAC, "Discarding the received RAR.\n");
+    LOG_D(MAC, "Discarding the received RAR.\n");
     return -1;
   }
   while (1) {
@@ -2185,7 +2174,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       LOG_D(MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d\n", mod_id, ra->RA_backoff_indicator);
     }
     if (rarh->RAPID == preamble_index) {
-      LOG_I(MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d, CRNTI %x, t_crnti = %x\n", mod_id, frame, slot, rarh->RAPID, mac->crnti, ra->t_crnti);
+      LOG_I(MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
       rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
       ra->RA_RAPID_found = 1;
       break;

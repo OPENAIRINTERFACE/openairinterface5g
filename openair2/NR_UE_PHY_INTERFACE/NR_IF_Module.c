@@ -327,8 +327,6 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     {
         nfapi_nr_ul_dci_request_pdus_t *pdu_list = &ul_dci_req->ul_dci_pdu_list[i];
         AssertFatal(pdu_list->PDUType == 0, "ul_dci_req pdu type != PUCCH");
-        //if (pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI != get_mac_inst(0)->crnti)
-        //  continue;
         LOG_I(NR_PHY, "[%d %d] PUCCH PDU in ul_dci for rnti %x\n", ul_dci_req->SFN, ul_dci_req->Slot, pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu->RNTI);
         uint16_t num_dci = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
         if (num_dci > 0)
@@ -343,7 +341,6 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
                 nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
                 if (dci_pdu_list->RNTI != mac->crnti)
                 {
-                  LOG_I(NR_MAC, "ul_dci_req Skip: dci_pdu_list->RNTI %x != mac->crnti %x\n", dci_pdu_list->RNTI, get_mac_inst(dl_info->module_id)->crnti);
                   continue;
                 }
                 int num_bytes = (dci_pdu_list->PayloadSizeBits + 7) / 8;
@@ -608,11 +605,8 @@ void *nrue_standalone_pnf_task(void *context)
 
       if (!put_queue(&nr_sfn_slot_queue, &sfn_slot_pool[sfn_slot_id]))
       {
-        LOG_D(NR_MAC, "put_queue failed for sfn slot.\n");
+        LOG_E(NR_PHY, "put_queue failed for sfn slot.\n");
       }
-      LOG_D(NR_MAC, "We have successfully queued snf slot %d.%d, with id %u, qsize %zu\n",
-                    sfn_slot_pool[sfn_slot_id]>> 6, sfn_slot_pool[sfn_slot_id] & 0x3F,
-                    sfn_slot_id, nr_sfn_slot_queue.num_items);
 
       sfn_slot_id = (sfn_slot_id + 1) % 512;
 
@@ -635,11 +629,8 @@ void *nrue_standalone_pnf_task(void *context)
 
       if (!put_queue(&nr_sfn_slot_queue, &sfn_slot_pool[sfn_slot_id]))
       {
-        LOG_D(NR_MAC, "put_queue failed for sfn slot.\n");
+        LOG_E(NR_PHY, "put_queue failed for sfn slot.\n");
       }
-      LOG_D(NR_MAC, "We have successfully queued snf slot %d.%d, with id %u, qsize %zu\n",
-                    sfn_slot_pool[sfn_slot_id]>> 6, sfn_slot_pool[sfn_slot_id] & 0x3F,
-                    sfn_slot_id, nr_sfn_slot_queue.num_items);
 
       sfn_slot_id = (sfn_slot_id + 1) % 512;
 
@@ -650,7 +641,7 @@ void *nrue_standalone_pnf_task(void *context)
       }
       sfn = NFAPI_SFNSLOT2SFN(ch_info.sfn_slot);
       slot = NFAPI_SFNSLOT2SLOT(ch_info.sfn_slot);
-      LOG_I(MAC, "Received_SINR = %f, sfn:slot %d:%d\n", ch_info.sinr, sfn, slot);
+      LOG_I(NR_PHY, "Received_SINR = %f, sfn:slot %d:%d\n", ch_info.sinr, sfn, slot);
     }
     else
     {
@@ -703,11 +694,11 @@ void *nrue_standalone_pnf_task(void *context)
             delta = NFAPI_SFNSLOT2DEC(sfn, slot) - NFAPI_SFNSLOT2DEC(ul_dci_request.SFN, ul_dci_request.Slot);
             if (delta < -NFAPI_SFNSLOT2DEC(512, 0))
             {
-              delta += NFAPI_SFNSLOT2DEC(1024, 0);
+                delta += NFAPI_SFNSLOT2DEC(1024, 0);
             }
             if (delta < 6)
             {
-              check_and_process_dci(NULL, NULL, &ul_dci_request, NULL);
+                check_and_process_dci(NULL, NULL, &ul_dci_request, NULL);
             }
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
