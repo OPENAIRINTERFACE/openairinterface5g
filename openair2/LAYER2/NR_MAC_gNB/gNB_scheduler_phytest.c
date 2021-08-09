@@ -354,7 +354,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
           frame,
           slot);
     UE_info->num_pdcch_cand[UE_id][cid]--;
-    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id-1][cid];
+    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
     for (int i = 0; i < sched_ctrl->aggregation_level; i++)
       cce_list[sched_ctrl->cce_index + i] = 0;
     return;
@@ -369,7 +369,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->pucch_allocation = alloc;
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id-1][slot] : 1;
+  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
   if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
     nr_set_pdsch_semi_static(
@@ -422,7 +422,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id-1][slot] : 1;
+  const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 1;
   if (tda < 0)
     return false;
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =

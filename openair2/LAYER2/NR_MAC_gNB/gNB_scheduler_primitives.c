@@ -188,7 +188,7 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   if(bwp == NULL || bwp->bwp_Id == 0) {
     cce_list = nr_mac->cce_list[0][0];
   } else {
-    cce_list = nr_mac->cce_list[bwp->bwp_Id-1][coreset_id];
+    cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
   }
 
   int n_rb=0;

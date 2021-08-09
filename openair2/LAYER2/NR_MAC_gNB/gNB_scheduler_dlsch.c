@@ -60,8 +60,8 @@ static int loop_dcch_dtch = DL_SCH_LCID_DTCH;
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp)
 {
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
-  const int bwp_id = bwp ? bwp->bwp_Id : 1;
-  if (nrmac->preferred_dl_tda[bwp_id-1])
+  const int bwp_id = bwp ? bwp->bwp_Id : 0;
+  if (nrmac->preferred_dl_tda[bwp_id])
     return;
 
   /* there is a mixed slot only when in TDD */
@@ -120,17 +120,17 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
 
   const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
   const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
-  nrmac->preferred_dl_tda[bwp_id-1] = malloc(n * sizeof(*nrmac->preferred_dl_tda[bwp_id-1]));
+  nrmac->preferred_dl_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_dl_tda[bwp_id]));
 
   const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
   const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
   for (int i = 0; i < n; ++i) {
-    nrmac->preferred_dl_tda[bwp_id-1][i] = -1;
+    nrmac->preferred_dl_tda[bwp_id][i] = -1;
     if (!tdd || i % nr_slots_period < tdd->nrofDownlinkSlots)
-      nrmac->preferred_dl_tda[bwp_id-1][i] = 0;
+      nrmac->preferred_dl_tda[bwp_id][i] = 0;
     else if (tdd && nr_mix_slots && i % nr_slots_period == tdd->nrofDownlinkSlots)
-      nrmac->preferred_dl_tda[bwp_id-1][i] = tdaMi;
-    LOG_I(MAC, "slot %d preferred_dl_tda %d\n", i, nrmac->preferred_dl_tda[bwp_id-1][i]);
+      nrmac->preferred_dl_tda[bwp_id][i] = tdaMi;
+    LOG_I(MAC, "slot %d preferred_dl_tda %d\n", i, nrmac->preferred_dl_tda[bwp_id][i]);
   }
 }
 
@@ -458,7 +458,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
 
   int rbSize = 0;
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id-1][slot] : 1;
+  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
   if (tda == retInfo->time_domain_allocation) {
     /* Check that there are enough resources for retransmission */
     while (rbSize < retInfo->rbSize) {
@@ -531,7 +531,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
           slot);
     int cid = sched_ctrl->coreset->controlResourceSetId;
     UE_info->num_pdcch_cand[UE_id][cid]--;
-    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id-1][cid];
+    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
     for (int i = 0; i < sched_ctrl->aggregation_level; i++)
       cce_list[sched_ctrl->cce_index + i] = 0;
     return false;
@@ -634,7 +634,7 @@ void pf_dl(module_id_t module_id,
     *p = -1;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    int bwp_Id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 1;
+    int bwp_Id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
     const uint16_t rnti = UE_info->rnti[UE_id];
     NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
       &sched_ctrl->active_bwp->bwp_Common->genericParameters:
@@ -666,7 +666,7 @@ void pf_dl(module_id_t module_id,
             slot);
       int cid = sched_ctrl->coreset->controlResourceSetId;
       UE_info->num_pdcch_cand[UE_id][cid]--;
-      int *cce_list = mac->cce_list[bwp_Id-1][cid];
+      int *cce_list = mac->cce_list[bwp_Id][cid];
       for (int i = 0; i < sched_ctrl->aggregation_level; i++)
         cce_list[sched_ctrl->cce_index + i] = 0;
       return;
@@ -679,7 +679,7 @@ void pf_dl(module_id_t module_id,
       max_rbSize++;
 
     /* MCS has been set above */
-    const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id-1][slot] : 1;
+    const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
@@ -877,9 +877,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not
      * exist, create it */
-    const int bwpid = bwp ? bwp->bwp_Id : 1;
+    const int bwpid = bwp ? bwp->bwp_Id : 0;
     const int coresetid = bwp ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid-1][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
     if (!pdcch_pdu) {
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -891,7 +891,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       NR_SearchSpace_t *ss = bwp ? sched_ctrl->search_space:gNB_mac->sched_ctrlCommon->search_space;
       NR_ControlResourceSet_t *coreset = bwp? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
       nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, bwp);
-      gNB_mac->pdcch_pdu_idx[CC_id][bwpid-1][coresetid] = pdcch_pdu;
+      gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu;
     }
 
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
