@@ -766,7 +766,6 @@ int ngap_gNB_initial_ctxt_resp(
         ASN_SEQUENCE_ADD(&pdusessionTransfer_p->dLQosFlowPerTNLInformation.associatedQosFlowList.list, ass_qos_item_p);
       }
                
-      memset(&res, 0, sizeof(res));
       //res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
       //item->pDUSessionResourceSetupResponseTransfer.buf = res.buffer;
       //item->pDUSessionResourceSetupResponseTransfer.size = res.result.encoded;
@@ -799,16 +798,14 @@ int ngap_gNB_initial_ctxt_resp(
     ie->value.present = NGAP_InitialContextSetupResponseIEs__value_PR_PDUSessionResourceFailedToSetupListCxtRes;
 
     for (i = 0; i < initial_ctxt_resp_p->nb_of_pdusessions_failed; i++) {
-        NGAP_PDUSessionResourceFailedToSetupItemCxtRes_t *item;
-        NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t *pdusessionUnTransfer_p = NULL;
+        NGAP_PDUSessionResourceFailedToSetupItemCxtRes_t *item= calloc(1, sizeof *item);
+        NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t *pdusessionUnTransfer_p = calloc(1, sizeof *pdusessionUnTransfer_p);
     
-        /* mandatory */
-        item = (NGAP_PDUSessionResourceFailedToSetupItemCxtRes_t *)calloc(1, sizeof(NGAP_PDUSessionResourceFailedToSetupItemCxtRes_t));
         /* pDUSessionID */
         item->pDUSessionID = initial_ctxt_resp_p->pdusessions_failed[i].pdusession_id;
 
         /* cause */
-        pdusessionUnTransfer_p = (NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t));
+
         pdusessionUnTransfer_p->cause.present = initial_ctxt_resp_p->pdusessions_failed[i].cause;
         switch(pdusessionUnTransfer_p->cause.present) {
           case NGAP_Cause_PR_radioNetwork:
@@ -993,7 +990,6 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
   uint8_t  *buffer  = NULL;
   uint32_t length;
   int      i;
-  asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
 
   /* Retrieve the NGAP gNB instance associated with Mod_id */
   ngap_gNB_instance_p = ngap_gNB_get_instance(instance);
@@ -1028,14 +1024,14 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
   pdu.choice.successfulOutcome->value.present = NGAP_SuccessfulOutcome__value_PR_PDUSessionResourceSetupResponse;
   out = &pdu.choice.successfulOutcome->value.choice.PDUSessionResourceSetupResponse;
   /* mandatory */
-  ie = (NGAP_PDUSessionResourceSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseIEs_t));
+  ie = calloc(1, sizeof *ie);
   ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
   ie->criticality = NGAP_Criticality_ignore;
   ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_AMF_UE_NGAP_ID;
   asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   /* mandatory */
-  ie = (NGAP_PDUSessionResourceSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseIEs_t));
+  ie = calloc(1, sizeof *ie );
   ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
   ie->criticality = NGAP_Criticality_ignore;
   ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_RAN_UE_NGAP_ID;
@@ -1044,23 +1040,19 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
 
   /* optional */
   if (pdusession_setup_resp_p->nb_of_pdusessions > 0) {
-    ie = (NGAP_PDUSessionResourceSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseIEs_t));
+    ie = calloc(1, sizeof *ie );
     ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceSetupListSURes;
     ie->criticality = NGAP_Criticality_ignore;
     ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_PDUSessionResourceSetupListSURes;
 
     for (i = 0; i < pdusession_setup_resp_p->nb_of_pdusessions; i++) {
-      NGAP_PDUSessionResourceSetupItemSURes_t *item;
-      NGAP_PDUSessionResourceSetupResponseTransfer_t     *pdusessionTransfer_p = NULL;
-
-      /* mandatory */
-      item = (NGAP_PDUSessionResourceSetupItemSURes_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupItemSURes_t));
+      NGAP_PDUSessionResourceSetupItemSURes_t *item=calloc(1, sizeof *item );
+      NGAP_PDUSessionResourceSetupResponseTransfer_t *pdusessionTransfer_p = calloc(1, sizeof *pdusessionTransfer_p );
 
       /* pDUSessionID */
       item->pDUSessionID = pdusession_setup_resp_p->pdusessions[i].pdusession_id;
 
       /* dLQosFlowPerTNLInformation */
-      pdusessionTransfer_p = (NGAP_PDUSessionResourceSetupResponseTransfer_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseTransfer_t));
 
       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.present = NGAP_UPTransportLayerInformation_PR_gTPTunnel;
       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel =
@@ -1086,8 +1078,7 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
 
       /* associatedQosFlowList. number of 1? */
       for(int j=0; j < pdusession_setup_resp_p->pdusessions[i].nb_of_qos_flow; j++) {
-        NGAP_AssociatedQosFlowItem_t *ass_qos_item_p;
-        ass_qos_item_p = (NGAP_AssociatedQosFlowItem_t *)calloc(1, sizeof(NGAP_AssociatedQosFlowItem_t));
+        NGAP_AssociatedQosFlowItem_t *ass_qos_item_p = calloc(1, sizeof *ass_qos_item_p);
 
         /* qosFlowIdentifier */
         ass_qos_item_p->qosFlowIdentifier = pdusession_setup_resp_p->pdusessions[i].associated_qos_flows[j].qfi;
@@ -1100,11 +1091,10 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
         ASN_SEQUENCE_ADD(&pdusessionTransfer_p->dLQosFlowPerTNLInformation.associatedQosFlowList.list, ass_qos_item_p);
       }
 
-      memset(&res, 0, sizeof(res));
 //      res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, pdusessionTransfer_p);
 //      item->pDUSessionResourceSetupResponseTransfer.buf = res.buffer;
 //      item->pDUSessionResourceSetupResponseTransfer.size = res.result.encoded;
-      uint8_t buffer[100];
+      uint8_t *buffer=calloc(1,100);;
       asn_enc_rval_t  enc_rval = aper_encode_to_buffer(&asn_DEF_NGAP_PDUSessionResourceSetupResponseTransfer, 
                                   NULL, 
                                   pdusessionTransfer_p, 
@@ -1122,22 +1112,19 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
 
   /* optional */
   if (pdusession_setup_resp_p->nb_of_pdusessions_failed > 0) {
-    ie = (NGAP_PDUSessionResourceSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseIEs_t));
+    ie = calloc(1, sizeof *ie);
     ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceFailedToSetupListSURes;
     ie->criticality = NGAP_Criticality_ignore;
     ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_PDUSessionResourceFailedToSetupListSURes;
 
     for (i = 0; i < pdusession_setup_resp_p->nb_of_pdusessions_failed; i++) {
-      NGAP_PDUSessionResourceFailedToSetupItemSURes_t *item;
-      NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t *pdusessionUnTransfer_p = NULL;
+      NGAP_PDUSessionResourceFailedToSetupItemSURes_t *item=calloc(1, sizeof *item);
+      NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t *pdusessionUnTransfer_p = calloc(1, sizeof *pdusessionUnTransfer_p);
 
-      /* mandatory */
-      item = (NGAP_PDUSessionResourceFailedToSetupItemSURes_t *)calloc(1, sizeof(NGAP_PDUSessionResourceFailedToSetupItemSURes_t));
       /* pDUSessionID */
       item->pDUSessionID = pdusession_setup_resp_p->pdusessions_failed[i].pdusession_id;
 
       /* cause */
-      pdusessionUnTransfer_p = (NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t));
       pdusessionUnTransfer_p->cause.present = pdusession_setup_resp_p->pdusessions_failed[i].cause;
       switch(pdusessionUnTransfer_p->cause.present) {
         case NGAP_Cause_PR_radioNetwork:
@@ -1167,8 +1154,9 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
 
       NGAP_DEBUG("pdusession setup response: failed pdusession ID %ld\n", item->pDUSessionID);
 
-      memset(&res, 0, sizeof(res));
-      res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, pdusessionUnTransfer_p);
+     asn_encode_to_new_buffer_result_t res =
+	       asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER,
+				  &asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, pdusessionUnTransfer_p);
       item->pDUSessionResourceSetupUnsuccessfulTransfer.buf = res.buffer;
       item->pDUSessionResourceSetupUnsuccessfulTransfer.size = res.result.encoded;
 
@@ -1182,7 +1170,7 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
 
   /* optional */
   if (0) {
-      ie = (NGAP_PDUSessionResourceSetupResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceSetupResponseIEs_t));
+    ie = calloc(1, sizeof *ie);
       ie->id = NGAP_ProtocolIE_ID_id_CriticalityDiagnostics;
       ie->criticality = NGAP_Criticality_ignore;
       ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_CriticalityDiagnostics;
