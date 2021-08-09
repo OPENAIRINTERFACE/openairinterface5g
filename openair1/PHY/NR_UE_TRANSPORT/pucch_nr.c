@@ -59,11 +59,11 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         int16_t amp,
                         int nr_slot_tx,
                         uint8_t m0,
-			                  uint8_t mcs,
+			uint8_t mcs,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
                         uint16_t startingPRB,
-			                  uint16_t secondHopPRB) {
+			uint16_t secondHopPRB) {
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch0] start function at slot(nr_slot_tx)=%d\n",nr_slot_tx);
 #endif

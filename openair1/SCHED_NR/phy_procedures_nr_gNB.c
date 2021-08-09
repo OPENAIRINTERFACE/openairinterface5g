@@ -474,22 +474,20 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   for (int symbol=0;symbol<14;symbol++) {
     if (gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1){
       nb_rb = 0;
-      for (int m=0;m<9;m++) gNB->rb_mask_ul[m] = 0;
-      gNB->ulmask_symb = -1;
+      for (int m=0;m<9;m++) gNB->rb_mask_ul[symbol][m] = 0;
 
       for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
         NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
         if (pucch) {
           if ((pucch->active == 1) &&
-	            (pucch->frame == frame_rx) &&
+              (pucch->frame == frame_rx) &&
 	            (pucch->slot == slot_rx) ) {
-            gNB->ulmask_symb = symbol;
             nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
             if ((symbol>=pucch_pdu->start_symbol_index) &&
                 (symbol<(pucch_pdu->start_symbol_index + pucch_pdu->nr_of_symbols))){
               for (rb=0; rb<pucch_pdu->prb_size; rb++) {
                 rb2 = rb+pucch_pdu->prb_start+pucch_pdu->bwp_start;
-                gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
+                gNB->rb_mask_ul[symbol][rb2>>5] |= (1<<(rb2&31));
               }
               nb_rb+=pucch_pdu->prb_size;
             }
@@ -512,12 +510,11 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                 (ulsch_harq->handled == 0)){
               uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
               uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
-              gNB->ulmask_symb = symbol;
               if ((symbol>=symbol_start) &&
                   (symbol<symbol_end)){
                 for (rb=0; rb<ulsch_harq->ulsch_pdu.rb_size; rb++) {
                   rb2 = rb+ulsch_harq->ulsch_pdu.rb_start+ulsch_harq->ulsch_pdu.bwp_start;
-                  gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
+                  gNB->rb_mask_ul[symbol][rb2>>5] |= (1<<(rb2&31));
                 }
                 nb_rb+=ulsch_harq->ulsch_pdu.rb_size;
               }
