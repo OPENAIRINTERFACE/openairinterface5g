@@ -258,8 +258,6 @@ void nr_fill_dlsch(processingData_L1tx_t *msgTx,
                    nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                    uint8_t *sdu) {
 
-  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &pdsch_pdu->pdsch_pdu_rel15;
- 
   NR_gNB_DLSCH_t  *dlsch = msgTx->dlsch[msgTx->num_pdsch_slot][0];
   NR_DL_gNB_HARQ_t *harq  = &dlsch->harq_process;
   /// DLSCH struct

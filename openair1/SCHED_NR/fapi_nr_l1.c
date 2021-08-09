@@ -192,8 +192,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       break;
       case NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE:
         LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
-        handle_nfapi_nr_csirs_pdu(msgTx,
-          int frame,int slot,
+        handle_nfapi_nr_csirs_pdu(msgTx,frame,slot,
 				  &dl_tti_pdu->csi_rs_pdu);
       break;
       case NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE:
