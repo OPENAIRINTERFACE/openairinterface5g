@@ -1841,7 +1841,10 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                                 buflen_remain-MAX_RLC_SDU_SUBHEADER_SIZE,
                                 (char *)&ulsch_sdus[sdu_length_total],0,
                                 0);
-
+        char buffer[1024];
+        hexdump((char *)&ulsch_sdus[sdu_length_total], buflen_remain, buffer, sizeof(buffer));
+        LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right after receving in MAC layer\n",
+              buffer);
         AssertFatal(buflen_remain >= sdu_lengths[num_sdus],
                     "LCID=%d RLC has segmented %d bytes but MAC has max=%d\n",
                     lcid, sdu_lengths[num_sdus], buflen_remain);
@@ -1868,8 +1871,9 @@ nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                   buflen - (total_rlc_pdu_header_len + sdu_length_total + MAX_RLC_SDU_SUBHEADER_SIZE);
         }
         char buffer[1024];
-        hexdump(&ulsch_sdus[sdu_length_total], lcid_buffer_occupancy_new, buffer, sizeof(buffer));
-        LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s \n", buffer);
+        hexdump(&ulsch_sdus[sdu_length_total], buflen_remain, buffer, sizeof(buffer));
+        LOG_I(MAC, "Melissa Elkadi, total_rlc_pdu_header_len %d and this is hexdump of pdu %s \n",
+              total_rlc_pdu_header_len, buffer);
   }
 
 }

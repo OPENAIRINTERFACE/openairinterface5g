@@ -58,6 +58,10 @@ void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int
   nr_pdcp_entity_drb_am_t *entity = (nr_pdcp_entity_drb_am_t *)_entity;
   int sn;
   char buf[size+3];
+  char buf_mel[1024];
+  hexdump(buffer, size, buf_mel, sizeof(buf_mel));
+  LOG_I(PDCP, "Melissa Elkadi in %s, this is hexdump of pdu %s recevied in PDCP layer directly\n",
+        __FUNCTION__, buf_mel);
 
   sn = entity->common.next_nr_pdcp_tx_sn;
 
@@ -71,6 +75,10 @@ void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int
   buf[1] = (sn >> 8) & 0xff;
   buf[2] = sn & 0xff;
   memcpy(buf+3, buffer, size);
+  char buf_melissa[1024];
+  hexdump(buf+3, size, buf_melissa, sizeof(buf_melissa));
+  LOG_I(PDCP, "Melissa Elkadi in %s, this is hexdump of pdu %s copied into buf+3 in PDCP. And this is the sdu_id %d\n",
+        __FUNCTION__, buf_melissa, sdu_id);
 
   if (entity->common.has_ciphering)
     entity->common.cipher(entity->common.security_context, (unsigned char *)buf+3, size,
@@ -78,6 +86,10 @@ void nr_pdcp_entity_drb_am_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int
 
   entity->common.deliver_pdu(entity->common.deliver_pdu_data,
                              (nr_pdcp_entity_t *)entity, buf, size+3, sdu_id);
+  char buf_meli[1024];
+  hexdump(buf, size + 3, buf_meli, sizeof(buf_meli));
+  LOG_I(PDCP, "Melissa Elkadi in %s, this is hexdump of pdu %s After delivering to RLC\n",
+        __FUNCTION__, buf_meli);
 }
 
 void nr_pdcp_entity_drb_am_set_integrity_key(nr_pdcp_entity_t *_entity, char *key)

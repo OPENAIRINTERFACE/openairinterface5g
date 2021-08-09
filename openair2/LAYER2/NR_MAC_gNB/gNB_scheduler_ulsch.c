@@ -283,7 +283,7 @@ void nr_process_mac_pdu(
                                  1,
                                  NULL);
                 char buf[1024];
-                hexdump((char *) (pdu_ptr + mac_subheader_len), mac_sdu_len, buff, sizeof(buf));
+                hexdump((char *) (pdu_ptr + mac_subheader_len), mac_sdu_len, buf, sizeof(buf));
                 LOG_I(MAC, "Melissa Elkadi, after passing to rlc this is hexdump of pdu %s \n", buf);
                 /* Updated estimated buffer when receiving data */
                 if (sched_ctrl->estimated_ul_buffer >= mac_sdu_len)

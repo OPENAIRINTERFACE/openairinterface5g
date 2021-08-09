@@ -265,6 +265,9 @@ static void *ue_tun_read_thread(void *_)
     }
 
     LOG_D(PDCP, "%s(): nas_sock_fd read returns len %d\n", __func__, len);
+    char buffer[1024];
+    hexdump(rx_buf, len, buffer, sizeof(buffer));
+    LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s from tunnel interface\n", buffer);
 
     nr_pdcp_manager_lock(nr_pdcp_ue_manager);
     rnti = nr_pdcp_get_first_rnti(nr_pdcp_ue_manager);
@@ -940,7 +943,10 @@ static boolean_t pdcp_data_req_drb(
           __FILE__, __LINE__, __FUNCTION__, rnti, rb_id);
     return 0;
   }
-
+  char buffer[1024];
+  hexdump((char *)sdu_buffer, sdu_buffer_size, buffer, sizeof(buffer));
+  LOG_I(PDCP, "Melissa Elkadi in %s, this is hexdump of pdu %s from tunnel interface in PDCP layer\n",
+        __FUNCTION__, buffer);
   rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);

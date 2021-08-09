@@ -104,6 +104,7 @@ int nr_rlc_entity_tm_generate_pdu(nr_rlc_entity_t *_entity,
                                   char *buffer, int size)
 {
   nr_rlc_entity_tm_t *entity = (nr_rlc_entity_tm_t *)_entity;
+  LOG_I(MAC, "Melissa Elkadi, in %s(): %d\n", __FUNCTION__, __LINE__);
 
   return generate_tx_pdu(entity, buffer, size);
 }

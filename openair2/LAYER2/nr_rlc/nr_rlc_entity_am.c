@@ -552,7 +552,10 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
   int control_e2;
   int control_e3;
   unsigned char sn_set[32768];  /* used to dec retx_count only once per sdu */
-
+  char buf_3[1024];
+  hexdump(buffer, size, buf_3, sizeof(buf_3));
+  LOG_I(MAC, "Melissa Elkadi, %s in %s():%d\n",
+        buf_3, __FUNCTION__, __LINE__);
   nr_rlc_pdu_decoder_init(&decoder, buffer, size);
   dc = nr_rlc_pdu_decoder_get_bits(&decoder, 1); R(decoder);
   LOG_I(RLC, "Melissa Elkadi, we are here %s(): %d. dc = %d\n", __FUNCTION__, __LINE__, dc);
@@ -815,9 +818,20 @@ static int serialize_sdu(nr_rlc_entity_am_t *entity,
 
   nr_rlc_pdu_encoder_put_bits(&encoder, 1, 1);             /* D/C: 1 = data */
   nr_rlc_pdu_encoder_put_bits(&encoder, 0, 1);     /* P: reserve, set later */
-
+  char buf_1[1024];
+  hexdump(sdu->sdu->data, sdu->size, buf_1, sizeof(buf_1));
+  LOG_I(MAC, "Melissa Elkadi, %s in %s():%d\n",
+        buf_1, __FUNCTION__, __LINE__);
   nr_rlc_pdu_encoder_put_bits(&encoder, 1-sdu->is_first,1);/* 1st bit of SI */
+  char buf_2[1024];
+  hexdump(sdu->sdu->data, sdu->size, buf_2, sizeof(buf_2));
+  LOG_I(MAC, "Melissa Elkadi, %s in %s():%d\n",
+        buf_2, __FUNCTION__, __LINE__);
   nr_rlc_pdu_encoder_put_bits(&encoder, 1-sdu->is_last,1); /* 2nd bit of SI */
+  char buf_3[1024];
+  hexdump(sdu->sdu->data, sdu->size, buf_3, sizeof(buf_3));
+  LOG_I(MAC, "Melissa Elkadi, %s in %s():%d\n",
+        buf_3, __FUNCTION__, __LINE__);
 
   if (entity->sn_field_length == 18)
     nr_rlc_pdu_encoder_put_bits(&encoder, 0, 2);                       /* R */
@@ -833,7 +847,10 @@ static int serialize_sdu(nr_rlc_entity_am_t *entity,
 
   if (p)
     include_poll(entity, buffer);
-
+  char buf[1024];
+  hexdump(buffer + encoder.byte, sdu->size, buf, sizeof(buf));
+  LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right after calling generate_pdu in %s\n",
+        buf, __FUNCTION__);
   return encoder.byte + sdu->size;
 }
 
@@ -1557,19 +1574,25 @@ int nr_rlc_entity_am_generate_pdu(nr_rlc_entity_t *_entity,
 {
   nr_rlc_entity_am_t *entity = (nr_rlc_entity_am_t *)_entity;
   int ret;
+    LOG_I(MAC, "Melissa Elkadi, in %s(): %d\n", __FUNCTION__, __LINE__);
 
   if (status_to_report(entity)) {
+    LOG_I(MAC, "Melissa Elkadi, in %s(): %d\n", __FUNCTION__, __LINE__);
     ret = generate_status(entity, buffer, size);
     if (ret != 0)
       return ret;
   }
 
   if (entity->retransmit_list != NULL) {
+    LOG_I(MAC, "Melissa Elkadi, in %s(): %d\n", __FUNCTION__, __LINE__);
     ret = generate_retx_pdu(entity, buffer, size);
     if (ret != 0)
       return ret;
   }
-
+  char buf[1024];
+  hexdump(buffer, size, buf, sizeof(buf));
+  LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right before calling generate_pdu in %s\n",
+        buf, __FUNCTION__);
   return generate_tx_pdu(entity, buffer, size);
 }
 

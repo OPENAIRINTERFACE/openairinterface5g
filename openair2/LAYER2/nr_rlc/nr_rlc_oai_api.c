@@ -197,6 +197,10 @@ tbs_size_t mac_rlc_data_req(
     rb->set_time(rb, nr_rlc_current_time);
     maxsize = tb_sizeP;
     ret = rb->generate_pdu(rb, buffer_pP, maxsize);
+    char buffer[1024];
+    hexdump(buffer_pP, ret, buffer, sizeof(buffer));
+    LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right after calling generate_pdu in %s\n",
+              buffer, __FUNCTION__);
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB, channel_idP: %d\n", __FILE__, __LINE__, __FUNCTION__, channel_idP);
     exit(1);
