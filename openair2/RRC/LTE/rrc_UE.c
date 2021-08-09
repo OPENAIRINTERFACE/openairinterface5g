@@ -4618,7 +4618,7 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
               is_state_connected = true;
             if (ue->Info[0].T304_active == 0)
               is_t304_inactive = true;
-            if (ue->HandoverInfoUe.measFlag == 1);
+            if (ue->HandoverInfoUe.measFlag == 1)
               have_meas_flag = true;
 
             if (is_state_connected && is_t304_inactive && have_meas_flag) {
