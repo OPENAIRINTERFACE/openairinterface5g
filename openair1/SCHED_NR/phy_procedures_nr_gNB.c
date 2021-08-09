@@ -624,8 +624,10 @@ void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
     	AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
       //printf("ulsch_harq->frame = %d, frame_rx = %d \n", ulsch_harq->frame, frame_rx);
       if (NFAPI_MODE == NFAPI_MODE_PNF)
-        ulsch_harq->frame = frame_rx;
-    	if ((ulsch_harq->status == NR_ACTIVE) &&
+      {
+          ulsch_harq->frame = frame_rx;
+      }
+      if ((ulsch_harq->status == NR_ACTIVE) &&
           (ulsch_harq->frame == frame_rx) &&
           (ulsch_harq->slot == slot_rx) &&
           (ulsch_harq->handled == 0)){
