@@ -229,7 +229,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
           AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
           pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
           uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
-          if(NFAPI_MODE != NFAPI_MODE_VNF)
           handle_nr_nfapi_pdsch_pdu(gNB,frame,slot,&dl_tti_pdu->pdsch_pdu, sdu);
           break;
       }

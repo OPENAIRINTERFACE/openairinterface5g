@@ -17,6 +17,10 @@ void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
                             nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                             uint8_t *sdu){
                             }
+void handle_nfapi_nr_csirs_pdu(PHY_VARS_gNB *gNB,
+			       int frame, int slot,
+			       nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu){
+                    }
 int l1_north_init_gNB(void){return 0;}
 
 uint8_t slot_ahead=6;

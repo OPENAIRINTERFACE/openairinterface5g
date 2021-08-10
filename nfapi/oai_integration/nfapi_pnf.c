@@ -92,6 +92,9 @@ extern void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
                             uint8_t *sdu);
 extern void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
                              nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu);
+extern void handle_nfapi_nr_csirs_pdu(PHY_VARS_gNB *gNB,
+			       int frame, int slot,
+			       nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu);
 extern void nr_fill_ulsch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,

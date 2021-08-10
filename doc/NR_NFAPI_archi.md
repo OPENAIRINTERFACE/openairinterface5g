@@ -112,7 +112,7 @@ While receiving the DL P7 message, we check whether the message was received wit
 
 graph TB
     pselect[PNF socket pselect] -- timed out : end of slot --> slot_inc[Increment sfn/slot];
-    pselect[PNF socket pselect] -- DL p7 xyz msg recvd --> msg_recvd[Read message pnf_nr_nfapi_p7_read_dispatch_message] --> header_unpack[Unpack Header] -- switch cases on header --> unpack_msg[Unpack Message pnf_handle_nr_xyz] --> fill_pnf_p7[Fill pnf_p7 global structure pnf_handle_nr_xyz] --Data from pnf_p7 struct copied to fapi structures using pnf_phy_***_req. Called every slot from oai_slot_ind-->pselect;
+    pselect[PNF socket pselect] -- DL p7 xyz msg recvd --> msg_recvd[Read message pnf_nr_nfapi_p7_read_dispatch_message] --> header_unpack[Unpack Header] -- switch cases on header --> unpack_msg[Unpack Message pnf_handle_nr_xyz] --> fill_pnf_p7[Fill pnf_p7 global structure pnf_handle_nr_xyz] --Data from pnf_p7 struct copied to fapi structures using pnf_phy_***_req. Called every slot from handle_nr_slot_ind-->pselect;
 
     slot_inc -- next slot --> pselect
 ```

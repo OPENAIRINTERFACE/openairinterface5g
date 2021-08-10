@@ -708,7 +708,7 @@ static uint8_t pack_dl_tti_request_body_value(void* tlv, uint8_t **ppWritePacked
 {
 	nfapi_nr_dl_tti_request_pdu_t* value = (nfapi_nr_dl_tti_request_pdu_t*)tlv;
 
-	if(!(push16(value->PDUSize, ppWritePackedMsg, end) &&
+	if(!(push32(value->PDUSize, ppWritePackedMsg, end) &&
 	 	 push16(value->PDUType, ppWritePackedMsg, end) ))
 		  return 0;
 
@@ -4607,7 +4607,7 @@ static uint8_t unpack_dl_tti_request_body_value(uint8_t **ppReadPackedMsg, uint8
 {
 	nfapi_nr_dl_tti_request_pdu_t* value = (nfapi_nr_dl_tti_request_pdu_t*)msg;
 
-	if(!(pull16(ppReadPackedMsg, &value->PDUSize, end) &&
+	if(!(pull32(ppReadPackedMsg, &value->PDUSize, end) &&
 	 	 pull16(ppReadPackedMsg, &value->PDUType, end) ))
 		  return 0;
 
