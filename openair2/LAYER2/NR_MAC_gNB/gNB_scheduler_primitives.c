@@ -437,6 +437,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
     }
     ps->dmrs_ports_id = 0;
     ps->frontloaded_symb = 1;
+    ps->nrOfLayers = 1;
   }
   else {
     if (ps->nrOfLayers != layers) {
