@@ -185,7 +185,7 @@ class HTMLManagement():
 			if (ADBIPAddress != 'none') and (ADBIPAddress != 'modules'):
 				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(self.htmlNb_Smartphones) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
 				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(self.htmlNb_CATM_Modules) + ' CAT-M UE(s) is(are) connected to bench server</h2>\n')
-			elif (ADBIPAddress != 'modules'):
+			elif (ADBIPAddress == 'modules'):
 				self.htmlUEConnected = 1
 				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> 1 commercial module is connected to CI bench</h2>\n')
 			else:
