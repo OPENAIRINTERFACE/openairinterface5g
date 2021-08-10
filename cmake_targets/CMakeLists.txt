@@ -1590,6 +1590,11 @@ set(PHY_LDPC_OPTIM8SEGMULTI_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
 )
+set(PHY_LDPC_CUDA_SRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder.cu
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
+)
+
 set(PHY_NR_CODINGIF
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_load.c;
 )
@@ -1597,7 +1602,12 @@ set(PHY_NR_CODINGIF
 add_library(ldpc_orig MODULE ${PHY_LDPC_ORIG_SRC} )
 add_library(ldpc_optim MODULE ${PHY_LDPC_OPTIM_SRC} )
 add_library(ldpc_optim8seg MODULE ${PHY_LDPC_OPTIM8SEG_SRC} )
+if (CUDA_FOUND)
+  add_library(ldpc_cuda MODULE ${PHY_LDPC_CUDA_SRC} )
+  CUDA_ADD_CUFFT_TO_TARGET(ldpc_cuda)
+endif (CUDA_FOUND)
 add_library(ldpc MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
+
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
 
@@ -3178,10 +3188,7 @@ if (CUDA_FOUND)
 # For CUDA library
 ###################################################
 
-    CUDA_ADD_LIBRARY(LDPC_CU
-      ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
-      )
-    CUDA_ADD_CUFFT_TO_TARGET(LDPC_CU)
+
     cuda_add_executable(ldpctest
       ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
       ${T_SOURCE}
@@ -3189,7 +3196,7 @@ if (CUDA_FOUND)
       )
     target_link_libraries(ldpctest -ldl
       -Wl,--start-group
-      LDPC_CU UTIL SIMU PHY_NR CONFIG_LIB
+      UTIL SIMU PHY_NR CONFIG_LIB
       -Wl,--end-group
       m pthread ${ATLAS_LIBRARIES} dl
       )
