@@ -1111,6 +1111,8 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   int l2=pucch_pdu->start_symbol_index;
   int re_offset[2];
   re_offset[0] = 12*(pucch_pdu->prb_start+pucch_pdu->bwp_start) + frame_parms->first_carrier_offset;
+  int soffset=(slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size; 
+
   if (re_offset[0]>= frame_parms->ofdm_symbol_size) 
     re_offset[0]-=frame_parms->ofdm_symbol_size;
   if (pucch_pdu->freq_hop_flag == 0) re_offset[1] = re_offset[0];
@@ -1141,7 +1143,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 
   for (int aa=0;aa<Prx;aa++){
     for (int symb=0;symb<pucch_pdu->nr_of_symbols;symb++) { 
-      tmp_rp = ((int16_t *)&rxdataF[aa][(l2+symb)*frame_parms->ofdm_symbol_size]);
+      tmp_rp = ((int16_t *)&rxdataF[aa][soffset + (l2+symb)*frame_parms->ofdm_symbol_size]);
       
       if (re_offset[symb] + nb_re_pucch < frame_parms->ofdm_symbol_size) {
         memcpy1((void*)rp[aa][symb],(void*)&tmp_rp[re_offset[symb]*2],nb_re_pucch*sizeof(int32_t));
@@ -1649,9 +1651,10 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     LOG_D(PHY,"metric %d dB\n",corr_dB);
   }
 
-  int re_off = (12*pucch_pdu->prb_start) + (12*pucch_pdu->bwp_start) + frame_parms->first_carrier_offset;
-  // estimate CQI for MAC (from antenna port 0 only)
-  int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset],12*pucch_pdu->prb_size)) - (10*gNB->measurements.n0_power_tot_dB);
+    // estimate CQI for MAC (from antenna port 0 only)
+  int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[0]],
+                                                       12*pucch_pdu->prb_size)) - 
+                                                       (10*gNB->measurements.n0_power_tot_dB);
   int cqi,bit_left;
   if (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
@@ -1664,7 +1667,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   uci_pdu->pucch_format=0;
   uci_pdu->ul_cqi=cqi;
   uci_pdu->timing_advance=0xffff; // currently not valid
-  uci_pdu->rssi=1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy_nodc(&rxdataF[0][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset],12*pucch_pdu->prb_size)));
+  uci_pdu->rssi=1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy_nodc(&rxdataF[0][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[0]],12*pucch_pdu->prb_size)));
   if (pucch_pdu->bit_len_harq>0) {
     int harq_bytes=pucch_pdu->bit_len_harq>>3;
     if ((pucch_pdu->bit_len_harq&7) > 0) harq_bytes++;

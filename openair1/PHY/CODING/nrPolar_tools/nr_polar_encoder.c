@@ -30,7 +30,7 @@
  * \warning
  */
 
-#define DEBUG_POLAR_ENCODER
+//#define DEBUG_POLAR_ENCODER
 //#define DEBUG_POLAR_ENCODER_DCI
 //#define DEBUG_POLAR_MATLAB
 

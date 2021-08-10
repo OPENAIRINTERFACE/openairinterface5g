@@ -578,7 +578,7 @@ int main(int argc, char **argv)
             gNB->rb_mask_ul[s][rb2>>5] |= (1<<(rb2&31));
           }
       }
-      gNB_I0_measurements(gNB, 0, gNB->frame_parms.symbols_per_slot);
+      gNB_I0_measurements(gNB, nr_slot_tx, 0, gNB->frame_parms.symbols_per_slot);
 
       if (n_trials==1) printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
       if(format==0){

@@ -695,7 +695,7 @@ uint32_t polar_decoder_int16(int16_t *input,
     else if (crclen==6) crc = (uint64_t)(crc6(A64_flip,8*offset+len)>>26)&0x3f;
   }
 
-#if 1
+#if 0
   printf("A %llx B %llx|%llx Cprime %llx|%llx  (crc %x,rxcrc %llx %d)\n",
          Ar,
          B[1],B[0],Cprime[1],Cprime[0],crc,
