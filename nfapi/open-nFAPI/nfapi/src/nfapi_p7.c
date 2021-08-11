@@ -3523,7 +3523,7 @@ static uint8_t pack_nr_rach_indication(void *msg, uint8_t **ppWritePackedMsg, ui
 
 	if (!(push16(pNfapiMsg->sfn , ppWritePackedMsg, end) &&
 		push16(pNfapiMsg->slot , ppWritePackedMsg, end) &&
-		push16(pNfapiMsg->number_of_pdus, ppWritePackedMsg, end)
+		push8(pNfapiMsg->number_of_pdus, ppWritePackedMsg, end)
 		))
 			return 0;
 
@@ -3748,11 +3748,11 @@ int nfapi_nr_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packe
 			break;
 
 		case NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION:
-			result = pack_nr_rach_indication(pMessageHeader, &pWritePackedMessage, end, config);
+			result = pack_nr_srs_indication(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
 
 		case NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION:
-			result = pack_nr_srs_indication(pMessageHeader, &pWritePackedMessage, end, config);
+			result = pack_nr_rach_indication(pMessageHeader, &pWritePackedMessage, end, config);
 			break;
 
 		case NFAPI_NR_PHY_MSG_TYPE_DL_NODE_SYNC:

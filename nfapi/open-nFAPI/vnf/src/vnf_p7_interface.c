@@ -153,31 +153,8 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 	//struct timespec original_pselect_timeout;
 	struct timespec pselect_timeout;
 	pselect_timeout.tv_sec = 100; 
-	pselect_timeout.tv_nsec = 0; // ns in a 0.5 ms
-	//pselect_timeout.tv_nsec = 500000;
+	pselect_timeout.tv_nsec = 0; 
 
-	struct timespec pselect_start;
-	struct timespec pselect_stop;
-
-
-//	struct timespec sf_duration; //Change to slot_duration?
-//	sf_duration.tv_sec = 0;
-//	sf_duration.tv_nsec = 0.5e6; // We want 1ms pause //We want 0.5 ms pause for NR
-	struct timespec slot_duration; 
-	slot_duration.tv_sec = 0;
-	//slot_duration.tv_nsec = 0.5e6;
-	slot_duration.tv_nsec = 0.5e6;
-
-
-//	struct timespec sf_start; //Change to slot_start?
-	struct timespec slot_start;
-//	clock_gettime(CLOCK_MONOTONIC, &sf_start);
-	clock_gettime(CLOCK_MONOTONIC, &slot_start);
-	//long millisecond = slot_start.tv_nsec / 0.5e6;
-//	sf_start = timespec_add(sf_start, sf_duration);
-	slot_start = timespec_add(slot_start, slot_duration);
-
-	NFAPI_TRACE(NFAPI_TRACE_INFO, "next slot will start at %d.%d\n", slot_start.tv_sec, slot_start.tv_nsec);
     struct timespec ref_time;
 	clock_gettime(CLOCK_MONOTONIC, &ref_time);
 	uint8_t setup_time;
@@ -195,26 +172,8 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		struct timespec curr_time;
 		clock_gettime(CLOCK_MONOTONIC, &curr_time);
 		setup_time = curr_time.tv_sec - ref_time.tv_sec;
-		
-		clock_gettime(CLOCK_MONOTONIC, &pselect_start);
 
-        //NFAPI_TRACE(NFAPI_TRACE_INFO, "pselect_start:%d.%d sf_start:%d.%d\n", pselect_start.tv_sec, pselect_start.tv_nsec, sf_start.tv_sec, sf_start.tv_nsec);
-
-		if((pselect_start.tv_sec > slot_start.tv_sec) || ((pselect_start.tv_sec == slot_start.tv_sec) && (pselect_start.tv_nsec > slot_start.tv_nsec)))
-		{
-			// overran the end of the subframe we do not want to wait
-			pselect_timeout.tv_sec = 0;
-			pselect_timeout.tv_nsec = 0;
-			LOG_D(MAC, "Slot overrun detected \n");
-			//NFAPI_TRACE(NFAPI_TRACE_INFO, "Slot overrun detected of %d.%d running to catchup\n", overrun.tv_sec, overrun.tv_nsec);
-		}
-		else
-		{
-			// still time before the end of the subframe wait
-			pselect_timeout = timespec_sub(slot_start, pselect_start);
-		}
-
-		if(setup_time > 10 && prev_slot != gNB->UL_INFO.slot){
+		if(setup_time > 10 && prev_slot != gNB->UL_INFO.slot){ //Give the VNF sufficient time to setup before starting scheduling
 
 			//Call the scheduler
 			pthread_mutex_lock(&gNB->UL_INFO_mutex);
@@ -226,53 +185,12 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		}
 
 		selectRetval = pselect(maxSock+1, &rfds, NULL, NULL, &pselect_timeout, NULL);
-
-		clock_gettime(CLOCK_MONOTONIC, &pselect_stop);
 		
 		nfapi_vnf_p7_connection_info_t* curr = vnf_p7->p7_connections;
 
 		if(selectRetval == 0)
 		{
-			// pselect timed out
-
-			// calculate the start of the next slot
-
-			slot_start = timespec_add(slot_start, slot_duration);
-			//NFAPI_TRACE(NFAPI_TRACE_INFO, "next subframe will start at %d.%d\n", sf_start.tv_sec, sf_start.tv_nsec);
-			if (slot_start.tv_nsec > 1e9) 
-            {
-                slot_start.tv_sec++;
-                slot_start.tv_nsec-=1e9;
-            }
-            else if (slot_start.tv_nsec < 0)
-            {
-                slot_start.tv_sec--;
-                slot_start.tv_nsec+=1e9;
-            }
-		
-			vnf_p7->slot_start_time_hr = vnf_get_current_time_hr();
-
-			while(curr != 0)
-			{
-				if (curr->slot == 19)
-				{  
-					curr->sfn = (curr->sfn + 1) % 1024;
-					curr->slot=0;
-				}
-				else
-				{
-				curr->slot++;
-				}
-				//printf("Frame = %d, slot = %d in VNF main loop. \n",curr->sfn,curr->slot);
-
-				//vnf_nr_sync(vnf_p7, curr);	
-	
-				(vnf_p7->_public.sync_indication)(&(vnf_p7->_public), 1); //hardcoded sync
-
-				curr = curr->next;	
-			}
-			send_mac_slot_indications(vnf_p7);
-
+			// pselect timed out, continue
 		}
 		else if(selectRetval > 0)
 		{

@@ -2214,11 +2214,11 @@ void vnf_nr_dispatch_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 			break;
 	
 		case NFAPI_NR_PHY_MSG_TYPE_SRS_INDICATION:
-			vnf_handle_nr_rach_indication(pRecvMsg, recvMsgLen, vnf_p7);
+			vnf_handle_nr_srs_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
 	
 		case NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION:
-			vnf_handle_nr_srs_indication(pRecvMsg, recvMsgLen, vnf_p7);
+			vnf_handle_nr_rach_indication(pRecvMsg, recvMsgLen, vnf_p7);
 			break;
 
 		case NFAPI_UE_RELEASE_RESPONSE:

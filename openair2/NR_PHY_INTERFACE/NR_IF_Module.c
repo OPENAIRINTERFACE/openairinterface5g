@@ -61,7 +61,7 @@ extern uint16_t sl_ahead;
 void handle_nr_rach(NR_UL_IND_t *UL_info) {
   if(NFAPI_MODE == NFAPI_MODE_PNF) {
     if (UL_info->rach_ind.number_of_pdus>0) {
-      //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
+      LOG_D(PHY,"UL_info->UL_info->rach_ind.number_of_pdus:%d SFN/Slot:%d.%d \n", UL_info->rach_ind.number_of_pdus, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
       oai_nfapi_nr_rach_indication(&UL_info->rach_ind);
       UL_info->rach_ind.number_of_pdus = 0;
     }
@@ -113,14 +113,12 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
           break;
 
         case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
-          //printf("handle uci format 0_1 \n");
           const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu = &uci_list[i].pucch_pdu_format_0_1;
           handle_nr_uci_pucch_0_1(mod_id, frame, slot, uci_pdu);
           break;
         }
 
         case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
-          //printf("handle uci format 2_3_4 \n");
           const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &uci_list[i].pucch_pdu_format_2_3_4;
           handle_nr_uci_pucch_2_3_4(mod_id, frame, slot, uci_pdu);
           break;
@@ -137,13 +135,13 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
 {
   if(NFAPI_MODE == NFAPI_MODE_PNF) {
     if (UL_info->crc_ind.number_crcs>0) {
-      //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
+      LOG_D(PHY,"UL_info->UL_info->crc_ind.number_crcs:%d CRC_IND:SFN/Slot:%d.%d\n", UL_info->crc_ind.number_crcs, UL_info->crc_ind.sfn, UL_info->crc_ind.slot);
       oai_nfapi_nr_crc_indication(&UL_info->crc_ind);
       UL_info->crc_ind.number_crcs = 0;
     }
 
     if (UL_info->rx_ind.number_of_pdus>0) {
-      //LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/SF:%d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf));
+      LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/Slot:%d.%d \n", UL_info->rx_ind.number_of_pdus, UL_info->rx_ind.sfn, UL_info->rx_ind.slot);
       oai_nfapi_nr_rx_data_indication(&UL_info->rx_ind);
       UL_info->rx_ind.number_of_pdus = 0;
     }
