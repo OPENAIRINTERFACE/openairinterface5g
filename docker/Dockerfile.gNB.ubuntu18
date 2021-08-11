@@ -25,7 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM ran-build:latest AS gnb-build 
+FROM ran-build:latest AS gnb-build
 
 RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
@@ -110,4 +110,4 @@ WORKDIR /opt/oai-gnb
 #EXPOSE 50001/udp # IF5 / ECPRI (data)
 
 ENTRYPOINT ["/opt/oai-gnb/bin/entrypoint.sh"]
-CMD ["/opt/oai-gnb/bin/nr-softmodem", "-O", "/opt/oai-gnb/etc/gnb.conf"]
+CMD ["/opt/oai-gnb/bin/nr-softmodem.Rel15", "-O", "/opt/oai-gnb/etc/gnb.conf"]
