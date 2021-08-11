@@ -1,6 +1,6 @@
 # Procedure to run nFAPI in 5G NR
 
-## Conributed by 5G Testbed IISc 
+## Contributed by 5G Testbed IISc 
 
 ### Developers: Gokul S, Mahesh A, Aniq U R
 
