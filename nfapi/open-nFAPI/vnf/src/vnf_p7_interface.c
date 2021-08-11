@@ -185,8 +185,6 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		}
 
 		selectRetval = pselect(maxSock+1, &rfds, NULL, NULL, &pselect_timeout, NULL);
-		
-		nfapi_vnf_p7_connection_info_t* curr = vnf_p7->p7_connections;
 
 		if(selectRetval == 0)
 		{
