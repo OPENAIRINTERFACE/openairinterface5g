@@ -115,10 +115,13 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
     if (x2ap_enb_data_p != NULL) {
       /* some sanity check - to be refined at some point */
       if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
-        X2AP_ERROR("x2ap_enb_data_p not NULL and sctp state not SCTP_STATE_ESTABLISHED, what to do?\n");
-        // Allow for a gracious exit when we kill first the gNB, then the eNB
-        //abort();
-        return;
+        X2AP_ERROR("x2ap_enb_data_p not NULL and sctp state not SCTP_STATE_ESTABLISHED?\n");
+        if (sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN){
+          RB_REMOVE(x2ap_enb_map, &instance_p->x2ap_enb_head, x2ap_enb_data_p);
+          return;
+        }
+
+        exit(1);
       }
 
       x2ap_enb_data_p->in_streams  = sctp_new_association_resp->in_streams;
@@ -131,6 +134,18 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
                                  sctp_new_association_resp->ulp_cnx_id);
   DevAssert(x2ap_enb_data_p != NULL);
   dump_trees();
+
+  /* gNB: exit if connection to eNB failed - to be modified if needed.
+   * We may want to try to connect over and over again until we succeed
+   * but the modifications to the code to get this behavior are complex.
+   * Exit on error is a simple solution that can be caught by a script
+   * for example.
+   */
+  if (instance_p->cell_type == CELL_MACRO_GNB
+      && sctp_new_association_resp->sctp_state == SCTP_STATE_UNREACHABLE) {
+    X2AP_ERROR("association with eNB failed, is it running? If no, run it first. If yes, check IP addresses in your configuration file.\n");
+    exit(1);
+  }
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
     X2AP_WARN("Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u\n",

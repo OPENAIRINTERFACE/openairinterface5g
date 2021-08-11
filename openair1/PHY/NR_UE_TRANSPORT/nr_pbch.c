@@ -54,22 +54,20 @@ uint16_t nr_pbch_extract(int **rxdataF,
                          int **dl_ch_estimates_ext,
                          uint32_t symbol,
                          uint32_t s_offset,
-                         uint32_t high_speed_flag,
                          NR_DL_FRAME_PARMS *frame_parms) {
   uint16_t rb;
   uint8_t i,j,aarx;
   int32_t *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
   int nushiftmod4 = frame_parms->nushift;
-  unsigned int  rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier; //and
-
- // if (rx_offset>= frame_parms->ofdm_symbol_size) rx_offset-=frame_parms->ofdm_symbol_size;
- rx_offset=(rx_offset)%(frame_parms->ofdm_symbol_size);
 
   AssertFatal(symbol>=1 && symbol<5,
               "symbol %d illegal for PBCH extraction\n",
               symbol);
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+    unsigned int rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier;
+    rx_offset = (rx_offset)%(frame_parms->ofdm_symbol_size);
+
     rxF        = &rxdataF[aarx][(symbol+s_offset)*frame_parms->ofdm_symbol_size];
     rxF_ext    = &rxdataF_ext[aarx][symbol*20*12];
 #ifdef DEBUG_PBCH
@@ -139,10 +137,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
       }
     }
 
-    if (high_speed_flag == 1)
-      dl_ch0     = &dl_ch_estimates[aarx][((symbol+s_offset)*(frame_parms->ofdm_symbol_size))];
-    else
-      dl_ch0     = &dl_ch_estimates[aarx][0];
+    dl_ch0 = &dl_ch_estimates[aarx][((symbol+s_offset)*(frame_parms->ofdm_symbol_size))];
 
     //printf("dl_ch0 addr %p\n",dl_ch0);
     dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*20*12];
@@ -421,8 +416,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 NR_DL_FRAME_PARMS *frame_parms,
                 uint8_t gNB_id,
                 uint8_t i_ssb,
-                MIMO_mode_t mimo_mode,
-                uint32_t high_speed_flag) {
+                MIMO_mode_t mimo_mode) {
 
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
   int max_h=0;
@@ -471,7 +465,6 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                     nr_ue_pbch_vars->dl_ch_estimates_ext,
                     symbol,
                     symbol_offset,
-                    high_speed_flag,
                     frame_parms);
 #ifdef DEBUG_PBCH
     LOG_I(PHY,"[PHY] PBCH Symbol %d ofdm size %d\n",symbol, frame_parms->ofdm_symbol_size );
@@ -590,7 +583,9 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
       frame_parms->ssb_index += (((nr_ue_pbch_vars->xtra_byte>>(7-i))&0x01)<<(3+i));
   }
 
-  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms);
+  ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms,frame_parms->ssb_index);
+  if (frame_parms->half_frame_bit)
+    ue->symbol_offset += (frame_parms->slots_per_frame>>1)*frame_parms->symbols_per_slot;
 
   uint8_t frame_number_4lsb = 0;
   for (int i=0; i<4; i++)
@@ -612,7 +607,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint16_t number_pdus = 1;
 
   nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-  nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_MIB, gNB_id, ue, NULL, number_pdus);
+  nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, gNB_id, ue, NULL, number_pdus);
 
   if (ue->if_inst && ue->if_inst->dl_indication)
     ue->if_inst->dl_indication(&dl_indication, NULL);

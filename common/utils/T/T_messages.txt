@@ -1,7 +1,3 @@
-ID = BENETEL
-  GROUP = ALL
-  FORMAT = int,frame : int,slot : buffer,rxdataF
-
 #general logs
 ID = ENB_MASTER_TICK
     DESC = eNodeB master tick - one tick per ms, to be used as "reference clock", mostly for ticktime view
@@ -93,6 +89,14 @@ ID = GNB_PHY_MIB
     DESC = NR MIB data
     GROUP = ALL:PHY:GNB:WIRESHARK
     FORMAT = int,gNB_ID : int,frame : int,slot : buffer,data
+ID = GNB_PHY_PUCCH_PUSCH_IQ
+    DESC = gNodeB input data in the frequency domain for a slot where some PUCCH or PUSCH detection was done
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:GNB
+    FORMAT = int,frame : int,slot : buffer,rxdataF
+ID = GNB_PHY_PRACH_INPUT_SIGNAL
+    DESC = gNodeB input data in the time domain for slots with PRACH detection
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:GNB
+    FORMAT = int,frame : int,slot : int,antenna : buffer,rxdata
 
 #MAC logs
 ID = ENB_MAC_UE_DL_SDU
@@ -2407,6 +2411,21 @@ ID = VCD_FUNCTION_UE_SLOT_FEP
     GROUP = ALL:VCD:UE:VCD_FUNCTION
     FORMAT = int,value
     VCD_NAME = ue_slot_fep
+ID = VCD_FUNCTION_UE_SLOT_FEP_PDCCH
+    DESC = VCD function UE_SLOT_FEP_PDCCH
+    GROUP = ALL:VCD:UE:VCD_FUNCTION
+    FORMAT = int,value
+    VCD_NAME = ue_slot_fep_pdcch
+ID = VCD_FUNCTION_UE_SLOT_FEP_PBCH
+    DESC = VCD function UE_SLOT_FEP_PBCH
+    GROUP = ALL:VCD:UE:VCD_FUNCTION
+    FORMAT = int,value
+    VCD_NAME = ue_slot_fep_pbch
+ID = VCD_FUNCTION_UE_SLOT_FEP_PDSCH
+    DESC = VCD function UE_SLOT_FEP_PDSCH
+    GROUP = ALL:VCD:UE:VCD_FUNCTION
+    FORMAT = int,value
+    VCD_NAME = ue_slot_fep_pdsch
 ID = VCD_FUNCTION_UE_SLOT_FEP_MBSFN
     DESC = VCD function UE_SLOT_FEP_MBSFN
     GROUP = ALL:VCD:UE:VCD_FUNCTION
@@ -2847,6 +2866,11 @@ ID = VCD_FUNCTION_PDSCH_PROC
     GROUP = ALL:VCD:UE:VCD_FUNCTION
     FORMAT = int,value
     VCD_NAME = pdsch_procedures
+ID = VCD_FUNCTION_PDSCH_PROC_C
+    DESC = VCD function PDSCH_PROC_C
+    GROUP = ALL:VCD:UE:VCD_FUNCTION
+    FORMAT = int,value
+    VCD_NAME = pdsch_procedures_crnti
 ID = VCD_FUNCTION_PDSCH_PROC_SI
     DESC = VCD function PDSCH_PROC_SI
     GROUP = ALL:VCD:UE:VCD_FUNCTION

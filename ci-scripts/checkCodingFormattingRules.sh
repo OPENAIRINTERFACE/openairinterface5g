@@ -76,8 +76,8 @@ then
     do
        IS_NFAPI=`echo $FILE | egrep -c "nfapi/open-nFAPI|nfapi/oai_integration/vendor_ext" || true`
        IS_OAI_LICENCE_PRESENT=`egrep -c "OAI Public License" $FILE || true`
-       IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence" $FILE || true`
-       IS_EXCEPTION=`echo $FILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h|openair3/GTPV1-U/nw-gtpv1u|openair2/UTIL/OPT/ws_|openair3/NAS/COMMON/milenage.h" || true`
+       IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence|License-Identifier: BSD-2-Clause" $FILE || true`
+       IS_EXCEPTION=`echo $FILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h|openair3/GTPV1-U/nw-gtpv1u|openair2/UTIL/OPT/ws_|openair2/UTIL/OPT/packet-rohc.h|openair3/NAS/COMMON/milenage.h" || true`
        if [ $IS_OAI_LICENCE_PRESENT -eq 0 ] && [ $IS_BSD_LICENCE_PRESENT -eq 0 ]
        then
            if [ $IS_NFAPI -eq 0 ] && [ $IS_EXCEPTION -eq 0 ]
@@ -197,8 +197,8 @@ do
         then
             IS_NFAPI=`echo $FULLFILE | egrep -c "nfapi/open-nFAPI|nfapi/oai_integration/vendor_ext" || true`
             IS_OAI_LICENCE_PRESENT=`egrep -c "OAI Public License" $FULLFILE || true`
-            IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence" $FULLFILE || true`
-            IS_EXCEPTION=`echo $FULLFILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h|openair3/GTPV1-U/nw-gtpv1u|openair2/UTIL/OPT/ws_|openair3/NAS/COMMON/milenage.h" || true`
+            IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence|License-Identifier: BSD-2-Clause" $FULLFILE || true`
+            IS_EXCEPTION=`echo $FULLFILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h|openair3/GTPV1-U/nw-gtpv1u|openair2/UTIL/OPT/ws_|openair2/UTIL/OPT/packet-rohc.h|openair3/NAS/COMMON/milenage.h" || true`
             if [ $IS_OAI_LICENCE_PRESENT -eq 0 ] && [ $IS_BSD_LICENCE_PRESENT -eq 0 ]
             then
                 if [ $IS_NFAPI -eq 0 ] && [ $IS_EXCEPTION -eq 0 ]

@@ -169,8 +169,8 @@ int udp_eNB_create_socket(int port, char *ip_addr, task_id_t task_id)
 
   if ((rc = bind(sd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in))) < 0) {
     close(sd);
-    AssertFatal(rc >= 0, "UDP: Failed to bind socket: (%s:%d) address %s port %d\n",
-                strerror(errno), errno, ip_addr, port);
+    LOG_E(UDP_, "Failed to bind socket: (%s:%d) address %s port %d\n", strerror(errno), errno, ip_addr, port);
+    return -1;
   }
 
   /* Create a new descriptor for this connection */

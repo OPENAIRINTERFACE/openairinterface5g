@@ -132,23 +132,26 @@ With the RF simulator (on the same machine):
 
 `sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --do-ra --rfsim --parallel-config PARALLEL_SINGLE_THREAD`
 
-## sa setup with OAI
+## SA setup with OAI
 
-The sa flag is used to run gNB in standalone mode. Currently OAI in NR standalone mode transmits and receives SIB1.
+The sa flag is used to run gNB in standalone mode.
 
-In order to run gNB in standalone mode, the following flag is needed at gNB:
+In order to run gNB and UE in standalone mode, the following flag is needed:
 
 `--sa`
 
-### Run OAI in sa mode
+At the gNB the --sa flag does the following:
+- The RRC encodes SIB1 according to the configuration file and transmits it through NR-BCCH-DL-SCH.
 
-At the gNB the --sa flag does the following
-- it reads the RRC configuration from the configuration file
-- it encodes the RRCConfiguration and the RBconfig message and stores them in the binary files rbconfig.raw and reconfig.raw
-- the RRC encodes SIB1 according the configuration file and transmits it through PDSCH
+At the UE the --sa flag will:
+- Decode SIB1 and starts the 5G NR Initial Access Procedure for SA:
+  1) 5G-NR RRC Connection Setup
+  2) NAS Authentication and Security
+  3) 5G-NR AS Security Procedure
+  4) 5G-NR RRC Reconfiguration
+  5) Start Downlink and Uplink Data Transfer
 
-At the UE the --sa flag will
-- read the binary files rbconfig.raw and reconfig.raw from the current directory (a different directory can be specified with the flag --rrc_config_path) and process them.
+### Run OAI in SA mode
 
 From the `cmake_targets/ran_build/build` folder:
 
@@ -158,17 +161,17 @@ gNB on machine 1:
 
 UE on machine 2:
 
-`sudo ./nr-uesoftmodem --rrc_config_path . --sa`
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --sa`
 
 With the RF simulator (on the same machine):
 
 `sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --rfsim --sa`
 
-`sudo ./nr-uesoftmodem --rrc_config_path . --rfsim --sa`
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa`
 
 ## IF setup with OAI
 
-The -C and -CO flags can be used together at UE side to set custom downlink and uplink FR1 intermediate frequencies for the IF equipment.
+The -C and --CO flags can be used together at UE side to set custom downlink and uplink FR1 arbitrary frequencies for the IF equipment.
 
 In order to run this setup, the following flags are needed at the UE side:
 
@@ -182,9 +185,11 @@ and the following parameters must be configured in the RUs section of the gNB co
 
 `if_offset`
 
-### Run OAI with custom DL/UL intermediate frequencies
+The values must be given in Hz.
 
-The following example uses DL frequency 2169.080 MHz and UL frequency offset -400 MHz, with a configuration file for band 66 at gNB side.
+### Run OAI with custom DL/UL arbitrary frequencies
+
+The following example uses DL frequency 2169.080 MHz and UL frequency offset -400 MHz, with a configuration file for band 66 (FDD) at gNB side.
 
 From the `cmake_targets/ran_build/build` folder:
 

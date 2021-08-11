@@ -31,15 +31,12 @@
  */
 
 #include "PHY/defs_gNB.h"
-#include "PHY/phy_extern.h"
 #include "sched_nr.h"
 #include "PHY/MODULATION/modulation_common.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
-#include "LAYER2/MAC/mac.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/system.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -200,17 +197,17 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
 
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+j , 1);
         start_meas(&ru->txdataF_copy_stats);
-        if (ru->num_gNB == 1){
-          gNB = ru->gNB_list[0];
-          cfg = &gNB->gNB_config;
+        AssertFatal(ru->num_gNB==1,"num_gNB>1, help\n");
+        gNB = ru->gNB_list[0];
+        cfg = &gNB->gNB_config;
 
-          for(i=0; i<ru->nb_tx; ++i){
-            memcpy((void*)&ru->common.txdataF[i][j*fp->ofdm_symbol_size],
-                   (void*)&gNB->common_vars.txdataF[i][j*fp->ofdm_symbol_size + txdataF_offset],
-                   fp->ofdm_symbol_size*sizeof(int32_t));
-          }
+        for(i=0; i<ru->nb_tx; ++i){
+          memcpy((void*)&ru->common.txdataF[i][j*fp->ofdm_symbol_size],
+                 (void*)&gNB->common_vars.txdataF[i][j*fp->ofdm_symbol_size + txdataF_offset],
+                 fp->ofdm_symbol_size*sizeof(int32_t));
+	    
+        }
 
-        }//num_gNB == 1
         stop_meas(&ru->txdataF_copy_stats);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+j , 0);
 
@@ -279,13 +276,12 @@ static void *nr_feptx_thread(void *param) {
 
   RU_feptx_t *feptx = (RU_feptx_t *)param;
   RU_t       *ru;
-  int         aa, slot, start, l, nb_antenna_ports, ret;
+  int         aa, slot, start, l, ret;
   int         i;
   int32_t ***bw;
   NR_DL_FRAME_PARMS *fp;
   int ofdm_mask_full;
   int txdataF_offset;
-  int32_t *txdataF;
   while (!oai_exit) {
     ret = 0;
     if (wait_on_condition(&feptx->mutex_feptx,&feptx->cond_feptx,&feptx->instance_cnt_feptx,"NR feptx thread")<0) break;
@@ -299,40 +295,55 @@ static void *nr_feptx_thread(void *param) {
     l     = feptx->symbol;
     fp    = ru->nr_frame_parms;
     start = feptx->symbol;
-    nb_antenna_ports = feptx->nb_antenna_ports;
     ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
 
     if(ru->num_gNB != 0){
       txdataF_offset = ((slot%2)*fp->samples_per_slot_wCP);
       ////////////precoding////////////
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 1);
-      start_meas(&ru->precoding_stats);
+      
+      if (aa==0 && l==0) start_meas(&ru->precoding_stats);
+
+      if (ru->do_precoding == 1) {
+        for(i=0; i<ru->nb_log_antennas; ++i) {
+          memcpy((void*) &ru->common.beam_id[i][slot*fp->symbols_per_slot+l],
+                 (void*) &ru->gNB_list[0]->common_vars.beam_id[i][slot*fp->symbols_per_slot+l],
+                 (fp->symbols_per_slot>>1)*sizeof(uint8_t));
+         }
+      }
+
       if (ru->nb_tx == 1 && ru->nb_log_antennas == 1) {
-            memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
-                 (void*)&ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset + l*fp->ofdm_symbol_size],
-                 (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
+        memcpy((void*)&ru->common.txdataF_BF[0][l*fp->ofdm_symbol_size],
+               (void*)&ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset + l*fp->ofdm_symbol_size],
+               (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
+      }
+      else if (ru->do_precoding == 0) {
+        int gNB_tx = ru->gNB_list[0]->frame_parms.nb_antennas_tx;
+        memcpy((void*)&ru->common.txdataF_BF[aa][l*fp->ofdm_symbol_size],
+               (void*)&ru->gNB_list[0]->common_vars.txdataF[aa%gNB_tx][txdataF_offset + l*fp->ofdm_symbol_size],
+               (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
       }
       else {
         bw  = ru->beam_weights[0];
-        txdataF = &ru->gNB_list[0]->common_vars.txdataF[0][txdataF_offset];
         for(i=0; i<fp->symbols_per_slot>>1; ++i){
-          nr_beam_precoding(&txdataF,
+          nr_beam_precoding(ru->gNB_list[0]->common_vars.txdataF,
                         ru->common.txdataF_BF,
                         fp,
                         bw,
                         slot,
                         l+i,
                         aa,
-                        nb_antenna_ports);
+                        ru->nb_log_antennas,
+                        txdataF_offset);//here
         }
       }
-      stop_meas(&ru->precoding_stats);
+      if (aa==0 && l==0) stop_meas(&ru->precoding_stats);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 0);
 
       ////////////FEPTX////////////
-      start_meas(&ru->ofdm_mod_stats);
+      if (aa==0 && l==0) start_meas(&ru->ofdm_mod_stats);
       nr_feptx0(ru,slot,start,fp->symbols_per_slot>>1,aa);
-      stop_meas(&ru->ofdm_mod_stats);
+      if (aa==0 && l==0) stop_meas(&ru->ofdm_mod_stats);
 
       if (release_thread(&feptx->mutex_feptx,&feptx->instance_cnt_feptx,"NR feptx thread")<0) break;
 
@@ -362,7 +373,8 @@ static void *nr_feptx_thread(void *param) {
                         slot,
                         l,
                         aa,
-                        nb_antenna_ports);
+                        ru->nb_log_antennas,
+                        0);
       }
       stop_meas(&ru->precoding_stats);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 0);
@@ -459,10 +471,14 @@ void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
 
     if (nr_slot_select(cfg,frame_tx,slot_tx) == NR_UPLINK_SLOT) return;
 
-    for(i=0; i<ru->nb_log_antennas; ++i)
+    for(i=0; i<ru->nb_log_antennas; ++i) {
       memcpy((void*)ru->common.txdataF[i],
            (void*)&gNB->common_vars.txdataF[i][txdataF_offset],
            fp->samples_per_slot_wCP*sizeof(int32_t));
+      memcpy((void*)&ru->common.beam_id[i][slot_tx*fp->symbols_per_slot],
+	     (void*)&gNB->common_vars.beam_id[i][slot_tx*fp->symbols_per_slot],
+	     fp->symbols_per_slot*sizeof(uint8_t));
+    }
 
     if (ru->nb_tx == 1 && ru->nb_log_antennas == 1) {
     
@@ -485,7 +501,8 @@ void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
                             tti_tx,
                             l,
                             aa,
-                            ru->nb_log_antennas);
+                            ru->nb_log_antennas,
+                            0);
         }// for (aa=0;aa<ru->nb_tx;aa++)
       }// for (l=0;l<fp->symbols_per_slot;l++)
     }// if (ru->nb_tx == 1)
@@ -520,8 +537,7 @@ void nr_fep0(RU_t *ru, int first_half) {
                      ru->common.rxdataF[aa],
                      l,
                      proc->tti_rx,
-                     ru->N_TA_offset,
-                     0);
+                     ru->N_TA_offset);
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+proc->tti_rx, 0);
@@ -657,8 +673,7 @@ void nr_fep_full(RU_t *ru, int slot) {
                      ru->common.rxdataF[aa],
                      l,
                      proc->tti_rx,
-                     ru->N_TA_offset,
-                     0);
+                     ru->N_TA_offset);
     }
   }
 

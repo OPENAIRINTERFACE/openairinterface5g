@@ -2762,7 +2762,7 @@ do_RRCConnectionSetup(
   //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax,
   //SchedulingRequestConfig__setup__dsr_TransMax_n4);
   //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
-  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = LTE_SchedulingRequestConfig__setup__dsr_TransMax_n4;
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = LTE_SchedulingRequestConfig__setup__dsr_TransMax_n64;
   rrcConnectionSetup->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionSetup->criticalExtensions.present = LTE_RRCConnectionSetup__criticalExtensions_PR_c1;
   rrcConnectionSetup->criticalExtensions.choice.c1.present = LTE_RRCConnectionSetup__criticalExtensions__c1_PR_rrcConnectionSetup_r8 ;
@@ -3254,56 +3254,58 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count=0;
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list,
                    &rat);
-
-  /* request NR configuration */
   LTE_UECapabilityEnquiry_r8_IEs_t *r8 = &dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8;
   LTE_UECapabilityEnquiry_v8a0_IEs_t r8_a0;
   LTE_UECapabilityEnquiry_v1180_IEs_t r11_80;
   LTE_UECapabilityEnquiry_v1310_IEs_t r13_10;
   LTE_UECapabilityEnquiry_v1430_IEs_t r14_30;
   LTE_UECapabilityEnquiry_v1510_IEs_t r15_10;
-
-  memset(&r8_a0, 0, sizeof(r8_a0));
-  memset(&r11_80, 0, sizeof(r11_80));
-  memset(&r13_10, 0, sizeof(r13_10));
-  memset(&r14_30, 0, sizeof(r14_30));
-  memset(&r15_10, 0, sizeof(r15_10));
-
-  r8->nonCriticalExtension = &r8_a0;
-  r8_a0.nonCriticalExtension = &r11_80;
-  r11_80.nonCriticalExtension = &r13_10;
-  r13_10.nonCriticalExtension = &r14_30;
-  r14_30.nonCriticalExtension = &r15_10;
-
-  /* TODO: no hardcoded values here */
-
-  nsa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
-
-  nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
-  nsa_band->present = NR_FreqBandInformation_PR_bandInformationEUTRA;
-  nsa_band->choice.bandInformationEUTRA = (NR_FreqBandInformationEUTRA_t *) calloc(1, sizeof(NR_FreqBandInformationEUTRA_t));
-  nsa_band->choice.bandInformationEUTRA->bandEUTRA = eutra_band;
-  ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
-
-  nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
-  nsa_band->present = NR_FreqBandInformation_PR_bandInformationNR;
-  nsa_band->choice.bandInformationNR = (NR_FreqBandInformationNR_t *) calloc(1, sizeof(NR_FreqBandInformationNR_t));
-  if(nr_band > 0)
-    nsa_band->choice.bandInformationNR->bandNR = nr_band;
-  else
-    nsa_band->choice.bandInformationNR->bandNR = 78;
-  ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
-
   OCTET_STRING_t req_freq;
-  //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
-  unsigned char req_freq_buf[1024];
-  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_FreqBandList,
-                              NULL,
-                              (void *)nsa_band_list,
-                              req_freq_buf,
-                              1024);
 
-  xer_fprint(stdout, &asn_DEF_NR_FreqBandList, (void *)nsa_band_list);
+  if (nr_band>0) {
+
+    /* request NR configuration */
+
+    memset(&r8_a0, 0, sizeof(r8_a0));
+    memset(&r11_80, 0, sizeof(r11_80));
+    memset(&r13_10, 0, sizeof(r13_10));
+    memset(&r14_30, 0, sizeof(r14_30));
+    memset(&r15_10, 0, sizeof(r15_10));
+
+    r8->nonCriticalExtension = &r8_a0;
+    r8_a0.nonCriticalExtension = &r11_80;
+    r11_80.nonCriticalExtension = &r13_10;
+    r13_10.nonCriticalExtension = &r14_30;
+    r14_30.nonCriticalExtension = &r15_10;
+
+    /* TODO: no hardcoded values here */
+
+    nsa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
+
+    nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+    nsa_band->present = NR_FreqBandInformation_PR_bandInformationEUTRA;
+    nsa_band->choice.bandInformationEUTRA = (NR_FreqBandInformationEUTRA_t *) calloc(1, sizeof(NR_FreqBandInformationEUTRA_t));
+    nsa_band->choice.bandInformationEUTRA->bandEUTRA = eutra_band;
+    ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
+
+    nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+    nsa_band->present = NR_FreqBandInformation_PR_bandInformationNR;
+    nsa_band->choice.bandInformationNR = (NR_FreqBandInformationNR_t *) calloc(1, sizeof(NR_FreqBandInformationNR_t));
+  //if(nr_band > 0)
+    nsa_band->choice.bandInformationNR->bandNR = nr_band;
+  //else
+  //  nsa_band->choice.bandInformationNR->bandNR = 78;
+    ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
+
+  //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
+    unsigned char req_freq_buf[1024];
+    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_FreqBandList,
+                                NULL,
+                                (void *)nsa_band_list,
+                                req_freq_buf,
+                                1024);
+
+    xer_fprint(stdout, &asn_DEF_NR_FreqBandList, (void *)nsa_band_list);
 
 
 
@@ -3314,14 +3316,16 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 //0x01, 0x60, 0x18, 0x05, 0x80, 0xc0, 0x04, 0x04, 0xc1, 0x2c, 0x10, 0x08, 0x20, 0x30, 0x40, 0xe0, 0x82, 0x40, 0x28, 0x80, 0x9a
 //  };
 
-  req_freq.buf = req_freq_buf;
-  req_freq.size = (enc_rval.encoded+7)/8;
+    req_freq.buf = req_freq_buf;
+    req_freq.size = (enc_rval.encoded+7)/8;
 //  req_freq.size = 21;
 
-  r15_10.requestedFreqBandsNR_MRDC_r15 = &req_freq;
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    xer_fprint(stdout, &asn_DEF_LTE_DL_DCCH_Message, (void *)&dl_dcch_msg);
+    r15_10.requestedFreqBandsNR_MRDC_r15 = &req_freq;
+    // Add request for eutra-nr 
   }
+//  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_LTE_DL_DCCH_Message, (void *)&dl_dcch_msg);
+//  }
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_DCCH_Message,
                                    NULL,

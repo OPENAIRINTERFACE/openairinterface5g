@@ -43,7 +43,7 @@
 
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
-const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH"};
+const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH", "SI_DLSCH", "P_DLSCH"};
 const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 queue_t nr_rx_ind_queue;
 queue_t nr_crc_ind_queue;
@@ -232,7 +232,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
       pdcch_vars->nb_search_space = 0;
 
       for (i = 0; i < dl_config->number_pdus; ++i){
-
+        AssertFatal(dl_config->number_pdus < FAPI_NR_DL_CONFIG_LIST_NUM,"dl_config->number_pdus %d out of bounds\n",dl_config->number_pdus);
+        AssertFatal(dl_config->dl_config_list[i].pdu_type<=FAPI_NR_DL_CONFIG_TYPES,"pdu_type %d > 2\n",dl_config->dl_config_list[i].pdu_type);
         LOG_D(PHY, "In %s: received 1 DL %s PDU of %d total DL PDUs:\n", __FUNCTION__, dl_pdu_type[dl_config->dl_config_list[i].pdu_type - 1], dl_config->number_pdus);
 
         if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DCI) {
@@ -244,29 +245,30 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         } else {
 
+          fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
+          uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
+
           if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DLSCH){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
           }
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_ra[0];
+            dlsch0->rnti_type = _RA_RNTI_;
+            dlsch0->harq_processes[current_harq_pid]->status = ACTIVE;
           }
           else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_SI[0];
             dlsch0->rnti_type = _SI_RNTI_;
-            dlsch0->harq_processes[dlsch0->current_harq_pid]->status = ACTIVE;
+            dlsch0->harq_processes[current_harq_pid]->status = ACTIVE;
           }
-
-          fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
-          uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
-          NR_DL_UE_HARQ_t *dlsch0_harq;
 
           dlsch0->current_harq_pid = current_harq_pid;
           dlsch0->active = 1;
           dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
-          dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
 
           LOG_D(PHY,"current_harq_pid = %d\n", current_harq_pid);
 
+          NR_DL_UE_HARQ_t *dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
           if (dlsch0_harq){
 
             dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
@@ -283,7 +285,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
             dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
             dlsch0_harq->harq_ack.slot_for_feedback_ack = (slot+dlsch_config_pdu->pdsch_to_harq_feedback_time_ind)%frame_parms.slots_per_frame;
-            dlsch0_harq->Nl=1;
+
+            //get nrOfLayers from DCI info
+            uint8_t Nl = 0;
+            for (i = 0; i < 4; i++) {
+              if (dlsch_config_pdu->dmrs_ports[i] >= i) Nl += 1;
+            }
+            dlsch0_harq->Nl = Nl;
+
             dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
             dlsch0_harq->harq_ack.rx_status = downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch0->rnti_type);
             dlsch0_harq->status = ACTIVE; //Gokul
@@ -291,6 +300,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
               // dlsch0_harq->status not ACTIVE may be due to false retransmission. Reset the 
               // following flag to skip PDSCH procedures in that case.
               dlsch0->active = 0;
+              dlsch0_harq->harq_ack.ack = 1;
+              dlsch0_harq->harq_ack.send_harq_status = 1;
             }
             dlsch0_harq->harq_ack.vDAI_DL = dlsch_config_pdu->dai;
             /* PTRS */
@@ -313,6 +324,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
       for (i = 0; i < ul_config->number_pdus; ++i){
 
+        AssertFatal(ul_config->ul_config_list[i].pdu_type <= FAPI_NR_UL_CONFIG_TYPES,"pdu_type %d out of bounds\n",ul_config->ul_config_list[i].pdu_type);
         LOG_D(PHY, "In %s: processing %s PDU of %d total UL PDUs (ul_config %p) \n", __FUNCTION__, ul_pdu_type[ul_config->ul_config_list[i].pdu_type - 1], ul_config->number_pdus, ul_config);
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, pucch_resource_id, current_harq_pid, format, gNB_id = 0;
@@ -345,7 +357,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
             if (scheduled_response->tx_request){ 
               fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[i];
-
+              LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
               memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
 
               harq_process_ul_ue->status = ACTIVE;
@@ -431,9 +443,11 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
   fapi_nr_config_request_t *nrUE_config = &PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->nrUE_config;
 
-  if(phy_config != NULL)
+  if(phy_config != NULL) {
       memcpy(nrUE_config,&phy_config->config_req,sizeof(fapi_nr_config_request_t));
-
+      if (PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] == NOT_SYNCHED)
+	      PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] = PRACH;
+  }
   return 0;
 }
 

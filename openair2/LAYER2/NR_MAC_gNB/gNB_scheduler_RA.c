@@ -41,6 +41,7 @@
 #include "UTIL/OPT/opt.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
+#include <executables/softmodem-common.h>
 extern RAN_CONTEXT_t RC;
 extern const uint8_t nr_slots_per_frame[5];
 extern uint16_t sl_ahead;
@@ -65,7 +66,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
   uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
   
-  uint8_t total_RApreambles = 64;
+  uint8_t total_RApreambles = MAX_NUM_NR_PRACH_PREAMBLES;
   if( scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
     total_RApreambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;	
   
@@ -130,7 +131,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
     }
   }
 
-  LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %d ssb per RO = %f number of active SSB %u index = %d fdm %u symbol index %u freq_index %u total_RApreambles %u\n", 
+  LOG_D(NR_MAC, "Frame %d, Slot %d: Prach Occasion id = %d ssb per RO = %f number of active SSB %u index = %d fdm %u symbol index %u freq_index %u total_RApreambles %u\n",
         frameP, slotP, prach_occasion_id, num_ssb_per_RO, num_active_ssb, index, fdm, start_symbol_index, freq_index, total_RApreambles);
 
   return index;
@@ -214,7 +215,7 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
   }
 
   cc->total_prach_occasions_per_config_period = total_RA_occasions;
-  for(int i=1; (1 << (i-1)) < max_association_period; i++) {
+  for(int i=1; (1 << (i-1)) <= max_association_period; i++) {
     cc->max_association_period = (1 <<(i-1));
     total_RA_occasions = total_RA_occasions * cc->max_association_period;
     if(total_RA_occasions >= (int) (num_active_ssb/num_ssb_per_RO)) {
@@ -227,7 +228,7 @@ void find_SSB_and_RO_available(module_id_t module_idP) {
   cc->total_prach_occasions = total_RA_occasions - unused_RA_occasion;
   cc->num_active_ssb = num_active_ssb;
 
-  LOG_I(MAC,
+  LOG_I(NR_MAC,
         "Total available RO %d, num of active SSB %d: unused RO = %d association_period %u N_RA_sfn %u total_prach_occasions_per_config_period %u\n",
         cc->total_prach_occasions,
         cc->num_active_ssb,
@@ -245,7 +246,8 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
   nfapi_nr_ul_tti_request_t *UL_tti_req = &RC.nrmac[module_idP]->UL_tti_req_ahead[0][slotP];
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
 
-  if (is_nr_UL_slot(scc,slotP)) {
+  if (is_nr_UL_slot(scc->tdd_UL_DL_ConfigurationCommon, slotP, cc->frame_type)) {
+
     uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
     uint8_t mu,N_dur,N_t_slot,start_symbol = 0,N_RA_slot;
     uint16_t RA_sfn_index = -1;
@@ -311,7 +313,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
                                         format0,
                                         scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig);
 
-            LOG_D(MAC, "Frame %d, Slot %d: Prach Occasion id = %u  fdm index = %u start symbol = %u slot index = %u subframe index = %u \n",
+            LOG_D(NR_MAC, "Frame %d, Slot %d: Prach Occasion id = %u  fdm index = %u start symbol = %u slot index = %u subframe index = %u \n",
                   frameP, slotP,
                   prach_occasion_id, prach_pdu->num_ra,
                   prach_pdu->prach_start_symbol,
@@ -375,6 +377,16 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
           }
         }
       }
+
+      // block resources in vrb_map_UL
+      const NR_RACH_ConfigGeneric_t *rach_ConfigGeneric =
+          &scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric;
+      const uint8_t mu_pusch =
+          scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+      const int16_t N_RA_RB = get_N_RA_RB(cfg->prach_config.prach_sub_c_spacing.value, mu_pusch);
+      uint16_t *vrb_map_UL = &cc->vrb_map_UL[slotP * MAX_BWP_SIZE];
+      for (int i = 0; i < N_RA_RB * fdm; ++i)
+        vrb_map_UL[rach_ConfigGeneric->msg1_FrequencyStart + i] = 0xff; // all symbols
     }
   }
 }
@@ -383,7 +395,9 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
                       uint16_t *msg2_frame, uint16_t *msg2_slot,
                       NR_ServingCellConfigCommon_t *scc,
                       uint16_t monitoring_slot_period,
-                      uint16_t monitoring_offset,uint8_t index,uint8_t num_active_ssb){
+                      uint16_t monitoring_offset,uint8_t beam_index,
+                      uint8_t num_active_ssb,
+                      int16_t *tdd_beam_association){
 
   // preferentially we schedule the msg2 in the mixed slot or in the last dl slot
   // if they are allowed by search space configuration
@@ -399,18 +413,6 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
     last_dl_slot_period--;
   if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
     tdd_period_slot++;
-
-  // computing start of next period
-  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
-  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
-  *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
-
-  // we can't schedule msg2 before sl_ahead since prach
-  int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
-  if ((eff_slot-rach_slot)<=sl_ahead) {
-    *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
-    *msg2_frame = (*msg2_slot>(rach_slot))? rach_frame : (rach_frame +1);
-  }
 
   switch(response_window){
     case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
@@ -446,6 +448,31 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
   uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame[mu];
   uint8_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
 
+  // computing start of next period
+
+  int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
+
+  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
+  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
+  *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
+
+  // we can't schedule msg2 before sl_ahead since prach
+  int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
+  if ((eff_slot-rach_slot)<=sl_ahead) {
+    *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
+    *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
+  }
+  if (FR==nr_FR2) {
+    int num_tdd_period = *msg2_slot/tdd_period_slot;
+    while((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=beam_index)) {
+      *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
+      *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
+      num_tdd_period = *msg2_slot/tdd_period_slot;
+    }
+    if(tdd_beam_association[num_tdd_period] == -1)
+      tdd_beam_association[num_tdd_period] = beam_index;
+  }
+
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
   while (((*msg2_slot>slot_limit)&&(*msg2_frame>frame_limit)) || ((*msg2_frame*nr_slots_per_frame[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
@@ -474,13 +501,13 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
 
-  uint8_t total_RApreambles = 64;
-  uint8_t  num_ssb_per_RO = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;	
+  uint8_t total_RApreambles = MAX_NUM_NR_PRACH_PREAMBLES;
+  uint8_t  num_ssb_per_RO = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
   int pr_found;
 
   if( scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
-    total_RApreambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;	
-  
+    total_RApreambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;
+
   if(num_ssb_per_RO > 3) { /*num of ssb per RO >= 1*/
     num_ssb_per_RO -= 3;
     total_RApreambles = total_RApreambles/num_ssb_per_RO ;
@@ -508,7 +535,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
           break;
         }
       }
-
       if (pr_found == 0) {
          continue;
       }
@@ -524,13 +550,17 @@ void nr_initiate_ra_proc(module_id_t module_idP,
         ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
 
       // This should be handled differently when we use the initialBWP for RA
-      ra->bwp_id = 1;
-      NR_BWP_Downlink_t *bwp = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
-                                   ->list.array[ra->bwp_id - 1];
+      ra->bwp_id = 0;
+      NR_BWP_Downlink_t *bwp=NULL;
+      if (ra->CellGroup && ra->CellGroup->spCellConfig && ra->CellGroup->spCellConfig->spCellConfigDedicated &&
+          ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
+        ra->bwp_id = 1;
+	      bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
+      }
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
 
-      LOG_I(MAC,
+      LOG_D(NR_MAC,
             "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Initiating RA procedure for preamble index %d\n",
             module_idP,
             CC_id,
@@ -545,28 +575,37 @@ void nr_initiate_ra_proc(module_id_t module_idP,
         // if the preamble received correspond to one of the listed
         if (!(preamble_index == ra->preambles.preamble_list[beam_index])) {
           LOG_E(
-              MAC,
+              NR_MAC,
               "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated\n",
               module_idP,
               preamble_index);
           continue; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
         }
       }
-      int loop = 0;
-      LOG_D(MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
+      LOG_D(NR_MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
       ra->state = Msg2;
       ra->timing_offset = timing_offset;
       ra->preamble_slot = slotP;
 
-      struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList =
-          bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      NR_SearchSpaceId_t	ra_SearchSpace = 0;
+      struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = NULL;
+      if(bwp) {
+        commonSearchSpaceList = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+        ra_SearchSpace = *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      } else {
+        commonSearchSpaceList = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+        ra_SearchSpace = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      }
       AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
-      // Common searchspace list
+
+      // Common SearchSpace list
       for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
         ss = commonSearchSpaceList->list.array[i];
-        if (ss->searchSpaceId == *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace)
+        if (ss->searchSpaceId == ra_SearchSpace)
           ra->ra_ss = ss;
       }
+
+      AssertFatal(ra->ra_ss!=NULL,"SearchSpace cannot be null for RA\n");
 
       // retrieving ra pdcch monitoring period and offset
       find_monitoring_periodicity_offset_common(ra->ra_ss, &monitoring_slot_period, &monitoring_offset);
@@ -579,13 +618,16 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                        monitoring_slot_period,
                        monitoring_offset,
                        beam_index,
-                       cc->num_active_ssb);
+                       cc->num_active_ssb,
+                       nr_mac->tdd_beam_association);
 
       ra->Msg2_frame = msg2_frame;
       ra->Msg2_slot = msg2_slot;
 
-      LOG_I(MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
-      if (!ra->cfra) {
+      LOG_D(NR_MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
+
+      int loop = 0;
+      if (ra->rnti == 0) { // This condition allows for the usage of a preconfigured rnti for the CFRA
         do {
           ra->rnti = (taus() % 65518) + 1;
           loop++;
@@ -593,15 +635,16 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                  && !((find_nr_UE_id(module_idP, ra->rnti) == -1) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1)
                       && ra->rnti >= 1 && ra->rnti <= 65519));
         if (loop == 100) {
-          LOG_E(MAC, "%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
+          LOG_E(NR_MAC, "%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
           abort();
         }
       }
+
       ra->RA_rnti = ra_rnti;
       ra->preamble_index = preamble_index;
       ra->beam_id = beam_index;
 
-      LOG_I(MAC,
+      LOG_D(NR_MAC,
             "[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB "
             "index %u\n",
             module_idP,
@@ -615,38 +658,38 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       return;
     }
   }
-  LOG_E(MAC, "[gNB %d][RAPROC] FAILURE: CC_id %d Frame %d initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, preamble_index);
+  LOG_E(NR_MAC, "[gNB %d][RAPROC] FAILURE: CC_id %d Frame %d initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, preamble_index);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);
 }
 
-void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
-{
-  gNB_MAC_INST *mac = RC.nrmac[module_idP];
+  void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
+  {
+    gNB_MAC_INST *mac = RC.nrmac[module_idP];
 
-  start_meas(&mac->schedule_ra);
-  for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    NR_COMMON_channels_t *cc = &mac->common_channels[CC_id];
-    for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
-      NR_RA_t *ra = &cc->ra[i];
-      LOG_D(MAC, "RA[state:%d]\n", ra->state);
-      switch (ra->state) {
-        case Msg2:
-          nr_generate_Msg2(module_idP, CC_id, frameP, slotP, ra);
-          break;
-        case Msg4:
-          // generate_Msg4(module_idP, CC_id, frameP, slotP);
-          break;
-        case WAIT_Msg4_ACK:
-          // check_Msg4_retransmission(module_idP, CC_id, frameP, slotP);
-          break;
-        default:
-          break;
+    start_meas(&mac->schedule_ra);
+    for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+      NR_COMMON_channels_t *cc = &mac->common_channels[CC_id];
+      for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+        NR_RA_t *ra = &cc->ra[i];
+        LOG_D(NR_MAC, "RA[state:%d]\n", ra->state);
+        switch (ra->state) {
+          case Msg2:
+            nr_generate_Msg2(module_idP, CC_id, frameP, slotP, ra);
+            break;
+          case Msg4:
+            nr_generate_Msg4(module_idP, CC_id, frameP, slotP, ra);
+            break;
+          case WAIT_Msg4_ACK:
+            nr_check_Msg4_Ack(module_idP, CC_id, frameP, slotP, ra);
+            break;
+          default:
+            break;
+        }
       }
     }
+    stop_meas(&mac->schedule_ra);
   }
-  stop_meas(&mac->schedule_ra);
-}
 
 void nr_get_Msg3alloc(module_id_t module_id,
                       int CC_id,
@@ -654,54 +697,84 @@ void nr_get_Msg3alloc(module_id_t module_id,
                       NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_slot,
                       frame_t current_frame,
-                      NR_RA_t *ra) {
+                      NR_RA_t *ra,
+                      int16_t *tdd_beam_association) {
 
-  // msg3 is schedulend in mixed slot in the following TDD period
-  // for now we consider a TBS of 18 bytes
+    // msg3 is schedulend in mixed slot in the following TDD period
 
-  int mu = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
-  int StartSymbolIndex, NrOfSymbols, startSymbolAndLength, temp_slot;
-  ra->Msg3_tda_id = 16; // initialization to a value above limit
+    uint16_t msg3_nb_rb = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // sdu has 6 or 8 bytes
 
-  for (int i=0; i<ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count; i++) {
-    startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
-    SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
-    // we want to transmit in the uplink symbols of mixed slot
-    if (NrOfSymbols == scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols) {
-      ra->Msg3_tda_id = i;
-      break;
+    int mu = ubwp ?
+      ubwp->bwp_Common->genericParameters.subcarrierSpacing :
+      scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
+    int StartSymbolIndex = 0;
+    int NrOfSymbols = 0;
+    int startSymbolAndLength = 0;
+    int temp_slot = 0;
+    ra->Msg3_tda_id = 16; // initialization to a value above limit
+
+    NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList= ubwp ?
+      ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList:
+      scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+
+    uint8_t k2 = 0;
+    for (int i=0; i<pusch_TimeDomainAllocationList->list.count; i++) {
+      startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
+      SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
+      // we want to transmit in the uplink symbols of mixed slot
+      if (NrOfSymbols == scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols) {
+        k2 = *pusch_TimeDomainAllocationList->list.array[i]->k2;
+        temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
+        ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
+        if (is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[ra->Msg3_slot / 64], ra->Msg3_slot)) {
+          ra->Msg3_tda_id = i;
+          break;
+        }
+      }
     }
+
+    AssertFatal(ra->Msg3_tda_id<16,"Unable to find Msg3 time domain allocation in list\n");
+
+    if (nr_slots_per_frame[mu]>temp_slot)
+      ra->Msg3_frame = current_frame;
+    else
+      ra->Msg3_frame = (current_frame + (temp_slot/nr_slots_per_frame[mu]))%1024;
+
+  // beam association for FR2
+  if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
+    uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+    if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
+      tdd_period_slot++;
+    int num_tdd_period = ra->Msg3_slot/tdd_period_slot;
+    if((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=ra->beam_id))
+      AssertFatal(1==0,"Cannot schedule MSG3\n");
+    else
+      tdd_beam_association[num_tdd_period] = ra->beam_id;
   }
-  AssertFatal(ra->Msg3_tda_id<16,"Unable to find Msg3 time domain allocation in list\n");
 
-  uint8_t k2 = *ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->k2;
-
-  temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
-  ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
-  if (nr_slots_per_frame[mu]>temp_slot)
-    ra->Msg3_frame = current_frame;
-  else
-    ra->Msg3_frame = current_frame + (temp_slot/nr_slots_per_frame[mu]);
-
-  LOG_I(MAC, "[RAPROC] Msg3 slot %d: current slot %u Msg3 frame %u k2 %u Msg3_tda_id %u start symbol index %u\n", ra->Msg3_slot, current_slot, ra->Msg3_frame, k2,ra->Msg3_tda_id, StartSymbolIndex);
+  LOG_D(NR_MAC, "[RAPROC] Msg3 slot %d: current slot %u Msg3 frame %u k2 %u Msg3_tda_id %u start symbol index %u\n", ra->Msg3_slot, current_slot, ra->Msg3_frame, k2,ra->Msg3_tda_id, StartSymbolIndex);
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * MAX_BWP_SIZE];
-  const uint16_t bwpSize = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  /* search 18 free RBs */
+  const uint16_t bwpSize = NRRIV2BW(ubwp ?
+				    ubwp->bwp_Common->genericParameters.locationAndBandwidth :
+				    scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,
+				    MAX_BWP_SIZE);
+
+    /* search msg3_nb_rb free RBs */
   int rbSize = 0;
   int rbStart = 0;
-  while (rbSize < 18) {
+  while (rbSize < msg3_nb_rb) {
     rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
     rbSize = 0;
     while (rbStart < bwpSize && vrb_map_UL[rbStart])
       rbStart++;
-    AssertFatal(rbStart < bwpSize - 18, "no space to allocate Msg 3 for RA!\n");
+    AssertFatal(rbStart < bwpSize - msg3_nb_rb, "no space to allocate Msg 3 for RA!\n");
     while (rbStart + rbSize < bwpSize
            && !vrb_map_UL[rbStart + rbSize]
-           && rbSize < 18)
+           && rbSize < msg3_nb_rb)
       rbSize++;
   }
-  ra->msg3_nb_rb = 18;
+  ra->msg3_nb_rb = msg3_nb_rb;
   ra->msg3_first_rb = rbStart;
 }
 
@@ -712,7 +785,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   NR_ServingCellConfigCommon_t                   *scc = cc->ServingCellConfigCommon;
 
   if (ra->state == RA_IDLE) {
-    LOG_W(MAC,"RA is not active for RA %X. skipping msg3 scheduling\n", ra->rnti);
+    LOG_W(NR_MAC,"RA is not active for RA %X. skipping msg3 scheduling\n", ra->rnti);
     return;
   }
 
@@ -727,7 +800,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     vrb_map_UL[i + ra->msg3_first_rb] = 1;
   }
 
-  LOG_I(MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
+  LOG_D(NR_MAC, "[gNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
 
   nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_idP]->UL_tti_req_ahead[CC_id][ra->Msg3_slot];
   AssertFatal(future_ul_tti_req->SFN == ra->Msg3_frame
@@ -742,14 +815,29 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   nfapi_nr_pusch_pdu_t *pusch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pusch_pdu;
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
   future_ul_tti_req->n_pdus += 1;
+  int ibwp_size  = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  int ibwp_start = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  int abwp_size = ibwp_size;
+  int abwp_start = ibwp_start;
+  int scs = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
+  int fh = 0;
+  int startSymbolAndLength = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
+  int mappingtype = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
 
-  AssertFatal(ra->secondaryCellGroup,
-              "no secondaryCellGroup for RNTI %04x\n",
-              ra->crnti);
-  AssertFatal(ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
-    "downlinkBWP_ToAddModList has %d BWP!\n", ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
-  NR_BWP_Uplink_t *ubwp = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
-  LOG_D(MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d,%d) for rnti: %d\n",
+  if (ra->CellGroup) {
+    AssertFatal(ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
+		"downlinkBWP_ToAddModList has %d BWP!\n", ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
+    NR_BWP_Uplink_t *ubwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
+
+    startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
+    mappingtype = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
+    abwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    scs = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+    fh = ubwp->bwp_Dedicated->pusch_Config->choice.setup->frequencyHopping ? 1 : 0;
+  }
+
+  LOG_D(NR_MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d,%d) for rnti: %d\n",
     frameP,
     slotP,
     ra->Msg3_frame,
@@ -759,23 +847,19 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     ra->msg3_round,
     ra->rnti);
 
-  int startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
   int start_symbol_index,nr_of_symbols;
   SLIV2SL(startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
 
   pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_pdu->rnti = ra->rnti;
   pusch_pdu->handle = 0;
-  int abwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  int abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  int ibwp_size  = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  int ibwp_start = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
   if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size))
     pusch_pdu->bwp_start = abwp_start;
   else
     pusch_pdu->bwp_start = ibwp_start;
   pusch_pdu->bwp_size = ibwp_size;
-  pusch_pdu->subcarrier_spacing = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+  pusch_pdu->subcarrier_spacing = scs;
   pusch_pdu->cyclic_prefix = 0;
   pusch_pdu->mcs_index = 0;
   pusch_pdu->mcs_table = 0;
@@ -787,23 +871,25 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     pusch_pdu->transform_precoding = 0;
   pusch_pdu->data_scrambling_id = *scc->physCellId;
   pusch_pdu->nrOfLayers = 1;
-  pusch_pdu->ul_dmrs_symb_pos = 1<<start_symbol_index; // ok for now but use fill dmrs mask later
+
+  pusch_pdu->ul_dmrs_symb_pos = get_l_prime(nr_of_symbols,mappingtype,pusch_dmrs_pos2,pusch_len1,start_symbol_index, scc->dmrs_TypeA_Position);
+  LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , ul_dmrs_symb_pos:%x\n", start_symbol_index, nr_of_symbols, mappingtype, pusch_pdu->ul_dmrs_symb_pos);
+
   pusch_pdu->dmrs_config_type = 0;
   pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
   pusch_pdu->dmrs_ports = 1;  // 6.2.2 in 38.214 only port 0 to be used
   pusch_pdu->num_dmrs_cdm_grps_no_data = 2;  // no data in dmrs symbols as in 6.2.2 in 38.214
   pusch_pdu->resource_alloc = 1; //type 1
-  pusch_pdu->rb_start = ra->msg3_first_rb + ibwp_start - abwp_start; // as for 6.3.1.7 in 38.211
+  //pusch_pdu->rb_start = ra->msg3_first_rb + ibwp_start - abwp_start; // as for 6.3.1.7 in 38.211
+  pusch_pdu->rb_start = ra->msg3_first_rb;
   if (ra->msg3_nb_rb > pusch_pdu->bwp_size)
     AssertFatal(1==0,"MSG3 allocated number of RBs exceed the BWP size\n");
   else
     pusch_pdu->rb_size = ra->msg3_nb_rb;
   pusch_pdu->vrb_to_prb_mapping = 0;
-  if (ubwp->bwp_Dedicated->pusch_Config->choice.setup->frequencyHopping == NULL)
-    pusch_pdu->frequency_hopping = 0;
-  else
-    pusch_pdu->frequency_hopping = 1;
+
+  pusch_pdu->frequency_hopping = fh;
   //pusch_pdu->tx_direct_current_location;//The uplink Tx Direct Current location for the carrier. Only values in the value range of this field between 0 and 3299, which indicate the subcarrier index within the carrier corresponding 1o the numerology of the corresponding uplink BWP and value 3300, which indicates "Outside the carrier" and value 3301, which indicates "Undetermined position within the carrier" are used. [TS38.331, UplinkTxDirectCurrentBWP IE]
   pusch_pdu->uplink_frequency_shift_7p5khz = 0;
   //Resource Allocation in time domain
@@ -829,83 +915,88 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
 
 void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra)
 {
-  int mcsIndex;
-  int startSymbolAndLength = 0, StartSymbolIndex = -1, NrOfSymbols = 14, StartSymbolIndex_tmp, NrOfSymbols_tmp, x_Overhead, time_domain_assignment = 0;
-  gNB_MAC_INST                      *nr_mac = RC.nrmac[module_idP];
-  NR_COMMON_channels_t                  *cc = &nr_mac->common_channels[CC_id];
-  NR_SearchSpace_t *ss = ra->ra_ss;
 
-  // This code from this point on will not work on initialBWP or CORESET0
-  AssertFatal(ra->bwp_id > 0, "cannot work on initialBWP for now\n");
-
-  AssertFatal(ra->secondaryCellGroup, "no secondaryCellGroup for RNTI %04x\n", ra->crnti);
-  AssertFatal(ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
-              "downlinkBWP_ToAddModList has %d BWP!\n",
-              ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
-
-  uint16_t RA_rnti = ra->RA_rnti;
-  long locationAndBandwidth;
-
-  // check if UE is doing RA on CORESET0 , InitialBWP or configured BWP from SCD
-  // get the BW of the PDCCH for PDCCH size and RAR PDSCH size
-
-  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  int dci10_bw = 0;
-
-  if (ra->coreset0_configured == 1) {
-    AssertFatal(1==0,"This is a standalone condition\n");
-  }
-  else { // on configured BWP or initial LDBWP, bandwidth parameters in DCI correspond size of initialBWP
-    locationAndBandwidth = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth;
-    dci10_bw = NRRIV2BW(locationAndBandwidth, MAX_BWP_SIZE); 
-  }
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
+  NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
 
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
+    uint8_t time_domain_assignment = 1;
+    uint8_t mcsIndex = 0;
+    int rbStart = 0;
+    int rbSize = 8;
+
+    NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+    NR_SearchSpace_t *ss = ra->ra_ss;
+
+    long BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+    NR_BWP_Downlink_t *bwp = NULL;
+    NR_ControlResourceSet_t *coreset = NULL;
+    NR_BWP_t *genericParameters = NULL;
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList=NULL;
+    long BWPStart = 0;
+
+    if (ra->CellGroup &&
+        ra->CellGroup->spCellConfig &&
+        ra->CellGroup->spCellConfig->spCellConfigDedicated &&
+        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList &&
+        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]) {
+      bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+      genericParameters = &bwp->bwp_Common->genericParameters;
+      pdsch_TimeDomainAllocationList = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+    }
+    else {
+      genericParameters= &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+      pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+    }
+    BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    coreset = get_coreset(scc,bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
+
+    AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg2\n");
+
     uint16_t *vrb_map = cc[CC_id].vrb_map;
-    int rbStart = 0, rbSize = 6;
-    for (int i = 0; (i < rbSize) && (rbStart <= (dci10_bw - rbSize)); i++) {
+    for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
       if (vrb_map[rbStart + i]) {
         rbStart += i;
         i = 0;
       }
     }
-    if (rbStart > (dci10_bw - rbSize)) {
-      LOG_E(MAC, "%s(): cannot find free vrb_map for RA RNTI %04x!\n", __func__, ra->RA_rnti);
+
+    if (rbStart > (BWPSize - rbSize)) {
+      LOG_E(NR_MAC, "%s(): cannot find free vrb_map for RA RNTI %04x!\n", __func__, ra->RA_rnti);
       return;
     }
 
+    // Checking if the DCI allocation is feasible in current subframe
     nfapi_nr_dl_tti_request_body_t *dl_req = &nr_mac->DL_req[CC_id].dl_tti_request_body;
-    // Checking if the DCI allocation is feasible in current subframe: we might
-    // need to need up to two (PDCCH + PDSCH) messages, so check that we can
-    // always allocate both (this might be an overestimation, since the PDCCH
-    // message might already exist)
     if (dl_req->nPDUs > NFAPI_NR_MAX_DL_TTI_PDUS - 2) {
-      LOG_I(MAC, "[RAPROC] Subframe %d: FAPI DL structure is full, skip scheduling UE %d\n", slotP, RA_rnti);
+      LOG_I(NR_MAC, "[RAPROC] Subframe %d: FAPI DL structure is full, skip scheduling UE %d\n", slotP, ra->RA_rnti);
       return;
     }
 
-    uint8_t nr_of_candidates, aggregation_level;
+    uint8_t aggregation_level;
+    uint8_t nr_of_candidates;
     find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
-    NR_BWP_Downlink_t *bwp = ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
-    NR_ControlResourceSet_t *coreset = get_coreset(bwp, ss, 0 /* common */);
-    int CCEIndex = allocate_nr_CCEs(nr_mac,
-                                    bwp,
-                                    coreset,
-                                    aggregation_level,
-                                    0, // Y
-                                    0, // m
-                                    nr_of_candidates);
-
+    int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
     if (CCEIndex < 0) {
-      LOG_E(MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
+      LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
       return;
     }
 
-    /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not
-     * exist, create it. This is especially important if we have multiple RAs,
-     * and the DLSCH has to reuse them, so we need to mark them */
-    const int bwpid = bwp->bwp_Id;
+    // Calculate number of symbols
+    int startSymbolIndex, nrOfSymbols;
+    const int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+    SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+    AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
+
+    LOG_D(MAC,"Msg2 startSymbolIndex.nrOfSymbols %d.%d\n",startSymbolIndex,nrOfSymbols);
+
+    int mappingtype = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
+
+    // look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it. This is especially
+    // important if we have multiple RAs, and the DLSCH has to reuse them, so we need to mark them
+    const int bwpid = bwp ? bwp->bwp_Id : 0;
     const int coresetid = coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
     if (!pdcch_pdu_rel15) {
@@ -926,81 +1017,78 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dl_req->nPDUs+=1;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
 
-    LOG_I(MAC,"[gNB %d] [RAPROC] CC_id %d Frame %d, slotP %d: Generating RAR DCI, state %d\n", module_idP, CC_id, frameP, slotP, ra->state);
+    LOG_I(NR_MAC,"[gNB %d][RAPROC] CC_id %d Frame %d, slotP %d: Generating RA-Msg2 DCI, rnti 0x%x, state %d\n",
+          module_idP, CC_id, frameP, slotP, ra->RA_rnti, ra->state);
 
-    NR_BWP_Uplink_t *ubwp=ra->secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+    // SCF222: PDU index incremented for each PDSCH PDU sent in TX control message. This is used to associate control
+    // information to data and is reset every slot.
+    const int pduindex = nr_mac->pdu_index[CC_id]++;
 
-    LOG_I(MAC, "[RAPROC] Scheduling common search space DCI type 1 dlBWP BW %d\n", dci10_bw);
+    uint8_t mcsTableIdx = 0;
+    if (bwp &&
+        bwp->bwp_Dedicated &&
+        bwp->bwp_Dedicated->pdsch_Config &&
+        bwp->bwp_Dedicated->pdsch_Config->choice.setup &&
+        bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table) {
+      if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0)
+        mcsTableIdx = 1;
+      else
+        mcsTableIdx = 2;
+    }
+    else mcsTableIdx = 0;
 
-    // Qm>2 not allowed for RAR
-    if (get_softmodem_params()->do_ra)
-      mcsIndex = 9;
-    else
-      mcsIndex = 0;
+    int dmrsConfigType=0;
+    if (bwp &&
+        bwp->bwp_Dedicated &&
+        bwp->bwp_Dedicated->pdsch_Config &&
+        bwp->bwp_Dedicated->pdsch_Config->choice.setup &&
+        bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA &&
+        bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup &&
+        bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type)
+      dmrsConfigType = 1;
 
     pdsch_pdu_rel15->pduBitmap = 0;
-    pdsch_pdu_rel15->rnti = RA_rnti;
-    /* SCF222: PDU index incremented for each PDSCH PDU sent in TX control
-     * message. This is used to associate control information to data and is
-     * reset every slot. */
-    const int pduindex = nr_mac->pdu_index[CC_id]++;
+    pdsch_pdu_rel15->rnti = ra->RA_rnti;
     pdsch_pdu_rel15->pduIndex = pduindex;
-
-
-    pdsch_pdu_rel15->BWPSize  = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    pdsch_pdu_rel15->BWPStart = NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    pdsch_pdu_rel15->SubcarrierSpacing = bwp->bwp_Common->genericParameters.subcarrierSpacing;
+    pdsch_pdu_rel15->BWPSize  = BWPSize;
+    pdsch_pdu_rel15->BWPStart = BWPStart;
+    pdsch_pdu_rel15->SubcarrierSpacing = genericParameters->subcarrierSpacing;
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
-    pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,0);
+    pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
     pdsch_pdu_rel15->qamModOrder[0] = 2;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
-    if (bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL)
-      pdsch_pdu_rel15->mcsTable[0] = 0;
-    else{
-      if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0)
-        pdsch_pdu_rel15->mcsTable[0] = 1;
-      else
-        pdsch_pdu_rel15->mcsTable[0] = 2;
-    }
+    pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
     pdsch_pdu_rel15->rvIndex[0] = 0;
     pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->nrOfLayers = 1;
     pdsch_pdu_rel15->transmissionScheme = 0;
     pdsch_pdu_rel15->refPoint = 0;
-    pdsch_pdu_rel15->dmrsConfigType = 0;
+    pdsch_pdu_rel15->dmrsConfigType = dmrsConfigType;
     pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->SCID = 0;
-    pdsch_pdu_rel15->numDmrsCdmGrpsNoData = 2;
+    pdsch_pdu_rel15->numDmrsCdmGrpsNoData = nrOfSymbols <= 2 ? 1 : 2;
     pdsch_pdu_rel15->dmrsPorts = 1;
     pdsch_pdu_rel15->resourceAlloc = 1;
     pdsch_pdu_rel15->rbStart = rbStart;
     pdsch_pdu_rel15->rbSize = rbSize;
-    pdsch_pdu_rel15->VRBtoPRBMapping = 0; // non interleaved
+    pdsch_pdu_rel15->VRBtoPRBMapping = 0;
+    pdsch_pdu_rel15->StartSymbolIndex = startSymbolIndex;
+    pdsch_pdu_rel15->NrOfSymbols = nrOfSymbols;
+    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL,
+                                                    nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
+                                                    nrOfSymbols,
+                                                    startSymbolIndex,
+                                                    mappingtype);
 
-    for (int i=0; i<bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count; i++) {
-      startSymbolAndLength = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
-      SLIV2SL(startSymbolAndLength, &StartSymbolIndex_tmp, &NrOfSymbols_tmp);
-      if (NrOfSymbols_tmp < NrOfSymbols) {
-        NrOfSymbols = NrOfSymbols_tmp;
-        StartSymbolIndex = StartSymbolIndex_tmp;
-        time_domain_assignment = i; // this is short PDSCH added to the config to fit mixed slot
-      }
-    }
+    int x_Overhead = 0;
+    uint8_t tb_scaling = 0;
+    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
 
-    AssertFatal(StartSymbolIndex >= 0, "StartSymbolIndex is negative\n");
-
-    pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
-    pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
-    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL, scc->dmrs_TypeA_Position, NrOfSymbols);
-
-    /* Fill PDCCH DL DCI PDU */
+    // Fill PDCCH DL DCI PDU
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
     pdcch_pdu_rel15->numDlDci++;
-    dci_pdu->RNTI = RA_rnti;
-    /* TODO: remove next line */
-    AssertFatal(ss->searchSpaceType->present != NR_SearchSpace__searchSpaceType_PR_ue_Specific,
-                "shouldn't the RA SS be common?\n");
+    dci_pdu->RNTI = ra->RA_rnti;
     dci_pdu->ScramblingId = *scc->physCellId;
     dci_pdu->ScramblingRNTI = 0;
     dci_pdu->AggregationLevel = aggregation_level;
@@ -1010,85 +1098,461 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     dci_pdu_rel15_t dci_payload;
     dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize,
-										     pdsch_pdu_rel15->rbStart,dci10_bw);
+                                                                                    pdsch_pdu_rel15->rbStart,
+                                                                                    pdsch_pdu_rel15->BWPSize);
+
     dci_payload.time_domain_assignment.val = time_domain_assignment;
     dci_payload.vrb_to_prb_mapping.val = 0;
     dci_payload.mcs = pdsch_pdu_rel15->mcsIndex[0];
-    dci_payload.tb_scaling = 0;
+    dci_payload.tb_scaling = tb_scaling;
 
-    LOG_I(MAC,
+    LOG_D(NR_MAC,
           "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
           dci_payload.frequency_domain_assignment.val,
           pdsch_pdu_rel15->rbStart,
           pdsch_pdu_rel15->rbSize,
-          dci10_bw,
+          pdsch_pdu_rel15->BWPSize,
           dci_payload.time_domain_assignment.val,
           dci_payload.vrb_to_prb_mapping.val,
           dci_payload.mcs,
           dci_payload.tb_scaling);
 
-    LOG_I(MAC, "Frame %d: Subframe %d : Adding common DL DCI for RA_RNTI %x\n", frameP, slotP, RA_rnti);
-
-    const int dci_format = NR_DL_DCI_FORMAT_1_0;
-    const int rnti_type = NR_RNTI_RA;
-
-    LOG_I(MAC,
-          "[RAPROC] DCI params: rnti %d, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
+    LOG_D(NR_MAC,
+          "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
           pdcch_pdu_rel15->dci_pdu[0].RNTI,
-          rnti_type,
-          dci_format,
+          NR_RNTI_RA,
+          NR_DL_DCI_FORMAT_1_0,
           (unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
           pdcch_pdu_rel15->StartSymbolIndex,
           pdcch_pdu_rel15->DurationSymbols);
 
     fill_dci_pdu_rel15(scc,
-                       ra->secondaryCellGroup,
-                       dci_pdu,
+                       ra->CellGroup,
+                       &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
                        &dci_payload,
-                       dci_format,
-                       rnti_type,
-                       dci10_bw,
-                       ra->bwp_id);
+                       NR_DL_DCI_FORMAT_1_0,
+                       NR_RNTI_RA,
+                       pdsch_pdu_rel15->BWPSize,
+                       bwpid);
 
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
+
+    // Program UL processing for Msg3
+    NR_BWP_Uplink_t *ubwp = ra->CellGroup ?
+      ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1] :
+      NULL;
+    nr_get_Msg3alloc(module_idP, CC_id, scc, ubwp, slotP, frameP, ra, nr_mac->tdd_beam_association);
+    nr_add_msg3(module_idP, CC_id, frameP, slotP, ra, (uint8_t *) &tx_req->TLVs[0].value.direct[0]);
+
+    if(ra->cfra) {
+      LOG_I(NR_MAC, "Frame %d, Subframe %d: Setting RA-Msg3 reception for Frame %d Subframe %d\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot);
+    }
+
+    T(T_GNB_MAC_DL_RAR_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(ra->RA_rnti), T_INT(frameP),
+      T_INT(slotP), T_INT(0), T_BUFFER(&tx_req->TLVs[0].value.direct[0], tx_req->TLVs[0].length));
+
     tx_req->PDU_length = pdsch_pdu_rel15->TBSize[0];
     tx_req->PDU_index = pduindex;
     tx_req->num_TLV = 1;
-    tx_req->TLVs[0].length = 8;
+    tx_req->TLVs[0].length = tx_req->PDU_length + 2;
     nr_mac->TX_req[CC_id].SFN = frameP;
     nr_mac->TX_req[CC_id].Number_of_PDUs++;
     nr_mac->TX_req[CC_id].Slot = slotP;
 
-    // Program UL processing for Msg3
-    nr_get_Msg3alloc(module_idP, CC_id, scc, ubwp, slotP, frameP, ra);
-    LOG_I(MAC, "Frame %d, Subframe %d: Setting Msg3 reception for Frame %d Subframe %d\n", frameP, slotP, ra->Msg3_frame, ra->Msg3_slot);
-    nr_add_msg3(module_idP, CC_id, frameP, slotP, ra, (uint8_t *) &tx_req->TLVs[0].value.direct[0]);
-    ra->state = WAIT_Msg3;
-    LOG_I(MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
-
-    x_Overhead = 0;
-    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, dci_payload.tb_scaling);
-
-    T(T_GNB_MAC_DL_RAR_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id),
-      T_INT(RA_rnti), T_INT(frameP), T_INT(slotP), T_INT(0) /* harq pid, meaningful? */,
-      T_BUFFER(&tx_req->TLVs[0].value.direct[0], tx_req->TLVs[0].length));
-
-    /* mark the corresponding RBs as used */
-    for (int rb = 0; rb < rbSize; rb++)
+    // Mark the corresponding RBs as used
+    for (int rb = 0; rb < rbSize; rb++) {
       vrb_map[rb + rbStart] = 1;
+    }
+
+    ra->state = WAIT_Msg3;
+    LOG_I(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
   }
 }
 
-void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP){
-  
-  NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[CC_id].ra[0];
-  LOG_D(MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Clear Random access information rnti %x\n", module_idP, CC_id, frameP, ra->rnti);
-  ra->state = IDLE;
+void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra) {
+
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
+  NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
+
+  if (ra->Msg4_frame == frameP && ra->Msg4_slot == slotP ) {
+
+    uint8_t time_domain_assignment = 0;
+    uint8_t mcsIndex = 0;
+
+    NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+    NR_SearchSpace_t *ss = ra->ra_ss;
+
+    NR_BWP_Downlink_t *bwp = NULL;
+    NR_ControlResourceSet_t *coreset = NULL;
+    NR_BWP_t *genericParameters = NULL;
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList=NULL;
+
+    if (ra->CellGroup &&
+        ra->CellGroup->spCellConfig &&
+        ra->CellGroup->spCellConfig->spCellConfigDedicated &&
+        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList &&
+        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]) {
+      bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+      genericParameters = &bwp->bwp_Common->genericParameters;
+      pdsch_TimeDomainAllocationList = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+    }
+    else {
+      genericParameters= &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+      pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+    }
+    coreset = get_coreset(scc,bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
+
+    AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg4\n");
+
+    int UE_id = find_nr_UE_id(module_idP, ra->rnti);
+    NR_UE_info_t *UE_info = &nr_mac->UE_info;
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+    long BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    long BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+
+    // HARQ management
+    AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
+                "UE context not initialized: no HARQ processes found\n");
+    int current_harq_pid = sched_ctrl->available_dl_harq.head;
+    remove_front_nr_list(&sched_ctrl->available_dl_harq);
+    NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+    DevAssert(!harq->is_waiting);
+    add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
+    harq->is_waiting = true;
+    ra->harq_pid = current_harq_pid;
+
+    // get CCEindex, needed also for PUCCH and then later for PDCCH
+    uint8_t aggregation_level;
+    uint8_t nr_of_candidates;
+    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss);
+    int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
+    if (CCEIndex < 0) {
+      LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
+      return;
+    }
+
+    int n_rb=0;
+    for (int i=0;i<6;i++)
+      for (int j=0;j<8;j++) {
+	      n_rb+=((coreset->frequencyDomainResources.buf[i]>>j)&1);
+      }
+    n_rb*=6;
+    const uint16_t N_cce = n_rb * coreset->duration / NR_NB_REG_PER_CCE;
+    const int delta_PRI=0;
+    int r_pucch = ((CCEIndex<<1)/N_cce)+(delta_PRI<<1);
+
+    int alloc = nr_acknack_scheduling(module_idP, UE_id, frameP, slotP, r_pucch);
+    AssertFatal(alloc>=0,"Couldn't find a pucch allocation for ack nack (msg4)\n");
+    NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[alloc];
+    harq->feedback_slot = pucch->ul_slot;
+    harq->feedback_frame = pucch->frame;
+
+    // Bytes to be transmitted
+    uint8_t *buf = (uint8_t *) harq->tb;
+    uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
+    LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
+    uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, &buf[mac_pdu_length+2]);
+    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
+    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
+    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
+    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
+    mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
+
+    LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, (int)sizeof(NR_MAC_SUBHEADER_SHORT), mac_pdu_length);
+
+    // Calculate number of symbols
+    int startSymbolIndex, nrOfSymbols;
+    const int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+    SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+    AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
+
+    int mappingtype = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
+
+    uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL,
+                                            scc->dmrs_TypeA_Position,
+                                            nrOfSymbols,
+                                            startSymbolIndex,
+                                            mappingtype);
+
+    uint16_t N_DMRS_SLOT = get_num_dmrs(dlDmrsSymbPos);
+
+    long dmrsConfigType = bwp!=NULL ? (bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
+
+    nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData = 2;
+    if (nrOfSymbols == 2) {
+      nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData = 1;
+    }
+
+    AssertFatal(nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData == 1
+                || nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData == 2,
+                "nr_mac->schedCtrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData %d is not possible",
+                nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData);
+
+    uint8_t N_PRB_DMRS = 0;
+    if (dmrsConfigType==NFAPI_NR_DMRS_TYPE1) {
+      N_PRB_DMRS = nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 6;
+    }
+    else {
+      N_PRB_DMRS = nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 4;
+    }
+
+    uint8_t mcsTableIdx = 0;
+    if (bwp &&
+        bwp->bwp_Dedicated &&
+        bwp->bwp_Dedicated->pdsch_Config &&
+        bwp->bwp_Dedicated->pdsch_Config->choice.setup &&
+        bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table) {
+      if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0)
+        mcsTableIdx = 1;
+      else
+        mcsTableIdx = 2;
+    }
+    else mcsTableIdx = 0;
+
+    int rbStart = 0;
+    int rbSize = 0;
+    uint8_t tb_scaling = 0;
+    uint16_t *vrb_map = cc[CC_id].vrb_map;
+    do {
+      rbSize++;
+      LOG_D(NR_MAC,"Calling nr_compute_tbs with N_PRB_DMRS %d, N_DMRS_SLOT %d\n",N_PRB_DMRS,N_DMRS_SLOT);
+      harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
+                           nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
+                           rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
+    } while (rbStart + rbSize < BWPSize && !vrb_map[rbStart + rbSize] && harq->tb_size < mac_pdu_length);
+
+    for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
+      if (vrb_map[rbStart + i]) {
+        rbStart += i;
+        i = 0;
+      }
+    }
+
+    if (rbStart > (BWPSize - rbSize)) {
+      LOG_E(NR_MAC, "%s(): cannot find free vrb_map for RNTI %04x!\n", __func__, ra->rnti);
+      return;
+    }
+
+    // Checking if the DCI allocation is feasible in current subframe
+    nfapi_nr_dl_tti_request_body_t *dl_req = &nr_mac->DL_req[CC_id].dl_tti_request_body;
+    if (dl_req->nPDUs > NFAPI_NR_MAX_DL_TTI_PDUS - 2) {
+      LOG_I(NR_MAC, "[RAPROC] Subframe %d: FAPI DL structure is full, skip scheduling UE %d\n", slotP, ra->rnti);
+      return;
+    }
+
+
+    // look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it. This is especially
+    // important if we have multiple RAs, and the DLSCH has to reuse them, so we need to mark them
+    const int bwpid = bwp ? bwp->bwp_Id : 0;
+    const int coresetid = coreset->controlResourceSetId;
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
+    if (!pdcch_pdu_rel15) {
+      nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+      memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
+      dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
+      dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2 + sizeof(nfapi_nr_dl_tti_pdcch_pdu));
+      dl_req->nPDUs += 1;
+      pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
+      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, bwp);
+      nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu_rel15;
+    }
+
+    nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
+    memset((void *)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
+    dl_tti_pdsch_pdu->PDUType = NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE;
+    dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
+    dl_req->nPDUs+=1;
+    nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
+
+    LOG_I(NR_MAC,"[gNB %d] [RAPROC] CC_id %d Frame %d, slotP %d: Generating RA-Msg4 DCI, state %d\n", module_idP, CC_id, frameP, slotP, ra->state);
+
+    // SCF222: PDU index incremented for each PDSCH PDU sent in TX control message. This is used to associate control
+    // information to data and is reset every slot.
+    const int pduindex = nr_mac->pdu_index[CC_id]++;
+
+    pdsch_pdu_rel15->pduBitmap = 0;
+    pdsch_pdu_rel15->rnti = ra->rnti;
+    pdsch_pdu_rel15->pduIndex = pduindex;
+    pdsch_pdu_rel15->BWPSize  = BWPSize;
+    pdsch_pdu_rel15->BWPStart = BWPStart;
+    pdsch_pdu_rel15->SubcarrierSpacing = genericParameters->subcarrierSpacing;
+    pdsch_pdu_rel15->CyclicPrefix = 0;
+    pdsch_pdu_rel15->NrOfCodewords = 1;
+    pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
+    pdsch_pdu_rel15->qamModOrder[0] = 2;
+    pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
+    pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
+    pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[harq->round];
+    pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
+    pdsch_pdu_rel15->nrOfLayers = 1;
+    pdsch_pdu_rel15->transmissionScheme = 0;
+    pdsch_pdu_rel15->refPoint = 0;
+    pdsch_pdu_rel15->dmrsConfigType = dmrsConfigType;
+    pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
+    pdsch_pdu_rel15->SCID = 0;
+    pdsch_pdu_rel15->numDmrsCdmGrpsNoData = nrOfSymbols <= 2 ? 1 : 2;
+    pdsch_pdu_rel15->dmrsPorts = 1;
+    pdsch_pdu_rel15->resourceAlloc = 1;
+    pdsch_pdu_rel15->rbStart = rbStart;
+    pdsch_pdu_rel15->rbSize = rbSize;
+    pdsch_pdu_rel15->VRBtoPRBMapping = 0;
+    pdsch_pdu_rel15->StartSymbolIndex = startSymbolIndex;
+    pdsch_pdu_rel15->NrOfSymbols = nrOfSymbols;
+    pdsch_pdu_rel15->dlDmrsSymbPos = dlDmrsSymbPos;
+
+    int x_Overhead = 0;
+    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
+
+    pdsch_pdu_rel15->precodingAndBeamforming.num_prgs=1;
+    pdsch_pdu_rel15->precodingAndBeamforming.prg_size=275;
+    pdsch_pdu_rel15->precodingAndBeamforming.dig_bf_interfaces=1;
+    pdsch_pdu_rel15->precodingAndBeamforming.prgs_list[0].pm_idx = 0;
+    pdsch_pdu_rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx = ra->beam_id;
+
+    /* Fill PDCCH DL DCI PDU */
+    nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
+    pdcch_pdu_rel15->numDlDci++;
+    dci_pdu->RNTI = ra->rnti;
+    dci_pdu->ScramblingId = *scc->physCellId;
+    dci_pdu->ScramblingRNTI = 0;
+    dci_pdu->AggregationLevel = aggregation_level;
+    dci_pdu->CceIndex = CCEIndex;
+    dci_pdu->beta_PDCCH_1_0 = 0;
+    dci_pdu->powerControlOffsetSS = 1;
+
+    dci_pdu_rel15_t dci_payload;
+    dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize,
+                                                                                    pdsch_pdu_rel15->rbStart,
+                                                                                    pdsch_pdu_rel15->BWPSize);
+
+    dci_payload.format_indicator = 1;
+    dci_payload.time_domain_assignment.val = time_domain_assignment;
+    dci_payload.vrb_to_prb_mapping.val = 0;
+    dci_payload.mcs = pdsch_pdu_rel15->mcsIndex[0];
+    dci_payload.tb_scaling = tb_scaling;
+    dci_payload.rv = pdsch_pdu_rel15->rvIndex[0];
+    dci_payload.harq_pid = current_harq_pid;
+    dci_payload.ndi = harq->ndi;
+    dci_payload.dai[0].val = (pucch->dai_c-1)&3;
+    dci_payload.tpc = sched_ctrl->tpc1; // TPC for PUCCH: table 7.2.1-1 in 38.213
+    dci_payload.pucch_resource_indicator = delta_PRI; // This is delta_PRI from 9.2.1 in 38.213
+    dci_payload.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator;
+
+    LOG_D(NR_MAC,
+          "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d pucchres %d harqtiming %d\n",
+          dci_payload.frequency_domain_assignment.val,
+          pdsch_pdu_rel15->rbStart,
+          pdsch_pdu_rel15->rbSize,
+          pdsch_pdu_rel15->BWPSize,
+          dci_payload.time_domain_assignment.val,
+          dci_payload.vrb_to_prb_mapping.val,
+          dci_payload.mcs,
+          dci_payload.tb_scaling,
+          dci_payload.pucch_resource_indicator,
+          dci_payload.pdsch_to_harq_feedback_timing_indicator.val);
+
+    LOG_D(NR_MAC,
+          "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
+          pdcch_pdu_rel15->dci_pdu[0].RNTI,
+          NR_RNTI_TC,
+          NR_DL_DCI_FORMAT_1_0,
+          (unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
+          pdcch_pdu_rel15->StartSymbolIndex,
+          pdcch_pdu_rel15->DurationSymbols);
+
+    fill_dci_pdu_rel15(scc,
+                       ra->CellGroup,
+                       &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
+                       &dci_payload,
+                       NR_DL_DCI_FORMAT_1_0,
+                       NR_RNTI_TC,
+                       pdsch_pdu_rel15->BWPSize,
+                       bwpid);
+
+    // Add padding header and zero rest out if there is space left
+    if (mac_pdu_length < harq->tb_size) {
+      NR_MAC_SUBHEADER_FIXED *padding = (NR_MAC_SUBHEADER_FIXED *) &buf[mac_pdu_length];
+      padding->R = 0;
+      padding->LCID = DL_SCH_LCID_PADDING;
+      for(int k = mac_pdu_length+1; k<harq->tb_size; k++) {
+        buf[k] = 0;
+      }
+    }
+
+    // DL TX request
+    nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
+    memcpy(tx_req->TLVs[0].value.direct, harq->tb, sizeof(uint8_t) * harq->tb_size);
+    tx_req->PDU_length =  harq->tb_size;
+    tx_req->PDU_index = pduindex;
+    tx_req->num_TLV = 1;
+    tx_req->TLVs[0].length =  harq->tb_size + 2;
+    nr_mac->TX_req[CC_id].SFN = frameP;
+    nr_mac->TX_req[CC_id].Number_of_PDUs++;
+    nr_mac->TX_req[CC_id].Slot = slotP;
+
+    // Mark the corresponding RBs as used
+    for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++) {
+      vrb_map[rb + pdsch_pdu_rel15->rbStart] = 1;
+    }
+
+    LOG_D(NR_MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);
+    LOG_D(NR_MAC,"BWPStart: %i\n", pdcch_pdu_rel15->BWPStart);
+    LOG_D(NR_MAC,"SubcarrierSpacing: %i\n", pdcch_pdu_rel15->SubcarrierSpacing);
+    LOG_D(NR_MAC,"CyclicPrefix: %i\n", pdcch_pdu_rel15->CyclicPrefix);
+    LOG_D(NR_MAC,"StartSymbolIndex: %i\n", pdcch_pdu_rel15->StartSymbolIndex);
+    LOG_D(NR_MAC,"DurationSymbols: %i\n", pdcch_pdu_rel15->DurationSymbols);
+    for(int n=0;n<6;n++) LOG_D(NR_MAC,"FreqDomainResource[%i]: %x\n",n, pdcch_pdu_rel15->FreqDomainResource[n]);
+    LOG_D(NR_MAC,"CceRegMappingType: %i\n", pdcch_pdu_rel15->CceRegMappingType);
+    LOG_D(NR_MAC,"RegBundleSize: %i\n", pdcch_pdu_rel15->RegBundleSize);
+    LOG_D(NR_MAC,"InterleaverSize: %i\n", pdcch_pdu_rel15->InterleaverSize);
+    LOG_D(NR_MAC,"CoreSetType: %i\n", pdcch_pdu_rel15->CoreSetType);
+    LOG_D(NR_MAC,"ShiftIndex: %i\n", pdcch_pdu_rel15->ShiftIndex);
+    LOG_D(NR_MAC,"precoderGranularity: %i\n", pdcch_pdu_rel15->precoderGranularity);
+    LOG_D(NR_MAC,"numDlDci: %i\n", pdcch_pdu_rel15->numDlDci);
+
+    ra->state = WAIT_Msg4_ACK;
+    LOG_I(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
+  }
+}
+
+void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra) {
+
+  int UE_id = find_nr_UE_id(module_id, ra->rnti);
+  const int current_harq_pid = ra->harq_pid;
+
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_UE_harq_t *harq = &UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid];
+
+  LOG_D(NR_MAC, "ue %d, rnti %d, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
+
+  if (harq->is_waiting == 0)
+  {
+    if (harq->round == 0)
+    {
+      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
+      nr_clear_ra_proc(module_id, CC_id, frame, ra);
+      UE_info->active[UE_id] = true;
+      UE_info->Msg4_ACKed[UE_id] = true;
+    }
+    else
+    {
+      ra->state = Msg4;
+    }
+  }
+
+}
+
+void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t *ra){
+  LOG_D(NR_MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Clear Random access information rnti %x\n", module_idP, CC_id, frameP, ra->rnti);
+  ra->state = RA_IDLE;
   ra->timing_offset = 0;
   ra->RRC_timer = 20;
-  ra->rnti = 0;
   ra->msg3_round = 0;
+  if(ra->cfra == false) {
+    ra->rnti = 0;
+  }
 }
 
 
@@ -1127,9 +1591,10 @@ void nr_fill_rar(uint8_t Mod_idP,
                  uint8_t * dlsch_buffer,
                  nfapi_nr_pusch_pdu_t  *pusch_pdu){
 
-  LOG_I(MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u TA command %d \n", ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index, ra->timing_offset);
-  NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer;
-  NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);
+  LOG_I(NR_MAC, "[gNB] Generate RAR MAC PDU frame %d slot %d preamble index %u TA command %d \n", ra->Msg2_frame, ra-> Msg2_slot, ra->preamble_index, ra->timing_offset);
+  NR_RA_HEADER_BI *rarbi = (NR_RA_HEADER_BI *) dlsch_buffer;
+  NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) (dlsch_buffer + 1);
+  NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 2);
   unsigned char csi_req = 0, tpc_command;
   //uint8_t N_UL_Hop;
   uint8_t valid_bits;
@@ -1137,6 +1602,16 @@ void nr_fill_rar(uint8_t Mod_idP,
   uint16_t f_alloc, prb_alloc, bwp_size, truncation=0;
 
   tpc_command = 3; // this is 0 dB
+
+  /// E/T/R/R/BI subheader ///
+  // E = 1, MAC PDU includes another MAC sub-PDU (RAPID)
+  // T = 0, Back-off indicator subheader
+  // R = 2, Reserved
+  // BI = 0, 5ms
+  rarbi->E = 1;
+  rarbi->T = 0;
+  rarbi->R = 0;
+  rarbi->BI = 0;
 
   /// E/T/RAPID subheader ///
   // E = 0, one only RAR, first and last
@@ -1184,4 +1659,50 @@ void nr_fill_rar(uint8_t Mod_idP,
   rar->UL_GRANT_3 = (uint8_t) (ul_grant >> 8) & 0xff;
   rar->UL_GRANT_4 = (uint8_t) ul_grant & 0xff;
 
+#ifdef DEBUG_RAR
+  //LOG_I(NR_MAC, "rarbi->E = 0x%x\n", rarbi->E);
+  //LOG_I(NR_MAC, "rarbi->T = 0x%x\n", rarbi->T);
+  //LOG_I(NR_MAC, "rarbi->R = 0x%x\n", rarbi->R);
+  //LOG_I(NR_MAC, "rarbi->BI = 0x%x\n", rarbi->BI);
+
+  LOG_I(NR_MAC, "rarh->E = 0x%x\n", rarh->E);
+  LOG_I(NR_MAC, "rarh->T = 0x%x\n", rarh->T);
+  LOG_I(NR_MAC, "rarh->RAPID = 0x%x (%i)\n", rarh->RAPID, rarh->RAPID);
+
+  LOG_I(NR_MAC, "rar->R = 0x%x\n", rar->R);
+  LOG_I(NR_MAC, "rar->TA1 = 0x%x\n", rar->TA1);
+
+  LOG_I(NR_MAC, "rar->TA2 = 0x%x\n", rar->TA2);
+  LOG_I(NR_MAC, "rar->UL_GRANT_1 = 0x%x\n", rar->UL_GRANT_1);
+
+  LOG_I(NR_MAC, "rar->UL_GRANT_2 = 0x%x\n", rar->UL_GRANT_2);
+  LOG_I(NR_MAC, "rar->UL_GRANT_3 = 0x%x\n", rar->UL_GRANT_3);
+  LOG_I(NR_MAC, "rar->UL_GRANT_4 = 0x%x\n", rar->UL_GRANT_4);
+
+  LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
+  LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
+#endif
+
+  int mcs = (unsigned char) (rar->UL_GRANT_4 >> 4);
+  // time alloc
+  int Msg3_t_alloc = (unsigned char) (rar->UL_GRANT_3 & 0x07);
+  // frequency alloc
+  int Msg3_f_alloc = (uint16_t) ((rar->UL_GRANT_3 >> 4) | (rar->UL_GRANT_2 << 4) | ((rar->UL_GRANT_1 & 0x03) << 12));
+  // frequency hopping
+  int freq_hopping = (unsigned char) (rar->UL_GRANT_1 >> 2);
+  // TA command
+  int  ta_command = rar->TA2 + (rar->TA1 << 5);
+  // TC-RNTI
+  int t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
+
+  LOG_I(NR_MAC, "In %s: Transmitted RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
+        __FUNCTION__,
+        Msg3_t_alloc,
+        Msg3_f_alloc,
+        ta_command,
+        mcs,
+        freq_hopping,
+        tpc_command,
+        csi_req,
+        t_crnti);
 }

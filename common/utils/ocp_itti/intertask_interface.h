@@ -340,6 +340,7 @@ void *rrc_enb_process_msg(void *);
   TASK_DEF(TASK_RAL_UE,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_MSC,      TASK_PRIORITY_MED,  200, NULL, NULL)\
   TASK_DEF(TASK_GTPV1_U,  TASK_PRIORITY_MED,  1000,NULL, NULL)\
+  TASK_DEF(OCP_GTPV1_U,  TASK_PRIORITY_MED,  1000,NULL, NULL)\
   TASK_DEF(TASK_UDP,      TASK_PRIORITY_MED,  1000, NULL, NULL)\
   TASK_DEF(TASK_CU_F1,    TASK_PRIORITY_MED,  200, NULL, NULL) \
   TASK_DEF(TASK_DU_F1,    TASK_PRIORITY_MED,  200, NULL, NULL) \
@@ -347,6 +348,7 @@ void *rrc_enb_process_msg(void *);
   TASK_DEF(TASK_RRC_GNB_SIM,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_RRC_NSA_UE,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_RRC_NSA_NRUE,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_NAS_NRUE,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_MAX,      TASK_PRIORITY_MED,  200, NULL, NULL)
 
 #define TASK_DEF(TaskID, pRIO, qUEUEsIZE, FuNc, ThreadFunc)          { pRIO, qUEUEsIZE, #TaskID, FuNc, ThreadFunc },
@@ -475,6 +477,9 @@ void itti_subscribe_event_fd(task_id_t task_id, int fd);
 void itti_unsubscribe_event_fd(task_id_t task_id, int fd);
 
 /** \brief Return the list of events excluding the fd associated with itti
+    \the fd associated with itti can return, but it is marked events[i].events &= ~EPOLLIN
+    \as it is not EPOLLIN, the reader should ignore this fd
+    \or it can manage the list of fd's in his interest, so ignore the other ones
     \param task_id Task ID of the task
     \param events events list
     @returns number of events to handle

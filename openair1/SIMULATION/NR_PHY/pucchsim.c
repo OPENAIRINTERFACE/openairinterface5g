@@ -46,6 +46,7 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
+
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
@@ -91,6 +92,7 @@ int main(int argc, char **argv)
   //uint8_t nacktoack_flag=0;
   int16_t amp=0x7FFF;
   int nr_slot_tx=0;
+  int nr_frame_tx=0;
   uint64_t actual_payload=0,payload_received;
   int nr_bit=1; // maximum value possible is 2
   uint8_t m0=0;// higher layer paramater initial cyclic shift
@@ -418,7 +420,7 @@ int main(int argc, char **argv)
 	printf("FFO = %lf; IFO = %d\n",eps-IFO,IFO);
   }
 
-  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, bw, DS_TDL,0, 0, 0);
+  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, bw, DS_TDL,0, 0, 0, 0);
 
   if (UE2gNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");
@@ -501,13 +503,13 @@ int main(int argc, char **argv)
     for (trial=0; trial<n_trials; trial++) {
       bzero(txdataF[aa],frame_parms->ofdm_symbol_size*sizeof(int));
       if(format==0){
-        nr_generate_pucch0(UE,txdataF,frame_parms,PUCCH_GroupHopping,hopping_id,amp,nr_slot_tx,m0,mcs,nrofSymbols,startingSymbolIndex,startingPRB);
+        nr_generate_pucch0(UE,txdataF,frame_parms,PUCCH_GroupHopping,hopping_id,amp,nr_slot_tx,m0,mcs,nrofSymbols,startingSymbolIndex,startingPRB, 0);
       }
       else if (format == 1){
         nr_generate_pucch1(UE,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_slot_tx,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,0,nr_bit);
       }
       else {
-	nr_generate_pucch2(UE,0x1234,dmrs_scrambling_id,data_scrambling_id,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_slot_tx,nrofSymbols,startingSymbolIndex,nrofPRB,startingPRB,nr_bit);
+	      nr_generate_pucch2(UE,0x1234,dmrs_scrambling_id,data_scrambling_id,txdataF,frame_parms,UE->pucch_config_dedicated,actual_payload,amp,nr_slot_tx,nrofSymbols,startingSymbolIndex,nrofPRB,startingPRB,nr_bit);
       }
       
       int txlev = signal_energy(&txdataF[aa][startingSymbolIndex*frame_parms->ofdm_symbol_size],
@@ -532,7 +534,7 @@ int main(int argc, char **argv)
         int rb2 = rb+startingPRB;
         gNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
       }
-      gNB_I0_measurements(gNB);
+      gNB_I0_measurements(gNB, startingSymbolIndex, nrofSymbols);
 
       if (n_trials==1) printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
       if(format==0){
@@ -550,7 +552,9 @@ int main(int argc, char **argv)
         pucch_pdu.initial_cyclic_shift  = 0;
         pucch_pdu.start_symbol_index    = startingSymbolIndex;
         pucch_pdu.prb_start             = startingPRB;
-        nr_decode_pucch0(gNB,nr_slot_tx,&uci_pdu,&pucch_pdu);
+        pucch_pdu.bwp_start             = 0;
+        pucch_pdu.freq_hop_flag         = 0;
+        nr_decode_pucch0(gNB, nr_frame_tx, nr_slot_tx,&uci_pdu,&pucch_pdu);
         if(sr_flag==1){
           if (uci_pdu.sr->sr_indication == 0 || uci_pdu.sr->sr_confidence_level == 1)
             sr_errors+=1;

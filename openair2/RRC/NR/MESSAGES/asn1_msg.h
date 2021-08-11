@@ -65,6 +65,9 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   gNB_RrcConfigurationReq *configuration
                   );
 
+uint8_t do_SIB23_NR(rrc_gNB_carrier_data_t *carrier,
+                    gNB_RrcConfigurationReq *configuration);
+
 void do_RLC_BEARER(uint8_t Mod_id,
                     int CC_id,
                     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_BearerToAddModList,
@@ -86,12 +89,22 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
 uint8_t do_RRCReject(uint8_t Mod_id,
                      uint8_t *const buffer);
 
-uint8_t do_RRCSetup(const protocol_ctxt_t        *const ctxt_pP,
-                    rrc_gNB_ue_context_t         *const ue_context_pP,
-                    int                          CC_id,
+void fill_initial_SpCellConfig(rnti_t rnti,
+			       NR_SpCellConfig_t *SpCellConfig,
+			       NR_ServingCellConfigCommon_t *scc);
+
+void fill_initial_cellGroupConfig(rnti_t rnti,
+				  NR_CellGroupConfig_t *cellGroupConfig,
+				  NR_ServingCellConfigCommon_t *scc);
+
+void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup);
+
+uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
                     uint8_t                      *const buffer,
                     const uint8_t                transaction_id,
-                    NR_SRB_ToAddModList_t        **SRB_configList);
+                    OCTET_STRING_t               *masterCellGroup_from_DU,
+                    NR_ServingCellConfigCommon_t *scc);
+
 uint8_t do_NR_SecurityModeCommand(
                     const protocol_ctxt_t *const ctxt_pP,
                     uint8_t *const buffer,
@@ -105,7 +118,8 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
 uint8_t do_NR_RRCRelease(uint8_t *buffer,
                          uint8_t Transaction_id);
-uint16_t do_RRCReconfiguration(
+
+int16_t do_RRCReconfiguration(
     const protocol_ctxt_t        *const ctxt_pP,
     uint8_t                      *buffer,
     uint8_t                       Transaction_id,
@@ -115,9 +129,9 @@ uint16_t do_RRCReconfiguration(
     NR_SecurityConfig_t          *security_config,
     NR_SDAP_Config_t             *sdap_config,
     NR_MeasConfig_t              *meas_config,
-    struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList
-                                 *dedicatedNAS_MessageList,
-    NR_MAC_CellGroupConfig_t     *mac_CellGroupConfig);
+    struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
+    NR_MAC_CellGroupConfig_t     *mac_CellGroupConfig,
+    NR_CellGroupConfig_t         *cellGroupConfig);
                     
 uint8_t do_RRCSetupComplete(uint8_t Mod_id, 
                             uint8_t *buffer, 

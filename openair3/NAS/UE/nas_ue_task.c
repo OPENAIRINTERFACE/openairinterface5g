@@ -33,6 +33,7 @@
 # include "memory.h"
 
 #include "nas_user.h"
+#include <common/utils/msc/msc.h>
 
 // FIXME make command line option for NAS_UE_AUTOSTART
 # define NAS_UE_AUTOSTART 1

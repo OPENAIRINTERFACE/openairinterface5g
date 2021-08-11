@@ -113,10 +113,29 @@ bool try_allocate_harq_retransmission(module_id_t Mod_id,
     LOG_D(MAC, "cannot allocate UE %d: no CCE can be allocated\n", UE_id);
     return false;
   }
+  /* if nb_rb is not multiple of RBGsize, then last RBG must be free
+   * (it will be allocated just below)
+   */
+  if (nb_rb % RBGsize && !rbgalloc_mask[N_RBG-1]) {
+    LOG_E(MAC, "retransmission: last RBG already allocated (this should not happen)\n");
+    return false;
+  }
   ue_ctrl->pre_dci_dl_pdu_idx = idx;
   // retransmissions: directly allocate
   *n_rbg_sched -= nb_rbg;
   ue_ctrl->pre_nb_available_rbs[CC_id] += nb_rb;
+  if (nb_rb % RBGsize) {
+    /* special case: if nb_rb is not multiple of RBGsize, then allocate last RBG.
+     * If we instead allocated another RBG then we will retransmit with more
+     * RBs and the UE will not accept it.
+     * (This has been seen in a test with cots UEs, if not true, then change
+     * code as needed.)
+     * At this point rbgalloc_mask[N_RBG-1] == 1 due to the test above.
+     */
+    ue_ctrl->rballoc_sub_UE[CC_id][N_RBG-1] = 1;
+    rbgalloc_mask[N_RBG-1] = 0;
+    nb_rbg--;
+  }
   for (; nb_rbg > 0; start_rbg++) {
     if (!rbgalloc_mask[start_rbg])
       continue;
@@ -730,13 +749,13 @@ void calculate_max_mcs_min_rb(module_id_t mod_id,
   int tbs = get_TBS_UL(*mcs, rb_table[*rb_index]);
 
   // fixme: set use_srs flag
-  *tx_power = estimate_ue_tx_power(tbs * 8, rb_table[*rb_index], 0, Ncp, 0);
+  *tx_power = estimate_ue_tx_power(0,tbs * 8, rb_table[*rb_index], 0, Ncp, 0);
 
   /* find maximum MCS */
   while ((phr - *tx_power < 0 || tbs > bytes) && *mcs > 3) {
     (*mcs)--;
     tbs = get_TBS_UL(*mcs, rb_table[*rb_index]);
-    *tx_power = estimate_ue_tx_power(tbs * 8, rb_table[*rb_index], 0, Ncp, 0);
+    *tx_power = estimate_ue_tx_power(0,tbs * 8, rb_table[*rb_index], 0, Ncp, 0);
   }
 
   /* find minimum necessary RBs */
@@ -746,7 +765,7 @@ void calculate_max_mcs_min_rb(module_id_t mod_id,
          && phr - *tx_power > 0) {
     (*rb_index)++;
     tbs = get_TBS_UL(*mcs, rb_table[*rb_index]);
-    *tx_power = estimate_ue_tx_power(tbs * 8, rb_table[*rb_index], 0, Ncp, 0);
+    *tx_power = estimate_ue_tx_power(0,tbs * 8, rb_table[*rb_index], 0, Ncp, 0);
   }
 
   /* Decrease if we went to far in last iteration */
@@ -801,7 +820,7 @@ int rr_ul_run(module_id_t Mod_id,
   AssertFatal(num_contig_rb <= 2, "cannot handle more than two contiguous RB regions\n");
   UE_info_t *UE_info = &RC.mac[Mod_id]->UE_info;
   const int max_rb = num_contig_rb > 1 ? MAX(rbs[0].length, rbs[1].length) : rbs[0].length;
-
+  eNB_MAC_INST *mac = RC.mac[Mod_id];
   /* for every UE: check whether we have to handle a retransmission (and
    * allocate, if so). If not, compute how much RBs this UE would need */
   int rb_idx_required[MAX_MOBILES_PER_ENB];
@@ -809,7 +828,7 @@ int rr_ul_run(module_id_t Mod_id,
   int num_ue_req = 0;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     UE_TEMPLATE *UE_template = &UE_info->UE_template[CC_id][UE_id];
-    uint8_t harq_pid = subframe2harqpid(&RC.mac[Mod_id]->common_channels[CC_id],
+    uint8_t harq_pid = subframe2harqpid(&mac->common_channels[CC_id],
                                         sched_frame, sched_subframe);
     if (UE_info->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid] > 0) {
       /* this UE has a retransmission, allocate it right away */
@@ -845,11 +864,11 @@ int rr_ul_run(module_id_t Mod_id,
         }
       } else {
         LOG_W(MAC,
-              "cannot allocate UL retransmission for UE %d (nb_rb %d)\n",
-              UE_id,
-              nb_rb);
+              "%d.%d cannot allocate UL retransmission for UE %d (nb_rb %d, rbs0.length %d, rbs1.length %d,rbs0.start %d,rbs1.start %d)\n",
+              sched_frame,sched_subframe,UE_id,
+              nb_rb, rbs[0].length,rbs[1].length,rbs[0].start,rbs[1].start);
         UE_template->pre_dci_ul_pdu_idx = -1; // do not need CCE
-        RC.mac[Mod_id]->HI_DCI0_req[CC_id][subframe].hi_dci0_request_body.number_of_dci--;
+        mac->HI_DCI0_req[CC_id][subframe].hi_dci0_request_body.number_of_dci--;
         continue;
       }
       LOG_D(MAC, "%4d.%d UE %d retx %d RBs at start %d\n",
@@ -895,10 +914,9 @@ int rr_ul_run(module_id_t Mod_id,
         &tx_power);
 
     UE_template->pre_assigned_mcs_ul = mcs;
-    /* rb_idx_given >= 22: apparently the PHY cannot support more than 48
-     * RBs in the uplink. Hence, we limit every UE to 48 RBs, which is at
-     * index 22 */
-    rb_idx_required[UE_id] = min(22, rb_table_index);
+    /* rb_idx_given >= MAX index: limit RBs to value in configuration file 
+     * RBs in the uplink.  */
+    rb_idx_required[UE_id] = min(mac->max_ul_rb_index, rb_table_index);
     //UE_template->pre_allocated_nb_rb_ul = rb_table[rb_table_index];
     /* only print log when PHR changed */
     static int phr = 0;

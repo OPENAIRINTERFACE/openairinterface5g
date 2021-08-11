@@ -142,6 +142,7 @@ typedef struct {
   uint32_t rsrp[7];
   float rsrp_filtered[7]; // after layer 3 filtering
   float rsrq_filtered[7];
+  short rsrp_dBm[7];
   // common measurements
   //! estimated noise power (linear)
   unsigned int   n0_power[NB_ANTENNAS_RX];
@@ -187,7 +188,7 @@ typedef struct {
   //! estimated rssi (dBm)
   short          rx_rssi_dBm[NUMBER_OF_CONNECTED_gNB_MAX];
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_CONNECTED_gNB_MAX][2];
+  int            rx_correlation[NUMBER_OF_CONNECTED_gNB_MAX][4][4];
   //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
   int            rx_correlation_dB[NUMBER_OF_CONNECTED_gNB_MAX][2];
 
@@ -332,12 +333,10 @@ typedef struct {
   int32_t **dl_ch_magb1[8][8];
   /// \brief Magnitude of Downlink Channel, first layer (256QAM level).
   int32_t **dl_ch_magr0;
-  /// \brief Cross-correlation of two gNB signals.
-  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// \brief Cross-correlation Matrix of the gNB Tx channel signals.
+  /// - first index: aatx*n_rx+aarx for all aatx=[0..n_tx[ and aarx=[0..nb_rx[
   /// - second index: symbol [0..]
-  int32_t **rho;
-  /// never used... always send dl_ch_rho_ext instead...
-  int32_t **rho_i;
+  int32_t ***rho;
   /// \brief Pointers to llr vectors (2 TBs).
   /// - first index: ? [0..1] (hard coded)
   /// - second index: ? [0..1179743] (hard coded)
@@ -764,6 +763,8 @@ typedef struct {
   int is_synchronized;
   /// \brief Indicates on which frame is synchronized in a two frame synchronization
   int is_synchronized_on_frame;
+  /// \brief Indicator that UE lost frame synchronization
+  int lost_sync;
   /// Data structure for UE process scheduling
   UE_nr_proc_t proc;
   /// Flag to indicate the UE shouldn't do timing correction at all
@@ -790,6 +791,8 @@ typedef struct {
   uint8_t ho_initiated;
   /// \brief indicator that Handover procedure has been triggered
   uint8_t ho_triggered;
+  /// threshold for false dci detection
+  int dci_thres;
   /// \brief Measurement variables.
   PHY_NR_MEASUREMENTS measurements;
   NR_DL_FRAME_PARMS  frame_parms;
@@ -842,17 +845,23 @@ typedef struct {
   /// PDSCH DMRS
   uint32_t ****nr_gold_pdsch[NUMBER_OF_CONNECTED_eNB_MAX];
 
+  // Scrambling IDs used in PDSCH DMRS
+  uint16_t scramblingID[2];
+
   /// PDCCH DMRS
   uint32_t ***nr_gold_pdcch[NUMBER_OF_CONNECTED_eNB_MAX];
+
+  // Scrambling IDs used in PDCCH DMRS
+  uint16_t scramblingID_pdcch;
 
   /// PUSCH DMRS sequence
   uint32_t ****nr_gold_pusch_dmrs;
 
   uint32_t X_u[64][839];
 
-  uint32_t high_speed_flag;
+
   uint32_t perfect_ce;
-  int16_t ch_est_alpha;
+
   int generate_ul_signal[NUMBER_OF_CONNECTED_gNB_MAX];
 
   UE_NR_SCAN_INFO_t scan_info[NB_BANDS_MAX];
@@ -954,25 +963,9 @@ typedef struct {
 
   //#if defined(UPGRADE_RAT_NR)
 #if 1
-
   SystemInformationBlockType1_nr_t systemInformationBlockType1_nr;
-
-  CellGroupConfig_t          cell_group_config;
-  PDSCH_ServingCellConfig_t  PDSCH_ServingCellConfig;
-  PDSCH_Config_t             PDSCH_Config;
-
   PUCCH_ConfigCommon_nr_t    pucch_config_common_nr[NUMBER_OF_CONNECTED_gNB_MAX];
   PUCCH_Config_t             pucch_config_dedicated_nr[NUMBER_OF_CONNECTED_gNB_MAX];
-
-  PUSCH_Config_t             pusch_config;
-  SRS_NR                     srs;
-
-  crossCarrierSchedulingConfig_t crossCarrierSchedulingConfig;
-  supplementaryUplink_t supplementaryUplink;
-  dmrs_DownlinkConfig_t dmrs_DownlinkConfig;
-  csi_MeasConfig_t csi_MeasConfig;
-  PUSCH_ServingCellConfig_t PUSCH_ServingCellConfig;
-
 #endif
 
   uint8_t ncs_cell[20][7];
@@ -1075,6 +1068,7 @@ typedef struct {
 typedef struct nr_rxtx_thread_data_s {
   UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE    *UE;
+  notifiedFIFO_t txFifo;
 }  nr_rxtx_thread_data_t;
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"

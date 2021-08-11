@@ -136,7 +136,7 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
 
 
-  int N_reg = n_rb * pdcch_pdu_rel15->DurationSymbols;
+  int N_reg = n_rb;
   int C=-1;
 
   AssertFatal(N_reg > 0,"N_reg cannot be 0\n");
@@ -174,8 +174,8 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
 	  for (uint8_t reg_idx=0; reg_idx<bsize; reg_idx++) {
 	    reg = &cce->reg_list[reg_idx];
 	    reg->reg_idx = bsize*idx + reg_idx;
-	    reg->start_sc_idx = (reg->reg_idx/pdcch_pdu_rel15->DurationSymbols) * NR_NB_SC_PER_RB;
-	    reg->symb_idx = reg->reg_idx % pdcch_pdu_rel15->DurationSymbols;
+	    reg->start_sc_idx = reg->reg_idx * NR_NB_SC_PER_RB;
+	    reg->symb_idx = 0;
 	    LOG_D(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
 	  }
 	}
@@ -185,8 +185,8 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
 	for (uint8_t reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
 	  reg = &cce->reg_list[reg_idx];
 	  reg->reg_idx = cce->cce_idx*NR_NB_REG_PER_CCE + reg_idx;
-	  reg->start_sc_idx = (reg->reg_idx/pdcch_pdu_rel15->DurationSymbols) * NR_NB_SC_PER_RB;
-	  reg->symb_idx = reg->reg_idx % pdcch_pdu_rel15->DurationSymbols;
+	  reg->start_sc_idx = reg->reg_idx * NR_NB_SC_PER_RB;
+	  reg->symb_idx = 0;
 	  LOG_D(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
 	}
 	
@@ -239,7 +239,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu[i].Payload;
 
     int dlsch_id = find_nr_dlsch(pdcch_pdu_rel15->dci_pdu[i].RNTI,gNB,SEARCH_EXIST_OR_FREE);
-    if( (dlsch_id<0) || (dlsch_id>=NUMBER_OF_NR_DLSCH_MAX) ){
+    if( (dlsch_id<0) || (dlsch_id>=gNB->number_of_nr_dlsch_max) ){
       LOG_E(PHY,"illegal dlsch_id found!!! rnti %04x dlsch_id %d\n",(unsigned int)pdcch_pdu_rel15->dci_pdu[i].RNTI,dlsch_id);
       return;
     }
@@ -255,12 +255,7 @@ void nr_fill_dci(PHY_VARS_gNB *gNB,
     dlsch->harq_mask                |= (1<<harq_pid);
     dlsch->rnti                      = pdcch_pdu_rel15->dci_pdu[i].RNTI;
     
-    //    nr_fill_cce_list(gNB,0);  
-    /*
-    LOG_D(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
-    LOG_D(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
-    */
-
+    //    nr_fill_cce_list(gNB,0);
   }
 
 }

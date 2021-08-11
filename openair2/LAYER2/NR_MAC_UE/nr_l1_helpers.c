@@ -41,10 +41,11 @@
 int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  NR_ServingCellConfigCommon_t *scc = mac->scc;
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (mac->scc!=NULL) ? 
+    mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup:
+    mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
   NR_SubcarrierSpacing_t scs = *nr_rach_ConfigCommon->msg1_SubcarrierSpacing;
-  int prach_sequence_length = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present - 1;
+  int prach_sequence_length = (mac->scc!=NULL)?(mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present - 1) : (mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present-1);
   uint8_t prachConfigIndex, mu;
 
   AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
@@ -145,18 +146,11 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_forma
 int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t mod_id, uint8_t CC_id){
   
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  NR_ServingCellConfigCommon_t *scc = mac->scc;
-  int8_t receivedTargerPower, delta_preamble;
-  long preambleReceivedTargetPower = 0;
+  int8_t receivedTargerPower;
+  int8_t delta_preamble;
 
-  if (prach_resources->RA_TYPE == RA_4STEP){
-    NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-    preambleReceivedTargetPower = nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower;
-  } else if (prach_resources->RA_TYPE == RA_2STEP){
-    // msgA-PreambleReceivedTargetPower
-    LOG_E(MAC, "In %s:%d: missing implementation for 2-step RA...\n", __FUNCTION__, __LINE__);
-  }
-
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (mac->scc != NULL) ? mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup: mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
+  long preambleReceivedTargetPower = nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower;
   delta_preamble = nr_get_DELTA_PREAMBLE(mod_id, CC_id, prach_resources->prach_format);
 
   receivedTargerPower = preambleReceivedTargetPower + delta_preamble + (prach_resources->RA_PREAMBLE_POWER_RAMPING_COUNTER - 1) * prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP + prach_resources->POWER_OFFSET_2STEP_RA;
@@ -211,7 +205,8 @@ void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
 long nr_get_Pcmax(module_id_t mod_id){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  uint32_t band = *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  uint32_t band = (mac->scc!=NULL) ? *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] :
+    *mac->scc_SIB->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR;
   NR_P_Max_t p_max           = 0;
   uint8_t P_powerclass       = 23;
   uint8_t delta_P_powerclass = 0;
@@ -230,17 +225,18 @@ long nr_get_Pcmax(module_id_t mod_id){
     delta_MPR_c = 0.5;
   }
 
-  if (mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->ext1){
-    if (*mac->scg->spCellConfig->spCellConfigDedicated->uplinkConfig->ext1->powerBoostPi2BPSK == 1){
+  if (mac->cg && mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->ext1){
+    if (*mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->ext1->powerBoostPi2BPSK == 1){
       // TbD: assuming power class 3 capable UE operating in TDD bands n40, n41, n77, n78, and n79 with Pi/2 BPSK modulation
       delta_P_powerclass = -3;
       p_max += 3;
     }
   }
 
-  if (mac->scc->uplinkConfigCommon->frequencyInfoUL->p_Max){
+  NR_P_Max_t *p_Max = (mac->scc!=NULL) ? mac->scc->uplinkConfigCommon->frequencyInfoUL->p_Max : mac->scc_SIB->uplinkConfigCommon->frequencyInfoUL.p_Max;
+  if (p_Max){
 
-    p_max += *mac->scc->uplinkConfigCommon->frequencyInfoUL->p_Max;
+    p_max += *p_Max;
 
     LOG_D(MAC, "In %s maximum UL transmission power p_max is %ld dBm \n", __FUNCTION__, p_max);
 

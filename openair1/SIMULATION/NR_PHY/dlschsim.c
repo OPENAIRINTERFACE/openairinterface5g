@@ -339,7 +339,7 @@ int main(int argc, char **argv)
 				      61.44e6, //N_RB2sampling_rate(N_RB_DL),
 				      40e6, //N_RB2channel_bandwidth(N_RB_DL),
                                       DS_TDL,
-				      0, 0, 0);
+				      0, 0, 0, 0);
 
 	if (gNB2UE == NULL) {
 		printf("Problem generating channel model. Exiting.\n");
@@ -357,7 +357,7 @@ int main(int argc, char **argv)
 	frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
 	crcTableInit();
 	nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell,SSB_positions);
-	phy_init_nr_gNB(gNB, 0, 0);
+	phy_init_nr_gNB(gNB, 0, 1); //lowmem
 	//init_eNB_afterRU();
 	frame_length_complex_samples = frame_parms->samples_per_subframe;
 	//frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;

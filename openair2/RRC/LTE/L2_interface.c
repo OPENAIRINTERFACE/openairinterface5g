@@ -49,8 +49,6 @@
 #include "intertask_interface.h"
 
 #include "flexran_agent_extern.h"
-#undef C_RNTI // C_RNTI is used in F1AP generated code, prevent preprocessor replace
-//#include "f1ap_du_rrc_message_transfer.h"
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
 extern RAN_CONTEXT_t RC;
@@ -316,8 +314,9 @@ mac_rrc_data_ind(
       UE_id,
       rntiP,
       sduP,
-      sdu_lenP
-    );
+      sdu_lenP,
+      NULL,
+      0);
     return(0);
   }
 
@@ -349,12 +348,12 @@ mac_rrc_data_ind(
     ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.module_id],rntiP);
 
     if(ue_context_p) {
-      if (ue_context_p->ue_context.Status != RRC_RECONFIGURED) {
-        LOG_E(RRC,"[eNB %d] Received C-RNTI ,but UE %x status(%d) not RRC_RECONFIGURED\n",module_idP,rntiP,ue_context_p->ue_context.Status);
+      if (ue_context_p->ue_context.StatusRrc != RRC_RECONFIGURED) {
+        LOG_E(RRC,"[eNB %d] Received C-RNTI ,but UE %x status(%d) not RRC_RECONFIGURED\n",module_idP,rntiP,ue_context_p->ue_context.StatusRrc);
         return (-1);
       } 
       rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt,ue_context_p,0);
-      ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+      ue_context_p->ue_context.StatusRrc = RRC_RECONFIGURED;
     }
   }
 
@@ -376,7 +375,7 @@ mac_eNB_get_rrc_status(
   ue_context_p = rrc_eNB_get_ue_context(RC.rrc[Mod_idP], rntiP);
 
   if (ue_context_p != NULL) {
-    return(ue_context_p->ue_context.Status);
+    return(ue_context_p->ue_context.StatusRrc);
   } else {
     return RRC_INACTIVE;
   }

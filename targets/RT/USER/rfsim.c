@@ -361,6 +361,7 @@ void init_ocm(void) {
                                DS_TDL,
                                0.0,
                                0,
+                               0,
                                0);
         random_channel(sim.RU2UE[ru_id][UE_id][CC_id],0);
         LOG_D(OCM,"[SIM] Initializing channel (%s) from UE %d to ru %d\n", "AWGN", UE_id, ru_id);
@@ -373,6 +374,7 @@ void init_ocm(void) {
                                N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms->N_RB_UL),
                                DS_TDL,
                                0.0,
+                               0,
                                0,
                                0);
         random_channel(sim.UE2RU[UE_id][ru_id][CC_id],0);

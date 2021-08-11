@@ -357,7 +357,7 @@ typedef struct
 //table 3-23
 typedef struct 
 {
-  nfapi_uint32_tlv_t ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
+  nfapi_int32_tlv_t ss_pbch_power;//SSB Block Power Value: TBD (-60..50 dBm)
   nfapi_uint8_tlv_t  bch_payload;//Defines option selected for generation of BCH payload, see Table 3-13 (v0.0.011 Value: 0: MAC generates the full PBCH payload 1: PHY generates the timing PBCH bits 2: PHY generates the full PBCH payload
   nfapi_uint8_tlv_t  scs_common;//subcarrierSpacing for common, used for initial access and broadcast message. [38.211 sec 4.2] Value:0->3
 
@@ -398,13 +398,13 @@ typedef struct
 {
   nfapi_uint32_tlv_t ssb_mask;//Bitmap for actually transmitted SSB. MSB->LSB of first 32 bit number corresponds to SSB 0 to SSB 31 MSB->LSB of second 32 bit number corresponds to SSB 32 to SSB 63 Value for each bit: 0: not transmitted 1: transmitted
 
-} nfapi_nr_ssb_mask_size_2_t;
+} nfapi_nr_ssb_mask_list_t;
 
 typedef struct 
 {
-  nfapi_uint8_tlv_t beam_id[64];//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
+  nfapi_uint8_tlv_t beam_id;//BeamID for each SSB in SsbMask. For example, if SSB mask bit 26 is set to 1, then BeamId[26] will be used to indicate beam ID of SSB 26. Value: from 0 to 63
 
-} nfapi_nr_ssb_mask_size_64_t;
+} nfapi_nr_ssb_beam_id_list_t;
 
 typedef struct 
 {
@@ -413,8 +413,8 @@ typedef struct
   nfapi_uint8_tlv_t  ssb_period;//SSB periodicity in msec Value: 0: ms5 1: ms10 2: ms20 3: ms40 4: ms80 5: ms160
   nfapi_uint8_tlv_t  ssb_subcarrier_offset;//ssbSubcarrierOffset or 𝑘𝑆𝑆𝐵 (38.211, section 7.4.3.1) Value: 0->31
   nfapi_uint32_tlv_t MIB;//MIB payload, where the 24 MSB are used and represent the MIB in [38.331 MIB IE] and represent 0 1 2 3 1 , , , ,..., A− a a a a a [38.212, sec 7.1.1]
-  nfapi_nr_ssb_mask_size_2_t ssb_mask_list[2];
-  nfapi_nr_ssb_mask_size_64_t* ssb_beam_id_list;//64
+  nfapi_nr_ssb_mask_list_t ssb_mask_list[2];
+  nfapi_nr_ssb_beam_id_list_t ssb_beam_id_list[64];
   nfapi_uint8_tlv_t  ss_pbch_multiple_carriers_in_a_band;//0 = disabled 1 = enabled
   nfapi_uint8_tlv_t  multiple_cells_ss_pbch_in_a_carrier;//Indicates that multiple cells will be supported in a single carrier 0 = disabled 1 = enabled
 
@@ -678,7 +678,7 @@ typedef struct {
   
 } nfapi_nr_slot_indication_scf_t;
 
-// 3.4.2 
+// 3.4.2
 
 //for pdcch_pdu:
 
@@ -691,11 +691,10 @@ typedef struct
 typedef struct
 {
   uint16_t pm_idx;//Index to precoding matrix (PM) pre-stored at cell configuration. Note: If precoding is not used this parameter should be set to 0. Value: 0->65535.
-  nfapi_nr_dig_bf_interface_t* dig_bf_interface_list;
+  nfapi_nr_dig_bf_interface_t dig_bf_interface_list[1];//max dig_bf_interfaces
 
 }nfapi_nr_tx_precoding_and_beamforming_number_of_prgs_t;
 
-/*
 //table 3-43
 typedef struct 
 {
@@ -703,23 +702,10 @@ typedef struct
   uint16_t prg_size;//Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
   //watchout: dig_bf_interfaces here, in table 3-53 it's dig_bf_interface
   uint8_t  dig_bf_interfaces;//Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
-  nfapi_nr_tx_precoding_and_beamforming_number_of_prgs_t* prgs_list;//
+  nfapi_nr_tx_precoding_and_beamforming_number_of_prgs_t prgs_list[1];//max prg_size
 
 }nfapi_nr_tx_precoding_and_beamforming_t;
-*/
 
-typedef struct {
-  /// Number of PRGs spanning this allocation. Value : 1->275
-  uint16_t numPRGs;
-  /// Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
-  uint16_t prgSize;
-  /// Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
-  uint8_t digBFInterfaces;
-  // Depends on numPRGs
-  uint16_t PMIdx[275];
-  // Depends on digBFInterfaces
-  uint16_t beamIdx[256];
-} nfapi_nr_tx_precoding_and_beamforming_t;
 
 //table 3-37 
 
@@ -755,16 +741,6 @@ typedef struct {
 
 } nfapi_nr_dl_dci_pdu_t;
 
-typedef struct {
-  /// Number of PRGs spanning this allocation. Value : 1->275
-  uint16_t numPRGs;
-  /// Size in RBs of a precoding resource block group (PRG) – to which same precoding and digital beamforming gets applied. Value: 1->275
-  uint16_t prgSize;
-  /// Number of STD ant ports (parallel streams) feeding into the digBF Value: 0->255
-  uint8_t digBFInterfaces;
-  uint16_t PMIdx[275];
-  uint16_t *beamIdx[275];
-} nr_beamforming_t;
 
 typedef struct {
   ///Bandwidth part size [TS38.213 sec12]. Number of contiguous PRBs allocated to the BWP,Value: 1->275
@@ -1030,7 +1006,7 @@ typedef struct {
 
 typedef struct {
   uint16_t PDUType;
-  uint16_t PDUSize;
+  uint32_t PDUSize;
 
   union {
   nfapi_nr_dl_tti_pdcch_pdu      pdcch_pdu;
@@ -1600,8 +1576,7 @@ typedef struct
 {
   uint8_t  csi_part1_crc;
   uint16_t csi_part1_bit_len;
-  //! fixme
-  uint8_t*  csi_part1_payload;//uint8_t[ceil(csiPart1BitLen/8)]
+  uint8_t*  csi_part1_payload;
   
 } nfapi_nr_csi_part1_pdu_t;
 
@@ -1610,8 +1585,7 @@ typedef struct
 {
   uint8_t  csi_part2_crc;
   uint16_t csi_part2_bit_len;
-  //! fixme
-  uint8_t*  csi_part2_payload;//uint8_t[ceil(csiPart2BitLen/8)]
+  uint8_t*  csi_part2_payload;
 } nfapi_nr_csi_part2_pdu_t;
 
 //table 3-63

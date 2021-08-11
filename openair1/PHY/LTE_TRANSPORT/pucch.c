@@ -65,10 +65,41 @@ int16_t cfo_pucch_ep[24*6] = {24278,-22005,29621,-14010,32412,-4808,32412,4807,2
 
 
 
+void dump_uci_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame) {
+
+  int strpos=0;
+  char output[16384];
+
+  for (int i=0;i<NUMBER_OF_SCH_STATS_MAX;i++){
+    if (eNB->uci_stats[i].rnti>0) {
+      eNB_UCI_STATS_t *uci_stats = &eNB->uci_stats[i];
+      strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch1_trials %d, pucch1_n0 %d dB, pucch1_thres %d dB, current pucch1_stat_pos %d dB, current pucch1_stat_neg %d dB, positive SR count %d\n",
+	i,uci_stats->rnti,uci_stats->pucch1_trials,eNB->measurements.n0_pucch_dB/*max(eNB->measurements.n0_subband_power_tot_dB[0], eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1])*/,uci_stats->pucch1_thres,dB_fixed(uci_stats->current_pucch1_stat_pos),dB_fixed(uci_stats->current_pucch1_stat_neg),uci_stats->pucch1_positive_SR);
+      strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch1_low (%d,%d)dB pucch1_high (%d,%d)dB\n",
+	    i,uci_stats->rnti,
+            dB_fixed(uci_stats->pucch1_low_stat[0]),
+            dB_fixed(uci_stats->pucch1_low_stat[1]),
+            dB_fixed(uci_stats->pucch1_high_stat[0]),
+            dB_fixed(uci_stats->pucch1_high_stat[1]));
+      
+      strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch1a_trials %d, pucch1a_stat (%d,%d), pucch1b_trials %d, pucch1b_stat (%d,%d) pucch1ab_DTX %d\n",
+            i,uci_stats->rnti,
+            uci_stats->pucch1a_trials,
+            uci_stats->current_pucch1a_stat_re,
+            uci_stats->current_pucch1a_stat_im,
+            uci_stats->pucch1b_trials,
+	    uci_stats->current_pucch1b_stat_re,
+	    uci_stats->current_pucch1b_stat_im,
+            uci_stats->pucch1ab_DTX);
+    }
+  }
+  if (fd) fprintf(fd,"%s",output);
+  else    printf("%s",output);  
+}
 /* PUCCH format3 >> */
 /* SubCarrier Demap */
 uint16_t pucchfmt3_subCarrierDeMapping( PHY_VARS_eNB *eNB,
-                                        int16_t SubCarrierDeMapData[NB_ANTENNAS_RX][14][12][2],
+                                        int16_t SubCarrierDeMapData[4][14][12][2],
                                         uint16_t n3_pucch ) {
   LTE_eNB_COMMON *eNB_common_vars  = &eNB->common_vars;
   LTE_DL_FRAME_PARMS  *frame_parms = &eNB->frame_parms;
@@ -118,8 +149,8 @@ uint16_t pucchfmt3_subCarrierDeMapping( PHY_VARS_eNB *eNB,
 }
 
 /* cyclic shift hopping remove */
-uint16_t pucchfmt3_Baseseq_csh_remove( int16_t SubCarrierDeMapData[NB_ANTENNAS_RX][14][12][2],
-                                       int16_t CshData_fmt3[NB_ANTENNAS_RX][14][12][2],
+uint16_t pucchfmt3_Baseseq_csh_remove( int16_t SubCarrierDeMapData[4][14][12][2],
+                                       int16_t CshData_fmt3[4][14][12][2],
                                        LTE_DL_FRAME_PARMS *frame_parms,
                                        uint8_t subframe,
                                        uint8_t ncs_cell[20][7] ) {
@@ -169,9 +200,9 @@ const int16_t TBL_3_SF5_GEN_N_DASH_NS[MAXROW_TBL_SF5_OS_IDX] = {0,3,6,8,10};
 const int16_t TBL_3_SF4_GEN_N_DASH_NS[MAXROW_TBL_SF4_OS_IDX] = {0,3,6,9};
 
 /* Channel estimation */
-uint16_t pucchfmt3_ChannelEstimation( int16_t SubCarrierDeMapData[NB_ANTENNAS_RX][14][12][2],
-                                      double delta_theta[NB_ANTENNAS_RX][12],
-                                      int16_t ChestValue[NB_ANTENNAS_RX][2][12][2],
+uint16_t pucchfmt3_ChannelEstimation( int16_t SubCarrierDeMapData[4][14][12][2],
+                                      double delta_theta[4][12],
+                                      int16_t ChestValue[4][2][12][2],
                                       int16_t *Interpw,
                                       uint8_t subframe,
                                       uint8_t shortened_format,
@@ -183,12 +214,12 @@ uint16_t pucchfmt3_ChannelEstimation( int16_t SubCarrierDeMapData[NB_ANTENNAS_RX
   int16_t         np, np_n, ip_ind=-1;
   //int16_t         npucch_sf;
   int16_t         calctmp[2];
-  int16_t         BsCshData[NB_ANTENNAS_RX][D_NSYM1SF][D_NSC1RB][2];
-  //int16_t         delta_theta_calctmp[NB_ANTENNAS_RX][4][D_NSC1RB][2], delta_theta_comp[NB_ANTENNAS_RX][D_NSC1RB][2];
-  int16_t         delta_theta_comp[NB_ANTENNAS_RX][D_NSC1RB][2];
-  int16_t         CsData_allavg[NB_ANTENNAS_RX][14][2];
-  int16_t         CsData_temp[NB_ANTENNAS_RX][D_NSYM1SF][D_NSC1RB][2];
-  int32_t         IP_CsData_allsfavg[NB_ANTENNAS_RX][14][4][2];
+  int16_t         BsCshData[4][D_NSYM1SF][D_NSC1RB][2];
+  //int16_t         delta_theta_calctmp[4][4][D_NSC1RB][2], delta_theta_comp[4][D_NSC1RB][2];
+  int16_t         delta_theta_comp[4][D_NSC1RB][2];
+  int16_t         CsData_allavg[4][14][2];
+  int16_t         CsData_temp[4][D_NSYM1SF][D_NSC1RB][2];
+  int32_t         IP_CsData_allsfavg[4][14][4][2];
   int32_t         IP_allavg[D_NPUCCH_SF5];
   //int16_t         temp_ch[2];
   int16_t         m[NUMBER_OF_UE_MAX], m_self=0, same_m_number;
@@ -432,9 +463,9 @@ uint16_t pucchfmt3_ChannelEstimation( int16_t SubCarrierDeMapData[NB_ANTENNAS_RX
 }
 
 /* Channel Equalization */
-uint16_t pucchfmt3_Equalization( int16_t CshData_fmt3[NB_ANTENNAS_RX][14][12][2],
-                                 int16_t ChdetAfterValue_fmt3[NB_ANTENNAS_RX][14][12][2],
-                                 int16_t ChestValue[NB_ANTENNAS_RX][2][12][2],
+uint16_t pucchfmt3_Equalization( int16_t CshData_fmt3[4][14][12][2],
+                                 int16_t ChdetAfterValue_fmt3[4][14][12][2],
+                                 int16_t ChestValue[4][2][12][2],
                                  LTE_DL_FRAME_PARMS *frame_parms) {
   int16_t aa, sltNo, symNo, k;
 
@@ -457,9 +488,9 @@ uint16_t pucchfmt3_Equalization( int16_t CshData_fmt3[NB_ANTENNAS_RX][14][12][2]
 }
 
 /* Frequency deviation remove AFC */
-uint16_t pucchfmt3_FrqDevRemove( int16_t ChdetAfterValue_fmt3[NB_ANTENNAS_RX][14][12][2],
-                                 double delta_theta[NB_ANTENNAS_RX][12],
-                                 int16_t RemoveFrqDev_fmt3[NB_ANTENNAS_RX][2][5][12][2],
+uint16_t pucchfmt3_FrqDevRemove( int16_t ChdetAfterValue_fmt3[4][14][12][2],
+                                 double delta_theta[4][12],
+                                 int16_t RemoveFrqDev_fmt3[4][2][5][12][2],
                                  LTE_DL_FRAME_PARMS *frame_parms ) {
   int16_t aa, sltNo, symNo1slt, k, n;
   double calctmp[2];
@@ -509,8 +540,8 @@ const int16_t TBL_3_SF4[MAXROW_TBL_SF4_fmt3][MAXCLM_TBL_SF4][2] = {
 };
 
 /* orthogonal sequence remove */
-uint16_t pucchfmt3_OrthSeqRemove( int16_t RemoveFrqDev_fmt3[NB_ANTENNAS_RX][2][5][12][2],
-                                  int16_t Fmt3xDataRmvOrth[NB_ANTENNAS_RX][2][5][12][2],
+uint16_t pucchfmt3_OrthSeqRemove( int16_t RemoveFrqDev_fmt3[4][2][5][12][2],
+                                  int16_t Fmt3xDataRmvOrth[4][2][5][12][2],
                                   uint8_t shortened_format,
                                   uint16_t n3_pucch,
                                   LTE_DL_FRAME_PARMS *frame_parms ) {
@@ -556,7 +587,7 @@ uint16_t pucchfmt3_OrthSeqRemove( int16_t RemoveFrqDev_fmt3[NB_ANTENNAS_RX][2][5
 }
 
 /* averaging antenna */
-uint16_t pucchfmt3_AvgAnt( int16_t Fmt3xDataRmvOrth[NB_ANTENNAS_RX][2][5][12][2],
+uint16_t pucchfmt3_AvgAnt( int16_t Fmt3xDataRmvOrth[4][2][5][12][2],
                            int16_t Fmt3xDataAvgAnt[2][5][12][2],
                            uint8_t shortened_format,
                            LTE_DL_FRAME_PARMS *frame_parms ) {
@@ -856,7 +887,7 @@ uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
 
 uint32_t rx_pucch(PHY_VARS_eNB *eNB,
                   PUCCH_FMT_t fmt,
-                  uint8_t UE_id,
+                  uint8_t UCI_id,
                   uint16_t n1_pucch,
                   uint16_t n2_pucch,
                   uint8_t shortened_format,
@@ -871,15 +902,15 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   static int first_call = 1;
   LTE_eNB_COMMON *common_vars = &eNB->common_vars;
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  int8_t sigma2_dB = eNB->measurements.n0_pucch_dB;
+  int8_t sigma2_dB = /*max(eNB->measurements.n0_subband_power_tot_dB[0], eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]); */eNB->measurements.n0_pucch_dB;
 
   uint32_t u,v,n,aa;
   uint32_t z[12*14];
   int16_t *zptr;
-  int16_t rxcomp[NB_ANTENNAS_RX][2*12*14];
+  int16_t rxcomp[4][2*12*14];
   uint8_t ns,N_UL_symb,nsymb,n_oc,n_oc0,n_oc1;
   uint8_t c = (frame_parms->Ncp==0) ? 3 : 2;
-  uint16_t nprime,nprime0,nprime1;
+  int16_t nprime,nprime0,nprime1;
   uint16_t i,j,re_offset,thres,h,off;
   uint8_t Nprime_div_deltaPUCCH_Shift,Nprime,d;
   uint8_t m,l,refs,phase,re,l2,phase_max=0;
@@ -887,12 +918,12 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   int16_t tmp_re,tmp_im,W_re=0,W_im=0;
   int16_t *rxptr;
   uint32_t symbol_offset;
-  int16_t stat_ref_re,stat_ref_im,*cfo;
-  int16_t chest0_re[NB_ANTENNAS_RX][12],chest0_im[NB_ANTENNAS_RX][12];
-  int16_t chest1_re[NB_ANTENNAS_RX][12],chest1_im[NB_ANTENNAS_RX][12];
+  int16_t stat0_ref_re[4],stat0_ref_im[4],stat1_ref_re[4],stat1_ref_im[4],*cfo;
+  int16_t chest0_re[4][12],chest0_im[4][12];
+  int16_t chest1_re[4][12],chest1_im[4][12];
   int32_t chest_mag;
-  int32_t stat_re=0,stat_im=0;
-  uint32_t stat,stat_max=0;
+  int32_t stat0_re[4],stat1_re[4],stat0_im[4],stat1_im[4];
+  uint32_t stat0[4],stat1[4],stat_max=0,stat0_max[4],stat1_max[4]; 
   uint8_t log2_maxh;
   uint8_t deltaPUCCH_Shift          = frame_parms->pucch_config_common.deltaPUCCH_Shift;
   uint8_t NRB2                      = frame_parms->pucch_config_common.nRB_CQI;
@@ -905,13 +936,13 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   int chL;
   /* PUCCH format3 >> */
   uint16_t Ret = 0;
-  int16_t SubCarrierDeMapData[NB_ANTENNAS_RX][14][12][2];       //[Antenna][Symbol][Subcarrier][Complex]
-  int16_t CshData_fmt3[NB_ANTENNAS_RX][14][12][2];              //[Antenna][Symbol][Subcarrier][Complex]
-  double delta_theta[NB_ANTENNAS_RX][12];                       //[Antenna][Subcarrier][Complex]
-  int16_t ChestValue[NB_ANTENNAS_RX][2][12][2];                 //[Antenna][Slot][Subcarrier][Complex]
-  int16_t ChdetAfterValue_fmt3[NB_ANTENNAS_RX][14][12][2];      //[Antenna][Symbol][Subcarrier][Complex]
-  int16_t RemoveFrqDev_fmt3[NB_ANTENNAS_RX][2][5][12][2];       //[Antenna][Slot][PUCCH_Symbol][Subcarrier][Complex]
-  int16_t Fmt3xDataRmvOrth[NB_ANTENNAS_RX][2][5][12][2];        //[Antenna][Slot][PUCCH_Symbol][Subcarrier][Complex]
+  int16_t SubCarrierDeMapData[4][14][12][2];       //[Antenna][Symbol][Subcarrier][Complex]
+  int16_t CshData_fmt3[4][14][12][2];              //[Antenna][Symbol][Subcarrier][Complex]
+  double delta_theta[4][12];                       //[Antenna][Subcarrier][Complex]
+  int16_t ChestValue[4][2][12][2];                 //[Antenna][Slot][Subcarrier][Complex]
+  int16_t ChdetAfterValue_fmt3[4][14][12][2];      //[Antenna][Symbol][Subcarrier][Complex]
+  int16_t RemoveFrqDev_fmt3[4][2][5][12][2];       //[Antenna][Slot][PUCCH_Symbol][Subcarrier][Complex]
+  int16_t Fmt3xDataRmvOrth[4][2][5][12][2];        //[Antenna][Slot][PUCCH_Symbol][Subcarrier][Complex]
   int16_t Fmt3xDataAvgAnt[2][5][12][2];                         //[Slot][PUCCH_Symbol][Subcarrier][Complex]
   int16_t Fmt3xDataAvgSym[2][12][2];                            //[Slot][Subcarrier][Complex]
   int16_t IFFTOutData_Fmt3[2][12][2];                           //[Slot][Subcarrier][Complex]
@@ -941,9 +972,27 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
     first_call=0;
   }
-
+  eNB_UCI_STATS_t *uci_stats = NULL;
   if(fmt!=pucch_format3) {  /* PUCCH format3 */
+ 
+    eNB_UCI_STATS_t *first_uci_stats=NULL;
+    for (int i=0;i<NUMBER_OF_SCH_STATS_MAX;i++) 
+      if (eNB->uci_stats[i].rnti == eNB->uci_vars[UCI_id].rnti) { 
+        uci_stats = &eNB->uci_stats[i];
+        break;
+      } else if (first_uci_stats == NULL && eNB->uci_stats[i].rnti == 0) first_uci_stats = &eNB->uci_stats[i];
 
+    if (uci_stats == NULL) {
+      if (first_uci_stats == NULL) {
+        LOG_E(PHY,"first_uci_stats is NULL\n");
+        return -1;
+      }
+      uci_stats=first_uci_stats;
+      uci_stats->rnti = eNB->uci_vars[UCI_id].rnti;
+    }
+
+    AssertFatal(uci_stats!=NULL,"No stat index found\n");
+    uci_stats->frame = frame;
     // TODO
     // "SR+ACK/NACK" length is only 7 bits.
     // This restriction will be lifted in the future.
@@ -1149,57 +1198,63 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     // Do cfo correction and MRC across symbols
 
     if (fmt == pucch_format1) {
+      uci_stats->pucch1_trials++;
 #ifdef DEBUG_PUCCH_RX
       printf("Doing PUCCH detection for format 1\n");
 #endif
       stat_max = 0;
 
       for (phase=0; phase<7; phase++) {
-        stat=0;
-
+        int stat=0;
         for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+	  stat0[aa]=0;stat1[aa]=0;
           for (re=0; re<12; re++) {
-            stat_re=0;
-            stat_im=0;
+	    stat0_re[aa]=0;
+	    stat0_im[aa]=0;
+	    stat1_re[aa]=0;
+	    stat1_im[aa]=0;
             off=re<<1;
             cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase] : &cfo_pucch_ep[12*phase];
 
             for (l=0; l<(nsymb>>1); l++) {
-              stat_re += (((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15))/nsymb;
-              stat_im += (((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15))/nsymb;
+              stat0_re[aa] += (((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15))/nsymb;
+              stat0_im[aa] += (((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15))/nsymb;
               off+=2;
 #ifdef DEBUG_PUCCH_RX
               printf("[eNB] PUCCH subframe %d (%d,%d,%d) => (%d,%d) x (%d,%d) : (%d,%d) , stat %d\n",subframe,phase,l,re,
                      rxcomp[aa][off],rxcomp[aa][1+off],
                      cfo[l<<1],cfo[1+(l<<1)],
-                     stat_re,stat_im,stat);
+                     stat0_re[aa],stat0_im[aa],stat);
 #endif
             }
 
             for (l2=0,l=(nsymb>>1); l < nsymb; l++,l2++) {
-              stat_re += (((rxcomp[aa][off]*(int32_t)cfo[l2<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l2<<1)])>>15))/nsymb;
-              stat_im += (((rxcomp[aa][off]*(int32_t)cfo[1+(l2<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l2<<1)])>>15))/nsymb;
+              stat1_re[aa] += (((rxcomp[aa][off]*(int32_t)cfo[l2<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l2<<1)])>>15))/nsymb;
+              stat1_im[aa] += (((rxcomp[aa][off]*(int32_t)cfo[1+(l2<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l2<<1)])>>15))/nsymb;
               off+=2;
 #ifdef DEBUG_PUCCH_RX
               printf("[eNB] PUCCH subframe %d (%d,%d,%d) => (%d,%d) x (%d,%d) : (%d,%d), stat %d\n",subframe,phase,l2,re,
                      rxcomp[aa][off],rxcomp[aa][1+off],
                      cfo[l2<<1],cfo[1+(l2<<1)],
-                     stat_re,stat_im,stat);
+                     stat1_re[aa],stat1_im[aa],stat);
 #endif
             }
-
-            stat += ((stat_re*stat_re) + (stat_im*stat_im));
+           
+            stat0[aa] += ((stat0_re[aa]*stat0_re[aa]) + (stat0_im[aa]*stat0_im[aa]));
+	    stat1[aa] += ((stat1_re[aa]*stat1_re[aa]) + (stat1_im[aa]*stat1_im[aa]));
           } //re
+          stat+=(stat0[aa]+stat1[aa]);
         } // aa
-
         if (stat>stat_max) {
           stat_max = stat;
           phase_max = phase;
+          for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+             stat0_max[aa] = stat0[aa];
+             stat1_max[aa] = stat1[aa];
+          }
         }
       } //phase
 
-      //    stat_max *= nsymb;  // normalize to energy per symbol
-      //    stat_max /= (frame_parms->N_RB_UL*12); //
       stat_max /= 12;
 #ifdef DEBUG_PUCCH_RX
       printf("[eNB] PUCCH: stat %d, stat_max %d, phase_max %d\n", stat,stat_max,phase_max);
@@ -1207,12 +1262,14 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #ifdef DEBUG_PUCCH_RX
       LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements.n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
 #endif
-      eNB->pucch1_stats[UE_id][(subframe<<10)+eNB->pucch1_stats_cnt[UE_id][subframe]] = stat_max;
-      eNB->pucch1_stats_thres[UE_id][(subframe<<10)+eNB->pucch1_stats_cnt[UE_id][subframe]] = sigma2_dB+pucch1_thres;
-      eNB->pucch1_stats_cnt[UE_id][subframe] = (eNB->pucch1_stats_cnt[UE_id][subframe]+1)&1023;
-      T(T_ENB_PHY_PUCCH_1_ENERGY, T_INT(eNB->Mod_id), T_INT(eNB->uci_vars[UE_id].rnti), T_INT(frame), T_INT(subframe),
+      eNB->pucch1_stats[UCI_id][(subframe<<10)+eNB->pucch1_stats_cnt[UCI_id][subframe]] = stat_max;
+      eNB->pucch1_stats_thres[UCI_id][(subframe<<10)+eNB->pucch1_stats_cnt[UCI_id][subframe]] = sigma2_dB+pucch1_thres;
+      eNB->pucch1_stats_cnt[UCI_id][subframe] = (eNB->pucch1_stats_cnt[UCI_id][subframe]+1)&1023;
+      uci_stats->pucch1_thres = sigma2_dB+pucch1_thres;
+      T(T_ENB_PHY_PUCCH_1_ENERGY, T_INT(eNB->Mod_id), T_INT(eNB->uci_vars[UCI_id].rnti), T_INT(frame), T_INT(subframe),
         T_INT(stat_max), T_INT(sigma2_dB+pucch1_thres));
 
+      
       /*
       if (eNB->pucch1_stats_cnt[UE_id][subframe] == 0) {
         LOG_M("pucch_debug.m","pucch_energy",
@@ -1226,11 +1283,18 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       // This is a moving average of the PUCCH1 statistics conditioned on being above or below the threshold
       if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {
         *payload = 1;
+        uci_stats->current_pucch1_stat_pos = stat_max;
+        for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+          uci_stats->pucch1_low_stat[aa]=stat0_max[aa];
+          uci_stats->pucch1_high_stat[aa]=stat1_max[aa];
+          uci_stats->pucch1_positive_SR++;
+        }
       } else {
+        uci_stats->current_pucch1_stat_neg = stat_max;
         *payload = 0;
       }
 
-      if (UE_id==0) {
+      if (UCI_id==0) {
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SR_ENERGY,dB_fixed(stat_max));
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SR_THRES,sigma2_dB+pucch1_thres);
       }
@@ -1239,29 +1303,30 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #ifdef DEBUG_PUCCH_RX
       LOG_D(PHY,"Doing PUCCH detection for format 1a/1b\n");
 #endif
-
+      int stat_re=0,stat_im=0;
       for (phase=0; phase<7; phase++) {
-        stat=0;
-
+        int stat=0;
         for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+          stat0[aa]=0;
+          stat1[aa]=0;
           for (re=0; re<12; re++) {
             // compute received energy first slot, seperately for data and reference
             // by coherent combining across symbols but not resource elements
             // Note: assumption is that channel is stationary over symbols in slot after CFO
-            stat_re=0;
-            stat_im=0;
-            stat_ref_re=0;
-            stat_ref_im=0;
+            stat0_re[aa]=0;
+            stat0_im[aa]=0;
+            stat0_ref_re[aa]=0;
+            stat0_ref_im[aa]=0;
             off=re<<1;
             cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase] : &cfo_pucch_ep[12*phase];
 
             for (l=0; l<(nsymb>>1); l++) {
               if ((l<2)||(l>(nsymb>>1) - 3)) {  //data symbols
-                stat_re += ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
-                stat_im += ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
+                stat0_re[aa] += ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
+                stat0_im[aa] += ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
               } else { //reference symbols
-                stat_ref_re += ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
-                stat_ref_im += ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
+                stat0_ref_re[aa] += ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
+                stat0_ref_im[aa] += ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
               }
 
               off+=2;
@@ -1274,26 +1339,21 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
             }
 
             // this is total energy received, summed over data and reference
-            if (fmt==pucch_format1a){
-                   stat += ((((stat_re*stat_re)) + ((stat_ref_re*stat_ref_re)) + ((stat_ref_im*stat_ref_im)))/nsymb);
-            }else{
-                   stat += ((((stat_re*stat_re)) + ((stat_im*stat_im)) +
-                             ((stat_ref_re*stat_ref_re)) + ((stat_ref_im*stat_ref_im)))/nsymb);
-            }
-
+            stat0[aa] += ((((stat0_re[aa]*stat0_re[aa])) + ((stat0_im[aa]*stat0_im[aa])) +
+                      ((stat0_ref_re[aa]*stat0_ref_re[aa])) + ((stat0_ref_im[aa]*stat0_ref_im[aa])))/nsymb);
             // now second slot
-            stat_re=0;
-            stat_im=0;
-            stat_ref_re=0;
-            stat_ref_im=0;
+            stat1_re[aa]=0;
+            stat1_im[aa]=0;
+            stat1_ref_re[aa]=0;
+            stat1_ref_im[aa]=0;
 
             for (l2=0,l=(nsymb>>1); l< nsymb; l++,l2++) {
               if ((l2<2) || ((l2>(nsymb>>1) - 3)) ) {  // data symbols
-                stat_re += ((rxcomp[aa][off]*(int32_t)cfo[l2<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l2<<1)])>>15);
-                stat_im += ((rxcomp[aa][off]*(int32_t)cfo[1+(l2<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l2<<1)])>>15);
+                stat1_re[aa] += ((rxcomp[aa][off]*(int32_t)cfo[l2<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l2<<1)])>>15);
+                stat1_im[aa] += ((rxcomp[aa][off]*(int32_t)cfo[1+(l2<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l2<<1)])>>15);
               } else { //reference_symbols
-                stat_ref_re += ((rxcomp[aa][off]*(int32_t)cfo[l2<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l2<<1)])>>15);
-                stat_ref_im += ((rxcomp[aa][off]*(int32_t)cfo[1+(l2<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l2<<1)])>>15);
+                stat1_ref_re[aa] += ((rxcomp[aa][off]*(int32_t)cfo[l2<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l2<<1)])>>15);
+                stat1_ref_im[aa] += ((rxcomp[aa][off]*(int32_t)cfo[1+(l2<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l2<<1)])>>15);
               }
 
               off+=2;
@@ -1308,20 +1368,16 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #ifdef DEBUG_PUCCH_RX
             printf("aa%d re %d : phase %d : stat %d\n",aa,re,phase,stat);
 #endif
-            if (fmt==pucch_format1a){
-                   stat += ((((stat_re*stat_re)) + ((stat_ref_re*stat_ref_re)) + ((stat_ref_im*stat_ref_im)))/nsymb);
-            }else{
-                   stat += ((((stat_re*stat_re)) + ((stat_im*stat_im)) +
-                             ((stat_ref_re*stat_ref_re)) + ((stat_ref_im*stat_ref_im)))/nsymb);
-            }
-
+            stat1[aa] += ((((stat1_re[aa]*stat1_re[aa])) + ((stat1_im[aa]*stat1_im[aa])) +
+                      ((stat1_ref_re[aa]*stat1_ref_re[aa])) + ((stat1_ref_im[aa]*stat1_ref_im[aa])))/nsymb);
           } //re
+          stat+=(stat0[aa]+stat1[aa]);
         } // aa
 
 #ifdef DEBUG_PUCCH_RX
         LOG_D(PHY,"Format 1A: phase %d : stat %d\n",phase,stat);
 #endif
-
+        
         if (stat>stat_max) {
           stat_max = stat;
           phase_max = phase;
@@ -1332,8 +1388,6 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #ifdef DEBUG_PUCCH_RX
       LOG_I(PHY,"[eNB] PUCCH fmt1a/b:  stat_max : %d (%d : sigma2 %d), phase_max : %d\n",stat_max,dB_fixed(stat_max),sigma2_dB,phase_max);
 #endif
-      stat_re=0;
-      stat_im=0;
       // Do detection now
 
 
@@ -1341,13 +1395,12 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       // For instance i assume to skip pucch1_thres from the test below.
       // Not 100% sure
         
-        if (sigma2_dB<(dB_fixed(stat_max) - (IS_SOFTMODEM_IQPLAYER?0:pucch1_thres)) ) {//
+      if (sigma2_dB<(dB_fixed(stat_max) - (IS_SOFTMODEM_IQPLAYER?0:pucch1_thres)) ) {//
         chL = (nsymb>>1)-4;
         chest_mag=0;
         cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase_max] : &cfo_pucch_ep[12*phase_max];
 
         for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-          // channel estimates first
           for (re=0; re<12; re++) {
             // channel estimate for first slot
             chest0_re[aa][re]=0;
@@ -1381,6 +1434,11 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
         // now do channel matched filter
         for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+          stat0_re[aa]=0;
+          stat0_im[aa]=0;
+          stat1_re[aa]=0;
+          stat1_im[aa]=0;
+
           for (re=0; re<12; re++) {
 #ifdef DEBUG_PUCCH_RX
             printf("[eNB] PUCCH subframe %d chest0[%d][%d] => (%d,%d)\n",subframe,aa,re,
@@ -1392,8 +1450,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
               off=(re<<1) + (24*l);
               tmp_re = ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
               tmp_im = ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
-              stat_re += (((tmp_re*chest0_re[aa][re])>>log2_maxh) + ((tmp_im*chest0_im[aa][re])>>log2_maxh));
-              stat_im += (((tmp_re*chest0_im[aa][re])>>log2_maxh) - ((tmp_im*chest0_re[aa][re])>>log2_maxh));
+              stat0_re[aa] += (((tmp_re*chest0_re[aa][re])>>log2_maxh) + ((tmp_im*chest0_im[aa][re])>>log2_maxh));
+              stat0_im[aa] += (((tmp_re*chest0_im[aa][re])>>log2_maxh) - ((tmp_im*chest0_re[aa][re])>>log2_maxh));
               off+=2;
 #ifdef DEBUG_PUCCH_RX
               printf("[eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d) => (%d,%d)\n",subframe,l,re,
@@ -1409,8 +1467,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
               off=(re<<1) + (24*l);
               tmp_re = ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
               tmp_im = ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
-              stat_re += (((tmp_re*chest0_re[aa][re])>>log2_maxh) + ((tmp_im*chest0_im[aa][re])>>log2_maxh));
-              stat_im += (((tmp_re*chest0_im[aa][re])>>log2_maxh) - ((tmp_im*chest0_re[aa][re])>>log2_maxh));
+              stat0_re[aa] += (((tmp_re*chest0_re[aa][re])>>log2_maxh) + ((tmp_im*chest0_im[aa][re])>>log2_maxh));
+              stat0_im[aa] += (((tmp_re*chest0_im[aa][re])>>log2_maxh) - ((tmp_im*chest0_re[aa][re])>>log2_maxh));
               off+=2;
 #ifdef DEBUG_PUCCH_RX
               printf("[eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d) => (%d,%d)\n",subframe,l,re,
@@ -1431,8 +1489,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
               off=(re<<1) + (24*l) + (nsymb>>1)*24;
               tmp_re = ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
               tmp_im = ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
-              stat_re += (((tmp_re*chest1_re[aa][re])>>log2_maxh) + ((tmp_im*chest1_im[aa][re])>>log2_maxh));
-              stat_im += (((tmp_re*chest1_im[aa][re])>>log2_maxh) - ((tmp_im*chest1_re[aa][re])>>log2_maxh));
+              stat1_re[aa] += (((tmp_re*chest1_re[aa][re])>>log2_maxh) + ((tmp_im*chest1_im[aa][re])>>log2_maxh));
+              stat1_im[aa] += (((tmp_re*chest1_im[aa][re])>>log2_maxh) - ((tmp_im*chest1_re[aa][re])>>log2_maxh));
               off+=2;
 #ifdef DEBUG_PUCCH_RX
               printf("[PHY][eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d) => (%d,%d)\n",subframe,l,re,
@@ -1448,8 +1506,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
               off=(re<<1) + (24*l) + (nsymb>>1)*24;
               tmp_re = ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
               tmp_im = ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
-              stat_re += (((tmp_re*chest1_re[aa][re])>>log2_maxh) + ((tmp_im*chest1_im[aa][re])>>log2_maxh));
-              stat_im += (((tmp_re*chest1_im[aa][re])>>log2_maxh) - ((tmp_im*chest1_re[aa][re])>>log2_maxh));
+              stat1_re[aa] += (((tmp_re*chest1_re[aa][re])>>log2_maxh) + ((tmp_im*chest1_im[aa][re])>>log2_maxh));
+              stat1_im[aa] += (((tmp_re*chest1_im[aa][re])>>log2_maxh) - ((tmp_im*chest1_re[aa][re])>>log2_maxh));
               off+=2;
 #ifdef DEBUG_PUCCH_RX
               printf("[PHY][eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d) => (%d,%d)\n",subframe,l,re,
@@ -1464,29 +1522,42 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
             printf("aa%d re %d : stat %d,%d\n",aa,re,stat_re,stat_im);
 #endif
           } //re
+          stat_re+=stat0_re[aa]+stat1_re[aa];
+          stat_im+=stat0_im[aa]+stat1_im[aa];
         } // aa
 
         LOG_D(PHY,"PUCCH 1a/b: subframe %d : stat %d,%d (pos %d)\n",subframe,stat_re,stat_im,
-              (subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe]));
+              (subframe<<10) + (eNB->pucch1ab_stats_cnt[UCI_id][subframe]));
         LOG_D(PHY,"In pucch.c PUCCH 1a/b: ACK subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
-        eNB->pucch1ab_stats[UE_id][(subframe<<11) + 2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_re);
-        eNB->pucch1ab_stats[UE_id][(subframe<<11) + 1+2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_im);
-        eNB->pucch1ab_stats_cnt[UE_id][subframe] = (eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
+        eNB->pucch1ab_stats[UCI_id][(subframe<<11) + 2*(eNB->pucch1ab_stats_cnt[UCI_id][subframe])] = (stat_re);
+        eNB->pucch1ab_stats[UCI_id][(subframe<<11) + 1+2*(eNB->pucch1ab_stats_cnt[UCI_id][subframe])] = (stat_im);
+        eNB->pucch1ab_stats_cnt[UCI_id][subframe] = (eNB->pucch1ab_stats_cnt[UCI_id][subframe]+1)&1023;
         /* frame not available here - set to -1 for the moment */
-        T(T_ENB_PHY_PUCCH_1AB_IQ, T_INT(eNB->Mod_id), T_INT(eNB->uci_vars[UE_id].rnti), T_INT(-1), T_INT(subframe), T_INT(stat_re), T_INT(stat_im));
+        T(T_ENB_PHY_PUCCH_1AB_IQ, T_INT(eNB->Mod_id), T_INT(eNB->uci_vars[UCI_id].rnti), T_INT(-1), T_INT(subframe), T_INT(stat_re), T_INT(stat_im));
         *payload = (stat_re<0) ? 1 : 2; // 1 == ACK, 2 == NAK
 
-        if (fmt==pucch_format1b)
+        if (fmt==pucch_format1b) {
+          uci_stats->pucch1b_trials++;
           *(1+payload) = (stat_im<0) ? 1 : 2;
+          uci_stats->current_pucch1b_stat_re = stat_re;
+          uci_stats->current_pucch1b_stat_im = stat_im;
+        }
+        else {
+          uci_stats->pucch1a_trials++;
+          uci_stats->current_pucch1a_stat_re = stat_re;
+          uci_stats->current_pucch1a_stat_im = stat_im;
+        }
+
       } else { // insufficient energy on PUCCH so NAK
         LOG_D(PHY,"In pucch.c PUCCH 1a/b: NAK subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
         *payload = 4;  // DTX
-        ((int16_t *)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
-        ((int16_t *)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);
-        eNB->pucch1ab_stats_cnt[UE_id][subframe] = (eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
+        ((int16_t *)&eNB->pucch1ab_stats[UCI_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UCI_id][subframe])])[0] = (int16_t)(stat_re);
+        ((int16_t *)&eNB->pucch1ab_stats[UCI_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UCI_id][subframe])])[1] = (int16_t)(stat_im);
+        eNB->pucch1ab_stats_cnt[UCI_id][subframe] = (eNB->pucch1ab_stats_cnt[UCI_id][subframe]+1)&1023;
 
         if (fmt==pucch_format1b)
           *(1+payload) = 4;
+        uci_stats->pucch1ab_DTX++;
       }
     } else {
       LOG_E(PHY,"[eNB] PUCCH fmt2/2a/2b not supported\n");

@@ -133,15 +133,13 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     @param ue Pointer to PHY variables
     @param UE_id id of current UE
     @param frame Frame number
-    @param nr_tti_rx TTI number
-    @param symbol Symbol on which to act (within-in nr_TTI_rx)
+    @param slot Slot number
     @param harq_pid HARQ process ID
 */
 int nr_rx_pusch(PHY_VARS_gNB *gNB,
                 uint8_t UE_id,
                 uint32_t frame,
-                uint8_t nr_tti_rx,
-                unsigned char symbol,
+                uint8_t slot,
                 unsigned char harq_pid);
 
 /** \brief This function performs RB extraction (signal and channel estimates) (currently signal only until channel estimation and compensation are implemented)
@@ -328,11 +326,11 @@ void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
 
-int nr_generate_csi_rs(uint32_t **gold_csi_rs,
-                       int32_t **txdataF,
-                       int16_t amp,
-                       NR_DL_FRAME_PARMS frame_parms,
-                       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params);
+void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
+                        int16_t amp,
+                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
+                        uint16_t cell_id,
+                        int slot);
 
 void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
 
@@ -357,6 +355,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
 
 void nr_decode_pucch0(PHY_VARS_gNB *gNB,
+                      int frame,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);

@@ -471,7 +471,7 @@ int nr_dlsch_64qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param beamforming_mode beamforming mode
 */
 int32_t nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
-                   int32_t **rxdataF_comp,
+                   int32_t *rxdataF_comp,
                    int16_t *dlsch_llr,
                    uint8_t symbol,
 				   uint32_t len,
@@ -505,14 +505,13 @@ int32_t nr_dlsch_qpsk_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
                            uint32_t rb_alloc);
 
 void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                     int32_t **rxdataF_comp,
+                     int32_t *rxdataF_comp,
                      int16_t *dlsch_llr,
-                     int32_t **dl_ch_mag,
+                     int32_t *dl_ch_mag,
                      uint8_t symbol,
-					 uint32_t len,
+                     uint32_t len,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
-                     int16_t **llr32p,
                      uint8_t beamforming_mode);
 /**
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
@@ -553,28 +552,26 @@ void dlsch_64qam_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
                          uint32_t rb_alloc);
 
 void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                     int32_t **rxdataF_comp,
+                     int32_t *rxdataF_comp,
                      int16_t *dlsch_llr,
-                     int32_t **dl_ch_mag,
-                     int32_t **dl_ch_magb,
-                     uint8_t symbol,
-					 uint32_t len,
-                     uint8_t first_symbol_flag,
-                     uint16_t nb_rb,
-                     uint32_t llr_offset,
-                     uint8_t beamforming_mode);
-
-void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                     int32_t **rxdataF_comp,
-                     int16_t *dlsch_llr,
-                     int32_t **dl_ch_mag,
-                     int32_t **dl_ch_magb,
-                     int32_t **dl_ch_magr,
+                     int32_t *dl_ch_mag,
+                     int32_t *dl_ch_magb,
                      uint8_t symbol,
                      uint32_t len,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
-                     uint32_t llr_offset,
+                     uint8_t beamforming_mode);
+
+void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+                     int32_t *rxdataF_comp,
+                     int16_t *dlsch_llr,
+                     int32_t *dl_ch_mag,
+                     int32_t *dl_ch_magb,
+                     int32_t *dl_ch_magr,
+                     uint8_t symbol,
+                     uint32_t len,
+                     uint8_t first_symbol_flag,
+                     uint16_t nb_rb,
                      uint8_t beamforming_mode);
 
 /** \fn dlsch_siso(NR_DL_FRAME_PARMS *frame_parms,
@@ -686,11 +683,8 @@ void dlsch_detection_mrc_TM34(NR_DL_FRAME_PARMS *frame_parms,
     int32_t **dl_ch_estimates,
     int32_t **rxdataF_ext,
     int32_t **dl_ch_estimates_ext,
-    uint16_t pmi,
-    uint8_t *pmi_ext,
     uint32_t *rb_alloc,
     uint8_t symbol,
-    uint8_t nr_slot_rx,
     NR_DL_FRAME_PARMS *frame_parms)
     \brief This function extracts the received resource blocks, both channel estimates and data symbols,
     for the current allocation and for single antenna eNB transmission.
@@ -698,67 +692,61 @@ void dlsch_detection_mrc_TM34(NR_DL_FRAME_PARMS *frame_parms,
     @param dl_ch_estimates Channel estimates of current slot
     @param rxdataF_ext FFT output for RBs in this allocation
     @param dl_ch_estimates_ext Channel estimates for RBs in this allocation
-    @param pmi subband Precoding matrix indicator
-    @param pmi_ext Extracted PMI for chosen RBs
     @param rb_alloc RB allocation vector
     @param symbol Symbol to extract
-    @param nr_slot_rx Slot number
-    @param high_speed_flag
+    @param n_dmrs_cdm_groups
     @param frame_parms Pointer to frame descriptor
 */
 unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
                                         int **dl_ch_estimates,
                                         int **rxdataF_ext,
                                         int **dl_ch_estimates_ext,
-                                        unsigned short pmi,
-                                        unsigned char *pmi_ext,
                                         unsigned char symbol,
                                         uint8_t pilots,
                                         uint8_t config_type,
                                         unsigned short start_rb,
-                                        unsigned short nb_pdsch_rb,
-                                        unsigned char nr_slot_rx,
-                                        uint32_t high_speed_flag,
+                                        unsigned short nb_rb_pdsch,
+                                        uint8_t n_dmrs_cdm_groups,
                                         NR_DL_FRAME_PARMS *frame_parms,
                                         uint16_t dlDmrsSymbPos);
 
-/** \fn dlsch_extract_rbs_dual(int32_t **rxdataF,
+/** \fn dlsch_extract_rbs_multiple(int32_t **rxdataF,
     int32_t **dl_ch_estimates,
     int32_t **rxdataF_ext,
     int32_t **dl_ch_estimates_ext,
-    uint16_t pmi,
-    uint8_t *pmi_ext,
-    uint32_t *rb_alloc,
-    uint8_t symbol,
-    NR_DL_FRAME_PARMS *frame_parms)
+    unsigned char symbol
+    uint8_t pilots,
+    uint8_t config_type,
+    unsigned short start_rb,
+    unsigned short nb_rb_pdsch,
+    uint8_t n_dmrs_cdm_groups,
+    uint8_t Nl,
+    NR_DL_FRAME_PARMS *frame_parms,
+    uint16_t dlDmrsSymbPos)
     \brief This function extracts the received resource blocks, both channel estimates and data symbols,
-    for the current allocation and for dual antenna eNB transmission.
+    for the current allocation and for multiple layer antenna gNB transmission.
     @param rxdataF Raw FFT output of received signal
     @param dl_ch_estimates Channel estimates of current slot
     @param rxdataF_ext FFT output for RBs in this allocation
     @param dl_ch_estimates_ext Channel estimates for RBs in this allocation
-    @param pmi subband Precoding matrix indicator
-    @param pmi_ext Extracted PMI for chosen RBs
-    @param rb_alloc RB allocation vector
+    @param Nl nb of antenna layers
     @param symbol Symbol to extract
-    @param nr_slot_rx Slot index
-    @param high_speed_flag
+    @param n_dmrs_cdm_groups
     @param frame_parms Pointer to frame descriptor
 */
-unsigned short nr_dlsch_extract_rbs_dual(int **rxdataF,
-                                      int **dl_ch_estimates,
-                                      int **rxdataF_ext,
-                                      int **dl_ch_estimates_ext,
-                                      unsigned short pmi,
-                                      unsigned char *pmi_ext,
-                                      unsigned char symbol,
-									  uint8_t pilots,
-									  unsigned short start_rb,
-									  unsigned short nb_rb_pdsch,
-                                      unsigned char nr_slot_rx,
-                                      uint32_t high_speed_flag,
-                                      NR_DL_FRAME_PARMS *frame_parms,
-                                      MIMO_mode_t mimo_mode);
+unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,
+                                        int **dl_ch_estimates,
+                                        int **rxdataF_ext,
+                                        int **dl_ch_estimates_ext,
+                                        unsigned char symbol,
+                                        uint8_t pilots,
+                                        uint8_t config_type,
+                                        unsigned short start_rb,
+                                        unsigned short nb_rb_pdsch,
+                                        uint8_t n_dmrs_cdm_groups,
+                                        uint8_t Nl,
+                                        NR_DL_FRAME_PARMS *frame_parms,
+                                        uint16_t dlDmrsSymbPos);
 
 /** \fn dlsch_extract_rbs_TM7(int32_t **rxdataF,
     int32_t **dl_bf_ch_estimates,
@@ -812,10 +800,11 @@ void nr_dlsch_channel_compensation(int32_t **rxdataF_ext,
                                 int32_t **dl_ch_magb,
                                 int32_t **dl_ch_magr,
                                 int32_t **rxdataF_comp,
-                                int32_t **rho,
+                                int32_t ***rho,
                                 NR_DL_FRAME_PARMS *frame_parms,
+                                uint8_t nb_aatx,
                                 uint8_t symbol,
-								uint8_t start_symbol,
+                                int length,
                                 uint8_t first_symbol_flag,
                                 uint8_t mod_order,
                                 uint16_t nb_rb,
@@ -827,7 +816,7 @@ void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
                                      int **dl_ch_mag,
                                      int **dl_ch_magb,
                                      int **rxdataF_comp,
-                                     int **rho,
+                                     int ***rho,
                                      unsigned char n_tx,
                                      unsigned char n_rx,
                                      unsigned char mod_order,
@@ -897,6 +886,17 @@ void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
                                 int n_rx,
                                 int length,
                                 int start_point);
+
+void nr_dlsch_detection_mrc(int **rxdataF_comp,
+                            int ***rho,
+                            int **dl_ch_mag,
+                            int **dl_ch_magb,
+                            int **dl_ch_magr,
+                            short n_tx,
+                            short n_rx,
+                            unsigned char symbol,
+                            unsigned short nb_rb,
+                            int length);
 
 void nr_dlsch_detection_mrc_core(int **rxdataF_comp,
                               int **rxdataF_comp_i,
@@ -971,6 +971,7 @@ void dlsch_channel_compensation_TM34(NR_DL_FRAME_PARMS *frame_parms,
 */
 void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
+                         uint8_t n_tx,
                          int32_t *avg,
                          uint8_t symbol,
 						 uint32_t len,
@@ -1002,6 +1003,8 @@ void dlsch_channel_level_TM7(int32_t **dl_bf_ch_estimates_ext,
 
 void nr_dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
+                         uint8_t n_tx,
+                         uint8_t n_rx,
                          NR_UE_DLSCH_t **dlsch_ue,
                          uint8_t symbol,
                          uint8_t start_symbol,
@@ -1162,13 +1165,12 @@ int rx_sss(PHY_VARS_NR_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uin
   \returns number of tx antennas or -1 if error
 */
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
-		     UE_nr_rxtx_proc_t *proc,
-		     NR_UE_PBCH *nr_ue_pbch_vars,
-		     NR_DL_FRAME_PARMS *frame_parms,
-		     uint8_t eNB_id,
-                     uint8_t i_ssb,
-		     MIMO_mode_t mimo_mode,
-		     uint32_t high_speed_flag);
+                UE_nr_rxtx_proc_t *proc,
+                NR_UE_PBCH *nr_ue_pbch_vars,
+                NR_DL_FRAME_PARMS *frame_parms,
+                uint8_t eNB_id,
+                uint8_t i_ssb,
+                MIMO_mode_t mimo_mode);
 
 int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
 		      PHY_VARS_NR_UE *ue,

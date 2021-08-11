@@ -161,13 +161,12 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
 #endif
 
     ret = nr_rx_pbch(ue,
-	             proc,
-		     ue->pbch_vars[0],
-		     frame_parms,
-		     0,
-		     temp_ptr->i_ssb,
-                     SISO,
-                     ue->high_speed_flag);
+                     proc,
+                     ue->pbch_vars[0],
+                     frame_parms,
+                     0,
+                     temp_ptr->i_ssb,
+                     SISO);
 
     temp_ptr=temp_ptr->next_ssb;
   }
@@ -289,8 +288,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames)
                               proc,
                               i,
                               0,
-                              is*fp->samples_per_frame+ue->ssb_offset,
-                              0);
+                              is*fp->samples_per_frame+ue->ssb_offset);
 
 #ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"Calling sss detection (normal CP)\n");
@@ -309,15 +307,17 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames)
         // every 7*(1<<mu) symbols there is a different prefix length (38.211 5.3.1)
         int n_symb_prefix0 = (ue->symbol_offset/(7*(1<<mu)))+1;
         sync_pos_frame = n_symb_prefix0*(fp->ofdm_symbol_size + fp->nb_prefix_samples0)+(ue->symbol_offset-n_symb_prefix0)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
-        if (ue->ssb_offset < sync_pos_frame)
+        // for a correct computation of frame number to sync with the one decoded at MIB we need to take into account in which of the n_frames we got sync
+        ue->init_sync_frame = n_frames - 1 - is;
+        // we also need to take into account the shift by samples_per_frame in case the if is true
+        if (ue->ssb_offset < sync_pos_frame){
           ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;
+          ue->init_sync_frame += 1;
+        }
         else
           ue->rx_offset = ue->ssb_offset - sync_pos_frame;
-
-        ue->init_sync_frame = is;
       }   
 
-      nr_gold_pdcch(ue,0, 2);
     /*
     int nb_prefix_samples0 = fp->nb_prefix_samples0;
     fp->nb_prefix_samples0 = fp->nb_prefix_samples;

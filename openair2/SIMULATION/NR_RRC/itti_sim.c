@@ -81,14 +81,16 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "RRC/NR_UE/rrc_proto.h"
 #include "RRC/NR_UE/rrc_vars.h"
 #include "openair3/NAS/UE/nas_ue_task.h"
+#include <executables/split_headers.h>
+#include <executables/nr-uesoftmodem.h>
+#if ITTI_SIM
+#include "nr_nas_msg_sim.h"
+#endif
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
-uint8_t nfapi_mode = 0; // Default to monolithic mode
-uint32_t target_dl_mcs = 28;
-uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0;
 
@@ -96,7 +98,18 @@ int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
   AssertFatal(false, "Must not be called in this context\n");
 }
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
+  AssertFatal(false, "Must not be called in this context\n");
+}
 
+nrUE_params_t nrUE_params;
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+
+void processSlotTX(void *arg) {}
+
+THREAD_STRUCT thread_struct;
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
@@ -120,7 +133,6 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
 
-static char                    *itti_dump_file = NULL;
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;
@@ -148,7 +160,6 @@ extern void *udp_eNB_task(void *args_p);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-int usrp_tx_thread = 0;
 
 
 double cpuf;
@@ -404,11 +415,12 @@ int create_tasks_nrue(uint32_t ue_nb) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
     }
-    if (itti_create_task (TASK_RRC_NSA_NRUE, recv_msgs_from_lte_ue, NULL) < 0) {
-      LOG_E(RRC, "Create task for RRC NSA UE failed\n");
+
+    LOG_D(NR_RRC,"create TASK_NAS_NRUE\n");
+    if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for NAS UE failed\n");
       return -1;
     }
-
   }
 
 
@@ -576,8 +588,14 @@ int main( int argc, char **argv )
     init_pdcp();
 
   if (RC.nb_nr_inst > 0)  {
+    nr_read_config_and_init();
     // don't create if node doesn't connect to RRC/S1/GTP
     AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
+    for (int gnb_id = 0; gnb_id < RC.nb_nr_inst; gnb_id++) {
+      MessageDef *msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
+      NRRRC_CONFIGURATION_REQ(msg_p) = RC.nrrrc[gnb_id]->configuration;
+      itti_send_msg_to_task (TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
+    }
   } else {
     printf("No ITTI, Initializing L1\n");
     return 0;
@@ -629,7 +647,7 @@ int main( int argc, char **argv )
                                 0);
   NR_UE_rrc_inst[ctxt.module_id].Info[0].State = RRC_SI_RECEIVED;
 
-  rrc_ue_generate_RRCSetupRequest(&ctxt, 0);
+  nr_rrc_ue_generate_RRCSetupRequest(ctxt.module_id, 0);
 
   printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();

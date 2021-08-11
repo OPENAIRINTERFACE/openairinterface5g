@@ -37,6 +37,7 @@
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
@@ -47,8 +48,9 @@
 #include "OCG_vars.h"
 #include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
+#include <executables/softmodem-common.h>
+#include <openair2/RRC/NR_UE/rrc_defs.h>
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
-
 
 #define NR_PRACH_DEBUG 1
 #define PRACH_WRITE_OUTPUT_DEBUG 1
@@ -64,11 +66,15 @@ double cpuf;
 extern uint16_t prach_root_sequence_map0_3[838];
 openair0_config_t openair0_cfg[MAX_CARDS];
 //uint8_t nfapi_mode=0;
-int sl_ahead = 0;
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
+uint16_t sl_ahead = 0;
+msc_interface_t msc_interface;
+uint32_t N_RB_DL = 106;
 
 //void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
 /* temporary dummy implem of get_softmodem_optmask, till basic simulators implemented as device */
+msc_interface_t msc_interface;
 uint64_t get_softmodem_optmask(void) {return 0;}
 softmodem_params_t *get_softmodem_params(void) {return 0;}
 int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
@@ -84,6 +90,12 @@ rrc_data_ind(
   const uint8_t   *const       buffer_pP
 )
 {
+}
+
+int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
+                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
+                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
+    return 0;
 }
 
 int
@@ -121,6 +133,10 @@ gtpv1u_update_ngu_tunnel(
   return 0;
 }
 
+int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+  return 0;
+}
+
 int
 nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   const protocol_ctxt_t *const ctxt_pP,
@@ -130,15 +146,37 @@ nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   return 0;
 }
 
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return 0;}
-
-// Dummy function to avoid linking error at compilation of nr-prachsim
-int is_x2ap_enabled(void)
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
+                              const int CC_id,
+                              const uint8_t gNB_index,
+                              const frame_t frame,
+                              const sub_frame_t sub_frame,
+                              const rnti_t rnti,
+                              const channel_t channel,
+                              const uint8_t* pduP,
+                              const sdu_size_t pdu_len)
 {
   return 0;
 }
 
-int8_t nr_rrc_ue_decode_NR_SIB1_Message(module_id_t module_id, uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len) {
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
+{
+  return;
+}
+
+int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
+                              const int         CC_id,
+                              const uint8_t     gNB_id,
+                              const frame_t     frameP,
+                              const rb_id_t     Srb_id,
+                              uint8_t           *buffer_pP)
+{
+  return 0;
+}
+
+// Dummy function to avoid linking error at compilation of nr-prachsim
+int is_x2ap_enabled(void)
+{
   return 0;
 }
 
@@ -148,13 +186,38 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
   return 0;
 }
 
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
+                                            int             CC_idP,
+                                            int             UE_id,
+                                            rnti_t          rntiP,
+                                            const uint8_t   *sduP,
+                                            sdu_size_t      sdu_lenP,
+                                            const uint8_t   *sdu2P,
+                                            sdu_size_t      sdu2_lenP) {
+  return 0;
+}
+
+typedef struct {
+  uint64_t       optmask;   //mask to store boolean config options
+  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
+  tpool_t        Tpool;             // thread pool
+} nrUE_params_t;
+
+nrUE_params_t nrUE_params;
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+
+void processSlotTX(void *arg) {}
+
 int main(int argc, char **argv){
 
   char c;
 
   double sigma2, sigma2_dB = 0, SNR, snr0 = -2.0, snr1 = 0.0, ue_speed0 = 0.0, ue_speed1 = 0.0;
   double **s_re, **s_im, **r_re, **r_im, iqim = 0.0, delay_avg = 0, ue_speed = 0, fs, bw;
-  int i, aa, aarx, **txdata, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
+  int i, l, aa, aarx, **txdata, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
   int N_RB_UL = 106, delay = 0, NCS_config = 13, rootSequenceIndex = 1, threequarter_fs = 0, mu = 1, fd_occasion = 0, loglvl = OAILOG_INFO, numRA = 0, prachStartSymbol = 0;
   uint8_t snr1set = 0, ue_speed1set = 0, transmission_mode = 1, n_tx = 1, n_rx = 1, awgn_flag = 0, msg1_frequencystart = 0, num_prach_fd_occasions = 1, prach_format=0;
   uint8_t frame = 1, slot=19, slot_gNB=19, config_index = 98, prach_sequence_length = 1, restrictedSetConfig = 0, N_dur, N_t_slot, start_symbol;
@@ -194,7 +257,7 @@ int main(int argc, char **argv){
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "hHaA:Cc:r:p:g:m:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
+  while ((c = getopt (argc, argv, "hHaA:Cc:l:r:p:g:m:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
     switch (c) {
     case 'a':
       printf("Running AWGN simulation\n");
@@ -205,6 +268,10 @@ int main(int argc, char **argv){
 
     case 'c':
       config_index = atoi(optarg);
+      break;
+
+    case 'l':
+      loglvl = atoi(optarg);
       break;
 
     case 'r':
@@ -454,7 +521,10 @@ int main(int argc, char **argv){
 
   nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
-  uint64_t absoluteFrequencyPointA = (mu==1 ? 640000 : 2070833);
+  uint64_t absoluteFrequencyPointA = to_nrarfcn(frame_parms->nr_band,
+				       frame_parms->dl_CarrierFreq,
+				       frame_parms->numerology_index,
+				       frame_parms->N_RB_UL*(180e3)*(1 << frame_parms->numerology_index));
 
   uint8_t subframe = slot/frame_parms->slots_per_subframe;
   
@@ -475,7 +545,8 @@ int main(int argc, char **argv){
   ru->if_south       = LOCAL_RF;
   ru->nb_tx          = n_tx;
   ru->nb_rx          = n_rx;
-
+  ru->num_gNB        = 1;
+  ru->gNB_list[0]    = gNB;
   gNB->gNB_config.carrier_config.num_tx_ant.value = 1;
   gNB->gNB_config.carrier_config.num_rx_ant.value = 1;
   if (mu==1)
@@ -576,7 +647,7 @@ int main(int argc, char **argv){
 
   memcpy((void*)&ru->config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru->config));
   RC.nb_nr_L1_inst=1;
-  phy_init_nr_gNB(gNB,0,0);
+  phy_init_nr_gNB(gNB,0,1); //lowmem
   nr_phy_init_RU(ru);
   gNB->common_vars.rxdata = ru->common.rxdata;
   set_tdd_config_nr(&gNB->gNB_config, mu, 7, 6, 2, 4);
@@ -644,7 +715,7 @@ int main(int argc, char **argv){
                                 DS_TDL,
                                 0.0,
                                 delay,
-                                0);
+                                0, 0);
 
   if (UE2gNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");
@@ -782,7 +853,17 @@ int main(int argc, char **argv){
 	  }
 	}
 
-
+	for (l = 0; l < frame_parms->symbols_per_slot; l++) {
+	  for (aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
+	    nr_slot_fep_ul(frame_parms,
+			   ru->common.rxdata[aa],
+			   ru->common.rxdataF[aa],
+			   l,
+			   slot,
+			   ru->N_TA_offset);
+	  }
+	}
+	
         rx_nr_prach_ru(ru, prach_format, numRA, prachStartSymbol, prachOccasion, frame, slot);
 
         gNB->prach_vars.rxsigF = ru->prach_rxsigF[prachOccasion];
@@ -805,7 +886,8 @@ int main(int argc, char **argv){
             LOG_M("prachF0.m","prachF0", &gNB->prach_vars.prachF[0], N_ZC, 1, 1);
             LOG_M("rxsig0.m","rxs0", &gNB->common_vars.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
             LOG_M("ru_rxsig0.m","rxs0", &ru->common.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
-            LOG_M("ru_rxsigF0.m","rxsF0", ru->prach_rxsigF[0][0], N_ZC, 1, 1);
+            LOG_M("ru_rxsigF0.m","rxsF0", ru->common.rxdataF[0], frame_parms->ofdm_symbol_size*frame_parms->symbols_per_slot, 1, 1);
+            LOG_M("ru_prach_rxsigF0.m","rxsF0", ru->prach_rxsigF[0][0], N_ZC, 1, 1);
             LOG_M("prach_preamble.m","prachp", &gNB->X_u[0], N_ZC, 1, 1);
             LOG_M("ue_prach_preamble.m","prachp", &UE->X_u[0], N_ZC, 1, 1);
           #endif

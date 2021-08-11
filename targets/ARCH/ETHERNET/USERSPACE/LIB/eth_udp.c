@@ -45,7 +45,6 @@
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
-#include "common/ran_context.h"
 
 //#define DEBUG 1
 

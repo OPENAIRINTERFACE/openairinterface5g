@@ -42,6 +42,7 @@
 # include "enb_app.h"
 # include "openair2/LAYER2/MAC/mac_proto.h"
 #include <executables/split_headers.h> 
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 extern RAN_CONTEXT_t RC;
 

@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define TABLE_38213_13_1_NUM_INDEXES 15
 #define TABLE_38213_13_2_NUM_INDEXES 14
@@ -53,7 +54,7 @@
 // Definitions for MAC control and data
 #define NR_BCCH_DL_SCH 3 // SI
 #define NR_BCCH_BCH 5    // MIB
-#define CCCH_PAYLOAD_SIZE_MAX 128
+#define CCCH_PAYLOAD_SIZE_MAX 512 
 #define RAR_PAYLOAD_SIZE_MAX  128
 #define MAX_BWP_SIZE          275
 
@@ -148,10 +149,10 @@ typedef struct {
 // single Entry PHR MAC CE
 // TS 38.321 ch. 6.1.3.8
 typedef struct {
-  uint8_t PH: 6;
-  uint8_t R1: 2;
-  uint8_t PCMAX: 6;
-  uint8_t R2: 6;
+  uint8_t PH: 6;    // octet 1 [5:0]
+  uint8_t R1: 2;    // octet 1 [7:6]
+  uint8_t PCMAX: 6; // octet 2 [5:0]
+  uint8_t R2: 2;    // octet 2 [7:6]
 } __attribute__ ((__packed__)) NR_SINGLE_ENTRY_PHR_MAC_CE;
 
 
@@ -334,12 +335,12 @@ typedef struct {
 #define DL_SCH_LCID_CON_RES_ID                     0x3E
 #define DL_SCH_LCID_PADDING                        0x3F
 
-#define UL_SCH_LCID_CCCH                           0x00
+#define UL_SCH_LCID_CCCH1                          0x00
 #define UL_SCH_LCID_SRB1                           0x01
 #define UL_SCH_LCID_SRB2                           0x02
 #define UL_SCH_LCID_SRB3                           0x03
 #define UL_SCH_LCID_DTCH                           0x04
-#define UL_SCH_LCID_CCCH_MSG3                      0x21
+#define UL_SCH_LCID_CCCH                           0x34
 #define UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY      0x35
 #define UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT          0x36
 #define UL_SCH_LCID_CONFIGURED_GRANT_CONFIRMATION  0x37
@@ -418,14 +419,6 @@ typedef enum {
   NR_RNTI_MCS_C,
 } nr_rnti_type_t;
 
-typedef enum subcarrier_spacing_e {
-  scs_15kHz  = 0x1,
-  scs_30kHz  = 0x2,
-  scs_60kHz  = 0x4,
-  scs_120kHz = 0x8,
-  scs_240kHz = 0x16
-} subcarrier_spacing_t;
-
 typedef enum channel_bandwidth_e {
   bw_5MHz   = 0x1,
   bw_10MHz  = 0x2,
@@ -462,6 +455,7 @@ typedef struct Type0_PDCCH_CSS_config_s {
   uint32_t ssb_length;
   uint32_t ssb_index;
   uint32_t cset_start_rb;
+  bool active;
 } NR_Type0_PDCCH_CSS_config_t;
 
 #endif /*__LAYER2_MAC_H__ */

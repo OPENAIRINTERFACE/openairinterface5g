@@ -73,17 +73,19 @@ int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 volatile int oai_exit = 0;
 double cpuf;
+THREAD_STRUCT thread_struct;
+
 uint16_t sf_ahead=4;
 //uint16_t slot_ahead=6;
 int otg_enabled;
 uint64_t  downlink_frequency[MAX_NUM_CCs][4];
 int32_t   uplink_frequency_offset[MAX_NUM_CCs][4];
 int split73;
-int usrp_tx_thread = 0;
 char * split73_config;
 int split73;
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB]= {0};
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB]= {0};
+uint8_t proto_agent_flag = 0;
 void flexran_agent_slice_update(mid_t module_idP) {
 }
 int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p){
@@ -202,7 +204,6 @@ void init_eNB_afterRU(void) {
   for (int inst=0; inst<RC.nb_inst; inst++) {
     for (int CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
       PHY_VARS_eNB *eNB = RC.eNB[inst][CC_id];
-      phy_init_lte_eNB(eNB,0,0);
       eNB->frame_parms.nb_antennas_rx       = 0;
       eNB->frame_parms.nb_antennas_tx       = 0;
       eNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
@@ -228,12 +229,26 @@ void init_eNB_afterRU(void) {
           for (int ce_level=0; ce_level<4; ce_level++)
             eNB->prach_vars_br.rxsigF[ce_level][aa] = eNB->RU_list[ru_id]->prach_rxsigF_br[ce_level][i];
 
-          eNB->common_vars.rxdataF[aa]     =  eNB->RU_list[ru_id]->common.rxdataF[i];
         }
       }
 
-      AssertFatal( eNB->frame_parms.nb_antennas_rx > 0 && eNB->frame_parms.nb_antennas_rx < 4, "");
-      AssertFatal( eNB->frame_parms.nb_antennas_tx > 0 && eNB->frame_parms.nb_antennas_rx < 4, "");
+
+      AssertFatal( eNB->frame_parms.nb_antennas_rx > 0 && eNB->frame_parms.nb_antennas_rx < 5, "");
+      AssertFatal( eNB->frame_parms.nb_antennas_tx > 0 && eNB->frame_parms.nb_antennas_rx < 5, "");
+
+      phy_init_lte_eNB(eNB,0,0);
+
+      // need to copy rxdataF after L1 variables are allocated
+      for (int inst=0; inst<RC.nb_inst; inst++) {
+         for (int CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
+           PHY_VARS_eNB *eNB = RC.eNB[inst][CC_id];
+           for (int ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) {
+              for (int i=0; i<eNB->RU_list[ru_id]->nb_rx; aa++,i++) 
+                eNB->common_vars.rxdataF[aa]     =  eNB->RU_list[ru_id]->common.rxdataF[i];
+           }
+         }
+      }
+
       LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
       init_transport(eNB);
       //init_precoding_weights(RC.eNB[inst][CC_id]);
@@ -800,7 +815,7 @@ int init_rf(RU_t *ru) {
   pthread_setname_np(pthread_self(),name);
   return ret;
 }
-
+ 
 void ocp_init_RU(RU_t *ru, char *rf_config_file, int send_dmrssync) {
   PHY_VARS_eNB *eNB0= (PHY_VARS_eNB *)NULL;
   int i;
@@ -1318,7 +1333,7 @@ int main ( int argc, char **argv ) {
 
   // end of CI modifications
   //getchar();
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
     load_softscope("enb", NULL);
 
   itti_wait_tasks_end();
@@ -1327,7 +1342,7 @@ int main ( int argc, char **argv ) {
   // stop threads
 
   if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
-    if(IS_SOFTMODEM_DOFORMS)
+    if(IS_SOFTMODEM_DOSCOPE)
       end_forms();
 
     LOG_I(ENB_APP,"stopping MODEM threads\n");

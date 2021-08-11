@@ -52,16 +52,15 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
                      int32_t *output,
                      unsigned short p,
                      unsigned char lp,
-                     unsigned short nb_pdsch_rb);
+                     unsigned short nb_pdsch_rb,
+                     uint8_t config_type);
 
 void nr_gold_pbch(PHY_VARS_NR_UE* ue);
 
 void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
-                   unsigned short n_idDMRS,
-                   unsigned short length_dmrs);
+                   unsigned short n_idDMRS);
 
 void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
-                   unsigned char ns,
                    unsigned short *n_idDMRS);
 
 void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,

@@ -48,8 +48,9 @@ DEADLINE_SCHEDULER_FLAG_USER=""
 CPU_AFFINITY_FLAG_USER="False" #Only valid when low-latency flag is set to False
 REL="Rel15"
 HW="None"
-TP="None"
+TP="Ethernet"
 EPC=0
+VERBOSE_CI=0
 VERBOSE_COMPILE=0
 CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
@@ -69,6 +70,7 @@ NR="False"
 ITTI_SIM="False"
 SANITIZE_ADDRESS="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
+RU=0
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -103,6 +105,8 @@ Options
   Makes the NR softmodem
 --nrUE
   Makes the NR UE softmodem
+--RU
+  Makes the OAI RRU (without full stack)
 --UE
    Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
 --UE-conf-nvram [configuration file]
@@ -240,26 +244,36 @@ function main() {
             shift;;
        --eNB)
             eNB=1
+            RU=0
             echo_info "Will compile eNB"
             shift;;
        --eNBocp)
             eNBocp=1
+            RU=0
             echo_info "Will compile OCP eNB"
             shift;;
       --gNB)
             gNB=1
+            RU=0
             NR="True"
             echo_info "Will compile gNB"
             shift;;
+       --RU)
+	          RU=1
+            echo_info "Will compile RRU"
+	    shift;;
        -a | --agent)
             echo_info "FlexRAN support is always compiled into the eNB"
             shift;;
        --UE)
+            RU=0
             UE=1
             echo_info "Will compile UE"
             shift;;
        --nrUE)
+            RU=0
             nrUE=1
+            rfsimNas=1
             NR="True"
             echo_info "Will compile NR UE"
             shift;;
@@ -290,8 +304,12 @@ function main() {
             esac
 			echo_info "Setting hardware to: $HW"
             shift 2;;
+       -t | --transport)
+	    TP=$2
+            shift 2;;
        -P | --phy_simulators)
             SIMUS_PHY=1
+	          RU=0
             echo_info "Will compile dlsim, ulsim, ..."
             shift;;
        -S | --core_simulators)
@@ -324,6 +342,10 @@ function main() {
        --HWLAT_TEST)
             HWLAT_TEST=1
             echo_info "Will compile hw latency test program"
+            shift;;
+       --verbose-ci)
+	        VERBOSE_CI=1
+            echo_info "Will compile with verbose instructions in CI Docker env"
             shift;;
        --verbose-compile)
 	        VERBOSE_COMPILE=1
@@ -456,7 +478,7 @@ function main() {
   ########################################################
   # to be discussed
   
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$gNB" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$gNB" = "1" -o "$RU" = "1" ] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	      echo_info "No local radio head and no transport protocol selected"
       fi
@@ -583,7 +605,7 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" -o "$rfsimNas" = "1" ] ; then
 
     # softmodem compilation
 
@@ -607,6 +629,7 @@ function main() {
     echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
     echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
     echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
+    echo "set ( RU $RU )"                                                 >> $cmake_file
     echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
     echo "set ( SANITIZE_ADDRESS $SANITIZE_ADDRESS )"                     >> $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
@@ -622,6 +645,9 @@ function main() {
     fi
     if [ "$gNB" = "1" ] ; then
       execlist="$execlist nr-softmodem"
+    fi
+    if [ "$RU" = "1" ] ; then
+      execlist="$execlist oairu"
     fi
     if [ "$UE" = 1 ] ; then
       execlist="$execlist lte-uesoftmodem"
@@ -651,28 +677,15 @@ function main() {
         $build_dir $config_libconfig_shlib \
         lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
 
-      compilations \
-        $build_dir coding \
-        libcoding.so $dbin/libcoding.so
-
-
-      #check if we run inside a container or not
-      #IS_CONTAINER variable is defined in build_helper file
-      #compile  nasmesh and rb_tool only if NOT running in a container
-      if [ $IS_CONTAINER -eq 0 ]
-      then
-        compilations \
-          $build_dir nasmesh \
-          CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+      if [ "$RU" = "0" ] ; then
 
         compilations \
-          $build_dir rb_tool \
-          rb_tool $dbin/rb_tool
+          $build_dir coding \
+          libcoding.so $dbin/libcoding.so
 
-        cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
-      fi #IS_CONTAINER
+
+      fi
     fi
-
   fi
 
   if [ "$UE" = 1 ] ; then
@@ -854,7 +867,7 @@ function main() {
   ####################################################
   # Build RF device and transport protocol libraries #
   ####################################################
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1"  -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
 
       # build RF device libraries
       if [ "$HW" != "None" ] ; then
@@ -941,12 +954,30 @@ function main() {
           echo_info "Building transport protocol libraries"
           rm -f liboai_transpro.so
           rm -f $dbin/liboai_transpro.so
-          compilations \
-              $build_dir oai_eth_transpro \
-              liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
-          ln -sf liboai_eth_transpro.so liboai_transpro.so
-          ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
-          echo_info "liboai_transpro.so is linked to ETHERNET transport"
+	  if [ "$TP" == "Ethernet" ]; then
+              compilations \
+		  $build_dir oai_eth_transpro \
+		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
+              ln -sf liboai_eth_transpro.so liboai_transpro.so
+              ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+              echo_info "liboai_transpro.so is linked to ETHERNET transport"
+	  fi
+	  if [ "$TP" == "benetel4g" ]; then
+              compilations \
+		  $build_dir benetel_4g \
+		  libbenetel_4g.so $dbin/libbenetel_4g.$REL
+              ln -sf libbenetel_4g.so liboai_transpro.so
+              ln -sf $dbin/libbenetel_4g.so.$REL $dbin/liboai_transpro.so
+              echo_info "liboai_transpro.so is linked to BENETEL4G transport"
+	  fi
+	  if [ "$TP" == "benetel5g" ]; then
+              compilations \
+		  $build_dir benetel_5g \
+		  libbenetel_5g.so $dbin/libbenetel_5g.$REL
+              ln -sf libbenetel_5g.so liboai_transpro.so
+              ln -sf $dbin/libbenetel_5g.so.$REL $dbin/liboai_transpro.so
+              echo_info "liboai_transpro.so is linked to BENETEL4G transport"
+	  fi
       fi
   fi
 

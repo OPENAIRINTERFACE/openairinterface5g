@@ -136,7 +136,7 @@ extern "C" {
       LOG_E(TMR,"Queue for %s task contains %ld messages\n", itti_get_task_name(destination_task_id), s );
 
     if ( s > 50 )
-      LOG_I(TMR,"Queue for %s task size: %ld\n",itti_get_task_name(destination_task_id), s+1);
+      LOG_I(TMR,"Queue for %s task size: %ld (last message %s)\n",itti_get_task_name(destination_task_id), s+1,ITTI_MSG_NAME(message));
 
     t->message_queue.insert(t->message_queue.begin(), message);
     eventfd_t sem_counter = 1;
@@ -339,7 +339,9 @@ extern "C" {
   int itti_create_queue(const task_info_t *taskInfo) {
     pthread_mutex_lock (&lock_nb_queues);
     int newQueue=nb_queues++;
-    AssertFatal(tasks=(task_list_t **) realloc(tasks, nb_queues * sizeof(*tasks)),"");
+    task_list_t **new_tasks = (task_list_t **)realloc(tasks, nb_queues * sizeof(*tasks));
+    AssertFatal(new_tasks != NULL, "could not realloc() tasks list");
+    tasks = new_tasks;
     tasks[newQueue]= new task_list_t;
     pthread_mutex_unlock (&lock_nb_queues);
     LOG_I(TMR,"Starting itti queue: %s as task %d\n", taskInfo->name, newQueue);

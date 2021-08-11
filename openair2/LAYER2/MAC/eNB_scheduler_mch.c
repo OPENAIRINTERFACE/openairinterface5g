@@ -84,7 +84,7 @@ get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
 
 static uint32_t bytes_in_buffer=0;
 static uint32_t msi_pmch_stop=0;
-int mbms_rab_id = 2047;
+rb_id_t mbms_rab_id=2047;//[8] = {2047,2047,2047,2047,2047,2047,2047,2047};
 static uint32_t msi_sfs=0;
 
 

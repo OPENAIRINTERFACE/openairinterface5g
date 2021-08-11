@@ -51,6 +51,7 @@
 #include "gtpv1u_eNB_defs.h"
 #include "gtpv1u_eNB_task.h"
 #include "rrc_eNB_GTPV1U.h"
+#include <common/utils/msc/msc.h>
 
 #undef GTP_DUMP_SOCKET
 
@@ -280,7 +281,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
             (ue_context_p->ue_context.handover_info->state < HO_FORWARDING_COMPLETE)) {
           if(msgType == NW_GTP_END_MARKER) {
             /* in the source enb, UE in RRC_HO_EXECUTION mode */
-            if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION && ue_context_p->ue_context.handover_info->state == HO_COMPLETE) {
+            if (ue_context_p->ue_context.StatusRrc == RRC_HO_EXECUTION && ue_context_p->ue_context.handover_info->state == HO_COMPLETE) {
               /* set handover state */
               //ue_context_p->ue_context.handover_info->state = HO_END_MARKER;
               MessageDef *msg;
@@ -298,17 +299,17 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
             }
           }
 
-          if (ue_context_p->ue_context.Status == RRC_HO_EXECUTION || ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
+          if (ue_context_p->ue_context.StatusRrc == RRC_HO_EXECUTION || ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED) {
             int msgsrc = gtpv1u_eNB_get_msgsource(ue_context_p, teid);
             LOG_D(GTPU,"UE INFO.ueStatus %d, handover state %d, forwarding state %d, from %s. message type %s\n",
-                  ue_context_p->ue_context.Status,
+                  ue_context_p->ue_context.StatusRrc,
                   ue_context_p->ue_context.handover_info->state,
                   ue_context_p->ue_context.handover_info->forwarding_state,
                   msgsrc == GTPV1U_MSG_FROM_SOURCE_ENB?"Source eNB":"EPC",
                   msgsrc != GTPV1U_MSG_FROM_SOURCE_ENB? "UDP DATA" :
                   msgType == NW_GTP_END_MARKER?"END MARKER":"DATA FORWARDING");
 
-            /* target enb */
+	    /* target enb */
             if(msgType == NW_GTP_END_MARKER) {
               LOG_I(GTPU, "target end receive END MARKER\n");
               ue_context_p->ue_context.handover_info->state = HO_END_MARKER;
@@ -1212,7 +1213,7 @@ int gtpv1u_eNB_init(void) {
   //gtpv1u_data_g.udp_data;
   RC.gtpv1u_data_g->seq_num         = 0;
   RC.gtpv1u_data_g->restart_counter = 0;
-
+  RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up = 0;
   /* Initializing GTPv1-U stack */
   if ((rc = nwGtpv1uInitialize(&RC.gtpv1u_data_g->gtpv1u_stack, GTPU_STACK_ENB)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "Failed to setup nwGtpv1u stack %x\n", rc);
@@ -1498,15 +1499,15 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
           stack_req.apiInfo.sendtoInfo.teid   = tenb_x2u_teid;
           stack_req.apiInfo.sendtoInfo.ipAddr = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].tenb_ip_addr;// target enb ip
           rc = nwGtpv1uGpduMsgNew(
-                 RC.gtpv1u_data_g->gtpv1u_stack,
-                 tenb_x2u_teid,
-                 NW_FALSE,
-                 RC.gtpv1u_data_g->seq_num++,
-                 data_req_p->buffer,
-                 data_req_p->length,
-                 data_req_p->offset,
-                 &(stack_req.apiInfo.sendtoInfo.hMsg));
-
+				  RC.gtpv1u_data_g->gtpv1u_stack,
+				  tenb_x2u_teid,
+				  NW_FALSE,
+				  RC.gtpv1u_data_g->seq_num++,
+				  data_req_p->buffer,
+				  data_req_p->length,
+				  data_req_p->offset,
+				  &(stack_req.apiInfo.sendtoInfo.hMsg));
+	  
           if (rc != NW_GTPV1U_OK) {
             LOG_E(GTPU, "nwGtpv1uGpduMsgNew failed: 0x%x\n", rc);
             MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
@@ -1516,7 +1517,7 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
             pMsg = (NwGtpv1uMsgT *) stack_req.apiInfo.sendtoInfo.hMsg;
             pMsg->msgType = NW_GTP_END_MARKER;
             rc = nwGtpv1uProcessUlpReq(RC.gtpv1u_data_g->gtpv1u_stack, &stack_req);
-
+	    
             if (rc != NW_GTPV1U_OK) {
               LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: 0x%x\n", rc);
               MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
@@ -1536,11 +1537,11 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
 
             rc = nwGtpv1uMsgDelete(RC.gtpv1u_data_g->gtpv1u_stack,
                                    stack_req.apiInfo.sendtoInfo.hMsg);
-
+	    
             if (rc != NW_GTPV1U_OK) {
               LOG_E(GTPU, "nwGtpv1uMsgDelete failed: 0x%x\n", rc);
             }
-
+	    
             gtpv1u_enb_delete_tunnel_req_t delete_tunnel_req;
             memset(&delete_tunnel_req, 0, sizeof(delete_tunnel_req));
             delete_tunnel_req.rnti = data_req_p->rnti;
@@ -1548,7 +1549,7 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
           }
         }
       }
-
+      
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_PROCESS_TUNNEL_DATA_REQ, VCD_FUNCTION_OUT);
     }
     break;

@@ -37,7 +37,6 @@
 #include <sched.h>
 //#include "openair1/PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "nfapi_interface.h"
-#include "platform_constants.h"
 #include "platform_types.h"
 #include <common/utils/threadPool/thread-pool.h>
 
@@ -135,64 +134,13 @@ typedef struct {
     uint8_t Mod_id;
     int CC_id;
     nfapi_config_request_t *cfg;
-}PHY_Config_t;
+} PHY_Config_t;
 #include <targets/ARCH/COMMON/common_lib.h>
-/// Context data structure for RX/TX portion of subframe processing
-typedef struct {
-  /// Component Carrier index
-  uint8_t              CC_id;
-  /// timestamp transmitted to HW
-  openair0_timestamp timestamp_tx;
-  openair0_timestamp timestamp_rx;
-  /// subframe to act upon for transmission
-  int subframe_tx;
-  /// subframe to act upon for reception
-  int subframe_rx;
-  /// frame to act upon for transmission
-  int frame_tx;
-  /// frame to act upon for reception
-  int frame_rx;
-  int frame_prach;
-  int subframe_prach;
-  int frame_prach_br;
-  int subframe_prach_br;
-  /// \brief Instance count for RXn-TXnp4 processing thread.
-  /// \internal This variable is protected by \ref mutex_rxtx.
-  int instance_cnt;
-  /// pthread structure for RXn-TXnp4 processing thread
-  pthread_t pthread;
-  /// pthread attributes for RXn-TXnp4 processing thread
-  pthread_attr_t attr;
-  /// condition variable for tx processing thread
-  pthread_cond_t cond;
-  /// mutex for RXn-TXnp4 processing thread
-  pthread_mutex_t mutex;
-  /// scheduling parameters for RXn-TXnp4 thread
-  struct sched_param sched_param_rxtx;
-
-  /// \internal This variable is protected by \ref mutex_RUs.
-  int instance_cnt_RUs;
-  /// condition variable for tx processing thread
-  pthread_cond_t cond_RUs;
-  /// mutex for RXn-TXnp4 processing thread
-  pthread_mutex_t mutex_RUs;
-  tpool_t *threadPool;
-  int nbEncode;
-  int nbDecode;
-  notifiedFIFO_t *respEncode;
-  notifiedFIFO_t *respDecode;
-    pthread_mutex_t mutex_emulateRF;
-  int instance_cnt_emulateRF;
-  pthread_t pthread_emulateRF;
-  pthread_attr_t attr_emulateRF;
-  pthread_cond_t cond_emulateRF;
-  int first_rx;
-} L1_rxtx_proc_t;
 
 typedef struct IF_Module_s{
 //define the function pointer
-  void (*UL_indication)(UL_IND_t *UL_INFO, L1_rxtx_proc_t *proc);
-  void (*schedule_response)(Sched_Rsp_t *Sched_INFO, L1_rxtx_proc_t *proc);
+  void (*UL_indication)(UL_IND_t *UL_INFO, void *proc);
+  void (*schedule_response)(Sched_Rsp_t *Sched_INFO, void *proc);
   void (*PHY_config_req)(PHY_Config_t* config_INFO);
 
   void (*PHY_config_update_sib2_req)(PHY_Config_t* config_INFO);
@@ -220,7 +168,7 @@ void IF_Module_kill(int Mod_id);
 
 /*Interface for uplink, transmitting the Preamble(list), ULSCH SDU, NAK, Tick (trigger scheduler)
  */
-void UL_indication(UL_IND_t *UL_INFO, L1_rxtx_proc_t *proc);
+void UL_indication(UL_IND_t *UL_INFO, void *proc);
 
 /*Interface for Downlink, transmitting the DLSCH SDU, DCI SDU*/
 void Schedule_Response(Sched_Rsp_t *Sched_INFO);

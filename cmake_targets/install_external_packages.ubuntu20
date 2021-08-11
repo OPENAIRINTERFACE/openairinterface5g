@@ -83,6 +83,8 @@ get_distribution_release() {
 check_supported_distribution() {
     case $(get_distribution_release) in
         "ubuntu20.04") return 0 ;;
+        "ubuntu20.10") return 0 ;;
+        "ubuntu21.04") return 0 ;;
     esac
     return 1
 }
@@ -152,11 +154,11 @@ install_protobuf_from_source(){
 	cd /tmp || exit
 	echo "Downloading protobuf"
 	#rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
-	#wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+	#wget https://github.com/protocolbuffers/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
 	#tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
 	#cd protobuf-2.6.1/
 	rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-	wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+	wget --tries=3 --retry-connrefused https://github.com/protocolbuffers/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
 	tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner "$USER" --group "$(groups | cut -d" " -f1)" --no-same-owner
 	cd protobuf-3.3.0/ || exit
 	./configure
@@ -198,15 +200,15 @@ install_usrp_uhd_driver_from_source(){
 	rm -rf /tmp/uhd
 	git clone https://github.com/EttusResearch/uhd.git
 	cd uhd || exit
-	git checkout tags/v3.13.0.2
+	git checkout UHD-3.15.LTS
 	mkdir -p host/build
 	cd host/build || exit
-	$CMAKE ../
+	$CMAKE ../ -GNinja
 	echo "Compiling UHD"
-	make -j"$(nproc)"
-	make test
-	$SUDO make install
+	ninja
+	$SUDO ninja install
 	$SUDO ldconfig
+        $SUDO /usr/lib/uhd/utils/uhd_images_downloader.py
     ) >& "$uhd_install_log"
 }
 
@@ -333,6 +335,11 @@ check_install_ubuntu_packages() {
 		LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
 		LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
 		;;
+            "ubuntu21.04")
+		specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
+		LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+		LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+		;;
 	esac
 	$SUDO $INSTALLER install -y \
 	      $specific_packages \
@@ -345,7 +352,6 @@ check_install_ubuntu_packages() {
               openvpn \
               pkg-config \
               python3-dev  \
-              python-pexpect \
               sshfs \
               swig  \
               tshark \
@@ -358,7 +364,6 @@ check_install_ubuntu_packages() {
               iperf3 \
               android-tools-adb \
               wvdial \
-              python-numpy \
               sshpass \
               nscd \
               bc \
@@ -379,7 +384,6 @@ check_install_ubuntu_packages() {
 	      git \
 	      graphviz \
 	      gtkwave \
-	      guile-2.0-dev  \
 	      iperf \
 	      iptables \
 	      libxtables-dev \
@@ -419,7 +423,8 @@ check_install_ubuntu_packages() {
 	      libxpm-dev \
               libboost-all-dev \
 	      nettle-dev \
-	      nettle-bin
+	      nettle-bin \
+              libreadline-dev
     fi
     
     $SUDO update-alternatives --set "$LAPACK_LIBNAME" "$LAPACK_TARGET"

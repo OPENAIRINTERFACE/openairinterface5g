@@ -186,21 +186,23 @@ int main(int argc, char *argv[]) {
     serviceSock=client_start(argv[2],atoi(argv[3]));
   }
 
-  uint64_t typeStamp=ENB_MAGICDL_FDD;
+  uint64_t typeStamp=ENB_MAGICDL;
   boolean_t raw=false;
 
   if ( argc == 5 ) {
     raw=true;
 
     if (strcmp(argv[4],"UL") == 0 )
-      typeStamp=UE_MAGICDL_FDD;
+      typeStamp=UE_MAGICDL;
   }
 
   samplesBlockHeader_t header;
   int bufSize=100000;
   void *buff=malloc(bufSize);
   uint64_t timestamp=0;
-  const int blockSize=1000;
+  const int blockSize=1920;
+  // If fileSize is not multiple of blockSize*4 then discard remaining samples
+  fileSize = (fileSize/(blockSize<<2))*(blockSize<<2);
 
   while (1) {
     //Rewind the file to loop on the samples

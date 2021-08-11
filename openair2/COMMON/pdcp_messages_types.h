@@ -38,6 +38,7 @@
 #define RRC_DCCH_DATA_COPY_IND(mSGpTR)          (mSGpTR)->ittiMsg.rrc_dcch_data_copy_ind
 
 // gNB
+#define NR_RRC_DCCH_DATA_REQ(mSGpTR)            (mSGpTR)->ittiMsg.nr_rrc_dcch_data_req
 #define NR_RRC_DCCH_DATA_IND(mSGpTR)            (mSGpTR)->ittiMsg.nr_rrc_dcch_data_ind
 
 //-------------------------------------------------------------------------------------------//
@@ -72,6 +73,20 @@ typedef struct RrcDcchDataCopyInd_s {
   uint8_t *sdu_p;
   uint8_t      eNB_index;
 } RrcDcchDataCopyInd;
+
+typedef struct NRRrcDcchDataReq_s {
+  uint32_t frame;
+  uint8_t  gnb_flag;
+  rb_id_t  rb_id;
+  uint32_t muip;
+  uint32_t confirmp;
+  uint32_t sdu_size;
+  uint8_t *sdu_p;
+  uint8_t  mode;
+  uint16_t rnti;
+  uint8_t  module_id;
+  uint8_t  gNB_index;
+} NRRrcDcchDataReq;
 
 typedef struct NRRrcDcchDataInd_s {
   uint32_t frame;

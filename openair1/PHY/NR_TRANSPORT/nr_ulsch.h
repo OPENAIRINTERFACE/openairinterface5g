@@ -89,6 +89,9 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
                          uint8_t harq_pid);
 int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
 
-void dump_pusch_stats(PHY_VARS_gNB *gNB);
+void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB);
 
+void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB);
 void clear_pusch_stats(PHY_VARS_gNB *gNB);
+
+NR_gNB_SCH_STATS_t *get_ulsch_stats(PHY_VARS_gNB *gNB,NR_gNB_ULSCH_t *ulsch);

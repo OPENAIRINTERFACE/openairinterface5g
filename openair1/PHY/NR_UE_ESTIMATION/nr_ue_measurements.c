@@ -21,16 +21,17 @@
 
 /*! \file nr_ue_measurements.c
  * \brief UE measurements routines
- * \author  R. Knopp, G. Casati
+ * \author  R. Knopp, G. Casati, K. Saaifan
  * \date 2020
  * \version 0.1
  * \company Eurecom, Fraunhofer IIS
- * \email: knopp@eurecom.fr, guido.casati@iis.fraunhofer.de
+ * \email: knopp@eurecom.fr, guido.casati@iis.fraunhofer.de, khodr.saaifan@iis.fraunhofer.de
  * \note
  * \warning
  */
 
 #include "executables/softmodem-common.h"
+#include "executables/nr-softmodem-common.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "common/utils/LOG/log.h"
@@ -45,7 +46,7 @@
 //#define DEBUG_MEAS_UE
 //#define DEBUG_RANK_EST
 
-// Returns the pathloss in dBm for the active UL BWP on the selected carrier based on the DL RS associated with the PRACH transmission
+// Returns the pathloss in dB for the active UL BWP on the selected carrier based on the DL RS associated with the PRACH transmission
 // computation according to clause 7.4 (Physical random access channel) of 3GPP TS 38.213 version 16.3.0 Release 16
 // Assumptions:
 // - PRACH transmission from a UE is not in response to a detection of a PDCCH order by the UE
@@ -59,18 +60,17 @@ int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
   if (get_softmodem_params()->do_ra){
 
     long referenceSignalPower = ue->nrUE_config.ssb_config.ss_pbch_power;
-    double rsrp_dBm = 10*log10(ue->measurements.rsrp[gNB_index]) + 30 - ue->rx_total_gain_dB;
 
-    pathloss = (int16_t)(10*log10(pow(10, (double)(referenceSignalPower)/10) - pow(10, (double)(rsrp_dBm)/10)));
+    pathloss = (int16_t)(referenceSignalPower - ue->measurements.rsrp_dBm[gNB_index]);
 
-    LOG_D(MAC, "In %s: pathloss %d dBm, UE RX total gain %d dB, referenceSignalPower %ld dBm (%f mW), RSRP %f dBm (%f mW)\n",
+    LOG_D(MAC, "In %s: pathloss %d dB, UE RX total gain %d dB, referenceSignalPower %ld dBm/RE (%f mW), RSRP %d dBm (%f mW)\n",
       __FUNCTION__,
       pathloss,
       ue->rx_total_gain_dB,
       referenceSignalPower,
       pow(10, referenceSignalPower/10),
-      rsrp_dBm,
-      pow(10, rsrp_dBm/10));
+      ue->measurements.rsrp_dBm[gNB_index],
+      pow(10, ue->measurements.rsrp_dBm[gNB_index]/10));
 
   } else {
 
@@ -178,13 +178,13 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
     ue->measurements.rx_power_avg_dB[gNB_id] = dB_fixed( ue->measurements.rx_power_avg[gNB_id]);
     ue->measurements.wideband_cqi_tot[gNB_id] = dB_fixed2(ue->measurements.rx_power_tot[gNB_id], ue->measurements.n0_power_tot);
     ue->measurements.wideband_cqi_avg[gNB_id] = dB_fixed2(ue->measurements.rx_power_avg[gNB_id], ue->measurements.n0_power_avg);
-    ue->measurements.rx_rssi_dBm[gNB_id] = ue->measurements.rx_power_avg_dB[gNB_id] - ue->rx_total_gain_dB;
+    ue->measurements.rx_rssi_dBm[gNB_id] = ue->measurements.rx_power_avg_dB[gNB_id] + 30 - 10*log10(pow(2, 30)) - ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) - dB_fixed(ue->frame_parms.ofdm_symbol_size);
 
-    LOG_D(PHY, "[gNB %d] Slot %d, RSSI %d dBm, RSSI (digital) %d dB, WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d\n",
+    LOG_D(PHY, "[gNB %d] Slot %d, RSSI %d dB (%d dBm/RE), WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d\n",
       gNB_id,
       slot,
-      ue->measurements.rx_rssi_dBm[gNB_id],
       ue->measurements.rx_power_avg_dB[gNB_id],
+      ue->measurements.rx_rssi_dBm[gNB_id],
       ue->measurements.wideband_cqi_avg[gNB_id],
       ue->measurements.rx_power_avg[gNB_id],
       ue->measurements.n0_power_tot);
@@ -258,15 +258,20 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 
   ue->measurements.rsrp_filtered[gNB_id] = ue->measurements.rsrp[gNB_id];
 
-  LOG_D(PHY, "In %s: [UE %d] slot %d SS-RSRP: %3.1f dBm/RE (%d W)\n",
+  ue->measurements.rsrp_dBm[gNB_id] = 10*log10(ue->measurements.rsrp[gNB_id]) + 30 - 10*log10(pow(2,30)) - ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) - dB_fixed(ue->frame_parms.ofdm_symbol_size);
+
+  LOG_D(PHY, "In %s: [UE %d] slot %d SS-RSRP: %d dBm/RE (%d)\n",
     __FUNCTION__,
     ue->Mod_id,
     slot,
-    10*log10(ue->measurements.rsrp[gNB_id]) + 30 - ue->rx_total_gain_dB,
+    ue->measurements.rsrp_dBm[gNB_id],
     ue->measurements.rsrp[gNB_id]);
 
 }
 
+// This function computes the received noise power
+// Measurement units:
+// - psd_awgn (AWGN power spectral density):     dBm/Hz
 void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
                             uint8_t slot){
@@ -279,6 +284,9 @@ void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
   uint8_t k_length = 8;
   uint8_t l_sss = ue->symbol_offset + 2;
   unsigned int ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
+  double rx_gain = openair0_cfg[0].rx_gain[0];
+  double rx_gain_offset = openair0_cfg[0].rx_gain_offset[0];
+
   ue->measurements.n0_power_tot = 0;
 
   LOG_D(PHY, "In %s doing measurements for ssb_offset %d l_sss %d \n", __FUNCTION__, ssb_offset, l_sss);
@@ -322,10 +330,17 @@ void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
   ue->measurements.n0_power_tot_dB = (unsigned short) dB_fixed(ue->measurements.n0_power_tot/aarx);
 
   #ifdef DEBUG_MEAS_RRC
-  int nf_usrp = ue->measurements.n0_power_tot_dB + 30 - ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) - 90 - (-174 + dB_fixed(30000/*scs*/) + dB_fixed(ue->frame_parms.ofdm_symbol_size));
-  LOG_D(PHY, "In %s slot %d NF USRP %d dBm\n", __FUNCTION__, nf_usrp);
+  const int psd_awgn = -174;
+  const int scs = 15000 * (1 << ue->frame_parms.numerology_index);
+  const int nf_usrp = ue->measurements.n0_power_tot_dB + 3 + 30 - ((int)rx_gain - (int)rx_gain_offset) - 10 * log10(pow(2, 30)) - (psd_awgn + dB_fixed(scs) + dB_fixed(ue->frame_parms.ofdm_symbol_size));
+  LOG_D(PHY, "In [%s][slot:%d] NF USRP %d dB\n", __FUNCTION__, slot, nf_usrp);
   #endif
 
-  LOG_D(PHY, "In %s slot %d Noise Level %d ue->measurements.n0_power_tot_dB %d \n", __FUNCTION__, slot, ue->measurements.n0_power_tot, ue->measurements.n0_power_tot_dB);
+  LOG_D(PHY, "In [%s][slot:%d] Noise Level %d (digital level %d dB, noise power spectral density %f dBm/RE)\n",
+    __FUNCTION__,
+    slot,
+    ue->measurements.n0_power_tot,
+    ue->measurements.n0_power_tot_dB,
+    ue->measurements.n0_power_tot_dB + 30 - 10*log10(pow(2, 30)) - dB_fixed(ue->frame_parms.ofdm_symbol_size) - ((int)rx_gain - (int)rx_gain_offset));
 
 }

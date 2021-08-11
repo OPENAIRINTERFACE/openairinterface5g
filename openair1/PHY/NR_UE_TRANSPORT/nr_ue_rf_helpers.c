@@ -31,13 +31,15 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "nr_transport_proto_ue.h"
+#include "executables/softmodem-common.h"
 
 void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t *dl_carrier, uint64_t *ul_carrier){
 
-  if (downlink_frequency[0][0])
-    *dl_carrier = downlink_frequency[0][0];
-  else
+  if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || !downlink_frequency[0][0]) {
     *dl_carrier = fp->dl_CarrierFreq;
+  } else {
+    *dl_carrier = downlink_frequency[0][0];
+  }
 
   if (uplink_frequency_offset[0][0])
     *ul_carrier = *dl_carrier + uplink_frequency_offset[0][0];
@@ -78,13 +80,15 @@ void nr_rf_card_config(openair0_config_t *openair0_cfg,
 
     openair0_cfg->autocal[i] = 1;
 
-    LOG_I(PHY, "HW: Configuring channel %d (rf_chain %d): setting tx_gain %f, rx_gain %f, tx_freq %f Hz, rx_freq %f Hz\n",
-      i,
-      rf_chain,
-      openair0_cfg->tx_gain[i],
-      openair0_cfg->rx_gain[i],
-      openair0_cfg->tx_freq[i],
-      openair0_cfg->rx_freq[i]);
+    if (i < openair0_cfg->rx_num_channels) {
+      LOG_I(PHY, "HW: Configuring channel %d (rf_chain %d): setting tx_gain %f, rx_gain %f, tx_freq %f Hz, rx_freq %f Hz\n",
+        i,
+        rf_chain,
+        openair0_cfg->tx_gain[i],
+        openair0_cfg->rx_gain[i],
+        openair0_cfg->tx_freq[i],
+        openair0_cfg->rx_freq[i]);
+    }
 
   }
 }

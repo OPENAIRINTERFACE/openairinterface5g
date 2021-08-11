@@ -2375,16 +2375,14 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   for (l=num_pdcch_symbols; l<nsymb; l++) {
 
   if (dlsch0 != NULL ) {
-#ifdef DEBUG_DLSCH_MODULATION
-    LOG_I(PHY,"Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc0 %lx, mod0 %d, mod1 %d, rb_alloc[0] %d)\n",
-            harq_pid,
+     LOG_D(PHY,"Generating DLSCH (num_pdcch_symb %d harq_pid %d,mimo %d, pmi_alloc0 %lx, mod0 %d, mod1 %d, rb_alloc[0] %x)\n",
+            num_pdcch_symbols,harq_pid,
             dlsch0_harq->mimo_mode,
             pmi2hex_2Ar2(dlsch0_harq->pmi_alloc),
             mod_order0,
             mod_order1,
             rb_alloc[0]
             );
-#endif
   }
 
     if (frame_parms->Ncp==0) { // normal prefix
@@ -2983,7 +2981,7 @@ int allocate_REs_in_RB_MCH_khz_1dot25(int32_t **txdataF,
 
       case 2:  //QPSK
 
-                  LOG_D(PHY,"%d : %d,%d => ",tti_offset,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+      LOG_D(PHY,"%d : %d,%d => ",tti_offset,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
       ((int16_t*)&txdataF[0][tti_offset])[0] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
 
       *jj = *jj + 1;
@@ -3085,7 +3083,7 @@ int mch_modulation_khz_1dot25(int32_t **txdataF,
   uint8_t skip_dc=0;
   uint8_t mod_order = dlsch->harq_processes[0]->Qm;
   int16_t qam16_table_a[4],qam64_table_a[8];//,qam16_table_b[4],qam64_table_b[8];
-  int16_t *qam_table_s;
+  int16_t *qam_table_s=qam16_table_a;
 
   nsymb_pmch = 1;
   nsymb = (frame_parms->Ncp == NORMAL) ? 14 : 12;
@@ -3128,12 +3126,8 @@ int mch_modulation_khz_1dot25(int32_t **txdataF,
 
       }
 
-      if (mod_order == 4)
-        qam_table_s = qam16_table_a;
-      else if (mod_order == 6)
+      if (mod_order == 6)
         qam_table_s = qam64_table_a;
-      else
-        qam_table_s = NULL;
 
       //LOG_I(PHY,"Allocated rb %d, subframe_offset %d,amp %d\n",rb,subframe_offset,amp);
       allocate_REs_in_RB_MCH_khz_1dot25(txdataF,

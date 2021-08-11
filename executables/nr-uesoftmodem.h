@@ -56,7 +56,7 @@
     {"ue-scan-carrier",          CONFIG_HLP_UESCAN,      PARAMFLAG_BOOL,  iptr:&(UE->UE_scan_carrier),        defintval:0,           TYPE_INT,      0},     \
     {"ue-fo-compensation",       CONFIG_HLP_UEFO,        PARAMFLAG_BOOL,  iptr:&(UE->UE_fo_compensation),     defintval:0,           TYPE_INT,      0},     \
     {"ue-max-power",             NULL,                   0,               iptr:&(tx_max_power[0]),            defintval:90,          TYPE_INT,      0},     \
-    {"r"  ,                      CONFIG_HLP_PRB,         0,               iptr:&(fp->N_RB_DL),                defintval:25,          TYPE_UINT,     0},     \
+    {"r"  ,                      CONFIG_HLP_PRB,         0,               uptr:&(N_RB_DL),                    defuintval:160,         TYPE_UINT,     0},     \
     {"A" ,                       CONFIG_HLP_TADV,        0,               iptr:&(UE->timing_advance),         defintval:0,           TYPE_INT,      0}, \
     {"E" ,                       CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,  u8ptr:&(fp->threequarter_fs),       defintval:0,           TYPE_UINT8,    0}, \
     {"T" ,                       CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,           TYPE_INT,      0}, \
@@ -73,9 +73,6 @@ extern uint64_t get_nrUE_optmask(void);
 extern uint64_t set_nrUE_optmask(uint64_t bitmask);
 extern nrUE_params_t *get_nrUE_params(void);
 
-#ifdef NRUE_MAIN
-nrUE_params_t nrUE_params;
-#endif
 
 // In nr-ue.c
 extern int setup_nr_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);

@@ -31,9 +31,17 @@
  */
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "common/utils/nr/nr_common.h"
 #include <limits.h>
 
 #define reserved 0xffff
+
+// start symbols for SSB types A,B,C,D,E
+uint16_t symbol_ssb_AC[8]={2,8,16,22,30,36,44,50};
+uint16_t symbol_ssb_BD[64]={4,8,16,20,32,36,44,48,60,64,72,76,88,92,100,104,144,148,156,160,172,176,184,188,200,204,212,216,228,232,240,244,284,288,
+                            296,300,312,316,324,328,340,344,352,356,368,372,380,384,424,428,436,440,452,456,464,468,480,484,492,496,508,512,520,524};
+uint16_t symbol_ssb_E[64]={8,12,16,20,32,36,40,44,64,68,72,76,88,92,96,100,120,124,128,132,144,148,152,156,176,180,184,188,200,204,208,212,288,292,
+                           296,300,312,316,320,324,344,348,352,356,368,372,376,380,400,404,408,412,424,428,432,436,456,460,464,468,480,484,488,492};
 
 const uint8_t nr_slots_per_frame[5] = {10, 20, 40, 80, 160};
 
@@ -116,6 +124,152 @@ const int32_t table_38213_13_12_c2[16] = { 1,  2,  1,  2,  1,  2,  2,  2,  2,  1
 const float   table_38213_13_12_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 0.5f, 0.5f, 0.5f, 1, 0.5f, 0.5f, 1, 1,  reserved,  reserved}; // M, index 14-15 reserved
 
 const int32_t table_38213_10_1_1_c2[5] = { 0, 0, 4, 2, 1 };
+
+// for PDSCH from TS 38.214 subclause 5.1.2.1.1
+const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[16][3]={
+    {0,2,12},   // row index 1
+    {0,2,10},   // row index 2
+    {0,2,9},    // row index 3
+    {0,2,7},    // row index 4
+    {0,2,5},    // row index 5
+    {0,9,4},    // row index 6
+    {0,4,4},    // row index 7
+    {0,5,7},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,12,2},   // row index 11
+    {0,1,13},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,7},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[16][3]={
+    {0,3,11},   // row index 1
+    {0,3,9},    // row index 2
+    {0,3,8},    // row index 3
+    {0,3,6},    // row index 4
+    {0,3,4},    // row index 5
+    {0,10,4},   // row index 6
+    {0,6,4},    // row index 7
+    {0,5,7},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,12,2},   // row index 11
+    {0,1,13},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,7},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[16][3]={
+    {0,2,6},    // row index 1
+    {0,2,10},   // row index 2
+    {0,2,9},    // row index 3
+    {0,2,7},    // row index 4
+    {0,2,5},    // row index 5
+    {0,6,4},    // row index 6
+    {0,4,4},    // row index 7
+    {0,5,6},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,10,2},   // row index 11
+    {0,1,11},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,6},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[16][3]={
+    {0,3,5},    // row index 1
+    {0,3,9},    // row index 2
+    {0,3,8},    // row index 3
+    {0,3,6},    // row index 4
+    {0,3,4},    // row index 5
+    {0,8,2},    // row index 6
+    {0,6,4},    // row index 7
+    {0,5,6},    // row index 8
+    {0,5,2},    // row index 9
+    {0,9,2},    // row index 10
+    {0,10,2},   // row index 11
+    {0,1,11},   // row index 12
+    {0,1,6},    // row index 13
+    {0,2,4},    // row index 14
+    {0,4,6},    // row index 15
+    {0,8,4}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[16][3]={
+    {0,2,2},    // row index 1
+    {0,4,2},    // row index 2
+    {0,6,2},    // row index 3
+    {0,8,2},    // row index 4
+    {0,10,2},   // row index 5
+    {1,2,2},    // row index 6
+    {1,4,2},    // row index 7
+    {0,2,4},    // row index 8
+    {0,4,4},    // row index 9
+    {0,6,4},    // row index 10
+    {0,8,4},    // row index 11
+    {0,10,4},   // row index 12
+    {0,2,7},    // row index 13
+    {0,2,12},   // row index 14
+    {1,2,4},    // row index 15
+    {0,0,0}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[16][3]={
+    {0,2,2},    // row index 1
+    {0,4,2},    // row index 2
+    {0,6,2},    // row index 3
+    {0,8,2},    // row index 4
+    {0,10,2},   // row index 5
+    {1,2,2},    // row index 6
+    {1,4,2},    // row index 7
+    {0,2,4},    // row index 8
+    {0,4,4},    // row index 9
+    {0,6,4},    // row index 10
+    {0,8,4},    // row index 11
+    {0,10,4},   // row index 12
+    {0,2,7},    // row index 13
+    {0,3,11},   // row index 14
+    {1,2,4},    // row index 15
+    {0,0,0}     // row index 16
+};
+const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[16][3]={
+    {0,2,2},  // row index 1
+    {0,4,2},  // row index 2
+    {0,6,2},  // row index 3
+    {0,8,2},  // row index 4
+    {0,10,2}, // row index 5
+    {0,0,0},  // row index 6
+    {0,0,0},  // row index 7
+    {0,2,4},  // row index 8
+    {0,4,4},  // row index 9
+    {0,6,4},  // row index 10
+    {0,8,4},  // row index 11
+    {0,10,4}, // row index 12
+    {0,2,7},  // row index 13
+    {0,2,12},  // row index 14
+    {0,0,6},  // row index 15
+    {0,2,6}   // row index 16
+};
+const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[16][3]={
+    {0,2,2},  // row index 1
+    {0,4,2},  // row index 2
+    {0,6,2},  // row index 3
+    {0,8,2},  // row index 4
+    {0,10,2}, // row index 5
+    {0,0,0},  // row index 6
+    {0,0,0},  // row index 7
+    {0,2,4},  // row index 8
+    {0,4,4},  // row index 9
+    {0,6,4},  // row index 10
+    {0,8,4},  // row index 11
+    {0,10,4}, // row index 12
+    {0,2,7},  // row index 13
+    {0,3,11},  // row index 14
+    {0,0,6},  // row index 15
+    {0,2,6}   // row index 16
+};
 
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
 const char *duplex_mode[]={"FDD","TDD"};
@@ -1009,7 +1163,7 @@ int get_format0(uint8_t index,
                 uint8_t unpaired,
 		frequency_range_t frequency_range){
 
-  uint16_t format;
+  uint16_t format=0;
   if (unpaired) {
     if (frequency_range==FR1)
       format = table_6_3_3_2_3_prachConfig_Index[index][0];
@@ -1025,12 +1179,12 @@ int get_format0(uint8_t index,
   return format;
 }
 
-int64_t *get_prach_config_info(uint32_t pointa,
+int64_t *get_prach_config_info(frequency_range_t freq_range,
                                uint8_t index,
                                uint8_t unpaired) {
   int64_t *prach_config_info_p;
 
-  if (pointa > 2016666) { //FR2
+  if (freq_range == FR2) { //FR2
     prach_config_info_p = table_6_3_3_2_4_prachConfig_Index[index];
   }
   else { // FR1
@@ -1220,6 +1374,11 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
     else { // FDD
       x = table_6_3_3_2_2_prachConfig_Index[index][2];
       s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
+      for(int i = 0; i < 64 ; i++) {
+        if ( (s_map >> i) & 0x01) {
+          (*N_RA_sfn)++;
+        }
+      }
       *N_RA_slot = table_6_3_3_2_2_prachConfig_Index[index][6];
       if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
         *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
@@ -1396,19 +1555,17 @@ int get_nr_prach_info_from_index(uint8_t index,
             if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
               format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
             *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
-            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %lu) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u \n",
-                  frame,
-                  slot,
-                  index,
-                  table_6_3_3_2_3_prachConfig_Index[index][6],
-                  pointa,
-                  mu,
-                  unpaired,
-                  *start_symbol,
-                  *N_t_slot,
-                  *N_dur,
-                  *N_RA_slot,
-                  *RA_sfn_index);
+            LOG_D(MAC,"Frame %d slot %d: Getting PRACH info from index %d (col 6 %lu) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_slot %u RA_sfn_index %u \n", frame,
+              slot,
+              index, table_6_3_3_2_3_prachConfig_Index[index][6],
+              pointa,
+              mu,
+              unpaired,
+              *start_symbol,
+              *N_t_slot,
+              *N_dur,
+              *N_RA_slot,
+              *RA_sfn_index);
           }
           return 1;
         }
@@ -1428,6 +1585,11 @@ int get_nr_prach_info_from_index(uint8_t index,
           if (mu == 1) {
             if ( (table_6_3_3_2_2_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
+          }
+          for(int i = 0; i <= subframe ; i++) {
+            if ( (s_map >> i) & 0x01) {
+              (*RA_sfn_index)++;
+            }
           }
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
             *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
@@ -1567,78 +1729,46 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
   }
 }
 
-// Table 5.2-1 NR operating bands in FR1 & FR2 (3GPP TS 38.101)
-// Table 5.4.2.3-1 Applicable NR-ARFCN per operating band in FR1 & FR2 (3GPP TS 38.101)
-// Notes:
-// - N_OFFs for bands from 80 to 89 and band 95 is referred to UL
-// - Frequencies are expressed in KHz
-// - col: NR_band ul_min  ul_max  dl_min  dl_max  step  N_OFFs_DL  deltaf_raster
-nr_bandentry_t nr_bandtable[] = {
-  {1,   1920000, 1980000, 2110000, 2170000, 20, 422000, 100},
-  {2,   1850000, 1910000, 1930000, 1990000, 20, 386000, 100},
-  {3,   1710000, 1785000, 1805000, 1880000, 20, 361000, 100},
-  {5,    824000,  849000,  869000,  894000, 20, 173800, 100},
-  {7,   2500000, 2570000, 2620000, 2690000, 20, 524000, 100},
-  {8,    880000,  915000,  925000,  960000, 20, 185000, 100},
-  {12,   698000,  716000,  729000,  746000, 20, 145800, 100},
-  {14,   788000,  798000,  758000,  768000, 20, 151600, 100},
-  {18,   815000,  830000,  860000,  875000, 20, 172000, 100},
-  {20,   832000,  862000,  791000,  821000, 20, 158200, 100},
-  {25,  1850000, 1915000, 1930000, 1995000, 20, 386000, 100},
-  {26,   814000,  849000,  859000,  894000, 20, 171800, 100},
-  {28,   703000,  758000,  758000,  813000, 20, 151600, 100},
-  {29,      000,     000,  717000,  728000, 20, 143400, 100},
-  {30,  2305000, 2315000, 2350000, 2360000, 20, 470000, 100},
-  {34,  2010000, 2025000, 2010000, 2025000, 20, 402000, 100},
-  {38,  2570000, 2620000, 2570000, 2630000, 20, 514000, 100},
-  {39,  1880000, 1920000, 1880000, 1920000, 20, 376000, 100},
-  {40,  2300000, 2400000, 2300000, 2400000, 20, 460000, 100},
-  {41,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
-  {41,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
-  {47,  5855000, 5925000, 5855000, 5925000,  1, 790334,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
-  {50,  1432000, 1517000, 1432000, 1517000, 20, 286400, 100},
-  {51,  1427000, 1432000, 1427000, 1432000, 20, 285400, 100},
-  {53,  2483500, 2495000, 2483500, 2495000, 20, 496700, 100},
-  {65,  1920000, 2010000, 2110000, 2200000, 20, 422000, 100},
-  {66,  1710000, 1780000, 2110000, 2200000, 20, 422000, 100},
-  {70,  1695000, 1710000, 1995000, 2020000, 20, 399000, 100},
-  {71,   663000,  698000,  617000,  652000, 20, 123400, 100},
-  {74,  1427000, 1470000, 1475000, 1518000, 20, 295000, 100},
-  {75,      000,     000, 1432000, 1517000, 20, 286400, 100},
-  {76,      000,     000, 1427000, 1432000, 20, 285400, 100},
-  {77,  3300000, 4200000, 3300000, 4200000,  1, 620000,  15},
-  {77,  3300000, 4200000, 3300000, 4200000,  2, 620000,  30},
-  {78,  3300000, 3800000, 3300000, 3800000,  1, 620000,  15},
-  {78,  3300000, 3800000, 3300000, 3800000,  2, 620000,  30},
-  {79,  4400010, 5000000, 4400010, 5000000,  1, 693334,  15},
-  {79,  4400010, 5000000, 4400010, 5000000,  2, 693334,  30},
-  {80,  1710000, 1785000,     000,     000, 20, 342000, 100},
-  {81,   880000,  915000,     000,     000, 20, 176000, 100},
-  {82,   832000,  862000,     000,     000, 20, 166400, 100},
-  {83,   703000,  748000,     000,     000, 20, 140600, 100},
-  {84,  1920000, 1980000,     000,     000, 20, 384000, 100},
-  {86,  1710000, 1785000,     000,     000, 20, 342000, 100},
-  {89,   824000,  849000,     000,     000, 20, 342000, 100},
-  {90,  2496000, 2690000, 2496000, 2690000, 3,  499200,  15},
-  {90,  2496000, 2690000, 2496000, 2690000, 6,  499200,  30},
-  {90,  2496000, 2690000, 2496000, 2690000, 20, 499200, 100},
-  {91,   832000,  862000, 1427000, 1432000, 20, 285400, 100},
-  {92,   832000,  862000, 1432000, 1517000, 20, 286400, 100},
-  {93,   880000,  915000, 1427000, 1432000, 20, 285400, 100},
-  {94,   880000,  915000, 1432000, 1517000, 20, 286400, 100},
-  {95,  2010000, 2025000,     000,     000, 20, 402000, 100},
-  {257,26500020,29500000,26500020,29500000,  1,2054166,  60},
-  {257,26500080,29500000,26500080,29500000,  2,2054167, 120},
-  {258,24250080,27500000,24250080,27500000,  1,2016667,  60},
-  {258,24250080,27500000,24250080,27500000,  2,2016667, 120},
-  {260,37000020,40000000,37000020,40000000,  1,2229166,  60},
-  {260,37000080,40000000,37000080,40000000,  2,2229167, 120},
-  {261,27500040,28350000,27500040,28350000,  1,2070833,  60},
-  {261,27500040,28350000,27500040,28350000,  2,2070833, 120}
+// TS 38.211 Table 7.4.1.1.2-3: PDSCH DMRS positions l' within a slot for single-symbol DMRS and intra-slot frequency hopping disabled.
+// The first 4 colomns are PDSCH mapping type A and the last 4 colomns are PDSCH mapping type B.
+// When l' = l0, it is represented by 1
+// E.g. when symbol duration is 12 in colomn 7, value 1057 ('10000100001') which means l' =  l0, 5, 10.
+
+int32_t table_7_4_1_1_2_3_pdsch_dmrs_positions_l [13][8] = {                             // Duration in symbols
+{-1,          -1,          -1,         -1,          1,          1,         1,         1},       //2              // (DMRS l' position)
+{0,            0,           0,          0,          1,          1,         1,         1},       //3              // (DMRS l' position)
+{0,            0,           0,          0,          1,          1,         1,         1},       //4               // (DMRS l' position)
+{0,            0,           0,          0,          1,          17,        17,       17},       //5               // (DMRS l' position)
+{0,            0,           0,          0,          1,          17,        17,       17},       //6               // (DMRS l' position)
+{0,            0,           0,          0,          1,          17,        17,       17},       //7               // (DMRS l' position)
+{0,          128,         128,        128,          1,          65,        73,       73},       //8               // (DMRS l' position)
+{0,          128,         128,        128,          1,         129,       145,      145},       //9               // (DMRS l' position)
+{0,          512,         576,        576,          1,         129,       145,      145},       //10              // (DMRS l' position)
+{0,          512,         576,        576,          1,         257,       273,      585},       //11              // (DMRS l' position)
+{0,          512,         576,       2336,          1,         513,       545,      585},       //12              // (DMRS l' position)
+{0,         2048,        2176,       2336,          1,         513,       545,      585},       //13              // (DMRS l' position)
+{0,         2048,        2176,       2336,         -1,          -1,       -1,        -1},       //14              // (DMRS l' position)
 };
 
+
+// TS 38.211 Table 7.4.1.1.2-4: PDSCH DMRS positions l' within a slot for double-symbol DMRS and intra-slot frequency hopping disabled.
+// The first 4 colomns are PDSCH mapping type A and the last 4 colomns are PDSCH mapping type B.
+// When l' = l0, it is represented by 1
+
+int32_t table_7_4_1_1_2_4_pdsch_dmrs_positions_l [12][8] = {                             // Duration in symbols
+{-1,          -1,          -1,         -1,         -1,         -1,        -1,         -1},       //<4              // (DMRS l' position)
+{0,            0,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //5               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //6               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //7               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //8               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //9               // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //10              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //11              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        771,        -1,         -1},       //12              // (DMRS l' position)
+{0,         3072,          -1,         -1,          3,        771,        -1,         -1},       //13              // (DMRS l' position)
+{0,         3072,          -1,         -1,          -1,        -1,        -1,         -1},       //14              // (DMRS l' position)
+};
 
 // TS 38.211 Table 6.4.1.1.3-3: PUSCH DMRS positions l' within a slot for single-symbol DMRS and intra-slot frequency hopping disabled.
 // The first 4 colomns are PUSCH mapping type A and the last 4 colomns are PUSCH mapping type B.
@@ -1647,17 +1777,17 @@ nr_bandentry_t nr_bandtable[] = {
 
 int32_t table_6_4_1_1_3_3_pusch_dmrs_positions_l [12][8] = {                             // Duration in symbols
 {-1,          -1,          -1,         -1,          1,          1,         1,         1},       //<4              // (DMRS l' position)
-{1,            1,           1,          1,          1,          1,         1,         1},       //4               // (DMRS l' position)
-{1,            1,           1,          1,          1,          5,         5,         5},       //5               // (DMRS l' position)
-{1,            1,           1,          1,          1,          5,         5,         5},       //6               // (DMRS l' position)
-{1,            1,           1,          1,          1,          5,         5,         5},       //7               // (DMRS l' position)
-{1,          129,         129,        129,          1,         65,        73,        73},       //8               // (DMRS l' position)
-{1,          129,         129,        129,          1,         65,        73,        73},       //9               // (DMRS l' position)
-{1,          513,         577,        577,          1,        257,       273,       585},       //10              // (DMRS l' position)
-{1,          513,         577,        577,          1,        257,       273,       585},       //11              // (DMRS l' position)
-{1,          513,         577,       2337,          1,       1025,      1057,       585},       //12              // (DMRS l' position)
-{1,         2049,        2177,       2337,          1,       1025,      1057,       585},       //13              // (DMRS l' position)
-{1,         2049,        2177,       2337,          1,       1025,      1057,       585},       //14              // (DMRS l' position)
+{0,            0,           0,          0,          1,          1,         1,         1},       //4               // (DMRS l' position)
+{0,            0,           0,          0,          1,         17,        17,        17},       //5               // (DMRS l' position)
+{0,            0,           0,          0,          1,         17,        17,        17},       //6               // (DMRS l' position)
+{0,            0,           0,          0,          1,         17,        17,        17},       //7               // (DMRS l' position)
+{0,          128,         128,        128,          1,         65,        73,        73},       //8               // (DMRS l' position)
+{0,          128,         128,        128,          1,         65,        73,        73},       //9               // (DMRS l' position)
+{0,          512,         576,        576,          1,        257,       273,       585},       //10              // (DMRS l' position)
+{0,          512,         576,        576,          1,        257,       273,       585},       //11              // (DMRS l' position)
+{0,          512,         576,       2336,          1,       1025,      1057,       585},       //12              // (DMRS l' position)
+{0,         2048,        2176,       2336,          1,       1025,      1057,       585},       //13              // (DMRS l' position)
+{0,         2048,        2176,       2336,          1,       1025,      1057,       585},       //14              // (DMRS l' position)
 };
 
 
@@ -1667,24 +1797,22 @@ int32_t table_6_4_1_1_3_3_pusch_dmrs_positions_l [12][8] = {                    
 
 int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                             // Duration in symbols
 {-1,          -1,          -1,         -1,         -1,         -1,        -1,         -1},       //<4              // (DMRS l' position)
-{1,            1,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //5               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //6               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,          1,        -1,         -1},       //7               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //8               // (DMRS l' position)
-{1,            1,          -1,         -1,          1,         33,        -1,         -1},       //9               // (DMRS l' position)
-{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //10              // (DMRS l' position)
-{1,          257,          -1,         -1,          1,        129,        -1,         -1},       //11              // (DMRS l' position)
-{1,          257,          -1,         -1,          1,        513,        -1,         -1},       //12              // (DMRS l' position)
-{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //13              // (DMRS l' position)
-{1,         1025,          -1,         -1,          1,        513,        -1,         -1},       //14              // (DMRS l' position)
+{0,            0,          -1,         -1,         -1,         -1,        -1,         -1},       //4               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //5               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //6               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,          3,        -1,         -1},       //7               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //8               // (DMRS l' position)
+{0,            0,          -1,         -1,          3,         99,        -1,         -1},       //9               // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //10              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,        387,        -1,         -1},       //11              // (DMRS l' position)
+{0,          768,          -1,         -1,          3,       1539,        -1,         -1},       //12              // (DMRS l' position)
+{0,         3072,          -1,         -1,          3,       1539,        -1,         -1},       //13              // (DMRS l' position)
+{0,         3072,          -1,         -1,          3,       1539,        -1,         -1},       //14              // (DMRS l' position)
 };
 
-#define NR_BANDTABLE_SIZE (sizeof(nr_bandtable)/sizeof(nr_bandentry_t))
-
 // Returns the corresponding row index of the NR table
-int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
-
+int get_nr_table_idx(int nr_bandP, uint8_t scs_index)
+{
   int i, j;
   int scs_khz = 15 << scs_index;
   int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
@@ -1695,8 +1823,8 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
       AssertFatal(0 == 1, "Band %d is a supplementary band (%d). This is not supported yet.\n", nr_bandP, supplementary_bands[j]);
   }
 
-  AssertFatal(nr_bandP <= nr_bandtable[NR_BANDTABLE_SIZE-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[NR_BANDTABLE_SIZE-1].band);
-  for (i = 0; i < NR_BANDTABLE_SIZE && nr_bandtable[i].band != nr_bandP; i++);
+  AssertFatal(nr_bandP <= nr_bandtable[nr_bandtable_size-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[nr_bandtable_size-1].band);
+  for (i = 0; i < nr_bandtable_size && nr_bandtable[i].band != nr_bandP; i++);
 
   // selection of correct Deltaf raster according to SCS
   if ((nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
@@ -1705,35 +1833,33 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index){
   LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
 
   return i;
-
 }
 
 // Computes the duplex spacing (either positive or negative) in KHz
-void get_delta_duplex(int nr_bandP, uint8_t scs_index, int32_t *delta_duplex){
-
+int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index)
+{
   int nr_table_idx = get_nr_table_idx(nr_bandP, scs_index);
 
-  *delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
+  int32_t delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
 
-  LOG_D(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", *delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
+  LOG_I(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
 
+  return delta_duplex;
 }
 
-void get_frame_type(uint16_t current_band,
-                    uint8_t scs_index,
-                    lte_frame_type_t *current_type){
+lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
+{
+  lte_frame_type_t current_type;
+  int32_t delta_duplex = get_delta_duplex(current_band, scs_index);
 
-  int32_t current_offset;
-  get_delta_duplex(current_band, scs_index, &current_offset);
-
-  current_offset *= 1000;
-  if (current_offset == 0)
-    *current_type = TDD;
+  if (delta_duplex == 0)
+    current_type = TDD;
   else
-    *current_type = FDD;
+    current_type = FDD;
 
-  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[*current_type], current_offset);
+  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[current_type], delta_duplex);
 
+  return current_type;
 }
 
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
@@ -1911,7 +2037,6 @@ uint64_t from_nrarfcn(int nr_bandP,
   int deltaFglobal = 5;
   uint32_t N_REF_Offs = 0;
   uint64_t F_REF_Offs_khz = 0;
-  int32_t delta_duplex;
   uint64_t N_OFFs, frequency, freq_min;
   int i = get_nr_table_idx(nr_bandP, scs_index);
 
@@ -1926,7 +2051,7 @@ uint64_t from_nrarfcn(int nr_bandP,
     F_REF_Offs_khz = 24250080;
   }
 
-  get_delta_duplex(nr_bandP, scs_index, &delta_duplex);
+  int32_t delta_duplex = get_delta_duplex(nr_bandP, scs_index);
 
   if (delta_duplex <= 0){ // DL band >= UL band
     if (nrarfcn >= nr_bandtable[i].N_OFFs_DL){ // is TDD of FDD DL
@@ -2228,8 +2353,8 @@ int get_num_dmrs(uint16_t dmrs_mask ) {
   return(num_dmrs);
 }
 /* returns the total DMRS symbols in a slot*/
-uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols){
-  return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols));
+uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols, int startSymbol, int mappingtype){
+  return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols, startSymbol, mappingtype));
 }
 
 // Table 5.1.2.2.1-1 38.214
@@ -2293,29 +2418,46 @@ uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position) {
 
 }
 
-int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength) {
+int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength, uint8_t start_symbol, uint8_t dmrs_typeA_position) {
 
   uint8_t row, colomn;
   int32_t l_prime;
+
+  LOG_D(MAC, "PUSCH: NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", duration_in_symbols, start_symbol, mapping_type, dmrs_typeA_position);
+
+  // Section 6.4.1.1.3 in Spec 38.211
+  // For PDSCH Mapping TypeA, ld is duration between first OFDM of the slot and last OFDM symbol of the scheduled PUSCH resources
+  // For TypeB, ld is the duration of the scheduled PUSCH resources
+  uint8_t ld = (mapping_type == typeA) ? (duration_in_symbols + start_symbol) : duration_in_symbols;
+  uint8_t l0 = (dmrs_typeA_position == NR_MIB__dmrs_TypeA_Position_pos2) ? 2 : 3 ;
 
   colomn = additional_pos;
 
   if (mapping_type == typeB)
     colomn += 4;
 
-  if (duration_in_symbols < 4)
+  if (ld < 4)
     row = 0;
   else
-    row = duration_in_symbols - 3;
+    row = ld - 3;
 
-  if (pusch_maxLength == pusch_len1)
+  if (pusch_maxLength == pusch_len1) {
     l_prime = table_6_4_1_1_3_3_pusch_dmrs_positions_l[row][colomn];
-  else
+    l0 = 1 << l0;
+  }
+  else {
     l_prime = table_6_4_1_1_3_4_pusch_dmrs_positions_l[row][colomn];
+    l0 = 1<<l0 | 1<<(l0+1);
+  }
 
-  AssertFatal(l_prime>0,"invalid l_prime < 0\n");
+  LOG_D(MAC, "PUSCH - l0:%d, ld:%d,row:%d, column:%d, addpos:%d, maxlen:%d\n", l0, ld, row, colomn, additional_pos, pusch_maxLength);
+  AssertFatal(l_prime>=0,"invalid l_prime < 0\n");
+
+  l_prime = (mapping_type == typeA) ? (l_prime | l0) : (l_prime << start_symbol);
+  LOG_D(MAC, " PUSCH DMRS MASK in HEX:%x\n", l_prime);
 
   return l_prime;
+
 }
 
 /*******************************************************************
@@ -2342,7 +2484,7 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
     mcs4 = 28;
 
   if (I_mcs < mcs1) {
-    LOG_I(PHY, "PUSH PT-RS is not present.\n");
+    LOG_D(PHY, "PUSH PT-RS is not present.\n");
     return -1;
   } else if (I_mcs >= mcs1 && I_mcs < mcs2)
     return 2;
@@ -2360,7 +2502,7 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
 *
 * NAME :         get_K_ptrs
 *
-* PARAMETERS :   ptrs_UplinkConfig      PTRS uplink configuration
+* PARAMETERS :   nrb0, nrb1             PTRS uplink configuration
 *                N_RB                   number of RBs scheduled for PUSCH
 *
 * RETURN :       the parameter K_ptrs
@@ -2372,7 +2514,7 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
 
   if (N_RB < nrb0) {
-    LOG_I(PHY,"PUSH PT-RS is not present.\n");
+    LOG_D(PHY,"PUSH PT-RS is not present.\n");
     return -1;
   } else if (N_RB >= nrb0 && N_RB < nrb1)
     return 2;
@@ -2382,7 +2524,7 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
 
 // Set the transform precoding status according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16:
 // - "UE procedure for applying transform precoding on PUSCH"
-uint8_t get_transformPrecoding(const NR_ServingCellConfigCommon_t *scc,
+uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
                                const NR_PUSCH_Config_t *pusch_config,
                                const NR_BWP_Uplink_t *ubwp,
                                uint8_t *dci_format,
@@ -2397,7 +2539,7 @@ uint8_t get_transformPrecoding(const NR_ServingCellConfigCommon_t *scc,
     }
   }
 
-  if (rnti_type != NR_RNTI_RA) {
+  if (rnti_type != NR_RNTI_RA && rnti_type != NR_RNTI_TC) {
     if (*dci_format != NR_UL_DCI_FORMAT_0_0) {
       if (pusch_config->transformPrecoder != NULL) {
         return *pusch_config->transformPrecoder;
@@ -2405,7 +2547,7 @@ uint8_t get_transformPrecoding(const NR_ServingCellConfigCommon_t *scc,
     }
   }
 
-  if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL) {
+  if (initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL) {
     return 1; // Transformprecoding disabled
   } else {
     LOG_D(PHY, "MAC_COMMON: Transform Precodig enabled through msg3_transformPrecoder\n");
@@ -2416,8 +2558,8 @@ uint8_t get_transformPrecoding(const NR_ServingCellConfigCommon_t *scc,
   return -1;
 }
 
-uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
-                     const NR_CellGroupConfig_t *secondaryCellGroup,
+uint16_t nr_dci_size(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
+                     const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
 		     nr_rnti_type_t rnti_type,
@@ -2436,8 +2578,9 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
   NR_PUSCH_Config_t *pusch_Config = NULL;
   NR_SRS_Config_t *srs_config = NULL;
   if(bwp_id > 0) {
-    bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
-    ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
+    AssertFatal(cg!=NULL,"Cellgroup is null and bwp_id!=0");
+    bwp=cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+    ubwp=cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1];
     pdsch_config = bwp->bwp_Dedicated->pdsch_Config->choice.setup;
     pusch_Config = ubwp->bwp_Dedicated->pusch_Config->choice.setup;
     srs_config = ubwp->bwp_Dedicated->srs_Config->choice.setup;
@@ -2449,7 +2592,7 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
       size += 20;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
-      size += nr_dci_size(scc,secondaryCellGroup,dci_pdu,NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, bwp_id) - size; // Padding to match 1_0 size
+      size += nr_dci_size(initialUplinkBWP,cg,dci_pdu,NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, bwp_id) - size; // Padding to match 1_0 size
       // UL/SUL indicator assumed to be 0
       break;
 
@@ -2457,24 +2600,24 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
       /// fixed: Format identifier 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2, ULSCH indicator 1 --16
       size += 16;
       // Carrier indicator
-      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig != NULL) {
+      if (cg->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig != NULL) {
         dci_pdu->carrier_indicator.nbits=3;
         size += dci_pdu->carrier_indicator.nbits;
       }
       // UL/SUL indicator
-      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->supplementaryUplink != NULL) {
+      if (cg->spCellConfig->spCellConfigDedicated->supplementaryUplink != NULL) {
         dci_pdu->carrier_indicator.nbits=1;
         size += dci_pdu->ul_sul_indicator.nbits;
       }
       // BWP Indicator
-      uint8_t n_ul_bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
+      uint8_t n_ul_bwp = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
       if (n_ul_bwp < 2)
         dci_pdu->bwp_indicator.nbits = n_ul_bwp;
       else
         dci_pdu->bwp_indicator.nbits = 2;
       size += dci_pdu->bwp_indicator.nbits;
       // Freq domain assignment
-      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pusch_Config->choice.setup->rbg_Size != NULL)
+      if (cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pusch_Config->choice.setup->rbg_Size != NULL)
         rbg_size_config = 1;
       else
         rbg_size_config = 0;
@@ -2505,13 +2648,13 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
         size += 1;
       }
       // 1st DAI
-      if (secondaryCellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook==NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic)
+      if (cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook==NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic)
         dci_pdu->dai[0].nbits = 2;
       else
         dci_pdu->dai[0].nbits = 1;
       size += dci_pdu->dai[0].nbits;
       // 2nd DAI
-      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) { //TODO not sure about that
+      if (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) { //TODO not sure about that
         dci_pdu->dai[1].nbits = 2;
         size += dci_pdu->dai[1].nbits;
       }
@@ -2531,9 +2674,9 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
         else {
           int lmin,Lmax = 0;
           int lsum = 0;
-          if ( secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig != NULL) {
-            if ( secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers != NULL)
-              Lmax = *secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
+          if ( cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig != NULL) {
+            if ( cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers != NULL)
+              Lmax = *cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
             else
               AssertFatal(1==0,"MIMO on PUSCH not supported, maxMIMO_Layers needs to be set to 1\n");
           }
@@ -2553,7 +2696,7 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
         }
       }
       // Precoding info and number of layers
-      long transformPrecoder = get_transformPrecoding(scc, pusch_Config, ubwp, (uint8_t*)&format, rnti_type, 0);
+      long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwp, (uint8_t*)&format, rnti_type, 0);
 
       if (pusch_Config->txConfig != NULL){
         if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook){
@@ -2597,21 +2740,21 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
         dci_pdu->antenna_ports.nbits = xb;
       size += dci_pdu->antenna_ports.nbits;
       // SRS request
-      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->supplementaryUplink==NULL)
+      if (cg->spCellConfig->spCellConfigDedicated->supplementaryUplink==NULL)
         dci_pdu->srs_request.nbits = 2;
       else
         dci_pdu->srs_request.nbits = 3;
       size += dci_pdu->srs_request.nbits;
       // CSI request
-      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig != NULL) {
-        if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->reportTriggerSize != NULL) {
-          dci_pdu->csi_request.nbits = *secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->reportTriggerSize;
+      if (cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig != NULL) {
+        if (cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->reportTriggerSize != NULL) {
+          dci_pdu->csi_request.nbits = *cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->reportTriggerSize;
           size += dci_pdu->csi_request.nbits;
         }
       }
       // CBGTI
-      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
-        int num = secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock;
+      if (cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
+        int num = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock;
         dci_pdu->cbgti.nbits = 2 + (num<<1);
         size += dci_pdu->cbgti.nbits;
       }
@@ -2644,7 +2787,6 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
       dci_pdu->frequency_domain_assignment.nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       dci_pdu->time_domain_assignment.nbits = 4;
       dci_pdu->vrb_to_prb_mapping.nbits = 1;
-
       break;
 
     case NR_DL_DCI_FORMAT_1_1:
@@ -2652,19 +2794,19 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
       // Format identifier
       size = 1;
       // Carrier indicator
-      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig != NULL) {
+      if (cg->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig != NULL) {
         dci_pdu->carrier_indicator.nbits=3;
         size += dci_pdu->carrier_indicator.nbits;
       }
       // BWP Indicator
-      uint8_t n_dl_bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
+      uint8_t n_dl_bwp = cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
       if (n_dl_bwp < 2)
         dci_pdu->bwp_indicator.nbits = n_dl_bwp;
       else
         dci_pdu->bwp_indicator.nbits = 2;
       size += dci_pdu->bwp_indicator.nbits;
       // Freq domain assignment
-      rbg_size_config = secondaryCellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rbg_Size;
+      rbg_size_config = cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->rbg_Size;
       numRBG = getNRBG(NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
                        NRRIV2PRBOFFSET(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
                        rbg_size_config);
@@ -2720,7 +2862,7 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
       // HARQ PID
       size += 4;
       // DAI
-      if (secondaryCellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) { // FIXME in case of more than one serving cell
+      if (cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) { // FIXME in case of more than one serving cell
         dci_pdu->dai[0].nbits = 2;
         size += dci_pdu->dai[0].nbits;
       }
@@ -2744,20 +2886,20 @@ uint16_t nr_dci_size(const NR_ServingCellConfigCommon_t *scc,
         size += dci_pdu->transmission_configuration_indication.nbits;
       }
       // SRS request
-      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->supplementaryUplink==NULL)
+      if (cg->spCellConfig->spCellConfigDedicated->supplementaryUplink==NULL)
         dci_pdu->srs_request.nbits = 2;
       else
         dci_pdu->srs_request.nbits = 3;
       size += dci_pdu->srs_request.nbits;
       // CBGTI
-      if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
-        uint8_t maxCBGperTB = (secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock + 1) * 2;
+      if (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
+        uint8_t maxCBGperTB = (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock + 1) * 2;
         long *maxCWperDCI_rrc = pdsch_config->maxNrofCodeWordsScheduledByDCI;
         uint8_t maxCW = (maxCWperDCI_rrc == NULL) ? 1 : *maxCWperDCI_rrc;
         dci_pdu->cbgti.nbits = maxCBGperTB * maxCW;
         size += dci_pdu->cbgti.nbits;
         // CBGFI
-        if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->codeBlockGroupFlushIndicator) {
+        if (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->codeBlockGroupFlushIndicator) {
           dci_pdu->cbgfi.nbits = 1;
           size += dci_pdu->cbgfi.nbits;
         }
@@ -2808,144 +2950,150 @@ int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig, long transformPrec
 
 int tdd_period_to_num[8] = {500,625,1000,1250,2000,2500,5000,10000};
 
-int is_nr_DL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slot) {
+int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slot_t slot) {
 
   int period,period1,period2=0;
 
-  if (scc->tdd_UL_DL_ConfigurationCommon==NULL) return(1);
+  if (tdd_UL_DL_ConfigurationCommon==NULL) return(1);
 
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
-      scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
-    period1 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+  if (tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
+      tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
+    period1 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
   else
-    period1 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity];
+    period1 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity];
 			       
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern2) {
-    if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
-	scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
-      period2 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
+  if (tdd_UL_DL_ConfigurationCommon->pattern2) {
+    if (tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
+        tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
+      period2 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
     else
-      period2 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
+      period2 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
   }    
   period = period1+period2;
-  int scs=scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
+  int scs=tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
   int slots=period*(1<<scs)/1000;
   int slots1=period1*(1<<scs)/1000;
   int slot_in_period = slot % slots;
-  if (slot_in_period < slots1) return(slot_in_period <= scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
-  else return(slot_in_period <= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
+  if (slot_in_period < slots1) return(slot_in_period <= tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
+  else return(slot_in_period <= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
 }
 
-int is_nr_UL_slot(NR_ServingCellConfigCommon_t *scc,slot_t slot) {
+int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t	*tdd_UL_DL_ConfigurationCommon, slot_t slot, lte_frame_type_t frame_type) {
 
   int period,period1,period2=0;
 
-  if (scc->tdd_UL_DL_ConfigurationCommon==NULL) return(1);
+  // Note: condition on frame_type
+  // goal: the UL scheduler assumes mode is TDD therefore this hack is needed to make FDD work
+  if (tdd_UL_DL_ConfigurationCommon == NULL || frame_type == FDD) {
+    return(1);
+  }
 
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
-      scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
-    period1 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+  if (tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
+      tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
+    period1 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
   else
-    period1 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity];
+    period1 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity];
 			       
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern2) {
-    if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
-	scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
-      period2 = 3000+*scc->tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
+  if (tdd_UL_DL_ConfigurationCommon->pattern2) {
+    if (tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
+	      tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
+      period2 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
     else
-      period2 = tdd_period_to_num[scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
+      period2 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
   }    
   period = period1+period2;
-  int scs=scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
+  int scs=tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
   int slots=period*(1<<scs)/1000;
   int slots1=period1*(1<<scs)/1000;
   int slot_in_period = slot % slots;
-  if (slot_in_period < slots1) return(slot_in_period >= scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
-  else return(slot_in_period >= slots1+scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
+  if (slot_in_period < slots1) return(slot_in_period >= tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
+  else return(slot_in_period >= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
 }
 
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols) {
+int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols, int startSymbol, int mappingtype_fromDCI) {
 
-  int l0;
+  int l0;int dmrs_AdditionalPosition = 0;int maxLength = 0;
+  NR_DMRS_DownlinkConfig_t *dmrs_config = NULL;
+
+  LOG_D(MAC, "NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", NrOfSymbols, startSymbol, mappingtype_fromDCI, dmrs_TypeA_Position);
+
   if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0=2;
   else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0=3;
   else AssertFatal(1==0,"Illegal dmrs_TypeA_Position %d\n",(int)dmrs_TypeA_Position);
-  if (pdsch_Config == NULL) { // Initial BWP
-    return(1<<l0);
+
+  // in case of DCI FORMAT 1_0 or dedicated pdsch config not received additionposition = pos2, len1 should be used
+  // referred to section 5.1.6.2 in 38.214
+  dmrs_AdditionalPosition = 2;
+  maxLength = 1;
+
+  if (pdsch_Config != NULL) {
+    if (mappingtype_fromDCI == typeA) { // Type A
+      if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA && pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup)
+        dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
+    } else if (mappingtype_fromDCI == typeB) {
+      if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB && pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup)
+        dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+    } else {
+      AssertFatal(1==0,"Incorrect Mappingtype\n");
+    }
+
+    AssertFatal(dmrs_config != NULL," DMRS configs not present in PDSCH DMRS Downlink config\n");
+
+    // default values of maxlength = len2, additionalposition is pos2
+    if (dmrs_config->maxLength != NULL) maxLength = 2;
+    if (dmrs_config->dmrs_AdditionalPosition != NULL) dmrs_AdditionalPosition = *dmrs_config->dmrs_AdditionalPosition;
+  }
+
+  uint8_t ld, row, column;
+  int32_t l_prime = -1;
+
+  // columns 0-3 for TypeA, 4-7 for TypeB
+  column = (mappingtype_fromDCI == typeA) ? dmrs_AdditionalPosition : (dmrs_AdditionalPosition + 4);
+
+  // Section 7.4.1.1.2 in Spec 38.211
+  // For PDSCH Mapping TypeA, ld is duration between first OFDM of the slot and last OFDM symbol of the scheduled PDSCH resources
+  // For TypeB, ld is the duration of the scheduled PDSCH resources
+  ld = (mappingtype_fromDCI == typeA) ? (NrOfSymbols + startSymbol) : NrOfSymbols;
+
+  // Section 7.4.1.1.2 in Spec 38.211
+  //For PDSCH Mapping typeB, if PDSCH duration ld <=4, only single symbol DMRS is supported
+  if (mappingtype_fromDCI == typeB && ld <= 4)
+    maxLength = 1;
+
+  AssertFatal(ld > 2 && ld < 15,"Illegal NrOfSymbols according to Table 5.1.2.1-1 Spec 38.214 %d\n",ld);
+  AssertFatal((NrOfSymbols + startSymbol) < 15,"Illegal S+L according to Table 5.1.2.1-1 Spec 38.214 S:%d L:%d\n",startSymbol, NrOfSymbols);
+
+  if (mappingtype_fromDCI == typeA) {
+
+    // Section 7.4.1.1.2 in Spec 38.211
+    AssertFatal((l0 == 2) || (l0 == 3 && dmrs_AdditionalPosition != 3),"Wrong config, If dmrs_TypeA_Position POS3, ADD POS cannot be POS3 \n");
+
+    // Table 5.1.2.1-1 in Spec 38.214
+    AssertFatal(startSymbol <= l0, "Wrong config, Start symbol %d cannot be later than dmrs_TypeA_Position %d \n", startSymbol, l0);
+
+    // Section 7.4.1.1.2 in Spec 38.211
+    AssertFatal(l0 == 2 || (l0 == 3 && (ld != 3 || ld != 4)), "ld 3 or 4 symbols only possible with dmrs_TypeA_Position POS2 \n");
+
+  }
+
+  if (maxLength == 1) {
+    row = ld - 2;
+    l_prime = table_7_4_1_1_2_3_pdsch_dmrs_positions_l[row][column];
+    l0 = 1 << l0;
   }
   else {
-    if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA &&
-	pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
-      // Relative to start of slot
-      NR_DMRS_DownlinkConfig_t *dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
-      AssertFatal(NrOfSymbols>1 && NrOfSymbols < 15,"Illegal NrOfSymbols %d\n",NrOfSymbols);
-      int pos2=0;
-      if (dmrs_config->maxLength == NULL) {
-	// this is Table 7.4.1.1.2-3: PDSCH DM-RS positions l for single-symbol DM-RS
-	if (dmrs_config->dmrs_AdditionalPosition == NULL) pos2=1;
-	else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition == NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0 )
-	  return(1<<l0);
-	
-	
-	switch (NrOfSymbols) {
-	case 2 :
-	case 3 :
-	case 4 :
-	case 5 :
-	case 6 :
-	case 7 :
-    return(1<<l0);
-	  break;
-	case 8 :
-	case 9:
-	  return(1<<l0 | 1<<7);
-	  break;
-	case 10:
-	case 11:
-	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<9);
-	  else
-	    return(1<<l0 | 1<<6 | 1<<9);
-	  break;
-	case 12:
-	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<9);
-	  else if (pos2==1)
-	    return(1<<l0 | 1<<6 | 1<<9);
-	  else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
-	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
-	  break;
-	case 13:
-	case 14:
-	  if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1)
-	    return(1<<l0 | 1<<11);
-	  else if (pos2==1)
-	    return(1<<l0 | 1<<7 | 1<<11);
-	  else if (dmrs_config->dmrs_AdditionalPosition && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3)
-	    return(1<<l0 | 1<<5 | 1<<8 | 1<<11);
-	  break;
-	}
-      }
-      else {
-	// Table 7.4.1.1.2-4: PDSCH DM-RS positions l for double-symbol DM-RS.
-	AssertFatal(NrOfSymbols>3,"Illegal NrOfSymbols %d for len2 DMRS\n",NrOfSymbols);
-	if (NrOfSymbols < 10) return(1<<l0);
-	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (NrOfSymbols < 13 && *dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0 | 1<<8);
-	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (*dmrs_config->dmrs_AdditionalPosition!=NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
-        if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0) return(1<<l0);
-	if (*dmrs_config->dmrs_AdditionalPosition==NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1) return(1<<l0 | 1<<10);
-      }
-    }
-    else if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB &&
-	     pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup) {
-      // Relative to start of PDSCH resource
-      AssertFatal(1==0,"TypeB DMRS not supported yet\n");
-    }
+    row = (ld < 4) ? 0 : (ld - 3);
+    l_prime = table_7_4_1_1_2_4_pdsch_dmrs_positions_l[row][column];
+    l0 = 1<<l0 | 1<<(l0+1);
   }
-  AssertFatal(1==0,"Shouldn't get here\n");
-  return(-1);
+
+  LOG_D(MAC, "l0:%d, ld:%d,row:%d, column:%d, addpos:%d, maxlen:%d\n", l0, ld, row, column, dmrs_AdditionalPosition, maxLength);
+  AssertFatal(l_prime>=0,"ERROR in configuration.Check Time Domain allocation of this Grant. l_prime < 1. row:%d, column:%d\n", row, column);
+
+  l_prime = (mappingtype_fromDCI == typeA) ? (l_prime | l0) : (l_prime << startSymbol);
+  LOG_D(MAC, " PDSCH DMRS MASK in HEX:%x\n", l_prime);
+
+  return l_prime;
 }
 
 uint8_t get_pusch_mcs_table(long *mcs_Table,
@@ -3064,102 +3212,67 @@ bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
     valid = false;
     return valid;
   }
-  //printf("[MAC] PTRS is set  K= %u L= %u\n", *K_ptrs,1<<*L_ptrs);
+
+  /* Moved below check from scheduler function to here */
+  if (*L_ptrs >= NrOfSymbols) {
+    valid = false;
+    return valid;
+  }
   return valid;
 }
-void get_band(uint64_t downlink_frequency,
-              uint16_t *current_band,
-              int32_t *current_offset,
-              lte_frame_type_t *current_type)
-{
-    int ind;
-    uint64_t center_frequency_khz;
-    uint64_t center_freq_diff_khz;
-    uint64_t dl_freq_khz = downlink_frequency/1000;
 
-    center_freq_diff_khz = 999999999999999999; // 2^64
-    *current_band = 0;
+uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i_ssb) {
 
-    for ( ind=0;
-          ind < sizeof(nr_bandtable) / sizeof(nr_bandtable[0]);
-          ind++) {
-
-      LOG_I(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
-
-      if ( nr_bandtable[ind].dl_min <= dl_freq_khz && nr_bandtable[ind].dl_max >= dl_freq_khz ) {
-
-        center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min)/2;
-        if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
-          *current_band = nr_bandtable[ind].band;
-	  *current_offset = (nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min)*1000;
-          center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
-
-	  if (*current_offset == 0)
-	    *current_type = TDD;
-	  else
-	    *current_type = FDD;
-        }
-      }
-    }
-
-    LOG_I( PHY, "DL frequency %"PRIu64": band %d, frame_type %d, UL frequency %"PRIu64"\n",
-         downlink_frequency, *current_band, *current_type, downlink_frequency+*current_offset);
-
-    AssertFatal(*current_band != 0,
-	    "Can't find EUTRA band for frequency %lu\n", downlink_frequency);
+  switch (scs) {
+    case NR_SubcarrierSpacing_kHz15:
+      return symbol_ssb_AC[i_ssb];  //type A
+    case NR_SubcarrierSpacing_kHz30:
+      if (band == 5 || band == 66)
+        return symbol_ssb_BD[i_ssb];  //type B
+      else
+        return symbol_ssb_AC[i_ssb];  //type C
+    case NR_SubcarrierSpacing_kHz120:
+      return symbol_ssb_BD[i_ssb];  //type D
+    case NR_SubcarrierSpacing_kHz240:
+      return symbol_ssb_E[i_ssb];
+    default:
+      AssertFatal(1 == 0, "SCS %ld not allowed for SSB \n",scs);
+  }
 }
 
+void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                           frame_t frameP,
+                                           NR_MIB_t *mib,
+                                           uint8_t num_slot_per_frame,
+                                           uint8_t ssb_subcarrier_offset,
+                                           uint16_t ssb_start_symbol,
+                                           NR_SubcarrierSpacing_t scs_ssb,
+                                           frequency_range_t frequency_range,
+                                           uint32_t ssb_index,
+                                           uint32_t ssb_offset_point_a) {
 
-uint32_t get_ssb_slot(uint32_t ssb_index){
-  //  this function now only support f <= 3GHz
-  return ssb_index & 0x3 ;
+  NR_SubcarrierSpacing_t scs_pdcch;
 
-  //  return first_symbol(case, freq, ssb_index) / 14
-}
+  channel_bandwidth_t min_channel_bw = bw_10MHz; // TODO remove hardcoding and implement Table 5.3.5-1 in 38.104
 
-int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
-                                          NR_MIB_t *mib,
-                                          uint8_t extra_bits,
-                                          uint32_t ssb_length,
-                                          uint32_t ssb_index,
-                                          uint32_t ssb_offset_point_a) {
+  if (frequency_range == FR2) {
+    if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60)
+      scs_pdcch = NR_SubcarrierSpacing_kHz60;
+    else
+      scs_pdcch = NR_SubcarrierSpacing_kHz120;
+  }
+  else {
+    frequency_range = FR1;
+    if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60)
+      scs_pdcch = NR_SubcarrierSpacing_kHz15;
+    else
+      scs_pdcch = NR_SubcarrierSpacing_kHz30;
+  }
 
-  //  deafult for testing
-  subcarrier_spacing_t scs_ssb = scs_30kHz;
-  channel_bandwidth_t min_channel_bw = bw_10MHz;
-  frequency_range_t frequency_range = FR1;
-  const uint32_t num_slot_per_frame = 20;
-
-  type0_PDCCH_CSS_config->ssb_length = ssb_length;
   type0_PDCCH_CSS_config->ssb_index = ssb_index;
-  type0_PDCCH_CSS_config->frame = (mib->systemFrameNumber.buf[0] >> mib->systemFrameNumber.bits_unused);
+  type0_PDCCH_CSS_config->frame = frameP;
 
-  uint16_t frame_number_4lsb = 0;
-  for (int i=0; i<4; i++) {
-    frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
-  }
-
-  uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
-  uint8_t ssb_subcarrier_offset = (uint8_t)mib->ssb_SubcarrierOffset;
-
-  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame << 4;
-  type0_PDCCH_CSS_config->frame = type0_PDCCH_CSS_config->frame | frame_number_4lsb;
-
-  if(type0_PDCCH_CSS_config->ssb_length == 64){
-    type0_PDCCH_CSS_config->ssb_index = type0_PDCCH_CSS_config->ssb_index & (( extra_bits >> 2 ) & 0x1C );    //	{ extra_bits[5:7], ssb_index[2:0] }
-  }else{
-    if(ssb_subcarrier_offset_msb){
-      ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
-    }
-  }
-
-  //  assume carrier frequency < 6GHz
-  subcarrier_spacing_t scs_pdcch;
-  if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60){
-    scs_pdcch = scs_15kHz;
-  }else{  //NR_MIB__subCarrierSpacingCommon_scs30or120
-    scs_pdcch = scs_30kHz;
-  }
+  uint8_t ssb_slot = ssb_start_symbol/14;
 
   uint32_t is_condition_A = (ssb_subcarrier_offset == 0);   //  38.213 ch.13
   uint32_t index_4msb = (mib->pdcch_ConfigSIB1.controlResourceSetZero);
@@ -3170,8 +3283,8 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   type0_PDCCH_CSS_config->rb_offset = -1;
 
   //  type0-pdcch coreset
-  switch( (scs_ssb << 5) | scs_pdcch ){
-    case (scs_15kHz << 5) | scs_15kHz :
+  switch( (scs_ssb << 3) | scs_pdcch ){
+    case (NR_SubcarrierSpacing_kHz15 << 5) | NR_SubcarrierSpacing_kHz15:
       AssertFatal(index_4msb < 15, "38.213 Table 13-1 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_1_c2[index_4msb];
@@ -3179,7 +3292,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_1_c4[index_4msb];
       break;
 
-    case (scs_15kHz << 5) | scs_30kHz:
+    case (NR_SubcarrierSpacing_kHz15 << 3) | NR_SubcarrierSpacing_kHz30:
       AssertFatal(index_4msb < 14, "38.213 Table 13-2 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_2_c2[index_4msb];
@@ -3187,7 +3300,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_2_c4[index_4msb];
       break;
 
-    case (scs_30kHz << 5) | scs_15kHz:
+    case (NR_SubcarrierSpacing_kHz30 << 3) | NR_SubcarrierSpacing_kHz15:
       if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
         AssertFatal(index_4msb < 9, "38.213 Table 13-3 4 MSB out of range\n");
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3204,7 +3317,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
 
       break;
 
-    case (scs_30kHz << 5) | scs_30kHz:
+    case (NR_SubcarrierSpacing_kHz30 << 3) | NR_SubcarrierSpacing_kHz30:
       if((min_channel_bw & bw_5MHz) | (min_channel_bw & bw_10MHz)){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
         type0_PDCCH_CSS_config->num_rbs     = table_38213_13_4_c2[index_4msb];
@@ -3220,7 +3333,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }else{ ; }
       break;
 
-    case (scs_120kHz << 5) | scs_60kHz:
+    case (NR_SubcarrierSpacing_kHz120 << 3) | NR_SubcarrierSpacing_kHz60:
       AssertFatal(index_4msb < 12, "38.213 Table 13-7 4 MSB out of range\n");
       if(index_4msb & 0x7){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3237,7 +3350,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }
       break;
 
-    case (scs_120kHz << 5) | scs_120kHz:
+    case (NR_SubcarrierSpacing_kHz120 << 3) | NR_SubcarrierSpacing_kHz120:
       AssertFatal(index_4msb < 8, "38.213 Table 13-8 4 MSB out of range\n");
       if(index_4msb & 0x3){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3254,7 +3367,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       }
       break;
 
-    case (scs_240kHz << 5) | scs_60kHz:
+    case (NR_SubcarrierSpacing_kHz240 << 3) | NR_SubcarrierSpacing_kHz60:
       AssertFatal(index_4msb < 4, "38.213 Table 13-9 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_9_c2[index_4msb];
@@ -3262,7 +3375,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
       type0_PDCCH_CSS_config->rb_offset   = table_38213_13_9_c4[index_4msb];
       break;
 
-    case (scs_240kHz << 5) | scs_120kHz:
+    case (NR_SubcarrierSpacing_kHz240 << 3) | NR_SubcarrierSpacing_kHz120:
       AssertFatal(index_4msb < 8, "38.213 Table 13-10 4 MSB out of range\n");
       if(index_4msb & 0x3){
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
@@ -3333,7 +3446,7 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
     type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
     big_m = table_38213_13_11_c3[index_4lsb];
 
-    uint32_t temp = (uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
+    uint32_t temp = (uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
     type0_PDCCH_CSS_config->n_c = temp / num_slot_per_frame;
     if((temp/num_slot_per_frame) & 0x1){
       type0_PDCCH_CSS_config->sfn_c = SFN_C_MOD_2_EQ_1;
@@ -3369,12 +3482,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   /// MUX PATTERN 2
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 2){
 
-    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_60kHz)){
+    if((scs_ssb == NR_SubcarrierSpacing_kHz120) && (scs_pdcch == NR_SubcarrierSpacing_kHz60)){
       //  38.213 Table 13-13
       AssertFatal(index_4lsb == 0, "38.213 Table 13-13 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3391,12 +3504,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
         default: break;
       }
 
-    }else if((scs_ssb == scs_240kHz) && (scs_pdcch == scs_120kHz)){
+    }else if((scs_ssb == NR_SubcarrierSpacing_kHz240) && (scs_pdcch == NR_SubcarrierSpacing_kHz120)){
       //  38.213 Table 13-14
       AssertFatal(index_4lsb == 0, "38.213 Table 13-14 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x7){    //  ssb_index(i) mod 8
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3412,11 +3525,11 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
           break;
         case 4:
           type0_PDCCH_CSS_config->first_symbol_index = 12;
-          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          type0_PDCCH_CSS_config->n_c = ssb_slot - 1;
           break;
         case 5:
           type0_PDCCH_CSS_config->first_symbol_index = 13;
-          type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index) - 1;
+          type0_PDCCH_CSS_config->n_c = ssb_slot - 1;
           break;
         case 6:
           type0_PDCCH_CSS_config->first_symbol_index = 0;
@@ -3433,12 +3546,12 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
 
   /// MUX PATTERN 3
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 3){
-    if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_120kHz)){
+    if((scs_ssb == NR_SubcarrierSpacing_kHz120) && (scs_pdcch == NR_SubcarrierSpacing_kHz120)){
       //  38.213 Table 13-15
       AssertFatal(index_4lsb == 0, "38.213 Table 13-15 4 LSB out of range\n");
       //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
       //                sfn_c = SFN_C_EQ_SFN_SSB;
-      type0_PDCCH_CSS_config->n_c = get_ssb_slot(type0_PDCCH_CSS_config->ssb_index);
+      type0_PDCCH_CSS_config->n_c = ssb_slot;
       switch(type0_PDCCH_CSS_config->ssb_index & 0x3){    //  ssb_index(i) mod 4
         case 0:
           type0_PDCCH_CSS_config->first_symbol_index = 4;
@@ -3475,8 +3588,83 @@ int get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDC
   AssertFatal(type0_PDCCH_CSS_config->sfn_c!=SFN_C_IMPOSSIBLE,"");
   AssertFatal(type0_PDCCH_CSS_config->n_c!=UINT_MAX,"");
 
-  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*scs_pdcch) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
+  type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
   type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
 
-  return 0;
 }
+
+/* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */
+bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
+                        uint16_t rbSize,uint8_t mcsIndex, uint8_t mcsTable,
+                        uint8_t *K_ptrs, uint8_t *L_ptrs,
+                        uint8_t *reOffset, uint8_t *maxNumPorts, uint8_t *ulPower,
+                        uint8_t NrOfSymbols)
+{
+  bool valid = true;
+
+  /* as defined in T 38.214 6.2.3 */
+  if(rbSize < 3) {
+    valid = false;
+    return valid;
+  }
+  /* Check for Frequency Density values */
+  if(ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.count < 2) {
+    /* Default value for K_PTRS = 2 as defined in T 38.214 6.2.3 */
+    *K_ptrs = 2;
+  }
+  else {
+    *K_ptrs = get_K_ptrs(*ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.array[0],
+                         *ul_ptrs_config->transformPrecoderDisabled->frequencyDensity->list.array[1],
+                         rbSize);
+  }
+  /* Check for time Density values */
+  if(ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.count < 3) {
+    *L_ptrs = 0;
+  }
+  else {
+    *L_ptrs = get_L_ptrs(*ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[0],
+                         *ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[1],
+                         *ul_ptrs_config->transformPrecoderDisabled->timeDensity->list.array[2],
+                         mcsIndex,
+                         mcsTable);
+  }
+  
+  *reOffset  = *ul_ptrs_config->transformPrecoderDisabled->resourceElementOffset;
+  *maxNumPorts = ul_ptrs_config->transformPrecoderDisabled->maxNrofPorts;
+  *ulPower = ul_ptrs_config->transformPrecoderDisabled->ptrs_Power;
+  /* If either or both of the parameters PT-RS time density (LPT-RS) and PT-RS frequency density (KPT-RS), shown in Table
+   * 6.2.3.1-1 and Table 6.2.3.1-2, indicates that 'PT-RS not present', the UE shall assume that PT-RS is not present
+   */
+  if(*K_ptrs ==2  || *K_ptrs ==4 ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  if(*L_ptrs ==0 || *L_ptrs ==1 || *L_ptrs ==2  ) {
+    valid = true;
+  }
+  else {
+    valid = false;
+    return valid;
+  }
+  /* PTRS is not present also :
+   * When the UE is receiving a PUSCH with allocation duration of 4 symbols and if LPT-RS is set to 4, the UE shall assume
+   * PT-RS is not transmitted
+   * When the UE is receiving a PUSCH with allocation duration of 2 symbols as defined in Clause 6.4.1.2.2 of [4, TS
+   * 38.211] and if LPT-RS is set to 2 or 4, the UE shall assume PT-RS is not transmitted.
+   */
+  if((NrOfSymbols == 4 && *L_ptrs ==2) || ((NrOfSymbols == 2 && *L_ptrs > 0))) {
+    valid = false;
+    return valid;
+  }
+
+  /* Moved below check from nr_ue_scheduler function to here */
+  if (*L_ptrs >= NrOfSymbols) {
+    valid = false;
+    return valid;
+  }
+  return valid;
+}
+

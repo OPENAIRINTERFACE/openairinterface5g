@@ -265,7 +265,6 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
   return ret;
 }
 
-int oai_emulation;
 
 rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
                                   const srb_flag_t   srb_flagP,
@@ -1031,4 +1030,15 @@ void rlc_tick(int frame, int subframe)
     rlc_current_time_last_frame = frame;
     rlc_current_time_last_subframe = subframe;
   }
+}
+
+void du_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
+                     const srb_flag_t   srb_flagP,
+                     const MBMS_flag_t  MBMS_flagP,
+                     const rb_id_t      rb_idP,
+                     const mui_t        muiP,
+                     confirm_t    confirmP,
+                     sdu_size_t   sdu_sizeP,
+                     mem_block_t *sdu_pP){
+
 }

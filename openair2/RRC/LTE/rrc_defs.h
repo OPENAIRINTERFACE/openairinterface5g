@@ -329,7 +329,7 @@ typedef enum SL_TRIGGER_e {
 #define MAX_MEAS_ID 7
 
 #define PAYLOAD_SIZE_MAX 1024
-#define RRC_BUF_SIZE 255
+#define RRC_BUF_SIZE 8192
 #define UNDEF_SECURITY_MODE 0xff
 #define NO_SECURITY_MODE 0x20
 
@@ -520,13 +520,13 @@ typedef struct RB_INFO_TABLE_ENTRY_s {
   RB_INFO Rb_info;
   uint8_t Active;
   uint32_t Next_check_frame;
-  uint8_t Status;
+  uint8_t StatusRb;
 } RB_INFO_TABLE_ENTRY;
 
 typedef struct SRB_INFO_TABLE_ENTRY_s {
   SRB_INFO Srb_info;
   uint8_t Active;
-  uint8_t Status;
+  uint8_t StatusSrb;
   uint32_t Next_check_frame;
 } SRB_INFO_TABLE_ENTRY;
 
@@ -600,7 +600,7 @@ typedef struct eNB_RRC_UE_s {
   LTE_CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
 
-  uint8_t                            Status; // RRC status, type enum UE_STATE_t
+  uint8_t                            StatusRrc; // RRC status, type enum UE_STATE_t
   rnti_t                             rnti;
   int                                gnb_rnti;     //RNTI of the UE at the gNB if in ENDC connection
   int                                gnb_x2_assoc_id;
@@ -837,13 +837,6 @@ typedef struct OAI_UECapability_s {
   uint8_t sdu_size;
   LTE_UE_EUTRA_Capability_t *UE_EUTRA_Capability;
 } OAI_UECapability_t;
-
-#define MAX_UE_NR_CAPABILITY_SIZE 255
-typedef struct OAI_NR_UECapability_s {
-  uint8_t sdu[MAX_UE_NR_CAPABILITY_SIZE];
-  uint8_t sdu_size;
-  NR_UE_NR_Capability_t *UE_NR_Capability;
-} OAI_NR_UECapability_t;
 
 typedef struct UE_RRC_INST_s {
   Rrc_State_t     RrcState;

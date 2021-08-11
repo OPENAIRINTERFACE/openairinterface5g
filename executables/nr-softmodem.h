@@ -18,19 +18,29 @@
 /*   optname                helpstr                 paramflags        XXXptr                              defXXXval                   type         numelt               */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_PARAMS_DESC_GNB {  \
-    {"mmapped-dma",           CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,   uptr:&mmapped_dma,                  defintval:0,                   TYPE_INT,    0},        \
     {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,   iptr:&single_thread_flag,           defintval:1,                   TYPE_INT,    0},        \
     {"A" ,                    CONFIG_HLP_TADV,        0,                uptr:&timing_advance,               defintval:0,                   TYPE_UINT,   0},        \
     {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,   i8ptr:&threequarter_fs,             defintval:0,                   TYPE_INT8,   0},        \
-    {"K" ,                    CONFIG_HLP_ITTIL,       PARAMFLAG_NOFREE, strptr:&itti_dump_file,             defstrval:"/tmp/itti.dump",    TYPE_STRING, 0},        \
-    {"m" ,                    CONFIG_HLP_DLMCS,       0,                uptr:&target_dl_mcs,                defintval:0,                   TYPE_UINT,   0},        \
-    {"t" ,                    CONFIG_HLP_ULMCS,       0,                uptr:&target_ul_mcs,                defintval:0,                   TYPE_UINT,   0},        \
+    {"m" ,                    CONFIG_HLP_DLMCS_PHYTEST,0,               uptr:&target_dl_mcs,                defintval:0,                   TYPE_UINT,   0},        \
+    {"l" ,                    CONFIG_HLP_DLNL_PHYTEST,0,                uptr:&target_dl_Nl,                 defintval:0,                   TYPE_UINT,   0},        \
+    {"t" ,                    CONFIG_HLP_ULMCS_PHYTEST,0,               uptr:&target_ul_mcs,                defintval:0,                   TYPE_UINT,   0},        \
+    {"M" ,                    CONFIG_HLP_DLBW_PHYTEST,0,                uptr:&target_dl_bw,                 defintval:0,                   TYPE_UINT,   0},        \
+    {"T" ,                    CONFIG_HLP_ULBW_PHYTEST,0,                uptr:&target_ul_bw,                 defintval:0,                   TYPE_UINT,   0},        \
+    {"D" ,                    CONFIG_HLP_DLBM_PHYTEST,0,                u64ptr:&dlsch_slot_bitmap,          defintval:0,                   TYPE_UINT64, 0},        \
+    {"U" ,                    CONFIG_HLP_ULBM_PHYTEST,0,                u64ptr:&ulsch_slot_bitmap,          defintval:0,                   TYPE_UINT64, 0},        \
     {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,                iptr:&usrp_tx_thread,               defstrval:0,                   TYPE_INT,    0},        \
     {"s" ,                    CONFIG_HLP_SNR,         0,                dblptr:&snr_dB,                     defdblval:25,                  TYPE_DOUBLE, 0},        \
   }
 
 #include "threads_t.h"
 extern threads_t threads;
+extern uint32_t target_dl_mcs;
+extern uint32_t target_dl_Nl;
+extern uint32_t target_ul_mcs;
+extern uint32_t target_dl_bw;
+extern uint32_t target_ul_bw;
+extern uint64_t dlsch_slot_bitmap;
+extern uint64_t ulsch_slot_bitmap;
 
 // In nr-gnb.c
 extern void init_gNB(int single_thread_flag,int wait_for_sync);

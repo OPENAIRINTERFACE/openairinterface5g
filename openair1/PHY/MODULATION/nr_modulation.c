@@ -22,6 +22,101 @@
 #include "nr_modulation.h"
 #include "PHY/NR_REFSIG/nr_mod_table.h"
 
+//Table 6.3.1.5-1 Precoding Matrix W 1 layer 2 antenna ports 'n' = -1 and 'o' = -j
+char nr_W_1l_2p[6][2][1] = {
+  {{'1'}, {'0'}},//pmi 0
+  {{'0'}, {'1'}},
+  {{'1'}, {'1'}},
+  {{'1'}, {'n'}},
+  {{'1'}, {'j'}},
+  {{'1'}, {'o'}}//pmi 5
+};
+
+//Table 6.3.1.5-3 Precoding Matrix W 1 layer 4 antenna ports 'n' = -1 and 'o' = -j
+char nr_W_1l_4p[28][4][1] = {
+  {{'1'}, {'0'}, {'0'}, {'0'}},//pmi 0
+  {{'0'}, {'1'}, {'0'}, {'0'}},
+  {{'0'}, {'0'}, {'1'}, {'0'}},
+  {{'0'}, {'0'}, {'0'}, {'1'}},
+  {{'1'}, {'0'}, {'1'}, {'0'}},
+  {{'1'}, {'0'}, {'n'}, {'0'}},
+  {{'1'}, {'0'}, {'j'}, {'0'}},
+  {{'1'}, {'0'}, {'o'}, {'0'}},//pmi 7
+  {{'0'}, {'1'}, {'0'}, {'1'}},//pmi 8
+  {{'0'}, {'1'}, {'0'}, {'n'}},
+  {{'0'}, {'1'}, {'0'}, {'j'}},
+  {{'0'}, {'1'}, {'0'}, {'o'}},
+  {{'1'}, {'1'}, {'1'}, {'1'}},
+  {{'1'}, {'1'}, {'j'}, {'j'}},
+  {{'1'}, {'1'}, {'n'}, {'n'}},
+  {{'1'}, {'1'}, {'o'}, {'o'}},
+  {{'1'}, {'j'}, {'1'}, {'j'}},//pmi 16
+  {{'1'}, {'j'}, {'j'}, {'n'}},
+  {{'1'}, {'j'}, {'n'}, {'o'}},
+  {{'1'}, {'j'}, {'o'}, {'1'}},
+  {{'1'}, {'n'}, {'1'}, {'n'}},
+  {{'1'}, {'n'}, {'j'}, {'o'}},
+  {{'1'}, {'n'}, {'n'}, {'1'}},
+  {{'1'}, {'n'}, {'o'}, {'j'}},//pmi 23
+  {{'1'}, {'o'}, {'1'}, {'o'}},//pmi 24
+  {{'1'}, {'o'}, {'j'}, {'1'}},
+  {{'1'}, {'o'}, {'n'}, {'j'}},
+  {{'1'}, {'o'}, {'o'}, {'n'}}//pmi 27
+};
+
+//Table 6.3.1.5-4 Precoding Matrix W 2 antenna ports layers 2  'n' = -1 and 'o' = -j
+char nr_W_2l_2p[3][2][2] = {
+  {{'1', '0'}, {'0', '1'}},//pmi 0
+  {{'1', '1'}, {'1', 'n'}},
+  {{'1', '1'}, {'j', 'o'}} //pmi 2
+};
+
+//Table 6.3.1.5-5 Precoding Matrix W 2 layers 4 antenna ports 'n' = -1 and 'o' = -j
+char nr_W_2l_4p[22][4][2] = {
+  {{'1', '0'}, {'0', '1'}, {'0', '0'}, {'0', '0'}},//pmi 0
+  {{'1', '0'}, {'0', '0'}, {'0', '1'}, {'0', '0'}},
+  {{'1', '0'}, {'0', '0'}, {'0', '0'}, {'0', '1'}},
+  {{'0', '0'}, {'1', '0'}, {'0', '1'}, {'0', '0'}},//pmi 3
+  {{'0', '0'}, {'1', '0'}, {'0', '0'}, {'0', '1'}},//pmi 4
+  {{'0', '0'}, {'0', '0'}, {'1', '0'}, {'0', '1'}},
+  {{'1', '0'}, {'0', '1'}, {'1', '0'}, {'0', 'o'}},
+  {{'1', '0'}, {'0', '1'}, {'1', '0'}, {'0', 'j'}},
+  {{'1', '0'}, {'0', '1'}, {'o', '0'}, {'0', '1'}},//pmi 8
+  {{'1', '0'}, {'0', '1'}, {'o', '0'}, {'0', 'n'}},
+  {{'1', '0'}, {'0', '1'}, {'n', '0'}, {'0', 'o'}},
+  {{'1', '0'}, {'0', '1'}, {'n', '0'}, {'0', 'j'}},//pmi 11
+  {{'1', '0'}, {'0', '1'}, {'j', '0'}, {'0', '1'}},//pmi 12
+  {{'1', '0'}, {'0', '1'}, {'j', '0'}, {'0', 'n'}},
+  {{'1', '1'}, {'1', '1'}, {'1', 'n'}, {'1', 'n'}},
+  {{'1', '1'}, {'1', '1'}, {'j', 'o'}, {'j', 'o'}},//pmi 15
+  {{'1', '1'}, {'j', 'j'}, {'1', 'n'}, {'j', 'o'}},//pmi 16
+  {{'1', '1'}, {'j', 'j'}, {'j', 'o'}, {'n', '1'}},
+  {{'1', '1'}, {'n', 'n'}, {'1', 'n'}, {'n', '1'}},
+  {{'1', '1'}, {'n', 'n'}, {'j', 'o'}, {'o', 'j'}},//pmi 19
+  {{'1', '1'}, {'o', 'o'}, {'1', 'n'}, {'o', 'j'}},
+  {{'1', '1'}, {'o', 'o'}, {'j', 'o'}, {'1', 'n'}}//pmi 21
+};
+
+//Table 6.3.1.5-6 Precoding Matrix W 3 layers 4 antenna ports 'n' = -1 and 'o' = -j
+char nr_W_3l_4p[7][4][3] = {
+  {{'1', '0', '0'}, {'0', '1', '0'}, {'0', '0', '1'},{'0', '0', '0'}},//pmi 0
+  {{'1', '0', '0'}, {'0', '1', '0'}, {'1', '0', '0'},{'0', '0', '1'}},
+  {{'1', '0', '0'}, {'0', '1', '0'}, {'n', '0', '0'},{'0', '0', '1'}},
+  {{'1', '1', '1'}, {'1', 'n', '1'}, {'1', '1', 'n'},{'1', 'n', 'n'}},//pmi 3
+  {{'1', '1', '1'}, {'1', 'n', '1'}, {'j', 'j', 'o'},{'j', 'o', 'o'}},//pmi 4
+  {{'1', '1', '1'}, {'n', '1', 'n'}, {'1', '1', 'n'},{'n', '1', '1'}},
+  {{'1', '1', '1'}, {'n', '1', 'n'}, {'j', 'j', 'o'},{'o', 'j', 'j'}}
+};
+
+//Table 6.3.1.5-7 Precoding Matrix W 4 layers 4 antenna ports 'n' = -1 and 'o' = -j
+char nr_W_4l_4p[5][4][4] = {
+  {{'1', '0', '0', '0'}, {'0', '1', '0', '0'}, {'0', '0', '1', '0'}, {'0', '0', '0', '1'}},//pmi 0
+  {{'1', '1', '0', '0'}, {'0', '0', '1', '1'}, {'1', 'n', '0', '0'}, {'0', '0', '1', 'n'}},
+  {{'1', '1', '0', '0'}, {'0', '0', '1', '1'}, {'j', 'o', '0', '0'}, {'0', '0', 'j', 'o'}},
+  {{'1', '1', '1', '1'}, {'1', 'n', '1', 'n'}, {'1', '1', 'n', 'n'}, {'1', 'n', 'n', '1'}},//pmi 3
+  {{'1', '1', '1', '1'}, {'1', 'n', '1', 'n'}, {'j', 'j', 'o', 'o'}, {'j', 'o', 'o', 'j'}}//pmi 4
+};
+
 void nr_modulation(uint32_t *in,
                    uint32_t length,
                    uint16_t mod_order,
@@ -37,7 +132,7 @@ void nr_modulation(uint32_t *in,
   uint32_t i,j;
   uint32_t bit_cnt;
   uint64_t x,x1,x2;
-    
+
 #if defined(__SSE2__)
   __m128i *nr_mod_table128;
   __m128i *out128;
@@ -56,7 +151,7 @@ void nr_modulation(uint32_t *in,
     // the bits that are left out
     i = i*8/2;
     nr_mod_table32 = (int32_t*) nr_qpsk_mod_table;
-    while (i<length/2){
+    while (i<length/2) {
       idx = ((in_bytes[(i*2)/8]>>((i*2)&0x7)) & mask);
       out32[i] = nr_mod_table32[idx];
       i++;
@@ -78,7 +173,7 @@ void nr_modulation(uint32_t *in,
       out64[i] = nr_16qam_byte_mod_table[in_bytes[i]];
     // the bits that are left out
     i = i*8/4;
-    while (i<length/4){
+    while (i<length/4) {
       idx = ((in_bytes[(i*4)/8]>>((i*4)&0x7)) & mask);
       out32[i] = nr_16qam_mod_table[idx];
       i++;
@@ -88,7 +183,7 @@ void nr_modulation(uint32_t *in,
   case 6:
     j = 0;
     for (i=0; i<length/192; i++) {
-      x = in64[i*3]; 
+      x = in64[i*3];
       x1 = x&4095;
       out64[j++] = nr_64qam_mod_table[x1];
       x1 = (x>>12)&4095;
@@ -140,7 +235,7 @@ void nr_modulation(uint32_t *in,
       bit_cnt += 24;
     }
     return;
-      
+
   case 8:
     nr_mod_table32 = (int32_t*) nr_256qam_mod_table;
     for (i=0; i<length/8; i++)
@@ -151,20 +246,20 @@ void nr_modulation(uint32_t *in,
     break;
   }
   AssertFatal(false,"Invalid or unsupported modulation order %d\n",mod_order);
-
 }
 
 void nr_layer_mapping(int16_t **mod_symbs,
-		      uint8_t n_layers,
-		      uint16_t n_symbs,
-		      int16_t **tx_layers) {
+                      uint8_t n_layers,
+                      uint16_t n_symbs,
+                      int16_t **tx_layers)
+{
   LOG_D(PHY,"Doing layer mapping for %d layers, %d symbols\n",n_layers,n_symbs);
 
   switch (n_layers) {
 
     case 1:
       memcpy((void*)tx_layers[0], (void*)mod_symbs[0], (n_symbs<<1)*sizeof(int16_t));
-    break;
+      break;
 
     case 2:
     case 3:
@@ -174,7 +269,7 @@ void nr_layer_mapping(int16_t **mod_symbs,
           tx_layers[l][i<<1] = mod_symbs[0][(n_layers*i+l)<<1];
           tx_layers[l][(i<<1)+1] = mod_symbs[0][((n_layers*i+l)<<1)+1];
         }
-    break;
+      break;
 
     case 5:
       for (int i=0; i<n_symbs>>1; i++)
@@ -186,8 +281,8 @@ void nr_layer_mapping(int16_t **mod_symbs,
         for (int l=2; l<5; l++) {
           tx_layers[l][i<<1] = mod_symbs[1][(3*i+l)<<1];
           tx_layers[l][(i<<1)+1] = mod_symbs[1][((3*i+l)<<1)+1];
-      }
-    break;
+        }
+      break;
 
     case 6:
       for (int q=0; q<2; q++)
@@ -196,7 +291,7 @@ void nr_layer_mapping(int16_t **mod_symbs,
             tx_layers[l][i<<1] = mod_symbs[q][(3*i+l)<<1];
             tx_layers[l][(i<<1)+1] = mod_symbs[q][((3*i+l)<<1)+1];
           }
-    break;
+      break;
 
     case 7:
       for (int i=0; i<n_symbs/3; i++)
@@ -209,7 +304,7 @@ void nr_layer_mapping(int16_t **mod_symbs,
           tx_layers[l][i<<1] = mod_symbs[0][((i<<2)+l)<<1];
           tx_layers[l][(i<<1)+1] = mod_symbs[0][(((i<<2)+l)<<1)+1];
         }
-    break;
+      break;
 
     case 8:
       for (int q=0; q<2; q++)
@@ -218,42 +313,42 @@ void nr_layer_mapping(int16_t **mod_symbs,
             tx_layers[l][i<<1] = mod_symbs[q][((i<<2)+l)<<1];
             tx_layers[l][(i<<1)+1] = mod_symbs[q][(((i<<2)+l)<<1)+1];
           }
-    break;
+      break;
 
-  default:
-  AssertFatal(0, "Invalid number of layers %d\n", n_layers);
+    default:
+      AssertFatal(0, "Invalid number of layers %d\n", n_layers);
   }
 }
 
 void nr_ue_layer_mapping(NR_UE_ULSCH_t **ulsch_ue,
-                      uint8_t n_layers,
-                      uint16_t n_symbs,
-                      int16_t **tx_layers) {
-
+                         uint8_t n_layers,
+                         uint16_t n_symbs,
+                         int16_t **tx_layers)
+{
   int16_t *mod_symbs;
 
   switch (n_layers) {
 
     case 1:
       mod_symbs = (int16_t *)ulsch_ue[0]->d_mod;
-      for (int i=0; i<n_symbs; i++){
+      for (int i=0; i<n_symbs; i++) {
         tx_layers[0][i<<1] = (mod_symbs[i<<1]*AMP)>>15;
         tx_layers[0][(i<<1)+1] = (mod_symbs[(i<<1)+1]*AMP)>>15;
       }
-    break;
+      break;
 
     case 2:
     case 3:
     case 4:
       mod_symbs = (int16_t *)ulsch_ue[0]->d_mod;
 
-      for (int i=0; i<n_symbs/n_layers; i++){
+      for (int i=0; i<n_symbs/n_layers; i++) {
         for (int l=0; l<n_layers; l++) {
           tx_layers[l][i<<1] = (mod_symbs[(n_layers*i+l)<<1]*AMP)>>15;
           tx_layers[l][(i<<1)+1] = (mod_symbs[((n_layers*i+l)<<1)+1]*AMP)>>15;
         }
       }
-    break;
+      break;
 
     case 5:
       mod_symbs = (int16_t *)ulsch_ue[0]->d_mod;
@@ -271,11 +366,10 @@ void nr_ue_layer_mapping(NR_UE_ULSCH_t **ulsch_ue,
           tx_layers[l][i<<1] = (mod_symbs[(3*i+l)<<1]*AMP)>>15;
           tx_layers[l][(i<<1)+1] = (mod_symbs[((3*i+l)<<1)+1]*AMP)>>15;
       }
-    break;
+      break;
 
     case 6:
-      for (int q=0; q<2; q++){
-
+      for (int q=0; q<2; q++) {
         mod_symbs = (int16_t *)ulsch_ue[q]->d_mod;
 
         for (int i=0; i<n_symbs/3; i++)
@@ -284,7 +378,7 @@ void nr_ue_layer_mapping(NR_UE_ULSCH_t **ulsch_ue,
             tx_layers[l][(i<<1)+1] = (mod_symbs[((3*i+l)<<1)+1]*AMP)>>15;
           }
       }
-    break;
+      break;
 
     case 7:
       mod_symbs = (int16_t *)ulsch_ue[1]->d_mod;
@@ -302,11 +396,10 @@ void nr_ue_layer_mapping(NR_UE_ULSCH_t **ulsch_ue,
           tx_layers[l][i<<1] = (mod_symbs[((i<<2)+l)<<1]*AMP)>>15;
           tx_layers[l][(i<<1)+1] = (mod_symbs[(((i<<2)+l)<<1)+1]*AMP)>>15;
         }
-    break;
+      break;
 
     case 8:
-      for (int q=0; q<2; q++){
-
+      for (int q=0; q<2; q++) {
         mod_symbs = (int16_t *)ulsch_ue[q]->d_mod;
 
         for (int i=0; i<n_symbs>>2; i++)
@@ -315,10 +408,10 @@ void nr_ue_layer_mapping(NR_UE_ULSCH_t **ulsch_ue,
             tx_layers[l][(i<<1)+1] = (mod_symbs[(((i<<2)+l)<<1)+1]*AMP)>>15;
           }
       }
-    break;
+      break;
 
-  default:
-  AssertFatal(0, "Invalid number of layers %d\n", n_layers);
+    default:
+      AssertFatal(0, "Invalid number of layers %d\n", n_layers);
   }
 }
 
@@ -591,35 +684,103 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
 }
 
 
-void init_symbol_rotation(NR_DL_FRAME_PARMS *fp,uint64_t CarrierFreq) {
+void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
+
+  uint64_t dl_CarrierFreq = fp->dl_CarrierFreq;
+  uint64_t ul_CarrierFreq = fp->ul_CarrierFreq;
+  double f[2] = {(double)dl_CarrierFreq, (double)ul_CarrierFreq};
 
   const int nsymb = fp->symbols_per_slot * fp->slots_per_frame/10;
   const double Tc=(1/480e3/4096);
   const double Nu=2048*64*(1/(float)(1<<fp->numerology_index));
-  const double f0= (double)CarrierFreq;
   const double Ncp0=16*64 + (144*64*(1/(float)(1<<fp->numerology_index)));
   const double Ncp1=(144*64*(1/(float)(1<<fp->numerology_index)));
-  double tl=0,poff,exp_re,exp_im;
-  double Ncp,Ncpm1=Ncp0;
 
-  poff = 2*M_PI*((Ncp0*Tc))*f0;
-  exp_re = cos(poff);
-  exp_im = sin(-poff);
-  fp->symbol_rotation[0]=(int16_t)floor(exp_re*32767);
-  fp->symbol_rotation[1]=(int16_t)floor(exp_im*32767);
-  LOG_I(PHY,"Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n",f0,nsymb);
-  LOG_I(PHY,"Symbol rotation %d/%d => (%d,%d)\n",0,nsymb,fp->symbol_rotation[0],fp->symbol_rotation[1]);
-  for (int l=1;l<nsymb;l++) {
-    if (l==(7*(1<<fp->numerology_index))) Ncp=Ncp0;
-    else Ncp=Ncp1;
-    tl += (Nu+Ncpm1)*Tc;					     
-    poff = 2*M_PI*(tl + (Ncp*Tc))*f0;
-    exp_re = cos(poff);
-    exp_im = sin(-poff);
-    fp->symbol_rotation[l<<1]=(int16_t)floor(exp_re*32767);
-    fp->symbol_rotation[1+(l<<1)]=(int16_t)floor(exp_im*32767);
-    LOG_I(PHY,"Symbol rotation %d/%d => tl %f (%d,%d) (%f)\n",l,nsymb,tl,fp->symbol_rotation[l<<1],fp->symbol_rotation[1+(l<<1)],
-	  (poff/2/M_PI)-floor(poff/2/M_PI));
-    Ncpm1=Ncp;
+  for (uint8_t ll = 0; ll < 2; ll++){
+
+    double f0 = f[ll];
+    double Ncpm1 = Ncp0;
+    int16_t *symbol_rotation = fp->symbol_rotation[ll];
+
+    double tl = 0;
+    double poff = 2 * M_PI * ((Ncp0 * Tc)) * f0;
+    double exp_re = cos(poff);
+    double exp_im = sin(-poff);
+    symbol_rotation[0] = (int16_t)floor(exp_re * 32767);
+    symbol_rotation[1] = (int16_t)floor(exp_im * 32767);
+    LOG_I(PHY, "Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n", f0, nsymb);
+    LOG_I(PHY, "Symbol rotation %d/%d => (%d,%d)\n",
+      0,
+      nsymb,
+      symbol_rotation[0],
+      symbol_rotation[1]);
+
+    for (int l = 1; l < nsymb; l++) {
+
+      double Ncp;
+      if (l == (7 * (1 << fp->numerology_index))) {
+        Ncp = Ncp0;
+      } else {
+        Ncp = Ncp1;
+      }
+
+      tl += (Nu + Ncpm1) * Tc;
+      poff = 2 * M_PI * (tl + (Ncp * Tc)) * f0;
+      exp_re = cos(poff);
+      exp_im = sin(-poff);
+      symbol_rotation[l<<1] = (int16_t)floor(exp_re * 32767);
+      symbol_rotation[1 + (l<<1)] = (int16_t)floor(exp_im * 32767);
+
+      LOG_I(PHY, "Symbol rotation %d/%d => tl %f (%d,%d) (%f)\n",
+        l,
+        nsymb,
+        tl,
+        symbol_rotation[l<<1],
+        symbol_rotation[1 + (l<<1)],
+        (poff / 2 / M_PI) - floor(poff / 2 / M_PI));
+
+      Ncpm1 = Ncp;
+
+    }
   }
+}
+
+int nr_layer_precoder(int16_t **datatx_F_precoding, char *prec_matrix, uint8_t n_layers, int32_t re_offset)
+{
+  int32_t precodatatx_F = 0;
+
+  for (int al = 0; al<n_layers; al++) {
+    int16_t antenna_re = datatx_F_precoding[al][re_offset<<1];
+    int16_t antenna_im = datatx_F_precoding[al][(re_offset<<1) +1];
+
+    switch (prec_matrix[al]) {
+      case '0': //multiply by zero
+        break;
+
+      case '1': //multiply by 1
+        ((int16_t *) &precodatatx_F)[0] += antenna_re;
+        ((int16_t *) &precodatatx_F)[1] += antenna_im;
+        break;
+
+      case 'n': // multiply by -1
+        ((int16_t *) &precodatatx_F)[0] -= antenna_re;
+        ((int16_t *) &precodatatx_F)[1] -= antenna_im;
+        break;
+
+      case 'j': //
+        ((int16_t *) &precodatatx_F)[0] -= antenna_im;
+        ((int16_t *) &precodatatx_F)[1] += antenna_re;
+        break;
+
+      case 'o': // -j
+        ((int16_t *) &precodatatx_F)[0] += antenna_im;
+        ((int16_t *) &precodatatx_F)[1] -= antenna_re;
+        break;
+    }
+  }
+
+  return precodatatx_F;
+  // normalize
+  /*  ((int16_t *)precodatatx_F)[0] = (int16_t)((((int16_t *)precodatatx_F)[0]*ONE_OVER_SQRT2_Q15)>>15);
+      ((int16_t *)precodatatx_F)[1] = (int16_t)((((int16_t *)precodatatx_F)[1]*ONE_OVER_SQRT2_Q15)>>15);*/
 }

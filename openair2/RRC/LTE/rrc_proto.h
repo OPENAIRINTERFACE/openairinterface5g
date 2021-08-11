@@ -528,17 +528,6 @@ rrc_data_req_ue(
   const pdcp_transmission_mode_t modeP
 );
 
-uint8_t
-rrc_data_req_nr_ue(
-  const protocol_ctxt_t   *const ctxt_pP,
-  const rb_id_t                  rb_idP,
-  const mui_t                    muiP,
-  const confirm_t                confirmP,
-  const sdu_size_t               sdu_sizeP,
-  uint8_t                 *const buffer_pP,
-  const pdcp_transmission_mode_t modeP
-);
-
 void
 rrc_data_ind(
   const protocol_ctxt_t *const ctxt_pP,

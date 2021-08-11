@@ -28,6 +28,8 @@
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
+//#include "executables/softmodem-common.h"
+#include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -91,6 +93,8 @@
 #else
   #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
 #endif
+#define RX_JOB_ID 0x1010
+#define TX_JOB_ID 100
 
 typedef enum {
   pss = 0,
@@ -112,6 +116,7 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
   ue->if_inst     = nr_ue_if_module_init(0);
+  ue->dci_thres   = 0;
 
   // Setting UE mode to NOT_SYNCHED by default
   for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++){
@@ -287,11 +292,11 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     mac->dl_info.dci_ind = NULL;
     mac->dl_info.rx_ind = NULL;
 
-    if (is_nr_DL_slot(mac->scc, ul_info.slot_rx))
+    if (is_nr_DL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_rx))
     {
       nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
     }
-    if (is_nr_UL_slot(mac->scc, ul_info.slot_tx))
+    if (is_nr_UL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_tx, mac->frame_type))
     {
       LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", ul_info.slot_tx, __FUNCTION__);
       nr_ue_ul_indication(&ul_info);
@@ -367,10 +372,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
  * \param arg is a pointer to a \ref PHY_VARS_NR_UE structure.
  */
 
-typedef struct syncData_s {
-  UE_nr_rxtx_proc_t proc;
-  PHY_VARS_NR_UE *UE;
-} syncData_t;
+typedef nr_rxtx_thread_data_t syncData_t;
 
 static void UE_synch(void *arg) {
   syncData_t *syncD=(syncData_t *) arg;
@@ -475,43 +477,6 @@ static void UE_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].rx_freq[0],
               openair0_cfg[UE->rf_map.card].tx_freq[0]);
 
-        // reconfigure for potentially different bandwidth
-        switch(UE->frame_parms.N_RB_DL) {
-          case 6:
-            openair0_cfg[UE->rf_map.card].sample_rate =1.92e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =.96e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =.96e6;
-            //            openair0_cfg[0].rx_gain[0] -= 12;
-            break;
-
-          case 25:
-            openair0_cfg[UE->rf_map.card].sample_rate =7.68e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =2.5e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =2.5e6;
-            //            openair0_cfg[0].rx_gain[0] -= 6;
-            break;
-
-          case 50:
-            openair0_cfg[UE->rf_map.card].sample_rate =15.36e6;
-            openair0_cfg[UE->rf_map.card].rx_bw          =5.0e6;
-            openair0_cfg[UE->rf_map.card].tx_bw          =5.0e6;
-            //            openair0_cfg[0].rx_gain[0] -= 3;
-            break;
-
-          case 100:
-            openair0_cfg[UE->rf_map.card].sample_rate=30.72e6;
-            openair0_cfg[UE->rf_map.card].rx_bw=10.0e6;
-            openair0_cfg[UE->rf_map.card].tx_bw=10.0e6;
-            //            openair0_cfg[0].rx_gain[0] -= 0;
-            break;
-
-          case 66:
-            openair0_cfg[UE->rf_map.card].sample_rate=122.88e6;
-            openair0_cfg[UE->rf_map.card].rx_bw=100.e6;
-            openair0_cfg[UE->rf_map.card].tx_bw=100.e6;
-            break;
-        }
-
         if (UE->mode != loop_through_memory) {
           UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
           //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
@@ -554,11 +519,16 @@ static void UE_synch(void *arg) {
   }
 }
 
-void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
+void processSlotTX(void *arg) {
+
+  nr_rxtx_thread_data_t *rxtxD = (nr_rxtx_thread_data_t *) arg;
+  UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
+  PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
   int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_slot_tx);
   uint8_t gNB_id = 0;
 
+  LOG_D(PHY,"%d.%d => slot type %d\n",proc->frame_tx,proc->nr_slot_tx,tx_slot_type);
   if (tx_slot_type == NR_UPLINK_SLOT || tx_slot_type == NR_MIXED_SLOT){
 
     // trigger L2 to run ue_scheduler thru IF module
@@ -585,10 +555,14 @@ void processSlotTX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   }
 }
 
-void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
+void processSlotRX(void *arg) {
 
+  nr_rxtx_thread_data_t *rxtxD = (nr_rxtx_thread_data_t *) arg;
+  UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
+  PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
   int rx_slot_type = nr_ue_slot_select(cfg, proc->frame_rx, proc->nr_slot_rx);
+  int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_slot_tx);
   uint8_t gNB_id = 0;
 
   if (rx_slot_type == NR_DOWNLINK_SLOT || rx_slot_type == NR_MIXED_SLOT){
@@ -604,44 +578,56 @@ void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, no_relay, NULL );
 #else
     uint64_t a=rdtsc();
-    phy_procedures_nrUE_RX(UE, proc, gNB_id, get_nrUE_params()->nr_dlsch_parallel);
+    phy_procedures_nrUE_RX(UE, proc, gNB_id, get_nrUE_params()->nr_dlsch_parallel, &rxtxD->txFifo);
     LOG_D(PHY, "In %s: slot %d, time %lu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc()-a)/3500);
 #endif
 
-    if(IS_SOFTMODEM_NOS1){
+    if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa){
       NR_UE_MAC_INST_t *mac = get_mac_inst(0);
       protocol_ctxt_t ctxt;
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO, mac->crnti, proc->frame_rx, proc->nr_slot_rx, 0);
       pdcp_run(&ctxt);
+
+      /* send tick to RLC and PDCP every ms */
+      if (proc->nr_slot_rx % UE->frame_parms.slots_per_subframe == 0) {
+        void nr_rlc_tick(int frame, int subframe);
+        void nr_pdcp_tick(int frame, int subframe);
+        nr_rlc_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
+        nr_pdcp_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
+      }
     }
+
+    // Wait for PUSCH processing to finish
+    notifiedFIFO_elt_t *res;
+    res = pullTpool(&rxtxD->txFifo,&(get_nrUE_params()->Tpool));
+    delNotifiedFIFO_elt(res);
+
+  } else {
+    processSlotTX(rxtxD);
   }
 
-}
+  if (tx_slot_type == NR_UPLINK_SLOT || tx_slot_type == NR_MIXED_SLOT){
+    if (UE->UE_mode[gNB_id] <= PUSCH) {
+      if (get_softmodem_params()->usim_test==0) {
+        pucch_procedures_ue_nr(UE,
+                               gNB_id,
+                               proc,
+                               FALSE);
+      }
 
-/*!
- * \brief This is the UE thread for RX subframe n and TX subframe n+4.
- * This thread performs the phy_procedures_UE_RX() on every received slot.
- * then, if TX is enabled it performs TX for n+4.
- * \param arg is a pointer to a \ref PHY_VARS_NR_UE structure.
- * \returns a pointer to an int. The storage is not on the heap and must not be freed.
- */
+      LOG_D(PHY, "Sending Uplink data \n");
+      nr_ue_pusch_common_procedures(UE,
+                                    proc->nr_slot_tx,
+                                    &UE->frame_parms,1);
+    }
 
-typedef struct processingData_s {
-  UE_nr_rxtx_proc_t proc;
-  PHY_VARS_NR_UE    *UE;
-}  processingData_t;
+    if (UE->UE_mode[gNB_id] > NOT_SYNCHED && UE->UE_mode[gNB_id] < PUSCH) {
+      nr_ue_prach_procedures(UE, proc, gNB_id);
+    }
+    LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", proc->frame_tx, proc->nr_slot_tx);
+  }
 
-void UE_processing(void *arg) {
-  processingData_t *rxtxD = (processingData_t *) arg;
-  UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
-  PHY_VARS_NR_UE    *UE   = rxtxD->UE;
-  int slot_tx = proc->nr_slot_tx;
-  int frame_tx = proc->frame_tx;
-
-  processSlotRX(UE, proc);
-  processSlotTX(UE, proc);
-  ue_ta_procedures(UE, slot_tx, frame_tx);
-
+  ue_ta_procedures(UE, proc->nr_slot_tx, proc->frame_tx);
 }
 
 void dummyWrite(PHY_VARS_NR_UE *UE,openair0_timestamp timestamp, int writeBlockSize) {
@@ -758,25 +744,44 @@ void *UE_thread(void *arg) {
   int start_rx_stream = 0;
   AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
   UE->rfdevice.host_type = RAU_HOST;
+  UE->lost_sync = 0;
+  UE->is_synchronized = 0;
   AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
+
   notifiedFIFO_t nf;
   initNotifiedFIFO(&nf);
-  int nbSlotProcessing=0;
-  int thread_idx=0;
+
   notifiedFIFO_t freeBlocks;
   initNotifiedFIFO_nothreadSafe(&freeBlocks);
+
+  int nbSlotProcessing=0;
+  int thread_idx=0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   int timing_advance = UE->timing_advance;
-
-  for (int i=0; i<RX_NB_TH+1; i++)  // RX_NB_TH working + 1 we are making to be pushed
-    pushNotifiedFIFO_nothreadSafe(&freeBlocks,
-                                  newNotifiedFIFO_elt(sizeof(processingData_t), 0,&nf,UE_processing));
 
   bool syncRunning=false;
   const int nb_slot_frame = UE->frame_parms.slots_per_frame;
   int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
 
+  for (int i=0; i<NR_RX_NB_TH+1; i++) {// NR_RX_NB_TH working + 1 we are making to be pushed
+    notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), RX_JOB_ID,&nf,processSlotRX);
+    nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(newElt);
+    initNotifiedFIFO(&curMsg->txFifo);
+    pushNotifiedFIFO_nothreadSafe(&freeBlocks, newElt);
+  }
+
   while (!oai_exit) {
+    if (UE->lost_sync) {
+      int nb = abortTpool(&(get_nrUE_params()->Tpool),RX_JOB_ID);
+      nb += abortNotifiedFIFO(&nf, RX_JOB_ID);
+      LOG_I(PHY,"Number of aborted slots %d\n",nb);
+      for (int i=0; i<nb; i++)
+        pushNotifiedFIFO_nothreadSafe(&freeBlocks, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), RX_JOB_ID,&nf,processSlotRX));
+      nbSlotProcessing = 0;
+      UE->is_synchronized = 0;
+      UE->lost_sync = 0;
+    }
+
     if (syncRunning) {
       notifiedFIFO_elt_t *res=tryPullTpool(&nf,&(get_nrUE_params()->Tpool));
 
@@ -786,9 +791,10 @@ void *UE_thread(void *arg) {
         if (UE->is_synchronized) {
           decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
           // shift the frame index with all the frames we trashed meanwhile we perform the synch search
-          decoded_frame_rx=(decoded_frame_rx + (!UE->init_sync_frame) + trashed_frames) % MAX_FRAME_NUMBER;
+          decoded_frame_rx=(decoded_frame_rx + UE->init_sync_frame + trashed_frames) % MAX_FRAME_NUMBER;
         }
         delNotifiedFIFO_elt(res);
+        start_rx_stream=0;
       } else {
         readFrame(UE, &timestamp, true);
         trashed_frames+=2;
@@ -835,13 +841,13 @@ void *UE_thread(void *arg) {
 
     // whatever means thread_idx
     // Fix me: will be wrong when slot 1 is slow, as slot 2 finishes
-    // Slot 3 will overlap if RX_NB_TH is 2
+    // Slot 3 will overlap if NR_RX_NB_TH is 2
     // this is general failure in UE !!!
-    thread_idx = absolute_slot % RX_NB_TH;
+    thread_idx = absolute_slot % NR_RX_NB_TH;
     int slot_nr = absolute_slot % nb_slot_frame;
     notifiedFIFO_elt_t *msgToPush;
     AssertFatal((msgToPush=pullNotifiedFIFO_nothreadSafe(&freeBlocks)) != NULL,"chained list failure");
-    processingData_t *curMsg=(processingData_t *)NotifiedFifoData(msgToPush);
+    nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(msgToPush);
     curMsg->UE=UE;
     // update thread index for received subframe
     curMsg->proc.thread_id   = thread_idx;
@@ -869,18 +875,18 @@ void *UE_thread(void *arg) {
 
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       txp[i] = (void *)&UE->common_vars.txdata[i][UE->frame_parms.get_samples_slot_timestamp(
-               ((slot_nr + DURATION_RX_TO_TX - RX_NB_TH)%nb_slot_frame),&UE->frame_parms,0)];
+               ((slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH)%nb_slot_frame),&UE->frame_parms,0)];
 
     int readBlockSize, writeBlockSize;
 
     if (slot_nr<(nb_slot_frame - 1)) {
       readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms);
-      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - RX_NB_TH) % nb_slot_frame, &UE->frame_parms);
+      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH) % nb_slot_frame, &UE->frame_parms);
     } else {
       UE->rx_offset_diff = computeSamplesShift(UE);
       readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms) -
                     UE->rx_offset_diff;
-      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - RX_NB_TH) % nb_slot_frame, &UE->frame_parms)- UE->rx_offset_diff;
+      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH) % nb_slot_frame, &UE->frame_parms)- UE->rx_offset_diff;
     }
 
     AssertFatal(readBlockSize ==
@@ -907,31 +913,33 @@ void *UE_thread(void *arg) {
     }
 
     curMsg->proc.timestamp_tx = timestamp+
-                                UE->frame_parms.get_samples_slot_timestamp(slot_nr,
-                                &UE->frame_parms,DURATION_RX_TO_TX) - firstSymSamp;
+      UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,DURATION_RX_TO_TX) 
+      - firstSymSamp;
 
     notifiedFIFO_elt_t *res;
 
-    while (nbSlotProcessing >= RX_NB_TH) {
+    while (nbSlotProcessing >= NR_RX_NB_TH) {
       res=pullTpool(&nf, &(get_nrUE_params()->Tpool));
       nbSlotProcessing--;
-      processingData_t *tmp=(processingData_t *)res->msgData;
+      nr_rxtx_thread_data_t *tmp=(nr_rxtx_thread_data_t *)res->msgData;
 
       if (tmp->proc.decoded_frame_rx != -1)
         decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
-      else 
+      else
          decoded_frame_rx=-1;
 
       pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
     }
 
-    if (  decoded_frame_rx>0 && decoded_frame_rx != curMsg->proc.frame_rx)
+    if (decoded_frame_rx>0 && decoded_frame_rx != curMsg->proc.frame_rx)
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
-            decoded_frame_rx, curMsg->proc.frame_rx  );
+            decoded_frame_rx, curMsg->proc.frame_rx);
 
     // use previous timing_advance value to compute writeTimestamp
-    writeTimestamp = timestamp + UE->frame_parms.get_samples_slot_timestamp(slot_nr, &UE->frame_parms,DURATION_RX_TO_TX - RX_NB_TH) -
-                     firstSymSamp - openair0_cfg[0].tx_sample_advance - UE->N_TA_offset - timing_advance;
+    writeTimestamp = timestamp+
+      UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,DURATION_RX_TO_TX
+      - NR_RX_NB_TH) - firstSymSamp - openair0_cfg[0].tx_sample_advance -
+      UE->N_TA_offset - timing_advance;
 
     // but use current UE->timing_advance value to compute writeBlockSize
     if (UE->timing_advance != timing_advance) {
@@ -940,50 +948,46 @@ void *UE_thread(void *arg) {
     }
 
     int flags = 0;
-    int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - RX_NB_TH;
-    uint8_t tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
-    uint8_t num_UL_slots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots +
-                           (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols!=0);
-    uint8_t first_tx_slot = tdd_period - num_UL_slots;
-    if (slot_tx_usrp%tdd_period==first_tx_slot)
-      flags=2;
-    else     if (slot_tx_usrp%tdd_period==first_tx_slot+num_UL_slots-1)
-      flags = 3;
-    else     if (slot_tx_usrp%tdd_period>first_tx_slot)
+    int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH;
+
+    if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
+
+      uint8_t    tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
+
+      int   nrofUplinkSlots = 0;
+      if (mac->scc_SIB)
+	      nrofUplinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+      else if (mac->scc)
+	      nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+
+      uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSlots != 0);
+      uint8_t first_tx_slot = tdd_period - num_UL_slots;
+
+      if (slot_tx_usrp % tdd_period == first_tx_slot)
+        flags = 2;
+      else if (slot_tx_usrp % tdd_period == first_tx_slot + num_UL_slots - 1)
+        flags = 3;
+      else if (slot_tx_usrp % tdd_period > first_tx_slot)
+        flags = 1;
+    } else {
       flags = 1;
+    }
 
     if (flags || IS_SOFTMODEM_RFSIM)
-      AssertFatal( writeBlockSize ==
-                 UE->rfdevice.trx_write_func(&UE->rfdevice,
-					       writeTimestamp,
-					       txp,
-					       writeBlockSize,
-					       UE->frame_parms.nb_antennas_tx,
-					       flags),"");
+      AssertFatal(writeBlockSize ==
+                  UE->rfdevice.trx_write_func(&UE->rfdevice,
+                                              writeTimestamp,
+                                              txp,
+                                              writeBlockSize,
+                                              UE->frame_parms.nb_antennas_tx,
+                                              flags),"");
     
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       memset(txp[i], 0, writeBlockSize);
 
     nbSlotProcessing++;
-    msgToPush->key=slot_nr;
+    LOG_D(PHY,"Number of slots being processed at the moment: %d\n",nbSlotProcessing);
     pushTpool(&(get_nrUE_params()->Tpool), msgToPush);
-
-    if (IS_SOFTMODEM_RFSIM) {  //getenv("RFSIMULATOR")
-      // FixMe: Wait previous thread is done, because race conditions seems too bad
-      // in case of actual RF board, the overlap between threads mitigate the issue
-      // We must receive one message, that proves the slot processing is done
-      res=pullTpool(&nf, &(get_nrUE_params()->Tpool));
-      nbSlotProcessing--;
-      processingData_t *tmp=(processingData_t *)res->msgData;
-
-      if (tmp->proc.decoded_frame_rx != -1)
-        decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
-      else 
-        decoded_frame_rx=-1;
-        //decoded_frame_rx=tmp->proc.decoded_frame_rx;
-
-      pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
-    }
 
   } // while !oai_exit
 

@@ -1,19 +1,15 @@
 #include <getopt.h>
 #include "SIMULATION/TOOLS/sim.h"
 #include "PHY/CODING/nrSmallBlock/nr_small_block_defs.h"
-#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+#include "coding_unitary_defs.h"
 
 //#define DEBUG_SMALLBLOCKTEST
 
-RAN_CONTEXT_t RC;
-PHY_VARS_UE ***PHY_vars_UE_g;
-uint16_t NB_UE_INST = 1;
 
 int main(int argc, char *argv[])
 {
 	time_stats_t timeEncoder,timeDecoder;
 	opp_enabled=1;
-	cpu_freq_GHz = get_cpu_freq_GHz();
 	reset_meas(&timeEncoder);
 	reset_meas(&timeDecoder);
 	randominit(0);
@@ -141,8 +137,8 @@ int main(int argc, char *argv[])
 				SNR,
 				((double)bitErrorCumulative / (iterations*messageLength)),
 				((double)blockErrorCumulative/iterations),
-				((double)timeEncoder.diff/timeEncoder.trials)/(cpu_freq_GHz),
-				((double)timeDecoder.diff/timeDecoder.trials)/(cpu_freq_GHz*1000.0));
+				((double)timeEncoder.diff/timeEncoder.trials)/(get_cpu_freq_GHz()),
+				((double)timeDecoder.diff/timeDecoder.trials)/(get_cpu_freq_GHz()*1000.0));
 
 		blockErrorCumulative=0;
 		bitErrorCumulative=0;

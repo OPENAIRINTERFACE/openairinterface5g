@@ -33,10 +33,9 @@
 #include "PHY/phy_extern.h"
 #include "proto_agent_common.h"
 #include "common/utils/LOG/log.h"
+#include "common/ran_context.h"
 
-#include "RRC/LTE/rrc_extern.h"
-#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-#include "rrc_eNB_UE_context.h"
+extern RAN_CONTEXT_t RC;
 
 /*
  * message primitives
@@ -319,13 +318,15 @@ error:
 }
 
 int proto_agent_get_ack_result(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
+/* code useless in this status: return 0 anyways
   rlc_op_status_t result = 0;
-  //printf("PROTO_AGENT: handling the data_req_ack message\n");
+  printf("PROTO_AGENT: handling the data_req_ack message\n");
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
   Protocol__FspRlcDataReqAck *data_ack = input->data_req_ack;
   result = data_ack->result;
-  //printf("PROTO_AGENT: ACK RESULT IS %u\n", result);
+  printf("PROTO_AGENT: ACK RESULT IS %u\n", result);
   ack_result = result;
+*/
   return 0;
 }
 
@@ -362,28 +363,23 @@ int proto_agent_pdcp_data_req_process(mod_id_t mod_id, const void *params, Proto
   pdcp_pdu_size = rlc_data->fsp_pdu->fsp_pdu_data.len;
   pdcp_pdu_p = get_free_mem_block(pdcp_pdu_size, __func__);
 
-  if (!pdcp_pdu_p) goto error;
+  if (!pdcp_pdu_p) {
+    LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
+    return -1;
+  }
 
   memcpy(pdcp_pdu_p->data, rlc_data->fsp_pdu->fsp_pdu_data.data, pdcp_pdu_size);
-  result = rlc_data_req(&ctxt_pP
-                        ,srb_flagP
-                        ,flag_MBMS
-                        ,rb_idP
-                        ,muiP
-                        ,confirmP
-                        ,pdcp_pdu_size
-                        ,pdcp_pdu_p
-                        ,NULL
-                        ,NULL
-                       );
+  if (RC.nrrrc) {
+    LOG_D(PROTO_AGENT, "proto_agent received pdcp_data_req \n");
+    // for (int i = 0; i < pdcp_pdu_size; i++)
+    //   printf(" %2.2x", (unsigned char)pdcp_pdu_p->data[i]);
+    // printf("\n");
+    du_rlc_data_req(&ctxt_pP, srb_flagP, flag_MBMS, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+    result = 1;
+  } else {
+    result = rlc_data_req(&ctxt_pP, srb_flagP, flag_MBMS, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p, NULL, NULL);
+  }
   return result;
-error:
-
-  if (pdcp_pdu_p)
-    free_mem_block(pdcp_pdu_p, __func__);
-
-  LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
-  return -1;
 }
 
 int proto_agent_destroy_pdcp_data_ind(Protocol__FlexsplitMessage *msg) {
@@ -500,6 +496,13 @@ error:
   return -1;
 }
 
+boolean_t pdcp_data_ind(
+  const protocol_ctxt_t *const  ctxt_pP,
+  const srb_flag_t srb_flagP,
+  const MBMS_flag_t MBMS_flagP,
+  const rb_id_t rb_id,
+  const sdu_size_t sdu_buffer_size,
+  mem_block_t *const sdu_buffer);
 
 int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
   boolean_t result = 0;
@@ -522,6 +525,8 @@ int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Proto
   ctxt_pP.rnti = ctxt->fsp_rnti;
   ctxt_pP.frame = ctxt->fsp_frame;
   ctxt_pP.subframe = ctxt->fsp_subframe;
+  ctxt_pP.configured = 1;
+  ctxt_pP.brOption = 0;
   ctxt_pP.eNB_index = ctxt->fsp_enb_index;
   srb_flagP = rlc_data->fsp_srb_flag;
   flag_MBMS = rlc_data->fsp_mbms_flag;

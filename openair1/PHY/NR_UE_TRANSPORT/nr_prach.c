@@ -66,7 +66,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
 
   uint8_t Mod_id, fd_occasion, preamble_index, restricted_set, not_found;
   uint16_t rootSequenceIndex, prach_fmt_id, NCS, *prach_root_sequence_map, preamble_offset = 0;
-  uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
+  uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start=INT16_MAX, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
   int16_t prach_tmp[98304*2*4] __attribute__((aligned(32)));
 
   int16_t Ncp = 0, amp, *prach, *prach2, *prachF, *Xu;
@@ -74,6 +74,10 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k, prachStartSymbol, sample_offset_slot;
   //int restricted_Type;
 
+  fd_occasion             = 0;
+  prach_len               = 0;
+  dftlen                  = 0;
+  first_nonzero_root_idx  = 0;
   prach                   = prach_tmp;
   prachF                  = ue->prach_vars[gNB_id]->prachF;
   amp                     = ue->prach_vars[gNB_id]->amp;
@@ -83,14 +87,10 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   mu                      = nrUE_config->prach_config.prach_sub_c_spacing;
   restricted_set          = prach_pdu->restricted_set;
   rootSequenceIndex       = prach_pdu->root_seq_id;
-  n_ra_prb                = prach_pdu->freq_msg1;
+  n_ra_prb                = nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].k1,//prach_pdu->freq_msg1;
   NCS                     = prach_pdu->num_cs;
   prach_fmt_id            = prach_pdu->prach_format;
   preamble_index          = prach_resources->ra_PreambleIndex;
-  fd_occasion             = 0;
-  prach_len               = 0;
-  dftlen                  = 0;
-  first_nonzero_root_idx  = 0;
   kbar                    = 1;
   K                       = 24;
   k                       = 12*n_ra_prb - 6*fp->N_RB_UL;
@@ -130,6 +130,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
     #endif
 
     not_found = 1;
+    nr_fill_du(N_ZC,prach_root_sequence_map);
     preamble_index0 = preamble_index;
     // set preamble_offset to initial rootSequenceIndex and look if we need more root sequences for this
     // preamble index and find the corresponding cyclic shift
@@ -216,12 +217,13 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   k += kbar;
   k *= 2;
 
-  LOG_I(PHY, "PRACH [UE %d] in slot %d, placing PRACH in position %d, msg1 frequency start %d, preamble_offset %d, first_nonzero_root_idx %d\n", Mod_id,
-    slot,
-    k,
-    n_ra_prb,
-    preamble_offset,
-    first_nonzero_root_idx);
+  LOG_I(PHY, "PRACH [UE %d] in slot %d, placing PRACH in position %d, msg1 frequency start %d (k1 %d), preamble_offset %d, first_nonzero_root_idx %d\n", Mod_id,
+        slot,
+        k,
+        n_ra_prb,
+        nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].k1,
+        preamble_offset,
+        first_nonzero_root_idx);
 
   Xu = (int16_t*)ue->X_u[preamble_offset-first_nonzero_root_idx];
 
@@ -244,86 +246,82 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
    *********************************************************/
 
   if (mu==1) {
-  if (fp->N_RB_UL <= 100)
-    AssertFatal(1 == 0, "N_RB_UL %d not support for NR PRACH yet\n", fp->N_RB_UL);
-  else if (fp->N_RB_UL < 137) {
-    if (fp->threequarter_fs == 0) {
-      //40 MHz @ 61.44 Ms/s
-      //50 MHz @ 61.44 Ms/s
+    switch(fp->samples_per_subframe) {
+    case 15360:
+      // 10, 15 MHz @ 15.36 Ms/s
       if (prach_sequence_length == 0) {
         if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
-            dftlen = 49152;
+          dftlen = 12288;
         if (prach_fmt_id == 3)
-            dftlen = 12288;
-      } // 839 sequence
-      else {
-        switch (mu){
-          case 1:
-            dftlen = 2048;
-            break;
-          default:
-            AssertFatal(1 == 0, "Shouldn't get here\n");
-            break;
-        }
+          dftlen = 3072;
+      } else { // 839 sequence
+        dftlen = 512;
       }
-    } else { // threequarter sampling
-      //  40 MHz @ 46.08 Ms/s
+      break;
+
+    case 30720:
+      // 20, 25, 30 MHz @ 30.72 Ms/s
       if (prach_sequence_length == 0) {
-        AssertFatal(fp->N_RB_UL <= 107, "cannot do 108..136 PRBs with 3/4 sampling\n");
+        if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
+          dftlen = 24576;
+        if (prach_fmt_id == 3)
+          dftlen = 6144;
+      } else { // 839 sequence
+        dftlen = 1024;
+      }
+      break;
+
+    case 46080:
+      // 40 MHz @ 46.08 Ms/s
+      if (prach_sequence_length == 0) {
         if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
           dftlen = 36864;
         if (prach_fmt_id == 3)
           dftlen = 9216;
-      } else {
-        switch (mu){
-          case 1:
-            dftlen = 1536;
-          break;
-          default:
-            AssertFatal(1 == 0, "Shouldn't get here\n");
-            break;
-        }
-      } // short format
-    } // 3/4 sampling
-  } // <=50 MHz BW
-  else if (fp->N_RB_UL <= 273) {
-    if (fp->threequarter_fs == 0) {
-    //80,90,100 MHz @ 122.88 Ms/s
+      } else { // 839 sequence
+        dftlen = 1536;
+      }
+      break;
+
+    case 61440:
+      // 40, 50, 60 MHz @ 61.44 Ms/s
+      if (prach_sequence_length == 0) {
+        if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
+          dftlen = 49152;
+        if (prach_fmt_id == 3)
+          dftlen = 12288;
+      } else { // 839 sequence
+        dftlen = 2048;
+      }
+      break;
+
+    case 92160:
+      // 50, 60, 70, 80, 90 MHz @ 92.16 Ms/s
+      if (prach_sequence_length == 0) {
+        if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
+          dftlen = 73728;
+        if (prach_fmt_id == 3)
+          dftlen = 18432;
+      } else { // 839 sequence
+        dftlen = 3072;
+      }
+      break;
+
+    case 122880:
+      // 70, 80, 90, 100 MHz @ 122.88 Ms/s
       if (prach_sequence_length == 0) {
         if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
           dftlen = 98304;
         if (prach_fmt_id == 3)
           dftlen = 24576;
+      } else { // 839 sequence
+        dftlen = 4096;
       }
-    } else { // threequarter sampling
-      switch (mu){
-        case 1:
-          dftlen = 4096;
-          break;
-        default:
-          AssertFatal(1 == 0, "Shouldn't get here\n");
-          break;
-      }
+      break;
+
+    default:
+      AssertFatal(1==0,"sample rate %f MHz not supported for numerology %d\n", fp->samples_per_subframe / 1000.0, mu);
     }
-  } else {
-    AssertFatal(fp->N_RB_UL <= 217, "cannot do more than 217 PRBs with 3/4 sampling\n");
-    //  80 MHz @ 92.16 Ms/s
-    if (prach_sequence_length == 0) {
-      if (prach_fmt_id == 0 || prach_fmt_id == 1 || prach_fmt_id == 2)
-        dftlen = 73728;
-      if (prach_fmt_id == 3)
-        dftlen = 18432;
-    } else {
-      switch (mu){
-        case 1:
-          dftlen = 3072;
-          break;
-        default:
-          AssertFatal(1 == 0, "Shouldn't get here\n");
-          break;
-      }
-    }
-  }
   }
   else if (mu==3) {
     if (fp->threequarter_fs) 
@@ -425,15 +423,16 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   uint8_t  use_extended_prach_prefix = 0;
   if(fp->numerology_index == 0) {
     if (prachStartSymbol == 0 || prachStartSymbol == 7)
-	  use_extended_prach_prefix = 1;
+      use_extended_prach_prefix = 1;
   }
   else {
     if (slot%(fp->slots_per_subframe/2)==0 && prachStartSymbol == 0)
-	  use_extended_prach_prefix = 1;
+      use_extended_prach_prefix = 1;
   }
-    
-  if (fp->N_RB_UL <= 34) { //32 PRB case 61.44Msps
-    if (fp->threequarter_fs == 0) {
+
+  if (mu == 3) {
+    switch (fp->samples_per_subframe) {
+    case 61440: // 32 PRB case, 61.44 Msps
       Ncp<<=1; //to account for 61.44Mbps
       // This is after cyclic prefix 
       prach2 = prach+(Ncp<<1); //times 2 for complex samples
@@ -491,13 +490,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (512*12)+Ncp;
 	}		
       }
-    }
-    else
-      AssertFatal(1==0,"3/4 sampling not supported for this PRACH size %d\n",fp->N_RB_UL);
-   
-  }
-  else if (fp->N_RB_UL <= 68) {//66 PRB case, 122.88 Msps 
-    if (fp->threequarter_fs == 0) {
+      break;
+
+    case 122880: // 66 PRB case, 122.88 Msps
       Ncp<<=2; //to account for 122.88Mbps
       // This is after cyclic prefix 
       prach2 = prach+(Ncp<<1); //times 2 for complex samples
@@ -555,13 +550,211 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (1024*12)+Ncp;
 	}	
       }
+      break;
+
+    default:
+      AssertFatal(1==0,"sample rate %f MHz not supported for numerology %d\n", fp->samples_per_subframe / 1000.0, mu);
     }
-    else
-      AssertFatal(1==0,"3/4 sampling not supported for this PRACH size %d\n",fp->N_RB_UL);
-  }
-  else if (fp->N_RB_UL < 137) { // 46.08 or 61.44 Ms/s
-    if (fp->threequarter_fs == 0) { // full sampling @ 61.44 Ms/s
-      Ncp<<=1; //to account for 61.44Mbps 
+  } else if (mu == 1) {
+    switch (fp->samples_per_subframe) {
+    case 15360: // full sampling @ 15.36 Ms/s
+      Ncp = Ncp/2; // to account for 15.36 Ms/s
+      // This is after cyclic prefix
+      prach2 = prach+(2*Ncp); // times 2 for complex samples
+      if (prach_sequence_length == 0){
+        if (prach_fmt_id == 0) { // 24576 samples @ 30.72 Ms/s, 12288 samples @ 15.36 Ms/s
+          idft(IDFT_12288,prachF,prach2,1);
+          // here we have | empty  | Prach12288 |
+          memmove(prach,prach+(12288<<1),(Ncp<<2));
+          // here we have | Prefix | Prach12288 |
+          prach_len = 12288+Ncp;
+        } else if (prach_fmt_id == 1) { // 24576 samples @ 30.72 Ms/s, 12288 samples @ 15.36 Ms/s
+          idft(IDFT_12288,prachF,prach2,1);
+          // here we have | empty  | Prach12288 | empty12288 |
+          memmove(prach2+(12288<<1),prach2,(12288<<2));
+          // here we have | empty  | Prach12288 | Prach12288 |
+          memmove(prach,prach+(12288<<2),(Ncp<<2));
+          // here we have | Prefix | Prach12288 | Prach12288 |
+          prach_len = (12288*2)+Ncp;
+        } else if (prach_fmt_id == 2) { // 24576 samples @ 30.72 Ms/s, 12288 samples @ 15.36 Ms/s
+          idft(IDFT_12288,prachF,prach2,1);
+          // here we have | empty  | Prach12288 | empty12288 | empty12288 | empty12288 |
+          memmove(prach2+(12288<<1),prach2,(12288<<2));
+          // here we have | empty  | Prach12288 | Prach12288 | empty12288 | empty12288 |
+          memmove(prach2+(12288<<2),prach2,(12288<<3));
+          // here we have | empty  | Prach12288 | Prach12288 | Prach12288 | Prach12288 |
+          memmove(prach,prach+(12288<<3),(Ncp<<2));
+          // here we have | Prefix | Prach12288 | Prach12288 | Prach12288 | Prach12288 |
+          prach_len = (12288*4)+Ncp;
+        } else if (prach_fmt_id == 3) { // 6144 samples @ 30.72 Ms/s, 3072 samples @ 15.36 Ms/s
+          idft(IDFT_3072,prachF,prach2,1);
+          // here we have | empty  | Prach3072 | empty3072 | empty3072 | empty3072 |
+          memmove(prach2+(3072<<1),prach2,(3072<<2));
+          // here we have | empty  | Prach3072 | Prach3072 | empty3072 | empty3072 |
+          memmove(prach2+(3072<<2),prach2,(3072<<3));
+          // here we have | empty  | Prach3072 | Prach3072 | Prach3072 | Prach3072 |
+          memmove(prach,prach+(3072<<3),(Ncp<<2));
+          // here we have | Prefix | Prach3072 | Prach3072 | Prach3072 | Prach3072 |
+          prach_len = (3072*4)+Ncp;
+        }
+      } else { // short PRACH sequence
+	if (use_extended_prach_prefix)
+	  Ncp += 8; // 16*kappa, kappa=0.5 for 15.36 Ms/s
+	prach2 = prach+(2*Ncp); // times 2 for complex samples
+        if (prach_fmt_id == 9) {
+          idft(IDFT_512,prachF,prach2,1);
+          // here we have | empty  | Prach512 |
+          memmove(prach,prach+(512<<1),(Ncp<<2));
+          // here we have | Prefix | Prach512 |
+          prach_len = (512*1)+Ncp;
+        } else if (prach_fmt_id == 4 || prach_fmt_id == 7) {
+          idft(IDFT_512,prachF,prach2,1);
+          // here we have | empty  | Prach512 | empty512 |
+          memmove(prach2+(512<<1),prach2,(512<<2));
+          // here we have | empty  | Prach512 | Prach512 |
+          memmove(prach,prach+(512<<1),(Ncp<<2));
+          // here we have | Prefix | Prach512 | Prach512 |
+          prach_len = (512*2)+Ncp;
+        } else if (prach_fmt_id == 5) { // 4x512
+          idft(IDFT_512,prachF,prach2,1);
+          // here we have | empty  | Prach512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<1),prach2,(512<<2));
+          // here we have | empty  | Prach512 | Prach512 | empty512 | empty512 |
+          memmove(prach2+(512<<2),prach2,(512<<3));
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 |
+          memmove(prach,prach+(512<<1),(Ncp<<2));
+          // here we have | Prefix | Prach512 | Prach512 | Prach512 | Prach512 |
+          prach_len = (512*4)+Ncp;
+        } else if (prach_fmt_id == 6) { // 6x512
+          idft(IDFT_512,prachF,prach2,1);
+          // here we have | empty  | Prach512 | empty512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<1),prach2,(512<<2));
+          // here we have | empty  | Prach512 | Prach512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<2),prach2,(512<<3));
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 | empty512 | empty512 |
+          memmove(prach2+(512<<3),prach2,(512<<3));
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 |
+          memmove(prach,prach+(512<<1),(Ncp<<2));
+          // here we have | Prefix | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 |
+          prach_len = (512*6)+Ncp;
+        } else if (prach_fmt_id == 8) { // 12x512
+          idft(IDFT_512,prachF,prach2,1);
+          // here we have | empty  | Prach512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<1),prach2,(512<<2));
+          // here we have | empty  | Prach512 | Prach512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<2),prach2,(512<<3));
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<3),prach2,(512<<3));
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | empty512 | empty512 | empty512 | empty512 | empty512 | empty512 |
+          memmove(prach2+(512<<1)*6,prach2,(512<<2)*6);
+          // here we have | empty  | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 |
+          memmove(prach,prach+(512<<1),(Ncp<<2));
+          // here we have | Prefix | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 | Prach512 |
+          prach_len = (512*12)+Ncp;
+        }
+      }
+      break;
+
+    case 30720: // full sampling @ 30.72 Ms/s
+      Ncp = Ncp*1; // to account for 30.72 Ms/s
+      // This is after cyclic prefix
+      prach2 = prach+(2*Ncp); // times 2 for complex samples
+      if (prach_sequence_length == 0){
+        if (prach_fmt_id == 0) { // 24576 samples @ 30.72 Ms/s
+          idft(IDFT_24576,prachF,prach2,1);
+          // here we have | empty  | Prach24576 |
+          memmove(prach,prach+(24576<<1),(Ncp<<2));
+          // here we have | Prefix | Prach24576 |
+          prach_len = 24576+Ncp;
+        } else if (prach_fmt_id == 1) { // 24576 samples @ 30.72 Ms/s
+          idft(IDFT_24576,prachF,prach2,1);
+          // here we have | empty  | Prach24576 | empty24576 |
+          memmove(prach2+(24576<<1),prach2,(24576<<2));
+          // here we have | empty  | Prach24576 | Prach24576 |
+          memmove(prach,prach+(24576<<2),(Ncp<<2));
+          // here we have | Prefix | Prach24576 | Prach24576 |
+          prach_len = (24576*2)+Ncp;
+        } else if (prach_fmt_id == 2) { // 24576 samples @ 30.72 Ms/s
+          idft(IDFT_24576,prachF,prach2,1);
+          // here we have | empty  | Prach24576 | empty24576 | empty24576 | empty24576 |
+          memmove(prach2+(24576<<1),prach2,(24576<<2));
+          // here we have | empty  | Prach24576 | Prach24576 | empty24576 | empty24576 |
+          memmove(prach2+(24576<<2),prach2,(24576<<3));
+          // here we have | empty  | Prach24576 | Prach24576 | Prach24576 | Prach24576 |
+          memmove(prach,prach+(24576<<3),(Ncp<<2));
+          // here we have | Prefix | Prach24576 | Prach24576 | Prach24576 | Prach24576 |
+          prach_len = (24576*4)+Ncp;
+        } else if (prach_fmt_id == 3) { // 6144 samples @ 30.72 Ms/s
+          idft(IDFT_6144,prachF,prach2,1);
+          // here we have | empty  | Prach6144 | empty6144 | empty6144 | empty6144 |
+          memmove(prach2+(6144<<1),prach2,(6144<<2));
+          // here we have | empty  | Prach6144 | Prach6144 | empty6144 | empty6144 |
+          memmove(prach2+(6144<<2),prach2,(6144<<3));
+          // here we have | empty  | Prach6144 | Prach6144 | Prach6144 | Prach6144 |
+          memmove(prach,prach+(6144<<3),(Ncp<<2));
+          // here we have | Prefix | Prach6144 | Prach6144 | Prach6144 | Prach6144 |
+          prach_len = (6144*4)+Ncp;
+        }
+      } else { // short PRACH sequence
+	if (use_extended_prach_prefix)
+	  Ncp += 16; // 16*kappa, kappa=1 for 30.72Msps
+	prach2 = prach+(2*Ncp); // times 2 for complex samples
+        if (prach_fmt_id == 9) {
+          idft(IDFT_1024,prachF,prach2,1);
+          // here we have | empty  | Prach1024 |
+          memmove(prach,prach+(1024<<1),(Ncp<<2));
+          // here we have | Prefix | Prach1024 |
+          prach_len = (1024*1)+Ncp;
+        } else if (prach_fmt_id == 4 || prach_fmt_id == 7) {
+          idft(IDFT_1024,prachF,prach2,1);
+          // here we have | empty  | Prach1024 | empty1024 |
+          memmove(prach2+(1024<<1),prach2,(1024<<2));
+          // here we have | empty  | Prach1024 | Prach1024 |
+          memmove(prach,prach+(1024<<1),(Ncp<<2));
+          // here we have | Prefix | Prach1024 | Prach1024 |
+          prach_len = (1024*2)+Ncp;
+        } else if (prach_fmt_id == 5) { // 4x1024
+          idft(IDFT_1024,prachF,prach2,1);
+          // here we have | empty  | Prach1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<1),prach2,(1024<<2));
+          // here we have | empty  | Prach1024 | Prach1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<2),prach2,(1024<<3));
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          memmove(prach,prach+(1024<<1),(Ncp<<2));
+          // here we have | Prefix | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          prach_len = (1024*4)+Ncp;
+        } else if (prach_fmt_id == 6) { // 6x1024
+          idft(IDFT_1024,prachF,prach2,1);
+          // here we have | empty  | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<1),prach2,(1024<<2));
+          // here we have | empty  | Prach1024 | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<2),prach2,(1024<<3));
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<3),prach2,(1024<<3));
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          memmove(prach,prach+(1024<<1),(Ncp<<2));
+          // here we have | Prefix | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          prach_len = (1024*6)+Ncp;
+        } else if (prach_fmt_id == 8) { // 12x1024
+          idft(IDFT_1024,prachF,prach2,1);
+          // here we have | empty  | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<1),prach2,(1024<<2));
+          // here we have | empty  | Prach1024 | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<2),prach2,(1024<<3));
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<3),prach2,(1024<<3));
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 | empty1024 |
+          memmove(prach2+(1024<<1)*6,prach2,(1024<<2)*6);
+          // here we have | empty  | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          memmove(prach,prach+(1024<<1),(Ncp<<2));
+          // here we have | Prefix | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 | Prach1024 |
+          prach_len = (1024*12)+Ncp;
+        }
+      }
+      break;
+
+    case 61440: // full sampling @ 61.44 Ms/s
+      Ncp = Ncp*2; // to account for 61.44 Ms/s
       // This is after cyclic prefix 
       prach2 = prach+(Ncp<<1); //times 2 for complex samples
       if (prach_sequence_length == 0){
@@ -587,7 +780,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           memmove(prach,prach+(49152<<3),(Ncp<<2));
           // here we have |Prefix | Prach49152 | Prach49152| Prach49152 | Prach49152
           prach_len = (49152*4)+Ncp;
-        } else if (prach_fmt_id == 3) { // //6144 samples @ 30.72 Ms/s, 12288 samples @ 61.44 Ms/s
+        } else if (prach_fmt_id == 3) { // 6144 samples @ 30.72 Ms/s, 12288 samples @ 61.44 Ms/s
           idft(IDFT_12288,prachF,prach2,1);
           memmove(prach2+(12288<<1),prach2,(12288<<2));
           // here we have |empty | Prach12288 | Prach12288| empty12288 | empty12288
@@ -649,7 +842,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (2048*12)+Ncp;
         }
       }
-    } else {  // threequarter sampling @ 46.08 Ms/s
+      break;
+
+    case 46080: // threequarter sampling @ 46.08 Ms/s
       Ncp = (Ncp*3)/2;
       prach2 = prach+(Ncp<<1);
       if (prach_sequence_length == 0){
@@ -738,9 +933,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (1536*12)+Ncp;
         }
       }
-    }
-  } else if (fp->N_RB_UL <= 273) {// 92.16 or 122.88 Ms/s
-    if (fp->threequarter_fs == 0) { // full sampling @ 122.88 Ms/s
+      break;
+
+    case 122880: // full sampling @ 122.88 Ms/s
       Ncp<<=2; //to account for 122.88Mbps
       // This is after cyclic prefix
       prach2 = prach+(Ncp<<1); //times 2 for complex samples
@@ -828,7 +1023,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (4096*12)+Ncp;
         }
       }
-    } else { // three quarter sampling @ 92.16 Ms/s
+      break;
+
+    case 92160: // three quarter sampling @ 92.16 Ms/s
       Ncp = (Ncp*3); //to account for 92.16 Msps
       prach2 = prach+(Ncp<<1); //times 2 for complex samples
       if (prach_sequence_length == 0){
@@ -915,6 +1112,10 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
           prach_len = (3072*12)+Ncp;
         }
       }
+      break;
+
+    default:
+      AssertFatal(1==0,"sample rate %f MHz not supported for numerology %d\n", fp->samples_per_subframe / 1000.0, mu);
     }
   }
 

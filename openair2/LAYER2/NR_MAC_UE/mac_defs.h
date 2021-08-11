@@ -234,9 +234,12 @@ typedef struct {
 
 typedef enum {
   RA_UE_IDLE = 0,
-  WAIT_RAR = 1,
-  WAIT_CONTENTION_RESOLUTION = 2,
-  RA_SUCCEEDED = 3
+  GENERATE_IDLE = 0,
+  GENERATE_PREAMBLE = 1,
+  WAIT_RAR = 2,
+  WAIT_CONTENTION_RESOLUTION = 3,
+  RA_SUCCEEDED = 4,
+  RA_FAILED = 5
 } RA_state_t;
 
 typedef struct {
@@ -257,8 +260,10 @@ typedef struct {
   uint8_t RA_attempt_number;
   /// Random-access procedure flag
   uint8_t RA_active;
+  /// Random-access preamble index
+  int ra_PreambleIndex;
   /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
-  uint8_t generate_nr_prach;
+  RA_state_t generate_nr_prach;
 
   /// Random-access window counter
   int16_t RA_window_cnt;
@@ -289,6 +294,8 @@ typedef struct {
   uint8_t RA_contention_resolution_timer_active;
   /// Random-access Contention Resolution Timer count value
   uint8_t RA_contention_resolution_cnt;
+  /// Transmitted UE Contention Resolution Identifier
+  uint8_t cont_res_id[6];
 
   /// BeamfailurerecoveryConfig
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
@@ -308,22 +315,27 @@ typedef struct {
 typedef struct {
 
   NR_ServingCellConfigCommon_t    *scc;
-  NR_CellGroupConfig_t            *scg;
+  NR_ServingCellConfigCommonSIB_t *scc_SIB;
+  NR_CellGroupConfig_t            *cg;
   int                             servCellIndex;
   NR_CSI_ReportConfig_t           *csirc;
+  long                            physCellId;
   ////  MAC config
+  int                             common_configuration_complete;
   NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
   NR_BSR_Config_t                 *bsr_Config;
   NR_TAG_Config_t                 *tag_Config;
   NR_PHR_Config_t                 *phr_Config;
   NR_RNTI_Value_t                 *cs_RNTI;
-  NR_MIB_t                         *mib;
+  NR_MIB_t                        *mib;
 
   NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP];
   NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP];
   NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP][FAPI_NR_MAX_CORESET_PER_BWP];
   NR_SearchSpace_t                *SSpace[MAX_NUM_BWP][FAPI_NR_MAX_CORESET_PER_BWP][FAPI_NR_MAX_SS_PER_CORESET];
+
+  lte_frame_type_t frame_type;
 
   /*BWP*/
   // dedicated active DL BWP
@@ -352,7 +364,8 @@ typedef struct {
   uint8_t mib_ssb;
   /// Last NDI of UL HARQ processes
   uint8_t UL_ndi[NR_MAX_HARQ_PROCESSES];
-
+  /// first ULTX of UL HARQ processes
+  int first_ul_tx[NR_MAX_HARQ_PROCESSES];
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;
   fapi_nr_dl_config_request_t dl_config_request;
@@ -371,6 +384,9 @@ typedef struct {
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
+  frequency_range_t frequency_range;
+
+  dci_pdu_rel15_t def_dci_pdu_rel15[8];
 
   // Defined for abstracted mode
   nr_downlink_indication_t dl_info;
@@ -493,6 +509,9 @@ typedef struct ssb_list_info {
   ssb_info_t tx_ssb[MAX_NB_SSB];
   uint8_t   nb_tx_ssb;
 } ssb_list_info_t;
+
+void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id);
+void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

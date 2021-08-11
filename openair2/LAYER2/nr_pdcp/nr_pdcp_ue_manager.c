@@ -85,7 +85,7 @@ nr_pdcp_ue_t *nr_pdcp_manager_get_ue(nr_pdcp_ue_manager_t *_m, int rnti)
     if (m->ue_list[i]->rnti == rnti)
       return m->ue_list[i];
 
-  LOG_D(PDCP, "%s:%d:%s: new UE %d\n", __FILE__, __LINE__, __FUNCTION__, rnti);
+  LOG_D(PDCP, "%s:%d:%s: new UE 0x%x\n", __FILE__, __LINE__, __FUNCTION__, rnti);
 
   m->ue_count++;
   m->ue_list = realloc(m->ue_list, sizeof(nr_pdcp_ue_t *) * m->ue_count);
@@ -187,6 +187,20 @@ void nr_pdcp_ue_add_drb_pdcp_entity(nr_pdcp_ue_t *ue, int drb_id, nr_pdcp_entity
   }
 
   ue->drb[drb_id] = entity;
+}
+
+/* must be called with lock acquired */
+nr_pdcp_ue_t **nr_pdcp_manager_get_ue_list(nr_pdcp_ue_manager_t *_m)
+{
+  nr_pdcp_ue_manager_internal_t *m = _m;
+  return m->ue_list;
+}
+
+/* must be called with lock acquired */
+int nr_pdcp_manager_get_ue_count(nr_pdcp_ue_manager_t *_m)
+{
+  nr_pdcp_ue_manager_internal_t *m = _m;
+  return m->ue_count;
 }
 
 int nr_pdcp_get_first_rnti(nr_pdcp_ue_manager_t *_m)

@@ -515,7 +515,7 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     ul_info.slot_rx = slot;
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
-    if (mac->scc && is_nr_UL_slot(mac->scc, ul_info.slot_tx))
+    if (mac->scc && is_nr_UL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_tx, mac->frame_type))
     {
         nr_ue_ul_indication(&ul_info);
     }
@@ -722,7 +722,11 @@ void *nrue_standalone_pnf_task(void *context)
 }
 
 //  L2 Abstraction Layer
-int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){
+int handle_bcch_bch(module_id_t module_id, int cc_id,
+                    unsigned int gNB_index, uint8_t *pduP,
+                    unsigned int additional_bits,
+                    uint32_t ssb_index, uint32_t ssb_length,
+                    uint16_t ssb_start_subcarrier, uint16_t cell_id){
 
   return nr_ue_decode_mib(module_id,
 			  cc_id,
@@ -730,14 +734,15 @@ int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, ui
 			  additional_bits,
 			  ssb_length,  //  Lssb = 64 is not support    
 			  ssb_index,
-			  pduP, 
+			  pduP,
+			  ssb_start_subcarrier,
 			  cell_id);
 
 }
 
 //  L2 Abstraction Layer
 int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len){
-  return nr_ue_decode_sib1(module_id, cc_id, gNB_index, sibs_mask, pduP, pdu_len);
+  return nr_ue_decode_BCCH_DL_SCH(module_id, cc_id, gNB_index, sibs_mask, pduP, pdu_len);
 }
 
 //  L2 Abstraction Layer
@@ -765,7 +770,9 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   ret = nr_ue_scheduler(NULL, ul_info);
 
-  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx))
+  NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
+
+  if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
 
   switch(ret){
@@ -792,7 +799,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
 
-  if ((!dl_info->dci_ind && !dl_info->rx_ind) || !def_dci_pdu_rel15) { //Melissa review this with Raymond
+  if ((!dl_info->dci_ind && !dl_info->rx_ind)) { //Melissa review this with Raymond|| !def_dci_pdu_rel15
     // UL indication to schedule DCI reception
     nr_ue_scheduler(dl_info, NULL);
   } else {
@@ -830,14 +837,15 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 
         switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
 
-        case FAPI_NR_RX_PDU_TYPE_MIB:
+        case FAPI_NR_RX_PDU_TYPE_SSB:
 
           ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.pdu,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.additional_bits,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_index,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_length,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_MIB;
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu,
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.additional_bits,
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_index,
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_length,
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_start_subcarrier,
+                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_SSB;
 
           break;
 

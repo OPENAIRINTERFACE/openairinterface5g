@@ -82,12 +82,15 @@ unsigned short config_frames[4] = {2,9,11,13};
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 #include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
-#define NRUE_MAIN
 #include <executables/nr-uesoftmodem.h>
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
 
+#include "nr_nas_msg_sim.h"
+
 extern const char *duplex_mode[];
+THREAD_STRUCT thread_struct;
+nrUE_params_t nrUE_params;
 
 // Thread variables
 pthread_cond_t nfapi_sync_cond;
@@ -146,11 +149,11 @@ int           card_offset = 0;
 uint64_t num_missed_slots = 0; // counter for the number of missed slots
 int     transmission_mode = 1;
 int            numerology = 0;
-int        usrp_tx_thread = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
-
-char uecap_xer[1024],uecap_xer_in=0;
+uint32_t       N_RB_DL    = 106;
+char         uecap_xer_in = 0;
+char         uecap_xer[1024];
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -188,6 +191,7 @@ int create_tasks_nrue(uint32_t ue_nb) {
   itti_wait_ready(1);
 
   if (ue_nb > 0) {
+    LOG_I(NR_RRC,"create TASK_RRC_NRUE \n");
     if (itti_create_task (TASK_RRC_NRUE, rrc_nrue_task, NULL) < 0) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
@@ -200,6 +204,11 @@ int create_tasks_nrue(uint32_t ue_nb) {
       return -1;
     }
   }
+  if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
+    LOG_E(NR_RRC, "Create task for NAS UE failed\n");
+    return -1;
+  }
+
   itti_wait_ready(0);
   return 0;
 }
@@ -238,9 +247,16 @@ nrUE_params_t *get_nrUE_params(void) {
 }
 /* initialie thread pools used for NRUE processing paralleliation */ 
 void init_tpools(uint8_t nun_dlsch_threads) {
-  char *params=calloc(1,(RX_NB_TH*3)+1);
-  for (int i=0; i<RX_NB_TH; i++) {
-    memcpy(params+(i*3),"-1,",3);
+  char *params = NULL;
+  if (IS_SOFTMODEM_RFSIM) {
+    params = calloc(1,2);
+    memcpy(params,"N",1);
+  }
+  else {
+    params = calloc(1,(NR_RX_NB_TH*NR_NB_TH_SLOT*3)+1);
+    for (int i=0; i<NR_RX_NB_TH*NR_NB_TH_SLOT; i++) {
+      memcpy(params+(i*3),"-1,",3);
+    }
   }
   initTpool(params, &(nrUE_params.Tpool), false);
   free(params);
@@ -264,7 +280,6 @@ static void get_options(void) {
     printf("%s\n",uecap_xer);
     uecap_xer_in=1;
   } /* UE with config file  */
-    init_tpools(nrUE_params.nr_dlsch_parallel);
 }
 
 // set PHY vars from command line
@@ -327,8 +342,9 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
     LOG_I(PHY, "Set UE frame_type %d\n", fp->frame_type);
   }
 
-  LOG_I(PHY, "Set UE N_RB_DL %d\n", fp->N_RB_DL);
+  fp->N_RB_DL = N_RB_DL;
 
+  LOG_I(PHY, "Set UE N_RB_DL %d\n", N_RB_DL);
   LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs);
 
 }
@@ -340,92 +356,10 @@ void init_openair0(void) {
 
   for (card=0; card<MAX_CARDS; card++) {
     uint64_t dl_carrier, ul_carrier;
-    openair0_cfg[card].configFilename = NULL;
-    openair0_cfg[card].threequarter_fs = frame_parms->threequarter_fs;
-    numerology = frame_parms->numerology_index;
-
-    if(frame_parms->N_RB_DL == 66) {
-      if (numerology==3) {
-          openair0_cfg[card].sample_rate=122.88e6;
-          openair0_cfg[card].samples_per_frame = 1228800;
-        } else {
-          LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
-          exit(-1);
-        }
-    }else if(frame_parms->N_RB_DL == 32) {
-      if (numerology==3) {
-          openair0_cfg[card].sample_rate=61.44e6;
-          openair0_cfg[card].samples_per_frame = 614400;
-        } else {
-          LOG_E(PHY,"Unsupported numerology! FR2 supports only 120KHz SCS for now.\n");
-          exit(-1);
-        }
-    }else if(frame_parms->N_RB_DL == 217) {
-      if (numerology==1) {
-        if (frame_parms->threequarter_fs) {
-          openair0_cfg[card].sample_rate=92.16e6;
-          openair0_cfg[card].samples_per_frame = 921600;
-        }
-        else {
-          openair0_cfg[card].sample_rate=122.88e6;
-          openair0_cfg[card].samples_per_frame = 1228800;
-        }
-      } else {
-        LOG_E(PHY,"Unsupported numerology!\n");
-        exit(-1);
-      }
-    } else if(frame_parms->N_RB_DL == 273) {
-      if (numerology==1) {
-        if (frame_parms->threequarter_fs) {
-          AssertFatal(0 == 1,"three quarter sampling not supported for N_RB 273\n");
-        }
-        else {
-          openair0_cfg[card].sample_rate=122.88e6;
-          openair0_cfg[card].samples_per_frame = 1228800;
-        }
-      } else {
-        LOG_E(PHY,"Unsupported numerology!\n");
-        exit(-1);
-      }
-    } else if(frame_parms->N_RB_DL == 106) {
-      if (numerology==0) {
-        if (frame_parms->threequarter_fs) {
-          openair0_cfg[card].sample_rate=23.04e6;
-          openair0_cfg[card].samples_per_frame = 230400;
-        } else {
-          openair0_cfg[card].sample_rate=30.72e6;
-          openair0_cfg[card].samples_per_frame = 307200;
-        }
-      } else if (numerology==1) {
-        if (frame_parms->threequarter_fs) {
-          openair0_cfg[card].sample_rate=46.08e6;
-          openair0_cfg[card].samples_per_frame = 460800;
-	}
-	else {
-          openair0_cfg[card].sample_rate=61.44e6;
-          openair0_cfg[card].samples_per_frame = 614400;
-        }
-      } else if (numerology==2) {
-        openair0_cfg[card].sample_rate=122.88e6;
-        openair0_cfg[card].samples_per_frame = 1228800;
-      } else {
-        LOG_E(PHY,"Unsupported numerology!\n");
-        exit(-1);
-      }
-    } else if(frame_parms->N_RB_DL == 50) {
-      openair0_cfg[card].sample_rate=15.36e6;
-      openair0_cfg[card].samples_per_frame = 153600;
-    } else if (frame_parms->N_RB_DL == 25) {
-      openair0_cfg[card].sample_rate=7.68e6;
-      openair0_cfg[card].samples_per_frame = 76800;
-    } else if (frame_parms->N_RB_DL == 6) {
-      openair0_cfg[card].sample_rate=1.92e6;
-      openair0_cfg[card].samples_per_frame = 19200;
-    }
-    else {
-      LOG_E(PHY,"Unknown NB_RB %d!\n",frame_parms->N_RB_DL);
-      exit(-1);
-    }
+    openair0_cfg[card].configFilename    = NULL;
+    openair0_cfg[card].threequarter_fs   = frame_parms->threequarter_fs;
+    openair0_cfg[card].sample_rate       = frame_parms->samples_per_subframe * 1e3;
+    openair0_cfg[card].samples_per_frame = frame_parms->samples_per_frame;
 
     if (frame_parms->frame_type==TDD)
       openair0_cfg[card].duplex_mode = duplex_mode_TDD;
@@ -436,11 +370,12 @@ void init_openair0(void) {
     openair0_cfg[card].num_rb_dl = frame_parms->N_RB_DL;
     openair0_cfg[card].clock_source = get_softmodem_params()->clock_source;
     openair0_cfg[card].time_source = get_softmodem_params()->timing_source;
-    openair0_cfg[card].tx_num_channels = min(2, frame_parms->nb_antennas_tx);
-    openair0_cfg[card].rx_num_channels = min(2, frame_parms->nb_antennas_rx);
+    openair0_cfg[card].tx_num_channels = min(4, frame_parms->nb_antennas_tx);
+    openair0_cfg[card].rx_num_channels = min(4, frame_parms->nb_antennas_rx);
 
-    LOG_I(PHY, "HW: Configuring card %d, tx/rx num_channels %d/%d, duplex_mode %s\n",
+    LOG_I(PHY, "HW: Configuring card %d, sample_rate %f, tx/rx num_channels %d/%d, duplex_mode %s\n",
       card,
+      openair0_cfg[card].sample_rate,
       openair0_cfg[card].tx_num_channels,
       openair0_cfg[card].rx_num_channels,
       duplex_mode[openair0_cfg[card].duplex_mode]);
@@ -472,9 +407,10 @@ void init_pdcp(int ue_id) {
   }
   pdcp_layer_init();
   nr_pdcp_module_init(pdcp_initmask, ue_id);
+  //nr_DRB_preconfiguration();
+  //pdcp_module_init(pdcp_initmask, 0);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
-  LOG_I(PDCP, "Before getting out from init_pdcp() \n");
 }
 
 // Stupid function addition because UE itti messages queues definition is common with eNB
@@ -502,6 +438,7 @@ int main( int argc, char **argv ) {
   get_options (); //Command-line options specific for NRUE
 
   get_common_options(SOFTMODEM_5GUE_BIT );
+  init_tpools(nrUE_params.nr_dlsch_parallel);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 #if T_TRACER
   T_Config_Init();
@@ -527,7 +464,7 @@ int main( int argc, char **argv ) {
   init_NR_UE(1,rrc_config_path);
 
   int mode_offset = get_softmodem_params()->nsa ? NUMBER_OF_UE_MAX : 0;
-  int node_number = get_softmodem_params()->node_number;
+  uint16_t node_number = get_softmodem_params()->node_number;
   ue_id_g = (node_number == 0) ? 0 : node_number - 2;
   AssertFatal(ue_id_g >= 0, "UE id is expected to be nonnegative.\n");
 
@@ -555,6 +492,7 @@ int main( int argc, char **argv ) {
     LOG_E(NR_RRC,"Cannot create ITTI tasks for RRC layer of nr-UE\n");
     exit(-1);
   }
+
   if (!get_softmodem_params()->nsa) {
     for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
@@ -568,22 +506,28 @@ int main( int argc, char **argv ) {
         mac->if_module->phy_config_request(&mac->phy_config);
 
       fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+      if (get_softmodem_params()->sa) { // set frame config to initial values from command line and assume that the SSB is centered on the grid
+        nrUE_config->ssb_config.scs_common = get_softmodem_params()->numerology;
+        nrUE_config->carrier_config.dl_grid_size[nrUE_config->ssb_config.scs_common] = UE[CC_id]->frame_parms.N_RB_DL;
+        nrUE_config->carrier_config.ul_grid_size[nrUE_config->ssb_config.scs_common] = UE[CC_id]->frame_parms.N_RB_DL;
+        nrUE_config->carrier_config.dl_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
+        nrUE_config->carrier_config.uplink_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
+        nrUE_config->ssb_table.ssb_offset_point_a = (UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
 
-      nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
-
-      init_symbol_rotation(&UE[CC_id]->frame_parms, 0);
-      init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
-
-      #ifdef FR2_TEST
-      // Overwrite DL frequency (for FR2 testing)
-      if (downlink_frequency[0][0]!=0){
-        frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
-        if (frame_parms[CC_id]->frame_type == TDD)
-          frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
+        // Initialize values, will be updated upon SIB1 reception
+        nrUE_config->cell_config.frame_duplex_type = TDD;
+        nrUE_config->ssb_table.ssb_mask_list[0].ssb_mask = 0xFFFFFFFF;
+        nrUE_config->ssb_table.ssb_period = 1;
       }
-      #endif
+      nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config,
+          mac->scc == NULL ? 78 : *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+
+      init_symbol_rotation(&UE[CC_id]->frame_parms);
+      init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
     }
 
+    init_NR_UE_threads(1);
+    printf("UE threads created by %ld\n", gettid());
     init_openair0();
     // init UE_PF_PO and mutex lock
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
@@ -591,18 +535,22 @@ int main( int argc, char **argv ) {
     configure_linux();
     mlockall(MCL_CURRENT | MCL_FUTURE);
 
-    if(IS_SOFTMODEM_DOFORMS) {
+    if(IS_SOFTMODEM_DOSCOPE) {
       load_softscope("nr",PHY_vars_UE_g[0][0]);
     }
-
-    init_NR_UE_threads(1);
-    printf("UE threads created by %ld\n", gettid());
-
   }
 
   config_sync_var=0;
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
+
+#if 0
+  if (create_tasks_nrue(1) < 0) {
+    printf("cannot create ITTI tasks\n");
+    exit(-1); // need a softer mode
+  }
+#endif
+
   // Sleep a while before checking all parameters have been used
   // Some are used directly in external threads, asynchronously
   sleep(20);

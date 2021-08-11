@@ -663,7 +663,7 @@ control:
   control_decoder = decoder;
   control_e1 = e1;
   while (control_e1) {
-    nr_rlc_pdu_decoder_get_bits(&control_decoder, entity->sn_field_length); R(control_decoder); /* NACK_SN */
+    nack_sn = nr_rlc_pdu_decoder_get_bits(&control_decoder, entity->sn_field_length); R(control_decoder);
     control_e1 = nr_rlc_pdu_decoder_get_bits(&control_decoder, 1); R(control_decoder);
     control_e2 = nr_rlc_pdu_decoder_get_bits(&control_decoder, 1); R(control_decoder);
     control_e3 = nr_rlc_pdu_decoder_get_bits(&control_decoder, 1); R(control_decoder);
@@ -673,17 +673,36 @@ control:
     } else {
       nr_rlc_pdu_decoder_get_bits(&control_decoder, 1); R(control_decoder);
     }
+    /* check range and so_start/so_end consistency */
     if (control_e2) {
-      nr_rlc_pdu_decoder_get_bits(&control_decoder, 16); R(control_decoder); /* SOstart */
-      nr_rlc_pdu_decoder_get_bits(&control_decoder, 16); R(control_decoder); /* SOend */
+      so_start = nr_rlc_pdu_decoder_get_bits(&control_decoder, 16); R(control_decoder);
+      so_end = nr_rlc_pdu_decoder_get_bits(&control_decoder, 16); R(control_decoder);
+    } else {
+      so_start = 0;
+      so_end = 0xffff;
     }
     if (control_e3) {
-      nr_rlc_pdu_decoder_get_bits(&control_decoder, 8); R(control_decoder); /* NACK range */
+      range = nr_rlc_pdu_decoder_get_bits(&control_decoder, 8); R(control_decoder);
+    } else {
+      range = 1;
+    }
+    if (range < 1) {
+      LOG_E(RLC, "%s:%d:%s: error, bad 'range' in RLC NACK (sn %d)\n",
+            __FILE__, __LINE__, __FUNCTION__, nack_sn);
+      goto err;
+    }
+    /* so_start can be > so_end if more than one range; they don't refer
+     * to the same PDU then
+     */
+    if (range == 1 && so_end < so_start) {
+      LOG_E(RLC, "%s:%d:%s: error, bad so start/end (sn %d)\n",
+            __FILE__, __LINE__, __FUNCTION__, nack_sn);
+      goto err;
     }
   }
 
   /* 38.322 5.3.3.3 says to stop t_poll_retransmit if a ACK or NACK is
-   * received for the SN 'poll_sn'
+   * received for the SN 'poll_sn' - check ACK case (NACK done below)
    */
   if (sn_compare_tx(entity, entity->poll_sn, ack_sn) < 0)
     entity->t_poll_retransmit_start = 0;
@@ -710,28 +729,22 @@ control:
     if (e2) {
       so_start = nr_rlc_pdu_decoder_get_bits(&decoder, 16); R(decoder);
       so_end = nr_rlc_pdu_decoder_get_bits(&decoder, 16); R(decoder);
-      if (so_end < so_start) {
-        LOG_W(RLC, "%s:%d:%s: warning, bad so start/end, NACK the whole PDU (sn %d)\n",
-              __FILE__, __LINE__, __FUNCTION__, nack_sn);
-        so_start = 0;
-        so_end = -1;
-      }
-      /* special value 0xffff indicates 'all bytes to the end' */
-      if (so_end == 0xffff)
-        so_end = -1;
     } else {
       so_start = 0;
-      so_end = -1;
+      so_end = 0xffff;
     }
     if (e3) {
       range = nr_rlc_pdu_decoder_get_bits(&decoder, 8); R(decoder);
     } else {
       range = 1;
     }
+    /* special value 0xffff indicates 'all bytes to the end' */
+    if (so_end == 0xffff)
+      so_end = -1;
     process_received_nack(entity, nack_sn, so_start, so_end, range, sn_set);
 
     /* 38.322 5.3.3.3 says to stop t_poll_retransmit if a ACK or NACK is
-     * received for the SN 'poll_sn'
+     * received for the SN 'poll_sn' - check NACK case (ACK done above)
      */
     if (sn_compare_tx(entity, nack_sn, entity->poll_sn) <= 0 &&
         sn_compare_tx(entity, entity->poll_sn, (nack_sn + range) % entity->sn_modulus) < 0)
@@ -1543,7 +1556,7 @@ static int tx_list_size(nr_rlc_entity_am_t *entity,
 {
   int ret = 0;
 
-  while (l != NULL) {
+  while (l != NULL && ret < maxsize) {
     ret += compute_pdu_header_size(entity, l) + l->size;
     l = l->next;
   }

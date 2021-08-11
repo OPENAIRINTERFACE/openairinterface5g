@@ -28,11 +28,13 @@
 
  ***************************************************************************/
 
-#include "LTE_asn_constant.h"
-#include "NR_asn_constant.h"
 
 #ifndef __PLATFORM_CONSTANTS_H__
 #    define __PLATFORM_CONSTANTS_H__
+
+#include "LTE_asn_constant.h"
+#include "NR_asn_constant.h"
+#define NR_MAXDRB 14
 
 #ifdef JUMBO_FRAME
   #define NL_MAX_PAYLOAD 18000  /* this should cover the max mtu size*/
@@ -87,13 +89,7 @@
   #define MAX_gNB                      2
 #endif
 
-#define NUMBER_OF_NR_DLSCH_MAX 2//16
-#define NUMBER_OF_NR_ULSCH_MAX 2//16
-#define NUMBER_OF_NR_SCH_STATS_MAX 16
-#define NUMBER_OF_NR_PUCCH_MAX 16
-#define NUMBER_OF_NR_SR_MAX 16
-#define NUMBER_OF_NR_PDCCH_MAX 16
-
+#define NUMBER_OF_NR_UCI_STATS_MAX 16
 #define MAX_MANAGED_ENB_PER_MOBILE  2
 #define MAX_MANAGED_GNB_PER_MOBILE  2
 

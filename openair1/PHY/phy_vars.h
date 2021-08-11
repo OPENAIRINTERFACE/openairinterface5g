@@ -26,7 +26,6 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_UE.h"
-#include "common/ran_context.h"
 
 char* namepointer_chMag ;
 char fmageren_name2[512];
@@ -34,17 +33,15 @@ char* namepointer_log2;
 
 
 #include "PHY/LTE_REFSIG/primary_synch.h"
-int16_t *primary_synch0_time;
-int16_t *primary_synch1_time;
-int16_t *primary_synch2_time;
 
 
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
 
+#include "nfapi/oai_integration/vendor_ext.h"
+
 
 PHY_VARS_UE ***PHY_vars_UE_g;
-RAN_CONTEXT_t RC;
 UL_RCC_IND_t UL_RCC_INFO;
 NR_UL_IND_t UL_INFO;
 

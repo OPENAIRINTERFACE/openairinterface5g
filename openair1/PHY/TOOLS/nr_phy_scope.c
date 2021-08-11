@@ -38,10 +38,7 @@ int otg_enabled;
 const FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 const FL_COLOR water_colors[4] = {FL_BLUE,FL_GREEN,FL_YELLOW,FL_RED};
 
-typedef struct {
-  int16_t r;
-  int16_t i;
-} scopeSample_t;
+typedef struct complex16 scopeSample_t;
 #define SquaredNorm(VaR) ((VaR).r*(VaR).r+(VaR).i*(VaR).i)
 
 typedef struct OAIgraph {
@@ -59,7 +56,7 @@ typedef struct OAIgraph {
   double *waterFallAvg;
   boolean_t initDone;
   int iteration;
-  void (*gNBfunct) (struct OAIgraph *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int UE_id);
+  void (*gNBfunct) (struct OAIgraph *graph, scopeData_t *p, int UE_id);
   void (*nrUEfunct)(struct OAIgraph *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id);
 } OAIgraph_t;
 
@@ -135,7 +132,7 @@ static void commonGraph(OAIgraph_t *graph, int type, FL_Coord x, FL_Coord y, FL_
   graph->iteration=0;
 }
 
-static OAIgraph_t gNBcommonGraph( void (*funct) (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int UE_id),
+static OAIgraph_t gNBcommonGraph( void (*funct) (OAIgraph_t *graph, scopeData_t *p, int UE_id),
                                   int type, FL_Coord x, FL_Coord y, FL_Coord w, FL_Coord h, const char *label, FL_COLOR pointColor) {
   OAIgraph_t graph;
   commonGraph(&graph, type, x, y, w, h, label, pointColor);
@@ -226,7 +223,8 @@ static void oai_xygraph(OAIgraph_t *graph, float *x, float *y, int len, int laye
 
 static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const int datasize, const int divisions, const char *label) {
   if ( values == NULL )
-     return;
+    return;
+
   fl_winset(FL_ObjWin(graph->graph));
   const int samplesPerPixel=datasize/graph->w;
   int displayPart=graph->waterFallh-ScaleZone;
@@ -278,32 +276,8 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
     graph->initDone=true;
   }
 
-  fl_set_object_label_f(graph->text, "%s, avg I/Q pow: %4.1f", label, sqrt(avg));
+  fl_set_object_label_f(graph->text, "%s, avg I/Q pow: %4.1f", label, 0/*sqrt(avg)*/);
   graph->iteration++;
-}
-
-static void genericLogPowerPerAntena(OAIgraph_t *graph, const int nb_ant, const scopeSample_t **data, const int len) {
-  float *values, *time;
-  oai_xygraph_getbuff(graph, &time, &values, len, 0);
-
-  for (int ant=0; ant<nb_ant; ant++) {
-    if (data[ant] != NULL) {
-      float *values, *time;
-      oai_xygraph_getbuff(graph, &time, &values, len, ant);
-
-      for (int i=0; i<len; i+=8) {
-        float *vals=values+i;
-        const scopeSample_t *in=&(data[ant][i]);
-
-        // TRY AUTOMATIC simd BY GCC
-        for (int k=0; k<8; k++ ) {
-          vals[k] = 10*log10(1.0+SquaredNorm(in[k]));
-        }
-      }
-
-      oai_xygraph(graph,time,values, len, ant, 10);
-    }
-  }
 }
 
 static void genericPowerPerAntena(OAIgraph_t  *graph, const int nb_ant, const scopeSample_t **data, const int len) {
@@ -321,10 +295,10 @@ static void genericPowerPerAntena(OAIgraph_t  *graph, const int nb_ant, const sc
   }
 }
 
-static void gNBWaterFall (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
-  NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
+static void gNBWaterFall (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
+  NR_DL_FRAME_PARMS *frame_parms=&p->gNB->frame_parms;
   //use 1st antenna
-  genericWaterFall(graph, (scopeSample_t *)phy_vars_ru->common.rxdata[0],
+  genericWaterFall(graph, (scopeSample_t *)p->ru->common.rxdata[0],
                    frame_parms->samples_per_frame,  frame_parms->slots_per_frame,
                    "X axis:one frame in time");
 }
@@ -342,31 +316,35 @@ static void timeSignal (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy
 }
 */
 
-static void timeResponse (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
-  const int len=2*phy_vars_gnb->frame_parms.ofdm_symbol_size;
+static void timeResponse (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
+  const int len=2*p->gNB->frame_parms.ofdm_symbol_size;
   float *values, *time;
   oai_xygraph_getbuff(graph, &time, &values, len, 0);
   const int ant=0; // display antenna 0 for each UE
 
   for (int ue=0; ue<nb_UEs; ue++) {
-    scopeSample_t *data= (scopeSample_t *)phy_vars_gnb->pusch_vars[ue]->ul_ch_estimates_time[ant];
+    if ( p->gNB->pusch_vars && p->gNB->pusch_vars[ue] &&
+         p->gNB->pusch_vars[ue]->ul_ch_estimates_time &&
+         p->gNB->pusch_vars[ue]->ul_ch_estimates_time[ant] ) {
+      scopeSample_t *data= (scopeSample_t *)p->gNB->pusch_vars[ue]->ul_ch_estimates_time[ant];
 
-    if (data != NULL) {
-      for (int i=0; i<len; i++) {
-        values[i] = SquaredNorm(data[i]);
+      if (data != NULL) {
+        for (int i=0; i<len; i++) {
+          values[i] = SquaredNorm(data[i]);
+        }
+
+        oai_xygraph(graph,time,values, len, ue, 10);
       }
-
-      oai_xygraph(graph,time,values, len, ue, 10);
     }
   }
 }
 
-static void gNBfreqWaterFall (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
-  NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
+static void gNBfreqWaterFall (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
+  NR_DL_FRAME_PARMS *frame_parms=&p->gNB->frame_parms;
   //use 1st antenna
-  genericWaterFall(graph, (scopeSample_t *)phy_vars_ru->common.rxdataF[0], frame_parms->samples_per_frame_wCP,
+  genericWaterFall(graph, (scopeSample_t *)p->rxdataF, frame_parms->samples_per_frame_wCP,
                    frame_parms->slots_per_frame,
-                   "X axis: Frequency domain, one frame");
+                   "X axis: Frequency domain, one subframe");
 }
 
 /*
@@ -378,16 +356,18 @@ static void frequencyResponse (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU
 }
 */
 
-static void puschLLR (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
+static void puschLLR (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   //int Qm = 2;
   int coded_bits_per_codeword =3*8*6144+12; // (8*((3*8*6144)+12)); // frame_parms->N_RB_UL*12*Qm*frame_parms->symbols_per_tti;
 
   for (int ue=0; ue<nb_UEs; ue++) {
-    int16_t *pusch_llr = (int16_t *)phy_vars_gnb->pusch_vars[ue]->llr;
-    float *llr, *bit;
-    oai_xygraph_getbuff(graph, &bit, &llr, coded_bits_per_codeword, ue);
+    if ( p->gNB->pusch_vars &&
+         p->gNB->pusch_vars[ue] &&
+         p->gNB->pusch_vars[ue]->llr ) {
+      int16_t *pusch_llr = (int16_t *)p->gNB->pusch_vars[ue]->llr;
+      float *llr, *bit;
+      oai_xygraph_getbuff(graph, &bit, &llr, coded_bits_per_codeword, ue);
 
-    if (pusch_llr) {
       for (int i=0; i<coded_bits_per_codeword; i++) {
         llr[i] = (float) pusch_llr[i];
       }
@@ -397,16 +377,19 @@ static void puschLLR (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_v
   }
 }
 
-static void puschIQ (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
-  NR_DL_FRAME_PARMS *frame_parms=&phy_vars_gnb->frame_parms;
+static void puschIQ (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
+  NR_DL_FRAME_PARMS *frame_parms=&p->gNB->frame_parms;
   int sz=frame_parms->N_RB_UL*12*frame_parms->symbols_per_slot;
 
   for (int ue=0; ue<nb_UEs; ue++) {
-    scopeSample_t *pusch_comp = (scopeSample_t *) phy_vars_gnb->pusch_vars[ue]->rxdataF_comp[0];
-    float *I, *Q;
-    oai_xygraph_getbuff(graph, &I, &Q, sz, ue);
+    if ( p->gNB->pusch_vars &&
+         p->gNB->pusch_vars[ue] &&
+         p->gNB->pusch_vars[ue]->rxdataF_comp &&
+         p->gNB->pusch_vars[ue]->rxdataF_comp[0] ) {
+      scopeSample_t *pusch_comp = (scopeSample_t *) p->gNB->pusch_vars[ue]->rxdataF_comp[0];
+      float *I, *Q;
+      oai_xygraph_getbuff(graph, &I, &Q, sz, ue);
 
-    if (pusch_comp) {
       for (int k=0; k<sz; k++ ) {
         I[k] = pusch_comp[k].r;
         Q[k] = pusch_comp[k].i;
@@ -417,7 +400,7 @@ static void puschIQ (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_va
   }
 }
 
-static void pucchEnergy (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
+static void pucchEnergy (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   // PUSCH I/Q of MF Output
   /*
     int32_t *pucch1ab_comp = (int32_t *) NULL; //phy_vars_gnb->pucch1ab_stats[UE_id];
@@ -443,10 +426,10 @@ static void pucchEnergy (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *ph
   */
 }
 
-static void pucchIQ (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
+static void pucchIQ (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
 }
 
-static void puschThroughtput (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy_vars_ru, int nb_UEs) {
+static void puschThroughtput (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   // PUSCH Throughput
   /*
   float tput_time_enb[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
@@ -461,7 +444,6 @@ static void puschThroughtput (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_
   //    fl_set_xyplot_ybounds(form->pusch_tput,0,ymax);
   */
 }
-
 static OAI_phy_scope_t *create_phy_scope_gnb(void) {
   FL_OBJECT *obj;
   OAI_phy_scope_t *fdui = calloc(( sizeof *fdui ),1);
@@ -510,11 +492,9 @@ static OAI_phy_scope_t *create_phy_scope_gnb(void) {
   fl_show_form (fdui->phy_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, "LTE UL SCOPE gNB");
   return fdui;
 }
-
 static const int scope_enb_num_ue = 1;
 void phy_scope_gNB(OAI_phy_scope_t *form,
-                   PHY_VARS_gNB *phy_vars_gnb,
-                   RU_t *phy_vars_ru,
+                   scopeData_t *p,
                    int UE_id) {
   static OAI_phy_scope_t *rememberForm=NULL;
 
@@ -529,15 +509,14 @@ void phy_scope_gNB(OAI_phy_scope_t *form,
   int i=0;
 
   while (form->graph[i].graph) {
-    form->graph[i].gNBfunct(form->graph+i, phy_vars_gnb, phy_vars_ru, UE_id);
+    form->graph[i].gNBfunct(form->graph+i, p, UE_id);
     i++;
   }
 
   //fl_check_forms();
 }
-
 static void *scope_thread_gNB(void *arg) {
-  scopeParms_t *p=(scopeParms_t *) arg;
+  scopeData_t *p=(scopeData_t *) arg;
   //# ifdef ENABLE_XFORMS_WRITE_STATS
   //  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
   //#endif
@@ -554,20 +533,31 @@ static void *scope_thread_gNB(void *arg) {
   OAI_phy_scope_t  *form_gnb = create_phy_scope_gnb();
 
   while (!oai_exit) {
-    phy_scope_gNB(form_gnb, p->gNB, p->ru, nb_ue);
+    phy_scope_gNB(form_gnb, p, nb_ue);
     usleep(99*1000);
   }
 
   return NULL;
 }
-
-void gNBinitScope(scopeParms_t *p) {
-  static scopeParms_t parms;
-  memcpy(&parms,p,sizeof(parms));
-  pthread_t forms_thread;
-  threadCreate(&forms_thread, scope_thread_gNB, &parms, "scope", -1, OAI_PRIORITY_RT_LOW);
+static void copyRxdataF(int32_t *data, int slot,  void *scopeData) {
+  scopeData_t *scope=(scopeData_t *)scopeData;
+  memcpy(scope->rxdataF + slot*scope->gNB->frame_parms.samples_per_slot_wCP,
+         data,
+         scope->gNB->frame_parms.samples_per_slot_wCP);
 }
 
+void gNBinitScope(scopeParms_t *p) {
+  AssertFatal(p->gNB->scopeData=malloc(sizeof(scopeData_t)),"");
+  scopeData_t *scope=(scopeData_t *) p->gNB->scopeData;
+  scope->argc=p->argc;
+  scope->argv=p->argv;
+  scope->ru=p->ru;
+  scope->gNB=p->gNB;
+  scope->slotFunc=copyRxdataF;
+  AssertFatal(scope->rxdataF=(int32_t *) calloc(p->gNB->frame_parms.samples_per_frame_wCP*sizeof(int32_t),1),"");
+  pthread_t forms_thread;
+  threadCreate(&forms_thread, scope_thread_gNB, p->gNB->scopeData, "scope", -1, OAI_PRIORITY_RT_LOW);
+}
 static void ueWaterFall  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // Received signal in time domain of receive antenna 0
   genericWaterFall(graph,
@@ -576,7 +566,6 @@ static void ueWaterFall  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eN
                    phy_vars_ue->frame_parms.slots_per_frame,
                    "X axis: one frame time");
 }
-
 /* replaced by waterfall
 static void ueTimeResponse  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // Received signal in time domain of receive antenna 0
@@ -585,14 +574,12 @@ static void ueTimeResponse  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int
                            phy_vars_ue->frame_parms.samples_per_frame);
 }
 */
-
 static void ueChannelResponse  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // Channel Impulse Response
   genericPowerPerAntena(graph, phy_vars_ue->frame_parms.nb_antennas_rx,
                         (const scopeSample_t **) phy_vars_ue->pbch_vars[eNB_id]->dl_ch_estimates_time,
                         phy_vars_ue->frame_parms.ofdm_symbol_size>>3);
 }
-
 static void ueFreqWaterFall (OAIgraph_t *graph,PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id ) {
   NR_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->frame_parms;
   //use 1st antenna
@@ -602,7 +589,6 @@ static void ueFreqWaterFall (OAIgraph_t *graph,PHY_VARS_NR_UE *phy_vars_ue, int 
                    phy_vars_ue->frame_parms.slots_per_frame,
                    "X axis: one frame frequency" );
 }
-
 /*
 static void uePbchFrequencyResp  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // Channel Frequency Response (includes 5 complex sample for filter)
@@ -638,7 +624,6 @@ static void uePbchFrequencyResp  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue
   oai_xygraph(graph,freq,chest_f_abs,frame_parms->ofdm_symbol_size,0,10);
 }
 */
-
 static void uePbchLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PBCH LLRs
   if ( !phy_vars_ue->pbch_vars[eNB_id]->llr)
@@ -654,7 +639,6 @@ static void uePbchLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_
 
   oai_xygraph(graph,bit_pbch,llr_pbch,864,0,10);
 }
-
 static void uePbchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PBCH I/Q of MF Output
   if (!phy_vars_ue->pbch_vars[eNB_id]->rxdataF_comp[0])
@@ -689,15 +673,14 @@ static void uePbchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_i
   AssertFatal(base <= 180*3,"");
   oai_xygraph(graph,I,Q,base,0, 10);
 }
-
 static void uePcchLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDCCH LLRs
   if (!phy_vars_ue->pdcch_vars[0][eNB_id]->llr)
     return;
 
-  int num_re = 4*273*12; // 12*frame_parms->N_RB_DL*num_pdcch_symbols
-  int Qm = 2;
-  int coded_bits_per_codeword = num_re*Qm;
+  //int num_re = 4*273*12; // 12*frame_parms->N_RB_DL*num_pdcch_symbols
+  //int Qm = 2;
+  int coded_bits_per_codeword = 2*4*100*12; //num_re*Qm;
   float *llr, *bit;
   oai_xygraph_getbuff(graph, &bit, &llr, coded_bits_per_codeword*RX_NB_TH_MAX, 0);
   int base=0;
@@ -715,7 +698,6 @@ static void uePcchLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_
   AssertFatal(base <= coded_bits_per_codeword*RX_NB_TH_MAX, "");
   oai_xygraph(graph,bit,llr,base,0,10);
 }
-
 static void uePcchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDCCH I/Q of MF Output
   if (!phy_vars_ue->pdcch_vars[0][eNB_id]->rxdataF_comp[0])
@@ -740,7 +722,6 @@ static void uePcchIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_i
   AssertFatal(base <= nb*RX_NB_TH_MAX, "");
   oai_xygraph(graph,I,Q,base,0,10);
 }
-
 static void uePdschLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDSCH LLRs
   if (!phy_vars_ue->pdsch_vars[0][eNB_id]->llr[0])
@@ -768,7 +749,6 @@ static void uePdschLLR  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB
   //fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword);
   oai_xygraph(graph,bit,llr,base,0,10);
 }
-
 static void uePdschIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDSCH I/Q of MF Output
   if (!phy_vars_ue->pdsch_vars[0][eNB_id]->rxdataF_comp0[0])
@@ -796,7 +776,6 @@ static void uePdschIQ  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_
   AssertFatal(base <= sz*RX_NB_TH_MAX, "");
   oai_xygraph(graph,I,Q,sz*RX_NB_TH_MAX,0,10);
 }
-
 static void uePdschThroughput  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   /*
   float tput_time_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
@@ -820,7 +799,6 @@ static void uePdschThroughput  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, 
   fl_set_xyplot_ybounds(form->pdsch_tput,0,tput_ue_max[UE_id]);
   */
 }
-
 static OAI_phy_scope_t *create_phy_scope_nrue( int ID ) {
   FL_OBJECT *obj;
   OAI_phy_scope_t *fdui = calloc(( sizeof *fdui ),1);
@@ -890,7 +868,6 @@ static OAI_phy_scope_t *create_phy_scope_nrue( int ID ) {
   fl_show_form (fdui->phy_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, buf);
   return fdui;
 }
-
 void phy_scope_nrUE(OAI_phy_scope_t *form,
                     PHY_VARS_NR_UE *phy_vars_ue,
                     int eNB_id,
@@ -914,8 +891,6 @@ void phy_scope_nrUE(OAI_phy_scope_t *form,
 
   //fl_check_forms();
 }
-
-
 static void *nrUEscopeThread(void *arg) {
   PHY_VARS_NR_UE *ue=(PHY_VARS_NR_UE *)arg;
   size_t stksize;
@@ -939,13 +914,10 @@ static void *nrUEscopeThread(void *arg) {
 
   pthread_exit((void *)arg);
 }
-
 void nrUEinitScope(PHY_VARS_NR_UE *ue) {
   pthread_t forms_thread;
   threadCreate(&forms_thread, nrUEscopeThread, ue, "scope", -1, OAI_PRIORITY_RT_LOW);
 }
-
-
 void nrscope_autoinit(void *dataptr) {
   AssertFatal( (IS_SOFTMODEM_GNB_BIT||IS_SOFTMODEM_5GUE_BIT),"Scope cannot find NRUE or GNB context");
 
@@ -980,7 +952,6 @@ static void reset_stats_gNB(FL_OBJECT *button,
     }
   }
 }
-
 static FD_stats_form *create_form_stats_form(int ID) {
   FL_OBJECT *obj;
   FD_stats_form *fdui = calloc(( sizeof *fdui ),1);

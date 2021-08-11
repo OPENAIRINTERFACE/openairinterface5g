@@ -85,6 +85,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "x2ap_eNB.h"
 #include "ngap_gNB.h"
 #include "gnb_paramdef.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 #include "nfapi/oai_integration/vendor_ext.h"
 
 pthread_cond_t nfapi_sync_cond;
@@ -92,7 +93,7 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 extern uint8_t nfapi_mode; // Default to monolithic mode
-
+THREAD_STRUCT thread_struct;
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
@@ -114,7 +115,6 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
 
-static char                    *itti_dump_file = NULL;
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;
@@ -135,9 +135,6 @@ double rx_gain[MAX_NUM_CCs][4] = {{110,0,0,0},{20,0,0,0}};
 #endif
 
 double rx_gain_off = 0.0;
-
-double sample_rate=30.72e6;
-double bw = 10.0e6;
 
 static int tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
@@ -163,15 +160,20 @@ int otg_enabled;
 
 //static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 //static nfapi_nr_config_request_t *config[MAX_NUM_CCs];
-uint32_t target_dl_mcs = 28; //maximum allowed mcs
-uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
+
+#include <executables/split_headers.h>
+#include <SIMULATION/ETH_TRANSPORT/proto.h>
 
 int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
   AssertFatal(false, "Must not be called in this context\n");
 }
+void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
+    AssertFatal(false, "Must not be called in this context\n");
+}
+
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
@@ -182,7 +184,6 @@ extern void *udp_eNB_task(void *args_p);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-int usrp_tx_thread = 0;
 
 
 static char *parallel_config = NULL;
@@ -344,7 +345,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
   }
 
 
-  if (AMF_MODE_ENABLED && (get_softmodem_params()->phy_test==0 && get_softmodem_params()->do_ra==0 && get_softmodem_params()->sa==0)) {
+  if (AMF_MODE_ENABLED) {
     if (gnb_nb > 0) {
       /*
       if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
@@ -369,24 +370,30 @@ int create_gNB_tasks(uint32_t gnb_nb) {
         }
       }
 
-      if (itti_create_task (TASK_GTPV1_U, &gtpv1u_gNB_task, NULL) < 0) {
+      /*if (itti_create_task (TASK_GTPV1_U, &nr_gtpv1u_gNB_task, NULL) < 0) {
         LOG_E(GTPU, "Create task for GTPV1U failed\n");
         return -1;
-      }
+      }*/
     }
   }
-
 
   if (gnb_nb > 0) {
     if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
       LOG_E(GNB_APP, "Create task for gNB APP failed\n");
       return -1;
     }
-    LOG_I(NR_RRC,"Creating NR RRC gNB Task\n");
 
+    LOG_I(NR_RRC,"Creating NR RRC gNB Task\n");
     if (itti_create_task (TASK_RRC_GNB, rrc_gnb_task, NULL) < 0) {
       LOG_E(NR_RRC, "Create task for NR RRC gNB failed\n");
       return -1;
+    }
+    //Use check on x2ap to consider the NSA scenario and check on AMF_MODE_ENABLED for the SA scenario 
+    if(is_x2ap_enabled() || AMF_MODE_ENABLED){
+      if (itti_create_task (TASK_GTPV1_U, &nr_gtpv1u_gNB_task, NULL) < 0) {
+        LOG_E(GTPU, "Create task for GTPV1U failed\n");
+        return -1;
+      }
     }
   }
 
@@ -626,33 +633,36 @@ static  void wait_nfapi_init(char *thread_name) {
 }
 
 void init_pdcp(void) {
-  //if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
-  pdcp_layer_init();
-  uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
-                           (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
-
-  if (IS_SOFTMODEM_NOS1) {
-    printf("IS_SOFTMODEM_NOS1 option enabled \n");
-    pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
-  }
+  if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+    // pdcp_layer_init();
+    uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+                            (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+    if (IS_SOFTMODEM_NOS1) {
+      printf("IS_SOFTMODEM_NOS1 option enabled \n");
+      pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT;
+    }
 
   nr_pdcp_module_init(pdcp_initmask, 0);
 
-  /*if (NODE_IS_CU(RC.rrc[0]->node_type)) {
-    pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
-  } else {*/
-  pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-  pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
-  //}
-  /*} else {
+    if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+      LOG_I(PDCP, "node is CU, pdcp send rlc_data_req by proto_agent \n");
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+    } else {
+      LOG_I(PDCP, "node is gNB \n");
+      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+    }
+  } else {
+    LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
     pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
-  }*/
+  }
 }
 
 
 int main( int argc, char **argv )
 {
   int ru_id, CC_id = 0;
+
   start_background_system();
 
   ///static configuration for NR at the moment
@@ -680,8 +690,8 @@ int main( int argc, char **argv )
   }
 
   openair0_cfg[0].threequarter_fs = threequarter_fs;
-  AMF_MODE_ENABLED = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
-  NGAP_CONF_MODE   = !IS_SOFTMODEM_NOS1; //!get_softmodem_params()->phy_test;
+  AMF_MODE_ENABLED = get_softmodem_params()->sa;
+  NGAP_CONF_MODE   = get_softmodem_params()->sa;
 
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
@@ -812,36 +822,38 @@ if(IS_SOFTMODEM_NOS1)
     wait_nfapi_init("main?");
   }
 
-  printf("wait RUs\n");
-  wait_RUs();
-  printf("ALL RUs READY!\n");
-  printf("RC.nb_RU:%d\n", RC.nb_RU);
-  // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
-  printf("ALL RUs ready - init gNBs\n");
-  if(IS_SOFTMODEM_DOFORMS) {
-    sleep(1);	
-    scopeParms_t p;
-    p.argc=&argc;
-    p.argv=argv;
-    p.gNB=RC.gNB[0];
-    p.ru=RC.ru[0];
-    load_softscope("nr",&p);
-  }
+  if (RC.nb_nr_L1_inst > 0) {
+    printf("wait RUs\n");
+    wait_RUs();
+    printf("ALL RUs READY!\n");
+    printf("RC.nb_RU:%d\n", RC.nb_RU);
+    // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
+    printf("ALL RUs ready - init gNBs\n");
+    if(IS_SOFTMODEM_DOSCOPE) {
+      sleep(1);
+      scopeParms_t p;
+      p.argc=&argc;
+      p.argv=argv;
+      p.gNB=RC.gNB[0];
+      p.ru=RC.ru[0];
+      load_softscope("nr",&p);
+    }
 
-  if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {
-    printf("Not NFAPI mode - call init_eNB_afterRU()\n");
-    init_eNB_afterRU();
-  } else {
-    printf("NFAPI mode - DO NOT call init_gNB_afterRU()\n");
-  }
+    if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {
+      printf("Not NFAPI mode - call init_eNB_afterRU()\n");
+      init_eNB_afterRU();
+    } else {
+      printf("NFAPI mode - DO NOT call init_gNB_afterRU()\n");
+    }
 
-  printf("ALL RUs ready - ALL gNBs ready\n");
-  // connect the TX/RX buffers
-  printf("Sending sync to all threads\n");
-  pthread_mutex_lock(&sync_mutex);
-  sync_var=0;
-  pthread_cond_broadcast(&sync_cond);
-  pthread_mutex_unlock(&sync_mutex);
+    printf("ALL RUs ready - ALL gNBs ready\n");
+    // connect the TX/RX buffers
+    printf("Sending sync to all threads\n");
+    pthread_mutex_lock(&sync_mutex);
+    sync_var=0;
+    pthread_cond_broadcast(&sync_cond);
+    pthread_mutex_unlock(&sync_mutex);
+  }
   printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   end_configmodule();
   printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
@@ -879,7 +891,10 @@ if(IS_SOFTMODEM_NOS1)
   printf("stopping MODEM threads\n");
   // cleanup
   stop_gNB(NB_gNB_INST);
-  stop_RU(NB_RU);
+
+  if (RC.nb_nr_L1_inst > 0) {
+    stop_RU(NB_RU);
+  }
 
   /* release memory used by the RU/gNB threads (incomplete), after all
    * threads have been stopped (they partially use the same memory) */

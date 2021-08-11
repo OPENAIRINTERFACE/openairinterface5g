@@ -98,6 +98,7 @@ typedef enum {
 #define CONFIG_STRING_RU_BF_WEIGHTS_LIST          "bf_weights"
 #define CONFIG_STRING_RU_IF_FREQUENCY             "if_freq"
 #define CONFIG_STRING_RU_IF_FREQ_OFFSET           "if_offset"
+#define CONFIG_STRING_RU_DO_PRECODING             "do_precoding"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -127,7 +128,7 @@ typedef enum {
 #define RU_BF_WEIGHTS_LIST_IDX        25
 #define RU_IF_FREQUENCY               26
 #define RU_IF_FREQ_OFFSET             27
-
+#define RU_DO_PRECODING               28
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
 /*   optname                                   helpstr   paramflags    XXXptr          defXXXval                   type      numelt        */
@@ -160,7 +161,8 @@ typedef enum {
     {CONFIG_STRING_RU_OTA_SYNC_ENABLE,             NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_BF_WEIGHTS_LIST,             NULL,       0,       iptr:NULL,       defintarrayval:DEFBFW,   TYPE_INTARRAY,    0}, \
     {CONFIG_STRING_RU_IF_FREQUENCY,                NULL,       0,       u64ptr:NULL,     defuintval:0,            TYPE_UINT64,      0}, \
-    {CONFIG_STRING_RU_IF_FREQ_OFFSET,              NULL,       0,       iptr:NULL,     defintval:0,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_IF_FREQ_OFFSET,              NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_DO_PRECODING,                NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
   }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
@@ -214,6 +216,11 @@ typedef enum {
 #define ENB_CONFIG_STRING_X2                            "enable_x2"
 #define ENB_CONFIG_STRING_ENB_M2                        "enable_enb_m2"
 #define ENB_CONFIG_STRING_MCE_M2                        "enable_mce_m2"
+#define ENB_CONFIG_STRING_S1SETUP_RSP_TIMER             "s1setup_rsp_timer"
+#define ENB_CONFIG_STRING_S1SETUP_REQ_TIMER             "s1setup_req_timer"
+#define ENB_CONFIG_STRING_S1SETUP_REQ_COUNT             "s1setup_req_count"
+#define ENB_CONFIG_STRING_SCTP_REQ_TIMER                "sctp_req_timer"
+#define ENB_CONFIG_STRING_SCTP_REQ_COUNT                "sctp_req_count"
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                   type           numelt     */
@@ -239,6 +246,11 @@ typedef enum {
     {ENB_CONFIG_STRING_X2,                           NULL,   0,            strptr:NULL, defstrval:NULL,              TYPE_STRING,    0},  \
     {ENB_CONFIG_STRING_ENB_M2,                       NULL,   0,            strptr:NULL, defstrval:"no",              TYPE_STRING,    0},  \
     {ENB_CONFIG_STRING_MCE_M2,                       NULL,   0,            strptr:NULL, defstrval:"no",              TYPE_STRING,    0},  \
+    {ENB_CONFIG_STRING_S1SETUP_RSP_TIMER,            NULL,   0,            uptr:NULL,   defuintval:5,                TYPE_UINT,      0},  \
+    {ENB_CONFIG_STRING_S1SETUP_REQ_TIMER,            NULL,   0,            uptr:NULL,   defuintval:5,                TYPE_UINT,      0},  \
+    {ENB_CONFIG_STRING_S1SETUP_REQ_COUNT,            NULL,   0,            uptr:NULL,   defuintval:65535,            TYPE_UINT,      0},  \
+    {ENB_CONFIG_STRING_SCTP_REQ_TIMER,               NULL,   0,            uptr:NULL,   defuintval:180,              TYPE_UINT,      0},  \
+    {ENB_CONFIG_STRING_SCTP_REQ_COUNT,               NULL,   0,            uptr:NULL,   defuintval:65535,            TYPE_UINT,      0},  \
   }
 
 #define ENB_ENB_ID_IDX                  0
@@ -261,6 +273,11 @@ typedef enum {
 #define ENB_ENABLE_X2                   17
 #define ENB_ENABLE_ENB_M2               18
 #define ENB_ENABLE_MCE_M2               19
+#define ENB_S1SETUP_RSP_TIMER_IDX       20
+#define ENB_S1SETUP_REQ_TIMER_IDX       21
+#define ENB_S1SETUP_REQ_COUNT_IDX       22
+#define ENB_SCTP_REQ_TIMER_IDX          23
+#define ENB_SCTP_REQ_COUNT_IDX          24
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define ENBPARAMS_CHECK {                                           \

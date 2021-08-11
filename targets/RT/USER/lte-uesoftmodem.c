@@ -83,10 +83,9 @@
 #include "create_tasks.h"
 #include "system.h"
 
-
 #include "lte-softmodem.h"
+#include "executables/softmodem-common.h"
 
-extern int ue_id_g;
 /* temporary compilation wokaround (UE/eNB split */
 
 
@@ -168,7 +167,6 @@ extern void get_uethreads_params(void);
 
 int transmission_mode=1;
 
-int usrp_tx_thread = 0;
 
 
 char *usrp_args=NULL;
@@ -194,6 +192,8 @@ int oaisim_flag=0;
 uint8_t abstraction_flag=0;
 
 bler_struct bler_data[NUM_MCS];
+// needed for pdcp.c
+RAN_CONTEXT_t RC;
 
 /* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
@@ -289,7 +289,6 @@ static void get_options(void) {
   int dumpframe=0;
   int timingadv=0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
-  int simL1flag =0;
 
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
@@ -303,8 +302,6 @@ static void get_options(void) {
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
   nfapi_setmode(nfapi_mode);
 
-  if (simL1flag)
-    set_softmodem_optmask(SOFTMODEM_SIML1_BIT);
 
   if (loopfile != NULL) {
     printf("Input file for hardware emulation: %s",loopfile);
@@ -597,11 +594,6 @@ int main( int argc, char **argv ) {
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
   printf("Running with %d UE instances\n",NB_UE_INST);
 
-  if (NB_UE_INST > 1 && (!IS_SOFTMODEM_SIML1)  && NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
-    printf("Running with more than 1 UE instance and simL1 is not active, this will result in undefined behaviour for now, exiting.\n");
-    abort();
-  }
-
   // Checking option of nums_ue_thread.
   if(NB_THREAD_INST < 1) {
     printf("Running with 0 UE rxtx thread, exiting.\n");
@@ -633,8 +625,8 @@ int main( int argc, char **argv ) {
 
   MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
-  ue_id_g = (node_number == 0)? 0 : node_number-2 ;//ue_id_g = 0, 1, ...,
-  if( node_number == 0 )
+  ue_id_g = (node_number == 0) ? 0 : node_number-2; //ue_id_g = 0, 1, ...,
+  if(node_number == 0)
   {
     init_pdcp(0);
   }
@@ -681,9 +673,6 @@ int main( int argc, char **argv ) {
     }
   } else init_openair0(frame_parms[0],(int)rx_gain[0][0]);
 
-  if (IS_SOFTMODEM_SIML1 ) {
-    RCConfig_sim();
-  }
 
   cpuf=get_cpu_freq_GHz();
 
@@ -800,12 +789,8 @@ int main( int argc, char **argv ) {
 
   //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
 
-  if (IS_SOFTMODEM_SIML1 )  {
-    init_ocm();
-    PHY_vars_UE_g[0][0]->no_timing_correction = 1;
-  }
 
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
     load_softscope("ue",NULL);
 
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
@@ -830,7 +815,7 @@ int main( int argc, char **argv ) {
   printf("oai_exit=%d\n",oai_exit);
 
   // stop threads
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
     end_forms();
 
   printf("stopping MODEM threads\n");

@@ -608,6 +608,23 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     memset(cc[CC_id].vrb_map_UL, 0, 100);
     cc[CC_id].mcch_active = 0;
     clear_nfapi_information(RC.mac[module_idP], CC_id, frameP, subframeP);
+
+    /* hack: skip BCH RBs in subframe 0 for DL scheduling,
+     *       because with high MCS we may exceed code rate 0.93
+     *       when using those RBs (36.213 7.1.7 says the UE may
+     *       skip decoding if the code rate is higher than 0.93)
+     * TODO: remove this hack, deal with physical bits properly
+     *       i.e. reduce MCS in the scheduler if code rate > 0.93
+     */
+    if (subframeP == 0) {
+      int i;
+      int bw = cc[CC_id].mib->message.dl_Bandwidth;
+      /* start and count defined for RBs: 6, 15, 25, 50, 75, 100 */
+      int start[6] = { 0, 4, 9, 22, 34, 47 };
+      int count[6] = { 6, 7, 7,  6,  7,  6 };
+      for (i = 0; i < count[bw]; i++)
+        cc[CC_id].vrb_map[start[bw] + i] = 1;
+    }
   }
 
   /* Refresh UE list based on UEs dropped by PHY in previous subframe */
@@ -617,6 +634,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       CC_id = UE_PCCID(module_idP, UE_id);
       UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
+/* to be merged with MAC_stats.log generation. probably redundant
       if (((frameP & 127) == 0) && (subframeP == 0)) {
         double total_bler;
         if(UE_scheduling_control->pusch_rx_num[CC_id] == 0 && UE_scheduling_control->pusch_rx_error_num[CC_id] == 0) {
@@ -654,7 +672,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
               UE_scheduling_control->aperiodic_ri_received[CC_id]
         );
       }
-
+*/
       RC.eNB[module_idP][CC_id]->pusch_stats_bsr[UE_id][(frameP * 10) + subframeP] = -63;
 
       if (UE_id == UE_info->list.head) {

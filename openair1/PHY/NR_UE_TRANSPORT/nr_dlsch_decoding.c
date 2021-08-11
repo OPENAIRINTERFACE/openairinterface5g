@@ -261,7 +261,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   int8_t llrProcBuf[NR_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
   t_nrLDPC_dec_params decParams;
   t_nrLDPC_dec_params* p_decParams = &decParams;
-  t_nrLDPC_time_stats procTime;
+  t_nrLDPC_time_stats procTime = {0};
   t_nrLDPC_time_stats* p_procTime =&procTime ;
   
   if (!harq_process) {
@@ -587,8 +587,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
         ret = no_iteration_ldpc;
       }
       else {
-        LOG_I(PHY,"CRC NOT OK\n\033[0m");
-        ret = 1 + dlsch->max_ldpc_iterations;
+        LOG_D(PHY,"CRC NOT OK\n\033[0m");
       }
 
 
@@ -678,7 +677,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
     memcpy(harq_process->b+offset,
 	   harq_process->c[r],
-	   Kr_bytes- - (harq_process->F>>3) -((harq_process->C>1)?3:0));
+	   Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
 
     if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
@@ -691,8 +690,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
               harq_process->F>>3,
               (void *)(uint64_t)(harq_process->c[r]) );
       if (frame%100 == 0){
-          LOG_D (PHY, "Printing 10 first payload bytes at frame: %d ", frame);
-          for (int i = 0; i <10 ; i++){ //Kr_bytes
+          LOG_D (PHY, "Printing 60 first payload bytes at frame: %d ", frame);
+          for (int i = 0; i <60 ; i++){ //Kr_bytes
             LOG_D(PHY, "[%d] : %x ", i, harq_process->b[i]);
           }
         }
@@ -1122,7 +1121,6 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
         ret = 2;
       }
       else {
-        LOG_D(PHY,"CRC NOK\n");
         ret = 1+dlsch->max_ldpc_iterations;
       }
 

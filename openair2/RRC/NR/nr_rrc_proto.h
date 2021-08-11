@@ -51,6 +51,7 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
                            const int         CC_id,
                            const frame_t     frameP,
                            const rb_id_t     Srb_id,
+                           const rnti_t      rnti,
                            const uint8_t     Nb_tb,
                            uint8_t *const    buffer_pP );
 
@@ -79,17 +80,21 @@ void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0, NR_ServingCellC
 void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0);
 
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-				     NR_CellGroupConfig_t *secondaryCellGroup,
-				     int scg_id,
-				     int servCellIndex,
-				     int n_physical_antenna_ports,
-				     int initial_csi_index);
+                                     NR_ServingCellConfig_t *servingcellconfigdedicated,
+                                     NR_CellGroupConfig_t *secondaryCellGroup,
+                                     int scg_id,
+                                     int servCellIndex,
+                                     int n_physical_antenna_ports,
+                                     int initial_csi_index,
+                                     int uid);
 
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-			   NR_RRCReconfiguration_IEs_t *reconfig,
-			   NR_CellGroupConfig_t *secondaryCellGroup,
-			   int n_physical_antenna_ports,
-			   int initial_csi_index);
+                           NR_ServingCellConfig_t *servingcellconfigdedicated,
+                           NR_RRCReconfiguration_IEs_t *reconfig,
+                           NR_CellGroupConfig_t *secondaryCellGroup,
+                           int n_physical_antenna_ports,
+                           int initial_csi_index,
+                           int uid);
 
 void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
                            int eps_bearer_id, int rb_id,
@@ -100,6 +105,21 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
 		       NR_CG_Config_t *cg_Config,
 		       NR_RRCReconfiguration_t *reconfig,
 		       NR_RadioBearerConfig_t *rbconfig);
+
+void apply_macrlc_config(gNB_RRC_INST *rrc,
+                         rrc_gNB_ue_context_t         *const ue_context_pP,
+                         const protocol_ctxt_t        *const ctxt_pP );
+
+void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,
+                       const protocol_ctxt_t        *const ctxt_pP );
+
+void
+rrc_gNB_generate_RRCSetup(
+    const protocol_ctxt_t        *const ctxt_pP,
+    rrc_gNB_ue_context_t         *const ue_context_pP,
+    OCTET_STRING_t               *masterCellGroup_from_DU,
+    NR_ServingCellConfigCommon_t *scc,
+    const int                    CC_id);
 
 int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2ap_ENDC_sgnb_addition_req_t *m);
 
@@ -156,6 +176,25 @@ int
 nr_rrc_mac_remove_ue(module_id_t mod_idP,
                   rnti_t rntiP);
 
+int8_t nr_mac_rrc_data_ind(
+    const module_id_t     module_idP,
+    const int             CC_id,
+    const frame_t         frameP,
+    const sub_frame_t     sub_frameP,
+    const int             UE_id,
+    const rnti_t          rntiP,
+    const rb_id_t         srb_idP,
+    const uint8_t        *sduP,
+    const sdu_size_t      sdu_lenP,
+    const boolean_t   brOption
+);
+
+int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
+                           const uint8_t      *buffer,
+                           int                buffer_length,
+                           OCTET_STRING_t     *du_to_cu_rrc_container,
+                           const int          CC_id);
+
 void
 rrc_gNB_generate_dedicatedRRCReconfiguration_release(
     const protocol_ctxt_t   *const ctxt_pP,
@@ -163,3 +202,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
     uint8_t                  xid,
     uint32_t                 nas_length,
     uint8_t                 *nas_buffer);
+
+void 
+rrc_gNB_generate_dedicatedRRCReconfiguration(
+    const protocol_ctxt_t     *const ctxt_pP,
+    rrc_gNB_ue_context_t      *ue_context_pP);

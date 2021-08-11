@@ -41,7 +41,7 @@ KERNEL_VERSION=$(uname -r | cut -d '.' -f1)
 KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
 
 #check if we run inside a container
-IS_CONTAINER=`egrep -c "docker|podman|kubepods" /proc/self/cgroup || true`
+IS_CONTAINER=`egrep -c "docker|podman|kubepods|libpod|buildah" /proc/self/cgroup || true`
 #sudo is not needed when we are root
 if [ "$UID" = 0 ]
 then
@@ -113,6 +113,7 @@ check_supported_distribution() {
         "rhel7.6")     return 0 ;;
         "rhel7.7")     return 0 ;;
         "rhel7.8")     return 0 ;;
+        "rhel7.9")     return 0 ;;
         "rhel8.2")     return 0 ;;
         "rhel8.3")     return 0 ;;
         "rhel8.4")     return 0 ;;
@@ -221,6 +222,11 @@ compilations() {
     ret=$?
   } > $dlog/$2.$REL.txt 2>&1
   set -e
+  if [ "$VERBOSE_CI" == "1" ]; then
+     echo_info "====== Start of log for $2.$REL.txt ======"
+     cat $dlog/$2.$REL.txt
+     echo_info "====== End of log for $2.$REL.txt ======"
+  fi
   if [[ $ret -ne 0 ]]; then
      check_warnings "$dlog/$2.$REL.txt"
      check_errors "$dlog/$2.$REL.txt"
@@ -250,14 +256,14 @@ install_protobuf_from_source(){
     cd /tmp
     echo "Downloading protobuf"
     #rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
-    #wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+    #wget https://github.com/protocolbuffers/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
     #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
     #cd protobuf-2.6.1/
 
     if [ $IS_CONTAINER -eq 0 ]
     then
       rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-      wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+      wget --tries=3 --retry-connrefused https://github.com/protocolbuffers/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
       tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $(id -u) --group $(id -g) --no-same-owner
       cd protobuf-3.3.0/
     else
@@ -359,10 +365,10 @@ check_install_usrp_uhd_driver(){
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         if [ $IS_CONTAINER -eq 0 ]
         then
-            $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
+            $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils $CMAKE
             $SUDO -H pip install requests
         else
-            $SUDO $INSTALLER -y install boost boost-devel cmake3
+            $SUDO $INSTALLER -y install boost boost-devel $CMAKE
             $SUDO pip3 install mako requests
         fi
         if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
@@ -488,7 +494,7 @@ install_soapy_from_source(){
     #git checkout tags/release_003_010_001_001
     mkdir -p build
     cd build
-    cmake ../
+    $CMAKE ../
     echo "Compiling SoapyRemote"
     make -j`nproc`
     $SUDO make install
@@ -507,7 +513,7 @@ install_soapy_iris_from_source(){
     cd sklk-soapyiris
     mkdir -p build
     cd build
-    cmake ../
+    $CMAKE ../
     echo "Compiling SoapyIris"
     make -j`nproc`
     $SUDO make install
@@ -684,7 +690,7 @@ check_install_oai_software() {
 	automake  \
 	bison  \
 	build-essential \
-	cmake \
+	$CMAKE \
 	cmake-curses-gui  \
         ninja-build \
 	doxygen \

@@ -28,7 +28,7 @@ typedef void nr_pdcp_ue_manager_t;
 
 typedef struct nr_pdcp_ue_t {
   int rnti;
-  nr_pdcp_entity_t *srb[2];
+  nr_pdcp_entity_t *srb[3];
   nr_pdcp_entity_t *drb[5];
 } nr_pdcp_ue_t;
 
@@ -45,6 +45,9 @@ void nr_pdcp_manager_unlock(nr_pdcp_ue_manager_t *m);
 
 nr_pdcp_ue_t *nr_pdcp_manager_get_ue(nr_pdcp_ue_manager_t *m, int rnti);
 void nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager_t *m, int rnti);
+
+nr_pdcp_ue_t **nr_pdcp_manager_get_ue_list(nr_pdcp_ue_manager_t *_m);
+int nr_pdcp_manager_get_ue_count(nr_pdcp_ue_manager_t *_m);
 
 /***********************************************************************/
 /* ue functions                                                        */

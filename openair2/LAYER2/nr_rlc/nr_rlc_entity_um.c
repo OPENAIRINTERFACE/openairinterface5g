@@ -528,7 +528,7 @@ static int tx_list_size(nr_rlc_entity_um_t *entity,
 {
   int ret = 0;
 
-  while (l != NULL) {
+  while (l != NULL && ret < maxsize) {
     ret += compute_pdu_header_size(entity, l) + l->size;
     l = l->next;
   }

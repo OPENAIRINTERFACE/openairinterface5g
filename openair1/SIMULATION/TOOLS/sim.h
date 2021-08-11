@@ -89,6 +89,7 @@ typedef struct {
   double path_loss_dB;
   ///additional delay of channel in samples.
   int32_t channel_offset;
+  float noise_power_dB;
   ///This parameter (0...1) allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time
   double forgetting_factor;
   ///needs to be set to 1 for the first call, 0 otherwise.
@@ -106,8 +107,10 @@ typedef struct {
   unsigned int chan_idx;
   /// id of the channel modeling algorithm
   int modelid;
-  /// identifies channel descriptor owner (the module which created this descriptor)
+  /// identifies channel descriptor owner (the module which created this descriptor
   channelmod_moduleid_t module_id;
+  /// name of this descriptor,used for model created from config file at init time
+  char *model_name;  
   /// flags to properly trigger memory free
   unsigned int free_flags;
 } channel_desc_t;
@@ -241,11 +244,36 @@ typedef enum {
 
 #define CONFIG_HLP_SNR     "Set average SNR in dB (for --siml1 option)\n"
 #define CHANNELMOD_SECTION "channelmod"
+
+/* global channel modelization parameters */
+#define CHANNELMOD_MODELLIST_PARANAME "modellist"
+
+#define CHANNELMOD_HELP_MODELLIST "<list name> channel list name in config file describing the model type and its parameters\n"
 #define CHANNELMOD_PARAMS_DESC {  \
-    {"s"      , CONFIG_HLP_SNR,         PARAMFLAG_CMDLINE_NOPREFIXENABLED, dblptr:&snr_dB,    defdblval:25, TYPE_DOUBLE, 0},\
-    {"sinr_dB", NULL,                   0                                , dblptr:&sinr_dB,   defdblval:0 , TYPE_DOUBLE, 0},\
-    {"max_chan, CONFIG_HLP_MAX_CHAN",   0,                                 uptr:&max_chan,    defintval:10,  TYPE_UINT,   0},\
+    {"s"      ,     CONFIG_HLP_SNR,                                     PARAMFLAG_CMDLINE_NOPREFIXENABLED,   dblptr:&snr_dB,                        defdblval:25,                    TYPE_DOUBLE, 0},\
+    {"sinr_dB",     NULL,                                               0,                                   dblptr:&sinr_dB,                       defdblval:0 ,                    TYPE_DOUBLE, 0},\
+    {"max_chan",    "Max number of runtime models",                     0,                                   uptr:&max_chan,                        defintval:10,                    TYPE_UINT,   0},\
+    {CHANNELMOD_MODELLIST_PARANAME, CHANNELMOD_HELP_MODELLIST,          0,                                   strptr:(char **)&modellist_name,       defstrval:"DefaultChannelList",  TYPE_STRING, 60 },\
   }
+
+/* parameters for one model */ 
+#define CHANNELMOD_MODEL_NAME_PNAME "model_name"
+#define CHANNELMOD_MODEL_TYPE_PNAME "type"
+#define CHANNELMOD_MODEL_PL_PNAME "ploss_dB"
+#define CHANNELMOD_MODEL_NP_PNAME "noise_power_dB"
+#define CHANNELMOD_MODEL_FF_PNAME "forgetfact"
+#define CHANNELMOD_MODEL_CO_PNAME "offset"
+#define CHANNELMOD_MODEL_DT_PNAME "ds_tdl"
+
+#define CHANNELMOD_MODEL_PARAMS_DESC {  \
+    {CHANNELMOD_MODEL_NAME_PNAME, "name of the model\n",               0,  strptr:NULL ,             defstrval:"",                    TYPE_STRING,    0 },\
+    {CHANNELMOD_MODEL_TYPE_PNAME, "name of the model type\n",          0,  strptr:NULL ,             defstrval:"AWGN",                TYPE_STRING,    0 },\
+    {CHANNELMOD_MODEL_PL_PNAME,   "channel path loss in dB\n",         0,  dblptr:NULL,              defdblval:0,                     TYPE_DOUBLE,    0 },\
+    {CHANNELMOD_MODEL_NP_PNAME,   "channel noise in dB\n",             0,  dblptr:NULL,              defdblval:-50,                     TYPE_DOUBLE,    0 },\
+    {CHANNELMOD_MODEL_FF_PNAME,   "channel forget factor ((0 to 1)\n", 0,  dblptr:NULL,              defdblval:0,                     TYPE_DOUBLE,    0 },\
+    {CHANNELMOD_MODEL_CO_PNAME,   "channel offset in samps\n",         0,  iptr:NULL,                defintval:0,                     TYPE_INT,       0 },\
+    {CHANNELMOD_MODEL_DT_PNAME,    "delay spread for TDL models\n",    0,  dblptr:NULL,              defdblval:0,                     TYPE_DOUBLE,    0 }\
+}
 
 #include "platform_constants.h"
 
@@ -275,12 +303,17 @@ typedef struct {
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
-				     double sampling_rate,
+				                     double sampling_rate,
                                      double channel_bandwidth,
-				     double TDL_DS,
+				                     double TDL_DS,
                                      double forgetting_factor,
                                      int32_t channel_offset,
-                                     double path_loss_dB);
+                                     double path_loss_dB,
+				                     float noise_power_dB);
+
+channel_desc_t *find_channel_desc_fromname( char *modelname );
+
+
 /**
 \brief free memory allocated for a model descriptor
 \param ch points to the model, which cannot be used after calling this fuction
@@ -293,6 +326,12 @@ void free_channel_desc_scm(channel_desc_t *ch);
 \param module_id identifies the channel model. should be define as a macro in simu.h
 */
 void set_channeldesc_owner(channel_desc_t *cdesc, channelmod_moduleid_t module_id);
+/**
+\brief This function set a model name to a model descriptor, can be later used to identify a allocated channel model
+\param cdesc points to the model descriptor
+\param module_name is the C string to use as model name for the channel pointed by cdesc
+*/
+void set_channeldesc_name(channel_desc_t *cdesc,char *modelname);
 /** \fn void random_channel(channel_desc_t *desc)
 \brief This routine generates a random channel response (time domain) according to a tapped delay line model.
 \param desc Pointer to the channel descriptor
@@ -300,10 +339,10 @@ void set_channeldesc_owner(channel_desc_t *cdesc, channelmod_moduleid_t module_i
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
 
 /**\fn void multipath_channel(channel_desc_t *desc,
-           double tx_sig_re[2],
-           double tx_sig_im[2],
-           double rx_sig_re[2],
-           double rx_sig_im[2],
+           double tx_sig_re[NB_ANTENNAS_TX],
+           double tx_sig_im[NB_ANTENANS_TX],
+           double rx_sig_re[NB_ANTENNAS_RX],
+           double rx_sig_im[NB_ANTENNAS_RX],
            uint32_t length,
            uint8_t keep_channel,
 	   int log_channel)
@@ -320,10 +359,10 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
 */
 
 void multipath_channel(channel_desc_t *desc,
-                       double *tx_sig_re[2],
-                       double *tx_sig_im[2],
-                       double *rx_sig_re[2],
-                       double *rx_sig_im[2],
+                       double *tx_sig_re[NB_ANTENNAS_TX],
+                       double *tx_sig_im[NB_ANTENNAS_TX],
+                       double *rx_sig_re[NB_ANTENNAS_RX],
+                       double *rx_sig_im[NB_ANTENNAS_RX],
                        uint32_t length,
                        uint8_t keep_channel,
 		       int log_channel);
@@ -452,11 +491,11 @@ void multipath_tv_channel(channel_desc_t *desc,
 /**@} */
 /**@} */
 
-int modelid_fromname(char *modelname);
+int modelid_fromstrtype(char *modeltype);
 double channelmod_get_snr_dB(void);
 double channelmod_get_sinr_dB(void);
 void init_channelmod(void) ;
-
+int load_channellist(uint8_t nb_tx, uint8_t nb_rx, double sampling_rate, double channel_bandwidth) ;
 double N_RB2sampling_rate(uint16_t N_RB);
 double N_RB2channel_bandwidth(uint16_t N_RB);
 
@@ -468,11 +507,9 @@ double N_RB2channel_bandwidth(uint16_t N_RB);
 */
 //look-up table for the sine (cosine) function
 #define ResolSinCos 100
-uint16_t LUTSin[ResolSinCos+1];
 void InitSinLUT( void );
 void phase_noise(double ts, int16_t * InRe, int16_t * InIm);
 
-#include "targets/RT/USER/rfsim.h"
 
 void do_DL_sig(sim_t *sim,
                uint16_t subframe,

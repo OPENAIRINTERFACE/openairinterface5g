@@ -54,22 +54,21 @@
 #include <targets/ARCH/rfsimulator/rfsimulator.h>
 
 #define PORT 4043 //default TCP port for this simulator
-#define CirSize 307200 // 100ms is enough
+#define CirSize 6144000 // 100ms is enough
 #define sampleToByte(a,b) ((a)*(b)*sizeof(sample_t))
 #define byteToSample(a,b) ((a)/(sizeof(sample_t)*(b)))
 
 #define MAX_SIMULATION_CONNECTED_NODES 5
 #define GENERATE_CHANNEL 10 //each frame in DL
 
-// Fixme: datamodel, external variables in .h files, ...
-#include <common/ran_context.h>
 
-extern RAN_CONTEXT_t RC;
 //
 
 #define RFSIMU_SECTION    "rfsimulator"
 #define RFSIMU_OPTIONS_PARAMNAME "options"
-# define RFSIM_CONFIG_HELP_OPTIONS     " list of comma separated options to enable rf simulator functionalities. Available options: \n"\
+
+
+#define RFSIM_CONFIG_HELP_OPTIONS     " list of comma separated options to enable rf simulator functionalities. Available options: \n"\
   "        chanmod:   enable channel modelisation\n"\
   "        saviq:     enable saving written iqs to a file\n"
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -78,21 +77,21 @@ extern RAN_CONTEXT_t RC;
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define simOpt PARAMFLAG_NOFREE|PARAMFLAG_CMDLINE_NOPREFIXENABLED
 #define RFSIMULATOR_PARAMS_DESC {					\
-    {"serveraddr",             "<ip address to connect to>\n",    simOpt   ,  strptr:&(rfsimulator->ip),              defstrval:"127.0.0.1",           TYPE_STRING,    0 },\
-    {"serverport",             "<port to connect to>\n",             simOpt,  u16ptr:&(rfsimulator->port),            defuintval:PORT,                 TYPE_UINT16,    0 },\
-    {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,            0,       strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0 },\
-    {"IQfile",                 "<file path to use when saving IQs>\n",simOpt, strptr:&(saveF),                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 },\
-    {"modelname",              "<channel model name>\n",              simOpt, strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 },\
-    {"ploss",                  "<channel path loss in dB>\n",         simOpt, dblptr:&(rfsimulator->chan_pathloss),   defdblval:0,                     TYPE_DOUBLE,    0 },\
-    {"forgetfact",             "<channel forget factor ((0 to 1)>\n", simOpt, dblptr:&(rfsimulator->chan_forgetfact), defdblval:0,                     TYPE_DOUBLE,    0 },\
-    {"offset",                 "<channel offset in samps>\n",         simOpt, iptr:&(rfsimulator->chan_offset),       defintval:0,                     TYPE_INT,       0 }\
+    {"serveraddr",             "<ip address to connect to>\n",        simOpt,  strptr:&(rfsimulator->ip),              defstrval:"127.0.0.1",           TYPE_STRING,    0 },\
+    {"serverport",             "<port to connect to>\n",              simOpt,  u16ptr:&(rfsimulator->port),            defuintval:PORT,                 TYPE_UINT16,    0 },\
+    {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,             0,       strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0 },\
+    {"IQfile",                 "<file path to use when saving IQs>\n",simOpt,  strptr:&(saveF),                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 },\
+    {"modelname",              "<channel model name>\n",              simOpt,  strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 },\
+    {"ploss",                  "<channel path loss in dB>\n",         simOpt,  dblptr:&(rfsimulator->chan_pathloss),   defdblval:0,                     TYPE_DOUBLE,    0 },\
+    {"forgetfact",             "<channel forget factor ((0 to 1)>\n", simOpt,  dblptr:&(rfsimulator->chan_forgetfact), defdblval:0,                     TYPE_DOUBLE,    0 },\
+    {"offset",                 "<channel offset in samps>\n",         simOpt,  iptr:&(rfsimulator->chan_offset),       defintval:0,                     TYPE_INT,       0 }\
   };
 
 
 
 static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static telnetshell_cmddef_t rfsimu_cmdarray[] = {
-  {"setmodel","<model name>",(cmdfunc_t)rfsimu_setchanmod_cmd,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
+  {"setmodel","<model name> <model type>",(cmdfunc_t)rfsimu_setchanmod_cmd,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
   {"","",NULL},
 };
 
@@ -133,6 +132,7 @@ typedef struct {
   double chan_pathloss;
   double chan_forgetfact;
   int    chan_offset;
+  float  noise_power_dB;
   void *telnetcmd_qid;
   poll_telnetcmdq_func_t poll_telnetcmdq;
 } rfsimulator_state_t;
@@ -182,15 +182,9 @@ static void allocCirBuf(rfsimulator_state_t *bridge, int sock) {
       tableNor(rand);
       init_done=true;
     }
-
-    ptr->channel_model=new_channel_desc_scm(bridge->tx_num_channels,bridge->rx_num_channels,
-                                            bridge->channelmod,
-                                            bridge->sample_rate,
-                                            bridge->tx_bw,
-                                            30e-9,  // TDL delay-spread parameter
-                                            bridge->chan_forgetfact, // forgetting_factor
-                                            bridge->chan_offset, // maybe used for TA
-                                            bridge->chan_pathloss); // path_loss in dB
+    char *modelname = (bridge->typeStamp == ENB_MAGICDL) ? "rfsimu_channel_ue0":"rfsimu_channel_enB0";
+    ptr->channel_model=find_channel_desc_fromname(modelname); // path_loss in dB
+    AssertFatal((ptr->channel_model!= NULL),"Channel model %s not found, check config file\n",modelname);
     set_channeldesc_owner(ptr->channel_model, RFSIMU_MODULEID);
     random_channel(ptr->channel_model,false);
   }
@@ -299,7 +293,8 @@ static void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
       break;
     } else if (strcmp(rfsimu_params[p].strlistptr[i],"chanmod") == 0) {
       init_channelmod();
-      rfsimulator->channelmod=modelid_fromname(modelname);
+      load_channellist(rfsimulator->tx_num_channels, rfsimulator->rx_num_channels, rfsimulator->sample_rate, rfsimulator->tx_bw);
+      rfsimulator->channelmod=true;
     } else {
       fprintf(stderr,"Unknown rfsimulator option: %s\n",rfsimu_params[p].strlistptr[i]);
       exit(-1);
@@ -320,20 +315,27 @@ static void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
 
 static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg) {
   char *modelname=NULL;
-  int s = sscanf(buff,"%ms\n",&modelname);
+  char *modeltype=NULL;
+  if (debug)
+  	  prnt("rfsimu_setchanmod_cmd buffer \"%s\"\n",buff);
+  int s = sscanf(buff,"%m[^ ] %ms\n",&modelname, &modeltype);
 
-  if (s == 1) {
-    int channelmod=modelid_fromname(modelname);
+  if (s == 2) {
+    int channelmod=modelid_fromstrtype(modeltype);
 
     if (channelmod<0)
-      prnt("ERROR: model %s unknown\n",modelname);
+      prnt("ERROR: model type %s unknown\n",modeltype);
     else {
       rfsimulator_state_t *t = (rfsimulator_state_t *)arg;
-
+      int found=0;
       for (int i=0; i<FD_SETSIZE; i++) {
         buffer_t *b=&t->buf[i];
+        if ( b->channel_model==NULL)
+          continue;
+        if (b->channel_model->model_name==NULL)
+          continue;
+        if (b->conn_sock >= 0 && (strcmp(b->channel_model->model_name,modelname)==0)) {
 
-        if (b->conn_sock >= 0 ) {
           channel_desc_t *newmodel=new_channel_desc_scm(t->tx_num_channels,t->rx_num_channels,
                                    channelmod,
                                    t->sample_rate,
@@ -341,21 +343,29 @@ static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt,
                                    30e-9,  // TDL delay-spread parameter
                                    t->chan_forgetfact, // forgetting_factor
                                    t->chan_offset, // maybe used for TA
-                                   t->chan_pathloss); // path_loss in dB
+							       t->chan_pathloss,
+							       t->noise_power_dB
+							       ); // path_loss in dB
           set_channeldesc_owner(newmodel, RFSIMU_MODULEID);
+          set_channeldesc_name(newmodel,modelname);
           random_channel(newmodel,false);
           channel_desc_t *oldmodel=b->channel_model;
           b->channel_model=newmodel;
           free_channel_desc_scm(oldmodel);
-          prnt("New model %s applied to channel connected to sock %d\n",modelname,i);
+          prnt("New model type %s applied to channel %s connected to sock %d\n",modeltype,modelname,i);
+          found=1;
+          break;
         }
-      }
+      } /* for */
+      if (found==0)
+      	prnt("Channel %s not found or not currently used\n",modelname); 
     }
   } else {
-    prnt("ERROR: no model specified\n");
+    prnt("ERROR: 2 parameters required: model name and model type (%i found)\n",s);
   }
 
   free(modelname);
+  free(modeltype);
   return CMDSTATUS_FOUND;
 }
 
@@ -608,8 +618,8 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
 }
 
 static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, void **samplesVoid, int nsamps, int nbAnt) {
-  if (nbAnt != 1) {
-    LOG_W(HW, "rfsimulator: only 1 antenna tested\n");
+  if (nbAnt > 4) {
+    LOG_W(HW, "rfsimulator: only 4 antenna tested\n");
   }
 
   rfsimulator_state_t *t = device->priv;
@@ -726,14 +736,19 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
                       CirSize
                     );
         else { // no channel modeling
+          double H_awgn_mimo[4][4] ={{1.0, 0.5, 0.25, 0.125},//rx 0
+                                     {0.5, 1.0, 0.5, 0.25},  //rx 1
+                                     {0.25, 0.5, 1.0, 0.5},  //rx 2
+                                     {0.125, 0.25, 0.5, 1.0}};//rx 3
+
           sample_t *out=(sample_t *)samplesVoid[a];
           int nbAnt_tx = ptr->th.nbAnt;//number of Tx antennas
 
           //LOG_I(HW, "nbAnt_tx %d\n",nbAnt_tx);
           for (int i=0; i < nsamps; i++) {//loop over nsamps
             for (int a_tx=0; a_tx<nbAnt_tx; a_tx++) { //sum up signals from nbAnt_tx antennas
-              out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].r;
-              out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].i;
+              out[i].r += (short)(ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].r*H_awgn_mimo[a][a_tx]);
+              out[i].i += (short)(ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].i*H_awgn_mimo[a][a_tx]);
             } // end for a_tx
           } // end for i (number of samps)
         } // end of no channel modeling
@@ -774,6 +789,11 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   // to change the log level, use this on command line
   // --log_config.hw_log_level debug
   rfsimulator_state_t *rfsimulator = (rfsimulator_state_t *)calloc(sizeof(rfsimulator_state_t),1);
+  // initialize channel simulation
+  rfsimulator->tx_num_channels=openair0_cfg->tx_num_channels;
+  rfsimulator->rx_num_channels=openair0_cfg->rx_num_channels;
+  rfsimulator->sample_rate=openair0_cfg->sample_rate;
+  rfsimulator->tx_bw=openair0_cfg->tx_bw;  
   rfsimulator_readconfig(rfsimulator);
   pthread_mutex_init(&Sockmutex, NULL);
   LOG_I(HW,"rfsimulator: running as %s\n", rfsimulator-> typeStamp == ENB_MAGICDL ? "server waiting opposite rfsimulators to connect" : "client: will connect to a rfsimulator server side");
@@ -798,11 +818,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     rfsimulator->buf[i].conn_sock=-1;
 
   AssertFatal((rfsimulator->epollfd = epoll_create1(0)) != -1,"");
-  // initialize channel simulation
-  rfsimulator->tx_num_channels=openair0_cfg->tx_num_channels;
-  rfsimulator->rx_num_channels=openair0_cfg->rx_num_channels;
-  rfsimulator->sample_rate=openair0_cfg->sample_rate;
-  rfsimulator->tx_bw=openair0_cfg->tx_bw;
+
   //randominit(0);
   set_taus_seed(0);
   /* look for telnet server, if it is loaded, add the channel modeling commands to it */

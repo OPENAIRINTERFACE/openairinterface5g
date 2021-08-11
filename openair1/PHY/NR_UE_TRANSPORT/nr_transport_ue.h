@@ -38,10 +38,10 @@
 
 //#include "PHY/defs_nr_UE.h"
 #include "../NR_TRANSPORT/nr_transport_common_proto.h"
-#ifndef STANDALONE_COMPILE
+/*#ifndef STANDALONE_COMPILE
 #include "UTIL/LISTS/list.h"
 #endif
-
+*/
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 
 
@@ -105,6 +105,8 @@ typedef struct {
   uint8_t O_ACK;
   /// Index of current HARQ round for this ULSCH
   uint8_t round;
+  /// Last Ndi for this harq process
+  uint8_t ndi;
   /// pointer to pdu from MAC interface (TS 36.212 V15.4.0, Sec 5.1 p. 8)
   unsigned char *a;
   /// Pointer to the payload + CRC 

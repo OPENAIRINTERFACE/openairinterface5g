@@ -39,7 +39,7 @@ void output_log_mem(void);
     display_backtrace();                        \
     fflush(stdout);                             \
     fflush(stderr);                             \
-    exit(EXIT_FAILURE);                         \
+    abort();
 
 #define _Assert_(cOND, aCTION, fORMAT, aRGS...)             \
 do {                                                        \

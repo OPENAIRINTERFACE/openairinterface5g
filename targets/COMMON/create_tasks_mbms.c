@@ -47,6 +47,7 @@
 # include "mce_app.h"
 # include "mme_app.h"
 
+#include <openair3/ocp-gtpu/gtp_itf.h>
 //extern RAN_CONTEXT_t RC;
 
 int create_tasks_mbms(uint32_t enb_nb) {

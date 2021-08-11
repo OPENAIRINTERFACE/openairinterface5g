@@ -33,6 +33,7 @@
 #ifndef COMMON_LIB_H
 #define COMMON_LIB_H
 #include <stdint.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <openair1/PHY/TOOLS/tools_defs.h>
 #include "record_player.h"
@@ -560,7 +561,10 @@ extern int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **r
 extern void iqrecorder_end(openair0_device *device);
 
 
+#include <unistd.h>
+#ifndef gettid
 #define gettid() syscall(__NR_gettid)
+#endif
 /*@}*/
 
 

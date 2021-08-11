@@ -48,11 +48,12 @@
 #include "pdcp_primitives.h"
 
 #include "UTIL/OSA/osa_defs.h"
-#include "msc.h"
+#include <common/utils/msc/msc.h>
 
 #include "LTE_UERadioAccessCapabilityInformation.h"
 
 #include "gtpv1u_eNB_task.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 #include "RRC/LTE/rrc_eNB_GTPV1U.h"
 
 #include "TLVDecoder.h"
@@ -785,21 +786,37 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask |= UE_IDENTITIES_gummei;
 
         if (r_mme->plmn_Identity != NULL) {
-          if ((r_mme->plmn_Identity->mcc != NULL) && (r_mme->plmn_Identity->mcc->list.count > 0)) {
-            /* Use first indicated PLMN MCC if it is defined */
-            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc = *r_mme->plmn_Identity->mcc->list.array[selected_plmn_identity];
+          if ((r_mme->plmn_Identity->mcc != NULL) && (r_mme->plmn_Identity->mcc->list.count == 3))
+          {
+            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc = (*r_mme->plmn_Identity->mcc->list.array[0] & 0xf) * 100 +
+                                                                    (*r_mme->plmn_Identity->mcc->list.array[1] & 0xf) * 10 +
+                                                                    (*r_mme->plmn_Identity->mcc->list.array[2] & 0xf);
             LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue %x\n",
                   ctxt_pP->module_id,
                   S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc,
                   ue_context_pP->ue_context.rnti);
           }
-
-          if (r_mme->plmn_Identity->mnc.list.count > 0) {
-            /* Use first indicated PLMN MNC if it is defined */
-            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc = *r_mme->plmn_Identity->mnc.list.array[selected_plmn_identity];
-            LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue %x\n",
+          if(r_mme->plmn_Identity->mnc.list.count == 3)
+          {
+            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc = (*r_mme->plmn_Identity->mnc.list.array[0] & 0xf) * 100 +
+                                                                    (*r_mme->plmn_Identity->mnc.list.array[1] & 0xf) * 10 +
+                                                                    (*r_mme->plmn_Identity->mnc.list.array[2] & 0xf);
+            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc_len = 3;
+            LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u %udigit ue %x\n",
                   ctxt_pP->module_id,
                   S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc,
+                  S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc_len,
+                  ue_context_pP->ue_context.rnti);
+          }
+          else if(r_mme->plmn_Identity->mnc.list.count == 2)
+          {
+            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc = (*r_mme->plmn_Identity->mnc.list.array[0] & 0xf) * 10 +
+                                                                    (*r_mme->plmn_Identity->mnc.list.array[1] & 0xf);
+            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc_len = 2;
+            LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u %udigit ue %x\n",
+                  ctxt_pP->module_id,
+                  S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc,
+                  S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc_len,
                   ue_context_pP->ue_context.rnti);
           }
         } else { // end if plmn_Identity != NULL
@@ -1058,7 +1075,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
                  ue_context_p->ue_context.nr_security.kgNB);
 
     // in case, send the S1SP initial context response if it is not sent with the attach complete message
-    if (ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
+    if (ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED) {
       LOG_I(RRC, "Sending rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP, cause %ld\n", ue_context_p->ue_context.reestablishment_cause);
       //if(ue_context_p->ue_context.reestablishment_cause == ReestablishmentCause_spare1){}
       rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(&ctxt,ue_context_p);
@@ -1774,7 +1791,7 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
         }
       }
 
-      itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
+      itti_send_msg_to_task(TASK_VARIABLE, instance, msg_delete_tunnels_p);
       //S1AP_E_RAB_RELEASE_RESPONSE
       rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(&ctxt, ue_context_p, xid);
     }

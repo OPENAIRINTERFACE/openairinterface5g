@@ -374,7 +374,7 @@ static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, 
   int n;
 
   if (reset) {
-    *x1 = 1+ (1<<31);
+    *x1 = 1+ (1U<<31);
     *x2=*x2 ^ ((*x2 ^ (*x2>>1) ^ (*x2>>2) ^ (*x2>>3))<<31);
 
     // skip first 50 double words (1600 bits)
@@ -468,6 +468,35 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
         ulsch_harq->Nsymb_pusch,
         nb_rb);
   //#endif
+
+  eNB_SCH_STATS_t *stats=NULL;
+  int first_free=-1;
+  for (int i=0;i<NUMBER_OF_SCH_STATS_MAX;i++) {
+    if (eNB->ulsch_stats[i].rnti == 0 && first_free == -1) {
+      first_free = i;
+      stats=&eNB->ulsch_stats[i];
+    }
+    if (eNB->ulsch_stats[i].rnti == ulsch->rnti) {
+      stats=&eNB->ulsch_stats[i];
+      break;
+    }
+  }
+  if (stats) {
+    stats->rnti = ulsch->rnti;
+    stats->round_trials[ulsch_harq->round]++;
+    stats->frame=proc->frame_rx;
+  }
+  if (ulsch_harq->round == 0) {
+    if (stats) {
+      stats->current_Qm = Q_m;
+      stats->current_RI = 1;
+      stats->total_bytes_tx += ulsch_harq->TBS;
+      stats->current_TBS = ulsch_harq->TBS;
+      stats->current_G   = ulsch_harq->G;
+    }
+  }
+
+
   //if (ulsch_harq->round == 0) { // delete for RB shortage pattern
   // This is a new packet, so compute quantities regarding segmentation
   ulsch_harq->B = A+24;
@@ -1086,3 +1115,44 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
   ret = ulsch_decoding_data_all(eNB,proc, UE_id,harq_pid,llr8_flag);
   return(ret);
 }
+
+#define STATSTRLEN 16384
+void dump_ulsch_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame) {
+
+  char output[16384];
+  int stroff=0;
+  for (int i=0;i<NUMBER_OF_ULSCH_MAX;i++)
+    if (eNB->ulsch_stats[i].rnti>0 && eNB->ulsch_stats[i].round_trials[0]>100) { 
+      for (int aa=0;aa<eNB->frame_parms.nb_antennas_rx;aa++) 
+        stroff+=sprintf(output+stroff,"ULSCH RNTI %x: ulsch_power[%d] %d, ulsch_noise_power[%d] %d\n", 
+              eNB->ulsch_stats[i].rnti, aa,eNB->ulsch_stats[i].ulsch_power[aa],aa,eNB->ulsch_stats[i].ulsch_noise_power[aa]);
+      AssertFatal(stroff<(STATSTRLEN-1000),"Increase STATSTRLEN\n");
+      stroff+=sprintf(output+stroff,"ULSCH RNTI %x: round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d\n",
+            eNB->ulsch_stats[i].rnti,
+            eNB->ulsch_stats[i].round_trials[0],
+            (double)eNB->ulsch_stats[i].round_trials[1]/eNB->ulsch_stats[i].round_trials[0],
+            eNB->ulsch_stats[i].round_trials[1],
+            (double)eNB->ulsch_stats[i].round_trials[2]/eNB->ulsch_stats[i].round_trials[0],
+            eNB->ulsch_stats[i].round_trials[2],
+           (double)eNB->ulsch_stats[i].round_trials[3]/eNB->ulsch_stats[i].round_trials[0],
+            eNB->ulsch_stats[i].round_trials[3]);
+      stroff+=sprintf(output+stroff,"ULSCH RNTI %x:  current_Qm %d, current_G %d, current_TBS %d, current_rate %f,current_RI %d, timing_offset %d, total_bytes RX/SCHED %d/%d\n",
+            eNB->ulsch_stats[i].rnti,
+            eNB->ulsch_stats[i].current_Qm,
+	    eNB->ulsch_stats[i].current_G,
+	    eNB->ulsch_stats[i].current_TBS,
+	    (double)eNB->ulsch_stats[i].current_G/eNB->ulsch_stats[i].current_TBS,
+            eNB->ulsch_stats[i].current_RI,
+	    eNB->ulsch_stats[i].timing_offset,
+            eNB->ulsch_stats[i].total_bytes_rx,
+            eNB->ulsch_stats[i].total_bytes_tx);
+    }
+  fprintf(fd,"%s",output);
+}
+
+void clear_ulsch_stats(PHY_VARS_eNB *eNB) {
+
+  for (int i=0;i<NUMBER_OF_ULSCH_MAX;i++)
+    memset((void*)&eNB->ulsch_stats[i],0,sizeof(eNB->ulsch_stats[i]));
+}
+

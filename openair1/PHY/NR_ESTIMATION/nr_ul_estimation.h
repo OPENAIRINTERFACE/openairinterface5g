@@ -47,10 +47,13 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned short bwp_start_subcarrier,
                                 nfapi_nr_pusch_pdu_t *pusch_pdu);
 
-void gNB_I0_measurements(PHY_VARS_gNB *gNB);
+void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB);
+
+void gNB_I0_measurements(PHY_VARS_gNB *gNB,int first_symb,int num_symb);
+
+void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol);
 
 int nr_est_timing_advance_pusch(PHY_VARS_gNB* phy_vars_gNB, int UE_id);
-
 
 void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                               NR_DL_FRAME_PARMS *frame_parms,

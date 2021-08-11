@@ -35,6 +35,7 @@
 #include <sched.h>
 
 #include "rt_wrapper.h"
+#include <common/utils/msc/msc.h>
 
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -55,6 +56,8 @@
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
+
+#include <openair1/PHY/phy_extern_ue.h>
 
 #include "PHY/phy_vars.h"
 #include "SCHED/sched_common_vars.h"
@@ -102,7 +105,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
-
 
 uint16_t sf_ahead=4;
 
@@ -164,16 +166,19 @@ void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *
   AssertFatal(false, "Must not be called in this context\n");
 }
 
+RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
+
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
 
 extern void init_eNB_afterRU(void);
 
+RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
+
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-int usrp_tx_thread = 0;
 
 THREAD_STRUCT thread_struct;
 /* struct for ethernet specific parameters given in eNB conf file */
@@ -183,6 +188,7 @@ double cpuf;
 
 int oaisim_flag=0;
 uint16_t ue_idx_standalone = 0xFFFF;
+uint8_t proto_agent_flag = 0;
 
 
 /* forward declarations */
@@ -428,7 +434,6 @@ int stop_L1L2(module_id_t enb_id) {
  * Restart the lte-softmodem after it has been soft-stopped with stop_L1L2()
  */
 int restart_L1L2(module_id_t enb_id) {
-  RU_t *ru = RC.ru[enb_id];
   int cc_id;
   MessageDef *msg_p = NULL;
   LOG_W(ENB_APP, "restarting lte-softmodem\n");
@@ -439,10 +444,12 @@ int restart_L1L2(module_id_t enb_id) {
 
   for (cc_id = 0; cc_id < RC.nb_L1_CC[enb_id]; cc_id++) {
     RC.eNB[enb_id][cc_id]->configured = 0;
+    for (int ru_id=0;ru_id<RC.eNB[enb_id][cc_id]->num_RU;ru_id++) {
+      int ru_idx = RC.eNB[enb_id][cc_id]->RU_list[ru_id]->idx;
+      RC.ru_mask |= (1 << ru_idx);
+      set_function_spec_param(RC.ru[ru_idx]);
+    }
   }
-
-  RC.ru_mask |= (1 << ru->idx);
-  set_function_spec_param(RC.ru[enb_id]);
   /* reset the list of connected UEs in the MAC, since in this process with
    * loose all UEs (have to reconnect) */
   init_UE_info(&RC.mac[enb_id]->UE_info);
@@ -463,9 +470,15 @@ int restart_L1L2(module_id_t enb_id) {
   /* TODO XForms might need to be restarted, but it is currently (09/02/18)
    * broken, so we cannot test it */
   wait_eNBs();
-  init_RU_proc(ru);
-  ru->rf_map.card = 0;
-  ru->rf_map.chain = 0; /* CC_id + chain_offset;*/
+  for (int cc_id=0;cc_id<RC.nb_L1_CC[enb_id]; cc_id++) {
+    for (int ru_id=0;ru_id<RC.eNB[enb_id][cc_id]->num_RU;ru_id++) {
+      int ru_idx = RC.eNB[enb_id][cc_id]->RU_list[ru_id]->idx;
+
+      init_RU_proc(RC.ru[ru_idx]);
+      RC.ru[ru_idx]->rf_map.card = 0;
+      RC.ru[ru_idx]->rf_map.chain = 0; /* CC_id + chain_offset;*/
+    }
+  }
   wait_RUs();
   init_eNB_afterRU();
   printf("Sending sync to all threads\n");
@@ -593,7 +606,7 @@ int main ( int argc, char **argv )
   /* We need to read RU configuration before FlexRAN starts so it knows what
    * splits to report. Actual RU start comes later. */
   if (RC.nb_RU > 0 && NFAPI_MODE != NFAPI_MODE_VNF) {
-    RCconfig_RU();
+    RC.ru = RCconfig_RU(RC.nb_RU,RC.nb_L1_inst,RC.eNB,&RC.ru_mask,&RC.ru_mutex,&RC.ru_cond);
     LOG_I(PHY,
           "number of L1 instances %d, number of RU %d, number of CPU cores %d\n",
           RC.nb_L1_inst, RC.nb_RU, get_nprocs());
@@ -670,6 +683,7 @@ int main ( int argc, char **argv )
     for (int x=0; x < RC.nb_L1_inst; x++) 
       for (int CC_id=0; CC_id<RC.nb_L1_CC[x]; CC_id++) {
         L1_rxtx_proc_t *L1proc= &RC.eNB[x][CC_id]->proc.L1_proc;
+        L1_rxtx_proc_t *L1proctx= &RC.eNB[x][CC_id]->proc.L1_proc_tx;
 	L1proc->threadPool=(tpool_t*)malloc(sizeof(tpool_t));
         L1proc->respEncode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
         L1proc->respDecode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
@@ -677,9 +691,11 @@ int main ( int argc, char **argv )
          initTpool(get_softmodem_params()->threadPoolConfig, L1proc->threadPool, true);
         else
          initTpool("n", L1proc->threadPool, true);
-      initNotifiedFIFO(L1proc->respEncode);
-      initNotifiedFIFO(L1proc->respDecode);
-      RC.eNB[x][CC_id]->proc.L1_proc_tx.threadPool = L1proc->threadPool;
+        initNotifiedFIFO(L1proc->respEncode);
+        initNotifiedFIFO(L1proc->respDecode);
+        L1proctx->threadPool=L1proc->threadPool;
+        L1proctx->respEncode=L1proc->respEncode;
+        L1proctx->nbEncode=L1proc->nbEncode;
     }
 
 
@@ -694,7 +710,7 @@ int main ( int argc, char **argv )
   // some initialization is necessary and init_ru_vnf do this.
   if (RC.nb_RU >0 && NFAPI_MODE!=NFAPI_MODE_VNF) {
     printf("Initializing RU threads\n");
-    init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
+    init_RU(RC.ru,RC.nb_RU,RC.eNB,RC.nb_L1_inst,RC.nb_L1_CC,get_softmodem_params()->rf_config_file,get_softmodem_params()->send_dmrs_sync);
     
     for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;
@@ -744,7 +760,7 @@ int main ( int argc, char **argv )
   fflush(stderr);
   // end of CI modifications
   //getchar();
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
      load_softscope("enb",NULL);
   itti_wait_tasks_end();
 
@@ -761,7 +777,7 @@ int main ( int argc, char **argv )
 
   #if 0 //Disable clean up because this tends to crash (and unnecessary)
   if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
-    if(IS_SOFTMODEM_DOFORMS)
+    if(IS_SOFTMODEM_DOSCOPE)
       end_forms();
 
     LOG_I(ENB_APP,"stopping MODEM threads\n");

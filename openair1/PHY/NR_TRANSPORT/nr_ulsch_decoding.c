@@ -320,7 +320,7 @@ void nr_processULSegment(void* arg) {
   Kr_bytes = Kr>>3;
   K_bits_F = Kr-ulsch_harq->F;
 
-  t_nrLDPC_time_stats procTime;
+  t_nrLDPC_time_stats procTime = {0};
   t_nrLDPC_time_stats* p_procTime     = &procTime ;
 
   //start_meas(&phy_vars_gNB->ulsch_deinterleaving_stats);
@@ -451,7 +451,7 @@ void nr_processULSegment(void* arg) {
 }
 
 uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
-                           uint8_t UE_id,
+                           uint8_t ULSCH_id,
                            short *ulsch_llr,
                            NR_DL_FRAME_PARMS *frame_parms,
                            nfapi_nr_pusch_pdu_t *pusch_pdu,
@@ -473,7 +473,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #endif
   
 
-  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[UE_id][0];
+  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[ULSCH_id][0];
+  NR_gNB_PUSCH                         *pusch                 = phy_vars_gNB->pusch_vars[ULSCH_id];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
 
   if (!harq_process) {
@@ -560,9 +561,11 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   if (stats) {
     stats->rnti = ulsch->rnti;
     stats->round_trials[harq_process->round]++;
-  }
-  if (harq_process->round == 0) {
-    if (stats) {
+    for (int aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
+       stats->power[aarx]=dB_fixed_x10(pusch->ulsch_power[aarx]);
+       stats->noise_power[aarx]=dB_fixed_x10(pusch->ulsch_noise_power[aarx]);
+    }
+    if (harq_process->round == 0) {
       stats->current_Qm = Qm;
       stats->current_RI = n_layers;
       stats->total_bytes_tx += harq_process->TBS;
@@ -642,7 +645,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     rdata->Tbslbrm = Tbslbrm;
     rdata->offset = offset;
     rdata->ulsch = ulsch;
-    rdata->ulsch_id = UE_id;
+    rdata->ulsch_id = ULSCH_id;
     pushTpool(phy_vars_gNB->threadPool,req);
     phy_vars_gNB->nbDecode++;
     LOG_D(PHY,"Added a block to decode, in pipe: %d\n",phy_vars_gNB->nbDecode);

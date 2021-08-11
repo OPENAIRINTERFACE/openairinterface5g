@@ -27,7 +27,6 @@ extern "C" {
 #include <openair2/PHY_INTERFACE/IF_Module.h>
 #include "nfapi_nr_interface.h"
 #include "nfapi_nr_interface_scf.h"
-
 #include <sys/types.h>
 #include "openair1/PHY/defs_gNB.h"
 

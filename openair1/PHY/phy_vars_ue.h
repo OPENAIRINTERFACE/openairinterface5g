@@ -33,9 +33,6 @@ char *namepointer_log2;
 
 
 #include "PHY/LTE_REFSIG/primary_synch.h"
-int16_t *primary_synch0_time;
-int16_t *primary_synch1_time;
-int16_t *primary_synch2_time;
 
 PHY_VARS_UE ***PHY_vars_UE_g;
 

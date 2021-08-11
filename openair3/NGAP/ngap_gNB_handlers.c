@@ -657,6 +657,7 @@ int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
           case NGAP_CauseRadioNetwork_up_integrity_protection_not_possible:
             NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_up_integrity_protection_not_possible\n");
             break;
+
           case NGAP_CauseRadioNetwork_up_confidentiality_protection_not_possible:
             NGAP_WARN("Received NG Error indication NGAP_CauseRadioNetwork_up_confidentiality_protection_not_possible\n");
             break;
@@ -1030,6 +1031,12 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
                 
                 /* Set the QOS informations */
                 NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
+                if(qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.present == NGAP_QosCharacteristics_PR_nonDynamic5QI){
+                  if(qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.choice.nonDynamic5QI != NULL){
+                    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].fiveQI =
+                        (uint64_t)qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.choice.nonDynamic5QI->fiveQI;
+                  }
+                }
               
                 NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].allocation_retention_priority.priority_level =
                   qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.priorityLevelARP;
@@ -1061,13 +1068,33 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_InitialContextSetupRequestIEs_t, ie, container,
                                NGAP_ProtocolIE_ID_id_AllowedNSSAI, true);
   
-  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
+  //if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
     NGAP_AllowedNSSAI_Item_t *allow_nssai_item_p = NULL;
-  
-    NGAP_DEBUG("AllowedNSSAI.list.count %d\n", ie->value.choice.AllowedNSSAI.list.count);
-    DevAssert(ie->value.choice.AllowedNSSAI.list.count > 0);
-    DevAssert(ie->value.choice.AllowedNSSAI.list.count <= NGAP_maxnoofAllowedS_NSSAIs);
 
+    //NGAP_DEBUG("AllowedNSSAI.list.count %d\n", ie->value.choice.AllowedNSSAI.list.count);
+    //DevAssert(ie->value.choice.AllowedNSSAI.list.count > 0);
+    //DevAssert(ie->value.choice.AllowedNSSAI.list.count <= NGAP_maxnoofAllowedS_NSSAIs);
+
+    if (ie == NULL) {
+        NGAP_WARN("AllowedNSSAI not present, forging 2 NSSAI\n");
+
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nb_allowed_nssais = 2;
+
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sST = 01;
+
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD_flag = 1;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD[0] = 01;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD[1] = 02;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD[2] = 03;
+
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sST = 01;
+ 
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD_flag = 1;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD[0] = 00;//11;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD[1] = 00;//22;
+    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD[2] = 01;//33;
+    } else {
+    NGAP_INFO("AllowedNSSAI.list.count %d\n", ie->value.choice.AllowedNSSAI.list.count);
     NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nb_allowed_nssais = ie->value.choice.AllowedNSSAI.list.count;
     
     for(i = 0; i < ie->value.choice.AllowedNSSAI.list.count; i++) {
@@ -1082,9 +1109,10 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
         NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD[2] = allow_nssai_item_p->s_NSSAI.sD->buf[2];
       }
     }
-  } else {/* ie != NULL */
-    return -1;
-  }
+   }
+  //} else {/* ie != NULL */
+  //  return -1;
+  //}
 
   /* id-UESecurityCapabilities */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_InitialContextSetupRequestIEs_t, ie, container,

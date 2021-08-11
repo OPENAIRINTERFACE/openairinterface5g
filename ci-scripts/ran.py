@@ -37,6 +37,8 @@ import logging
 import os
 import time
 from multiprocessing import Process, Lock, SimpleQueue
+import yaml
+
 
 #-----------------------------------------------------------
 # OAI Testing modules
@@ -90,6 +92,9 @@ class RANManagement():
 		self.testCase_id = ''
 		self.epcPcapFile = ''
 		self.runtime_stats= ''
+		self.datalog_rt_stats={}
+		self.eNB_Trace = '' #if 'yes', Tshark will be launched at initialization
+		self.USRPIPAddress = ''
 
 
 
@@ -127,12 +132,16 @@ class RANManagement():
 		result = re.search('--eNBocp', self.Build_eNB_args)
 		if result is not None:
 			self.air_interface[self.eNB_instance] = 'ocp-enb'
-		else:	
-			result = re.search('--gNB', self.Build_eNB_args)
+		else:
+			result = re.search('--RU', self.Build_eNB_args)
 			if result is not None:
-				self.air_interface[self.eNB_instance] = 'nr-softmodem'
+				self.air_interface[self.eNB_instance] = 'oairu'
 			else:
-				self.air_interface[self.eNB_instance] = 'lte-softmodem'
+				result = re.search('--gNB', self.Build_eNB_args)
+				if result is not None:
+					self.air_interface[self.eNB_instance] = 'nr-softmodem'
+				else:
+					self.air_interface[self.eNB_instance] = 'lte-softmodem'
 		
 		# Worakround for some servers, we need to erase completely the workspace
 		if self.Build_eNB_forced_workspace_cleanup:
@@ -141,7 +150,7 @@ class RANManagement():
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
-			full_ran_repo_name = self.ranRepository
+			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
 		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
@@ -184,7 +193,7 @@ class RANManagement():
 		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
+			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
 		if (self.ranAllowMerge):
@@ -293,7 +302,7 @@ class RANManagement():
 				mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 				mySSH.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
 				#-qq quiet / -u update orcreate files
-				mySSH.command('unzip -u -qq -DD tmp_build' + testcaseId + '.zip', '\$', 5)
+				mySSH.command('unzip -o -u -qq -DD tmp_build' + testcaseId + '.zip', '\$', 5)
 				mySSH.command('rm -f tmp_build' + testcaseId + '.zip', '\$', 5)
 				mySSH.close()
 		else:
@@ -333,10 +342,41 @@ class RANManagement():
 		self.testCase_id = HTML.testCase_id
 		mySSH = SSH.SSHConnection()
 		
+		#reboot USRP if requested in xml
+		if self.USRPIPAddress!='':
+			logging.debug('USRP '+ self.USRPIPAddress +'reboot request')
+			mySSH.open(lIpAddr, lUserName, lPassWord)
+			cmd2usrp='ssh root@'+self.USRPIPAddress+' reboot'
+			mySSH.command2(cmd2usrp,1)
+			mySSH.close()
+			logging.debug('Waiting for USRP to be ready')
+			time.sleep(120)
+
+
 		if (self.pStatus < 0):
 			HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
+
+		#Get pcap on enb and/or gnb if enabled in the xml 
+		if self.eNB_Trace=='yes':
+			if ((self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb')):
+				pcapfile_prefix="enb_"
+			else:
+				pcapfile_prefix="gnb_"
+			mySSH.open(lIpAddr, lUserName, lPassWord)
+			mySSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
+			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
+			if result is not None:
+				eth_interface = result.group('eth_interface')
+				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
+				pcapfile = pcapfile_prefix + self.testCase_id + '_log.pcap'
+				mySSH.command('echo ' + lPassWord + ' | sudo -S rm -f /tmp/' + pcapfile , '\$', 5)
+				mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -w /tmp/' + pcapfile + ' 2>&1 &','\$', 5)
+			mySSH.close()
+			
+
+
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if (result is not None):
@@ -381,13 +421,13 @@ class RANManagement():
 		# do not reset board twice in IF4.5 case
 		result = re.search('^rru|^enb|^du.band', str(config_file))
 		if result is not None:
-			mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 60)
+			mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 90)
 			result = re.search('type: b200', mySSH.getBefore())
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
 				mySSH.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 				# Reloading FGPA bin firmware
-				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 60)
+				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 90)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		mySSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		localMmeIpAddr = EPC.MmeIPAddress
@@ -464,7 +504,7 @@ class RANManagement():
 				self.prematureExit = True
 				return
 			else:
-				mySSH.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Starting"', '\$', 4)
+				mySSH.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Starting|Started"', '\$', 4)
 				if rruCheck:
 					result = re.search('wait RUs', mySSH.getBefore())
 				else:
@@ -572,6 +612,10 @@ class RANManagement():
 				mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL -r .*-softmodem ocp-enb || true', '\$', 5)
 				time.sleep(5)
 		mySSH.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		#stopping tshark (valid if eNB and enabled in xml, will not harm otherwise)
+		logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+		mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+		time.sleep(1)
 		mySSH.close()
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
@@ -590,6 +634,7 @@ class RANManagement():
 			mySSH.close()
 			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
 			mySSH.open(lIpAddr, lUserName, lPassWord)
+			mySSH.command('killall --signal SIGKILL record', '\$', 5)
 			mySSH.command('cd ' + lSourcePath + '/common/utils/T/tracer/', '\$', 5)
 			enbLogFile = self.eNBLogFiles[int(self.eNB_instance)]
 			raw_record_file = enbLogFile.replace('.log', '_record.raw')
@@ -632,6 +677,9 @@ class RANManagement():
 					HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			else:
 				HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+		#display rt stats for gNB only
+		if len(self.datalog_rt_stats)!=0 and nodeB_prefix == 'g':
+			HTML.CreateHtmlDataLogTable(self.datalog_rt_stats)
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
 		self.eNBstatuses[int(self.eNB_instance)] = -1
 
@@ -640,9 +688,11 @@ class RANManagement():
 		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*.pcap .','\$',20)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log', '\$', 60)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 5)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 5)
 		mySSH.close()
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML):
@@ -693,12 +743,32 @@ class RANManagement():
 		NSA_RAPROC_PUSCH_check = 0
 		#dlsch and ulsch statistics (dictionary)
 		dlsch_ulsch_stats = {}
-		#count "L1 thread not ready" msg 	
-		L1_thread_not_ready_cnt = 0
+		#real time statistics (dictionary)
+		real_time_stats = {}
 		#count "problem receiving samples" msg
 		pb_receiving_samples_cnt = 0
+		#count "removing UE" msg
+		removing_ue = 0
+		#NSA specific log markers
+		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
 	
+		#the datalog config file has to be loaded
+		datalog_rt_stats_file='datalog_rt_stats.yaml'
+		if (os.path.isfile(datalog_rt_stats_file)):
+			yaml_file=datalog_rt_stats_file
+		elif (os.path.isfile('ci-scripts/'+datalog_rt_stats_file)):
+			yaml_file='ci-scripts/'+datalog_rt_stats_file
+		else:
+			logging.error("Datalog RT stats yaml file cannot be found")
+			sys.exit("Datalog RT stats yaml file cannot be found")
+
+		with open(yaml_file,'r') as f:
+			datalog_rt_stats = yaml.load(f,Loader=yaml.FullLoader)
+		rt_keys = datalog_rt_stats['Ref'] #we use the keys from the Ref field  
+
+		line_cnt=0 #log file line counter
 		for line in enb_log_file.readlines():
+			line_cnt+=1
 			# Runtime statistics
 			result = re.search('Run time:' ,str(line))
 			if result is not None:
@@ -856,20 +926,36 @@ class RANManagement():
 			#keys below are the markers we are loooking for, loop over this keys list
 			#everytime these markers are found in the log file, the previous ones are overwritten in the dict
 			#eventually we record and print only the last occurence 
-			keys = {'dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
+			keys = {'UE ID','dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
 			for k in keys:
 				result = re.search(k, line)
 				if result is not None:
 					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
 					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
-			#count "L1 thread not ready" msg
-			result = re.search('\[PHY\]\s+L1_thread isn\'t ready', str(line))
-			if result is not None:
-				L1_thread_not_ready_cnt += 1	
+			#real time statistics for gNB
+			for k in rt_keys:
+				result = re.search(k, line)     
+				if result is not None:
+					#remove 1- all useless char before relevant info  2- trailing char
+					line=line.replace('[0m','')
+					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex
+					if tmp!=None: #with ULULULUULULULLLL at the head of the line, we skip it
+						real_time_stats[k]=tmp.group(1)
+
 			#count "problem receiving samples" msg
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
 			if result is not None:
-				pb_receiving_samples_cnt += 1				
+				pb_receiving_samples_cnt += 1
+			#count "Removing UE" msg
+			result = re.search('\[MAC\]\s+Removing UE', str(line))
+			if result is not None:
+				removing_ue += 1
+
+			#nsa markers logging
+			for k in nsa_markers:
+				result = re.search(k, line)
+				if result is not None:
+					nsa_markers[k].append(line_cnt)					
 
 		enb_log_file.close()
 		logging.debug('   File analysis completed')
@@ -878,7 +964,7 @@ class RANManagement():
 		else:
 			nodeB_prefix = 'g'
 
-		if self.air_interface[self.eNB_instance] == 'nr-softmodem':
+		if nodeB_prefix == 'g':
 			if ulschReceiveOK > 0:
 				statMsg = nodeB_prefix + 'NB showed ' + str(ulschReceiveOK) + ' "ULSCH received ok" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -896,17 +982,28 @@ class RANManagement():
 				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
 				htmlMsg = statMsg+'\n'
 			else:
-				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL '
+				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : FAIL or not relevant'
 				htmlMsg = statMsg+'\n'
-			logging.debug(statMsg)
-			htmleNBFailureMsg += htmlMsg
-			#L1 thread not ready log
-			statMsg = '[PHY] L1 thread is not ready msg count =  '+str(L1_thread_not_ready_cnt)
-			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
 			#problem receiving samples log
 			statMsg = '[PHY] problem receiving samples msg count =  '+str(pb_receiving_samples_cnt)
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			#nsa markers
+			statMsg = 'logfile line count = ' + str(line_cnt)			
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			if len(nsa_markers['SgNBReleaseRequestAcknowledge'])!=0:
+				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(nsa_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences , starting line ' + str(nsa_markers['SgNBReleaseRequestAcknowledge'][0])
+			else:
+				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(nsa_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences' 
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			statMsg = 'FAILURE = ' + str(len(nsa_markers['FAILURE'])) + ' occurences'
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
@@ -918,6 +1015,52 @@ class RANManagement():
 					statMsg += dlsch_ulsch_stats[key] + '\n' 
 					logging.debug(dlsch_ulsch_stats[key])
 				htmleNBFailureMsg += statMsg
+
+			#real time statistics
+			datalog_rt_stats['Data']={}
+			if len(real_time_stats)!=0: #check if dictionary is not empty
+				for k in real_time_stats:
+					tmp=re.match(r'^(?P<metric>.*):\s+(?P<avg>\d+\.\d+) us;\s+\d+;\s+(?P<max>\d+\.\d+) us;',real_time_stats[k])
+					if tmp is not None:
+						metric=tmp.group('metric')
+						avg=float(tmp.group('avg'))
+						max=float(tmp.group('max'))
+						datalog_rt_stats['Data'][metric]=["{:.0f}".format(avg),"{:.0f}".format(max),"{:.2f}".format(avg/datalog_rt_stats['Ref'][metric])]
+				#once all metrics are collected, store the data as a class attribute to build a dedicated HTML table afterward
+				self.datalog_rt_stats=datalog_rt_stats
+				#check if there is a fail => will render the test as failed
+				for k in datalog_rt_stats['Data']:
+					if float(datalog_rt_stats['Data'][k][2])> datalog_rt_stats['Threshold'][k]: #condition for fail : avg/ref is greater than the fixed threshold
+						#setting prematureExit is ok although not the best option
+						self.prematureExit=True
+			else:
+				statMsg = 'No real time stats found in the log file\n'
+				logging.debug('No real time stats found in the log file')
+				htmleNBFailureMsg += statMsg
+
+		else:
+			#Removing UE log
+			statMsg = '[MAC] Removing UE msg count =  '+str(removing_ue)
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			#nsa markers
+			statMsg = 'logfile line count = ' + str(line_cnt)			
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			if len(nsa_markers['SgNBReleaseRequest'])!=0:
+				statMsg = 'SgNBReleaseRequest = ' + str(len(nsa_markers['SgNBReleaseRequest'])) + ' occurences , starting line ' + str(nsa_markers['SgNBReleaseRequest'][0])
+			else:
+				statMsg = 'SgNBReleaseRequest = ' + str(len(nsa_markers['SgNBReleaseRequest'])) + ' occurences'
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			statMsg = 'scgFailureInformationNR-r15 = ' + str(len(nsa_markers['scgFailureInformationNR-r15'])) + ' occurences'
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg			
+
 
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'

@@ -1147,6 +1147,7 @@ void UE_config_stub_pnf(void) {
   int j;
   paramdef_t L1_Params[] = L1PARAMS_DESC;
   paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST, NULL, 0};
+  eth_params_t         stub_eth_params;
 
   config_getlist(&L1_ParamList, L1_Params, sizeof(L1_Params) / sizeof(paramdef_t), NULL);
   if (L1_ParamList.numelt > 0) {

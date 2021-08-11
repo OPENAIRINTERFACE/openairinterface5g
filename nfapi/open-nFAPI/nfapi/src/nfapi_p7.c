@@ -278,7 +278,6 @@ static uint8_t pack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 		push16(value->dci_pdu[i].PayloadSizeBits, ppWritePackedMsg, end) &&
 		pusharray8(value->dci_pdu[i].Payload, value->dci_pdu[i].PayloadSizeBits, value->dci_pdu[i].PayloadSizeBits, ppWritePackedMsg, end)))
 		return 0;
-		
 	}
 
 	// TODO: resolve the packaging of array (currently sending a single element)
@@ -306,7 +305,6 @@ static uint8_t pack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 
 static uint8_t pack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
-	NFAPI_TRACE(NFAPI_TRACE_DEBUG, "packing pdsch pdu. \n");
 	nfapi_nr_dl_tti_pdsch_pdu_rel15_t* value = (nfapi_nr_dl_tti_pdsch_pdu_rel15_t*)tlv;
 
 	// TODO: resolve the packaging of array (currently sending a single element)
@@ -360,7 +358,6 @@ static uint8_t pack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppWritePac
 
 static uint8_t pack_dl_tti_ssb_pdu_rel15_value(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
-	NFAPI_TRACE(NFAPI_TRACE_DEBUG, "Packing ssb. \n");
 	nfapi_nr_dl_tti_ssb_pdu_rel15_t* value = (nfapi_nr_dl_tti_ssb_pdu_rel15_t*)tlv;
 
 	return(
@@ -908,7 +905,7 @@ static uint8_t pack_dl_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_
 		//pusharray8(pNfapiMsg->PduIdx[0] ,256,256, ppWritePackedMsg, end)
 		))
 			return 0;
-		
+
 	int arr[12];
 	for(int i=0;i<pNfapiMsg->dl_tti_request_body.nGroup;i++)
 	{
@@ -3693,7 +3690,6 @@ int nfapi_nr_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packe
 	{
 		case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
 			result = pack_dl_tti_request(pMessageHeader, &pWritePackedMessage, end, config);
-			NFAPI_TRACE(NFAPI_TRACE_DEBUG, "result of pack dl_tti_req is %d. \n",result);
 			break;
 
 		case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
@@ -4014,7 +4010,7 @@ static uint8_t unpack_dl_tti_csi_rs_pdu_rel15_value(void* tlv, uint8_t **ppReadP
 
 
 static uint8_t unpack_dl_tti_pdcch_pdu_rel15_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
-{	
+{
 	nfapi_nr_dl_tti_pdcch_pdu_rel15_t* value = (nfapi_nr_dl_tti_pdcch_pdu_rel15_t*)tlv;
 	
 	for(uint8_t i = 0; i < MAX_DCI_CORESET; ++i)
@@ -4112,8 +4108,7 @@ static uint8_t unpack_dl_tti_pdsch_pdu_rel15_value(void* tlv, uint8_t **ppReadPa
 
 
 static uint8_t unpack_dl_tti_ssb_pdu_rel15_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
-{	
-	NFAPI_TRACE(NFAPI_TRACE_DEBUG, "ssb received and unpacked. \n");
+{
 	nfapi_nr_dl_tti_ssb_pdu_rel15_t* value = (nfapi_nr_dl_tti_ssb_pdu_rel15_t*)tlv;
 
 	return(
@@ -4580,7 +4575,7 @@ static uint8_t unpack_dl_tti_request_body_value(uint8_t **ppReadPackedMsg, uint8
 {
 	nfapi_nr_dl_tti_request_pdu_t* value = (nfapi_nr_dl_tti_request_pdu_t*)msg;
 
-	if(!(pull16(ppReadPackedMsg, &value->PDUSize, end) &&
+	if(!(pull32(ppReadPackedMsg, &value->PDUSize, end) &&
 	 	 pull16(ppReadPackedMsg, &value->PDUType, end) ))
 		  return 0;
 
@@ -6093,6 +6088,7 @@ static uint8_t unpack_hi_dci0_request_body_value(void *tlv, uint8_t **ppReadPack
 static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg)
 {
 	nfapi_nr_ul_dci_request_pdus_t* value = (nfapi_nr_ul_dci_request_pdus_t*)msg;
+	
 	for(uint8_t i = 0; i < MAX_DCI_CORESET; ++i)
 	{
 		if(!(pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i].RNTI,  end) &&
@@ -7123,7 +7119,6 @@ static uint8_t unpack_rx_indication_body_value(void *tlv, uint8_t **ppReadPacked
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s number_of_pdus = %u\n", __FUNCTION__, value->number_of_pdus);
 	for (int i = 0; i < value->number_of_pdus; i++)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s i = %u\n", __FUNCTION__, i);
 		nfapi_tl_t generic_tl;
 
 		// NFAPI_RX_UE_INFORMATION_TAG
@@ -8807,4 +8802,5 @@ int nfapi_nr_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *
 	else 
 		return 0;
 }
+
 

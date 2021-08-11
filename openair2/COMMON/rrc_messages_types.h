@@ -42,6 +42,7 @@
 #include "LTE_SL-DiscResourcePool-r12.h"
 #include "NR_RACH-ConfigCommon.h"
 #include "NR_ServingCellConfigCommon.h"
+#include "NR_ServingCellConfig.h"
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
 #if defined(DISABLE_ITTI_XER_PRINT)
@@ -406,9 +407,12 @@ typedef struct NRRrcConfigurationReq_s {
   uint16_t                mcc[PLMN_LIST_MAX_SIZE];
   uint16_t                mnc[PLMN_LIST_MAX_SIZE];
   uint8_t                 mnc_digit_length[PLMN_LIST_MAX_SIZE];
+  uint8_t                 num_plmn;
   NR_ServingCellConfigCommon_t *scc;
+  NR_ServingCellConfig_t  *scd;
   int                     ssb_SubcarrierOffset;
   int                     pdsch_AntennaPorts;
+  int                     pusch_AntennaPorts;
   int                     pusch_TargetSNRx10;
   int                     pucch_TargetSNRx10;
 } gNB_RrcConfigurationReq;
