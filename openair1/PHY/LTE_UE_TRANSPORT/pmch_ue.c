@@ -328,7 +328,7 @@ void mch_channel_compensation(int **rxdataF_ext,
   int aarx,nre,i;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0};
 #elif defined(__arm__)
 #endif
 
@@ -455,7 +455,7 @@ void mch_channel_compensation_khz_1dot25(int **rxdataF_ext,
   int aarx,nre,i;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0};
 #elif defined(__arm__)
 #endif
   /*if ((symbol == 2) || (symbol == 6) || (symbol == 10))

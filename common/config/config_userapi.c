@@ -83,9 +83,14 @@ char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) {
   }
 
   if (*ptr == NULL) {
-    *ptr = malloc(length>40?length:40);
     // LTS: dummy fix, waiting Francois full fix in 4G branch
     // the issue is we don't know at this point the size we will get
+    // for parmeters on the command line, 
+    // The length sould probably managed, in a later version
+    // 100 is a very large value for a string parameter of today OAI
+    if (length<100)
+       length=100;
+    *ptr = malloc(length);
 
     if ( *ptr != NULL) {
       memset(*ptr,0,length);

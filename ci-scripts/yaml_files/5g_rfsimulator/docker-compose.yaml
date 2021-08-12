@@ -1,0 +1,293 @@
+version: '3.8'
+services:
+    oai-nrf:
+        container_name: "rfsim5g-oai-nrf"
+        image: oai-nrf:latest
+        environment:
+            - NRF_INTERFACE_NAME_FOR_SBI=eth0
+            - NRF_INTERFACE_PORT_FOR_SBI=80
+            - NRF_INTERFACE_HTTP2_PORT_FOR_SBI=9090
+            - NRF_API_VERSION=v1
+            - INSTANCE=0
+            - PID_DIRECTORY=/var/run
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.130
+        volumes:
+            - ./nrf-healthcheck.sh:/openair-nrf/bin/nrf-healthcheck.sh
+        healthcheck:
+            test: /bin/bash -c "/openair-nrf/bin/nrf-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    mysql:
+        container_name: "rfsim5g-mysql"
+        image: mysql:5.7
+        volumes:
+            - ./oai_db.sql:/docker-entrypoint-initdb.d/oai_db.sql
+            - ./mysql-healthcheck.sh:/tmp/mysql-healthcheck.sh
+        environment:
+            - TZ=Europe/Paris
+            - MYSQL_DATABASE=oai_db
+            - MYSQL_USER=test
+            - MYSQL_PASSWORD=test
+            - MYSQL_ROOT_PASSWORD=linux
+        healthcheck:
+            test: /bin/bash -c "/tmp/mysql-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.131
+    oai-amf:
+        container_name: "rfsim5g-oai-amf"
+        image: oai-amf:latest
+        environment:
+            - TZ=Europe/paris
+            - INSTANCE=0
+            - PID_DIRECTORY=/var/run
+            - MCC=208
+            - MNC=99
+            - REGION_ID=128
+            - AMF_SET_ID=1
+            - SERVED_GUAMI_MCC_0=208
+            - SERVED_GUAMI_MNC_0=99
+            - SERVED_GUAMI_REGION_ID_0=128
+            - SERVED_GUAMI_AMF_SET_ID_0=1
+            - SERVED_GUAMI_MCC_1=460
+            - SERVED_GUAMI_MNC_1=11
+            - SERVED_GUAMI_REGION_ID_1=10
+            - SERVED_GUAMI_AMF_SET_ID_1=1
+            - PLMN_SUPPORT_MCC=208
+            - PLMN_SUPPORT_MNC=99
+            - PLMN_SUPPORT_TAC=0x0001
+            - SST_0=1
+            - SD_0=1
+            - SST_1=1
+            - SD_1=12
+            - AMF_INTERFACE_NAME_FOR_NGAP=eth0
+            - AMF_INTERFACE_NAME_FOR_N11=eth0
+            - SMF_INSTANCE_ID_0=1
+            - SMF_FQDN_0=oai-smf
+            - SMF_IPV4_ADDR_0=0.0.0.0
+            - SMF_HTTP_VERSION_0=v1
+            - SELECTED_0=true
+            - SMF_INSTANCE_ID_1=2
+            - SMF_FQDN_1=oai-smf
+            - SMF_IPV4_ADDR_1=0.0.0.0
+            - SMF_HTTP_VERSION_1=v1
+            - SELECTED_1=false
+            - MYSQL_SERVER=192.168.71.131
+            - MYSQL_USER=root
+            - MYSQL_PASS=linux
+            - MYSQL_DB=oai_db
+            - OPERATOR_KEY=c42449363bbad02b66d16bc975d77cc1
+            - NRF_IPV4_ADDRESS=192.168.71.130
+            - NRF_PORT=80
+            - NF_REGISTRATION=yes
+            - SMF_SELECTION=yes
+            - USE_FQDN_DNS=yes
+            - NRF_API_VERSION=v1
+            - NRF_FQDN=oai-nrf
+            - AUSF_IPV4_ADDRESS=127.0.0.1
+            - AUSF_PORT=80
+            - AUSF_API_VERSION=v1
+        depends_on:
+            - oai-nrf
+        volumes:
+            - ./amf-healthcheck.sh:/openair-amf/bin/amf-healthcheck.sh
+        healthcheck:
+            test: /bin/bash -c "/openair-amf/bin/amf-healthcheck.sh"
+            interval: 10s
+            timeout: 15s
+            retries: 5
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.132
+    oai-smf:
+        container_name: "rfsim5g-oai-smf"
+        image: oai-smf:latest
+        entrypoint: /bin/bash -c "/openair-smf/bin/oai_smf -c /openair-smf/bin/oai-smf.conf -o"
+        environment:
+            - TZ=Europe/Paris
+            - INSTANCE=0
+            - PID_DIRECTORY=/var/run
+            - SMF_INTERFACE_NAME_FOR_N4=eth0
+            - SMF_INTERFACE_NAME_FOR_SBI=eth0
+            - SMF_INTERFACE_PORT_FOR_SBI=80
+            - SMF_INTERFACE_HTTP2_PORT_FOR_SBI=9090
+            - SMF_API_VERSION=v1
+            - DEFAULT_DNS_IPV4_ADDRESS=192.168.18.129
+            - DEFAULT_DNS_SEC_IPV4_ADDRESS=4.4.4.4
+            - AMF_IPV4_ADDRESS=0.0.0.0
+            - AMF_PORT=80
+            - AMF_API_VERSION=v1
+            - AMF_FQDN=oai-amf
+            - UDM_IPV4_ADDRESS=127.0.0.1
+            - UDM_PORT=80
+            - UDM_API_VERSION=v1
+            - UDM_FQDN=localhost
+            - UPF_IPV4_ADDRESS=192.168.71.134
+            - UPF_FQDN_0=oai-spgwu
+            - NRF_IPV4_ADDRESS=192.168.71.130
+            - NRF_PORT=80
+            - NRF_API_VERSION=v1
+            - NRF_FQDN=oai-nrf
+            - REGISTER_NRF=yes
+            - DISCOVER_UPF=yes
+            - USE_FQDN_DNS=yes
+        depends_on:
+            - oai-nrf
+        volumes:
+            - ./smf-healthcheck.sh:/openair-smf/bin/smf-healthcheck.sh
+            - ./oai-smf.conf:/openair-smf/bin/oai-smf.conf
+        healthcheck:
+            test: /bin/bash -c "/openair-smf/bin/smf-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.133
+    oai-spgwu:
+        container_name: "rfsim5g-oai-spgwu"
+        image: oai-spgwu-tiny:latest
+        environment:
+            - TZ=Europe/Paris
+            - PID_DIRECTORY=/var/run
+            - SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP=eth0
+            - SGW_INTERFACE_NAME_FOR_SX=eth0
+            - PGW_INTERFACE_NAME_FOR_SGI=eth0
+            - NETWORK_UE_NAT_OPTION=yes
+            - NETWORK_UE_IP=12.1.1.0/24
+            - SPGWC0_IP_ADDRESS=192.168.71.133
+            - BYPASS_UL_PFCP_RULES=no
+            - MCC=208
+            - MNC=99
+            - MNC03=099
+            - TAC=1
+            - GTP_EXTENSION_HEADER_PRESENT=yes
+            - GW_ID=1
+            - REALM=openairinterface.org
+            - ENABLE_5G_FEATURES=yes
+            - REGISTER_NRF=yes
+            - USE_FQDN_NRF=yes
+            - UPF_FQDN_5G=oai-spgwu
+            - NRF_IPV4_ADDRESS=192.168.71.130
+            - NRF_PORT=80
+            - NRF_API_VERSION=v1
+            - NRF_FQDN=oai-nrf
+            - NSSAI_SST_0=1
+            - NSSAI_SD_0=1
+            - DNN_0=oai
+        depends_on:
+            - oai-nrf
+        cap_add:
+            - NET_ADMIN
+            - SYS_ADMIN
+        cap_drop:
+            - ALL
+        privileged: true
+        volumes:
+            - ./spgwu-healthcheck.sh:/openair-spgwu-tiny/bin/spgwu-healthcheck.sh
+        healthcheck:
+            test: /bin/bash -c "/openair-spgwu-tiny/bin/spgwu-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.134
+            traffic_net:
+                ipv4_address: 192.168.72.134
+    oai-ext-dn:
+        image: ubuntu:bionic
+        privileged: true
+        container_name: rfsim5g-oai-ext-dn
+        entrypoint: /bin/bash -c \
+              "apt update; apt install -y iptables iproute2 iperf iputils-ping;"\
+              "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE;"\
+              "ip route add 12.1.1.0/24 via 192.168.72.134 dev eth0; sleep infinity"
+        depends_on:
+            - oai-spgwu
+        networks:
+            traffic_net:
+                ipv4_address: 192.168.72.135
+        healthcheck:
+            test: /bin/bash -c "ping -c 2 192.168.72.134"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    oai-gnb:
+        image: oai-gnb:int-w32
+        privileged: true
+        container_name: rfsim5g-oai-gnb
+        environment: 
+            RFSIMULATOR: server
+            USE_SA_TDD_MONO: 'yes'
+            GNB_NAME: gnb-rfsim
+            TAC: 1
+            MCC: '208'
+            MNC: '99'
+            MNC_LENGTH: 2
+            NSSAI_SST: 1
+            NSSAI_SD0: 1
+            NSSAI_SD1: 112233
+            AMF_IP_ADDRESS: 192.168.71.132
+            GNB_NGA_IF_NAME: eth0
+            GNB_NGA_IP_ADDRESS: 192.168.71.136
+            GNB_NGU_IF_NAME: eth0
+            GNB_NGU_IP_ADDRESS: 192.168.71.136
+            USE_ADDITIONAL_OPTIONS: --sa -E --rfsim
+        depends_on:
+            - oai-ext-dn
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.136
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    oai-nr-ue:
+        image: oai-nr-ue:int-w32
+        privileged: true
+        container_name: rfsim5g-oai-nr-ue
+        environment: 
+            RFSIMULATOR: 192.168.71.136
+            FULL_IMSI: '208990100001100'
+            FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
+            OPC: 'C42449363BBAD02B66D16BC975D77CC1'
+            DNN: oai
+            NSSAI_SST: 1
+            NSSAI_SD: 1
+            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --nokrnmod
+        depends_on:
+            - oai-gnb
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.137
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    public_net:
+        driver: bridge
+        name: rfsim5g-oai-public-net
+        ipam:
+            config:
+                - subnet: 192.168.71.128/26
+        driver_opts:
+            com.docker.network.bridge.name: "rfsim5g-public"
+    traffic_net:
+        driver: bridge
+        name: rfsim5g-oai-traffic_net-net
+        ipam:
+            config:
+                - subnet: 192.168.72.128/26
+        driver_opts:
+            com.docker.network.bridge.name: "rfsim5g-traffic"
