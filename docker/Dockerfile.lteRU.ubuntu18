@@ -50,6 +50,7 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         tzdata \
+        procps \
         software-properties-common \
         libblas3 \
         libatlas3-base \

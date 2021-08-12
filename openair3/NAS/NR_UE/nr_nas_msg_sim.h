@@ -148,9 +148,6 @@ typedef struct {
 } dl_nas_transport_t;
 
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg, int Mod_id);
-void generateSecurityModeComplete(as_nas_info_t *initialNasMsg);
-void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentContainer *sortransparentcontainer);
-void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg);
 void *nas_nrue_task(void *args_p);
 
 #endif /* __NR_NAS_MSG_SIM_H__*/

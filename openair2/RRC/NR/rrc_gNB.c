@@ -330,6 +330,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
   rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
+  rrc->carrier.do_CSIRS = configuration->do_CSIRS;
    /// System Information INIT
   pthread_mutex_init(&rrc->cell_info_mutex,NULL);
   rrc->cell_info_configured = 0;
@@ -1672,6 +1673,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
     for ( j = 0, i = 0; i < NB_RB_MAX; i++) {
       if (ue_context_pP->ue_context.pduSession[i].status == PDU_SESSION_STATUS_ESTABLISHED || ue_context_pP->ue_context.pduSession[i].status == PDU_SESSION_STATUS_DONE) {
         create_tunnel_req.pdusession_id[j]   = ue_context_pP->ue_context.pduSession[i].param.pdusession_id;
+        create_tunnel_req.incoming_rb_id[j]  = i+1;
         create_tunnel_req.upf_NGu_teid[j]  = ue_context_pP->ue_context.pduSession[i].param.gtp_teid;
         memcpy(create_tunnel_req.upf_addr[j].buffer,
                ue_context_pP->ue_context.pduSession[i].param.upf_addr.buffer,

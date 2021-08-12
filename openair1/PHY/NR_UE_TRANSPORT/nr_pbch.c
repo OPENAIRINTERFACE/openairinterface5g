@@ -328,7 +328,7 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 #endif
 }
 
-void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
+static void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
                           uint16_t Nid,
                           uint8_t nushift,
                           uint16_t M,
@@ -549,7 +549,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   nr_ue_pbch_vars->pbch_a_prime = a_reversed;
   //payload un-scrambling
-  memset(&nr_ue_pbch_vars->pbch_a_interleaved, 0, sizeof(uint32_t) );
+  nr_ue_pbch_vars->pbch_a_interleaved=0;
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
   nushift = ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) ^ (((nr_ue_pbch_vars->pbch_a_prime>>6)&1)<<1);
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_PAYLOAD_BITS,1,unscrambling_mask);
@@ -607,7 +607,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint16_t number_pdus = 1;
 
   nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-  nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, gNB_id, ue, NULL, number_pdus);
+  nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, gNB_id, ue, NULL, NULL, number_pdus);
 
   if (ue->if_inst && ue->if_inst->dl_indication)
     ue->if_inst->dl_indication(&dl_indication, NULL);

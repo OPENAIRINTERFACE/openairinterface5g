@@ -32,7 +32,7 @@ services:
         entrypoint: /bin/bash -c "cqlsh --file /home/oai_db.cql 192.168.68.2 && echo 'OK'"
 
     oai_hss:
-        image: oai-hss:develop-2021-06-14
+        image: oai-hss:latest
         container_name: rfsim4g-oai-hss
         privileged: true
         depends_on: [cassandra]
@@ -59,7 +59,7 @@ services:
             retries: 5
 
     oai_mme:
-        image: oai-mme:production
+        image: oai-mme:latest
         container_name: rfsim4g-oai-mme
         privileged: true
         depends_on: [oai_hss]
@@ -116,7 +116,7 @@ services:
             retries: 5
 
     oai_spgwc:
-        image: oai-spgwc:develop-2021-06-14
+        image: oai-spgwc:latest
         privileged: true
         depends_on: [oai_mme]
         container_name: rfsim4g-oai-spgwc
@@ -148,7 +148,7 @@ services:
             retries: 5
 
     oai_spgwu:
-        image: oai-spgwu-tiny:develop-2021-06-14
+        image: oai-spgwu-tiny:latest
         privileged: true
         container_name: rfsim4g-oai-spgwu-tiny
         depends_on: [oai_spgwc]
@@ -173,19 +173,6 @@ services:
             REALM: openairinterface.org
         healthcheck:
             test: /bin/bash -c "pgrep oai_spgwu"
-            interval: 10s
-            timeout: 5s
-            retries: 5
-
-    flexran_rtc:
-        image: flexran-rtc:production
-        privileged: true
-        container_name: rfsim4g-flexran-rtc
-        networks:
-            public_net:
-                ipv4_address: 192.168.61.10
-        healthcheck:
-            test: /bin/bash -c "pgrep rt_controller"
             interval: 10s
             timeout: 5s
             retries: 5
@@ -235,6 +222,11 @@ services:
             FLEXRAN_INTERFACE_NAME: eth0
             FLEXRAN_IPV4_ADDRESS: 192.168.61.10
             USE_ADDITIONAL_OPTIONS: --rfsim
+        healthcheck:
+            test: /bin/bash -c "pgrep lte-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
     oai_ue0:
         image: oai-lte-ue:develop
@@ -257,6 +249,11 @@ services:
             MSISDN: '001011234561010'
             HPLMN: 20896
             USE_ADDITIONAL_OPTIONS: --rfsim -C 2680000000 -r 25 --ue-rxgain 140 --ue-txgain 120 --nokrnmod 1
+        healthcheck:
+            test: /bin/bash -c "pgrep lte-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
 networks:
     private_net:
@@ -264,9 +261,12 @@ networks:
         ipam:
             config:
                 - subnet: 192.168.68.0/26
+        driver_opts:
+            com.docker.network.bridge.name: "rfsim4g-private"
     public_net:
         name: rfsim4g-oai-public-net
         ipam:
             config:
                 - subnet: 192.168.61.0/26
-
+        driver_opts:
+            com.docker.network.bridge.name: "rfsim4g-public"
