@@ -819,7 +819,7 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *yp128;
   __m128i tmp128[(n+8)>>3];
-  __m128i tmp, zeros=_mm_setzero_si128();
+  __m128i tmp={0}, zeros=_mm_setzero_si128();
 #elif defined(__arm__)
   int8x16_t *yp128;
   int8x16_t tmp128[(n+8)>>3];

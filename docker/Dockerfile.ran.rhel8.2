@@ -44,8 +44,11 @@ RUN rm -f /etc/rhsm-host && \
        file \
        psmisc \
        git \
+       # python3-pip and pyyaml are used for conf template generation
+       python3-pip \
        #unzip is needed for protobuf
        unzip && \
+    pip3 install --ignore-installed pyyaml && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
