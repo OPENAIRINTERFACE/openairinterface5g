@@ -181,6 +181,16 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     }
   }
 
+  /////////////////////////PUCCH init/////////////////////////
+  ///////////
+  for (th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
+    for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
+      ue->pucch_vars[th_id][gNB_id] = (NR_UE_PUCCH *)malloc16(sizeof(NR_UE_PUCCH));
+      for (i=0; i<2; i++)
+        ue->pucch_vars[th_id][gNB_id]->active[i] = false;
+    }
+  }
+
   ///////////
   ////////////////////////////////////////////////////////////////////////////////////////////
 

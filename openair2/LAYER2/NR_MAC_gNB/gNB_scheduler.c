@@ -121,12 +121,14 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
           UE_id,
           stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
     for (int lc_id = 0; lc_id < 63; lc_id++) {
-      if (stats->lc_bytes_tx[lc_id] > 0)
+      if (stats->lc_bytes_tx[lc_id] > 0) {
         stroff+=sprintf(output+stroff, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
-        LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
-      if (stats->lc_bytes_rx[lc_id] > 0)
+	LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
+      }
+      if (stats->lc_bytes_rx[lc_id] > 0) {
         stroff+=sprintf(output+stroff, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
-        LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
+	LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
+      }
     }
   }
   print_meas(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL);

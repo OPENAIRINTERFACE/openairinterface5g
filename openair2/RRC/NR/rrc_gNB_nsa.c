@@ -245,6 +245,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
+                        carrier->do_CSIRS,
                         carrier->initial_csi_index[ue_context_p->local_uid + 1],
                         ue_context_p->local_uid);
   } else {
@@ -253,6 +254,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
+                        carrier->do_CSIRS,
                         carrier->initial_csi_index[ue_context_p->local_uid + 1],
                         ue_context_p->local_uid);
   }

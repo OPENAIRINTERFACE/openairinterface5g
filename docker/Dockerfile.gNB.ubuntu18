@@ -25,7 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM ran-build:latest AS gnb-build 
+FROM ran-build:latest AS gnb-build
 
 RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
@@ -37,23 +37,22 @@ RUN /bin/sh oaienv && \
     mkdir -p log && \
     ./build_oai --gNB --ninja -w USRP --verbose-ci
 
-#debug
-RUN ldconfig -v
-RUN ldd /oai-ran/targets/bin/nr-softmodem.Rel15
-RUN ls -lst /oai-ran/targets/bin
-RUN ls -lst /oai-ran/cmake_targets/ran_build/build/*.so
+RUN apt-get install -y python3-pip && \
+    pip3 install --ignore-installed pyyaml && \
+    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/gnb_parameters.yaml
 
 #start from scratch for target executable
 FROM ubuntu:bionic as oai-gnb
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         software-properties-common \
+        procps \
         libsctp1 \
+        tzdata \
         libnettle6 \
         libblas3 \
         libatlas3-base \
@@ -76,6 +75,7 @@ RUN apt-get update && \
 
 WORKDIR /opt/oai-gnb/bin
 COPY --from=gnb-build /oai-ran/targets/bin/nr-softmodem.Rel15 .
+COPY --from=gnb-build /oai-ran/docker/scripts/gnb_entrypoint.sh entrypoint.sh
 
 WORKDIR /usr/local/lib/
 COPY --from=gnb-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
@@ -96,23 +96,10 @@ RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/li
 COPY --from=gnb-build /usr/local/lib/libprotobuf-c.so.1 .
 
 RUN ldconfig
-#debug
-#RUN ldd /opt/oai-gnb/bin/nr-softmodem.Rel15
-#RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
-#RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
-#RUN ldd /usr/local/lib/librfsimulator.so.Rel15
-#RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
-#RUN ldd /usr/local/lib/libcoding.so
-#RUN ldd /usr/local/lib/libparams_libconfig.so
-#RUN ldd /usr/local/lib/libdfts.so
-#RUN ldd /usr/local/lib/libldpc.so
-#RUN ldd /usr/local/lib/libldpc_optim.so
-#RUN ldd /usr/local/lib/libldpc_optim8seg.so
-#RUN ldd /usr/local/lib/libldpc_orig.so
 
 # Copy the relevant configuration files for gNB
 WORKDIR /opt/oai-gnb/etc
-COPY --from=gnb-build /oai-ran/ci-scripts/conf_files/gnb.* ./
+COPY --from=gnb-build /oai-ran/docker/etc .
 
 WORKDIR /opt/oai-gnb
 #EXPOSE 2152/udp  # S1U, GTP/UDP
@@ -122,6 +109,5 @@ WORKDIR /opt/oai-gnb
 #EXPOSE 50000/udp # IF5 / ORI (control)
 #EXPOSE 50001/udp # IF5 / ECPRI (data)
 
-#CMD ["/opt/oai-gnb/bin/nr-softmodem", "-O", "/opt/oai-gnb/etc/gnb.conf"]
-#ENTRYPOINT ["/opt/oai-gnb/bin/entrypoint.sh"]
-CMD ["sleep", "infinity"]
+ENTRYPOINT ["/opt/oai-gnb/bin/entrypoint.sh"]
+CMD ["/opt/oai-gnb/bin/nr-softmodem.Rel15", "-O", "/opt/oai-gnb/etc/gnb.conf"]

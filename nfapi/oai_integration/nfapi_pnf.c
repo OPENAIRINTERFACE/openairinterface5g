@@ -48,7 +48,7 @@
 
 #include <vendor_ext.h>
 #include "fapi_stub.h"
-//#include "fapi_l1.h"
+
 #include "common/utils/LOG/log.h"
 
 #include "PHY/INIT/phy_init.h"
@@ -57,7 +57,10 @@
 #include "openair1/SCHED_NR/fapi_nr_l1.h"
 #include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "openair1/PHY/defs_gNB.h"
-
+#include <openair1/SCHED/fapi_l1.h>
+#include <openair1/PHY/NR_TRANSPORT/nr_transport_proto.h>
+#include <targets/RT/USER/lte-softmodem.h>
+#include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
 
 #define NUM_P5_PHY 2
 
@@ -72,52 +75,6 @@ extern pthread_mutex_t nfapi_sync_mutex;
 extern int nfapi_sync_var;
 
 extern int sync_var;
-
-extern void init_eNB_afterRU(void);
-extern void init_UE_stub(int nb_inst,int,int);
-extern void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB, int frame, int subframe, L1_rxtx_proc_t *proc, nfapi_dl_config_request_pdu_t *dl_config_pdu);
-extern void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, nfapi_ul_config_request_pdu_t *ul_config_pdu, uint16_t frame,uint8_t subframe,uint8_t srs_present);
-extern void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame, int subframe, L1_rxtx_proc_t *proc,  nfapi_dl_config_request_pdu_t *dl_config_pdu, uint8_t codeword_index, uint8_t *sdu);
-extern void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame, int subframe, L1_rxtx_proc_t *proc, nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu);
-extern void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame, int subframe, L1_rxtx_proc_t *proc, nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu);
-extern void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, nfapi_dl_config_request_pdu_t *dl_config_pdu, uint8_t *sdu);
-extern void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
-			       int frame, int slot,
-			       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu);
-extern void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
-			       int frame, int slot,
-			       nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu);
-extern void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
-                            nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
-                            uint8_t *sdu);
-extern void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
-                             nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu);
-extern void handle_nfapi_nr_csirs_pdu(PHY_VARS_gNB *gNB,
-			       int frame, int slot,
-			       nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu);
-extern void nr_fill_ulsch(PHY_VARS_gNB *gNB,
-                   int frame,
-                   int slot,
-                   nfapi_nr_pusch_pdu_t *ulsch_pdu);
-extern void nr_fill_pucch(PHY_VARS_gNB *gNB,
-                   int frame,
-                   int slot,
-                   nfapi_nr_pucch_pdu_t *pucch_pdu);
-extern void nr_fill_prach(PHY_VARS_gNB *gNB,
-                   int SFN,
-                   int Slot,
-                   nfapi_nr_prach_pdu_t *prach_pdu);
-extern void nr_fill_prach_ru(RU_t *ru,
-                      int SFN,
-                      int Slot,
-                      nfapi_nr_prach_pdu_t *prach_pdu);
-
-int nfapi_pnf_p7_nr_slot_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_slot_indication_scf_t* ind);
-int nfapi_pnf_p7_nr_rx_data_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_rx_data_indication_t* ind);
-int nfapi_pnf_p7_nr_crc_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_crc_indication_t* ind);
-int nfapi_pnf_p7_nr_srs_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_srs_indication_t* ind);
-int nfapi_pnf_p7_nr_uci_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_uci_indication_t* ind);
-int nfapi_pnf_p7_nr_rach_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_rach_indication_t* ind);
 
 nfapi_tx_request_pdu_t *tx_request_pdu[1023][10][10]; // [frame][subframe][max_num_pdus]
 uint8_t nr_tx_pdus[32][16][4096];

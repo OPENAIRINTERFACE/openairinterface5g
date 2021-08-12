@@ -129,8 +129,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   //------------------generate DMRS------------------//
 
-  if (pusch_pdu->transform_precoding == transform_precoder_disabled) {
-    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch, (pusch_pdu->bwp_start + pusch_pdu->rb_start)*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
+  // transform precoding = 1 means disabled
+  if (pusch_pdu->transform_precoding == 1) {
+    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch,
+                     (pusch_pdu->bwp_start + pusch_pdu->rb_start)*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
   }
   else {  // if transform precoding or SC-FDMA is enabled in Uplink
 
@@ -171,7 +173,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
-    ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
+    ul_ch = (int16_t *)&ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
     re_offset = k;
 
     memset(ul_ch,0,4*(gNB->frame_parms.ofdm_symbol_size));
@@ -370,7 +372,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
       // check if PRB crosses DC and improve estimates around DC
       if ((bwp_start_subcarrier < gNB->frame_parms.ofdm_symbol_size) && (bwp_start_subcarrier+nb_rb_pusch*12 >= gNB->frame_parms.ofdm_symbol_size)) {
-        ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
+        ul_ch = (int16_t *)&ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
         uint16_t idxDC = 2*(gNB->frame_parms.ofdm_symbol_size - bwp_start_subcarrier);
         uint16_t idxPil = idxDC/2;
         re_offset = k;
@@ -421,7 +423,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         }
       }
 #ifdef DEBUG_PUSCH
-      ul_ch = (int16_t *)&ul_ch_estimates[aarx][ch_offset];
+      ul_ch = (int16_t *)&ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
       for(uint16_t idxP=0; idxP<ceil((float)nb_rb_pusch*12/8); idxP++) {
         for(uint8_t idxI=0; idxI<16; idxI+=2) {
           printf("%d\t%d\t",ul_ch[idxP*16+idxI],ul_ch[idxP*16+idxI+1]);
@@ -511,7 +513,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                                         ch_r,
                                                         ul_ch);
 
-        ul_ch_128 = (__m128i *)&ul_ch_estimates[aarx][ch_offset];
+        ul_ch_128 = (__m128i *)&ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
 
         ul_ch_128[0] = _mm_slli_epi16 (ul_ch_128[0], 2);
     }
