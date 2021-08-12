@@ -905,7 +905,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
                                                  12, // nb dmrs set for no data in dmrs symbol
                                                  0, //nb_rb_oh
                                                  0, // to verify tb scaling
-                                                 pusch_pdu->nrOfLayers = 1)>>3;
+                                                 pusch_pdu->nrOfLayers)>>3;
 
   // calling function to fill rar message
   nr_fill_rar(module_idP, ra, RAR_pdu, pusch_pdu);
