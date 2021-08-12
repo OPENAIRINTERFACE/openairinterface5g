@@ -4674,6 +4674,10 @@ rrc_eNB_process_MeasurementReport(
     if (ue_context_pP->ue_context.measResults->measResultNeighCells == NULL) {
       ue_context_pP->ue_context.measResults->measResultNeighCells = CALLOC(1, sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells));
     }
+    if (!ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array) {
+        ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array =
+        calloc(neighboring_cells, sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array));
+    }
 
     for (i=0; i < neighboring_cells; i++) {
       if (i>=ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.count) {
@@ -4683,6 +4687,11 @@ rrc_eNB_process_MeasurementReport(
 
       ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->physCellId =
         measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->physCellId;
+
+      if (!ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult)
+        ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult = calloc(1, sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult));
+      if (!ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrqResult)
+        ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrqResult = calloc(1, sizeof(*ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrqResult));
       ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult =
         measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult;
       ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrqResult =
@@ -7880,7 +7889,6 @@ rrc_eNB_decode_dcch(
           Srb_id);
   }
 
-  //memset(ul_dcch_msg,0,sizeof(UL_DCCH_Message_t));
   LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Decoding UL-DCCH Message\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
   dec_rval = uper_decode(

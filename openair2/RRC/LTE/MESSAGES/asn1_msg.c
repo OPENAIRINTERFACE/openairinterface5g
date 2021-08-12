@@ -4272,17 +4272,86 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
   LTE_MeasurementReport_t *measurementReport = &ul_dcch_msg.message.choice.c1.choice.measurementReport;
   measurementReport->criticalExtensions.present = LTE_MeasurementReport__criticalExtensions_PR_c1;
   measurementReport->criticalExtensions.choice.c1.present = LTE_MeasurementReport__criticalExtensions__c1_PR_measurementReport_r8;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.nonCriticalExtension =
+    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.nonCriticalExtension));
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measId = measid;
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrpResult = rsrp_s;
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrqResult = rsrq_s;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells =
+    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells));
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->present =
+    LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
+  LTE_MeasResultListEUTRA_t  *measResultListEUTRA2;
+  measResultListEUTRA2 = CALLOC(1, sizeof(*measResultListEUTRA2));
+  struct LTE_MeasResultEUTRA *measresulteutra_list;
+  measresulteutra_list = CALLOC(1, sizeof(*measresulteutra_list));
+  measresulteutra_list->physCellId = phy_id;
+  //struct LTE_MeasResultEUTRA *eutra_array;
+  //eutra_array = CALLOC(1, sizeof(*eutra_array));
+  struct LTE_MeasResultEUTRA__cgi_Info *measresult_cgi2;
+  measresult_cgi2 = CALLOC(1, sizeof(*measresult_cgi2));
+  memset(&measresult_cgi2->cellGlobalId, 0, sizeof(measresult_cgi2->cellGlobalId));
+  memset(&measresult_cgi2->trackingAreaCode, 0, sizeof(measresult_cgi2->trackingAreaCode));
+  struct LTE_PLMN_IdentityList2 *plmn_id_list;
+  plmn_id_list = CALLOC(1, sizeof(*plmn_id_list));
+  struct LTE_MeasResultEUTRA__measResult measResult;
+  //measResult = CALLOC(1, sizeof(*measResult));
+  //measResult->rsrpResult = CALLOC(1, sizeof(*measResult->rsrpResult));
+  measResult.rsrpResult = &rsrp_tar;
+  //measResult->rsrqResult = CALLOC(1, sizeof(*measResult->rsrqResult));
+  measResult.rsrqResult = &rsrq_tar;
+  measResult.ext1 = NULL;
+  //struct LTE_MeasResultEUTRA__measResult__ext1 *measResult_ext;
+  //measResult_ext = CALLOC(1, sizeof(*measResult_ext));
+  measresulteutra_list->measResult = measResult;
+  measresulteutra_list->cgi_Info = measresult_cgi2;
+  ASN_SEQUENCE_ADD(&measResultListEUTRA2->list, measresulteutra_list);
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA=*(measResultListEUTRA2);
 
   #if 0 //Melissa: This was a hack. Incomplete filling of ul_dcch_msg is done above
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array =
+    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array));
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0] =
+    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0]));
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult =
+    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult));
+      measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult =
+    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult));
+  if (measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells == NULL)
+    LOG_E(MAC, "Melissa, the calloc failed on neighcells.....!!\n");
   LTE_MeasResults_t *mr_r8 = &measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults;
   mr_r8->measId = measid;
   mr_r8->measResultPCell.rsrpResult = rsrp_s;
   mr_r8->measResultPCell.rsrqResult = rsrq_s;
   mr_r8->measResultNeighCells = CALLOC(1, sizeof(*mr_r8->measResultNeighCells));
   mr_r8->measResultNeighCells->present = LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
+  mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.count = 1;
+
+  mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array =
+       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array));
+  mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0] =
+       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]));
+  mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15 =
+       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15));
+  mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15 =
+       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15));
+  //mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15 = rsrp_tar;
+  //mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15 = rsrq_tar;
+  LOG_D(RRC, "Melissa Elkadi RSRQ of Target %ld\n",
+            *mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15);
+  LOG_D(RRC, "Melissa Elkadi RSRP of Target %ld\n",
+            *mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15);
+
+  //mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.count = 1;
+  //mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId = 0;
+  mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array =
+       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array));
+  mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0] =
+       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]));
+  mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult =
+       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult));
+  mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult =
+       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult));
 
   LTE_MeasResultCellNR_r15_t *measResultCellNR_r15;
   measResultCellNR_r15 = CALLOC(1, sizeof(*measResultCellNR_r15));
@@ -4311,8 +4380,28 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
     SEQUENCE_free(&asn_DEF_LTE_UL_DCCH_Message, &ul_dcch_msg, ASFM_FREE_UNDERLYING_AND_RESET);
     return -1;
   }
-
-  SEQUENCE_free(&asn_DEF_LTE_UL_DCCH_Message, &ul_dcch_msg, ASFM_FREE_UNDERLYING_AND_RESET);
+  #if 0
+  LTE_UL_DCCH_Message_t               *ul_dcch_msg_dec = NULL;
+  asn_dec_rval_t dec_rval = uper_decode(
+               NULL,
+               &asn_DEF_LTE_UL_DCCH_Message,
+               (void **)&ul_dcch_msg_dec,
+               buffer,
+               bufsize,
+               0,
+               0);
+   if (1) {
+    xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg_dec);
+  }
+  LOG_I(RRC, "Melissa, this is rsrp_result %ld\n",
+          *ul_dcch_msg_dec->message.choice.c1.choice.measurementReport.criticalExtensions.
+          choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->
+          choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15);
+  AssertFatal(ul_dcch_msg_dec->message.choice.c1.choice.measurementReport.criticalExtensions.
+          choice.c1.choice.measurementReport_r8.measResults.
+          measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult != NULL, "rsrq not allocated! and dec_val = %lu", dec_rval.consumed);
+  SEQUENCE_free(&asn_DEF_LTE_UL_DCCH_Message, &ul_dcch_msg, ASFM_FREE_UNDERLYING_AND_RESET); Melissa, might want to figure this out!
+  #endif
   return((enc_rval.encoded+7)/8);
 }
 
