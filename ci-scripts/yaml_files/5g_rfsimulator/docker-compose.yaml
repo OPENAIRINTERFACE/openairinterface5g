@@ -220,7 +220,7 @@ services:
             timeout: 5s
             retries: 5
     oai-gnb:
-        image: oai-gnb:int-w32
+        image: oai-gnb:develop
         privileged: true
         container_name: rfsim5g-oai-gnb
         environment: 
@@ -251,7 +251,7 @@ services:
             timeout: 5s
             retries: 5
     oai-nr-ue:
-        image: oai-nr-ue:int-w32
+        image: oai-nr-ue:develop
         privileged: true
         container_name: rfsim5g-oai-nr-ue
         environment: 

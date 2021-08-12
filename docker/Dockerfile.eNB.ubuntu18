@@ -37,9 +37,7 @@ RUN /bin/sh oaienv && \
     mkdir -p log && \
     ./build_oai --eNB --ninja -w USRP --verbose-ci
 
-RUN apt-get install -y python3-pip && \
-    pip3 install --ignore-installed pyyaml && \
-    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
+RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
 
 #start from scratch for target executable
 FROM ubuntu:bionic as oai-enb
