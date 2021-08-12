@@ -147,8 +147,6 @@ F1AP_CU_task(void *arg) {
 
       case F1AP_SETUP_RESP: // from rrc
         LOG_I(F1AP, "CU Task Received F1AP_SETUP_RESP\n");
-        // CU_send_f1setup_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-        //                                       &F1AP_SETUP_RESP(received_msg));
         CU_send_F1_SETUP_RESPONSE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                   &F1AP_SETUP_RESP(received_msg));
         break;

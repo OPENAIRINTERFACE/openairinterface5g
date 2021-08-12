@@ -1953,8 +1953,8 @@ int gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
 
           du_extract_and_decode_SI(i,
                                    si_ind,
-                                   resp->cells_to_activate[j].SI_container[2+si_ind],
-                                   resp->cells_to_activate[j].SI_container_length[2+si_ind]);
+                                   resp->cells_to_activate[j].SI_container[si_ind],
+                                   resp->cells_to_activate[j].SI_container_length[si_ind]);
         }
 
         // perform MAC/L1 common configuration
@@ -1988,8 +1988,8 @@ int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_up
 
           du_extract_and_decode_SI(i,
                                    si_ind,
-                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container[2+si_ind],
-                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container_length[2+si_ind]);
+                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container[si_ind],
+                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container_length[si_ind]);
         }
 
         // perform MAC/L1 common configuration
