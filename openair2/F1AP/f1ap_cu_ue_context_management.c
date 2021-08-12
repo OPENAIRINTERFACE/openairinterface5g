@@ -73,8 +73,6 @@ static void setQos(F1AP_NonDynamic5QIDescriptor_t *toFill) {
 int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
                                      f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req) {
   F1AP_F1AP_PDU_t  pdu= {0};
-  uint8_t  *buffer=NULL;
-  uint32_t  len=0;
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
@@ -115,7 +113,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   ie4->id                             = F1AP_ProtocolIE_ID_id_ServCellIndex;
   ie4->criticality                    = F1AP_Criticality_reject;
   ie4->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_ServCellIndex;
-  ie4->value.choice.ServCellIndex = 2;
+  ie4->value.choice.ServCellIndex = 0;
 
   /* optional */
   /* c5. CellULConfigured */
@@ -149,25 +147,23 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   /* mandatory */
   /* c7. Candidate_SpCell_List */
-  if (0) {
-    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie7);
-    ie7->id                             = F1AP_ProtocolIE_ID_id_Candidate_SpCell_List;  //90
-    ie7->criticality                    = F1AP_Criticality_ignore;
-    ie7->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_Candidate_SpCell_List;
-
-    for (int i=0;   i<0;  i++) {
-      asn1cSequenceAdd(ie7->value.choice.Candidate_SpCell_List.list,F1AP_Candidate_SpCell_ItemIEs_t, candidate_spCell_item_ies);
-      candidate_spCell_item_ies->id            = F1AP_ProtocolIE_ID_id_Candidate_SpCell_Item; // 91
-      candidate_spCell_item_ies->criticality   = F1AP_Criticality_reject;
-      candidate_spCell_item_ies->value.present = F1AP_Candidate_SpCell_ItemIEs__value_PR_Candidate_SpCell_Item;
-      /* 7.1 Candidate_SpCell_Item */
-      F1AP_Candidate_SpCell_Item_t *candidate_spCell_item=
-        &candidate_spCell_item_ies->value.choice.Candidate_SpCell_Item;
-      /* - candidate_SpCell_ID */
-      //FixMe: first cell ???
-      addnRCGI(candidate_spCell_item->candidate_SpCell_ID,f1ap_ue_context_setup_req);
-      /* TODO add correct mcc/mnc */
-    }
+  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie7);
+  ie7->id                             = F1AP_ProtocolIE_ID_id_Candidate_SpCell_List;  //90
+  ie7->criticality                    = F1AP_Criticality_ignore;
+  ie7->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_Candidate_SpCell_List;
+  
+  for (int i=0;   i<1;  i++) {
+    asn1cSequenceAdd(ie7->value.choice.Candidate_SpCell_List.list,F1AP_Candidate_SpCell_ItemIEs_t, candidate_spCell_item_ies);
+    candidate_spCell_item_ies->id            = F1AP_ProtocolIE_ID_id_Candidate_SpCell_Item; // 91
+    candidate_spCell_item_ies->criticality   = F1AP_Criticality_reject;
+    candidate_spCell_item_ies->value.present = F1AP_Candidate_SpCell_ItemIEs__value_PR_Candidate_SpCell_Item;
+    /* 7.1 Candidate_SpCell_Item */
+    F1AP_Candidate_SpCell_Item_t *candidate_spCell_item=
+      &candidate_spCell_item_ies->value.choice.Candidate_SpCell_Item;
+    /* - candidate_SpCell_ID */
+    //FixMe: first cell ???
+    addnRCGI(candidate_spCell_item->candidate_SpCell_ID,f1ap_ue_context_setup_req);
+    /* TODO add correct mcc/mnc */
   }
 
   /* optional */
@@ -601,8 +597,10 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     MaskedIMEISV_TO_BIT_STRING(12340000l, &ie15->value.choice.MaskedIMEISV); // size (64)
   }
 
-  //xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, &pdu); //(void *)pdu
   /* encode */
+  uint8_t  *buffer=NULL;
+  uint32_t  len=0;
+
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 UE CONTEXT SETUP REQUEST\n");
     return -1;

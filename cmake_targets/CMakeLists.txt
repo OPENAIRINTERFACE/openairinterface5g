@@ -814,9 +814,8 @@ set(F1AP_ASN_FILES
 
 if (${RU} STREQUAL 0)
   set(F1AP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
-  message("calling ASN1C_PREFIX=F1AP_ asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}")
   execute_process(
-    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "F1AP_" "-findirect-choice -fno-include-deps" ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "F1AP_" "-findirect-choice -fno-include-deps -Wdebug-compiler -Wdebug-parser" ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
     RESULT_VARIABLE ret
     )
   

@@ -47,6 +47,13 @@ int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length) {
     LOG_E(F1AP, "----------------- ASN1 ENCODER PRINT END----------------- \n");
   }
 
+  char errbuf[128]; /* Buffer for error message */
+  size_t errlen = sizeof(errbuf); /* Size of the buffer */
+  int ret = asn_check_constraints(&asn_DEF_F1AP_F1AP_PDU, pdu, errbuf, &errlen);
+  /* assert(errlen < sizeof(errbuf)); // Guaranteed: you may rely on that */
+  if(ret) {
+    fprintf(stderr, "Constraint validation failed: %s\n", errbuf);
+  }
   encoded = aper_encode_to_new_buffer(&asn_DEF_F1AP_F1AP_PDU, 0, pdu, (void **)buffer);
 
   if (encoded < 0) {
