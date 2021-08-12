@@ -1536,8 +1536,13 @@ class OaiCiTest():
 					SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 				else: #launch from Module
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+					#target address is different depending on EPC type
+					if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+						Target = EPC.MmeIPAddress
+					else:
+						Target = EPC.IPAddress
 					#ping from module NIC rather than IP address to make sure round trip is over the air	
-					cmd = 'ping -I ' + Module_UE.UENetwork  + ' ' + self.ping_args + ' ' +  EPC.IPAddress  + ' 2>&1 > ping_' + self.testCase_id + '_' + self.ue_id + '.log' 
+					cmd = 'ping -I ' + Module_UE.UENetwork  + ' ' + self.ping_args + ' ' +  Target  + ' 2>&1 > ping_' + self.testCase_id + '_' + self.ue_id + '.log' 
 					SSH.command(cmd,'\$',int(ping_time[0])*1.5)
 					#copy the ping log file to have it locally for analysis (ping stats)
 					SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'ping_' + self.testCase_id + '_' + self.ue_id + '.log', '.')

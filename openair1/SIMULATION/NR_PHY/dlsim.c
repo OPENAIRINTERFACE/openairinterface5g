@@ -87,7 +87,6 @@ uint16_t sl_ahead=0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
-msc_interface_t msc_interface;
 uint32_t N_RB_DL = 106;
 
 // dummy functions
@@ -759,7 +758,7 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0);
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0, 0);
 
   /* RRC parameter validation for secondaryCellGroup */
   fix_scd(scd);
@@ -1004,12 +1003,12 @@ int main(int argc, char **argv)
       NR_gNB_DLSCH_t *gNB_dlsch = gNB->dlsch[0][0];
       nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &gNB_dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
       
-      UE_harq_process->harq_ack.ack = 0;
+      UE_harq_process->ack = 0;
       round = 0;
       UE_harq_process->round = round;
       UE_harq_process->first_tx = 1;
         
-      while ((round<num_rounds) && (UE_harq_process->harq_ack.ack==0)) {
+      while ((round<num_rounds) && (UE_harq_process->ack==0)) {
         memset(RC.nrmac[0]->cce_list[1][0],0,MAX_NUM_CCE*sizeof(int));
         memset(RC.nrmac[0]->cce_list[1][1],0,MAX_NUM_CCE*sizeof(int));
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
@@ -1243,7 +1242,7 @@ int main(int argc, char **argv)
 	  printf("errors_bit = %u (trial %d)\n", errors_bit, trial);
       }
       roundStats[snrRun]+=((float)round); 
-      if (UE_harq_process->harq_ack.ack==1) effRate += ((float)TBS)/round;
+      if (UE_harq_process->ack==1) effRate += ((float)TBS)/round;
     } // noise trials
 
     blerStats[snrRun] = (float) n_errors / (float) n_trials;

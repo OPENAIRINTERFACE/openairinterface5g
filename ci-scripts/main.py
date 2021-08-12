@@ -155,6 +155,11 @@ def GetParametersFromXML(action):
 		RAN.eNB_Trace=test.findtext('eNB_Trace')
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
+		USRPIPAddress=test.findtext('USRP_IPAddress')
+		if USRPIPAddress is None:
+			RAN.USRPIPAddress=''
+		else:
+			RAN.USRPIPAddress=USRPIPAddress
 		if (eNB_instance is None):
 			RAN.eNB_instance=0
 		else:
@@ -568,7 +573,7 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	if foundCount != HTML.nbTestXMLfiles:
 		HTML.nbTestXMLfiles=foundCount
 	
-	if (CiTestObj.ADBIPAddress != 'none'):
+	if (CiTestObj.ADBIPAddress != 'none') and (CiTestObj.ADBIPAddress != 'modules'):
 		terminate_ue_flag = False
 		CiTestObj.GetAllUEDevices(terminate_ue_flag)
 		CiTestObj.GetAllCatMDevices(terminate_ue_flag)
@@ -659,6 +664,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	if (EPC.IPAddress != '') and (EPC.IPAddress != 'none'):
 		CiTestObj.CheckFlexranCtrlInstallation(RAN,EPC,CONTAINERS)
 		EPC.SetMmeIPAddress()
+		EPC.SetAmfIPAddress()
 
 	#get the list of tests to be done
 	todo_tests=[]
@@ -671,10 +677,12 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	signal.signal(signal.SIGUSR1, receive_signal)
 
-	if (CiTestObj.ADBIPAddress != 'none'):
+	if (CiTestObj.ADBIPAddress != 'none') and (CiTestObj.ADBIPAddress != 'modules'):
 		terminate_ue_flag = False
 		CiTestObj.GetAllUEDevices(terminate_ue_flag)
 		CiTestObj.GetAllCatMDevices(terminate_ue_flag)
+	elif (CiTestObj.ADBIPAddress == 'modules'):
+		CiTestObj.UEDevices.append('COTS-Module')
 	else:
 		CiTestObj.UEDevices.append('OAI-UE')
 	HTML.SethtmlUEConnected(len(CiTestObj.UEDevices) + len(CiTestObj.CatMDevices))
@@ -708,7 +716,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				CiTestObj.ShowTestID()
 				GetParametersFromXML(action)
 				if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE' or action == 'DataDisable_UE' or action == 'DataEnable_UE' or action == 'CheckStatusUE':
-					if (CiTestObj.ADBIPAddress != 'none'):
+					if (CiTestObj.ADBIPAddress != 'none') and (CiTestObj.ADBIPAddress != 'modules'):
 						#in these cases, having no devices is critical, GetAllUEDevices function has to manage it as a critical error, reason why terminate_ue_flag is set to True
 						terminate_ue_flag = True 
 						# Now we stop properly the test-suite --> clean reporting
@@ -775,6 +783,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					EPC.InitializeSPGW(HTML)
 				elif action == 'Terminate_SPGW':
 					EPC.TerminateSPGW(HTML)
+				elif action == 'Initialize_5GCN':
+					EPC.Initialize5GCN(HTML)
+				elif action == 'Terminate_5GCN':
+					EPC.Terminate5GCN(HTML)
 				elif action == 'Deploy_EPC':
 					EPC.DeployEpc(HTML)
 				elif action == 'Undeploy_EPC':
@@ -789,7 +801,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CiTestObj.Perform_X2_Handover(HTML,RAN,EPC)
 				elif action == 'Build_PhySim':
 					HTML=ldpc.Build_PhySim(HTML,CONST)
-					if ldpc.exitStatus==1:sys.exit()
+					if ldpc.exitStatus==1:
+						RAN.prematureExit = False
 				elif action == 'Run_PhySim':
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				elif action == 'Build_Image':

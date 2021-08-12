@@ -113,10 +113,29 @@ bool try_allocate_harq_retransmission(module_id_t Mod_id,
     LOG_D(MAC, "cannot allocate UE %d: no CCE can be allocated\n", UE_id);
     return false;
   }
+  /* if nb_rb is not multiple of RBGsize, then last RBG must be free
+   * (it will be allocated just below)
+   */
+  if (nb_rb % RBGsize && !rbgalloc_mask[N_RBG-1]) {
+    LOG_E(MAC, "retransmission: last RBG already allocated (this should not happen)\n");
+    return false;
+  }
   ue_ctrl->pre_dci_dl_pdu_idx = idx;
   // retransmissions: directly allocate
   *n_rbg_sched -= nb_rbg;
   ue_ctrl->pre_nb_available_rbs[CC_id] += nb_rb;
+  if (nb_rb % RBGsize) {
+    /* special case: if nb_rb is not multiple of RBGsize, then allocate last RBG.
+     * If we instead allocated another RBG then we will retransmit with more
+     * RBs and the UE will not accept it.
+     * (This has been seen in a test with cots UEs, if not true, then change
+     * code as needed.)
+     * At this point rbgalloc_mask[N_RBG-1] == 1 due to the test above.
+     */
+    ue_ctrl->rballoc_sub_UE[CC_id][N_RBG-1] = 1;
+    rbgalloc_mask[N_RBG-1] = 0;
+    nb_rbg--;
+  }
   for (; nb_rbg > 0; start_rbg++) {
     if (!rbgalloc_mask[start_rbg])
       continue;
