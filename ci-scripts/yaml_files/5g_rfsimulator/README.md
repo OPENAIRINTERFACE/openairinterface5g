@@ -218,34 +218,6 @@ oaitun_ue1: flags=4305<UP,POINTOPOINT,RUNNING,NOARP,MULTICAST>  mtu 1500
         TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
 ```
 
-**CAUTION: THESE NEXT FEW COMMANDS ARE A HACK. RAN developers SHALL FIX THIS!**
-
-```bash
-$ docker exec -it rfsim5g-oai-nr-ue /bin/bash
-
-# Check the current routes
-
-root@bb4d400a832d:/opt/oai-nr-ue# ip route
-default via 192.168.71.129 dev eth0 
-12.1.1.0/24 dev oaitun_ue1 proto kernel scope link src 12.1.1.2 
-192.168.71.128/26 dev eth0 proto kernel scope link src 192.168.71.137 
-
-# Remove the default and PDN routes
-
-root@bb4d400a832d:/opt/oai-nr-ue# ip route del default
-root@bb4d400a832d:/opt/oai-nr-ue# ip route del 12.1.1.0/24
-
-# Force the default route through oaitun_ue1 tunnel
-
-root@bb4d400a832d:/opt/oai-nr-ue# ip route add default via 12.1.1.2 dev oaitun_ue1
-
-# Check the new routes
-
-root@bb4d400a832d:/opt/oai-nr-ue# ip route
-default via 12.1.1.2 dev oaitun_ue1 
-192.168.71.128/26 dev eth0 proto kernel scope link src 192.168.71.137 
-```
-
 # 3. Check traffic #
 
 ## 3.1. Check your Internet connectivity ##
