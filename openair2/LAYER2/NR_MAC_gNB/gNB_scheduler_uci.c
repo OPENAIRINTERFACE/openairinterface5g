@@ -72,10 +72,13 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
         pucch->resource_indicator);
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
+  NR_CellGroupConfig_t *cg=UE_info->CellGroup[UE_id];
+  NR_BWP_UplinkDedicated_t *ubwpd = cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
   nr_configure_pucch(pucch_pdu,
                      scc,
                      UE_info->CellGroup[UE_id],
                      UE_info->UE_sched_ctrl[UE_id].active_ubwp,
+                     ubwpd,
                      UE_info->rnti[UE_id],
                      pucch->resource_indicator,
                      pucch->csi_bits,

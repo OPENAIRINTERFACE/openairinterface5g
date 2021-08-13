@@ -123,13 +123,13 @@ static inline uint8_t get_max_cces(uint8_t scs) {
 }
 
 NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
-                                     NR_BWP_Downlink_t *bwp,
+                                     void *bwp,
                                      NR_SearchSpace_t *ss,
                                      NR_SearchSpace__searchSpaceType_PR ss_type) {
   NR_ControlResourceSetId_t coreset_id = *ss->controlResourceSetId;
   if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) { // common search space
     NR_ControlResourceSet_t *coreset;
-    if (bwp) coreset = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
+    if (bwp) coreset = ((NR_BWP_Downlink_t*)bwp)->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
     else if (scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet)
       coreset = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
     else coreset = NULL;
@@ -139,10 +139,10 @@ NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
 			     "search space\n");
     return coreset;
   } else {
-    const int n = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.count;
+    const int n = ((NR_BWP_DownlinkDedicated_t*)bwp)->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.count;
     for (int i = 0; i < n; i++) {
       NR_ControlResourceSet_t *coreset =
-          bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[i];
+          ((NR_BWP_DownlinkDedicated_t*)bwp)->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[i];
       if (coreset_id == coreset->controlResourceSetId) {
         return coreset;
       }
@@ -307,6 +307,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
+			      const NR_BWP_UplinkDedicated_t *ubwpd,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
@@ -324,7 +325,7 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
           &ps->startSymbolIndex,
           &ps->nrOfSymbols);
 
-  ps->pusch_Config = ubwp?ubwp->bwp_Dedicated->pusch_Config->choice.setup:NULL;
+  ps->pusch_Config = ubwp?ubwp->bwp_Dedicated->pusch_Config->choice.setup:(ubwpd ? ubwpd->pusch_Config->choice.setup : NULL);
   if (ps->pusch_Config == NULL || !ps->pusch_Config->transformPrecoder)
     ps->transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
   else
@@ -599,6 +600,7 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 }
 
 void config_uldci(const NR_BWP_Uplink_t *ubwp,
+		  const NR_BWP_UplinkDedicated_t *ubwpd,
                   const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
@@ -620,23 +622,25 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
   dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
   dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
   dci_pdu_rel15->tpc = tpc;
-  if (ubwp) AssertFatal(ubwp->bwp_Dedicated->pusch_Config->choice.setup->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
+  const NR_BWP_UplinkDedicated_t *ubwpd2 = (ubwp) ? ubwp->bwp_Dedicated : ubwpd;
+
+  if (ubwpd2) AssertFatal(ubwpd2->pusch_Config->choice.setup->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
 			"Only frequency resource allocation type 1 is currently supported\n");
   switch (dci_format) {
     case NR_UL_DCI_FORMAT_0_0:
       dci_pdu_rel15->format_indicator = 0;
       break;
     case NR_UL_DCI_FORMAT_0_1:
+      LOG_I(NR_MAC,"Configuring DCI Format 0_1\n");
       dci_pdu_rel15->dai[0].val = 0; //TODO
       // bwp indicator as per table 7.3.1.1.2-1 in 38.212
       dci_pdu_rel15->bwp_indicator.val = n_ubwp < 4 ? bwp_id : bwp_id - 1;
       // SRS resource indicator
-      if (ubwp &&
-          ubwp->bwp_Dedicated &&
-          ubwp->bwp_Dedicated->pusch_Config &&
-          ubwp->bwp_Dedicated->pusch_Config->choice.setup &&
-          ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig != NULL) {
-        AssertFatal(*ubwp->bwp_Dedicated->pusch_Config->choice.setup->txConfig == NR_PUSCH_Config__txConfig_codebook,
+      if (ubwpd2 &&
+          ubwpd2->pusch_Config &&
+          ubwpd2->pusch_Config->choice.setup &&
+          ubwpd2->pusch_Config->choice.setup->txConfig != NULL) {
+        AssertFatal(*ubwpd2->pusch_Config->choice.setup->txConfig == NR_PUSCH_Config__txConfig_codebook,
                     "Non Codebook configuration non supported\n");
         dci_pdu_rel15->srs_resource_indicator.val = 0; // taking resource 0 for SRS
       }
@@ -710,7 +714,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
   for (int i=0;i<6;i++)
     pdcch_pdu->FreqDomainResource[i] = coreset->frequencyDomainResources.buf[i];
  
-  LOG_D(MAC,"Coreset : BWPstart %d, BWPsize %d, SCS %d, freq %x, , duration %d,  \n",pdcch_pdu->BWPStart,pdcch_pdu->BWPSize,pdcch_pdu->SubcarrierSpacing,coreset->frequencyDomainResources.buf[0],coreset->duration);
+  LOG_D(MAC,"Coreset : BWPstart %d, BWPsize %d, SCS %d, freq %x, , duration %d,  \n",pdcch_pdu->BWPStart,pdcch_pdu->BWPSize,(int)pdcch_pdu->SubcarrierSpacing,(int)coreset->frequencyDomainResources.buf[0],(int)coreset->duration);
   
   //cce-REG-MappingType
   pdcch_pdu->CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
@@ -744,6 +748,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_CellGroupConfig_t *CellGroup,
                         NR_BWP_Uplink_t *bwp,
+                        NR_BWP_UplinkDedicated_t *bwpd,
                         uint16_t rnti,
                         uint8_t pucch_resource,
                         uint16_t O_csi,
@@ -767,12 +772,12 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 
   uint16_t O_uci = O_csi + O_ack;
 
-  NR_PUSCH_Config_t *pusch_Config = bwp ? bwp->bwp_Dedicated->pusch_Config->choice.setup : NULL;
-  long *pusch_id = bwp ? pusch_Config->dataScramblingIdentityPUSCH : NULL;
+  NR_PUSCH_Config_t *pusch_Config = bwp ? bwp->bwp_Dedicated->pusch_Config->choice.setup : bwpd->pusch_Config->choice.setup;
+  long *pusch_id = pusch_Config ? pusch_Config->dataScramblingIdentityPUSCH : NULL;
 
-  if (bwp && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
+  if (pusch_Config && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
     id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
-  else if (bwp && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
+  else if (pusch_Config && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
     id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
   else id0 = scc->physCellId;
 
@@ -797,7 +802,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
     pucch_pdu->sequence_hop_flag = 1;
     break;
   default:
-    AssertFatal(1==0,"Group hopping flag %ld undefined (0,1,2) \n", bwp->bwp_Common->pucch_ConfigCommon->choice.setup->pucch_GroupHopping);
+    AssertFatal(1==0,"Group hopping flag %ld undefined (0,1,2) \n", pucch_ConfigCommon->pucch_GroupHopping);
   }
 
   if (pucch_ConfigCommon->hoppingId != NULL)
@@ -813,9 +818,10 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   pucch_pdu->cyclic_prefix = (genericParameters->cyclicPrefix==NULL) ? 0 : *genericParameters->cyclicPrefix;
   if (r_pucch<0 || bwp){
     // we have either a dedicated BWP or Dedicated PUCCH configuration on InitialBWP
+        AssertFatal(bwp!=NULL || bwpd!=NULL,"We need one dedicated configuration for a BPW (neither additional or initial BWP has a dedicated configuration)\n");
 	pucch_Config = bwp ?
 	  bwp->bwp_Dedicated->pucch_Config->choice.setup:
-	  CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+	  bwpd->pucch_Config->choice.setup;
 
 	AssertFatal(pucch_Config->resourceSetToAddModList!=NULL,
 		    "PUCCH resourceSetToAddModList is null\n");
@@ -984,7 +990,21 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  nr_dci_format_t format,
                  int bwp_id) {
 
-  NR_BWP_Downlink_t *bwp=CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+  AssertFatal(CellGroup!=NULL,"CellGroup shouldn't be null here\n");
+
+  const NR_BWP_DownlinkDedicated_t *bwpd = NULL;
+  const NR_PDSCH_Config_t *pdsch_Config = NULL;
+  const NR_PDCCH_Config_t *pdcch_Config = NULL;
+
+  if (bwp_id>0) {
+    bwpd=CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated;
+  }
+  else {
+    bwpd=CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+  }
+  pdsch_Config = (bwpd->pdsch_Config) ? bwpd->pdsch_Config->choice.setup : NULL;
+  pdcch_Config = (bwpd->pdcch_Config) ? bwpd->pdcch_Config->choice.setup : NULL;
+
 
   switch(format) {
     case NR_UL_DCI_FORMAT_0_1:
@@ -1007,22 +1027,22 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
       if (CellGroup->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig != NULL)
         AssertFatal(1==0,"Cross Carrier Scheduling Config currently not supported\n");
       //vrb to prb mapping
-      if (bwp->bwp_Dedicated->pdsch_Config->choice.setup->vrb_ToPRB_Interleaver==NULL)
+      if (pdsch_Config->vrb_ToPRB_Interleaver==NULL)
         dci_pdu_rel15->vrb_to_prb_mapping.val = 0;
       else
         dci_pdu_rel15->vrb_to_prb_mapping.val = 1;
       //bundling size indicator
-      if (bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present == NR_PDSCH_Config__prb_BundlingType_PR_dynamicBundling)
+      if (pdsch_Config->prb_BundlingType.present == NR_PDSCH_Config__prb_BundlingType_PR_dynamicBundling)
         AssertFatal(1==0,"Dynamic PRB bundling type currently not supported\n");
       //rate matching indicator
-      uint16_t msb = (bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup1==NULL)?0:1;
-      uint16_t lsb = (bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup2==NULL)?0:1;
+      uint16_t msb = (pdsch_Config->rateMatchPatternGroup1==NULL)?0:1;
+      uint16_t lsb = (pdsch_Config->rateMatchPatternGroup2==NULL)?0:1;
       dci_pdu_rel15->rate_matching_indicator.val = lsb | (msb<<1);
       // aperiodic ZP CSI-RS trigger
-      if (bwp->bwp_Dedicated->pdsch_Config->choice.setup->aperiodic_ZP_CSI_RS_ResourceSetsToAddModList != NULL)
+      if (pdsch_Config->aperiodic_ZP_CSI_RS_ResourceSetsToAddModList != NULL)
         AssertFatal(1==0,"Aperiodic ZP CSI-RS currently not supported\n");
       // transmission configuration indication
-      if (bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1]->tci_PresentInDCI != NULL)
+      if (pdcch_Config->controlResourceSetToAddModList->list.array[0]->tci_PresentInDCI != NULL)
         AssertFatal(1==0,"TCI in DCI currently not supported\n");
       //srs resource set
       if (CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->carrierSwitching!=NULL) {
@@ -1046,7 +1066,9 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
       else
         dci_pdu_rel15->srs_request.val = 0;
     // CBGTI and CBGFI
-    if (CellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL)
+    if (CellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig &&
+        CellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup &&
+        CellGroup->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL)
       AssertFatal(1==0,"CBG transmission currently not supported\n");
     break;
   default :
@@ -1066,7 +1088,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   uint8_t fsize = 0, pos = 0;
 
   uint64_t *dci_pdu = (uint64_t *)pdcch_dci_pdu->Payload;
-  int dci_size = nr_dci_size(scc->uplinkConfigCommon->initialUplinkBWP, CellGroup, dci_pdu_rel15, dci_format, rnti_type, N_RB, bwp_id);
+  int dci_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,scc->uplinkConfigCommon->initialUplinkBWP, CellGroup, dci_pdu_rel15, dci_format, rnti_type, N_RB, bwp_id);
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
   if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1)
@@ -1122,8 +1144,9 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // indicating a DL DCI format 1bit
       pos++;
       *dci_pdu |= ((uint64_t)1) << (dci_size - pos);
-      LOG_D(NR_MAC,
-            "Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",
+      LOG_I(NR_MAC,
+            "DCI1_0 (size %d): Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",
+            dci_size,
             dci_pdu_rel15->format_indicator,
             1,
             N_RB,
@@ -1333,7 +1356,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   case NR_UL_DCI_FORMAT_0_0:
     switch (rnti_type) {
     case NR_RNTI_C:
-      LOG_D(NR_MAC,"Filling format 0_0 DCI for CRNTI (size %d bits)\n",dci_size);
+      LOG_I(NR_MAC,"Filling format 0_0 DCI for CRNTI (size %d bits, format ind %d)\n",dci_size,dci_pdu_rel15->format_indicator);
       // indicating a UL DCI format 1bit
       pos=1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
@@ -1429,6 +1452,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   case NR_UL_DCI_FORMAT_0_1:
     switch (rnti_type) {
     case NR_RNTI_C:
+      LOG_I(NR_MAC,"Filling NR_UL_DCI_FORMAT_0_1 size %d format indicator %d\n",dci_size,dci_pdu_rel15->format_indicator);
       // Indicating a DL DCI format 1bit
       pos = 1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 0x1) << (dci_size - pos);
@@ -1863,8 +1887,12 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     const int bwp_id = 1;
     sched_ctrl->active_bwp = bwpList ? bwpList->list.array[bwp_id - 1] : NULL;
     const int target_ss = sched_ctrl->active_bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
-    sched_ctrl->search_space = get_searchspace(scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
-    sched_ctrl->coreset = get_coreset(scc, sched_ctrl->active_bwp, sched_ctrl->search_space, target_ss);
+    sched_ctrl->search_space = get_searchspace(scc, 
+                                               sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, 
+                                               target_ss);
+    sched_ctrl->coreset = get_coreset(scc, 
+                                      sched_ctrl->active_bwp ? (void*)sched_ctrl->active_bwp->bwp_Dedicated : NULL, 
+	                              sched_ctrl->search_space, target_ss);
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
     if (ubwpList) AssertFatal(ubwpList->list.count == 1,
 			      "uplinkBWP_ToAddModList has %d BWP!\n",

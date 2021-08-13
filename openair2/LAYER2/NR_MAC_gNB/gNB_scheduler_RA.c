@@ -1447,14 +1447,15 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
           dci_payload.pucch_resource_indicator,
           dci_payload.pdsch_to_harq_feedback_timing_indicator.val);
 
-    LOG_D(NR_MAC,
-          "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
+    LOG_I(NR_MAC,
+          "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d, BWPsize %d\n",
           pdcch_pdu_rel15->dci_pdu[0].RNTI,
           NR_RNTI_TC,
           NR_DL_DCI_FORMAT_1_0,
           (unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
           pdcch_pdu_rel15->StartSymbolIndex,
-          pdcch_pdu_rel15->DurationSymbols);
+          pdcch_pdu_rel15->DurationSymbols,
+          pdsch_pdu_rel15->BWPSize);
 
     fill_dci_pdu_rel15(scc,
                        ra->CellGroup,

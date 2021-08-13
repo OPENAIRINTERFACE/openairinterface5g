@@ -314,10 +314,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       }
     }
 
-#ifdef DEBUG_NR_PUCCH_RX
-    LOG_I(PHY,"PUCCH IDFT = (%d,%d)=>%f\n",corr_re[0],corr_im[0],10*log10((double)corr_re[0]*corr_re[0] + (double)corr_im[0]*corr_im[0]));
-    if (l>1) LOG_I(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[1],corr_im[1],10*log10((double)corr_re[1]*corr_re[1] + (double)corr_im[1]*corr_im[1]));
-#endif
+    LOG_D(PHY,"PUCCH IDFT = (%d,%d)=>%f\n",corr_re[0],corr_im[0],10*log10((double)corr_re[0]*corr_re[0] + (double)corr_im[0]*corr_im[0]));
+    if (l>1) LOG_D(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[1],corr_im[1],10*log10((double)corr_re[1]*corr_re[1] + (double)corr_im[1]*corr_im[1]));
+
     if (pucch_pdu->freq_hop_flag == 0 && l==1) // non-coherent correlation
       temp=(int64_t)corr_re[0]*corr_re[0] + (int64_t)corr_im[0]*corr_im[0];
     else if (pucch_pdu->freq_hop_flag == 0 && l==2) {
@@ -342,7 +341,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   av_corr/=nr_sequences/l;
 
-  uint8_t xrtmag_dB = dB_fixed64(xrtmag);
+  int xrtmag_dBtimes10 = 10*(int)dB_fixed64(xrtmag);
  
 #ifdef DEBUG_NR_PUCCH_RX
   printf("PUCCH 0 : maxpos %d\n",maxpos);
@@ -356,8 +355,10 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int max_n0 = uci_stats->pucch0_n00>uci_stats->pucch0_n01 ? uci_stats->pucch0_n00:uci_stats->pucch0_n01;
   int SNRtimes10,sigenergy=0;
   for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
-    sigenergy += signal_energy_nodc(&rxdataF[0][pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size+re_offset[0]],12);
-  SNRtimes10 = dB_fixed_times10(sigenergy)-(10*max_n0);
+    sigenergy += signal_energy_nodc(&rxdataF[aa][soffset+
+                                                 (pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size)+
+                                                 re_offset[0]],12);
+  SNRtimes10 = xrtmag_dBtimes10-(10*max_n0);
   int cqi;
   if (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
@@ -366,7 +367,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   uci_stats->pucch0_thres = gNB->pucch0_thres + (10*max_n0);
   bool no_conf=false;
   if (nr_sequences>1) {
-    if (10*xrtmag_dB < uci_stats->pucch0_thres)
+    if (xrtmag_dBtimes10 < uci_stats->pucch0_thres)
       no_conf=true;
   }
   gNB->bad_pucch += no_conf;
@@ -383,7 +384,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
     uci_pdu->sr->sr_confidence_level = no_conf ? 1 : 0;
     uci_stats->pucch0_sr_trials++;
-    if (xrtmag_dB>(gNB->measurements.n0_power_tot_dB)) {
+    if (xrtmag_dBtimes10>(10*gNB->measurements.n0_power_tot_dB)) {
       uci_pdu->sr->sr_indication = 1;
       uci_stats->pucch0_positive_SR++;
     } else {
@@ -396,8 +397,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = no_conf ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
-    LOG_D(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d n0 %d pucch0_thres %d\n",
-          slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB,max_n0,uci_stats->pucch0_thres);
+    LOG_I(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d n0 %d pucch0_thres %d, cqi %d, SNRtimes10 %d\n",
+          slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,max_n0,uci_stats->pucch0_thres,cqi,SNRtimes10);
 
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
@@ -415,7 +416,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_list[1].harq_value = index&0x01;
     uci_pdu->harq->harq_list[0].harq_value = (index>>1)&0x01;
     LOG_D(PHY, "Slot %d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d, xrt_mag %d\n",
-          slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB);
+          slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;

@@ -448,7 +448,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   if (ps->time_domain_allocation != tda
       || ps->dci_format != dci_format
       || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, NULL,dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
 
   uint16_t rbStart = 0;
   uint16_t rbSize;

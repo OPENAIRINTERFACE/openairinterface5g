@@ -63,6 +63,20 @@ const uint32_t NR_LONG_BSR_TABLE[256] ={
 35910462, 38241455, 40723756, 43367187, 46182206, 49179951, 52372284, 55771835, 59392055, 63247269, 67352729, 71724679, 76380419, 81338368, 162676736, 4294967295
 };
 
+int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl) {
+
+    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+    int dci_format;
+    if (sched_ctrl->search_space) {
+       dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+    }
+    else {
+       dci_format = NR_UL_DCI_FORMAT_0_0;
+    }
+
+    return(dci_format);
+}
+
 void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp)
 {
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
@@ -854,12 +868,13 @@ bool allocate_ul_retransmission(module_id_t module_id,
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pusch_t *retInfo = &sched_ctrl->ul_harq_processes[harq_pid].sched_pusch;
-
+  NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
+  NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
   NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
   int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
-  const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? 1 : 2;
+  const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp || ubwpd) ? 1 : 2;
   const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
   if (tda == retInfo->time_domain_allocation) {
@@ -873,12 +888,13 @@ bool allocate_ul_retransmission(module_id_t module_id,
     /* check whether we need to switch the TDA allocation since tha last
      * (re-)transmission */
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    const int dci_format = sched_ctrl->active_ubwp ? (f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0) : NR_UL_DCI_FORMAT_0_0;
+
+    int dci_format = get_dci_format(sched_ctrl);
+
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
     LOG_D(NR_MAC, "%s(): retransmission keeping TDA %d and TBS %d\n", __func__, tda, retInfo->tb_size);
   } else {
     /* the retransmission will use a different time domain allocation, check
@@ -889,9 +905,8 @@ bool allocate_ul_retransmission(module_id_t module_id,
     while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
       rbSize++;
     NR_pusch_semi_static_t temp_ps;
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    const int dci_format = sched_ctrl->active_ubwp ? (f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0) : NR_UL_DCI_FORMAT_0_0;
-    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
+    int dci_format = get_dci_format(sched_ctrl);
+    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp,ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -990,6 +1005,9 @@ void pf_ul(module_id_t module_id,
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+    NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
+    NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+
     int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
@@ -1050,14 +1068,13 @@ void pf_ul(module_id_t module_id,
       /* we want to avoid a lengthy deduction of DMRS and other parameters in
        * every TTI if we can save it, so check whether dci_format, TDA, or
        * num_dmrs_cdm_grps_no_data has changed and only then recompute */
-      const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_ubwp ? 1 : 2;
-      const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-      const int dci_format = sched_ctrl->active_ubwp ? (f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0) : NR_UL_DCI_FORMAT_0_0;
+      const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
+      int dci_format = get_dci_format(sched_ctrl);
       const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-        nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+        nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
       sched_pusch->mcs = 9;
       update_ul_ue_R_Qm(sched_pusch, ps);
@@ -1125,6 +1142,8 @@ void pf_ul(module_id_t module_id,
       return;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
+    NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
     NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
     int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
@@ -1149,13 +1168,12 @@ void pf_ul(module_id_t module_id,
      * every TTI if we can save it, so check whether dci_format, TDA, or
      * num_dmrs_cdm_grps_no_data has changed and only then recompute */
     const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_ubwp ? 1 : 2;
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    const int dci_format = sched_ctrl->active_ubwp ? (f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0) : NR_UL_DCI_FORMAT_0_0;
+    int dci_format = get_dci_format(sched_ctrl);
     const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
     update_ul_ue_R_Qm(sched_pusch, ps);
 
     /* Calculate the current scheduling bytes and the necessary RBs */
@@ -1404,7 +1422,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->last_ul_frame = sched_pusch->frame;
     sched_ctrl->last_ul_slot = sched_pusch->slot;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "%4d.%2d RNTI %04x UL sched %4d.%2d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d\n",
           frame,
           slot,
@@ -1464,7 +1482,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->mcs_table = ps->mcs_table;
     pusch_pdu->transform_precoding = ps->transform_precoding;
     if (ps->pusch_Config &&
-	      ps->pusch_Config->dataScramblingIdentityPUSCH)
+	ps->pusch_Config->dataScramblingIdentityPUSCH)
       pusch_pdu->data_scrambling_id = *ps->pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
@@ -1516,6 +1534,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 
+    LOG_I(NR_MAC,"PUSCH PDU : data_scrambling_identity %x, dmrs_scrambling_id %x\n",pusch_pdu->data_scrambling_id,pusch_pdu->ul_dmrs_scrambling_id);
     /* TRANSFORM PRECODING --------------------------------------------------------*/
 
     if (pusch_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled){
@@ -1570,7 +1589,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       pdcch_pdu_bwp_coreset[bwpid][coresetid] = pdcch_pdu;
     }
 
-    LOG_D(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d at CCE %d, rnti %x\n", frame,slot,sched_ctrl->cce_index,rnti);
+    LOG_I(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d at CCE %d, rnti %x\n", frame,slot,sched_ctrl->cce_index,rnti);
 
     /* Fill PDCCH DL DCI PDU */
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu->dci_pdu[pdcch_pdu->numDlDci];
@@ -1593,12 +1612,15 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     memset(&uldci_payload, 0, sizeof(uldci_payload));
     NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
     int n_ubwp=1;
+    NR_BWP_UplinkDedicated_t *ubwpd;
     if (CellGroup && CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated &&
-        CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-        CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList)
-      n_ubwp = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
-
+        CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig) {
+      ubwpd = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
+      if (CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList)
+        n_ubwp = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
+    }
     config_uldci(sched_ctrl->active_ubwp,
+                 ubwpd,
                  scc,
                  pusch_pdu,
                  &uldci_payload,
