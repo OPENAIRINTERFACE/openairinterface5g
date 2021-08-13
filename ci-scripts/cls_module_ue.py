@@ -62,7 +62,7 @@ class Module_UE:
 	#this method checks if the specified Process is running on the server hosting the module
 	#if not it will be started
 	def CheckCMProcess(self):
-		HOST=self.HostIPAddress
+		HOST=self.HostUsername+'@'+self.HostIPAddress
 		COMMAND="ps aux | grep " + self.Process['Name'] + " | grep -v grep "
 		logging.debug(COMMAND)
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -80,7 +80,7 @@ class Module_UE:
 			mySSH.close()
 			#checking the process
 			time.sleep(5)
-			HOST=self.HostIPAddress
+			HOST=self.HostUsername+'@'+self.HostIPAddress
 			COMMAND="ps aux | grep " + self.Process['Name'] + " | grep -v grep "
 			logging.debug(COMMAND)
 			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -104,7 +104,7 @@ class Module_UE:
 
 	#this method retrieves the Module IP address (not the Host IP address) 
 	def GetModuleIPAddress(self):
-		HOST=self.HostIPAddress
+		HOST=self.HostUsername+'@'+self.HostIPAddress
 		response= []
 		tentative = 3 
 		while (len(response)==0) and (tentative>0):
@@ -163,12 +163,12 @@ class Module_UE:
 			now=datetime.now()
 			now_string = now.strftime("%Y%m%d-%H%M")
 			source='ci_qlog'
-			destination='/media/usb-drive/ci_qlogs/ci_qlog_'+now_string+'.zip'
+			destination= self.LogStore + '/ci_qlog_'+now_string+'.zip'
 			#qlog artifact is zipped into the target folder
 			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S zip -r '+destination+' '+source+' &','\$', 10)
 			mySSH.close()
 			#post action : log cleaning to make sure enough space is reserved for the next run
-			Log_Mgt=cls_log_mgt.Log_Mgt(self.HostIPAddress, self.HostPassword, "/media/usb-drive/ci_qlogs")
+			Log_Mgt=cls_log_mgt.Log_Mgt(self.HostUsername,self.HostIPAddress, self.HostPassword, self.LogStore)
 			Log_Mgt.LogRotation()
 		else:
 			destination=""
