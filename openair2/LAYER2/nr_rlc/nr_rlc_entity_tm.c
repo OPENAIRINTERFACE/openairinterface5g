@@ -78,7 +78,7 @@ static int tx_list_size(nr_rlc_entity_tm_t *entity,
 {
   int ret = 0;
 
-  while (l != NULL) {
+  while (l != NULL && ret < maxsize) {
     ret += l->size;
     l = l->next;
   }

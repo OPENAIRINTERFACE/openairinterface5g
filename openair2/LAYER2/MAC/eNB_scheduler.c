@@ -557,10 +557,7 @@ copy_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
   }
 }
 
-extern int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
-extern int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
-extern void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
-extern void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
+#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 
 void
 eNB_dlsch_ulsch_scheduler(module_id_t module_idP,

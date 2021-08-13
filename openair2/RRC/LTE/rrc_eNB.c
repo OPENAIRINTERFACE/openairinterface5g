@@ -103,13 +103,9 @@ static int encode_CG_ConfigInfo(char *buffer,int buffer_size,rrc_eNB_ue_context_
 
 extern RAN_CONTEXT_t RC;
 
-#ifdef PHY_EMUL
-  extern EMULATION_VARS              *Emul_vars;
-#endif
 extern eNB_MAC_INST                *eNB_mac_inst;
 extern UE_MAC_INST                 *UE_mac_inst;
 
-extern uint16_t                     two_tier_hexagonal_cellIds[7];
 
 mui_t                               rrc_eNB_mui = 0;
 
@@ -6128,7 +6124,6 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   mobilityInfo = CALLOC(1, sizeof(*mobilityInfo));
   memset((void *)mobilityInfo, 0, sizeof(*mobilityInfo));
   mobilityInfo->targetPhysCellId = RC.rrc[ctxt_pP->module_id]->carrier[0].physCellId;
-  //(PhysCellId_t) two_tier_hexagonal_cellIds[ue_context_pP->ue_context.handover_info->modid_t];
   LOG_D(RRC, "[eNB %d] Frame %d: handover preparation: targetPhysCellId: %ld mod_id: %d ue: %x \n",
         ctxt_pP->module_id,
         ctxt_pP->frame,

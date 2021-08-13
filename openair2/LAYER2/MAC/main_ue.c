@@ -43,6 +43,7 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "PHY_INTERFACE/phy_stub_UE.h"
 #include "common/ran_context.h"
+#include <openair2/RRC/LTE/rrc_proto.h>
 
 extern void openair_rrc_top_init_ue( int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active);
 

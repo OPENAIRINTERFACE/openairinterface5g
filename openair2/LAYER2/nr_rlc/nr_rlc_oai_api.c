@@ -220,8 +220,10 @@ tbs_size_t mac_rlc_data_req(
     LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right after calling generate_pdu in %s\n",
               buffer, __FUNCTION__);
   } else {
-    LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB, channel_idP: %d\n", __FILE__, __LINE__, __FUNCTION__, channel_idP);
-    exit(1);
+    // Laurent: the query loop was checking all possible RB, but by  mac_rlc_get_buffer_occupancy_ind
+    // so it is more straitforward to try to get data
+    //LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB, channel_idP: %d\n", __FILE__, __LINE__, __FUNCTION__, channel_idP);
+    //exit(1);
     ret = 0;
   }
 
@@ -267,7 +269,8 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
      * reports '> 81338368' (table 6.1.3.1-2). Passing 100000000 is thus
      * more than enough.
      */
-    buf_stat = rb->buffer_status(rb, 100000000);
+    // Fix me: temproary reduction meanwhile cpu cost of this computation is optimized
+    buf_stat = rb->buffer_status(rb, 1000*1000);
     ret.bytes_in_buffer = buf_stat.status_size
                         + buf_stat.retx_size
                         + buf_stat.tx_size;
@@ -330,7 +333,8 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
      * more than enough.
      */
     // Fixme : Laurent reduced size for CPU saving
-    buf_stat = rb->buffer_status(rb, 10000000);
+    // Fix me: temproary reduction meanwhile cpu cost of this computation is optimized
+    buf_stat = rb->buffer_status(rb, 1000*1000);
     ret = buf_stat.status_size
         + buf_stat.retx_size
         + buf_stat.tx_size;

@@ -49,6 +49,12 @@ extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);
 extern int oai_nfapi_cqi_indication(nfapi_cqi_indication_t *cqi_ind);
 extern int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind);
 extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
+extern int oai_nfapi_nr_slot_indication(nfapi_nr_slot_indication_scf_t *ind);
+extern int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind);
+extern int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind);
+extern int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind);
+extern int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind);
+extern int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind);
 extern uint8_t nfapi_mode;
 extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
@@ -138,15 +144,16 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
         break;
       }
 
-      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
-        const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &uci_list[i].pucch_pdu_format_2_3_4;
-        handle_nr_uci_pucch_2_3_4(mod_id, frame, slot, uci_pdu);
-        break;
-      }
+        case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
+          const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &uci_list[i].pucch_pdu_format_2_3_4;
+          handle_nr_uci_pucch_2_3_4(mod_id, frame, slot, uci_pdu);
+          break;
+        }
+      LOG_D(MAC, "UCI handled \n");
     }
   }
 
-  for (int i = 0; i < num_ucis; i++){
+  for (int i = 0; i < num_ucis; i++) {
     switch (uci_list[i].pdu_type) {
       case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE:
         free(uci_list[i].pucch_pdu_format_0_1.harq->harq_list);
@@ -298,7 +305,15 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         module_id,CC_id, UL_info->rach_ind.number_of_pdus,
         UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
 
+  handle_nr_rach(UL_info);
+  
+  handle_nr_uci(UL_info);
+  // clear UL DCI prior to handling ULSCH
+  mac->UL_dci_req[CC_id].numPdus = 0;
+  handle_nr_ulsch(UL_info);
+
   if (NFAPI_MODE != NFAPI_MODE_PNF) {
+
     if (ifi->CC_mask==0) {
       ifi->current_frame    = UL_info->frame;
       ifi->current_slot = UL_info->slot;
@@ -308,17 +323,15 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
     }
 
     ifi->CC_mask |= (1<<CC_id);
-  }
 
-  handle_nr_rach(UL_info);
+    handle_nr_rach(UL_info);
 
-  handle_nr_uci(UL_info);
+    handle_nr_uci(UL_info);
 
-  // clear HI prior to handling ULSCH
-  mac->UL_dci_req[CC_id].numPdus = 0;
-  handle_nr_ulsch(UL_info);
+    // clear HI prior to handling ULSCH
+    mac->UL_dci_req[CC_id].numPdus = 0;
+    handle_nr_ulsch(UL_info);
 
-  if (NFAPI_MODE != NFAPI_MODE_PNF) {
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
       /*
       eNB_dlsch_ulsch_scheduler(module_id,

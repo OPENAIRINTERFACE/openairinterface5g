@@ -58,51 +58,12 @@
 #define BITS_PER_SYMBOL_BPSK  (1)     /* 1 bit per symbol for bpsk modulation */
 #define BITS_PER_SYMBOL_QPSK  (2)     /* 2 bits per symbol for bpsk modulation */
 
-/************** VARIABLES *****************************************/
-
-#define  NB_SYMBOL_MINUS_FOUR             (11)
-#define  I_PUCCH_NO_ADDITIONAL_DMRS        (0)
-#define  I_PUCCH_ADDITIONAL_DMRS           (1)
-#define  I_PUCCH_NO_HOPPING                (0)
-#define  I_PUCCH_HOPING                    (1)
-
 
 /*************** FUNCTIONS ****************************************/
 
-bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_t *proc, bool reset_harq);
-
-/** \brief This function return number of downlink acknowledgement and its bitmap
-    @param ue context
-    @param gNB_id identity
-    @param slots for rx and tx
-    @param o_ACK HARQ-ACK information bits
-    @param n_HARQ_ACK use for obtaining a PUCCH transmission power
-    @param do_reset reset downlink HARQ context
-    @returns number of bits of o_ACK */
-
-uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t *proc, uint32_t *o_ACK,
-                         int *n_HARQ_ACK, bool do_reset);
-
-/** \brief This function selects a pucch resource
-    @param ue context
-    @param gNB_id identity
-    @param uci size number of uci bits
-    @param pucch_resource_indicator is from downlink DCI
-    @param initial_pucch_id  pucch resource id for initial phase
-    @param resource_set_id   pucch resource set if any
-    @param resource_id       pucch resource id if any
-    @returns TRUE  a pucch resource has been found FALSE no valid pucch resource */
-
-boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size, int pucch_resource_indicator, 
-                                int *initial_pucch_id, int *resource_set_id, int *resource_id, NR_UE_HARQ_STATUS_t *harq_status);
-
-/** \brief This function select a pucch resource set
-    @param ue context
-    @param gNB_id identity
-    @param uci size number of uci bits
-    @returns number of the pucch resource set */
-
-int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size);
+void pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, 
+                            uint8_t gNB_id,
+                            UE_nr_rxtx_proc_t *proc);
 
 /** \brief This function check pucch format
     @param ue context
@@ -114,14 +75,6 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, int uci_size)
 
 boolean_t check_pucch_format(NR_UE_MAC_INST_t *mac, uint8_t gNB_id, pucch_format_nr_t format_pucch, int nb_symbols_for_tx, 
                              int uci_size);
-
-/** \brief This function selects a pucch resource
-    @param ue context
-    @param gNB_id identity
-    @param slots for rx and tx
-    @returns TRUE  a scheduling request is triggered */
-                             
-int trigger_periodic_scheduling_request(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_t *proc);
 
 /** \brief This function reads current CSI
     @param ue context

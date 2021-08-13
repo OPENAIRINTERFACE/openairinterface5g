@@ -72,7 +72,7 @@ void fill_channel_desc(channel_desc_t *chan_desc,
                        uint8_t channel_length,
                        double *amps,
                        double *delays,
-                       struct complex **R_sqrt,
+                       struct complex *R_sqrt,
                        double Td,
                        double sampling_rate,
                        double channel_bandwidth,
@@ -155,7 +155,7 @@ void fill_channel_desc(channel_desc_t *chan_desc,
       //chan_desc->R_sqrt[i]    = (struct complex*) calloc(nb_tx*nb_rx*nb_tx*nb_rx,sizeof(struct complex));
       //chan_desc->R_sqrt = (struct complex*)&R_sqrt[i][0];
       /* all chan_desc share the same R_sqrt, coming from caller */
-      chan_desc->R_sqrt[i] = R_sqrt[0];
+      chan_desc->R_sqrt[i] = R_sqrt;
     }
   }
 
@@ -177,13 +177,13 @@ void fill_channel_desc(channel_desc_t *chan_desc,
   reset_meas(&chan_desc->convolution);
 }
 
-double mbsfn_delays[] = {0,.03,.15,.31,.37,1.09,12.490,12.52,12.64,12.80,12.86,13.58,27.49,27.52,27.64,27.80,27.86,28.58};
-double mbsfn_amps_dB[] = {0,-1.5,-1.4,-3.6,-0.6,-7.0,-10,-11.5,-11.4,-13.6,-10.6,-17.0,-20,-21.5,-21.4,-23.6,-20.6,-27};
+static double mbsfn_delays[] = {0,.03,.15,.31,.37,1.09,12.490,12.52,12.64,12.80,12.86,13.58,27.49,27.52,27.64,27.80,27.86,28.58};
+static double mbsfn_amps_dB[] = {0,-1.5,-1.4,-3.6,-0.6,-7.0,-10,-11.5,-11.4,-13.6,-10.6,-17.0,-20,-21.5,-21.4,-23.6,-20.6,-27};
 
-double scm_c_delays[] = {0, 0.0125, 0.0250, 0.3625, 0.3750, 0.3875, 0.2500, 0.2625, 0.2750, 1.0375, 1.0500, 1.0625, 2.7250, 2.7375, 2.7500, 4.6000, 4.6125, 4.6250};
-double scm_c_amps_dB[] = {0.00, -2.22, -3.98, -1.86, -4.08, -5.84, -1.08, -3.30, -5.06, -9.08, -11.30, -13.06, -15.14, -17.36, -19.12, -20.64, -22.85, -24.62};
+static double scm_c_delays[] = {0, 0.0125, 0.0250, 0.3625, 0.3750, 0.3875, 0.2500, 0.2625, 0.2750, 1.0375, 1.0500, 1.0625, 2.7250, 2.7375, 2.7500, 4.6000, 4.6125, 4.6250};
+static double scm_c_amps_dB[] = {0.00, -2.22, -3.98, -1.86, -4.08, -5.84, -1.08, -3.30, -5.06, -9.08, -11.30, -13.06, -15.14, -17.36, -19.12, -20.64, -22.85, -24.62};
 
-double tdl_a_delays[] = {0.0000,
+static double tdl_a_delays[] = {0.0000,
                          0.3819,
                          0.4025,
                          0.5868,
@@ -207,7 +207,7 @@ double tdl_a_delays[] = {0.0000,
                          5.3043,
                          9.6586
                         };
-double tdl_a_amps_dB[] = {-13.4,
+static double tdl_a_amps_dB[] = {-13.4,
                           0,
                           -2.2,
                           -4,
@@ -232,7 +232,7 @@ double tdl_a_amps_dB[] = {-13.4,
                           -29.7
                           };
 
-double tdl_b_delays[] = {0.0000,
+static double tdl_b_delays[] = {0.0000,
                          0.1072,
                          0.2155,
                          0.2095,
@@ -257,7 +257,7 @@ double tdl_b_delays[] = {0.0000,
                          4.7834
                         };
 
-double tdl_b_amps_dB[] = {0,
+static double tdl_b_amps_dB[] = {0,
                           -2.2,
                           -4,
                           -3.2,
@@ -282,7 +282,7 @@ double tdl_b_amps_dB[] = {0,
                           -11.3
                           };
 
-double tdl_c_delays[] = {0,
+static double tdl_c_delays[] = {0,
                          0.2099,
                          0.2219,
                          0.2329,
@@ -308,7 +308,7 @@ double tdl_c_delays[] = {0,
                          8.6523
                         };
 
-double tdl_c_amps_dB[] = {-4.4,
+static double tdl_c_amps_dB[] = {-4.4,
                           -1.2,
                           -3.5,
                           -5.2,
@@ -334,7 +334,7 @@ double tdl_c_amps_dB[] = {-4.4,
                           -22.8
                           };
 
-double tdl_d_delays[] = {//0,
+static double tdl_d_delays[] = {//0,
   0,
   0.035,
   0.612,
@@ -350,7 +350,7 @@ double tdl_d_delays[] = {//0,
   12.525
 };
 
-double tdl_d_amps_dB[] = {//-0.2,
+static double tdl_d_amps_dB[] = {//-0.2,
   //-13.5,
   -.00147,
     -18.8,
@@ -369,7 +369,7 @@ double tdl_d_amps_dB[] = {//-0.2,
 
 #define TDL_D_RICEAN_FACTOR .046774
 
-double tdl_e_delays[] = {0,
+static double tdl_e_delays[] = {0,
                          0.5133,
                          0.5440,
                          0.5630,
@@ -385,7 +385,7 @@ double tdl_e_delays[] = {0,
                          20.6519
                         };
 
-double tdl_e_amps_dB[] = {//-0.03,
+static double tdl_e_amps_dB[] = {//-0.03,
   //-22.03,
   -.00433,
     -15.8,
@@ -405,102 +405,78 @@ double tdl_e_amps_dB[] = {//-0.03,
 
 #define TDL_E_RICEAN_FACTOR 0.0063096
 
-double epa_delays[] = { 0,.03,.07,.09,.11,.19,.41};
-double epa_amps_dB[] = {0.0,-1.0,-2.0,-3.0,-8.0,-17.2,-20.8};
+static double epa_delays[] = { 0,.03,.07,.09,.11,.19,.41};
+static double epa_amps_dB[] = {0.0,-1.0,-2.0,-3.0,-8.0,-17.2,-20.8};
 
-double eva_delays[] = { 0,.03,.15,.31,.37,.71,1.09,1.73,2.51};
-double eva_amps_dB[] = {0.0,-1.5,-1.4,-3.6,-0.6,-9.1,-7.0,-12.0,-16.9};
+static double eva_delays[] = { 0,.03,.15,.31,.37,.71,1.09,1.73,2.51};
+static double eva_amps_dB[] = {0.0,-1.5,-1.4,-3.6,-0.6,-9.1,-7.0,-12.0,-16.9};
 
-double etu_delays[] = { 0,.05,.12,.2,.23,.5,1.6,2.3,5.0};
-double etu_amps_dB[] = {-1.0,-1.0,-1.0,0.0,0.0,0.0,-3.0,-5.0,-7.0};
+static double etu_delays[] = { 0,.05,.12,.2,.23,.5,1.6,2.3,5.0};
+static double etu_amps_dB[] = {-1.0,-1.0,-1.0,0.0,0.0,0.0,-3.0,-5.0,-7.0};
 
-double default_amps_lin[] = {0.3868472, 0.3094778, 0.1547389, 0.0773694, 0.0386847, 0.0193424, 0.0096712, 0.0038685};
-double default_amp_lin[] = {1};
-
-double ts_shift_delays[] = {0, 1/7.68};
-double ts_shift_amps[] = {0, 1};
+static double default_amps_lin[] = {0.3868472, 0.3094778, 0.1547389, 0.0773694, 0.0386847, 0.0193424, 0.0096712, 0.0038685};
+static double default_amp_lin[] = {1};
 
 //correlation matrix for a 2x2 channel with full Tx correlation
-struct complex R_sqrt_22_corr_tap[16] = {{0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0},
+static struct complex R_sqrt_22_corr[16] = {{0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0},
   {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, {0.70711,0},
   {0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0},
   {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, {0.70711,0}
 };
-struct complex *R_sqrt_22_corr[1]     = {R_sqrt_22_corr_tap};
 
 //correlation matrix for a fully correlated 2x1 channel (h1==h2)
-struct complex R_sqrt_21_corr_tap[4]  = {{0.70711,0}, {0.70711,0}, {0.70711,0}, {0.70711,0}};
-struct complex *R_sqrt_21_corr[1]      = {R_sqrt_21_corr_tap};
+static struct complex R_sqrt_21_corr[]  = {{0.70711,0}, {0.70711,0}, {0.70711,0}, {0.70711,0}};
 
 //correlation matrix for a 2x2 channel with full Tx anti-correlation
-struct complex R_sqrt_22_anticorr_tap[16] = {{0.70711,0}, {0.0, 0.0}, {-0.70711,0}, {0.0, 0.0},
+static struct complex R_sqrt_22_anticorr[16] = {{0.70711,0}, {0.0, 0.0}, {-0.70711,0}, {0.0, 0.0},
   {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, {-0.70711,0},
   {-0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0},
   {0.0, 0.0}, {-0.70711,0}, {0.0, 0.0}, {0.70711,0}
 };
-struct complex *R_sqrt_22_anticorr[1]     = {R_sqrt_22_anticorr_tap};
 
 //correlation matrix for a fully anti-correlated 2x1 channel (h1==-h2)
-struct complex R_sqrt_21_anticorr_tap[4]  = {{0.70711,0}, {-0.70711,0}, {-0.70711,0}, {0.70711,0}};
-struct complex *R_sqrt_21_anticorr[1]     = {R_sqrt_21_anticorr_tap};
-
-struct complex **R_sqrt_ptr2;
+static struct complex R_sqrt_21_anticorr[4]  = {{0.70711,0}, {-0.70711,0}, {-0.70711,0}, {0.70711,0}};
 
 // full correlation matrix in vectorized form for 2x2 channel, where h1 is  perfectly orthogonal to h2
 
-struct complex R_sqrt_22_orthogonal_tap[16] = {{0.70711,0.0}, {0.0, 0.0}, {0.0,0.0}, {0.0, 0.0},
+static struct complex R_sqrt_22_orthogonal[16] = {{0.70711,0.0}, {0.0, 0.0}, {0.0,0.0}, {0.0, 0.0},
   {0.0, 0.0}, {0.0,0.0}, {0.0, 0.0}, {0.0,0.0},
   {0.0,0.0}, {0.0, 0.0}, {0.0,0.0}, {0.0, 0.0},
   {0.0, 0.0}, {0.0,0.0}, {0.0, 0.0}, {0.70711,0.0}
 };
-struct complex *R_sqrt_22_orthogonal[1]     = {R_sqrt_22_orthogonal_tap};
 
 // full correlation matrix for TM4 to make orthogonal effective channel
-
-
-
-
-struct complex R_sqrt_22_orth_eff_ch_TM4_prec_real_tap[16] = {{0.70711,0.0}, {0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0},
+static struct complex R_sqrt_22_orth_eff_ch_TM4_prec_real[16] = {{0.70711,0.0}, {0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0},
   {0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0}, {-0.70711,0.0},
   {0.70711,0.0}, {0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0},
   {0.0, 0.0}, {-0.70711,0.0}, {0.0, 0.0}, {0.70711,0.0}
 };
-struct complex *R_sqrt_22_orth_eff_ch_TM4_prec_real[1]     = {R_sqrt_22_orth_eff_ch_TM4_prec_real_tap};
 
-
-
-
-struct complex R_sqrt_22_orth_eff_ch_TM4_prec_imag_tap[16] = {{0.70711,0.0}, {0.0,0.0}, {0.0, -0.70711}, {0.0,0.0},
+static struct complex R_sqrt_22_orth_eff_ch_TM4_prec_imag[16] = {{0.70711,0.0}, {0.0,0.0}, {0.0, -0.70711}, {0.0,0.0},
   {0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0}, {0.0,0.70711},
   {0.0,-0.70711}, {0.0, 0.0}, {-0.70711,0.0}, {0.0, 0.0},
   {0.0, 0.0}, {0.0,0.70711}, {0.0, 0.0}, {-0.70711,0.0}
 };
-struct complex *R_sqrt_22_orth_eff_ch_TM4_prec_imag[1]     = {R_sqrt_22_orth_eff_ch_TM4_prec_imag_tap};
 
 //Correlation matrix for EPA channel
-struct complex R_sqrt_22_EPA_low_tap[16] = {{1.0,0.0}, {0.0,0.0}, {0.0,0.0}, {0.0,0.0},
+static struct complex R_sqrt_22_EPA_low[16] = {{1.0,0.0}, {0.0,0.0}, {0.0,0.0}, {0.0,0.0},
   {0.0,0.0}, {1.0,0.0}, {0.0,0.0}, {0.0,0.0},
   {0.0,0.0}, {0.0,0.0}, {1.0,0.0}, {0.0,0.0},
   {0.0,0.0}, {0.0,0.0}, {0.0,0.0}, {1.0,0.0}
 };
-struct complex *R_sqrt_22_EPA_low[1]     = {R_sqrt_22_EPA_low_tap};
 
-struct complex R_sqrt_22_EPA_high_tap[16] = {
+static struct complex R_sqrt_22_EPA_high[16] = {
   {0.7179,0.0}, {0.4500,0.0}, {0.4500,0.0}, {0.2821,0.0},
   {0.4500,0.0}, {0.7179,0.0}, {0.2821,0.0}, {0.4500,0.0},
   {0.4500,0.0}, {0.2821,0.0}, {0.7179,0.0}, {0.4500,0.0},
   {0.2821,0.0}, {0.4500,0.0}, {0.4500,0.0}, {0.7179,0.0}
 };
-struct complex *R_sqrt_22_EPA_high[1]     = {R_sqrt_22_EPA_high_tap};
 
-struct complex R_sqrt_22_EPA_medium_tap[16] = {{0.8375,0.0}, {0.5249,0.0}, {0.1286,0.0}, {0.0806,0.0},
+static struct complex R_sqrt_22_EPA_medium[16] = {{0.8375,0.0}, {0.5249,0.0}, {0.1286,0.0}, {0.0806,0.0},
   {0.5249,0.0}, {0.8375,0.0}, {0.0806,0.0}, {0.1286,0.0},
   {0.1286,0.0}, {0.0806,0.0}, {0.8375,0.0}, {0.5249,0.0},
   {0.0806,0.0}, {0.1286,0.0}, {0.5249,0.0}, {0.8375,0.0}
 };
-struct complex *R_sqrt_22_EPA_medium[1]     = {R_sqrt_22_EPA_medium_tap};
-
-
 
 //Rayleigh1_orth_eff_ch_TM4
 
@@ -600,6 +576,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   double sum_amps;
   double aoa,ricean_factor,Td,maxDoppler;
   int channel_length,nb_taps;
+  struct complex *R_sqrt_ptr2;
   chan_desc->modelid                   = channel_model;
   chan_desc->nb_tx                      = nb_tx;
   chan_desc->nb_rx                      = nb_rx;
@@ -880,7 +857,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
         chan_desc->R_sqrt  = (struct complex **) malloc(chan_desc->nb_taps*sizeof(struct complex **));
 
         for (i = 0; i<chan_desc->nb_taps; i++)
-          chan_desc->R_sqrt[i] = R_sqrt_22_EPA_low[0];
+          chan_desc->R_sqrt[i] = R_sqrt_22_EPA_low;
       } else {
         printf("Correlation matrices are implemented for 2 x 2 only");
       }
@@ -935,7 +912,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
         chan_desc->R_sqrt  = (struct complex **) malloc(chan_desc->nb_taps*sizeof(struct complex **));
 
         for (i = 0; i<chan_desc->nb_taps; i++)
-          chan_desc->R_sqrt[i] = R_sqrt_22_EPA_high[0];
+          chan_desc->R_sqrt[i] = R_sqrt_22_EPA_high;
       } else {
         printf("Correlation matrices are implemented for 2 x 2 only");
       }
@@ -990,7 +967,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
         chan_desc->R_sqrt  = (struct complex **) malloc(chan_desc->nb_taps*sizeof(struct complex **));
 
         for (i = 0; i<chan_desc->nb_taps; i++)
-          chan_desc->R_sqrt[i] = R_sqrt_22_EPA_medium[0];
+          chan_desc->R_sqrt[i] = R_sqrt_22_EPA_medium;
       } else {
         printf("Correlation matrices are implemented for 2 x 2 only");
       }
@@ -1397,11 +1374,13 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 
     case TS_SHIFT:
       nb_taps = 2;
+      double ts_shift_delays[] = {0, 1/7.68};
       Td = ts_shift_delays[1];
       channel_length = 10;
       ricean_factor = 0.0;
       aoa = 0.0;
       maxDoppler = 0;
+      double ts_shift_amps[] = {0, 1};
       fill_channel_desc(chan_desc,nb_tx,
                         nb_rx,
                         nb_taps,

@@ -2729,7 +2729,7 @@ typedef struct {
 } nfapi_cqi_indication_rel8_t;
 #define NFAPI_CQI_INDICATION_REL8_TAG 0x202f
 
-#define NFAPI_CC_MAX 4
+#define NFAPI_CC_MAX MAX_NUM_CCs
 typedef struct {
 	nfapi_tl_t tl;
 	uint16_t length;

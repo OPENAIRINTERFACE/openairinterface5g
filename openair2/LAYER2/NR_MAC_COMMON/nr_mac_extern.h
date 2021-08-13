@@ -58,7 +58,6 @@ extern unsigned char NB_UE_INST;*/
 extern unsigned char NB_INST;
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_RN_INST;
-extern unsigned short NODE_ID[1];
 
 /* Scheduler */
 extern RAN_CONTEXT_t RC;

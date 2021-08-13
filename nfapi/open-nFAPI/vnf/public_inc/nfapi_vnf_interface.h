@@ -897,8 +897,12 @@ typedef struct nfapi_vnf_p7_config
 	 *  be deallocated on return. If the client wishes to 'keep' the structures
 	 *  then the substructure pointers should be set to 0 and then the client should
 	 *  use the codec_config.deallocate function to release it at a future point
-	 */
-	int (*nrach_indication)(struct nfapi_vnf_p7_config* config, nfapi_nrach_indication_t* ind);
+	 */	
+	int (*nrach_indication)(struct nfapi_vnf_p7_config* config, nfapi_nrach_indication_t* ind);		
+
+	//The NR indication functions below copy uplink information received at the VNF into the UL info struct
+	int (*nr_slot_indication)(nfapi_nr_slot_indication_scf_t* ind);
+	int (*nr_srs_indication)(nfapi_nr_srs_indication_t* ind);
 
 	/*! A callback for any vendor extension messages
      *  \param config A pointer to the vnf p7 configuration

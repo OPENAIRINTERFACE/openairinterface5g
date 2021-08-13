@@ -172,8 +172,6 @@ extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
 
-extern void init_eNB_afterRU(void);
-
 RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
 
 int transmission_mode=1;
