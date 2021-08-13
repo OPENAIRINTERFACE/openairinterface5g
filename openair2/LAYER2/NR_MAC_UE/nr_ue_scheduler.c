@@ -954,7 +954,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           } else {
 
             if ((mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator ||
-                mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id]==1) && ra->ra_state == RA_SUCCEEDED){
+                mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id]==1) &&
+                ((get_softmodem_params()->phy_test == 1) || (ra->ra_state == RA_SUCCEEDED))){
 
               // Getting IP traffic to be transmitted
               data_existing = nr_ue_get_sdu(mod_id,
