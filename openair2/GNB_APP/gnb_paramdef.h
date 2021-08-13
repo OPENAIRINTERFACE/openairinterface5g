@@ -117,6 +117,7 @@ typedef enum {
 #define GNB_CONFIG_STRING_PDSCHANTENNAPORTS             "pdsch_AntennaPorts"
 #define GNB_CONFIG_STRING_PUSCHANTENNAPORTS             "pusch_AntennaPorts"
 #define GNB_CONFIG_STRING_SIB1TDA                       "sib1_tda"
+#define GNB_CONFIG_STRING_DOCSIRS                       "do_CSIRS"
 #define GNB_CONFIG_STRING_NRCELLID                      "nr_cellid"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
@@ -142,7 +143,8 @@ typedef enum {
 {GNB_CONFIG_STRING_PDSCHANTENNAPORTS,            NULL,   0,            iptr:NULL,   defintval:1,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_PUSCHANTENNAPORTS,            NULL,   0,            iptr:NULL,   defintval:1,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_SIB1TDA,                      NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
-{GNB_CONFIG_STRING_NRCELLID         ,            NULL,   0,            u64ptr:NULL, defint64val:1,               TYPE_UINT64,     0},  \
+{GNB_CONFIG_STRING_DOCSIRS,                      NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_NRCELLID,                     NULL,   0,            u64ptr:NULL, defint64val:1,               TYPE_UINT64,    0},  \
 }															     	
 
 #define GNB_GNB_ID_IDX                  0
@@ -163,7 +165,8 @@ typedef enum {
 #define GNB_PDSCH_ANTENNAPORTS_IDX      15
 #define GNB_PUSCH_ANTENNAPORTS_IDX      16
 #define GNB_SIB1_TDA_IDX                17
-#define GNB_NRCELLID_IDX                18
+#define GNB_DO_CSIRS_IDX                18
+#define GNB_NRCELLID_IDX                19
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define GNBPARAMS_CHECK {                                         \

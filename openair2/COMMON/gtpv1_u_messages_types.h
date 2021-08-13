@@ -191,6 +191,7 @@ typedef struct gtpv1u_gnb_create_tunnel_req_s {
   int                    num_tunnels;
   teid_t                 upf_NGu_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];  ///< Tunnel Endpoint Identifier
   pdusessionid_t         pdusession_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
+  ebi_t                  incoming_rb_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
   transport_layer_addr_t upf_addr[NR_GTPV1U_MAX_BEARERS_PER_UE];
 } gtpv1u_gnb_create_tunnel_req_t;
 

@@ -220,7 +220,6 @@ static void UE_synch(void *arg) {
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
       uint64_t dl_carrier, ul_carrier;
-      double rx_gain_off = 0;
       nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
 
       if (nr_initial_sync(&syncD->proc, UE, 2, get_softmodem_params()->sa, get_nrUE_params()->nr_dlsch_parallel) == 0) {
@@ -230,7 +229,7 @@ static void UE_synch(void *arg) {
 
         // rerun with new cell parameters and frequency-offset
         // todo: the freq_offset computed on DL shall be scaled before being applied to UL
-        nr_rf_card_config(&openair0_cfg[UE->rf_map.card], rx_gain_off, ul_carrier, dl_carrier, freq_offset);
+        nr_rf_card_config_freq(&openair0_cfg[UE->rf_map.card], ul_carrier, dl_carrier, freq_offset);
 
         LOG_I(PHY,"Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %f (DL %f Hz, UL %f Hz)\n",
               hw_slot_offset,
@@ -264,7 +263,7 @@ static void UE_synch(void *arg) {
 
           freq_offset *= -1;
 
-          nr_rf_card_config(&openair0_cfg[UE->rf_map.card], rx_gain_off, ul_carrier, dl_carrier, freq_offset);
+          nr_rf_card_config_freq(&openair0_cfg[UE->rf_map.card], ul_carrier, dl_carrier, freq_offset);
 
           LOG_I(PHY, "Initial sync failed: trying carrier off %d Hz\n", freq_offset);
 
@@ -307,11 +306,12 @@ void processSlotTX(void *arg) {
       ul_indication.frame_tx  = proc->frame_tx;
       ul_indication.slot_tx   = proc->nr_slot_tx;
       ul_indication.thread_id = proc->thread_id;
+      ul_indication.ue_sched_mode = rxtxD->ue_sched_mode;
 
       UE->if_inst->ul_indication(&ul_indication);
     }
 
-    if (UE->mode != loop_through_memory) {
+    if ((UE->mode != loop_through_memory) && (rxtxD->ue_sched_mode != NOT_PUSCH)) {
       phy_procedures_nrUE_TX(UE,proc,0);
     }
   }
@@ -358,6 +358,9 @@ void processSlotRX(void *arg) {
         nr_pdcp_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
       }
     }
+    // calling UL_indication to schedule things other than PUSCH (eg, PUCCH)
+    rxtxD->ue_sched_mode = NOT_PUSCH;
+    processSlotTX(rxtxD);
 
     // Wait for PUSCH processing to finish
     notifiedFIFO_elt_t *res;
@@ -365,6 +368,7 @@ void processSlotRX(void *arg) {
     delNotifiedFIFO_elt(res);
 
   } else {
+    rxtxD->ue_sched_mode = SCHED_ALL;
     processSlotTX(rxtxD);
   }
 
@@ -373,8 +377,7 @@ void processSlotRX(void *arg) {
       if (get_softmodem_params()->usim_test==0) {
         pucch_procedures_ue_nr(UE,
                                gNB_id,
-                               proc,
-                               FALSE);
+                               proc);
       }
 
       LOG_D(PHY, "Sending Uplink data \n");

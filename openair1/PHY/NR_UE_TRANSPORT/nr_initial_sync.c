@@ -377,8 +377,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 #endif
     //#endif
 
-    ue->is_synchronized_on_frame = is; // to notify on which of the two frames sync was successful
-
     if (ue->UE_scan_carrier == 0) {
 
     #if UE_AUTOTEST_TRACE

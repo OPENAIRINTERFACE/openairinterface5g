@@ -4,6 +4,8 @@ set -euo pipefail
 
 PREFIX=/opt/oai-enb
 RRC_INACTIVITY_THRESHOLD=${RRC_INACTIVITY_THRESHOLD:-0}
+ENABLE_MEASUREMENT_REPORTS=${ENABLE_MEASUREMENT_REPORTS:-no}
+ENABLE_X2=${ENABLE_X2:-no}
 
 # Based another env var, pick one template to use
 if [[ -v USE_FDD_CU ]]; then ln -s $PREFIX/etc/cu.fdd.conf $PREFIX/etc/enb.conf; fi

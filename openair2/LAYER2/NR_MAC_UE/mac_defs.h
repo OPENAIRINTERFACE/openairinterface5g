@@ -305,6 +305,20 @@ typedef struct {
 } RA_config_t;
 
 typedef struct {
+  bool active;
+  bool ack_received;
+  uint8_t  pucch_resource_indicator;
+  uint16_t feedback_to_ul;
+  frame_t dl_frame;
+  int dl_slot;
+  uint8_t ack;
+  uint8_t dai;
+  int n_CCE;
+  int N_CCE;
+  int8_t delta_pucch;
+} NR_UE_HARQ_STATUS_t;
+
+typedef struct {
 
   uint8_t freq_hopping;
   uint8_t mcs;
@@ -312,6 +326,22 @@ typedef struct {
   uint16_t Msg3_f_alloc;
 
 } RAR_grant_t;
+
+typedef struct {
+  int n_HARQ_ACK;
+  uint32_t ack_payload;
+  uint8_t sr_payload;
+  uint32_t csi_part1_payload;
+  uint32_t csi_part2_payload;
+  int resource_indicator;
+  int resource_set_id;
+  int initial_pucch_id;
+  NR_PUCCH_Resource_t *pucch_resource;
+  int n_CCE;
+  int N_CCE;
+  int8_t delta_pucch;
+} PUCCH_sched_t;
+
 
 /*!\brief Top level UE MAC structure */
 typedef struct {
@@ -364,6 +394,8 @@ typedef struct {
   RA_config_t ra;
   /// SSB index from MIB decoding
   uint8_t mib_ssb;
+  /// measured SSB RSRP in dBm
+  short ssb_rsrp_dBm;
 
   /// Last NDI of UL HARQ processes
   uint8_t UL_ndi[NR_MAX_HARQ_PROCESSES];
@@ -392,6 +424,8 @@ typedef struct {
   uint8_t ssb_subcarrier_offset;
 
   dci_pdu_rel15_t def_dci_pdu_rel15[8];
+
+  NR_UE_HARQ_STATUS_t dl_harq_info[16];
 
 } NR_UE_MAC_INST_t;
 

@@ -1478,11 +1478,13 @@ void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp,
   @param dl_Carrier     DL carrier to be set
   @param freq_offset    Freq offset to be set
 */
-void nr_rf_card_config(openair0_config_t *openair0_cfg,
-                       double rx_gain_off,
-                       uint64_t ul_Carrier,
-                       uint64_t dl_Carrier,
-                       int freq_offset);
+void nr_rf_card_config_gain(openair0_config_t *openair0_cfg,
+                            double rx_gain_off);
+
+void nr_rf_card_config_freq(openair0_config_t *openair0_cfg,
+                            uint64_t ul_Carrier,
+                            uint64_t dl_Carrier,
+                            int freq_offset);
 
 
 void print_CQI(void *o,UCI_format_t uci_format,uint8_t eNB_id,int N_RB_DL);

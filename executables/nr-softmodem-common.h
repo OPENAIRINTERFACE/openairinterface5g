@@ -157,7 +157,4 @@ extern int emulate_rf;
 extern int numerology;
 extern int usrp_tx_thread;
 
-extern volatile int start_eNB;
-extern volatile int start_UE;
-
 #endif
