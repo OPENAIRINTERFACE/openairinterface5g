@@ -1034,6 +1034,8 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       LOG_T(PHY,"Sequential dlsch decoding , ret = %d\n", ret);
     }
 
+    if(ret<dlsch0->max_ldpc_iterations+1)
+      dec = true;
 
     switch (pdsch) {
       case RA_PDSCH:
