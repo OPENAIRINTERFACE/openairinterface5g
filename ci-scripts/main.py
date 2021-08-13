@@ -372,6 +372,41 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.yamlPath[CONTAINERS.eNB_instance] = string_field
 
+	elif action == 'DeployGenObject' or action == 'UndeployGenObject':
+		string_field=test.findtext('yaml_path')
+		if (string_field is not None):
+			CONTAINERS.yamlPath[0] = string_field
+		string_field=test.findtext('services')
+		if (string_field is not None):
+			CONTAINERS.services[0] = string_field
+		string_field=test.findtext('nb_healthy')
+		if (string_field is not None):
+			CONTAINERS.nb_healthy[0] = int(string_field)
+
+	elif action == 'PingFromContainer':
+		string_field = test.findtext('container_name')
+		if (string_field is not None):
+			CONTAINERS.pingContName = string_field
+		string_field = test.findtext('options')
+		if (string_field is not None):
+			CONTAINERS.pingOptions = string_field
+		string_field = test.findtext('loss_threshold')
+		if (string_field is not None):
+			CONTAINERS.pingLossThreshold = string_field
+
+	elif action == 'IperfFromContainer':
+		string_field = test.findtext('server_container_name')
+		if (string_field is not None):
+			CONTAINERS.svrContName = string_field
+		string_field = test.findtext('server_options')
+		if (string_field is not None):
+			CONTAINERS.svrOptions = string_field
+		string_field = test.findtext('client_container_name')
+		if (string_field is not None):
+			CONTAINERS.cliContName = string_field
+		string_field = test.findtext('client_options')
+		if (string_field is not None):
+			CONTAINERS.cliOptions = string_field
 
 	else: # ie action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
@@ -479,6 +514,8 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
+	if RAN.eNBIPAddress == 'none':
+		sys.exit(0)
 	RAN.eNB_instance=0
 	RAN.eNB_serverId[0]='0'
 	RAN.eNBSourceCodePath='/tmp/'
@@ -514,11 +551,15 @@ elif re.match('^LogCollectBuild$', mode, re.IGNORECASE):
 	if (RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '') and (CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '' or CiTestObj.UESourceCodePath == ''):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
+	if RAN.eNBIPAddress == 'none':
+		sys.exit(0)
 	CiTestObj.LogCollectBuild(RAN)
 elif re.match('^LogCollecteNB$', mode, re.IGNORECASE):
 	if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
+	if RAN.eNBIPAddress == 'none':
+		sys.exit(0)
 	RAN.LogCollecteNB()
 elif re.match('^LogCollectHSS$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
@@ -802,7 +843,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Build_PhySim':
 					HTML=ldpc.Build_PhySim(HTML,CONST)
 					if ldpc.exitStatus==1:
-						RAN.prematureExit = False
+						RAN.prematureExit = True
 				elif action == 'Run_PhySim':
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				elif action == 'Build_Image':
@@ -815,9 +856,25 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					SCA.CppCheckAnalysis(HTML)
 				elif action == 'Deploy_Run_PhySim':
 					PHYSIM.Deploy_PhySim(HTML, RAN)
+				elif action == 'DeployGenObject':
+					CONTAINERS.DeployGenObject(HTML)
+					if CONTAINERS.exitStatus==1:
+						RAN.prematureExit = True
+				elif action == 'UndeployGenObject':
+					CONTAINERS.UndeployGenObject(HTML)
+					if CONTAINERS.exitStatus==1:
+						RAN.prematureExit = True
+				elif action == 'PingFromContainer':
+					CONTAINERS.PingFromContainer(HTML)
+					if CONTAINERS.exitStatus==1:
+						RAN.prematureExit = True
+				elif action == 'IperfFromContainer':
+					CONTAINERS.IperfFromContainer(HTML)
+					if CONTAINERS.exitStatus==1:
+						RAN.prematureExit = True
 				else:
 					sys.exit('Invalid class (action) from xml')
-				if not RAN.prematureExit:
+				if RAN.prematureExit:
 					if CiTestObj.testCase_id == CiTestObj.testMinStableId:
 						logging.debug('Scenario has reached minimal stability point')
 						CiTestObj.testStabilityPointReached = True
