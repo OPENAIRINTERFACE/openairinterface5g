@@ -411,7 +411,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint8_t ul_cqi,
                const uint16_t rssi);
 
-void handle_nr_ul_harq(module_id_t mod_id,
+void handle_nr_ul_harq(const int CC_idP,
+                       module_id_t mod_id,
                        frame_t frame,
                        sub_frame_t slot,
                        const nfapi_nr_crc_t *crc_pdu);

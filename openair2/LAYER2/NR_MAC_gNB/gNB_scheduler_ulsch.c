@@ -511,13 +511,21 @@ void abort_nr_ul_harq(module_id_t mod_id, int UE_id, int8_t harq_pid)
     sched_ctrl->sched_ul_bytes = 0;
 }
 
-void handle_nr_ul_harq(module_id_t mod_id,
+void handle_nr_ul_harq(const int CC_idP,
+                       module_id_t mod_id,
                        frame_t frame,
                        sub_frame_t slot,
                        const nfapi_nr_crc_t *crc_pdu)
 {
+  gNB_MAC_INST *gNB_mac = RC.nrmac[mod_id];
   int UE_id = find_nr_UE_id(mod_id, crc_pdu->rnti);
   if (UE_id < 0) {
+    for (int i = 0; i < NR_NB_RA_PROC_MAX; ++i) {
+      NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[i];
+      if (ra->state >= WAIT_Msg3 &&
+          ra->rnti == crc_pdu->rnti)
+        return;
+    }
     LOG_E(NR_MAC, "%s(): unknown RNTI %04x in PUSCH\n", __func__, crc_pdu->rnti);
     return;
   }
