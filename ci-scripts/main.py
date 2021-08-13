@@ -65,6 +65,7 @@ import xml.etree.ElementTree as ET
 import logging
 import datetime
 import signal
+import subprocess
 from multiprocessing import Process, Lock, SimpleQueue
 logging.basicConfig(
 	level=logging.DEBUG,
@@ -559,6 +560,9 @@ elif re.match('^LogCollecteNB$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	if RAN.eNBIPAddress == 'none':
+		cmd = 'zip -r enb.log.' + RAN.BuildId + '.zip cmake_targets/log'
+		logging.debug(cmd)
+		zipStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=60)
 		sys.exit(0)
 	RAN.LogCollecteNB()
 elif re.match('^LogCollectHSS$', mode, re.IGNORECASE):
