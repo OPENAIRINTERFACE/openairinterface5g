@@ -76,7 +76,7 @@
 #define CONFIG_HLP_ULMCS_PHYTEST "Set the uplink MCS for PHYTEST mode\n"
 #define CONFIG_HLP_DLBW_PHYTEST  "Set the number of PRBs used for DLSCH in PHYTEST mode\n"
 #define CONFIG_HLP_ULBW_PHYTEST  "Set the number of PRBs used for ULSCH in PHYTEST mode\n"
-#define CONFIG_HLP_PRB           "Set the number of PRBs for SA\n"
+#define CONFIG_HLP_PRB_SA        "Set the number of PRBs for SA\n"
 #define CONFIG_HLP_DLBM_PHYTEST  "Bitmap for DLSCH slots (slot 0 starts at LSB)\n"
 #define CONFIG_HLP_ULBM_PHYTEST  "Bitmap for ULSCH slots (slot 0 starts at LSB)\n"
 #define CONFIG_HLP_SSC           "Set the start subcarrier \n"
@@ -121,7 +121,7 @@
     {"g" ,           CONFIG_HLP_LOGL, 0,                  uptr:&glog_level,          defintval:0,         TYPE_UINT,     0},       \
     {"G" ,           CONFIG_HLP_LOGV, 0,                  uptr:&glog_verbosity,      defintval:0,         TYPE_UINT16,   0},       \
     {"telnetsrv",    CONFIG_HLP_TELN, PARAMFLAG_BOOL,     uptr:&start_telnetsrv,     defintval:0,         TYPE_UINT,     0},       \
-	{"msc",          CONFIG_HLP_MSC,  PARAMFLAG_BOOL,     uptr:&START_MSC,           defintval:0,         TYPE_UINT,     0},       \
+    {"msc",          CONFIG_HLP_MSC,  PARAMFLAG_BOOL,     uptr:&START_MSC,           defintval:0,         TYPE_UINT,     0},       \
   }
 
 #define CMDLINE_ONLINELOG_IDX     0
