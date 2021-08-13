@@ -124,6 +124,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
                       NR_RA_t *ra,
                       int16_t *tdd_beam_association);
 
+void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+
 /* \brief Function in gNB to fill RAR pdu when requested by PHY.
 @param ra Instance of RA resources of gNB
 @param dlsch_buffer Pointer to RAR input buffer
@@ -133,6 +135,14 @@ void nr_fill_rar(uint8_t Mod_idP,
                  NR_RA_t * ra,
                  uint8_t * dlsch_buffer,
                  nfapi_nr_pusch_pdu_t  *pusch_pdu);
+
+void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
+                         NR_ServingCellConfigCommon_t *scc,
+                         int startSymbolAndLength,
+                         rnti_t rnti, int scs,
+                         int bwp_size, int bwp_start,
+                         int mappingtype, int fh,
+                         int msg3_first_rb, int msg3_nb_rb);
 
 
 void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);

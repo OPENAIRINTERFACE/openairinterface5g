@@ -523,7 +523,6 @@ void handle_nr_ul_harq(module_id_t mod_id,
   }
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-
   int8_t harq_pid = sched_ctrl->feedback_ul_harq.head;
   while (crc_pdu->harq_id != harq_pid || harq_pid < 0) {
     LOG_W(NR_MAC,
@@ -586,6 +585,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint16_t timing_advance,
                const uint8_t ul_cqi,
                const uint16_t rssi){
+
   gNB_MAC_INST *gNB_mac = RC.nrmac[gnb_mod_idP];
   NR_UE_info_t *UE_info = &gNB_mac->UE_info;
 
@@ -784,9 +784,11 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if (ra->state != WAIT_Msg3)
         continue;
 
-      LOG_W(NR_MAC, "Random Access %i failed at state %i (state is not WAIT_Msg3)\n", i, ra->state);
-      nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
-      nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+      if( (frameP!=ra->Msg3_frame) || (slotP!=ra->Msg3_slot))
+        continue;
+
+      LOG_W(NR_MAC, "Random Access %i failed at state %i (CRC did not pass)\n", i, ra->state);
+      ra->state = Msg3_retransmission;
     }
   }
 }

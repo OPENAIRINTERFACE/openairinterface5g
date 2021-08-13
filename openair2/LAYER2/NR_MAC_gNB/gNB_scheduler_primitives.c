@@ -607,6 +607,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
                   uint8_t tpc,
                   int n_ubwp,
                   int bwp_id) {
+
   const int bw = NRRIV2BW(ubwp ?
 			  ubwp->bwp_Common->genericParameters.locationAndBandwidth :
 			  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
