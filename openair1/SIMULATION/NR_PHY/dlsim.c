@@ -409,7 +409,7 @@ int main(int argc, char **argv)
   uint16_t rbSize = 106;
   uint8_t  mcsIndex = 9;
   uint8_t  dlsch_threads = 0;
-  int      fd_inter = 0;
+  int      prb_inter = 0;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
   }

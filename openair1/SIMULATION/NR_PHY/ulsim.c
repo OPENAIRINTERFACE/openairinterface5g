@@ -298,7 +298,7 @@ int main(int argc, char **argv)
   float effRate; 
   //float eff_tp_check = 0.7;
   uint8_t snrRun;
-  int fd_inter = 0;
+  int prb_inter = 0;
 
   int enable_ptrs = 0;
   int modify_dmrs = 0;

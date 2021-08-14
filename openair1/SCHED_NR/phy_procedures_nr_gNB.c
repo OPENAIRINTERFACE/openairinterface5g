@@ -387,7 +387,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   // do some integer rounding to improve TA accuracy
   if (sync_pos > 0)
     sync_pos_rounded = sync_pos + (bw_scaling / 2) - 1;
-  else if(sync_pos < 0)
+  else
     sync_pos_rounded = sync_pos - (bw_scaling / 2) - 1;
   timing_advance_update = sync_pos_rounded / bw_scaling;
 
