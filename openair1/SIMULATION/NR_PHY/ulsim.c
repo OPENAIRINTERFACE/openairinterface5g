@@ -425,7 +425,7 @@ int main(int argc, char **argv)
       break;
       
     case 'i':
-      fd_inter=1;
+      prb_inter=1;
       break;
 	
     case 'k':
@@ -587,7 +587,7 @@ int main(int argc, char **argv)
       printf("-f Number of frames to simulate\n");
       printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
       printf("-h This message\n");
-      printf("-i Activate freq domain interpolation for channel estimation. Average over 1 PRB by default.\n");
+      printf("-i Activate PRB based averaging for channel estimation. Frequncy domain interpolation by default.\n");
       //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
       printf("-m MCS value\n");
@@ -675,7 +675,7 @@ int main(int argc, char **argv)
   gNB->UL_INFO.crc_ind.crc_list = (nfapi_nr_crc_t *)malloc(NB_UE_INST*sizeof(nfapi_nr_crc_t));
   gNB->UL_INFO.rx_ind.number_of_pdus = 0;
   gNB->UL_INFO.crc_ind.number_crcs = 0;
-  gNB->fd_interpolation = fd_inter;
+  gNB->prb_interpolation = prb_inter;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
 

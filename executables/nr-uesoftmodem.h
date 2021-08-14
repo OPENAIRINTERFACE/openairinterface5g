@@ -62,7 +62,7 @@
     {"E" ,                       CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,  u8ptr:&(fp->threequarter_fs),       defintval:0,           TYPE_UINT8,    0}, \
     {"T" ,                       CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,           TYPE_INT,      0}, \
     {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&(UE->no_timing_correction), defintval:0,         TYPE_INT,    0}, \
-    {"do-fd-interpolation",      CONFIG_HLP_FDINTER,     PARAMFLAG_BOOL, iptr:&(UE->fd_lin_interpolation), defintval:0,         TYPE_INT,    0}, \
+    {"do-prb-interpolation",      CONFIG_HLP_PRBINTER,   PARAMFLAG_BOOL,  iptr:&(UE->prb_interpolation),      defintval:0,           TYPE_INT,      0}, \
 }
 
 

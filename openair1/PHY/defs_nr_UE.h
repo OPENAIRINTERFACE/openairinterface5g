@@ -861,9 +861,9 @@ typedef struct {
 
 
   uint32_t perfect_ce;
-  // flag to activate linear interpolation in frequency-domain channel estimation
-  // when off (default), this just averages channel on per-PRB basis
-  int fd_lin_interpolation;
+  // flag to activate PRB based averaging of channel estimates
+  // when off, defaults to frequency domain interpolation
+  int prb_interpolation;
   int16_t ch_est_alpha;
   int generate_ul_signal[NUMBER_OF_CONNECTED_gNB_MAX];
 

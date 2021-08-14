@@ -536,7 +536,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
     gNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = gNB->cqi_raw_pdu_list;*/
 
     gNB->prach_energy_counter = 0;
-    gNB->fd_interpolation = get_softmodem_params()->fd_interpolation;
+    gNB->prb_interpolation = get_softmodem_params()->prb_interpolation;
   }
   
 

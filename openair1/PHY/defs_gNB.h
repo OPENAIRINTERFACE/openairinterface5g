@@ -840,7 +840,7 @@ typedef struct PHY_VARS_gNB_s {
   int              **dl_precoder_SgNB[3];
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
-  int  fd_interpolation;
+  int  prb_interpolation;
 
   /// if ==0 enables phy only test mode
   int mac_enabled;

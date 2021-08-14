@@ -785,7 +785,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
     printf("rxF addr %p p %d\n", rxF,p);
     printf("dl_ch addr %p nushift %d\n",dl_ch,nushift);
 #endif
-    if (config_type == NFAPI_NR_DMRS_TYPE1 && ue->fd_lin_interpolation == 1) {
+    if (config_type == NFAPI_NR_DMRS_TYPE1 && ue->prb_interpolation == 0) {
 
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -962,7 +962,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                      8);
         }
       }
-    } else if (config_type == NFAPI_NR_DMRS_TYPE2 && ue->fd_lin_interpolation == 1){ //pdsch_dmrs_type2  |dmrs_r,dmrs_l,0,0,0,0,dmrs_r,dmrs_l,0,0,0,0|
+    } else if (config_type == NFAPI_NR_DMRS_TYPE2 && ue->prb_interpolation == 0){ //pdsch_dmrs_type2  |dmrs_r,dmrs_l,0,0,0,0,dmrs_r,dmrs_l,0,0,0,0|
 
       // Treat first 4 pilots specially (left edge)
       ch_l[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);

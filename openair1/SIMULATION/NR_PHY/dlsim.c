@@ -477,7 +477,7 @@ int main(int argc, char **argv)
       break;
 
     case 'i':
-      fd_inter=1;
+      prb_inter=1;
       break;
 
     case 'n':
@@ -638,7 +638,7 @@ int main(int argc, char **argv)
       printf("-g [A,B,C,D,E,F,G,R] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models or R for MIMO model (ignores delay spread and Ricean factor)\n");
       printf("-y Number of TX antennas used in gNB\n");
       printf("-z Number of RX antennas used in UE\n");
-      printf("-i Activate freq domain interpolation for channel estimation. Average over 1 PRB by default.\n");
+      printf("-i Activate PRB based averaging for channel estimation. Frequncy domain interpolation by default.\n");
       //printf("-j Relative strength of second intefering gNB (in dB) - cell_id mod 3 = 2\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -905,7 +905,7 @@ int main(int argc, char **argv)
   UE->if_inst->phy_config_request = nr_ue_phy_config_request;
   UE->if_inst->dl_indication = nr_ue_dl_indication;
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
-  UE->fd_lin_interpolation = fd_inter;
+  UE->prb_interpolation = prb_inter;
 
 
   UE_mac->if_module = nr_ue_if_module_init(0);
