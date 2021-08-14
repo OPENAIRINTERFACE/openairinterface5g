@@ -70,9 +70,15 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   const int symb_dlMixed = tdd ? (1 << tdd->nrofDownlinkSymbols) - 1 : 0;
 
-  const int target_ss = bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
+  int target_ss;
+  if (bwp) {
+    target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+  }
+  else {
+    target_ss = NR_SearchSpace__searchSpaceType_PR_common;
+  }
   NR_SearchSpace_t *search_space = get_searchspace(scc, bwp ? bwp->bwp_Dedicated : NULL, target_ss);
-  const NR_ControlResourceSet_t *coreset = get_coreset(scc, (NR_BWP_Downlink_t*)bwp, search_space, target_ss);
+  const NR_ControlResourceSet_t *coreset = get_coreset(scc, bwp ? bwp->bwp_Dedicated : NULL, search_space, target_ss);
 
   // get coreset symbol "map"
   const uint16_t symb_coreset = (1 << coreset->duration) - 1;
@@ -458,7 +464,10 @@ bool allocate_dl_retransmission(module_id_t module_id,
   const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
 
   int rbSize = 0;
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
+  bool is_mixed_slot = is_xlsch_in_slot(RC.nrmac[module_id]->dlsch_slot_bitmap[slot / 64], slot) &&
+                       is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[slot / 64], slot);
+
+  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : (0+(is_mixed_slot?1:0));
   if (tda == retInfo->time_domain_allocation) {
     /* Check that there are enough resources for retransmission */
     while (rbSize < retInfo->rbSize) {
@@ -603,6 +612,7 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       sched_pdsch->mcs = 9;
+      sched_pdsch->nrOfLayers = 1;
       uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(NR_MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
@@ -678,7 +688,11 @@ void pf_dl(module_id_t module_id,
       max_rbSize++;
 
     /* MCS has been set above */
-    const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
+
+    bool is_mixed_slot = is_xlsch_in_slot(RC.nrmac[module_id]->dlsch_slot_bitmap[slot / 64], slot) &&
+                         is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[slot / 64], slot);
+
+    const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : (0+(is_mixed_slot?1:0));
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
@@ -820,7 +834,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const rnti_t rnti = UE_info->rnti[UE_id];
 
     /* POST processing */
-    const int nrOfLayers = 1;
+    const uint8_t nrOfLayers = sched_pdsch->nrOfLayers;
     const uint16_t R = sched_pdsch->R;
     const uint8_t Qm = sched_pdsch->Qm;
     const uint32_t TBS = sched_pdsch->tb_size;
@@ -857,7 +871,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "%4d.%2d RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d\n",
           frame,
           slot,
@@ -1041,7 +1055,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.tpc);
 
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    const int dci_format = bwp ? (f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0) : NR_DL_DCI_FORMAT_1_0;
+    int dci_format;
+    if (sched_ctrl->search_space) {
+       dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
+    }
+    else {
+       dci_format = NR_DL_DCI_FORMAT_1_0;
+    } 
     const int rnti_type = NR_RNTI_C;
 
     fill_dci_pdu_rel15(scc,

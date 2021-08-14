@@ -100,8 +100,8 @@ int nr_phy_init_RU(RU_t *ru) {
     // allocate FFT output buffers (RX)
     ru->common.rxdataF     = (int32_t**)malloc16(ru->nb_rx*sizeof(int32_t*) );
     for (i=0; i<ru->nb_rx; i++) {    
-      // allocate 2 subframes of I/Q signal data (frequency)
-      ru->common.rxdataF[i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(2*fp->samples_per_subframe_wCP) ); 
+      // allocate 4 slots of I/Q signal data (frequency)
+      ru->common.rxdataF[i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(4*fp->symbols_per_slot*fp->ofdm_symbol_size) ); 
       LOG_I(PHY,"rxdataF[%d] %p for RU %d\n",i,ru->common.rxdataF[i],ru->idx);
     }
 
@@ -132,22 +132,22 @@ int nr_phy_init_RU(RU_t *ru) {
         }
         AssertFatal(ru->nb_bfw==(beam_count*ru->nb_tx),"Number of beam weights from config file is %d while the expected number is %d",ru->nb_bfw,(beam_count*ru->nb_tx));
     
+      for (i=0; i<ru->num_gNB; i++) {
         int l_ind = 0;
-        for (i=0; i<ru->num_gNB; i++) {
-          for (p=0;p<ru->nb_log_antennas;p++) {
+        for (p=0;p<ru->nb_log_antennas;p++) {
           //if ((fp->L_ssb >> (63-p)) & 0x01)  {
-	      ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
-	      for (j=0; j<ru->nb_tx; j++) {
-	        ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-                AssertFatal(ru->bw_list[i],"ru->bw_list[%d] is null\n",i);
-                for (re=0; re<fp->ofdm_symbol_size; re++)
-		  ru->beam_weights[i][p][j][re] = ru->bw_list[i][l_ind];
-              //printf("Beam Weight %08x for beam %d and tx %d\n",ru->bw_list[i][l_ind],p,j);
-                l_ind++;
-  	      } // for j
-	    //}
-          } // for p
-        } //for i
+          ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
+          for (j=0; j<ru->nb_tx; j++) {
+            ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+            AssertFatal(ru->bw_list[i],"ru->bw_list[%d] is null\n",i);
+            for (re=0; re<fp->ofdm_symbol_size; re++)
+              ru->beam_weights[i][p][j][re] = ru->bw_list[i][l_ind];
+            //printf("Beam Weight %08x for beam %d and tx %d\n",ru->bw_list[i][l_ind],p,j);
+            l_ind++;
+          } // for j
+          //}
+        } // for p
+      } //for i
       }
 
       ru->common.beam_id = (uint8_t**)malloc16_clear(ru->nb_tx*sizeof(uint8_t*));

@@ -121,6 +121,13 @@ typedef struct {
 } NR_gNB_PDCCH_t;
 
 typedef struct {
+  uint8_t active;
+  int frame;
+  int slot;
+  nfapi_nr_dl_tti_csi_rs_pdu csirs_pdu;
+} NR_gNB_CSIRS_t;
+
+typedef struct {
   int frame;
   int slot;
   nfapi_nr_ul_dci_request_pdus_t pdcch_pdu;
@@ -667,6 +674,8 @@ typedef struct {
   unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg subband noise power (dB)
   unsigned short n0_subband_power_avg_dB;
+  //! estimated avg subband noise power per antenna (dB)
+  unsigned short n0_subband_power_avg_perANT_dB[NB_ANTENNAS_RX];
   //! estimated avg noise power per RB (dB)
   short n0_subband_power_tot_dB[275];
   //! estimated avg noise power per RB (dBm)
@@ -762,6 +771,7 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
   NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
+  NR_gNB_CSIRS_t     csirs_pdu[NUMBER_OF_NR_CSIRS_MAX];
   NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
@@ -799,8 +809,7 @@ typedef struct PHY_VARS_gNB_s {
   uint32_t ****nr_gold_pusch_dmrs;
 
   // Mask of occupied RBs
-  uint32_t rb_mask_ul[9];
-  int ulmask_symb;
+  uint32_t rb_mask_ul[14][9];
 
   /// CSI  RS sequence
   uint32_t ***nr_gold_csi_rs;

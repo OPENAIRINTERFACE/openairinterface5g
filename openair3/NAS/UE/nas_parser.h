@@ -55,7 +55,7 @@ Description NAS command line parser
 #define NAS_PARSER_DEFAULT_UE_ID        "1"
 
 /* User application layer default hostname */
-#define NAS_PARSER_DEFAULT_USER_HOSTNAME    "localhost"
+#define NAS_PARSER_DEFAULT_USER_HOSTNAME    NULL
 
 /* User application layer default port number */
 #define NAS_PARSER_DEFAULT_USER_PORT_NUMBER "10000"

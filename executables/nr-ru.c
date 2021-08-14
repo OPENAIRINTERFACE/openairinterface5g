@@ -782,8 +782,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 					siglen+sf_extension,
 					ru->nb_tx,
 					flags);
-      LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %di, returned %d\n",ru->idx,
-	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot, txs);
+      LOG_I(PHY,"[TXPATH] RU %d aa %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d, returned %d, E %f\n",ru->idx,i,
+	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot, txs,10*log10((double)signal_energy(txp[0],siglen+sf_extension)));
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       //AssertFatal(txs == 0,"trx write function error %d\n", txs);
   }
@@ -1371,11 +1371,12 @@ void *ru_thread( void *param ) {
       //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
 
       LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
-      LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
+     /* LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
       
       for (aa=0;aa<ru->nb_rx;aa++)
 	memcpy((void*)RC.gNB[0]->common_vars.rxdataF[aa],
 	       (void*)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
+    */
       if (IS_SOFTMODEM_DOSCOPE && RC.gNB[0]->scopeData) 
          ((scopeData_t*)RC.gNB[0]->scopeData)->slotFunc(ru->common.rxdataF[0],proc->tti_rx, RC.gNB[0]->scopeData);
       // Do PRACH RU processing

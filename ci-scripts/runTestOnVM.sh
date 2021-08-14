@@ -1355,8 +1355,11 @@ function start_rf_sim_gnb {
     ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR < $1
     rm $1
     # Copy the RAW files from the gNB run for the NR-UE
-    scp -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/ran_build/build/rbconfig.raw .
-    scp -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/ran_build/build/reconfig.raw .
+    if [ $LOC_RA_SA_TEST -ne 2 ]
+    then
+        scp -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/ran_build/build/rbconfig.raw .
+        scp -o StrictHostKeyChecking=no ubuntu@$LOC_GNB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/ran_build/build/reconfig.raw .
+    fi
 }
 
 function start_rf_sim_nr_ue {
@@ -1371,8 +1374,11 @@ function start_rf_sim_nr_ue {
     local LOC_RA_SA_TEST=$8
 
     # Copy the RAW files from the gNB run
-    scp -o StrictHostKeyChecking=no rbconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
-    scp -o StrictHostKeyChecking=no reconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
+    if [ $LOC_RA_SA_TEST -ne 2 ]
+    then
+        scp -o StrictHostKeyChecking=no rbconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
+        scp -o StrictHostKeyChecking=no reconfig.raw ubuntu@$LOC_NR_UE_VM_IP_ADDR:/home/ubuntu/tmp
+    fi
 
     echo "echo \"sudo apt-get --yes --quiet install daemon \"" > $1
     echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
@@ -1380,8 +1386,12 @@ function start_rf_sim_nr_ue {
     echo "export RFSIMULATOR=${LOC_GNB_VM_IP_ADDR}" >> $1
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/ran_build/build/\"" >> $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
-    echo "sudo cp /home/ubuntu/tmp/r*config.raw /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
-    echo "sudo chmod 666 /home/ubuntu/tmp/cmake_targets/ran_build/build/r*config.raw" >> $1
+    echo "sudo rm -f /home/ubuntu/tmp/cmake_targets/ran_build/build/r*config.raw" >> $1
+    if [ $LOC_RA_SA_TEST -ne 2 ]
+    then
+        echo "sudo cp /home/ubuntu/tmp/r*config.raw /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
+        echo "sudo chmod 666 /home/ubuntu/tmp/cmake_targets/ran_build/build/r*config.raw" >> $1
+    fi
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
@@ -1472,11 +1482,13 @@ function run_test_on_vm {
         UE_VM_CMDS=${UE_VM_NAME}_cmds.txt
         echo "UE_VM_NAME          = $UE_VM_NAME"
         echo "UE_VM_CMD_FILE      = $UE_VM_CMDS"
-        GNB_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#gnb-usrp#" -e "s#rf-sim#gnb-usrp#"`
+    elif [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf5g-sim.* ))  ]]
+    then
+        GNB_VM_NAME=`echo $VM_NAME | sed -e "s#rf5g-sim#gnb-usrp#"`
         GNB_VM_CMDS=${GNB_VM_NAME}_cmds.txt
         echo "GNB_VM_NAME         = $GNB_VM_NAME"
         echo "GNB_VM_CMD_FILE     = $GNB_VM_CMDS"
-        NR_UE_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#nr-ue-usrp#" -e "s#rf-sim#nr-ue-usrp#"`
+        NR_UE_VM_NAME=`echo $VM_NAME | sed -e "s#rf5g-sim#nr-ue-usrp#"`
         NR_UE_VM_CMDS=${UE_VM_NAME}_cmds.txt
         echo "NR_UE_VM_NAME       = $NR_UE_VM_NAME"
         echo "NR_UE_VM_CMD_FILE   = $NR_UE_VM_CMDS"
@@ -1505,6 +1517,8 @@ function run_test_on_vm {
         UE_VM_IP_ADDR=`uvt-kvm ip $UE_VM_NAME`
         echo "$UE_VM_NAME has for IP addr = $UE_VM_IP_ADDR"
 
+    elif [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf5g-sim.* ))  ]]
+    then
         echo "############################################################"
         echo "Waiting for GNB VM to be started"
         echo "############################################################"
@@ -2239,14 +2253,23 @@ function run_test_on_vm {
 
     fi
 
-    if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-rf-sim.* ]]
+    if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-rf5g-sim.* ]]
     then
+        PING_STATUS=0
+        IPERF_STATUS=0
+        NR_STATUS=0
+        if [ -d $ARCHIVES_LOC ]
+        then
+            rm -Rf $ARCHIVES_LOC
+        fi
+        mkdir --parents $ARCHIVES_LOC
+
         echo "############################################################"
         echo "SA TEST"
         echo "############################################################"
         #SA test, attention : has a different config file from the rest of the test
         CN_CONFIG="noS1"
-        CONF_FILE=gnb.band78.sa.fr1.106PRB.usrpb210.conf 
+        CONF_FILE=gnb.band78.sa.fr1.106PRB.usrpn310.conf
         S1_NOS1_CFG=0
         PRB=106
         FREQUENCY=3510
@@ -2257,7 +2280,6 @@ function run_test_on_vm {
         fi
 
         local try_cnt=0
-        NR_STATUS=0
 
         ######### start of SA TEST loop
         while [ $try_cnt -lt 5 ] #5 because it hardly succeed within CI
@@ -2314,6 +2336,7 @@ function run_test_on_vm {
                 echo "try_cnt = " $try_cnt
                 try_cnt=$((try_cnt+1))
             else
+                echo "SA test OK"
                 try_cnt=$((try_cnt+10))
             fi
         done
@@ -2339,14 +2362,14 @@ function run_test_on_vm {
         fi
 
         local try_cnt=0
-        NR_STATUS=0
 
         ######### start of RA TEST loop
+        RA_FR2_STATUS=0
         while [ $try_cnt -lt 5 ] #5 because it hardly succeed within CI
         do
 
             SYNC_STATUS=0
-            RA_FR2_STATUS=0
+            RA_STATUS=0
             rm -f $ARCHIVES_LOC/tdd_${PRB}prb_${CN_CONFIG}*ra_fr2_test.log
 
             echo "############################################################"
@@ -2390,12 +2413,15 @@ function run_test_on_vm {
 
             # Proper check to be done when RA test is working!
             check_ra_result $ARCHIVES_LOC/$CURRENT_GNB_LOG_FILE $ARCHIVES_LOC/$CURRENT_NR_UE_LOG_FILE
-            if [ $RA_FR2_STATUS -ne 0 ]
+            if [ $RA_STATUS -ne 0 ]
             then
                 echo "RA FR2 test NOT OK"
                 echo "try_cnt = " $try_cnt
                 try_cnt=$((try_cnt+1))
+                RA_FR2_STATUS=-1
             else
+                echo "RA FR2 test OK"
+                RA_FR2_STATUS=0
                 try_cnt=$((try_cnt+10))
             fi
         done
@@ -2439,8 +2465,8 @@ function run_test_on_vm {
             FREQUENCY=3510
           fi
 
+          RA_FR1_STATUS=0
           local try_cnt=0
-          NR_STATUS=0
           while [ $try_cnt -lt 5 ] #5 because it hardly succeed within CI
 
           do
@@ -2493,8 +2519,11 @@ function run_test_on_vm {
             then
                 echo "RA FR1 test NOT OK"
                 echo "try_cnt = " $try_cnt
+                RA_FR1_STATUS=-1
                 try_cnt=$((try_cnt+1))
             else
+                echo "RA FR1 test OK"
+                RA_FR1_STATUS=0
                 try_cnt=$((try_cnt+10))
             fi
           done
@@ -2629,17 +2658,17 @@ function run_test_on_vm {
 
         if [ $SA_STATUS -ne 0 ]; then NR_STATUS=-1; fi     
         if [ $RA_FR2_STATUS -ne 0 ]; then NR_STATUS=-1; fi        
-        if [ $RA_STATUS -ne 0 ]; then NR_STATUS=-1; fi
+        if [ $RA_FR1_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $SYNC_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $PING_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $IPERF_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $NR_STATUS -eq 0 ]
         then
             echo "5G-NR RFSIM seems OK"
-            echo "5G-NR: TEST_OK" >> $ARCHIVES_LOC/test_final_status.log
+            echo "5G-NR: TEST_OK" > $ARCHIVES_LOC/test_final_status.log
         else
             echo "5G-NR RFSIM seems to FAIL"
-            echo "5G-NR: TEST_KO" >> $ARCHIVES_LOC/test_final_status.log
+            echo "5G-NR: TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             STATUS=-1
         fi
     fi

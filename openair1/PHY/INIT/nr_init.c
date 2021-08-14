@@ -227,15 +227,13 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
+  nr_init_csi_rs(gNB, cfg->cell_config.phy_cell_id.value);
+
   /* Generate low PAPR type 1 sequences for PUSCH DMRS, these are used if transform precoding is enabled.  */
   generate_lowpapr_typ1_refsig_sequences(SHRT_MAX);
-  
-
-  nr_init_csi_rs(gNB, 0); // TODO scramblingID currently hardcoded to 0, to be taken from higher layer parameter scramblingID when implemented
 
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
-
 
   gNB->first_run_I0_measurements = 1;
 
@@ -594,27 +592,6 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
         LOG_E(PHY,"Can't get gNB ulsch structures\n");
         exit(-1);
       }
-
-      /*
-      LOG_I(PHY,"Initializing nFAPI for ULSCH, UE %d\n",i);
-      // [hna] added here for RT implementation
-      uint8_t harq_pid = 0;
-      nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &gNB->ulsch[i+1][j]->harq_processes[harq_pid]->ulsch_pdu;
-  
-      // --------- setting rel15_ul parameters ----------
-      rel15_ul->rnti                           = 0x1234;
-      rel15_ul->ulsch_pdu_rel15.start_rb       = 0;
-      rel15_ul->ulsch_pdu_rel15.number_rbs     = 50;
-      rel15_ul->ulsch_pdu_rel15.start_symbol   = 2;
-      rel15_ul->ulsch_pdu_rel15.number_symbols = 12;
-      rel15_ul->ulsch_pdu_rel15.length_dmrs    = gNB->dmrs_UplinkConfig.pusch_maxLength;
-      rel15_ul->ulsch_pdu_rel15.Qm             = 2;
-      rel15_ul->ulsch_pdu_rel15.R              = 679;
-      rel15_ul->ulsch_pdu_rel15.mcs            = 9;
-      rel15_ul->ulsch_pdu_rel15.rv             = 0;
-      rel15_ul->ulsch_pdu_rel15.n_layers       = 1;
-      ///////////////////////////////////////////////////
-      */
 
     }
 

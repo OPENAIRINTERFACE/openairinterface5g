@@ -383,6 +383,7 @@ typedef struct NR_sched_pdsch {
   uint8_t mcs;
 
   /// TBS-related info
+  uint8_t nrOfLayers;
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;
@@ -439,7 +440,8 @@ struct CRI_RI_LI_PMI_CQI {
   uint8_t li;
   uint8_t pmi_x1;
   uint8_t pmi_x2;
-  uint8_t cqi;
+  uint8_t wb_cqi_1tb;
+  uint8_t wb_cqi_2tb;
 };
 
 typedef struct CRI_SSB_RSRP {

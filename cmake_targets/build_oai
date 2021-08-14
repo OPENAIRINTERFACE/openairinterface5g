@@ -683,21 +683,7 @@ function main() {
           $build_dir coding \
           libcoding.so $dbin/libcoding.so
 
-        #check if we run inside a container or not
-        #IS_CONTAINER variable is defined in build_helper file
-        #compile  nasmesh and rb_tool only if NOT running in a container
-        if [ $IS_CONTAINER -eq 0 ]
-        then
-          compilations \
-            $build_dir nasmesh \
-            CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
 
-          compilations \
-            $build_dir rb_tool \
-            rb_tool $dbin/rb_tool
-
-          cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
-        fi #IS_CONTAINER
       fi
     fi
   fi

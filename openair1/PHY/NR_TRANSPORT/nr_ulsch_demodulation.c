@@ -303,6 +303,7 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 
 void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
                                  NR_gNB_PUSCH *pusch_vars,
+                                 int slot,
                                  unsigned char symbol,
                                  uint8_t is_dmrs_symbol,
                                  nfapi_nr_pusch_pdu_t *pusch_pdu,
@@ -319,7 +320,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
   int16_t *rxF,*rxF_ext;
   int *ul_ch0,*ul_ch0_ext;
   uint8_t delta = 0;
-
+  int soffset = (slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
 #ifdef DEBUG_RB_EXT
 
   printf("--------------------symbol = %d-----------------------\n", symbol);
@@ -338,7 +339,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
   for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
 
-    rxF       = (int16_t *)&rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size];
+    rxF       = (int16_t *)&rxdataF[aarx][soffset+(symbol * frame_parms->ofdm_symbol_size)];
     rxF_ext   = (int16_t *)&pusch_vars->rxdataF_ext[aarx][symbol * nb_re_pusch2]; // [hna] rxdataF_ext isn't contiguous in order to solve an alignment problem ib llr computation in case of mod_order = 4, 6
 
     ul_ch0     = &pusch_vars->ul_ch_estimates[aarx][pusch_vars->dmrs_symbol*frame_parms->ofdm_symbol_size]; // update channel estimates if new dmrs symbol are available
@@ -1116,20 +1117,20 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
   int off = 0;
 #endif
 
-  if (frame_parms->nb_antennas_rx>1) {
+  if (0/*frame_parms->nb_antennas_rx>1*/) {
 #if defined(__x86_64__) || defined(__i386__)
     int nb_re = nb_rb*12;
     for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
       rxdataF_comp128[aa]   = (__m128i *)&rxdataF_comp[aa][(symbol*(nb_re + off))];
       ul_ch_mag128[aa]      = (__m128i *)&ul_ch_mag[aa][(symbol*(nb_re + off))];
       ul_ch_mag128b[aa]     = (__m128i *)&ul_ch_magb[aa][(symbol*(nb_re + off))];
-      
+    }
+    for (int aa=1;aa<frame_parms->nb_antennas_rx;aa++) {      
       // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
       for (i=0; i<nb_rb*3; i++) {
-	rxdataF_comp128[0][i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128[aa][i],1),_mm_srai_epi16(rxdataF_comp128[aa][i],1));
-	ul_ch_mag128[0][i]    = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128[aa][i],1),_mm_srai_epi16(ul_ch_mag128[aa][i],1));
-	ul_ch_mag128b[0][i]   = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128b[aa][i],1),_mm_srai_epi16(ul_ch_mag128b[aa][i],1));
-	//	rxdataF_comp128[0][i] = _mm_add_epi16(rxdataF_comp128_0[i],(*(__m128i *)&jitterc[0]));
+	rxdataF_comp128[0][i] = _mm_adds_epi16(rxdataF_comp128[0][i],rxdataF_comp128[aa][i]);
+	ul_ch_mag128[0][i]    = _mm_adds_epi16(ul_ch_mag128[0][i], ul_ch_mag128[aa][i]);
+	ul_ch_mag128b[0][i]   = _mm_adds_epi16(ul_ch_mag128b[0][i],ul_ch_mag128b[aa][i]);
       }
     }
 #elif defined(__arm__)
@@ -1175,8 +1176,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   gNB->pusch_vars[ulsch_id]->cl_done = 0;
 
   bwp_start_subcarrier = ((rel15_ul->rb_start + rel15_ul->bwp_start)*NR_NB_SC_PER_RB + frame_parms->first_carrier_offset) % frame_parms->ofdm_symbol_size;
-  LOG_D(PHY,"bwp_start_subcarrier %d, rb_start %d, first_carrier_offset %d\n", bwp_start_subcarrier, rel15_ul->rb_start, frame_parms->first_carrier_offset);
-  LOG_D(PHY,"ul_dmrs_symb_pos %x\n",rel15_ul->ul_dmrs_symb_pos);
+  LOG_I(PHY,"pusch %d.%d : bwp_start_subcarrier %d, rb_start %d, first_carrier_offset %d\n", frame,slot,bwp_start_subcarrier, rel15_ul->rb_start, frame_parms->first_carrier_offset);
+  LOG_I(PHY,"pusch %d.%d : ul_dmrs_symb_pos %x\n",frame,slot,rel15_ul->ul_dmrs_symb_pos);
 
   //----------------------------------------------------------
   //--------------------- Channel estimation ---------------------
@@ -1184,7 +1185,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   start_meas(&gNB->ulsch_channel_estimation_stats);
   for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
     uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
-    LOG_D(PHY, "symbol %d, dmrs_symbol_flag :%d\n", symbol, dmrs_symbol_flag);
+    LOG_I(PHY, "symbol %d, dmrs_symbol_flag :%d\n", symbol, dmrs_symbol_flag);
     if (dmrs_symbol_flag == 1) {
       if (gNB->pusch_vars[ulsch_id]->dmrs_symbol == INVALID_VALUE)
         gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
@@ -1245,7 +1246,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
     }
 
     gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] = nb_re_pusch;
-    LOG_D(PHY,"symbol %d: nb_re_pusch %d, DMRS symbl used for Chest :%d \n", symbol, nb_re_pusch, gNB->pusch_vars[ulsch_id]->dmrs_symbol);
+    LOG_I(PHY,"symbol %d: nb_re_pusch %d, DMRS symbl used for Chest :%d \n", symbol, nb_re_pusch, gNB->pusch_vars[ulsch_id]->dmrs_symbol);
 
     //----------------------------------------------------------
     //--------------------- RBs extraction ---------------------
@@ -1255,6 +1256,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       start_meas(&gNB->ulsch_rbs_extraction_stats);
       nr_ulsch_extract_rbs_single(gNB->common_vars.rxdataF,
                                   gNB->pusch_vars[ulsch_id],
+                                  slot,
                                   symbol,
                                   dmrs_symbol_flag,
                                   rel15_ul,
@@ -1294,6 +1296,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       //--------------------- Channel Compensation ---------------
       //----------------------------------------------------------
       start_meas(&gNB->ulsch_channel_compensation_stats);
+      LOG_I(PHY,"Doing channel compensations log2_maxh %d, avgs %d (%d,%d)\n",gNB->pusch_vars[ulsch_id]->log2_maxh,avgs,avg[0],avg[1]);
       nr_ulsch_channel_compensation(gNB->pusch_vars[ulsch_id]->rxdataF_ext,
                                     gNB->pusch_vars[ulsch_id]->ul_ch_estimates_ext,
                                     gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
