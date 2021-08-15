@@ -773,6 +773,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
 
     fill_msg3_pusch_pdu(pusch_pdu, scc,
+                        ra->msg3_round,
                         startSymbolAndLength,
                         ra->rnti, scs,
                         bwpSize, bwpStart,
@@ -956,6 +957,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
 void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
                          NR_ServingCellConfigCommon_t *scc,
+                         int round,
                          int startSymbolAndLength,
                          rnti_t rnti, int scs,
                          int bwp_size, int bwp_start,
@@ -1006,9 +1008,9 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->start_symbol_index = start_symbol_index;
   pusch_pdu->nr_of_symbols = nr_of_symbols;
   //Optional Data only included if indicated in pduBitmap
-  pusch_pdu->pusch_data.rv_index = 0;  // 8.3 in 38.213
+  pusch_pdu->pusch_data.rv_index = nr_rv_round_map[round];
   pusch_pdu->pusch_data.harq_process_id = 0;
-  pusch_pdu->pusch_data.new_data_indicator = 1; // new data
+  pusch_pdu->pusch_data.new_data_indicator = 1;
   pusch_pdu->pusch_data.num_cb = 0;
   pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
                                                  pusch_pdu->target_code_rate,
@@ -1097,6 +1099,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     bwp_start = ibwp_start;
 
   fill_msg3_pusch_pdu(pusch_pdu,scc,
+                      ra->msg3_round,
                       startSymbolAndLength,
                       ra->rnti, scs,
                       ibwp_size, bwp_start,

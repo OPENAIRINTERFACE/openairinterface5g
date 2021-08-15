@@ -795,7 +795,15 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if( (frameP!=ra->Msg3_frame) || (slotP!=ra->Msg3_slot))
         continue;
 
-      LOG_W(NR_MAC, "Random Access %i failed at state %i (CRC did not pass)\n", i, ra->state);
+      if (ra->msg3_round >= MAX_HARQ_ROUNDS - 1) {
+        LOG_W(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
+        nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+        nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+        return;
+      }
+
+      LOG_W(NR_MAC, "Random Access %i Msg3 CRC did not pass)\n", i);
+      ra->msg3_round++;
       ra->state = Msg3_retransmission;
     }
   }

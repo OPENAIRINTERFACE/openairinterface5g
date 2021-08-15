@@ -138,6 +138,7 @@ void nr_fill_rar(uint8_t Mod_idP,
 
 void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
                          NR_ServingCellConfigCommon_t *scc,
+                         int round,
                          int startSymbolAndLength,
                          rnti_t rnti, int scs,
                          int bwp_size, int bwp_start,
