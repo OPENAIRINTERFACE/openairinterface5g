@@ -69,7 +69,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
       for (i = 0; i < dl_config->number_pdus; ++i){
         AssertFatal(dl_config->number_pdus < FAPI_NR_DL_CONFIG_LIST_NUM,"dl_config->number_pdus %d out of bounds\n",dl_config->number_pdus);
         AssertFatal(dl_config->dl_config_list[i].pdu_type<=FAPI_NR_DL_CONFIG_TYPES,"pdu_type %d > 2\n",dl_config->dl_config_list[i].pdu_type);
-        LOG_D(PHY, "In %s: received 1 DL %s PDU of %d total DL PDUs:\n", __FUNCTION__, dl_pdu_type[dl_config->dl_config_list[i].pdu_type - 1], dl_config->number_pdus);
+        LOG_D(PHY, "In %s: frame %d slot %d received 1 DL %s PDU of %d total DL PDUs:\n",
+              __FUNCTION__, scheduled_response->frame, slot, dl_pdu_type[dl_config->dl_config_list[i].pdu_type - 1], dl_config->number_pdus);
 
         if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DCI) {
 
@@ -145,7 +146,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->nEpreRatioOfPDSCHToPTRS = dlsch_config_pdu->nEpreRatioOfPDSCHToPTRS;
             dlsch0_harq->PTRSReOffset = dlsch_config_pdu->PTRSReOffset;
             dlsch0_harq->pduBitmap = dlsch_config_pdu->pduBitmap;
-            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\tpdsch_to_harq_feedback_time_ind = %d\tslot_for_feedback_ack = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs, dlsch_config_pdu->pdsch_to_harq_feedback_time_ind, dlsch0_harq->harq_ack.slot_for_feedback_ack);
+            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\tpdsch_to_harq_feedback_time_ind = %d\tslot_for_feedback_ack = %d\n",
+                  dlsch0->g_pucch, dlsch0_harq->mcs, dlsch_config_pdu->pdsch_to_harq_feedback_time_ind, dlsch0_harq->harq_ack.slot_for_feedback_ack);
           }
         }
       }

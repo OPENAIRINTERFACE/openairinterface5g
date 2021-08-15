@@ -859,6 +859,8 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     // reset state to wait msg3
     ra->state = WAIT_Msg3;
+    ra->Msg3_frame = sched_frame;
+    ra->Msg3_slot = sched_slot;
 
   }
 
