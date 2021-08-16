@@ -114,7 +114,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   ie4->criticality                    = F1AP_Criticality_reject;
   ie4->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_ServCellIndex;
   ie4->value.choice.ServCellIndex = 0;
-
+  
   /* optional */
   /* c5. CellULConfigured */
   if (0) {
@@ -204,15 +204,14 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     OCTET_STRING_fromBuf(&ie9->value.choice.ResourceCoordinationTransferContainer, "asdsa1d32sa1d31asd31as",
                          strlen("asdsa1d32sa1d31asd31as"));
   }
-
-  /* mandatory */
+   /* mandatory */
   /* c10. SCell_ToBeSetup_List */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie10);
   ie10->id                             = F1AP_ProtocolIE_ID_id_SCell_ToBeSetup_List;
   ie10->criticality                    = F1AP_Criticality_ignore;
   ie10->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_SCell_ToBeSetup_List;
-
-  for (int i=0; i<0; i++) {
+  
+  for (int i=0; i<1; i++) {
     //
     asn1cSequenceAdd(ie10->value.choice.SCell_ToBeSetup_List.list, F1AP_SCell_ToBeSetup_ItemIEs_t, scell_toBeSetup_item_ies);
     scell_toBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_SCell_ToBeSetup_Item; //53
@@ -397,8 +396,8 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
       /* 12.1.2.2 sNSSAI */
       {
         /* sST */
-        OCTET_STRING_fromBuf(&DRB_Information->sNSSAI.sST, "asdsa1d32sa1d31asd31as",
-                             strlen("asdsa1d32sa1d31asd31as"));
+	
+        OCTET_STRING_fromBuf(&DRB_Information->sNSSAI.sST, "1", 1);
 
         /* OPTIONAL */
         /* sD */

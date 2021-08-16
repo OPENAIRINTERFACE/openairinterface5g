@@ -50,9 +50,9 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
   F1AP_UEContextSetupRequestIEs_t *ie;
   int i;
   DevAssert(pdu);
-  msg_p = itti_alloc_new_message(TASK_DU_F1, 0, F1AP_UE_CONTEXT_SETUP_REQ);
-  f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req;
-  f1ap_ue_context_setup_req = &F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
+  LOG_E(F1AP, "DU_handle_UE_CONTEXT_SETUP_REQUEST() fills a ITTI message F1AP_UE_CONTEXT_SETUP_REQ but it never sends it\n");
+  msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_SETUP_REQ);
+  f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req = &F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
   container = &pdu->choice.initiatingMessage->value.choice.UEContextSetupRequest;
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
@@ -144,27 +144,29 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     /* correct here */
     f1ap_ue_context_setup_req->rrc_container = malloc(ie->value.choice.RRCContainer.size);
     memcpy(f1ap_ue_context_setup_req->rrc_container, ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
+    
+    
+    // AssertFatal(0, "check configuration, send to appropriate handler\n");
+    protocol_ctxt_t ctxt;
+    // ctxt.rnti      = f1ap_get_rnti_by_du_id(&f1ap_du_inst[instance], ie->value.choice.GNB_DU_UE_F1AP_ID);
+    ctxt.rnti = 0x1234;
+    ctxt.module_id = instance;
+    ctxt.instance  = instance;
+    ctxt.enb_flag  = 1;
+    
+    if ( ie->value.choice.RRCContainer.size )  {
+      mem_block_t *pdcp_pdu_p = NULL;
+      pdcp_pdu_p = get_free_mem_block(ie->value.choice.RRCContainer.size, __func__);
+      memset(pdcp_pdu_p->data, 0, ie->value.choice.RRCContainer.size);
+      memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
+      /* for rfsim */
+      du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, ie->value.choice.RRCContainer.size, pdcp_pdu_p);
+    } else {
+       LOG_E(F1AP, " RRCContainer in UEContextSetupRequestIEs size id 0\n");
+    }
   } else {
     LOG_E(F1AP, "can't find RRCContainer in UEContextSetupRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
   }
-
-  // AssertFatal(0, "check configuration, send to appropriate handler\n");
-  protocol_ctxt_t ctxt;
-  // ctxt.rnti      = f1ap_get_rnti_by_du_id(&f1ap_du_inst[instance], ie->value.choice.GNB_DU_UE_F1AP_ID);
-  ctxt.rnti = 0x1234;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
-  mem_block_t *pdcp_pdu_p = NULL;
-  pdcp_pdu_p = get_free_mem_block(ie->value.choice.RRCContainer.size, __func__);
-
-  if (pdcp_pdu_p != NULL) {
-    memset(pdcp_pdu_p->data, 0, ie->value.choice.RRCContainer.size);
-    memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
-    /* for rfsim */
-    du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, ie->value.choice.RRCContainer.size, pdcp_pdu_p);
-  }
-
   return 0;
 }
 

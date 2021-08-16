@@ -337,7 +337,7 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -ggdb2 -Wl,-rpath -Wl,${C
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
 set(debugOpt "-ggdb2 -DMALLOC_CHECK_=3 -fno-delete-null-pointer-checks")
-set(CMAKE_C_FLAGS_DEBUG "${debugOpt} -Og")
+set(CMAKE_C_FLAGS_DEBUG "${debugOpt} -O0")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${debugOpt} -O2")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 
@@ -378,14 +378,13 @@ set (FIRMWARE_VERSION "No svn information")
 add_definitions("-DFIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"")
 add_definitions("-DPACKAGE_VERSION=\"Branch: ${GIT_BRANCH} Abrev. Hash: ${GIT_COMMIT_HASH} Date: ${GIT_COMMIT_DATE}\"")
 add_definitions("-DPACKAGE_BUGREPORT=\"openair4g-devel@lists.eurecom.fr\"")
-#add_definitions("-DEMIT_ASN_DEBUG=1")
 
 
 # Debug related options
 #########################################
-add_boolean_option(ASN_DEBUG           False "ASN1 coder/decoder Debug")
-add_boolean_option(EMIT_ASN_DEBUG      False "ASN1 coder/decoder Debug")
-add_boolean_option(MSG_PRINT           False "print debug messages")
+add_boolean_option(ASN_EMIT_DEBUG      False "ASN1 coder/decoder Debug")
+add_boolean_option(ASN_THREAD_SAFE     True "ASN1 coder/decoder Debug")
+add_boolean_option(MSG_PRINT           True "print debug messages")
 add_boolean_option(DISABLE_XER_PRINT   False "print XER Format")
 add_boolean_option(XER_PRINT           False "print XER Format")
 add_boolean_option(RRC_MSG_PRINT       False "print RRC messages")
@@ -624,7 +623,7 @@ set(M2AP_C_DIR ${asn1_generated_dir}/M2AP_${M2AP_RELEASE})
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 if (${RU} STREQUAL 0)
   execute_process(
-    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M2AP_" "-fno-include-deps -DEMIT_ASN_DEBUG=1" "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M2AP_" "-fno-include-deps " "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"
     RESULT_VARIABLE ret)
   if (NOT ${ret} STREQUAL 0)
     message(FATAL_ERROR "${ret}: error")
@@ -635,7 +634,7 @@ file(GLOB M2AP_source ${M2AP_C_DIR}/*.c)
 
 add_custom_target (
   m2_flag ALL
-  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M2AP_" "-fno-include-deps -DEMIT_ASN_DEBUG=1" "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"
+  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M2AP_" "-fno-include-deps " "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"
   DEPENDS ${M2AP_ASN_DIR}/${M2AP_ASN_FILES}
   )
 
@@ -815,7 +814,7 @@ set(F1AP_ASN_FILES
 if (${RU} STREQUAL 0)
   set(F1AP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
   execute_process(
-    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "F1AP_" "-findirect-choice -fno-include-deps -Wdebug-compiler -Wdebug-parser" ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "F1AP_" "-findirect-choice -fno-include-deps" ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
     RESULT_VARIABLE ret
     )
   
