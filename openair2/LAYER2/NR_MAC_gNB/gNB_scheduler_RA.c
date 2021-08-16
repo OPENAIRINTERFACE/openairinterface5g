@@ -793,7 +793,10 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
         ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1])
       bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
 
-    coreset = get_coreset(scc, bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
+    if (*ss->controlResourceSetId == 0)
+      coreset = nr_mac->sched_ctrlCommon->coreset; // this is coreset 0
+    else
+      coreset = get_coreset(scc, bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg3 retransmission\n");
 
     nfapi_nr_ul_dci_request_t *ul_dci_req = &nr_mac->UL_dci_req[CC_id];

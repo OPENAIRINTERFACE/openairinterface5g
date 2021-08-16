@@ -470,12 +470,12 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot
   int subframes_per_slot = nr_slots_per_frame[mu]/10;
 
   // start contention resolution timer (cnt in slots)
-  int RA_contention_resolution_timer_subframes = (nr_rach_ConfigCommon->ra_ContentionResolutionTimer + 1) * 8;
+  int RA_contention_resolution_timer_subframes = (nr_rach_ConfigCommon->ra_ContentionResolutionTimer + 1)<<3;
 
   ra->RA_contention_resolution_target_frame = frameP + (RA_contention_resolution_timer_subframes/10);
   ra->RA_contention_resolution_target_slot = (slotP + (RA_contention_resolution_timer_subframes * subframes_per_slot)) % nr_slots_per_frame[mu];
 
-  LOG_D(MAC,"In %s: [UE %d] CB-RA: starting contention resolution timer set in frame.slot %d.%d and expiring in %d.%d\n",
+  LOG_I(MAC,"In %s: [UE %d] CB-RA: contention resolution timer set in frame.slot %d.%d and expiring in %d.%d\n",
        __FUNCTION__, mod_id, frameP, slotP, ra->RA_contention_resolution_target_frame, ra->RA_contention_resolution_target_slot);
 
   ra->RA_contention_resolution_timer_active = 1;
@@ -746,7 +746,7 @@ void nr_ue_contention_resolution(module_id_t module_id, int cc_id, frame_t frame
 
   if (ra->RA_contention_resolution_timer_active == 1) {
     if (frame >= ra->RA_contention_resolution_target_frame &&
-      slot >= ra->RA_contention_resolution_target_frame) {
+      slot >= ra->RA_contention_resolution_target_slot) {
       ra->t_crnti = 0;
       ra->RA_active = 0;
       ra->RA_contention_resolution_timer_active = 0;
