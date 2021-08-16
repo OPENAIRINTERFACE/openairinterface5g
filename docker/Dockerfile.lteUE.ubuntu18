@@ -52,6 +52,7 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         software-properties-common \
+        procps \
         libsctp1 \
         libnettle6 \
         liblapacke \

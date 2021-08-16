@@ -1149,7 +1149,11 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     }
     BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-    coreset = get_coreset(scc,bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
+
+    if (*ss->controlResourceSetId == 0)
+      coreset = nr_mac->sched_ctrlCommon->coreset; // this is coreset 0
+    else
+      coreset = get_coreset(scc, bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg2\n");
 
@@ -1399,7 +1403,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       genericParameters= &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     }
-    coreset = get_coreset(scc,bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
+
+    if (*ss->controlResourceSetId == 0)
+      coreset = nr_mac->sched_ctrlCommon->coreset; // this is coreset 0
+    else
+      coreset = get_coreset(scc, bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg4\n");
 
