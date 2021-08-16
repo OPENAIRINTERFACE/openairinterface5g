@@ -1091,7 +1091,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
           if (ra->ra_state == WAIT_RAR && !ra->cfra){
             LOG_I(NR_MAC,"[RAPROC] RA-Msg3 transmitted\n");
-            nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->gNB_index);
+            nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->gNB_index);
           }
 
         }
