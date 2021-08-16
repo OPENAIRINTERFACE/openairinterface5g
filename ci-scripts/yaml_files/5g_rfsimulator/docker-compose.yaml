@@ -206,7 +206,7 @@ services:
         privileged: true
         container_name: rfsim5g-oai-ext-dn
         entrypoint: /bin/bash -c \
-              "apt update; apt install -y iptables iproute2 iperf iputils-ping;"\
+              "apt update; apt install -y procps iptables iproute2 iperf iputils-ping;"\
               "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE;"\
               "ip route add 12.1.1.0/24 via 192.168.72.134 dev eth0; sleep infinity"
         depends_on:
@@ -220,7 +220,7 @@ services:
             timeout: 5s
             retries: 5
     oai-gnb:
-        image: oai-gnb:int-w32
+        image: oai-gnb:develop
         privileged: true
         container_name: rfsim5g-oai-gnb
         environment: 
@@ -251,7 +251,7 @@ services:
             timeout: 5s
             retries: 5
     oai-nr-ue:
-        image: oai-nr-ue:int-w32
+        image: oai-nr-ue:develop
         privileged: true
         container_name: rfsim5g-oai-nr-ue
         environment: 

@@ -7,7 +7,7 @@
       </a>
     </td>
     <td style="border-collapse: collapse; border: none; vertical-align: center;">
-      <b><font size = "5">OAI Full Stack RF simulation with containers</font></b>
+      <b><font size = "5">OAI Full Stack 4G-LTE RF simulation with containers</font></b>
     </td>
   </tr>
 </table>
@@ -81,11 +81,14 @@ How to build the Traffic-Generator image is explained [here](https://github.com/
 
 **Just `docker-compose up -d` WILL NOT WORK!**
 
+All the following commands **SHALL** be run from the `ci-scripts/yaml_files/4g_rfsimulator` folder.
+
 ## 2.1. Deploy and Configure Cassandra Database ##
 
 It is very crutial that the Cassandra DB is fully configured before you do anything else!
 
 ```bash
+$ cd ci-scripts/yaml_files/4g_rfsimulator
 $ docker-compose up -d db_init
 Creating network "rfsim4g-oai-private-net" with the default driver
 Creating network "rfsim4g-oai-public-net" with the default driver
