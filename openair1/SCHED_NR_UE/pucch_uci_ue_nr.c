@@ -991,15 +991,17 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   int N_m_c_rx = 0;
   int V_DAI_m_DL = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-  NR_BWP_Id_t dl_bwp_id = (mac->DL_BWP_Id == 0 ) ? 1: mac->DL_BWP_Id ;
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id ;
 
-  if (mac->DLbwp[dl_bwp_id-1] &&
-      mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated &&
-      mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config &&
-      mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup &&
-      mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0] == 2) {
-    two_transport_blocks = TRUE;
-    number_of_code_word = 2;
+  if(dl_bwp_id){
+    if (mac->DLbwp[dl_bwp_id-1] &&
+        mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated &&
+        mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config &&
+        mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup &&
+        mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0] == 2) {
+      two_transport_blocks = TRUE;
+      number_of_code_word = 2;
+    }
   }
   else {
     number_of_code_word = 1;

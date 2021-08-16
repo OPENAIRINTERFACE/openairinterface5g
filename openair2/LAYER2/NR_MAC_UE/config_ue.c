@@ -639,7 +639,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
 
   // check pdcch_Config, pdcch_ConfigCommon and DL BWP
   // Check dedicated UL BWP and pass to MAC
-  for (int num_BWP = 0; num_BWP < MAX_NUM_BWP ;num_BWP++)
+  for (int num_BWP = 0; num_BWP < MAX_NUM_BWP_UE ;num_BWP++)
   {
     mac->DLbwp[num_BWP] = scd->downlinkBWP_ToAddModList->list.array[num_BWP];
     mac->ULbwp[num_BWP] = uplinkBWP_ToAddModList->list.array[num_BWP];

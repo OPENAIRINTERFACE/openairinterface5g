@@ -244,10 +244,10 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   RA_config_t *ra = &mac->ra;
   int ss_id;
 
-  NR_BWP_Id_t bwp_id = (mac->cg) ? ((mac->DL_BWP_Id == 0 ) ? 1: mac->DL_BWP_Id ): 0;
+  NR_BWP_Id_t bwp_id = (mac->cg) ?  mac->DL_BWP_Id : 0;
   uint8_t coreset_id = (mac->cg) ? 1 : 0;
   //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
-  NR_BWP_Downlink_t *bwp = (mac->cg) ? mac->DLbwp[bwp_id-1] : NULL;
+  NR_BWP_Downlink_t *bwp = (mac->cg) ? ( (bwp_id) ? mac->DLbwp[bwp_id-1] :NULL) : NULL;
 
   LOG_D(MAC, "[DCI_CONFIG] ra_rnti %p (%x) crnti %p (%x) t_crnti %p (%x)\n", &ra->ra_rnti, ra->ra_rnti, &mac->crnti, mac->crnti, &ra->t_crnti, ra->t_crnti);
 
