@@ -63,6 +63,11 @@ typedef enum frequency_range_e {
   FR2
 } frequency_range_t;
 
+#define NR_BSR_TRIGGER_NONE      (0) /* No BSR Trigger */
+#define NR_BSR_TRIGGER_REGULAR   (1) /* For Regular and ReTxBSR Expiry Triggers */
+#define NR_BSR_TRIGGER_PERIODIC  (2) /* For BSR Periodic Timer Expiry Trigger */
+#define NR_BSR_TRIGGER_PADDING   (4) /* For Padding BSR Trigger */
+
 //  For both DL/UL-SCH
 //  Except:
 //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)

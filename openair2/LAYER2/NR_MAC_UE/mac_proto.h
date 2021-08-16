@@ -125,7 +125,53 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              int slot,
                              int thread_id);
 
-int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, int slotP);
+/*! \fn int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slotP);
+   \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3 SDUs and generates header and forms the complete MAC SDU.
+\param[in] Mod_id Instance id of UE in machine
+\param[in] frameP subframe number
+\param[in] slotP slot number
+*/
+int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slotP);
+
+/*! \fn  boolean_t update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_index)
+   \brief get the rlc stats and update the bsr level for each lcid
+\param[in] Mod_id instance of the UE
+\param[in] frameP Frame index
+\param[in] slot slotP number
+\param[in] uint8_t gNB_index
+*/
+boolean_t nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_index);
+
+/*! \fn  nr_locate_BsrIndexByBufferSize (int *table, int size, int value)
+   \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table.
+\param[in] *table Pointer to BSR table
+\param[in] size Size of the table
+\param[in] value Value of the buffer
+\return the index in the BSR_LEVEL table
+*/
+uint8_t nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size,
+                                    int value);
+
+/*! \fn  int nr_get_sf_periodicBSRTimer(uint8_t periodicBSR_Timer)
+   \brief get the number of subframe from the periodic BSR timer configured by the higher layers
+\param[in] periodicBSR_Timer timer for periodic BSR
+\return the number of subframe
+*/
+int nr_get_sf_periodicBSRTimer(uint8_t bucketSize);
+
+/*! \fn  int nr_get_ms_bucketsizeduration(uint8_t bucketSize)
+   \brief get the time in ms form the bucket size duration configured by the higher layer
+\param[in]  bucketSize the bucket size duration
+\return the time in ms
+*/
+int nr_get_ms_bucketsizeduration(uint8_t bucketsizeduration);
+
+/*! \fn  int nr_get_sf_retxBSRTimer(uint8_t retxBSR_Timer)
+   \brief get the number of subframe form the bucket size duration configured by the higher layer
+\param[in]  retxBSR_Timer timer for regular BSR
+\return the time in sf
+*/
+int nr_get_sf_retxBSRTimer(uint8_t retxBSR_Timer);
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, fapi_nr_dci_indication_pdu_t *dci_ind);
 int nr_ue_process_dci_indication_pdu(module_id_t module_id, int cc_id, int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci);
@@ -170,7 +216,13 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                            int pdu_id);
 
 int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
-                          NR_UE_MAC_INST_t *mac);
+                          NR_UE_MAC_INST_t *mac,
+                          uint8_t power_headroom, // todo: NR_POWER_HEADROOM_CMD *power_headroom,
+						  uint16_t *crnti,
+                          NR_BSR_SHORT *truncated_bsr,
+                          NR_BSR_SHORT *short_bsr,
+                          NR_BSR_LONG  *long_bsr
+						  );
 
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
