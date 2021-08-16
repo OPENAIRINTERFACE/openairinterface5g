@@ -457,7 +457,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                   ssb_SubcarrierOffset,
                   pdsch_AntennaPorts,
                   pusch_AntennaPorts,
-		              scc);
+                  scc);
     LOG_D(NR_MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   
     // if in nFAPI mode 

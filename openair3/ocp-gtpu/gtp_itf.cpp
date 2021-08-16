@@ -528,7 +528,7 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
 
   for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
     teid_t teid=newGtpuCreateTunnel(compatInst(instance), create_tunnel_req->rnti,
-                                    create_tunnel_req->pdusession_id[i],
+                                    create_tunnel_req->incoming_rb_id[i],
                                     create_tunnel_req->pdusession_id[i],
                                     create_tunnel_req->upf_NGu_teid[i],
                                     create_tunnel_req->upf_addr[i], 2152,

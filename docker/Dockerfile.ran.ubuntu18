@@ -42,7 +42,10 @@ RUN apt-get update && \
        git \
        xxd \
        #unzip is needed for protobuf
-       unzip
+       unzip \
+       # python3-pip for conf template generation
+       python3-pip && \
+    pip3 install --ignore-installed pyyaml
 
 # In some network environments, GIT proxy is required
 RUN /bin/bash -c "if [[ -v NEEDED_GIT_PROXY ]]; then git config --global http.proxy $NEEDED_GIT_PROXY; fi"
@@ -56,4 +59,3 @@ RUN /bin/sh oaienv && \
     cd cmake_targets && \
     mkdir -p log && \
     ./build_oai -I -w USRP
-

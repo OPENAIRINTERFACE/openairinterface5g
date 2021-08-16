@@ -41,7 +41,6 @@
 #define DEBUG_RAR
 
 extern unsigned int localRIV2alloc_LUT25[512];
-extern unsigned int distRIV2alloc_LUT25[512];
 extern unsigned short RIV2nb_rb_LUT25[512];
 extern unsigned short RIV2first_rb_LUT25[512];
 extern RAN_CONTEXT_t RC;

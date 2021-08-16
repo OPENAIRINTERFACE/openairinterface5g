@@ -105,8 +105,6 @@ int config_sync_var=-1;
 
 
 RAN_CONTEXT_t RC;
-volatile int             start_eNB = 0;
-volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
 
@@ -375,7 +373,8 @@ void init_openair0(void) {
 
     nr_get_carrier_frequencies(frame_parms, &dl_carrier, &ul_carrier);
 
-    nr_rf_card_config(&openair0_cfg[card], rx_gain_off, ul_carrier, dl_carrier, freq_off);
+    nr_rf_card_config_freq(&openair0_cfg[card], ul_carrier, dl_carrier, freq_off);
+    nr_rf_card_config_gain(&openair0_cfg[card], rx_gain_off);
 
     openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
 

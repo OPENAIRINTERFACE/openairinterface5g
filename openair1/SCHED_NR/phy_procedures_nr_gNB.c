@@ -575,8 +575,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
       if ((pucch->active == 1) &&
-	       (pucch->frame == frame_rx) &&
-	       (pucch->slot == slot_rx) ) {
+          (pucch->frame == frame_rx) &&
+          (pucch->slot == slot_rx) ) {
 
         pucch_decode_done = 1;
 
@@ -597,7 +597,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
           nr_decode_pucch0(gNB,
-	                         frame_rx,
+                           frame_rx,
                            slot_rx,
                            uci_pdu_format0,
                            pucch_pdu);
@@ -639,9 +639,9 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         (ulsch->rnti > 0)) {
       // for for an active HARQ process
       for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
-	      ulsch_harq = ulsch->harq_processes[harq_pid];
-    	  AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
-    	  if ((ulsch_harq->status == NR_ACTIVE) &&
+        ulsch_harq = ulsch->harq_processes[harq_pid];
+        AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
+        if ((ulsch_harq->status == NR_ACTIVE) &&
             (ulsch_harq->frame == frame_rx) &&
             (ulsch_harq->slot == slot_rx) &&
             (ulsch_harq->handled == 0)){

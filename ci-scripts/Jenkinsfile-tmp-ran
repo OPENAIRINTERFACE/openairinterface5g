@@ -369,7 +369,7 @@ pipeline {
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
                         ]) {
                             echo '\u2705 \u001B[32mLog Collection (eNB - Run)\u001B[0m'
-                            sh "python3 ci-scripts/main.py --mode=LogCollecteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath}"
+                            sh "python3 ci-scripts/main.py --mode=LogCollecteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --BuildId=${env.BUILD_ID}"
 
                             echo '\u2705 \u001B[32mLog Transfer (eNB - Run)\u001B[0m'
                             sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/enb.log.zip ./enb.log.${env.BUILD_ID}.zip || true"
