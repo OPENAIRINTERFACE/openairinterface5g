@@ -1267,9 +1267,10 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
 
       //switch to DCI_0_0
-      if (dci_pdu_rel15->format_indicator == 0)
+      if (dci_pdu_rel15->format_indicator == 0) {
+        dci_pdu_rel15_t *dci_pdu_rel15 = &mac->def_dci_pdu_rel15[NR_UL_DCI_FORMAT_0_0];
         return 2+nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, dci_pdu, dci_pdu_rel15);
-
+      }
 #ifdef DEBUG_EXTRACT_DCI
       LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,N_RB,dci_size-pos,*dci_pdu);
 #endif
@@ -1466,9 +1467,10 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
 
       //switch to DCI_0_0
-      if (dci_pdu_rel15->format_indicator == 0)
+      if (dci_pdu_rel15->format_indicator == 0) {
+        dci_pdu_rel15_t *dci_pdu_rel15 = &mac->def_dci_pdu_rel15[NR_UL_DCI_FORMAT_0_0];
         return 2+nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, dci_pdu, dci_pdu_rel15);
-
+      }
 
       if (dci_pdu_rel15->format_indicator == 0)
         return 1; // discard dci, format indicator not corresponding to dci_format
