@@ -25,7 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM localhost/ran-build:latest AS nr-ue-build 
+FROM ran-build:latest AS nr-ue-build 
 
 RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
@@ -37,18 +37,15 @@ RUN /bin/sh oaienv && \
     mkdir -p log && \
     ./build_oai --nrUE --ninja -w USRP --verbose-ci
 
-# debug
-#RUN ldconfig -v
-#RUN ldd /oai-ran/targets/bin/nr-uesoftmodem.Rel15
-#RUN ls -lst /oai-ran/targets/bin
-#RUN ls -lst /oai-ran/cmake_targets/ran_build/build/*.so
-
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-nr-ue
+ENV TZ=Europe/Paris
 
 RUN yum update -y && \
     yum install -y --enablerepo="ubi-8-codeready-builder" \
         lksctp-tools \
+        procps-ng \
+        tzdata \
         nettle \
         net-tools \
         iputils \
@@ -61,6 +58,10 @@ RUN yum update -y && \
 
 WORKDIR /opt/oai-nr-ue/bin
 COPY --from=nr-ue-build /oai-ran/targets/bin/nr-uesoftmodem.Rel15 .
+COPY --from=nr-ue-build /oai-ran/docker/scripts/nr_ue_entrypoint.sh entrypoint.sh
+
+WORKDIR /opt/oai-nr-ue/etc
+COPY --from=nr-ue-build /oai-ran/ci-scripts/conf_files/nr-ue-sim.conf .
 
 WORKDIR /usr/local/lib/
 COPY --from=nr-ue-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
@@ -98,24 +99,11 @@ COPY --from=nr-ue-build /lib64/libboost_timer.so.1.66.0 /lib64
 COPY --from=nr-ue-build /usr/local/lib64/libuhd.so.4.0.0 /usr/local/lib64
 
 RUN ldconfig
-#RUN ldd /opt/oai-nr-ue/bin/nr-uesoftmodem.Rel15
-#RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
-#RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
-#RUN ldd /usr/local/lib/librfsimulator.so.Rel15
-#RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
-#RUN ldd /usr/local/lib/libcoding.so
-#RUN ldd /usr/local/lib/libparams_libconfig.so
-#RUN ldd /usr/local/lib/libdfts.so
-#RUN ldd /usr/local/lib/libldpc.so
-#RUN ldd /usr/local/lib/libldpc_optim.so
-#RUN ldd /usr/local/lib/libldpc_optim8seg.so
-#RUN ldd /usr/local/lib/libldpc_orig.so
 
 # Copy the relevant configuration files for eNB
 WORKDIR /opt/oai-nr-ue/etc
 COPY --from=nr-ue-build /oai-ran/ci-scripts/conf_files/ue.* .
 
 WORKDIR /opt/oai-nr-ue
-#CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem", "-O", "/opt/oai-nr-ue/etc/enb.conf"]
-#ENTRYPOINT ["/opt/oai-nr-ue/bin/entrypoint.sh"]
-CMD ["sleep", "infinity"]
+CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem.Rel15", "-O", "/opt/oai-nr-ue/etc/nr-ue-sim.conf"]
+ENTRYPOINT ["/opt/oai-nr-ue/bin/entrypoint.sh"]

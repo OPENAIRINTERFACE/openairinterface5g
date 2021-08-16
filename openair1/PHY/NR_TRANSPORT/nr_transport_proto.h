@@ -79,19 +79,6 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
                           NR_DL_FRAME_PARMS *frame_parms);
 
 /*!
-\fn int nr_pbch_scrambling
-\brief PBCH scrambling function
-@param
- */
-void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
-                        uint32_t Nid,
-                        uint8_t nushift,
-                        uint16_t M,
-                        uint16_t length,
-                        uint8_t encoded,
-                        uint32_t unscrambling_mask);
-
-/*!
 \fn int nr_generate_pbch
 \brief Generation of the PBCH
 @param
@@ -178,6 +165,7 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
                             int32_t *avg,
                             uint8_t symbol,
                             uint32_t len,
+                            uint8_t  nrOfLayers,
                             unsigned short nb_rb);
 
 /** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
@@ -202,6 +190,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
                                 unsigned char symbol,
                                 uint8_t is_dmrs_symbol,
                                 unsigned char mod_order,
+                                uint8_t  nrOfLayers,
                                 unsigned short nb_rb,
                                 unsigned char output_shift);
 
@@ -326,11 +315,11 @@ void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
 
-int nr_generate_csi_rs(uint32_t **gold_csi_rs,
-                       int32_t **txdataF,
-                       int16_t amp,
-                       NR_DL_FRAME_PARMS frame_parms,
-                       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params);
+void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
+                        int16_t amp,
+                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
+                        uint16_t cell_id,
+                        int slot);
 
 void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
 

@@ -194,6 +194,18 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
   }
 
+  for (int i=0;i<NUMBER_OF_NR_CSIRS_MAX;i++){
+    NR_gNB_CSIRS_t *csirs = &gNB->csirs_pdu[i];
+    if ((csirs->active == 1) &&
+	(csirs->frame == frame) &&
+	(csirs->slot == slot) ) {
+      LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
+      nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params = csirs->csirs_pdu.csi_rs_pdu_rel15;
+      nr_generate_csi_rs(gNB, AMP, csi_params, gNB->gNB_config.cell_config.phy_cell_id.value, slot);
+      csirs->active = 0;
+    }
+  }
+
   if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
 
   if ((frame&127) == 0) dump_pdsch_stats(gNB);
@@ -202,7 +214,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
 	  apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[aa][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14,fp->ofdm_symbol_size);
   }
-  
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
 
@@ -557,8 +569,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
       if ((pucch->active == 1) &&
-	       (pucch->frame == frame_rx) &&
-	       (pucch->slot == slot_rx) ) {
+          (pucch->frame == frame_rx) &&
+          (pucch->slot == slot_rx) ) {
 
         pucch_decode_done = 1;
 
@@ -579,7 +591,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
           nr_decode_pucch0(gNB,
-	                         frame_rx,
+                           frame_rx,
                            slot_rx,
                            uci_pdu_format0,
                            pucch_pdu);
@@ -621,9 +633,9 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         (ulsch->rnti > 0)) {
       // for for an active HARQ process
       for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
-	      ulsch_harq = ulsch->harq_processes[harq_pid];
-    	  AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
-    	  if ((ulsch_harq->status == NR_ACTIVE) &&
+        ulsch_harq = ulsch->harq_processes[harq_pid];
+        AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
+        if ((ulsch_harq->status == NR_ACTIVE) &&
             (ulsch_harq->frame == frame_rx) &&
             (ulsch_harq->slot == slot_rx) &&
             (ulsch_harq->handled == 0)){

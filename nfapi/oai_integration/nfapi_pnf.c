@@ -59,6 +59,9 @@ extern RAN_CONTEXT_t RC;
 #include "openair1/SCHED_NR/fapi_nr_l1.h"
 #include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "openair1/PHY/defs_gNB.h"
+#include <openair1/SCHED/fapi_l1.h>
+#include <openair1/PHY/NR_TRANSPORT/nr_transport_proto.h>
+#include <targets/RT/USER/lte-softmodem.h>
 
 
 #define NUM_P5_PHY 2
@@ -73,45 +76,6 @@ extern pthread_mutex_t nfapi_sync_mutex;
 extern int nfapi_sync_var;
 
 extern int sync_var;
-
-extern void init_eNB_afterRU(void);
-extern void init_UE_stub(int nb_inst,int,int);
-extern void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB, int frame, int subframe, L1_rxtx_proc_t *proc, nfapi_dl_config_request_pdu_t *dl_config_pdu);
-extern void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, nfapi_ul_config_request_pdu_t *ul_config_pdu, uint16_t frame,uint8_t subframe,uint8_t srs_present);
-extern void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame, int subframe, L1_rxtx_proc_t *proc,  nfapi_dl_config_request_pdu_t *dl_config_pdu, uint8_t codeword_index, uint8_t *sdu);
-extern void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame, int subframe, L1_rxtx_proc_t *proc, nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu);
-extern void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame, int subframe, L1_rxtx_proc_t *proc, nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu);
-extern void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, nfapi_dl_config_request_pdu_t *dl_config_pdu, uint8_t *sdu);
-extern void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
-			       int frame, int slot,
-			       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu);
-extern void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
-			       int frame, int slot,
-			       nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu);
-extern void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
-                            nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
-                            uint8_t *sdu);
-extern void handle_nr_nfapi_ssb_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
-                             nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu);
-extern void nr_fill_ulsch(PHY_VARS_gNB *gNB,
-                   int frame,
-                   int slot,
-                   nfapi_nr_pusch_pdu_t *ulsch_pdu);
-extern void nr_fill_pucch(PHY_VARS_gNB *gNB,
-                   int frame,
-                   int slot,
-                   nfapi_nr_pucch_pdu_t *pucch_pdu);
-extern void nr_fill_prach(PHY_VARS_gNB *gNB,
-                   int SFN,
-                   int Slot,
-                   nfapi_nr_prach_pdu_t *prach_pdu);
-extern void nr_fill_prach_ru(RU_t *ru,
-                      int SFN,
-                      int Slot,
-                      nfapi_nr_prach_pdu_t *prach_pdu);
-
-
-
 
 nfapi_tx_request_pdu_t *tx_request_pdu[1023][10][10]; // [frame][subframe][max_num_pdus]
 uint8_t nr_tx_pdus[32][16][4096];

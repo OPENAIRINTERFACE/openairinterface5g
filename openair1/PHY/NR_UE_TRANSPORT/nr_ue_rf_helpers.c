@@ -48,11 +48,9 @@ void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t *dl_carrier, uin
 
 }
 
-void nr_rf_card_config(openair0_config_t *openair0_cfg,
-                       double rx_gain_offset,
-                       uint64_t ul_carrier,
-                       uint64_t dl_carrier,
-                       int freq_offset){
+
+void nr_rf_card_config_gain(openair0_config_t *openair0_cfg,
+                            double rx_gain_off){
 
   uint8_t mod_id     = 0;
   uint8_t cc_id      = 0;
@@ -60,6 +58,36 @@ void nr_rf_card_config(openair0_config_t *openair0_cfg,
   int rf_chain       = ue->rf_map.chain;
   double rx_gain     = ue->rx_total_gain_dB;
   double tx_gain     = ue->tx_total_gain_dB;
+
+  for (int i = rf_chain; i < rf_chain + 4; i++) {
+
+    if (tx_gain)
+      openair0_cfg->tx_gain[i] = tx_gain;
+    if (rx_gain)
+      openair0_cfg->rx_gain[i] = rx_gain - rx_gain_off;
+
+    openair0_cfg->autocal[i] = 1;
+
+    if (i < openair0_cfg->rx_num_channels) {
+      LOG_I(PHY, "HW: Configuring channel %d (rf_chain %d): setting tx_gain %f, rx_gain %f\n",
+        i,
+        rf_chain,
+        openair0_cfg->tx_gain[i],
+        openair0_cfg->rx_gain[i]);
+    }
+
+  }
+}
+
+void nr_rf_card_config_freq(openair0_config_t *openair0_cfg,
+                            uint64_t ul_carrier,
+                            uint64_t dl_carrier,
+                            int freq_offset){
+
+  uint8_t mod_id     = 0;
+  uint8_t cc_id      = 0;
+  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[mod_id][cc_id];
+  int rf_chain       = ue->rf_map.chain;
 
   for (int i = rf_chain; i < rf_chain + 4; i++) {
 
@@ -73,19 +101,12 @@ void nr_rf_card_config(openair0_config_t *openair0_cfg,
     else
       openair0_cfg->tx_freq[i] = 0.0;
 
-    if (tx_gain)
-      openair0_cfg->tx_gain[i] = tx_gain;
-    if (rx_gain)
-      openair0_cfg->rx_gain[i] = rx_gain - rx_gain_offset;
-
     openair0_cfg->autocal[i] = 1;
 
     if (i < openair0_cfg->rx_num_channels) {
-      LOG_I(PHY, "HW: Configuring channel %d (rf_chain %d): setting tx_gain %f, rx_gain %f, tx_freq %f Hz, rx_freq %f Hz\n",
+      LOG_I(PHY, "HW: Configuring channel %d (rf_chain %d): setting tx_freq %f Hz, rx_freq %f Hz\n",
         i,
         rf_chain,
-        openair0_cfg->tx_gain[i],
-        openair0_cfg->rx_gain[i],
         openair0_cfg->tx_freq[i],
         openair0_cfg->rx_freq[i]);
     }

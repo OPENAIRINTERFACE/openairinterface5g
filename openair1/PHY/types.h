@@ -23,6 +23,6 @@
 #define __openair_TYPES_H__
 
 #include <stdint.h>
-
+#define MAKE_VERSION(a,b,c) ((a)*256+(b)*16+c)
 
 #endif /*__openair_TYPES_H__ */
