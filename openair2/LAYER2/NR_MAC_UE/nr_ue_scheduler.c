@@ -1089,11 +1089,15 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           tx_req.tx_request_body[0].pdu_index = j;
           tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
 
+          if (ra->ra_state == WAIT_CONTENTION_RESOLUTION && !ra->cfra){
+            LOG_I(NR_MAC,"[RAPROC] RA-Msg3 retransmitted\n");
+            // 38.321 restart the ra-ContentionResolutionTimer at each HARQ retransmission in the first symbol after the end of the Msg3 transmission
+            nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->gNB_index);
+          }
           if (ra->ra_state == WAIT_RAR && !ra->cfra){
             LOG_I(NR_MAC,"[RAPROC] RA-Msg3 transmitted\n");
             nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->gNB_index);
           }
-
         }
       }
 

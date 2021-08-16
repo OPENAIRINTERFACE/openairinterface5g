@@ -475,7 +475,7 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot
   ra->RA_contention_resolution_target_frame = frameP + (RA_contention_resolution_timer_subframes/10);
   ra->RA_contention_resolution_target_slot = (slotP + (RA_contention_resolution_timer_subframes * subframes_per_slot)) % nr_slots_per_frame[mu];
 
-  LOG_I(MAC,"In %s: [UE %d] CB-RA: contention resolution timer set in frame.slot %d.%d and expiring in %d.%d\n",
+  LOG_D(MAC,"In %s: [UE %d] CB-RA: contention resolution timer set in frame.slot %d.%d and expiring in %d.%d\n",
        __FUNCTION__, mod_id, frameP, slotP, ra->RA_contention_resolution_target_frame, ra->RA_contention_resolution_target_slot);
 
   ra->RA_contention_resolution_timer_active = 1;
