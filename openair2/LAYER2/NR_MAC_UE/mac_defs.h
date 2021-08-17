@@ -182,9 +182,9 @@ typedef struct {
   uint16_t  All_lcid_buffer_size_lastTTI;
   /// buffer status for each lcid
   uint8_t  LCID_status[NR_MAX_NUM_LCID];
-  /// SR pending as defined in 36.321
+  /// SR pending as defined in 38.321
   uint8_t  SR_pending;
-  /// SR_COUNTER as defined in 36.321
+  /// SR_COUNTER as defined in 38.321
   uint16_t SR_COUNTER;
   /// logical channel group ide for each LCID
   uint8_t  LCGID[NR_MAX_NUM_LCID];

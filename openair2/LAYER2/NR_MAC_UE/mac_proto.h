@@ -40,6 +40,10 @@
 #define NR_DL_MAX_DAI                            (4)                      /* TS 38.213 table 9.1.3-1 Value of counter DAI for DCI format 1_0 and 1_1 */
 #define NR_DL_MAX_NB_CW                          (2)                      /* number of downlink code word */
 
+/**\brief initialize the field in nr_mac instance
+   \param module_id      module id */
+void nr_ue_init_mac(module_id_t module_idP);
+
 /**\brief decode mib pdu in NR_UE, from if_module ul_ind with P7 tx_ind message
    \param module_id      module id
    \param cc_id          component carrier id
@@ -143,7 +147,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slotP);
 boolean_t nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_index);
 
 /*! \fn  nr_locate_BsrIndexByBufferSize (int *table, int size, int value)
-   \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table.
+   \brief locate the BSR level in the table as defined in 38.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table.
 \param[in] *table Pointer to BSR table
 \param[in] size Size of the table
 \param[in] value Value of the buffer
@@ -374,7 +378,7 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot);
 If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC
 attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB
 index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for
-andom-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
+andom-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 38.321)
 @param mod_id Index of UE instance
 @param CC_id Component Carrier Index
 @param frame
