@@ -154,7 +154,7 @@ void *F1AP_DU_task(void *arg) {
                                      &received_msg->ittiMsg.sctp_data_ind);
         break;
 
-      case F1AP_INITIAL_UL_RRC_MESSAGE: // to rrc
+      case F1AP_INITIAL_UL_RRC_MESSAGE: // from rrc
         LOG_I(F1AP, "DU Task Received F1AP_INITIAL_UL_RRC_MESSAGE\n");
         f1ap_initial_ul_rrc_message_t *msg = &F1AP_INITIAL_UL_RRC_MESSAGE(received_msg);
         DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(0,0,0,msg->crnti,

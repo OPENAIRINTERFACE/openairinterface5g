@@ -40,11 +40,11 @@
 void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind) {
   createF1inst(true, instance, NULL);
   // save the assoc id
-  f1ap_setup_req_t *f1ap_du_data=f1ap_req(true, instance);
-  f1ap_du_data->assoc_id         = sctp_new_association_ind->assoc_id;
-  f1ap_du_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
-  f1ap_du_data->sctp_out_streams = sctp_new_association_ind->out_streams;
-  f1ap_du_data->default_sctp_stream_id = 0;
+  f1ap_setup_req_t *f1ap_cu_data=f1ap_req(true, instance);
+  f1ap_cu_data->assoc_id         = sctp_new_association_ind->assoc_id;
+  f1ap_cu_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
+  f1ap_cu_data->sctp_out_streams = sctp_new_association_ind->out_streams;
+  f1ap_cu_data->default_sctp_stream_id = 0;
   // Nothing
 }
 

@@ -2736,16 +2736,19 @@ rrc_gNB_decode_dcch(
 void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
   LOG_I(NR_RRC,"Received F1 Setup Request from gNB_DU %llu (%s)\n",(unsigned long long int)f1_setup_req->gNB_DU_id,f1_setup_req->gNB_DU_name);
   int cu_cell_ind = 0;
-  MessageDef *msg_p = NULL,*msg_p2=NULL;
+  MessageDef *msg_p =itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_SETUP_RESP);
+  F1AP_SETUP_RESP (msg_p).num_cells_to_activate = 0;
+  MessageDef *msg_p2=itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE);
 
   for (int i = 0; i < f1_setup_req->num_cells_available; i++) {
-    int found_cell=0;
     for (int j=0; j<RC.nb_nr_inst; j++) {
       gNB_RRC_INST *rrc = RC.nrrrc[j];
 
       if (rrc->configuration.mcc[0] == f1_setup_req->cell[i].mcc &&
           rrc->configuration.mnc[0] == f1_setup_req->cell[i].mnc &&
           rrc->nr_cellid == f1_setup_req->cell[i].nr_cellid) {
+	//fixme: multi instance is not consistent here
+	F1AP_SETUP_RESP (msg_p).gNB_CU_name  = rrc->node_name;
         // check that CU rrc instance corresponds to mcc/mnc/cgi (normally cgi should be enough, but just in case)
         rrc->carrier.MIB = malloc(f1_setup_req->mib_length[i]);
         rrc->carrier.sizeof_MIB = f1_setup_req->mib_length[i];
@@ -2789,19 +2792,6 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
                     "bcch_message->message.choice.c1->present != NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1\n");
         rrc->carrier.sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
         rrc->carrier.physCellId = f1_setup_req->cell[i].nr_pci;
-	if (cu_cell_ind == 0) {
-	  // prepare F1_SETUP_RESPONSE + GNB_CU_CONFIGURATION_UPDATE
-	  if (msg_p == NULL) {
-	    msg_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_SETUP_RESP);
-	  }
-	  if (msg_p2 == NULL) {
-	    msg_p2 = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE);
-	  }
-
-	  F1AP_SETUP_RESP (msg_p).gNB_CU_name                                = rrc->node_name;
-	  F1AP_SETUP_RESP (msg_p).num_cells_to_activate = 0;
-
-	}
 
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).gNB_CU_name                                = rrc->node_name;
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].mcc                           = rrc->configuration.mcc[0];
@@ -2819,7 +2809,6 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
 
         F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].num_SI = num_SI;
         cu_cell_ind++;
-        found_cell=1;
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).num_cells_to_activate = cu_cell_ind;
 	// send
         break;
@@ -2831,10 +2820,9 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
       }
     }// for (int j=0;j<RC.nb_inst;j++)
 
-    if (found_cell == 0) {
+    if (cu_cell_ind == 0) {
       AssertFatal(1 == 0, "No cell found\n");
-    }
-    else {
+    }  else {
       // send ITTI message to F1AP-CU task
       itti_send_msg_to_task (TASK_CU_F1, 0, msg_p);
 
@@ -3202,36 +3190,46 @@ void *rrc_gnb_task(void *args_p) {
 
       /* Messages from MAC */
       case NR_RRC_MAC_CCCH_DATA_IND:
-        PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
-            NR_RRC_MAC_CCCH_DATA_IND(msg_p).gnb_index,
-            GNB_FLAG_YES,
-            NR_RRC_MAC_CCCH_DATA_IND(msg_p).rnti,
-            msg_p->ittiMsgHeader.lte_time.frame,
-            msg_p->ittiMsgHeader.lte_time.slot);
-        LOG_I(NR_RRC,"Decoding CCCH : ue %d, inst %ld, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
-            ctxt.rnti,
-            instance,
-            NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id,
-            &ctxt,
-            NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
+	{
+	  instance_t i;
+	  for (i=0; i<RC.nb_nr_inst; i++) {
+	    // first get RRC instance (note, no the ITTI instance)
+	    gNB_RRC_INST *rrc = RC.nrrrc[i];
+	    
+	    if (rrc->nr_cellid == NR_RRC_MAC_CCCH_DATA_IND(msg_p).nr_cellid)
+	      break;
+	  }
+	  AssertFatal(i!=RC.nb_nr_inst, "Cell_id not found\n");
+	  PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
+					i,
+					GNB_FLAG_YES,
+					NR_RRC_MAC_CCCH_DATA_IND(msg_p).rnti,
+					msg_p->ittiMsgHeader.lte_time.frame,
+					msg_p->ittiMsgHeader.lte_time.slot);
+	  LOG_I(NR_RRC,"Decoding CCCH : ue %d, inst %ld, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
+		ctxt.rnti,
+		i,
+		NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id,
+		&ctxt,
+		NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
+	  
+	  if (NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= CCCH_SDU_SIZE) {
+	    LOG_I(NR_RRC, "CCCH message has size %d > %d\n",
+		  NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,CCCH_SDU_SIZE);
+	    break;
+	  }
 
-        if (NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= CCCH_SDU_SIZE) {
-          LOG_I(NR_RRC, "CCCH message has size %d > %d\n",
-              NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,CCCH_SDU_SIZE);
-          break;
-      }
-
-      nr_rrc_gNB_decode_ccch(&ctxt,
-                             (uint8_t *)NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
-                             NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,
-                             NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container,
-                             NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id);
-
-      if (NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container) {
-        free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container->buf);
-        free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container);
-      }
-
+	  nr_rrc_gNB_decode_ccch(&ctxt,
+				 (uint8_t *)NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
+				 NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,
+				 NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container,
+				 NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id);
+	  
+	  if (NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container) {
+	    free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container->buf);
+	    free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container);
+	  }
+	}
       break;
 
       /* Messages from PDCP */

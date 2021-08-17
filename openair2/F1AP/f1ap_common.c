@@ -87,25 +87,21 @@ void createF1inst(bool isCU, module_id_t module_idP, f1ap_setup_req_t *req) {
 
 int f1ap_add_ue(bool isCu,
                 module_id_t          module_idP,
-                int                  CC_idP,
-                int                  UE_id,
                 rnti_t               rntiP) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, module_idP);
 
   for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     if (f1_inst->f1ap_ue[i].rnti == rntiP) {
       f1_inst->f1ap_ue[i].f1ap_uid = i;
-      f1_inst->f1ap_ue[i].mac_uid = UE_id;
       LOG_I(F1AP, "Updating the index of UE with RNTI %x and du_ue_f1ap_id %d\n", f1_inst->f1ap_ue[i].rnti, f1_inst->f1ap_ue[i].du_ue_f1ap_id);
       return i;
     }
   }
-
+  // We didn't find the rnti
   for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     if (f1_inst->f1ap_ue[i].rnti == 0 ) {
       f1_inst->f1ap_ue[i].rnti = rntiP;
       f1_inst->f1ap_ue[i].f1ap_uid = i;
-      f1_inst->f1ap_ue[i].mac_uid = UE_id;
       f1_inst->f1ap_ue[i].du_ue_f1ap_id = rntiP;
       f1_inst->f1ap_ue[i].cu_ue_f1ap_id = rntiP;
       f1_inst->num_ues++;

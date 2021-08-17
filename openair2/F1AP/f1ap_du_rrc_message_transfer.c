@@ -762,13 +762,13 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
     rnti_t          rntiP,
     const uint8_t   *sduP,
     sdu_size_t      sdu_lenP,
-    const char   *sdu2P,
+    const char      *sdu2P,
     sdu_size_t      sdu2_lenP) {
   F1AP_F1AP_PDU_t                       pdu= {0};
   F1AP_InitialULRRCMessageTransfer_t    *out;
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
-  int f1ap_uid = f1ap_add_ue (false, module_idP, CC_idP,UE_id, rntiP);
+  int f1ap_uid = f1ap_add_ue (false, module_idP, rntiP);
 
   if (f1ap_uid  < 0 ) {
     LOG_E(F1AP, "Failed to add UE \n");
@@ -829,22 +829,6 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 INITIAL UL RRC MESSAGE TRANSFER\n");
     return -1;
-  }
-
-  if (RC.nrrrc && RC.nrrrc[module_idP]->node_type == ngran_gNB_DU) {
-    struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[module_idP]);
-    ue_context_p->ue_id_rnti                    = rntiP;
-    ue_context_p->ue_context.rnti               = rntiP;
-    ue_context_p->ue_context.random_ue_identity = rntiP;
-    ue_context_p->ue_context.Srb0.Active        = 1;
-    RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[module_idP]->rrc_ue_head, ue_context_p);
-  } else {
-    struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_allocate_new_UE_context(RC.rrc[module_idP]);
-    ue_context_p->ue_id_rnti                    = rntiP;
-    ue_context_p->ue_context.rnti               = rntiP;
-    ue_context_p->ue_context.random_ue_identity = rntiP;
-    ue_context_p->ue_context.Srb0.Active        = 1;
-    RB_INSERT(rrc_ue_tree_s, &RC.rrc[module_idP]->rrc_ue_head, ue_context_p);
   }
 
   f1ap_itti_send_sctp_data_req(false, module_idP, buffer, len, getCxt(false, module_idP)->default_sctp_stream_id);

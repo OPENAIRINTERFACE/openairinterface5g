@@ -68,9 +68,9 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  getCxt(true, instance)->du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+  module_id_t du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
   /* NRCGI
-  * TODO: process NRCGI
+  * Fixme: process NRCGI
   */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_NRCGI, true);
@@ -120,33 +120,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
            ie->value.choice.DUtoCURRCContainer.size);
   }
 
-  // Find instance from nr_cellid
-  int rrc_inst = -1;
-
-  if (f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB) {
-    for (int i=0; i<RC.nb_nr_inst; i++) {
-      // first get RRC instance (note, no the ITTI instance)
-      gNB_RRC_INST *rrc = RC.nrrrc[i];
-
-      if (rrc->nr_cellid == nr_cellid) {
-        rrc_inst = i;
-        break;
-      }
-    }
-  } else {
-    for (int i=0; i<RC.nb_inst; i++) {
-      // first get RRC instance (note, no the ITTI instance)
-      eNB_RRC_INST *rrc = RC.rrc[i];
-
-      if (rrc->nr_cellid == nr_cellid) {
-        rrc_inst = i;
-        break;
-      }
-    }
-  }
-
-  AssertFatal(rrc_inst>=0,"couldn't find an RRC instance for nr_cell %llu\n",(unsigned long long int)nr_cellid);
-  int f1ap_uid = f1ap_add_ue(true, rrc_inst, CC_id, 0, rnti);
+  int f1ap_uid = f1ap_add_ue(true, instance, rnti);
 
   if (f1ap_uid  < 0 ) {
     LOG_E(F1AP, "Failed to add UE \n");
@@ -158,7 +132,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0;
   NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = 0;
   NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = ccch_sdu_len;
-  NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = rrc_inst; // CU instance
+  NR_RRC_MAC_CCCH_DATA_IND (message_p).nr_cellid = nr_cellid; // CU instance
   NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;
   NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id     = CC_id;
   itti_send_msg_to_task (f1ap_req(true,ITTI_MSG_DESTINATION_ID(message_p))->cell_type==CELL_MACRO_GNB?TASK_RRC_GNB:TASK_RRC_ENB, instance, message_p);

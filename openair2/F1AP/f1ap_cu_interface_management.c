@@ -95,9 +95,10 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
           assoc_id, stream);
   }
 
-  message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
   /* assoc_id */
-  f1ap_setup_req_t *req=&F1AP_SETUP_REQ(message_p);
+  f1ap_setup_req_t *req=&getCxt(true, instance)->setupReq;
+
+
   req->assoc_id = assoc_id;
   /* gNB_DU_id */
   // this function exits if the ie is mandatory
@@ -159,8 +160,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     /* Convert the mme name to a printable string */
     req->mib[i][served_cells_item_p->gNB_DU_System_Information->mIB_message.size] = '\0';
     req->mib_length[i] = served_cells_item_p->gNB_DU_System_Information->mIB_message.size;
-    LOG_D(F1AP, "req->mib[%d] %s , len = %d \n",
-          i, req->mib[i], req->mib_length[i]);
+    LOG_D(F1AP, "req->mib[%d] len = %d \n",
+          i, req->mib_length[i]);
     /* sib1 */
     req->sib1[i] = calloc(served_cells_item_p->gNB_DU_System_Information->sIB1_message.size + 1, sizeof(char));
     memcpy(req->sib1[i], served_cells_item_p->gNB_DU_System_Information->sIB1_message.buf,
@@ -168,8 +169,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     /* Convert the mme name to a printable string */
     req->sib1[i][served_cells_item_p->gNB_DU_System_Information->sIB1_message.size] = '\0';
     req->sib1_length[i] = served_cells_item_p->gNB_DU_System_Information->sIB1_message.size;
-    LOG_D(F1AP, "req->sib1[%d] %s , len = %d \n",
-          i, req->sib1[i], req->sib1_length[i]);
+    LOG_D(F1AP, "req->sib1[%d] len = %d \n",
+          i, req->sib1_length[i]);
   }
 
   // char *measurement_timing_information[F1AP_MAX_NB_CELLS];
@@ -207,6 +208,9 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   //   } tdd;
   // } nr_mode_info[F1AP_MAX_NB_CELLS];
 
+  // We copy and store in F1 task data, RRC will free "req" as it frees all itti received messages
+  message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
+  memcpy(&F1AP_SETUP_REQ(message_p), req, sizeof(f1ap_setup_req_t) );
   if (num_cells_available > 0) {
     if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_CU) {
       itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);

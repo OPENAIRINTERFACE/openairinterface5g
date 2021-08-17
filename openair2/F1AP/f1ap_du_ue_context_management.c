@@ -41,6 +41,7 @@
 #include "openair2/RRC/NR/rrc_gNB_UE_context.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 
+int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, rnti_t rntiP);
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                                        uint32_t         assoc_id,
                                        uint32_t         stream,
@@ -149,7 +150,8 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     // AssertFatal(0, "check configuration, send to appropriate handler\n");
     protocol_ctxt_t ctxt;
       // decode RRC Container and act on the message type
-    rnti_t rnti      = f1ap_get_rnti_by_du_id(false, instance, du_ue_f1ap_id);
+    //FIXME
+    //rnti_t rnti      = f1ap_get_rnti_by_du_id(false, instance, du_ue_f1ap_id);
     ctxt.module_id = instance;
     ctxt.instance  = instance;
     ctxt.enb_flag  = 1;   

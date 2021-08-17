@@ -422,14 +422,12 @@ typedef struct f1ap_cudu_ue_inst_s {
   // used for eNB stats generation
   rnti_t      rnti;
   module_id_t f1ap_uid;
-  module_id_t mac_uid;
   module_id_t du_ue_f1ap_id;
   module_id_t cu_ue_f1ap_id;
 } f1ap_cudu_ue_t;
 
 typedef struct f1ap_cudu_inst_s {
   f1ap_setup_req_t setupReq;
-  instance_t du_ue_f1ap_id;
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;
   uint16_t default_sctp_stream_id;
@@ -447,8 +445,6 @@ f1ap_cudu_inst_t *getCxt(bool isCU, module_id_t module_idP);
 void createF1inst(bool isCU, module_id_t module_idP, f1ap_setup_req_t *req);
 int f1ap_add_ue(bool isCu,
                 module_id_t     module_idP,
-                int             CC_idP,
-                int             UE_id,
                 rnti_t          rntiP);
 
 int f1ap_remove_ue(bool isCu, module_id_t module_idP,
