@@ -23,9 +23,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdio.h>
 #include <assert.h>
 
-#include <stdio.h>
 #include "vnf_p7.h"
 
 #ifdef NDEBUG
@@ -1473,7 +1473,8 @@ void vnf_handle_nr_slot_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf
 		}
 		else
 		{
-			if(vnf_p7->_public.nr_slot_indication)
+			NFAPI_TRACE(NFAPI_TRACE_INFO, "%s: Handling NR SLOT Indication\n", __FUNCTION__);
+                        if(vnf_p7->_public.nr_slot_indication)
 			{
 				(vnf_p7->_public.nr_slot_indication)(&ind);
 			}
@@ -1496,12 +1497,12 @@ void vnf_handle_nr_rx_data_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* 
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
 		}
-                else
+		else
 		{
-		        NFAPI_TRACE(NFAPI_TRACE_INFO, "%s: Handling RX Indication\n", __FUNCTION__);
-			if(vnf_p7->_public.nr_rx_indication)
+			NFAPI_TRACE(NFAPI_TRACE_INFO, "%s: Handling RX Indication\n", __FUNCTION__);
+                        if(vnf_p7->_public.nr_rx_data_indication)
 			{
-				(vnf_p7->_public.nr_rx_indication)(&vnf_p7->_public, &ind);
+				(vnf_p7->_public.nr_rx_data_indication)(&ind);
 			}
 		}
 	}
@@ -1522,12 +1523,12 @@ void vnf_handle_nr_crc_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
 		}
-               else
+		else
 		{
 		        NFAPI_TRACE(NFAPI_TRACE_INFO, "%s: Handling CRC Indication\n", __FUNCTION__);
 			if(vnf_p7->_public.nr_crc_indication)
 			{
-				(vnf_p7->_public.nr_crc_indication)(&vnf_p7->_public, &ind);
+				(vnf_p7->_public.nr_crc_indication)(&ind);
 			}
 		}
 	}
@@ -1573,12 +1574,12 @@ void vnf_handle_nr_uci_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_
 		{
 			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Failed to unpack message\n", __FUNCTION__);
 		}
-                else
+		else
 		{
 		        NFAPI_TRACE(NFAPI_TRACE_INFO, "%s: Handling UCI Indication\n", __FUNCTION__);
 			if(vnf_p7->_public.nr_uci_indication)
 			{
-				(vnf_p7->_public.nr_uci_indication)(&vnf_p7->_public, &ind);
+				(vnf_p7->_public.nr_uci_indication)(&ind);
 			}
 		}
 	}
@@ -1604,11 +1605,9 @@ void vnf_handle_nr_rach_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf
 		        NFAPI_TRACE(NFAPI_TRACE_INFO, "%s: Handling RACH Indication\n", __FUNCTION__);
 			if(vnf_p7->_public.nr_rach_indication)
 			{
-				(vnf_p7->_public.nr_rach_indication)(&vnf_p7->_public, &ind);
+				(vnf_p7->_public.nr_rach_indication)(&ind);
 			}
 		}
-		//vnf_p7_codec_free(vnf_p7, ind.nr_rach_indication_body.preamble_list); Melissa do we need to do this?
-		//vnf_p7_codec_free(vnf_p7, ind.vendor_extension);
 	}
 }
 
@@ -1703,14 +1702,7 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 	}
 
         if (phy->filtered_adjust && (phy->slot_offset_filtered > 1e6 || phy->slot_offset_filtered < -1e6))
-        {  struct timespec ts;
-           clock_gettime(CLOCK_MONOTONIC, &ts);
-			NFAPI_TRACE(NFAPI_TRACE_NOTE, "(%4d/%1d) %ld.%ld PNF to VNF phy_id:%2d (t1/2/3/4:%8u, %8u, %8u, %8u) txrx:%4u procT:%3u latency(us):%4d(avg:%4d) offset(us):%8d filtered(us):%8d wrap[t1:%u t2:%u]\n", 
-					phy->sfn, phy->slot, ts.tv_sec, ts.tv_nsec, ind.header.phy_id,
-					ind.t1, ind.t2, ind.t3, t4, 
-					tx_2_rx, pnf_proc_time, latency, phy->average_latency, phy->slot_offset, phy->slot_offset_filtered,
-					(ind.t1<phy->previous_t1), (ind.t2<phy->previous_t2));
-
+        {
           phy->filtered_adjust = 0;
           phy->zero_count=0;
           phy->min_sync_cycle_count = 2;
@@ -1742,7 +1734,7 @@ void vnf_nr_handle_ul_node_sync(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf_p7
 
 			sfn_slot_dec += (phy->slot_offset / 500);
 			
-			//NFAPI_TRACE(NFAPI_TRACE_NOTE, "PNF to VNF slot offset:%d sfn :%d slot:%d \n",phy->slot_offset,NFAPI_SFNSLOTDEC2SFN(sfn_slot_dec),NFAPI_SFNSLOTDEC2SLOT(sfn_slot_dec) ); 
+			NFAPI_TRACE(NFAPI_TRACE_NOTE, "PNF to VNF slot offset:%d sfn :%d slot:%d \n",phy->slot_offset,NFAPI_SFNSLOTDEC2SFN(sfn_slot_dec),NFAPI_SFNSLOTDEC2SLOT(sfn_slot_dec) );
 
 
 		}

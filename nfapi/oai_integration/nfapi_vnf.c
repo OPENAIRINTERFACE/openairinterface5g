@@ -721,7 +721,7 @@ int phy_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_rach_indicatio
   return 1;
 }
 
-int phy_nr_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rach_indication_t *ind)
+int phy_nr_rach_indication(nfapi_nr_rach_indication_t *ind)
 {
   if(NFAPI_MODE == NFAPI_MODE_VNF)
   {
@@ -762,7 +762,7 @@ int phy_nr_rach_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rach_ind
   return 1;
 }
 
-int phy_nr_uci_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_uci_indication_t *ind)
+int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind)
 {
 
   LOG_I(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u\n",
@@ -936,7 +936,7 @@ int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_
   return 1;
 }
 
-int phy_nr_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_crc_indication_t *ind) {
+int phy_nr_crc_indication(nfapi_nr_crc_indication_t *ind) {
 
   LOG_I(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u\n",
           __FUNCTION__,ind->sfn, ind->slot, ind->number_crcs);
@@ -1055,7 +1055,7 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
   return 1;
 }
 
-int phy_nr_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rx_data_indication_t *ind) {
+int phy_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) {
 
   LOG_I(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u, and pdu %p\n",
           __FUNCTION__,ind->sfn, ind->slot, ind->number_of_pdus, ind->pdu_list[0].pdu);
@@ -1070,7 +1070,7 @@ int phy_nr_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_nr_rx_data_in
 
     if (ind->number_of_pdus > 0) {
       rx_ind->pdu_list = CALLOC(NFAPI_NR_RX_DATA_IND_MAX_PDU, sizeof(nfapi_nr_rx_data_pdu_t));
-      AssertFatal(rx_ind->pdu_list != NULL, "Memory not allocated for rx_ind->pdu_list in phy_nr_rx_indication.");
+      AssertFatal(rx_ind->pdu_list != NULL, "Memory not allocated for rx_ind->pdu_list in phy_nr_rx_data_indication.");
     }
     for (int j = 0; j < ind->number_of_pdus; j++)
     {
@@ -1431,7 +1431,7 @@ void *vnf_nr_p7_thread_start(void *ptr) {
   p7_vnf->config->slot_indication = &phy_slot_indication;
   p7_vnf->config->harq_indication = &phy_harq_indication;
   p7_vnf->config->nr_crc_indication = &phy_nr_crc_indication;
-  p7_vnf->config->nr_rx_indication = &phy_nr_rx_indication;
+  p7_vnf->config->nr_rx_data_indication = &phy_nr_rx_data_indication;
   p7_vnf->config->nr_rach_indication = &phy_nr_rach_indication;
   p7_vnf->config->nr_uci_indication = &phy_nr_uci_indication;
   p7_vnf->config->srs_indication = &phy_srs_indication;
