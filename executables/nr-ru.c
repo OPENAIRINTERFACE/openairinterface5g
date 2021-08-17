@@ -782,8 +782,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 					siglen+sf_extension,
 					ru->nb_tx,
 					flags);
-      LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %di, returned %d\n",ru->idx,
-	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot, txs);
+      LOG_I(PHY,"[TXPATH] RU %d aa %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d, returned %d, E %f\n",ru->idx,i,
+	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot, txs,10*log10((double)signal_energy(txp[0],siglen+sf_extension)));
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       //AssertFatal(txs == 0,"trx write function error %d\n", txs);
   }
