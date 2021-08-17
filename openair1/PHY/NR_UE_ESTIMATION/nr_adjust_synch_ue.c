@@ -106,7 +106,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   {
     first_time = 0;
     ue->time_sync_cell = 1;
-    if (get_softmodem_params()->do_ra) {
+    if (get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
       LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
       //mac_resynch();
       //dl_phy_sync_success(ue->Mod_id,frame,0,1);//ue->common_vars.eNb_id);

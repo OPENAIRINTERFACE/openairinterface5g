@@ -67,7 +67,6 @@
 {CONFIG_STRING_L1_REMOTE_N_PORTD,                    NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PUSCH_PROC_THREADS,                NULL,      0,         uptr:NULL,           defintval:3,               TYPE_UINT,     0}, \
 {CONFIG_STRING_L1_OFDM_OFFSET_DIVISOR,               NULL,      0,         uptr:NULL,           defuintval:8,              TYPE_UINT,     0}, \
-{CONFIG_STRING_L1_PUSCH_PROC_THREADS,                NULL,      0,         uptr:NULL,           defintval:1,               TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PUCCH0_DTX_THRESHOLD,              NULL,      0,         uptr:NULL,           defintval:100,             TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PRACH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:150,             TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PUSCH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:50,              TYPE_UINT,     0}          \
