@@ -426,21 +426,21 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   if (timing_advance_update < 0)  timing_advance_update = 0;
   if (timing_advance_update > 63) timing_advance_update = 63;
 
-  LOG_I(PHY, "%d.%d : Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", frame,slot_rx,sync_pos,timing_advance_update);
+  if (crc_flag == 0) LOG_I(PHY, "%d.%d : Received PUSCH : Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", frame,slot_rx,sync_pos,timing_advance_update);
 
   // estimate UL_CQI for MAC
 
   int SNRtimes10 = dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot) -
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot);
 
-  LOG_I(PHY, "Estimated SNR for PUSCH is = %f dB (ulsch_power %f, noise %f)\n", SNRtimes10/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot)/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot)/10.0);
+  if (crc_flag == 0) LOG_I(PHY, "Estimated SNR for PUSCH is = %f dB (ulsch_power %f, noise %f)\n", SNRtimes10/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot)/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot)/10.0);
 
   if      (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
   else                        cqi=(640+SNRtimes10)/5;
 
 
-  if (pusch_pdu->mcs_index == 9) {
+  if (0/*pusch_pdu->mcs_index == 9*/) {
 #ifdef __AVX2__
       int off = ((pusch_pdu->rb_size&1) == 1)? 4:0;
 #else

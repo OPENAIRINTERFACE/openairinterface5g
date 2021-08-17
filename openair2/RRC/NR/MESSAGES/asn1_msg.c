@@ -1186,6 +1186,14 @@ void fill_initial_SpCellConfig(rnti_t rnti,
     *schedulingRequestResourceConfig->resource = 0;
     ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
   }
+ pucch_Config->dl_DataToUL_ACK = calloc(1,sizeof(*pucch_Config->dl_DataToUL_ACK));
+ long *delay[8];
+ for (int i=0;i<8;i++) {
+   delay[i] = calloc(1,sizeof(*delay[i]));
+   *delay[i] = (i+2);
+   ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
+ }
+
   SpCellConfig->spCellConfigDedicated->initialDownlinkBWP = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->initialDownlinkBWP));
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
   bwp_Dedicated->pdcch_Config=calloc(1,sizeof(*bwp_Dedicated->pdcch_Config));
@@ -1201,15 +1209,20 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   // frequency domain resources depends on BWP size
   // options are 24, 48 or 96
   coreset->frequencyDomainResources.buf = calloc(1,6);
-  int curr_bwp = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-  if (curr_bwp < 48)
-    coreset->frequencyDomainResources.buf[0] = 0xf0;
-  else
-    coreset->frequencyDomainResources.buf[0] = 0xff;
-  if (curr_bwp < 96)
-    coreset->frequencyDomainResources.buf[1] = 0;
-  else
-    coreset->frequencyDomainResources.buf[1] = 0xff;
+  if (0) {
+     int curr_bwp = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+     if (curr_bwp < 48)
+       coreset->frequencyDomainResources.buf[0] = 0xf0;
+     else
+       coreset->frequencyDomainResources.buf[0] = 0xff;
+     if (curr_bwp < 96)
+       coreset->frequencyDomainResources.buf[1] = 0;
+     else
+       coreset->frequencyDomainResources.buf[1] = 0xff;
+  } else {
+     coreset->frequencyDomainResources.buf[0] = 0xf0;
+     coreset->frequencyDomainResources.buf[1] = 0;
+  }
   coreset->frequencyDomainResources.buf[2] = 0;
   coreset->frequencyDomainResources.buf[3] = 0;
   coreset->frequencyDomainResources.buf[4] = 0;
@@ -1248,7 +1261,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   ss2->nrofCandidates=calloc(1,sizeof(*ss2->nrofCandidates));
   ss2->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
   ss2->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
-  ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n8;
+  ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
   ss2->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
   ss2->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
   ss2->searchSpaceType=calloc(1,sizeof(*ss2->searchSpaceType));
@@ -1271,7 +1284,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
 
   bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
  *bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1;
-
+ bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation = NR_PDSCH_Config__resourceAllocation_resourceAllocationType1;
  bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
  bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling));
  bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize =

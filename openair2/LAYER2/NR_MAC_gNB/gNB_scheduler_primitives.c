@@ -185,8 +185,8 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   int coreset_id = coreset->controlResourceSetId;
 
   int *cce_list;
-  if(bwp == NULL || bwp->bwp_Id == 0) {
-    cce_list = nr_mac->cce_list[0][0];
+  if(bwp == NULL) {
+    cce_list = nr_mac->cce_list[0][coreset_id];
   } else {
     cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
   }
@@ -204,6 +204,8 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
   const uint16_t N_cce = N_reg / NR_NB_REG_PER_CCE;
   const uint16_t M_s_max = nr_of_candidates;
 
+  LOG_D(PHY,"allocate_NR_CCes : bwp_id %d, coreset_id %d : N_cce %d, m %d, nr_of_candidates %d, Y %d\n",
+        (int)(bwp ? bwp->bwp_Id : 0),coreset_id,N_cce,m,nr_of_candidates, Y);
   //PDCCH candidate index m in CORESET exceeds the maximum number of PDCCH candidates
   if(m >= nr_of_candidates)
     return -1;
@@ -268,6 +270,7 @@ bool nr_find_nb_rb(uint16_t Qm,
 void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
                               const NR_BWP_Downlink_t *bwp,
+                              const NR_BWP_DownlinkDedicated_t *bwpd0,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
                               NR_pdsch_semi_static_t *ps)
@@ -281,14 +284,18 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   const int mapping_type = tdaList->list.array[tda]->mappingType;
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
+  NR_BWP_DownlinkDedicated_t *bwpd;
 
   ps->mcsTableIdx = 0;
   if (bwp &&
       bwp->bwp_Dedicated &&
-      bwp->bwp_Dedicated->pdsch_Config &&
-      bwp->bwp_Dedicated->pdsch_Config->choice.setup &&
-      bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table) {
-    if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0)
+      bwp->bwp_Dedicated) bwpd = bwp->bwp_Dedicated;
+  else bwpd = bwpd0;
+
+  if (bwpd->pdsch_Config &&
+      bwpd->pdsch_Config->choice.setup &&
+      bwpd->pdsch_Config->choice.setup->mcs_Table) {
+    if (*bwpd->pdsch_Config->choice.setup->mcs_Table == 0)
       ps->mcsTableIdx = 1;
     else
       ps->mcsTableIdx = 2;
@@ -296,12 +303,12 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   else ps->mcsTableIdx = 0;
 
   ps->numDmrsCdmGrpsNoData = num_dmrs_cdm_grps_no_data;
-  ps->dmrsConfigType = bwp!=NULL ? (bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
+  ps->dmrsConfigType = bwpd!=NULL ? (bwpd->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
 
   // if no data in dmrs cdm group is 1 only even REs have no data
   // if no data in dmrs cdm group is 2 both odd and even REs have no data
   ps->N_PRB_DMRS = num_dmrs_cdm_grps_no_data * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
-  ps->dl_dmrs_symb_pos = fill_dmrs_mask(bwp ? bwp->bwp_Dedicated->pdsch_Config->choice.setup : NULL, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, mapping_type);
+  ps->dl_dmrs_symb_pos = fill_dmrs_mask(bwpd ? bwpd->pdsch_Config->choice.setup : NULL, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, mapping_type);
   ps->N_DMRS_SLOT = get_num_dmrs(ps->dl_dmrs_symb_pos);
 }
 
@@ -631,7 +638,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
       dci_pdu_rel15->format_indicator = 0;
       break;
     case NR_UL_DCI_FORMAT_0_1:
-      LOG_I(NR_MAC,"Configuring DCI Format 0_1\n");
+      LOG_D(NR_MAC,"Configuring DCI Format 0_1\n");
       dci_pdu_rel15->dai[0].val = 0; //TODO
       // bwp indicator as per table 7.3.1.1.2-1 in 38.212
       dci_pdu_rel15->bwp_indicator.val = n_ubwp < 4 ? bwp_id : bwp_id - 1;
@@ -1356,7 +1363,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   case NR_UL_DCI_FORMAT_0_0:
     switch (rnti_type) {
     case NR_RNTI_C:
-      LOG_I(NR_MAC,"Filling format 0_0 DCI for CRNTI (size %d bits, format ind %d)\n",dci_size,dci_pdu_rel15->format_indicator);
+      LOG_D(NR_MAC,"Filling format 0_0 DCI for CRNTI (size %d bits, format ind %d)\n",dci_size,dci_pdu_rel15->format_indicator);
       // indicating a UL DCI format 1bit
       pos=1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
@@ -1452,7 +1459,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   case NR_UL_DCI_FORMAT_0_1:
     switch (rnti_type) {
     case NR_RNTI_C:
-      LOG_I(NR_MAC,"Filling NR_UL_DCI_FORMAT_0_1 size %d format indicator %d\n",dci_size,dci_pdu_rel15->format_indicator);
+      LOG_D(NR_MAC,"Filling NR_UL_DCI_FORMAT_0_1 size %d format indicator %d\n",dci_size,dci_pdu_rel15->format_indicator);
       // Indicating a DL DCI format 1bit
       pos = 1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 0x1) << (dci_size - pos);
@@ -1531,6 +1538,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
 
   case NR_DL_DCI_FORMAT_1_1:
     // Indicating a DL DCI format 1bit
+    LOG_D(NR_MAC,"Filling Format 1_1 DCI of size %d\n",dci_size);
     pos = 1;
     *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 0x1) << (dci_size - pos);
     // Carrier indicator
