@@ -40,7 +40,6 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                                        uint32_t         assoc_id,
                                        uint32_t         stream,
                                        F1AP_F1AP_PDU_t *pdu);
-int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance);
 int DU_send_UE_CONTEXT_SETUP_FAILURE(instance_t instance);
 
 

@@ -148,12 +148,11 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     
     // AssertFatal(0, "check configuration, send to appropriate handler\n");
     protocol_ctxt_t ctxt;
-    // ctxt.rnti      = f1ap_get_rnti_by_du_id(&f1ap_du_inst[instance], ie->value.choice.GNB_DU_UE_F1AP_ID);
-    ctxt.rnti = 0x1234;
+      // decode RRC Container and act on the message type
+    rnti_t rnti      = f1ap_get_rnti_by_du_id(false, instance, du_ue_f1ap_id);
     ctxt.module_id = instance;
     ctxt.instance  = instance;
-    ctxt.enb_flag  = 1;
-    
+    ctxt.enb_flag  = 1;   
     if ( ie->value.choice.RRCContainer.size )  {
       mem_block_t *pdcp_pdu_p = NULL;
       pdcp_pdu_p = get_free_mem_block(ie->value.choice.RRCContainer.size, __func__);
@@ -161,22 +160,23 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
       /* for rfsim */
       du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, ie->value.choice.RRCContainer.size, pdcp_pdu_p);
+    
+      DU_send_UE_CONTEXT_SETUP_RESPONSE(instance,  ctxt.rnti);
     } else {
        LOG_E(F1AP, " RRCContainer in UEContextSetupRequestIEs size id 0\n");
     }
   } else {
     LOG_E(F1AP, "can't find RRCContainer in UEContextSetupRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
   }
-  return 0;
+    return 0;
 }
 
 //void DU_send_UE_CONTEXT_SETUP_RESPONSE(F1AP_UEContextSetupResponse_t *UEContextSetupResponse) {
-int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
+int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, rnti_t    rntiP) {
   F1AP_F1AP_PDU_t                  pdu= {0};
   F1AP_UEContextSetupResponse_t    *out;
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
-  rnti_t    rntiP;  // note: need get value
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_successfulOutcome;
@@ -208,8 +208,8 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
   {
     /* cellGroupConfig */
     OCTET_STRING_fromBuf(&ie3->value.choice.DUtoCURRCInformation.cellGroupConfig, "asdsa",
-                         strlen("asdsa"));
-
+			 strlen("asdsa"));
+    
     /* OPTIONAL */
     /* measGapConfig */
     if (0) {
@@ -474,6 +474,10 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
     return -1;
   }
 
+  f1ap_itti_send_sctp_data_req(false, instance,
+                               buffer,
+                               len,
+                               getCxt(false, instance)->default_sctp_stream_id);
   return 0;
 }
 

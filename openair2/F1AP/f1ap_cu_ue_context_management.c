@@ -133,17 +133,19 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   ie6->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_CUtoDURRCInformation;
   /* optional */
   /* 6.1 cG_ConfigInfo */
-  const char cG_ConfigInfoStr[]="asdsa1d32sa1d31asd31as";
-  asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.cG_ConfigInfo, F1AP_CG_ConfigInfo_t, cG_ConfigInfo);
-  OCTET_STRING_fromBuf(cG_ConfigInfo, cG_ConfigInfoStr, strlen( cG_ConfigInfoStr )) ;
-  /* optional */
-  /* 6.2 uE_CapabilityRAT_ContainerList */
-  asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList, F1AP_UE_CapabilityRAT_ContainerList_t, uE_CapabilityRAT_ContainerList );
-  OCTET_STRING_fromBuf(uE_CapabilityRAT_ContainerList, cG_ConfigInfoStr, strlen( cG_ConfigInfoStr )) ;
-  /* optional */
-  /* 6.3 measConfig */
-  asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.measConfig, F1AP_MeasConfig_t, measConfig);
-  OCTET_STRING_fromBuf(measConfig, cG_ConfigInfoStr, strlen( cG_ConfigInfoStr )) ;
+  if (0) {
+    const char cG_ConfigInfoStr[]="asdsa1d32sa1d31asd31as";
+    asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.cG_ConfigInfo, F1AP_CG_ConfigInfo_t, cG_ConfigInfo);
+    OCTET_STRING_fromBuf(cG_ConfigInfo, cG_ConfigInfoStr, strlen( cG_ConfigInfoStr )) ;
+    /* optional */
+    /* 6.2 uE_CapabilityRAT_ContainerList */
+    asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList, F1AP_UE_CapabilityRAT_ContainerList_t, uE_CapabilityRAT_ContainerList );
+    OCTET_STRING_fromBuf(uE_CapabilityRAT_ContainerList, cG_ConfigInfoStr, strlen( cG_ConfigInfoStr )) ;
+    /* optional */
+    /* 6.3 measConfig */
+    asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.measConfig, F1AP_MeasConfig_t, measConfig);
+    OCTET_STRING_fromBuf(measConfig, cG_ConfigInfoStr, strlen( cG_ConfigInfoStr )) ;
+  }
 
   /* mandatory */
   /* c7. Candidate_SpCell_List */
