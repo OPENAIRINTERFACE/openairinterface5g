@@ -856,7 +856,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
   NR_sched_pusch_t *retInfo = &sched_ctrl->ul_harq_processes[harq_pid].sched_pusch;
 
   NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-  int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
+  int rbStart = 0; // wrt BWP start
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   const uint8_t num_dmrs_cdm_grps_no_data = sched_ctrl->active_bwp ? 1 : 2;
@@ -990,7 +990,7 @@ void pf_ul(module_id_t module_id,
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-    int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
+    int rbStart = 0; // wrt BWP start
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
@@ -1235,6 +1235,10 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
                                     sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth:
                                     scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,
                                     MAX_BWP_SIZE);
+  const uint16_t bwpStart = NRRIV2PRBOFFSET(sched_ctrl->active_ubwp ?
+                                            sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth:
+                                            scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,
+                                            MAX_BWP_SIZE);
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList = sched_ctrl->active_ubwp ?
     sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList:
     scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -1245,10 +1249,10 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 
   int st = 0, e = 0, len = 0;
   for (int i = 0; i < bwpSize; i++) {
-    while ((vrb_map_UL[i] & symb) != 0 && i < bwpSize)
+    while ((vrb_map_UL[bwpStart + i] & symb) != 0 && i < bwpSize)
       i++;
     st = i;
-    while ((vrb_map_UL[i] & symb) == 0 && i < bwpSize)
+    while ((vrb_map_UL[bwpStart + i] & symb) == 0 && i < bwpSize)
       i++;
     if (i - st > len) {
       len = i - st;
