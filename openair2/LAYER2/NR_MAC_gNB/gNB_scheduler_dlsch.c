@@ -451,7 +451,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 &RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
 
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-  int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  int rbStart = 0; // start wrt BWPstart
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
@@ -641,7 +641,7 @@ void pf_dl(module_id_t module_id,
       &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
 
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
-    int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    int rbStart = 0; // start wrt BWPstart
 
     /* Find a free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
@@ -731,14 +731,18 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 				    sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
 				    scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
 				    MAX_BWP_SIZE);
+  const uint16_t BWPStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp ?
+				            sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
+				            scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
+				            MAX_BWP_SIZE);
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   uint8_t rballoc_mask[bwpSize];
   int n_rb_sched = 0;
-  for (int i = 0; i < bwpSize; i++) {
+  for (int i = BWPStart; i < bwpSize; i++) {
     // calculate mask: init with "NOT" vrb_map:
     // if any RB in vrb_map is blocked (1), the current RBG will be 0
-    rballoc_mask[i] = !vrb_map[i];
+    rballoc_mask[i-BWPStart] = !vrb_map[i];
     n_rb_sched += rballoc_mask[i];
   }
 
