@@ -2230,7 +2230,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
         mac->measGapConfig->choice.
         setup.gapOffset.choice.gp1;
     } else {
-      LOG_W(MAC, "Measurement GAP offset is unknown\n");
+      LOG_W(NR_MAC, "Measurement GAP offset is unknown\n");
     }
 
     T = MGRP / 10;
@@ -2253,7 +2253,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
          mac->
          physicalConfigDedicated->schedulingRequestConfig->choice.setup.
          dsr_TransMax)))) {
-    LOG_D(MAC,
+    LOG_D(NR_MAC,
           "[UE %d] Frame %d slot %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",
           module_idP, frameP, slot,
           mac->scheduling_info.SR_COUNTER,
@@ -2265,7 +2265,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
           mac->scheduling_info.SR_pending);
 #endif
   DSR_TRANSMAX_t dsr_TransMax = sr_n64; // todo
-  LOG_D(MAC,
+  LOG_D(NR_MAC,
         "[UE %d] Frame %d slot %d send SR indication (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",
         module_idP, frameP, slot,
         mac->scheduling_info.SR_COUNTER,
@@ -2279,7 +2279,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
 /*
   if ((mac->scheduling_info.sr_ProhibitTimer_Running == 0)) {
     mac->scheduling_info.SR_pending = 1;
-    LOG_D(MAC,
+    LOG_D(NR_MAC,
           "[UE %d] Frame %d slot %d send SR indication (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d, sr_ProhibitTimer_Running == 0\n",
           module_idP, frameP, slot,
           mac->scheduling_info.SR_COUNTER,
@@ -2301,7 +2301,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
          //physicalConfigDedicated->schedulingRequestConfig->choice.setup.
 		 //dsr_TransMax)))) {
 		 dsr_TransMax)))) {
-    LOG_D(MAC,
+    LOG_D(NR_MAC,
           "[UE %d] Frame %d slot %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d, increment SR_COUNTER\n",
           module_idP, frameP, slot,
           mac->scheduling_info.SR_COUNTER,
@@ -2335,7 +2335,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
       //mac->ul_active = 0; // todo
       mac->BSR_reporting_active =
         NR_BSR_TRIGGER_NONE;
-      LOG_I(MAC, "[UE %d] Release all SRs \n", module_idP);
+      LOG_I(NR_MAC, "[UE %d] Release all SRs \n", module_idP);
     }
 
     mac->scheduling_info.SR_pending = 0;

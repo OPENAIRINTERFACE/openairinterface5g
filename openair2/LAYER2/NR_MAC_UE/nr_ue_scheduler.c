@@ -1127,7 +1127,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
             get_ms_bucketsizeduration(mac->logicalChannelConfig
                                       [lcid]->ul_SpecificParameters->bucketSizeDuration);
         } else {
-          LOG_E(MAC,
+          LOG_E(NR_MAC,
                 "[UE %d] lcid %d, NULL ul_SpecificParameters\n",
                 mod_id, lcid);
           AssertFatal(1 == 0, "");
@@ -1145,7 +1145,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
       /*
          if (lcid == DCCH) {
-         LOG_D(MAC,"[UE %d][SR] Frame %d slot %d Pending data for SRB1=%d for LCGID %d \n",
+         LOG_D(NR_MAC,"[UE %d][SR] Frame %d slot %d Pending data for SRB1=%d for LCGID %d \n",
          mod_id, txFrameP,txSlotP,mac->scheduling_info.BSR[mac->scheduling_info.LCGID[lcid]],
          //         mac->scheduling_info.LCGID[lcid]);
          }
@@ -1178,7 +1178,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     // Regular BSR trigger
     mac->BSR_reporting_active |=
       NR_BSR_TRIGGER_REGULAR;
-    LOG_I(MAC,
+    LOG_D(NR_MAC,
           "[UE %d][BSR] Regular BSR Triggered Frame %d slot %d SR for PUSCH is pending\n",
           mod_id, txFrameP, txSlotP);
   }
@@ -1188,7 +1188,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     // cancel all pending SRs
     mac->scheduling_info.SR_pending = 0;
     mac->ul_active = 0;
-    LOG_T(MAC, "[UE %d] Release all SRs \n", mod_id);
+    LOG_T(NR_MAC, "[UE %d] Release all SRs \n", mod_id);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
     (VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
@@ -1206,7 +1206,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     // cancel all pending SRs
     mac->scheduling_info.SR_pending = 0;
     mac->ul_active = 0;
-    LOG_T(MAC, "[UE %d] Release all SRs \n", mod_id);
+    LOG_T(NR_MAC, "[UE %d] Release all SRs \n", mod_id);
   }
 #endif
   return UE_CONNECTION_OK;
@@ -1267,7 +1267,7 @@ nr_update_bsr(module_id_t module_idP, frame_t frameP,
       lcid_bytes_in_buffer[lcid] = rlc_status.bytes_in_buffer;
 
       if (rlc_status.bytes_in_buffer > 0) {
-        LOG_D(MAC,"[UE %d] PDCCH Tick : LCID%d LCGID%d has data to transmit =%d bytes at frame %d slot %d\n",
+        LOG_D(NR_MAC,"[UE %d] PDCCH Tick : LCID%d LCGID%d has data to transmit =%d bytes at frame %d slot %d\n",
               module_idP, lcid,lcgid,rlc_status.bytes_in_buffer,frameP,slotP);
         mac->scheduling_info.LCID_status[lcid] = LCID_NOT_EMPTY;
 
@@ -1300,7 +1300,7 @@ nr_update_bsr(module_id_t module_idP, frame_t frameP,
 
   // Check whether a regular BSR can be triggered according to the first cases in 38.321
   if (num_lcid_with_data) {
-    LOG_D(MAC,
+    LOG_D(NR_MAC,
           "[UE %d] PDCCH Tick at frame %d slot %d: NumLCID with data=%d Reordered LCID0=%d LCID1=%d LCID2=%d\n",
           module_idP, frameP, slotP, num_lcid_with_data,
           lcid_reordered_array[0], lcid_reordered_array[1],
@@ -1322,7 +1322,7 @@ nr_update_bsr(module_id_t module_idP, frame_t frameP,
            [mac->scheduling_info.LCGID[lcid]] ==
            0)) {
         bsr_regular_triggered = TRUE;
-        LOG_D(MAC,
+        LOG_D(NR_MAC,
               "[UE %d] PDCCH Tick : MAC BSR Triggered LCID%d LCGID%d data become available at frame %d slot %d\n",
               module_idP, lcid,
               mac->scheduling_info.LCGID[lcid],
@@ -1337,7 +1337,7 @@ nr_update_bsr(module_id_t module_idP, frame_t frameP,
 
       if ((mac->BSR_reporting_active &
            NR_BSR_TRIGGER_REGULAR) == 0) {
-        LOG_I(MAC,
+        LOG_I(NR_MAC,
               "[UE %d] PDCCH Tick : MAC BSR Triggered ReTxBSR Timer expiry at frame %d slot %d\n",
               module_idP, frameP, slotP);
       }
@@ -1377,7 +1377,7 @@ nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size, int value) {
       ju = jm;    //replace the upper limit
     }
 
-    LOG_T(MAC,
+    LOG_T(NR_MAC,
           "[UE] searching BSR index %d for (BSR TABLE %d < value %d)\n",
           jm, table[jm], value);
   }
@@ -2538,7 +2538,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
     // Trigger BSR Periodic
     mac->BSR_reporting_active |=
       NR_BSR_TRIGGER_PERIODIC;
-    LOG_D(MAC,
+    LOG_D(NR_MAC,
           "[UE %d] MAC BSR Triggered PeriodicBSR Timer expiry at frame%d subframe %d TBS=%d\n",
           module_idP, frameP, subframe, buflen);
   }
@@ -2574,7 +2574,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
   if ((phr_ce_len > 0)
       && ((phr_ce_len + phr_header_len + bsr_len) <= buflen)) {
     phr_len = phr_ce_len + phr_header_len;
-    LOG_D(MAC,
+    LOG_D(NR_MAC,
           "[UE %d] header size info: PHR len %d (ce%d,hdr%d) buff_len %d\n",
           module_idP, phr_len, phr_ce_len, phr_header_len, buflen);
   } else {
@@ -2633,7 +2633,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
 
       if (sdu_length > 0) {
 
-        LOG_D(MAC, "In %s: Generating UL MAC sub-PDU for SDU %d, length %d bytes, RB with LCID 0x%02x (buflen (TBS) %d bytes)\n", __FUNCTION__,
+        LOG_D(NR_MAC, "In %s: Generating UL MAC sub-PDU for SDU %d, length %d bytes, RB with LCID 0x%02x (buflen (TBS) %d bytes)\n", __FUNCTION__,
           num_sdus + 1,
           sdu_length,
           lcid,
@@ -2660,7 +2660,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
 
       } else {
         pdu -= sh_size;
-        LOG_D(MAC, "In %s: no data to transmit for RB with LCID 0x%02x\n", __FUNCTION__, lcid);
+        LOG_D(NR_MAC, "In %s: no data to transmit for RB with LCID 0x%02x\n", __FUNCTION__, lcid);
         break;
       }
 
@@ -2669,7 +2669,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
       //Update Buffer remain and BSR bytes after transmission
       mac->scheduling_info.LCID_buffer_remain[lcid] -= sdu_length;
       mac->scheduling_info.BSR_bytes[mac->scheduling_info.LCGID[lcid]] -= sdu_length;
-      LOG_D(MAC,
+      LOG_D(NR_MAC,
             "[UE %d] Update BSR [%d.%d] num_lcg_id_with_data %d. BSR_bytes for LCG%d=%d\n",
             module_idP, frameP, subframe, num_lcg_id_with_data, mac->scheduling_info.LCGID[lcid],
             mac->scheduling_info.BSR_bytes[mac->scheduling_info.LCGID[lcid]]);
@@ -2739,7 +2739,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
     }
 
     phr_p->R = 0;
-    LOG_D(MAC,
+    LOG_D(NR_MAC,
           "[UE %d] Frame %d report PHR with mapping (%d->%d) for LCID %d\n",
           module_idP, frameP, get_PHR(module_idP, CC_id, eNB_index),
           phr_p->PH, POWER_HEADROOM);
@@ -2748,7 +2748,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
     phr_p = NULL;
   }
 
-  LOG_T(MAC, "[UE %d] Frame %d: bsr s %p bsr_l %p, phr_p %p\n",
+  LOG_T(NR_MAC, "[UE %d] Frame %d: bsr s %p bsr_l %p, phr_p %p\n",
         module_idP, frameP, bsr_s, bsr_l, phr_p);
 #endif
 
@@ -2844,7 +2844,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
       mac->scheduling_info.BSR[6];
     bsr_l->Buffer_size7 =
       mac->scheduling_info.BSR[7];
-    LOG_D(MAC,
+    LOG_D(NR_MAC,
           "[UE %d] Frame %d subframe %d BSR Trig=%d report LONG BSR (level LCGID0 %d,level LCGID1 %d,level LCGID2 %d,level LCGID3 %d level LCGID4 %d,level LCGID5 %d,level LCGID6 %d,level LCGID7 %d)\n",
           module_idP, frameP, subframe,
           mac->BSR_reporting_active,
@@ -2868,7 +2868,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
       bsr_t->Buffer_size =
         mac->scheduling_info.
         BSR[lcg_id_bsr_trunc];
-      LOG_D(MAC,
+      LOG_D(NR_MAC,
             "[UE %d] Frame %d subframe %d BSR Trig=%d report TRUNCATED BSR with level %d for LCGID %d\n",
             module_idP, frameP, subframe,
             mac->BSR_reporting_active,
@@ -2880,7 +2880,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
       bsr_s->Buffer_size =
         mac->scheduling_info.
         BSR[lcg_id_bsr_trunc];
-      LOG_D(MAC,
+      LOG_D(NR_MAC,
             "[UE %d] Frame %d subframe %d BSR Trig=%d report SHORT BSR with level %d for LCGID %d\n",
             module_idP, frameP, subframe,
             mac->BSR_reporting_active,
