@@ -41,3 +41,7 @@
   - Undeploy_Object
   - Cppcheck_Analysis
   - Deploy_Run_PhySim
+  - DeployGenObject
+  - UndeployGenObject
+  - PingFromContainer
+  - IperfFromContainer

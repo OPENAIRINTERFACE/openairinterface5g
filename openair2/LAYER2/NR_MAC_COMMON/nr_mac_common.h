@@ -139,7 +139,24 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
 
 uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i_ssb);
 
+uint16_t compute_pucch_prb_size(uint8_t format,
+                                uint8_t nr_prbs,
+                                uint16_t O_tot,
+                                uint16_t O_csi,
+                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
+                                uint8_t Qm,
+                                uint8_t n_symb,
+                                uint8_t n_re_ctrl);
+
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
+
+void find_period_offest_SR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset);
+
+void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
+                       NR_NZP_CSI_RS_Resource_t *nzpcsi,
+                       int *period, int *offset);
+
+void reverse_n_bits(uint8_t *value, uint16_t bitlen);
 
 bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
                         uint16_t rbSize, uint8_t mcsIndex, uint8_t mcsTable,

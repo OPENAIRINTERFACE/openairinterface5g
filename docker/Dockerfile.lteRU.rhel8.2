@@ -37,9 +37,7 @@ RUN /bin/sh oaienv && \
     mkdir -p log && \
     ./build_oai --RU --ninja -w USRP --verbose-ci
 
-RUN yum install -y python3-pip && \
-    pip3 install --ignore-installed pyyaml && \
-    python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
+RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-lte-ru
@@ -48,6 +46,7 @@ ENV TZ=Europe/Paris
 RUN yum update -y && \
     yum install -y --enablerepo="ubi-8-codeready-builder" \
         tzdata \
+        procps-ng \
         atlas \
         net-tools \
         iputils \

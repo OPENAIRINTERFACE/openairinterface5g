@@ -57,6 +57,7 @@
 #include "LTE_PMCH-InfoList-r9.h"
 
 
+#include <openair2/LAYER2/MAC/mac_proto.h>
 extern void mac_init_cell_params(int Mod_idP,int CC_idP);
 extern void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 

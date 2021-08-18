@@ -123,7 +123,7 @@
     - key: bands
       env: "@UTRA_BAND_ID@"
       
-  - filePrefix: enb.band7.tm1.25PRB.usrpb210
+  - filePrefix: enb.band7.tm1.fr1.25PRB.usrpb210.conf
     outputfilename: "enb.fdd.conf"
     config:
     - key: Active_eNBs
@@ -147,6 +147,10 @@
       env: "@NID_CELL@"
     - key: N_RB_DL
       env: "@NB_PRB@"
+    - key: enable_measurement_reports
+      env: "@ENABLE_MEASUREMENT_REPORTS@"
+    - key: enable_x2
+      env: "@ENABLE_X2@"
     - key: ipv4
       env: "@MME_S1C_IP_ADDRESS@"
     - key: ENB_INTERFACE_NAME_FOR_S1_MME
