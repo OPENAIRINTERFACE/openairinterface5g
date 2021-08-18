@@ -648,16 +648,18 @@ int main(int argc, char **argv)
   int8_t   l_ol [68*384];
   __m128i *pl_ol128 = (__m128i*)&l_ol;
   int8_t llrProcBuf[22*384];
- 
+
+  p_decParams->Z = 384;
+  p_decParams->BG = 1;
+
   nrLDPC_decoder_offload(p_decParams,
                         1,  
                         0,
                         0,
-                        0,
-                        2, 
+                        25344, 
+			8, 
                         (int8_t*)&pl_ol128[0],
                         llrProcBuf, 0);
-
 
   if (snr1set == 0)
     snr1 = snr0 + 10;

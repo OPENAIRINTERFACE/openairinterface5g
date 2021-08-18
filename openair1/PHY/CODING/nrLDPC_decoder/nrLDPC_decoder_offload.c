@@ -28,7 +28,6 @@
  * \warning
  */
 
-
 #include <stdint.h>
 #include <immintrin.h>
 #include "nrLDPCdecoder_defs.h"
@@ -73,7 +72,7 @@
 #define GET_SOCKET(socket_id) (((socket_id) == SOCKET_ID_ANY) ? 0 : (socket_id))
 
 #define MAX_QUEUES RTE_MAX_LCORE
-#define TEST_REPETITIONS 1
+#define TEST_REPETITIONS 1 
 
 #ifdef RTE_LIBRTE_PMD_BBDEV_FPGA_LTE_FEC
 #include <fpga_lte_fec.h>
@@ -114,19 +113,11 @@
 /* Headroom for filler LLRs insertion in HARQ buffer */
 #define FILLER_HEADROOM 1024
 
-struct test_bbdev_vector test_vector;
-struct test_bbdev_vector test_vector_dec;
 /* Switch between PMD and Interrupt for throughput TC */
 static bool intr_enabled;
 
-/* LLR arithmetic representation for numerical conversion */
-static int ldpc_llr_decimals;
-static int ldpc_llr_size;
-/* Keep track of the LDPC decoder device capability flag */
-static uint32_t ldpc_cap_flags;
-
 /* Represents tested active devices */
-static struct active_device {
+struct active_device {
 	const char *driver_name;
 	uint8_t dev_id;
 	uint16_t supported_ops;
@@ -286,7 +277,6 @@ create_mbuf_pool(uint32_t length, uint8_t dev_id,
 		int socket_id, unsigned int mbuf_pool_size,
 		const char *op_type_str)
 {
-	unsigned int i;
 	uint32_t max_seg_sz = 0;
 	char pool_name[RTE_MEMPOOL_NAMESIZE];
 
@@ -358,7 +348,6 @@ create_mempools(struct active_device *ad, int socket_id,
 				socket_id);
 		ad->in_mbuf_pool = mp;
 	}
-
 	/* Hard outputs */
 	if (nb_segments > 0) {
 		mbuf_pool_size = optimal_mempool_size(ops_pool_size *
@@ -765,45 +754,6 @@ allocate_buffers_on_socket(struct rte_bbdev_op_data **buffers, const int len,
 }
 
 
-/*
- * We may have to insert filler bits
- * when they are required by the HARQ assumption
- */
-static void
-ldpc_add_filler(struct rte_bbdev_op_data *input_ops,
-		const uint16_t n, struct test_op_params *op_params)
-{
-	struct rte_bbdev_op_ldpc_dec dec = op_params->ref_dec_op->ldpc_dec;
-
-	if (input_ops == NULL)
-		return;
-	/* No need to add filler if not required by device */
-	if (!(ldpc_cap_flags &
-			RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_FILLERS))
-		return;
-	/* No need to add filler for loopback operation */
-	if (dec.op_flags & RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_LOOPBACK)
-		return;
-
-	uint16_t i, j, parity_offset;
-	for (i = 0; i < n; ++i) {
-		struct rte_mbuf *m = input_ops[i].data;
-		int8_t *llr = rte_pktmbuf_mtod_offset(m, int8_t *,
-				input_ops[i].offset);
-		parity_offset = (dec.basegraph == 1 ? 20 : 8)
-				* dec.z_c - dec.n_filler;
-		uint16_t new_hin_size = input_ops[i].length + dec.n_filler;
-		m->data_len = new_hin_size;
-		input_ops[i].length = new_hin_size;
-		for (j = new_hin_size - 1; j >= parity_offset + dec.n_filler;
-				j--)
-			llr[j] = llr[j - dec.n_filler];
-		uint16_t llr_max_pre_scaling = (1 << (ldpc_llr_size - 1)) - 1;
-		for (j = 0; j < dec.n_filler; j++)
-			llr[parity_offset + j] = llr_max_pre_scaling;
-	}
-}
-
 static void
 ldpc_input_llr_scaling(struct rte_bbdev_op_data *input_ops,
 		const uint16_t n, const int8_t llr_size,
@@ -856,6 +806,9 @@ fill_queue_buffers(struct test_op_params *op_params,int8_t* p_llr, uint32_t data
 	int ret;
 	enum op_data_type type;
 	const uint16_t n = op_params->num_to_process;
+	int ldpc_llr_decimals;
+	int ldpc_llr_size;
+	uint32_t ldpc_cap_flags;
 
 	struct rte_mempool *mbuf_pools[DATA_NUM_TYPES] = {
 		in_mp,
@@ -885,29 +838,19 @@ fill_queue_buffers(struct test_op_params *op_params,int8_t* p_llr, uint32_t data
 				mbuf_pools[type], n, type, min_alignment);
 		TEST_ASSERT_SUCCESS(ret,
 				"Couldn't init rte_bbdev_op_data structs");
+	
 	}
 
-//	if (test_vector.op_type == RTE_BBDEV_OP_LDPC_DEC) {
 		bool loopback = op_params->ref_dec_op->ldpc_dec.op_flags &
 				RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_LOOPBACK;
 		bool llr_comp = op_params->ref_dec_op->ldpc_dec.op_flags &
 				RTE_BBDEV_LDPC_LLR_COMPRESSION;
-		bool harq_comp = op_params->ref_dec_op->ldpc_dec.op_flags &
-				RTE_BBDEV_LDPC_HARQ_6BIT_COMPRESSION;
 		ldpc_llr_decimals = capabilities->cap.ldpc_dec.llr_decimals;
 		ldpc_llr_size = capabilities->cap.ldpc_dec.llr_size;
 		ldpc_cap_flags = capabilities->cap.ldpc_dec.capability_flags;
 		if (!loopback && !llr_comp)
 			ldpc_input_llr_scaling(*queue_ops[DATA_INPUT], n,
 					ldpc_llr_size, ldpc_llr_decimals);
-		if (!loopback && !harq_comp)
-			ldpc_input_llr_scaling(*queue_ops[DATA_HARQ_INPUT], n,
-					ldpc_llr_size, ldpc_llr_decimals);
-		if (!loopback)
-			ldpc_add_filler(*queue_ops[DATA_HARQ_INPUT], n,
-					op_params);
-//	}
-
 	return 0;
 }
 
@@ -946,7 +889,7 @@ maxstar(double A, double B)
 }
 
 static void
-copy_reference_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
+set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 		unsigned int start_idx,
 		struct rte_bbdev_op_data *inputs,
 		struct rte_bbdev_op_data *hard_outputs,
@@ -957,7 +900,7 @@ copy_reference_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 		t_nrLDPCoffload_params *p_offloadParams)
 {
 	unsigned int i;
-	struct rte_bbdev_op_ldpc_dec *ldpc_dec = &ref_op->ldpc_dec;
+	//struct rte_bbdev_op_ldpc_dec *ldpc_dec = &ref_op->ldpc_dec;
 	for (i = 0; i < n; ++i) {
 	/*	if (ldpc_dec->code_block_mode == 0) {
 			ops[i]->ldpc_dec.tb_params.ea =
@@ -1007,12 +950,11 @@ copy_reference_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 
 
 
-static int
+/*static int
 check_dec_status_and_ordering(struct rte_bbdev_dec_op *op,
 		unsigned int order_idx, const int expected_status)
 {
 	int status = op->status;
-	/* ignore parity mismatch false alarms for long iterations */
 	if (get_iter_max() >= 10) {
 		if (!(expected_status & (1 << RTE_BBDEV_SYNDROME_ERROR)) &&
 				(status & (1 << RTE_BBDEV_SYNDROME_ERROR))) {
@@ -1037,7 +979,7 @@ check_dec_status_and_ordering(struct rte_bbdev_dec_op *op,
 	return TEST_SUCCESS;
 }
 
-/*static int
+static int
 check_enc_status_and_ordering(struct rte_bbdev_enc_op *op,
 		unsigned int order_idx, const int expected_status)
 {
@@ -1060,13 +1002,10 @@ validate_ldpc_dec_op(struct rte_bbdev_dec_op **ops, const uint16_t n,
 		int8_t* p_out)
 {
 	unsigned int i;
-	int ret;
-	struct op_data_entries *hard_data_orig ; 
+	//int ret;
 	struct rte_bbdev_op_ldpc_dec *ops_td;
 	struct rte_bbdev_op_data *hard_output;
-	struct rte_bbdev_op_data *harq_output;
-	struct rte_bbdev_op_data *soft_output;
-	struct rte_bbdev_op_ldpc_dec *ref_td = &ref_op->ldpc_dec;
+	//struct rte_bbdev_op_ldpc_dec *ref_td = &ref_op->ldpc_dec;
 	struct rte_mbuf *m;  
 	char *data;
 
@@ -1081,7 +1020,7 @@ validate_ldpc_dec_op(struct rte_bbdev_dec_op **ops, const uint16_t n,
 			TEST_ASSERT(ops_td->iter_count <= ref_td->iter_count,
 					"Returned iter_count (%d) > expected iter_count (%d)",
 					ops_td->iter_count, ref_td->iter_count);
-*/
+	*/
 		uint16_t offset = hard_output->offset;
                 uint16_t data_len = rte_pktmbuf_data_len(m) - offset;
 
@@ -1122,20 +1061,13 @@ static void
 create_reference_ldpc_dec_op(struct rte_bbdev_dec_op *op, t_nrLDPCoffload_params *p_offloadParams)
 {
 //	unsigned int i;
-//	struct op_data_entries *entry;
 
-//	op->ldpc_dec = test_vector.ldpc_dec;
-//	entry = &test_vector.entries[DATA_INPUT];
 	//for (i = 0; i < entry->nb_segments; ++i)
 		op->ldpc_dec.input.length = p_offloadParams->E; 
-//				entry->segments[i].length;
-	/*if (test_vector.ldpc_dec.op_flags &
-			RTE_BBDEV_LDPC_HQ_COMBINE_IN_ENABLE) {
-		entry = &test_vector.entries[DATA_HARQ_INPUT];
-		for (i = 0; i < entry->nb_segments; ++i)
-			op->ldpc_dec.harq_combined_input.length +=
-				entry->segments[i].length;
-	}*/
+		op->ldpc_dec.basegraph = p_offloadParams->BG; 
+		op->ldpc_dec.z_c = p_offloadParams->Z; 
+		op->ldpc_dec.n_filler = p_offloadParams->F; 
+		op->ldpc_dec.code_block_mode = 1;
 }
 
 
@@ -1150,6 +1082,8 @@ calc_ldpc_dec_TB_size(struct rte_bbdev_dec_op *op)
 
 	if (op->ldpc_dec.code_block_mode) {
 		tb_size = sys_cols * op->ldpc_dec.z_c - op->ldpc_dec.n_filler;
+	//printf("calc tb  sys cols %d tb_size %d\n",sys_cols,tb_size);
+
 	} else {
 		c = op->ldpc_dec.tb_params.c;
 		r = op->ldpc_dec.tb_params.r;
@@ -1248,7 +1182,7 @@ decod_on_device(uint8_t dev_id,
 			"Couldn't find capabilities");
 
 	create_reference_ldpc_dec_op(op_params->ref_dec_op, p_offloadParams);
-
+printf("info alig %d queue id %d nb queue %d socket id %d\n", info.drv.min_alignment, ad->queue_ids[i], ad->nb_queues, socket_id); 
 	for (i = 0; i < ad->nb_queues; ++i) {
 		f_ret = fill_queue_buffers(op_params,
 			 	p_llr,	
@@ -1268,10 +1202,10 @@ decod_on_device(uint8_t dev_id,
 		}
 	}
 
-	t_ret = start_pmd_dec(ad, op_params, p_offloadParams, p_out);
+//	t_ret = start_pmd_dec(ad, op_params, p_offloadParams, p_out);
 
 	/* Free active device resources and return */
-	free_buffers(ad, op_params);
+	//free_buffers(ad, op_params);
 	return t_ret;
 
 fail:
@@ -1283,123 +1217,25 @@ fail:
  * per burst size.
  */
 static int
-ldpc_decod_ut(int8_t* p_llr, t_nrLDPCoffload_params *p_offloadParams, int8_t* p_out) 
+ldpc_decod_ut(struct test_op_params *op_params, int8_t* p_llr, t_nrLDPCoffload_params *p_offloadParams, int8_t* p_out) 
 {
 	int ret = 0;
 	uint8_t dev;
 
 	/* Alloc op_params */
-	struct test_op_params *op_params = rte_zmalloc(NULL,
+	/*struct test_op_params *op_params = rte_zmalloc(NULL,
 			sizeof(struct test_op_params), RTE_CACHE_LINE_SIZE);
 	TEST_ASSERT_NOT_NULL(op_params, "Failed to alloc %zuB for op_params",
 			RTE_ALIGN(sizeof(struct test_op_params),
 				RTE_CACHE_LINE_SIZE));
+	*/
 	/* For each device run test case function */
 	for (dev = 0; dev < nb_active_devs; ++dev)
 		ret |= decod_on_device(dev, op_params, p_llr, p_offloadParams, p_out);
 
-	rte_free(op_params);
+//	rte_free(op_params);
 
 	return ret;
-}
-
-
-/* Push back the HARQ output from DDR to host */
-static void
-retrieve_harq_ddr(uint16_t dev_id, uint16_t queue_id,
-		struct rte_bbdev_dec_op **ops,
-		const uint16_t n)
-{
-	uint16_t j;
-	int save_status, ret;
-	uint32_t harq_offset = (uint32_t) queue_id * HARQ_INCR * 1024;
-	struct rte_bbdev_dec_op *ops_deq[MAX_BURST];
-	uint32_t flags = ops[0]->ldpc_dec.op_flags;
-	bool loopback = flags & RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_LOOPBACK;
-	bool mem_out = flags & RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE;
-	bool hc_out = flags & RTE_BBDEV_LDPC_HQ_COMBINE_OUT_ENABLE;
-	bool h_comp = flags & RTE_BBDEV_LDPC_HARQ_6BIT_COMPRESSION;
-	for (j = 0; j < n; ++j) {
-		if ((loopback && mem_out) || hc_out) {
-			save_status = ops[j]->status;
-			ops[j]->ldpc_dec.op_flags =
-				RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_LOOPBACK +
-				RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_IN_ENABLE;
-			if (h_comp)
-				ops[j]->ldpc_dec.op_flags +=
-					RTE_BBDEV_LDPC_HARQ_6BIT_COMPRESSION;
-			ops[j]->ldpc_dec.harq_combined_input.offset =
-					harq_offset;
-			ops[j]->ldpc_dec.harq_combined_output.offset = 0;
-			harq_offset += HARQ_INCR;
-			if (!loopback)
-				ops[j]->ldpc_dec.harq_combined_input.length =
-				ops[j]->ldpc_dec.harq_combined_output.length;
-			rte_bbdev_enqueue_ldpc_dec_ops(dev_id, queue_id,
-					&ops[j], 1);
-			ret = 0;
-			while (ret == 0)
-				ret = rte_bbdev_dequeue_ldpc_dec_ops(
-						dev_id, queue_id,
-						&ops_deq[j], 1);
-			ops[j]->ldpc_dec.op_flags = flags;
-			ops[j]->status = save_status;
-		}
-	}
-}
-
-/*
- * Push back the HARQ output from HW DDR to Host
- * Preload HARQ memory input and adjust HARQ offset
- */
-static void
-preload_harq_ddr(uint16_t dev_id, uint16_t queue_id,
-		struct rte_bbdev_dec_op **ops, const uint16_t n,
-		bool preload)
-{
-	uint16_t j;
-	int ret;
-	uint32_t harq_offset = (uint32_t) queue_id * HARQ_INCR * 1024;
-	struct rte_bbdev_op_data save_hc_in, save_hc_out;
-	struct rte_bbdev_dec_op *ops_deq[MAX_BURST];
-	uint32_t flags = ops[0]->ldpc_dec.op_flags;
-	bool mem_in = flags & RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_IN_ENABLE;
-	bool hc_in = flags & RTE_BBDEV_LDPC_HQ_COMBINE_IN_ENABLE;
-	bool mem_out = flags & RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE;
-	bool hc_out = flags & RTE_BBDEV_LDPC_HQ_COMBINE_OUT_ENABLE;
-	bool h_comp = flags & RTE_BBDEV_LDPC_HARQ_6BIT_COMPRESSION;
-	for (j = 0; j < n; ++j) {
-		if ((mem_in || hc_in) && preload) {
-			save_hc_in = ops[j]->ldpc_dec.harq_combined_input;
-			save_hc_out = ops[j]->ldpc_dec.harq_combined_output;
-			ops[j]->ldpc_dec.op_flags =
-				RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_LOOPBACK +
-				RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE;
-			if (h_comp)
-				ops[j]->ldpc_dec.op_flags +=
-					RTE_BBDEV_LDPC_HARQ_6BIT_COMPRESSION;
-			ops[j]->ldpc_dec.harq_combined_output.offset =
-					harq_offset;
-			ops[j]->ldpc_dec.harq_combined_input.offset = 0;
-			rte_bbdev_enqueue_ldpc_dec_ops(dev_id, queue_id,
-					&ops[j], 1);
-			ret = 0;
-			while (ret == 0)
-				ret = rte_bbdev_dequeue_ldpc_dec_ops(
-					dev_id, queue_id, &ops_deq[j], 1);
-			ops[j]->ldpc_dec.op_flags = flags;
-			ops[j]->ldpc_dec.harq_combined_input = save_hc_in;
-			ops[j]->ldpc_dec.harq_combined_output = save_hc_out;
-		}
-		/* Adjust HARQ offset when we reach external DDR */
-		if (mem_in || hc_in)
-			ops[j]->ldpc_dec.harq_combined_input.offset
-				= harq_offset;
-		if (mem_out || hc_out)
-			ops[j]->ldpc_dec.harq_combined_output.offset
-				= harq_offset;
-		harq_offset += HARQ_INCR;
-	}
 }
 
 
@@ -1420,11 +1256,10 @@ pmd_lcore_ldpc_dec(void *arg, t_nrLDPCoffload_params *p_offloadParams, int8_t* p
 	struct rte_bbdev_info info;
 	uint16_t num_to_enq;
 
-        struct rte_bbdev_op_data *hard_output;	
-        struct rte_bbdev_op_ldpc_dec *ops_td;
+        //struct rte_bbdev_op_data *hard_output;	
        
-        bool extDdr = check_bit(ldpc_cap_flags,
-			RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE);
+        //bool extDdr = check_bit(ldpc_cap_flags,
+	//		RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE);
 	bool loopback = check_bit(ref_op->ldpc_dec.op_flags,
 			RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_LOOPBACK);
 	bool hc_out = check_bit(ref_op->ldpc_dec.op_flags,
@@ -1455,8 +1290,7 @@ pmd_lcore_ldpc_dec(void *arg, t_nrLDPCoffload_params *p_offloadParams, int8_t* p
 	ref_op->ldpc_dec.iter_max = get_iter_max();
 	ref_op->ldpc_dec.iter_count = ref_op->ldpc_dec.iter_max;
 
-	//if (test_vector.op_type != RTE_BBDEV_OP_NONE)
-		copy_reference_ldpc_dec_op(ops_enq, num_ops, 0, bufs->inputs,
+	set_ldpc_dec_op(ops_enq, num_ops, 0, bufs->inputs,
 				bufs->hard_outputs, bufs->soft_outputs,
 				bufs->harq_inputs, bufs->harq_outputs, ref_op, p_offloadParams);
 
@@ -1472,11 +1306,6 @@ pmd_lcore_ldpc_dec(void *arg, t_nrLDPCoffload_params *p_offloadParams, int8_t* p
 			if (hc_out || loopback)
 				mbuf_reset(
 				ops_enq[j]->ldpc_dec.harq_combined_output.data);
-		}
-		if (extDdr) {
-			bool preload = i == (TEST_REPETITIONS - 1);
-			preload_harq_ddr(tp->dev_id, queue_id, ops_enq,
-					num_ops, preload);
 		}
 		start_time = rte_rdtsc_precise();
 
@@ -1509,16 +1338,10 @@ pmd_lcore_ldpc_dec(void *arg, t_nrLDPCoffload_params *p_offloadParams, int8_t* p
 		tp->iter_count = RTE_MAX(ops_enq[i]->ldpc_dec.iter_count,
 				tp->iter_count);
 	}
-	if (extDdr) {
-		/* Read loopback is not thread safe */
-		retrieve_harq_ddr(tp->dev_id, queue_id, ops_enq, num_ops);
-	}
 
-	//if (test_vector.op_type != RTE_BBDEV_OP_NONE) {
 	ret = validate_ldpc_dec_op(ops_deq, num_ops, ref_op,
 				tp->op_params->vector_mask, p_out);
 		TEST_ASSERT_SUCCESS(ret, "Validation failed!");
-	//}
 
 	rte_bbdev_dec_op_free_bulk(ops_enq, num_ops);
 
@@ -1533,25 +1356,6 @@ pmd_lcore_ldpc_dec(void *arg, t_nrLDPCoffload_params *p_offloadParams, int8_t* p
 	return TEST_SUCCESS;
 }
 
-
-static void
-print_enc_throughput(struct thread_params *t_params, unsigned int used_cores)
-{
-	unsigned int iter = 0;
-	double total_mops = 0, total_mbps = 0;
-
-	for (iter = 0; iter < used_cores; iter++) {
-		printf(
-			"Throughput for core (%u): %.8lg Ops/s, %.8lg Mbps\n",
-			t_params[iter].lcore_id, t_params[iter].ops_per_sec,
-			t_params[iter].mbps);
-		total_mops += t_params[iter].ops_per_sec;
-		total_mbps += t_params[iter].mbps;
-	}
-	printf(
-		"\nTotal throughput for %u cores: %.8lg MOPS, %.8lg Mbps\n",
-		used_cores, total_mops, total_mbps);
-}
 
 /* Aggregate the performance results over the number of cores used */
 static void
@@ -1594,22 +1398,16 @@ start_pmd_dec(struct active_device *ad,
 	struct thread_params *t_params, *tp;
 	struct rte_bbdev_info info;
 	uint16_t num_lcores;
-	const char *op_type_str;
 
 	rte_bbdev_info_get(ad->dev_id, &info);
 
-	op_type_str = rte_bbdev_op_type_str(test_vector.op_type);
-	TEST_ASSERT_NOT_NULL(op_type_str, "Invalid op type: %u",
-			test_vector.op_type);
-
-	printf("+ ------------------------------------------------------- +\n");
-	printf("== start pmd dec\ndev: %s, nb_queues: %u, burst size: %u, num ops: %u, num_lcores: %u, op type: %s, itr mode: %s, GHz: %lg\n",
+	/*printf("+ ------------------------------------------------------- +\n");
+	printf("== start pmd dec\ndev: %s, nb_queues: %u, burst size: %u, num ops: %u, num_lcores: %u,  itr mode: %s, GHz: %lg\n",
 			info.dev_name, ad->nb_queues, op_params->burst_sz,
 			op_params->num_to_process, op_params->num_lcores,
-			op_type_str,
 			intr_enabled ? "Interrupt mode" : "PMD mode",
 			(double)rte_get_tsc_hz() / 1000000000.0);
-
+	*/
 	/* Set number of lcores */
 	num_lcores = (ad->nb_queues < (op_params->num_lcores))
 			? ad->nb_queues
@@ -1640,7 +1438,6 @@ start_pmd_dec(struct active_device *ad,
 		t_params[used_cores].op_params = op_params;
 		t_params[used_cores].queue_id = ad->queue_ids[used_cores];
 		t_params[used_cores].iter_count = 0;
-
 		rte_eal_remote_launch(pmd_lcore_ldpc_dec,
 				&t_params[used_cores++], lcore_id);
 	}
@@ -1660,11 +1457,7 @@ start_pmd_dec(struct active_device *ad,
 
 	/* Print throughput if interrupts are disabled and test passed */
 	if (!intr_enabled) {
-		if (test_vector.op_type == RTE_BBDEV_OP_TURBO_DEC ||
-				test_vector.op_type == RTE_BBDEV_OP_LDPC_DEC)
-			print_dec_throughput(t_params, num_lcores);
-		else
-			print_enc_throughput(t_params, num_lcores);
+			//print_dec_throughput(t_params, num_lcores);
 		rte_free(t_params);
 		return ret;
 	}
@@ -1702,12 +1495,7 @@ start_pmd_dec(struct active_device *ad,
 
 	/* Print throughput if test passed */
 	if (!ret) {
-		if (test_vector.op_type == RTE_BBDEV_OP_TURBO_DEC ||
-				test_vector.op_type == RTE_BBDEV_OP_LDPC_DEC)
 			print_dec_throughput(t_params, num_lcores);
-		else if (test_vector.op_type == RTE_BBDEV_OP_TURBO_ENC ||
-				test_vector.op_type == RTE_BBDEV_OP_LDPC_ENC)
-			print_enc_throughput(t_params, num_lcores);
 	}
 
 	rte_free(t_params);
@@ -1728,11 +1516,6 @@ static struct test_params {
 	bool init_device;
 } test_params;
 
-const char *
-get_vector_filename(void)
-{
-	return test_params.test_vector_filename;
-}
 unsigned int
 get_num_ops(void)
 {
@@ -1769,8 +1552,11 @@ get_init_device(void)
 	return test_params.init_device;
 }
 
+struct test_op_params op_params_e; 
+struct test_op_params *op_params = &op_params_e; 
+
 int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_t rv, uint16_t F, 
-			uint32_t E, uint8_t Qm, int8_t* p_llr, int8_t* p_out, uint8_t mode)
+			uint32_t E, uint8_t Qm, int8_t* p_llr, int8_t* p_out, uint8_t mode) 
 {
     	t_nrLDPCoffload_params offloadParams;
     	t_nrLDPCoffload_params* p_offloadParams    = &offloadParams;
@@ -1787,15 +1573,55 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 	test_params.burst_sz=1;
 	test_params.num_lcores=1;		
 	test_params.num_tests = 1;
+  	struct active_device *ad;
+        ad = &active_devs[0];
 
 	if (mode==0){
-		printf("offload mode %d\n", mode);
+		
 		ret = rte_eal_init(argc_re, argv_re);
-
 		device_setup();
 		ut_setup();
+	
+	        p_offloadParams->E = E;
+        	p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
+        	p_offloadParams->BG = p_decParams->BG;
+        	p_offloadParams->Z = p_decParams->Z;
+        	p_offloadParams->rv = rv;
+        	p_offloadParams->F = F;
+        	p_offloadParams->Qm = Qm;
+
+	        //struct test_op_params *op_params = rte_zmalloc(NULL,
+	        op_params = rte_zmalloc(NULL,
+                        sizeof(struct test_op_params), RTE_CACHE_LINE_SIZE);
+       		TEST_ASSERT_NOT_NULL(op_params, "Failed to alloc %zuB for op_params",
+                        RTE_ALIGN(sizeof(struct test_op_params),
+                                RTE_CACHE_LINE_SIZE));
+
+	int socket_id;
+        int f_ret;
+        struct rte_bbdev_info info;
+        rte_bbdev_info_get(ad->dev_id, &info);
+        socket_id = GET_SOCKET(info.socket_id);
+        enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;
+        f_ret = create_mempools(ad, socket_id, op_type,
+                        get_num_ops(),p_offloadParams);
+        if (f_ret != TEST_SUCCESS) {
+                printf("Couldn't create mempools");
+        }
+        f_ret = init_test_op_params(op_params, op_type,
+                        0,
+                        0,
+                        ad->ops_mempool,
+                        1,
+                        1,
+                        1);
+        if (f_ret != TEST_SUCCESS) {
+                printf("Couldn't init test op params");
+        }
+
 	}
 	else{
+	//printf("offload param E %d BG %d F %d Z %d Qm %d\n", E,p_decParams->BG, F,p_decParams->Z, Qm);
 
 	p_offloadParams->E = E;
 	p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
@@ -1804,7 +1630,50 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 	p_offloadParams->rv = rv;
 	p_offloadParams->F = F;
 	p_offloadParams->Qm = Qm;
-	ldpc_decod_ut(p_llr, p_offloadParams, p_out);
+ 	int socket_id;	
+	int f_ret, i;	
+	const struct rte_bbdev_op_cap *capabilities = NULL;	
+	        struct rte_bbdev_info info;
+        rte_bbdev_info_get(ad->dev_id, &info);
+        socket_id = GET_SOCKET(info.socket_id);
+	enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;
+	const struct rte_bbdev_op_cap *cap = info.drv.capabilities;
+
+	for (i = 0; i < RTE_BBDEV_OP_TYPE_COUNT; i++) {
+		if (cap->type == op_type) {
+			capabilities = cap;
+			break;
+		}
+		cap++;
+	}
+
+	create_reference_ldpc_dec_op(op_params->ref_dec_op, p_offloadParams);
+
+	ad->nb_queues =1;
+	for (i = 0; i < ad->nb_queues; ++i) {
+		f_ret = fill_queue_buffers(op_params,
+			 	p_llr,	
+			 	p_offloadParams->E,	
+				ad->in_mbuf_pool,
+				ad->hard_out_mbuf_pool,
+				ad->soft_out_mbuf_pool,
+				ad->harq_in_mbuf_pool,
+				ad->harq_out_mbuf_pool,
+				ad->queue_ids[i],
+				capabilities,
+				info.drv.min_alignment,
+				socket_id);
+		if (f_ret != TEST_SUCCESS) {
+			printf("Couldn't init queue buffers");
+		}
+	}
+
+
+	start_pmd_dec(ad, op_params, p_offloadParams, p_out);
+
+ //       free_buffers(ad, op_params);
+	
+//	rte_free(op_params);
 	}
 	//ut_teardown();
 

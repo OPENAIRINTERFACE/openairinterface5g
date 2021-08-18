@@ -602,17 +602,17 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   {
     pl_ol128[j] = _mm_packs_epi16(pv_ol128[i],pv_ol128[i+1]);
   }
- 
+	
   ret = nrLDPC_decoder_offload(p_decParams,
-			1, //harq_process->C, 
+			1,  
 			pusch_pdu->pusch_data.rv_index,
 			harq_process->F,
 			E,
 			Qm,
  			(int8_t*)&pl_ol128[0],
 			llrProcBuf, 1);
-
-        for (int m=0; m < Kr>>3; m ++) {
+       
+	 for (int m=0; m < Kr>>3; m ++) {
 	    harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
   	}
 
