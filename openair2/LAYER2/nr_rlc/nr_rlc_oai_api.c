@@ -271,7 +271,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
                         + buf_stat.tx_size;
   } else {
     if (!(frameP%128)) //to supress this warning message
-      LOG_W(RLC, "[%s] Radio Bearer (channel ID %d) is NULL for UE with rntiP %x\n", __FUNCTION__, channel_idP, rntiP);
+      LOG_D(RLC, "[%s] Radio Bearer (channel ID %d) is NULL for UE with rntiP %x\n", __FUNCTION__, channel_idP, rntiP);
     ret.bytes_in_buffer = 0;
   }
 
