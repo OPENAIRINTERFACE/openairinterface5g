@@ -743,7 +743,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
     // calculate mask: init with "NOT" vrb_map:
     // if any RB in vrb_map is blocked (1), the current RBG will be 0
     rballoc_mask[i-BWPStart] = !vrb_map[i];
-    n_rb_sched += rballoc_mask[i];
+    n_rb_sched += rballoc_mask[i-BWPStart];
   }
 
   /* Retrieve amount of data to send for this UE */
