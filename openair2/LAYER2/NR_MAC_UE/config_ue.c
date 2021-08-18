@@ -739,13 +739,18 @@ int nr_rrc_mac_config_req_ue(
       LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
       mac->cg = cell_group_config;
       mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
-      if(get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1) {
+      if(get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || get_softmodem_params()->nsa) {
         config_control_ue(mac);
         if (cell_group_config->spCellConfig->reconfigurationWithSync) {
           if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
             ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
           }
           mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+          int num_slots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+          if (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0) {
+            num_slots++;
+          }
+          mac->ul_config_request = calloc(num_slots, sizeof(*mac->ul_config_request));
           config_common_ue(mac,module_id,cc_idP);
           mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
           LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);

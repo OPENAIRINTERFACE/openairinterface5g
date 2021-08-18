@@ -518,10 +518,14 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
   int num_sdus = 0;
   int offset = 0;
+  int TBS_bytes = 848;
+  int header_length_total=0;
+  int mac_ce_len;
 
   // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
   if (!prach_resources->init_msg1) {
-    if ( (mac->common_configuration_complete>0 || get_softmodem_params()->do_ra==1) && ((MAX_FRAME_NUMBER+frame-prach_resources->sync_frame)%MAX_FRAME_NUMBER)>150 ){
+    if ( (mac->common_configuration_complete>0 || get_softmodem_params()->do_ra==1 || get_softmodem_params()->nsa) &&
+        ((MAX_FRAME_NUMBER + frame - prach_resources->sync_frame) % MAX_FRAME_NUMBER) > 150){
       prach_resources->init_msg1 = 1;
     } else {
       LOG_D(NR_MAC,"PRACH Condition not met: frame %d, prach_resources->sync_frame %d\n",frame,prach_resources->sync_frame);
@@ -539,9 +543,9 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       LOG_D(NR_MAC, "RA not active. Checking for data to transmit from upper layers...\n");
 
-      uint8_t TBS_max = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
+      int TBS_max = 848; //8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
       payload = (uint8_t*) mac->CCCH_pdu.payload;
-
+      mac_ce_len = 0;
       num_sdus = 1;
       post_padding = 1;
       sdu_lcids[0] = lcid;
@@ -551,14 +555,23 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       // TODO: To be removed after RA procedures fully implemented
       if(get_softmodem_params()->do_ra) {
         nr_rrc_ue_generate_RRCSetupRequest(mod_id,gNB_id);
+        size_sdu = (uint16_t) nr_mac_rrc_data_req_ue(mod_id, CC_id, gNB_id, frame, CCCH, mac_sdus);
+        // CCCH PDU
+        sdu_lengths[0] = size_sdu;
+        LOG_D(NR_MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
+      } else {
+        // fill ulsch_buffer with random data
+        for (int i = 0; i < TBS_bytes; i++){
+          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+        }
+        //Sending SDUs with size 1
+        //Initialize elements of sdu_lcids and sdu_lengths
+        sdu_lcids[0] = lcid;
+        sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
+        header_length_total += 2 + (sdu_lengths[0] >= 128);
+        size_sdu += sdu_lengths[0];
       }
 
-      // CCCH PDU
-      size_sdu = (uint16_t) nr_mac_rrc_data_req_ue(mod_id, CC_id, gNB_id, frame, CCCH, mac_sdus);
-
-      sdu_lengths[0] = size_sdu;
-
-      LOG_D(NR_MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n", mod_id, frame, size_sdu);
 
       if (size_sdu > 0) {
 
@@ -592,7 +605,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                                        post_padding,
                                        0);
 
-        AssertFatal(TBS_max > offset, "Frequency resources are not enough for Msg3!\n");
+        AssertFatal(TBS_max > offset, "Frequency resources are not enough for Msg3! TBS max = %d, offset = %d\n",
+                    TBS_max, offset);
 
         // Padding: fill remainder with 0
         if (post_padding > 0){
@@ -600,18 +614,19 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
             payload[offset + j] = 0;
         }
       }
+      if(get_softmodem_params()->do_ra) {
+        LOG_D(MAC,"size_sdu = %i\n", size_sdu);
+        LOG_D(MAC,"offset = %i\n", offset);
+        for(int k = 0; k < TBS_max; k++) {
+          LOG_D(MAC,"(%i): %i\n", k, prach_resources->Msg3[k]);
+        }
 
-      LOG_D(MAC,"size_sdu = %i\n", size_sdu);
-      LOG_D(MAC,"offset = %i\n", offset);
-      for(int k = 0; k < TBS_max; k++) {
-        LOG_D(MAC,"(%i): %i\n", k, prach_resources->Msg3[k]);
+        // Msg3 was initialized with TBS_max bytes because the RA_Msg3_size will only be known after
+        // receiving Msg2 (which contains the Msg3 resource reserve).
+        // Msg3 will be transmitted with RA_Msg3_size bytes, removing unnecessary 0s.
+        mac->ulsch_pdu.Pdu_size = TBS_max;
+        memcpy(mac->ulsch_pdu.payload, prach_resources->Msg3, TBS_max);
       }
-
-      // Msg3 was initialized with TBS_max bytes because the RA_Msg3_size will only be known after
-      // receiving Msg2 (which contains the Msg3 resource reserve).
-      // Msg3 will be transmitted with RA_Msg3_size bytes, removing unnecessary 0s.
-      mac->ulsch_pdu.Pdu_size = TBS_max;
-      memcpy(mac->ulsch_pdu.payload, prach_resources->Msg3, TBS_max);
 
     } else if (ra->RA_window_cnt != -1) { // RACH is active
 

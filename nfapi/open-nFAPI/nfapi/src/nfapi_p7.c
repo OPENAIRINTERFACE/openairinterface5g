@@ -300,18 +300,21 @@ static uint8_t pack_dl_tti_pdsch_pdu_rel15_value(void *tlv, uint8_t **ppWritePac
 
 
 static uint8_t pack_dl_tti_ssb_pdu_rel15_value(void *tlv, uint8_t **ppWritePackedMsg, uint8_t *end) {
-  nfapi_nr_dl_tti_ssb_pdu_rel15_t *value = (nfapi_nr_dl_tti_ssb_pdu_rel15_t *)tlv;
-  return(
-          push16(value->PhysCellId, ppWritePackedMsg, end) &&
-          push8(value->BetaPss, ppWritePackedMsg, end) &&
-          push8(value->SsbBlockIndex, ppWritePackedMsg, end) &&
-          push8(value->SsbSubcarrierOffset, ppWritePackedMsg, end) &&
-          push16(value->ssbOffsetPointA, ppWritePackedMsg, end) &&
-          push8(value->bchPayloadFlag, ppWritePackedMsg, end) &&
-          push32(value->bchPayload, ppWritePackedMsg, end) &&
-  	  push8(value->ssbRsrp, ppWritePackedMsg, end)
-          // TODO: pack precoding_and_beamforming too
-        );
+	NFAPI_TRACE(NFAPI_TRACE_DEBUG, "Packing ssb. \n");
+	nfapi_nr_dl_tti_ssb_pdu_rel15_t* value = (nfapi_nr_dl_tti_ssb_pdu_rel15_t*)tlv;
+
+	return(
+		push16(value->PhysCellId, ppWritePackedMsg, end) &&
+		push8(value->BetaPss, ppWritePackedMsg, end) &&
+		push8(value->SsbBlockIndex, ppWritePackedMsg, end) &&
+		push8(value->SsbSubcarrierOffset, ppWritePackedMsg, end) &&
+		push16(value->ssbOffsetPointA, ppWritePackedMsg, end) &&
+		push8(value->bchPayloadFlag, ppWritePackedMsg, end) &&
+		push32(value->bchPayload, ppWritePackedMsg, end) &&
+		push8(value->ssbRsrp, ppWritePackedMsg, end)
+		// TODO: pack precoding_and_beamforming too
+	);
+
 }
 
 
@@ -779,36 +782,39 @@ static uint8_t pack_dl_config_request_body_value(void *tlv, uint8_t **ppWritePac
 }
 
 
-static uint8_t pack_dl_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t *config) {
-  nfapi_nr_dl_tti_request_t *pNfapiMsg = (nfapi_nr_dl_tti_request_t *)msg;
+static uint8_t pack_dl_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t* config)
+{
+	nfapi_nr_dl_tti_request_t *pNfapiMsg = (nfapi_nr_dl_tti_request_t*)msg;
 
-  if (!(push16(pNfapiMsg->SFN, ppWritePackedMsg, end) &&
-        push16(pNfapiMsg->Slot, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->dl_tti_request_body.nGroup, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->dl_tti_request_body.nPDUs, ppWritePackedMsg, end) &&
-        pusharray8(pNfapiMsg->dl_tti_request_body.nUe,256,pNfapiMsg->dl_tti_request_body.nGroup, ppWritePackedMsg, end)
-        //pusharray8(pNfapiMsg->PduIdx[0] ,256,256, ppWritePackedMsg, end)
-       ))
-    return 0;
+	if (!(push16(pNfapiMsg->SFN , ppWritePackedMsg, end) &&
+		push16(pNfapiMsg->Slot , ppWritePackedMsg, end) &&
+		push8(pNfapiMsg->dl_tti_request_body.nGroup , ppWritePackedMsg, end) &&
+		push8(pNfapiMsg->dl_tti_request_body.nPDUs , ppWritePackedMsg, end) &&
+		pusharray8(pNfapiMsg->dl_tti_request_body.nUe, 256, pNfapiMsg->dl_tti_request_body.nGroup, ppWritePackedMsg, end)
+		//pusharray8(pNfapiMsg->PduIdx[0] ,256,256, ppWritePackedMsg, end)
+		))
+			return 0;
 
-  int arr[12];
+	int arr[12];
+	for(int i=0;i<pNfapiMsg->dl_tti_request_body.nGroup;i++)
+	{
+		for(int j=0;j<pNfapiMsg->dl_tti_request_body.nUe[i];j++)
+		{
+			arr[j] = pNfapiMsg->dl_tti_request_body.PduIdx[i][j];
+		}
+		if(!(pusharrays32(arr, 12, pNfapiMsg->dl_tti_request_body.nUe[i], ppWritePackedMsg, end)))
+		return 0;
+	}
 
-  for(int i=0; i<pNfapiMsg->dl_tti_request_body.nGroup; i++) {
-    for(int j=0; j<pNfapiMsg->dl_tti_request_body.nUe[i]; j++) {
-      arr[j] = pNfapiMsg->dl_tti_request_body.PduIdx[i][j];
-    }
+	for(int i=0;i<pNfapiMsg->dl_tti_request_body.nPDUs;i++)	
+	{
+		if(!pack_dl_tti_request_body_value(&pNfapiMsg->dl_tti_request_body.dl_tti_pdu_list[i],ppWritePackedMsg,end))
+		return 0;
+	}
 
-    if(!(pusharrays32(arr,12,pNfapiMsg->dl_tti_request_body.nUe[i],ppWritePackedMsg, end)))
-      return 0;
-  }
-
-  for(int i=0; i<pNfapiMsg->dl_tti_request_body.nPDUs; i++) {
-    if(!pack_dl_tti_request_body_value(&pNfapiMsg->dl_tti_request_body.dl_tti_pdu_list[i],ppWritePackedMsg,end))
-      return 0;
-  }
-
-  return 1;
+return 1;
 }
+
 
 
 static uint8_t pack_dl_config_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t *config) {

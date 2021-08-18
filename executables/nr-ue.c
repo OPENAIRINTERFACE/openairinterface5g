@@ -248,7 +248,10 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     }
     sfn_slot_p = get_queue(&nr_sfn_slot_queue);
     if (sfn_slot_p == NULL)
+    {
+      LOG_D(MAC, "get_queue(&nr_sfn_slot_queue) == NULL!\n");
       continue;
+    }
 
     sfn_slot = *sfn_slot_p;
     if (sfn_slot == last_sfn_slot)
@@ -263,6 +266,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
     if (mac->scc == NULL)
     {
+      LOG_D(MAC, "mac->scc == NULL!\n");
       continue;
     }
 
@@ -320,7 +324,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
         else if (nr_prach == 2)
         {
           LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
-          nr_DRB_preconfiguration(mac->crnti);
+          //nr_DRB_preconfiguration(mac->crnti);
         }
         else if(nr_prach == 3)
         {

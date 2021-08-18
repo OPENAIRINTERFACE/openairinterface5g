@@ -173,7 +173,7 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		clock_gettime(CLOCK_MONOTONIC, &curr_time);
 		setup_time = curr_time.tv_sec - ref_time.tv_sec;
 
-		if(setup_time > 10 && prev_slot != gNB->UL_INFO.slot){ //Give the VNF sufficient time to setup before starting scheduling
+		if(setup_time > 3 && prev_slot != gNB->UL_INFO.slot){ //Give the VNF sufficient time to setup before starting scheduling
 
 			//Call the scheduler
 			pthread_mutex_lock(&gNB->UL_INFO_mutex);

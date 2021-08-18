@@ -769,7 +769,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  if (ul_info->ue_sched_mode == ONLY_PUSCH) {
+  if (ul_info->ue_sched_mode == ONLY_PUSCH || mac->ra.ra_state == RA_SUCCEEDED) {
     ret = nr_ue_scheduler(NULL, ul_info);
     return 0;
   }
