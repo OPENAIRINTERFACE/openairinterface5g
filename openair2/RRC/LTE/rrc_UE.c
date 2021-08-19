@@ -1953,6 +1953,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
                 uint32_t RadioBearer_size;
                 uint32_t SecondaryCellGroup_size;
                 uint8_t trans_id;
+                uint8_t padding[3];
                 uint8_t buffer[total_size];
           } msg;
 
@@ -1962,9 +1963,10 @@ rrc_ue_process_rrcConnectionReconfiguration(
           memcpy(msg.buffer, nr_RadioBearer->buf, nr_RadioBearer->size);
           memcpy(msg.buffer + nr_RadioBearer->size, nr_SecondaryCellGroup->buf, nr_SecondaryCellGroup->size);
 
-          LOG_D(RRC, "nr_RadioBearerConfig1_r15 size %ld nr_SecondaryCellGroupConfig_r15 size %ld\n",
+          LOG_D(RRC, "nr_RadioBearerConfig1_r15 size %ld nr_SecondaryCellGroupConfig_r15 size %ld, sizeof(msg) = %zu\n",
                       nr_RadioBearer->size,
-                      nr_SecondaryCellGroup->size);
+                      nr_SecondaryCellGroup->size,
+                      sizeof(msg));
 
           nsa_sendmsg_to_nrue(&msg, sizeof(msg), RRC_CONFIG_COMPLETE_REQ);
           LOG_A(RRC, "Sent RRC_CONFIG_COMPLETE_REQ to the NR UE\n");
