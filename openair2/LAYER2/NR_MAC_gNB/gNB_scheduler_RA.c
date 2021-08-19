@@ -816,7 +816,6 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
   future_ul_tti_req->n_pdus += 1;
   int ibwp_size  = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  int abwp_size = ibwp_size;
   int scs = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
   int fh = 0;
   int startSymbolAndLength = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
@@ -953,7 +952,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     uint16_t *vrb_map = cc[CC_id].vrb_map;
     for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
-      if (vrb_map[rbStart + i]) {
+      if (vrb_map[BWPStart + rbStart + i]) {
         rbStart += i;
         i = 0;
       }
@@ -1158,7 +1157,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // Mark the corresponding RBs as used
     for (int rb = 0; rb < rbSize; rb++) {
-      vrb_map[rb + rbStart] = 1;
+      vrb_map[BWPStart + rb + rbStart] = 1;
     }
 
     ra->state = WAIT_Msg3;
@@ -1321,10 +1320,10 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
                            nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
                            rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
-    } while (rbStart + rbSize < BWPSize && !vrb_map[rbStart + rbSize] && harq->tb_size < mac_pdu_length);
+    } while (rbStart + rbSize < BWPSize && !vrb_map[BWPStart + rbStart + rbSize] && harq->tb_size < mac_pdu_length);
 
     for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
-      if (vrb_map[rbStart + i]) {
+      if (vrb_map[BWPStart + rbStart + i]) {
         rbStart += i;
         i = 0;
       }
@@ -1494,7 +1493,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // Mark the corresponding RBs as used
     for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++) {
-      vrb_map[rb + pdsch_pdu_rel15->rbStart] = 1;
+      vrb_map[BWPStart + rb + pdsch_pdu_rel15->rbStart] = 1;
     }
 
     LOG_D(NR_MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);
