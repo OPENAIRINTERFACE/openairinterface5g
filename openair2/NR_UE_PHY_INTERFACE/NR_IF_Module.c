@@ -350,8 +350,7 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
                         ul_dci_req->SFN, ul_dci_req->Slot, 
                         dci_pdu_list->RNTI, 
                         dci_pdu_list->PayloadSizeBits, num_bytes,
-                        harq_pid
-                        );
+                        harq_pid);
                 for (int k = 0; k < num_bytes; k++)
                 {
                     LOG_I(NR_MAC, "PDCCH DCI PDU payload[%d] = %d\n", k, dci_pdu_list->Payload[k]);
@@ -769,11 +768,11 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  if (ul_info->ue_sched_mode == ONLY_PUSCH || mac->ra.ra_state == RA_SUCCEEDED) {
+  if (ul_info->ue_sched_mode == ONLY_PUSCH) {
     ret = nr_ue_scheduler(NULL, ul_info);
     return 0;
   }
-  else if (ul_info->ue_sched_mode == SCHED_ALL)
+  else if (ul_info->ue_sched_mode == SCHED_ALL || mac->ra.ra_state == RA_SUCCEEDED)
     ret = nr_ue_scheduler(NULL, ul_info);
 
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
