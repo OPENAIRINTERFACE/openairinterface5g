@@ -72,12 +72,11 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     return DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance, assoc_id, stream, pdu);
   }
 
-  LOG_D(F1AP, "DU_handle_DL_RRC_MESSAGE_TRANSFER \n");
+  LOG_W(F1AP, "DU_handle_DL_RRC_MESSAGE_TRANSFER is a big race condition with rrc \n");
   F1AP_DLRRCMessageTransfer_t    *container;
   F1AP_DLRRCMessageTransferIEs_t *ie;
   uint64_t        cu_ue_f1ap_id;
   uint64_t        du_ue_f1ap_id;
-  uint64_t        srb_id;
   int             executeDuplication;
   sdu_size_t      rrc_dl_sdu_len;
   //uint64_t        subscriberProfileIDforRFP;
@@ -102,7 +101,8 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
   LOG_D(F1AP, "du_ue_f1ap_id %lu associated with UE RNTI %x \n",
         du_ue_f1ap_id,
-        f1ap_get_rnti_by_du_id(false, instance, du_ue_f1ap_id)); // this should be the one transmitted via initial ul rrc message transfer
+        f1ap_get_rnti_by_du_id(false, instance, du_ue_f1ap_id));
+  // this should be the one transmitted via initial ul rrc message transfer
 
   if (f1ap_du_add_cu_ue_id(false, instance,du_ue_f1ap_id, cu_ue_f1ap_id) < 0 ) {
     LOG_E(F1AP, "Failed to find the F1AP UID \n");
@@ -120,7 +120,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   /* SRBID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_SRBID, true);
-  srb_id = ie->value.choice.SRBID;
+  uint64_t  srb_id = ie->value.choice.SRBID;
   LOG_D(F1AP, "srb_id %lu \n", srb_id);
 
   /* optional */
@@ -137,18 +137,8 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   /* RRC Container */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
-  // BK: need check
-  // create an ITTI message and copy SDU
-  //  message_p = itti_alloc_new_message (TASK_CU_F1, 0, RRC_MAC_CCCH_DATA_IND);
-  //  memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
-  rrc_dl_sdu_len = ie->value.choice.RRCContainer.size;
-  //  memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
-  //         ccch_sdu_len);
 
-  //LOG_I(F1AP, "%s() RRCContainer size %lu: ", __func__, ie->value.choice.RRCContainer.size);
-  //for (int i = 0;i < ie->value.choice.RRCContainer.size; i++)
-  //  printf("%02x ", ie->value.choice.RRCContainer.buf[i]);
-  //printf("\n");
+  rrc_dl_sdu_len = ie->value.choice.RRCContainer.size;
 
   /* optional */
   /* RAT_FrequencyPriorityInformation */
@@ -909,19 +899,10 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_DLRRCMessageTransferIEs_t *ie;
   uint64_t        cu_ue_f1ap_id;
   uint64_t        du_ue_f1ap_id;
-  uint64_t        srb_id;
   int             executeDuplication;
-  sdu_size_t      rrc_dl_sdu_len;
   //uint64_t        subscriberProfileIDforRFP;
   //uint64_t        rAT_FrequencySelectionPriority;
   DevAssert(pdu != NULL);
-
-  if (stream != 0) {
-    LOG_E(F1AP, "[SCTP %d] Received F1 on stream != 0 (%d)\n",
-          assoc_id, stream);
-    return -1;
-  }
-
   container = &pdu->choice.initiatingMessage->value.choice.DLRRCMessageTransfer;
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
@@ -940,7 +921,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
     LOG_E(F1AP, "Failed to find the F1AP UID \n");
     //return -1;
   }
-
+  
   /* optional */
   /* oldgNB_DU_UE_F1AP_ID */
   if (0) {
@@ -952,7 +933,8 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
   /* SRBID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_SRBID, true);
-  srb_id = ie->value.choice.SRBID;
+
+  uint64_t  srb_id = ie->value.choice.SRBID;
   LOG_D(F1AP, "srb_id %lu \n", srb_id);
 
   /* optional */
@@ -973,7 +955,6 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
   // create an ITTI message and copy SDU
   //  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
   //  memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
-  rrc_dl_sdu_len = ie->value.choice.RRCContainer.size;
   //  memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
   //         ccch_sdu_len);
 
@@ -1005,268 +986,13 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   // decode RRC Container and act on the message type
   AssertFatal(srb_id<3,"illegal srb_id\n");
-  protocol_ctxt_t ctxt;
-  ctxt.rnti      = f1ap_get_rnti_by_du_id(false, instance, du_ue_f1ap_id);
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
-  struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(
-        RC.nrrrc[ctxt.module_id],
-        ctxt.rnti);
-  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
-
-  if (srb_id == 0) {
-    NR_DL_CCCH_Message_t *dl_ccch_msg=NULL;
-    asn_dec_rval_t dec_rval;
-    dec_rval = uper_decode(NULL,
-                           &asn_DEF_NR_DL_CCCH_Message,
-                           (void **)&dl_ccch_msg,
-                           ie->value.choice.RRCContainer.buf,
-                           rrc_dl_sdu_len,0,0);
-    AssertFatal(dec_rval.code == RC_OK, "could not decode F1AP message\n");
-
-    switch (dl_ccch_msg->message.choice.c1->present) {
-      case NR_DL_CCCH_MessageType__c1_PR_NOTHING:
-        LOG_I(F1AP, "Received PR_NOTHING on DL-CCCH-Message\n");
-        break;
-
-      case NR_DL_CCCH_MessageType__c1_PR_rrcReject:
-        LOG_I(F1AP,
-              "Logical Channel DL-CCCH (SRB0), Received RRCReject\n");
-        break;
-
-      case NR_DL_CCCH_MessageType__c1_PR_rrcSetup: {
-        LOG_I(F1AP,
-              "Logical Channel DL-CCCH (SRB0), Received RRCSetup DU_ID %lx/RNTI %x\n",
-              du_ue_f1ap_id,
-              f1ap_get_rnti_by_du_id(false, instance, du_ue_f1ap_id));
-        // Get configuration
-        NR_RRCSetup_t *rrcSetup = dl_ccch_msg->message.choice.c1->choice.rrcSetup;
-        AssertFatal(rrcSetup!=NULL, "rrcSetup is null\n");
-        NR_RRCSetup_IEs_t *rrcSetup_ies = rrcSetup->criticalExtensions.choice.rrcSetup;
-        ue_context_p->ue_context.SRB_configList = rrcSetup_ies->radioBearerConfig.srb_ToAddModList;
-        AssertFatal(rrcSetup_ies->masterCellGroup.buf!=NULL,"masterCellGroup is null\n");
-        asn_dec_rval_t dec_rval;
-        dec_rval = uper_decode(NULL,
-                               &asn_DEF_NR_CellGroupConfig,
-                               (void **)&ue_context_p->ue_context.masterCellGroup,
-                               rrcSetup_ies->masterCellGroup.buf,
-                               rrcSetup_ies->masterCellGroup.size,0,0);
-        AssertFatal(dec_rval.code == RC_OK, "could not decode masterCellGroup\n");
-        apply_macrlc_config(rrc,ue_context_p,&ctxt);
-        gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
-        AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
-        memcpy((void *)ue_p->Srb0.Tx_buffer.Payload,
-               (void *)ie->value.choice.RRCContainer.buf,
-               rrc_dl_sdu_len); // ie->value.choice.RRCContainer.size
-        ue_p->Srb0.Tx_buffer.payload_size = rrc_dl_sdu_len;
-        break;
-      } // case
-
-      case NR_DL_CCCH_MessageType__c1_PR_spare2:
-        LOG_I(F1AP,
-              "Logical Channel DL-CCCH (SRB0), Received spare2\n");
-        break;
-
-      case NR_DL_CCCH_MessageType__c1_PR_spare1:
-        LOG_I(F1AP,
-              "Logical Channel DL-CCCH (SRB0), Received spare1\n");
-        break;
-
-      default:
-        AssertFatal(1==0,
-                    "Unknown message\n");
-        break;
-    }// switch case
-
-    return(0);
-  } else if (srb_id == 1) {
-    NR_DL_DCCH_Message_t *dl_dcch_msg=NULL;
-    asn_dec_rval_t dec_rval;
-    dec_rval = uper_decode(NULL,
-                           &asn_DEF_NR_DL_DCCH_Message,
-                           (void **)&dl_dcch_msg,
-                           &ie->value.choice.RRCContainer.buf[2], // buf[0] includes the pdcp header
-                           rrc_dl_sdu_len-6,0,0);
-
-    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
-      LOG_E(F1AP," Failed to decode DL-DCCH (%zu bytes)\n",dec_rval.consumed);
-    else
-      LOG_D(F1AP, "Received message: present %d and c1 present %d\n",
-            dl_dcch_msg->message.present, dl_dcch_msg->message.choice.c1->present);
-
-    if (dl_dcch_msg->message.present == NR_DL_DCCH_MessageType_PR_c1) {
-      switch (dl_dcch_msg->message.choice.c1->present) {
-        case NR_DL_DCCH_MessageType__c1_PR_NOTHING:
-          LOG_I(F1AP, "Received PR_NOTHING on DL-DCCH-Message\n");
-          return 0;
-
-        case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
-          // handle RRCReconfiguration
-          LOG_I(F1AP,
-                "Logical Channel DL-DCCH (SRB1), Received RRCReconfiguration DU_ID %lx/RNTI %x\n",
-                du_ue_f1ap_id,
-                f1ap_get_rnti_by_du_id(false, instance, du_ue_f1ap_id));
-          NR_RRCReconfiguration_t *rrcReconfiguration = dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration;
-
-          if (rrcReconfiguration->criticalExtensions.present == NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration) {
-            NR_RRCReconfiguration_IEs_t *rrcReconfiguration_ies =
-              rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration;
-
-            if (rrcReconfiguration_ies->measConfig != NULL) {
-              LOG_I(F1AP, "Measurement Configuration is present\n");
-            }
-
-            if (rrcReconfiguration_ies->radioBearerConfig) {
-              LOG_I(F1AP, "Radio Resource Configuration is present\n");
-              long drb_id;
-              int i;
-              NR_DRB_ToAddModList_t  *DRB_configList  = rrcReconfiguration_ies->radioBearerConfig->drb_ToAddModList;
-              NR_SRB_ToAddModList_t  *SRB_configList  = rrcReconfiguration_ies->radioBearerConfig->srb_ToAddModList;
-
-              // NR_DRB_ToReleaseList_t *DRB_ReleaseList = rrcReconfiguration_ies->radioBearerConfig->drb_ToReleaseList;
-
-              // rrc_rlc_config_asn1_req
-
-              if (SRB_configList != NULL) {
-                for (i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
-                  if (SRB_configList->list.array[i]->srb_Identity == 1 ) {
-                    ue_context_p->ue_context.Srb1.Active=1;
-                  } else if (SRB_configList->list.array[i]->srb_Identity == 2 )  {
-                    ue_context_p->ue_context.Srb2.Active=1;
-                    ue_context_p->ue_context.Srb2.Srb_info.Srb_id=2;
-                    LOG_I(F1AP, "[DU %d] SRB2 is now active\n",ctxt.module_id);
-                  } else {
-                    LOG_W(F1AP, "[DU %d] invalide SRB identity %ld\n",ctxt.module_id,
-                          SRB_configList->list.array[i]->srb_Identity);
-                  }
-                }
-              }
-
-              if (DRB_configList != NULL) {
-                for (i = 0; i < DRB_configList->list.count; i++) {  // num max DRB (11-3-8)
-                  if (DRB_configList->list.array[i]) {
-                    drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
-                    LOG_I(F1AP,
-                          "[DU %d] Logical Channel UL-DCCH, Received RRCConnectionReconfiguration for UE rnti %x, reconfiguring DRB %d\n",
-                          ctxt.module_id,
-                          ctxt.rnti,
-                          (int)DRB_configList->list.array[i]->drb_Identity);
-
-                    // (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
-
-                    if (ue_context_p->ue_context.DRB_active[drb_id] == 0) {
-                      ue_context_p->ue_context.DRB_active[drb_id] = 1;
-                      // logicalChannelIdentity
-                      // rrc_mac_config_req_eNB
-                    }
-                  } else {        // remove LCHAN from MAC/PHY
-                    AssertFatal(1==0,"Can't handle this yet in DU\n");
-                  }
-                }
-              }
-            }
-          }
-
-          break;
-
-        case NR_DL_DCCH_MessageType__c1_PR_rrcResume:
-          LOG_I(F1AP,"Received rrcResume\n");
-          break;
-
-        case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
-          LOG_I(F1AP,"Received rrcRelease\n");
-          break;
-
-        case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
-          LOG_I(F1AP,"Received rrcReestablishment\n");
-          break;
-
-        case NR_DL_DCCH_MessageType__c1_PR_securityModeCommand:
-          LOG_I(F1AP,"Received securityModeCommand\n");
-          break;
-
-        case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
-          LOG_I(F1AP, "Received dlInformationTransfer\n");
-          break;
-
-        case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
-          LOG_I(F1AP, "Received ueCapabilityEnquiry\n");
-          break;
-
-        case NR_DL_DCCH_MessageType__c1_PR_counterCheck:
-          LOG_I(F1AP, "Received counterCheck\n");
-          break;
-
-        case NR_DL_DCCH_MessageType__c1_PR_mobilityFromNRCommand:
-        case NR_DL_DCCH_MessageType__c1_PR_dlDedicatedMessageSegment_r16:
-        case NR_DL_DCCH_MessageType__c1_PR_ueInformationRequest_r16:
-        case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransferMRDC_r16:
-        case NR_DL_DCCH_MessageType__c1_PR_loggedMeasurementConfiguration_r16:
-        case NR_DL_DCCH_MessageType__c1_PR_spare3:
-        case NR_DL_DCCH_MessageType__c1_PR_spare2:
-        case NR_DL_DCCH_MessageType__c1_PR_spare1:
-          break;
-      }
-    }
-  } else if (srb_id == 2) {
-    // TODO
-  }
-
-  LOG_I(F1AP, "Received DL RRC Transfer on srb_id %ld\n", srb_id);
-  //   rlc_op_status_t    rlc_status;
-  //   boolean_t          ret             = TRUE;
-  mem_block_t       *pdcp_pdu_p      = NULL;
-  pdcp_pdu_p = get_free_mem_block(rrc_dl_sdu_len, __func__);
-
-  //LOG_I(F1AP, "PRRCContainer size %lu:", ie->value.choice.RRCContainer.size);
-  //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
-  //  printf("%02x ", ie->value.choice.RRCContainer.buf[i]);
-
-  //printf (", PDCP PDU size %d:", rrc_dl_sdu_len);
-  //for (int i=0;i<rrc_dl_sdu_len;i++) printf("%2x ",pdcp_pdu_p->data[i]);
-  //printf("\n");
-
-  if (pdcp_pdu_p != NULL) {
-    memset(pdcp_pdu_p->data, 0, rrc_dl_sdu_len);
-    memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
-    /* for rfsim */
-    du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, rrc_dl_sdu_len, pdcp_pdu_p);
-    //   rlc_status = rlc_data_req(&ctxt
-    //                             , 1
-    //                             , MBMS_FLAG_NO
-    //                             , srb_id
-    //                             , 0
-    //                             , 0
-    //                             , rrc_dl_sdu_len
-    //                             , pdcp_pdu_p
-    //                             ,NULL
-    //                             ,NULL
-    //                             );
-    //   switch (rlc_status) {
-    //     case RLC_OP_STATUS_OK:
-    //       //LOG_I(F1AP, "Data sending request over RLC succeeded!\n");
-    //       ret=TRUE;
-    //       break;
-    //     case RLC_OP_STATUS_BAD_PARAMETER:
-    //       LOG_W(F1AP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-    //       ret= FALSE;
-    //       break;
-    //     case RLC_OP_STATUS_INTERNAL_ERROR:
-    //       LOG_W(F1AP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
-    //       ret= FALSE;
-    //       break;
-    //     case RLC_OP_STATUS_OUT_OF_RESSOURCES:
-    //       LOG_W(F1AP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
-    //       ret= FALSE;
-    //       break;
-    //     default:
-    //       LOG_W(F1AP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
-    //       ret= FALSE;
-    //       break;
-    //   } // switch case
-    //   return ret;
-  } // if pdcp_pdu_p
+  MessageDef * msg = itti_alloc_new_message(TASK_DU_F1, 0, NR_DU_RRC_DL_INDICATION);
+  NRDuDlReq_t * req=&NRDuDlReq(msg);
+  req->rnti=f1ap_get_rnti_by_du_id(false, instance, du_ue_f1ap_id);
+  req->srb_id=srb_id;
+  req->buf= get_free_mem_block( ie->value.choice.RRCContainer.size, __func__);
+  memcpy(req->buf->data, ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
+  itti_send_msg_to_task(TASK_RRC_GNB, instance, msg);
 
   return 0;
 }

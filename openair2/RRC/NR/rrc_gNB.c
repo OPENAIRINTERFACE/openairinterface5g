@@ -47,6 +47,12 @@
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_UL-DCCH-Message.h"
 #include "NR_DL-DCCH-Message.h"
+#include "NR_DL-CCCH-Message.h"
+#include "NR_UL-CCCH-Message.h"
+#include "NR_RRCReject.h"
+#include "NR_RejectWaitTime.h"
+#include "NR_RRCSetup.h"
+
 #include "NR_CellGroupConfig.h"
 #include "NR_MeasResults.h"
 #include "LTE_UECapabilityInformation.h"
@@ -2846,6 +2852,261 @@ void rrc_gNB_process_dc_overall_timeout(const module_id_t gnb_mod_idP, x2ap_ENDC
   rrc_remove_nsa_user(rrc, m->rnti);
 }
 
+static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_t instance) {
+  NRDuDlReq_t * req=&NRDuDlReq(msg_p);
+  protocol_ctxt_t ctxt;
+  ctxt.rnti      = req->rnti;
+  ctxt.module_id = instance;
+  ctxt.instance  = instance;
+  ctxt.enb_flag  = 1;
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
+  struct rrc_gNB_ue_context_s *ue_context_p =
+    rrc_gNB_get_ue_context(rrc, ctxt.rnti);
+
+  if (req->srb_id == 0) {
+    NR_DL_CCCH_Message_t *dl_ccch_msg=NULL;
+    asn_dec_rval_t dec_rval;
+    dec_rval = uper_decode(NULL,
+                           &asn_DEF_NR_DL_CCCH_Message,
+                           (void **)&dl_ccch_msg,
+                           req->buf->data,
+                           req->buf->size,0,0);
+    AssertFatal(dec_rval.code == RC_OK, "could not decode F1AP message\n");
+
+    switch (dl_ccch_msg->message.choice.c1->present) {
+    case NR_DL_CCCH_MessageType__c1_PR_NOTHING:
+      LOG_I(F1AP,"Received PR_NOTHING on DL-CCCH-Message\n");
+      break;
+
+    case NR_DL_CCCH_MessageType__c1_PR_rrcReject:
+      LOG_I(F1AP,"Logical Channel DL-CCCH (SRB0), Received RRCReject\n");
+      break;
+
+    case NR_DL_CCCH_MessageType__c1_PR_rrcSetup: {
+      LOG_I(F1AP, "Logical Channel DL-CCCH (SRB0), Received RRCSetup RNTI %x\n",
+	    req->rnti);
+      // Get configuration
+      NR_RRCSetup_t *rrcSetup = dl_ccch_msg->message.choice.c1->choice.rrcSetup;
+      AssertFatal(rrcSetup!=NULL, "rrcSetup is null\n");
+      NR_RRCSetup_IEs_t *rrcSetup_ies = rrcSetup->criticalExtensions.choice.rrcSetup;
+      ue_context_p->ue_context.SRB_configList = rrcSetup_ies->radioBearerConfig.srb_ToAddModList;
+      AssertFatal(rrcSetup_ies->masterCellGroup.buf!=NULL,"masterCellGroup is null\n");
+      asn_dec_rval_t dec_rval;
+      dec_rval = uper_decode(NULL,
+			     &asn_DEF_NR_CellGroupConfig,
+			     (void **)&ue_context_p->ue_context.masterCellGroup,
+			     rrcSetup_ies->masterCellGroup.buf,
+			     rrcSetup_ies->masterCellGroup.size,0,0);
+      AssertFatal(dec_rval.code == RC_OK, "could not decode masterCellGroup\n");
+      apply_macrlc_config(rrc,ue_context_p,&ctxt);
+      gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
+      AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
+      memcpy((void *)ue_p->Srb0.Tx_buffer.Payload,
+	     (void *)req->buf->data,
+	     req->buf->size); // ie->value.choice.RRCContainer.size
+      ue_p->Srb0.Tx_buffer.payload_size = req->buf->size;
+      break;
+    } // case
+      
+    case NR_DL_CCCH_MessageType__c1_PR_spare2:
+      LOG_I(F1AP,
+	    "Logical Channel DL-CCCH (SRB0), Received spare2\n");
+      break;
+      
+    case NR_DL_CCCH_MessageType__c1_PR_spare1:
+      LOG_I(F1AP,
+	    "Logical Channel DL-CCCH (SRB0), Received spare1\n");
+      break;
+      
+    default:
+      AssertFatal(1==0,
+		  "Unknown message\n");
+      break;
+    }// switch case
+    
+    return(0);
+  } else if (req->srb_id == 1) {
+    NR_DL_DCCH_Message_t *dl_dcch_msg=NULL;
+    asn_dec_rval_t dec_rval;
+    dec_rval = uper_decode(NULL,
+			   &asn_DEF_NR_DL_DCCH_Message,
+			   (void **)&dl_dcch_msg,
+			   &req->buf->data[2], // buf[0] includes the pdcp header
+			   req->buf->size-6,0,0);
+    
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
+      LOG_E(F1AP," Failed to decode DL-DCCH (%zu bytes)\n",dec_rval.consumed);
+    else
+      LOG_D(F1AP, "Received message: present %d and c1 present %d\n",
+	    dl_dcch_msg->message.present, dl_dcch_msg->message.choice.c1->present);
+    
+    if (dl_dcch_msg->message.present == NR_DL_DCCH_MessageType_PR_c1) {
+      switch (dl_dcch_msg->message.choice.c1->present) {
+      case NR_DL_DCCH_MessageType__c1_PR_NOTHING:
+	LOG_I(F1AP, "Received PR_NOTHING on DL-DCCH-Message\n");
+	return 0;
+	
+      case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
+	// handle RRCReconfiguration
+	LOG_I(F1AP, "Logical Channel DL-DCCH (SRB1), Received RRCReconfiguration RNTI %x\n",
+	      req->rnti);
+	NR_RRCReconfiguration_t *rrcReconfiguration = dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration;
+	
+	if (rrcReconfiguration->criticalExtensions.present == NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration) {
+	  NR_RRCReconfiguration_IEs_t *rrcReconfiguration_ies =
+	    rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration;
+	  
+	  if (rrcReconfiguration_ies->measConfig != NULL) {
+	    LOG_I(F1AP, "Measurement Configuration is present\n");
+	  }
+	  
+	  if (rrcReconfiguration_ies->radioBearerConfig) {
+	    LOG_I(F1AP, "Radio Resource Configuration is present\n");
+	    long drb_id;
+	    int i;
+	    NR_DRB_ToAddModList_t  *DRB_configList  = rrcReconfiguration_ies->radioBearerConfig->drb_ToAddModList;
+	    NR_SRB_ToAddModList_t  *SRB_configList  = rrcReconfiguration_ies->radioBearerConfig->srb_ToAddModList;
+	    
+	    // NR_DRB_ToReleaseList_t *DRB_ReleaseList = rrcReconfiguration_ies->radioBearerConfig->drb_ToReleaseList;
+	    
+	    // rrc_rlc_config_asn1_req
+	    
+	    if (SRB_configList != NULL) {
+	      for (i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
+		if (SRB_configList->list.array[i]->srb_Identity == 1 ) {
+		  ue_context_p->ue_context.Srb1.Active=1;
+		} else if (SRB_configList->list.array[i]->srb_Identity == 2 )  {
+		  ue_context_p->ue_context.Srb2.Active=1;
+		  ue_context_p->ue_context.Srb2.Srb_info.Srb_id=2;
+		  LOG_I(F1AP, "[DU %d] SRB2 is now active\n",ctxt.module_id);
+		} else {
+		  LOG_W(F1AP, "[DU %d] invalide SRB identity %ld\n",ctxt.module_id,
+			SRB_configList->list.array[i]->srb_Identity);
+		}
+	      }
+	    }
+	    
+	    if (DRB_configList != NULL) {
+	      for (i = 0; i < DRB_configList->list.count; i++) {  // num max DRB (11-3-8)
+		if (DRB_configList->list.array[i]) {
+		  drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
+		  LOG_I(F1AP,
+			"[DU %d] Logical Channel UL-DCCH, Received RRCConnectionReconfiguration for UE rnti %x, reconfiguring DRB %d\n",
+			ctxt.module_id,
+			ctxt.rnti,
+			(int)DRB_configList->list.array[i]->drb_Identity);
+		  
+		  // (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
+		  
+		  if (ue_context_p->ue_context.DRB_active[drb_id] == 0) {
+		    ue_context_p->ue_context.DRB_active[drb_id] = 1;
+		    // logicalChannelIdentity
+		    // rrc_mac_config_req_eNB
+		  }
+		} else {        // remove LCHAN from MAC/PHY
+		  AssertFatal(1==0,"Can't handle this yet in DU\n");
+		}
+	      }
+	    }
+	  }
+	}
+	
+	break;
+	
+      case NR_DL_DCCH_MessageType__c1_PR_rrcResume:
+	LOG_I(F1AP,"Received rrcResume\n");
+	break;
+	
+      case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
+	LOG_I(F1AP,"Received rrcRelease\n");
+	break;
+	
+      case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
+	LOG_I(F1AP,"Received rrcReestablishment\n");
+	break;
+	
+      case NR_DL_DCCH_MessageType__c1_PR_securityModeCommand:
+	LOG_I(F1AP,"Received securityModeCommand\n");
+	break;
+	
+      case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
+	LOG_I(F1AP, "Received dlInformationTransfer\n");
+	break;
+	
+      case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
+	LOG_I(F1AP, "Received ueCapabilityEnquiry\n");
+	break;
+	
+      case NR_DL_DCCH_MessageType__c1_PR_counterCheck:
+	LOG_I(F1AP, "Received counterCheck\n");
+	break;
+	
+      case NR_DL_DCCH_MessageType__c1_PR_mobilityFromNRCommand:
+      case NR_DL_DCCH_MessageType__c1_PR_dlDedicatedMessageSegment_r16:
+      case NR_DL_DCCH_MessageType__c1_PR_ueInformationRequest_r16:
+      case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransferMRDC_r16:
+      case NR_DL_DCCH_MessageType__c1_PR_loggedMeasurementConfiguration_r16:
+      case NR_DL_DCCH_MessageType__c1_PR_spare3:
+      case NR_DL_DCCH_MessageType__c1_PR_spare2:
+      case NR_DL_DCCH_MessageType__c1_PR_spare1:
+	break;
+      }
+    }
+  } else if (req->srb_id == 2) {
+    // TODO
+    abort();
+  }
+  
+  LOG_I(F1AP, "Received DL RRC Transfer on srb_id %ld\n", req->srb_id);
+  //   rlc_op_status_t    rlc_status;
+  //   boolean_t          ret             = TRUE;
+  
+  //LOG_I(F1AP, "PRRCContainer size %lu:", ie->value.choice.RRCContainer.size);
+  //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+  //  printf("%02x ", ie->value.choice.RRCContainer.buf[i]);
+  
+  //printf (", PDCP PDU size %d:", rrc_dl_sdu_len);
+  //for (int i=0;i<rrc_dl_sdu_len;i++) printf("%2x ",pdcp_pdu_p->data[i]);
+  //printf("\n");
+  
+  du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, req->buf->size, req->buf);
+  //   rlc_status = rlc_data_req(&ctxt
+  //                             , 1
+  //                             , MBMS_FLAG_NO
+  //                             , srb_id
+  //                             , 0
+  //                             , 0
+  //                             , rrc_dl_sdu_len
+  //                             , pdcp_pdu_p
+  //                             ,NULL
+  //                             ,NULL
+  //                             );
+  //   switch (rlc_status) {
+  //     case RLC_OP_STATUS_OK:
+  //       //LOG_I(F1AP, "Data sending request over RLC succeeded!\n");
+  //       ret=TRUE;
+  //       break;
+  //     case RLC_OP_STATUS_BAD_PARAMETER:
+  //       LOG_W(F1AP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+  //       ret= FALSE;
+  //       break;
+  //     case RLC_OP_STATUS_INTERNAL_ERROR:
+  //       LOG_W(F1AP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+  //       ret= FALSE;
+  //       break;
+  //     case RLC_OP_STATUS_OUT_OF_RESSOURCES:
+  //       LOG_W(F1AP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+  //       ret= FALSE;
+  //       break;
+  //     default:
+  //       LOG_W(F1AP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+  //       ret= FALSE;
+  //       break;
+  //   } // switch case
+  //   return ret;
+return 0;
+}
+
 unsigned int mask_flip(unsigned int x) {
   return((((x>>8) + (x<<8))&0xffff)>>6);
 }
@@ -3336,7 +3597,11 @@ void *rrc_gnb_task(void *args_p) {
         LOG_I(NR_RRC,"[gNB %ld] Received %s : %p\n", instance, msg_name_p, &F1AP_SETUP_REQ(msg_p));
         rrc_gNB_process_f1_setup_req(&F1AP_SETUP_REQ(msg_p));
         break;
-
+	
+    case NR_DU_RRC_DL_INDICATION:
+      rrc_process_DU_DL(msg_p, msg_name_p, instance);
+      break;
+      
       /* Messages from X2AP */
       case X2AP_ENDC_SGNB_ADDITION_REQ:
         LOG_I(NR_RRC, "Received ENDC sgNB addition request from X2AP \n");

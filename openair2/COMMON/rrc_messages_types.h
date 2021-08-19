@@ -89,6 +89,7 @@
 #define RRC_SUBFRAME_PROCESS(mSGpTR)    (mSGpTR)->ittiMsg.rrc_subframe_process
 
 #define RLC_SDU_INDICATION(mSGpTR)      (mSGpTR)->ittiMsg.rlc_sdu_indication
+#define NRDuDlReq(mSGpTR)      (mSGpTR)->ittiMsg.nr_du_dl_req
 
 //-------------------------------------------------------------------------------------------//
 typedef struct RrcStateInd_s {
@@ -416,6 +417,11 @@ typedef struct NRRrcConfigurationReq_s {
   int                     pucch_TargetSNRx10;
 } gNB_RrcConfigurationReq;
 
+typedef struct NRDuDlReq_s {
+  rnti_t rnti;
+  mem_block_t * buf;
+  uint64_t srb_id;
+}  NRDuDlReq_t; 
 
 // UE: NAS -> RRC messages
 typedef kenb_refresh_req_t      NasKenbRefreshReq;
