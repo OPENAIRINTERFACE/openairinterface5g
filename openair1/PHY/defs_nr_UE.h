@@ -868,7 +868,6 @@ typedef struct {
   // flag to activate PRB based averaging of channel estimates
   // when off, defaults to frequency domain interpolation
   int prb_interpolation;
-  int16_t ch_est_alpha;
   int generate_ul_signal[NUMBER_OF_CONNECTED_gNB_MAX];
 
   UE_NR_SCAN_INFO_t scan_info[NB_BANDS_MAX];

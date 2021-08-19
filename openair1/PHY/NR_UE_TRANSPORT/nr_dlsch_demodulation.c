@@ -445,8 +445,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
           //LOG_I(PHY, "avgs Power per SC is %d\n", avgs);
           median[(aatx*frame_parms->nb_antennas_rx)+aarx] = avg[(aatx*frame_parms->nb_antennas_rx)+aarx];
         }
-      pdsch_vars[gNB_id]->log2_maxh = (log2_approx(avgs)/2) + 1;
-      //LOG_I(PHY, "avgs Power per SC is %d lg2_maxh %d\n", avgs,  pdsch_vars[gNB_id]->log2_maxh);
 
       if (dlsch0_harq->mimo_mode == NR_DUALSTREAM) {
         nr_dlsch_channel_level_median(pdsch_vars[gNB_id]->dl_ch_estimates_ext,
