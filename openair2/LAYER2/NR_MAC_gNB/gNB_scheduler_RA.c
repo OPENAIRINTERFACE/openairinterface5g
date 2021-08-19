@@ -755,7 +755,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
     NR_BWP_Uplink_t *ubwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
     int act_bwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     int act_bwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    if ((bwpStart < act_bwp_start) || (bwpSize > act_bwp_size))
+    if (!((bwpStart >= act_bwp_start) && ((bwpStart+bwpSize) <= (act_bwp_start+act_bwp_size))))
       bwpStart = act_bwp_start;
   }
 
@@ -853,7 +853,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   pusch_pdu->rnti = ra->rnti;
   pusch_pdu->handle = 0;
 
-  if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size))
+  if (!((ibwp_start >= abwp_start) && ((ibwp_size+ibwp_start) <= (abwp_size+abwp_start))))
     pusch_pdu->bwp_start = abwp_start;
   else
     pusch_pdu->bwp_start = ibwp_start;
