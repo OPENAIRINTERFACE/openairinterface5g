@@ -144,6 +144,8 @@ typedef struct {
   uint8_t msg3_first_rb;
   /// Msg3 number of RB
   uint8_t msg3_nb_rb;
+  /// Msg3 BWP start
+  uint8_t msg3_bwp_start;
   /// Msg3 TPC command
   uint8_t msg3_TPC;
   /// Msg3 ULdelay command
