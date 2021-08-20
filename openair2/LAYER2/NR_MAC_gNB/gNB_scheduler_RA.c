@@ -261,6 +261,8 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
     else
       mu = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
 
+    int bwp_start = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
     uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
     // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
     if ( get_nr_prach_info_from_index(config_index,
@@ -387,7 +389,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
       const int16_t N_RA_RB = get_N_RA_RB(cfg->prach_config.prach_sub_c_spacing.value, mu_pusch);
       uint16_t *vrb_map_UL = &cc->vrb_map_UL[slotP * MAX_BWP_SIZE];
       for (int i = 0; i < N_RA_RB * fdm; ++i)
-        vrb_map_UL[rach_ConfigGeneric->msg1_FrequencyStart + i] = 0xff; // all symbols
+        vrb_map_UL[bwp_start + rach_ConfigGeneric->msg1_FrequencyStart + i] = 0xff; // all symbols
     }
   }
 }
