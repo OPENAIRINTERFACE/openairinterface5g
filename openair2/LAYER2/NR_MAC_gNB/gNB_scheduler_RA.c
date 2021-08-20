@@ -1106,7 +1106,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
           dci_payload.frequency_domain_assignment.val,
           pdsch_pdu_rel15->rbStart,
           pdsch_pdu_rel15->rbSize,
-          pdsch_pdu_rel15->BWPSize,
+          effective_BWPSize,
           dci_payload.time_domain_assignment.val,
           dci_payload.vrb_to_prb_mapping.val,
           dci_payload.mcs,

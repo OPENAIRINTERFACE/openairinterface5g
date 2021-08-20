@@ -708,7 +708,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
   void *txp[ru->nb_tx];
   unsigned int txs;
-  int i,txsymb;
+  int i,txsymb=fp->symbols_per_slot;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->samples_per_subframe * 4));
 
@@ -782,8 +782,11 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 					siglen+sf_extension,
 					ru->nb_tx,
 					flags);
-      LOG_I(PHY,"[TXPATH] RU %d aa %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d, returned %d, E %f\n",ru->idx,i,
-	    (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot, txs,10*log10((double)signal_energy(txp[0],siglen+sf_extension)));
+      for (i=0;i<ru->nb_tx;i++) {
+         double E=10*log10((double)signal_energy(txp[i],siglen+sf_extension));
+         if (E>0) LOG_I(PHY,"[TXPATH] RU %d aa %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d, nsymb %d, returned %d, E %f\n",ru->idx,i,
+	                      (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot, txsymb, txs,E);
+      }
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       //AssertFatal(txs == 0,"trx write function error %d\n", txs);
   }
