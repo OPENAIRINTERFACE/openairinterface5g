@@ -56,7 +56,7 @@
 //#define UL_HARQ_PRINT
 extern RAN_CONTEXT_t RC;
 
-const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
+const uint8_t nr_rv_round_map[4] = {0, 2, 3, 1}; 
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
 //uint8_t mac_pdu[MAX_NR_DLSCH_PAYLOAD_BYTES];

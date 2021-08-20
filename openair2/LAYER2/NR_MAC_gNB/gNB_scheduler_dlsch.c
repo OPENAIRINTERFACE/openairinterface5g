@@ -882,8 +882,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(NR_MAC,
-          "%4d.%2d DLSCH RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d MCS %2d TBS %4d HARQ PID %2d round %d NDI %d\n",
+    LOG_I(NR_MAC,
+          "%4d.%2d [DLSCH/PDSCH/PUCCH] RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d NDI %d dl_data_to_ULACK %d (%d.%d)\n",
           frame,
           slot,
           rnti,
@@ -891,11 +891,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
           sched_pdsch->rbSize,
           ps->startSymbolIndex,
           ps->nrOfSymbols,
+          ps->dl_dmrs_symb_pos, 
           sched_pdsch->mcs,
           TBS,
           current_harq_pid,
           harq->round,
-          harq->ndi);
+          harq->ndi,
+          pucch->timing_indicator,
+          pucch->frame,
+          pucch->ul_slot);
 
     NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
 
