@@ -3560,6 +3560,12 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
   module_id_t mod_id       = dl_info->module_id;
   frame_t frame            = dl_info->frame;
   int slot                 = dl_info->slot;
+
+  if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack == 0) {
+    LOG_W(NR_MAC,"[UE %d][RAPROC][%d.%d] CRC check failed on RAR (NAK)\n", mod_id, frame, slot);
+    return 0;
+  }
+
   int cc_id                = dl_info->cc_id;
   uint8_t gNB_id           = dl_info->gNB_index;
   NR_UE_MAC_INST_t *mac    = get_mac_inst(mod_id);
@@ -3622,46 +3628,46 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     unsigned char csi_req;
 #endif
 
-  // TC-RNTI
-  ra->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
+    // TC-RNTI
+    ra->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
 
-  // TA command
-  ul_time_alignment->apply_ta = 1;
-  ul_time_alignment->ta_command = 31 + rar->TA2 + (rar->TA1 << 5);
+    // TA command
+    ul_time_alignment->apply_ta = 1;
+    ul_time_alignment->ta_command = 31 + rar->TA2 + (rar->TA1 << 5);
 
 #ifdef DEBUG_RAR
-  // CSI
-  csi_req = (unsigned char) (rar->UL_GRANT_4 & 0x01);
+    // CSI
+    csi_req = (unsigned char) (rar->UL_GRANT_4 & 0x01);
 #endif
 
-  // TPC
-  tpc_command = (unsigned char) ((rar->UL_GRANT_4 >> 1) & 0x07);
-  switch (tpc_command){
-    case 0:
-      ra->Msg3_TPC = -6;
-      break;
-    case 1:
-      ra->Msg3_TPC = -4;
-      break;
-    case 2:
-      ra->Msg3_TPC = -2;
-      break;
-    case 3:
-      ra->Msg3_TPC = 0;
-      break;
-    case 4:
-      ra->Msg3_TPC = 2;
-      break;
-    case 5:
-      ra->Msg3_TPC = 4;
-      break;
-    case 6:
-      ra->Msg3_TPC = 6;
-      break;
-    case 7:
-      ra->Msg3_TPC = 8;
-      break;
-  }
+    // TPC
+    tpc_command = (unsigned char) ((rar->UL_GRANT_4 >> 1) & 0x07);
+    switch (tpc_command){
+      case 0:
+        ra->Msg3_TPC = -6;
+        break;
+      case 1:
+        ra->Msg3_TPC = -4;
+        break;
+      case 2:
+        ra->Msg3_TPC = -2;
+        break;
+      case 3:
+        ra->Msg3_TPC = 0;
+        break;
+      case 4:
+        ra->Msg3_TPC = 2;
+        break;
+      case 5:
+        ra->Msg3_TPC = 4;
+        break;
+      case 6:
+        ra->Msg3_TPC = 6;
+        break;
+      case 7:
+        ra->Msg3_TPC = 8;
+        break;
+    }
     // MCS
     rar_grant.mcs = (unsigned char) (rar->UL_GRANT_4 >> 4);
     // time alloc
