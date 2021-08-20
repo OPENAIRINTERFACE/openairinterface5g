@@ -1210,11 +1210,15 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     long BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     long BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
+    /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
+    int current_harq_pid = sched_ctrl->retrans_dl_harq.head;
     // HARQ management
-    AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
-                "UE context not initialized: no HARQ processes found\n");
-    int current_harq_pid = sched_ctrl->available_dl_harq.head;
-    remove_front_nr_list(&sched_ctrl->available_dl_harq);
+    if (current_harq_pid < 0) {
+      AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
+                  "UE context not initialized: no HARQ processes found\n");
+      current_harq_pid = sched_ctrl->available_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->available_dl_harq);
+    }
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
     DevAssert(!harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
@@ -1522,24 +1526,32 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
 
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_harq_t *harq = &UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid];
+  NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
 
   LOG_D(NR_MAC, "ue %d, rnti %d, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
 
-  if (harq->is_waiting == 0)
-  {
-    if (harq->round == 0)
-    {
-      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
-      nr_clear_ra_proc(module_id, CC_id, frame, ra);
-      UE_info->active[UE_id] = true;
-      UE_info->Msg4_ACKed[UE_id] = true;
+  if (harq->is_waiting == 0) {
+    if (harq->round == 0) {
+      if (stats->dlsch_errors == 0) {
+        LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
+        nr_clear_ra_proc(module_id, CC_id, frame, ra);
+        UE_info->active[UE_id] = true;
+        UE_info->Msg4_ACKed[UE_id] = true;
+      }
+      else {
+        LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);
+        nr_mac_remove_ra_rnti(module_id, ra->rnti);
+        nr_clear_ra_proc(module_id, CC_id, frame, ra);
+        mac_remove_nr_ue(module_id, ra->rnti);
+      }
     }
-    else
-    {
+    else {
+      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Nack of RA-Msg4. Preparing retransmission!\n", UE_id, ra->rnti);
+      ra->Msg4_frame = (frame + 1) % 1024;
+      ra->Msg4_slot = 1;
       ra->state = Msg4;
     }
   }
-
 }
 
 void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t *ra){
