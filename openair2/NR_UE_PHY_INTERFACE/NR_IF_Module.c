@@ -772,8 +772,12 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
     ret = nr_ue_scheduler(NULL, ul_info);
     return 0;
   }
-  else if (ul_info->ue_sched_mode == SCHED_ALL)
+  if (ul_info->ue_sched_mode == SCHED_ALL || (mac->ra.ra_state >= GENERATE_PREAMBLE && mac->ra.ra_state != RA_FAILED)) {
     ret = nr_ue_scheduler(NULL, ul_info);
+  }
+  else
+    LOG_D(NR_MAC, "In %s():%d not calling scheduler. sched mode = %d and mac->ra.ra_state = %d\n",
+        __FUNCTION__, __LINE__, ul_info->ue_sched_mode, mac->ra.ra_state);
 
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
 
