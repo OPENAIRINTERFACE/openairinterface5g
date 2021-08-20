@@ -320,6 +320,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
         {
           L1_nsa_prach_procedures(ul_info.frame_tx, ul_info.slot_tx, prach_pdu);
           ul_config->number_pdus = 0;
+          ul_info.ue_sched_mode = SCHED_ALL;
         }
         else if (nr_prach == 2)
         {

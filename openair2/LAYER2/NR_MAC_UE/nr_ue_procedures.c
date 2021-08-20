@@ -2820,7 +2820,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	LOG_D(MAC,"RV %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->rv,2,dci_size-pos,*dci_pdu);
 #endif
 	// HARQ process number  4bit
-	pos+=2;
+	pos+=4;
 	dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
 #ifdef DEBUG_EXTRACT_DCI
 	LOG_D(MAC,"HARQ_PID %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->harq_pid,4,dci_size-pos,*dci_pdu);
