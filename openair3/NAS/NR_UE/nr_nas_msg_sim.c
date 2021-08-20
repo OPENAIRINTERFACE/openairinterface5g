@@ -867,8 +867,6 @@ void *nas_nrue_task(void *args_p)
               if (*(payload_container + offset) == 0x29) { // PDU address IEI
                 if ((*(payload_container+offset+1) == 0x05) && (*(payload_container +offset+2) == 0x01)) { // IPV4
                   nas_getparams();
-		  // FixME: seems wrong: pdcp_module_init has already created the interface
-                  netlink_init_tun("ue", 1);
                   sprintf(baseNetAddress, "%d.%d", *(payload_container+offset+3), *(payload_container+offset+4));
                   int third_octet = *(payload_container+offset+5);
                   int fourth_octet = *(payload_container+offset+6);
