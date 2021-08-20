@@ -212,7 +212,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
   memcpy(&F1AP_SETUP_REQ(message_p), req, sizeof(f1ap_setup_req_t) );
   if (num_cells_available > 0) {
-    if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_CU) {
+    if (f1ap_req(true, instance)->cell_type == CELL_MACRO_GNB) {
       itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
     } else {
       itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
