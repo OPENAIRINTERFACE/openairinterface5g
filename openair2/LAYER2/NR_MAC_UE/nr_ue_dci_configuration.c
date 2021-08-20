@@ -426,7 +426,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       }
     }
   }
-  else { // use coreset0/ss0
+  else if (!get_softmodem_params()->nsa) { // use coreset0/ss0
     NR_SearchSpace_t *ss0 = mac->search_space_zero;
     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15;
     rel15->num_dci_options = 1;
