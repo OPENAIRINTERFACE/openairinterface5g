@@ -236,6 +236,11 @@ typedef struct {
   } NR_UE_PUSCH;
 
 typedef struct {
+  bool active[2];
+  fapi_nr_ul_config_pucch_pdu pucch_pdu[2];
+  } NR_UE_PUCCH;
+
+typedef struct {
   /// \brief Holds the transmit data in time domain.
   /// For IFFT_FPGA this points to the same memory as PHY_vars->tx_vars[a].TX_DMA_BUFFER.
   /// - first index: tx antenna [0..nb_antennas_tx[
@@ -634,6 +639,9 @@ typedef struct {
   uint8_t agregationLevel;
   int nb_search_space;
   fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS_PER_CORESET];
+  // frame and slot for sib1 in initial sync
+  uint16_t sfn;
+  uint16_t slot;
   /*
 #ifdef NR_PDCCH_DEFS_NR_UE
   int nb_searchSpaces;
@@ -761,8 +769,6 @@ typedef struct {
   int UE_fo_compensation;
   /// \brief Indicator that UE is synchronized to a gNB
   int is_synchronized;
-  /// \brief Indicates on which frame is synchronized in a two frame synchronization
-  int is_synchronized_on_frame;
   /// \brief Indicator that UE lost frame synchronization
   int lost_sync;
   /// Data structure for UE process scheduling
@@ -810,6 +816,7 @@ typedef struct {
   NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PUSCH     *pusch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_PUCCH     *pucch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_CODEWORDS]; // two RxTx Threads
   NR_UE_ULSCH_t   *ulsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_CODEWORDS]; // two code words
   NR_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_gNB_MAX];
@@ -957,15 +964,10 @@ typedef struct {
   /// PUSCH contention-based access vars
   PUSCH_CA_CONFIG_DEDICATED  pusch_ca_config_dedicated[NUMBER_OF_eNB_MAX]; // lola
 
-  /// PUCCH variables
-
-  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_gNB_MAX];
 
   //#if defined(UPGRADE_RAT_NR)
 #if 1
   SystemInformationBlockType1_nr_t systemInformationBlockType1_nr;
-  PUCCH_ConfigCommon_nr_t    pucch_config_common_nr[NUMBER_OF_CONNECTED_gNB_MAX];
-  PUCCH_Config_t             pucch_config_dedicated_nr[NUMBER_OF_CONNECTED_gNB_MAX];
 #endif
 
   uint8_t ncs_cell[20][7];
@@ -1068,6 +1070,7 @@ typedef struct {
 typedef struct nr_rxtx_thread_data_s {
   UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE    *UE;
+  NR_UE_SCHED_MODE_t ue_sched_mode;
   notifiedFIFO_t txFifo;
 }  nr_rxtx_thread_data_t;
 

@@ -33,6 +33,7 @@
 //#include "common/utils/threadPool/thread-pool.h"
 #include "common/utils/load_module_shlib.h"
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
+#include "common/utils/nr/nr_common.h"
 
 #include "../../ARCH/COMMON/common_lib.h"
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
@@ -105,8 +106,6 @@ int config_sync_var=-1;
 
 
 RAN_CONTEXT_t RC;
-volatile int             start_eNB = 0;
-volatile int             start_UE = 0;
 volatile int             oai_exit = 0;
 
 
@@ -280,7 +279,7 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
 
   UE->mode = normal_txrx;
 
-  config_process_cmdline( cmdline_params,numparams,NULL);
+  config_get(cmdline_params,numparams,NULL);
 
   int pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRX_OPT);
   if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue;
@@ -319,22 +318,16 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   UE->rf_map.card          = card_offset;
   UE->rf_map.chain         = CC_id + chain_offset;
 
-
   LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n", 
   	   UE->mode, UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction);
 
   // Set FP variables
 
-
-  
   if (tddflag){
     fp->frame_type = TDD;
     LOG_I(PHY, "Set UE frame_type %d\n", fp->frame_type);
   }
 
-  fp->N_RB_DL = N_RB_DL;
-
-  LOG_I(PHY, "Set UE N_RB_DL %d\n", N_RB_DL);
   LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs);
 
 }
@@ -372,7 +365,8 @@ void init_openair0(void) {
 
     nr_get_carrier_frequencies(frame_parms, &dl_carrier, &ul_carrier);
 
-    nr_rf_card_config(&openair0_cfg[card], rx_gain_off, ul_carrier, dl_carrier, freq_off);
+    nr_rf_card_config_freq(&openair0_cfg[card], ul_carrier, dl_carrier, freq_off);
+    nr_rf_card_config_gain(&openair0_cfg[card], rx_gain_off);
 
     openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
 
@@ -467,34 +461,30 @@ int main( int argc, char **argv ) {
 
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
-
     PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
     UE[CC_id] = PHY_vars_UE_g[0][CC_id];
     memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
 
     set_options(CC_id, UE[CC_id]);
-
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-    if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
-      mac->if_module->phy_config_request(&mac->phy_config);
 
-    fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
-    if (get_softmodem_params()->sa) { // set frame config to initial values from command line and assume that the SSB is centered on the grid
-      nrUE_config->ssb_config.scs_common = get_softmodem_params()->numerology;
-      nrUE_config->carrier_config.dl_grid_size[nrUE_config->ssb_config.scs_common] = UE[CC_id]->frame_parms.N_RB_DL;
-      nrUE_config->carrier_config.ul_grid_size[nrUE_config->ssb_config.scs_common] = UE[CC_id]->frame_parms.N_RB_DL;
-      nrUE_config->carrier_config.dl_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
-      nrUE_config->carrier_config.uplink_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
-      nrUE_config->ssb_table.ssb_offset_point_a = (UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
-
-      // Initialize values, will be updated upon SIB1 reception
-      nrUE_config->cell_config.frame_duplex_type = TDD;
-      nrUE_config->ssb_table.ssb_mask_list[0].ssb_mask = 0xFFFFFFFF;
-      nrUE_config->ssb_table.ssb_period = 1;
+    if (get_softmodem_params()->sa) {
+      uint16_t nr_band = get_band(downlink_frequency[CC_id][0],uplink_frequency_offset[CC_id][0]);
+      mac->nr_band = nr_band;
+      nr_init_frame_parms_ue_sa(&UE[CC_id]->frame_parms,
+                                downlink_frequency[CC_id][0],
+                                uplink_frequency_offset[CC_id][0],
+                                get_softmodem_params()->numerology,
+                                nr_band);
     }
-    
-    nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, 
-			   mac->scc == NULL ? 78 : *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+    else{
+      if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
+        mac->if_module->phy_config_request(&mac->phy_config);
+
+      fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+
+      nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+    }
 
     init_symbol_rotation(&UE[CC_id]->frame_parms);
     init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);

@@ -278,8 +278,9 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_re %d,nb_layers %d)\n",
 	   start_sc, rel15->StartSymbolIndex, rel15->rbSize, nb_re,rel15->nrOfLayers);
 #endif
+
     for (int ap=0; ap<rel15->nrOfLayers; ap++) {
-      
+
       // DMRS params for this ap
       get_Wt(Wt, ap, dmrs_Type);
       get_Wf(Wf, ap, dmrs_Type);

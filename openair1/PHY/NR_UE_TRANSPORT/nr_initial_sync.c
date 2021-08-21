@@ -36,8 +36,7 @@
 #include "PHY/MODULATION/modulation_UE.h"
 #include "nr_transport_proto_ue.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
-//#include "SCHED/defs.h"
-//#include "SCHED/extern.h"
+#include "SCHED_NR_UE/defs.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "common_lib.h"
@@ -46,6 +45,7 @@
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/sss_nr.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_TRANSPORT/nr_dci.h"
 
 extern openair0_config_t openair0_cfg[];
 //static  nfapi_nr_config_request_t config_t;
@@ -201,7 +201,10 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
 char duplex_string[2][4] = {"FDD","TDD"};
 char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 
-int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames)
+int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
+                    PHY_VARS_NR_UE *ue,
+                    int n_frames, int sa,
+                    int dlsch_parallel)
 {
 
   int32_t sync_pos, sync_pos_frame; // k_ssb, N_ssb_crb, sync_pos2,
@@ -349,7 +352,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames)
     }
   }
   else {
-	  ret = -1;
+    ret = -1;
   }
 
   /* Consider this is a false detection if the offset is > 1000 Hz 
@@ -373,8 +376,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames)
     LOG_I(PHY, "[UE%d] In synch, rx_offset %d samples\n",ue->Mod_id, ue->rx_offset);
 #endif
     //#endif
-
-    ue->is_synchronized_on_frame = is; // to notify on which of the two frames sync was successful
 
     if (ue->UE_scan_carrier == 0) {
 
@@ -481,6 +482,76 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames)
 
   }
 
+  // if stand alone and sync on ssb do sib1 detection as part of initial sync
+  if (sa==1 && ret==0) {
+    bool dec = false;
+    NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[proc->thread_id][0];
+    int gnb_id = 0; //FIXME
+    int coreset_nb_rb=0;
+    int coreset_start_rb=0;
+
+    for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
+      uint8_t nb_symb_pdcch = pdcch_vars->pdcch_config[n_ss].coreset.duration;
+      get_coreset_rballoc(pdcch_vars->pdcch_config[n_ss].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
+
+      for (uint16_t l=0; l<nb_symb_pdcch; l++) {
+        nr_slot_fep_init_sync(ue,
+                              proc,
+                              l, // the UE PHY has no notion of the symbols to be monitored in the search space
+                              pdcch_vars->slot,
+                              is*fp->samples_per_frame+pdcch_vars->sfn*fp->samples_per_frame+ue->rx_offset);
+
+        if (coreset_nb_rb > 0)
+          nr_pdcch_channel_estimation(ue,
+                                      proc,
+                                      0,
+                                      pdcch_vars->slot,
+                                      l,
+                                      fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
+                                      coreset_nb_rb);
+
+      }
+      int  dci_cnt = nr_ue_pdcch_procedures(gnb_id, ue, proc, n_ss);
+      if (dci_cnt>0){
+        NR_UE_DLSCH_t *dlsch = ue->dlsch_SI[gnb_id];
+        if (dlsch && (dlsch->active == 1)) {
+          uint8_t harq_pid = dlsch->current_harq_pid;
+          NR_DL_UE_HARQ_t *dlsch0_harq = dlsch->harq_processes[harq_pid];
+          uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
+          uint16_t start_symb_sch = dlsch0_harq->start_symbol;
+
+          for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
+            nr_slot_fep_init_sync(ue,
+                                  proc,
+                                  m,
+                                  pdcch_vars->slot,  // same slot and offset as pdcch
+                                  is*fp->samples_per_frame+pdcch_vars->sfn*fp->samples_per_frame+ue->rx_offset);
+          }
+
+          int ret = nr_ue_pdsch_procedures(ue,
+                                           proc,
+                                           gnb_id,
+                                           SI_PDSCH,
+                                           ue->dlsch_SI[gnb_id],
+                                           NULL);
+          if (ret >= 0)
+            dec = nr_ue_dlsch_procedures(ue,
+                                         proc,
+                                         gnb_id,
+                                         SI_PDSCH,
+                                         ue->dlsch_SI[gnb_id],
+                                         NULL,
+                                         &ue->dlsch_SI_errors[gnb_id],
+                                         dlsch_parallel);
+
+          // deactivate dlsch once dlsch proc is done
+          ue->dlsch_SI[gnb_id]->active = 0;
+        }
+      }
+    }
+    if (dec == false) // sib1 not decoded
+      ret = -1;
+  }
   //  exit_fun("debug exit");
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_OUT);
   return ret;

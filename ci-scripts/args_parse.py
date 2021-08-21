@@ -266,6 +266,9 @@ def ArgsParse(argvs,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP,SCA,PHYSIM):
         elif re.match('^\-\-OCProjectName=(.+)$', myArgv, re.IGNORECASE):
             matchReg = re.match('^\-\-OCProjectName=(.+)$', myArgv, re.IGNORECASE)
             PHYSIM.OCProjectName = matchReg.group(1)
+        elif re.match('^\-\-BuildId=(.+)$', myArgv, re.IGNORECASE):
+            matchReg = re.match('^\-\-BuildId=(.+)$', myArgv, re.IGNORECASE)
+            RAN.BuildId = matchReg.group(1)
         else:
             HELP.GenericHelp(CONST.Version)
             sys.exit('Invalid Parameter: ' + myArgv)

@@ -245,6 +245,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
+                        carrier->do_CSIRS,
                         carrier->initial_csi_index[ue_context_p->local_uid + 1],
                         ue_context_p->local_uid);
   } else {
@@ -253,6 +254,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
+                        carrier->do_CSIRS,
                         carrier->initial_csi_index[ue_context_p->local_uid + 1],
                         ue_context_p->local_uid);
   }
@@ -350,7 +352,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     rrc_mac_config_req_gNB(rrc->module_id,
                            rrc->carrier.ssb_SubcarrierOffset,
                            rrc->carrier.pdsch_AntennaPorts,
-			                     rrc->carrier.pusch_AntennaPorts,
+			   rrc->carrier.pusch_AntennaPorts,
+                           rrc->carrier.sib1_tda,
                            rrc->carrier.servingcellconfigcommon,
                            &rrc->carrier.mib,
                            1, // add_ue flag
@@ -361,6 +364,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                            rrc->carrier.ssb_SubcarrierOffset,
                            rrc->carrier.pdsch_AntennaPorts,
                            rrc->carrier.pusch_AntennaPorts,
+                           rrc->carrier.sib1_tda,
                            NULL,
                            NULL,
                            1, // add_ue flag

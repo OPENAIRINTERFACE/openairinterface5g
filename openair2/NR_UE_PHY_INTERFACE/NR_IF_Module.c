@@ -66,8 +66,8 @@ int handle_bcch_bch(module_id_t module_id, int cc_id,
 }
 
 //  L2 Abstraction Layer
-int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len){
-  return nr_ue_decode_BCCH_DL_SCH(module_id, cc_id, gNB_index, sibs_mask, pduP, pdu_len);
+int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t ack_nack, uint8_t *pduP, uint32_t pdu_len){
+  return nr_ue_decode_BCCH_DL_SCH(module_id, cc_id, gNB_index, ack_nack, pduP, pdu_len);
 }
 
 //  L2 Abstraction Layer
@@ -81,6 +81,7 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t
 // Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
 int8_t handle_dlsch (nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
 
+  update_harq_status(dl_info, pdu_id);
   nr_ue_send_sdu(dl_info, ul_time_alignment, pdu_id);
 
   return 0;
@@ -93,12 +94,20 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  ret = nr_ue_scheduler(NULL, ul_info);
+  if (ul_info->ue_sched_mode == ONLY_PUSCH) {
+    ret = nr_ue_scheduler(NULL, ul_info);
+    return 0;
+  }
+  else if (ul_info->ue_sched_mode == SCHED_ALL)
+    ret = nr_ue_scheduler(NULL, ul_info);
 
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
 
   if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
+
+  if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
+    nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
 
   switch(ret){
   case UE_CONNECTION_OK:
@@ -161,43 +170,32 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
           dl_info->rx_ind->number_pdus);
 
         switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
+          case FAPI_NR_RX_PDU_TYPE_SSB:
+            mac->ssb_rsrp_dBm = (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.rsrp_dBm;
+            ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.additional_bits,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_index,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_length,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_start_subcarrier,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_SSB;
 
-        case FAPI_NR_RX_PDU_TYPE_SSB:
-
-          ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.additional_bits,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_index,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_length,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_start_subcarrier,
-                                       (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_SSB;
-
-          break;
-
-        case FAPI_NR_RX_PDU_TYPE_SIB:
-
-          ret_mask |= (handle_bcch_dlsch(dl_info->module_id,
-                       dl_info->cc_id, dl_info->gNB_index,
-                      (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.sibs_mask,
-                      (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu,
-                      (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
-
-          break;
-
-        case FAPI_NR_RX_PDU_TYPE_DLSCH:
-
-          ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
-
-          break;
-
-        case FAPI_NR_RX_PDU_TYPE_RAR:
-
-          ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_RAR;
-
-          break;
-
-        default:
-          break;
+            break;
+          case FAPI_NR_RX_PDU_TYPE_SIB:
+            ret_mask |= (handle_bcch_dlsch(dl_info->module_id,
+                                           dl_info->cc_id, dl_info->gNB_index,
+                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.ack_nack,
+                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
+                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
+            break;
+          case FAPI_NR_RX_PDU_TYPE_DLSCH:
+            ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
+            break;
+          case FAPI_NR_RX_PDU_TYPE_RAR:
+            ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_RAR;
+            break;
+          default:
+            break;
         }
       }
     }

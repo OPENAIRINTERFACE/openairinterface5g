@@ -40,6 +40,7 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
+#include <targets/RT/USER/lte-softmodem.h>
 
 #include "common/ran_context.h"
 
@@ -196,7 +197,6 @@ int vnf_unpack_vendor_extension_tlv(nfapi_tl_t *tl, uint8_t **ppReadPackedMessag
 void install_nr_schedule_handlers(NR_IF_Module_t *if_inst);
 void install_schedule_handlers(IF_Module_t *if_inst);
 extern int single_thread_flag;
-extern void init_eNB_afterRU(void);
 extern uint16_t sf_ahead;
 extern uint16_t slot_ahead;
 
