@@ -225,9 +225,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         break;
         }
       }
-
       memset(ul_config, 0, sizeof(fapi_nr_ul_config_request_t));
-
     }
   }
   return 0;
