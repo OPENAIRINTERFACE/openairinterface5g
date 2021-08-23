@@ -116,6 +116,7 @@ nr_sa_rrc_ue_process_radioBearerConfig(
 uint8_t do_NR_RRCReconfigurationComplete(
                         const protocol_ctxt_t *const ctxt_pP,
                         uint8_t *buffer,
+                        size_t buffer_size,
                         const uint8_t Transaction_id
                       );
 
@@ -1375,7 +1376,8 @@ static void rrc_ue_generate_RRCSetupComplete(
     nas_msg         = nr_nas_attach_req_imsi;
     nas_msg_length  = sizeof(nr_nas_attach_req_imsi);
   }
-  size = do_RRCSetupComplete(ctxt_pP->module_id,buffer,Transaction_id,sel_plmn_id,nas_msg_length,nas_msg);
+  size = do_RRCSetupComplete(ctxt_pP->module_id, buffer, sizeof(buffer),
+                             Transaction_id, sel_plmn_id, nas_msg_length, nas_msg);
   LOG_I(NR_RRC,"[UE %d][RAPROC] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCSetupComplete (bytes%d, gNB %d)\n",
    ctxt_pP->module_id,ctxt_pP->frame, size, gNB_index);
   LOG_D(NR_RRC,
@@ -1780,6 +1782,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 	do_RRCSetupRequest(
 	  module_id,
 	  (uint8_t *)NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload,
+          sizeof(NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.Payload),
 	  rv);
      LOG_I(NR_RRC,"[UE %d] : Logical Channel UL-CCCH (SRB0), Generating RRCSetupRequest (bytes %d, gNB %d)\n",
 	   module_id, NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size, gNB_index);
@@ -2246,7 +2249,7 @@ nr_rrc_ue_establish_srb2(
  //-----------------------------------------------------------------------------
  void nr_rrc_ue_generate_RRCReconfigurationComplete( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index, const uint8_t Transaction_id ) {
    uint8_t buffer[32], size;
-   size = do_NR_RRCReconfigurationComplete(ctxt_pP, buffer, Transaction_id);
+   size = do_NR_RRCReconfigurationComplete(ctxt_pP, buffer, sizeof(buffer), Transaction_id);
    LOG_I(NR_RRC,PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel UL-DCCH (SRB1), Generating RRCReconfigurationComplete (bytes %d, gNB_index %d)\n",
 	 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP), size, gNB_index);
    LOG_D(RLC,
@@ -2290,6 +2293,7 @@ nr_rrc_ue_establish_srb2(
    const protocol_ctxt_t *const ctxt_pP,
    const srb_id_t               Srb_id,
    const uint8_t         *const Buffer,
+   size_t                       Buffer_size,
    const uint8_t                gNB_indexP
  )
  //-----------------------------------------------------------------------------
@@ -2310,7 +2314,7 @@ nr_rrc_ue_establish_srb2(
 			   &asn_DEF_NR_DL_DCCH_Message,
 			   (void **)&dl_dcch_msg,
 			   Buffer,
-			   RRC_BUF_SIZE,
+			   Buffer_size,
 			   0,
 			   0);
 
@@ -2492,6 +2496,7 @@ nr_rrc_ue_establish_srb2(
           &ctxt,
           NR_RRC_DCCH_DATA_IND (msg_p).dcch_index,
           NR_RRC_DCCH_DATA_IND (msg_p).sdu_p,
+          NR_RRC_DCCH_DATA_IND (msg_p).sdu_size,
           NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
         break;
 
@@ -2725,7 +2730,8 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 {
     uint32_t length;
     uint8_t buffer[100];
-    length = do_RRCReestablishmentComplete(buffer, rrcReestablishment->rrc_TransactionIdentifier);
+    length = do_RRCReestablishmentComplete(buffer, sizeof(buffer),
+                                           rrcReestablishment->rrc_TransactionIdentifier);
     LOG_I(NR_RRC,"[UE %d][RAPROC] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCReestablishmentComplete (bytes%d, gNB %d)\n",
           ctxt_pP->module_id,ctxt_pP->frame, length, gNB_index);
 #ifdef ITTI_SIM

@@ -2129,7 +2129,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   return((enc_rval.encoded+7)/8);
 }
 
-uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
+uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, uint8_t *rv) {
   asn_enc_rval_t enc_rval;
   uint8_t buf[5],buf2=0;
   LTE_UL_CCCH_Message_t ul_ccch_msg;
@@ -2178,7 +2178,7 @@ uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
                                    NULL,
                                    (void *)&ul_ccch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
   LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
@@ -3176,6 +3176,7 @@ uint8_t do_RRCConnectionSetup_BR(
 uint8_t do_SecurityModeCommand(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t *const buffer,
+  size_t buffer_size,
   const uint8_t Transaction_id,
   const uint8_t cipheringAlgorithm,
   const uint8_t integrityProtAlgorithm
@@ -3205,7 +3206,7 @@ uint8_t do_SecurityModeCommand(
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -3234,6 +3235,7 @@ uint8_t do_SecurityModeCommand(
 //------------------------------------------------------------------------------
 uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                 uint8_t               *const buffer,
+                                size_t                       buffer_size,
                                 const uint8_t                Transaction_id,
                                 int16_t              eutra_band,
                                 uint32_t              nr_band)
@@ -3331,7 +3333,7 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -3358,6 +3360,7 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 //------------------------------------------------------------------------------
 uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    uint8_t               *const buffer,
+                                   size_t                       buffer_size,
                                    const uint8_t                Transaction_id,
                                    int16_t              eutra_band,
                                    uint32_t             nr_band)
@@ -3451,7 +3454,7 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -3478,6 +3481,7 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
 uint16_t do_RRCConnectionReconfiguration_BR(const protocol_ctxt_t        *const ctxt_pP,
     uint8_t                            *buffer,
+    size_t                              buffer_size,
     uint8_t                             Transaction_id,
     LTE_SRB_ToAddModList_t                 *SRB_list,
     LTE_DRB_ToAddModList_t                 *DRB_list,
@@ -3579,7 +3583,7 @@ uint16_t do_RRCConnectionReconfiguration_BR(const protocol_ctxt_t        *const 
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   RRC_BUF_SIZE);
+                                   buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed %s, %lu!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
@@ -3596,6 +3600,7 @@ uint16_t do_RRCConnectionReconfiguration_BR(const protocol_ctxt_t        *const 
  */
 uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
     uint8_t                                *buffer,
+    size_t                                  buffer_size,
     uint8_t                                 Transaction_id,
     LTE_SRB_ToAddModList_t                 *SRB_list,
     LTE_DRB_ToAddModList_t                 *DRB_list,
@@ -3756,7 +3761,7 @@ uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   RRC_BUF_SIZE);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -4011,6 +4016,7 @@ uint8_t do_RRCConnectionReject(uint8_t                    Mod_id,
 
 uint8_t do_RRCConnectionRelease(uint8_t                             Mod_id,
                                 uint8_t                            *buffer,
+                                size_t                              buffer_size,
                                 uint8_t                             Transaction_id) {
   asn_enc_rval_t enc_rval;
   LTE_DL_DCCH_Message_t dl_dcch_msg;
@@ -4032,7 +4038,7 @@ uint8_t do_RRCConnectionRelease(uint8_t                             Mod_id,
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   RRC_BUF_SIZE);
+                                   buffer_size);
   return((enc_rval.encoded+7)/8);
 }
 
@@ -4042,6 +4048,7 @@ uint8_t TMGI[5] = {4,3,2,1,0};//TMGI is a string of octet, ref. TS 24.008 fig. 1
 uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
                            uint8_t sync_area,
                            uint8_t *buffer,
+                           size_t buffer_size,
                            LTE_MCCH_Message_t *mcch_message,
                            LTE_MBSFNAreaConfiguration_r9_t **mbsfnAreaConfiguration) {
   asn_enc_rval_t enc_rval;
@@ -4148,7 +4155,7 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
                                    NULL,
                                    (void *)mcch_message,
                                    buffer,
-                                   100);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -4167,7 +4174,9 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
 }
 
 
-uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_id,long rsrp_s,long rsrq_s,long rsrp_t,long rsrq_t) {
+uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size,
+                             int measid, int phy_id, long rsrp_s, long rsrq_s,
+                             long rsrp_t, long rsrq_t) {
   asn_enc_rval_t enc_rval;
   LTE_UL_DCCH_Message_t ul_dcch_msg;
   LTE_MeasurementReport_t  *measurementReport;
@@ -4239,7 +4248,7 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
                                    NULL,
                                    (void *)&ul_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -4422,7 +4431,8 @@ uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t trans
   return encoded;
 }
 
-uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_paging_identity, cn_domain_t cn_domain) {
+uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size,
+                  ue_paging_identity_t ue_paging_identity, cn_domain_t cn_domain) {
   LOG_D(RRC, "[eNB %d] do_Paging start\n", Mod_id);
   asn_enc_rval_t enc_rval;
   LTE_PCCH_Message_t pcch_msg;
@@ -4474,7 +4484,8 @@ uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_pagin
   ASN_SEQUENCE_ADD(&pcch_msg.message.choice.c1.choice.paging.pagingRecordList->list, paging_record_p);
   LOG_D(RRC, "[eNB %d] do_Paging paging_record: cn_Domain %ld, ue_paging_identity.presenceMask %d, PagingRecordList.count %d\n",
         Mod_id, paging_record_p->cn_Domain, ue_paging_identity.presenceMask, pcch_msg.message.choice.c1.choice.paging.pagingRecordList->list.count);
-  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_PCCH_Message, NULL, (void *)&pcch_msg, buffer, RRC_BUF_SIZE);
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_PCCH_Message, NULL, (void *)&pcch_msg,
+                                   buffer, buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",

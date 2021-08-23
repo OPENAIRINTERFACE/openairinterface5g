@@ -456,6 +456,7 @@ void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t *const ctxt_pP,
       do_RRCConnectionRequest(
         ctxt_pP->module_id,
         (uint8_t *)UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.Payload,
+        sizeof(UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.Payload),
         rv);
     LOG_I(RRC,"[UE %d] : Frame %d, Logical Channel UL-CCCH (SRB0), Generating RRCConnectionRequest (bytes %d, eNB %d)\n",
           ctxt_pP->module_id, ctxt_pP->frame, UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size, eNB_index);
@@ -4450,7 +4451,8 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
               (long int)rsrq_s,
               (long int)rsrp_t,
               (long int)rsrq_t);
-        ssize_t size = do_MeasurementReport(ctxt_pP->module_id, buffer,measId,targetCellId,rsrp_s,rsrq_s,rsrp_t,rsrq_t);
+        ssize_t size = do_MeasurementReport(ctxt_pP->module_id, buffer, sizeof(buffer),
+                                            measId, targetCellId, rsrp_s, rsrq_s, rsrp_t, rsrq_t);
         AssertFatal(size >= 0, "do_MeasurementReport failed \n");
         LOG_I(RRC, "[UE %d] Frame %d : Generating Measurement Report for eNB %d. Size is %zu\n",
               ctxt_pP->module_id, ctxt_pP->frame, eNB_index, size);

@@ -313,6 +313,7 @@ void
 rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
     rrc_eNB_ue_context_t  *const ue_context_pP,
     uint8_t               *buffer,
+    size_t                 buffer_size,
     int                    *_size
     //const uint8_t        ho_state
                                                 );
