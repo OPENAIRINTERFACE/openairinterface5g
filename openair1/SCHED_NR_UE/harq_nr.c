@@ -306,7 +306,7 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq)
 {
   dl_harq->status = SCH_IDLE;
-  dl_harq->first_tx = 1;
+  dl_harq->first_rx = 1;
   dl_harq->round  = 0;
   dl_harq->ack = DL_ACKNACK_NO_SET;
 }
@@ -328,39 +328,63 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq)
 *
 *********************************************************************/
 
-void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, uint8_t rnti_type) {
+void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, int rv, uint8_t rnti_type) {
 
-  if (rnti_type == _CS_RNTI_) {
-    LOG_E(PHY, "Fatal error in HARQ entity due to not supported CS_RNTI at line %d in function %s of file %s \n", __LINE__ , __func__, __FILE__);
-    return;
-  }
-  else if ((rnti_type != _C_RNTI_) && (rnti_type != _TC_RNTI_)) {
-    /* harq mechanism is not relevant for other rnti */
-    return;
-  }
 
-  if (dl_harq->first_tx == 1) {
+  if (rnti_type == _SI_RNTI_ ||
+      rnti_type == _P_RNTI_ ||
+      rnti_type == _RA_RNTI_) {
     dl_harq->round = 0;
     dl_harq->status = ACTIVE;
-    dl_harq->DCINdi = ndi;
-    dl_harq->first_tx = 0;
-
-    LOG_D(PHY, "[HARQ-DL-PDSCH harqId : %d] first new reception \n", harq_pid);
+    dl_harq->first_rx = 1;
   }
-  else if (dl_harq->DCINdi != ndi) {
-    dl_harq->round = 0;
-    dl_harq->status = ACTIVE;
-    dl_harq->DCINdi = ndi;
-
-    LOG_D(PHY, "[HARQ-DL-PDSCH harqId : %d] new reception due to toogle of ndi \n", harq_pid);
+  else{
+    switch(rv){
+      case 0:
+        dl_harq->round = 0;
+        dl_harq->status = ACTIVE;
+        dl_harq->first_rx = 1;
+        if (dl_harq->DCINdi == ndi)
+          LOG_E(PHY,"Warning! rv %d indicates new transmission but new ndi %d is the same as old ndi %d\n",rv,ndi,dl_harq->DCINdi);
+        dl_harq->DCINdi = ndi;
+        break;
+      case 1:
+        dl_harq->round = 2;
+        if (dl_harq->DCINdi != ndi) {
+          LOG_E(PHY,"Missed previous DCI detections. NDI toggled but rv %d does not correspond to first reception\n",rv);
+          dl_harq->status = ACTIVE;
+          dl_harq->first_rx = 1;
+          dl_harq->DCINdi = ndi;
+        }
+        else if (dl_harq->ack)
+          dl_harq->status = SCH_IDLE;
+        break;
+      case 2:
+        dl_harq->round = 1;
+        if (dl_harq->DCINdi != ndi) {
+          LOG_E(PHY,"Missed previous DCI detections. NDI toggled but rv %d does not correspond to first reception\n",rv);
+          dl_harq->status = ACTIVE;
+          dl_harq->first_rx = 1;
+          dl_harq->DCINdi = ndi;
+        }
+        else if (dl_harq->ack)
+          dl_harq->status = SCH_IDLE;
+        break;
+      case 3:
+        dl_harq->round = 3;
+        if (dl_harq->DCINdi != ndi) {
+          LOG_E(PHY,"Missed previous DCI detections. NDI toggled but rv %d does not correspond to first reception\n",rv);
+          dl_harq->status = ACTIVE;
+          dl_harq->first_rx = 1;
+          dl_harq->DCINdi = ndi;
+        }
+        else if (dl_harq->ack)
+          dl_harq->status = SCH_IDLE;
+        break;
+      default:
+        AssertFatal(1==0,"Invalid value for rv %d\n",rv);
+    }
   }
-  else {
 
-    dl_harq->round++;
-
-    if (dl_harq->ack) dl_harq->status = SCH_IDLE;
-
-    LOG_D(PHY, "[HARQ-DL-PDSCH harqId : %d] reception of a retransmission \n", harq_pid);
-  }
 }
 
