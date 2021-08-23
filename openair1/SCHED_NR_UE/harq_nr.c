@@ -308,6 +308,7 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq)
   dl_harq->status = SCH_IDLE;
   dl_harq->first_rx = 1;
   dl_harq->round  = 0;
+  dl_harq->DCINdi = 1;
   dl_harq->ack = DL_ACKNACK_NO_SET;
 }
 
