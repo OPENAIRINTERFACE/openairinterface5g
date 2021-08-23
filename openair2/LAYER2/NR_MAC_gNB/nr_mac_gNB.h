@@ -156,6 +156,8 @@ typedef struct {
   int msg4_TBsize;
   /// MCS used for Msg4
   int msg4_mcs;
+  /// MAC PDU length for Msg4
+  int mac_pdu_length;
   /// RA search space
   NR_SearchSpace_t *ra_ss;
   // Beam index

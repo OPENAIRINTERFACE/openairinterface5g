@@ -1251,18 +1251,19 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     harq->feedback_slot = pucch->ul_slot;
     harq->feedback_frame = pucch->frame;
 
-    // Bytes to be transmitted
     uint8_t *buf = (uint8_t *) harq->tb;
-    uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
-    LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
-    uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, &buf[mac_pdu_length+2]);
-    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
-    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
-    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
-    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
-    mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
-
-    LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, (int)sizeof(NR_MAC_SUBHEADER_SHORT), mac_pdu_length);
+    // Bytes to be transmitted
+    if (harq->round == 0) {
+      uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
+      LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
+      uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, &buf[mac_pdu_length+2]);
+      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
+      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
+      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
+      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
+      ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
+      LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, (int)sizeof(NR_MAC_SUBHEADER_SHORT), ra->mac_pdu_length);
+    }
 
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
@@ -1323,7 +1324,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
                            nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
                            rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
-    } while (rbStart + rbSize < BWPSize && !vrb_map[rbStart + rbSize] && harq->tb_size < mac_pdu_length);
+    } while (rbStart + rbSize < BWPSize && !vrb_map[rbStart + rbSize] && harq->tb_size < ra->mac_pdu_length);
 
     for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
       if (vrb_map[rbStart + i]) {
@@ -1474,11 +1475,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        bwpid);
 
     // Add padding header and zero rest out if there is space left
-    if (mac_pdu_length < harq->tb_size) {
-      NR_MAC_SUBHEADER_FIXED *padding = (NR_MAC_SUBHEADER_FIXED *) &buf[mac_pdu_length];
+    if (ra->mac_pdu_length < harq->tb_size) {
+      NR_MAC_SUBHEADER_FIXED *padding = (NR_MAC_SUBHEADER_FIXED *) &buf[ra->mac_pdu_length];
       padding->R = 0;
       padding->LCID = DL_SCH_LCID_PADDING;
-      for(int k = mac_pdu_length+1; k<harq->tb_size; k++) {
+      for(int k = ra->mac_pdu_length+1; k<harq->tb_size; k++) {
         buf[k] = 0;
       }
     }
