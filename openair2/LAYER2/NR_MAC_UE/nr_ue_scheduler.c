@@ -1109,7 +1109,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
   // Handle the SR/BSR procedures per subframe
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   uint8_t gNB_indexP=0;
-#if 0
+#if 0 // todo
   // Get RLC status info and update Bj for all lcids that are active
   int lcid;     // lcid index
   for (lcid = DCCH; lcid < NR_MAX_NUM_LCID; lcid++) {
@@ -1251,7 +1251,7 @@ nr_update_bsr(module_id_t module_idP, frame_t frameP,
   //Get Buffer Occupancy and fill lcid_reordered_array
   for (lcid=DCCH; lcid < NR_MAX_NUM_LCID; lcid++) {
     //if (mac->logicalChannelConfig[lcid]) {
-    if (1) {
+    if (mac->logicalChannelBearer_exist[lcid] ) { // todo
       lcgid = mac->scheduling_info.LCGID[lcid];
 
       // Store already available data to transmit per Group
@@ -1281,7 +1281,7 @@ nr_update_bsr(module_id_t module_idP, frame_t frameP,
 
           do {
             //if (mac->logicalChannelConfig[lcid]->ul_SpecificParameters->priority <= highest_priority) {
-            if (1) {
+            if (1) { // todo
               //Insert if priority is higher or equal (lower or equal in value)
               for (pos_next=num_lcid_with_data-1; pos_next > array_index; pos_next--) {
                 lcid_reordered_array[pos_next] = lcid_reordered_array[pos_next - 1];

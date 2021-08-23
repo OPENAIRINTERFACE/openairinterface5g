@@ -409,6 +409,9 @@ typedef struct {
 
   /// BSR report flag management
   uint8_t BSR_reporting_active;
+
+  /// LogicalChannelConfig has bearer.
+  boolean_t logicalChannelBearer_exist[NR_MAX_NUM_LCID];
   NR_UE_SCHEDULING_INFO   scheduling_info;
 
   /// PHR

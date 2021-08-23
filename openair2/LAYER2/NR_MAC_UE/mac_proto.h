@@ -78,6 +78,18 @@ int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
                                 uint8_t *pduP,
                                 uint32_t pdu_len);
 
+/**\brief primitive from RLC layer to MAC layer to set if bearer exists for a logical channel. todo handle mac_LogicalChannelConfig
+   \param module_id                 module id
+   \param cc_id                     component carrier id
+   \param gNB_index                 gNB index
+   \param long                      logicalChannelIdentity*/
+int nr_rlc_mac_config_req_ue_logicalChannelBearer(
+	    module_id_t                 module_id,
+	    int                         cc_idP,
+	    uint8_t                     gNB_index,
+	    long                        logicalChannelIdentity
+);
+
 /**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)
    \param module_id                 module id
    \param cc_id                     component carrier id
