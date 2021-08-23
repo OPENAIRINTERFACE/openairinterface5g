@@ -184,6 +184,7 @@ uint16_t
 do_RRCConnectionReconfiguration_NB_IoT(
   const protocol_ctxt_t*        const ctxt_pP,
     uint8_t                            *buffer,
+    size_t                              buffer_size,
     uint8_t                             Transaction_id,
     SRB_ToAddModList_NB_r13_t          *SRB_list_NB_IoT,
     DRB_ToAddModList_NB_r13_t          *DRB_list_NB_IoT,
@@ -255,8 +256,8 @@ do_RRCConnectionReject_NB_IoT(
 @param transaction_id Transaction index
 @returns Size of encoded bit stream in bytes*/
 
-uint8_t do_RRCConnectionRelease_NB_IoT(uint8_t Mod_id, uint8_t *buffer,int Transaction_id);
-
+uint8_t do_RRCConnectionRelease_NB_IoT(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size,
+                                       int Transaction_id);
 
 uint8_t do_DLInformationTransfer_NB_IoT(
 		uint8_t Mod_id,
@@ -279,7 +280,8 @@ uint8_t do_DLInformationTransfer_NB_IoT(
 
 uint8_t do_RRCConnectionReestablishment_NB_IoT(
 		uint8_t Mod_id,
-		uint8_t* const buffer,
+		uint8_t* buffer,
+		size_t buffer_size,
 		const uint8_t     Transaction_id,
 		const NB_IoT_DL_FRAME_PARMS* const frame_parms, //to be changed
 		SRB_ToAddModList_NB_r13_t**             SRB_configList_NB_IoT

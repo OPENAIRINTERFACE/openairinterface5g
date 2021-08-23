@@ -1538,6 +1538,7 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
 
 uint8_t do_NR_RRCRelease(uint8_t                            *buffer,
+                         size_t                              buffer_size,
                          uint8_t                             Transaction_id) {
   asn_enc_rval_t enc_rval;
   NR_DL_DCCH_Message_t dl_dcch_msg;
@@ -1563,7 +1564,7 @@ uint8_t do_NR_RRCRelease(uint8_t                            *buffer,
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   RRC_BUF_SIZE);
+                                   buffer_size);
   if(enc_rval.encoded == -1) {
     LOG_I(NR_RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
         enc_rval.failed_type->name, enc_rval.encoded);
@@ -1576,6 +1577,7 @@ uint8_t do_NR_RRCRelease(uint8_t                            *buffer,
 int16_t do_RRCReconfiguration(
     const protocol_ctxt_t        *const ctxt_pP,
     uint8_t                      *buffer,
+    size_t                        buffer_size,
     uint8_t                       Transaction_id,
     NR_SRB_ToAddModList_t        *SRB_configList,
     NR_DRB_ToAddModList_t        *DRB_configList,
@@ -1671,7 +1673,7 @@ int16_t do_RRCReconfiguration(
                                     NULL,
                                     (void *)&dl_dcch_msg,
                                     buffer,
-                                    1000);
+                                    buffer_size);
 
     if(enc_rval.encoded == -1) {
         LOG_I(NR_RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -1696,7 +1698,7 @@ int16_t do_RRCReconfiguration(
 }
 
 
-uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
+uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, uint8_t *rv) {
   asn_enc_rval_t enc_rval;
   uint8_t buf[5],buf2=0;
   NR_UL_CCCH_Message_t ul_ccch_msg;
@@ -1740,7 +1742,7 @@ uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
                                    NULL,
                                    (void *)&ul_ccch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
   LOG_D(NR_RRC,"[UE] RRCSetupRequest Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
@@ -1784,6 +1786,7 @@ uint8_t
 do_NR_RRCReconfigurationComplete(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t *buffer,
+  size_t buffer_size,
   const uint8_t Transaction_id
 )
 //------------------------------------------------------------------------------
@@ -1811,14 +1814,15 @@ do_NR_RRCReconfigurationComplete(
                                    NULL,
                                    (void *)&ul_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   LOG_I(NR_RRC,"rrcReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
 }
 
-uint8_t do_RRCSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Transaction_id, uint8_t sel_plmn_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS){
+uint8_t do_RRCSetupComplete(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size,
+                            const uint8_t Transaction_id, uint8_t sel_plmn_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS){
   asn_enc_rval_t enc_rval;
   
   NR_UL_DCCH_Message_t  ul_dcch_msg;
@@ -1861,7 +1865,7 @@ enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
                                  NULL,
                                  (void *)&ul_dcch_msg,
                                  buffer,
-                                 100);
+                                 buffer_size);
 AssertFatal(enc_rval.encoded > 0,"ASN1 message encoding failed (%s, %lu)!\n",
     enc_rval.failed_type->name,enc_rval.encoded);
 LOG_D(NR_RRC,"RRCSetupComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
@@ -1976,6 +1980,7 @@ const protocol_ctxt_t     *const ctxt_pP,
 rrc_gNB_ue_context_t      *const ue_context_pP,
 int                              CC_id,
 uint8_t                   *const buffer,
+size_t                           buffer_size,
 //const uint8_t                    transmission_mode,
 const uint8_t                    Transaction_id,
 NR_SRB_ToAddModList_t               **SRB_configList
@@ -2098,7 +2103,7 @@ NR_SRB_ToAddModList_t               **SRB_configList
 }
 
 uint8_t 
-do_RRCReestablishmentComplete(uint8_t *buffer, int64_t rrc_TransactionIdentifier) {
+do_RRCReestablishmentComplete(uint8_t *buffer, size_t buffer_size, int64_t rrc_TransactionIdentifier) {
   asn_enc_rval_t enc_rval;
   NR_UL_DCCH_Message_t ul_dcch_msg;
   NR_RRCReestablishmentComplete_t *rrcReestablishmentComplete;
@@ -2124,7 +2129,7 @@ do_RRCReestablishmentComplete(uint8_t *buffer, int64_t rrc_TransactionIdentifier
                                    NULL,
                                    (void *)&ul_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
   LOG_D(NR_RRC,"[UE] RRCReestablishmentComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);

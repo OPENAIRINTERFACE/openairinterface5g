@@ -147,7 +147,6 @@ typedef struct UE_RRC_INFO_NB_IoT_s {
 
 //Measurement Report not supported in NB-IoT
 
-#define PAYLOAD_SIZE_MAX 1024
 #define RRC_BUF_SIZE 8192
 #define UNDEF_SECURITY_MODE 0xff
 #define NO_SECURITY_MODE 0x20

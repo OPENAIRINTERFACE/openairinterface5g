@@ -1970,7 +1970,7 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
           message_p = itti_alloc_new_message (TASK_RRC_ENB, 0, RRC_PCCH_DATA_REQ);
           /* Create message for PDCP (DLInformationTransfer_t) */
           length = do_Paging (instance,
-                              buffer,
+                              buffer, sizeof(buffer),
                               S1AP_PAGING_IND(msg_p).ue_paging_identity,
                               S1AP_PAGING_IND(msg_p).cn_domain);
 

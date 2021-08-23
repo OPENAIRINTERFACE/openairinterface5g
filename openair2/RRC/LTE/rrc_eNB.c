@@ -537,6 +537,7 @@ init_MCCH(
     RC.rrc[enb_mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[sync_area] = do_MBSFNAreaConfig(enb_mod_idP,
         sync_area,
         (uint8_t *)RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESSAGE[sync_area],
+        100, /* TODO: what is the actual size of .MCCH_MESSAGE[sync_area]? */
         &RC.rrc[enb_mod_idP]->carrier[CC_id].mcch,
         &RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message);
     LOG_I(RRC, "mcch message pointer %p for sync area %d \n",
@@ -1230,6 +1231,7 @@ rrc_eNB_generate_SecurityModeCommand(
   size = do_SecurityModeCommand(
            ctxt_pP,
            buffer,
+           sizeof(buffer),
            rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
            ue_context_pP->ue_context.ciphering_algorithm,
            ue_context_pP->ue_context.integrity_algorithm);
@@ -1284,6 +1286,7 @@ rrc_eNB_generate_UECapabilityEnquiry(
   size = do_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
+           sizeof(buffer),
            rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
            eutra_band,
            nr_band);
@@ -1334,6 +1337,7 @@ rrc_eNB_generate_NR_UECapabilityEnquiry(
   size = do_NR_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
+           sizeof(buffer),
            rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
            eutra_band,
            nr_band);
@@ -2000,9 +2004,10 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   measurements_enabled = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2 ||
                          RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_measurement_reports;
   // send LTE_RRCConnectionReconfiguration
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
   size = do_RRCConnectionReconfiguration(ctxt_pP,
                                          buffer,
+                                         sizeof(buffer),
                                          next_xid,   //Transaction_id,
                                          (LTE_SRB_ToAddModList_t *)*SRB_configList2, // SRB_configList
                                          (LTE_DRB_ToAddModList_t *)DRB_configList,
@@ -2198,7 +2203,7 @@ rrc_eNB_generate_RRCConnectionRelease(
   uint8_t buffer[RRC_BUF_SIZE];
   uint16_t size = 0;
   int release_num;
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
   T(T_ENB_RRC_CONNECTION_RELEASE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 #if 0
@@ -2210,7 +2215,8 @@ rrc_eNB_generate_RRCConnectionRelease(
   }
 
 #endif
-  size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
+  size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer, sizeof(buffer),
+                                 rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
@@ -2486,9 +2492,10 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *co
     LOG_W(RRC,"dedlicated NAS list is empty\n");
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
   size = do_RRCConnectionReconfiguration(ctxt_pP,
                                          buffer,
+                                         sizeof(buffer),
                                          xid,
                                          (LTE_SRB_ToAddModList_t *)NULL,
                                          (LTE_DRB_ToAddModList_t *)*DRB_configList2,
@@ -2733,9 +2740,9 @@ rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *cons
     LOG_W(RRC,"dedlicated NAS list is empty\n");
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
   size = do_RRCConnectionReconfiguration(ctxt_pP,
-                                         buffer,
+                                         buffer, sizeof(buffer),
                                          xid,
                                          (LTE_SRB_ToAddModList_t *)NULL,
                                          (LTE_DRB_ToAddModList_t *)DRB_configList2,
@@ -2834,9 +2841,10 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(  const protocol_
     LOG_W(RRC,"dedlicated NAS list is empty\n");
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
   size = do_RRCConnectionReconfiguration(ctxt_pP,
                                          buffer,
+                                         sizeof(buffer),
                                          xid,
                                          NULL,
                                          NULL,
@@ -3544,9 +3552,10 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 
   measurements_enabled = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2 ||
                          RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_measurement_reports;
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
   size = do_RRCConnectionReconfiguration(ctxt_pP,
                                          buffer,
+                                         sizeof(buffer),
                                          xid, // Transaction_id,
                                          (LTE_SRB_ToAddModList_t *) *SRB_configList2, // SRB_configList
                                          (LTE_DRB_ToAddModList_t *) *DRB_configList,
@@ -4260,9 +4269,10 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
 
   measurements_enabled = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2 ||
                          RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_measurement_reports;
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
   size = do_RRCConnectionReconfiguration(ctxt_pP,
                                          buffer,
+                                         sizeof(buffer),
                                          xid, // Transaction_id,
                                          (LTE_SRB_ToAddModList_t *) *SRB_configList2, // SRB_configList
                                          (LTE_DRB_ToAddModList_t *) *DRB_configList,
@@ -4360,6 +4370,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_SCell(
 
   size = do_RRCConnectionReconfiguration(ctxt_pP,
                                          buffer,
+                                         sizeof(buffer),
                                          rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),//Transaction_id,
                                          (LTE_SRB_ToAddModList_t *)NULL,
                                          (LTE_DRB_ToAddModList_t *)NULL,
@@ -5155,7 +5166,9 @@ check_handovers(
         // Configure target
         ue_context_p->ue_context.handover_info->state = HO_FORWARDING;
         msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_HANDOVER_REQ_ACK);
-        rrc_eNB_generate_HO_RRCConnectionReconfiguration(ctxt_pP, ue_context_p, X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer,
+        rrc_eNB_generate_HO_RRCConnectionReconfiguration(ctxt_pP, ue_context_p,
+            X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer,
+            RRC_BUF_SIZE, // TODO: supposed to be size of the .rrc_buffer. Is this right?
             &X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer_size);
         rrc_eNB_configure_rbs_handover(ue_context_p,ctxt_pP);
         X2AP_HANDOVER_REQ_ACK(msg).rnti = ue_context_p->ue_context.rnti;
@@ -5317,6 +5330,7 @@ void
 rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
     rrc_eNB_ue_context_t  *const ue_context_pP,
     uint8_t               *buffer,
+    size_t                 buffer_size,
     int                    *_size
     //const uint8_t        ho_state
                                                 )
@@ -6258,11 +6272,12 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
 
   measurements_enabled = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_x2 ||
                          RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)]->configuration.enable_measurement_reports;
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, buffer_size);
   char rrc_buf[1000 /* arbitrary, should be big enough, has to be less than size of return buf by a few bits/bytes */];
   int rrc_size;
   rrc_size = do_RRCConnectionReconfiguration(ctxt_pP,
              (unsigned char *)rrc_buf,
+             sizeof(rrc_buf),
              xid,   //Transaction_id,
              NULL, // SRB_configList
              NULL,
@@ -6298,7 +6313,7 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   char *ho_buf = (char *)buffer;
   int ho_size;
   ho_size = do_HandoverCommand(
-              ho_buf, 1024 /* TODO: this is the value found in struct x2ap_handover_req_ack_s for array rrc_buffer */,
+              ho_buf, buffer_size,
               rrc_buf,
               rrc_size);
   *_size = size = ho_size;
@@ -10042,7 +10057,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
 {
   uint8_t                             buffer[RRC_BUF_SIZE];
   uint16_t                            size = 0;
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
 
   // allocate dedicated pools for UE -sl-CommConfig/sl-DiscConfig (sl-V2X-ConfigDedicated)
   //populate dedicated resources for SL communication (sl-CommConfig)
@@ -10055,6 +10070,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
     sl_CommConfig[0] = rrc_eNB_get_sidelink_commTXPool(ctxt_pP, ue_context_pP, destinationInfoList);
     size = do_RRCConnectionReconfiguration(ctxt_pP,
                                            buffer,
+                                           sizeof(buffer),
                                            rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),   //Transaction_id
                                            (LTE_SRB_ToAddModList_t *)NULL,
                                            (LTE_DRB_ToAddModList_t *)NULL,
@@ -10077,6 +10093,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
     sl_DiscConfig[0] = rrc_eNB_get_sidelink_discTXPool(ctxt_pP, ue_context_pP, n_discoveryMessages );
     size = do_RRCConnectionReconfiguration(ctxt_pP,
                                            buffer,
+                                           sizeof(buffer),
                                            rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),   //Transaction_id
                                            (LTE_SRB_ToAddModList_t *)NULL,
                                            (LTE_DRB_ToAddModList_t *)NULL,
