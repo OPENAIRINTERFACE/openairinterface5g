@@ -1613,8 +1613,8 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
                         0,
                         ad->ops_mempool,
                         1,
-                        1,
-                        1);
+                        get_num_ops(), 
+                        get_num_lcores());
         if (f_ret != TEST_SUCCESS) {
                 printf("Couldn't init test op params");
         }
