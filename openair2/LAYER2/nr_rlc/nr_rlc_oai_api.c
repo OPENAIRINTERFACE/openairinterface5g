@@ -37,7 +37,6 @@
 #include "NR_RLC-Config.h"
 #include "common/ran_context.h"
 #include "NR_UL-CCCH-Message.h"
-#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
@@ -937,9 +936,6 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
             if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity){
               if(srb2add_listP->list.array[i]->srb_Identity == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.srb_Identity){
                 add_rlc_srb(rnti, srb2add_listP->list.array[i], rlc_bearer2add_list->list.array[j]);
-                LOG_I(RLC, "[FRAME %05d][RLC_UE][MOD %02d][][--- MAC_CONFIG_REQ (SRB%ld gNB %d) --->][MAC_UE][MOD %02d][]\n",
-         	       ctxt_pP->frame, ctxt_pP->module_id, rlc_bearer2add_list->list.array[j]->logicalChannelIdentity, 0, ctxt_pP->module_id);
-                nr_rlc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,0,rlc_bearer2add_list->list.array[j]->logicalChannelIdentity);
               }
             }
           }
@@ -957,9 +953,6 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
             if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity){
               if(drb2add_listP->list.array[i]->drb_Identity == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.drb_Identity){
                 add_drb(rnti, drb2add_listP->list.array[i], rlc_bearer2add_list->list.array[j]);
-                LOG_I(RLC, "[FRAME %05d][RLC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB%ldles gNB %d) --->][MAC_UE][MOD %02d][]\n",
-                   ctxt_pP->frame, ctxt_pP->module_id, rlc_bearer2add_list->list.array[j]->logicalChannelIdentity, 0, ctxt_pP->module_id);
-                nr_rlc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,0,rlc_bearer2add_list->list.array[j]->logicalChannelIdentity);
               }
             }
           }

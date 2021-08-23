@@ -673,7 +673,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
 }
 
 // todo handle mac_LogicalChannelConfig
-int nr_rlc_mac_config_req_ue_logicalChannelBearer(
+int nr_rrc_mac_config_req_ue_logicalChannelBearer(
     module_id_t                     module_id,
     int                             cc_idP,
     uint8_t                         gNB_index,

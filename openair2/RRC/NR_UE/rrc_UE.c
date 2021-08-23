@@ -2083,6 +2083,7 @@ nr_rrc_ue_establish_srb2(
 
 	   LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 gNB %d) --->][MAC_UE][MOD %02d][]\n",
 	       ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
+	   nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,gNB_index,1);
 	   // rrc_mac_config_req_ue
 	 }
        } else {
@@ -2098,6 +2099,7 @@ nr_rrc_ue_establish_srb2(
 
 	   LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 gNB %d) --->][MAC_UE][MOD %02d][]\n",
 	       ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
+	   nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,gNB_index,2);
 	   // rrc_mac_config_req_ue
 	 }
        } // srb2
@@ -2118,8 +2120,21 @@ nr_rrc_ue_establish_srb2(
 	 memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][DRB_id-1],
 		 radioBearerConfig->drb_ToAddModList->list.array[cnt], sizeof(NR_DRB_ToAddMod_t));
        } else {
-	 LOG_D(NR_RRC, "Adding DRB %ld %p\n", DRB_id-1, radioBearerConfig->drb_ToAddModList->list.array[cnt]);
+	 //LOG_D(NR_RRC, "Adding DRB %ld %p\n", DRB_id-1, radioBearerConfig->drb_ToAddModList->list.array[cnt]);
 	 NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][DRB_id-1] = radioBearerConfig->drb_ToAddModList->list.array[cnt];
+	 int j;
+	 struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list = NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList;
+	 if (rlc_bearer2add_list != NULL) {
+	   for(j = 0; j < rlc_bearer2add_list->list.count; j++){
+	     if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
+	       if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity){
+	           LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB lcid %ld gNB %d) --->][MAC_UE][MOD %02d][]\n",
+	            ctxt_pP->frame, ctxt_pP->module_id, rlc_bearer2add_list->list.array[j]->logicalChannelIdentity, 0, ctxt_pP->module_id);
+	         nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,0,rlc_bearer2add_list->list.array[j]->logicalChannelIdentity);
+	       }
+	     }
+	   }
+	 }
        }
      }
 

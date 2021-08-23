@@ -38,6 +38,9 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define NR_SHORT_BSR_TABLE_SIZE 32
+#define NR_LONG_BSR_TABLE_SIZE 256
+
 #define TABLE_38213_13_1_NUM_INDEXES 15
 #define TABLE_38213_13_2_NUM_INDEXES 14
 #define TABLE_38213_13_3_NUM_INDEXES 9
