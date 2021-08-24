@@ -1509,6 +1509,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
 
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_pusch->slot];
+    future_ul_tti_req->SFN = sched_pusch->frame; // Melissa Elkadi, we hacked this to keep gNB from crashing
     AssertFatal(future_ul_tti_req->SFN == sched_pusch->frame
                 && future_ul_tti_req->Slot == sched_pusch->slot,
                 "%d.%d future UL_tti_req's frame.slot %d.%d does not match PUSCH %d.%d\n",

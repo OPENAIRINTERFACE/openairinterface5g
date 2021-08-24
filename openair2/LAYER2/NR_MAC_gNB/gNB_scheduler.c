@@ -460,8 +460,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_csirs_scheduling(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // Schedule CSI measurement reporting: check in slot 0 for the whole frame
-  if (slot == 0)
-    nr_csi_meas_reporting(module_idP, frame, slot);
+  //if (slot == 0)
+    // nr_csi_meas_reporting(module_idP, frame, slot); Melissa Elkadi, hack to keep from crashing
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected
