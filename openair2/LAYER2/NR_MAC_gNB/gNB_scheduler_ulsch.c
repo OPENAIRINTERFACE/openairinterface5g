@@ -811,7 +811,7 @@ bool nr_UE_is_to_be_scheduled(module_id_t mod_id, int CC_id, int UE_id, frame_t 
    * (2) there is a scheduling request
    * (3) or we did not schedule it in more than 10 frames */
   const bool has_data = sched_ctrl->estimated_ul_buffer > sched_ctrl->sched_ul_bytes;
-  const bool high_inactivity = diff >= nrmac->ulsch_max_slots_inactivity;
+  const bool high_inactivity = diff >= nrmac->ulsch_max_frame_inactivity * n;
   LOG_D(NR_MAC,
         "%4d.%2d UL inactivity %d slots has_data %d SR %d\n",
         frame,

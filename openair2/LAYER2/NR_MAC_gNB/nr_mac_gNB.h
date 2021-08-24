@@ -739,7 +739,7 @@ typedef struct gNB_MAC_INST_s {
   int *preferred_ul_tda[MAX_NUM_BWP];
 
   /// maximum number of slots before a UE will be scheduled ULSCH automatically
-  uint32_t ulsch_max_slots_inactivity;
+  uint32_t ulsch_max_frame_inactivity;
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
