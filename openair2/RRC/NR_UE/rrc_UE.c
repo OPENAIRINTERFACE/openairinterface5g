@@ -2083,7 +2083,7 @@ nr_rrc_ue_establish_srb2(
 
 	   LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 gNB %d) --->][MAC_UE][MOD %02d][]\n",
 	       ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
-	   nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,gNB_index,1);
+	   nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,gNB_index,1,true); //todo handle mac_LogicalChannelConfig
 	   // rrc_mac_config_req_ue
 	 }
        } else {
@@ -2099,7 +2099,7 @@ nr_rrc_ue_establish_srb2(
 
 	   LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 gNB %d) --->][MAC_UE][MOD %02d][]\n",
 	       ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
-	   nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,gNB_index,2);
+	   nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,gNB_index,2,true); //todo handle mac_LogicalChannelConfig
 	   // rrc_mac_config_req_ue
 	 }
        } // srb2
@@ -2128,9 +2128,11 @@ nr_rrc_ue_establish_srb2(
 	   for(j = 0; j < rlc_bearer2add_list->list.count; j++){
 	     if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
 	       if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity){
+	         if(DRB_id == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.drb_Identity){
 	           LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB lcid %ld gNB %d) --->][MAC_UE][MOD %02d][]\n",
-	            ctxt_pP->frame, ctxt_pP->module_id, rlc_bearer2add_list->list.array[j]->logicalChannelIdentity, 0, ctxt_pP->module_id);
-	         nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,0,rlc_bearer2add_list->list.array[j]->logicalChannelIdentity);
+	               ctxt_pP->frame, ctxt_pP->module_id, rlc_bearer2add_list->list.array[j]->logicalChannelIdentity, 0, ctxt_pP->module_id);
+	           nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,0,rlc_bearer2add_list->list.array[j]->logicalChannelIdentity,true); //todo handle mac_LogicalChannelConfig
+	         }
 	       }
 	     }
 	   }
@@ -2179,6 +2181,15 @@ nr_rrc_ue_establish_srb2(
      for (i = 0; i < radioBearerConfig->drb_ToReleaseList->list.count; i++) {
        DRB_id = *radioBearerConfig->drb_ToReleaseList->list.array[i];
        free(NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][DRB_id-1]);
+     }
+   }
+
+   if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToReleaseList != NULL) {
+     for (i = 0; i < NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToReleaseList->list.count; i++) {
+       int lcid = *NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToReleaseList->list.array[i];
+       LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (RB lcid %ld gNB %d release) --->][MAC_UE][MOD %02d][]\n",
+           ctxt_pP->frame, ctxt_pP->module_id, lcid, 0, ctxt_pP->module_id);
+       nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,0,lcid,false); //todo handle mac_LogicalChannelConfig
      }
    }
 
