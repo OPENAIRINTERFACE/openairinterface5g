@@ -514,6 +514,7 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     ul_info.slot_rx = slot;
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
+    ul_info.ue_sched_mode = SCHED_ALL;
     if (mac->scc && is_nr_UL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_tx, mac->frame_type))
     {
         nr_ue_ul_indication(&ul_info);
@@ -768,11 +769,11 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  if (ul_info->ue_sched_mode == ONLY_PUSCH && !get_softmodem_params()->nsa) {
+  if (ul_info->ue_sched_mode == ONLY_PUSCH) {
     ret = nr_ue_scheduler(NULL, ul_info);
     return 0;
   }
-  if (ul_info->ue_sched_mode == SCHED_ALL || (mac->ra.ra_state >= GENERATE_PREAMBLE && mac->ra.ra_state != RA_FAILED)) {
+  if (ul_info->ue_sched_mode == SCHED_ALL) {
     ret = nr_ue_scheduler(NULL, ul_info);
   }
   else

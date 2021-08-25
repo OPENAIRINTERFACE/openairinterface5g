@@ -285,6 +285,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     ul_info.slot_rx = slot;
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
+    ul_info.ue_sched_mode = SCHED_ALL;
 
     memset(&mac->dl_info, 0, sizeof(mac->dl_info));
     mac->dl_info.cc_id = CC_id;
