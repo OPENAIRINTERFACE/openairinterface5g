@@ -26,38 +26,52 @@ while (<INPUT_FILE>) {
 
     syswrite OUTPUT_FILE,"END\n\n";
 
-	while(<INPUT_FILE>) {
-  	  if( m/NR-UE-Variables DEFINITIONS AUTOMATIC TAGS ::=/){
-         
-          syswrite OUTPUT_FILE,"$_ \n";
-          syswrite OUTPUT_FILE,"BEGIN\n\n";
+	  while(<INPUT_FILE>) {
+      if( m/PC5-RRC-Definitions DEFINITIONS AUTOMATIC TAGS ::=/){
+        syswrite OUTPUT_FILE,"$_ \n";
+        syswrite OUTPUT_FILE,"BEGIN\n\n";
 
-          # Get all the text delimited by -- ASN1START and -- ASN1STOP
-          extract_asn1();
+        # Get all the text delimited by -- ASN1START and -- ASN1STOP
+        extract_asn1();
 
-          syswrite OUTPUT_FILE,"END\n\n";
+        syswrite OUTPUT_FILE,"END\n\n";
           
-          	while(<INPUT_FILE>) {
+        while(<INPUT_FILE>) {
+          if( m/NR-UE-Variables DEFINITIONS AUTOMATIC TAGS ::=/){
+            syswrite OUTPUT_FILE,"$_ \n";
+            syswrite OUTPUT_FILE,"BEGIN\n\n";
+
+            # Get all the text delimited by -- ASN1START and -- ASN1STOP
+            extract_asn1();
+            syswrite OUTPUT_FILE,"END\n\n";
+            while(<INPUT_FILE>) {
+              if( m/NR-Sidelink-Preconf DEFINITIONS AUTOMATIC TAGS ::=/){
+                syswrite OUTPUT_FILE,"$_ \n";
+                syswrite OUTPUT_FILE,"BEGIN\n\n";
+
+                # Get all the text delimited by -- ASN1START and -- ASN1STOP
+                extract_asn1();
+
+                syswrite OUTPUT_FILE,"END\n\n";
+                while(<INPUT_FILE>) {
                   if( m/NR-InterNodeDefinitions DEFINITIONS AUTOMATIC TAGS ::=/){
-		  
-          	  syswrite OUTPUT_FILE,"$_ \n";
-          	  syswrite OUTPUT_FILE,"BEGIN\n\n";
+                    syswrite OUTPUT_FILE,"$_ \n";
+                    syswrite OUTPUT_FILE,"BEGIN\n\n";
 
-          	  # Get all the text delimited by -- ASN1START and -- ASN1STOP
-          	  extract_asn1();
+                    # Get all the text delimited by -- ASN1START and -- ASN1STOP
+                    extract_asn1();
 
-          	  syswrite OUTPUT_FILE,"END\n\n";
-
-		  }
+                    syswrite OUTPUT_FILE,"END\n\n";
+                  }
                 }
-
-	  }	
-	}	  
-
+              }
+            }
+          }
+        }
+	    }
+    }
     close(OUTPUT_FILE);
   }
-
-
 }
 
 close(INPUT_FILE);
