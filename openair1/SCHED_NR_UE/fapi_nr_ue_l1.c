@@ -197,6 +197,12 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               LOG_E(NR_MAC, "Put_queue failed for uci_ind\n");
               //free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->harq_list);
               //free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq);
+              for (int j = 0; j < uci_ind->num_ucis; j++)
+              {
+                nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
+                free(pdu_0_1->harq->harq_list);
+                free(pdu_0_1->harq);
+              }
               free(uci_ind->uci_list);
               free(uci_ind);
             }

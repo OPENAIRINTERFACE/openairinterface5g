@@ -425,6 +425,8 @@ typedef struct {
   nr_downlink_indication_t dl_info;
   NR_UE_HARQ_STATUS_t dl_harq_info[16];
 
+  pthread_mutex_t mutex_dl_info;
+
 } NR_UE_MAC_INST_t;
 
 typedef enum seach_space_mask_e {

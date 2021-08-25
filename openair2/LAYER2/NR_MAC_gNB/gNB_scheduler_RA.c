@@ -1521,7 +1521,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     LOG_D(NR_MAC,"numDlDci: %i\n", pdcch_pdu_rel15->numDlDci);
 
     ra->state = WAIT_Msg4_ACK;
-    LOG_I(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
+    LOG_I(NR_MAC,"[gNB %d][RAPROC] Frame %d, Slot %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
   }
 }
 

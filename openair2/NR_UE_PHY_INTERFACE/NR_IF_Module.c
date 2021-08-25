@@ -274,6 +274,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     }
 
     dl_info->rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
+    AssertFatal(dl_info->rx_ind != NULL, "%s: Out of memory in calloc", __FUNCTION__);
     dl_info->rx_ind->sfn = tx_data_request->SFN;
     dl_info->rx_ind->slot = tx_data_request->Slot;
     dl_info->rx_ind->number_pdus = num_pdus;
@@ -290,6 +291,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
         LOG_I(NR_PHY, "%s: num_tlv %d and length %d, pdu index %d\n",
               __FUNCTION__, pdu_list->num_TLV, length, i);
         uint8_t *pdu = malloc(length);
+        AssertFatal(pdu != NULL, "%s: Out of memory in malloc", __FUNCTION__);
         dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu;
         for (int j = 0; j < pdu_list->num_TLV; j++)
         {
@@ -332,6 +334,7 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
         if (num_dci > 0)
         {
             dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
+            AssertFatal(dl_info->dci_ind != NULL, "%s: Out of memory in calloc", __FUNCTION__);
             dl_info->dci_ind->number_of_dcis = num_dci;
             dl_info->dci_ind->SFN = ul_dci_req->SFN;
             dl_info->dci_ind->slot = ul_dci_req->Slot;
@@ -395,6 +398,12 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
                         .uci_ind = *uci_ind,
                     };
                     send_nsa_standalone_msg(&UL_INFO, uci_ind->header.message_id);
+                }
+                for (int j = 0; j < uci_ind->num_ucis; j++)
+                {
+                  nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
+                  free(pdu_0_1->harq->harq_list);
+                  free(pdu_0_1->harq);
                 }
                 free(uci_ind->uci_list);
                 free(uci_ind);
@@ -466,6 +475,8 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
       return;
     }
 
+    if (pthread_mutex_lock(&mac->mutex_dl_info)) abort();
+
     if (dl_tti_request)
     {
         frame = dl_tti_request->SFN;
@@ -496,6 +507,7 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     }
     else
     {
+        if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
         return;
     }
 
@@ -504,6 +516,8 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
     fill_dci_from_dl_config(&mac->dl_info, &mac->dl_config_request);
     nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+
+    if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
 
     // If we filled dl_info AFTER we got the slot indication, we want to check if we should fill tx_req:
     nr_uplink_indication_t ul_info;
@@ -880,9 +894,14 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
     }
 
     //clean up nr_downlink_indication_t *dl_info
-    dl_info->rx_ind = NULL;
-    dl_info->dci_ind = NULL;
-
+    if(dl_info->dci_ind != NULL){
+      free(dl_info->dci_ind);
+      dl_info->dci_ind = NULL;
+    }
+    if(dl_info->rx_ind != NULL){
+      free(dl_info->rx_ind);
+      dl_info->rx_ind  = NULL;
+    }
   }
   return 0;
 }
