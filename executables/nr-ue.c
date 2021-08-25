@@ -339,7 +339,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
         else if (nr_prach == 2)
         {
           LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
-          nr_DRB_preconfiguration(mac->crnti);
+          if (!IS_SOFTMODEM_NOS1)
+            nr_DRB_preconfiguration(mac->crnti);
         }
         else if(nr_prach == 3)
         {
