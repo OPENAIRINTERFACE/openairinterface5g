@@ -1188,7 +1188,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
  long *delay[8];
  for (int i=0;i<8;i++) {
    delay[i] = calloc(1,sizeof(*delay[i]));
-   *delay[i] = (i+2);
+   *delay[i] = (i+2+4);
    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
  }
 
