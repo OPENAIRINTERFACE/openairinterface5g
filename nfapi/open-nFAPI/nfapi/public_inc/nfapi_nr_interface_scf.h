@@ -673,6 +673,7 @@ typedef struct {
 #define NFAPI_NR_SLOT_INDICATION_PERIOD_NUMEROLOGY_3 125 //us
 
 typedef struct {
+  nfapi_p7_message_header_t header;
 	uint16_t sfn; //0->1023   
   uint16_t slot;//0->319
   
@@ -1492,10 +1493,11 @@ typedef struct
 
 typedef struct
 {
+  nfapi_p7_message_header_t header;
   uint16_t sfn;
   uint16_t slot;
   uint16_t number_of_pdus;
-  nfapi_nr_rx_data_pdu_t* pdu_list;
+  nfapi_nr_rx_data_pdu_t *pdu_list; 
 
 } nfapi_nr_rx_data_indication_t;
 
@@ -1518,6 +1520,7 @@ typedef struct
 
 typedef struct
 {
+  nfapi_p7_message_header_t header;
   uint16_t sfn;
   uint16_t slot;
   uint16_t number_crcs;
@@ -1653,6 +1656,7 @@ typedef struct
 
 typedef struct
 {
+  nfapi_p7_message_header_t header;
   uint16_t sfn;
   uint16_t slot;
   uint16_t num_ucis;
@@ -1689,6 +1693,7 @@ typedef struct
 
 typedef struct
 {
+  nfapi_p7_message_header_t header;
   uint16_t sfn;
   uint16_t slot;
   uint8_t number_of_pdus;
@@ -1721,6 +1726,7 @@ typedef struct{
 
 typedef struct
 {
+  nfapi_p7_message_header_t header;
   uint16_t sfn;
   uint16_t slot;
   uint8_t number_of_pdus;

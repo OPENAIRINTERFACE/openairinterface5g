@@ -147,14 +147,14 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);
-  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { 
-    for (int i=0; i<fp->Lmax; i++) {
-      if (gNB->ssb[i].active) {
-        nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[i].ssb_pdu);
-        gNB->ssb[i].active = false;
-      }
+
+  for (int i=0; i<fp->Lmax; i++) {
+    if (gNB->ssb[i].active) {
+      nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[i].ssb_pdu);
+      gNB->ssb[i].active = false;
     }
   }
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,0);
 
   int pdcch_pdu_id=find_nr_pdcch(frame,slot,gNB,SEARCH_EXIST);
