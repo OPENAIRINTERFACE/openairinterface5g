@@ -1161,7 +1161,8 @@ int nr_acknack_scheduling(int mod_id,
                           int UE_id,
                           frame_t frame,
                           sub_frame_t slot,
-                          int r_pucch)
+                          int r_pucch,
+                          int is_common)
 {
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
@@ -1238,7 +1239,7 @@ int nr_acknack_scheduling(int mod_id,
       cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) 
     ubwpd = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
  
-  NR_SearchSpace__searchSpaceType_PR ss_type = (sched_ctrl->active_bwp || ubwpd) ? NR_SearchSpace__searchSpaceType_PR_ue_Specific: NR_SearchSpace__searchSpaceType_PR_common;
+  NR_SearchSpace__searchSpaceType_PR ss_type = (is_common==0 && (sched_ctrl->active_bwp || ubwpd)) ? NR_SearchSpace__searchSpaceType_PR_ue_Specific: NR_SearchSpace__searchSpaceType_PR_common;
   uint8_t pdsch_to_harq_feedback[8];
   int bwp_Id = 0;
   if (sched_ctrl->active_ubwp) bwp_Id = sched_ctrl->active_ubwp->bwp_Id;
@@ -1268,7 +1269,7 @@ int nr_acknack_scheduling(int mod_id,
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
       pucch->ul_slot = (s + 1) % n_slots_frame;
-      return nr_acknack_scheduling(mod_id, UE_id, frame, slot, pucch->r_pucch);
+      return nr_acknack_scheduling(mod_id, UE_id, frame, slot, pucch->r_pucch,is_common);
     }
 
     pucch->timing_indicator = i;
@@ -1337,7 +1338,7 @@ int nr_acknack_scheduling(int mod_id,
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
       pucch->ul_slot = (s + 1) % n_slots_frame;
-      return nr_acknack_scheduling(mod_id, UE_id, frame, slot, -1);
+      return nr_acknack_scheduling(mod_id, UE_id, frame, slot, -1,is_common);
     }
     // multiplexing harq and csi in a pucch
     else {

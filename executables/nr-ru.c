@@ -776,7 +776,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       // prepare tx buffer pointers
     txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
                                       timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
-                                      txpsiglen+sf_extension,
+                                      txp,
                                       siglen+sf_extension,
                                       ru->nb_tx,
                                       flags);

@@ -82,18 +82,14 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   if (scc!=NULL || scc_SIB != NULL) {
     initialDownlinkBWP =  scc!=NULL ? scc->downlinkConfigCommon->initialDownlinkBWP : &scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
     initialUplinkBWP = scc!=NULL ? scc->uplinkConfigCommon->initialUplinkBWP : &scc_SIB->uplinkConfigCommon->initialUplinkBWP;
-
-    bwp_Common = bwp_id>0 ? mac->DLbwp[bwp_id-1]->bwp_Common : NULL;
   }
+  bwp_Common = bwp_id>0 ? mac->DLbwp[bwp_id-1]->bwp_Common : NULL;
 
   NR_SearchSpace_t *ss;
   NR_ControlResourceSet_t *coreset;
   if(ss_id>=0) {
-    AssertFatal(mac->scc != NULL, "scc is null\n");
-    initialDownlinkBWP = scc->downlinkConfigCommon->initialDownlinkBWP;
-    bwp_Common = mac->DLbwp[bwp_id - 1]->bwp_Common;
-    ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
-    coreset = mac->coreset[bwp_id - 1][coreset_id - 1];
+    ss = mac->SSpace[bwp_id][coreset_id - 1][ss_id];
+    coreset = mac->coreset[bwp_id][coreset_id - 1];
     rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   } else {
     ss = mac->search_space_zero;
@@ -161,10 +157,11 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     sps = initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
     monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
     rel15->rnti = mac->ra.ra_rnti;
-    rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     if (get_softmodem_params()->sa) {
-      rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
+      rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
     } else { // NSA mode is not using the Initial BWP
+      rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     }
     rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
@@ -179,8 +176,8 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       sps = initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
       monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
       rel15->rnti = mac->ra.t_crnti;
-      rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
+      rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
       rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
       rel15->dci_length_options[0] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
     break;
@@ -247,20 +244,19 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   RA_config_t *ra = &mac->ra;
   int ss_id;
 
-  uint8_t bwp_id = (mac->cg) ? 1 : 0, coreset_id = (mac->cg) ? 1 : 0;
+  uint8_t bwp_id = (mac->cg) ? mac->DL_BWP_Id : 0, coreset_id = (mac->cg) ? 1 : 0;
   //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
-  NR_BWP_Downlink_t *bwp = (mac->cg) ? mac->DLbwp[bwp_id - 1] : NULL;
+  NR_BWP_DownlinkDedicated_t *bwpd  = (bwp_id>0) ? mac->DLbwp[bwp_id-1]->bwp_Dedicated : mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+  NR_BWP_DownlinkCommon_t *bwp_Common = (bwp_id>0) ? mac->DLbwp[bwp_id-1]->bwp_Common : &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
 
-  LOG_D(MAC, "[DCI_CONFIG] ra_rnti %p (%x) crnti %p (%x) t_crnti %p (%x)\n", &ra->ra_rnti, ra->ra_rnti, &mac->crnti, mac->crnti, &ra->t_crnti, ra->t_crnti);
+  LOG_I(MAC, "[DCI_CONFIG] ra_rnti %p (%x) crnti %p (%x) t_crnti %p (%x)\n", &ra->ra_rnti, ra->ra_rnti, &mac->crnti, mac->crnti, &ra->t_crnti, ra->t_crnti);
 
-  if (mac->cg) { // do this only after we have a Master or Secondary Cell group
-    // loop over all available SS for BWP ID 1, CORESET ID 1
-    if (bwp) {
-      for (ss_id = 0; ss_id < FAPI_NR_MAX_SS_PER_CORESET && mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id] != NULL; ss_id++){
-	LOG_D(MAC, "[DCI_CONFIG] ss_id %d\n",ss_id);
-	NR_SearchSpace_t *ss = mac->SSpace[bwp_id - 1][coreset_id - 1][ss_id];
+    // loop over all available SS for CORESET ID 1
+  if (bwpd) {
+      for (ss_id = 0; ss_id < FAPI_NR_MAX_SS_PER_CORESET && mac->SSpace[bwp_id][coreset_id - 1][ss_id] != NULL; ss_id++){
+	LOG_I(MAC, "[DCI_CONFIG] ss_id %d\n",ss_id);
+	NR_SearchSpace_t *ss = mac->SSpace[bwp_id][coreset_id - 1][ss_id];
 	fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-	NR_BWP_DownlinkCommon_t *bwp_Common = bwp->bwp_Common;
 	NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
 	struct NR_PhysicalCellGroupConfig *phy_cgc = mac->cg->physicalCellGroupConfig;
 	switch (ss->searchSpaceType->present){
@@ -274,7 +270,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 	      pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=calloc(1,sizeof(*pdcch_ConfigCommon->choice.setup->searchSpaceSIB1));
 	    }
 	    *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 = 0;
-	    LOG_D(MAC, "[DCI_CONFIG] Configure SearchSpace#0 of the initial BWP\n");
+	    LOG_I(MAC, "[DCI_CONFIG] Configure SearchSpace#0 of the initial BWP\n");
 	  }
 	  if (ss->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0){
 	    // check available SS IDs
@@ -359,50 +355,47 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 	  break;
 	case NR_SearchSpace__searchSpaceType_PR_ue_Specific:
 	  // this is an USS
-	  if (ss->searchSpaceType->choice.ue_Specific){
-	    if(ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1){
+	  if (ss->searchSpaceType->choice.ue_Specific &&
+	      ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1 && 
+	      (ra->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) && 
+              mac->crnti > 0) {
 	      // Monitors DCI 01 and 11 scrambled with C-RNTI, or CS-RNTI(s), or SP-CSI-RNTI
-	      if ((ra->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) && mac->crnti > 0) {
-          LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in the user specific search space\n");
-          rel15->num_dci_options = 2;
-          rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_1;
-          rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_1;
-          config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C, ss_id);
-          fill_dci_search_candidates(ss, rel15);
+            LOG_I(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in the user specific search space\n");
+            rel15->num_dci_options = 2;
+            rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_1;
+            rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_1;
+            config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C, ss_id);
+            fill_dci_search_candidates(ss, rel15);
 
-#ifdef DEBUG_DCI
-		LOG_D(MAC, "[DCI_CONFIG] ss %d ue_Specific %p searchSpaceType->present %d dci_Formats %d\n",
+//#ifdef DEBUG_DCI
+		LOG_I(MAC, "[DCI_CONFIG] ss %d ue_Specific %p searchSpaceType->present %d dci_Formats %d\n",
 		      ss_id,
 		      ss->searchSpaceType->choice.ue_Specific,
-		      ss->searchSpaceType->present,
-		      ss->searchSpaceType->choice.ue_Specific->dci_Formats);
-#endif
-	      }
-	      if (phy_cgc){
-		if (phy_cgc->cs_RNTI){
+		      (int)ss->searchSpaceType->present,
+		      (int)ss->searchSpaceType->choice.ue_Specific->dci_Formats);
+//#endif
+	  }
+	  if (phy_cgc){
+            if (phy_cgc->cs_RNTI){
 		  LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in user specific search space for dci_Format0_0_AndFormat1_0 with CRC scrambled by CS-RNTI...\n");
 		  LOG_W(MAC, "[DCI_CONFIG] This RNTI should not be configured yet...");
-		}
-		if (phy_cgc->sp_CSI_RNTI){
+            }
+            if (phy_cgc->sp_CSI_RNTI){
 		  LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in user specific search space for dci_Format0_0_AndFormat1_0 with CRC scrambled by SP-CSI-RNTI...\n");
 		  LOG_W(MAC, "[DCI_CONFIG] This RNTI should not be configured yet...");
-		}
-		if (phy_cgc->ext1){
-		  if (phy_cgc->ext1->mcs_C_RNTI){
+            }
+	    if (phy_cgc->ext1 &&
+		phy_cgc->ext1->mcs_C_RNTI){
 		    LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in user specific search space for dci_Format0_0_AndFormat1_0 with CRC scrambled by MCS-C-RNTI...\n");
 		    LOG_W(MAC, "[DCI_CONFIG] This RNTI should not be configured yet...");
-		  }
-		}
-	      }
-	    }
+            }
 	  }
 	  break;
 	default:
 	  AssertFatal(1 == 0, "[DCI_CONFIG] Unrecognized search space type...");
 	  break;
-	}
-      }
-    }
+	} // switch searchspace
+      } // for ss_id
   }
   else {
 
@@ -410,8 +403,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   }
   // Search space 0, CORESET ID 0
 
-  NR_BWP_DownlinkCommon_t *bwp_Common = bwp ? bwp->bwp_Common : NULL;
-  NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp?bwp_Common->pdcch_ConfigCommon:NULL;
+  NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
 
   if (pdcch_ConfigCommon &&
       pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){

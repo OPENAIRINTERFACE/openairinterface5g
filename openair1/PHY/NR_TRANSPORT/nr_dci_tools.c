@@ -153,7 +153,7 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
       C = N_reg/(bsize*R);
     }
     
-    if (pdcch_pdu_rel15->dci_pdu[d].RNTI != 0xFFFF) LOG_I(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", m, bsize, R, pdcch_pdu_rel15->dci_pdu[d].CceIndex);
+    if (pdcch_pdu_rel15->dci_pdu[d].RNTI != 0xFFFF) LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", m, bsize, R, pdcch_pdu_rel15->dci_pdu[d].CceIndex);
     for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
       cce = &gNB->cce_list[d][cce_idx];
       cce->cce_idx = pdcch_pdu_rel15->dci_pdu[d].CceIndex + cce_idx;

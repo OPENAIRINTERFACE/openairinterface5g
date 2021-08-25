@@ -195,7 +195,8 @@ int nr_acknack_scheduling(int Mod_idP,
                            int UE_id,
                            frame_t frameP,
                            sub_frame_t slotP,
-                           int r_pucch);
+                           int r_pucch,
+                           int do_common);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
