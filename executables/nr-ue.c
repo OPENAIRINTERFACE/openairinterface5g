@@ -141,6 +141,9 @@ void init_nrUE_standalone_thread(int ue_idx)
   int standalone_rx_port = 3612 + ue_idx * 2;
   nrue_init_standalone_socket(standalone_addr, standalone_tx_port, standalone_rx_port);
 
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  pthread_mutex_init(&mac->mutex_dl_info, NULL);
+
   pthread_t thread;
   if (pthread_create(&thread, NULL, nrue_standalone_pnf_task, NULL) != 0) {
     LOG_E(NR_MAC, "pthread_create failed for calling nrue_standalone_pnf_task");
@@ -179,7 +182,12 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_p
 
   if (!put_queue(&nr_rach_ind_queue, rach_ind))
   {
+    for (int pdu_index = 0; pdu_index < rach_ind->number_of_pdus; pdu_index++)
+    {
+      free(rach_ind->pdu_list[pdu_index].preamble_list);
+    }
     free(rach_ind->pdu_list);
+    free(rach_ind);
   }
   LOG_I(NR_MAC, "Melissa, We have successfully filled the rach_ind queue with the recently filled rach ind\n");
 }
@@ -287,6 +295,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
     ul_info.ue_sched_mode = SCHED_ALL;
 
+    if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
+
     memset(&mac->dl_info, 0, sizeof(mac->dl_info));
     mac->dl_info.cc_id = CC_id;
     mac->dl_info.gNB_index = gNB_id;
@@ -301,6 +311,9 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     {
       nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
     }
+
+    if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
+
     if (is_nr_UL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_tx, mac->frame_type))
     {
       LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", ul_info.slot_tx, __FUNCTION__);
@@ -350,6 +363,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
           free(rach_ind->pdu_list[i].preamble_list);
         }
         free(rach_ind->pdu_list);
+        free(rach_ind);
         nr_Msg1_transmitted(mod_id, CC_id, frame, gNB_id);
     }
     if (rx_ind && rx_ind->number_of_pdus > 0)
@@ -359,6 +373,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       };
       send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
       free(rx_ind->pdu_list);
+      free(rx_ind);
     }
     if (crc_ind && crc_ind->number_crcs > 0)
     {
@@ -367,6 +382,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       };
       send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
       free(crc_ind->crc_list);
+      free(crc_ind);
     }
   }
   return NULL;

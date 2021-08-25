@@ -300,7 +300,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   NR_Sched_Rsp_t   *sched_info = &NR_Sched_INFO[module_id][CC_id];
   NR_IF_Module_t   *ifi        = nr_if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
-  LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
+  LOG_D(NR_PHY,"SFN/SLOT:%d.%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
         UL_info->frame,UL_info->slot,
         module_id,CC_id, UL_info->rach_ind.number_of_pdus,
         UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
@@ -360,7 +360,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         ifi->NR_Schedule_response(sched_info);
       }
 
-      LOG_D(PHY,"NR_Schedule_response: SFN SLOT:%d %d dl_pdus:%d\n",
+      LOG_D(NR_PHY,"NR_Schedule_response: SFN SLOT:%d %d dl_pdus:%d\n",
 	    sched_info->frame,
 	    sched_info->slot,
 	    sched_info->DL_req->dl_tti_request_body.nPDUs);
