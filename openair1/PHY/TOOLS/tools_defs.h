@@ -39,11 +39,6 @@ extern "C" {
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 
-struct complex {
-  double x;
-  double y;
-};
-
 struct complexd {
   double r;
   double i;
@@ -468,7 +463,7 @@ double signal_energy_fp(double *s_re[2], double *s_im[2], uint32_t nb_antennas, 
 /*!\fn double signal_energy_fp2(struct complex *, uint32_t);
 \brief Computes the signal energy per subcarrier
 */
-double signal_energy_fp2(struct complex *s, uint32_t length);
+double signal_energy_fp2(struct complexd *s, uint32_t length);
 
 
 int32_t iSqrt(int32_t value);

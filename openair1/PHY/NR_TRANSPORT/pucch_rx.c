@@ -48,6 +48,8 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
+#include "nfapi/oai_integration/vendor_ext.h"
+
 #include "T.h"
 
 //#define DEBUG_NR_PUCCH_RX 1
