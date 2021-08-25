@@ -64,11 +64,11 @@ typedef struct {
   ///length of impulse response. should be set to 11+2*bw*t_max
   uint8_t channel_length;
   ///channel state vector. size(state) = nb_taps * (n_tx * n_rx);
-  struct complex **a;
+  struct complexd **a;
   ///interpolated (sample-spaced) channel impulse response. size(ch) = (n_tx * n_rx) * channel_length. ATTENTION: the dimensions of ch are the transposed ones of a. This is to allow the use of BLAS when applying the correlation matrices to the state.
-  struct complex **ch;
+  struct complexd **ch;
   ///Sampled frequency response (90 kHz resolution)
-  struct complex **chF;
+  struct complexd **chF;
   ///Maximum path delay in mus.
   double Td;
   ///Channel bandwidth in MHz.
@@ -84,7 +84,7 @@ typedef struct {
   ///in Hz. if >0 generate a channel with a Clarke's Doppler profile with a maximum Doppler bandwidth max_Doppler. CURRENTLY NOT IMPLEMENTED!
   double max_Doppler;
   ///Square root of the full correlation matrix size(R_tx) = nb_taps * (n_tx * n_rx) * (n_tx * n_rx).
-  struct complex **R_sqrt;
+  struct complexd **R_sqrt;
   ///path loss including shadow fading in dB
   double path_loss_dB;
   ///additional delay of channel in samples.

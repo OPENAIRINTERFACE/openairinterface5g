@@ -1384,7 +1384,6 @@ void NRRCConfig(void) {
  
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
   RC.nb_nr_inst = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
- 
 
 	// Get num MACRLC instances
   config_getlist( &MACRLCParamList,NULL,0, NULL);
