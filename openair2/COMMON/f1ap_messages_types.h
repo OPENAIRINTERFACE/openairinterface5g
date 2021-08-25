@@ -326,6 +326,11 @@ typedef struct f1ap_drb_to_be_setup_s {
   rlc_mode_t     rlc_mode;
 } f1ap_drb_to_be_setup_t;
 
+typedef struct f1ap_srb_to_be_setup_s {
+  long           srb_id;
+  rlc_mode_t     rlc_mode;
+} f1ap_srb_to_be_setup_t;
+
 typedef struct f1ap_ue_context_setup_req_s {
   uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
   uint32_t *gNB_DU_ue_id;
@@ -342,6 +347,8 @@ typedef struct f1ap_ue_context_setup_req_s {
   uint8_t  cu_to_du_rrc_information_length;
   f1ap_drb_to_be_setup_t *drbs_to_be_setup; // BK: need to replace by s1ap_initial_context_setup_req
   uint8_t  drbs_to_be_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
+  f1ap_srb_to_be_setup_t *srbs_to_be_setup;
+  uint8_t  srbs_to_be_setup_length;
   s1ap_initial_context_setup_req_t *s1ap_initial_context_setup_req;
    // coniatner for the rrc_eNB_generate_SecurityModeCommand message
   uint8_t *rrc_container;

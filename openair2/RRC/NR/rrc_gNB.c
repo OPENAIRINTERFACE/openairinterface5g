@@ -400,7 +400,7 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
 
       nr_rrc_rlc_config_asn1_req(ctxt_pP,
                                  ue_context_pP->ue_context.SRB_configList,
-                                 NULL,
+                                 ue_context_pP->ue_context.DRB_configList,
                                  NULL,
                                  NULL,
                                  get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
@@ -3107,6 +3107,52 @@ static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_
 return 0;
 }
 
+static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const char *msg_name, instance_t instance){
+
+  f1ap_ue_context_setup_req_t * req=&F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
+  protocol_ctxt_t ctxt;
+  ctxt.rnti      = req->rnti;
+  ctxt.module_id = instance;
+  ctxt.instance  = instance;
+  ctxt.enb_flag  = 1;
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
+  struct rrc_gNB_ue_context_s *ue_context_p =
+      rrc_gNB_get_ue_context(rrc, ctxt.rnti);
+
+
+  NR_CellGroupConfig_t *cellGroupConfig;
+  cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
+  fill_mastercellGroupConfig(cellGroupConfig, ue_context_p->ue_context.masterCellGroup);
+
+  /* Configure SRB2 */
+  NR_SRB_ToAddMod_t            *SRB2_config          = NULL;
+  NR_SRB_ToAddModList_t        *SRB_configList  = ue_context_p->ue_context.SRB_configList;
+  if(SRB_configList != NULL){
+    for (int i=0; i<req->srbs_to_be_setup_length; i++){
+      SRB2_config = CALLOC(1, sizeof(*SRB2_config));
+      SRB2_config->srb_Identity = req->srbs_to_be_setup[i].srb_id;
+      ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
+    }
+  }
+  else{
+    LOG_E(NR_RRC, "The SRB list of the UE context is empty before the addition of SRB2 \n");
+    return;
+  }
+  /* Configure DRB */
+  NR_DRB_ToAddMod_t            *DRB_config          = NULL;
+  if(ue_context_p->ue_context.DRB_configList == NULL){
+    ue_context_p->ue_context.DRB_configList = CALLOC(1, sizeof(*ue_context_p->ue_context.DRB_configList));
+  }
+  NR_DRB_ToAddModList_t        *DRB_configList  = ue_context_p->ue_context.DRB_configList;
+
+  for (int i=0; i<req->drbs_to_be_setup_length; i++){
+    DRB_config = CALLOC(1, sizeof(*DRB_config));
+    DRB_config->drb_Identity = req->drbs_to_be_setup[i].drb_id;
+    ASN_SEQUENCE_ADD(&DRB_configList->list, DRB_config);
+  }
+  apply_macrlc_config(rrc, ue_context_p, &ctxt);
+}
+
 unsigned int mask_flip(unsigned int x) {
   return((((x>>8) + (x<<8))&0xffff)>>6);
 }
@@ -3602,6 +3648,10 @@ void *rrc_gnb_task(void *args_p) {
       rrc_process_DU_DL(msg_p, msg_name_p, instance);
       break;
       
+    case F1AP_UE_CONTEXT_SETUP_REQ:
+      rrc_DU_process_ue_context_setup_request(msg_p, msg_name_p, instance);
+      break;
+
       /* Messages from X2AP */
       case X2AP_ENDC_SGNB_ADDITION_REQ:
         LOG_I(NR_RRC, "Received ENDC sgNB addition request from X2AP \n");
