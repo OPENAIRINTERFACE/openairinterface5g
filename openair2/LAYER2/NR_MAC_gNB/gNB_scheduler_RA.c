@@ -1326,10 +1326,13 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                            rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
     } while (rbSize < BWPSize && harq->tb_size < ra->mac_pdu_length);
 
-    for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
+    int i = 0;
+    while ((i < rbSize) && (rbStart + rbSize <= BWPSize)) {
       if (vrb_map[rbStart + i]) {
-        rbStart += i;
+        rbStart += i+1;
         i = 0;
+      } else {
+        i++;
       }
     }
 
