@@ -94,6 +94,7 @@ class RANManagement():
 		self.runtime_stats= ''
 		self.datalog_rt_stats={}
 		self.eNB_Trace = '' #if 'yes', Tshark will be launched at initialization
+		self.USRPIPAddress = ''
 
 
 
@@ -341,20 +342,35 @@ class RANManagement():
 		self.testCase_id = HTML.testCase_id
 		mySSH = SSH.SSHConnection()
 		
+		#reboot USRP if requested in xml
+		if self.USRPIPAddress!='':
+			logging.debug('USRP '+ self.USRPIPAddress +'reboot request')
+			mySSH.open(lIpAddr, lUserName, lPassWord)
+			cmd2usrp='ssh root@'+self.USRPIPAddress+' reboot'
+			mySSH.command2(cmd2usrp,1)
+			mySSH.close()
+			logging.debug('Waiting for USRP to be ready')
+			time.sleep(120)
+
+
 		if (self.pStatus < 0):
 			HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
-		#Get pcap on S1 and X2 eNB interface, if enabled in the xml 
-		#will not work for gNB at this stage
-		if ((self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb')) and self.eNB_Trace=='yes':
+
+		#Get pcap on enb and/or gnb if enabled in the xml 
+		if self.eNB_Trace=='yes':
+			if ((self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb')):
+				pcapfile_prefix="enb_"
+			else:
+				pcapfile_prefix="gnb_"
 			mySSH.open(lIpAddr, lUserName, lPassWord)
 			mySSH.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
 			if result is not None:
 				eth_interface = result.group('eth_interface')
 				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
-				pcapfile = 'enb_' + self.testCase_id + '_s1x2log.pcap'
+				pcapfile = pcapfile_prefix + self.testCase_id + '_log.pcap'
 				mySSH.command('echo ' + lPassWord + ' | sudo -S rm -f /tmp/' + pcapfile , '\$', 5)
 				mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -w /tmp/' + pcapfile + ' 2>&1 &','\$', 5)
 			mySSH.close()
@@ -672,10 +688,11 @@ class RANManagement():
 		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*_s1x2log.pcap .','\$',20)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*.pcap .','\$',20)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 60)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 5)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 5)
 		mySSH.close()
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML):
@@ -921,8 +938,9 @@ class RANManagement():
 				if result is not None:
 					#remove 1- all useless char before relevant info  2- trailing char
 					line=line.replace('[0m','')
-					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex 
-					real_time_stats[k]=tmp.group(1)
+					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex
+					if tmp!=None: #with ULULULUULULULLLL at the head of the line, we skip it
+						real_time_stats[k]=tmp.group(1)
 
 			#count "problem receiving samples" msg
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))

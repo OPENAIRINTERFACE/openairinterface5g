@@ -98,17 +98,17 @@ int ssb_rsrp_sorted[MAX_NUM_SSB] = {0};
 //stored -1 for invalid values
 int L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[128] = {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //0 - 9
-    -1, -1, -1, -1, -1, -1, -140, -139, -138, -137, //10 - 19
-    -136, -135, -134, -133, -132, -131, -130, -129, -128, -127, //20 - 29
-    -126, -125, -124, -123, -122, -121, -120, -119, -118, -117, //30 - 39
-    -116, -115, -114, -113, -112, -111, -110, -109, -108, -107, //40 - 49
-    -106, -105, -104, -103, -102, -101, -100, -99, -98, -97, //50 - 59
-    -96, -95, -94, -93, -92, -91, -90, -89, -88, -87, //60 - 69
-    -86, -85, -84, -83, -82, -81, -80, -79, -78, -77, //70 - 79
-    -76, -75, -74, -73, -72, -71, -70, -69, -68, -67, //80 - 89
-    -66, -65, -64, -63, -62, -61, -60, -59, -58, -57, //90 - 99
-    -56, -55, -54, -53, -52, -51, -50, -49, -48, -47, //100 - 109
-    -46, -45, -44, -44, -1, -1, -1, -1, -1, -1, //110 - 119
+     -1, -1, -1, -1, -1, -1, INT_MIN, -140, -139, -138, //10 - 19
+    -137, -136, -135, -134, -133, -132, -131, -130, -129, -128, //20 - 29
+    -127, -126, -125, -124, -123, -122, -121, -120, -119, -118, //30 - 39
+    -117,-116, -115, -114, -113, -112, -111, -110, -109, -108, //40 - 49
+    -107, -106, -105, -104, -103, -102, -101, -100, -99, -98, //50 - 59
+    -97, -96, -95, -94, -93, -92, -91, -90, -89, -88, //60 - 69
+    -87, -86, -85, -84, -83, -82, -81, -80, -79, -78, //70 - 79
+    -77, -76, -75, -74, -73, -72, -71, -70, -69, -68, //80 - 89
+    -67, -66, -65, -64, -63, -62, -61, -60, -59, -58, //90 - 99
+    -57, -56, -55, -54, -53, -52, -51, -50, -49, -48, //100 - 109
+    -47, -46, -45, -44, INT_MAX, -1, -1, -1, -1, -1, //110 - 119
     -1, -1, -1, -1, -1, -1, -1, -1//120 - 127
   };
 
@@ -849,6 +849,7 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   }//is-triggering_beam_switch
 }//tci handling
 
+
 uint8_t pickandreverse_bits(uint8_t *payload, uint16_t bitlen, uint8_t start_bit) {
   uint8_t rev_bits = 0;
   for (int i=0; i<bitlen; i++)
@@ -1150,7 +1151,6 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 }
 
 
-// function to update pucch scheduling parameters in UE list when a USS DL is scheduled
 // this function returns an index to NR_sched_pucch structure
 // currently this structure contains PUCCH0 at index 0 and PUCCH2 at index 1
 // if the function returns -1 it was not possible to schedule acknack
@@ -1363,199 +1363,6 @@ int nr_acknack_scheduling(int mod_id,
   return 0;
 }
 
-void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
-                       NR_NZP_CSI_RS_Resource_t *nzpcsi,
-                       int *period, int *offset) {
-
-  if(nzpcsi != NULL) {
-
-    NR_CSI_ResourcePeriodicityAndOffset_PR p_and_o = nzpcsi->periodicityAndOffset->present;
-
-    switch(p_and_o){
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots4:
-        *period = 4;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots4;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots5:
-        *period = 5;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots5;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots8:
-        *period = 8;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots8;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots10:
-        *period = 10;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots10;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots16:
-        *period = 16;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots16;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots20:
-        *period = 20;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots20;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots32:
-        *period = 32;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots32;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots40:
-        *period = 40;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots40;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots64:
-        *period = 64;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots64;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots80:
-        *period = 80;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots80;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots160:
-        *period = 160;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots160;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots320:
-        *period = 320;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots320;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots640:
-        *period = 640;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots640;
-        break;
-    default:
-      AssertFatal(1==0,"No periodicity and offset found in CSI resource");
-    }
-
-  }
-
-  if(csirep != NULL) {
-
-    NR_CSI_ReportPeriodicityAndOffset_PR p_and_o = csirep->reportConfigType.choice.periodic->reportSlotConfig.present;
-
-    switch(p_and_o){
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots4:
-        *period = 4;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots4;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots5:
-        *period = 5;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots5;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots8:
-        *period = 8;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots8;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots10:
-        *period = 10;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots10;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots16:
-        *period = 16;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots16;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots20:
-        *period = 20;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots20;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots40:
-        *period = 40;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots40;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots80:
-        *period = 80;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots80;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots160:
-        *period = 160;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots160;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots320:
-        *period = 320;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
-        break;
-    default:
-      AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
-    }
-  }
-}
-
-uint16_t compute_pucch_prb_size(uint8_t format,
-                                uint8_t nr_prbs,
-                                uint16_t O_tot,
-                                uint16_t O_csi,
-                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
-                                uint8_t Qm,
-                                uint8_t n_symb,
-                                uint8_t n_re_ctrl) {
-
-  uint16_t O_crc;
-
-  if (O_tot<12)
-    O_crc = 0;
-  else{
-    if (O_tot<20)
-      O_crc = 6;
-    else {
-      if (O_tot<360)
-        O_crc = 11;
-      else
-        AssertFatal(1==0,"Case for segmented PUCCH not yet implemented");
-    }
-  }
-
-  int rtimes100;
-  switch(*maxCodeRate){
-    case NR_PUCCH_MaxCodeRate_zeroDot08 :
-      rtimes100 = 8;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot15 :
-      rtimes100 = 15;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot25 :
-      rtimes100 = 25;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot35 :
-      rtimes100 = 35;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot45 :
-      rtimes100 = 45;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot60 :
-      rtimes100 = 60;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot80 :
-      rtimes100 = 80;
-      break;
-  default :
-    AssertFatal(1==0,"Invalid MaxCodeRate");
-  }
-
-  float r = (float)rtimes100/100;
-
-  if (O_csi == O_tot) {
-    if ((O_tot+O_csi)>(nr_prbs*n_re_ctrl*n_symb*Qm*r))
-      AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with %d PRBs",
-                  r,O_tot,O_crc,nr_prbs);
-    else
-      return nr_prbs;
-  }
-
-  if (format==2){
-    // TODO fix this for multiple CSI reports
-    for (int i=1; i<=nr_prbs; i++){
-      if((O_tot+O_crc)<=(i*n_symb*Qm*n_re_ctrl*r) &&
-         (O_tot+O_crc)>((i-1)*n_symb*Qm*n_re_ctrl*r))
-        return i;
-    }
-    AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with at most %d PRBs",
-                r,O_tot,O_crc,nr_prbs);
-  }
-  else{
-    AssertFatal(1==0,"Not yet implemented");
-  }
-}
 
 void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
 {
@@ -1588,7 +1395,7 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
 
       int SR_period; int SR_offset;
 
-      periodicity__SRR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
+      find_period_offest_SR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
       // convert to int to avoid underflow of uint
       int sfn_sf = SFN * n_slots_frame + slot;
       if ((sfn_sf - SR_offset) % SR_period != 0)
@@ -1654,68 +1461,6 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
         nr_fill_nfapi_pucch(Mod_idP, SFN, slot, &sched_sr, UE_id);
       }
     }
-  }
-}
-
-
-void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset)
-{
-  NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR P_O = SchedulingReqRec->periodicityAndOffset->present;
-  switch (P_O){
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl1:
-      *period = 1;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl1;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl2:
-      *period = 2;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl2;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl4:
-      *period = 4;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl4;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl5:
-      *period = 5;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl5;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl8:
-      *period = 8;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl8;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl10:
-      *period = 10;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl10;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl16:
-      *period = 16;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl16;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl20:
-      *period = 20;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl20;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40:
-      *period = 40;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl40;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl80:
-      *period = 80;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl80;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl160:
-      *period = 160;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl160;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl320:
-      *period = 320;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl320;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl640:
-      *period = 640;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl640;
-      break;
-    default:
-      AssertFatal(1==0,"No periodicityAndOffset resources found in schedulingrequestresourceconfig");
   }
 }
 

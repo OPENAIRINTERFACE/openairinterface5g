@@ -83,7 +83,6 @@ double cpuf;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
-msc_interface_t msc_interface;
 uint32_t N_RB_DL = 106;
 
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
@@ -213,6 +212,11 @@ int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0); 
 int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
 int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
 int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
+int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) { return(0);  }
 
 int nr_derive_key(int alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)
@@ -286,7 +290,7 @@ int main(int argc, char **argv)
   int gNB_id = 0;
   int ap;
   int tx_offset;
-  int32_t txlev;
+  int32_t txlev=0;
   int start_rb = 0;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
   float target_error_rate = 0.01;
@@ -309,7 +313,7 @@ int main(int argc, char **argv)
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t ptrsRePerSymb = 0;
 
-  uint8_t transform_precoding = transform_precoder_disabled; // 0 - ENABLE, 1 - DISABLE
+  uint8_t transform_precoding = 1; // 0 - ENABLE, 1 - DISABLE
   uint8_t num_dmrs_cdm_grps_no_data = 1;
   uint8_t mcs_table = 0;
 
@@ -566,7 +570,7 @@ int main(int argc, char **argv)
 
     case 'Z':
 
-      transform_precoding = transform_precoder_enabled; 
+      transform_precoding = 0; // enabled
       num_dmrs_cdm_grps_no_data = 2;
       mcs_table = 3;
       
@@ -697,7 +701,7 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0);
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0, 0);
 
   // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
@@ -840,7 +844,8 @@ int main(int argc, char **argv)
   uint16_t number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
   uint8_t  nb_re_dmrs          = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
 
-  if (transform_precoding == transform_precoder_enabled) {  
+  // if transform precoding is enabled
+  if (transform_precoding == 0) {
 
     AssertFatal(enable_ptrs == 0, "PTRS NOT SUPPORTED IF TRANSFORM PRECODING IS ENABLED\n");
 
@@ -1045,7 +1050,8 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
       pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
-      if (transform_precoding == transform_precoder_enabled) { 
+      // if transform precoding is enabled
+      if (transform_precoding == 0) {
 
         pusch_pdu->dfts_ofdm.low_papr_group_number = *scc->physCellId % 30; // U as defined in 38.211 section 6.4.1.1.1.2 
         pusch_pdu->dfts_ofdm.low_papr_sequence_number = 0;     // V as defined in 38.211 section 6.4.1.1.1.2
@@ -1105,7 +1111,8 @@ int main(int argc, char **argv)
 
       ul_config.ul_config_list[0].pusch_config_pdu.transform_precoding = transform_precoding;
 
-      if (transform_precoding == transform_precoder_enabled) { 
+      // if transform precoding is enabled
+      if (transform_precoding == 0) {
    
         ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_group_number = *scc->physCellId % 30;// U as defined in 38.211 section 6.4.1.1.1.2 
         ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_sequence_number = 0;// V as defined in 38.211 section 6.4.1.1.1.2
@@ -1215,7 +1222,7 @@ int main(int argc, char **argv)
 	}
 
 
-	if (n_trials == 1  && round==0) { 
+	if (n_trials == 1  && round==0) {
 #ifdef __AVX2__
 	  int off = ((nb_rb&1) == 1)? 4:0;
 #else

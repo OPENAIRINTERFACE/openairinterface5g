@@ -303,6 +303,20 @@ typedef struct {
 } RA_config_t;
 
 typedef struct {
+  bool active;
+  bool ack_received;
+  uint8_t  pucch_resource_indicator;
+  uint16_t feedback_to_ul;
+  frame_t dl_frame;
+  int dl_slot;
+  uint8_t ack;
+  uint8_t dai;
+  int n_CCE;
+  int N_CCE;
+  int8_t delta_pucch;
+} NR_UE_HARQ_STATUS_t;
+
+typedef struct {
 
   uint8_t freq_hopping;
   uint8_t mcs;
@@ -310,6 +324,30 @@ typedef struct {
   uint16_t Msg3_f_alloc;
 
 } RAR_grant_t;
+
+typedef struct {
+
+  uint8_t  phr_reporting;
+  uint16_t truncated_bsr;
+  uint16_t short_bsr;
+  uint16_t long_bsr;
+
+} NR_UE_MAC_CE_t;
+
+typedef struct {
+  int n_HARQ_ACK;
+  uint32_t ack_payload;
+  uint8_t sr_payload;
+  uint32_t csi_part1_payload;
+  uint32_t csi_part2_payload;
+  int resource_indicator;
+  int resource_set_id;
+  int initial_pucch_id;
+  NR_PUCCH_Resource_t *pucch_resource;
+  int n_CCE;
+  int N_CCE;
+  int8_t delta_pucch;
+} PUCCH_sched_t;
 
 /*!\brief Top level UE MAC structure */
 typedef struct {
@@ -362,6 +400,9 @@ typedef struct {
   RA_config_t ra;
   /// SSB index from MIB decoding
   uint8_t mib_ssb;
+  /// measured SSB RSRP in dBm
+  short ssb_rsrp_dBm;
+
   /// Last NDI of UL HARQ processes
   uint8_t UL_ndi[NR_MAX_HARQ_PROCESSES];
   /// first ULTX of UL HARQ processes
@@ -374,12 +415,8 @@ typedef struct {
   nr_ue_if_module_t       *if_module;
   nr_phy_config_t         phy_config;
 
-  /// BSR report flag management
-  uint8_t BSR_reporting_active;
   NR_UE_SCHEDULING_INFO   scheduling_info;
-
-  /// PHR
-  uint8_t PHR_reporting_active;
+  NR_UE_MAC_CE_t          nr_ue_mac_ce;
 
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
   NR_SearchSpace_t *search_space_zero;
@@ -387,6 +424,8 @@ typedef struct {
   frequency_range_t frequency_range;
 
   dci_pdu_rel15_t def_dci_pdu_rel15[8];
+
+  NR_UE_HARQ_STATUS_t dl_harq_info[16];
 
 } NR_UE_MAC_INST_t;
 

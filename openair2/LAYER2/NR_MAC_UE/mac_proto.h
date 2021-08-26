@@ -37,6 +37,9 @@
 #include "PHY/defs_nr_UE.h"
 #include "RRC/NR_UE/rrc_defs.h"
 
+#define NR_DL_MAX_DAI                            (4)                      /* TS 38.213 table 9.1.3-1 Value of counter DAI for DCI format 1_0 and 1_1 */
+#define NR_DL_MAX_NB_CW                          (2)                      /* number of downlink code word */
+
 /**\brief decode mib pdu in NR_UE, from if_module ul_ind with P7 tx_ind message
    \param module_id      module id
    \param cc_id          component carrier id
@@ -65,11 +68,11 @@ int8_t nr_ue_decode_mib(
    \param pduP           pointer to pdu
    \param pdu_length     length of pdu */
 int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
-                         int cc_id,
-                         unsigned int gNB_index,
-                         uint32_t sibs_mask,
-                         uint8_t *pduP,
-                         uint32_t pdu_len);
+                                int cc_id,
+                                unsigned int gNB_index,
+                                uint8_t ack_nack,
+                                uint8_t *pduP,
+                                uint32_t pdu_len);
 
 /**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)
    \param module_id                 module id
@@ -122,25 +125,35 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              int slot,
                              int thread_id);
 
-/* \brief Get SR payload (0,1) from UE MAC
-@param Mod_id Instance id of UE in machine
-@param CC_id Component Carrier index
-@param eNB_id Index of eNB that UE is attached to
-@param rnti C_RNTI of UE
-@param subframe subframe number
-@returns 0 for no SR, 1 for SR
-*/
-uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
-       uint8_t eNB_id, rnti_t rnti, sub_frame_t subframe);
+int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, int slotP);
 
-int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
-
-int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, uint16_t rnti, uint8_t dci_format);
+int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, fapi_nr_dci_indication_pdu_t *dci_ind);
 int nr_ue_process_dci_indication_pdu(module_id_t module_id, int cc_id, int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci);
 
 uint32_t get_ssb_frame(uint32_t test);
 
-uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
+bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
+                                         PUCCH_sched_t *pucch,
+                                         frame_t frame,
+                                         int slot);
+
+uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
+                                frame_t frame,
+                                int slot,
+                                PUCCH_sched_t *pucch);
+
+uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
+                             PUCCH_sched_t *pucch,
+                             struct NR_CSI_ReportConfig *csi_reportconfig,
+                             NR_CSI_ResourceConfigId_t csi_ResourceConfigId,
+                             NR_CSI_MeasConfig_t *csi_MeasConfig);
+
+uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
+                           PUCCH_sched_t *pucch,
+                           NR_CSI_MeasConfig_t *csi_MeasConfig);
+
+uint8_t get_rsrp_index(int rsrp);
+uint8_t get_rsrp_diff_index(int best_rsrp,int current_rsrp);
 
 /* \brief Get payload (MAC PDU) from UE PHY
 @param dl_info            pointer to dl indication
@@ -156,18 +169,8 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                            NR_UL_TIME_ALIGNMENT_t *ul_time_alignment,
                            int pdu_id);
 
-uint16_t nr_generate_ulsch_pdu(uint8_t *sdus_payload,
-                                    uint8_t *pdu,
-                                    uint8_t num_sdus,
-                                    uint16_t *sdu_lengths,
-                                    uint8_t *sdu_lcids,
-                                    uint8_t power_headroom,
-                                    uint16_t crnti,
-                                    uint16_t truncated_bsr,
-                                    uint16_t short_bsr,
-                                    uint16_t long_bsr,
-                                    unsigned short post_padding,
-                                    uint16_t buflen);
+int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
+                          NR_UE_MAC_INST_t *mac);
 
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
@@ -188,14 +191,68 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
                                                       uint8_t time_domain_ind,
                                                       bool use_default);
 
-uint8_t
-nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-           sub_frame_t subframe, uint8_t eNB_index,
-           uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) ;
+uint8_t nr_ue_get_sdu(module_id_t module_idP,
+                      frame_t frameP,
+                      sub_frame_t subframe,
+                      uint8_t gNB_index,
+                      uint8_t *ulsch_buffer,
+                      uint16_t buflen);
 
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
                          int nrofDownlinkSlots, int nrofDownlinkSymbols,
                          int nrofUplinkSlots,   int nrofUplinkSymbols);
+
+void set_harq_status(NR_UE_MAC_INST_t *mac,
+                     uint8_t pucch_id,
+                     uint8_t harq_id,
+                     int8_t delta_pucch,
+                     uint8_t data_toul_fb,
+                     uint8_t dai,
+                     int n_CCE,
+                     int N_CCE,
+                     frame_t frame,
+                     int slot);
+
+void update_harq_status(nr_downlink_indication_t *dl_info,
+                        int pdu_id);
+
+uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
+                         frame_t frame,
+                         int slot,
+                         PUCCH_sched_t *pucch);
+
+int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int uci_size);
+
+void select_pucch_resource(NR_UE_MAC_INST_t *mac,
+                           PUCCH_sched_t *pucch);
+
+int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
+                              NR_PUCCH_Config_t *pucch_Config,
+                              PUCCH_sched_t *pucch,
+                              uint8_t format_type,
+                              uint16_t nb_of_prbs,
+                              uint8_t  freq_hop_flag,
+                              uint8_t  add_dmrs_flag,
+                              uint8_t N_symb_PUCCH,
+                              int subframe_number,
+                              int O_ACK, int O_SR,
+                              int O_CSI, int O_CRC);
+
+int get_deltatf(uint16_t nb_of_prbs,
+                uint8_t N_symb_PUCCH,
+                uint8_t freq_hop_flag,
+                uint8_t add_dmrs_flag,
+                int N_sc_ctrl_RB,
+                int n_HARQ_ACK,
+                int O_ACK, int O_SR,
+                int O_CSI, int O_CRC);
+
+void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
+                           int slot,
+                           uint16_t rnti,
+                           PUCCH_sched_t *pucch,
+                           fapi_nr_ul_config_pucch_pdu *pucch_pdu,
+                           int O_SR, int O_ACK, int O_CSI);
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE
@@ -226,6 +283,7 @@ and fills the PRACH PDU per each FD occasion.
 @returns void
 */
 void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, int thread_id);
+void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, int thread_id);
 
 /* \brief This function schedules the Msg3 transmission
 @param

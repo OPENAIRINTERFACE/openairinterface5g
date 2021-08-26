@@ -234,8 +234,6 @@ typedef struct {
   int RA_PCMAX;
   /// Corresponding RA-RNTI for UL-grant
   uint16_t ra_RNTI;
-  /// Pointer to Msg3 payload for UL-grant
-  uint8_t *Msg3;
   /// Frame of last completed synch
   uint16_t sync_frame;
   /// Flag to indicate that prach is ready to start: it is enabled with an initial delay after the sync
