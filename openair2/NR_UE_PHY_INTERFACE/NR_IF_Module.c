@@ -266,6 +266,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
 
 static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_tx_data_request_t *tx_data_request)
 {
+    NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
     int num_pdus = tx_data_request->Number_of_PDUs;
     if (num_pdus <= 0)
     {
@@ -304,7 +305,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
             pdu += pdu_list->TLVs[j].length;
         }
         dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = length;
-        if (tx_data_request->Slot == 7) { //Melissa this means we have an RAR, sorta hacky though
+        if (tx_data_request->Slot == 7 && mac->ra.ra_state <= WAIT_RAR) { //Melissa this means we have an RAR, sorta hacky though
             dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
         }
         else {
