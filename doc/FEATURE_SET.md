@@ -302,7 +302,7 @@ The following features are valid for the gNB and the 5G-NR UE.
    
 ## gNB Higher Layers ##
 
-**gNB RRC**  
+**gNB RRC**
 - NR RRC (38.331) Rel 15 messages using new asn1c 
 - LTE RRC (36.331) also updated to Rel 15 
 - Generation of CellGroupConfig (for eNB) and MIB
@@ -339,10 +339,10 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  30KHz SCS for FR1 and 120 KHz SCS for FR2
 *  Reception of NR-PSS/NR-SSS
 *  NR-PBCH supports multiple SSBs and flexible periodicity
-*  Reception of NR-PDCCH for SIB1 (including reception of DCI, polar decoding, de-scrambling, de-modulation, RB de-mapping, etc)
+*  Reception of NR-PDCCH (including reception of DCI, polar decoding, de-scrambling, de-modulation, RB de-mapping, etc)
    - common search space configured by MIB
    - user-specific search space configured by RRC
-   - DCI formats: 00, 10 (01 and 11 **under integration**)
+   - DCI formats: 00, 10, 01 and 11
 *  Reception of NR-PDSCH (including Segmentation, LDPC decoding, rate de-matching, de-scrambling, de-modulation, RB de-mapping, etc).
    - PDSCH mapping type A and B
    - DMRS configuration type 1 and 2
@@ -358,10 +358,15 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Support for 1 TX antenna
    - Support for 1 layer
 *  NR-PUCCH 
-   - Format 0 (2 bits, mainly for ACK/NACK)
+   - Format 0 (2 bits for ACK/NACK and SR)
    - Format 2 (up to 64 bits, mainly for CSI feedback)
+   - Format 1, 3 and 4 present but old code never dested (need restructuring before verification)
 *  NR-PRACH
    - Formats 0,1,2,3, A1-A3, B1-B3
+*  NR-SRS
+   - Old code never dested (need restructuring before verification)
+*  SS-RSRP
+   - RSRP measured on synchronization SSB (ok only for single SSB)
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 are supported)
 *  Highly efficient 3GPP compliant polar encoder and decoder
 *  Encoder and decoder for short block
