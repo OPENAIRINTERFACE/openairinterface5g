@@ -201,6 +201,7 @@ int nr_acknack_scheduling(int Mod_idP,
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
+                                int bwp_id,
                                 NR_SearchSpace__searchSpaceType_PR ss_type,
                                 uint8_t *pdsch_to_harq_feedback);
   
@@ -275,6 +276,7 @@ long get_K2(NR_ServingCellConfigCommon_t *scc, NR_BWP_Uplink_t *ubwp, int time_d
 void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
                               const NR_BWP_Downlink_t *bwp,
+                              const NR_BWP_DownlinkDedicated_t *bwpd,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
                               NR_pdsch_semi_static_t *ps);

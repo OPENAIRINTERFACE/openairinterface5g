@@ -1359,7 +1359,7 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
         if (table_6_3_3_2_3_prachConfig_Index[index][1] != -1)
           format2 = (uint8_t) table_6_3_3_2_3_prachConfig_Index[index][1];
         *format = ((uint8_t) table_6_3_3_2_3_prachConfig_Index[index][0]) | (format2<<8);
-        LOG_I(MAC,"Getting Total PRACH info from index %d (col %lu ) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_sfn = %u\n",
+        LOG_D(NR_MAC,"Getting Total PRACH info from index %d (col %lu ) absoluteFrequencyPointA %u mu %u frame_type %u start_symbol %u N_t_slot %u N_dur %u N_RA_sfn = %u\n",
               index, table_6_3_3_2_3_prachConfig_Index[index][6],
               pointa,
               mu,
@@ -1842,7 +1842,7 @@ int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index)
 
   int32_t delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
 
-  LOG_I(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
+  LOG_I(NR_MAC, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
 
   return delta_duplex;
 }
@@ -1857,7 +1857,7 @@ lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
   else
     current_type = FDD;
 
-  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[current_type], delta_duplex);
+  LOG_I(NR_MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[current_type], delta_duplex);
 
   return current_type;
 }
@@ -1994,7 +1994,7 @@ uint32_t to_nrarfcn(int nr_bandP,
   uint32_t nrarfcn;
   int i = get_nr_table_idx(nr_bandP, scs_index);
 
-  LOG_I(MAC,"Searching for nr band %d DL Carrier frequency %llu bw %u\n",nr_bandP,(long long unsigned int)dl_CarrierFreq,bw);
+  LOG_I(NR_MAC,"Searching for nr band %d DL Carrier frequency %llu bw %u\n",nr_bandP,(long long unsigned int)dl_CarrierFreq,bw);
 
   AssertFatal(dl_CarrierFreq_by_1k >= nr_bandtable[i].dl_min,
         "Band %d, bw %u : DL carrier frequency %llu kHz < %llu\n",
@@ -2071,14 +2071,14 @@ uint64_t from_nrarfcn(int nr_bandP,
     }
   }
 
-  LOG_D(MAC, "Frequency from NR-ARFCN for N_OFFs %lu, duplex spacing %d KHz, deltaFglobal %d KHz\n", N_OFFs, delta_duplex, deltaFglobal);
+  LOG_D(NR_MAC, "Frequency from NR-ARFCN for N_OFFs %lu, duplex spacing %d KHz, deltaFglobal %d KHz\n", N_OFFs, delta_duplex, deltaFglobal);
 
   AssertFatal(nrarfcn >= N_OFFs,"nrarfcn %u < N_OFFs[%d] %llu\n", nrarfcn, nr_bandtable[i].band, (long long unsigned int)N_OFFs);
   get_delta_arfcn(i, nrarfcn, N_OFFs);
 
   frequency = 1000*(F_REF_Offs_khz + (nrarfcn - N_REF_Offs) * deltaFglobal);
 
-  LOG_I(MAC, "Computing frequency (pointA %llu => %llu KHz (freq_min %llu KHz, NR band %d N_OFFs %llu))\n",
+  LOG_I(NR_MAC, "Computing frequency (pointA %llu => %llu KHz (freq_min %llu KHz, NR band %d N_OFFs %llu))\n",
     (unsigned long long)nrarfcn,
     (unsigned long long)frequency/1000,
     (unsigned long long)freq_min,
@@ -2423,7 +2423,7 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
   uint8_t row, colomn;
   int32_t l_prime;
 
-  LOG_I(MAC, "PUSCH: NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", duration_in_symbols, start_symbol, mapping_type, dmrs_typeA_position);
+  LOG_D(NR_MAC, "PUSCH: NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", duration_in_symbols, start_symbol, mapping_type, dmrs_typeA_position);
 
   // Section 6.4.1.1.3 in Spec 38.211
   // For PDSCH Mapping TypeA, ld is duration between first OFDM of the slot and last OFDM symbol of the scheduled PUSCH resources
@@ -2450,11 +2450,11 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
     l0 = 1<<l0 | 1<<(l0+1);
   }
 
-  LOG_I(MAC, "PUSCH - l0:%d, ld:%d,row:%d, column:%d, addpos:%d, maxlen:%d\n", l0, ld, row, colomn, additional_pos, pusch_maxLength);
+  LOG_D(NR_MAC, "PUSCH - l0:%d, ld:%d,row:%d, column:%d, addpos:%d, maxlen:%d\n", l0, ld, row, colomn, additional_pos, pusch_maxLength);
   AssertFatal(l_prime>=0,"invalid l_prime < 0\n");
 
   l_prime = (mapping_type == typeA) ? (l_prime | l0) : (l_prime << start_symbol);
-  LOG_I(MAC, " PUSCH DMRS MASK in HEX:%x\n", l_prime);
+  LOG_D(MAC, " PUSCH DMRS MASK in HEX:%x\n", l_prime);
 
   return l_prime;
 
@@ -2493,7 +2493,7 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
   else if (I_mcs >= mcs3 && I_mcs < mcs4)
     return 0;
   else {
-    LOG_I(PHY, "PT-RS time-density determination is obtained from the DCI for the same transport block in the initial transmission\n");
+    LOG_D(NR_MAC, "PT-RS time-density determination is obtained from the DCI for the same transport block in the initial transmission\n");
     return -1;
   }
 }
@@ -2657,7 +2657,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
           dci_pdu->frequency_domain_assignment.nbits = ((int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )>numRBG) ? (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )+1 : numRBG+1;
       }
       else dci_pdu->frequency_domain_assignment.nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
-      LOG_I(NR_MAC,"PUSCH Frequency Domain Assignment nbits %d, N_RB %d\n",dci_pdu->frequency_domain_assignment.nbits,N_RB);
+      LOG_D(NR_MAC,"PUSCH Frequency Domain Assignment nbits %d, N_RB %d\n",dci_pdu->frequency_domain_assignment.nbits,N_RB);
       size += dci_pdu->frequency_domain_assignment.nbits;
       // Time domain assignment
       if (pusch_Config==NULL || pusch_Config->pusch_TimeDomainAllocationList==NULL) {
@@ -2669,7 +2669,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       else
         num_entries = pusch_Config->pusch_TimeDomainAllocationList->choice.setup->list.count;
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
-      LOG_I(NR_MAC,"PUSCH Time Domain Allocation nbits %d, pusch_Config %p\n",dci_pdu->time_domain_assignment.nbits,pusch_Config);
+      LOG_D(NR_MAC,"PUSCH Time Domain Allocation nbits %d, pusch_Config %p\n",dci_pdu->time_domain_assignment.nbits,pusch_Config);
       size += dci_pdu->time_domain_assignment.nbits;
       // Frequency Hopping flag
       if (pusch_Config && 
@@ -2685,7 +2685,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       else
         dci_pdu->dai[0].nbits = 1;
       size += dci_pdu->dai[0].nbits;
-      LOG_I(NR_MAC,"DAI1 nbits %d\n",dci_pdu->dai[0].nbits);
+      LOG_D(NR_MAC,"DAI1 nbits %d\n",dci_pdu->dai[0].nbits);
       // 2nd DAI
       if (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig && 
           cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) { //TODO not sure about that
@@ -2732,7 +2732,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
           size += dci_pdu->srs_resource_indicator.nbits;
         }
       } else dci_pdu->srs_resource_indicator.nbits = 0;
-      LOG_I(PHY,"dci_pdu->srs_resource_indicator.nbits %d\n",dci_pdu->srs_resource_indicator.nbits);
+      LOG_D(NR_MAC,"dci_pdu->srs_resource_indicator.nbits %d\n",dci_pdu->srs_resource_indicator.nbits);
       // Precoding info and number of layers
       long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwpd, (uint8_t*)&format, rnti_type, 0);
       dci_pdu->precoding_information.nbits=0;
@@ -2761,7 +2761,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
         }
       }
       size += dci_pdu->precoding_information.nbits;
-      LOG_I(PHY,"dci_pdu->precoding_informaiton.nbits=%d\n",dci_pdu->precoding_information.nbits);
+      LOG_D(NR_MAC,"dci_pdu->precoding_informaiton.nbits=%d\n",dci_pdu->precoding_information.nbits);
       // Antenna ports
       NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = NULL;
       int xa=0;
@@ -2781,7 +2781,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       else
         dci_pdu->antenna_ports.nbits = xb;
       size += dci_pdu->antenna_ports.nbits;
-      LOG_I(PHY,"dci_pdu->antenna_ports.nbits = %d\n",dci_pdu->antenna_ports.nbits);
+      LOG_D(NR_MAC,"dci_pdu->antenna_ports.nbits = %d\n",dci_pdu->antenna_ports.nbits);
       // SRS request
       if (cg->spCellConfig->spCellConfigDedicated->supplementaryUplink==NULL)
         dci_pdu->srs_request.nbits = 2;
@@ -2839,6 +2839,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       break;
 
     case NR_DL_DCI_FORMAT_1_1:
+      LOG_D(NR_MAC,"DCI_FORMAT 1_1 : pdsch_Config %p, pucch_Config %p\n",pdsch_Config,pucch_Config);
       // General note: 0 bits condition is ignored as default nbits is 0.
       // Format identifier
       size = 1;
@@ -2871,6 +2872,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       else
          dci_pdu->frequency_domain_assignment.nbits = ((int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )>numRBG) ? (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )+1 : numRBG+1;
       size += dci_pdu->frequency_domain_assignment.nbits;
+      LOG_D(NR_MAC,"dci_pdu->frequency_domain_assignment.nbits %d (N_RB %d)\n",dci_pdu->frequency_domain_assignment.nbits,N_RB);
       // Time domain assignment (see table 5.1.2.1.1-1 in 38.214
       if (pdsch_Config == NULL || pdsch_Config->pdsch_TimeDomainAllocationList==NULL) {
         if (bwpc->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList==NULL)
@@ -2881,6 +2883,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       else
         num_entries = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup->list.count;
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
+      LOG_D(NR_MAC,"pdsch tda.nbits= %d\n",dci_pdu->time_domain_assignment.nbits);
       size += dci_pdu->time_domain_assignment.nbits;
       // VRB to PRB mapping 
       if (pdsch_Config && 
@@ -2925,6 +2928,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
         dci_pdu->dai[0].nbits = 2;
         size += dci_pdu->dai[0].nbits;
       }
+      LOG_D(NR_MAC,"dci_pdu->dai[0].nbits %d\n",dci_pdu->dai[0].nbits);
       // TPC PUCCH
       size += 2;
       // PUCCH resource indicator
@@ -2933,12 +2937,14 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       uint8_t I = pucch_Config->dl_DataToUL_ACK ? pucch_Config->dl_DataToUL_ACK->list.count : 8;
       dci_pdu->pdsch_to_harq_feedback_timing_indicator.nbits = (int)ceil(log2(I));
       size += dci_pdu->pdsch_to_harq_feedback_timing_indicator.nbits;
+      LOG_D(NR_MAC,"dci_pdu->pdsch_to_harq_feedback_timing_indicator.nbits %d\n",dci_pdu->pdsch_to_harq_feedback_timing_indicator.nbits);
       // Antenna ports
       NR_SetupRelease_DMRS_DownlinkConfig_t *typeA = pdsch_Config ? pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA : NULL;
       NR_SetupRelease_DMRS_DownlinkConfig_t *typeB = pdsch_Config ? pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB : NULL;
       AssertFatal(typeA!=NULL || typeB!=NULL, "either dmrs_typeA or typeB must be configured\n");
       dci_pdu->antenna_ports.nbits = getAntPortBitWidth(typeA,typeB);
       size += dci_pdu->antenna_ports.nbits;
+      LOG_D(NR_MAC,"dci_pdu->antenna_ports.nbits %d\n",dci_pdu->antenna_ports.nbits);
       // Tx Config Indication
       long *isTciEnable = pdcch_Config->controlResourceSetToAddModList->list.array[0]->tci_PresentInDCI;
       if (isTciEnable != NULL) {

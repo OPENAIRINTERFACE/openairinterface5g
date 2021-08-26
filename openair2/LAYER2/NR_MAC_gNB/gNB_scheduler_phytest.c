@@ -56,7 +56,7 @@
 //#define UL_HARQ_PRINT
 extern RAN_CONTEXT_t RC;
 
-const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
+const uint8_t nr_rv_round_map[4] = {0, 2, 3, 1}; 
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
 //uint8_t mac_pdu[MAX_NR_DLSCH_PAYLOAD_BYTES];
@@ -371,7 +371,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
   if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
     nr_set_pdsch_semi_static(
-        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, num_dmrs_cdm_grps_no_data, ps);
 
   sched_pdsch->nrOfLayers = target_dl_Nl;
   sched_pdsch->mcs = target_dl_mcs;
