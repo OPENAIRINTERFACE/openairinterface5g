@@ -3334,14 +3334,21 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                 //  check if LCID is valid at current time.
 
             default:
+            {
                 //  check if LCID is valid at current time.
-                if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                  return;
+                NR_MAC_SUBHEADER_SHORT *shs = (NR_MAC_SUBHEADER_SHORT *)pduP;
+                if (shs->F) {
                     //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
                     mac_subheader_len = 3;
-                    mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)
-                    | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pduP)->L2 & 0xff);
-
+                    if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                      return;
+                    NR_MAC_SUBHEADER_LONG *shl = (NR_MAC_SUBHEADER_LONG *)pduP;
+                    mac_sdu_len = ((uint16_t)(shl->L1 & 0x7f) << 8) | (uint16_t)(shl->L2 & 0xff);
                 } else {
+                  if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                    return;
                   mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
                   mac_subheader_len = 2;
                 }
@@ -3376,6 +3383,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 
 
             break;
+            }
         }
         pduP += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
         pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
