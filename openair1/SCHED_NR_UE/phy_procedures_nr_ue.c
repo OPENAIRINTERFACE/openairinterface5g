@@ -949,11 +949,11 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
     if (pdsch == RA_PDSCH) {
       if (ue->prach_resources[gNB_id]!=NULL)
-	      dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
+        dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
       else {
-	      LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
-	      //mac_xface->macphy_exit("prach_resources is NULL");
-	      return;
+        LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
+        //mac_xface->macphy_exit("prach_resources is NULL");
+        return;
       }
     }
 
