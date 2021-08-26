@@ -495,6 +495,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 
   nr_init_frame_parms(gNB_config, fp);
+  fp->ofdm_offset_divisor = UINT_MAX;
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");
 }
@@ -546,7 +547,9 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
 //  }
   RC.gNB[Mod_id]->configured     = 1;
 
+  fp->ofdm_offset_divisor = RC.gNB[Mod_id]->ofdm_offset_divisor;
   init_symbol_rotation(fp);
+  init_timeshift_rotation(fp);
 
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
 }
