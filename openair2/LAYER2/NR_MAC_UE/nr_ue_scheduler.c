@@ -952,12 +952,14 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
             }
             LOG_D(NR_MAC,"Flipping NDI for harq_id %d (Msg3)\n",ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
             mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
-	          mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
+            mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
           } else {
 
             if ((mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator ||
                 mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id]==1) &&
-                ((get_softmodem_params()->phy_test == 1) || (ra->ra_state == RA_SUCCEEDED))){
+                ((get_softmodem_params()->phy_test == 1) ||
+                (ra->ra_state == RA_SUCCEEDED) ||
+                (ra->ra_state == WAIT_RAR && ra->cfra))){
 
               // Getting IP traffic to be transmitted
               nr_ue_get_sdu(mod_id, frame_tx, slot_tx, gNB_index, ulsch_input_buffer, TBS_bytes);
