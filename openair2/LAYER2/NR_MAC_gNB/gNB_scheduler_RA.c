@@ -1690,6 +1690,9 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       }
     }
 
+    T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(ra->rnti),
+      T_INT(frameP), T_INT(slotP), T_INT(current_harq_pid), T_BUFFER(harq->tb, harq->tb_size));
+
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
     memcpy(tx_req->TLVs[0].value.direct, harq->tb, sizeof(uint8_t) * harq->tb_size);
