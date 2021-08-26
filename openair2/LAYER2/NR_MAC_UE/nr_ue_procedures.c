@@ -1331,7 +1331,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
 
   pucch_pdu->rnti = rnti;
 
-  LOG_I(NR_MAC,"initial_pucch_id %d, pucch_resource %p\n",pucch->initial_pucch_id,pucch->pucch_resource);
+  LOG_D(NR_MAC,"initial_pucch_id %d, pucch_resource %p\n",pucch->initial_pucch_id,pucch->pucch_resource);
   // configure pucch from Table 9.2.1-1
   if (pucch->initial_pucch_id > -1 &&
       pucch->pucch_resource == NULL) {

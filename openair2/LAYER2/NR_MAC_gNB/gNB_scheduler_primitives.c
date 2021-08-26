@@ -835,9 +835,10 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   pucch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
   pucch_pdu->subcarrier_spacing = genericParameters->subcarrierSpacing;
   pucch_pdu->cyclic_prefix = (genericParameters->cyclicPrefix==NULL) ? 0 : *genericParameters->cyclicPrefix;
-  if (r_pucch<0 || bwp){
+  if (r_pucch<0 || bwp ){
+      LOG_D(NR_MAC,"pucch_acknak: Filling dedicated configuration for PUCCH\n");
    // we have either a dedicated BWP or Dedicated PUCCH configuration on InitialBWP
-      AssertFatal(bwp!=NULL || bwpd!=NULL,"We need one dedicated configuration for a BPW (neither additional or initial BWP has a dedicated configuration)\n");
+      AssertFatal(bwp!=NULL || bwpd!=NULL,"We need one dedicated configuration for a BWP (neither additional or initial BWP has a dedicated configuration)\n");
       pucch_Config = bwp ?
 	  bwp->bwp_Dedicated->pucch_Config->choice.setup:
 	  bwpd->pucch_Config->choice.setup;
@@ -981,6 +982,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
     AssertFatal(res_found==1,"No PUCCH resource found corresponding to id %ld\n",*resource_id);
   }
   else { // this is the default PUCCH configuration, PUCCH format 0 or 1
+    LOG_D(NR_MAC,"pucch_acknak: Filling default PUCCH configuration from Tables (r_pucch %d, bwp %p)\n",r_pucch,bwp);
     int rsetindex = *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon;
     int prboffset = r_pucch/default_pucch_csset[rsetindex];
     int prboffsetm8 = (r_pucch-8)/default_pucch_csset[rsetindex];
