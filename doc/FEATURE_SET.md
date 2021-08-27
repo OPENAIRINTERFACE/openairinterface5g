@@ -371,16 +371,39 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  Highly efficient 3GPP compliant polar encoder and decoder
 *  Encoder and decoder for short block
 
+## NR UE FAPI ##
+
+*  MAC -> PHY configuration via UE FAPI P5 interface
+*  Basic MAC to control PHY via UE FAPI P7 interface
+*  PHY -> MAC indication (needs some improvement)
 
 ## NR UE Higher Layers ##
 
 **UE MAC**
 *  Minimum system information (MSI)
-    - Initial sync and MIB detection
-    - System information block 1 (SIB1) reception
-*  MAC -> PHY configuration of PHY via UE FAPI P5 interface
-*  Basic MAC to control PHY via UE FAPI P7 interface
-*  Random access procedure
+   - MIB processing
+   - Scheduling of system information block 1 (SIB1) reception
+*  Random access procedure (needs improvement, there is still not a clear separation between MAC and PHY)
+   - Mapping SSBs to multiple ROs
+   - Scheduling of PRACH
+   - Processing of RAR
+   - Transmission and re-transmission of Msg3
+   - Msg4 and contention resolution
+*  DCI processing
+   - format 10 (RA-RNTI, C-RNTI, SI-RNTI, TC-RNTI)
+   - format 00 (C-RNTI, TC-RNTI)
+   - format 11 (C-RNTI)
+   - format 01 (C-RNTI)
+*  UCI processing
+   - ACK/NACK processing
+   - Triggering periodic SR
+   - CSI measurement reporting (SSB RSRP only)
+* DLSH scheduler
+   - Configuration of fapi PDU according to DCI
+   - HARQ procedures
+* ULSCH scheduler
+   - Configuration of fapi PDU according to DCI
+
 
 
 **RLC**
