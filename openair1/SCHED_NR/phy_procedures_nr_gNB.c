@@ -261,6 +261,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
     }
   }
 
+  int dumpsig=0;
   // if all segments are done 
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
@@ -272,6 +273,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
 
       LOG_D(PHY, "ULSCH received ok \n");
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0);
+      dumpsig=1;
     } else {
       LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, ndi %d, status %d, round %d, TBS %d) r %d\n",
             gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
@@ -288,7 +290,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 1);
     }
 /*    
-    if (ulsch_harq->ulsch_pdu.mcs_index == 9) {
+    if (ulsch_harq->ulsch_pdu.mcs_index == 9 && dumpsig==1) {
 #ifdef __AVX2__
       int off = ((ulsch_harq->ulsch_pdu.rb_size&1) == 1)? 4:0;
 #else
