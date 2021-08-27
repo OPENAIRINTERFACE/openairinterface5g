@@ -272,10 +272,10 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  30KHz SCS for FR1 and 120 KHz SCS for FR2
 *  Generation of NR-PSS/NR-SSS
 *  NR-PBCH supports multiple SSBs and flexible periodicity
-*  Generation of NR-PDCCH for SIB1 (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc)
-   - common search space configured by MIB
-   - user-specific search space configured by RRC
-   - DCI formats: 00, 10 (01 and 11 **under integration**)
+*  Generation of NR-PDCCH (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc)
+   - common search space
+   - user-specific search space
+   - DCI formats: 00, 10, 01 and 11
 *  Generation of NR-PDSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
    - PDSCH mapping type A and B
    - DMRS configuration type 1 and 2
@@ -292,8 +292,8 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Support for 1 RX antenna
    - Support for 1 layer
 *  NR-PUCCH 
-   - Format 0 (2 bits, mainly for ACK/NACK)
-   - Format 2 (up to 64 bits, mainly for CSI feedback)
+   - Format 0 (2 bits, for ACK/NACK and SR)
+   - Format 2 (up to 11 bits, mainly for CSI feedback)
 *  NR-PRACH
    - Formats 0,1,2,3, A1-A3, B1-B3
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 are supported)
@@ -319,11 +319,22 @@ The following features are valid for the gNB and the 5G-NR UE.
 - MAC <-> PHY data interface using FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
 - Scheduler procedures for SIB1
 - Scheduler procedures for RA
+  - Contention free RA procedure
+  - Contention based RA procedure
 - Scheduler procedures for CSI-RS
-- MAC downlink scheduler (fixed allocations)
+- MAC downlink scheduler
+  - phy-test scheduler (fixed allocation and usable also without UE)
+  - regular scheduler with dynamic allocation
 - MAC header generation (including timing advance)
 - ACK / NACK handling and HARQ procedures for downlink
-- **As of May 2020** only DL was validated with COTS phone ; UL in progress, validated with OAI UE in noS1 mode
+- MAC uplink scheduler
+  - phy-test scheduler (fixed allocation)
+  - regular scheduler with dynamic allocation
+  - HARQ procedures for uplink
+- MAC procedures to handle CSI measurement report
+  - evalution of RSRP report
+  - evaluation of CQI report
+- MAC scheduling of SR reception
 
 # OpenAirInterface 5G-NR UE Feature Set #
 
