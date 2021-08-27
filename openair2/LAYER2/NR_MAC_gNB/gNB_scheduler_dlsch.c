@@ -483,7 +483,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
       rbStart++;
     while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
       rbSize++;
-    NR_pdsch_semi_static_t temp_ps;
+    NR_pdsch_semi_static_t temp_ps = *ps;
     nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
     uint32_t new_tbs;
     uint16_t new_rbSize;
