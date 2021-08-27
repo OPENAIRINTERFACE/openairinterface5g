@@ -2038,12 +2038,22 @@ nr_rrc_ue_establish_srb2(
        }
      }
 
+     uint8_t *k_kdf = NULL;
      uint8_t *kRRCenc = NULL;
      uint8_t *kRRCint = NULL;
-     derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-		     NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCenc);
-     derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-		     NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
+     nr_derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
+                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
+     kRRCenc = malloc(16);
+     if (kRRCenc == NULL) exit(1);
+     memcpy(kRRCenc, k_kdf + 16, 16);
+     free(k_kdf);
+     nr_derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
+                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
+     kRRCint = malloc(16);
+     if (kRRCint == NULL) exit(1);
+     memcpy(kRRCint, k_kdf + 16, 16);
+     free(k_kdf);
+
      // Refresh SRBs
       nr_rrc_pdcp_config_asn1_req(ctxt_pP,
                                   radioBearerConfig->srb_ToAddModList,
@@ -2124,9 +2134,24 @@ nr_rrc_ue_establish_srb2(
        }
      }
 
+     uint8_t *k_kdf = NULL;
      uint8_t *kUPenc = NULL;
-     derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-		     NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPenc);
+     uint8_t *kUPint = NULL;
+
+     nr_derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
+                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
+     kUPenc = malloc(16);
+     if (kUPenc == NULL) exit(1);
+     memcpy(kUPenc, k_kdf + 16, 16);
+     free(k_kdf);
+
+     nr_derive_key_up_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
+                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
+     kUPint = malloc(16);
+     if (kUPint == NULL) exit(1);
+     memcpy(kUPint, k_kdf + 16, 16);
+     free(k_kdf);
+
      MSC_LOG_TX_MESSAGE(
 	 MSC_RRC_UE,
 	 MSC_PDCP_UE,
@@ -2147,7 +2172,7 @@ nr_rrc_ue_establish_srb2(
                                     NULL,
                                     NULL,
                                     kUPenc,
-                                    NULL,
+                                    kUPint,
                                     NULL,
                                     NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
                                     NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);

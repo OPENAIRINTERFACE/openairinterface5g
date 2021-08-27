@@ -471,6 +471,10 @@ typedef struct {
   /* nia0 = 0, nia1 = 1, ... */
   int integrity_algorithms[4];
   int integrity_algorithms_count;
+
+  /* flags to enable/disable ciphering and integrity for DRBs */
+  int do_drb_ciphering;
+  int do_drb_integrity;
 } nr_security_configuration_t;
 
 //---NR---(completely change)---------------------
