@@ -4627,7 +4627,8 @@ void ue_measurement_report_triggering(protocol_ctxt_t *const ctxt_pP, const uint
             if (is_state_connected && is_t304_inactive && have_meas_flag) {
               LOG_I(RRC,"[UE %d] Frame %d: Triggering generation of Meas Report for NR_r15. count = %d\n",
                     ctxt_pP->module_id, ctxt_pP->frame, ue->subframeCount);
-              usleep(200000); //Melissa Elkadi come back for EPC
+              if (!SOFTMODEM_NOS1_BIT)
+                usleep(200000); //Melissa Elkadi come back for EPC
               if (ue->measReportList[i][j] == NULL) {
                 ue->measReportList[i][j] = malloc(sizeof(MEAS_REPORT_LIST));
               }
