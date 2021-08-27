@@ -208,7 +208,10 @@ tbs_size_t mac_rlc_data_req(
   switch (channel_idP) {
   case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
   case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
-  default:      rb = NULL;                     break;
+  default:
+  rb = NULL;
+  LOG_E(RLC, "In %s:%d:%s: data request for unknown RB with LCID 0x%02x !\n", __FILE__, __LINE__, __FUNCTION__, channel_idP);
+  break;
   }
 
   if (rb != NULL) {
@@ -216,8 +219,6 @@ tbs_size_t mac_rlc_data_req(
     maxsize = tb_sizeP;
     ret = rb->generate_pdu(rb, buffer_pP, maxsize);
   } else {
-    LOG_E(RLC, "%s:%d:%s: fatal: data req for unknown RB, channel_idP: %d\n", __FILE__, __LINE__, __FUNCTION__, channel_idP);
-    exit(1);
     ret = 0;
   }
 
@@ -263,7 +264,8 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
      * reports '> 81338368' (table 6.1.3.1-2). Passing 100000000 is thus
      * more than enough.
      */
-    buf_stat = rb->buffer_status(rb, 100000000);
+    // Fix me: temproary reduction meanwhile cpu cost of this computation is optimized
+    buf_stat = rb->buffer_status(rb, 1000*1000);
     ret.bytes_in_buffer = buf_stat.status_size
                         + buf_stat.retx_size
                         + buf_stat.tx_size;
@@ -326,7 +328,8 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
      * more than enough.
      */
     // Fixme : Laurent reduced size for CPU saving
-    buf_stat = rb->buffer_status(rb, 10000000);
+    // Fix me: temproary reduction meanwhile cpu cost of this computation is optimized
+    buf_stat = rb->buffer_status(rb, 1000*1000);
     ret = buf_stat.status_size
         + buf_stat.retx_size
         + buf_stat.tx_size;

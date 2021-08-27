@@ -42,7 +42,7 @@
 
 extern short nr_qpsk_mod_table[8];
 
-uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6, 24, 7, 0, 5, 3, 2, 1, 4,
+const uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6, 24, 7, 0, 5, 3, 2, 1, 4,
                                                     9, 11, 12, 13, 14, 15, 19, 20, 21, 22, 25, 26, 27, 28, 29, 31
                                                    };
 
@@ -141,7 +141,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
   return 0;
 }
 
-void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
+static void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
                         uint32_t Nid,
                         uint8_t nushift,
                         uint16_t M,

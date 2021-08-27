@@ -57,7 +57,6 @@ extern eNB_transport_info_t eNB_transport_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
 extern uint16_t eNB_transport_info_TB_index[NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
 
 extern UE_transport_info_t UE_transport_info[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
-extern uint16_t UE_transport_info_TB_index[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
 
 extern UE_cntl ue_cntl_delay[NUMBER_OF_UE_MAX][MAX_NUM_CCs][2];
 

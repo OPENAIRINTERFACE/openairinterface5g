@@ -503,8 +503,8 @@ int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length) {
         } else if(Mac_rlc_xface->Is_cluster_head[k] ==1) {
             Mod_id=k;
             len+=sprintf(&buffer[len],
-                         "-------------------------------------------------------------------CH %d: TTI: %d------------------------------------------------------------------\n",
-                         NODE_ID[Mod_id],Mac_rlc_xface->frame);
+                         "------------------------------------------------------------------- TTI: %d------------------------------------------------------------------\n",
+                         Mac_rlc_xface->frame);
 
             for(i=1; i<=NB_CNX_CH; i++) {
                 if (CH_mac_inst[Mod_id].Dcch_lchan[i].Active==1) {

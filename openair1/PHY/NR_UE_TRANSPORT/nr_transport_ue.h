@@ -56,34 +56,6 @@ typedef enum {
  RETRANSMISSION_HARQ
 } harq_result_t;
 
-//#if defined(UPGRADE_RAT_NR)
-#if 1
-typedef struct {
-  /// HARQ process id
-  uint8_t harq_id;
-  /// HARQ rx status
-  harq_result_t rx_status;
-  /// ACK bits (after decoding) 0:NACK / 1:ACK / 2:DTX
-  uint8_t ack;
-  /// send status (for PUCCH)
-  uint8_t send_harq_status;
-  /// nCCE (for PUCCH)
-  uint8_t nCCE;
-  /// DAI value detected from DCI1/1a/1b/1d/2/2a/2b/2c. 0xff indicates not touched
-  uint8_t vDAI_DL;
-  /// DAI value detected from DCI0/4. 0xff indicates not touched
-  uint8_t vDAI_UL;
-  /// allow to define pucch parameters TS 38.213 9.2.3 UE procedure for reporting HARQ-ACK
-  uint8_t  pucch_resource_indicator;
-  /// slot on which feedback ack should be send to network
-  uint16_t slot_for_feedback_ack;
-  /// index of a first CCE for the PDCCH reception
-  uint8_t  n_CCE;
-  /// number of CCEs in a control resource set of a PDCCH reception conveying DCI format 1_0
-  uint8_t  N_CCE;
-} NR_UE_HARQ_STATUS_t;
-#endif
-
 typedef struct {
   /// NDAPI struct for UE
   nfapi_nr_ue_pusch_pdu_t pusch_pdu;
@@ -321,7 +293,7 @@ typedef struct {
   /// codeword this transport block is mapped to
   uint8_t codeword;
   /// HARQ-ACKs
-  NR_UE_HARQ_STATUS_t harq_ack;
+  uint8_t ack;
   /// PTRS Frequency Density
   uint8_t PTRSFreqDensity;
   /// PTRS Time Density

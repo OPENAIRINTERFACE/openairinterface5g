@@ -183,10 +183,6 @@ void nr_csirs_scheduling(int Mod_idP,
                          sub_frame_t slot,
                          int n_slots_frame);
 
-void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
-                       NR_NZP_CSI_RS_Resource_t *nzpcsi,
-                       int *period, int *offset);
-
 void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frameP,
                            sub_frame_t slotP);
@@ -334,15 +330,6 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      int m,
                      int nr_of_candidates);
 
-uint16_t compute_pucch_prb_size(uint8_t format,
-                                uint8_t nr_prbs,
-                                uint16_t O_tot,
-                                uint16_t O_csi,
-                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
-                                uint8_t Qm,
-                                uint8_t n_symb,
-                                uint8_t n_re_ctrl);
-
 int nr_get_default_pucch_res(int pucch_ResourceCommon);
 
 void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_info, int UE_id, module_id_t Mod_idP);
@@ -440,9 +427,5 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t *nb_rb);
 
 void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
-
-void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRecconf,
-                       int *period,
-                       int *offset);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

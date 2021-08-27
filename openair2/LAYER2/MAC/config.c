@@ -51,7 +51,7 @@
 #include "LTE_MBSFN-SubframeConfigList.h"
 #include "LTE_MBSFN-SubframeConfig.h"
 #include "LTE_PMCH-InfoList-r9.h"
-
+#include <openair2/LAYER2/MAC/mac_proto.h>
 
 extern RAN_CONTEXT_t RC;
 extern int l2_init_eNB(void);

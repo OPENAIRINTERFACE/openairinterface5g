@@ -963,7 +963,8 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                           currentPtrDCI);
 
         n_rnti = rel15->rnti;
-	      LOG_D(PHY, "(%i.%i) dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d)\n", proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length);
+        LOG_D(PHY, "(%i.%i) dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d)\n",
+              proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length);
         if (crc == n_rnti) {
           LOG_D(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d,payload %llx)\n",
                 proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length,*(unsigned long long*)dci_estimation);
@@ -978,6 +979,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
             dci_ind->slot = proc->nr_slot_rx;
             dci_ind->dci_list[dci_ind->number_of_dcis].rnti        = n_rnti;
             dci_ind->dci_list[dci_ind->number_of_dcis].n_CCE       = CCEind;
+            dci_ind->dci_list[dci_ind->number_of_dcis].N_CCE       = L;
             dci_ind->dci_list[dci_ind->number_of_dcis].dci_format  = rel15->dci_format_options[k];
             dci_ind->dci_list[dci_ind->number_of_dcis].payloadSize = dci_length;
             memcpy((void*)dci_ind->dci_list[dci_ind->number_of_dcis].payloadBits,(void*)dci_estimation,8);
