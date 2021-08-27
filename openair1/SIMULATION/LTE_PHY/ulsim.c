@@ -1111,8 +1111,8 @@ int main(int argc, char **argv) {
                   for (aarx=0; aarx<UE2eNB->nb_rx; aarx++) {
                     for (aatx=0; aatx<UE2eNB->nb_tx; aatx++) {
                       // abs_channel = (eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x + eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y);
-                      channelx = UE2eNB->chF[aarx+(aatx*UE2eNB->nb_rx)][u].x;
-                      channely = UE2eNB->chF[aarx+(aatx*UE2eNB->nb_rx)][u].y;
+                      channelx = UE2eNB->chF[aarx+(aatx*UE2eNB->nb_rx)][u].r;
+                      channely = UE2eNB->chF[aarx+(aatx*UE2eNB->nb_rx)][u].i;
                       // if(transmission_m==5){
                       fprintf(csv_fdUL,"%e+i*(%e),",channelx,channely);
                       // }
