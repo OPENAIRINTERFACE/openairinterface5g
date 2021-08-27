@@ -299,21 +299,21 @@ void nr_rlc_entity_um_recv_pdu(nr_rlc_entity_t *_entity,
 
   /* dicard PDU if no data */
   if (data_size <= 0) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, no data\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, no data\n",
           __FILE__, __LINE__, __FUNCTION__);
     goto discard;
   }
 
   /* dicard PDU if rx buffer is full */
   if (entity->rx_size + data_size > entity->rx_maxsize) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, RX buffer full\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, RX buffer full\n",
           __FILE__, __LINE__, __FUNCTION__);
     goto discard;
   }
 
   /* discard PDU if sn < rx_next_reassembly */
   if (sn_compare_rx(entity, sn, entity->rx_next_reassembly) < 0) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, SN (%d) < rx_next_reassembly (%d)\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, SN (%d) < rx_next_reassembly (%d)\n",
           __FILE__, __LINE__, __FUNCTION__,
           sn, entity->rx_next_reassembly);
     goto discard;
@@ -545,7 +545,7 @@ void nr_rlc_entity_um_recv_sdu(nr_rlc_entity_t *_entity,
   }
 
   if (entity->tx_size + size > entity->tx_maxsize) {
-    LOG_D(RLC, "%s:%d:%s: warning: SDU rejected, SDU buffer full\n",
+    LOG_W(RLC, "%s:%d:%s: warning: SDU rejected, SDU buffer full\n",
           __FILE__, __LINE__, __FUNCTION__);
     return;
   }

@@ -257,7 +257,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   Ilbrm = 0;
   Tbslbrm = 950984; //max tbs
   Coderate = 0.0;
-  trace_NRpdu(DIRECTION_UPLINK, harq_process->a, harq_process->pusch_pdu.pusch_data.tb_size, 0, WS_C_RNTI, 0, 0, 0,0, 0);
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
 

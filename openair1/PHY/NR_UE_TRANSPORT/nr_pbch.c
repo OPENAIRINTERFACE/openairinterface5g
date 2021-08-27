@@ -607,7 +607,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint16_t number_pdus = 1;
 
   nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-  nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, gNB_id, ue, NULL, NULL, number_pdus);
+  nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, gNB_id, ue, NULL, NULL, number_pdus, proc);
 
   if (ue->if_inst && ue->if_inst->dl_indication)
     ue->if_inst->dl_indication(&dl_indication, NULL);

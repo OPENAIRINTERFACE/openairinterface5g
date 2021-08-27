@@ -123,7 +123,8 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            PHY_VARS_NR_UE *ue,
                            NR_UE_DLSCH_t *dlsch0,
                            NR_UE_DLSCH_t *dlsch1,
-                           uint16_t n_pdus){
+                           uint16_t n_pdus,
+			   UE_nr_rxtx_proc_t *proc ){
 
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
@@ -132,6 +133,16 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
     LOG_E(PHY, "In %s: multiple number of DL PDUs not supported yet...\n", __FUNCTION__);
   }
 
+  if (pdu_type !=  FAPI_NR_RX_PDU_TYPE_SSB)
+    trace_NRpdu(DIRECTION_DOWNLINK,
+		dlsch0->harq_processes[dlsch0->current_harq_pid]->b,
+		dlsch0->harq_processes[dlsch0->current_harq_pid]->TBS / 8,
+		pdu_type,
+		WS_C_RNTI,
+		dlsch0->rnti,
+		proc->frame_rx,
+		proc->nr_slot_rx,
+		0,0);
   switch (pdu_type){
     case FAPI_NR_RX_PDU_TYPE_SIB:
       rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.harq_pid = dlsch0->current_harq_pid;
@@ -1035,16 +1046,16 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     switch (pdsch) {
       case RA_PDSCH:
         nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, gNB_id, ue, dlsch0, NULL, number_pdus);
+        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, gNB_id, ue, dlsch0, NULL, number_pdus, proc);
         ue->UE_mode[gNB_id] = RA_RESPONSE;
         break;
       case PDSCH:
         nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, gNB_id, ue, dlsch0, NULL, number_pdus);
+        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, gNB_id, ue, dlsch0, NULL, number_pdus, proc);
         break;
       case SI_PDSCH:
         nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SIB, gNB_id, ue, dlsch0, NULL, number_pdus);
+        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SIB, gNB_id, ue, dlsch0, NULL, number_pdus, proc);
         break;
       default:
         break;

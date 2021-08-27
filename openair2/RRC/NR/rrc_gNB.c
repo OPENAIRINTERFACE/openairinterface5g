@@ -3054,7 +3054,7 @@ static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_
     }
   } else if (req->srb_id == 2) {
     // TODO
-    abort();
+    //abort();
   }
   
   LOG_I(F1AP, "Received DL RRC Transfer on srb_id %ld\n", req->srb_id);
