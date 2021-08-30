@@ -159,7 +159,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                               nb_dmrs_re_per_rb, number_dmrs_symbols, mod_order, Nl);
     
 
-    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
+    nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, G);
 
     ///////////
     ////////////////////////////////////////////////////////////////////
@@ -529,7 +529,8 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
       nr_normal_prefix_mod(txdataF[ap],
                            &txdata[ap][tx_offset],
                            14,
-                           frame_parms);
+                           frame_parms,
+                           slot);
     }
   }
 

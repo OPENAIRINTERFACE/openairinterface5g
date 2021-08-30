@@ -253,7 +253,7 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
       ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling;
 
-      LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+      LOG_I(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
         __FUNCTION__,
         ue->Mod_id,
         frame_tx,
@@ -949,11 +949,11 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
     if (pdsch == RA_PDSCH) {
       if (ue->prach_resources[gNB_id]!=NULL)
-	      dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
+        dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
       else {
-	      LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
-	      //mac_xface->macphy_exit("prach_resources is NULL");
-	      return;
+        LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
+        //mac_xface->macphy_exit("prach_resources is NULL");
+        return;
       }
     }
 
