@@ -1541,7 +1541,12 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
     }
     else
     {
-      ra->state = Msg4;
+//      ra->state = Msg4;
+      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Nak of RA-Msg4. CBRA procedure failed!\n", UE_id, ra->rnti);
+      mac_remove_nr_ue(module_id,ra->rnti);
+      nr_clear_ra_proc(module_id, CC_id, frame, ra);
+      UE_info->active[UE_id] = false;
+      UE_info->Msg4_ACKed[UE_id] = false;
     }
   }
 

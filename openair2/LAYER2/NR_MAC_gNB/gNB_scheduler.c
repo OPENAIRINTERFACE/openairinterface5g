@@ -85,17 +85,27 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
       UE_info->num_UEs,
       UE_info->UE_sched_ctrl[UE_id].ph,
       UE_info->UE_sched_ctrl[UE_id].pcmax);
+    stroff+=sprintf(output+stroff,"UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm\n",
+      UE_id,
+      UE_info->rnti[UE_id],
+      num++,
+      UE_info->num_UEs,
+      UE_info->UE_sched_ctrl[UE_id].ph,
+      UE_info->UE_sched_ctrl[UE_id].pcmax);
+
     NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
-    stroff+=sprintf(output+stroff,"UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
+    stroff+=sprintf(output+stroff,"UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, pucch0_DTX %d average RSRP %d (%d meas)\n",
           UE_id,
           stats->dlsch_rounds[0], stats->dlsch_rounds[1],
           stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
+          stats->pucch0_DTX,
           avg_rsrp, stats->num_rsrp_meas);
-    LOG_D(NR_MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
+    LOG_D(NR_MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, pucch0_DTX %d, average RSRP %d (%d meas)\n",
       UE_id,
       stats->dlsch_rounds[0], stats->dlsch_rounds[1],
       stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
+      stats->pucch0_DTX,
       avg_rsrp, stats->num_rsrp_meas);
     stats->num_rsrp_meas = 0;
     stats->cumul_rsrp = 0 ;

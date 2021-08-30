@@ -543,7 +543,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
           slot);
     int cid = sched_ctrl->coreset->controlResourceSetId;
     UE_info->num_pdcch_cand[UE_id][cid]--;
-    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
+    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp?sched_ctrl->active_bwp->bwp_Id:0][cid];
     for (int i = 0; i < sched_ctrl->aggregation_level; i++)
       cce_list[sched_ctrl->cce_index + i] = 0;
     return false;
@@ -743,6 +743,8 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   if (UE_info->num_UEs == 0)
     return;
 
+  if (slot!=11) return;
+
   const int CC_id = 0;
 
 
@@ -812,6 +814,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
     return;
+
 
   /* PREPROCESSOR */
   gNB_mac->pre_processor_dl(module_id, frame, slot);
@@ -884,7 +887,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
     LOG_I(NR_MAC,
-          "%4d.%2d [DLSCH/PDSCH/PUCCH] RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d NDI %d dl_data_to_ULACK %d (%d.%d)\n",
+          "%4d.%2d [DLSCH/PDSCH/PUCCH] RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
           frame,
           slot,
           rnti,
@@ -897,10 +900,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
           TBS,
           current_harq_pid,
           harq->round,
+          nr_rv_round_map[harq->round],
           harq->ndi,
           pucch->timing_indicator,
           pucch->frame,
-          pucch->ul_slot);
+          pucch->ul_slot,
+          sched_ctrl->tpc1);
 
     NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
 
@@ -1160,7 +1165,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                  0,
                                  0);
 
-          LOG_D(NR_MAC,
+          LOG_I(NR_MAC,
                 "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
                 frame,
                 slot,
