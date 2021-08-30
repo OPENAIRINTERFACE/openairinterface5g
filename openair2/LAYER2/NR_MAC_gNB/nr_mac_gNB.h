@@ -93,8 +93,9 @@ typedef enum {
   RA_IDLE = 0,
   Msg2 = 1,
   WAIT_Msg3 = 2,
-  Msg4 = 3,
-  WAIT_Msg4_ACK = 4
+  Msg3_retransmission = 3,
+  Msg4 = 4,
+  WAIT_Msg4_ACK = 5
 } RA_gNB_state_t;
 
 typedef struct NR_preamble_ue {

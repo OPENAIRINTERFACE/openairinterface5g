@@ -72,6 +72,7 @@ extern "C"
 #define CONFIG_HLP_DLMCS         "Set the maximum downlink MCS\n"
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
 #define CONFIG_HLP_256QAM        "Use the 256 QAM mcs table for PDSCH\n"
+#define CONFIG_HLP_PRBINTER       "Do PRB based averaging of channel estimates. Frequency domain linear interpolation by default\n"
 
 #define CONFIG_HLP_NONSTOP       "Go back to frame sync mode after 100 consecutive PBCH failures\n"
 //#define CONFIG_HLP_NUMUES        "Set the number of UEs for the emulation"
@@ -119,6 +120,7 @@ extern "C"
 #define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
 #define USE_256QAM_TABLE    softmodem_params.use_256qam_table
+#define PRB_INTERPOLATION   softmodem_params.prb_interpolation
 #define NFAPI               softmodem_params.nfapi
 #define NON_STOP            softmodem_params.non_stop
 
@@ -153,6 +155,7 @@ extern int usrp_tx_thread;
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
     {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
+    {"do-prb-interpolation", CONFIG_HLP_PRBINTER,     PARAMFLAG_BOOL, iptr:&PRB_INTERPOLATION,            defintval:0,           TYPE_INT,    0},                     \
     {"usrp-tx-thread-config",CONFIG_HLP_USRP_THREAD,  0,              iptr:&usrp_tx_thread,               defstrval:0,           TYPE_INT,    0},                     \
     {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                  defintval:0,           TYPE_UINT8,  0},                     \
     {"non-stop",             CONFIG_HLP_NONSTOP,      PARAMFLAG_BOOL, iptr:&NON_STOP,                     defintval:0,           TYPE_INT,    0},                     \
@@ -246,6 +249,7 @@ typedef struct {
   int            hw_timing_advance;
   uint32_t       send_dmrs_sync;
   int            use_256qam_table;
+  int            prb_interpolation;
   uint8_t        nfapi;
   int            non_stop;
 } softmodem_params_t;
