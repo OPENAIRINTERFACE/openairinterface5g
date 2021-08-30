@@ -45,25 +45,23 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   static int max_pos_fil = 0;
   static int count_max_pos_ok = 0;
   static int first_time = 1;
-  int temp = 0, i, aa, max_val = 0, max_pos = 0;
-  int diff;
-  short Re,Im,ncoef;
+  int max_val = 0, max_pos = 0;
+  const int sync_pos = 0;
   uint8_t sync_offset = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_IN);
 
-  ncoef = 32767 - coef;
+  short ncoef = 32767 - coef;
 
   LOG_D(PHY,"AbsSubframe %d: rx_offset (before) = %d\n",subframe,ue->rx_offset);
 
-
   // we only use channel estimates from tx antenna 0 here
-  for (i = 0; i < frame_parms->nb_prefix_samples; i++) {
-    temp = 0;
+  for (int i = 0; i < frame_parms->nb_prefix_samples; i++) {
+    int temp = 0;
 
-    for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-      Re = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[(i<<1)];
-      Im = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[1+(i<<1)];
+    for (int aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
+      int Re = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[(i<<1)];
+      int Im = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[1+(i<<1)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
 
@@ -72,6 +70,9 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       max_val = temp;
     }
   }
+
+  if (max_pos > frame_parms->ofdm_symbol_size/2)
+    max_pos = max_pos - frame_parms->ofdm_symbol_size;
 
   // filter position to reduce jitter
   if (clear == 1)
@@ -82,61 +83,58 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   // do not filter to have proactive timing adjustment
   //max_pos_fil = max_pos;
 
-      diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
+  int diff = max_pos_fil - sync_pos;
 
-      if (frame_parms->freq_range==nr_FR2) 
-		sync_offset = 2;
-      else
-		sync_offset = 0;
-	
-      if ( abs(diff) < (SYNCH_HYST+sync_offset) )
-          ue->rx_offset = 0;
-      else
-          ue->rx_offset = diff;
+  if (frame_parms->freq_range==nr_FR2) 
+    sync_offset = 2;
+  else
+    sync_offset = 0;
 
-      if(abs(diff)<5)
-          count_max_pos_ok ++;
-      else
-          count_max_pos_ok = 0;
-          
-      //printf("adjust sync count_max_pos_ok = %d\n",count_max_pos_ok);
+  if ( abs(diff) < (SYNCH_HYST+sync_offset) )
+    ue->rx_offset = 0;
+  else
+    ue->rx_offset = diff;
 
-      if(count_max_pos_ok > 10 && first_time == 1)
-      {
-          first_time = 0;
-          ue->time_sync_cell = 1;
-          if (get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
-              LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
-              //mac_resynch();
-              //dl_phy_sync_success(ue->Mod_id,frame,0,1);//ue->common_vars.eNb_id);
-              ue->UE_mode[0] = PRACH;
-              ue->prach_resources[gNB_id]->sync_frame = frame;
-              ue->prach_resources[gNB_id]->init_msg1 = 0;
-          } else {
-              ue->UE_mode[0] = PUSCH;
-          }
-      }
+  if(abs(diff)<5)
+    count_max_pos_ok ++;
+  else
+    count_max_pos_ok = 0;
+      
+  //printf("adjust sync count_max_pos_ok = %d\n",count_max_pos_ok);
 
-      if (ue->rx_offset < 0)
-        ue->rx_offset += frame_parms->samples_per_frame;
+  if(count_max_pos_ok > 10 && first_time == 1)
+  {
+    first_time = 0;
+    ue->time_sync_cell = 1;
+    if (get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
+      LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
+      //mac_resynch();
+      //dl_phy_sync_success(ue->Mod_id,frame,0,1);//ue->common_vars.eNb_id);
+      ue->UE_mode[0] = PRACH;
+      ue->prach_resources[gNB_id]->sync_frame = frame;
+      ue->prach_resources[gNB_id]->init_msg1 = 0;
+    } else {
+      ue->UE_mode[0] = PUSCH;
+    }
+  }
 
-      if (ue->rx_offset >= frame_parms->samples_per_frame)
-        ue->rx_offset -= frame_parms->samples_per_frame;
+  if (ue->rx_offset < 0)
+    ue->rx_offset += frame_parms->samples_per_frame;
 
+  if (ue->rx_offset >= frame_parms->samples_per_frame)
+    ue->rx_offset -= frame_parms->samples_per_frame;
 
+#ifdef DEBUG_PHY
+  LOG_D(PHY,"AbsSubframe %d: diff = %i, rx_offset (final) = %i : clear = %d, max_pos = %d, max_pos_fil = %d, max_val = %d, sync_pos %d\n",
+        subframe,
+        diff,
+        ue->rx_offset,
+        clear,
+        max_pos,
+        max_pos_fil,
+        max_val,
+        sync_pos);
+#endif //DEBUG_PHY
 
-      #ifdef DEBUG_PHY
-      LOG_D(PHY,"AbsSubframe %d: diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
-              subframe,
-              diff,
-              ue->rx_offset,
-              clear,
-              max_pos,
-              max_pos_fil,
-              temp,max_val,
-              (frame_parms->nb_prefix_samples>>3));
-      #endif //DEBUG_PHY
-
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);
 }
