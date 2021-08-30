@@ -819,6 +819,8 @@ typedef struct PHY_VARS_gNB_s {
 
   uint32_t max_peak_val;
 
+  /// OFDM symbol offset divisor for UL
+  uint32_t ofdm_offset_divisor;
   /// \brief sinr for all subcarriers of the current link (used only for abstraction).
   /// first index: ? [0..N_RB_DL*12[
   double *sinr_dB;
@@ -837,6 +839,8 @@ typedef struct PHY_VARS_gNB_s {
   /// hold the precoder for NULL beam to the primary user
   int              **dl_precoder_SgNB[3];
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
+
+  int  prb_interpolation;
 
   /// if ==0 enables phy only test mode
   int mac_enabled;

@@ -74,10 +74,10 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
 
   for (int i=0; i<((int)nbSamples-dd); i++) {
     struct complex16 *out_ptr=after_channel_sig+dd+i;
-    struct complex rx_tmp= {0};
+    struct complexd rx_tmp= {0};
 
     for (int txAnt=0; txAnt < nbTx; txAnt++) {
-      const struct complex *channelModel= channelDesc->ch[rxAnt+(txAnt*channelDesc->nb_rx)];
+      const struct complexd *channelModel= channelDesc->ch[rxAnt+(txAnt*channelDesc->nb_rx)];
 
       //const struct complex *channelModelEnd=channelModel+channelDesc->channel_length;
       for (int l = 0; l<(int)channelDesc->channel_length; l++) {
@@ -88,14 +88,14 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
         // it would be better to split out each antenna in a separate flow
         // that will allow to mix ru antennas freely
         struct complex16 tx16=input_sig[((TS+i-l)*nbTx+txAnt)%CirSize];
-        rx_tmp.x += tx16.r * channelModel[l].x - tx16.i * channelModel[l].y;
-        rx_tmp.y += tx16.i * channelModel[l].x + tx16.r * channelModel[l].y;
+        rx_tmp.r += tx16.r * channelModel[l].r - tx16.i * channelModel[l].i;
+        rx_tmp.i += tx16.i * channelModel[l].r + tx16.r * channelModel[l].i;
       } //l
     }
 
     // Fixme: lround(), rount(), ... is detected by valgrind as error, not found why
-    out_ptr->r += lround(rx_tmp.x*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
-    out_ptr->i += lround(rx_tmp.y*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
+    out_ptr->r += lround(rx_tmp.r*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
+    out_ptr->i += lround(rx_tmp.i*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
     out_ptr++;
   }
 

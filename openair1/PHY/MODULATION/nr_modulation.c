@@ -745,6 +745,23 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
   }
 }
 
+void init_timeshift_rotation(NR_DL_FRAME_PARMS *fp)
+{
+  for (int i = 0; i < fp->ofdm_symbol_size; i++) {
+    double poff = -i * 2.0 * M_PI * 144.0 / 2048.0 / fp->ofdm_offset_divisor;
+    double exp_re = cos(poff);
+    double exp_im = sin(-poff);
+    fp->timeshift_symbol_rotation[i*2] = (int16_t)round(exp_re * 32767);
+    fp->timeshift_symbol_rotation[i*2+1] = (int16_t)round(exp_im * 32767);
+
+    if (i < 10)
+      LOG_I(PHY,"Timeshift symbol rotation %d => (%d,%d) %f\n",i,
+            fp->timeshift_symbol_rotation[i*2],
+            fp->timeshift_symbol_rotation[i*2+1],
+            poff);
+  }
+}
+
 int nr_layer_precoder(int16_t **datatx_F_precoding, char *prec_matrix, uint8_t n_layers, int32_t re_offset)
 {
   int32_t precodatatx_F = 0;
