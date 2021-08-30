@@ -166,6 +166,8 @@ struct thread_params {
 	uint8_t iter_count;
 	double iter_average;
 	double bler;
+	struct t_nrLDPCoffload_params *p_offloadParams;	
+	int8_t* p_out;
 	rte_atomic16_t nb_dequeued;
 	rte_atomic16_t processing_status;
 	rte_atomic16_t burst_sz;
@@ -928,7 +930,6 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 		ops[i]->ldpc_dec.op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE;
 		ops[i]->ldpc_dec.code_block_mode = 1; //ldpc_dec->code_block_mode;
 		
-
 		if (hard_outputs != NULL)
 			ops[i]->ldpc_dec.hard_output =
 					hard_outputs[start_idx + i];
@@ -1240,7 +1241,7 @@ ldpc_decod_ut(struct test_op_params *op_params, int8_t* p_llr, t_nrLDPCoffload_p
 
 
 static int
-pmd_lcore_ldpc_dec(void *arg, t_nrLDPCoffload_params *p_offloadParams, int8_t* p_out)
+pmd_lcore_ldpc_dec(void *arg)
 {
 	struct thread_params *tp = arg;
 	uint16_t enq, deq;
@@ -1255,8 +1256,10 @@ pmd_lcore_ldpc_dec(void *arg, t_nrLDPCoffload_params *p_offloadParams, int8_t* p
 	int i, j, ret;
 	struct rte_bbdev_info info;
 	uint16_t num_to_enq;
-
-        //struct rte_bbdev_op_data *hard_output;	
+ 	int8_t *p_out = tp->p_out;	
+	t_nrLDPCoffload_params *p_offloadParams = tp->p_offloadParams;
+        
+	//struct rte_bbdev_op_data *hard_output;	
        
         //bool extDdr = check_bit(ldpc_cap_flags,
 	//		RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE);
@@ -1407,7 +1410,7 @@ start_pmd_dec(struct active_device *ad,
 			op_params->num_to_process, op_params->num_lcores,
 			intr_enabled ? "Interrupt mode" : "PMD mode",
 			(double)rte_get_tsc_hz() / 1000000000.0);
-	*/
+	*/	
 	/* Set number of lcores */
 	num_lcores = (ad->nb_queues < (op_params->num_lcores))
 			? ad->nb_queues
@@ -1428,6 +1431,8 @@ start_pmd_dec(struct active_device *ad,
 	t_params[0].op_params = op_params;
 	t_params[0].queue_id = ad->queue_ids[used_cores++];
 	t_params[0].iter_count = 0;
+	t_params[0].p_out = p_out;
+	t_params[0].p_offloadParams = p_offloadParams;
 
 	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
 		if (used_cores >= num_lcores)
@@ -1438,12 +1443,15 @@ start_pmd_dec(struct active_device *ad,
 		t_params[used_cores].op_params = op_params;
 		t_params[used_cores].queue_id = ad->queue_ids[used_cores];
 		t_params[used_cores].iter_count = 0;
+		t_params[used_cores].p_out = p_out; 
+		t_params[used_cores].p_offloadParams = p_offloadParams; 
+
 		rte_eal_remote_launch(pmd_lcore_ldpc_dec,
 				&t_params[used_cores++], lcore_id);
 	}
 
 	rte_atomic16_set(&op_params->sync, SYNC_START);
-	ret = pmd_lcore_ldpc_dec(&t_params[0], p_offloadParams, p_out);
+	ret = pmd_lcore_ldpc_dec(&t_params[0]);
 
 	/* Master core is always used */
 	for (used_cores = 1; used_cores < num_lcores; used_cores++)
@@ -1560,8 +1568,8 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 {
     	t_nrLDPCoffload_params offloadParams;
     	t_nrLDPCoffload_params* p_offloadParams    = &offloadParams;
-
-    	uint32_t numIter = 0;
+    	
+	uint32_t numIter = 0;
 	int ret;
 
 	int argc_re=2;
@@ -1571,7 +1579,7 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 
 	test_params.num_ops=1; 
 	test_params.burst_sz=1;
-	test_params.num_lcores=1;		
+	test_params.num_lcores=3;		
 	test_params.num_tests = 1;
   	struct active_device *ad;
         ad = &active_devs[0];
@@ -1648,8 +1656,7 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 	}
 
 	create_reference_ldpc_dec_op(op_params->ref_dec_op, p_offloadParams);
-
-	ad->nb_queues =1;
+	ad->nb_queues =  1;
 	for (i = 0; i < ad->nb_queues; ++i) {
 		f_ret = fill_queue_buffers(op_params,
 			 	p_llr,	
