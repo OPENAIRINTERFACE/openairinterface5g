@@ -220,8 +220,6 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
         ulsch->harq_processes[i]->rar_alloc=0;
         ulsch->harq_processes[i]->status=NR_SCH_IDLE;
         ulsch->harq_processes[i]->subframe_scheduling_flag=0;
-        ulsch->harq_processes[i]->phich_active=0;
-        ulsch->harq_processes[i]->phich_ACK=0;
         ulsch->harq_processes[i]->previous_first_rb=0;
         ulsch->harq_processes[i]->handled=0;
         ulsch->harq_processes[i]->delta_TF=0;
@@ -506,8 +504,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
-  harq_process->round = nr_rv_round_map[pusch_pdu->pusch_data.rv_index];
-
+//  harq_process->round = nr_rv_round_map[pusch_pdu->pusch_data.rv_index];
+  if (pusch_pdu->pusch_data.rv_index == 0) harq_process->round = 0;
+ 
   A   = (harq_process->TBS)<<3;
 
   LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);

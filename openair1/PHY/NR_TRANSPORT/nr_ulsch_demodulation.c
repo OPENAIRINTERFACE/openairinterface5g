@@ -1118,7 +1118,7 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
   int off = 0;
 #endif
 
-  if (0/*frame_parms->nb_antennas_rx>1*/) {
+  if (frame_parms->nb_antennas_rx>1) {
 #if defined(__x86_64__) || defined(__i386__)
     int nb_re = nb_rb*12;
     for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
