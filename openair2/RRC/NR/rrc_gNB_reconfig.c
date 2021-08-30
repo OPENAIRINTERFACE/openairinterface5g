@@ -1382,7 +1382,7 @@ if (!servingcellconfigdedicated) {
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->sCellDeactivationTimer=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->tag_Id=0;
- secondaryCellGroup->spCellConfig->spCellConfigDedicated->dummy=NULL;
+ secondaryCellGroup->spCellConfig->spCellConfigDedicated->dummy1=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->pathlossReferenceLinking=NULL;
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->servingCellMO=NULL;
 

@@ -253,7 +253,7 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
       ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling;
 
-      LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+      LOG_I(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
         __FUNCTION__,
         ue->Mod_id,
         frame_tx,
@@ -949,11 +949,11 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
     if (pdsch == RA_PDSCH) {
       if (ue->prach_resources[gNB_id]!=NULL)
-	      dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
+        dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
       else {
-	      LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
-	      //mac_xface->macphy_exit("prach_resources is NULL");
-	      return;
+        LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
+        //mac_xface->macphy_exit("prach_resources is NULL");
+        return;
       }
     }
 
@@ -1270,38 +1270,38 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
           default: break;
         }
 
-        /* d_2_1 */
-        int d_2_1;
-        if (mapping_type_ul == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB && start_symbol != 0)
-          d_2_1 = 0;
-        else
-          d_2_1 = 1;
+      /* d_2_1 */
+      int d_2_1;
+      if (mapping_type_ul == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB && start_symbol != 0)
+        d_2_1 = 0;
+      else
+        d_2_1 = 1;
 
-        /* d_2_2 */
-        const double d_2_2 = pusch_d_2_2_timing_capability_1[numerology][1];
+      /* d_2_2 */
+      const double d_2_2 = pusch_d_2_2_timing_capability_1[numerology][1];
 
-        /* N_t_1 time duration in msec of N_1 symbols corresponding to a PDSCH reception time
-        // N_t_2 time duration in msec of N_2 symbols corresponding to a PUSCH preparation time */
-        double N_t_1 = (N_1 + d_1_1) * (ofdm_symbol_size + nb_prefix_samples) * tc_factor;
-        double N_t_2 = (N_2 + d_2_1) * (ofdm_symbol_size + nb_prefix_samples) * tc_factor;
-        if (N_t_2 < d_2_2) N_t_2 = d_2_2;
+      /* N_t_1 time duration in msec of N_1 symbols corresponding to a PDSCH reception time
+      // N_t_2 time duration in msec of N_2 symbols corresponding to a PUSCH preparation time */
+      double N_t_1 = (N_1 + d_1_1) * (ofdm_symbol_size + nb_prefix_samples) * tc_factor;
+      double N_t_2 = (N_2 + d_2_1) * (ofdm_symbol_size + nb_prefix_samples) * tc_factor;
+      if (N_t_2 < d_2_2) N_t_2 = d_2_2;
 
-        /* Time alignment procedure */
-        // N_t_1 + N_t_2 + N_TA_max must be in msec
-        const double t_subframe = 1.0; // subframe duration of 1 msec
-        const int ul_tx_timing_adjustment = 1 + (int)ceil(slots_per_subframe*(N_t_1 + N_t_2 + N_TA_max + 0.5)/t_subframe);
+      /* Time alignment procedure */
+      // N_t_1 + N_t_2 + N_TA_max must be in msec
+      const double t_subframe = 1.0; // subframe duration of 1 msec
+      const int ul_tx_timing_adjustment = 1 + (int)ceil(slots_per_subframe*(N_t_1 + N_t_2 + N_TA_max + 0.5)/t_subframe);
 
-        if (ul_time_alignment->apply_ta == 1){
-          ul_time_alignment->ta_slot = (nr_slot_rx + ul_tx_timing_adjustment) % slots_per_frame;
-          if (nr_slot_rx + ul_tx_timing_adjustment > slots_per_frame){
-            ul_time_alignment->ta_frame = (frame_rx + 1) % 1024;
-          } else {
-            ul_time_alignment->ta_frame = frame_rx;
-          }
-          // reset TA flag
-          ul_time_alignment->apply_ta = 0;
-          LOG_D(PHY,"Frame %d slot %d -- Starting UL time alignment procedures. TA update will be applied at frame %d slot %d\n", frame_rx, nr_slot_rx, ul_time_alignment->ta_frame, ul_time_alignment->ta_slot);
+      if (ul_time_alignment->apply_ta == 1){
+        ul_time_alignment->ta_slot = (nr_slot_rx + ul_tx_timing_adjustment) % slots_per_frame;
+        if (nr_slot_rx + ul_tx_timing_adjustment > slots_per_frame){
+          ul_time_alignment->ta_frame = (frame_rx + 1) % 1024;
+        } else {
+          ul_time_alignment->ta_frame = frame_rx;
         }
+        // reset TA flag
+        ul_time_alignment->apply_ta = 0;
+        LOG_D(PHY,"Frame %d slot %d -- Starting UL time alignment procedures. TA update will be applied at frame %d slot %d\n", frame_rx, nr_slot_rx, ul_time_alignment->ta_frame, ul_time_alignment->ta_slot);
+      }
     }
   }
 }
@@ -2138,7 +2138,8 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       int16_t ra_preamble_rx_power = (int16_t)(prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER - pathloss + 30);
       ue->tx_power_dBm[nr_slot_tx] = min(nr_get_Pcmax(mod_id), ra_preamble_rx_power);
 
-      LOG_D(PHY,"DEBUG [UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble %d, PL %d dB, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %x)\n",
+      LOG_D(PHY, "In %s: [UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble %d, PL %d dB, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %x)\n",
+        __FUNCTION__,
         mod_id,
         frame_tx,
         nr_slot_tx,

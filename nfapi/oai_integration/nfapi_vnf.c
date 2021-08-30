@@ -33,10 +33,10 @@
 
 #include "nfapi_nr_interface_scf.h"
 #include "nfapi_vnf_interface.h"
+#include "nfapi_vnf.h"
 #include "nfapi.h"
 #include "vendor_ext.h"
 
-#include "nfapi_vnf.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
@@ -239,6 +239,18 @@ void oai_enb_init(void) {
 
 void oai_create_gnb(void) {
   int bodge_counter=0;
+
+  if (RC.gNB == NULL) {
+    RC.gNB = (PHY_VARS_gNB **) calloc(1, sizeof(PHY_VARS_gNB *));
+    LOG_I(PHY,"gNB L1 structure RC.gNB allocated @ %p\n",RC.gNB);
+  }
+
+
+  if (RC.gNB[0] == NULL) {
+    RC.gNB[0] = (PHY_VARS_gNB *) calloc(1, sizeof(PHY_VARS_gNB));
+    LOG_I(PHY,"[nr-gnb.c] gNB structure RC.gNB[%d] allocated @ %p\n",0,RC.gNB[0]);
+  }
+  
   PHY_VARS_gNB *gNB = RC.gNB[0];
   RC.nb_nr_CC = (int *)malloc(sizeof(int)); // TODO: find a better function to place this in
   
@@ -584,7 +596,7 @@ extern pthread_mutex_t nfapi_sync_mutex;
 extern int nfapi_sync_var;
 
 int phy_sync_indication(struct nfapi_vnf_p7_config *config, uint8_t sync) {
-  printf("[VNF] SYNC %s\n", sync==1 ? "ACHIEVED" : "LOST");
+  //printf("[VNF] SYNC %s\n", sync==1 ? "ACHIEVED" : "LOST");
 
   if (sync==1 && nfapi_sync_var!=0) {
     
@@ -1002,6 +1014,124 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
   return 1;
 }
 
+//NR phy indication
+
+int phy_nr_slot_indication(nfapi_nr_slot_indication_scf_t *ind) {
+  
+  uint8_t vnf_slot_ahead = 2;
+  uint32_t vnf_sfn_slot = sfnslot_add_slot(ind->sfn, ind->slot, vnf_slot_ahead);
+	uint16_t vnf_sfn = NFAPI_SFNSLOT2SFN(vnf_sfn_slot);
+	uint8_t vnf_slot = NFAPI_SFNSLOT2SLOT(vnf_sfn_slot); //offsetting the vnf from pnf by vnf_slot_head slots
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+  gNB->UL_INFO.frame     = vnf_sfn;
+	gNB->UL_INFO.slot      = vnf_slot;	
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+  LOG_D(MAC, "VNF SFN/Slot %d.%d \n", gNB->UL_INFO.frame, gNB->UL_INFO.slot);
+
+  return 1;
+}
+
+int phy_nr_crc_indication(nfapi_nr_crc_indication_t *ind) {
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  gNB->UL_INFO.crc_ind = *ind;
+
+  if (ind->number_crcs > 0)
+    gNB->UL_INFO.crc_ind.crc_list = malloc(sizeof(nfapi_nr_crc_t)*ind->number_crcs);
+
+  for (int i=0; i<ind->number_crcs; i++)
+    memcpy(&gNB->UL_INFO.crc_ind.crc_list[i], &ind->crc_list[i], sizeof(ind->crc_list[0]));
+
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
+  return 1;
+}
+
+int phy_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) {
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  gNB->UL_INFO.rx_ind = *ind;
+
+  if (ind->number_of_pdus > 0)
+    gNB->UL_INFO.rx_ind.pdu_list = malloc(sizeof(nfapi_nr_rx_data_pdu_t)*ind->number_of_pdus);
+
+  for (int i=0; i<ind->number_of_pdus; i++) 
+    memcpy(&gNB->UL_INFO.rx_ind.pdu_list[i], &ind->pdu_list[i], sizeof(ind->pdu_list[0]));
+
+
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
+  return 1;
+}
+
+int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind) {
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  gNB->UL_INFO.uci_ind = *ind;
+
+  if (ind->num_ucis > 0)
+    gNB->UL_INFO.uci_ind.uci_list = malloc(sizeof(nfapi_nr_uci_t)*ind->num_ucis);
+
+  for (int i=0; i<ind->num_ucis; i++)
+    memcpy(&gNB->UL_INFO.uci_ind.uci_list[i], &ind->uci_list[i], sizeof(ind->uci_list[0]));
+  //printf("UCI ind written to UL_info: num_ucis: %d, PDU_type : %d. \n", ind->num_ucis, ind->uci_list[0].pdu_type);
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
+  return 1;
+}
+
+int phy_nr_srs_indication(nfapi_nr_srs_indication_t *ind) {
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  gNB->UL_INFO.srs_ind = *ind;
+
+  if (ind->number_of_pdus > 0)
+    gNB->UL_INFO.srs_ind.pdu_list = malloc(sizeof(nfapi_nr_srs_indication_pdu_t)*ind->number_of_pdus);
+
+  for (int i=0; i<ind->number_of_pdus; i++) {
+    memcpy(&gNB->UL_INFO.srs_ind.pdu_list[i], &ind->pdu_list[i], sizeof(ind->pdu_list[0]));
+
+    LOG_D(MAC, "%s() NFAPI SFN/Slot:%d.%d SRS_IND:number_of_pdus:%d UL_INFO:pdus:%d\n",
+        __FUNCTION__,
+        ind->sfn,ind->slot, ind->number_of_pdus, gNB->UL_INFO.srs_ind.number_of_pdus
+        );
+  }
+
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
+  return 1;
+}
+
+int phy_nr_rach_indication(nfapi_nr_rach_indication_t *ind) {
+  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+
+  gNB->UL_INFO.rach_ind = *ind;
+
+  if (ind->number_of_pdus > 0)
+    gNB->UL_INFO.rach_ind.pdu_list = malloc(sizeof(nfapi_nr_prach_indication_pdu_t)*ind->number_of_pdus);
+
+  for (int i=0; i<ind->number_of_pdus; i++) {
+    memcpy(&gNB->UL_INFO.rach_ind.pdu_list[i], &ind->pdu_list[i], sizeof(ind->pdu_list[0]));
+
+    LOG_D(MAC, "%s() NFAPI SFN/Slot:%d.%d RACH_IND:number_of_pdus:%d UL_INFO:pdus:%d\n",
+        __FUNCTION__,
+        ind->sfn,ind->slot, ind->number_of_pdus, gNB->UL_INFO.rach_ind.number_of_pdus
+        );
+  }
+
+  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
+  return 1;
+}
+
+//end NR phy indication
+
 int phy_lbt_dl_indication(struct nfapi_vnf_p7_config *config, nfapi_lbt_dl_indication_t *ind) {
   // vnf_p7_info* p7_vnf = (vnf_p7_info*)(config->user_data);
   //mac_lbt_dl_ind(p7_vnf->mac, ind);
@@ -1167,6 +1297,12 @@ void *vnf_nr_p7_thread_start(void *ptr) {
   p7_vnf->config->lbt_dl_indication = &phy_lbt_dl_indication;
   p7_vnf->config->nb_harq_indication = &phy_nb_harq_indication;
   p7_vnf->config->nrach_indication = &phy_nrach_indication;
+  p7_vnf->config->nr_crc_indication = &phy_nr_crc_indication;
+  p7_vnf->config->nr_slot_indication = &phy_nr_slot_indication;  
+  p7_vnf->config->nr_rx_data_indication = &phy_nr_rx_data_indication;
+  p7_vnf->config->nr_uci_indication = &phy_nr_uci_indication;
+  p7_vnf->config->nr_rach_indication = &phy_nr_rach_indication;
+  p7_vnf->config->nr_srs_indication = &phy_nr_srs_indication;
   p7_vnf->config->malloc = &vnf_allocate;
   p7_vnf->config->free = &vnf_deallocate;
   p7_vnf->config->trace = &vnf_trace;
@@ -1501,8 +1637,8 @@ void configure_nr_nfapi_vnf(char *vnf_addr, int vnf_p5_port) {
   nfapi_setmode(NFAPI_MODE_VNF);
   memset(&vnf, 0, sizeof(vnf));
   memset(vnf.p7_vnfs, 0, sizeof(vnf.p7_vnfs));
-  vnf.p7_vnfs[0].timing_window = 32;
-  vnf.p7_vnfs[0].periodic_timing_enabled = 1;
+  vnf.p7_vnfs[0].timing_window = 30;
+  vnf.p7_vnfs[0].periodic_timing_enabled = 0;
   vnf.p7_vnfs[0].aperiodic_timing_enabled = 0;
   vnf.p7_vnfs[0].periodic_timing_period = 10;
   vnf.p7_vnfs[0].config = nfapi_vnf_p7_config_create();
@@ -1620,7 +1756,7 @@ int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req)
   //LOG_I(PHY, "sfn:%d,slot:%d\n",dl_config_req->SFN,dl_config_req->Slot);
   //printf("\nEntering oai_nfapi_nr_dl_config_req sfn:%d,slot:%d\n",dl_config_req->SFN,dl_config_req->Slot);
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
-   dl_config_req->header.message_id= NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST;
+  dl_config_req->header.message_id= NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST;
   dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
 
   int retval = nfapi_vnf_p7_nr_dl_config_req(p7_config, dl_config_req);

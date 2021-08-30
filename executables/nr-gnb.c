@@ -85,6 +85,7 @@
 
 #include "T.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "executables/softmodem-common.h"
 #include <nfapi/oai_integration/nfapi_pnf.h>
 #include <openair1/PHY/NR_TRANSPORT/nr_ulsch.h>
 #include <PHY/NR_ESTIMATION/nr_ul_estimation.h>
@@ -146,15 +147,12 @@ void rx_func(void *param) {
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************
-  // NFAPI not yet supported for NR - this code has to be revised
+
   if (NFAPI_MODE == NFAPI_MODE_PNF) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
-    //add_subframe(&frame, &subframe, 4);
-    //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
-    //LOG_D(PHY, "oai_subframe_ind(frame:%u, subframe:%d) - NOT CALLED ********\n", frame, subframe);
+    //LOG_D(PHY, "oai_nfapi_slot_ind(frame:%u, slot:%d) ********\n", frame_rx, slot_rx);
     start_meas(&nfapi_meas);
-    // oai_subframe_ind(frame_rx, slot_rx);
-    oai_slot_ind(frame_rx, slot_rx);
+    handle_nr_slot_ind(frame_rx, slot_rx);
     stop_meas(&nfapi_meas);
 
     /*if (gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus||
@@ -451,6 +449,8 @@ void init_eNB_afterRU(void) {
   PHY_VARS_gNB *gNB;
   LOG_I(PHY,"%s() RC.nb_nr_inst:%d\n", __FUNCTION__, RC.nb_nr_inst);
 
+  if(NFAPI_MODE == NFAPI_MODE_PNF)
+    RC.nb_nr_inst = 1;
   for (inst=0; inst<RC.nb_nr_inst; inst++) {
     LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, RC.gNB[inst]);
     gNB                                  =  RC.gNB[inst];
@@ -535,6 +535,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
     gNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = gNB->cqi_raw_pdu_list;*/
 
     gNB->prach_energy_counter = 0;
+    gNB->prb_interpolation = get_softmodem_params()->prb_interpolation;
   }
   
 
