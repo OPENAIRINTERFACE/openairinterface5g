@@ -21,9 +21,9 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>rfsim-4gnr</htmlTabRef>
-        <htmlTabName>Testing 4G NR RF sim in containers</htmlTabName>
-        <htmlTabIcon>wrench</htmlTabIcon>
+        <htmlTabRef>rfsim-4glte-down</htmlTabRef>
+        <htmlTabName>CleanUp 4G RF</htmlTabName>
+        <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>
  100011
         </TestCaseRequestedList>

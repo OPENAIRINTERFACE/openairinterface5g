@@ -21,10 +21,9 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>rfsim-4gnr</htmlTabRef>
-        <htmlTabName>Testing 4G NR RF sim in containers</htmlTabName>
+        <htmlTabRef>rfsim-4glte</htmlTabRef>
+        <htmlTabName>Testing 4G LTE RF sim in containers</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
-        <repeatCount>4</repeatCount>
         <TestCaseRequestedList>
  100011
  000011
