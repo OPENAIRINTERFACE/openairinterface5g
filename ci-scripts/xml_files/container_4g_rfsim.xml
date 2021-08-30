@@ -109,7 +109,7 @@
                 <server_container_name>rfsim4g-oai-lte-ue0</server_container_name>
                 <client_container_name>rfsim4g-trf-gen</client_container_name>
                 <server_options>-B 12.0.0.2 -u -i 1 -s</server_options>
-                <client_options>-c 12.0.0.2 -u -i 1 -t 30 -b 4M</client_options>
+                <client_options>-c 12.0.0.2 -u -i 1 -t 30 -b 2M</client_options>
         </testCase>
 
         <testCase id="030012">
@@ -118,7 +118,7 @@
                 <server_container_name>rfsim4g-trf-gen</server_container_name>
                 <client_container_name>rfsim4g-oai-lte-ue0</client_container_name>
                 <server_options>-u -i 1 -s</server_options>
-                <client_options>-B 12.0.0.2 -c 192.168.61.11 -u -i 1 -t 30 -b 2M</client_options>
+                <client_options>-B 12.0.0.2 -c 192.168.61.11 -u -i 1 -t 30 -b 1M</client_options>
         </testCase>
 
         <testCase id="100011">
