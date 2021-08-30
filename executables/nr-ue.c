@@ -158,6 +158,7 @@ void init_nrUE_standalone_thread(int ue_idx)
 
 static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_prach_pdu *prach_pdu)
 {
+  NR_UE_MAC_INST_t *mac    = get_mac_inst(0);
   nfapi_nr_rach_indication_t *rach_ind = CALLOC(1, sizeof(*rach_ind));
   rach_ind->sfn = frame;
   rach_ind->slot = slot;
@@ -176,7 +177,8 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_p
   rach_ind->pdu_list[pdu_index].num_preamble                        = 1;
   const int num_p = rach_ind->pdu_list[pdu_index].num_preamble;
   rach_ind->pdu_list[pdu_index].preamble_list = calloc(num_p, sizeof(nfapi_nr_prach_indication_preamble_t));
-  rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_index     = 63; //Melissa, need to get this out of rrc_reconfig_msg
+  rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_index     = mac->ra.rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[0]->ra_PreambleIndex;
+
   rach_ind->pdu_list[pdu_index].preamble_list[0].timing_advance     = 0;
   rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_pwr       = 0xffffffff;
 
@@ -295,7 +297,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
     ul_info.ue_sched_mode = SCHED_ALL;
 
-    if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
+    if (pthread_mutex_lock(&mac->mutex_dl_info)) abort();
 
     memset(&mac->dl_info, 0, sizeof(mac->dl_info));
     mac->dl_info.cc_id = CC_id;

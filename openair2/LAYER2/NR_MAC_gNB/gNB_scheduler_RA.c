@@ -527,6 +527,10 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
     NR_RA_t *ra = &cc->ra[i];
     pr_found = 0;
+    const int UE_id = find_nr_UE_id(module_idP, ra->rnti);
+    if (UE_id != -1) {
+      continue;
+    }
     if (ra->state == RA_IDLE) {
       for(int j = 0; j < ra->preambles.num_preambles; j++) {
         //check if the preamble received correspond to one of the listed or configured preambles
