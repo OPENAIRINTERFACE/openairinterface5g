@@ -7,6 +7,7 @@
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "PHY/defs_nr_common.h"
+#include "common/utils/nr/nr_common.h"
 
 //#define DEBUG_CH_COMP
 //#define DEBUG_RB_EXT
@@ -468,6 +469,7 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
                             int32_t *avg,
                             uint8_t symbol,
                             uint32_t len,
+                            uint8_t nrOfLayers,
                             unsigned short nb_rb)
 {
 
@@ -475,7 +477,6 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
 
   short rb;
   unsigned char aatx, aarx;
-  char nb_antennas_ue_tx = 1;
   __m128i *ul_ch128, avg128U;
 
   int16_t x = factor2(len);
@@ -487,12 +488,12 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
   int off = 0;
 #endif
 
-  for (aatx = 0; aatx < nb_antennas_ue_tx; aatx++)
+  for (aatx = 0; aatx < nrOfLayers; aatx++)
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128U = _mm_setzero_si128();
 
-      ul_ch128=(__m128i *)&ul_ch_estimates_ext[(aatx<<1)+aarx][symbol*(off+(nb_rb*12))];
+      ul_ch128=(__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
 
       for (rb = 0; rb < len/12; rb++) {
         avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[0], ul_ch128[0]), x));
@@ -501,10 +502,10 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
         ul_ch128+=3;
       }
 
-      avg[(aatx<<1)+aarx] = (((int32_t*)&avg128U)[0] +
-                             ((int32_t*)&avg128U)[1] +
-                             ((int32_t*)&avg128U)[2] +
-                             ((int32_t*)&avg128U)[3]   ) / y;
+      avg[aatx*frame_parms->nb_antennas_rx+aarx] = (((int32_t*)&avg128U)[0] +
+                                                    ((int32_t*)&avg128U)[1] +
+                                                    ((int32_t*)&avg128U)[2] +
+                                                    ((int32_t*)&avg128U)[3]) / y;
 
     }
 
@@ -520,13 +521,13 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++) {
+  for (aatx=0; aatx<nrOfLayers; aatx++) {
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128U = vdupq_n_s32(0);
       // 5 is always a symbol with no pilots for both normal and extended prefix
 
-      ul_ch128 = (int16x4_t *)&ul_ch_estimates_ext[(aatx<<1)+aarx][symbol*frame_parms->N_RB_UL*12];
+      ul_ch128 = (int16x4_t *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*frame_parms->N_RB_UL*12];
 
       for (rb = 0; rb < nb_rb; rb++) {
         //  printf("rb %d : ",rb);
@@ -536,7 +537,7 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
         avg128U = vqaddq_s32(avg128U, vmull_s16(ul_ch128[2], ul_ch128[2]));
         avg128U = vqaddq_s32(avg128U, vmull_s16(ul_ch128[3], ul_ch128[3]));
 
-        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_gNB!=1)) {
+        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(nrOfLayers!=1)) {
           ul_ch128+=4;
         } else {
           avg128U = vqaddq_s32(avg128U, vmull_s16(ul_ch128[4], ul_ch128[4]));
@@ -558,10 +559,10 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
       else
           nre=12;
 
-      avg[(aatx<<1)+aarx] = (((int32_t*)&avg128U)[0] +
-                             ((int32_t*)&avg128U)[1] +
-                             ((int32_t*)&avg128U)[2] +
-                             ((int32_t*)&avg128U)[3]   ) / (nb_rb*nre);
+      avg[aatx*frame_parms->nb_antennas_rx+aarx] = (((int32_t*)&avg128U)[0] +
+                                                    ((int32_t*)&avg128U)[1] +
+                                                    ((int32_t*)&avg128U)[2] +
+                                                    ((int32_t*)&avg128U)[3]) / (nb_rb*nre);
     }
   }
 #endif
@@ -577,6 +578,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
                                    unsigned char symbol,
                                    uint8_t is_dmrs_symbol,
                                    unsigned char mod_order,
+                                   uint8_t  nrOfLayers,
                                    unsigned short nb_rb,
                                    unsigned char output_shift) {
 
@@ -628,12 +630,11 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
   unsigned short rb;
   unsigned char aatx,aarx;
-  char nb_antennas_ue_tx = 1;
   __m128i *ul_ch128,*ul_ch128_2,*ul_ch_mag128,*ul_ch_mag128b,*rxdataF128,*rxdataF_comp128,*rho128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0};
   QAM_amp128b = _mm_setzero_si128();
 
-  for (aatx=0; aatx<nb_antennas_ue_tx; aatx++) {
+  for (aatx=0; aatx<nrOfLayers; aatx++) {
 
     if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
@@ -647,11 +648,11 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-      ul_ch128          = (__m128i *)&ul_ch_estimates_ext[(aatx<<1)+aarx][symbol*(off+(nb_rb*12))];
-      ul_ch_mag128      = (__m128i *)&ul_ch_mag[(aatx<<1)+aarx][symbol*(off+(nb_rb*12))];
-      ul_ch_mag128b     = (__m128i *)&ul_ch_magb[(aatx<<1)+aarx][symbol*(off+(nb_rb*12))];
+      ul_ch128          = (__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
+      ul_ch_mag128      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
+      ul_ch_mag128b     = (__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
       rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*(off+(nb_rb*12))];
-      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol*(off+(nb_rb*12))];
+      rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
 
 
       for (rb=0; rb<nb_rb; rb++) {
@@ -885,7 +886,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
-    if (frame_parms->nb_antenna_ports_gNB==1) { // 10 out of 12 so don't reduce size
+    if (nrOfLayers==1) { // 10 out of 12 so don't reduce size
       nb_rb=1+(5*nb_rb/6);
     }
     else {
@@ -893,7 +894,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
     }
   }
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++) {
+  for (aatx=0; aatx<nrOfLayers; aatx++) {
     if (mod_order == 4) {
       QAM_amp128  = vmovq_n_s16(QAM16_n1);  // 2/sqrt(10)
       QAM_amp128b = vmovq_n_s16(0);
@@ -904,11 +905,11 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
     //    printf("comp: rxdataF_comp %p, symbol %d\n",rxdataF_comp[0],symbol);
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      ul_ch128          = (int16x4_t*)&ul_ch_estimates_ext[(aatx<<1)+aarx][symbol*frame_parms->N_RB_UL*12];
-      ul_ch_mag128      = (int16x8_t*)&ul_ch_mag[(aatx<<1)+aarx][symbol*frame_parms->N_RB_UL*12];
-      ul_ch_mag128b     = (int16x8_t*)&ul_ch_magb[(aatx<<1)+aarx][symbol*frame_parms->N_RB_UL*12];
+      ul_ch128          = (int16x4_t*)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*frame_parms->N_RB_UL*12];
+      ul_ch_mag128      = (int16x8_t*)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aarx][symbol*frame_parms->N_RB_UL*12];
+      ul_ch_mag128b     = (int16x8_t*)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aarx][symbol*frame_parms->N_RB_UL*12];
       rxdataF128        = (int16x4_t*)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_UL*12];
-      rxdataF_comp128   = (int16x4x2_t*)&rxdataF_comp[(aatx<<1)+aarx][symbol*frame_parms->N_RB_UL*12];
+      rxdataF_comp128   = (int16x4x2_t*)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx+aarx][symbol*frame_parms->N_RB_UL*12];
 
       for (rb=0; rb<nb_rb; rb++) {
   if (mod_order>2) {
@@ -1167,10 +1168,10 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   uint8_t aarx, aatx;
   uint32_t nb_re_pusch, bwp_start_subcarrier;
   int avgs;
-  int avg[4];
-  char nb_antennas_ue_tx = 1;
+
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[ulsch_id][0]->harq_processes[harq_pid]->ulsch_pdu;
+  int avg[frame_parms->nb_antennas_rx*rel15_ul->nrOfLayers];
 
   gNB->pusch_vars[ulsch_id]->dmrs_symbol = INVALID_VALUE;
   gNB->pusch_vars[ulsch_id]->cl_done = 0;
@@ -1190,15 +1191,16 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       if (gNB->pusch_vars[ulsch_id]->dmrs_symbol == INVALID_VALUE)
         gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
 
-      nr_pusch_channel_estimation(gNB,
-                                  slot,
-                                  0, // p
-                                  symbol,
-                                  ulsch_id,
-                                  bwp_start_subcarrier,
-                                  rel15_ul);
+      for (int nl=0; nl<rel15_ul->nrOfLayers; nl++)
+        nr_pusch_channel_estimation(gNB,
+                                    slot,
+                                    get_dmrs_port(nl,rel15_ul->dmrs_ports),
+                                    symbol,
+                                    ulsch_id,
+                                    bwp_start_subcarrier,
+                                    rel15_ul);
 
-      nr_gnb_measurements(gNB, ulsch_id, harq_pid, symbol);
+      nr_gnb_measurements(gNB, ulsch_id, harq_pid, symbol,rel15_ul->nrOfLayers);
 
       for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
         if (symbol == rel15_ul->start_symbol_index) {
@@ -1280,13 +1282,14 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                               avg,
                               symbol,
                               nb_re_pusch,
+                              rel15_ul->nrOfLayers,
                               rel15_ul->rb_size);
 
         avgs = 0;
 
-        for (aatx=0;aatx<nb_antennas_ue_tx;aatx++)
+        for (aatx=0;aatx<rel15_ul->nrOfLayers;aatx++)
           for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-            avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
+            avgs = cmax(avgs,avg[aatx*frame_parms->nb_antennas_rx+aarx]);
 
         gNB->pusch_vars[ulsch_id]->log2_maxh = (log2_approx(avgs)/2)+2;
         gNB->pusch_vars[ulsch_id]->cl_done = 1;
@@ -1302,11 +1305,12 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                     gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
                                     gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
                                     gNB->pusch_vars[ulsch_id]->rxdataF_comp,
-                                    (nb_antennas_ue_tx>1) ? gNB->pusch_vars[ulsch_id]->rho : NULL,
+                                    (rel15_ul->nrOfLayers>1) ? gNB->pusch_vars[ulsch_id]->rho : NULL,
                                     frame_parms,
                                     symbol,
                                     dmrs_symbol_flag,
                                     rel15_ul->qam_mod_order,
+                                    rel15_ul->nrOfLayers,
                                     rel15_ul->rb_size,
                                     gNB->pusch_vars[ulsch_id]->log2_maxh);
       stop_meas(&gNB->ulsch_channel_compensation_stats);
@@ -1320,7 +1324,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                              rel15_ul->rb_size);
       stop_meas(&gNB->ulsch_mrc_stats);
 
-      if (rel15_ul->transform_precoding == transform_precoder_enabled) {
+      // transform precoding = 0 means enabled
+      if (rel15_ul->transform_precoding == 0) {
 
       #ifdef __AVX2__
         // For odd number of resource blocks need byte alignment to multiple of 8

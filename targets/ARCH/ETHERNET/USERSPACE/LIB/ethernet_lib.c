@@ -42,7 +42,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <linux/sysctl.h>
-#include <sys/sysctl.h>
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
@@ -219,11 +218,6 @@ int ethernet_tune(openair0_device *device,
     struct timeval timeout;
     struct ifreq ifr;
     char system_cmd[256];
-    int rname[] = { CTL_NET, NET_CORE, NET_CORE_RMEM_MAX };
-    int wname[] = { CTL_NET, NET_CORE, NET_CORE_WMEM_MAX };
-    int namelen=3;
-    int newval[1];
-    int newlen=sizeof(newval);
     int ret=0;
     //  int i=0;
 
@@ -363,28 +357,36 @@ int ethernet_tune(openair0_device *device,
         }
         break;
     case KERNEL_RCV_BUF_MAX_SIZE:
-        newval[0] = value;
-        ret=sysctl(rname, namelen, NULL, 0, newval, newlen);
-        if (ret) {
-            fprintf(stderr,"[ETHERNET] Error using sysctl():%s\n",strerror(errno));
-        } else {
-            printf("[ETHERNET] Kernel network receive buffer max size is set to %u\n",(unsigned int)newval[0]);
-        }
-        break;
+      ret=snprintf(system_cmd,sizeof(system_cmd),"sysctl -w net.core.rmem_max=%d",value);
+      if (ret > 0) {
+	ret=system(system_cmd);
+	if (ret == -1) {
+	  fprintf (stderr,"[ETHERNET] Can't start shell to execute %s %s",system_cmd, strerror(errno));
+	} else {
+	  printf ("[ETHERNET] status of %s is %d\n", system_cmd, WEXITSTATUS(ret));
+	}
+	printf("[ETHERNET] net core rmem %s\n",system_cmd);
+      } else {
+	perror("[ETHERNET] Can't set net core rmem\n");
+      }
+      break;
     case KERNEL_SND_BUF_MAX_SIZE:
-        newval[0] = value;
-        ret=sysctl(wname, namelen, NULL, 0, newval, newlen);
-        if (ret) {
-            fprintf(stderr,"[ETHERNET] Error using sysctl():%s\n",strerror(errno));
-        } else {
-            printf("[ETHERNET] Kernel network send buffer max size is set to %u\n",(unsigned int)newval[0]);
-        }
-        break;
-
+      ret=snprintf(system_cmd,sizeof(system_cmd),"sysctl -w net.core.wmem_max=%d",value);
+      if (ret > 0) {
+	ret=system(system_cmd);
+	if (ret == -1) {
+	  fprintf (stderr,"[ETHERNET] Can't start shell to execute %s %s",system_cmd, strerror(errno));
+	} else {
+	  printf ("[ETHERNET] status of %s is %d\n", system_cmd, WEXITSTATUS(ret));
+	}
+	printf("[ETHERNET] net core wmem %s\n",system_cmd);
+      } else {
+	perror("[ETHERNET] Can't set net core wmem\n");
+      }
+      break;
     default:
         break;
     }
-
     return 0;
 }
 

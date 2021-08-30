@@ -73,32 +73,24 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 
 void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti);
 
-void fill_default_initialDownlinkBWP(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *servingcellconfigcommon);
-
-void fill_default_coresetZero(NR_ControlResourceSet_t *coreset0,
-                              NR_MIB_t *mib,
-                              int ssb_subcarrier_offset,
-                              int ssbSubcarrierSpacing,
-                              int ssb_start_symbol,
-                              int frequency_range,
-                              int ssboffset_pointa,
-                              int physCellId);
-void fill_default_searchSpaceZero(NR_SearchSpace_t *ss0);
-
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                                      NR_ServingCellConfig_t *servingcellconfigdedicated,
                                      NR_CellGroupConfig_t *secondaryCellGroup,
                                      int scg_id,
                                      int servCellIndex,
-                                     int n_physical_antenna_ports,
+                                     int dl_antenna_ports,
+                                     int do_csirs,
                                      int initial_csi_index,
                                      int uid);
+
+void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon, NR_CSI_MeasConfig_t *csi_MeasConfig, int dl_antenna_ports, int do_csirs);
 
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                            NR_ServingCellConfig_t *servingcellconfigdedicated,
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
-                           int n_physical_antenna_ports,
+                           int dl_antenna_ports,
+                           int do_csirs,
                            int initial_csi_index,
                            int uid);
 

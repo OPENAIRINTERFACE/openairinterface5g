@@ -111,6 +111,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
   int32_t *ul_ch;
   int32_t n0_power_tot[275];
 
+  LOG_D(PHY,"slot %d Doing I0 for first_symb %d, num_symb %d\n",slot,first_symb,num_symb);
   for (int s=first_symb;s<(first_symb+num_symb);s++) {
     for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
 
@@ -172,7 +173,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
 //
 // Todo:
 // - averaging IIR filter for RX power and noise
-void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol){
+void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol, uint8_t nrOfLayers){
 
   int rx_power_tot[NUMBER_OF_NR_ULSCH_MAX];
   int rx_power[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_RX];
@@ -192,9 +193,9 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
 
     rx_power[ulsch_id][aarx] = 0;
 
-    for (int aatx = 0; aatx < fp->nb_antennas_tx; aatx++){
+    for (int aatx = 0; aatx < nrOfLayers; aatx++){
 
-      meas->rx_spatial_power[ulsch_id][aatx][aarx] = (signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][ch_offset], N_RB_UL * NR_NB_SC_PER_RB));
+      meas->rx_spatial_power[ulsch_id][aatx][aarx] = (signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aatx*fp->nb_antennas_rx+aarx][ch_offset], N_RB_UL * NR_NB_SC_PER_RB));
 
       if (meas->rx_spatial_power[ulsch_id][aatx][aarx] < 0) {
         meas->rx_spatial_power[ulsch_id][aatx][aarx] = 0;

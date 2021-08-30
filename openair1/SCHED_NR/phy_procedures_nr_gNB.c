@@ -531,9 +531,11 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
            (pucch->frame == frame_rx) &&
            (pucch->slot == slot_rx) ) {
           nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
+          LOG_D(PHY,"%d.%d pucch %d : start_symbol %d, nb_symbols %d, prb_size %d\n",frame_rx,slot_rx,i,pucch_pdu->start_symbol_index,pucch_pdu->nr_of_symbols,pucch_pdu->prb_size);
           for (int symbol=pucch_pdu->start_symbol_index ; symbol<(pucch_pdu->start_symbol_index+pucch_pdu->nr_of_symbols);symbol++) {
             for (rb=0; rb<pucch_pdu->prb_size; rb++) {
-              rb2 = rb+pucch_pdu->prb_start+pucch_pdu->bwp_start;
+              rb2 = rb+(symbol < pucch_pdu->start_symbol_index+(pucch_pdu->nr_of_symbols>>1) ? pucch_pdu->prb_start : pucch_pdu->second_hop_prb)+pucch_pdu->bwp_start;
+              LOG_D(PHY,"%d.%d pucch %d : symbol %d, rb %d\n",frame_rx,slot_rx,i,symbol,rb2);
               gNB->rb_mask_ul[symbol][rb2>>5] |= (1<<(rb2&31));
             }
             if (symbol==pucch_pdu->start_symbol_index) nb_rb+=pucch_pdu->prb_size;
@@ -634,8 +636,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
       if ((pucch->active == 1) &&
-	       (pucch->frame == frame_rx) &&
-	       (pucch->slot == slot_rx) ) {
+          (pucch->frame == frame_rx) &&
+          (pucch->slot == slot_rx) ) {
 
         pucch_decode_done = 1;
 
@@ -698,9 +700,9 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         (ulsch->rnti > 0)) {
       // for for an active HARQ process
       for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
-	      ulsch_harq = ulsch->harq_processes[harq_pid];
-    	  AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
-    	  if ((ulsch_harq->status == NR_ACTIVE) &&
+        ulsch_harq = ulsch->harq_processes[harq_pid];
+        AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
+        if ((ulsch_harq->status == NR_ACTIVE) &&
             (ulsch_harq->frame == frame_rx) &&
             (ulsch_harq->slot == slot_rx) &&
             (ulsch_harq->handled == 0)){

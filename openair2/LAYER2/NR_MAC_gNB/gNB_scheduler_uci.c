@@ -61,7 +61,8 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
   future_ul_tti_req->n_pdus += 1;
 
   LOG_I(NR_MAC,
-        "%4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, ACK %d, CSI %d on res %d\n",
+        "%s %4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, DAI %d, CSI %d on res %d\n",
+        pucch->dai_c>0 ? "pucch_acknak" : "",
         frame,
         slot,
         pucch->frame,
@@ -73,7 +74,11 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   NR_CellGroupConfig_t *cg=UE_info->CellGroup[UE_id];
-  NR_BWP_UplinkDedicated_t *ubwpd = cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
+
+  NR_BWP_UplinkDedicated_t *ubwpd;
+  ubwpd = cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
+ 
+  LOG_D(NR_MAC,"pucch_acknak: %d.%d Calling nr_configure_pucch (ubwpd %p,r_pucch %d) pucch in %d.%d\n",frame,slot,ubwpd,pucch->r_pucch,pucch->frame,pucch->ul_slot);
   nr_configure_pucch(pucch_pdu,
                      scc,
                      UE_info->CellGroup[UE_id],
@@ -101,17 +106,17 @@ int ssb_rsrp_sorted[MAX_NUM_SSB] = {0};
 //stored -1 for invalid values
 int L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[128] = {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //0 - 9
-    -1, -1, -1, -1, -1, -1, -140, -139, -138, -137, //10 - 19
-    -136, -135, -134, -133, -132, -131, -130, -129, -128, -127, //20 - 29
-    -126, -125, -124, -123, -122, -121, -120, -119, -118, -117, //30 - 39
-    -116, -115, -114, -113, -112, -111, -110, -109, -108, -107, //40 - 49
-    -106, -105, -104, -103, -102, -101, -100, -99, -98, -97, //50 - 59
-    -96, -95, -94, -93, -92, -91, -90, -89, -88, -87, //60 - 69
-    -86, -85, -84, -83, -82, -81, -80, -79, -78, -77, //70 - 79
-    -76, -75, -74, -73, -72, -71, -70, -69, -68, -67, //80 - 89
-    -66, -65, -64, -63, -62, -61, -60, -59, -58, -57, //90 - 99
-    -56, -55, -54, -53, -52, -51, -50, -49, -48, -47, //100 - 109
-    -46, -45, -44, -44, -1, -1, -1, -1, -1, -1, //110 - 119
+     -1, -1, -1, -1, -1, -1, INT_MIN, -140, -139, -138, //10 - 19
+    -137, -136, -135, -134, -133, -132, -131, -130, -129, -128, //20 - 29
+    -127, -126, -125, -124, -123, -122, -121, -120, -119, -118, //30 - 39
+    -117,-116, -115, -114, -113, -112, -111, -110, -109, -108, //40 - 49
+    -107, -106, -105, -104, -103, -102, -101, -100, -99, -98, //50 - 59
+    -97, -96, -95, -94, -93, -92, -91, -90, -89, -88, //60 - 69
+    -87, -86, -85, -84, -83, -82, -81, -80, -79, -78, //70 - 79
+    -77, -76, -75, -74, -73, -72, -71, -70, -69, -68, //80 - 89
+    -67, -66, -65, -64, -63, -62, -61, -60, -59, -58, //90 - 99
+    -57, -56, -55, -54, -53, -52, -51, -50, -49, -48, //100 - 109
+    -47, -46, -45, -44, INT_MAX, -1, -1, -1, -1, -1, //110 - 119
     -1, -1, -1, -1, -1, -1, -1, -1//120 - 127
   };
 
@@ -508,6 +513,7 @@ void nr_csi_meas_reporting(int Mod_idP,
                   && curr_pucch->dai_c == 0,
                   "PUCCH not free at index 1 for UE %04x\n",
                   UE_info->rnti[UE_id]);
+      curr_pucch->r_pucch = -1;
       curr_pucch->frame = frame;
       curr_pucch->ul_slot = sched_slot;
       curr_pucch->resource_indicator = res_index;
@@ -850,6 +856,7 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   }//is-triggering_beam_switch
 }//tci handling
 
+
 uint8_t pickandreverse_bits(uint8_t *payload, uint16_t bitlen, uint8_t start_bit) {
   uint8_t rev_bits = 0;
   for (int i=0; i<bitlen; i++)
@@ -1151,7 +1158,6 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 }
 
 
-// function to update pucch scheduling parameters in UE list when a USS DL is scheduled
 // this function returns an index to NR_sched_pucch structure
 // currently this structure contains PUCCH0 at index 0 and PUCCH2 at index 1
 // if the function returns -1 it was not possible to schedule acknack
@@ -1160,7 +1166,8 @@ int nr_acknack_scheduling(int mod_id,
                           int UE_id,
                           frame_t frame,
                           sub_frame_t slot,
-                          int r_pucch)
+                          int r_pucch,
+                          int is_common)
 {
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
@@ -1186,6 +1193,7 @@ int nr_acknack_scheduling(int mod_id,
    * * each UE has dedicated PUCCH Format 0 resources, and we use index 0! */
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
   NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
+  LOG_D(NR_MAC,"pucch_acknak %d.%d Trying to allocate pucch, current DAI %d\n",frame,slot,pucch->dai_c);
   pucch->r_pucch=r_pucch;
   AssertFatal(pucch->csi_bits == 0,
               "%s(): csi_bits %d in sched_pucch[0]\n",
@@ -1197,6 +1205,7 @@ int nr_acknack_scheduling(int mod_id,
      * the same slot again */
     const int f = pucch->frame;
     const int s = pucch->ul_slot;
+    LOG_D(NR_MAC,"pucch_acknak : %d.%d DAI = 2 pucch currently in %d.%d, advancing by 1 slot\n",frame,slot,f,s);
     nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
     memset(pucch, 0, sizeof(*pucch));
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
@@ -1217,7 +1226,7 @@ int nr_acknack_scheduling(int mod_id,
     }
   }
 
-  LOG_D(NR_MAC,"1. DL slot %d, UL_ACK %d, DAI_C %d\n",slot,pucch->ul_slot,pucch->dai_c);
+  LOG_D(NR_MAC,"pucch_acknak 1. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
   /* if the UE's next PUCCH occasion is after the possible UL slots (within the
    * same frame) or wrapped around to the next frame, then we assume there is
    * no possible PUCCH allocation anymore */
@@ -1237,7 +1246,7 @@ int nr_acknack_scheduling(int mod_id,
       cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) 
     ubwpd = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
  
-  NR_SearchSpace__searchSpaceType_PR ss_type = (sched_ctrl->active_bwp || ubwpd) ? NR_SearchSpace__searchSpaceType_PR_ue_Specific: NR_SearchSpace__searchSpaceType_PR_common;
+  NR_SearchSpace__searchSpaceType_PR ss_type = (is_common==0 && (sched_ctrl->active_bwp || ubwpd)) ? NR_SearchSpace__searchSpaceType_PR_ue_Specific: NR_SearchSpace__searchSpaceType_PR_common;
   uint8_t pdsch_to_harq_feedback[8];
   int bwp_Id = 0;
   if (sched_ctrl->active_ubwp) bwp_Id = sched_ctrl->active_ubwp->bwp_Id;
@@ -1245,7 +1254,7 @@ int nr_acknack_scheduling(int mod_id,
   get_pdsch_to_harq_feedback(mod_id, UE_id, bwp_Id, ss_type, pdsch_to_harq_feedback);
 
 
-  LOG_D(NR_MAC,"1b. DL slot %d, UL_ACK %d, DAI_C %d\n",slot,pucch->ul_slot,pucch->dai_c);
+  LOG_D(NR_MAC,"pucch_acknak 1b. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
   if (pucch->dai_c > 0) {
     /* this UE already has a PUCCH occasion */
@@ -1263,19 +1272,22 @@ int nr_acknack_scheduling(int mod_id,
       const int f = pucch->frame;
       const int s = pucch->ul_slot;
       const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+      LOG_D(NR_MAC,"pucch_acknak : %d.%d DAI > 0, cannot reach timing for pucch in %d.%d, advancing slot by 1 and trying again\n",frame,slot,f,s);
       nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
       pucch->ul_slot = (s + 1) % n_slots_frame;
-      return nr_acknack_scheduling(mod_id, UE_id, frame, slot, pucch->r_pucch);
+      return nr_acknack_scheduling(mod_id, UE_id, frame, slot, r_pucch,is_common);
     }
 
     pucch->timing_indicator = i;
     pucch->dai_c++;
     // retain old resource indicator, and we are good
+    LOG_D(NR_MAC,"pucch_acknak : %d.%d. DAI > 0, pucch allocated for %d.%d\n",frame,slot,pucch->frame,pucch->ul_slot);
     return 0;
   }
 
+  LOG_D(NR_MAC,"pucch_acknak : %d.%d DAI = 0, looking for new pucch occasion\n",frame,slot);
   /* we need to find a new PUCCH occasion */
 
   /* if time information is outdated (e.g., last PUCCH occasion in last frame),
@@ -1294,27 +1306,18 @@ int nr_acknack_scheduling(int mod_id,
   }
 
   // advance ul_slot if it is not reachable by UE
-  pucch->ul_slot = max(pucch->ul_slot, slot + pdsch_to_harq_feedback[0]);
-
-  // Find the right timing_indicator value.
-  int i = 0;
-  while (i < 8) {
-    LOG_D(NR_MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
-	  i,pdsch_to_harq_feedback[i],pucch->ul_slot,slot);
-    if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot)
-      break;
-    ++i;
+  int pucch_slot,ind_found=-1;
+  for (int i=0;i<8;i++) {
+    pucch_slot = slot + pdsch_to_harq_feedback[i];
+    if ((pucch_slot%nr_slots_period) >= tdd->nrofDownlinkSlots) {
+       pucch->ul_slot = max(pucch->ul_slot, pucch_slot);
+       ind_found=i;
+       break;
+    }
   }
-  if (i >= 8) {
-    LOG_W(NR_MAC,
-          "%4d.%2d could not find pdsch_to_harq_feedback for UE %d: earliest "
-          "ack slot %d\n",
-          frame,
-          slot,
-          UE_id,
-          pucch->ul_slot);
-    return -1;
-  }
+  if (pucch->ul_slot >= n_slots_frame) pucch->frame++;
+  pucch->ul_slot = pucch->ul_slot % n_slots_frame;
+  AssertFatal(ind_found!=-1,"couldn't find a valid UL_ACK slot for PUCCH, shouldn't happen\n");
 
   // is there already CSI in this slot?
   csi_pucch = &sched_ctrl->sched_pucch[1];
@@ -1336,23 +1339,23 @@ int nr_acknack_scheduling(int mod_id,
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
       pucch->ul_slot = (s + 1) % n_slots_frame;
-      return nr_acknack_scheduling(mod_id, UE_id, frame, slot, -1);
+      return nr_acknack_scheduling(mod_id, UE_id, frame, slot, r_pucch,is_common);
     }
     // multiplexing harq and csi in a pucch
     else {
-      csi_pucch->timing_indicator = i;
+      csi_pucch->timing_indicator = ind_found;
       csi_pucch->dai_c++;
       return 1;
     }
   }
 
-  pucch->timing_indicator = i; // index in the list of timing indicators
+  pucch->timing_indicator = ind_found; // index in the list of timing indicators
 
-  LOG_D(NR_MAC,"2. DL slot %d, UL_ACK %d (index %d)\n",slot,pucch->ul_slot,i);
+  LOG_D(NR_MAC,"pucch_acknak 2. DAI 0 DL %d.%d, UL_ACK %d.%d (index %d)\n",frame,slot,pucch->frame,pucch->ul_slot,ind_found);
 
   pucch->dai_c++;
   pucch->resource_indicator = 0; // each UE has dedicated PUCCH resources
-
+  pucch->r_pucch=r_pucch;
   NR_PUCCH_Config_t *pucch_Config = NULL;
   if (sched_ctrl->active_ubwp) {
     pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
@@ -1382,199 +1385,6 @@ int nr_acknack_scheduling(int mod_id,
   return 0;
 }
 
-void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
-                       NR_NZP_CSI_RS_Resource_t *nzpcsi,
-                       int *period, int *offset) {
-
-  if(nzpcsi != NULL) {
-
-    NR_CSI_ResourcePeriodicityAndOffset_PR p_and_o = nzpcsi->periodicityAndOffset->present;
-
-    switch(p_and_o){
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots4:
-        *period = 4;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots4;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots5:
-        *period = 5;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots5;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots8:
-        *period = 8;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots8;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots10:
-        *period = 10;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots10;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots16:
-        *period = 16;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots16;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots20:
-        *period = 20;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots20;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots32:
-        *period = 32;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots32;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots40:
-        *period = 40;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots40;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots64:
-        *period = 64;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots64;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots80:
-        *period = 80;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots80;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots160:
-        *period = 160;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots160;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots320:
-        *period = 320;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots320;
-        break;
-      case NR_CSI_ResourcePeriodicityAndOffset_PR_slots640:
-        *period = 640;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots640;
-        break;
-    default:
-      AssertFatal(1==0,"No periodicity and offset found in CSI resource");
-    }
-
-  }
-
-  if(csirep != NULL) {
-
-    NR_CSI_ReportPeriodicityAndOffset_PR p_and_o = csirep->reportConfigType.choice.periodic->reportSlotConfig.present;
-
-    switch(p_and_o){
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots4:
-        *period = 4;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots4;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots5:
-        *period = 5;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots5;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots8:
-        *period = 8;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots8;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots10:
-        *period = 10;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots10;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots16:
-        *period = 16;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots16;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots20:
-        *period = 20;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots20;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots40:
-        *period = 40;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots40;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots80:
-        *period = 80;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots80;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots160:
-        *period = 160;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots160;
-        break;
-      case NR_CSI_ReportPeriodicityAndOffset_PR_slots320:
-        *period = 320;
-        *offset = csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320;
-        break;
-    default:
-      AssertFatal(1==0,"No periodicity and offset resource found in CSI report");
-    }
-  }
-}
-
-uint16_t compute_pucch_prb_size(uint8_t format,
-                                uint8_t nr_prbs,
-                                uint16_t O_tot,
-                                uint16_t O_csi,
-                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
-                                uint8_t Qm,
-                                uint8_t n_symb,
-                                uint8_t n_re_ctrl) {
-
-  uint16_t O_crc;
-
-  if (O_tot<12)
-    O_crc = 0;
-  else{
-    if (O_tot<20)
-      O_crc = 6;
-    else {
-      if (O_tot<360)
-        O_crc = 11;
-      else
-        AssertFatal(1==0,"Case for segmented PUCCH not yet implemented");
-    }
-  }
-
-  int rtimes100;
-  switch(*maxCodeRate){
-    case NR_PUCCH_MaxCodeRate_zeroDot08 :
-      rtimes100 = 8;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot15 :
-      rtimes100 = 15;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot25 :
-      rtimes100 = 25;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot35 :
-      rtimes100 = 35;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot45 :
-      rtimes100 = 45;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot60 :
-      rtimes100 = 60;
-      break;
-    case NR_PUCCH_MaxCodeRate_zeroDot80 :
-      rtimes100 = 80;
-      break;
-  default :
-    AssertFatal(1==0,"Invalid MaxCodeRate");
-  }
-
-  float r = (float)rtimes100/100;
-
-  if (O_csi == O_tot) {
-    if ((O_tot+O_csi)>(nr_prbs*n_re_ctrl*n_symb*Qm*r))
-      AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with %d PRBs",
-                  r,O_tot,O_crc,nr_prbs);
-    else
-      return nr_prbs;
-  }
-
-  if (format==2){
-    // TODO fix this for multiple CSI reports
-    for (int i=1; i<=nr_prbs; i++){
-      if((O_tot+O_crc)<=(i*n_symb*Qm*n_re_ctrl*r) &&
-         (O_tot+O_crc)>((i-1)*n_symb*Qm*n_re_ctrl*r))
-        return i;
-    }
-    AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with at most %d PRBs",
-                r,O_tot,O_crc,nr_prbs);
-  }
-  else{
-    AssertFatal(1==0,"Not yet implemented");
-  }
-}
 
 void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
 {
@@ -1609,7 +1419,7 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
 
       int SR_period; int SR_offset;
 
-      periodicity__SRR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
+      find_period_offest_SR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
       // convert to int to avoid underflow of uint
       int sfn_sf = SFN * n_slots_frame + slot;
       LOG_D(NR_MAC,"SR_resource_id %d: SR_period %d, SR_offset %d\n",SR_resource_id,SR_period,SR_offset);
@@ -1676,68 +1486,6 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
         nr_fill_nfapi_pucch(Mod_idP, SFN, slot, &sched_sr, UE_id);
       }
     }
-  }
-}
-
-
-void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset)
-{
-  NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR P_O = SchedulingReqRec->periodicityAndOffset->present;
-  switch (P_O){
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl1:
-      *period = 1;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl1;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl2:
-      *period = 2;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl2;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl4:
-      *period = 4;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl4;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl5:
-      *period = 5;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl5;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl8:
-      *period = 8;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl8;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl10:
-      *period = 10;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl10;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl16:
-      *period = 16;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl16;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl20:
-      *period = 20;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl20;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40:
-      *period = 40;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl40;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl80:
-      *period = 80;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl80;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl160:
-      *period = 160;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl160;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl320:
-      *period = 320;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl320;
-      break;
-    case NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl640:
-      *period = 640;
-      *offset = SchedulingReqRec->periodicityAndOffset->choice.sl640;
-      break;
-    default:
-      AssertFatal(1==0,"No periodicityAndOffset resources found in schedulingrequestresourceconfig");
   }
 }
 

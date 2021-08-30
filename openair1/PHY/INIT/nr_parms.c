@@ -20,12 +20,27 @@
  */
 
 #include "phy_init.h"
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 /// Subcarrier spacings in Hz indexed by numerology index
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
 uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 8, 16};
+
+
+void set_Lmax(NR_DL_FRAME_PARMS *fp) {
+  // definition of Lmax according to ts 38.213 section 4.1
+  if (fp->dl_CarrierFreq < 6e9) {
+    if(fp->frame_type && (fp->ssb_type==2))
+      fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
+    else
+      fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
+  } else {
+    fp->Lmax = 64;
+  }
+}
+
 
 int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp,uint8_t i_ssb) {
 
@@ -200,9 +215,8 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
 
-  fp->nb_antenna_ports_gNB = 1;                                   // It corresponds to the number of common antenna ports
   fp->nb_antennas_rx = cfg->carrier_config.num_rx_ant.value;      // It denotes the number of rx antennas at gNB
-  fp->nb_antennas_tx = cfg->carrier_config.num_tx_ant.value;      // It corresponds to pdsch_AntennaPorts
+  fp->nb_antennas_tx = cfg->carrier_config.num_tx_ant.value;      // It corresponds to pdsch_AntennaPorts (logical antenna ports)
 
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
@@ -220,15 +234,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 
   fp->Ncp = Ncp;
 
-  // definition of Lmax according to ts 38.213 section 4.1
-  if (fp->dl_CarrierFreq < 6e9) {
-    if(fp->frame_type && (fp->ssb_type==2))
-      fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
-    else
-      fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
-  } else {
-    fp->Lmax = 64;
-  }
+  set_Lmax(fp);
 
   fp->N_ssb = 0;
   int num_tx_ant = cfg->carrier_config.num_tx_ant.value;
@@ -319,16 +325,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
     sco = config->ssb_table.ssb_subcarrier_offset;
 
   fp->ssb_start_subcarrier = (12 * config->ssb_table.ssb_offset_point_a + sco);
-
-  // definition of Lmax according to ts 38.213 section 4.1
-  if (fp->dl_CarrierFreq < 6e9) {
-    if(fp->frame_type && (fp->ssb_type==2))
-      fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
-    else
-      fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
-  } else {
-    fp->Lmax = 64;
-  }
+  set_Lmax(fp);
 
   fp->L_ssb = (((uint64_t) config->ssb_table.ssb_mask_list[0].ssb_mask)<<32) | config->ssb_table.ssb_mask_list[1].ssb_mask;
   
@@ -338,6 +335,43 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 
   return 0;
 }
+
+void nr_init_frame_parms_ue_sa(NR_DL_FRAME_PARMS *frame_parms, uint64_t downlink_frequency, int32_t delta_duplex, uint8_t mu, uint16_t nr_band) {
+
+  LOG_I(PHY,"SA init parameters. DL freq %lu UL offset %d SSB numerology %d N_RB_DL %d\n",
+        downlink_frequency,
+        delta_duplex,
+        mu,
+        frame_parms->N_RB_DL);
+
+  frame_parms->numerology_index = mu;
+  frame_parms->dl_CarrierFreq = downlink_frequency;
+  frame_parms->ul_CarrierFreq = downlink_frequency + delta_duplex;
+  frame_parms->freq_range = (frame_parms->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
+  frame_parms->N_RB_UL = frame_parms->N_RB_DL;
+
+  frame_parms->nr_band = nr_band;
+  frame_parms->frame_type = get_frame_type(frame_parms->nr_band, frame_parms->numerology_index);
+
+  frame_parms->Ncp = NORMAL;
+  set_scs_parameters(frame_parms, frame_parms->numerology_index, frame_parms->N_RB_DL);
+  set_Lmax(frame_parms);
+
+  frame_parms->slots_per_frame = 10* frame_parms->slots_per_subframe;
+  frame_parms->symbols_per_slot = ((frame_parms->Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
+  frame_parms->samples_per_subframe_wCP = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_slot * frame_parms->slots_per_subframe;
+  frame_parms->samples_per_frame_wCP = 10 * frame_parms->samples_per_subframe_wCP;
+  frame_parms->samples_per_slot_wCP = frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
+  frame_parms->samples_per_slotN0 = (frame_parms->nb_prefix_samples + frame_parms->ofdm_symbol_size) * frame_parms->symbols_per_slot;
+  frame_parms->samples_per_slot0 = frame_parms->nb_prefix_samples0 + ((frame_parms->symbols_per_slot-1)*frame_parms->nb_prefix_samples) + (frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size);
+  frame_parms->samples_per_subframe = (frame_parms->nb_prefix_samples0 + frame_parms->ofdm_symbol_size) * 2 +
+                             (frame_parms->nb_prefix_samples + frame_parms->ofdm_symbol_size) * (frame_parms->symbols_per_slot * frame_parms->slots_per_subframe - 2);
+  frame_parms->get_samples_per_slot = &get_samples_per_slot;
+  frame_parms->get_samples_slot_timestamp = &get_samples_slot_timestamp;
+  frame_parms->samples_per_frame = 10 * frame_parms->samples_per_subframe;
+
+}
+
 
 void nr_dump_frame_parms(NR_DL_FRAME_PARMS *fp)
 {
