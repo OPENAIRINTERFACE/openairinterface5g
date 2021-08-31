@@ -1346,17 +1346,40 @@ rrc_gNB_process_RRCReconfigurationComplete(
     /*gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
     gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp;
     memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
-    create_tunnel_req.upf_NGu_teid[0]  = 1;*/
+    create_tunnel_req.outgoing_teid[0]  = 1;*/
     if(DRB_configList!=NULL){
+
+      gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
+      teid_t incoming_teid;
       MessageDef *message_p;
       message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup = malloc(DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length = DRB_configList->list.count;
       LOG_I(RRC, "Length of DRB list:%d, %d \n", DRB_configList->list.count, F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length);
       for (int i = 0; i < DRB_configList->list.count; i++){
+        memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
+        //Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU
+        //create_tunnel_req.outgoing_teid[i] = 0xFFFF;
+        create_tunnel_req.outgoing_teid[i] = 0xFFFF;
+        create_tunnel_req.rnti = ue_context_pP->ue_context.rnti;
+        memcpy(create_tunnel_req.dst_addr[i].buffer,rrc->eth_params_s.remote_addr,4);
+        //create_tunnel_req.dst_addr[i].length = 32;
+        create_tunnel_req.dst_addr[i].length = 32;
+        create_tunnel_req.incoming_rb_id[i] = DRB_configList->list.array[i]->drb_Identity;
+        //create_tunnel_req.outgoing_rb_id[i] = DRB_configList->list.array[i]->drb_Identity;
+
+        /* Here the callback function used as input is not the right one. Need to create a new one probably for F1-U, not sure
+         * if the kind of input parameters to the callback function are convenient though for gtp-u over F1-U.*/
+        incoming_teid=newGtpuCreateTunnel(0, create_tunnel_req.rnti,
+            create_tunnel_req.incoming_rb_id[i],
+            create_tunnel_req.incoming_rb_id[i],
+            create_tunnel_req.outgoing_teid[i],
+            create_tunnel_req.dst_addr[i], 2152,
+            cu_f1u_data_req);
+
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].rlc_mode = RLC_MODE_AM;
-        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].gtp_teid = 1;
+        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].gtp_teid = incoming_teid;
         memcpy(&F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].tl_address,rrc->eth_params_s.my_addr,4);
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl_length = 1;
       }
@@ -1680,11 +1703,11 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
       if (ue_context_pP->ue_context.pduSession[i].status == PDU_SESSION_STATUS_ESTABLISHED || ue_context_pP->ue_context.pduSession[i].status == PDU_SESSION_STATUS_DONE) {
         create_tunnel_req.pdusession_id[j]   = ue_context_pP->ue_context.pduSession[i].param.pdusession_id;
         create_tunnel_req.incoming_rb_id[j]  = i+1;
-        create_tunnel_req.upf_NGu_teid[j]  = ue_context_pP->ue_context.pduSession[i].param.gtp_teid;
-        memcpy(create_tunnel_req.upf_addr[j].buffer,
+        create_tunnel_req.outgoing_teid[j]  = ue_context_pP->ue_context.pduSession[i].param.gtp_teid;
+        memcpy(create_tunnel_req.dst_addr[j].buffer,
                ue_context_pP->ue_context.pduSession[i].param.upf_addr.buffer,
                 sizeof(uint8_t)*20);
-        create_tunnel_req.upf_addr[j].length = ue_context_pP->ue_context.pduSession[i].param.upf_addr.length;
+        create_tunnel_req.dst_addr[j].length = ue_context_pP->ue_context.pduSession[i].param.upf_addr.length;
         j++;
       }
     }

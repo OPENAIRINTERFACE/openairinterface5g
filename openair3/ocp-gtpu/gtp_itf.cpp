@@ -404,6 +404,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
     LOG_W(GTPU, "generated a random Teid that exists, re-generating (%x)\n",incoming_teid);
     incoming_teid=gtpv1uNewTeid();
   };
+  LOG_I (GTPU, "Allocated incoming teid: %d \n", incoming_teid);
 
   inst->te2ue_mapping[incoming_teid].rnti=rnti;
 
@@ -524,14 +525,14 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
   LOG_D(GTPU, "Start create tunnels for RNTI %x, num_tunnels %d, sgw_S1u_teid %x\n",
         create_tunnel_req->rnti,
         create_tunnel_req->num_tunnels,
-        create_tunnel_req->upf_NGu_teid[0]);
+        create_tunnel_req->outgoing_teid[0]);
 
   for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
     teid_t teid=newGtpuCreateTunnel(compatInst(instance), create_tunnel_req->rnti,
                                     create_tunnel_req->incoming_rb_id[i],
                                     create_tunnel_req->pdusession_id[i],
-                                    create_tunnel_req->upf_NGu_teid[i],
-                                    create_tunnel_req->upf_addr[i], 2152,
+                                    create_tunnel_req->outgoing_teid[i],
+                                    create_tunnel_req->dst_addr[i], 2152,
                                     pdcp_data_req);
     create_tunnel_resp->status=0;
     create_tunnel_resp->rnti=create_tunnel_req->rnti;

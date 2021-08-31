@@ -541,14 +541,14 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
           ue_context_p->ue_context.pduSession[i].param         = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done];
           create_tunnel_req.pdusession_id[pdu_sessions_done]   = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done].pdusession_id;
           create_tunnel_req.incoming_rb_id[pdu_sessions_done]  = i+1;
-          create_tunnel_req.upf_NGu_teid[pdu_sessions_done]    = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done].gtp_teid;
-          create_tunnel_req.upf_addr[pdu_sessions_done].length = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done].upf_addr.length;
-          memcpy(create_tunnel_req.upf_addr[pdu_sessions_done].buffer,
+          create_tunnel_req.outgoing_teid[pdu_sessions_done]    = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done].gtp_teid;
+          create_tunnel_req.dst_addr[pdu_sessions_done].length = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done].upf_addr.length;
+          memcpy(create_tunnel_req.dst_addr[pdu_sessions_done].buffer,
                   NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done].upf_addr.buffer,
                   sizeof(uint8_t)*20);
           LOG_I(NR_RRC, "PDUSESSION SETUP: local index %d teid %u, pdusession id %d \n",
                 i,
-                create_tunnel_req.upf_NGu_teid[pdu_sessions_done],
+                create_tunnel_req.outgoing_teid[pdu_sessions_done],
                 create_tunnel_req.pdusession_id[pdu_sessions_done]);
           inde_list[pdu_sessions_done] = i;
           pdu_sessions_done++;
@@ -1064,14 +1064,14 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
       ue_context_p->ue_context.pduSession[i].param       = NGAP_PDUSESSION_SETUP_REQ(msg_p).pdusession_setup_params[pdu_sessions_done];
       create_tunnel_req.pdusession_id[pdu_sessions_done] = NGAP_PDUSESSION_SETUP_REQ(msg_p).pdusession_setup_params[pdu_sessions_done].pdusession_id;
       create_tunnel_req.incoming_rb_id[pdu_sessions_done]= i+1;
-      create_tunnel_req.upf_NGu_teid[pdu_sessions_done]  = NGAP_PDUSESSION_SETUP_REQ(msg_p).pdusession_setup_params[pdu_sessions_done].gtp_teid;
-      memcpy(create_tunnel_req.upf_addr[pdu_sessions_done].buffer,
+      create_tunnel_req.outgoing_teid[pdu_sessions_done]  = NGAP_PDUSESSION_SETUP_REQ(msg_p).pdusession_setup_params[pdu_sessions_done].gtp_teid;
+      memcpy(create_tunnel_req.dst_addr[pdu_sessions_done].buffer,
               NGAP_PDUSESSION_SETUP_REQ(msg_p).pdusession_setup_params[pdu_sessions_done].upf_addr.buffer,
               sizeof(uint8_t)*20);
-      create_tunnel_req.upf_addr[pdu_sessions_done].length = NGAP_PDUSESSION_SETUP_REQ(msg_p).pdusession_setup_params[pdu_sessions_done].upf_addr.length;
+      create_tunnel_req.dst_addr[pdu_sessions_done].length = NGAP_PDUSESSION_SETUP_REQ(msg_p).pdusession_setup_params[pdu_sessions_done].upf_addr.length;
       LOG_I(NR_RRC,"NGAP PDUSESSION SETUP REQ: local index %d teid %u, pdusession id %d \n",
             i,
-            create_tunnel_req.upf_NGu_teid[pdu_sessions_done],
+            create_tunnel_req.outgoing_teid[pdu_sessions_done],
             create_tunnel_req.pdusession_id[pdu_sessions_done]);
       inde_list[pdu_sessions_done] = i;
       pdu_sessions_done++;
