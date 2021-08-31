@@ -624,7 +624,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         T_BUFFER(sduP, sdu_lenP));
 
     UE_info->mac_stats[UE_id].ulsch_total_bytes_rx += sdu_lenP;
-    LOG_I(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d TA %d sduP %p, rssi %d\n",
+    LOG_D(NR_MAC, "[gNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu from PHY (rnti %x, UE_id %d) ul_cqi %d TA %d sduP %p, rssi %d\n",
           gnb_mod_idP,
           harq_pid,
           CC_idP,
@@ -644,10 +644,10 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_scheduling_control->ta_update = timing_advance;
       UE_scheduling_control->raw_rssi = rssi;
       UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
-      LOG_I(NR_MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
+      LOG_D(NR_MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
     }
     else{
-      LOG_I(NR_MAC,"[UE %d] Detected DTX : increasing UE TX power\n",UE_id);
+      LOG_D(NR_MAC,"[UE %d] Detected DTX : increasing UE TX power\n",UE_id);
       UE_scheduling_control->tpc0 = 3;
     }
 
@@ -756,7 +756,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         // re-initialize ta update variables after RA procedure completion
         UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
 
-        LOG_I(NR_MAC,
+        LOG_D(NR_MAC,
               "reset RA state information for RA-RNTI %04x/index %d\n",
               ra->rnti,
               i);
@@ -776,7 +776,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_scheduling_control->ta_update = timing_advance;
       UE_scheduling_control->raw_rssi = rssi;
       UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
-      LOG_I(NR_MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
+      LOG_D(NR_MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
         if(ra->cfra) {
 
           LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CFRA procedure succeeded!\n", UE_id, ra->rnti);
@@ -1449,7 +1449,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->last_ul_frame = sched_pusch->frame;
     sched_ctrl->last_ul_slot = sched_pusch->slot;
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
           frame,
           slot,

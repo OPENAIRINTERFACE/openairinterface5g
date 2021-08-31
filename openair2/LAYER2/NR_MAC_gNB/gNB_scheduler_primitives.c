@@ -308,7 +308,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   ps->N_PRB_DMRS = num_dmrs_cdm_grps_no_data * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
   ps->dl_dmrs_symb_pos = fill_dmrs_mask(bwpd ? bwpd->pdsch_Config->choice.setup : NULL, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, mapping_type);
   ps->N_DMRS_SLOT = get_num_dmrs(ps->dl_dmrs_symb_pos);
-  LOG_I(NR_MAC,"bwpd0 %p, bwpd %p : Filling dmrs info, ps->N_PRB_DMRS %d, ps->dl_dmrs_symb_pos %x, ps->N_DMRS_SLOT %d",bwpd0,bwpd,ps->N_PRB_DMRS,ps->dl_dmrs_symb_pos,ps->N_DMRS_SLOT);
+  LOG_D(NR_MAC,"bwpd0 %p, bwpd %p : Filling dmrs info, ps->N_PRB_DMRS %d, ps->dl_dmrs_symb_pos %x, ps->N_DMRS_SLOT %d\n",bwpd0,bwpd,ps->N_PRB_DMRS,ps->dl_dmrs_symb_pos,ps->N_DMRS_SLOT);
 }
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
@@ -1126,7 +1126,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       pos = fsize;
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->frequency_domain_assignment.val & ((1 << fsize) - 1)) << (dci_size - pos));
-      LOG_I(NR_MAC,
+      LOG_D(NR_MAC,
             "RA_RNTI, size %d frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",
             dci_size,dci_pdu_rel15->frequency_domain_assignment.val,
             fsize,
@@ -1946,7 +1946,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
       add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
     create_nr_list(&sched_ctrl->feedback_ul_harq, 16);
     create_nr_list(&sched_ctrl->retrans_ul_harq, 16);
-    LOG_I(NR_MAC, "[gNB %d] Add NR UE_id %d : rnti %x\n",
+    LOG_D(NR_MAC, "[gNB %d] Add NR UE_id %d : rnti %x\n",
           mod_idP,
           UE_id,
           rntiP);

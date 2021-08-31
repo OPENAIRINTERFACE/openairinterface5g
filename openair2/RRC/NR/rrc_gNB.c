@@ -435,7 +435,7 @@ rrc_gNB_generate_RRCSetup(
 )
 //-----------------------------------------------------------------------------
 {
-  LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
+  LOG_D(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
   MessageDef                    *message_p;
 
   // T(T_GNB_RRC_SETUP,
