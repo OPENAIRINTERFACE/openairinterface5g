@@ -1111,6 +1111,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   uint8_t fsize = 0, pos = 0;
 
   uint64_t *dci_pdu = (uint64_t *)pdcch_dci_pdu->Payload;
+  *dci_pdu=0;
   int dci_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,scc->uplinkConfigCommon->initialUplinkBWP, CellGroup, dci_pdu_rel15, dci_format, rnti_type, N_RB, bwp_id);
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
@@ -1136,15 +1137,15 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // Time domain assignment
       pos += 4;
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment.val & 0xf) << (dci_size - pos));
-      LOG_D(NR_MAC,
-            "time-domain assignment %d  (3 bits)=> %d (0x%lx)\n",
+      LOG_I(NR_MAC,
+            "time-domain assignment %d  (4 bits)=> %d (0x%lx)\n",
             dci_pdu_rel15->time_domain_assignment.val,
             dci_size - pos,
             *dci_pdu);
       // VRB to PRB mapping
       pos++;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val & 0x1) << (dci_size - pos);
-      LOG_D(NR_MAC,
+      LOG_I(NR_MAC,
             "vrb to prb mapping %d  (1 bits)=> %d (0x%lx)\n",
             dci_pdu_rel15->vrb_to_prb_mapping.val,
             dci_size - pos,
@@ -1152,15 +1153,11 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // MCS
       pos += 5;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->mcs & 0x1f) << (dci_size - pos);
-#ifdef DEBUG_FILL_DCI
       LOG_I(NR_MAC, "mcs %d  (5 bits)=> %d (0x%lx)\n", dci_pdu_rel15->mcs, dci_size - pos, *dci_pdu);
-#endif
       // TB scaling
       pos += 2;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->tb_scaling & 0x3) << (dci_size - pos);
-#ifdef DEBUG_FILL_DCI
       LOG_I(NR_MAC, "tb_scaling %d  (2 bits)=> %d (0x%lx)\n", dci_pdu_rel15->tb_scaling, dci_size - pos, *dci_pdu);
-#endif
       break;
 
     case NR_RNTI_C:
