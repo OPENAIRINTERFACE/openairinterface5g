@@ -1343,34 +1343,28 @@ rrc_gNB_process_RRCReconfigurationComplete(
                                get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
   }
   else {
-    /*gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
-    gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp;
-    memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
-    create_tunnel_req.outgoing_teid[0]  = 1;*/
     if(DRB_configList!=NULL){
-
       gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
-      teid_t incoming_teid;
+      memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
       MessageDef *message_p;
       message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup = malloc(DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length = DRB_configList->list.count;
       LOG_I(RRC, "Length of DRB list:%d, %d \n", DRB_configList->list.count, F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length);
       for (int i = 0; i < DRB_configList->list.count; i++){
-        memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
         //Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU
         //create_tunnel_req.outgoing_teid[i] = 0xFFFF;
         create_tunnel_req.outgoing_teid[i] = 0xFFFF;
         create_tunnel_req.rnti = ue_context_pP->ue_context.rnti;
-        memcpy(create_tunnel_req.dst_addr[i].buffer,rrc->eth_params_s.remote_addr,4);
+        LOG_I(NR_RRC,"The DU remote IP address is: %s \n", rrc->eth_params_s.remote_addr);
+        create_tunnel_req.dst_addr[i].buffer[0] = inet_addr(rrc->eth_params_s.remote_addr);
         //create_tunnel_req.dst_addr[i].length = 32;
         create_tunnel_req.dst_addr[i].length = 32;
         create_tunnel_req.incoming_rb_id[i] = DRB_configList->list.array[i]->drb_Identity;
-        //create_tunnel_req.outgoing_rb_id[i] = DRB_configList->list.array[i]->drb_Identity;
 
         /* Here the callback function used as input is not the right one. Need to create a new one probably for F1-U, not sure
          * if the kind of input parameters to the callback function are convenient though for gtp-u over F1-U.*/
-        incoming_teid=newGtpuCreateTunnel(0, create_tunnel_req.rnti,
+        ue_context_pP->ue_context.incoming_teid[i] = newGtpuCreateTunnel(0, create_tunnel_req.rnti,
             create_tunnel_req.incoming_rb_id[i],
             create_tunnel_req.incoming_rb_id[i],
             create_tunnel_req.outgoing_teid[i],
@@ -1379,8 +1373,8 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].rlc_mode = RLC_MODE_AM;
-        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].gtp_teid = incoming_teid;
-        memcpy(&F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].tl_address,rrc->eth_params_s.my_addr,4);
+        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].gtp_teid = ue_context_pP->ue_context.incoming_teid[i]; 
+        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].tl_address = inet_addr(rrc->eth_params_s.my_addr);
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl_length = 1;
       }
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;
