@@ -1212,6 +1212,25 @@ static boolean_t pdcp_data_req_drb(
   return 1;
 }
 
+boolean_t cu_f1u_data_req(
+  protocol_ctxt_t  *ctxt_pP,
+  const srb_flag_t srb_flagP,
+  const rb_id_t rb_id,
+  const mui_t muiP,
+  const confirm_t confirmP,
+  const sdu_size_t sdu_buffer_size,
+  unsigned char *const sdu_buffer,
+  const pdcp_transmission_mode_t mode
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  ,const uint32_t *const sourceL2Id
+  ,const uint32_t *const destinationL2Id
+#endif
+  )
+{
+  LOG_E(PDCP, "Implementation is pending");
+  return true;
+}
+
 boolean_t pdcp_data_req(
   protocol_ctxt_t  *ctxt_pP,
   const srb_flag_t srb_flagP,
