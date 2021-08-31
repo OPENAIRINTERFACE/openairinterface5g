@@ -450,14 +450,21 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   uint8_t     *gtpu_buffer_p;
   int rb_id;
   int i;
-  LOG_I(PDCP, "Melissa Elkadi we got here %s\n", __FUNCTION__);
 
-  if(IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN){
+  if (IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN) {
     LOG_D(PDCP, "IP packet received, to be sent to TUN interface");
-    len = write(nas_sock_fd[0], buf, size);
-    LOG_D(PDCP, "Writing %d bytes to tunnel interface\n", len);
+
+    /* We are removing the instance ID from the buffer. TUN interfaces
+       care about the actual data we are sending. If we do not remove
+       the instance ID from the buffer, it will start with 00, and the
+       write will fail with errno = 22 (EINVAL) */
+    char *data_buffer = buf + 1;
+    int size_to_write = size - 1;
+
+    len = write(nas_sock_fd[0], data_buffer, size_to_write);
+    LOG_D(PDCP, "len = %d bytes to tunnel interface %d\n", len, nas_sock_fd[0]);
     if (len != size) {
-      LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+      LOG_E(PDCP, "%s:%d:%s: fatal error %d: %s\n", __FILE__, __LINE__, __FUNCTION__, errno, strerror(errno));
     }
   }
   else{
