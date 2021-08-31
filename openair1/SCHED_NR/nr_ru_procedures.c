@@ -119,6 +119,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                        fp->nb_prefix_samples,
                        CYCLIC_PREFIX);
           slot_offset += fp->nb_prefix_samples+fp->ofdm_symbol_size;
+          slot_offsetF += fp->ofdm_symbol_size;
         }
         else {
           PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
@@ -128,6 +129,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                        fp->nb_prefix_samples0,
                        CYCLIC_PREFIX);
           slot_offset += fp->nb_prefix_samples0+fp->ofdm_symbol_size;
+          slot_offsetF += fp->ofdm_symbol_size;
         }
       }
     }

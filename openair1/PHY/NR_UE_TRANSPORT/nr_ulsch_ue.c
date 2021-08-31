@@ -163,7 +163,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 		ulsch_ue->harq_processes[harq_pid]->a,
 		ulsch_ue->harq_processes[harq_pid]->pusch_pdu.pusch_data.tb_size,
 		0, WS_C_RNTI, rnti, frame, slot, 0, 0);
-    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid, G);
+    nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, G);
 
     ///////////
     ////////////////////////////////////////////////////////////////////
@@ -533,7 +533,8 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
       nr_normal_prefix_mod(txdataF[ap],
                            &txdata[ap][tx_offset],
                            14,
-                           frame_parms);
+                           frame_parms,
+                           slot);
     }
   }
 
