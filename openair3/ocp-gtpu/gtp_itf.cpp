@@ -404,7 +404,6 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
     LOG_W(GTPU, "generated a random Teid that exists, re-generating (%x)\n",incoming_teid);
     incoming_teid=gtpv1uNewTeid();
   };
-  LOG_I (GTPU, "Allocated incoming teid: %d \n", incoming_teid);
 
   inst->te2ue_mapping[incoming_teid].rnti=rnti;
 
@@ -443,7 +442,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   char ip4[INET_ADDRSTRLEN];
   char ip6[INET6_ADDRSTRLEN];
 
-  LOG_I(GTPU, "Created tunnel for RNTI %x, teid for DL: %d, teid for UL %d to remote IPv4: %s, IPv6 %s\n",
+  LOG_I(GTPU, "Created tunnel for RNTI %x, teid for DL: %u, teid for UL %u to remote IPv4: %s, IPv6 %s\n",
         rnti,
         tmp->teid_incoming,
         tmp->teid_outgoing,
