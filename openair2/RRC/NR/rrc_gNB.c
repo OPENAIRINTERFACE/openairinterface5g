@@ -1343,20 +1343,15 @@ rrc_gNB_process_RRCReconfigurationComplete(
                                get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
   }
   else {
-    /*gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
-    gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp;
-    memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
-    create_tunnel_req.outgoing_teid[0]  = 1;*/
     if(DRB_configList!=NULL){
-
       gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
+      memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
       MessageDef *message_p;
       message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup = malloc(DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length = DRB_configList->list.count;
       LOG_I(RRC, "Length of DRB list:%d, %d \n", DRB_configList->list.count, F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length);
       for (int i = 0; i < DRB_configList->list.count; i++){
-        memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
         //Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU
         //create_tunnel_req.outgoing_teid[i] = 0xFFFF;
         create_tunnel_req.outgoing_teid[i] = 0xFFFF;
