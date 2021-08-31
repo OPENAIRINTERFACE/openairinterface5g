@@ -453,7 +453,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   exit(1);
 
 rb_found:
-  LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d",
+  LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d\n",
         __FILE__, __LINE__, __FUNCTION__, ue->rnti, is_srb, rb_id, size);
 
   memblock = get_free_mem_block(size, __func__);

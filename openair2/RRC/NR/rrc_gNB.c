@@ -3069,7 +3069,7 @@ static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_
   //for (int i=0;i<rrc_dl_sdu_len;i++) printf("%2x ",pdcp_pdu_p->data[i]);
   //printf("\n");
   
-  du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, req->buf->size, req->buf);
+  du_rlc_data_req(&ctxt, 1, 0, req->srb_id , 1, 0, req->buf->size, req->buf);
   //   rlc_status = rlc_data_req(&ctxt
   //                             , 1
   //                             , MBMS_FLAG_NO
