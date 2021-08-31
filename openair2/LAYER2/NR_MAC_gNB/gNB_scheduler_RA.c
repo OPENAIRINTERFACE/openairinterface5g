@@ -1217,9 +1217,19 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_UE_info_t *UE_info = &nr_mac->UE_info;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-    NR_BWP_t *genericParameters = bwp ? & bwp->bwp_Common->genericParameters : &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters; 
-    long BWPSize  = coreset->frequencyDomainResources.buf[0]==0xFF ? 48 : 24; 
-    long BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    NR_BWP_t *genericParameters = bwp ? & bwp->bwp_Common->genericParameters : &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+
+    long BWPStart = 0;
+    long BWPSize = 0;
+    NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = NULL;
+    if(*ss->controlResourceSetId!=0) {
+      BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+      BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    } else {
+      type0_PDCCH_CSS_config = &nr_mac->type0_PDCCH_CSS_config[ra->beam_id];
+      BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
+      BWPSize = type0_PDCCH_CSS_config->num_rbs;
+    }
 
     // HARQ management
     AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
@@ -1365,7 +1375,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2 + sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, genericParameters, NULL);
+      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, genericParameters, type0_PDCCH_CSS_config);
       nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu_rel15;
     }
 
