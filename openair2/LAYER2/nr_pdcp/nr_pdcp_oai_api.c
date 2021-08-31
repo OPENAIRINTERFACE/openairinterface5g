@@ -463,7 +463,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
 
     len = write(nas_sock_fd[0], data_buffer, size_to_write);
     LOG_D(PDCP, "len = %d bytes to tunnel interface %d\n", len, nas_sock_fd[0]);
-    if (len != size) {
+    if (len != size_to_write) {
       LOG_E(PDCP, "%s:%d:%s: fatal error %d: %s\n", __FILE__, __LINE__, __FUNCTION__, errno, strerror(errno));
     }
   }
