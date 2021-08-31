@@ -96,39 +96,24 @@ static void read_pipe(int p, char *b, int size) {
   }
 }
 
-static int baseRunTimeCommand(char* cmd, size_t cmdSize) {
-  FILE *fp;
-  size_t retSize = 0;
-
-  fp = popen(cmd, "r");
-  if(fp) {
-    memset(cmd, 0, cmdSize);
-    retSize = fread(cmd, 1, cmdSize, fp);
-    fclose(fp);
-  } else {
-    LOG_D(HW,"%s:%d:%s: Cannot open %s\n", __FILE__, __LINE__, __FUNCTION__, cmd);
-  }
-
-  if (retSize == 0) {
-    return 0;
-  }
-  return atoi(cmd);
+static int baseRunTimeCommand(char* cmd) {
+  return system(cmd);
 }
 
 int checkIfFedoraDistribution(void) {
   char cmd[200];
 
   memset(cmd, 0, 200);
-  sprintf(cmd, "cat /etc/os-release | grep ID_LIKE | grep -ic fedora || true");
-  return baseRunTimeCommand(cmd, 200);
+  sprintf(cmd, "cat /etc/os-release | grep ID_LIKE | grep -ic fedora");
+  return baseRunTimeCommand(cmd);
 }
 
 int checkIfGenericKernelOnFedora(void) {
   char cmd[200];
 
   memset(cmd, 0, 200);
-  sprintf(cmd, "uname -a | grep -c rt || true");
-  return (1 - baseRunTimeCommand(cmd, 200));
+  sprintf(cmd, "uname -a | grep -c rt");
+  return (1 - baseRunTimeCommand(cmd));
 }
 
 int checkIfInsideContainer(void) {
@@ -136,8 +121,8 @@ int checkIfInsideContainer(void) {
   int res = 0;
 
   memset(cmd, 0, 200);
-  sprintf(cmd, "cat /proc/self/cgroup | egrep -c 'libpod|podman|kubepods' || true");
-  res = baseRunTimeCommand(cmd, 200);
+  sprintf(cmd, "cat /proc/self/cgroup | egrep -c 'libpod|podman|kubepods'");
+  res = baseRunTimeCommand(cmd);
   if (res > 0)
     return 1;
   else
@@ -255,19 +240,21 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  /*
   if (checkIfFedoraDistribution())
     if (checkIfGenericKernelOnFedora())
       if (checkIfInsideContainer())
-        settingPriority = 0;
-
+  */
+  settingPriority = 0;
+  
   if (settingPriority) {
     ret=pthread_attr_setschedpolicy(&attr, SCHED_OAI);
     AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
-    if(priority<sched_get_priority_min(SCHED_OAI) || priority>sched_get_priority_max(SCHED_FIFO)) {
+    if(priority<sched_get_priority_min(SCHED_OAI) || priority>sched_get_priority_max(SCHED_OAI)) {
       LOG_E(TMR,"Prio not possible: %d, min is %d, max: %d, forced in the range\n",
-                priority,
-                sched_get_priority_min(SCHED_OAI),
-                sched_get_priority_max(SCHED_OAI));
+	    priority,
+	    sched_get_priority_min(SCHED_OAI),
+	    sched_get_priority_max(SCHED_OAI));
       if(priority<sched_get_priority_min(SCHED_OAI))
         priority=sched_get_priority_min(SCHED_OAI);
       if(priority>sched_get_priority_max(SCHED_OAI))
@@ -279,12 +266,13 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
     ret=pthread_attr_setschedparam(&attr, &sparam);
     AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   }
-
+  
   ret=pthread_create(t, &attr, func, param);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
-
+  
   pthread_setname_np(*t, name);
   if (affinity != -1 ) {
+    abort();
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(affinity, &cpuset);
