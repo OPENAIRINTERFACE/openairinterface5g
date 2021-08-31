@@ -91,7 +91,7 @@ int read_intarray(paramdef_t *cfgoptions,config_setting_t *setting, char *cfgpat
 
 
 
-int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix ) {
+static int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix ) {
   config_setting_t *setting;
   char *str;
   int i,u;
@@ -122,7 +122,7 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix ) {
 
     switch(cfgoptions[i].type) {
       case TYPE_STRING:
-        if ( config_lookup_string(&(libconfig_privdata.cfg),cfgpath, (const char **)&str)) {
+        if ( config_lookup_string(&(libconfig_privdata.cfg), cfgpath, &str)) {
           if ( cfgoptions[i].numelt > 0  && str != NULL && strlen(str) >= cfgoptions[i].numelt ) {
             fprintf(stderr,"[LIBCONFIG] %s:  %s exceeds maximum length of %i bytes, value truncated\n",
                     cfgpath,str,cfgoptions[i].numelt);

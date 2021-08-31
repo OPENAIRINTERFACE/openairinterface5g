@@ -240,11 +240,11 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
-  /*
+  
   if (checkIfFedoraDistribution())
     if (checkIfGenericKernelOnFedora())
       if (checkIfInsideContainer())
-  */
+  
   settingPriority = 0;
   
   if (settingPriority) {

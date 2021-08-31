@@ -182,8 +182,8 @@ int config_cmdlineonly_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
 }
 
 configmodule_interface_t *load_configmodule(int argc,
-		                                    char **argv,
-											uint32_t initflags)
+					    char **argv,
+					    uint32_t initflags)
 {
   char *cfgparam=NULL;
   char *modeparams=NULL;
