@@ -603,7 +603,7 @@ gtpv1u_create_ngu_tunnel(
       gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].state                  = BEARER_IN_CONFIG;
       gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].teid_gNB               = ngu_teid;
       gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].teid_gNB_stack_session = stack_req.apiInfo.createTunnelEndPointInfo.hStackSession;
-      gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].teid_upf               = create_tunnel_req_pP->upf_NGu_teid[i];
+      gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].teid_upf               = create_tunnel_req_pP->outgoing_teid[i];
       gtpv1u_ue_data_p->num_bearers++;
       create_tunnel_resp_pP->gnb_NGu_teid[i] = ngu_teid;
 
