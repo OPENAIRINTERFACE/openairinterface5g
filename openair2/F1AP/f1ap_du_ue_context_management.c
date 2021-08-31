@@ -100,8 +100,6 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     f1ap_ue_context_setup_req->cellULConfigured = NULL;
   }
 
-  f1ap_drb_to_be_setup_t *drb_p;
-  f1ap_srb_to_be_setup_t *srb_p;
   if (RC.nrrrc) {
     /* RRCContainer */
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
@@ -113,7 +111,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                 "could not allocate memory for f1ap_ue_context_setup_req->drbs_to_be_setup\n");
 
     for (i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; ++i) {
-      drb_p = &f1ap_ue_context_setup_req->drbs_to_be_setup[i];
+      f1ap_drb_to_be_setup_t *drb_p = &f1ap_ue_context_setup_req->drbs_to_be_setup[i];
       F1AP_DRBs_ToBeSetup_Item_t *drbs_tobesetup_item_p;
       drbs_tobesetup_item_p = &((F1AP_DRBs_ToBeSetup_ItemIEs_t *)ie->value.choice.DRBs_ToBeSetup_List.list.array[i])->value.choice.DRBs_ToBeSetup_Item;
       drb_p->drb_id = drbs_tobesetup_item_p->dRBID;
@@ -146,7 +144,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                     "could not allocate memory for f1ap_ue_context_setup_req->srbs_to_be_setup\n");
 
     for (i = 0; i < f1ap_ue_context_setup_req->srbs_to_be_setup_length; ++i) {
-      srb_p = &f1ap_ue_context_setup_req->srbs_to_be_setup[i];
+      f1ap_srb_to_be_setup_t *srb_p = &f1ap_ue_context_setup_req->srbs_to_be_setup[i];
       F1AP_SRBs_ToBeSetup_Item_t *srbs_tobesetup_item_p;
             srbs_tobesetup_item_p = &((F1AP_SRBs_ToBeSetup_ItemIEs_t *)ie->value.choice.SRBs_ToBeSetup_List.list.array[i])->value.choice.SRBs_ToBeSetup_Item;
             srb_p->srb_id = srbs_tobesetup_item_p->sRBID;

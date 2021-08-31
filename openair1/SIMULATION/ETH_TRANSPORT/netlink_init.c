@@ -103,7 +103,7 @@ int netlink_init_mbms_tun(char *ifprefix) {
     nas_sock_mbms_fd = tun_alloc(ifname);
 
     if (nas_sock_mbms_fd == -1) {
-      printf("[NETLINK] Error opening socket %s (%d:%s)\n",ifname,errno, strerror(errno));
+      printf("[NETLINK] Error opening mbms socket %s (%d:%s)\n",ifname,errno, strerror(errno));
       exit(1);
     }
 
@@ -161,7 +161,7 @@ int netlink_init(void) {
   nas_sock_fd[0] = socket(PF_NETLINK, SOCK_RAW,GRAAL_NETLINK_ID);
 
   if (nas_sock_fd[0] == -1) {
-    printf("[NETLINK] Error opening socket %d (%d:%s)\n",nas_sock_fd[0],errno, strerror(errno));
+    printf("[NETLINK] Error opening GRAAL_NETLINK_ID socket %d (%d:%s)\n",nas_sock_fd[0],errno, strerror(errno));
 
     if (LINK_ENB_PDCP_TO_IP_DRIVER) {
       exit(1);

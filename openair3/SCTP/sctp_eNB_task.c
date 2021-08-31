@@ -451,7 +451,7 @@ sctp_handle_new_association_req(
 
             if (s > 0 ) {
                 if (((struct sockaddr_in*)ifa->ifa_addr)->sin_addr.s_addr == in.s_addr) {
-                    struct sockaddr_in locaddr;
+                    struct sockaddr_in locaddr={0};
                     locaddr.sin_family = AF_INET;
                     locaddr.sin_port = 0;
                     locaddr.sin_addr.s_addr = in.s_addr;
@@ -693,7 +693,7 @@ static int sctp_create_new_listener(
     sctp_init_t     *init_p,
     int server_type)
 {
-    struct sctp_event_subscribe   event;
+    struct sctp_event_subscribe   event={0};
     struct sockaddr              *addr      = NULL;
     struct sctp_cnx_list_elm_s   *sctp_cnx  = NULL;
     uint16_t                      i  = 0, j = 0;

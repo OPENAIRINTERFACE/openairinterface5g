@@ -3151,6 +3151,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
     ASN_SEQUENCE_ADD(&DRB_configList->list, DRB_config);
   }
   apply_macrlc_config(rrc, ue_context_p, &ctxt);
+  
 }
 
 unsigned int mask_flip(unsigned int x) {
