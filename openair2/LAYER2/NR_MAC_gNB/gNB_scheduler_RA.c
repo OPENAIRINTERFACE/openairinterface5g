@@ -919,13 +919,10 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
     NR_SearchSpace_t *ss = ra->ra_ss;
 
-    long BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-
     NR_BWP_Downlink_t *bwp = NULL;
     NR_ControlResourceSet_t *coreset = NULL;
     NR_BWP_t *genericParameters = NULL;
     NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList=NULL;
-    long BWPStart = 0;
 
     if (ra->CellGroup &&
         ra->CellGroup->spCellConfig &&
@@ -940,7 +937,18 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       genericParameters= &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     }
-    BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+
+    long BWPStart = 0;
+    long BWPSize = 0;
+    NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = NULL;
+    if(*ss->controlResourceSetId!=0) {
+      BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+      BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    } else {
+      type0_PDCCH_CSS_config = &nr_mac->type0_PDCCH_CSS_config[ra->beam_id];
+      BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
+      BWPSize = type0_PDCCH_CSS_config->num_rbs;
+    }
 
     if (*ss->controlResourceSetId == 0)
       coreset = nr_mac->sched_ctrlCommon->coreset; // this is coreset 0
@@ -1000,7 +1008,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2 + sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, genericParameters, &nr_mac->type0_PDCCH_CSS_config[ra->beam_id]);
+      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, genericParameters, type0_PDCCH_CSS_config);
       nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu_rel15;
     }
 
