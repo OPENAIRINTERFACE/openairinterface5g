@@ -456,13 +456,6 @@ rb_found:
   LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d\n",
         __FILE__, __LINE__, __FUNCTION__, ue->rnti, is_srb, rb_id, size);
 
-  memblock = get_free_mem_block(size, __func__);
-  if (memblock == NULL) {
-    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
-  }
-  memcpy(memblock->data, buf, size);
-
   /* unused fields? */
   ctx.instance = 0;
   ctx.frame = 0;
@@ -506,11 +499,26 @@ rb_found:
       return;
     }
     else if(NODE_IS_DU(type) && is_srb == 0) {
-      LOG_W(RLC, "Received uplink user-plane traffic at RLC-DU to be sent to the CU, but F1-U implementation is not in place yet \n");
+      MessageDef *msg = itti_alloc_new_message_sized(TASK_RLC_ENB, 0, GTPV1U_GNB_TUNNEL_DATA_REQ, sizeof(gtpv1u_gnb_tunnel_data_req_t) + size);
+      gtpv1u_gnb_tunnel_data_req_t *req=&GTPV1U_GNB_TUNNEL_DATA_REQ(msg);
+      req->buffer=(uint8_t*)(req+1);
+      memcpy(req->buffer,buf,size);
+      req->length=size;
+      req->offset=0;
+      req->rnti=ue->rnti;
+      req->pdusession_id=rb_id;
+      LOG_D(RLC, "Received uplink user-plane traffic at RLC-DU to be sent to the CU, size %d \n", size);
+      itti_send_msg_to_task(OCP_GTPV1_U, 0, msg);
       return;
     }
   }
 
+  memblock = get_free_mem_block(size, __func__);
+  if (memblock == NULL) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+  memcpy(memblock->data, buf, size);
   if (!pdcp_data_ind(&ctx, is_srb, 0, rb_id, size, memblock)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
     /* what to do in case of failure? for the moment: nothing */

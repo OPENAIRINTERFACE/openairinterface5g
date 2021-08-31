@@ -470,18 +470,21 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       int offset=0;
       if (entity->has_sdap == 1 && entity->has_sdapULheader == 1) offset = 1; // this is the offset of the SDAP header in bytes
 
-      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
-                                  size + GTPU_HEADER_OVERHEAD_MAX - offset);
-      AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
-      memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf+offset, size-offset);
-      message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_GNB_TUNNEL_DATA_REQ);
+      message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0,
+					       GTPV1U_GNB_TUNNEL_DATA_REQ,
+					       sizeof(gtpv1u_gnb_tunnel_data_req_t) + size
+					       + GTPU_HEADER_OVERHEAD_MAX - offset);
       AssertFatal(message_p != NULL, "OUT OF MEMORY");
-      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).buffer              = gtpu_buffer_p;
-      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).length              = size-offset;
-      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).offset              = GTPU_HEADER_OVERHEAD_MAX;
-      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti                = ue->rnti;
-      GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id       = entity->pdusession_id;
-      if (offset==1) LOG_I(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
+      gtpv1u_gnb_tunnel_data_req_t *req=&GTPV1U_GNB_TUNNEL_DATA_REQ(message_p);
+      gtpu_buffer_p = (uint8_t*)(req+1);
+      memcpy(gtpu_buffer_p+GTPU_HEADER_OVERHEAD_MAX, buf+offset, size-offset);
+      req->buffer              = gtpu_buffer_p;
+      req->length              = size-offset;
+      req->offset              = GTPU_HEADER_OVERHEAD_MAX;
+      req->rnti                = ue->rnti;
+      req->pdusession_id       = entity->pdusession_id;
+      if (offset==1)
+	LOG_I(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
       LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size-offset);
       itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
    }
