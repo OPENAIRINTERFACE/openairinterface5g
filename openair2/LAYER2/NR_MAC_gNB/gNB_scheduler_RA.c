@@ -919,13 +919,10 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
     NR_SearchSpace_t *ss = ra->ra_ss;
 
-    long BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-
     NR_BWP_Downlink_t *bwp = NULL;
     NR_ControlResourceSet_t *coreset = NULL;
     NR_BWP_t *genericParameters = NULL;
     NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList=NULL;
-    long BWPStart = 0;
 
     if (ra->CellGroup &&
         ra->CellGroup->spCellConfig &&
@@ -940,7 +937,18 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       genericParameters= &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     }
-    BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+
+    long BWPStart = 0;
+    long BWPSize = 0;
+    NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = NULL;
+    if(*ss->controlResourceSetId!=0) {
+      BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+      BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    } else {
+      type0_PDCCH_CSS_config = &nr_mac->type0_PDCCH_CSS_config[ra->beam_id];
+      BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
+      BWPSize = type0_PDCCH_CSS_config->num_rbs;
+    }
 
     if (*ss->controlResourceSetId == 0)
       coreset = nr_mac->sched_ctrlCommon->coreset; // this is coreset 0
@@ -1000,7 +1008,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2 + sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, genericParameters, NULL);
+      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, genericParameters, type0_PDCCH_CSS_config);
       nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu_rel15;
     }
 
@@ -1096,7 +1104,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                                                                     pdsch_pdu_rel15->rbStart,
                                                                                     effective_BWPSize);
 
-    LOG_I(NR_MAC,"Msg2 rbSize.rbStart.BWPsize %d.%d.%d\n",pdsch_pdu_rel15->rbSize,
+    LOG_D(NR_MAC,"Msg2 rbSize.rbStart.BWPsize %d.%d.%d\n",pdsch_pdu_rel15->rbSize,
 	  pdsch_pdu_rel15->rbStart,
 	  effective_BWPSize);
 
@@ -1116,7 +1124,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
           dci_payload.mcs,
           dci_payload.tb_scaling);
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
           pdcch_pdu_rel15->dci_pdu[0].RNTI,
           NR_RNTI_RA,
@@ -1165,7 +1173,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     ra->state = WAIT_Msg3;
-    LOG_I(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
+    LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
   }
 }
 
@@ -1209,9 +1217,19 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_UE_info_t *UE_info = &nr_mac->UE_info;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-    NR_BWP_t *genericParameters = bwp ? & bwp->bwp_Common->genericParameters : &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters; 
-    long BWPSize  = coreset->frequencyDomainResources.buf[0]==0xFF ? 48 : 24; 
-    long BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    NR_BWP_t *genericParameters = bwp ? & bwp->bwp_Common->genericParameters : &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+
+    long BWPStart = 0;
+    long BWPSize = 0;
+    NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = NULL;
+    if(*ss->controlResourceSetId!=0) {
+      BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+      BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    } else {
+      type0_PDCCH_CSS_config = &nr_mac->type0_PDCCH_CSS_config[ra->beam_id];
+      BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
+      BWPSize = type0_PDCCH_CSS_config->num_rbs;
+    }
 
     // HARQ management
     AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
@@ -1244,7 +1262,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     const int delta_PRI=0;
     int r_pucch = ((CCEIndex<<1)/N_cce)+(delta_PRI<<1);
 
-    LOG_I(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, N_cce %d, nb_of_candidates %d,delta_PRI %d)\n",r_pucch,CCEIndex,N_cce,nr_of_candidates,delta_PRI);
+    LOG_D(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, N_cce %d, nb_of_candidates %d,delta_PRI %d)\n",r_pucch,CCEIndex,N_cce,nr_of_candidates,delta_PRI);
     int alloc = nr_acknack_scheduling(module_idP, UE_id, frameP, slotP, r_pucch, 1);
     AssertFatal(alloc>=0,"Couldn't find a pucch allocation for ack nack (msg4)\n");
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[alloc];
@@ -1357,7 +1375,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2 + sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, genericParameters, NULL);
+      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, genericParameters, type0_PDCCH_CSS_config);
       nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu_rel15;
     }
 
@@ -1442,7 +1460,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_payload.pucch_resource_indicator = delta_PRI; // This is delta_PRI from 9.2.1 in 38.213
     dci_payload.pdsch_to_harq_feedback_timing_indicator.val = pucch->timing_indicator;
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "[RAPROC] DCI 1_0 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d pucchres %d harqtiming %d\n",
           dci_payload.frequency_domain_assignment.val,
           pdsch_pdu_rel15->rbStart,
@@ -1455,7 +1473,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
           dci_payload.pucch_resource_indicator,
           dci_payload.pdsch_to_harq_feedback_timing_indicator.val);
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d, BWPsize %d\n",
           pdcch_pdu_rel15->dci_pdu[0].RNTI,
           NR_RNTI_TC,
@@ -1516,7 +1534,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     LOG_D(NR_MAC,"numDlDci: %i\n", pdcch_pdu_rel15->numDlDci);
 
     ra->state = WAIT_Msg4_ACK;
-    LOG_I(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
+    LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
   }
 }
 

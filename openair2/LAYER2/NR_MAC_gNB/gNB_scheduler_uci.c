@@ -60,7 +60,7 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
   memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
   future_ul_tti_req->n_pdus += 1;
 
-  LOG_I(NR_MAC,
+  LOG_D(NR_MAC,
         "%s %4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, DAI %d, CSI %d on res %d\n",
         pucch->dai_c>0 ? "pucch_acknak" : "",
         frame,
@@ -152,7 +152,7 @@ void nr_schedule_pucch(int Mod_idP,
           || frameP != curr_pucch->frame
           || slotP != curr_pucch->ul_slot)
         continue;
-      LOG_I(NR_MAC,"Scheduling PUCCH[%d] RX for UE %d in %d.%d O_ack %d\n",i,UE_id,curr_pucch->frame,curr_pucch->ul_slot,O_ack);
+      LOG_D(NR_MAC,"Scheduling PUCCH[%d] RX for UE %d in %d.%d O_ack %d\n",i,UE_id,curr_pucch->frame,curr_pucch->ul_slot,O_ack);
       nr_fill_nfapi_pucch(Mod_idP, frameP, slotP, curr_pucch, UE_id);
       memset(curr_pucch, 0, sizeof(*curr_pucch));
     }
