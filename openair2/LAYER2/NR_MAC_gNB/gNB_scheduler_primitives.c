@@ -692,7 +692,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
 
   int sps;
-  if (bwp) { // This is not for SIB1
+  if (bwp && *ss->controlResourceSetId!=0) { // This is not for coreset0
     pdcch_pdu->BWPSize  = NRRIV2BW(bwp->locationAndBandwidth, MAX_BWP_SIZE);
     pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->locationAndBandwidth, MAX_BWP_SIZE);
     pdcch_pdu->SubcarrierSpacing = bwp->subcarrierSpacing;
@@ -702,6 +702,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
     sps = bwp->cyclicPrefix == NULL ? 14 : 12;
   }
   else {
+    AssertFatal(type0_PDCCH_CSS_config!=NULL,"type0_PDCCH_CSS_config is null\n");
     pdcch_pdu->BWPSize = type0_PDCCH_CSS_config->num_rbs;
     pdcch_pdu->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
     pdcch_pdu->SubcarrierSpacing = type0_PDCCH_CSS_config->scs_pdcch;
