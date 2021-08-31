@@ -292,8 +292,8 @@ typedef struct {
 
   /// Random-access Contention Resolution Timer active flag
   uint8_t RA_contention_resolution_timer_active;
-  /// Random-access Contention Resolution Timer count value
-  uint8_t RA_contention_resolution_cnt;
+  int RA_contention_resolution_target_frame;
+  int RA_contention_resolution_target_slot;
   /// Transmitted UE Contention Resolution Identifier
   uint8_t cont_res_id[6];
 
