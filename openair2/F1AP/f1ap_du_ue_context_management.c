@@ -40,6 +40,20 @@
 #include "rrc_eNB_UE_context.h"
 #include "openair2/RRC/NR/rrc_gNB_UE_context.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
+
+boolean_t DURecvCb( protocol_ctxt_t  *ctxt_pP,
+  const srb_flag_t     srb_flagP,
+  const rb_id_t        rb_idP,
+  const mui_t          muiP,
+  const confirm_t      confirmP,
+  const sdu_size_t     sdu_buffer_sizeP,
+  unsigned char *const sdu_buffer_pP,
+  const pdcp_transmission_mode_t modeP,
+  const uint32_t *sourceL2Id,
+		    const uint32_t *destinationL2Id) {
+  return true;
+}
 
 int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, rnti_t rntiP);
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
@@ -134,6 +148,18 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
           drb_p->rlc_mode = RLC_MODE_TM;
           break;
       }
+      transport_layer_addr_t addr;
+      memcpy(addr.buffer, &drb_p->up_ul_tnl[0].tl_address, sizeof(drb_p->up_ul_tnl[0].tl_address));
+      addr.length=sizeof(drb_p->up_ul_tnl[0].tl_address)*8;
+      teid_t t=newGtpuCreateTunnel(instance,
+				   f1ap_get_rnti_by_du_id(false, instance, ie->value.choice.GNB_DU_UE_F1AP_ID),
+				   drb_p->drb_id ,
+				   drb_p->drb_id,
+				   drb_p->up_ul_tnl[0].gtp_teid,
+				   addr,
+				   2152,
+				   DURecvCb);
+
     }
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
                                    F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_List, true);
@@ -146,8 +172,8 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     for (i = 0; i < f1ap_ue_context_setup_req->srbs_to_be_setup_length; ++i) {
       f1ap_srb_to_be_setup_t *srb_p = &f1ap_ue_context_setup_req->srbs_to_be_setup[i];
       F1AP_SRBs_ToBeSetup_Item_t *srbs_tobesetup_item_p;
-            srbs_tobesetup_item_p = &((F1AP_SRBs_ToBeSetup_ItemIEs_t *)ie->value.choice.SRBs_ToBeSetup_List.list.array[i])->value.choice.SRBs_ToBeSetup_Item;
-            srb_p->srb_id = srbs_tobesetup_item_p->sRBID;
+      srbs_tobesetup_item_p = &((F1AP_SRBs_ToBeSetup_ItemIEs_t *)ie->value.choice.SRBs_ToBeSetup_List.list.array[i])->value.choice.SRBs_ToBeSetup_Item;
+      srb_p->srb_id = srbs_tobesetup_item_p->sRBID;
     }
   }
 
@@ -198,6 +224,8 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
   } else {
     LOG_E(F1AP, "can't find RRCContainer in UEContextSetupRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
   }
+
+  
 
   itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
 
