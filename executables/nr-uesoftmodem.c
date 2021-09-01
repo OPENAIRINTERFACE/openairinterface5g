@@ -397,17 +397,17 @@ void init_pdcp(int ue_id) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }*/
 
-  if (IS_SOFTMODEM_NOKRNMOD)
+  if (IS_SOFTMODEM_NOKRNMOD) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
-  if(!IS_SOFTMODEM_NOS1) {
-    if (rlc_module_init(0) != 0) {
-      LOG_I(RLC, "Problem at RLC initiation \n");
-    }
   }
-  pdcp_layer_init();
-  nr_pdcp_module_init(pdcp_initmask, ue_id);
-  //nr_DRB_preconfiguration();
-  //pdcp_module_init(pdcp_initmask, 0);
+  if (rlc_module_init(0) != 0) {
+    LOG_I(RLC, "Problem at RLC initiation \n");
+  }
+  if(!IS_SOFTMODEM_NOS1) {
+    pdcp_layer_init();
+    nr_pdcp_module_init(pdcp_initmask, ue_id);
+  }
+
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
 }
