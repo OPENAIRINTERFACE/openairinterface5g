@@ -94,6 +94,7 @@
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 #include <openair2/X2AP/x2ap_eNB.h>
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "BIT_STRING.h"
 #include "assertions.h"
@@ -1356,10 +1357,10 @@ rrc_gNB_process_RRCReconfigurationComplete(
         //create_tunnel_req.outgoing_teid[i] = 0xFFFF;
         create_tunnel_req.outgoing_teid[i] = 0xFFFF;
         create_tunnel_req.rnti = ue_context_pP->ue_context.rnti;
-        LOG_I(NR_RRC,"The DU remote IP address is: %s \n", rrc->eth_params_s.remote_addr);
-        create_tunnel_req.dst_addr[i].buffer[0] = inet_addr(rrc->eth_params_s.remote_addr);
-        //create_tunnel_req.dst_addr[i].length = 32;
-        create_tunnel_req.dst_addr[i].length = 32;
+        in_addr_t tmp_addr = inet_addr(rrc->eth_params_s.remote_addr);
+        memcpy(create_tunnel_req.dst_addr[i].buffer, &tmp_addr, sizeof(tmp_addr));
+        LOG_D(NR_RRC, "The remote tunnel IP address of the DU is: %u.%u.%u.%u \n", create_tunnel_req.dst_addr[i].buffer[0], create_tunnel_req.dst_addr[i].buffer[1],create_tunnel_req.dst_addr[i].buffer[2], create_tunnel_req.dst_addr[i].buffer[3]);
+        create_tunnel_req.dst_addr[i].length = sizeof(tmp_addr)*8;
         create_tunnel_req.incoming_rb_id[i] = DRB_configList->list.array[i]->drb_Identity;
 
         /* Here the callback function used as input is not the right one. Need to create a new one probably for F1-U, not sure

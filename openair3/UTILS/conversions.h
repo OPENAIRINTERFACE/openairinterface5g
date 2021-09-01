@@ -403,7 +403,7 @@ do {                                                    \
     (bITsTRING)->buf[0] = (mACRO) >> 24 & 0xFF;         \
     (bITsTRING)->buf[1] = (mACRO) >> 16 & 0xFF;         \
     (bITsTRING)->buf[2] = (mACRO) >> 8 & 0xFF;          \
-    (bITsTRING)->buf[3] = (mACRO) >> 4 & 0xFF;          \
+    (bITsTRING)->buf[3] = (mACRO) &  0xFF;              \
     (bITsTRING)->size = 4;                              \
     (bITsTRING)->bits_unused = 0;                       \
 } while(0)
