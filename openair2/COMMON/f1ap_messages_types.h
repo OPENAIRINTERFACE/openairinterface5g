@@ -39,6 +39,7 @@
 #define F1AP_INITIAL_UL_RRC_MESSAGE(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_initial_ul_rrc_message
 #define F1AP_UL_RRC_MESSAGE(mSGpTR)                (mSGpTR)->ittiMsg.f1ap_ul_rrc_message
 #define F1AP_UE_CONTEXT_SETUP_REQ(mSGpTR)          (mSGpTR)->ittiMsg.f1ap_ue_context_setup_req
+#define F1AP_UE_CONTEXT_SETUP_RESP(mSGpTR)          (mSGpTR)->ittiMsg.f1ap_ue_context_setup_resp
 #define F1AP_UE_CONTEXT_RELEASE_RESP(mSGpTR)       (mSGpTR)->ittiMsg.f1ap_ue_context_release_resp
 #define F1AP_UE_CONTEXT_MODIFICATION_RESP(mSGpTR)  (mSGpTR)->ittiMsg.f1ap_ue_context_modification_resp
 #define F1AP_UE_CONTEXT_MODIFICATION_FAIL(mSGpTR)  (mSGpTR)->ittiMsg.f1ap_ue_context_modification_fail
@@ -354,6 +355,18 @@ typedef struct f1ap_ue_context_setup_req_s {
   uint8_t *rrc_container;
   int      rrc_container_length;
 } f1ap_ue_context_setup_req_t;
+
+typedef struct f1ap_ue_context_setup_resp_s {
+  uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
+  uint32_t gNB_DU_ue_id;
+  uint16_t rnti;
+  uint8_t  du_to_cu_rrc_information[1024 /*Arbitrarily big enough*/];
+  uint32_t  du_to_cu_rrc_information_length;
+  f1ap_drb_to_be_setup_t *drbs_setup; // BK: need to replace by s1ap_initial_context_setup_req
+  uint8_t  drbs_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
+  f1ap_srb_to_be_setup_t *srbs_setup;
+  uint8_t  srbs_setup_length;
+} f1ap_ue_context_setup_resp_t;
 
 typedef enum F1ap_Cause_e {
   F1AP_CAUSE_NOTHING,  /* No components present */
