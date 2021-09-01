@@ -283,12 +283,13 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
   NR_BWP_DownlinkDedicated_t *bwpd;
 
-  ps->mcsTableIdx = 0;
-  if (bwp &&
-      bwp->bwp_Dedicated &&
-      bwp->bwp_Dedicated) bwpd = bwp->bwp_Dedicated;
-  else bwpd = bwpd0;
+  if (bwp && bwp->bwp_Dedicated) {
+    bwpd = bwp->bwp_Dedicated;
+  } else {
+    bwpd = (NR_BWP_DownlinkDedicated_t*)bwpd0;
+  }
 
+  ps->mcsTableIdx = 0;
   if (bwpd->pdsch_Config &&
       bwpd->pdsch_Config->choice.setup &&
       bwpd->pdsch_Config->choice.setup->mcs_Table) {

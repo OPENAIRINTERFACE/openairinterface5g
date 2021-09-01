@@ -109,14 +109,12 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
   PHY_MEASUREMENTS_gNB *measurements = &gNB->measurements;
   int rb, offset, offset0, nb_symb[275], len;
   int32_t *ul_ch;
-  int32_t n0_power_tot[275];
 
   LOG_D(PHY,"slot %d Doing I0 for first_symb %d, num_symb %d\n",slot,first_symb,num_symb);
   for (int s=first_symb;s<(first_symb+num_symb);s++) {
     for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
 
-      if (s==first_symb) { 
-        n0_power_tot[rb]=0;
+      if (s==first_symb) {
         nb_symb[rb]=0;
       }
       offset0 = (slot&3)*(frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size) + (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;

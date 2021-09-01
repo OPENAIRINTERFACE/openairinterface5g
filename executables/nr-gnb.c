@@ -87,6 +87,7 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include <nfapi/oai_integration/nfapi_pnf.h>
 #include <openair1/PHY/NR_TRANSPORT/nr_ulsch.h>
+#include <openair1/PHY/NR_TRANSPORT/nr_dlsch.h>
 #include <PHY/NR_ESTIMATION/nr_ul_estimation.h>
 //#define DEBUG_THREADS 1
 

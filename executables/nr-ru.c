@@ -1241,7 +1241,6 @@ void *ru_thread( void *param ) {
   int                slot     = fp->slots_per_frame-1;
   int                frame    = 1023;
   char               threadname[40];
-  int                aa;
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
   // set default return value
   ru_thread_status = 0;
@@ -1367,7 +1366,7 @@ void *ru_thread( void *param ) {
 /*
         LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
 
-        for (aa=0; aa<ru->nb_rx; aa++)
+        for (int aa=0; aa<ru->nb_rx; aa++)
           memcpy((void *)RC.gNB[0]->common_vars.rxdataF[aa],
                  (void *)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
 */

@@ -591,10 +591,6 @@ void pf_dl(module_id_t module_id,
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
-    NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
-    NR_BWP_DownlinkDedicated_t *bwpd= cg ? cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP:NULL;
-
-
     /* Calculate Throughput */
     const float a = 0.0005f; // corresponds to 200ms window
     const uint32_t b = UE_info->mac_stats[UE_id].dlsch_current_bytes;
