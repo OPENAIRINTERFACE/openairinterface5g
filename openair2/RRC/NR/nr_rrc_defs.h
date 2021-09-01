@@ -447,8 +447,7 @@ typedef struct {
   int sib1_tda;
   int pdsch_AntennaPorts;
   int pusch_AntennaPorts;
-  int pusch_TargetSNRx10;
-  int pucch_TargetSNRx10;
+  int minRXTXTIMEpdsch;
   int do_CSIRS;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;

@@ -332,6 +332,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
   rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
+  rrc->carrier.minRXTXTIMEpdsch = configuration->minRXTXTIMEpdsch;
   rrc->carrier.sib1_tda = configuration->sib1_tda;
   rrc->carrier.do_CSIRS = configuration->do_CSIRS;
    /// System Information INIT
@@ -444,17 +445,18 @@ rrc_gNB_generate_RRCSetup(
   //   T_INT(ctxt_pP->subframe),
   //   T_INT(ctxt_pP->rnti));
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
 						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
 						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
 						  masterCellGroup_from_DU,
-						  scc);
+						  scc,&rrc->carrier);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
               ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRC Setup\n");
-  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+
   switch (rrc->node_type) {
     case ngran_gNB_CU:
       // create an ITTI message
@@ -567,7 +569,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
 						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
 						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
 						  NULL,
-						  scc);
+						  scc,&rrc_instance_p->carrier);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),

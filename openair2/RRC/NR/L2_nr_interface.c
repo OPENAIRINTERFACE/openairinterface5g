@@ -325,7 +325,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
     NR_ServingCellConfigCommon_t *scc=RC.nrrrc[module_idP]->carrier.servingcellconfigcommon;
     uint8_t sdu2[100];
     memset(&cellGroupConfig,0,sizeof(cellGroupConfig));
-    fill_initial_cellGroupConfig(rntiP,&cellGroupConfig,scc);
+    fill_initial_cellGroupConfig(rntiP,&cellGroupConfig,scc,&RC.nrrrc[module_idP]->carrier);
     asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
 						    NULL,
 						    (void *)&cellGroupConfig,

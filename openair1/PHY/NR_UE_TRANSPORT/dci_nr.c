@@ -823,6 +823,14 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   LOG_D(PHY,"we end nr_pdcch_unscrambling()\n");
   LOG_D(PHY,"Ending nr_rx_pdcch() function\n");
 
+  if (rel15->rnti!=0xFFFF && slot == 7) {
+     LOG_M("pdcch_rxdataF0.m","rxdataF0",common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0],2048*14,1,1);
+     LOG_M("pdcch_chestF_ext0.m","rxdataF_comp0",pdcch_vars->dl_ch_estimates_ext[0],n_rb*12,1,1);
+     LOG_M("pdcch_rxdataF_ext0.m","rxdataF_ext0",pdcch_vars->rxdataF_ext[0],n_rb*12,1,1);
+     LOG_M("pdcch_rxdataF_comp0.m","rxdataF_comp0",pdcch_vars->rxdataF_comp[0],n_rb*12,1,1);
+     LOG_M("slot7rxsig.m","s7rxs",&ue->common_vars.rxdata[0][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],30720,1,1);
+     exit(-1);
+  }
   return (0);
 }
 

@@ -702,7 +702,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
     sps = bwp->cyclicPrefix == NULL ? 14 : 12;
   }
   else {
-    AssertFatal(type0_PDCCH_CSS_config!=NULL,"type0_PDCCH_CSS_config is null\n");
+    AssertFatal(type0_PDCCH_CSS_config!=NULL,"type0_PDCCH_CSS_config is null,bwp %p\n",bwp);
     pdcch_pdu->BWPSize = type0_PDCCH_CSS_config->num_rbs;
     pdcch_pdu->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
     pdcch_pdu->SubcarrierSpacing = type0_PDCCH_CSS_config->scs_pdcch;

@@ -743,7 +743,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   if (UE_info->num_UEs == 0)
     return;
 
-  if (slot!=11) return;
+  if (slot!=1) return;
 
   const int CC_id = 0;
 
@@ -886,10 +886,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(NR_MAC,
-          "%4d.%2d [DLSCH/PDSCH/PUCCH] RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
+    LOG_I(NR_MAC,
+          "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
           frame,
           slot,
+          UE_id,
           rnti,
           sched_pdsch->rbStart,
           sched_pdsch->rbSize,
@@ -925,7 +926,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      LOG_D(NR_MAC,"Trying to configure DL pdcch for bwp %d, cs %d\n",bwpid,coresetid);
+      LOG_I(NR_MAC,"Trying to configure DL pdcch for UE %d, bwp %d, cs %d\n",UE_id,bwpid,coresetid);
       NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space:gNB_mac->sched_ctrlCommon->search_space;
       NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
       nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, genericParameters, NULL);

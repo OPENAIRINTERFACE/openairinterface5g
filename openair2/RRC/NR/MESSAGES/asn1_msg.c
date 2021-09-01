@@ -437,7 +437,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   LOG_I(NR_RRC,"SIB1 freq: absoluteFrequencySSB %ld, absoluteFrequencyPointA %ld\n",
                                     *configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
                                     configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
-  LOG_I(NR_RRC,"SIB1 freq: absolute_diff %d, %d*(absolute_diff/(12*%d) - 10) %d\n",absolute_diff,scs_scaling2,scs_scaling,sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA);
+  LOG_I(NR_RRC,"SIB1 freq: absolute_diff %d, %d*(absolute_diff/(12*%d) - 10) %d\n",absolute_diff,scs_scaling2,scs_scaling,(int)sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA);
 
   for(int i = 0; i< configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.count; i++) {
     ASN_SEQUENCE_ADD(&sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list,configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[i]);
@@ -997,7 +997,8 @@ uint8_t do_RRCReject(uint8_t Mod_id,
 
 void fill_initial_SpCellConfig(rnti_t rnti,
 			       NR_SpCellConfig_t *SpCellConfig,
-			       NR_ServingCellConfigCommon_t *scc) {
+			       NR_ServingCellConfigCommon_t *scc,
+                               rrc_gNB_carrier_data_t *carrier) {
 
   SpCellConfig->servCellIndex = NULL;
   SpCellConfig->reconfigurationWithSync = NULL;
@@ -1193,7 +1194,9 @@ void fill_initial_SpCellConfig(rnti_t rnti,
  long *delay[8];
  for (int i=0;i<8;i++) {
    delay[i] = calloc(1,sizeof(*delay[i]));
-   *delay[i] = (i+2/*+4*/);
+   AssertFatal(carrier->minRXTXTIMEpdsch >=2 && carrier->minRXTXTIMEpdsch <7,
+               "check minRXTXTIMEpdsch %d\n",carrier->minRXTXTIMEpdsch);
+   *delay[i] = (i+carrier->minRXTXTIMEpdsch);
    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
  }
 
@@ -1402,7 +1405,8 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
 
 void fill_initial_cellGroupConfig(rnti_t rnti,
 				  NR_CellGroupConfig_t *cellGroupConfig,
-				  NR_ServingCellConfigCommon_t *scc) {
+				  NR_ServingCellConfigCommon_t *scc,
+                                  rrc_gNB_carrier_data_t *carrier) {
 
   NR_RLC_BearerConfig_t                            *rlc_BearerConfig     = NULL;
   NR_RLC_Config_t                                  *rlc_Config           = NULL;
@@ -1493,7 +1497,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   
   cellGroupConfig->spCellConfig                                             = calloc(1,sizeof(*cellGroupConfig->spCellConfig));
   
-  fill_initial_SpCellConfig(rnti,cellGroupConfig->spCellConfig,scc);
+  fill_initial_SpCellConfig(rnti,cellGroupConfig->spCellConfig,scc,carrier);
   
   cellGroupConfig->sCellToAddModList                                        = NULL;
   cellGroupConfig->sCellToReleaseList                                       = NULL;
@@ -1504,7 +1508,8 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
                     uint8_t                      *const buffer,
                     const uint8_t                transaction_id,
 		    OCTET_STRING_t               *masterCellGroup_from_DU,
-		    NR_ServingCellConfigCommon_t *scc)
+		    NR_ServingCellConfigCommon_t *scc,
+                    rrc_gNB_carrier_data_t *carrier)
 //------------------------------------------------------------------------------
 {
     asn_enc_rval_t                                   enc_rval;
@@ -1571,7 +1576,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
     }
     else {
       cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-      fill_initial_cellGroupConfig(ue_context_pP->ue_context.rnti,cellGroupConfig,scc);
+      fill_initial_cellGroupConfig(ue_context_pP->ue_context.rnti,cellGroupConfig,scc,carrier);
 
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
 				       NULL,

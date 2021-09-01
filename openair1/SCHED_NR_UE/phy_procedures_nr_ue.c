@@ -1682,7 +1682,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
-  LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_slot_rx);
+  LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d (energy %d dB)******  \n", 
+        frame_rx%1024, nr_slot_rx,
+        dB_fixed(signal_energy(ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0],2048*14)));
 
   /*
   uint8_t next1_thread_id = proc->thread_id== (RX_NB_TH-1) ? 0:(proc->thread_id+1);
