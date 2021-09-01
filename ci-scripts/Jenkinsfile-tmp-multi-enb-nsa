@@ -24,6 +24,7 @@
 
 // Location of the python executor node shall be in the same subnet as the others servers
 def pythonExecutor = params.pythonExecutor
+def DataBaseHost = params.DataBaseHost
 
 // Location of the test XML file to be run
 def testXMLFile = params.pythonTestXmlFile
@@ -45,15 +46,20 @@ def eNB_CommitID
 def eNB_AllowMergeRequestProcess
 def eNB_TargetBranch
 
+//Status fed to the database
+def StatusForDb = ""
+
+
 pipeline {
-    agent {
-        label pythonExecutor
-    }
+    agent none
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
         lock(extra: [[resource: ciSmartPhonesResource2]], resource: ciSmartPhonesResource1)
     }
+    stages {
+    stage ("Py Exec"){
+    agent {label pythonExecutor}
     stages {
         stage("Build Init") {
             steps {
@@ -273,9 +279,31 @@ pipeline {
             }
         }
     }
+    }
+    
+
+    stage ("DB Host"){
+    agent {label DataBaseHost}
+    stages {
+        stage("SQL Collect ") {
+            steps {
+                script {
+                    if (currentBuild.result=='FAILURE') {StatusForDb = 'FAIL'} else {StatusForDb = 'PASS'}
+                    echo "${env.BUILD_URL}"
+                    echo "${env.BUILD_ID}"
+                    echo "${JOB_NAME}"
+                    sh "python3 /home/oaicicd/sql_connect.py ${params.eNB_MR} ${params.eNB_Branch} ${StatusForDb} ''"
+                }
+            }
+        }
+    }
+    }
+
+    }
 
     post {
         always {
+        node(pythonExecutor){
             script {
                 if (params.pipelineZipsConsoleLog != null) {
                     if (params.pipelineZipsConsoleLog) {
@@ -288,6 +316,7 @@ pipeline {
                     }
                 }
             }
+        }
         }
     }
 }
