@@ -65,7 +65,6 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
   F1AP_UEContextSetupRequestIEs_t *ie;
   int i;
   DevAssert(pdu);
-  LOG_E(F1AP, "DU_handle_UE_CONTEXT_SETUP_REQUEST() fills a ITTI message F1AP_UE_CONTEXT_SETUP_REQ but it never sends it\n");
   msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_SETUP_REQ);
   f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req = &F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
   container = &pdu->choice.initiatingMessage->value.choice.UEContextSetupRequest;
@@ -151,8 +150,11 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       transport_layer_addr_t addr;
       memcpy(addr.buffer, &drb_p->up_ul_tnl[0].tl_address, sizeof(drb_p->up_ul_tnl[0].tl_address));
       addr.length=sizeof(drb_p->up_ul_tnl[0].tl_address)*8;
+      rnti_t ue_rnti = (f1ap_ue_context_setup_req->gNB_DU_ue_id!=NULL) ?
+          f1ap_get_rnti_by_du_id(false, instance, *f1ap_ue_context_setup_req->gNB_DU_ue_id):
+          f1ap_get_rnti_by_cu_id(false, instance, f1ap_ue_context_setup_req->gNB_CU_ue_id);
       teid_t t=newGtpuCreateTunnel(instance,
-				   f1ap_get_rnti_by_du_id(false, instance, ie->value.choice.GNB_DU_UE_F1AP_ID),
+                                   ue_rnti,
 				   drb_p->drb_id ,
 				   drb_p->drb_id,
 				   drb_p->up_ul_tnl[0].gtp_teid,
