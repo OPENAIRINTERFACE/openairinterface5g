@@ -1113,7 +1113,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_payload.mcs = pdsch_pdu_rel15->mcsIndex[0];
     dci_payload.tb_scaling = tb_scaling;
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
           dci_payload.frequency_domain_assignment.val,
           pdsch_pdu_rel15->rbStart,
@@ -1721,7 +1721,7 @@ void nr_fill_rar(uint8_t Mod_idP,
   // TC-RNTI
   int t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
 
-  LOG_I(NR_MAC, "In %s: Transmitted RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
+  LOG_D(NR_MAC, "In %s: Transmitted RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
         __FUNCTION__,
         Msg3_t_alloc,
         Msg3_f_alloc,

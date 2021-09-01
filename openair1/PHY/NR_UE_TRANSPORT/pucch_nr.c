@@ -116,9 +116,9 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                                     pucch_pdu->mcs,l,
                                     pucch_pdu->start_symbol_index,
                                     nr_slot_tx);
-//#ifdef DEBUG_NR_PUCCH_TX
+#ifdef DEBUG_NR_PUCCH_TX
     printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u[l],v[l],alpha,l);
-//#endif
+#endif
 
     for (int n=0; n<12; n++) {
       x_n_re[l][n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u[l]][n])>>15)

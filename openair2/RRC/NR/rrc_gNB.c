@@ -3226,7 +3226,7 @@ void *rrc_gnb_task(void *args_p) {
                                       NR_RRC_DCCH_DATA_IND(msg_p).rnti,
                                       msg_p->ittiMsgHeader.lte_time.frame,
                                       msg_p->ittiMsgHeader.lte_time.slot);
-        LOG_I(NR_RRC,"Decoding DCCH : ue %d, inst %ld, ctxt %p, size %d\n",
+        LOG_D(NR_RRC,"Decoding DCCH : ue %d, inst %ld, ctxt %p, size %d\n",
                 ctxt.rnti,
                 instance,
                 &ctxt,

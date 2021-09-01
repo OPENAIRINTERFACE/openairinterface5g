@@ -1138,7 +1138,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // Time domain assignment
       pos += 4;
       *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment.val & 0xf) << (dci_size - pos));
-      LOG_I(NR_MAC,
+      LOG_D(NR_MAC,
             "time-domain assignment %d  (4 bits)=> %d (0x%lx)\n",
             dci_pdu_rel15->time_domain_assignment.val,
             dci_size - pos,
@@ -1146,7 +1146,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // VRB to PRB mapping
       pos++;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val & 0x1) << (dci_size - pos);
-      LOG_I(NR_MAC,
+      LOG_D(NR_MAC,
             "vrb to prb mapping %d  (1 bits)=> %d (0x%lx)\n",
             dci_pdu_rel15->vrb_to_prb_mapping.val,
             dci_size - pos,
@@ -1154,11 +1154,11 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // MCS
       pos += 5;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->mcs & 0x1f) << (dci_size - pos);
-      LOG_I(NR_MAC, "mcs %d  (5 bits)=> %d (0x%lx)\n", dci_pdu_rel15->mcs, dci_size - pos, *dci_pdu);
+      LOG_D(NR_MAC, "mcs %d  (5 bits)=> %d (0x%lx)\n", dci_pdu_rel15->mcs, dci_size - pos, *dci_pdu);
       // TB scaling
       pos += 2;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->tb_scaling & 0x3) << (dci_size - pos);
-      LOG_I(NR_MAC, "tb_scaling %d  (2 bits)=> %d (0x%lx)\n", dci_pdu_rel15->tb_scaling, dci_size - pos, *dci_pdu);
+      LOG_D(NR_MAC, "tb_scaling %d  (2 bits)=> %d (0x%lx)\n", dci_pdu_rel15->tb_scaling, dci_size - pos, *dci_pdu);
       break;
 
     case NR_RNTI_C:
