@@ -300,10 +300,10 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   NR_Sched_Rsp_t   *sched_info = &NR_Sched_INFO[module_id][CC_id];
   NR_IF_Module_t   *ifi        = nr_if_inst[module_id];
   gNB_MAC_INST     *mac        = RC.nrmac[module_id];
-  LOG_D(NR_PHY,"SFN/SLOT:%d.%d module_id:%d CC_id:%d UL_info[rach_pdus:%d rx_ind:%d crcs:%d]\n",
+  LOG_D(NR_PHY,"SFN/SLOT:%d.%d module_id:%d CC_id:%d UL_info[rach_pdus:%zu rx_ind:%zu crcs:%zu]\n",
         UL_info->frame,UL_info->slot,
-        module_id,CC_id, UL_info->rach_ind.number_of_pdus,
-        UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
+        module_id,CC_id, gnb_rach_ind_queue.num_items,
+        gnb_rx_ind_queue.num_items, gnb_crc_ind_queue.num_items);
 
   if (NFAPI_MODE != NFAPI_MODE_PNF) {
 
