@@ -86,7 +86,7 @@ class gtpEndPoints {
 gtpEndPoints globGtp;
 
 // note TEid 0 is reserved for specific usage: echo req/resp, error and supported extensions
-static  uint32_t gtpv1uNewTeid(void) {
+static  teid_t gtpv1uNewTeid(void) {
 #ifdef GTPV1U_LINEAR_TEID_ALLOCATION
   g_gtpv1u_teid = g_gtpv1u_teid + 1;
   return g_gtpv1u_teid;
@@ -400,7 +400,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
     inst->ue2te_mapping.erase(it);
   }
 
-  uint32_t incoming_teid=gtpv1uNewTeid();
+  teid_t incoming_teid=gtpv1uNewTeid();
 
   while ( inst->te2ue_mapping.find(incoming_teid) != inst->te2ue_mapping.end() ) {
     LOG_W(GTPU, "generated a random Teid that exists, re-generating (%x)\n",incoming_teid);
