@@ -738,11 +738,11 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 }
 
 void nr_dlsch_deinterleaving(uint8_t symbol,
-							uint8_t start_symbol,
-							uint16_t L,
-							uint16_t *llr,
-							uint16_t *llr_deint,
-							uint16_t nb_rb_pdsch)
+                             uint8_t start_symbol,
+                             uint16_t L,
+                             uint16_t *llr,
+                             uint16_t *llr_deint,
+                             uint16_t nb_rb_pdsch)
 {
 
   uint32_t bundle_idx, N_bundle, R, C, r,c;

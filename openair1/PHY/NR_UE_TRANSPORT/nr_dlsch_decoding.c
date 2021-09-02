@@ -327,7 +327,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   dlsch->last_iteration_cnt = ret;
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, dmrs_length, harq_process->Qm,harq_process->Nl);
   G = harq_process->G;
-  LOG_D(PHY,"DLSCH Decoding, harq_pid %d TBS %d (%d) G %d nb_re_dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,A/8,G, nb_re_dmrs,harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
+
+  LOG_D(PHY,"DLSCH Decoding, harq_pid %d TBS %d (%d) G %d nb_re_dmrs %d length dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",
+        harq_pid,A,A/8,G, nb_re_dmrs, dmrs_length, harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
 
   if ((harq_process->R)<1024)
     Coderate = (float) (harq_process->R) /(float) 1024;

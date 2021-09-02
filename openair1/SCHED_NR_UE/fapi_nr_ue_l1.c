@@ -78,6 +78,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           fapi_nr_dl_config_dci_dl_pdu_rel15_t *pdcch_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
           memcpy((void*)&pdcch_vars->pdcch_config[pdcch_vars->nb_search_space],(void*)pdcch_config,sizeof(*pdcch_config));
           pdcch_vars->nb_search_space = pdcch_vars->nb_search_space + 1;
+          pdcch_vars->sfn = scheduled_response->frame;
+          pdcch_vars->slot = slot;
           LOG_D(PHY,"Number of DCI SearchSpaces %d\n",pdcch_vars->nb_search_space);
 
         } else {
