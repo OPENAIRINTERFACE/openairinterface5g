@@ -454,10 +454,11 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   if (IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN) {
     LOG_D(PDCP, "IP packet received, to be sent to TUN interface");
 
-    /* We are removing the instance ID from the buffer. TUN interfaces
-       care about the actual data we are sending. If we do not remove
-       the instance ID from the buffer, it will start with 00, and the
-       write will fail with errno = 22 (EINVAL) */
+    /* In 5G there is a new layer called SDAP which adds one byte
+       to the PDU data. TUN interfaces care about the actual data
+       we are sending. If we do not remove the instance ID from
+       the buffer, it will start with 00, and the write will fail
+       with errno = 22 (EINVAL) */
     char *data_buffer = buf + 1;
     int size_to_write = size - 1;
 
