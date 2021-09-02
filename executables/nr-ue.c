@@ -136,10 +136,9 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
 
 void init_nrUE_standalone_thread(int ue_idx)
 {
-  const char *standalone_addr = "127.0.0.1";
   int standalone_tx_port = 3611 + ue_idx * 2;
   int standalone_rx_port = 3612 + ue_idx * 2;
-  nrue_init_standalone_socket(standalone_addr, standalone_tx_port, standalone_rx_port);
+  nrue_init_standalone_socket(standalone_tx_port, standalone_rx_port);
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   pthread_mutex_init(&mac->mutex_dl_info, NULL);

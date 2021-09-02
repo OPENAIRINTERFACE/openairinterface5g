@@ -75,6 +75,7 @@ extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][NUM_NFAPI_SUBFRAME][10]; //T
 extern UE_RRC_INST *UE_rrc_inst;
 extern uint16_t sf_ahead;
 
+static eth_params_t         stub_eth_params;
 void Msg1_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 void Msg3_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 
@@ -1147,7 +1148,6 @@ void UE_config_stub_pnf(void) {
   int j;
   paramdef_t L1_Params[] = L1PARAMS_DESC;
   paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST, NULL, 0};
-  eth_params_t         stub_eth_params;
 
   config_getlist(&L1_ParamList, L1_Params, sizeof(L1_Params) / sizeof(paramdef_t), NULL);
   if (L1_ParamList.numelt > 0) {
@@ -1179,6 +1179,9 @@ void UE_config_stub_pnf(void) {
             *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTD_IDX].iptr);
         stub_eth_params.transp_preference = ETH_UDP_MODE;
 
+        if (NFAPI_MODE!=NFAPI_UE_STUB_PNF)
+          continue;
+
         sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
         // configure_nfapi_pnf(UE_mac_inst[0].eth_params_n.remote_addr,
         // UE_mac_inst[0].eth_params_n.remote_portc,
@@ -1195,7 +1198,7 @@ void UE_config_stub_pnf(void) {
   }
 }
 
-void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
+void ue_init_standalone_socket(int tx_port, int rx_port)
 {
   {
     struct sockaddr_in server_address;
@@ -1211,7 +1214,7 @@ void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
       return;
     }
 
-    if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0)
+    if (inet_pton(server_address.sin_family, stub_eth_params.remote_addr, &server_address.sin_addr) <= 0)
     {
       LOG_E(MAC, "Invalid standalone PNF Address\n");
       close(sd);
@@ -1234,19 +1237,13 @@ void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
     int addr_len = sizeof(server_address);
     memset(&server_address, 0, addr_len);
     server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = INADDR_ANY;
     server_address.sin_port = htons(rx_port);
 
     int sd = socket(server_address.sin_family, SOCK_DGRAM, 0);
     if (sd < 0)
     {
       LOG_E(MAC, "Socket creation error standalone PNF\n");
-      return;
-    }
-
-    if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0)
-    {
-      LOG_E(MAC, "Invalid standalone PNF Address\n");
-      close(sd);
       return;
     }
 
