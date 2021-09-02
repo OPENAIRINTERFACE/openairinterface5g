@@ -462,8 +462,8 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
     char *data_buffer = buf;
     int size_to_write = size;
     if (buf[0] == 0) {
-        char *data_buffer = buf + 1;
-        int size_to_write = size - 1;
+        data_buffer = buf + 1;
+        size_to_write = size - 1;
     }
 
 
