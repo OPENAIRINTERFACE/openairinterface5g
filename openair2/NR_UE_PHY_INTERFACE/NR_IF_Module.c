@@ -38,21 +38,23 @@
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 #include "executables/softmodem-common.h"
 #include "openair2/RRC/NR_UE/rrc_proto.h"
-
+#include "openair2/GNB_APP/L1_nr_paramdef.h"
+#include "openair2/GNB_APP/gnb_paramdef.h"
+#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include <stdio.h>
 
 #define MAX_IF_MODULES 100
 
 UL_IND_t *UL_INFO = NULL;
 
-
+static eth_params_t         stub_eth_params;
 static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
 static int ue_tx_sock_descriptor = -1;
 static int ue_rx_sock_descriptor = -1;
 int current_sfn_slot;
 sem_t sfn_slot_semaphore;
 
-void nrue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
+void nrue_init_standalone_socket(int tx_port, int rx_port)
 {
   {
     struct sockaddr_in server_address;
@@ -68,7 +70,7 @@ void nrue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
       return;
     }
 
-    if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0)
+    if (inet_pton(server_address.sin_family, stub_eth_params.remote_addr, &server_address.sin_addr) <= 0)
     {
       LOG_E(MAC, "Invalid standalone PNF Address\n");
       close(sd);
@@ -92,19 +94,13 @@ void nrue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
     int addr_len = sizeof(server_address);
     memset(&server_address, 0, addr_len);
     server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = INADDR_ANY;
     server_address.sin_port = htons(rx_port);
 
     int sd = socket(server_address.sin_family, SOCK_DGRAM, 0);
     if (sd < 0)
     {
       LOG_E(MAC, "Socket creation error standalone PNF\n");
-      return;
-    }
-
-    if (inet_pton(server_address.sin_family, addr, &server_address.sin_addr) <= 0)
-    {
-      LOG_E(MAC, "Invalid standalone PNF Address\n");
-      close(sd);
       return;
     }
 
@@ -119,7 +115,7 @@ void nrue_init_standalone_socket(const char *addr, int tx_port, int rx_port)
     LOG_D(NR_RRC, "Sucessfully set up rx_socket in %s.\n", __FUNCTION__);
   }
   LOG_I(NR_RRC, "NRUE standalone socket info: tx_port %d  rx_port %d on %s.\n",
-        tx_port, rx_port, addr);
+        tx_port, rx_port, stub_eth_params.remote_addr);
 }
 
 void send_nsa_standalone_msg(NR_UL_IND_t *UL_INFO, uint16_t msg_id)
@@ -947,4 +943,33 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   ue_dci_configuration(UE_mac, dl_config, dcireq->frame, dcireq->slot);
 
   return 0;
+}
+
+void RCconfig_nr_ue_L1(void) {
+  int j;
+  paramdef_t L1_Params[] = L1PARAMS_DESC;
+  paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST, NULL, 0};
+
+  config_getlist(&L1_ParamList, L1_Params, sizeof(L1_Params) / sizeof(paramdef_t), NULL);
+  if (L1_ParamList.numelt > 0) {
+    for (j = 0; j < L1_ParamList.numelt; j++) {
+      if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
+        stub_eth_params.local_if_name = strdup(
+            *(L1_ParamList.paramarray[j][L1_LOCAL_N_IF_NAME_IDX].strptr));
+        stub_eth_params.my_addr = strdup(
+            *(L1_ParamList.paramarray[j][L1_LOCAL_N_ADDRESS_IDX].strptr));
+        stub_eth_params.remote_addr = strdup(
+            *(L1_ParamList.paramarray[j][L1_REMOTE_N_ADDRESS_IDX].strptr));
+        stub_eth_params.my_portc =
+            *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTC_IDX].iptr);
+        stub_eth_params.remote_portc =
+            *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTC_IDX].iptr);
+        stub_eth_params.my_portd =
+            *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTD_IDX].iptr);
+        stub_eth_params.remote_portd =
+            *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTD_IDX].iptr);
+        stub_eth_params.transp_preference = ETH_UDP_MODE;
+      }
+    }
+  }
 }

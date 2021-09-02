@@ -182,7 +182,7 @@ void *memcpy_tx_req_standalone(nfapi_tx_request_t *tx_req);
 void *memcpy_dl_config_req_standalone(nfapi_dl_config_request_t *dl_config_req);
 
 // open an SCTP socket with a standalone PNF module
-void ue_init_standalone_socket(const char *addr, int tx_port, int rx_port);
+void ue_init_standalone_socket(int tx_port, int rx_port);
 
 // read from standalone pnf socket call corresponding memcpy functions
 void *ue_standalone_pnf_task(void *context);

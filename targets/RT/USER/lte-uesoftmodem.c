@@ -727,7 +727,7 @@ int main( int argc, char **argv ) {
     exit(-1); // need a softer mode
   }
 
-  if (NFAPI_MODE==NFAPI_UE_STUB_PNF) { // UE-STUB-PNF
+  if (NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) { // UE-STUB-PNF
     UE_config_stub_pnf();
   }
 
