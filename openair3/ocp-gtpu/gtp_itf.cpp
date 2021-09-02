@@ -139,10 +139,11 @@ static  int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, te
   to.sin_addr.s_addr = peerIp ;
   LOG_D(GTPU,"sending packet size: %d to %s\n",fullSize, inet_ntoa(to.sin_addr) );
 
-  if (sendto(h, (void *)buffer, (size_t)fullSize, 0,(struct sockaddr *)&to, sizeof(to) ) != fullSize ) {
+  int ret;
+  if ((ret=sendto(h, (void *)buffer, (size_t)fullSize, 0,(struct sockaddr *)&to, sizeof(to) )) != fullSize ) {
     LOG_E(GTPU,
-          "[SD %d] Failed to send data to " IPV4_ADDR " on port %d, buffer size %u\n",
-          h, IPV4_ADDR_FORMAT(peerIp), peerPort, fullSize);
+          "[SD %d] Failed to send data to " IPV4_ADDR " on port %d, buffer size %u, ret: %d, errno: %d\n",
+          h, IPV4_ADDR_FORMAT(peerIp), peerPort, fullSize, ret, errno);
     free(buffer);
     return GTPNOK;
   }
@@ -390,6 +391,7 @@ instance_t ocp_gtpv1Init(openAddr_t context) {
 teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_bearer_id, teid_t outgoing_teid,
                            transport_layer_addr_t remoteAddr, int port, gtpCallback callBack) {
   pthread_mutex_lock(&globGtp.gtp_lock);
+  instance=compatInst(instance);
   auto inst=&globGtp.instances[instance];
   auto it=inst->ue2te_mapping.find(rnti);
 
@@ -465,7 +467,7 @@ int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
                 "From legacy code not clear, seems impossible (bearer=%d)\n",
                 create_tunnel_req->eps_bearer_id[i]);
     int incoming_rb_id=create_tunnel_req->eps_bearer_id[i]-4;
-    teid_t teid=newGtpuCreateTunnel(compatInst(instance), create_tunnel_req->rnti,
+    teid_t teid=newGtpuCreateTunnel(instance, create_tunnel_req->rnti,
                                     incoming_rb_id,
                                     create_tunnel_req->eps_bearer_id[i],
                                     create_tunnel_req->sgw_S1u_teid[i],
@@ -527,7 +529,7 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
         create_tunnel_req->outgoing_teid[0]);
 
   for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
-    teid_t teid=newGtpuCreateTunnel(compatInst(instance), create_tunnel_req->rnti,
+    teid_t teid=newGtpuCreateTunnel(instance, create_tunnel_req->rnti,
                                     create_tunnel_req->incoming_rb_id[i],
                                     create_tunnel_req->pdusession_id[i],
                                     create_tunnel_req->outgoing_teid[i],

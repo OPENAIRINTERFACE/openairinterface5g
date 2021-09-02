@@ -240,6 +240,8 @@ void *gNB_app_task(void *args_p)
       RCconfig_NR_DU_F1(msg_p, 0);
       
       itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(0), msg_p);
+      //start F1-U
+      RCconfig_nr_gtpu(); 
     }
   }
   do {

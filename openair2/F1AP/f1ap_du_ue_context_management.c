@@ -153,7 +153,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       rnti_t ue_rnti = (f1ap_ue_context_setup_req->gNB_DU_ue_id!=NULL) ?
           f1ap_get_rnti_by_du_id(false, instance, *f1ap_ue_context_setup_req->gNB_DU_ue_id):
           f1ap_get_rnti_by_cu_id(false, instance, f1ap_ue_context_setup_req->gNB_CU_ue_id);
-      teid_t t=newGtpuCreateTunnel(instance,
+      teid_t t=newGtpuCreateTunnel(INSTANCE_DEFAULT,
                                    ue_rnti,
 				   drb_p->drb_id ,
 				   drb_p->drb_id,
