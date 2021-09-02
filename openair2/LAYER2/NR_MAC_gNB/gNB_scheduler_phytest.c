@@ -56,7 +56,7 @@
 //#define UL_HARQ_PRINT
 extern RAN_CONTEXT_t RC;
 
-const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
+const uint8_t nr_rv_round_map[4] = {0, 2, 3, 1}; 
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
 //uint8_t mac_pdu[MAX_NR_DLSCH_PAYLOAD_BYTES];
@@ -166,10 +166,10 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
     pdsch_pdu_rel15->NrOfSymbols      = NrOfSymbols;
     pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL,
-						    scc->dmrs_TypeA_Position,
-						    NrOfSymbols,
-                StartSymbolIndex,
-                mappingtype);
+                                                    scc->dmrs_TypeA_Position,
+                                                    NrOfSymbols,
+                                                    StartSymbolIndex,
+                                                    mappingtype);
 
     /*
     AssertFatal(k0==0,"k0 is not zero for Initial DL BWP TimeDomain Alloc\n");
@@ -262,6 +262,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 extern int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda);
 extern uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData);
 uint32_t target_dl_mcs = 9;
+uint32_t target_dl_Nl = 1;
 uint32_t target_dl_bw = 50;
 uint64_t dlsch_slot_bitmap = (1<<1);
 /* schedules whole bandwidth for first user, all the time */
@@ -284,6 +285,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = 0;
   int rbSize = 0;
+  if (target_dl_bw>bwpSize)
+    target_dl_bw = bwpSize;
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   /* loop ensures that we allocate exactly target_dl_bw, or return */
   while (true) {
@@ -339,7 +342,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
 
-  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1);
+  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1,0);
   if (alloc < 0) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
@@ -368,8 +371,9 @@ void nr_preprocessor_phytest(module_id_t module_id,
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
   if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
     nr_set_pdsch_semi_static(
-        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, tda, num_dmrs_cdm_grps_no_data, ps);
+        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, num_dmrs_cdm_grps_no_data, ps);
 
+  sched_pdsch->nrOfLayers = target_dl_Nl;
   sched_pdsch->mcs = target_dl_mcs;
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -380,7 +384,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                         ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        1 /* nrOfLayers */)
+                                        sched_pdsch->nrOfLayers)
                          >> 3;
 
   /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
@@ -444,10 +448,19 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   if (ps->time_domain_allocation != tda
       || ps->dci_format != dci_format
       || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, NULL,dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
 
   uint16_t rbStart = 0;
-  uint16_t rbSize = target_ul_bw;
+  uint16_t rbSize;
+
+  const int bw = NRRIV2BW(sched_ctrl->active_ubwp ?
+			  sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth :
+			  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+  if (target_ul_bw>bw)
+    rbSize = bw;
+  else
+    rbSize = target_ul_bw;
 
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];

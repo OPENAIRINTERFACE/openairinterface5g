@@ -106,6 +106,40 @@ nr_bandentry_t nr_bandtable[] = {
   {261,27500040,28350000,27500040,28350000,  2,2070833, 120}
 };
 
+uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
+{
+  const uint64_t dl_freq_khz = downlink_frequency / 1000;
+  const int32_t  delta_duplex_khz = delta_duplex / 1000;
+
+  uint64_t center_freq_diff_khz = 999999999999999999; // 2^64
+  uint16_t current_band = 0;
+
+  for (int ind = 0; ind < nr_bandtable_size; ind++) {
+
+    if (dl_freq_khz < nr_bandtable[ind].dl_min || dl_freq_khz > nr_bandtable[ind].dl_max)
+      continue;
+
+    int32_t current_offset_khz = nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min;
+
+    if (current_offset_khz != delta_duplex_khz)
+      continue;
+
+    uint64_t center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min) / 2;
+
+    if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
+      current_band = nr_bandtable[ind].band;
+      center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
+    }
+  }
+
+  printf("DL frequency %"PRIu64": band %d, UL frequency %"PRIu64"\n",
+        downlink_frequency, current_band, downlink_frequency+delta_duplex);
+
+  AssertFatal(current_band != 0, "Can't find EUTRA band for frequency %"PRIu64" and duplex_spacing %u\n", downlink_frequency, delta_duplex);
+
+  return current_band;
+}
+
 const size_t nr_bandtable_size = sizeof(nr_bandtable) / sizeof(nr_bandentry_t);
 
 int NRRIV2BW(int locationAndBandwidth,int N_RB) {
@@ -195,6 +229,26 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
       break;
   }
 }
+
+
+int get_dmrs_port(int nl, uint16_t dmrs_ports) {
+
+  if (dmrs_ports == 0) return 0; // dci 1_0
+  int p = -1;
+  int found = -1;
+  for (int i=0; i<12; i++) { // loop over dmrs ports
+    if((dmrs_ports>>i)&0x01) { // check if current bit is 1
+      found++;
+      if (found == nl) { // found antenna port number corresponding to current layer
+        p = i;
+        break;
+      }
+    }
+  }
+  AssertFatal(p>-1,"No dmrs port corresponding to layer %d found\n",nl);
+  return p;
+}
+
 
 int get_subband_size(int NPRB,int size) {
   // implements table  5.2.1.4-2 from 36.214

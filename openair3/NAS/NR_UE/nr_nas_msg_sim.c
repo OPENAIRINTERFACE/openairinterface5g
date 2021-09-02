@@ -465,7 +465,7 @@ static void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *bu
   initialNasMsg->length = mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data), size);
 }
 
-void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
+static void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
 {
   int size = sizeof(mm_msg_header_t);
   fgs_nas_message_t nas_msg;
@@ -532,7 +532,7 @@ void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
   }
 }
 
-void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentContainer               *sortransparentcontainer) {
+static void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentContainer               *sortransparentcontainer) {
   //wait send RRCReconfigurationComplete and InitialContextSetupResponse
   sleep(1);
   int length = 0;
@@ -625,12 +625,11 @@ void decodeDownlinkNASTransport(as_nas_info_t *initialNasMsg, uint8_t * pdu_buff
   }
 }
 
-void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
+static void generatePduSessionEstablishRequest(uicc_t * uicc, as_nas_info_t *initialNasMsg){
   //wait send RegistrationComplete
   usleep(100*150);
   int size = 0;
-  fgs_nas_message_t nas_msg;
-  memset(&nas_msg, 0, sizeof(fgs_nas_message_t));
+  fgs_nas_message_t nas_msg={0};
 
   // setup pdu session establishment request
   uint16_t req_length = 7;
@@ -649,8 +648,6 @@ void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
   MM_msg *mm_msg;
   nas_stream_cipher_t stream_cipher;
   uint8_t             mac[4];
-  uint8_t             nssai[]={1,0,0,1}; //Corresponding to SST:1, SD:1
-  uint8_t            dnn[4]={0x4,0x6f,0x61,0x69}; //Corresponding to dnn:"oai"
   nas_msg.header.protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
   nas_msg.header.security_header_type = INTEGRITY_PROTECTED_AND_CIPHERED_WITH_NEW_SECU_CTX;
   size += 7;
@@ -680,11 +677,21 @@ void generatePduSessionEstablishRequest(as_nas_info_t *initialNasMsg){
   mm_msg->uplink_nas_transport.requesttype = 1;
   size += 3;
   mm_msg->uplink_nas_transport.snssai.length = 4;
-  mm_msg->uplink_nas_transport.snssai.value = nssai;
+  //Fixme: it seems there are a lot of memory errors in this: this value was on the stack, 
+  // but pushed  in a itti message to another thread
+  // this kind of error seems in many places in 5G NAS
+  mm_msg->uplink_nas_transport.snssai.value=calloc(1,4);
+  mm_msg->uplink_nas_transport.snssai.value[0] = uicc->nssai_sst;
+  mm_msg->uplink_nas_transport.snssai.value[1] = (uicc->nssai_sd>>16)&0xFF;
+  mm_msg->uplink_nas_transport.snssai.value[2] = (uicc->nssai_sd>>8)&0xFF; 
+  mm_msg->uplink_nas_transport.snssai.value[3] = (uicc->nssai_sd)&0xFF;
   size += (1+1+4);
-  mm_msg->uplink_nas_transport.dnn.length = 4;
-  mm_msg->uplink_nas_transport.dnn.value = dnn;
-  size += (1+1+4);
+  int dnnSize=strlen(uicc->dnnStr);
+  mm_msg->uplink_nas_transport.dnn.value=calloc(1,dnnSize+1);
+  mm_msg->uplink_nas_transport.dnn.length = dnnSize + 1;
+  mm_msg->uplink_nas_transport.dnn.value[0] = dnnSize + 1;
+  memcpy(mm_msg->uplink_nas_transport.dnn.value+1,uicc->dnnStr, dnnSize);
+  size += (1+1+dnnSize+1);
 
   // encode the message
   initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));
@@ -819,7 +826,7 @@ void *nas_nrue_task(void *args_p)
 
           as_nas_info_t pduEstablishMsg;
           memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
-          generatePduSessionEstablishRequest(&pduEstablishMsg);
+          generatePduSessionEstablishRequest(uicc, &pduEstablishMsg);
           if(pduEstablishMsg.length > 0){
             MessageDef *message_p;
             message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
@@ -833,6 +840,9 @@ void *nas_nrue_task(void *args_p)
         else if((pdu_buffer + 16) != NULL){
           msg_type = *(pdu_buffer + 16);
           if(msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC){
+            if(baseNetAddress==NULL) {
+              baseNetAddress = calloc(1,8);
+            }
             sprintf(baseNetAddress, "%d.%d", *(pdu_buffer + 39),*(pdu_buffer + 40));
             int third_octet = *(pdu_buffer + 41);
             int fourth_octet = *(pdu_buffer + 42);

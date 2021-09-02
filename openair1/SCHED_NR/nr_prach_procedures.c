@@ -49,9 +49,6 @@
 
 extern uint8_t nfapi_mode;
 
-extern int oai_nfapi_nr_rach_ind(nfapi_rach_indication_t *rach_ind);
-
-
 void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
 
   uint16_t max_preamble[4]={0},max_preamble_energy[4]={0},max_preamble_delay[4]={0};
@@ -124,7 +121,7 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
 
       if ((gNB->prach_energy_counter == 100) && (max_preamble_energy[0] > gNB->measurements.prach_I0+gNB->prach_thres)) {
 	
-	LOG_I(PHY,"[gNB %d][RAPROC] Frame %d, slot %d Initiating RA procedure with preamble %d, energy %d.%d dB (I0 %d, thres %d), delay %d start symbol %u freq index %u\n",
+	LOG_I(NR_PHY,"[gNB %d][RAPROC] Frame %d, slot %d Initiating RA procedure with preamble %d, energy %d.%d dB (I0 %d, thres %d), delay %d start symbol %u freq index %u\n",
 	      gNB->Mod_id,
 	      frame,
 	      slot,

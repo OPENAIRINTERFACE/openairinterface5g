@@ -278,8 +278,9 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_re %d,nb_layers %d)\n",
 	   start_sc, rel15->StartSymbolIndex, rel15->rbSize, nb_re,rel15->nrOfLayers);
 #endif
+
     for (int ap=0; ap<rel15->nrOfLayers; ap++) {
-      
+
       // DMRS params for this ap
       get_Wt(Wt, ap, dmrs_Type);
       get_Wf(Wf, ap, dmrs_Type);
@@ -448,7 +449,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
                      (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + txdataF_offset+ k)],
                      NR_NB_SC_PER_RB*sizeof(int32_t));
             else
-              memset((void*)&txdataF[ap][rel15->StartSymbolIndex*frame_parms->ofdm_symbol_size + txdataF_offset +k],
+              memset((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
                      0,
                      NR_NB_SC_PER_RB*sizeof(int32_t));
             k += NR_NB_SC_PER_RB;

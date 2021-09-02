@@ -109,11 +109,11 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   // use OFDM symbol from within 1/8th of the CP to avoid ISI
   rx_offset -= nb_prefix_samples / 8;
 
-#ifdef DEBUG_FEP
+//#ifdef DEBUG_FEP
   //  if (ue->frame <100)
-  printf("slot_fep: slot %d, symbol %d, nb_prefix_samples %u, nb_prefix_samples0 %u, rx_offset %u\n",
-         Ns, symbol, nb_prefix_samples, nb_prefix_samples0, rx_offset);
-#endif
+  LOG_D(PHY,"slot_fep: slot %d, symbol %d, nb_prefix_samples %u, nb_prefix_samples0 %u, rx_offset %u energy %d\n",
+  Ns, symbol, nb_prefix_samples, nb_prefix_samples0, rx_offset, dB_fixed(signal_energy(&common_vars->rxdata[0][rx_offset],frame_parms->ofdm_symbol_size)));
+  //#endif
 
   for (unsigned char aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
     memset(&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int32_t));

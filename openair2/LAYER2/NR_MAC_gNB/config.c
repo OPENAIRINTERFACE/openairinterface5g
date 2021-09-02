@@ -419,6 +419,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
+                           int sib1_tda,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
 	                   int add_ue,
@@ -508,6 +509,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     if (get_softmodem_params()->sa > 0) {
       NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[0];
+      RC.nrmac[Mod_idP]->sib1_tda = sib1_tda;
       for (int n=0;n<NR_NB_RA_PROC_MAX;n++ ) {
 	       cc->ra[n].cfra = false;
 	       cc->ra[n].rnti = 0;
@@ -593,9 +595,25 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
     } else { // CellGroup has been updated
       const int UE_id = find_nr_UE_id(Mod_idP,rnti);
+      int target_ss;
       UE_info->CellGroup[UE_id] = CellGroup;
       LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
+// update coreset/searchspace
+      void *bwpd = NULL;
+      target_ss = NR_SearchSpace__searchSpaceType_PR_common;
+      if ((UE_info->UE_sched_ctrl->active_bwp)) {
+        target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+        bwpd = (void*)UE_info->UE_sched_ctrl->active_bwp->bwp_Dedicated;
+      }
+      else if (CellGroup->spCellConfig &&
+                 CellGroup->spCellConfig->spCellConfigDedicated &&
+                 (CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
+        target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+        bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+      }
+      UE_info->UE_sched_ctrl->search_space = get_searchspace(scc, bwpd, target_ss);
+      UE_info->UE_sched_ctrl->coreset = get_coreset(scc, bwpd, UE_info->UE_sched_ctrl->search_space, target_ss);
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);

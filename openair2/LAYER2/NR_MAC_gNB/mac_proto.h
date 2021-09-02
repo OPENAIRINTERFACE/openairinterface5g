@@ -51,6 +51,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
+                           int sib1_tda,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
 		           int add_ue,
@@ -73,17 +74,18 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
                          sub_frame_t slot);
 
+uint32_t schedule_control_sib1(module_id_t module_id,
+                               int CC_id,
+                               NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                               int time_domain_allocation,
+                               int startSymbolIndex,
+                               int nrOfSymbols,
+                               uint16_t dlDmrsSymbPos,
+                               uint8_t candidate_idx,
+                               int num_total_bytes);
+
 /* \brief default FR1 DL preprocessor init routine, returns preprocessor to call */
 nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id);
-
-void schedule_control_sib1(module_id_t module_id,
-                           int CC_id,
-                           NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
-                           int time_domain_allocation,
-                           uint8_t mcsTableIdx,
-                           uint8_t mcs,
-                           uint8_t candidate_idx,
-                           int num_total_bytes);
 
 void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
@@ -166,7 +168,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 
 
 void config_uldci(const NR_BWP_Uplink_t *ubwp,
-		              const NR_ServingCellConfigCommon_t *scc,
+                  const NR_BWP_UplinkDedicated_t *ubwpd,
+                  const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int dci_format,
@@ -179,8 +182,10 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP);
 
-void csi_period_offset(const NR_CSI_ReportConfig_t *csirep,
-                       int *period, int *offset);
+void nr_csirs_scheduling(int Mod_idP,
+                         frame_t frame,
+                         sub_frame_t slot,
+                         int n_slots_frame);
 
 void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frameP,
@@ -190,10 +195,12 @@ int nr_acknack_scheduling(int Mod_idP,
                            int UE_id,
                            frame_t frameP,
                            sub_frame_t slotP,
-                           int r_pucch);
+                           int r_pucch,
+                           int do_common);
 
 void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
+                                int bwp_id,
                                 NR_SearchSpace__searchSpaceType_PR ss_type,
                                 uint8_t *pdsch_to_harq_feedback);
   
@@ -220,6 +227,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_CellGroupConfig_t *CellGroup,
                         NR_BWP_Uplink_t *bwp,
+                        NR_BWP_UplinkDedicated_t *bwpd,
                         uint16_t rnti,
                         uint8_t pucch_resource,
                         uint16_t O_csi,
@@ -235,7 +243,8 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
                         NR_ServingCellConfigCommon_t *scc,
-                        NR_BWP_Downlink_t *bwp);
+                        NR_BWP_t *bwp,
+                        NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
 
 void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         const NR_CellGroupConfig_t *CellGroup,
@@ -253,7 +262,7 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
 
 /* find coreset within the search space */
 NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
-                                     NR_BWP_Downlink_t *bwp,
+                                     void *bwp,
                                      NR_SearchSpace_t *ss,
                                      NR_SearchSpace__searchSpaceType_PR ss_type);
 
@@ -267,12 +276,14 @@ long get_K2(NR_ServingCellConfigCommon_t *scc, NR_BWP_Uplink_t *ubwp, int time_d
 void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
                               const NR_BWP_Downlink_t *bwp,
+                              const NR_BWP_DownlinkDedicated_t *bwpd,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
                               NR_pdsch_semi_static_t *ps);
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
+			      const NR_BWP_UplinkDedicated_t *ubwpd,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
@@ -327,15 +338,6 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
                      uint16_t Y,
                      int m,
                      int nr_of_candidates);
-
-uint16_t compute_pucch_prb_size(uint8_t format,
-                                uint8_t nr_prbs,
-                                uint16_t O_tot,
-                                uint16_t O_csi,
-                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
-                                uint8_t Qm,
-                                uint8_t n_symb,
-                                uint8_t n_re_ctrl);
 
 int nr_get_default_pucch_res(int pucch_ResourceCommon);
 
@@ -425,9 +427,5 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t *nb_rb);
 
 void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
-
-void periodicity__SRR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRecconf,
-                       int *period,
-                       int *offset);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

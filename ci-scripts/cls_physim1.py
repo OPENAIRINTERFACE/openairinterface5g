@@ -245,7 +245,7 @@ class PhySim:
 		isFinished = False
 		# doing a deep copy!
 		tmpPodNames = podNames.copy()
-		while(count < 28 and isFinished == False):
+		while(count < 32 and isFinished == False):
 			time.sleep(60)
 			for podName in tmpPodNames:
 				mySSH.command2(f'oc logs --tail=1 {podName} 2>&1', 6, silent=True)
@@ -257,6 +257,8 @@ class PhySim:
 			count += 1
 		if isFinished:
 			logging.debug('\u001B[1m PhySim test is Complete\u001B[0m')
+		else:
+			logging.error('\u001B[1m PhySim test Timed-out!\u001B[0m')
 
 		# Getting the logs of each executables running in individual pods
 		for podName in podNames:
@@ -279,15 +281,18 @@ class PhySim:
 		mySSH.command('oc logout', '\$', 6)
 		mySSH.close()
 		self.AnalyzeLogFile_phySim(HTML)
-		if self.testStatus:
+		if self.testStatus and isFinished:
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 			HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
 			logging.info('\u001B[1m Physical Simulator Pass\u001B[0m')
 		else:
 			RAN.prematureExit = True
-			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
+			if isFinished:
+				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
+			else:
+				HTML.CreateHtmlTestRow('Some test(s) timed-out!', 'KO', CONST.ALL_PROCESSES_OK)
 			HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
-			logging.info('\u001B[1m Physical Simulator Fail\u001B[0m')
+			logging.error('\u001B[1m Physical Simulator Fail\u001B[0m')
 
 	def AnalyzeLogFile_phySim(self, HTML):
 		lIpAddr = self.eNBIPAddress

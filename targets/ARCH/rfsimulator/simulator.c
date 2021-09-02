@@ -618,8 +618,8 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
 }
 
 static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, void **samplesVoid, int nsamps, int nbAnt) {
-  if (nbAnt != 1) {
-    LOG_W(HW, "rfsimulator: only 1 antenna tested\n");
+  if (nbAnt > 4) {
+    LOG_W(HW, "rfsimulator: only 4 antenna tested\n");
   }
 
   rfsimulator_state_t *t = device->priv;
@@ -736,14 +736,19 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
                       CirSize
                     );
         else { // no channel modeling
+          double H_awgn_mimo[4][4] ={{1.0, 0.5, 0.25, 0.125},//rx 0
+                                     {0.5, 1.0, 0.5, 0.25},  //rx 1
+                                     {0.25, 0.5, 1.0, 0.5},  //rx 2
+                                     {0.125, 0.25, 0.5, 1.0}};//rx 3
+
           sample_t *out=(sample_t *)samplesVoid[a];
           int nbAnt_tx = ptr->th.nbAnt;//number of Tx antennas
 
           //LOG_I(HW, "nbAnt_tx %d\n",nbAnt_tx);
           for (int i=0; i < nsamps; i++) {//loop over nsamps
             for (int a_tx=0; a_tx<nbAnt_tx; a_tx++) { //sum up signals from nbAnt_tx antennas
-              out[i].r+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].r;
-              out[i].i+=ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].i;
+              out[i].r += (short)(ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].r*H_awgn_mimo[a][a_tx]);
+              out[i].i += (short)(ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].i*H_awgn_mimo[a][a_tx]);
             } // end for a_tx
           } // end for i (number of samps)
         } // end of no channel modeling
@@ -805,6 +810,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->trx_read_func      = rfsimulator_read;
   /* let's pretend to be a b2x0 */
   device->type = RFSIMULATOR;
+  openair0_cfg[0].rx_gain[0] = 0;
   device->openair0_cfg=&openair0_cfg[0];
   device->priv = rfsimulator;
   device->trx_write_init = rfsimulator_write_init;

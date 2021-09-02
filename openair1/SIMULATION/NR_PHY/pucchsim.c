@@ -473,14 +473,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
   uint8_t mcs=0;
-  startingPRB_intraSlotHopping=N_RB_DL-1;
-  pucch_GroupHopping_t PUCCH_GroupHopping=UE->pucch_config_common_nr->pucch_GroupHopping;
-  uint32_t hopping_id=UE->pucch_config_common_nr->hoppingId;
-  uint32_t dmrs_scrambling_id = 0, data_scrambling_id=0;
-  //t_nrPolar_params *currentPtr;
-
   int shift = 0;
-
   if(format==0){
     if (sr_flag)
       shift = 1<<nr_bit;

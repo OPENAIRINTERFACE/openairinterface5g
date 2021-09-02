@@ -383,6 +383,7 @@ typedef struct NR_sched_pdsch {
   uint8_t mcs;
 
   /// TBS-related info
+  uint8_t nrOfLayers;
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;
@@ -439,7 +440,8 @@ struct CRI_RI_LI_PMI_CQI {
   uint8_t li;
   uint8_t pmi_x1;
   uint8_t pmi_x2;
-  uint8_t cqi;
+  uint8_t wb_cqi_1tb;
+  uint8_t wb_cqi_2tb;
 };
 
 typedef struct CRI_SSB_RSRP {
@@ -612,6 +614,7 @@ typedef struct {
   int ulsch_total_bytes_scheduled;
   int ulsch_total_bytes_rx;
   int ulsch_current_bytes;
+  int pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;
 } NR_mac_stats_t;
@@ -668,6 +671,8 @@ typedef struct gNB_MAC_INST_s {
   int                             pusch_failure_thres;
   /// Subcarrier Offset
   int                             ssb_SubcarrierOffset;
+  /// SIB1 Time domain allocation
+  int                             sib1_tda;
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)

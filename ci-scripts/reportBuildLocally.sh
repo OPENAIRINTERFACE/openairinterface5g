@@ -576,8 +576,6 @@ function report_build {
     summary_table_row "RF Simulator - Release 15" ./archives/enb_eth/rfsimulator.Rel15.txt "Built target rfsimulator" ./enb_eth_row5.html
     summary_table_row "TCP OAI Bridge - Release 15" ./archives/enb_eth/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./enb_eth_row6.html
     summary_table_row "OAI USRP device if - Release 15" ./archives/enb_eth/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./enb_eth_row7.html
-    summary_table_row "NASMESH - Release 15" ./archives/enb_eth/nasmesh.Rel15.txt "Built target nasmesh" ./enb_eth_row8.html
-    summary_table_row "RB Tool - Release 15" ./archives/enb_eth/rb_tool.Rel15.txt "Built target rb_tool" ./enb_eth_row9.html
     summary_table_footer
 
     summary_table_header "OAI Build: 4G LTE UE -- USRP option" ./archives/ue_eth
@@ -600,9 +598,7 @@ function report_build {
     summary_table_row "Coding - Release 15" ./archives/basic_sim/coding.Rel15.txt "Built target coding" ./basic_sim_row3.html
     summary_table_row "Conf 2 UE data - Release 15" ./archives/basic_sim/conf2uedata.Rel15.txt "Built target conf2uedata" ./basic_sim_row4.html
     summary_table_row "OAI ETHERNET transport - Release 15" ./archives/basic_sim/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./basic_sim_row5.html
-    summary_table_row "NASMESH - Release 15" ./archives/basic_sim/nasmesh.Rel15.txt "Built target nasmesh" ./basic_sim_row6.html
     summary_table_row "Parameters Lib Config - Release 15" ./archives/basic_sim/params_libconfig.Rel15.txt "Built target params_libconfig" ./basic_sim_row7.html
-    summary_table_row "RB Tool - Release 15" ./archives/basic_sim/rb_tool.Rel15.txt "Built target rb_tool" ./basic_sim_row8.html
     summary_table_row "RF Simulator - Release 15" ./archives/basic_sim/rfsimulator.Rel15.txt "Built target rfsimulator" ./basic_sim_row9.html
     summary_table_row "TCP Bridge - Release 15" ./archives/basic_sim/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./basic_sim_row10.html
     summary_table_row "UE IP - Release 15" ./archives/basic_sim/ue_ip.Rel15.txt "Built target ue_ip" ./basic_sim_row11.html
@@ -617,9 +613,7 @@ function report_build {
         summary_table_row "Coding - Release 15" ./archives/gnb_usrp/coding.Rel15.txt "Built target coding" ./gnb_usrp_row2.html
         summary_table_row "OAI USRP device if - Release 15" ./archives/gnb_usrp/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./gnb_usrp_row3.html
         summary_table_row "OAI ETHERNET transport - Release 15" ./archives/gnb_usrp/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./gnb_usrp_row4.html
-        summary_table_row "NASMESH - Release 15" ./archives/gnb_usrp/nasmesh.Rel15.txt "Built target nasmesh" ./gnb_usrp_row5.html
         summary_table_row "Parameters Lib Config - Release 15" ./archives/gnb_usrp/params_libconfig.Rel15.txt "Built target params_libconfig" ./gnb_usrp_row6.html
-        summary_table_row "RB Tool - Release 15" ./archives/gnb_usrp/rb_tool.Rel15.txt "Built target rb_tool" ./gnb_usrp_row7.html
         summary_table_footer
     fi
 
@@ -630,9 +624,7 @@ function report_build {
         summary_table_row "Coding - Release 15" ./archives/nr_ue_usrp/coding.Rel15.txt "Built target coding" ./nr_ue_usrp_row2.html
         summary_table_row "OAI USRP device if - Release 15" ./archives/nr_ue_usrp/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./nr_ue_usrp_row3.html
         summary_table_row "OAI ETHERNET transport - Release 15" ./archives/nr_ue_usrp/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./nr_ue_usrp_row4.html
-        summary_table_row "NASMESH - Release 15" ./archives/nr_ue_usrp/nasmesh.Rel15.txt "Built target nasmesh" ./nr_ue_usrp_row5.html
         summary_table_row "Parameters Lib Config - Release 15" ./archives/nr_ue_usrp/params_libconfig.Rel15.txt "Built target params_libconfig" ./nr_ue_usrp_row6.html
-        summary_table_row "RB Tool - Release 15" ./archives/nr_ue_usrp/rb_tool.Rel15.txt "Built target rb_tool" ./nr_ue_usrp_row7.html
         summary_table_footer
     fi
 
@@ -652,7 +644,7 @@ function report_build {
     echo "   <button data-toggle=\"collapse\" data-target=\"#oai-compilation-details\">Details for Compilation Errors and Warnings </button>" >> ./build_results.html
     echo "   <div id=\"oai-compilation-details\" class=\"collapse\">" >> ./build_results.html
 
-    if [ -f ./enb_eth_row1.html ] || [ -f ./enb_eth_row2.html ] || [ -f ./enb_eth_row3.html ] || [ -f ./enb_eth_row4.html ] || [ -f ./enb_eth_row5.html ] || [ -f ./enb_eth_row6.html ] || [ -f ./enb_eth_row7.html ] || [ -f ./enb_eth_row8.html ] || [ -f ./enb_eth_row9.html ]
+    if [ -f ./enb_eth_row1.html ] || [ -f ./enb_eth_row2.html ] || [ -f ./enb_eth_row3.html ] || [ -f ./enb_eth_row4.html ] || [ -f ./enb_eth_row5.html ] || [ -f ./enb_eth_row6.html ] || [ -f ./enb_eth_row7.html ]
     then
         for DETAILS_TABLE in `ls ./enb_eth_row*.html`
         do

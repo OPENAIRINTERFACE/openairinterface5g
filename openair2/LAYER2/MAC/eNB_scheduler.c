@@ -556,10 +556,7 @@ copy_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
   }
 }
 
-extern int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
-extern int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
-extern void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
-extern void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
+#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 
 void
 eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
@@ -586,6 +583,23 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     memset(cc[CC_id].vrb_map_UL, 0, 100);
     cc[CC_id].mcch_active = 0;
     clear_nfapi_information(RC.mac[module_idP], CC_id, frameP, subframeP);
+
+    /* hack: skip BCH RBs in subframe 0 for DL scheduling,
+     *       because with high MCS we may exceed code rate 0.93
+     *       when using those RBs (36.213 7.1.7 says the UE may
+     *       skip decoding if the code rate is higher than 0.93)
+     * TODO: remove this hack, deal with physical bits properly
+     *       i.e. reduce MCS in the scheduler if code rate > 0.93
+     */
+    if (subframeP == 0) {
+      int i;
+      int bw = cc[CC_id].mib->message.dl_Bandwidth;
+      /* start and count defined for RBs: 6, 15, 25, 50, 75, 100 */
+      int start[6] = { 0, 4, 9, 22, 34, 47 };
+      int count[6] = { 6, 7, 7,  6,  7,  6 };
+      for (i = 0; i < count[bw]; i++)
+        cc[CC_id].vrb_map[start[bw] + i] = 1;
+    }
   }
 
   /* Refresh UE list based on UEs dropped by PHY in previous subframe */

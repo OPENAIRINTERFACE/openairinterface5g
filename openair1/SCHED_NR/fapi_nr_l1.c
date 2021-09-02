@@ -111,9 +111,8 @@ void handle_nfapi_nr_pdcch_pdu(PHY_VARS_gNB *gNB,
 
   nr_fill_dci(gNB,frame,slot,pdcch_pdu);
 
-
-
 }
+
 
 void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
 			       int frame, int slot,
@@ -127,6 +126,30 @@ void handle_nfapi_nr_ul_dci_pdu(PHY_VARS_gNB *gNB,
   nr_fill_ul_dci(gNB,frame,slot,ul_dci_request_pdu);
 
 }
+
+
+void handle_nfapi_nr_csirs_pdu(PHY_VARS_gNB *gNB,
+			       int frame, int slot,
+			       nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu) {
+
+  int found = 0;
+
+  for (int id=0; id<NUMBER_OF_NR_CSIRS_MAX; id++) {
+    NR_gNB_CSIRS_t *csirs = &gNB->csirs_pdu[id];
+    if (csirs->active == 0) {
+      LOG_D(PHY,"Frame %d Slot %d CSI_RS with ID %d is now active\n",frame,slot,id);
+      csirs->frame = frame;
+      csirs->slot = slot;
+      csirs->active = 1;
+      memcpy((void*)&csirs->csirs_pdu, (void*)csirs_pdu, sizeof(nfapi_nr_dl_tti_csi_rs_pdu));
+      found = 1;
+      break;
+    }
+  }
+  if (found == 0)
+    LOG_E(MAC,"CSI-RS list is full\n");
+}
+
 
 void handle_nr_nfapi_pdsch_pdu(PHY_VARS_gNB *gNB,int frame,int slot,
                             nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
@@ -159,7 +182,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   uint8_t number_ul_dci_pdu         = (UL_dci_req==NULL) ? 0 : UL_dci_req->numPdus;
   uint8_t number_ul_tti_pdu         = (UL_tti_req==NULL) ? 0 : UL_tti_req->n_pdus;
 
-  if (DL_req != NULL && TX_req!=NULL)
+  if (DL_req != NULL && TX_req!=NULL && (number_dl_pdu > 0 || number_ul_dci_pdu > 0 || number_ul_tti_pdu > 0))
     LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d/%d DL_req:SFN/SLO:%04d/%d:dl_pdu:%d tx_req:SFN/SLOT:%04d/%d:pdus:%d;ul_dci %d ul_tti %d\n",
 	  frame,slot,
 	  DL_req->SFN,DL_req->Slot,number_dl_pdu,
@@ -194,6 +217,12 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
  
 	pdcch_received = 1;
 
+      break;
+      case NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE:
+        LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
+        handle_nfapi_nr_csirs_pdu(gNB,
+				  frame, slot,
+				  &dl_tti_pdu->csi_rs_pdu);
       break;
       case NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE:
 

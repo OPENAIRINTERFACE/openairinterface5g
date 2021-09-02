@@ -52,6 +52,7 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         software-properties-common \
+        procps \
         libsctp1 \
         libnettle6 \
         liblapacke \
@@ -61,6 +62,7 @@ RUN apt-get update && \
         net-tools \
         iputils-ping \
         iproute2 \
+        iperf \
         libyaml-0-2 && \
     # Install UHD driver from ettus ppa 
     # At time of writing, it is 3.14

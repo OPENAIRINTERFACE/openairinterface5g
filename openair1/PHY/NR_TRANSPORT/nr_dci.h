@@ -35,7 +35,7 @@ void nr_generate_dci_top(PHY_VARS_gNB *gNB,
 			    uint32_t **gold_pdcch_dmrs,
                             int32_t *txdataF,
                             int16_t amp,
-                            NR_DL_FRAME_PARMS frame_parms);
+                            NR_DL_FRAME_PARMS *frame_parms);
 
 void nr_pdcch_scrambling(uint32_t *in,
                          uint32_t size,

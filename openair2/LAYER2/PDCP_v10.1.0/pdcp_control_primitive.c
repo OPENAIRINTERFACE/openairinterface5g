@@ -32,7 +32,6 @@
 #include "rtos_header.h"
 #include "platform.h"
 #include "protocol_vars_extern.h"
-#include "print.h"
 //-----------------------------------------------------------------------------
 #include "rlc.h"
 #include "pdcp.h"
