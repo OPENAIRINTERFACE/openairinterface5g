@@ -2773,7 +2773,7 @@ target_link_libraries (nr-softmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRA
 target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-softmodem ${T_LIB})
 
-add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
+add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc ldpc_offload)
 
 # nr-uesoftmodem is  UE implementation
 #######################################
