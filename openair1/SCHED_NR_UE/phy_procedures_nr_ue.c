@@ -480,8 +480,8 @@ unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb
 #ifdef NR_PDCCH_SCHED
 
 int nr_ue_pdcch_procedures(uint8_t gNB_id,
-			   PHY_VARS_NR_UE *ue,
-			   UE_nr_rxtx_proc_t *proc,
+                           PHY_VARS_NR_UE *ue,
+                           UE_nr_rxtx_proc_t *proc,
                            int n_ss)
 {
   int frame_rx = proc->frame_rx;
@@ -1682,7 +1682,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
-  LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d (energy %d dB)******  \n", 
+  LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d (energy %d dB)******  \n",
         frame_rx%1024, nr_slot_rx,
         dB_fixed(signal_energy(ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0],2048*14)));
 
@@ -2141,7 +2141,8 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       int16_t ra_preamble_rx_power = (int16_t)(prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER - pathloss + 30);
       ue->tx_power_dBm[nr_slot_tx] = min(nr_get_Pcmax(mod_id), ra_preamble_rx_power);
 
-      LOG_D(PHY,"DEBUG [UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble %d, PL %d dB, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %x)\n",
+      LOG_D(PHY, "In %s: [UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble %d, PL %d dB, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %x)\n",
+        __FUNCTION__,
         mod_id,
         frame_tx,
         nr_slot_tx,

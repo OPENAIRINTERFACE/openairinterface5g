@@ -47,6 +47,7 @@
 
 /*Softmodem params*/
 #include "executables/softmodem-common.h"
+#include "../../../nfapi/oai_integration/vendor_ext.h"
 
 ////////////////////////////////////////////////////////
 /////* DLSCH MAC PDU generation (6.1.2 TS 38.321) */////

@@ -147,14 +147,14 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);
-  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { 
-    for (int i=0; i<fp->Lmax; i++) {
-      if (gNB->ssb[i].active) {
-        nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[i].ssb_pdu);
-        gNB->ssb[i].active = false;
-      }
+
+  for (int i=0; i<fp->Lmax; i++) {
+    if (gNB->ssb[i].active) {
+      nr_common_signal_procedures(gNB,frame,slot,gNB->ssb[i].ssb_pdu);
+      gNB->ssb[i].active = false;
     }
   }
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,0);
 
   int pdcch_pdu_id=find_nr_pdcch(frame,slot,gNB,SEARCH_EXIST);
@@ -421,7 +421,13 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   uint16_t bw_scaling = 16 * gNB->frame_parms.ofdm_symbol_size / 2048;
-  timing_advance_update = sync_pos / bw_scaling;
+  int sync_pos_rounded;
+  // do some integer rounding to improve TA accuracy
+  if (sync_pos > 0)
+    sync_pos_rounded = sync_pos + (bw_scaling / 2) - 1;
+  else
+    sync_pos_rounded = sync_pos - (bw_scaling / 2) - 1;
+  timing_advance_update = sync_pos_rounded / bw_scaling;
 
   // put timing advance command in 0..63 range
   timing_advance_update += 31;

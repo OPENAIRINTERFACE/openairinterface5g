@@ -984,6 +984,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
       }
     }
   }
+  pdcch_vars->nb_search_space = 0;
   return(dci_ind->number_of_dcis);
 }
 

@@ -135,7 +135,9 @@ void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
 
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 
+  fp->ofdm_offset_divisor = UINT_MAX;
   nr_init_frame_parms(gNB_config, fp);
+  init_timeshift_rotation(fp);
 
   init_symbol_rotation(fp);
 
@@ -431,6 +433,7 @@ int main(int argc, char **argv)
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
+  gNB->ofdm_offset_divisor = UINT_MAX;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;

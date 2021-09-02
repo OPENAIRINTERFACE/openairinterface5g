@@ -616,6 +616,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
                   uint8_t tpc,
                   int n_ubwp,
                   int bwp_id) {
+
   const int bw = NRRIV2BW(ubwp ?
 			  ubwp->bwp_Common->genericParameters.locationAndBandwidth :
 			  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -1432,41 +1433,53 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       break;
 
     case NFAPI_NR_RNTI_TC:
-      // indicating a DL DCI format 1bit
-      *dci_pdu |= (dci_pdu_rel15->format_indicator & 1) << (dci_size - pos++);
+      // indicating a UL DCI format 1bit
+      pos=1;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
       // Freq domain assignment  max 16 bit
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
-      for (int i = 0; i < fsize; i++)
-        *dci_pdu |= ((dci_pdu_rel15->frequency_domain_assignment.val >> (fsize - i - 1)) & 1) << (dci_size - pos++);
+      pos+=fsize;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->frequency_domain_assignment.val & ((1 << fsize) - 1)) << (dci_size - pos);
       // Time domain assignment 4bit
-      for (int i = 0; i < 4; i++)
-        *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment.val >> (3 - i)) & 1) << (dci_size - pos++);
+      pos += 4;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->time_domain_assignment.val & ((1 << 4) - 1)) << (dci_size - pos);
       // Frequency hopping flag – 1 bit
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->frequency_hopping_flag.val & 1) << (dci_size - pos++);
+      pos++;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->frequency_hopping_flag.val & 1) << (dci_size - pos);
       // MCS  5 bit
-      for (int i = 0; i < 5; i++)
-        *dci_pdu |= (((uint64_t)dci_pdu_rel15->mcs >> (4 - i)) & 1) << (dci_size - pos++);
+      pos+=5;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->mcs & 0x1f) << (dci_size - pos);
       // New data indicator 1bit
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->ndi & 1) << (dci_size - pos++);
+      pos++;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->ndi & 1) << (dci_size - pos);
       // Redundancy version  2bit
-      for (int i = 0; i < 2; i++)
-        *dci_pdu |= (((uint64_t)dci_pdu_rel15->rv >> (1 - i)) & 1) << (dci_size - pos++);
+      pos+=2;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->rv & 0x3) << (dci_size - pos);
       // HARQ process number  4bit
-      for (int i = 0; i < 4; i++)
-        *dci_pdu |= (((uint64_t)dci_pdu_rel15->harq_pid >> (3 - i)) & 1) << (dci_size - pos++);
-      // TPC command for scheduled PUSCH – 2 bits
-      for (int i = 0; i < 2; i++)
-        *dci_pdu |= (((uint64_t)dci_pdu_rel15->tpc >> (1 - i)) & 1) << (dci_size - pos++);
+      pos+=4;
+      *dci_pdu |= ((uint64_t)dci_pdu_rel15->harq_pid & 0xf) << (dci_size - pos);
       // Padding bits
       for (int a = pos; a < 32; a++)
         *dci_pdu |= ((uint64_t)dci_pdu_rel15->padding & 1) << (dci_size - pos++);
       // UL/SUL indicator – 1 bit
-      /*
-        commented for now (RK): need to get this information from BWP descriptor
-        if (cfg->pucch_config.pucch_GroupHopping.value)
+      /* commented for now (RK): need to get this from BWP descriptor
+      if (cfg->pucch_config.pucch_GroupHopping.value)
         *dci_pdu |=
-        ((uint64_t)dci_pdu_rel15->ul_sul_indicator.val&1)<<(dci_size-pos++);
+      ((uint64_t)dci_pdu_rel15->ul_sul_indicator.val&1)<<(dci_size-pos++);
         */
+      LOG_D(NR_MAC,"N_RB = %i\n", N_RB);
+      LOG_D(NR_MAC,"dci_size = %i\n", dci_size);
+      LOG_D(NR_MAC,"fsize = %i\n", fsize);
+      LOG_D(NR_MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->frequency_hopping_flag.val = %i\n", dci_pdu_rel15->frequency_hopping_flag.val);
+      LOG_D(NR_MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+      LOG_D(NR_MAC,"dci_pdu_rel15->ndi = %i\n", dci_pdu_rel15->ndi);
+      LOG_D(NR_MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+      LOG_D(NR_MAC,"dci_pdu_rel15->harq_pid = %i\n", dci_pdu_rel15->harq_pid);
+      LOG_D(NR_MAC,"dci_pdu_rel15->tpc = %i\n", dci_pdu_rel15->tpc);
+      LOG_D(NR_MAC,"dci_pdu_rel15->padding = %i\n", dci_pdu_rel15->padding);
+
       break;
     }
     break;

@@ -48,6 +48,8 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
+#include "nfapi/oai_integration/vendor_ext.h"
+
 #include "T.h"
 
 //#define DEBUG_NR_PUCCH_RX 1
@@ -1446,7 +1448,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	  corr_tmp += corr_re*corr_re + corr_im*corr_im;	
 	} // aa loop
       }// group loop
-
+      LOG_D(PHY,"cw %d, metric %f dB\n",cw,10*log10(corr_tmp));
       if (corr_tmp > corr) {
 	corr = corr_tmp;
 	cw_ML=cw;

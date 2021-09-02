@@ -179,7 +179,9 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
       rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
       rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
-      rel15->dci_length_options[0] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_TC, rel15->BWPSize, bwp_id);
+      for (int i = 0; i < rel15->num_dci_options; i++) {
+        rel15->dci_length_options[i] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[i]], rel15->dci_format_options[i], NR_RNTI_TC, rel15->BWPSize, bwp_id);
+      }
     break;
     case NR_RNTI_SP_CSI:
     break;
@@ -356,8 +358,8 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 	case NR_SearchSpace__searchSpaceType_PR_ue_Specific:
 	  // this is an USS
 	  if (ss->searchSpaceType->choice.ue_Specific &&
-	      ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1 && 
-	      (ra->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) && 
+	      ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1 &&
+	      (ra->ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test) &&
               mac->crnti > 0) {
 	      // Monitors DCI 01 and 11 scrambled with C-RNTI, or CS-RNTI(s), or SP-CSI-RNTI
             LOG_D(NR_MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in the user specific search space\n");
