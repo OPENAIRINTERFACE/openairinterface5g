@@ -459,8 +459,13 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
        we are sending. If we do not remove the instance ID from
        the buffer, it will start with 00, and the write will fail
        with errno = 22 (EINVAL) */
-    char *data_buffer = buf + 1;
-    int size_to_write = size - 1;
+    char *data_buffer = buf;
+    int size_to_write = size;
+    if (buf[0] == 0) {
+        char *data_buffer = buf + 1;
+        int size_to_write = size - 1;
+    }
+
 
     len = write(nas_sock_fd[0], data_buffer, size_to_write);
     LOG_D(PDCP, "len = %d bytes to tunnel interface %d\n", len, nas_sock_fd[0]);
@@ -851,7 +856,7 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
     pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id,pdusession_id,has_sdap,
                                   has_sdapULheader,has_sdapDLheader,
                                   deliver_sdu_drb, ue, deliver_pdu_drb, ue,
-                                  sn_size_dl, t_reordering, discard_timer,
+                                  12, t_reordering, discard_timer,
                                   ciphering_algorithm, integrity_algorithm,
                                   ciphering_key, integrity_key);
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
