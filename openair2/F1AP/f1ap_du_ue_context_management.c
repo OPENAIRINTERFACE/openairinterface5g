@@ -55,7 +55,7 @@ boolean_t DURecvCb( protocol_ctxt_t  *ctxt_pP,
   return true;
 }
 
-int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, rnti_t rntiP, int nbTEID, teid_t * teids);
+int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup_req_t * req);
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                                        uint32_t         assoc_id,
                                        uint32_t         stream,
@@ -79,19 +79,16 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, false);
 
   if (ieDU_UE) {
-    f1ap_ue_context_setup_req->gNB_DU_ue_id = malloc(sizeof(uint32_t));
-    if (f1ap_ue_context_setup_req->gNB_DU_ue_id)
-      *f1ap_ue_context_setup_req->gNB_DU_ue_id =
+    f1ap_ue_context_setup_req->gNB_DU_ue_id =
 	ieDU_UE->value.choice.GNB_DU_UE_F1AP_ID;
+    f1ap_ue_context_setup_req->rnti =
+      f1ap_get_rnti_by_du_id(false, instance, f1ap_ue_context_setup_req->gNB_DU_ue_id);
   } else {
-    f1ap_ue_context_setup_req->gNB_DU_ue_id = NULL;
+    f1ap_ue_context_setup_req->gNB_DU_ue_id = -1;
+    f1ap_ue_context_setup_req->rnti =
+      f1ap_get_rnti_by_cu_id(false, instance, f1ap_ue_context_setup_req->gNB_CU_ue_id);
   }
-  
-  if(f1ap_ue_context_setup_req->gNB_DU_ue_id!=NULL)
-    f1ap_ue_context_setup_req->rnti = f1ap_get_rnti_by_du_id(false, instance, *f1ap_ue_context_setup_req->gNB_DU_ue_id);
-  else
-    f1ap_ue_context_setup_req->rnti = f1ap_get_rnti_by_cu_id(false, instance, f1ap_ue_context_setup_req->gNB_CU_ue_id);
-
+ 
   if(f1ap_ue_context_setup_req->rnti<0)
     LOG_E(F1AP, "Could not retrieve UE rnti based on the CU/DU UE id \n");
   else
@@ -127,7 +124,6 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     f1ap_ue_context_setup_req->cellULConfigured = NULL;
   }
 
-  teid_t *teids=NULL;
   if (RC.nrrrc) {
     /* RRCContainer */
     F1AP_UEContextSetupRequestIEs_t *ieDrb;
@@ -139,21 +135,20 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     AssertFatal(f1ap_ue_context_setup_req->drbs_to_be_setup,
                 "could not allocate memory for f1ap_ue_context_setup_req->drbs_to_be_setup\n");
 
-    teids=malloc(f1ap_ue_context_setup_req->drbs_to_be_setup_length*sizeof(*teids));
     for (i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; ++i) {
       f1ap_drb_to_be_setup_t *drb_p = &f1ap_ue_context_setup_req->drbs_to_be_setup[i];
-      F1AP_DRBs_ToBeSetup_Item_t *drbs_tobesetup_item_p;
-      drbs_tobesetup_item_p = &((F1AP_DRBs_ToBeSetup_ItemIEs_t *)ieDrb->value.choice.DRBs_ToBeSetup_List.list.array[i])->value.choice.DRBs_ToBeSetup_Item;
+      F1AP_DRBs_ToBeSetup_Item_t *drbs_tobesetup_item_p =
+	&((F1AP_DRBs_ToBeSetup_ItemIEs_t *)ieDrb->value.choice.DRBs_ToBeSetup_List.list.array[i])->value.choice.DRBs_ToBeSetup_Item;
       drb_p->drb_id = drbs_tobesetup_item_p->dRBID;
       /* TODO in the following, assume only one UP UL TNL is present.
       * this matches/assumes OAI CU implementation, can be up to 2! */
-      drb_p->up_ul_tnl_length = 1;
+      drb_p->tnl_length = 1;
       AssertFatal(drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.count > 0,
                   "no UL UP TNL Information in DRBs to be Setup list\n");
       F1AP_ULUPTNLInformation_ToBeSetup_Item_t *ul_up_tnl_info_p = (F1AP_ULUPTNLInformation_ToBeSetup_Item_t *)drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.array[0];
       F1AP_GTPTunnel_t *ul_up_tnl0 = ul_up_tnl_info_p->uLUPTNLInformation.choice.gTPTunnel;
-      BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
-      OCTET_STRING_TO_INT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].gtp_teid);
+      BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->tnl[0].tl_address);
+      OCTET_STRING_TO_INT32(&ul_up_tnl0->gTP_TEID, drb_p->tnl[0].outgoingTeid);
 
       switch (drbs_tobesetup_item_p->rLCMode) {
         case F1AP_RLCMode_rlc_am:
@@ -165,21 +160,16 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
           break;
       }
       transport_layer_addr_t addr;
-      memcpy(addr.buffer, &drb_p->up_ul_tnl[0].tl_address, sizeof(drb_p->up_ul_tnl[0].tl_address));
-      addr.length=sizeof(drb_p->up_ul_tnl[0].tl_address)*8;
-      rnti_t ue_rnti = (f1ap_ue_context_setup_req->gNB_DU_ue_id!=NULL) ?
-	f1ap_get_rnti_by_du_id(false, instance, *f1ap_ue_context_setup_req->gNB_DU_ue_id):
-	f1ap_get_rnti_by_cu_id(false, instance, f1ap_ue_context_setup_req->gNB_CU_ue_id);
-      teid_t x=newGtpuCreateTunnel(INSTANCE_DEFAULT,
-                                   ue_rnti,
+      memcpy(addr.buffer, &drb_p->tnl[0].tl_address, sizeof(drb_p->tnl[0].tl_address));
+      addr.length=sizeof(drb_p->tnl[0].tl_address)*8;
+      drb_p->tnl[0].incomingTeid=newGtpuCreateTunnel(INSTANCE_DEFAULT,
+                                   f1ap_ue_context_setup_req->rnti,
 				   drb_p->drb_id ,
 				   drb_p->drb_id,
-				   drb_p->up_ul_tnl[0].gtp_teid,
+				   drb_p->tnl[0].outgoingTeid,
 				   addr,
 				   2152,
 				   DURecvCb);
-      teids[i]=x;
-
     }
     F1AP_UEContextSetupRequestIEs_t *ieSrb;
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieSrb, container,
@@ -231,18 +221,14 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     LOG_W(F1AP, "can't find RRCContainer in UEContextSetupRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
   }
   
-  DU_send_UE_CONTEXT_SETUP_RESPONSE(instance,  f1ap_ue_context_setup_req->rnti,
-				    f1ap_ue_context_setup_req->drbs_to_be_setup_length, teids);
-
-  if (teids)
-    free(teids);
+  DU_send_UE_CONTEXT_SETUP_RESPONSE(instance,  f1ap_ue_context_setup_req);
 
   itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
 
   return 0;
 }
 
-int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, rnti_t rntiP, int nbTEID, teid_t * teids) {
+int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup_req_t * req) {
   F1AP_F1AP_PDU_t                  pdu= {0};
   F1AP_UEContextSetupResponse_t    *out;
   uint8_t  *buffer=NULL;
@@ -261,16 +247,17 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, rnti_t rntiP, int nbT
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = 126L;
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = req->gNB_CU_ue_id;
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie2);
   ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie2->value.choice.GNB_DU_UE_F1AP_ID = 651L;
+  ie2->value.choice.GNB_DU_UE_F1AP_ID = req->gNB_DU_ue_id;
   /* mandatory */
   /* c3. DUtoCURRCInformation */
+  if (0) {
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie3);
   ie3->id                             = F1AP_ProtocolIE_ID_id_DUtoCURRCInformation;
   ie3->criticality                    = F1AP_Criticality_reject;
@@ -296,6 +283,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, rnti_t rntiP, int nbT
       OCTET_STRING_fromBuf(tmp, "asdsa", strlen("asdsa"));
     }
   }
+  }
 
   /* optional */
   /* c4. C_RNTI */
@@ -305,7 +293,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, rnti_t rntiP, int nbT
     ie4->criticality                    = F1AP_Criticality_ignore;
     ie4->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_C_RNTI;
     //C_RNTI_TO_BIT_STRING(rntiP, &ie->value.choice.C_RNTI);
-    ie4->value.choice.C_RNTI=rntiP;
+    ie4->value.choice.C_RNTI=req->rnti;
     LOG_E(F1AP,"RNTI to code!\n");
   }
 
@@ -337,7 +325,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, rnti_t rntiP, int nbT
   ie7->criticality                    = F1AP_Criticality_ignore;
   ie7->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_DRBs_Setup_List;
 
-  for (int i=0;  i<nbTEID; i++) {
+  for (int i=0;  i< req->drbs_to_be_setup_length; i++) {
     //
     asn1cSequenceAdd(ie7->value.choice.DRBs_Setup_List.list,
                      F1AP_DRBs_Setup_ItemIEs_t, drbs_setup_item_ies);
@@ -348,14 +336,14 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, rnti_t rntiP, int nbT
     /* ADD */
     F1AP_DRBs_Setup_Item_t *drbs_setup_item=&drbs_setup_item_ies->value.choice.DRBs_Setup_Item;
     /* dRBID */
-    drbs_setup_item->dRBID = 12;
+    drbs_setup_item->dRBID = req->drbs_to_be_setup[i].drb_id;
 
     /* OPTIONAL */
     /* lCID */
     //drbs_setup_item.lCID = (F1AP_LCID_t *)calloc(1, sizeof(F1AP_LCID_t));
     //drbs_setup_item.lCID = 1L;
 
-    for (int j=0;  j<1; j++) {
+    for (int j=0;  j<req->drbs_to_be_setup[i].tnl_length; j++) {
       /* ADD */
       asn1cSequenceAdd(drbs_setup_item->dLUPTNLInformation_ToBeSetup_List.list,
                        F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);
@@ -370,7 +358,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, rnti_t rntiP, int nbT
       TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr,
 						 &gTPTunnel->transportLayerAddress);
       /* gTP_TEID */
-      INT32_TO_OCTET_STRING(teids[i], &gTPTunnel->gTP_TEID);
+      INT32_TO_OCTET_STRING(req->drbs_to_be_setup[i].tnl[j].incomingTeid, &gTPTunnel->gTP_TEID);
     } // for j
   } // for i
 

@@ -1374,9 +1374,9 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].rlc_mode = RLC_MODE_AM;
-        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].gtp_teid = ue_context_pP->ue_context.incoming_teid[i]; 
-        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].tl_address = inet_addr(rrc->eth_params_s.my_addr);
-        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl_length = 1;
+        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].tnl[0].incomingTeid = ue_context_pP->ue_context.incoming_teid[i]; 
+        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].tnl[0].tl_address = inet_addr(rrc->eth_params_s.my_addr);
+        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].tnl_length = 1;
       }
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_DU_ue_id = 0;

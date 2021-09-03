@@ -509,8 +509,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     } // if some_decide_qos
 
     /* 12.1.3 uLUPTNLInformation_ToBeSetup_List */
-    for (int j = 0; j < f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl_length; j++) {
-      f1ap_up_tnl_t *up_tnl = &f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j];
+    for (int j = 0; j < f1ap_ue_context_setup_req->drbs_to_be_setup[i].tnl_length; j++) {
       /*  12.3.1 ULTunnels_ToBeSetup_Item */
       asn1cSequenceAdd(drbs_toBeSetup_item->uLUPTNLInformation_ToBeSetup_List.list,
                        F1AP_ULUPTNLInformation_ToBeSetup_Item_t, uLUPTNLInformation_ToBeSetup_Item);
@@ -518,9 +517,11 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
       asn1cCalloc( uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.choice.gTPTunnel,
                    F1AP_GTPTunnel_t,  gTPTunnel);
       /* 12.3.1.1.1 transportLayerAddress */
-      TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(up_tnl->tl_address, &gTPTunnel->transportLayerAddress);
+      TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(f1ap_ue_context_setup_req->drbs_to_be_setup[i].tnl[j].tl_address,
+						  &gTPTunnel->transportLayerAddress);
       /* 12.3.1.1.2 gTP_TEID */
-      INT32_TO_OCTET_STRING(up_tnl->gtp_teid, &gTPTunnel->gTP_TEID);
+      INT32_TO_OCTET_STRING(f1ap_ue_context_setup_req->drbs_to_be_setup[i].tnl[j].outgoingTeid,
+			    &gTPTunnel->gTP_TEID);
     }
 
     /* 12.1.4 rLCMode */

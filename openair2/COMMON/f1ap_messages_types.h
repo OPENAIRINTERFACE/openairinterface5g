@@ -317,13 +317,14 @@ typedef struct f1ap_ul_rrc_message_s {
 
 typedef struct f1ap_up_tnl_s {
   in_addr_t tl_address; // currently only IPv4 supported
-  uint32_t  gtp_teid;
+  teid_t  outgoingTeid;
+  teid_t  incomingTeid;
 } f1ap_up_tnl_t;
 
 typedef struct f1ap_drb_to_be_setup_s {
   long           drb_id;
-  f1ap_up_tnl_t  up_ul_tnl[2];
-  uint8_t        up_ul_tnl_length;
+  f1ap_up_tnl_t  tnl[2];
+  uint8_t        tnl_length;
   rlc_mode_t     rlc_mode;
 } f1ap_drb_to_be_setup_t;
 
@@ -334,7 +335,7 @@ typedef struct f1ap_srb_to_be_setup_s {
 
 typedef struct f1ap_ue_context_setup_req_s {
   uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
-  uint32_t *gNB_DU_ue_id;
+  uint32_t gNB_DU_ue_id;
   uint16_t rnti; 
   // SpCell Info
   uint16_t mcc;
