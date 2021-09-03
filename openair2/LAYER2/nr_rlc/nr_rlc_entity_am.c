@@ -1587,25 +1587,18 @@ int nr_rlc_entity_am_generate_pdu(nr_rlc_entity_t *_entity,
 {
   nr_rlc_entity_am_t *entity = (nr_rlc_entity_am_t *)_entity;
   int ret;
-    LOG_I(MAC, "Melissa Elkadi, in %s(): %d\n", __FUNCTION__, __LINE__);
 
   if (status_to_report(entity)) {
-    LOG_I(MAC, "Melissa Elkadi, in %s(): %d\n", __FUNCTION__, __LINE__);
     ret = generate_status(entity, buffer, size);
     if (ret != 0)
       return ret;
   }
 
   if (entity->retransmit_list != NULL) {
-    LOG_I(MAC, "Melissa Elkadi, in %s(): %d\n", __FUNCTION__, __LINE__);
     ret = generate_retx_pdu(entity, buffer, size);
     if (ret != 0)
       return ret;
   }
-  char buf[1024];
-  hexdump(buffer, size, buf, sizeof(buf));
-  LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right before calling generate_pdu in %s\n",
-        buf, __FUNCTION__);
   return generate_tx_pdu(entity, buffer, size);
 }
 
