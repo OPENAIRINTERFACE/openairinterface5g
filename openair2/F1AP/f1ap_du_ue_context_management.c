@@ -133,33 +133,33 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     F1AP_UEContextSetupRequestIEs_t *ieDrb;
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieDrb, container,
                                F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_List, true);
-    f1ap_ue_context_setup_req->drbs_to_be_setup_length = ieDrb->value.choice.DRBs_ToBeSetup_List.list.count;
-    f1ap_ue_context_setup_req->drbs_to_be_setup = calloc(f1ap_ue_context_setup_req->drbs_to_be_setup_length,
+    if(ieDrb!=NULL){
+      f1ap_ue_context_setup_req->drbs_to_be_setup_length = ieDrb->value.choice.DRBs_ToBeSetup_List.list.count;
+      f1ap_ue_context_setup_req->drbs_to_be_setup = calloc(f1ap_ue_context_setup_req->drbs_to_be_setup_length,
         sizeof(f1ap_drb_to_be_setup_t));
-    AssertFatal(f1ap_ue_context_setup_req->drbs_to_be_setup,
+      AssertFatal(f1ap_ue_context_setup_req->drbs_to_be_setup,
                 "could not allocate memory for f1ap_ue_context_setup_req->drbs_to_be_setup\n");
 
-    teids=malloc(f1ap_ue_context_setup_req->drbs_to_be_setup_length*sizeof(*teids));
-    for (i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; ++i) {
-      f1ap_drb_to_be_setup_t *drb_p = &f1ap_ue_context_setup_req->drbs_to_be_setup[i];
-      F1AP_DRBs_ToBeSetup_Item_t *drbs_tobesetup_item_p;
-      drbs_tobesetup_item_p = &((F1AP_DRBs_ToBeSetup_ItemIEs_t *)ieDrb->value.choice.DRBs_ToBeSetup_List.list.array[i])->value.choice.DRBs_ToBeSetup_Item;
-      drb_p->drb_id = drbs_tobesetup_item_p->dRBID;
-      /* TODO in the following, assume only one UP UL TNL is present.
-      * this matches/assumes OAI CU implementation, can be up to 2! */
-      drb_p->up_ul_tnl_length = 1;
-      AssertFatal(drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.count > 0,
+      teids=malloc(f1ap_ue_context_setup_req->drbs_to_be_setup_length*sizeof(*teids));
+      for (i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; ++i) {
+        f1ap_drb_to_be_setup_t *drb_p = &f1ap_ue_context_setup_req->drbs_to_be_setup[i];
+        F1AP_DRBs_ToBeSetup_Item_t *drbs_tobesetup_item_p;
+        drbs_tobesetup_item_p = &((F1AP_DRBs_ToBeSetup_ItemIEs_t *)ieDrb->value.choice.DRBs_ToBeSetup_List.list.array[i])->value.choice.DRBs_ToBeSetup_Item;
+        drb_p->drb_id = drbs_tobesetup_item_p->dRBID;
+        /* TODO in the following, assume only one UP UL TNL is present.
+        * this matches/assumes OAI CU implementation, can be up to 2! */
+        drb_p->up_ul_tnl_length = 1;
+        AssertFatal(drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.count > 0,
                   "no UL UP TNL Information in DRBs to be Setup list\n");
-      F1AP_ULUPTNLInformation_ToBeSetup_Item_t *ul_up_tnl_info_p = (F1AP_ULUPTNLInformation_ToBeSetup_Item_t *)drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.array[0];
-      F1AP_GTPTunnel_t *ul_up_tnl0 = ul_up_tnl_info_p->uLUPTNLInformation.choice.gTPTunnel;
-      BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
-      OCTET_STRING_TO_INT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].gtp_teid);
+        F1AP_ULUPTNLInformation_ToBeSetup_Item_t *ul_up_tnl_info_p = (F1AP_ULUPTNLInformation_ToBeSetup_Item_t *)drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.array[0];
+        F1AP_GTPTunnel_t *ul_up_tnl0 = ul_up_tnl_info_p->uLUPTNLInformation.choice.gTPTunnel;
+        BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
+        OCTET_STRING_TO_INT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].gtp_teid);
 
-      switch (drbs_tobesetup_item_p->rLCMode) {
-        case F1AP_RLCMode_rlc_am:
-          drb_p->rlc_mode = RLC_MODE_AM;
+        switch (drbs_tobesetup_item_p->rLCMode) {
+          case F1AP_RLCMode_rlc_am:
+            drb_p->rlc_mode = RLC_MODE_AM;
           break;
-
         default:
           drb_p->rlc_mode = RLC_MODE_TM;
           break;
@@ -180,21 +180,24 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
 				   DURecvCb);
       teids[i]=x;
 
+      }
     }
     F1AP_UEContextSetupRequestIEs_t *ieSrb;
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieSrb, container,
                                    F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_List, true);
-    f1ap_ue_context_setup_req->srbs_to_be_setup_length = ieSrb->value.choice.SRBs_ToBeSetup_List.list.count;
-    f1ap_ue_context_setup_req->srbs_to_be_setup = calloc(f1ap_ue_context_setup_req->srbs_to_be_setup_length,
+    if(ieSrb != NULL){
+      f1ap_ue_context_setup_req->srbs_to_be_setup_length = ieSrb->value.choice.SRBs_ToBeSetup_List.list.count;
+      f1ap_ue_context_setup_req->srbs_to_be_setup = calloc(f1ap_ue_context_setup_req->srbs_to_be_setup_length,
             sizeof(f1ap_srb_to_be_setup_t));
-    AssertFatal(f1ap_ue_context_setup_req->srbs_to_be_setup,
+      AssertFatal(f1ap_ue_context_setup_req->srbs_to_be_setup,
                     "could not allocate memory for f1ap_ue_context_setup_req->srbs_to_be_setup\n");
 
-    for (i = 0; i < f1ap_ue_context_setup_req->srbs_to_be_setup_length; ++i) {
-      f1ap_srb_to_be_setup_t *srb_p = &f1ap_ue_context_setup_req->srbs_to_be_setup[i];
-      F1AP_SRBs_ToBeSetup_Item_t *srbs_tobesetup_item_p;
-      srbs_tobesetup_item_p = &((F1AP_SRBs_ToBeSetup_ItemIEs_t *)ieSrb->value.choice.SRBs_ToBeSetup_List.list.array[i])->value.choice.SRBs_ToBeSetup_Item;
-      srb_p->srb_id = srbs_tobesetup_item_p->sRBID;
+      for (i = 0; i < f1ap_ue_context_setup_req->srbs_to_be_setup_length; ++i) {
+        f1ap_srb_to_be_setup_t *srb_p = &f1ap_ue_context_setup_req->srbs_to_be_setup[i];
+        F1AP_SRBs_ToBeSetup_Item_t *srbs_tobesetup_item_p;
+        srbs_tobesetup_item_p = &((F1AP_SRBs_ToBeSetup_ItemIEs_t *)ieSrb->value.choice.SRBs_ToBeSetup_List.list.array[i])->value.choice.SRBs_ToBeSetup_Item;
+        srb_p->srb_id = srbs_tobesetup_item_p->sRBID;
+      }
     }
   }
 

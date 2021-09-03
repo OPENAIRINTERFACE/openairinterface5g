@@ -1365,7 +1365,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
         /* Here the callback function used as input is not the right one. Need to create a new one probably for F1-U, not sure
          * if the kind of input parameters to the callback function are convenient though for gtp-u over F1-U.*/
-        ue_context_pP->ue_context.incoming_teid[i] = newGtpuCreateTunnel(0, create_tunnel_req.rnti,
+        ue_context_pP->ue_context.incoming_teid[i] = newGtpuCreateTunnel(INSTANCE_DEFAULT, create_tunnel_req.rnti,
             create_tunnel_req.incoming_rb_id[i],
             create_tunnel_req.incoming_rb_id[i],
             create_tunnel_req.outgoing_teid[i],
@@ -3669,6 +3669,10 @@ void *rrc_gnb_task(void *args_p) {
       
     case F1AP_UE_CONTEXT_SETUP_REQ:
       rrc_DU_process_ue_context_setup_request(msg_p, msg_name_p, instance);
+      break;
+
+    case F1AP_UE_CONTEXT_SETUP_RESP:
+      LOG_W(NR_RRC, "Handling of F1 UE context setup response context at the RRC layer of the CU is pending \n");
       break;
 
       /* Messages from X2AP */
