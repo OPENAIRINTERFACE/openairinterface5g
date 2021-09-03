@@ -355,6 +355,11 @@ int nas_config(int interface_id, int thirdOctet, int fourthOctet, char *ifname) 
     UE_NAS_USE_TUN ? "oaitun_ue" : "oip",
     interface_id, interface_id - 1 + 10000);
 
+  if (res < 0) {
+    LOG_E(OIP,"Could not create ip rule/route commands string\n");
+    return res;
+  }
+
   background_system(command_line);
 
   return returnValue;
