@@ -3167,6 +3167,9 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                 mac_subheader_len = 2;
               }
 
+              AssertFatal(pdu_len > mac_sdu_len, "The mac_sdu_len (%d) has an invalid size. PDU len = %d! \n",
+                          mac_sdu_len, pdu_len);
+
               // Check if it is a valid CCCH message, we get all 00's messages very often
               int i = 0;
               for(i=0; i<(mac_subheader_len+mac_sdu_len); i++) {
