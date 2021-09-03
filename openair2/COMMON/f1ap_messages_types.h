@@ -317,21 +317,27 @@ typedef struct f1ap_ul_rrc_message_s {
 
 typedef struct f1ap_up_tnl_s {
   in_addr_t tl_address; // currently only IPv4 supported
-  teid_t  outgoingTeid;
-  teid_t  incomingTeid;
+  teid_t  teid;
 } f1ap_up_tnl_t;
 
 typedef struct f1ap_drb_to_be_setup_s {
   long           drb_id;
-  f1ap_up_tnl_t  tnl[2];
-  uint8_t        tnl_length;
+  f1ap_up_tnl_t  up_ul_tnl[2];
+  uint8_t        up_ul_tnl_length;
+  f1ap_up_tnl_t  up_dl_tnl[2];
+  uint8_t        up_dl_tnl_length;
   rlc_mode_t     rlc_mode;
 } f1ap_drb_to_be_setup_t;
 
 typedef struct f1ap_srb_to_be_setup_s {
   long           srb_id;
   rlc_mode_t     rlc_mode;
+  uint8_t        lcid;
 } f1ap_srb_to_be_setup_t;
+
+typedef struct f1ap_rb_failed_to_be_setup_s {
+  long           rb_id;
+} f1ap_rb_failed_to_be_setup_t;
 
 typedef struct f1ap_ue_context_setup_req_s {
   uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
@@ -367,6 +373,10 @@ typedef struct f1ap_ue_context_setup_resp_s {
   uint8_t  drbs_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
   f1ap_srb_to_be_setup_t *srbs_setup;
   uint8_t  srbs_setup_length;
+  uint8_t  srbs_failed_to_be_setup_length;
+  f1ap_rb_failed_to_be_setup_t *srbs_failed_to_be_setup;
+  uint8_t  drbs_failed_to_be_setup_length;
+  f1ap_rb_failed_to_be_setup_t *drbs_failed_to_be_setup;
 } f1ap_ue_context_setup_resp_t;
 
 typedef enum F1ap_Cause_e {

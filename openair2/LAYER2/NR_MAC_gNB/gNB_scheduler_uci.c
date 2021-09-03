@@ -284,8 +284,10 @@ uint8_t compute_ri_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
     }
     return max_ri;
   }
-  else
+  else {
     AssertFatal(1==0,"Other configurations not yet implemented\n");
+    return 0;
+  }
 }
 
 void compute_li_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
@@ -1352,7 +1354,7 @@ int nr_acknack_scheduling(int mod_id,
    * for initialCyclicShift 0 (we assume it always has that one), so other
    * initialCyclicShifts can overlap with ICS 0!*/
   if (pucch_Config==NULL) 
-       return;
+       return -1;
   const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[pucch->resource_indicator];
   DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
   if (resource->format.choice.format0->initialCyclicShift == 0) {
