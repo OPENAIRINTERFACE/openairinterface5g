@@ -107,7 +107,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
 );
 
 void
-nr_sa_rrc_ue_process_radioBearerConfig(
+nr_rrc_ue_process_RadioBearerConfig(
     const protocol_ctxt_t *const       ctxt_pP,
     const uint8_t                      gNB_index,
     NR_RadioBearerConfig_t *const      radioBearerConfig
@@ -247,15 +247,6 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
     return 0;
 }
 
-int8_t nr_rrc_ue_process_RadioBearerConfig(NR_RadioBearerConfig_t *RadioBearerConfig){
-
-
-  xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)RadioBearerConfig);
-  // Configure PDCP
-
-  return 0;
-}
-
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (decoded)
 // RRCReconfiguration
 int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCReconfiguration_t *rrcReconfiguration){
@@ -266,7 +257,17 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
         if(NR_UE_rrc_inst[module_id].radio_bearer_config == NULL){
           NR_UE_rrc_inst[module_id].radio_bearer_config = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig;                
         }else{
-          nr_rrc_ue_process_RadioBearerConfig(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig);
+          protocol_ctxt_t ctxt;
+          NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+          PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_id, ENB_FLAG_YES, mac->crnti, 0, 0, 0);
+          struct NR_RadioBearerConfig *RadioBearerConfig = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig;
+          xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)RadioBearerConfig);
+          LOG_D(NR_RRC, "Calling fill_default_rbconfig_ue at %d with: e_rab_id = %ld, drbID = %ld, cipher_algo = %ld, key = %ld \n",
+                        __LINE__, RadioBearerConfig->drb_ToAddModList->list.array[0]->cnAssociation->choice.eps_BearerIdentity,
+                        RadioBearerConfig->drb_ToAddModList->list.array[0]->drb_Identity,
+                        RadioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm,
+                        *RadioBearerConfig->securityConfig->keyToUse);
+          nr_rrc_ue_process_RadioBearerConfig(&ctxt, 0, RadioBearerConfig);
         }
       }
       if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup != NULL){
@@ -404,7 +405,17 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
           SEQUENCE_free( &asn_DEF_NR_RadioBearerConfig, RadioBearerConfig, 1 );
           return;
         }
-        nr_rrc_ue_process_RadioBearerConfig(RadioBearerConfig);
+        protocol_ctxt_t ctxt;
+        NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_id, ENB_FLAG_YES, mac->crnti, 0, 0, 0);
+        xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)RadioBearerConfig);
+        LOG_D(NR_RRC, "Calling fill_default_rbconfig_ue at %d with: e_rab_id = %ld, drbID = %ld, cipher_algo = %ld, key = %ld \n",
+                        __LINE__, RadioBearerConfig->drb_ToAddModList->list.array[0]->cnAssociation->choice.eps_BearerIdentity,
+                        RadioBearerConfig->drb_ToAddModList->list.array[0]->drb_Identity,
+                        RadioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm,
+                        *RadioBearerConfig->securityConfig->keyToUse);
+        nr_rrc_ue_process_RadioBearerConfig(&ctxt, 0, RadioBearerConfig);
+
       }
       break;
     
@@ -1466,10 +1477,9 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 					   ctxt_pP,
 					   gNB_index,
 					   &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
-	 nr_sa_rrc_ue_process_radioBearerConfig(
-						ctxt_pP,
-						gNB_index,
-						&dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
+	 nr_rrc_ue_process_RadioBearerConfig(ctxt_pP,
+					     gNB_index,
+					     &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
 	 nr_rrc_set_state (ctxt_pP->module_id, RRC_STATE_CONNECTED);
 	 nr_rrc_set_sub_state (ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED);
 	 NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].rnti = ctxt_pP->rnti;
@@ -2032,7 +2042,7 @@ nr_rrc_ue_establish_srb2(
 
  //-----------------------------------------------------------------------------
  void
- nr_sa_rrc_ue_process_radioBearerConfig(
+ nr_rrc_ue_process_RadioBearerConfig(
      const protocol_ctxt_t *const       ctxt_pP,
      const uint8_t                      gNB_index,
      NR_RadioBearerConfig_t *const      radioBearerConfig
@@ -2221,7 +2231,7 @@ nr_rrc_ue_establish_srb2(
 
      if (ie->radioBearerConfig != NULL) {
        LOG_I(NR_RRC, "radio Bearer Configuration is present\n");
-       nr_sa_rrc_ue_process_radioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
+       nr_rrc_ue_process_RadioBearerConfig(ctxt_pP, gNB_index, ie->radioBearerConfig);
      }
 
      /* Check if there is dedicated NAS information to forward to NAS */

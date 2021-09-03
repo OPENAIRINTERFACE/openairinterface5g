@@ -454,22 +454,9 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   if (IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN) {
     LOG_D(PDCP, "IP packet received, to be sent to TUN interface");
 
-    /* In 5G there is a new layer called SDAP which adds one byte
-       to the PDU data. TUN interfaces care about the actual data
-       we are sending. If we do not remove the instance ID from
-       the buffer, it will start with 00, and the write will fail
-       with errno = 22 (EINVAL) */
-    char *data_buffer = buf;
-    int size_to_write = size;
-    if (buf[0] == 0) {
-        data_buffer = buf + 1;
-        size_to_write = size - 1;
-    }
-
-
-    len = write(nas_sock_fd[0], data_buffer, size_to_write);
+    len = write(nas_sock_fd[0], buf, size);
     LOG_D(PDCP, "len = %d bytes to tunnel interface %d\n", len, nas_sock_fd[0]);
-    if (len != size_to_write) {
+    if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal error %d: %s\n", __FILE__, __LINE__, __FUNCTION__, errno, strerror(errno));
     }
   }
@@ -856,7 +843,7 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
     pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id,pdusession_id,has_sdap,
                                   has_sdapULheader,has_sdapDLheader,
                                   deliver_sdu_drb, ue, deliver_pdu_drb, ue,
-                                  12, t_reordering, discard_timer,
+                                  sn_size_dl, t_reordering, discard_timer,
                                   ciphering_algorithm, integrity_algorithm,
                                   ciphering_key, integrity_key);
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
