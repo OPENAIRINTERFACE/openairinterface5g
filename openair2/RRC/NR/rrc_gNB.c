@@ -3084,7 +3084,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
                    ctxt_pP->module_id,
                    ue_context_p,
                    NGAP_CAUSE_RADIO_NETWORK,
-                   30);
+                   NGAP_CAUSE_RADIO_NETWORK_RADIO_CONNECTION_WITH_UE_LOST);
         }
 
         // Remove here the MAC and RRC context when RRC is not connected or gNB is not connected to CN5G
