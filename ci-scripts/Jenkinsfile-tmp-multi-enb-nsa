@@ -289,10 +289,7 @@ pipeline {
             steps {
                 script {
                     if (currentBuild.result=='FAILURE') {StatusForDb = 'FAIL'} else {StatusForDb = 'PASS'}
-                    echo "${env.BUILD_URL}"
-                    echo "${env.BUILD_ID}"
-                    echo "${JOB_NAME}"
-                    sh "python3 /home/oaicicd/sql_connect.py ${params.eNB_MR} ${params.eNB_Branch} ${StatusForDb} ''"
+                    sh "python3 /home/oaicicd/mysql/sql_connect.py ${JOB_NAME} ${params.eNB_MR} ${params.eNB_Branch} ${env.BUILD_ID} ${env.BUILD_URL} ${StatusForDb} ''"
                 }
             }
         }
