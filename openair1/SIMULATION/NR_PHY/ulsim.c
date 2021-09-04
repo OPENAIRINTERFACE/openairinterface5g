@@ -707,9 +707,9 @@ int main(int argc, char **argv)
 
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, scc, 0, 0, NULL);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, scc, &rrc.carrier.mib,0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, scc, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, scc, &rrc.carrier.mib,1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
 
@@ -752,7 +752,18 @@ int main(int argc, char **argv)
   }
   */
   
-  nr_l2_init_ue(NULL);
+
+
+
+  //Configure UE
+  NR_UE_RRC_INST_t rrcue;
+  memset(&rrcue,0,sizeof(NR_UE_RRC_INST_t));
+  rrc.carrier.MIB = (uint8_t*) malloc(4);
+  rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
+  rrcue.mib = rrc.carrier.mib.message.choice.mib;
+  rrcue.scell_group_config=secondaryCellGroup;
+  nr_l2_init_ue(&rrcue);
+
   NR_UE_MAC_INST_t* UE_mac = get_mac_inst(0);
   
   UE->if_inst = nr_ue_if_module_init(0);
@@ -763,11 +774,7 @@ int main(int argc, char **argv)
   
   UE_mac->if_module = nr_ue_if_module_init(0);
 
-  //Configure UE
-  rrc.carrier.MIB = (uint8_t*) malloc(4);
-  rrc.carrier.sizeof_MIB = do_MIB_NR(&rrc,0);
-
-  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib, NULL, NULL, secondaryCellGroup);
+//  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib, NULL, NULL, secondaryCellGroup);
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
 
@@ -1267,18 +1274,12 @@ int main(int argc, char **argv)
 	  if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) ||
 	     ((ulsch_ue[0]->g[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0)))
 	    {
-	      /*if(errors_scrambling == 0)
-		printf("\x1B[34m" "[frame %d][trial %d]\t1st bit in error in unscrambling = %d\n" "\x1B[0m", frame, trial, i);*/
 	      errors_scrambling[round]++;
 	    }
 	}
 	round++;
 
     } // round
-    
-    if (n_trials == 1 && errors_scrambling[0] > 0) {
-      printf("\x1B[31m""[frame %d][trial %d]\tnumber of errors in unscrambling = %u\n" "\x1B[0m", frame, trial, errors_scrambling[0]);
-    }
     
     for (i = 0; i < TBS; i++) {
       
@@ -1294,11 +1295,11 @@ int main(int argc, char **argv)
     if (n_trials == 1) {
       for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
 	for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
-	  /*if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
+	  if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
 	    printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
 	    i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
 	    i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
-	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
+	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);
 	}
     }
     if (errors_decoding > 0 && error_flag == 0) {

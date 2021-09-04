@@ -326,8 +326,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
         temp+=(int64_t)corr_re[aa][0]*corr_re[aa][0] + (int64_t)corr_im[aa][0]*corr_im[aa][0];
     }
 
-    LOG_D(PHY,"PUCCH IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[0],corr_im[0],10*log10((double)corr_re[0]*corr_re[0] + (double)corr_im[0]*corr_im[0]));
-    if (l>1) LOG_D(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[1],corr_im[1],10*log10((double)corr_re[1]*corr_re[1] + (double)corr_im[1]*corr_im[1]));
+    LOG_D(PHY,"PUCCH IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[0][0],corr_im[0][0],10*log10((double)corr_re[0][0]*corr_re[0][0] + (double)corr_im[0][0]*corr_im[0][0]));
+    if (l>1) LOG_D(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[0][1],corr_im[0][1],10*log10((double)corr_re[0][1]*corr_re[0][1] + (double)corr_im[0][1]*corr_im[0][1]));
     if (pucch_pdu->freq_hop_flag == 0 && l==1) {// non-coherent correlation
       temp=0;
       for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
@@ -1580,7 +1580,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
             corr_re = ( corr32_re[symb][half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_re[aa]))[0]);
             corr_im = ( corr32_im[symb][half_prb>>2][aa]/(2*nc_group_size*4/2)+((int16_t*)(&prod_im[aa]))[0]);
             corr_tmp += corr_re*corr_re + corr_im*corr_im;
-            /*
+           /* 
               LOG_D(PHY,"pucch2 half_prb %d cw %d (%d,%d) aa %d: (%d,%d,%d,%d,%d,%d,%d,%d)x(%d,%d,%d,%d,%d,%d,%d,%d)  (%d,%d)+(%d,%d) = (%d,%d) => %d\n",
               half_prb,cw,cw&15,cw>>4,aa,
               ((int16_t*)&pucch2_polar_4bit[cw&15])[0],((int16_t*)&pucch2_polar_4bit[cw>>4])[0],
@@ -1597,7 +1597,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                 corr_re,
                 corr_im,
                 corr_tmp);
-
+*/
 	}
 	corr16 = _mm_set1_epi16((int16_t)(corr_tmp>>8));
 
