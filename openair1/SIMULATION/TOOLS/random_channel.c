@@ -519,12 +519,12 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
     chan_desc->ch[i] = (struct complex *) malloc(chan_desc->channel_length * sizeof(struct complex));
 
   for (int i = 0; i<nb_tx*nb_rx; i++)
-    chan_desc->chF[i] = (struct complex *) malloc(1200 * sizeof(struct complex));
+    chan_desc->chF[i] = (struct complex *) malloc((2+(275*12)) * sizeof(struct complex));
 
   for (int i = 0; i<chan_desc->nb_taps; i++)
     chan_desc->a[i]         = (struct complex *) malloc(nb_tx*nb_rx * sizeof(struct complex));
 
-  chan_desc->R_sqrt  = (struct complex **) malloc(6*sizeof(struct complex **));
+  chan_desc->R_sqrt  = (struct complex **) malloc(tdl_pathsby3*sizeof(struct complex **));
 
   if (nb_tx==2 && nb_rx==2) {
     for (int i = 0; i<(tdl_pathsby3); i++)
@@ -1708,10 +1708,9 @@ void set_channeldesc_name(channel_desc_t *cdesc,char *modelname) {
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   double s;
   int i,k,l,aarx,aatx;
-  struct complex anew[NB_ANTENNAS_TX*NB_ANTENNAS_RX],acorr[NB_ANTENNAS_TX*NB_ANTENNAS_RX];
+  struct complex anew[desc->nb_tx*desc->nb_rx],acorr[desc->nb_tx*desc->nb_rx];
   struct complex phase, alpha, beta;
-  AssertFatal(desc->nb_tx<=NB_ANTENNAS_TX && desc->nb_rx <= NB_ANTENNAS_RX,
-              "random_channel.c: Error: temporary buffer for channel not big enough (%d,%d)\n",desc->nb_tx,desc->nb_rx);
+
   start_meas(&desc->random_channel);
 
   for (i=0; i<(int)desc->nb_taps; i++) {

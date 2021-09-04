@@ -429,9 +429,10 @@ void nr_processULSegment(void* arg) {
 
   if (check_crc((uint8_t*)llrProcBuf,length_dec,ulsch_harq->F,crc_type)) {
 #ifdef PRINT_CRC_CHECK
-      LOG_I(PHY, "Segment %d CRC OK\n",r);
+      LOG_I(PHY, "Segment %d CRC OK, iterations %d/%d\n",r,no_iteration_ldpc,max_ldpc_iterations);
 #endif
     rdata->decodeIterations = no_iteration_ldpc;
+    if (rdata->decodeIterations > p_decoderParms->numMaxIter) rdata->decodeIterations--;
   } else {
 #ifdef PRINT_CRC_CHECK
       LOG_I(PHY, "CRC NOK\n");

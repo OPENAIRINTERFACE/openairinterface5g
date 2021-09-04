@@ -1318,8 +1318,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       start_meas(&gNB->ulsch_mrc_stats);
       nr_ulsch_detection_mrc(frame_parms,
                              gNB->pusch_vars[ulsch_id]->rxdataF_comp,
-                             gNB->pusch_vars[ulsch_id]->ul_ch_mag,
-                             gNB->pusch_vars[ulsch_id]->ul_ch_magb,
+                             gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
+                             gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
                              symbol,
                              rel15_ul->rb_size);
       stop_meas(&gNB->ulsch_mrc_stats);

@@ -258,10 +258,11 @@ static inline void polar_rate_matching(const t_nrPolar_params *polarParams,void 
   // handle rate matching with a single 128 bit word using bit shuffling
   // can be done with SIMD intrisics if needed
   if (polarParams->groupsize < 8)  {
-    AssertFatal(polarParams->encoderLength<=128,"Need to handle groupsize<8 and N>128\n");
+    AssertFatal(polarParams->encoderLength<=512,"Need to handle groupsize(%d)<8 and N(%d)>512\n",polarParams->groupsize,polarParams->encoderLength);
     uint128_t *out128=(uint128_t*)out;
     uint128_t *in128=(uint128_t*)in;
-    *out128=0;
+    for (int i=0;i<=polarParams->encoderLength>>7;i++)
+      out128[i]=0;
     uint128_t tmp0;
 #ifdef DEBUG_POLAR_ENCODER
     uint128_t tmp1;
@@ -270,15 +271,21 @@ static inline void polar_rate_matching(const t_nrPolar_params *polarParams,void 
 #ifdef DEBUG_POLAR_ENCODER
       printf("%d<-%u : %llx.%llx =>",i,polarParams->rate_matching_pattern[i],((uint64_t *)out)[1],((uint64_t *)out)[0]);
 #endif
-      tmp0 = (*in128&(((uint128_t)1)<<polarParams->rate_matching_pattern[i]));
+      uint8_t pi=polarParams->rate_matching_pattern[i];
+      uint8_t pi7=pi>>7;
+      uint8_t pimod128=pi&127;
+      uint8_t imod128=i&127;
+      uint8_t i7=i>>7;
+      
+      tmp0 = (in128[pi7]&(((uint128_t)1)<<(pimod128)));
+      
       if (tmp0!=0) {
-	*out128 = *out128 | ((uint128_t)1)<<i;
+        out128[i7] = out128[i7] | ((uint128_t)1)<<imod128;
 #ifdef DEBUG_POLAR_ENCODER
-	tmp1 = ((uint128_t)1)<<i;
-	printf("%llx.%llx<->%llx.%llx => %llx.%llx\n",
-	       ((uint64_t *)&tmp0)[1],((uint64_t *)&tmp0)[0],
-	       ((uint64_t *)&tmp1)[1],((uint64_t *)&tmp1)[0],
-	       ((uint64_t *)out)[1],((uint64_t *)out)[0]);
+        printf("%llx.%llx<->%llx.%llx => %llx.%llx\n",
+               ((uint64_t *)&tmp0)[1],((uint64_t *)&tmp0)[0],
+               ((uint64_t *)&tmp1)[1],((uint64_t *)&tmp1)[0],
+               ((uint64_t *)out)[1],((uint64_t *)out)[0]);
 #endif
       }
     }
