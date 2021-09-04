@@ -261,7 +261,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   x_im[1] = table_5_2_2_2_2_Im[u[1]];
 
   int16_t xr[1+frame_parms->nb_antennas_rx][1+pucch_pdu->nr_of_symbols][24]  __attribute__((aligned(32)));
-  int64_t xrtmag=0;
+  int64_t xrtmag=0,xrtmag_next=0;
   uint8_t maxpos=0;
   uint8_t index=0;
   for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
@@ -355,6 +355,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
     av_corr+=temp;
     if (temp>xrtmag) {
+      xrtmag_next = xrtmag;
       xrtmag=temp;
       maxpos=i;
       uci_stats->current_pucch0_stat0 = 0;
@@ -371,7 +372,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   av_corr/=nr_sequences/l;
 
   int xrtmag_dBtimes10 = 10*(int)dB_fixed64(xrtmag/frame_parms->nb_antennas_rx);
- 
+  int xrtmag_next_dBtimes10 = 10*(int)dB_fixed64(xrtmag_next/frame_parms->nb_antennas_rx);
 #ifdef DEBUG_NR_PUCCH_RX
   printf("PUCCH 0 : maxpos %d\n",maxpos);
 #endif
@@ -393,10 +394,10 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   else if (SNRtimes10 >  635) cqi=255;
   else cqi=(640+SNRtimes10)/5;
 
-  uci_stats->pucch0_thres = gNB->pucch0_thres + (10*max_n0);
+  uci_stats->pucch0_thres = gNB->pucch0_thres; /* + (10*max_n0);*/
   bool no_conf=false;
   if (nr_sequences>1) {
-    if (xrtmag_dBtimes10 < uci_stats->pucch0_thres)
+    if (xrtmag_dBtimes10 < uci_stats->pucch0_thres+xrtmag_next_dBtimes10)
       no_conf=true;
   }
   gNB->bad_pucch += no_conf;
@@ -426,8 +427,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = no_conf ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
-    LOG_I(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d\n",
-          frame,slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10);
+    LOG_I(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d srt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d\n",
+          frame,slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
@@ -443,8 +444,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);
     uci_pdu->harq->harq_list[1].harq_value = index&0x01;
     uci_pdu->harq->harq_list[0].harq_value = (index>>1)&0x01;
-    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d, xrt_mag %d\n",
-          frame,slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10);
+    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d, xrt_mag %d xrt_mag_next %d\n",
+          frame,slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;

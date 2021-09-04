@@ -1311,6 +1311,19 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   ASN_SEQUENCE_ADD(&bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcic);
 
   SpCellConfig->spCellConfigDedicated->tag_Id=0;
+  SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig=calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig));
+  NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig = calloc(1,sizeof(*pdsch_servingcellconfig));
+  SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->present = NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup;
+  SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup = pdsch_servingcellconfig;
+  pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
+  pdsch_servingcellconfig->xOverhead = NULL;
+  pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = calloc(1, sizeof(*pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH));
+  *pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n16;
+  pdsch_servingcellconfig->pucch_Cell= NULL;
+  pdsch_servingcellconfig->ext1=calloc(1,sizeof(*pdsch_servingcellconfig->ext1));
+  pdsch_servingcellconfig->ext1->maxMIMO_Layers = calloc(1,sizeof(*pdsch_servingcellconfig->ext1->maxMIMO_Layers));
+  *pdsch_servingcellconfig->ext1->maxMIMO_Layers = 2;
+
 }
 
 void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup) {

@@ -326,7 +326,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
-                              sched_ctrl->search_space);
+                              sched_ctrl->search_space,
+                              sched_ctrl->maxL);
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = UE_info->Y[UE_id][cid][slot];
   const int m = UE_info->num_pdcch_cand[UE_id][cid];
@@ -483,7 +484,8 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
-                              sched_ctrl->search_space);
+                              sched_ctrl->search_space,
+			      sched_ctrl->maxL);
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = UE_info->Y[UE_id][cid][slot];
   const int m = UE_info->num_pdcch_cand[UE_id][cid];
