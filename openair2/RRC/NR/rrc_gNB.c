@@ -238,6 +238,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 			   rrc->carrier.ssb_SubcarrierOffset,
 			   rrc->carrier.pdsch_AntennaPorts,
 			   rrc->carrier.pusch_AntennaPorts,
+                           rrc->carrier.sib1_tda,
 			   (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
 			   0,
 			   0, // WIP hardcoded rnti
@@ -330,6 +331,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
   rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
+  rrc->carrier.sib1_tda = configuration->sib1_tda;
   rrc->carrier.do_CSIRS = configuration->do_CSIRS;
    /// System Information INIT
   pthread_mutex_init(&rrc->cell_info_mutex,NULL);
@@ -384,13 +386,14 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
                          const protocol_ctxt_t        *const ctxt_pP ) {
 
       rrc_mac_config_req_gNB(rrc->module_id,
-                             rrc->carrier.ssb_SubcarrierOffset,
-                             rrc->carrier.pdsch_AntennaPorts,
-                             rrc->carrier.pusch_AntennaPorts,
-                             NULL,
-                             0,
-                             ue_context_pP->ue_context.rnti,
-                             get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : (NR_CellGroupConfig_t *)NULL);
+			     rrc->carrier.ssb_SubcarrierOffset,
+			     rrc->carrier.pdsch_AntennaPorts,
+			     rrc->carrier.pusch_AntennaPorts,
+			     rrc->carrier.sib1_tda,
+			     NULL,
+			     0,
+			     ue_context_pP->ue_context.rnti,
+			     get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : (NR_CellGroupConfig_t *)NULL);
 
       nr_rrc_rlc_config_asn1_req(ctxt_pP,
                                  ue_context_pP->ue_context.SRB_configList,
@@ -528,6 +531,7 @@ rrc_gNB_generate_RRCSetup(
       //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
 
       // configure MAC
+
       apply_macrlc_config(rrc,ue_context_pP,ctxt_pP);
 
       apply_pdcp_config(ue_context_pP,ctxt_pP);
@@ -576,6 +580,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          rrc_instance_p->carrier.ssb_SubcarrierOffset,
                          rrc_instance_p->carrier.pdsch_AntennaPorts,
                          rrc_instance_p->carrier.pusch_AntennaPorts,
+                         rrc_instance_p->carrier.sib1_tda,
                          (NR_ServingCellConfigCommon_t *)rrc_instance_p->carrier.servingcellconfigcommon,
                          0,
                          ue_context_pP->ue_context.rnti,
@@ -1318,11 +1323,13 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               NULL,
                               get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
   /* Refresh SRBs/DRBs */
+
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
     rrc_mac_config_req_gNB(rrc->module_id,
                            rrc->carrier.ssb_SubcarrierOffset,
                            rrc->carrier.pdsch_AntennaPorts,
                            rrc->carrier.pusch_AntennaPorts,
+                           rrc->carrier.sib1_tda,
                            NULL,
                            0,
                            ue_context_pP->ue_context.rnti,
