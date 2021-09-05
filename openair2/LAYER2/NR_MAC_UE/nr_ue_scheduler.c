@@ -876,7 +876,86 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     nr_scheduled_response_t scheduled_response;
     nr_dcireq_t dcireq;
 
-    if(mac->cg != NULL){ // we have a cg
+    // check type0 from 38.213 13 if we have no CellGroupConfig
+    // TODO: implementation to be completed
+    LOG_D(NR_MAC,"nr_ue_scheduler(): mac->cg %p\n",mac->cg);
+    if (mac->cg == NULL) {
+      if(dl_info->ssb_index != -1){
+
+        if(mac->type0_pdcch_ss_mux_pattern == 1){
+          //  38.213 chapter 13
+          if((mac->type0_pdcch_ss_sfn_c == SFN_C_MOD_2_EQ_0) && !(rx_frame & 0x1) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+            search_space_mask = search_space_mask | type0_pdcch;
+            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
+          }
+          if((mac->type0_pdcch_ss_sfn_c == SFN_C_MOD_2_EQ_1) && (rx_frame & 0x1) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+            search_space_mask = search_space_mask | type0_pdcch;
+            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
+          }
+        }
+        if(mac->type0_pdcch_ss_mux_pattern == 2){
+          //  38.213 Table 13-13, 13-14
+          if((rx_frame == get_ssb_frame(rx_frame)) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+            search_space_mask = search_space_mask | type0_pdcch;
+            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
+          }
+        }
+        if(mac->type0_pdcch_ss_mux_pattern == 3){
+          //  38.213 Table 13-15
+          if((rx_frame == get_ssb_frame(rx_frame)) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+            search_space_mask = search_space_mask | type0_pdcch;
+            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
+          }
+        }
+      } // ssb_index != -1
+
+      // Type0 PDCCH search space
+      if((search_space_mask & type0_pdcch) || ( mac->type0_pdcch_consecutive_slots != 0 )){
+        mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_consecutive_slots - 1;
+
+        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
+        dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
+
+        /*
+        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti = 0xaaaa;        //      to be set
+        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;       //      to be set
+
+        LOG_I(NR_MAC,"nr_ue_scheduler Type0 PDCCH with rnti %x, BWP %d\n",
+        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti,
+        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP);
+        */
+	NR_SearchSpace_t *ss0 = mac->search_space_zero;
+	fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
+
+
+	if( mac->scc == NULL && mac->scc_SIB == NULL && (rx_frame%2 == mac->type0_PDCCH_CSS_config.sfn_c) && (rx_slot == mac->type0_PDCCH_CSS_config.n_0) ){
+	  rel15->num_dci_options = 1;
+	  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+	  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
+	  fill_dci_search_candidates(ss0, rel15);
+	  dl_config->number_pdus = 1;
+	  LOG_D(NR_MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
+	  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
+	  if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+	    mac->if_module->scheduled_response(&scheduled_response);
+	}
+	// this is for Msg2/Msg4
+	if (mac->ra.ra_state >= WAIT_RAR) {
+	  rel15->num_dci_options = mac->ra.ra_state == WAIT_RAR ? 1 : 2;
+	  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+          if (mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)
+            rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_0; // msg3 retransmission
+	  config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , -1);
+	  fill_dci_search_candidates(ss0, rel15);
+	  dl_config->number_pdus = 1;
+	  LOG_D(NR_MAC,"mac->cg %p: Calling fill_scheduled_response rnti %x, type0_pdcch, num_pdus %d frame %d slot %d\n",
+                mac->cg,rel15->rnti,dl_config->number_pdus,rx_frame,rx_slot);
+	  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
+	  if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+	    mac->if_module->scheduled_response(&scheduled_response);
+	}
+      }
+    } else { // we have a Master or Secondary CellGroupConfig
 
       dcireq.module_id = mod_id;
       dcireq.gNB_index = gNB_index;
@@ -913,7 +992,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     frame_t frame_tx      = ul_info->frame_tx;
     slot_t slot_tx        = ul_info->slot_tx;
     module_id_t mod_id    = ul_info->module_id;
-    uint8_t access_mode   = SCHEDULED_ACCESS;
+    uint32_t gNB_index    = ul_info->gNB_index;
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
     RA_config_t *ra       = &mac->ra;
@@ -927,7 +1006,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       LOG_D(NR_MAC, "In %s:[%d.%d]: number of UL PDUs: %d with UL transmission in [%d.%d]\n", __FUNCTION__, frame_tx, slot_tx, ul_config->number_pdus, ul_config->sfn, ul_config->slot);
 
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
-      uint8_t data_existing = 0;
       nr_scheduled_response_t scheduled_response;
       fapi_nr_tx_request_t tx_req;
 
@@ -938,7 +1016,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         if (ulcfg_pdu->pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUSCH) {
 
           uint16_t TBS_bytes = ulcfg_pdu->pusch_config_pdu.pusch_data.tb_size;
-          LOG_D(NR_MAC,"harq_id %d, NDI %d NDI_DCI %d, TBS_bytes %d\n",
+          LOG_D(NR_MAC,"harq_id %d, NDI %d NDI_DCI %d, TBS_bytes %d (ra_state %d)\n",
                 ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id,
                 mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id],
                 ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator,
@@ -959,45 +1037,14 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
                 ((get_softmodem_params()->phy_test == 1) || (ra->ra_state == RA_SUCCEEDED))){
 
               // Getting IP traffic to be transmitted
-              data_existing = nr_ue_get_sdu(mod_id,
-                                            cc_id,
-                                            frame_tx,
-                                            slot_tx,
-                                            0,
-                                            ulsch_input_buffer,
-                                            TBS_bytes,
-                                            &access_mode);
+              nr_ue_get_sdu(mod_id, frame_tx, slot_tx, gNB_index, ulsch_input_buffer, TBS_bytes);
             }
 
             LOG_D(NR_MAC,"Flipping NDI for harq_id %d\n",ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
             mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
             mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
 
-            //Random traffic to be transmitted if there is no IP traffic available for this Tx opportunity
-            if (!data_existing) {
-              //Use zeros for the header bytes in noS1 mode, in order to make sure that the LCID is not valid
-              //and block this traffic from being forwarded to the upper layers at the gNB
-              LOG_D(PHY, "In %s: Random data to be transmitted: TBS_bytes %d \n", __FUNCTION__, TBS_bytes);
-
-              //Give the first byte a dummy value (a value not corresponding to any valid LCID based on 38.321, Table 6.2.1-2)
-              //in order to distinguish the PHY random packets at the MAC layer of the gNB receiver from the normal packets that should
-              //have a valid LCID (nr_process_mac_pdu function)
-              ulsch_input_buffer[0] = UL_SCH_LCID_PADDING;
-
-              for (int i = 1; i < TBS_bytes; i++) {
-                ulsch_input_buffer[i] = (unsigned char) rand();
-              }
-            }
           }
-
-          #ifdef DEBUG_MAC_PDU
-          LOG_D(PHY, "Is data existing ?: %d \n", data_existing);
-          LOG_I(PHY, "Printing MAC PDU to be encoded, TBS is: %d \n", TBS_bytes);
-          for (i = 0; i < TBS_bytes; i++) {
-            printf("%02x", ulsch_input_buffer[i]);
-          }
-          printf("\n");
-          #endif
 
           // Config UL TX PDU
           tx_req.slot = slot_tx;
@@ -1007,11 +1054,15 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           tx_req.tx_request_body[0].pdu_index = j;
           tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
 
+          if (ra->ra_state == WAIT_CONTENTION_RESOLUTION && !ra->cfra){
+            LOG_I(NR_MAC,"[RAPROC] RA-Msg3 retransmitted\n");
+            // 38.321 restart the ra-ContentionResolutionTimer at each HARQ retransmission in the first symbol after the end of the Msg3 transmission
+            nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->gNB_index);
+          }
           if (ra->ra_state == WAIT_RAR && !ra->cfra){
             LOG_I(NR_MAC,"[RAPROC] RA-Msg3 transmitted\n");
-            nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->gNB_index);
+            nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->gNB_index);
           }
-
         }
       }
 
@@ -1043,7 +1094,6 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
 
   int delta = 0;
   NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
-
   // Get the numerology to calculate the Tx frame and slot
   int mu = ubwp ?
     ubwp->bwp_Common->genericParameters.subcarrierSpacing :
@@ -1991,161 +2041,174 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   } // if is_nr_UL_slot
 }
 
-// This function schedules the reception of SIB1 after initial sync and before going to real time state
-void nr_ue_sib1_scheduler(module_id_t module_idP,
-                          int cc_id,
-                          uint16_t ssb_start_symbol,
-                          uint16_t frame,
-                          uint8_t ssb_subcarrier_offset,
-                          uint32_t ssb_index,
-                          uint16_t ssb_start_subcarrier,
-                          frequency_range_t frequency_range) {
+#define MAX_LCID 8 // NR_MAX_NUM_LCID shall be used but the mac_rlc_data_req function can fetch data for max 8 LCID
 
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
-  nr_scheduled_response_t scheduled_response;
-  int frame_s,slot_s,ret;
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
+/**
+ * Function:      to fetch data to be transmitted from RLC, place it in the ULSCH PDU buffer
+                  to generate the complete MAC PDU with sub-headers and MAC CEs according to ULSCH MAC PDU generation (6.1.2 TS 38.321)
+                  the selected sub-header for the payload sub-PDUs is NR_MAC_SUBHEADER_LONG
+ * @module_idP    Module ID
+ * @frameP        current UL frame
+ * @subframe      current UL slot
+ * @gNB_index     gNB index
+ * @ulsch_buffer  Pointer to ULSCH PDU
+ * @buflen        TBS
+ */
+uint8_t nr_ue_get_sdu(module_id_t module_idP,
+                      frame_t frameP,
+                      sub_frame_t subframe,
+                      uint8_t gNB_index,
+                      uint8_t *ulsch_buffer,
+                      uint16_t buflen) {
 
-  uint8_t scs_ssb = get_softmodem_params()->numerology;
-  uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
-
-  get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
-                                        frame,
-                                        mac->mib,
-                                        nr_slots_per_frame[scs_ssb],
-                                        ssb_subcarrier_offset,
-                                        ssb_start_symbol,
-                                        scs_ssb,
-                                        frequency_range,
-                                        ssb_index,
-                                        1, // If the UE is not configured with a periodicity, the UE assumes a periodicity of a half frame
-                                        ssb_offset_point_a);
-
-  if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
-  if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
-
-  for (int i=0; i<3; i++) { // loop over possible aggregation levels
-
-    fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
-    ret = fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config,4<<i);
-    if (ret) {
-      rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-      rel15->num_dci_options = 1;
-      rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-      config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
-      fill_dci_search_candidates(mac->search_space_zero, rel15);
-
-      if(mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern == 1){
-        // same frame as ssb
-        if ((mac->type0_PDCCH_CSS_config.frame & 0x1) == mac->type0_PDCCH_CSS_config.sfn_c)
-          frame_s = 0;
-        else
-          frame_s = 1;
-        slot_s = mac->type0_PDCCH_CSS_config.n_0;
-      }
-      else{
-        frame_s = 0; // same frame as ssb
-        slot_s = mac->type0_PDCCH_CSS_config.n_c;
-      }
-      LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
-      fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, 0); // TODO fix thread_id, for now assumed 0
-    }
-  }
-  if (dl_config->number_pdus) {
-    if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
-      mac->if_module->scheduled_response(&scheduled_response);
-  }
-  else
-    AssertFatal(1==0,"Unable to find aggregation level for type0 CSS\n");
-}
-
-
-#define MAX_LCID 8 //Fixme: also defined in LCID table
-uint8_t nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-                      sub_frame_t subframe, uint8_t eNB_index,
-                      uint8_t *ulsch_buffer, uint16_t buflen, uint8_t *access_mode) {
-
+  int16_t buflen_remain = 0;
   uint8_t lcid = 0;
-  uint16_t sdu_lengths[MAX_LCID] = { 0 };
-  uint8_t sdu_lcids[MAX_LCID] = { 0 };
-  uint16_t payload_offset = 0, num_sdus = 0;
-  uint8_t ulsch_sdus[MAX_ULSCH_PAYLOAD_BYTES];
-  //unsigned short post_padding = 0;
+  uint16_t sdu_length = 0;
+  uint16_t num_sdus = 0;
+  uint16_t sdu_length_total = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  const uint8_t sh_size = sizeof(NR_MAC_SUBHEADER_LONG);
 
-  LOG_D(NR_MAC,
-        "[UE %d] MAC PROCESS UL TRANSPORT BLOCK at frame%d subframe %d TBS=%d\n",
-        module_idP, frameP, subframe, buflen);
-  AssertFatal(CC_id == 0,
-              "Transmission on secondary CCs is not supported yet\n");
-  
+  // Pointer used to build the MAC PDU by placing the RLC SDUs in the ULSCH buffer
+  uint8_t *pdu = ulsch_buffer;
+
+  // Preparing the MAC CEs sub-PDUs and get the total size
+  unsigned char mac_header_control_elements[16] = {0};
+  int tot_mac_ce_len = nr_write_ce_ulsch_pdu(&mac_header_control_elements[0], mac);
+  uint8_t total_mac_pdu_header_len = tot_mac_ce_len;
+
+  LOG_D(NR_MAC, "In %s: [UE %d] [%d.%d] process UL transport block at with size TBS = %d bytes \n", __FUNCTION__, module_idP, frameP, subframe, buflen);
+
   // Check for DCCH first
   // TO DO: Multiplex in the order defined by the logical channel prioritization
-
-  int buflen_remain = buflen;
-  char * current_ulsch_ptr = (char*)ulsch_sdus;
   for (lcid = UL_SCH_LCID_SRB1;
        lcid < MAX_LCID; lcid++) {
-    while ( (sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
-						   mac->crnti,
-						   eNB_index,
-						   frameP,
-						   ENB_FLAG_NO,
-						   MBMS_FLAG_NO,
-						   lcid,
-						   buflen_remain-MAX_RLC_SDU_SUBHEADER_SIZE*2,
-						   //Fixme: Laurent I removed MAX_RLC_SDU_SUBHEADER_SIZE*2 because else we get out the buffer silently
-						   // the interface with nr_generate_ulsch_pdu() looks over complex and not CPU optimized
-						   current_ulsch_ptr , 0,
-						      0)) > 0 ) {
-	  
-      AssertFatal(buflen_remain >= sdu_lengths[num_sdus],
-		  "LCID=%d RLC has segmented %d bytes but MAC has max=%d\n",
-		  lcid, sdu_lengths[num_sdus], buflen_remain);
-      AssertFatal(current_ulsch_ptr < (char*)ulsch_sdus+MAX_ULSCH_PAYLOAD_BYTES, "");
-      
-      current_ulsch_ptr += sdu_lengths[num_sdus];
-      buflen_remain -= sdu_lengths[num_sdus];
-      buflen_remain -=  MAX_RLC_SDU_SUBHEADER_SIZE;
-      sdu_lcids[num_sdus] = lcid;
-      num_sdus++;
+
+    buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total + sh_size);
+
+    LOG_D(NR_MAC, "In %s: [UE %d] [%d.%d] UL-DXCH -> ULSCH, RLC with LCID 0x%02x (TBS %d bytes, sdu_length_total %d bytes, MAC header len %d bytes, buflen_remain %d bytes)\n",
+          __FUNCTION__,
+          module_idP,
+          frameP,
+          subframe,
+          lcid,
+          buflen,
+          sdu_length_total,
+          tot_mac_ce_len,
+          buflen_remain);
+
+    while (buflen_remain > 0){
+
+      // Pointer used to build the MAC sub-PDU headers in the ULSCH buffer for each SDU
+      NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) pdu;
+
+      pdu += sh_size;
+
+      sdu_length = mac_rlc_data_req(module_idP,
+                                    mac->crnti,
+                                    gNB_index,
+                                    frameP,
+                                    ENB_FLAG_NO,
+                                    MBMS_FLAG_NO,
+                                    lcid,
+                                    buflen_remain,
+                                    (char *)pdu,
+                                    0,
+                                    0);
+
+      AssertFatal(buflen_remain >= sdu_length, "In %s: LCID = 0x%02x RLC has segmented %d bytes but MAC has max %d remaining bytes\n",
+                  __FUNCTION__,
+                  lcid,
+                  sdu_length,
+                  buflen_remain);
+
+      if (sdu_length > 0) {
+
+        LOG_D(MAC, "In %s: Generating UL MAC sub-PDU for SDU %d, length %d bytes, RB with LCID 0x%02x (buflen (TBS) %d bytes)\n", __FUNCTION__,
+          num_sdus + 1,
+          sdu_length,
+          lcid,
+          buflen);
+
+        header->R = 0;
+        header->F = 1;
+        header->LCID = lcid;
+        header->L1 = ((unsigned short) sdu_length >> 8) & 0x7f;
+        header->L2 = (unsigned short) sdu_length & 0xff;
+
+        #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+        LOG_I(NR_MAC, "In %s: dumping MAC sub-header with length %d: \n", __FUNCTION__, sh_size);
+        log_dump(NR_MAC, header, sh_size, LOG_DUMP_CHAR, "\n");
+        LOG_I(NR_MAC, "In %s: dumping MAC SDU with length %d \n", __FUNCTION__, sdu_length);
+        log_dump(NR_MAC, pdu, sdu_length, LOG_DUMP_CHAR, "\n");
+        #endif
+
+        pdu += sdu_length;
+        sdu_length_total += sdu_length;
+        total_mac_pdu_header_len += sh_size;
+
+        num_sdus++;
+
+      } else {
+        pdu -= sh_size;
+        LOG_D(MAC, "In %s: no data to transmit for RB with LCID 0x%02x\n", __FUNCTION__, lcid);
+        break;
+      }
+
+      buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total + sh_size);
+
     }
   }
-  
-  // Generate ULSCH PDU
-  if (num_sdus>0) {
-    payload_offset = nr_generate_ulsch_pdu(ulsch_sdus,
-					   ulsch_buffer,  // mac header
-					   num_sdus,  // num sdus
-					   sdu_lengths, // sdu length
-					   sdu_lcids, // sdu lcid
-					   0, // power_headroom
-					   mac->crnti, // crnti
-					   0, // truncated_bsr
-					   0, // short_bsr
-					   0, // long_bsr
-					   0, // post_padding 
-					   buflen);  // TBS in bytes
-  } else {
-    return 0;
+
+  if (tot_mac_ce_len > 0) {
+
+    LOG_D(NR_MAC, "In %s copying %d bytes of MAC CEs to the UL PDU \n", __FUNCTION__, tot_mac_ce_len);
+    memcpy((void *) pdu, (void *) mac_header_control_elements, tot_mac_ce_len);
+    pdu += (unsigned char) tot_mac_ce_len;
+
+    #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+    LOG_I(NR_MAC, "In %s: dumping MAC CE with length tot_mac_ce_len %d: \n", __FUNCTION__, tot_mac_ce_len);
+    log_dump(NR_MAC, mac_header_control_elements, tot_mac_ce_len, LOG_DUMP_CHAR, "\n");
+    #endif
+
   }
 
-  // Padding: fill remainder of ULSCH with 0
-  if (buflen - payload_offset > 0){
-          for (int j = payload_offset; j < buflen; j++)
-                  ulsch_buffer[j] = 0;
+  buflen_remain = buflen - (total_mac_pdu_header_len + sdu_length_total);
+
+  // Compute final offset for padding and fill remainder of ULSCH with 0
+  if (buflen_remain > 0) {
+
+    ((NR_MAC_SUBHEADER_FIXED *) pdu)->R = 0;
+    ((NR_MAC_SUBHEADER_FIXED *) pdu)->LCID = UL_SCH_LCID_PADDING;
+
+    #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+    LOG_I(NR_MAC, "In %s: padding MAC sub-header with length %ld bytes \n", __FUNCTION__, sizeof(NR_MAC_SUBHEADER_FIXED));
+    log_dump(NR_MAC, pdu, sizeof(NR_MAC_SUBHEADER_FIXED), LOG_DUMP_CHAR, "\n");
+    #endif
+
+    pdu++;
+    buflen_remain--;
+
+    if (IS_SOFTMODEM_RFSIM) {
+      for (int j = 0; j < buflen_remain; j++) {
+        pdu[j] = (unsigned char) rand();
+      }
+    } else {
+      memset(pdu, 0, buflen_remain);
+    }
+
+    #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+    LOG_I(NR_MAC, "In %s: MAC padding sub-PDU with length %d bytes \n", __FUNCTION__, buflen_remain);
+    log_dump(NR_MAC, pdu, buflen_remain, LOG_DUMP_CHAR, "\n");
+    #endif
+
   }
 
-#if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-  LOG_I(NR_MAC, "Printing UL MAC payload UE side, payload_offset: %d \n", payload_offset);
-  for (int i = 0; i < buflen ; i++) {
-          //harq_process_ul_ue->a[i] = (unsigned char) rand();
-          //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-          printf("%02x ",(unsigned char)ulsch_buffer[i]);
-  }
-  printf("\n");
-#endif
+  #ifdef ENABLE_MAC_PAYLOAD_DEBUG
+  LOG_I(NR_MAC, "In %s: dumping MAC PDU with length %d: \n", __FUNCTION__, buflen);
+  log_dump(NR_MAC, ulsch_buffer, buflen, LOG_DUMP_CHAR, "\n");
+  #endif
 
-  return 1;
+  return num_sdus > 0 ? 1 : 0;
+
 }

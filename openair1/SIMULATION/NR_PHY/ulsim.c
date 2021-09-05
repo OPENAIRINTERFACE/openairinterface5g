@@ -212,6 +212,11 @@ int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0); 
 int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
 int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
 int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
+int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) { return(0);  }
 
 int nr_derive_key(int alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)
@@ -297,6 +302,7 @@ int main(int argc, char **argv)
   float effRate; 
   //float eff_tp_check = 0.7;
   uint8_t snrRun;
+  int prb_inter = 0;
 
   int enable_ptrs = 0;
   int modify_dmrs = 0;
@@ -330,7 +336,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:j:kl:m:n:p:r:s:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -422,14 +428,10 @@ int main(int argc, char **argv)
       
       break;
       
-      /*case 'i':
-        interf1 = atoi(optarg);
-        break;
+    case 'i':
+      prb_inter=1;
+      break;
 	
-	case 'j':
-        interf2 = atoi(optarg);
-        break;*/
-
     case 'k':
       printf("Setting threequarter_fs_flag\n");
       openair0_cfg[0].threequarter_fs= 1;
@@ -458,6 +460,14 @@ int main(int argc, char **argv)
     case 's':
       snr0 = atof(optarg);
       printf("Setting SNR0 to %f\n", snr0);
+      break;
+
+    case 'u':
+      mu = atoi(optarg);
+      break;
+
+    case 'w':
+      start_rb = atoi(optarg);
       break;
 
 /*
@@ -581,13 +591,15 @@ int main(int argc, char **argv)
       printf("-f Number of frames to simulate\n");
       printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
       printf("-h This message\n");
-      //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+      printf("-i Activate PRB based averaging for channel estimation. Frequncy domain interpolation by default.\n");
       //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
       printf("-m MCS value\n");
       printf("-n Number of trials to simulate\n");
       printf("-p Use extended prefix mode\n");
       printf("-t Delay spread for multipath channel\n");
+      printf("-u Set the numerology\n");
+      printf("-w Start PRB for PUSCH\n");
       //printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
@@ -628,10 +640,12 @@ int main(int argc, char **argv)
 
   if (N_RB_UL >= 217) sampling_frequency = 122.88;
   else if (N_RB_UL >= 106) sampling_frequency = 61.44;
+  else if (N_RB_UL >= 32) sampling_frequency = 32.72;
   else { printf("Need at least 106 PRBs\b"); exit(-1); }
   if (N_RB_UL == 273) bandwidth = 100;
   else if (N_RB_UL == 217) bandwidth = 80;
   else if (N_RB_UL == 106) bandwidth = 40;
+  else if (N_RB_UL == 32) bandwidth = 50;
   else { printf("Add N_RB_UL %d\n",N_RB_UL); exit(-1); }
 			   
   if (openair0_cfg[0].threequarter_fs == 1) sampling_frequency*=.75;
@@ -652,6 +666,7 @@ int main(int argc, char **argv)
   RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = calloc(1,sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
+  gNB->ofdm_offset_divisor = UINT_MAX;
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   char tp_param[] = "n";
@@ -664,6 +679,7 @@ int main(int argc, char **argv)
   gNB->UL_INFO.crc_ind.crc_list = (nfapi_nr_crc_t *)malloc(NB_UE_INST*sizeof(nfapi_nr_crc_t));
   gNB->UL_INFO.rx_ind.number_of_pdus = 0;
   gNB->UL_INFO.crc_ind.number_crcs = 0;
+  gNB->prb_interpolation = prb_inter;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
 
@@ -803,7 +819,11 @@ int main(int argc, char **argv)
   nr_scheduled_response_t scheduled_response;
   fapi_nr_ul_config_request_t ul_config;
   fapi_nr_tx_request_t tx_req;
-  
+
+  memset(&scheduled_response, 0, sizeof(scheduled_response));
+  memset(&ul_config, 0, sizeof(ul_config));
+  memset(&tx_req, 0, sizeof(tx_req));
+
   uint8_t ptrs_mcs1 = 2;
   uint8_t ptrs_mcs2 = 4;
   uint8_t ptrs_mcs3 = 10;
@@ -951,9 +971,12 @@ int main(int argc, char **argv)
     input_fd);
     if (read_errors==0) exit(1);
     for (int i=0;i<16;i+=2) printf("slot_offset %d : %d,%d\n",
-           slot_offset,
-           ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
-           ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
+				   slot_offset,
+				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
+				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
+
+    mod_order = nr_get_Qm_ul(Imcs, mcs_table);
+    code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
   }
   
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
@@ -975,6 +998,10 @@ int main(int argc, char **argv)
     reset_meas(&gNB->ulsch_llr_stats);
     reset_meas(&gNB->ulsch_channel_compensation_stats);
     reset_meas(&gNB->ulsch_rbs_extraction_stats);
+    reset_meas(&UE->ulsch_ldpc_encoding_stats);
+    reset_meas(&UE->ulsch_rate_matching_stats);
+    reset_meas(&UE->ulsch_interleaving_stats);
+    reset_meas(&UE->ulsch_encoding_stats);
 
     clear_pusch_stats(gNB);
     for (trial = 0; trial < n_trials; trial++) {
@@ -1167,7 +1194,7 @@ int main(int argc, char **argv)
                                 frame_parms->ofdm_symbol_size/(12*nb_rb));
 
         for (i=0; i<slot_length; i++) {
-          for (int aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+          for (int aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
             s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)]);
             s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i<<1)+1]);
           }
@@ -1235,6 +1262,8 @@ int main(int argc, char **argv)
 		&gNB->pusch_vars[0]->rxdataF_ext[0][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
 	  LOG_M("chestF0.m","chF0",
 		&gNB->pusch_vars[0]->ul_ch_estimates[0][start_symbol*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
+	  LOG_M("chestT0.m","chT0",
+		&gNB->pusch_vars[0]->ul_ch_estimates_time[0][0],frame_parms->ofdm_symbol_size,1,1);
 	  LOG_M("chestF0_ext.m","chF0_ext",
 		&gNB->pusch_vars[0]->ul_ch_estimates_ext[0][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
 		(nb_symb_sch-1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
@@ -1346,6 +1375,11 @@ int main(int argc, char **argv)
       printStatIndent2(&gNB->ulsch_llr_stats,"ULSCH llr computation");
       printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
       printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
+      printStatIndent(&UE->ulsch_encoding_stats,"ULSCH total encoding time");
+      printStatIndent2(&UE->ulsch_segmentation_stats,"ULSCH segmentation time");
+      printStatIndent2(&UE->ulsch_ldpc_encoding_stats,"ULSCH LDPC encoder time");
+      printStatIndent2(&UE->ulsch_rate_matching_stats,"ULSCH rate-matching time");
+      printStatIndent2(&UE->ulsch_interleaving_stats,"ULSCH interleaving time");
       //printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
       //printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
       //printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");

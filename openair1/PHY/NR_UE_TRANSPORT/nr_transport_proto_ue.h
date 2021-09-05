@@ -1044,7 +1044,8 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t is_crnti,
                          uint8_t llr8_flag);
 
-int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
+int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
+                     NR_UE_ULSCH_t *ulsch,
                      NR_DL_FRAME_PARMS* frame_parms,
                      uint8_t harq_pid,
                      unsigned int G);
