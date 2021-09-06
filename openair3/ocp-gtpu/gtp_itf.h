@@ -62,6 +62,7 @@ int ocp_gtpv1u_create_x2u_tunnel(
 // New API
 teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_rb_id, teid_t teid,
                            transport_layer_addr_t remoteAddr, int port, gtpCallback callBack);
+void GtpuUpdateTunnelOutgoingTeid(instance_t instance, rnti_t rnti, ebi_t bearer_id, teid_t newOutgoingTeid);
 instance_t ocp_gtpv1Init(openAddr_t context);
 void *ocp_gtpv1uTask(void *args);
 
