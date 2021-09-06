@@ -519,12 +519,12 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
     chan_desc->ch[i] = (struct complexd *) malloc(chan_desc->channel_length * sizeof(struct complexd));
 
   for (int i = 0; i<nb_tx*nb_rx; i++)
-    chan_desc->chF[i] = (struct complex *) malloc((2+(275*12)) * sizeof(struct complex));
+    chan_desc->chF[i] = (struct complexd *) malloc((2+(275*12)) * sizeof(struct complexd));
 
   for (int i = 0; i<chan_desc->nb_taps; i++)
     chan_desc->a[i]         = (struct complexd *) malloc(nb_tx*nb_rx * sizeof(struct complexd));
 
-  chan_desc->R_sqrt  = (struct complex **) malloc(tdl_pathsby3*sizeof(struct complex **));
+  chan_desc->R_sqrt  = (struct complexd **) malloc(tdl_pathsby3*sizeof(struct complexd **));
 
   if (nb_tx==2 && nb_rx==2) {
     for (int i = 0; i<(tdl_pathsby3); i++)
@@ -1708,9 +1708,8 @@ void set_channeldesc_name(channel_desc_t *cdesc,char *modelname) {
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   double s;
   int i,k,l,aarx,aatx;
-  struct complex anew[desc->nb_tx*desc->nb_rx],acorr[desc->nb_tx*desc->nb_rx];
-  struct complex phase, alpha, beta;
-
+  struct complexd anew[desc->nb_tx*desc->nb_rx],acorr[desc->nb_tx*desc->nb_rx];
+  struct complexd phase, alpha, beta;
   start_meas(&desc->random_channel);
 
   for (i=0; i<(int)desc->nb_taps; i++) {

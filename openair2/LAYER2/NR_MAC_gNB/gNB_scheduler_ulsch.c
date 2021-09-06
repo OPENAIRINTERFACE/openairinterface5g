@@ -497,6 +497,7 @@ void nr_process_mac_pdu(module_id_t module_idP,
 
         default:
           LOG_E(NR_MAC, "Received unknown MAC header (LCID = 0x%02x)\n", rx_lcid);
+          return;
           break;
         }
 
@@ -820,7 +821,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
           nr_process_mac_pdu(gnb_mod_idP, UE_id, CC_idP, frameP, slotP, sduP, sdu_lenP);
           ra->state = Msg4;
-          ra->Msg4_frame = ( frameP +2 ) % 1024;
+          ra->Msg4_frame = (frameP + 2) % 1024;
           ra->Msg4_slot = 1;
           LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
         }

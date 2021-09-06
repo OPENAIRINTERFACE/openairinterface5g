@@ -876,87 +876,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     nr_scheduled_response_t scheduled_response;
     nr_dcireq_t dcireq;
 
-    // check type0 from 38.213 13 if we have no CellGroupConfig
-    // TODO: implementation to be completed
-    LOG_D(NR_MAC,"nr_ue_scheduler(): mac->cg %p\n",mac->cg);
-    if (mac->cg == NULL) {
-      if(dl_info->ssb_index != -1){
-
-        if(mac->type0_pdcch_ss_mux_pattern == 1){
-          //  38.213 chapter 13
-          if((mac->type0_pdcch_ss_sfn_c == SFN_C_MOD_2_EQ_0) && !(rx_frame & 0x1) && (rx_slot == mac->type0_pdcch_ss_n_c)){
-            search_space_mask = search_space_mask | type0_pdcch;
-            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
-          }
-          if((mac->type0_pdcch_ss_sfn_c == SFN_C_MOD_2_EQ_1) && (rx_frame & 0x1) && (rx_slot == mac->type0_pdcch_ss_n_c)){
-            search_space_mask = search_space_mask | type0_pdcch;
-            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
-          }
-        }
-        if(mac->type0_pdcch_ss_mux_pattern == 2){
-          //  38.213 Table 13-13, 13-14
-          if((rx_frame == get_ssb_frame(rx_frame)) && (rx_slot == mac->type0_pdcch_ss_n_c)){
-            search_space_mask = search_space_mask | type0_pdcch;
-            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
-          }
-        }
-        if(mac->type0_pdcch_ss_mux_pattern == 3){
-          //  38.213 Table 13-15
-          if((rx_frame == get_ssb_frame(rx_frame)) && (rx_slot == mac->type0_pdcch_ss_n_c)){
-            search_space_mask = search_space_mask | type0_pdcch;
-            mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.coreset.duration;
-          }
-        }
-      } // ssb_index != -1
-
-      // Type0 PDCCH search space
-      if((search_space_mask & type0_pdcch) || ( mac->type0_pdcch_consecutive_slots != 0 )){
-        mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_consecutive_slots - 1;
-
-        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
-        dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
-
-        /*
-        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti = 0xaaaa;        //      to be set
-        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;       //      to be set
-
-        LOG_I(NR_MAC,"nr_ue_scheduler Type0 PDCCH with rnti %x, BWP %d\n",
-        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti,
-        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP);
-        */
-	NR_SearchSpace_t *ss0 = mac->search_space_zero;
-	fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-
-
-	if( mac->scc == NULL && mac->scc_SIB == NULL && (rx_frame%2 == mac->type0_PDCCH_CSS_config.sfn_c) && (rx_slot == mac->type0_PDCCH_CSS_config.n_0) ){
-	  rel15->num_dci_options = 1;
-	  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-	  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
-	  fill_dci_search_candidates(ss0, rel15);
-	  dl_config->number_pdus = 1;
-	  LOG_D(NR_MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
-	  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
-	  if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
-	    mac->if_module->scheduled_response(&scheduled_response);
-	}
-	// this is for Msg2/Msg4
-	if (mac->ra.ra_state >= WAIT_RAR) {
-	  rel15->num_dci_options = mac->ra.ra_state == WAIT_RAR ? 1 : 2;
-	  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-          if (mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)
-            rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_0; // msg3 retransmission
-	  config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , -1);
-	  fill_dci_search_candidates(ss0, rel15);
-	  dl_config->number_pdus = 1;
-	  LOG_D(NR_MAC,"mac->cg %p: Calling fill_scheduled_response rnti %x, type0_pdcch, num_pdus %d frame %d slot %d\n",
-                mac->cg,rel15->rnti,dl_config->number_pdus,rx_frame,rx_slot);
-	  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
-	  if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
-	    mac->if_module->scheduled_response(&scheduled_response);
-	}
-      }
-    } else { // we have a Master or Secondary CellGroupConfig
-
+    if(mac->cg != NULL){ // we have a cg
       dcireq.module_id = mod_id;
       dcireq.gNB_index = gNB_index;
       dcireq.cc_id     = cc_id;
@@ -973,8 +893,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       // this is for Msg2/Msg4
       if (mac->ra.ra_state >= WAIT_RAR) {
         fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-        rel15->num_dci_options = 1;
+        rel15->num_dci_options = mac->ra.ra_state == WAIT_RAR ? 1 : 2;
         rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+        if (mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)
+          rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_0; // msg3 retransmission
         config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , -1);
         fill_dci_search_candidates(mac->ra.ss, rel15);
         dl_config->number_pdus = 1;
@@ -1020,7 +942,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
                 ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id,
                 mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id],
                 ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator,
-                TBS_bytes);
+                TBS_bytes,ra->ra_state);
           if (ra->ra_state == WAIT_RAR && !ra->cfra){
             memcpy(ulsch_input_buffer, mac->ulsch_pdu.payload, TBS_bytes);
             LOG_D(NR_MAC,"[RAPROC] Msg3 to be transmitted:\n");
@@ -1029,15 +951,17 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
             }
             LOG_D(NR_MAC,"Flipping NDI for harq_id %d (Msg3)\n",ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
             mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
-	          mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
+            mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
           } else {
 
             if ((mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator ||
                 mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id]==1) &&
-                ((get_softmodem_params()->phy_test == 1) || (ra->ra_state == RA_SUCCEEDED))){
+                ((get_softmodem_params()->phy_test == 1) ||
+                (ra->ra_state == RA_SUCCEEDED) ||
+                (ra->ra_state == WAIT_RAR && ra->cfra))){
 
               // Getting IP traffic to be transmitted
-              nr_ue_get_sdu(mod_id, frame_tx, slot_tx, gNB_index, ulsch_input_buffer, TBS_bytes);
+              nr_ue_get_sdu(mod_id, cc_id,frame_tx, slot_tx, gNB_index, ulsch_input_buffer, TBS_bytes);
             }
 
             LOG_D(NR_MAC,"Flipping NDI for harq_id %d\n",ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
@@ -2041,6 +1965,76 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   } // if is_nr_UL_slot
 }
 
+// This function schedules the reception of SIB1 after initial sync and before going to real time state
+void nr_ue_sib1_scheduler(module_id_t module_idP,
+                          int cc_id,
+                          uint16_t ssb_start_symbol,
+                          uint16_t frame,
+                          uint8_t ssb_subcarrier_offset,
+                          uint32_t ssb_index,
+                          uint16_t ssb_start_subcarrier,
+                          frequency_range_t frequency_range) {
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  nr_scheduled_response_t scheduled_response;
+  int frame_s,slot_s,ret;
+  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
+
+  uint8_t scs_ssb = get_softmodem_params()->numerology;
+  uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
+
+  get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
+                                        frame,
+                                        mac->mib,
+                                        nr_slots_per_frame[scs_ssb],
+                                        ssb_subcarrier_offset,
+                                        ssb_start_symbol,
+                                        scs_ssb,
+                                        frequency_range,
+                                        ssb_index,
+                                        1, // If the UE is not configured with a periodicity, the UE assumes a periodicity of a half frame
+                                        ssb_offset_point_a);
+
+  if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
+  if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
+
+  for (int i=0; i<3; i++) { // loop over possible aggregation levels
+
+    fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
+    ret = fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config,4<<i);
+    if (ret) {
+      rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
+      rel15->num_dci_options = 1;
+      rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+      config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
+      fill_dci_search_candidates(mac->search_space_zero, rel15);
+
+      if(mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern == 1){
+        // same frame as ssb
+        if ((mac->type0_PDCCH_CSS_config.frame & 0x1) == mac->type0_PDCCH_CSS_config.sfn_c)
+          frame_s = 0;
+        else
+          frame_s = 1;
+        slot_s = mac->type0_PDCCH_CSS_config.n_0;
+      }
+      else{
+        frame_s = 0; // same frame as ssb
+        slot_s = mac->type0_PDCCH_CSS_config.n_c;
+      }
+      LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
+      fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, 0); // TODO fix thread_id, for now assumed 0
+    }
+  }
+  if (dl_config->number_pdus) {
+    if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+      mac->if_module->scheduled_response(&scheduled_response);
+  }
+  else
+    AssertFatal(1==0,"Unable to find aggregation level for type0 CSS\n");
+}
+
+
 #define MAX_LCID 8 // NR_MAX_NUM_LCID shall be used but the mac_rlc_data_req function can fetch data for max 8 LCID
 
 /**
@@ -2048,6 +2042,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
                   to generate the complete MAC PDU with sub-headers and MAC CEs according to ULSCH MAC PDU generation (6.1.2 TS 38.321)
                   the selected sub-header for the payload sub-PDUs is NR_MAC_SUBHEADER_LONG
  * @module_idP    Module ID
+ * @CC_id         Component Carrier index
  * @frameP        current UL frame
  * @subframe      current UL slot
  * @gNB_index     gNB index
@@ -2055,6 +2050,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
  * @buflen        TBS
  */
 uint8_t nr_ue_get_sdu(module_id_t module_idP,
+                      int CC_id,
                       frame_t frameP,
                       sub_frame_t subframe,
                       uint8_t gNB_index,

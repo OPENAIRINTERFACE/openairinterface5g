@@ -690,29 +690,9 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  NR_SearchSpace_t *ss = ra->ra_ss;
-  NR_ControlResourceSet_t *coreset = NULL;
 
 
-  long BWPStart = 0;
-  long BWPSize = 0;
-  NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = NULL;
-  NR_BWP_t *genericParameters= &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
-
-  if(*ss->controlResourceSetId!=0) {
-    BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-    BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  } else {
-    type0_PDCCH_CSS_config = &nr_mac->type0_PDCCH_CSS_config[ra->beam_id];
-    BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
-    BWPSize = type0_PDCCH_CSS_config->num_rbs;
-  }
-
-  if (*ss->controlResourceSetId == 0)
-    coreset = nr_mac->sched_ctrlCommon->coreset; // this is coreset 0
-  else
-    coreset = get_coreset(scc, NULL, ss, NR_SearchSpace__searchSpaceType_PR_common);
-
+  NR_BWP_t *genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
 
   NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList= scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
 
@@ -744,6 +724,8 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     uint16_t *vrb_map_UL = &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
 
+    int BWPStart = nr_mac->type0_PDCCH_CSS_config[ra->beam_id].cset_start_rb;
+    int BWPSize  = nr_mac->type0_PDCCH_CSS_config[ra->beam_id].num_rbs;
     int rbStart = 0;
     for (int i = 0; (i < ra->msg3_nb_rb) && (rbStart <= (BWPSize - ra->msg3_nb_rb)); i++) {
       if (vrb_map_UL[rbStart + BWPStart + i]) {
@@ -781,6 +763,13 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                         rbStart, ra->msg3_nb_rb);
     future_ul_tti_req->n_pdus += 1;
 
+    // generation of DCI 0_0 to schedule msg3 retransmission
+    NR_SearchSpace_t *ss = ra->ra_ss;
+    NR_ControlResourceSet_t *coreset = NULL;
+
+    coreset = nr_mac->sched_ctrlCommon->coreset; // this is coreset 0
+    AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg3 retransmission\n");
+
     nfapi_nr_ul_dci_request_t *ul_dci_req = &nr_mac->UL_dci_req[CC_id];
 
     const int coresetid = coreset->controlResourceSetId;
@@ -792,13 +781,13 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
       ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       pdcch_pdu_rel15 = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
-      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, NULL, type0_PDCCH_CSS_config);
+      nr_configure_pdcch(pdcch_pdu_rel15, ss, coreset, scc, genericParameters, &nr_mac->type0_PDCCH_CSS_config[ra->beam_id]);
       nr_mac->pdcch_pdu_idx[CC_id][ra->bwp_id][coresetid] = pdcch_pdu_rel15;
     }
 
     uint8_t aggregation_level;
     uint8_t nr_of_candidates;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss,8);
+    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 4);
     int CCEIndex = allocate_nr_CCEs(nr_mac, NULL, coreset, aggregation_level, 0, 0, nr_of_candidates);
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
@@ -1173,7 +1162,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     uint8_t aggregation_level;
     uint8_t nr_of_candidates;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss,8);
+    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss,4);
     int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
@@ -1425,11 +1414,15 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       BWPSize = type0_PDCCH_CSS_config->num_rbs;
     }
 
+    /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
+    int current_harq_pid = sched_ctrl->retrans_dl_harq.head;
     // HARQ management
-    AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
-                "UE context not initialized: no HARQ processes found\n");
-    int current_harq_pid = sched_ctrl->available_dl_harq.head;
-    remove_front_nr_list(&sched_ctrl->available_dl_harq);
+    if (current_harq_pid < 0) {
+      AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
+                  "UE context not initialized: no HARQ processes found\n");
+      current_harq_pid = sched_ctrl->available_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->available_dl_harq);
+    }
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
     DevAssert(!harq->is_waiting);
     add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
@@ -1439,7 +1432,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // get CCEindex, needed also for PUCCH and then later for PDCCH
     uint8_t aggregation_level;
     uint8_t nr_of_candidates;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss,8);
+    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss,4);
     int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
@@ -1463,18 +1456,19 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     harq->feedback_slot = pucch->ul_slot;
     harq->feedback_frame = pucch->frame;
 
-    // Bytes to be transmitted
     uint8_t *buf = (uint8_t *) harq->tb;
-    uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
-    LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
-    uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, &buf[mac_pdu_length+2]);
-    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
-    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
-    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
-    ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
-    mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
-
-    LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, (int)sizeof(NR_MAC_SUBHEADER_SHORT), mac_pdu_length);
+    // Bytes to be transmitted
+    if (harq->round == 0) {
+      uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
+      LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
+      uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, &buf[mac_pdu_length+2]);
+      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
+      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
+      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
+      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
+      ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
+      LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, (int)sizeof(NR_MAC_SUBHEADER_SHORT), ra->mac_pdu_length);
+    }
 
     // Calculate number of symbols
     int startSymbolIndex, nrOfSymbols;
@@ -1535,12 +1529,15 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
                            nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
                            rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
-    } while (rbStart + rbSize < BWPSize && !vrb_map[rbStart + rbSize] && harq->tb_size < mac_pdu_length);
+    } while (rbSize < BWPSize && harq->tb_size < ra->mac_pdu_length);
 
-    for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
+    int i = 0;
+    while ((i < rbSize) && (rbStart + rbSize <= BWPSize)) {
       if (vrb_map[rbStart + i]) {
-        rbStart += i;
+        rbStart += i+1;
         i = 0;
+      } else {
+        i++;
       }
     }
 
@@ -1687,11 +1684,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        bwpid);
 
     // Add padding header and zero rest out if there is space left
-    if (mac_pdu_length < harq->tb_size) {
-      NR_MAC_SUBHEADER_FIXED *padding = (NR_MAC_SUBHEADER_FIXED *) &buf[mac_pdu_length];
+    if (ra->mac_pdu_length < harq->tb_size) {
+      NR_MAC_SUBHEADER_FIXED *padding = (NR_MAC_SUBHEADER_FIXED *) &buf[ra->mac_pdu_length];
       padding->R = 0;
       padding->LCID = DL_SCH_LCID_PADDING;
-      for(int k = mac_pdu_length+1; k<harq->tb_size; k++) {
+      for(int k = ra->mac_pdu_length+1; k<harq->tb_size; k++) {
         buf[k] = 0;
       }
     }
@@ -1742,29 +1739,32 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
 
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   NR_UE_harq_t *harq = &UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid];
+  NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
 
   LOG_D(NR_MAC, "ue %d, rnti %d, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
 
-  if (harq->is_waiting == 0)
-  {
-    if (harq->round == 0)
-    {
-      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
-      nr_clear_ra_proc(module_id, CC_id, frame, ra);
-      UE_info->active[UE_id] = true;
-      UE_info->Msg4_ACKed[UE_id] = true;
+  if (harq->is_waiting == 0) {
+    if (harq->round == 0) {
+      if (stats->dlsch_errors == 0) {
+        LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
+        nr_clear_ra_proc(module_id, CC_id, frame, ra);
+        UE_info->active[UE_id] = true;
+        UE_info->Msg4_ACKed[UE_id] = true;
+      }
+      else {
+        LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);
+        nr_mac_remove_ra_rnti(module_id, ra->rnti);
+        nr_clear_ra_proc(module_id, CC_id, frame, ra);
+        mac_remove_nr_ue(module_id, ra->rnti);
+      }
     }
-    else
-    {
-//      ra->state = Msg4;
-      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Nak of RA-Msg4. CBRA procedure failed!\n", UE_id, ra->rnti);
-      mac_remove_nr_ue(module_id,ra->rnti);
-      nr_clear_ra_proc(module_id, CC_id, frame, ra);
-      UE_info->active[UE_id] = false;
-      UE_info->Msg4_ACKed[UE_id] = false;
+    else {
+      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Nack of RA-Msg4. Preparing retransmission!\n", UE_id, ra->rnti);
+      ra->Msg4_frame = (frame + 1) % 1024;
+      ra->Msg4_slot = 1;
+      ra->state = Msg4;
     }
   }
-
 }
 
 void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t *ra){
