@@ -3172,6 +3172,57 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
   
 }
 
+static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const char *msg_name, instance_t instance){
+
+  f1ap_ue_context_setup_resp_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
+  protocol_ctxt_t ctxt;
+  ctxt.rnti      = resp->rnti;
+  ctxt.module_id = instance;
+  ctxt.instance  = instance;
+  ctxt.enb_flag  = 1;
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
+  struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rnti);
+  NR_CellGroupConfig_t *cellGroupConfig = NULL;
+  int i;
+  int j;
+
+  asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+    &asn_DEF_NR_CellGroupConfig,
+    (void **)&cellGroupConfig,
+    (uint8_t *)resp->du_to_cu_rrc_information,
+    (int) resp->du_to_cu_rrc_information_length);
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+    AssertFatal(1==0,"Cell group config decode error\n");
+    // free the memory
+    SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, cellGroupConfig, 1 );
+    return;
+  }
+  xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, cellGroupConfig);
+
+  if(ue_context_p->ue_context.masterCellGroup == NULL){
+    ue_context_p->ue_context.masterCellGroup = calloc(1, sizeof(NR_CellGroupConfig_t));
+  }
+  if(cellGroupConfig->rlc_BearerToAddModList!=NULL){
+    if(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList != NULL){
+      LOG_I(NR_RRC, "rlc_BearerToAddModList not empty before filling it \n");
+      free(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList);
+    }
+    ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(cellGroupConfig->rlc_BearerToAddModList));
+    memcpy(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList,
+        sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
+  }
+
+  for(i=0; i<resp->drbs_setup_length; i++){
+    for(j=0; j<resp->drbs_setup[i].up_dl_tnl_length; j++){
+      GtpuUpdateTunnelOutgoingTeid(INSTANCE_DEFAULT, ue_context_p->ue_context.rnti, (ebi_t)resp->drbs_setup[i].drb_id, resp->drbs_setup[i].up_dl_tnl[j].teid);
+    }
+  }
+  free(cellGroupConfig->rlc_BearerToAddModList);
+  free(cellGroupConfig);
+
+}
+
 unsigned int mask_flip(unsigned int x) {
   return((((x>>8) + (x<<8))&0xffff)>>6);
 }
@@ -3672,6 +3723,7 @@ void *rrc_gnb_task(void *args_p) {
       break;
 
     case F1AP_UE_CONTEXT_SETUP_RESP:
+      rrc_CU_process_ue_context_setup_response(msg_p, msg_name_p, instance);
       LOG_W(NR_RRC, "Handling of F1 UE context setup response context at the RRC layer of the CU is pending \n");
       break;
 

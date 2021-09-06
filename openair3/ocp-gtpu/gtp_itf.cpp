@@ -388,6 +388,25 @@ instance_t ocp_gtpv1Init(openAddr_t context) {
   return id;
 }
 
+void GtpuUpdateTunnelOutgoingTeid(instance_t instance, rnti_t rnti, ebi_t bearer_id, teid_t newOutgoingTeid) {
+  pthread_mutex_lock(&globGtp.gtp_lock);
+  auto inst=&globGtp.instances[compatInst(instance)];
+  auto ptrRnti=inst->ue2te_mapping.find(rnti);
+  if ( ptrRnti == inst->ue2te_mapping.end() ) {
+    LOG_E(GTPU,"Update tunnel for a not existing rnti %x\n", rnti);
+    pthread_mutex_unlock(&globGtp.gtp_lock);
+    return;
+  }  auto tmp=ptrRnti->second.bearers;
+  auto ptrBearer=tmp.find(bearer_id); if ( ptrBearer == tmp.end() ) {
+    LOG_E(GTPU,"Update tunnel for a existing rnti %x, but wrong bearer_id %u\n", rnti, bearer_id);
+    pthread_mutex_unlock(&globGtp.gtp_lock);
+    return;
+  } //AssertFatal(ptrBearer.second.teid_outgoing == oldOutGoingTeid, "");
+ ptrBearer->second.teid_outgoing = newOutgoingTeid;
+ pthread_mutex_unlock(&globGtp.gtp_lock);
+ return;
+}
+
 teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_bearer_id, teid_t outgoing_teid,
                            transport_layer_addr_t remoteAddr, int port, gtpCallback callBack) {
   pthread_mutex_lock(&globGtp.gtp_lock);
