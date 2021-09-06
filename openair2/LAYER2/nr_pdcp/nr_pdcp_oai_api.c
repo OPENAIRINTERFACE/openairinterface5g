@@ -160,8 +160,7 @@ static void enqueue_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
                                  const mui_t        muiP,
                                  confirm_t    confirmP,
                                  sdu_size_t   sdu_sizeP,
-                                 mem_block_t *sdu_pP,
-                                 void *_unused1, void *_unused2)
+                                 mem_block_t *sdu_pP)
 {
   int i;
   int logged = 0;
@@ -206,9 +205,7 @@ void du_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
                        rb_idP, muiP,
                        confirmP,
                        sdu_sizeP,
-                       sdu_pP,
-                       NULL,
-                       NULL);
+                       sdu_pP);
 }
 
 /****************************************************************************/
@@ -529,7 +526,7 @@ rb_found:
   LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
   //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
   //printf("\n");
-  enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock, NULL, NULL);
+  enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock);
 }
 
 static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
@@ -613,7 +610,7 @@ srb_found:
 
     memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
-    enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock, NULL, NULL);
+    enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock);
   }
   else {
     MessageDef  *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
@@ -1225,9 +1222,25 @@ boolean_t cu_f1u_data_req(
   ,const uint32_t *const sourceL2Id
   ,const uint32_t *const destinationL2Id
 #endif
-  )
-{
-  LOG_E(PDCP, "Implementation is pending");
+  ) {
+  MessageDef  *message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0,
+					   GTPV1U_GNB_TUNNEL_DATA_REQ,
+					   sizeof(gtpv1u_gnb_tunnel_data_req_t)
+					   + sdu_buffer_size
+					   + GTPU_HEADER_OVERHEAD_MAX);
+  AssertFatal(message_p != NULL, "OUT OF MEMORY");
+  gtpv1u_gnb_tunnel_data_req_t *req=&GTPV1U_GNB_TUNNEL_DATA_REQ(message_p);
+  uint8_t *gtpu_buffer_p = (uint8_t*)(req+1);
+  memcpy(gtpu_buffer_p+GTPU_HEADER_OVERHEAD_MAX, 
+         sdu_buffer, sdu_buffer_size);
+  req->buffer        = gtpu_buffer_p;
+  req->length        = sdu_buffer_size;
+  req->offset        = GTPU_HEADER_OVERHEAD_MAX;
+  req->rnti          = ctxt_pP->rnti;
+  req->pdusession_id = rb_id;
+  LOG_D(PDCP, "%s() (drb %ld) sending message to gtp size %d\n",
+	__func__, rb_id, sdu_buffer_size);
+  itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
   return true;
 }
 

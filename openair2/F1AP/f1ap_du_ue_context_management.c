@@ -52,6 +52,10 @@ boolean_t DURecvCb( protocol_ctxt_t  *ctxt_pP,
                     const pdcp_transmission_mode_t modeP,
                     const uint32_t *sourceL2Id,
                     const uint32_t *destinationL2Id) {
+  // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
+  mem_block_t *sdu=get_free_mem_block(sdu_buffer_sizeP, __func__);
+  memcpy(sdu->data,  sdu_buffer_pP,  sdu_buffer_sizeP);
+  du_rlc_data_req(ctxt_pP,srb_flagP, false,  rb_idP,muiP, confirmP,  sdu_buffer_sizeP, sdu);
   return true;
 }
 
@@ -64,6 +68,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
   F1AP_UEContextSetupRequest_t    *container;
   int i;
   DevAssert(pdu);
+AssertFatal(0,"");
   msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_SETUP_REQ);
   f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req = &F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
   container = &pdu->choice.initiatingMessage->value.choice.UEContextSetupRequest;
