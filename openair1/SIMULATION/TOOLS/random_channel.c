@@ -1733,7 +1733,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
         }
 
 #ifdef DEBUG_CH
-        printf("(%d,%d,%d) %f->(%f,%f) (%f,%f) phase (%f,%f)\n",aarx,aatx,i,desc->amps[i],anew[aarx+(aatx*desc->nb_rx)].x,anew[aarx+(aatx*desc->nb_rx)].y,desc->aoa,desc->ricean_factor,phase.x,phase.y);
+        printf("(%d,%d,%d) %f->(%f,%f) (%f,%f) phase (%f,%f)\n",aarx,aatx,i,desc->amps[i],anew[aarx+(aatx*desc->nb_rx)].r,anew[aarx+(aatx*desc->nb_rx)].i,desc->aoa,desc->ricean_factor,phase.r,phase.i);
 #endif
       } //aatx
     } //aarx
@@ -1825,7 +1825,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
             } //nb_taps
 
 #ifdef DEBUG_CH
-            printf("(%d,%d,%d)->(%e,%e)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].x,desc->ch[aarx+(aatx*desc->nb_rx)][k].y);
+            printf("(%d,%d,%d)->(%e,%e)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].r,desc->ch[aarx+(aatx*desc->nb_rx)][k].i);
 #endif
           } //channel_length
         }

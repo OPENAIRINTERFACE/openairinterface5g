@@ -80,7 +80,6 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
     uint8_t  numMaxIter = p_decParams->numMaxIter;
     e_nrLDPC_outMode outMode = p_decParams->outMode;
 
-    printf("nrLDCP_decoder_core: numMaxIter %d\n",numMaxIter);
     // Minimum number of iterations is 1
     // 0 iterations means hard-decision on input LLRs
     uint32_t i = 1;
@@ -488,6 +487,5 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
     stop_meas(&p_profiler->llr2bit);
 #endif
 
-    printf("num ldpc iterations %d\n",i);
     return i;
 }

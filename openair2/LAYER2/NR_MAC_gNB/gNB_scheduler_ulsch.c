@@ -405,9 +405,9 @@ void nr_process_mac_pdu(module_id_t module_idP,
                              mac_sdu_len,
                              1,
                              NULL);
+
           } else {
-            LOG_W(NR_MAC,"[UE %d] Frame/Slot %d.%d : Received LCID %d which is not configured, dropping packet\n",UE_id,frameP,slot,rx_lcid);
-            return;
+            AssertFatal(1==0,"[UE %d] Frame/Slot %d.%d : Received LCID %d which is not configured, dropping packet\n",UE_id,frameP,slot,rx_lcid);
           }
           break;
         case UL_SCH_LCID_SRB3:

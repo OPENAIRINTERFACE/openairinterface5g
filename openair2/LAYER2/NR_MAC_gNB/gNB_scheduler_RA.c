@@ -691,19 +691,12 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
 
-  NR_BWP_Uplink_t *ubwp = ra->CellGroup ?
-    ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1] :
-    NULL;
 
   NR_BWP_t *genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
 
-  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList= ubwp ?
-    ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList:
-    scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList= scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
 
-  int mu = ubwp ?
-    ubwp->bwp_Common->genericParameters.subcarrierSpacing :
-    scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
+  int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
 
   uint8_t K2 = *pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->k2;
 
@@ -724,36 +717,23 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
         tdd_beam_association[num_tdd_period] = ra->beam_id;
     }
 
-    int bwpSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    int bwpStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     int scs = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
     int fh = 0;
     int startSymbolAndLength = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
     int mappingtype = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
 
-    if (ra->CellGroup) {
-      AssertFatal(ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
-                  "downlinkBWP_ToAddModList has %d BWP!\n", ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
-      int act_bwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      int act_bwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
-      mappingtype = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
-      scs = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
-      fh = ubwp->bwp_Dedicated->pusch_Config->choice.setup->frequencyHopping ? 1 : 0;
-      if ((bwpStart < act_bwp_start) || (bwpSize > act_bwp_size))
-        bwpStart = act_bwp_start;
-    }
-    uint16_t *vrb_map_UL =
-        &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
+    uint16_t *vrb_map_UL = &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
 
+    int BWPStart = nr_mac->type0_PDCCH_CSS_config[ra->beam_id].cset_start_rb;
+    int BWPSize  = nr_mac->type0_PDCCH_CSS_config[ra->beam_id].num_rbs;
     int rbStart = 0;
-    for (int i = 0; (i < ra->msg3_nb_rb) && (rbStart <= (bwpSize - ra->msg3_nb_rb)); i++) {
-      if (vrb_map_UL[rbStart + bwpStart + i]) {
+    for (int i = 0; (i < ra->msg3_nb_rb) && (rbStart <= (BWPSize - ra->msg3_nb_rb)); i++) {
+      if (vrb_map_UL[rbStart + BWPStart + i]) {
         rbStart += i;
         i = 0;
       }
     }
-    if (rbStart > (bwpSize - ra->msg3_nb_rb)) {
+    if (rbStart > (BWPSize - ra->msg3_nb_rb)) {
       // cannot find free vrb_map for msg3 retransmission in this slot
       return;
     }
@@ -778,7 +758,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                         ra->msg3_round,
                         startSymbolAndLength,
                         ra->rnti, scs,
-                        bwpSize, bwpStart,
+                        BWPSize, BWPStart,
                         mappingtype, fh,
                         rbStart, ra->msg3_nb_rb);
     future_ul_tti_req->n_pdus += 1;
@@ -828,7 +808,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     dci_pdu_rel15_t uldci_payload;
     memset(&uldci_payload, 0, sizeof(uldci_payload));
 
-    config_uldci(ubwp,
+    config_uldci(NULL,
                  NULL,
                  scc,
                  pusch_pdu,
@@ -850,7 +830,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     // Mark the corresponding RBs as used
     for (int rb = 0; rb < ra->msg3_nb_rb; rb++) {
-      vrb_map_UL[rbStart + bwpStart + rb] = 1;
+      vrb_map_UL[rbStart + BWPStart + rb] = 1;
     }
 
     // reset state to wait msg3

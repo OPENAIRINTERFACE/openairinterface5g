@@ -205,9 +205,13 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
                                                       int default_abc,
                                                       bool use_default);
 
-uint8_t nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-                      sub_frame_t subframe, uint8_t eNB_index,
-                      uint8_t *ulsch_buffer, uint16_t buflen);
+uint8_t nr_ue_get_sdu(module_id_t module_idP,
+                      int cc_id,
+                      frame_t frameP,
+                      sub_frame_t subframe,
+                      uint8_t gNB_index,
+                      uint8_t *ulsch_buffer,
+                      uint16_t buflen);
 
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
                          int nrofDownlinkSlots, int nrofDownlinkSymbols,

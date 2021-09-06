@@ -540,7 +540,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
   NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   NR_ServingCellConfig_t *scd = mac->cg->spCellConfig->spCellConfigDedicated;
-  if (dl_bwp_id==0) AssertFatal(mac->scc_SIB,"dl_bwp_id 0 (DL %d,UL %d) means mac->scc_SIB should exist here!\n",mac->DL_BWP_Id,mac->UL_BWP_Id);
+  if (dl_bwp_id==0) AssertFatal(mac->scc_SIB,"dl_bwp_id 0 (DL %d,UL %d) means mac->scc_SIB should exist here!\n",(int)mac->DL_BWP_Id,(int)mac->UL_BWP_Id);
   NR_BWP_DownlinkCommon_t *bwp_Common = dl_bwp_id>0 ? scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common :
                                                       &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
 
@@ -605,7 +605,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   for (int css_id = 0; css_id < commonSearchSpaceList->list.count; css_id++) {
     NR_SearchSpace_t *css = commonSearchSpaceList->list.array[css_id];
     AssertFatal(css->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
-    AssertFatal(*css->controlResourceSetId == 0 || *css->controlResourceSetId == mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId, "css->controlResourceSetId %d is unknown, mac->coreset[%d][%d]->controlResourceSetId %d\n",*css->controlResourceSetId,dl_bwp_id,coreset_id-1,mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId);
+    AssertFatal(*css->controlResourceSetId == 0 || *css->controlResourceSetId == mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId, "css->controlResourceSetId %d is unknown, mac->coreset[%d][%d]->controlResourceSetId %d\n",(int)*css->controlResourceSetId,(int)dl_bwp_id,coreset_id-1,(int)mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId);
  
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");

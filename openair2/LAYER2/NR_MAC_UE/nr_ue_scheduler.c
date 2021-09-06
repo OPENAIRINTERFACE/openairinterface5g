@@ -2057,7 +2057,6 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 
   // Check for DCCH first
   // TO DO: Multiplex in the order defined by the logical channel prioritization
-
   for (lcid = UL_SCH_LCID_SRB1;
        lcid < MAX_LCID; lcid++) {
 
