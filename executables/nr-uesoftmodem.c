@@ -320,7 +320,7 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   UE->rf_map.chain         = CC_id + chain_offset;
 
   LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n, do_prb_interpolation %d\n", 
-  	   UE->mode, UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction, UE->prb_interpolation);
+  	UE->mode, UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction, UE->prb_interpolation);
 
   // Set FP variables
 

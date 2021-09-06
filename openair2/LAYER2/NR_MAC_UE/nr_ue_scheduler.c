@@ -877,7 +877,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     nr_dcireq_t dcireq;
 
     if(mac->cg != NULL){ // we have a cg
-
       dcireq.module_id = mod_id;
       dcireq.gNB_index = gNB_index;
       dcireq.cc_id     = cc_id;
@@ -894,8 +893,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       // this is for Msg2/Msg4
       if (mac->ra.ra_state >= WAIT_RAR) {
         fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-        rel15->num_dci_options = 1;
+        rel15->num_dci_options = mac->ra.ra_state == WAIT_RAR ? 1 : 2;
         rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+        if (mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)
+          rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_0; // msg3 retransmission
         config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , -1);
         fill_dci_search_candidates(mac->ra.ss, rel15);
         dl_config->number_pdus = 1;
@@ -950,12 +951,14 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
             }
             LOG_D(NR_MAC,"Flipping NDI for harq_id %d (Msg3)\n",ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
             mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
-	          mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
+            mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
           } else {
 
             if ((mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator ||
                 mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id]==1) &&
-                ((get_softmodem_params()->phy_test == 1) || (ra->ra_state == RA_SUCCEEDED))){
+                ((get_softmodem_params()->phy_test == 1) ||
+                (ra->ra_state == RA_SUCCEEDED) ||
+                (ra->ra_state == WAIT_RAR && ra->cfra))){
 
               // Getting IP traffic to be transmitted
               nr_ue_get_sdu(mod_id, cc_id,frame_tx, slot_tx, gNB_index, ulsch_input_buffer, TBS_bytes);
@@ -2032,10 +2035,27 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
 }
 
 
-#define MAX_LCID 8 //Fixme: also defined in LCID table
-uint8_t nr_ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
-                      sub_frame_t subframe, uint8_t gNB_index,
-                      uint8_t *ulsch_buffer, uint16_t buflen) {
+#define MAX_LCID 8 // NR_MAX_NUM_LCID shall be used but the mac_rlc_data_req function can fetch data for max 8 LCID
+
+/**
+ * Function:      to fetch data to be transmitted from RLC, place it in the ULSCH PDU buffer
+                  to generate the complete MAC PDU with sub-headers and MAC CEs according to ULSCH MAC PDU generation (6.1.2 TS 38.321)
+                  the selected sub-header for the payload sub-PDUs is NR_MAC_SUBHEADER_LONG
+ * @module_idP    Module ID
+ * @CC_id         Component Carrier index
+ * @frameP        current UL frame
+ * @subframe      current UL slot
+ * @gNB_index     gNB index
+ * @ulsch_buffer  Pointer to ULSCH PDU
+ * @buflen        TBS
+ */
+uint8_t nr_ue_get_sdu(module_id_t module_idP,
+                      int CC_id,
+                      frame_t frameP,
+                      sub_frame_t subframe,
+                      uint8_t gNB_index,
+                      uint8_t *ulsch_buffer,
+                      uint16_t buflen) {
 
   int16_t buflen_remain = 0;
   uint8_t lcid = 0;

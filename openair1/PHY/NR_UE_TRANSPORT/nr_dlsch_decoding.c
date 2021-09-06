@@ -155,7 +155,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
       if (dlsch->harq_processes[i]) {
         memset(dlsch->harq_processes[i],0,sizeof(NR_DL_UE_HARQ_t));
         init_downlink_harq_status(dlsch->harq_processes[i]);
-        dlsch->harq_processes[i]->first_tx=1;
+        dlsch->harq_processes[i]->first_rx=1;
         dlsch->harq_processes[i]->b = (uint8_t *)malloc16(dlsch_bytes);
 
         if (dlsch->harq_processes[i]->b)
@@ -360,7 +360,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     }
   }
 
-  if (harq_process->round == 0) {
+  if (harq_process->first_rx == 1) {
     // This is a new packet, so compute quantities regarding segmentation
     if (A > NR_MAX_PDSCH_TBS)
       harq_process->B = A+24;
@@ -450,7 +450,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                                  harq_process->w[r],
                                  harq_process->C,
                                  harq_process->rvidx,
-                                 (harq_process->round==0)?1:0,
+                                 (harq_process->first_rx==1)?1:0,
                                  E,
                                  harq_process->F,
                                  Kr-harq_process->F-2*(p_decParams->Z))==-1) {
@@ -773,7 +773,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     }
   }
 
-  if (harq_process->round == 0) {
+  if (harq_process->first_rx == 1) {
     // This is a new packet, so compute quantities regarding segmentation
     if (A > NR_MAX_PDSCH_TBS)
       harq_process->B = A+24;
@@ -911,7 +911,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
                                harq_process->w[r],
                                harq_process->C,
                                harq_process->rvidx,
-                               (harq_process->round==0)?1:0,
+                               (harq_process->first_rx==1)?1:0,
                                E,
                                harq_process->F,
                                Kr-harq_process->F-2*(p_decParams->Z))==-1) {
@@ -1231,25 +1231,23 @@ void nr_dlsch_decoding_process(void *arg) {
     }
   }
 
-  harq_process->round  =0;
+  if (harq_process->first_rx == 1) {
+    // This is a new packet, so compute quantities regarding segmentation
+    if (A > NR_MAX_PDSCH_TBS)
+      harq_process->B = A+24;
+    else
+      harq_process->B = A+16;
 
-  // if (harq_process->round == 0) {
-  // This is a new packet, so compute quantities regarding segmentation
-  if (A > NR_MAX_PDSCH_TBS)
-    harq_process->B = A+24;
-  else
-    harq_process->B = A+16;
-
-  nr_segmentation(NULL,
-                  NULL,
-                  harq_process->B,
-                  &harq_process->C,
-                  &harq_process->K,
-                  &harq_process->Z,
-                  &harq_process->F,
-                  p_decParams->BG);
-  p_decParams->Z = harq_process->Z;
-  // }
+    nr_segmentation(NULL,
+                    NULL,
+                    harq_process->B,
+                    &harq_process->C,
+                    &harq_process->K,
+                    &harq_process->Z,
+                    &harq_process->F,
+                    p_decParams->BG);
+    p_decParams->Z = harq_process->Z;
+  }
   LOG_D(PHY,"round %d Z %d K %d BG %d\n", harq_process->round, p_decParams->Z, harq_process->K, p_decParams->BG);
   p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
   p_decParams->outMode= 0;
@@ -1316,7 +1314,7 @@ void nr_dlsch_decoding_process(void *arg) {
                                harq_process->w[r],
                                harq_process->C,
                                harq_process->rvidx,
-                               (harq_process->round==0)?1:0,
+                               (harq_process->first_rx==1)?1:0,
                                E,
                                harq_process->F,
                                Kr-harq_process->F-2*(p_decParams->Z))==-1) {
