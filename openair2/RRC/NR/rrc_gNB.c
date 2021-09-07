@@ -134,6 +134,23 @@ uint8_t first_rrcreconfiguration = 0;
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
+boolean_t DURecvCb( protocol_ctxt_t  *ctxt_pP,
+                    const srb_flag_t     srb_flagP,
+                    const rb_id_t        rb_idP,
+                    const mui_t          muiP,
+                    const confirm_t      confirmP,
+                    const sdu_size_t     sdu_buffer_sizeP,
+                    unsigned char *const sdu_buffer_pP,
+                    const pdcp_transmission_mode_t modeP,
+                    const uint32_t *sourceL2Id,
+                    const uint32_t *destinationL2Id) {
+  // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
+  mem_block_t *sdu=get_free_mem_block(sdu_buffer_sizeP, __func__);
+  memcpy(sdu->data,  sdu_buffer_pP,  sdu_buffer_sizeP);
+  du_rlc_data_req(ctxt_pP,srb_flagP, false,  rb_idP,muiP, confirmP,  sdu_buffer_sizeP, sdu);
+  return true;
+}
+
 void openair_nr_rrc_on(const protocol_ctxt_t *const ctxt_pP) {
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" gNB:OPENAIR NR RRC IN....\n",PROTOCOL_NR_RRC_CTXT_ARGS(ctxt_pP));
   rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier.SI, BCCH, 1);
@@ -1365,7 +1382,8 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
         /* Here the callback function used as input is not the right one. Need to create a new one probably for F1-U, not sure
          * if the kind of input parameters to the callback function are convenient though for gtp-u over F1-U.*/
-        ue_context_pP->ue_context.incoming_teid[i] = newGtpuCreateTunnel(INSTANCE_DEFAULT, create_tunnel_req.rnti,
+         uint32_t incoming_teid;
+         incoming_teid = newGtpuCreateTunnel(INSTANCE_DEFAULT, create_tunnel_req.rnti,
             create_tunnel_req.incoming_rb_id[i],
             create_tunnel_req.incoming_rb_id[i],
             create_tunnel_req.outgoing_teid[i],
@@ -1374,7 +1392,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].rlc_mode = RLC_MODE_AM;
-        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].teid = ue_context_pP->ue_context.incoming_teid[i]; 
+        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].teid = incoming_teid; 
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].tl_address = inet_addr(rrc->eth_params_s.my_addr);
         F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl_length = 1;
       }
@@ -3134,8 +3152,13 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
   ctxt.instance  = instance;
   ctxt.enb_flag  = 1;
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
+  gNB_MAC_INST *mac = RC.nrmac[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p =
       rrc_gNB_get_ue_context(rrc, ctxt.rnti);
+  MessageDef *message_p;
+  message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_RESP);
+  f1ap_ue_context_setup_req_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(message_p);
+  uint32_t incoming_teid = 0;
 
 
   NR_CellGroupConfig_t *cellGroupConfig;
@@ -3145,6 +3168,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
   /* Configure SRB2 */
   NR_SRB_ToAddMod_t            *SRB2_config          = NULL;
   NR_SRB_ToAddModList_t        *SRB_configList  = ue_context_p->ue_context.SRB_configList;
+  uint8_t SRBs_before_new_addition = ue_context_p->ue_context.SRB_configList->list.count;
   if(SRB_configList != NULL){
     for (int i=0; i<req->srbs_to_be_setup_length; i++){
       SRB2_config = CALLOC(1, sizeof(*SRB2_config));
@@ -3167,9 +3191,53 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
     DRB_config = CALLOC(1, sizeof(*DRB_config));
     DRB_config->drb_Identity = req->drbs_to_be_setup[i].drb_id;
     ASN_SEQUENCE_ADD(&DRB_configList->list, DRB_config);
+    f1ap_drb_to_be_setup_t drb_p = req->drbs_to_be_setup[i];
+    transport_layer_addr_t addr;
+    memcpy(addr.buffer, &drb_p.up_ul_tnl[0].tl_address, sizeof(drb_p.up_ul_tnl[0].tl_address));
+    addr.length=sizeof(drb_p.up_ul_tnl[0].tl_address)*8;
+    incoming_teid=newGtpuCreateTunnel(INSTANCE_DEFAULT,
+        req->rnti,
+        drb_p.drb_id,
+        drb_p.drb_id,
+        drb_p.up_ul_tnl[0].teid,
+        addr,
+        2152,
+        DURecvCb);
+
   }
   apply_macrlc_config(rrc, ue_context_p, &ctxt);
+  /* Fill the UE context setup response ITTI message to send to F1AP */
+  resp->gNB_CU_ue_id = req->gNB_CU_ue_id;
+  resp->rnti = ctxt.rnti;
+  resp->drbs_to_be_setup = calloc(1,DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
+  resp->drbs_to_be_setup_length = DRB_configList->list.count;
+  for (int i=0; i<DRB_configList->list.count; i++){
+    resp->drbs_to_be_setup[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
+    resp->drbs_to_be_setup[i].rlc_mode = RLC_MODE_AM;
+    resp->drbs_to_be_setup[i].up_dl_tnl[0].teid = incoming_teid;
+    resp->drbs_to_be_setup[i].up_dl_tnl[0].tl_address = inet_addr(mac->eth_params_n.my_addr);
+    resp->drbs_to_be_setup[i].up_dl_tnl_length = 1;
+  }
+  if(SRBs_before_new_addition < SRB_configList->list.count){
+    resp->srbs_to_be_setup = calloc(1,req->srbs_to_be_setup_length*sizeof(f1ap_srb_to_be_setup_t));
+    resp->srbs_to_be_setup_length = req->srbs_to_be_setup_length;
+    for (int i=SRBs_before_new_addition; i<SRB_configList->list.count; i++){
+      resp->srbs_to_be_setup[i-SRBs_before_new_addition].srb_id = SRB_configList->list.array[i]->srb_Identity;
+    }
+  }
+  else{
+    LOG_E(NR_RRC, "SRB failed to get added \n");
+  }
+  resp->du_to_cu_rrc_information = calloc(1,1024*sizeof(uint8_t));
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
+                                NULL,
+                                (void *)ue_context_p->ue_context.masterCellGroup,
+                                resp->du_to_cu_rrc_information,
+                                1024);
+  resp->du_to_cu_rrc_information_length = (enc_rval.encoded+7)>>3;
+  itti_send_msg_to_task (TASK_DU_F1, ctxt.module_id, message_p);
   
+
 }
 
 static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const char *msg_name, instance_t instance){

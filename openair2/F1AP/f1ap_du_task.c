@@ -178,6 +178,10 @@ void *F1AP_DU_task(void *arg) {
 
         break;
 
+      case F1AP_UE_CONTEXT_SETUP_RESP:
+        DU_send_UE_CONTEXT_SETUP_RESPONSE(ITTI_MSG_DESTINATION_INSTANCE(received_msg), &F1AP_UE_CONTEXT_SETUP_RESP(received_msg));
+        break;
+
       case F1AP_UE_CONTEXT_RELEASE_REQ: // from MAC
         LOG_I(F1AP, "DU Task Received F1AP_UE_CONTEXT_RELEASE_REQ\n");
         DU_send_UE_CONTEXT_RELEASE_REQUEST(ITTI_MSG_DESTINATION_INSTANCE(received_msg),

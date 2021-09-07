@@ -42,22 +42,6 @@
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
-boolean_t DURecvCb( protocol_ctxt_t  *ctxt_pP,
-                    const srb_flag_t     srb_flagP,
-                    const rb_id_t        rb_idP,
-                    const mui_t          muiP,
-                    const confirm_t      confirmP,
-                    const sdu_size_t     sdu_buffer_sizeP,
-                    unsigned char *const sdu_buffer_pP,
-                    const pdcp_transmission_mode_t modeP,
-                    const uint32_t *sourceL2Id,
-                    const uint32_t *destinationL2Id) {
-  // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
-  mem_block_t *sdu=get_free_mem_block(sdu_buffer_sizeP, __func__);
-  memcpy(sdu->data,  sdu_buffer_pP,  sdu_buffer_sizeP);
-  du_rlc_data_req(ctxt_pP,srb_flagP, false,  rb_idP,muiP, confirmP,  sdu_buffer_sizeP, sdu);
-  return true;
-}
 
 int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup_req_t *req);
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
@@ -166,7 +150,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
             break;
         }
 
-        transport_layer_addr_t addr;
+        /*transport_layer_addr_t addr;
         memcpy(addr.buffer, &drb_p->up_ul_tnl[0].tl_address, sizeof(drb_p->up_ul_tnl[0].tl_address));
         addr.length=sizeof(drb_p->up_ul_tnl[0].tl_address)*8;
         drb_p->up_dl_tnl[0].teid=newGtpuCreateTunnel(INSTANCE_DEFAULT,
@@ -176,7 +160,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                                  drb_p->up_ul_tnl[0].teid,
                                  addr,
                                  2152,
-                                 DURecvCb);
+                                 DURecvCb);*/
       }
     }
 
@@ -230,7 +214,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     LOG_W(F1AP, "can't find RRCContainer in UEContextSetupRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
   }
 
-  DU_send_UE_CONTEXT_SETUP_RESPONSE(instance,  f1ap_ue_context_setup_req);
+  //DU_send_UE_CONTEXT_SETUP_RESPONSE(instance,  f1ap_ue_context_setup_req);
   itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
   return 0;
 }
@@ -254,26 +238,26 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = req->gNB_CU_ue_id;
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = req->gNB_CU_ue_id; //f1ap_get_cu_ue_f1ap_id(true, instance, req->rnti); 
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie2);
   ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie2->value.choice.GNB_DU_UE_F1AP_ID = req->gNB_DU_ue_id;
+  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(false, instance, req->rnti);
 
   /* mandatory */
   /* c3. DUtoCURRCInformation */
-  if (0) {
+  //if (0) {
     asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie3);
     ie3->id                             = F1AP_ProtocolIE_ID_id_DUtoCURRCInformation;
     ie3->criticality                    = F1AP_Criticality_reject;
     ie3->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_DUtoCURRCInformation;
     {
       /* cellGroupConfig */
-      OCTET_STRING_fromBuf(&ie3->value.choice.DUtoCURRCInformation.cellGroupConfig, "asdsa",
-                           strlen("asdsa"));
+      OCTET_STRING_fromBuf(&ie3->value.choice.DUtoCURRCInformation.cellGroupConfig, (const char *)req->du_to_cu_rrc_information,
+          req->du_to_cu_rrc_information_length);
 
       /* OPTIONAL */
       /* measGapConfig */
@@ -291,7 +275,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
         OCTET_STRING_fromBuf(tmp, "asdsa", strlen("asdsa"));
       }
     }
-  }
+  //}
 
   /* optional */
   /* c4. C_RNTI */
@@ -332,7 +316,6 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
   ie7->id                             = F1AP_ProtocolIE_ID_id_DRBs_Setup_List;
   ie7->criticality                    = F1AP_Criticality_ignore;
   ie7->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_DRBs_Setup_List;
-
   for (int i=0;  i< req->drbs_to_be_setup_length; i++) {
     //
     asn1cSequenceAdd(ie7->value.choice.DRBs_Setup_List.list,
@@ -372,6 +355,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
 
   /* mandatory */
   /* c8. SRBs_FailedToBeSetup_List */
+  if(0){
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie8);
   ie8->id                             = F1AP_ProtocolIE_ID_id_SRBs_FailedToBeSetup_List;
   ie8->criticality                    = F1AP_Criticality_ignore;
@@ -416,9 +400,11 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
         break;
     } // switch
   } // for i
+  }
 
   /*  */
   /* c9. DRBs_FailedToBeSetup_List */
+  if(0){
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie9);
   ie9->id                             = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeSetup_List;
   ie9->criticality                    = F1AP_Criticality_ignore;
@@ -463,9 +449,11 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
         break;
     } // switch
   } // for i
+  }
 
   // /*  */
   /* c10. SCell_FailedtoSetup_List */
+  if(0){
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie10);
   ie10->id                             = F1AP_ProtocolIE_ID_id_SCell_FailedtoSetup_List;
   ie10->criticality                    = F1AP_Criticality_ignore;
@@ -509,9 +497,30 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
         break;
     } // switch
   } // for i
+  }
+
+  /* mandatory */
+  /* c11. SRBs_Setup_List */
+  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie11);
+  ie11->id                             = F1AP_ProtocolIE_ID_id_SRBs_Setup_List;
+  ie11->criticality                    = F1AP_Criticality_ignore;
+  ie11->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_SRBs_Setup_List;
+
+  for (int i=0;  i< req->srbs_to_be_setup_length; i++) {//
+    asn1cSequenceAdd(ie11->value.choice.SRBs_Setup_List.list,
+        F1AP_SRBs_Setup_ItemIEs_t, srbs_setup_item_ies);
+    srbs_setup_item_ies->id            = F1AP_ProtocolIE_ID_id_SRBs_Setup_Item;
+    srbs_setup_item_ies->criticality   = F1AP_Criticality_ignore;
+    srbs_setup_item_ies->value.present = F1AP_SRBs_Setup_ItemIEs__value_PR_SRBs_Setup_Item;
+    /* 11.1 SRBs_Setup_Item */
+    /* ADD */
+    F1AP_SRBs_Setup_Item_t *srbs_setup_item=&srbs_setup_item_ies->value.choice.SRBs_Setup_Item;
+    /* sRBID */
+    srbs_setup_item->sRBID = req->srbs_to_be_setup[i].srb_id;
+  }
 
   /* Optional */
-  /* c11. InactivityMonitoringResponse */
+  /* c12. InactivityMonitoringResponse */
   if (0) {
     asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie11);
     ie11->id                                        = F1AP_ProtocolIE_ID_id_InactivityMonitoringResponse;
@@ -521,7 +530,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
   }
 
   /* Optional */
-  /* c12. CriticalityDiagnostics */
+  /* c13. CriticalityDiagnostics */
   if (0) {
     asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie12);
     ie12->id                             = F1AP_ProtocolIE_ID_id_CriticalityDiagnostics;

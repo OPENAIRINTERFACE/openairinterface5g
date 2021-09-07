@@ -353,6 +353,8 @@ typedef struct f1ap_ue_context_setup_req_s {
   uint32_t servCellId;
   uint8_t *cu_to_du_rrc_information;
   uint8_t  cu_to_du_rrc_information_length;
+  uint8_t *du_to_cu_rrc_information;
+  uint8_t  du_to_cu_rrc_information_length;
   f1ap_drb_to_be_setup_t *drbs_to_be_setup; // BK: need to replace by s1ap_initial_context_setup_req
   uint8_t  drbs_to_be_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
   f1ap_srb_to_be_setup_t *srbs_to_be_setup;
