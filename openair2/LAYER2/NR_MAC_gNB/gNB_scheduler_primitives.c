@@ -1830,6 +1830,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     int UE_id = i;
     UE_info->num_UEs++;
     UE_info->active[UE_id] = true;
+    UE_info->loop_dcch_dtch[UE_id] = DL_SCH_LCID_DTCH;
     if (CellGroup) UE_info->Msg4_ACKed[UE_id] = true;
     else           UE_info->Msg4_ACKed[UE_id] = false;
     UE_info->rnti[UE_id] = rntiP;

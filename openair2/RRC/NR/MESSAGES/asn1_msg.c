@@ -72,6 +72,8 @@
 #include "NR_RRCReestablishmentRequest.h"
 #include "NR_UE-CapabilityRequestFilterNR.h"
 #include "PHY/defs_nr_common.h"
+#include "common/utils/nr/nr_common.h"
+#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac.h"
 #if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"
   #include "NR_TDD-UL-DL-ConfigCommon.h"
@@ -980,7 +982,7 @@ uint8_t do_RRCReject(uint8_t Mod_id,
 void fill_initial_SpCellConfig(rnti_t rnti,
 			       NR_SpCellConfig_t *SpCellConfig,
 			       NR_ServingCellConfigCommon_t *scc) {
-
+  int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
   SpCellConfig->servCellIndex = NULL;
   SpCellConfig->reconfigurationWithSync = NULL;
   SpCellConfig->rlmInSyncOutOfSyncThreshold = NULL;
@@ -1009,7 +1011,9 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   // one symbol (13)
   NR_PUCCH_Resource_t *pucchres0=calloc(1,sizeof(*pucchres0));
   pucchres0->pucch_ResourceId=0;
-  pucchres0->startingPRB=0;
+  //pucchres0->startingPRB=0;
+  pucchres0->startingPRB=(8+rnti) % curr_bwp;
+  LOG_D(NR_RRC, "pucchres0->startPRB %ld rnti %d curr_bwp %d\n", pucchres0->startingPRB, rnti, curr_bwp);
   pucchres0->intraSlotFrequencyHopping=NULL;
   pucchres0->secondHopPRB=NULL;
   pucchres0->format.present= NR_PUCCH_Resource__format_PR_format0;
@@ -1053,7 +1057,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
  
   ss2->searchSpaceId=2;
   ss2->controlResourceSetId=calloc(1,sizeof(*ss2->controlResourceSetId));
-  *ss2->controlResourceSetId=0;
+  *ss2->controlResourceSetId=1;
   ss2->monitoringSlotPeriodicityAndOffset=calloc(1,sizeof(*ss2->monitoringSlotPeriodicityAndOffset));
   ss2->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
   ss2->monitoringSlotPeriodicityAndOffset->choice.sl1=(NULL_t)0;
@@ -1073,7 +1077,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   ss2->searchSpaceType=calloc(1,sizeof(*ss2->searchSpaceType));
   ss2->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   ss2->searchSpaceType->choice.ue_Specific = calloc(1,sizeof(*ss2->searchSpaceType->choice.ue_Specific));
-  ss2->searchSpaceType->choice.ue_Specific->dci_Formats=NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0;
+  ss2->searchSpaceType->choice.ue_Specific->dci_Formats=NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1;
   
   ASN_SEQUENCE_ADD(&bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list,
                    ss2);
