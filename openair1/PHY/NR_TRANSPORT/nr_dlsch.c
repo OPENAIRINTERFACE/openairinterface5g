@@ -214,7 +214,7 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
       nr_pdsch_codeword_scrambling_optim(harq->f,
 					 encoded_length,
 					 q,
-					 rel15->dlDmrsScramblingId,
+					 rel15->dataScramblingId,
 					 rel15->rnti,
 					 scrambled_output[q]);
     

@@ -420,6 +420,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
+                           int sib1_tda,
                            NR_ServingCellConfigCommon_t *scc,
 	                         int add_ue,
                            uint32_t rnti,
@@ -508,6 +509,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     if (get_softmodem_params()->sa > 0) {
       NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[0];
+      RC.nrmac[Mod_idP]->sib1_tda = sib1_tda;
       for (int n=0;n<NR_NB_RA_PROC_MAX;n++ ) {
 	       cc->ra[n].cfra = false;
 	       cc->ra[n].rnti = 0;

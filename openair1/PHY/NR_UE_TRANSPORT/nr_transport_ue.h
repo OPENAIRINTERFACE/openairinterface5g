@@ -206,8 +206,8 @@ typedef struct {
 } NR_UE_ULSCH_t;
 
 typedef struct {
-  /// Indicator of first transmission
-  uint8_t first_tx;
+  /// Indicator of first reception
+  uint8_t first_rx;
   /// Last Ndi received for this process on DCI (used for C-RNTI only)
   uint8_t DCINdi;
   /// DLSCH status flag indicating

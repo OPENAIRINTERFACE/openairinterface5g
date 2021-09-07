@@ -445,8 +445,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
           //LOG_I(PHY, "avgs Power per SC is %d\n", avgs);
           median[(aatx*frame_parms->nb_antennas_rx)+aarx] = avg[(aatx*frame_parms->nb_antennas_rx)+aarx];
         }
-      pdsch_vars[gNB_id]->log2_maxh = (log2_approx(avgs)/2) + 1;
-      //LOG_I(PHY, "avgs Power per SC is %d lg2_maxh %d\n", avgs,  pdsch_vars[gNB_id]->log2_maxh);
 
       if (dlsch0_harq->mimo_mode == NR_DUALSTREAM) {
         nr_dlsch_channel_level_median(pdsch_vars[gNB_id]->dl_ch_estimates_ext,
@@ -461,8 +459,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
             avgs = cmax(avgs, median[aatx*n_rx + aarx]);
           }
         }
-        pdsch_vars[gNB_id]->log2_maxh = (log2_approx(avgs)/2) + 1;
       }
+
+      pdsch_vars[gNB_id]->log2_maxh = (log2_approx(avgs)/2) + 1;
+      //LOG_I(PHY, "avgs Power per SC is %d lg2_maxh %d\n", avgs,  pdsch_vars[gNB_id]->log2_maxh);
     }
     LOG_D(PHY,"[DLSCH] AbsSubframe %d.%d log2_maxh = %d [log2_maxh0 %d log2_maxh1 %d] (%d,%d)\n",
           frame%1024,
@@ -738,11 +738,11 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 }
 
 void nr_dlsch_deinterleaving(uint8_t symbol,
-							uint8_t start_symbol,
-							uint16_t L,
-							uint16_t *llr,
-							uint16_t *llr_deint,
-							uint16_t nb_rb_pdsch)
+                             uint8_t start_symbol,
+                             uint16_t L,
+                             uint16_t *llr,
+                             uint16_t *llr_deint,
+                             uint16_t nb_rb_pdsch)
 {
 
   uint32_t bundle_idx, N_bundle, R, C, r,c;

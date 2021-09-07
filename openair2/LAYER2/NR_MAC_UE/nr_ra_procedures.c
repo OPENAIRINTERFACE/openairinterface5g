@@ -81,6 +81,41 @@ void init_RA(module_id_t mod_id,
   prach_resources->POWER_OFFSET_2STEP_RA = 0;
   prach_resources->RA_SCALING_FACTOR_BI = 1;
 
+  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList;
+  NR_SearchSpaceId_t *ra_ss;
+  NR_SearchSpaceId_t ss_id = -1;
+  NR_SearchSpace_t *ss = NULL;
+
+  if(mac->scc_SIB) {
+    commonSearchSpaceList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+    ss_id = *mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+  }
+  else{
+    if (mac->scc) {
+      NR_SearchSpaceId_t *ra_ss = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      if (ra_ss) {
+        commonSearchSpaceList = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+        ss_id = *mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      }
+    }
+    if (ss_id < 0) {
+      ra_ss = mac->DLbwp[0]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      if (ra_ss) {
+        commonSearchSpaceList = mac->DLbwp[0]->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+        ss_id = *mac->DLbwp[0]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      }
+    }
+  }
+
+  AssertFatal(ss_id>-1,"Didn't find ra-SearchSpace\n");
+  AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
+  // Common searchspace list
+  for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
+    ss = commonSearchSpaceList->list.array[i];
+    if (ss->searchSpaceId == ss_id)
+          ra->ss = ss;
+  }
+
   if (rach_ConfigDedicated) {
     if (rach_ConfigDedicated->cfra){
       LOG_I(MAC, "Initialization of 2-step contention-free random access procedure\n");
@@ -457,18 +492,27 @@ void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
   ra->RA_attempt_number++;
 }
 
-void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id){
+void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot_t slotP, uint8_t gNB_id){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (mac->scc) ? 
+  RA_config_t *ra = &mac->ra;
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (mac->scc) ?
     mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup:
     mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
-  RA_config_t *ra = &mac->ra;
+  long mu = (mac->scc) ? 
+    mac->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing :
+    mac->scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+  int subframes_per_slot = nr_slots_per_frame[mu]/10;
 
-  LOG_D(MAC,"In %s: [UE %d] Frame %d, CB-RA: starting contention resolution timer\n", __FUNCTION__, mod_id, frameP);
+  // start contention resolution timer (cnt in slots)
+  int RA_contention_resolution_timer_subframes = (nr_rach_ConfigCommon->ra_ContentionResolutionTimer + 1)<<3;
 
-  // start contention resolution timer
-  ra->RA_contention_resolution_cnt = (nr_rach_ConfigCommon->ra_ContentionResolutionTimer + 1) * 8;
+  ra->RA_contention_resolution_target_frame = frameP + (RA_contention_resolution_timer_subframes/10);
+  ra->RA_contention_resolution_target_slot = (slotP + (RA_contention_resolution_timer_subframes * subframes_per_slot)) % nr_slots_per_frame[mu];
+
+  LOG_D(MAC,"In %s: [UE %d] CB-RA: contention resolution timer set in frame.slot %d.%d and expiring in %d.%d\n",
+       __FUNCTION__, mod_id, frameP, slotP, ra->RA_contention_resolution_target_frame, ra->RA_contention_resolution_target_slot);
+
   ra->RA_contention_resolution_timer_active = 1;
   ra->ra_state = WAIT_CONTENTION_RESOLUTION;
 
@@ -739,20 +783,15 @@ void nr_ue_contention_resolution(module_id_t module_id, int cc_id, frame_t frame
   RA_config_t *ra = &mac->ra;
 
   if (ra->RA_contention_resolution_timer_active == 1) {
-
-      ra->RA_contention_resolution_cnt--;
-
-      LOG_D(MAC, "In %s: [%d.%d] RA contention resolution timer %d\n", __FUNCTION__, frame, slot, ra->RA_contention_resolution_cnt);
-
-      if (ra->RA_contention_resolution_cnt == 0) {
-        ra->t_crnti = 0;
-        ra->RA_active = 0;
-        ra->RA_contention_resolution_timer_active = 0;
-        // Signal PHY to quit RA procedure
-        LOG_E(MAC, "[UE %d] CB-RA: Contention resolution timer has expired, RA procedure has failed...\n", module_id);
-        nr_ra_failed(module_id, cc_id, prach_resources, frame, slot);
-      }
-    
+    if (frame >= ra->RA_contention_resolution_target_frame &&
+      slot >= ra->RA_contention_resolution_target_slot) {
+      ra->t_crnti = 0;
+      ra->RA_active = 0;
+      ra->RA_contention_resolution_timer_active = 0;
+      // Signal PHY to quit RA procedure
+      LOG_E(MAC, "[UE %d] CB-RA: Contention resolution timer has expired, RA procedure has failed...\n", module_id);
+      nr_ra_failed(module_id, cc_id, prach_resources, frame, slot);
+    }
   }
 }
 
@@ -775,7 +814,6 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
 
     LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CB-RA: Contention Resolution is successful.\n", mod_id, frame, slot);
 
-    ra->RA_contention_resolution_cnt = -1;
     ra->RA_contention_resolution_timer_active = 0;
     mac->crnti = ra->t_crnti;
     ra->t_crnti = 0;
