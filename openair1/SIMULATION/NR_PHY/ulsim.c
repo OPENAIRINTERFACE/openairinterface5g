@@ -307,7 +307,7 @@ int main(int argc, char **argv)
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t ptrsRePerSymb = 0;
 
-  uint8_t transform_precoding = transform_precoder_disabled; // 0 - ENABLE, 1 - DISABLE
+  uint8_t transform_precoding = 1; // 0 - ENABLE, 1 - DISABLE
   uint8_t num_dmrs_cdm_grps_no_data = 2;
   uint8_t mcs_table = 0;
 
@@ -720,7 +720,7 @@ int main(int argc, char **argv)
   // common configuration
   rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, scc, &rrc.carrier.mib,0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, scc, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, scc, &rrc.carrier.mib,1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -1081,7 +1081,6 @@ int main(int argc, char **argv)
       pusch_pdu->qam_mod_order = mod_order;
       pusch_pdu->transform_precoding = transform_precoding;
       pusch_pdu->data_scrambling_id = *scc->physCellId;
-      printf("scram id %d\n",pusch_pdu->data_scrambling_id);
       pusch_pdu->nrOfLayers = 1;
       pusch_pdu->ul_dmrs_symb_pos = l_prime_mask;
       pusch_pdu->dmrs_config_type = dmrs_config_type;
@@ -1408,12 +1407,12 @@ int main(int argc, char **argv)
     }
     if (n_trials == 1) {
       for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
-	for (int i=0;i<10;i++) {
+	for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
 	  if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
-	    printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
+	    /*printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
 	    i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
 	    i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
-	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);
+	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
 	}
     }
     if (errors_decoding > 0 && error_flag == 0) {
