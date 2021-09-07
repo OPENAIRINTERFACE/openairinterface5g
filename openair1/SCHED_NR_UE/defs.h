@@ -421,6 +421,25 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            uint16_t n_pdus,
                            UE_nr_rxtx_proc_t *proc);
 
+bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
+                            UE_nr_rxtx_proc_t *proc,
+                            int gNB_id,
+                            PDSCH_t pdsch,
+                            NR_UE_DLSCH_t *dlsch0,
+                            NR_UE_DLSCH_t *dlsch1,
+                            int *dlsch_errors,
+                            uint8_t dlsch_parallel);
+
+int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
+                           UE_nr_rxtx_proc_t *proc,
+                           int eNB_id, PDSCH_t pdsch,
+                           NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1);
+
+int nr_ue_pdcch_procedures(uint8_t gNB_id,
+			   PHY_VARS_NR_UE *ue,
+			   UE_nr_rxtx_proc_t *proc,
+                           int n_ss);
+
 
 #endif
 

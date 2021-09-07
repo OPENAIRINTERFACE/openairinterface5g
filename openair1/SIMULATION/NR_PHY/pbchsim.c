@@ -70,6 +70,31 @@ softmodem_params_t *get_softmodem_params(void) {return 0;}
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
+int nr_ue_pdcch_procedures(uint8_t gNB_id,
+			   PHY_VARS_NR_UE *ue,
+			   UE_nr_rxtx_proc_t *proc,
+                           int n_ss) {
+  return 0;
+}
+
+int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
+                           UE_nr_rxtx_proc_t *proc,
+                           int eNB_id, PDSCH_t pdsch,
+                           NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1) {
+  return 0;
+}
+
+bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
+                            UE_nr_rxtx_proc_t *proc,
+                            int gNB_id,
+                            PDSCH_t pdsch,
+                            NR_UE_DLSCH_t *dlsch0,
+                            NR_UE_DLSCH_t *dlsch1,
+                            int *dlsch_errors,
+                            uint8_t dlsch_parallel) {
+  return false;
+}
+
 void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
                                int N_RB_DL,
                                int N_RB_UL,
@@ -686,7 +711,7 @@ int main(int argc, char **argv)
       }
       if (UE->is_synchronized == 0) {
 	UE_nr_rxtx_proc_t proc={0};
-	ret = nr_initial_sync(&proc, UE, 1);
+	ret = nr_initial_sync(&proc, UE, 1, 0, 0);
 	printf("nr_initial_sync1 returns %d\n",ret);
 	if (ret<0) n_errors++;
       }

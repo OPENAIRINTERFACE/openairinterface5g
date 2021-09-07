@@ -524,6 +524,8 @@ int main ( int argc, char **argv )
   int ru_id;
   int node_type = ngran_eNB;
 
+  start_background_system();
+
   if ( load_configmodule(argc,argv,0) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }

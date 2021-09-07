@@ -445,7 +445,8 @@ typedef struct {
   NR_SIB2_t                                *sib2;
   NR_SIB3_t                                *sib3;
   NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
-  int ssb_SubcarrierOffset;                  
+  int ssb_SubcarrierOffset;
+  int sib1_tda;
   int pdsch_AntennaPorts;
   int pusch_AntennaPorts;
   int pusch_TargetSNRx10;

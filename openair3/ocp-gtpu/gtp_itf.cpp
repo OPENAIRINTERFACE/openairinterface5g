@@ -894,8 +894,8 @@ void *ocp_gtpv1uTask(void *args)  {
 
         case GTPV1U_GNB_NG_REQ:
           // to be dev: should be removed, to use API
-          strcpy(addr.originHost, GTPV1U_ENB_S1_REQ(message_p).addrStr);
-          strcpy(addr.originService, GTPV1U_ENB_S1_REQ(message_p).portStr);
+          strcpy(addr.originHost, GTPV1U_GNB_NG_REQ(message_p).addrStr);
+          strcpy(addr.originService, GTPV1U_GNB_NG_REQ(message_p).portStr);
           AssertFatal((legacyInstanceMapping=ocp_gtpv1Init(addr))!=0,"Instance 0 reserved for legacy\n");
           break;
 
