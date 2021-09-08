@@ -754,12 +754,21 @@ static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
     LOG_D(PDCP, "%s:%d:%s: warning SRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
-    pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
-                                  0, 0, 0, 0, // sdap parameters
-                                  deliver_sdu_srb, ue, deliver_pdu_srb, ue,
-                                  12, t_Reordering, -1,
-                                  0, 0,
-                                  NULL, NULL);
+    if(ue->srb[0] != NULL) {
+      pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
+                                    0, 0, 0, 0, // sdap parameters
+                                    deliver_sdu_srb, ue, deliver_pdu_srb, ue,
+                                    12, t_Reordering, -1,
+                                    ue->srb[0]->ciphering_algorithm, ue->srb[0]->integrity_algorithm,
+                                    ue->srb[0]->ciphering_key, ue->srb[0]->integrity_key);
+    } else {
+      pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
+                                    0, 0, 0, 0, // sdap parameters
+                                    deliver_sdu_srb, ue, deliver_pdu_srb, ue,
+                                    12, t_Reordering, -1,
+                                    0, 0,
+                                    NULL, NULL);
+    }
     nr_pdcp_ue_add_srb_pdcp_entity(ue, srb_id, pdcp_srb);
 
     LOG_D(PDCP, "%s:%d:%s: added srb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
