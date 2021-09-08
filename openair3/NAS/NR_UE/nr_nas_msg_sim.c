@@ -374,6 +374,7 @@ void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype
 }
 
 OctetString knas_int;
+uint8_t kamf[32];
 static void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf, uicc_t *uicc){
 
   uint8_t ak[6];
@@ -381,7 +382,6 @@ static void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *bu
   uint8_t kausf[32];
   uint8_t sqn[6];
   uint8_t kseaf[32];
-  uint8_t kamf[32];
   OctetString res;
 
   // get RAND for authentication request
@@ -463,6 +463,40 @@ static void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *bu
   initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));
 
   initialNasMsg->length = mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data), size);
+}
+
+uint8_t global_kgnb[32];
+static void get_kgnb(uint32_t count)
+{
+  /* Compute the KDF input parameter
+   * S = FC(0x11) || UL NAS Count || 0x00 0x04
+   */
+  uint8_t  input[32];
+  //    uint16_t length    = 4;
+  //    int      offset    = 0;
+
+  LOG_TRACE(INFO, "%s  with count= %d", __FUNCTION__, count);
+  memset(input, 0, 32);
+  input[0] = 0x6E;
+  // P0
+  input[1] = count >> 24;
+  input[2] = (uint8_t)(count >> 16);
+  input[3] = (uint8_t)(count >> 8);
+  input[4] = (uint8_t)count;
+  // L0
+  input[5] = 0;
+  input[6] = 4;
+  // P1
+  input[7] = 0x01;
+  // L1
+  input[8] = 0;
+  input[9] = 1;
+
+  kdf(kamf, 32, input, 10, global_kgnb, 32);
+  printf("global_kgnb : ");
+  for(int pp=0;pp<32;pp++)
+   printf("%02x ",global_kgnb[pp]);
+  printf("\n");
 }
 
 static void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
@@ -893,6 +927,7 @@ void *nas_nrue_task(void *args_p)
 	            generateAuthenticationResp(&initialNasMsg, pdu_buffer, uicc);
               break;
           case FGS_SECURITY_MODE_COMMAND:
+            get_kgnb(0);
             generateSecurityModeComplete(&initialNasMsg);
             break;
           case FGS_DOWNLINK_NAS_TRANSPORT:

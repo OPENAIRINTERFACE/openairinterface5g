@@ -1571,6 +1571,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
  }
 
 
+extern uint8_t global_kgnb[32];
  //-----------------------------------------------------------------------------
  void
  nr_rrc_ue_process_securityModeCommand(
@@ -1655,45 +1656,64 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    uint8_t *kRRCenc = NULL;
    uint8_t *kUPenc = NULL;
    uint8_t *kRRCint = NULL;
-   pdcp_t *pdcp_p = NULL;
-   hash_key_t key = HASHTABLE_NOT_A_KEY_VALUE;
-   hashtable_rc_t h_rc;
-   key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
-   h_rc = hashtable_get(pdcp_coll_p, key, (void **) &pdcp_p);
+   uint8_t  *k_kdf  = NULL;
+#ifndef PHYSIM
+  memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,global_kgnb,32);
+  k_kdf = NULL;
+  nr_derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
+                       NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
+                       &k_kdf);
+  /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
+  kUPenc = malloc(16);
+  if (kUPenc == NULL) exit(1);
+  memcpy(kUPenc, k_kdf+16, 16);
+  free(k_kdf);
 
-   if (h_rc == HASH_TABLE_OK) {
-     LOG_D(NR_RRC, "PDCP_COLL_KEY_VALUE() returns valid key = %ld\n", key);
-     LOG_D(NR_RRC, "driving kRRCenc, kRRCint and kUPenc from KgNB="
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x\n",
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[0],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[1],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[2],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[3],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[4],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[5],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[6],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[7],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[8],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[9],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[10], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[11],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[12], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[13], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[14], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[15],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[16], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[17], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[18], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[19],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[20], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[21], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[22], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[23],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[24], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[25], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[26], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[27],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[28], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[29], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[30], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[31]);
-     derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCenc);
-     derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
-     derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPenc);
+  k_kdf = NULL;
+  nr_derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
+                        NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
+                        &k_kdf);
+  /* kRRCenc: last 128 bits of key derivation function which returns 256 bits */
+  kRRCenc = malloc(16);
+  if (kRRCenc == NULL) exit(1);
+  memcpy(kRRCenc, k_kdf+16, 16);
+  free(k_kdf);
 
-     if (securityMode != 0xff) {
-       pdcp_config_set_security(ctxt_pP, pdcp_p, 0, 0,
-                                NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm
-                                | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-                                kRRCenc, kRRCint, kUPenc);
-     } else {
-       LOG_I(NR_RRC, "skipped pdcp_config_set_security() as securityMode == 0x%02x", securityMode);
-     }
+  k_kdf = NULL;
+  nr_derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
+                        NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
+                        &k_kdf);
+  /* kRRCint: last 128 bits of key derivation function which returns 256 bits */
+  kRRCint = malloc(16);
+  if (kRRCint == NULL) exit(1);
+  memcpy(kRRCint, k_kdf+16, 16);
+  free(k_kdf);
+#endif
+   LOG_I(NR_RRC, "driving kRRCenc, kRRCint and kUPenc from KgNB="
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x\n",
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[0],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[1],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[2],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[3],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[4],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[5],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[6],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[7],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[8],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[9],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[10], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[11],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[12], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[13], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[14], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[15],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[16], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[17], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[18], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[19],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[20], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[21], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[22], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[23],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[24], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[25], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[26], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[27],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[28], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[29], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[30], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[31]);
+
+   if (securityMode != 0xff) {
+     pdcp_config_set_security(ctxt_pP, NULL, DCCH, DCCH+2,
+                              NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm
+                              | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                              kRRCenc, kRRCint, kUPenc);
    } else {
-     LOG_I(NR_RRC, "Could not get PDCP instance where key=0x%ld\n", key);
+     LOG_I(NR_RRC, "skipped pdcp_config_set_security() as securityMode == 0x%02x", securityMode);
    }
 
    if (securityModeCommand->criticalExtensions.present == NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand) {
