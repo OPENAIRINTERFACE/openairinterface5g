@@ -822,10 +822,10 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
 
           if (nr_process_mac_pdu(gnb_mod_idP, UE_id, CC_idP, frameP, slotP, sduP, sdu_lenP) == 0) {
-             ra->state = Msg4;
-             ra->Msg4_frame = ( frameP +2 ) % 1024;
-             ra->Msg4_slot = 1;
-             LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
+            ra->state = Msg4;
+            ra->Msg4_frame = (frameP + 2) % 1024;
+            ra->Msg4_slot = 1;
+            LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
           }
           else {
              nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
@@ -1543,8 +1543,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->mcs_index = sched_pusch->mcs;
     pusch_pdu->mcs_table = ps->mcs_table;
     pusch_pdu->transform_precoding = ps->transform_precoding;
-    if (ps->pusch_Config &&
-	ps->pusch_Config->dataScramblingIdentityPUSCH)
+    if (ps->pusch_Config && ps->pusch_Config->dataScramblingIdentityPUSCH)
       pusch_pdu->data_scrambling_id = *ps->pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;

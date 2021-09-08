@@ -79,13 +79,13 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t
 
 // L2 Abstraction Layer
 // Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
-int8_t handle_dlsch (nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
+int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
 
   update_harq_status(dl_info, pdu_id);
-  nr_ue_send_sdu(dl_info, ul_time_alignment, pdu_id);
+  if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack)
+    nr_ue_send_sdu(dl_info, ul_time_alignment, pdu_id);
 
   return 0;
-
 }
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){

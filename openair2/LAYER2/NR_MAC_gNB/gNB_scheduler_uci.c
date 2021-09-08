@@ -77,7 +77,7 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
 
   NR_BWP_UplinkDedicated_t *ubwpd;
   ubwpd = cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
- 
+
   LOG_D(NR_MAC,"pucch_acknak: %d.%d Calling nr_configure_pucch (ubwpd %p,r_pucch %d) pucch in %d.%d\n",frame,slot,ubwpd,pucch->r_pucch,pucch->frame,pucch->ul_slot);
   nr_configure_pucch(pucch_pdu,
                      scc,
@@ -493,7 +493,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       // preparation is done in first slot of tdd period
       if (frame % (period / n_slots_frame) != offset / n_slots_frame)
         continue;
-      LOG_D(NR_MAC, "CSI in frame %d slot %d\n", frame, sched_slot);
+      LOG_D(NR_MAC, "CSI reporting in frame %d slot %d\n", frame, sched_slot);
 
       const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
       const NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
@@ -992,7 +992,7 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
     // verify if report with current id has been scheduled for this frame and slot
     if ((n_slots_frame*frame + slot - offset)%period == 0) {
       reportQuantity_type = UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type;
-      LOG_I(MAC,"SFN/SF:%d/%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
+      LOG_D(MAC,"SFN/SF:%d/%d reportQuantity type = %d\n",frame,slot,reportQuantity_type);
       switch(reportQuantity_type){
         case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP:
           evaluate_rsrp_report(UE_info,sched_ctrl,UE_id,csi_report_id,payload,&cumul_bits,reportQuantity_type);
@@ -1245,9 +1245,9 @@ int nr_acknack_scheduling(int mod_id,
       cg->spCellConfig &&
       cg->spCellConfig->spCellConfigDedicated &&
       cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) 
+      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)
     ubwpd = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
- 
+
   NR_SearchSpace__searchSpaceType_PR ss_type = (is_common==0 && (sched_ctrl->active_bwp || ubwpd)) ? NR_SearchSpace__searchSpaceType_PR_ue_Specific: NR_SearchSpace__searchSpaceType_PR_common;
   uint8_t pdsch_to_harq_feedback[8];
   int bwp_Id = 0;

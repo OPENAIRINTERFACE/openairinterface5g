@@ -61,6 +61,8 @@
       env: "@FLEXRAN_INTERFACE_NAME@"
     - key: FLEXRAN_IPV4_ADDRESS
       env: "@FLEXRAN_IPV4_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
 
   - filePrefix: gnb.band78.sa.fr1.106PRB.usrpn310.conf
     outputfilename: "gnb.sa.tdd.conf"
@@ -89,4 +91,6 @@
       env: "@GNB_NGU_IF_NAME@"
     - key: GNB_IPV4_ADDRESS_FOR_NGU
       env: "@GNB_NGU_IP_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
 

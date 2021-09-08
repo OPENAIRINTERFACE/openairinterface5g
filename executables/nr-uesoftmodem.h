@@ -62,6 +62,7 @@
     {"r"  ,                      CONFIG_HLP_PRB_SA,      0,               iptr:&(fp->N_RB_DL),                defintval:106,         TYPE_UINT,  0}, \
     {"s"  ,                      CONFIG_HLP_SSC,         0,               u16ptr:&(fp->ssb_start_subcarrier), defintval:516,         TYPE_UINT16,0}, \
     {"T" ,                       CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,           TYPE_INT,   0}, \
+    {"do-prb-interpolation",     CONFIG_HLP_PRBINTER,    PARAMFLAG_BOOL,  iptr:&(UE->prb_interpolation),      defintval:0,           TYPE_INT,   0}, \
     {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&(UE->no_timing_correction), defintval:0,      TYPE_INT,   0}, \
     {"do-prb-interpolation",      CONFIG_HLP_PRBINTER,   PARAMFLAG_BOOL,  iptr:&(UE->prb_interpolation),      defintval:0,           TYPE_INT,      0}, \
 }
