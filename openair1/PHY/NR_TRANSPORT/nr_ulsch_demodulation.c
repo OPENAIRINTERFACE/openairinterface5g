@@ -582,22 +582,29 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
                                    unsigned short nb_rb,
                                    unsigned char output_shift) {
 
+#ifdef __AVX2__
+  int off = ((nb_rb&1) == 1)? 4:0;
+#else
+  int off = 0;
+#endif
 
 #ifdef DEBUG_CH_COMP
   int16_t *rxF, *ul_ch;
   int prnt_idx;
 
-  rxF   = (int16_t *)&rxdataF_ext[0][symbol*(off+(nb_rb*12))];
-  ul_ch = (int16_t *)&ul_ch_estimates_ext[0][symbol*(off+(nb_rb*1))2];
+  for (int ant=0; ant<frame_parms->nb_antennas_rx; ant++) {
+    rxF   = (int16_t *)&rxdataF_ext[ant][symbol*(off+(nb_rb*12))];
+    ul_ch = (int16_t *)&ul_ch_estimates_ext[ant][symbol*(off+(nb_rb*12))];
 
-  printf("--------------------symbol = %d, mod_order = %d, output_shift = %d-----------------------\n", symbol, mod_order, output_shift);
-  printf("----------------Before compensation------------------\n");
+    printf("--------------------symbol = %d, mod_order = %d, output_shift = %d-----------------------\n", symbol, mod_order, output_shift);
+    printf("----------------Before compensation------------------\n");
 
-  for (prnt_idx=0;prnt_idx<12*nb_rb*2;prnt_idx+=2){
+    for (prnt_idx=0;prnt_idx<12*5*2;prnt_idx+=2){
 
-    printf("rxF[%d] = (%d,%d)\n", prnt_idx>>1, rxF[prnt_idx],rxF[prnt_idx+1]);
-    printf("ul_ch[%d] = (%d,%d)\n", prnt_idx>>1, ul_ch[prnt_idx],ul_ch[prnt_idx+1]);
+      printf("rxF[%d] = (%d,%d)\n", prnt_idx>>1, rxF[prnt_idx],rxF[prnt_idx+1]);
+      printf("ul_ch[%d] = (%d,%d)\n", prnt_idx>>1, ul_ch[prnt_idx],ul_ch[prnt_idx+1]);
 
+    }
   }
 
 #endif
@@ -607,23 +614,19 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
   int print_idx;
 
 
-  ch_mag   = (int16_t *)&ul_ch_mag[0][symbol*(off+(nb_rb*12))];
+  for (int ant=0; ant<frame_parms->nb_antennas_rx; ant++) {
+    ch_mag   = (int16_t *)&ul_ch_mag[ant][symbol*(off+(nb_rb*12))];
 
-  printf("--------------------symbol = %d, mod_order = %d-----------------------\n", symbol, mod_order);
-  printf("----------------Before computation------------------\n");
+    printf("--------------------symbol = %d, mod_order = %d-----------------------\n", symbol, mod_order);
+    printf("----------------Before computation------------------\n");
 
-  for (print_idx=0;print_idx<50;print_idx++){
+    for (print_idx=0;print_idx<5;print_idx++){
 
-    printf("ch_mag[%d] = %d\n", print_idx, ch_mag[print_idx]);
+      printf("ch_mag[%d] = %d\n", print_idx, ch_mag[print_idx]);
 
+    }
   }
 
-#endif
-
-#ifdef __AVX2__
-  int off = ((nb_rb&1) == 1)? 4:0;
-#else
-  int off = 0;
 #endif
 
 #if defined(__i386) || defined(__x86_64__)
@@ -1068,14 +1071,16 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
 #ifdef DEBUG_CH_COMP
 
-  rxF   = (int16_t *)&rxdataF_comp[0][(symbol*(off+(nb_rb*12)))];
+  for (int ant=0; ant<frame_parms->nb_antennas_rx; ant++) {
+    rxF   = (int16_t *)&rxdataF_comp[ant][(symbol*(off+(nb_rb*12)))];
 
-  printf("----------------After compansation------------------\n");
+    printf("----------------After compansation------------------\n");
 
-  for (prnt_idx=0;prnt_idx<12*nb_rb*2;prnt_idx+=2){
+    for (prnt_idx=0;prnt_idx<12*5*2;prnt_idx+=2){
 
-    printf("rxF[%d] = (%d,%d)\n", prnt_idx>>1, rxF[prnt_idx],rxF[prnt_idx+1]);
+      printf("rxF[%d] = (%d,%d)\n", prnt_idx>>1, rxF[prnt_idx],rxF[prnt_idx+1]);
 
+    }
   }
 
 #endif
@@ -1083,14 +1088,16 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 #ifdef DEBUG_CH_MAG
 
 
-  ch_mag   = (int16_t *)&ul_ch_mag[0][(symbol*(off+(nb_rb*12)))];
+  for (int ant=0; ant<frame_parms->nb_antennas_rx; ant++) {
+    ch_mag   = (int16_t *)&ul_ch_mag[ant][(symbol*(off+(nb_rb*12)))];
 
-  printf("----------------After computation------------------\n");
+    printf("----------------After computation------------------\n");
 
-  for (print_idx=0;print_idx<12*nb_rb*2;print_idx+=2){
+    for (print_idx=0;print_idx<12*5*2;print_idx+=2){
 
-    printf("ch_mag[%d] = (%d,%d)\n", print_idx>>1, ch_mag[print_idx],ch_mag[print_idx+1]);
+      printf("ch_mag[%d] = (%d,%d)\n", print_idx>>1, ch_mag[print_idx],ch_mag[print_idx+1]);
 
+    }
   }
 
 #endif
@@ -1318,8 +1325,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       start_meas(&gNB->ulsch_mrc_stats);
       nr_ulsch_detection_mrc(frame_parms,
                              gNB->pusch_vars[ulsch_id]->rxdataF_comp,
-                             gNB->pusch_vars[ulsch_id]->ul_ch_mag,
-                             gNB->pusch_vars[ulsch_id]->ul_ch_magb,
+                             gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
+                             gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
                              symbol,
                              rel15_ul->rb_size);
       stop_meas(&gNB->ulsch_mrc_stats);

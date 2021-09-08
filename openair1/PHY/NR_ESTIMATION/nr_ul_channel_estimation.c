@@ -319,7 +319,6 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
         rxF   = (int16_t *)&rxdataF[aarx][soffset+(symbol_offset+nushift+re_offset)];
         ul_ch+=8;
-
       }
       
       // Treat first 2 pilots specially (right edge)

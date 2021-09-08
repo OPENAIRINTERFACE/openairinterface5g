@@ -614,6 +614,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       }
       UE_info->UE_sched_ctrl->search_space = get_searchspace(scc, bwpd, target_ss);
       UE_info->UE_sched_ctrl->coreset = get_coreset(scc, bwpd, UE_info->UE_sched_ctrl->search_space, target_ss);
+      UE_info->UE_sched_ctrl->maxL = 2;
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);

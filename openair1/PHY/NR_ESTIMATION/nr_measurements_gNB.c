@@ -201,6 +201,7 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
       rx_power[ulsch_id][aarx] += meas->rx_spatial_power[ulsch_id][aatx][aarx];
 
     }
+    LOG_D(PHY, "[ULSCH ID %d] RX power in antenna %d = %d\n", ulsch_id, aarx, rx_power[ulsch_id][aarx]);
 
     rx_power_tot[ulsch_id] += rx_power[ulsch_id][aarx];
 
@@ -212,12 +213,13 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
   meas->wideband_cqi_tot[ulsch_id] = dB_fixed2(rx_power_tot[ulsch_id], meas->n0_power_tot);
   meas->rx_rssi_dBm[ulsch_id] = rx_power_avg_dB[ulsch_id] + 30 - 10 * log10(pow(2, 30)) - (rx_gain - rx_gain_offset) - dB_fixed(fp->ofdm_symbol_size);
 
-  LOG_D(PHY, "[ULSCH %d] RSSI %d dBm/RE, RSSI (digital) %d dB (N_RB_UL %d), WBand CQI tot %d dB, N0 Power tot %d\n",
+  LOG_D(PHY, "[ULSCH %d] RSSI %d dBm/RE, RSSI (digital) %d dB (N_RB_UL %d), WBand CQI tot %d dB, N0 Power tot %d, RX Power tot %d\n",
     ulsch_id,
     meas->rx_rssi_dBm[ulsch_id],
     rx_power_avg_dB[ulsch_id],
     N_RB_UL,
     meas->wideband_cqi_tot[ulsch_id],
-    meas->n0_power_tot);
+    meas->n0_power_tot,
+    rx_power_tot[ulsch_id]);
 
 }

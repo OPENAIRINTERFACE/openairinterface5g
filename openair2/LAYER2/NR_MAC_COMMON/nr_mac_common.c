@@ -1286,24 +1286,30 @@ int64_t *get_prach_config_info(frequency_range_t freq_range,
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
-                                 NR_SearchSpace_t *ss) {
-
+                                 NR_SearchSpace_t *ss,
+                                 int maxL) {
+  AssertFatal(maxL>=1,"maxL %d not ok\n",maxL);
   if (ss->nrofCandidates->aggregationLevel1 != NR_SearchSpace__nrofCandidates__aggregationLevel1_n0) {
     *aggregation_level = 1;
     *nr_of_candidates = ss->nrofCandidates->aggregationLevel1;
   }
+  if (maxL == 1) return;
   if (ss->nrofCandidates->aggregationLevel2 != NR_SearchSpace__nrofCandidates__aggregationLevel2_n0) {
     *aggregation_level = 2;
     *nr_of_candidates = ss->nrofCandidates->aggregationLevel2;
   }
+  if (maxL == 2) return;
   if (ss->nrofCandidates->aggregationLevel4 != NR_SearchSpace__nrofCandidates__aggregationLevel4_n0) {
     *aggregation_level = 4;
     *nr_of_candidates = ss->nrofCandidates->aggregationLevel4;
   }
+  if (maxL == 4) return;
   if (ss->nrofCandidates->aggregationLevel8 != NR_SearchSpace__nrofCandidates__aggregationLevel8_n0) {
     *aggregation_level = 8;
     *nr_of_candidates = ss->nrofCandidates->aggregationLevel8;
   }
+  if (maxL == 8) return;
+
   if (ss->nrofCandidates->aggregationLevel16 != NR_SearchSpace__nrofCandidates__aggregationLevel16_n0) {
     *aggregation_level = 16;
     *nr_of_candidates = ss->nrofCandidates->aggregationLevel16;

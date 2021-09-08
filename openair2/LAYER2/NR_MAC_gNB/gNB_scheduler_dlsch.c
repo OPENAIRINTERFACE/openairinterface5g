@@ -740,7 +740,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   if (UE_info->num_UEs == 0)
     return;
 
-  if (slot!=1) return;
+  if (slot!=1 && slot!=11) return;
 
   const int CC_id = 0;
 
@@ -884,11 +884,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
     LOG_D(NR_MAC,
-          "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
+          "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x DCI L %d start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
           frame,
           slot,
           UE_id,
           rnti,
+          sched_ctrl->aggregation_level,
           sched_pdsch->rbStart,
           sched_pdsch->rbSize,
           ps->startSymbolIndex,
