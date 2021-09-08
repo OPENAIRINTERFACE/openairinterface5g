@@ -483,6 +483,52 @@ void init_LLR_DMA_for_CUDA(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8
 	
 }
 
+using namespace std ;
+
+/* from here: entry points in decoder shared lib */
+extern "C"
+int ldpc_autoinit(void) {   // called by the library loader 
+int devices = 0; 
+
+  cudaError_t err = cudaGetDeviceCount(&devices); 
+  AssertFatal(devices>0,"\nNo cuda GPU found\n\n");
+
+    const int kb = 1024;
+    const int mb = kb * kb;
+    wcout << "NBody.GPU" << endl << "=========" << endl << endl;
+
+    wcout << "CUDA version:   v" << CUDART_VERSION << endl;    
+    
+
+    wcout << "CUDA Devices: " << endl << endl;
+
+    for(int i = 0; i < devices; ++i)
+    {
+        cudaDeviceProp props;
+        cudaGetDeviceProperties(&props, i);
+        wcout << i << ": " << props.name << ": " << props.major << "." << props.minor << endl;
+        wcout << "  Global memory:   " << props.totalGlobalMem / mb << "mb" << endl;
+        wcout << "  Shared memory:   " << props.sharedMemPerBlock / kb << "kb" << endl;
+        wcout << "  Constant memory: " << props.totalConstMem / kb << "kb" << endl;
+        wcout << "  Block registers: " << props.regsPerBlock << endl << endl;
+
+        wcout << "  Warp size:         " << props.warpSize << endl;
+        wcout << "  Threads per block: " << props.maxThreadsPerBlock << endl;
+        wcout << "  Max block dimensions: [ " << props.maxThreadsDim[0] << ", " << props.maxThreadsDim[1]  << ", " << props.maxThreadsDim[2] << " ]" << endl;
+        wcout << "  Max grid dimensions:  [ " << props.maxGridSize[0] << ", " << props.maxGridSize[1]  << ", " << props.maxGridSize[2] << " ]" << endl;
+        wcout << endl;
+    }
+  warmup_for_GPU();
+  return 0;  
+}
+
+extern "C"
+void nrLDPC_initcall(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out) {
+	set_compact_BG(p_decParams->Z,p_decParams->BG);
+	init_LLR_DMA(p_decParams, p_llr,  p_out);
+}
+
+
 extern "C"
 int32_t nrLDPC_decoder_LYC(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, int block_length, time_stats_t *time_decoder)
 {

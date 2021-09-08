@@ -42,14 +42,25 @@
 
 
 /* function description array, to be used when loading the encoding/decoding shared lib */
-static loader_shlibfunc_t shlib_fdesc[2];
 
-char *arg[64]={"ldpctest","-O","cmdlineonly::dbgl0"};
+static loader_shlibfunc_t shlib_fdesc[3];
+
+/* arguments used when called from phy simulators exec's which do not use the config module */
+/* arg is used to initialize the config module so that the loader works as expected */
+char *arg[64]={"ldpctest","-O","cmdlineonly::dbgl0",NULL,NULL};
 
 int load_nrLDPClib(void) {
 	 char *ptr = (char*)config_get_if();
+	 char libname[64]="ldpc";
+	 int argc=3;
+	 if (run_cuda) {
+         arg[3]="--loader.ldpc.shlibversion";
+         argc++;
+         arg[4]="_cuda";
+         argc++;
+     }
      if ( ptr==NULL )  {// phy simulators, config module possibly not loaded
-     	 load_configmodule(3,(char **)arg,CONFIG_ENABLECMDLINEONLY) ;
+     	 load_configmodule(argc,(char **)arg,CONFIG_ENABLECMDLINEONLY) ;
      	 logInit();
      }	 
      shlib_fdesc[0].fname = "nrLDPC_decod";
