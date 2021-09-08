@@ -308,7 +308,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   uint8_t l, number_dmrs_symbols = 0;
   uint32_t G;
   uint16_t start_symbol, number_symbols, nb_re_dmrs;
-  uint8_t enable_ldpc_offload = 1;
+  uint8_t enable_ldpc_offload = gNB->ldpc_offload_flag;
   start_symbol = pusch_pdu->start_symbol_index;
   number_symbols = pusch_pdu->nr_of_symbols;
 

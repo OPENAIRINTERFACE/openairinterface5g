@@ -403,7 +403,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   int8_t llrProcBuf[22*384];
   int ret = 0;
   int i,j;
-  int8_t enable_ldpc_offload = 1;
+  int8_t enable_ldpc_offload = phy_vars_gNB->ldpc_offload_flag;
   int16_t  z_ol [68*384];
   int8_t   l_ol [68*384];
   __m128i *pv_ol128 = (__m128i*)&z_ol;
@@ -598,7 +598,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   
   for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++)
   {
-    pl_ol128[j] = _mm_packs_epi16(pv_ol128[i],pv_ol128[i+1]);
+	pl_ol128[j] = _mm_packs_epi16(_mm_slli_epi16(pv_ol128[i],1),_mm_slli_epi16(pv_ol128[i+1],1));
   }
 	
   ret = nrLDPC_decoder_offload(p_decParams,
@@ -639,9 +639,16 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                		harq_process->c[r],
                		Kr_bytes - (harq_process->F>>3) -((harq_process->C>1)?3:0));
         	offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
+		harq_process->processedSegments=r+1;	
 	}
-    	
-	if (r==harq_process->C-1){
+  	else {
+   	 if ( harq_process->C != harq_process->processedSegments ) {
+      		LOG_I(PHY,"uplink segment error %d/%d\n",r,harq_process->C);
+   		LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
+      		harq_process->processedSegments=harq_process->C;
+    	 }
+  	}  	
+	if (harq_process->processedSegments==harq_process->C){
 	  if (decodeSuccess) {
 		LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
                         phy_vars_gNB->Mod_id,harq_process->slot,harq_process->TBS);
@@ -650,7 +657,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                 ulsch->harq_mask &= ~(1 << harq_pid);
 
                 LOG_D(PHY, "ULSCH received ok \n");
-                nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, UE_id, harq_pid, 0);
+                nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 0);
 	
 	  } else {
 		LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
@@ -664,9 +671,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       		}
       		harq_process->handled  = 1;
 
-      		LOG_D(PHY, "ULSCH %d in error\n",UE_id);
-		nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, UE_id, harq_pid, 1);
+      		LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
+		nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 1);
 	  } 
+  	ulsch->last_iteration_cnt = no_iteration_ldpc;	
 	}
     } 
   } 

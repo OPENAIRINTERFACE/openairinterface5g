@@ -829,7 +829,7 @@ typedef struct PHY_VARS_gNB_s {
   double N0;
 
   unsigned char first_run_I0_measurements;
-
+  int ldpc_offload_flag;
 
   unsigned char    is_secondary_gNB; // primary by default
   unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNB will listen to the PSS from the primary system.

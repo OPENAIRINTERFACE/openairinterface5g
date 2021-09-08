@@ -311,6 +311,7 @@ int main(int argc, char **argv)
   //float eff_tp_check = 0.7;
   uint8_t snrRun;
   int prb_inter = 0;
+  int ldpc_offload_flag = 0;
 
   int enable_ptrs = 0;
   int modify_dmrs = 0;
@@ -344,7 +345,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:o:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -455,6 +456,10 @@ int main(int argc, char **argv)
       
     case 'n':
       n_trials = atoi(optarg);
+      break;
+
+    case 'o':
+      ldpc_offload_flag = atoi(optarg);
       break;
       
     case 'p':
@@ -604,6 +609,7 @@ int main(int argc, char **argv)
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
       printf("-m MCS value\n");
       printf("-n Number of trials to simulate\n");
+      printf("-o ldpc offload flag\n");
       printf("-p Use extended prefix mode\n");
       printf("-t Delay spread for multipath channel\n");
       printf("-u Set the numerology\n");
@@ -805,7 +811,8 @@ int main(int argc, char **argv)
 
 
   unsigned char harq_pid = 0;
-
+  
+  gNB->ldpc_offload_flag = ldpc_offload_flag;
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = malloc(sizeof(*UL_tti_req));

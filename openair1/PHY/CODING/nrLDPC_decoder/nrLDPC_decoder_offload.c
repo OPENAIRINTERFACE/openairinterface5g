@@ -843,16 +843,6 @@ fill_queue_buffers(struct test_op_params *op_params,int8_t* p_llr, uint32_t data
 	
 	}
 
-		bool loopback = op_params->ref_dec_op->ldpc_dec.op_flags &
-				RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_LOOPBACK;
-		bool llr_comp = op_params->ref_dec_op->ldpc_dec.op_flags &
-				RTE_BBDEV_LDPC_LLR_COMPRESSION;
-		ldpc_llr_decimals = capabilities->cap.ldpc_dec.llr_decimals;
-		ldpc_llr_size = capabilities->cap.ldpc_dec.llr_size;
-		ldpc_cap_flags = capabilities->cap.ldpc_dec.capability_flags;
-		if (!loopback && !llr_comp)
-			ldpc_input_llr_scaling(*queue_ops[DATA_INPUT], n,
-					ldpc_llr_size, ldpc_llr_decimals);
 	return 0;
 }
 
@@ -925,7 +915,7 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 		ops[i]->ldpc_dec.q_m = p_offloadParams->Qm; 
 		ops[i]->ldpc_dec.n_filler = p_offloadParams->F; 
 		ops[i]->ldpc_dec.n_cb = p_offloadParams->n_cb;
-		ops[i]->ldpc_dec.iter_max = 8; 
+		ops[i]->ldpc_dec.iter_max = 20; 
 		ops[i]->ldpc_dec.rv_index = p_offloadParams->rv; 
 		ops[i]->ldpc_dec.op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE;
 		ops[i]->ldpc_dec.code_block_mode = 1; //ldpc_dec->code_block_mode;
@@ -998,7 +988,7 @@ check_enc_status_and_ordering(struct rte_bbdev_enc_op *op,
 */
 
 static int
-validate_ldpc_dec_op(struct rte_bbdev_dec_op **ops, const uint16_t n,
+retrieve_ldpc_dec_op(struct rte_bbdev_dec_op **ops, const uint16_t n,
 		struct rte_bbdev_dec_op *ref_op, const int vector_mask,
 		int8_t* p_out)
 {
@@ -1310,7 +1300,7 @@ pmd_lcore_ldpc_dec(void *arg)
 				mbuf_reset(
 				ops_enq[j]->ldpc_dec.harq_combined_output.data);
 		}
-		start_time = rte_rdtsc_precise();
+		//start_time = rte_rdtsc_precise();
 
 		for (enq = 0, deq = 0; enq < num_ops;) {
 			num_to_enq = burst_sz;
@@ -1332,7 +1322,7 @@ pmd_lcore_ldpc_dec(void *arg)
 					queue_id, &ops_deq[deq], enq - deq);
 		}
 
-		total_time += rte_rdtsc_precise() - start_time;
+//		total_time += rte_rdtsc_precise() - start_time;
 	}
 
 	tp->iter_count = 0;
@@ -1342,20 +1332,20 @@ pmd_lcore_ldpc_dec(void *arg)
 				tp->iter_count);
 	}
 
-	ret = validate_ldpc_dec_op(ops_deq, num_ops, ref_op,
+	ret = retrieve_ldpc_dec_op(ops_deq, num_ops, ref_op,
 				tp->op_params->vector_mask, p_out);
 		TEST_ASSERT_SUCCESS(ret, "Validation failed!");
 
 	rte_bbdev_dec_op_free_bulk(ops_enq, num_ops);
 
-	double tb_len_bits = calc_ldpc_dec_TB_size(ref_op);
+	/*double tb_len_bits = calc_ldpc_dec_TB_size(ref_op);
 
 	tp->ops_per_sec = ((double)num_ops * TEST_REPETITIONS) /
 			((double)total_time / (double)rte_get_tsc_hz());
 	tp->mbps = (((double)(num_ops * TEST_REPETITIONS * tb_len_bits)) /
 			1000000.0) / ((double)total_time /
 			(double)rte_get_tsc_hz());
-
+	*/	
 	return TEST_SUCCESS;
 }
 
@@ -1402,7 +1392,7 @@ start_pmd_dec(struct active_device *ad,
 	struct rte_bbdev_info info;
 	uint16_t num_lcores;
 
-	rte_bbdev_info_get(ad->dev_id, &info);
+	//rte_bbdev_info_get(ad->dev_id, &info);
 
 	/*printf("+ ------------------------------------------------------- +\n");
 	printf("== start pmd dec\ndev: %s, nb_queues: %u, burst size: %u, num ops: %u, num_lcores: %u,  itr mode: %s, GHz: %lg\n",
@@ -1437,7 +1427,6 @@ start_pmd_dec(struct active_device *ad,
 	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
 		if (used_cores >= num_lcores)
 			break;
-
 		t_params[used_cores].dev_id = ad->dev_id;
 		t_params[used_cores].lcore_id = lcore_id;
 		t_params[used_cores].op_params = op_params;
@@ -1486,7 +1475,6 @@ start_pmd_dec(struct active_device *ad,
 	tp->mbps /= TEST_REPETITIONS;
 	ret |= (int)rte_atomic16_read(&tp->processing_status);
 
-	/* Wait for slave lcores operations */
 	for (used_cores = 1; used_cores < num_lcores; used_cores++) {
 		tp = &t_params[used_cores];
 
@@ -1579,7 +1567,7 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 
 	test_params.num_ops=1; 
 	test_params.burst_sz=1;
-	test_params.num_lcores=3;		
+	test_params.num_lcores=1;		
 	test_params.num_tests = 1;
   	struct active_device *ad;
         ad = &active_devs[0];
@@ -1654,7 +1642,6 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 		}
 		cap++;
 	}
-
 	create_reference_ldpc_dec_op(op_params->ref_dec_op, p_offloadParams);
 	ad->nb_queues =  1;
 	for (i = 0; i < ad->nb_queues; ++i) {
