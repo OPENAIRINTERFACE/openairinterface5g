@@ -166,7 +166,7 @@ if (CUDA_FOUND)
     add_definitions("-L/usr/local/cuda/lib64")
 
     SET(CUDA_NVCC_FLAGS
-      "${CUDA_NVCC_FLAGS};-arch=sm_60;")
+      "${CUDA_NVCC_FLAGS};--gpu-architecture=compute_60")
 
     # Disable warnings for CUDA
     SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-lpthread;-w;-O3;--default-stream;per-thread;-I/usr/local/cuda/inc;-L/usr/local/cuda/lib -lcutil;-rdc=true;-lcudadevrt")
@@ -1600,9 +1600,11 @@ add_library(ldpc_orig MODULE ${PHY_LDPC_ORIG_SRC} )
 add_library(ldpc_optim MODULE ${PHY_LDPC_OPTIM_SRC} )
 add_library(ldpc_optim8seg MODULE ${PHY_LDPC_OPTIM8SEG_SRC} )
 if (CUDA_FOUND)
-  add_library(ldpc_cuda MODULE ${PHY_LDPC_CUDA_SRC} )
-  CUDA_ADD_CUFFT_TO_TARGET(ldpc_cuda)
+  cuda_add_library(ldpc_cuda MODULE ${PHY_LDPC_CUDA_SRC} )
+  set_target_properties(ldpc_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+#  CUDA_ADD_CUFFT_TO_TARGET(ldpc_cuda)
 endif (CUDA_FOUND)
+
 add_library(ldpc MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
 
 
@@ -3193,7 +3195,9 @@ add_executable(ldpctest
    )
 
 add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
-
+if (CUDA_FOUND)
+   add_dependencies( ldpctest ldpc_cuda)
+endif (CUDA_FOUND)
 target_link_libraries(ldpctest
   -Wl,--start-group UTIL SIMU_COMMON  SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl

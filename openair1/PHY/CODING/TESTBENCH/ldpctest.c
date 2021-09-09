@@ -101,8 +101,8 @@ int test_ldpc(short No_iteration,
               unsigned int *crc_misses,
               time_stats_t *time_optim,
               time_stats_t *time_decoder,
-              n_iter_stats_t *dec_iter,
-              short run_cuda)
+              n_iter_stats_t *dec_iter
+              )
 {
   //clock initiate
   //time_stats_t time,time_optim,tinput,tprep,tparity,toutput, time_decoder;
@@ -393,28 +393,13 @@ int test_ldpc(short No_iteration,
       decParams.R=code_rate_vec[R_ind];//13;
       decParams.numMaxIter=No_iteration;
       decParams.outMode = nrLDPC_outMode_BIT;
+      decParams.block_length=block_length;
       //decParams.outMode =nrLDPC_outMode_LLRINT8;
-#ifdef CUDA_FLAG
-	  set_compact_BG(Zc,BG);
-	  init_LLR_DMA_for_CUDA(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length);
-#endif
+	  nrLDPC_initcall(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j]);
 	  for(j=0;j<n_segments;j++) {
     	  start_meas(time_decoder);
-#ifdef CUDA_FLAG
-        if(run_cuda){
-          n_iter = nrLDPC_decoder_LYC(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], block_length, time_decoder);
-        }  
-        else{ 
-        // decode the sequence
-        // decoder supports BG2, Z=128 & 256
-        //esimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
-        ///nrLDPC_decoder(&decParams, channel_output_fixed, estimated_output, NULL);
           n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
-        }
-#else
-        n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
-#endif
-	stop_meas(time_decoder);
+	      stop_meas(time_decoder);
       }
 
       //for (i=(Kb+nrows) * Zc-5;i<(Kb+nrows) * Zc;i++)
@@ -514,9 +499,7 @@ int test_ldpc(short No_iteration,
 
 int main(int argc, char *argv[])
 {
-#ifdef CUDA_FLAG	
-  warmup_for_GPU();
-#endif
+
   unsigned int errors, errors_bit, crc_misses;
   double errors_bit_uncoded;
   short block_length=8448; // decoder supports length: 1201 -> 1280, 2401 -> 2560
@@ -619,7 +602,7 @@ int main(int argc, char *argv[])
   printf("SNR0 %f: \n", SNR0);
 
 
-  load_nrLDPClib();
+  load_nrLDPClib(run_cuda);
   load_nrLDPClib_ref("_orig", &encoder_orig);
   //for (block_length=8;block_length<=MAX_BLOCK_LENGTH;block_length+=8)
 
@@ -691,8 +674,7 @@ int main(int argc, char *argv[])
                                 &crc_misses,
                                 time_optim,
                                 time_decoder,
-                                dec_iter,
-								run_cuda);
+                                dec_iter);
 
     printf("SNR %f, BLER %f (%u/%d)\n", SNR, (float)decoded_errors[i]/(float)n_trials, decoded_errors[i], n_trials);
     printf("SNR %f, BER %f (%u/%d)\n", SNR, (float)errors_bit/(float)n_trials/(float)block_length/(double)n_segments, decoded_errors[i], n_trials);

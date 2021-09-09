@@ -7,14 +7,14 @@
  * \note
  * \warning
  */
-
+#include <iostream>
 #include <stdio.h>
 #include <unistd.h>
 #include <cuda_runtime.h>
 #include <cuda.h>
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPCdecoder_defs.h"
-
+#include "assertions.h"
 #include "bgs/BG1_I0"
 #include "bgs/BG1_I1"
 #include "bgs/BG1_I2"
@@ -462,10 +462,11 @@ void read_BG(int BG, int *h, int row, int col)
 }
 
 extern "C"
-void init_LLR_DMA_for_CUDA(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, int block_length){
+void init_LLR_DMA(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out){
 	
 	uint16_t Zc          = p_decParams->Z;
     uint8_t  BG         = p_decParams->BG;
+    int block_length     = p_decParams->block_length;
 	uint8_t row,col;
 	if(BG == 1){
 		row = 46;
@@ -530,13 +531,12 @@ void nrLDPC_initcall(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
 
 
 extern "C"
-int32_t nrLDPC_decoder_LYC(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, int block_length, time_stats_t *time_decoder)
+int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out,t_nrLDPC_procBuf* p_procBuf, t_nrLDPC_time_stats *time_decoder)
 {
-
-
     uint16_t Zc          = p_decParams->Z;
     uint8_t  BG         = p_decParams->BG;
     uint8_t  numMaxIter = p_decParams->numMaxIter;
+    int block_length    = p_decParams->block_length;
     e_nrLDPC_outMode outMode = p_decParams->outMode;
 	cudaError_t cudaStatus;
 	uint8_t row,col;

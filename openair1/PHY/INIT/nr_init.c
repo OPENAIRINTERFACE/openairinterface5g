@@ -108,7 +108,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   crcTableInit();
   init_scrambling_luts();
   init_pucch2_luts();
-  load_nrLDPClib();
+  load_nrLDPClib(0);
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
   //PDCCH DMRS init

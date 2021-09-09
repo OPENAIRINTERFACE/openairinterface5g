@@ -42,14 +42,13 @@
 
 
 /* function description array, to be used when loading the encoding/decoding shared lib */
-
 static loader_shlibfunc_t shlib_fdesc[3];
 
 /* arguments used when called from phy simulators exec's which do not use the config module */
 /* arg is used to initialize the config module so that the loader works as expected */
 char *arg[64]={"ldpctest","-O","cmdlineonly::dbgl0",NULL,NULL};
 
-int load_nrLDPClib(void) {
+int load_nrLDPClib(int run_cuda) {
 	 char *ptr = (char*)config_get_if();
 	 char libname[64]="ldpc";
 	 int argc=3;
@@ -65,10 +64,12 @@ int load_nrLDPClib(void) {
      }	 
      shlib_fdesc[0].fname = "nrLDPC_decod";
      shlib_fdesc[1].fname = "nrLDPC_encod";
-     int ret=load_module_shlib("ldpc",shlib_fdesc,sizeof(shlib_fdesc)/sizeof(loader_shlibfunc_t),NULL);
+     shlib_fdesc[2].fname = "nrLDPC_initcall";
+     int ret=load_module_shlib(libname,shlib_fdesc,sizeof(shlib_fdesc)/sizeof(loader_shlibfunc_t),NULL);
      AssertFatal( (ret >= 0),"Error loading ldpc decoder");
      nrLDPC_decoder = (nrLDPC_decoderfunc_t)shlib_fdesc[0].fptr;
      nrLDPC_encoder = (nrLDPC_encoderfunc_t)shlib_fdesc[1].fptr;
+     nrLDPC_initcall = (nrLDPC_initcallfunc_t)shlib_fdesc[2].fptr;
 return 0;
 }
 
