@@ -1621,8 +1621,9 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
     config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);
     AssertFatal(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr != NULL,
                 "gNB id %u is not defined in configuration file\n",i);
-    F1AP_SETUP_REQ (msg_p).num_cells_available = 0;
-    F1AP_SETUP_REQ (msg_p).cell_type=CELL_MACRO_GNB;
+    f1ap_setup_req_t * f1Setup=&F1AP_SETUP_REQ(msg_p);
+    f1Setup->num_cells_available = 0;
+    f1Setup->cell_type=CELL_MACRO_GNB;
 
     for (k=0; k <num_gnbs ; k++) {
       if (strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[k], *(GNBParamList.paramarray[i][GNB_GNB_NAME_IDX].strptr)) == 0) {
@@ -1638,44 +1639,46 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
 
         config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
         paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
-        F1AP_SETUP_REQ (msg_p).num_cells_available++;
-        F1AP_SETUP_REQ (msg_p).gNB_DU_id        = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
-        LOG_I(GNB_APP,"F1AP: gNB_DU_id[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
-        F1AP_SETUP_REQ (msg_p).gNB_DU_name      = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
-        LOG_I(GNB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_name);
-        F1AP_SETUP_REQ (msg_p).cell[k].tac              = *GNBParamList.paramarray[i][GNB_TRACKING_AREA_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: tac[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].tac);
-        F1AP_SETUP_REQ (msg_p).cell[k].mcc              = *PLMNParamList.paramarray[0][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: mcc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].mcc);
-        F1AP_SETUP_REQ (msg_p).cell[k].mnc              = *PLMNParamList.paramarray[0][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: mnc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].mnc);
-        F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length = *PLMNParamList.paramarray[0][GNB_MNC_DIGIT_LENGTH].u8ptr;
-        LOG_I(GNB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length);
-        AssertFatal((F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length == 2) ||
-                    (F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length == 3),
+        f1Setup->num_cells_available++;
+        f1Setup->gNB_DU_id        = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
+        LOG_I(GNB_APP,"F1AP: gNB_DU_id[%d] %ld\n",k,f1Setup->gNB_DU_id);
+        f1Setup->gNB_DU_name      = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
+        LOG_I(GNB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,f1Setup->gNB_DU_name);
+        f1Setup->cell[k].tac              = *GNBParamList.paramarray[i][GNB_TRACKING_AREA_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: tac[%d] %d\n",k,f1Setup->cell[k].tac);
+        f1Setup->cell[k].mcc              = *PLMNParamList.paramarray[0][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: mcc[%d] %d\n",k,f1Setup->cell[k].mcc);
+        f1Setup->cell[k].mnc              = *PLMNParamList.paramarray[0][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: mnc[%d] %d\n",k,f1Setup->cell[k].mnc);
+        f1Setup->cell[k].mnc_digit_length = *PLMNParamList.paramarray[0][GNB_MNC_DIGIT_LENGTH].u8ptr;
+        LOG_I(GNB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,f1Setup->cell[k].mnc_digit_length);
+        AssertFatal((f1Setup->cell[k].mnc_digit_length == 2) ||
+                    (f1Setup->cell[k].mnc_digit_length == 3),
                     "BAD MNC DIGIT LENGTH %d",
-                    F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length);
-        F1AP_SETUP_REQ (msg_p).cell[k].nr_cellid = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
-        LOG_I(GNB_APP,"F1AP: nr_cellid[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).cell[k].nr_cellid);
+                    f1Setup->cell[k].mnc_digit_length);
+        f1Setup->cell[k].nr_cellid = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
+        LOG_I(GNB_APP,"F1AP: nr_cellid[%d] %ld\n",k,f1Setup->cell[k].nr_cellid);
         LOG_I(GNB_APP,"F1AP: CU_ip4_address in DU %s\n",RC.nrmac[k]->eth_params_n.remote_addr);
-        LOG_I(GNB_APP,"FIAP: CU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address,(int)strlen(RC.nrmac[k]->eth_params_n.remote_addr));
-        F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6 = 0;
-        F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4 = 1;
-        //strcpy(F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6_address, "");
-        strcpy(F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.remote_addr);
+        LOG_I(GNB_APP,"FIAP: CU_ip4_address in DU %p, strlen %d\n",f1Setup->CU_f1_ip_address.ipv4_address,(int)strlen(RC.nrmac[k]->eth_params_n.remote_addr));
+        f1Setup->CU_f1_ip_address.ipv6 = 0;
+        f1Setup->CU_f1_ip_address.ipv4 = 1;
+        //strcpy(f1Setup->CU_f1_ip_address.ipv6_address, "");
+        strcpy(f1Setup->CU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.remote_addr);
         LOG_I(GNB_APP,"F1AP: DU_ip4_address in DU %s\n",RC.nrmac[k]->eth_params_n.my_addr);
         LOG_I(GNB_APP,"FIAP: DU_ip4_address in DU %p, strlen %ld\n",
-	      F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address,
+	      f1Setup->DU_f1_ip_address.ipv4_address,
 	      strlen(RC.nrmac[k]->eth_params_n.my_addr));
-        F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6 = 0;
-        F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4 = 1;
-        //strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6_address, "");
-        strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.my_addr);
-        //strcpy(F1AP_SETUP_REQ (msg_p).CU_ip_address[l].ipv6_address,*(F1ParamList.paramarray[l][ENB_CU_IPV6_ADDRESS_IDX].strptr));
+        f1Setup->DU_f1_ip_address.ipv6 = 0;
+        f1Setup->DU_f1_ip_address.ipv4 = 1;
+        //strcpy(f1Setup->DU_f1_ip_address.ipv6_address, "");
+        strcpy(f1Setup->DU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.my_addr);
+	f1Setup->DUport= RC.nrmac[k]->eth_params_n.my_portd;
+	f1Setup->CUport= RC.nrmac[k]->eth_params_n.remote_portd;
+        //strcpy(f1Setup->CU_ip_address[l].ipv6_address,*(F1ParamList.paramarray[l][ENB_CU_IPV6_ADDRESS_IDX].strptr));
         sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_SCTP_CONFIG);
         config_get(SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
-        F1AP_SETUP_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
-        F1AP_SETUP_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
+        f1Setup->sctp_in_streams = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
+        f1Setup->sctp_out_streams = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
         gNB_RRC_INST *rrc = RC.nrrrc[k];
         // wait until RRC cell information is configured
         int cell_info_configured = 0;
@@ -1688,53 +1691,53 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
           pthread_mutex_unlock(&rrc->cell_info_mutex);
         } while (cell_info_configured == 0);
 
-        rrc->configuration.mcc[0] = F1AP_SETUP_REQ (msg_p).cell[k].mcc;
-        rrc->configuration.mnc[0] = F1AP_SETUP_REQ (msg_p).cell[k].mnc;
-        rrc->configuration.tac    = F1AP_SETUP_REQ (msg_p).cell[k].tac;
-        rrc->nr_cellid = F1AP_SETUP_REQ (msg_p).cell[k].nr_cellid;
-        F1AP_SETUP_REQ (msg_p).cell[k].nr_pci    = *rrc->configuration.scc->physCellId;
-        F1AP_SETUP_REQ (msg_p).cell[k].num_ssi = 0;
+        rrc->configuration.mcc[0] = f1Setup->cell[k].mcc;
+        rrc->configuration.mnc[0] = f1Setup->cell[k].mnc;
+        rrc->configuration.tac    = f1Setup->cell[k].tac;
+        rrc->nr_cellid = f1Setup->cell[k].nr_cellid;
+        f1Setup->cell[k].nr_pci    = *rrc->configuration.scc->physCellId;
+        f1Setup->cell[k].num_ssi = 0;
 
         if (rrc->configuration.scc->tdd_UL_DL_ConfigurationCommon) {
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);
-          F1AP_SETUP_REQ (msg_p).fdd_flag = 0;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_arfcn = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.scs = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nrb = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.num_frequency_bands = 1;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_band[0] = *rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.sul_active              = 0;
+          f1Setup->fdd_flag = 0;
+          f1Setup->nr_mode_info[k].tdd.nr_arfcn = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+          f1Setup->nr_mode_info[k].tdd.scs = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+          f1Setup->nr_mode_info[k].tdd.nrb = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+          f1Setup->nr_mode_info[k].tdd.num_frequency_bands = 1;
+          f1Setup->nr_mode_info[k].tdd.nr_band[0] = *rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+          f1Setup->nr_mode_info[k].tdd.sul_active              = 0;
         } else {
           /***************** for test *****************/
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
-          F1AP_SETUP_REQ (msg_p).fdd_flag = 1;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_arfcn             = 26200UL;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_arfcn             = 26200UL;
+          f1Setup->fdd_flag = 1;
+          f1Setup->nr_mode_info[k].fdd.dl_nr_arfcn             = 26200UL;
+          f1Setup->nr_mode_info[k].fdd.ul_nr_arfcn             = 26200UL;
           // For LTE use scs field to carry prefix type and number of antennas
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_scs                  = 0;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_scs                  = 0;
+          f1Setup->nr_mode_info[k].fdd.dl_scs                  = 0;
+          f1Setup->nr_mode_info[k].fdd.ul_scs                  = 0;
           // use nrb field to hold LTE N_RB_DL (0...5)
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = 3;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = 3;
+          f1Setup->nr_mode_info[k].fdd.ul_nrb                  = 3;
+          f1Setup->nr_mode_info[k].fdd.ul_nrb                  = 3;
           // RK: we need to check there value for FDD's frequency_bands DL/UL
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_num_frequency_bands  = 1;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_band[0]           = 7;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_num_frequency_bands  = 1;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_band[0]           = 7;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_num_sul_frequency_bands  = 0;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_sul_band[0]           = 7;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_num_sul_frequency_bands  = 0;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_sul_band[0]           = 7;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active              = 0;
+          f1Setup->nr_mode_info[k].fdd.ul_num_frequency_bands  = 1;
+          f1Setup->nr_mode_info[k].fdd.ul_nr_band[0]           = 7;
+          f1Setup->nr_mode_info[k].fdd.dl_num_frequency_bands  = 1;
+          f1Setup->nr_mode_info[k].fdd.dl_nr_band[0]           = 7;
+          f1Setup->nr_mode_info[k].fdd.ul_num_sul_frequency_bands  = 0;
+          f1Setup->nr_mode_info[k].fdd.ul_nr_sul_band[0]           = 7;
+          f1Setup->nr_mode_info[k].fdd.dl_num_sul_frequency_bands  = 0;
+          f1Setup->nr_mode_info[k].fdd.dl_nr_sul_band[0]           = 7;
+          f1Setup->nr_mode_info[k].fdd.sul_active              = 0;
           /***************** for test *****************/
         }
 
-        F1AP_SETUP_REQ (msg_p).measurement_timing_information[k]             = "0";
-        F1AP_SETUP_REQ (msg_p).ranac[k]                                      = 0;
-        F1AP_SETUP_REQ (msg_p).mib[k]                                        = rrc->carrier.MIB;
-        F1AP_SETUP_REQ (msg_p).sib1[k]                                       = rrc->carrier.SIB1;
-        F1AP_SETUP_REQ (msg_p).mib_length[k]                                 = rrc->carrier.sizeof_MIB;
-        F1AP_SETUP_REQ (msg_p).sib1_length[k]                                = rrc->carrier.sizeof_SIB1;
+        f1Setup->measurement_timing_information[k]             = "0";
+        f1Setup->ranac[k]                                      = 0;
+        f1Setup->mib[k]                                        = rrc->carrier.MIB;
+        f1Setup->sib1[k]                                       = rrc->carrier.SIB1;
+        f1Setup->mib_length[k]                                 = rrc->carrier.sizeof_MIB;
+        f1Setup->sib1_length[k]                                = rrc->carrier.sizeof_SIB1;
         break;
       }
     }

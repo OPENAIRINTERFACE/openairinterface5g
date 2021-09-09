@@ -43,6 +43,7 @@
 #include "rrc_eNB_S1AP.h"
 #include "rrc_eNB_GTPV1U.h"
 #include "openair2/RRC/NR/rrc_gNB_NGAP.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 static void setQos(F1AP_NonDynamic5QIDescriptor_t *toFill) {
   asn1cCalloc(toFill,F1AP_NonDynamic5QIDescriptor_t, tmp);
@@ -510,6 +511,23 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
     /* 12.1.3 uLUPTNLInformation_ToBeSetup_List */
     for (int j = 0; j < f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl_length; j++) {
+      /* Here the callback function used as input is not the right one. Need to create a new one probably for F1-U, not sure
+       * if the kind of input parameters to the callback function are convenient though for gtp-u over F1-U.*/
+      //Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU
+      transport_layer_addr_t addr;
+      int sz=sizeof(f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].tl_address);
+      memcpy(addr.buffer,&f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].tl_address, sz);
+      addr.length = sz*8;
+
+      f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid=
+	newGtpuCreateTunnel(getCxt(true, instance)->gtpInst,
+			    f1ap_ue_context_setup_req->rnti,
+			    f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
+			    f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
+			    0xFFFF, // We will set the right value from DU answer
+			    addr,
+			    f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].port,
+			    cu_f1u_data_req);
       /*  12.3.1 ULTunnels_ToBeSetup_Item */
       asn1cSequenceAdd(drbs_toBeSetup_item->uLUPTNLInformation_ToBeSetup_List.list,
                        F1AP_ULUPTNLInformation_ToBeSetup_Item_t, uLUPTNLInformation_ToBeSetup_Item);
@@ -687,7 +705,10 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
       F1AP_GTPTunnel_t *dl_up_tnl0 = dl_up_tnl_info_p->dLUPTNLInformation.choice.gTPTunnel;
       BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&dl_up_tnl0->transportLayerAddress, drb_p->up_dl_tnl[0].tl_address);
       OCTET_STRING_TO_INT32(&dl_up_tnl0->gTP_TEID, drb_p->up_dl_tnl[0].teid);
-
+      GtpuUpdateTunnelOutgoingTeid(getCxt(true, instance)->gtpInst,
+				   f1ap_ue_context_setup_resp->rnti,
+				   (ebi_t)drbs_setup_item_p->dRBID,
+				   drb_p->up_dl_tnl[0].teid);
     }
   }
   // SRBs_FailedToBeSetup_List 

@@ -38,7 +38,17 @@
 #include "proto_agent.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
-static void cu_task_handle_sctp_association_ind(instance_t instance,instance_t gtpuInstance, sctp_new_association_ind_t *sctp_new_association_ind) {
+static instance_t cu_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs) {
+  openAddr_t tmp={0};
+  strncpy(tmp.originHost, IPaddrs->my_addr, sizeof(tmp.originHost)-1);
+  strncpy(tmp.destinationHost, IPaddrs->remote_addr, sizeof(tmp.destinationHost)-1);
+  sprintf(tmp.originService, "%d", GTPV1U_UDP_PORT);
+  sprintf(tmp.destinationService, "%d", GTPV1U_UDP_PORT);
+  return ocp_gtpv1Init(tmp);
+}
+
+static void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind,
+						eth_params_t *IPaddrs) {
   createF1inst(true, instance, NULL);
   // save the assoc id
   f1ap_setup_req_t *f1ap_cu_data=f1ap_req(true, instance);
@@ -46,6 +56,8 @@ static void cu_task_handle_sctp_association_ind(instance_t instance,instance_t g
   f1ap_cu_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
   f1ap_cu_data->sctp_out_streams = sctp_new_association_ind->out_streams;
   f1ap_cu_data->default_sctp_stream_id = 0;
+  getCxt(true, instance)->gtpInst=cu_task_create_gtpu_instance_to_du(IPaddrs);
+  AssertFatal(getCxt(true, instance)->gtpInst>0,"Failed to create CU F1-U UDP listener");
   // Nothing
 }
 
@@ -96,15 +108,6 @@ static void cu_task_send_sctp_init_req(instance_t instance, char * my_addr) {
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 
-instance_t cu_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs) {
-  openAddr_t tmp={0};
-  strncpy(tmp.originHost, IPaddrs->my_addr, sizeof(tmp.originHost)-1);
-  strncpy(tmp.destinationHost, IPaddrs->remote_addr, sizeof(tmp.destinationHost)-1);
-  sprintf(tmp.originService, "%d", GTPV1U_UDP_PORT);
-  sprintf(tmp.destinationService, "%d", GTPV1U_UDP_PORT);
-  return ocp_gtpv1Init(tmp);
-}
-
 void * F1AP_CU_task(void *arg) {
   MessageDef *received_msg = NULL;
   int         result;
@@ -119,8 +122,6 @@ void * F1AP_CU_task(void *arg) {
   else 
     IPaddrs=&RC.rrc[0]->eth_params_s;
   cu_task_send_sctp_init_req(0, IPaddrs->my_addr);
-  instance_t gtpInstance=cu_task_create_gtpu_instance_to_du(IPaddrs);
-  AssertFatal(gtpInstance>0,"Failed to create CU F1-U UDP listener");
   
   while (1) {
     itti_receive_msg(TASK_CU_F1, &received_msg);
@@ -130,8 +131,8 @@ void * F1AP_CU_task(void *arg) {
         LOG_I(F1AP, "CU Task Received SCTP_NEW_ASSOCIATION_IND for instance %ld\n",
               ITTI_MSG_DESTINATION_INSTANCE(received_msg));
         cu_task_handle_sctp_association_ind(ITTI_MSG_ORIGIN_INSTANCE(received_msg),
-					    gtpInstance,
-                                            &received_msg->ittiMsg.sctp_new_association_ind);
+                                            &received_msg->ittiMsg.sctp_new_association_ind,
+					    IPaddrs);
         break;
 
       case SCTP_NEW_ASSOCIATION_RESP:

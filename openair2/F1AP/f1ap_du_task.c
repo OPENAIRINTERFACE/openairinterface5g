@@ -36,6 +36,7 @@
 #include "f1ap_du_rrc_message_transfer.h"
 #include "f1ap_du_task.h"
 #include "proto_agent.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 void du_task_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1ap_setup_req) {
   DevAssert(f1ap_setup_req != NULL);
@@ -87,7 +88,8 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
     .remote_ipv4_address = RC.nrmac[instance]->eth_params_n.remote_addr,
     .remote_port         = RC.nrmac[instance]->eth_params_n.remote_portd
   };
-  AssertFatal(proto_agent_start(instance, &params) == 0,
+  if (!RC.nrrrc)
+    AssertFatal(proto_agent_start(instance, &params) == 0,
               "could not start PROTO_AGENT for F1U on instance %ld!\n", instance);
   DU_send_F1_SETUP_REQUEST(instance);
 }
@@ -101,67 +103,81 @@ void du_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_dat
   AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 }
 
+static instance_t du_create_gtpu_instance_to_cu(char* CUaddr, uint16_t CUport, char * DUaddr, uint16_t DUport) {
+  openAddr_t tmp={0};
+  strncpy(tmp.originHost, DUaddr, sizeof(tmp.originHost)-1);
+  strncpy(tmp.destinationHost, CUaddr, sizeof(tmp.destinationHost)-1);
+  sprintf(tmp.originService, "%d", DUport);
+  sprintf(tmp.destinationService, "%d", CUport);
+  return ocp_gtpv1Init(tmp);
+}
 
 void *F1AP_DU_task(void *arg) {
   //sctp_cu_init();
-  MessageDef *received_msg = NULL;
-  int         result;
   LOG_I(F1AP, "Starting F1AP at DU\n");
   //f1ap_eNB_prepare_internal_data();
   itti_mark_task_ready(TASK_DU_F1);
 
   // SCTP
   while (1) {
-    itti_receive_msg(TASK_DU_F1, &received_msg);
+    MessageDef *msg = NULL;
+    itti_receive_msg(TASK_DU_F1, &msg);
+    instance_t myInstance=ITTI_MSG_DESTINATION_INSTANCE(msg);
 
-    switch (ITTI_MSG_ID(received_msg)) {
-      // case TERMINATE_MESSAGE:
-      //   //F1AP_WARN(" *** Exiting F1AP DU thread\n");
-      //   itti_exit_task();
-      //   break;
-      case F1AP_SETUP_REQ: // this is not a true F1 message, but rather an ITTI message sent by enb_app
+    switch (ITTI_MSG_ID(msg)) {
+      case F1AP_SETUP_REQ:
+	// this is not a true F1 message, but rather an ITTI message sent by enb_app
         // 1. save the itti msg so that you can use it to sen f1ap_setup_req, fill the f1ap_setup_req message,
         // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
-        createF1inst(false, ITTI_MSG_DESTINATION_INSTANCE(received_msg), &F1AP_SETUP_REQ(received_msg));
-        LOG_I(F1AP, "DU Task Received F1AP_SETUP_REQ\n");
-        du_task_send_sctp_association_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                          &F1AP_SETUP_REQ(received_msg));
+	LOG_I(F1AP, "DU Task Received F1AP_SETUP_REQ\n");
+	f1ap_setup_req_t * msgSetup=&F1AP_SETUP_REQ(msg);
+        createF1inst(false, myInstance, msgSetup);
+	getCxt(false, myInstance)->gtpInst=du_create_gtpu_instance_to_cu(msgSetup->CU_f1_ip_address.ipv4_address,
+					   msgSetup->CUport,
+					   msgSetup->DU_f1_ip_address.ipv4_address,
+					   msgSetup->DUport);
+	AssertFatal(getCxt(false, myInstance)->gtpInst>0,"Failed to create CU F1-U UDP listener");
+	// Fixme: fully inconsistent instances management
+	// dirty global var is a bad fix
+	extern instance_t legacyInstanceMapping;
+	legacyInstanceMapping=getCxt(false, myInstance)->gtpInst;
+        du_task_send_sctp_association_req(myInstance,msgSetup);
         break;
 
       case F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE:
-        DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(ITTI_MSG_ORIGIN_INSTANCE(received_msg),
-            &F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(received_msg));
+        DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(ITTI_MSG_ORIGIN_INSTANCE(msg),
+            &F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(msg));
         break;
 
       case F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE:
-        DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-            &F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE(received_msg));
+        DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(myInstance,
+            &F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE(msg));
         break;
 
       case SCTP_NEW_ASSOCIATION_RESP:
         // 1. store the respon
         // 2. send the f1setup_req
         LOG_I(F1AP, "DU Task Received SCTP_NEW_ASSOCIATION_RESP\n");
-        du_task_handle_sctp_association_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                             &received_msg->ittiMsg.sctp_new_association_resp);
+        du_task_handle_sctp_association_resp(myInstance,
+                                             &msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_DATA_IND:
         // ex: any F1 incoming message for DU ends here
         LOG_I(F1AP, "DU Task Received SCTP_DATA_IND\n");
-        du_task_handle_sctp_data_ind(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                     &received_msg->ittiMsg.sctp_data_ind);
+        du_task_handle_sctp_data_ind(myInstance,
+                                     &msg->ittiMsg.sctp_data_ind);
         break;
 
       case F1AP_INITIAL_UL_RRC_MESSAGE: // from rrc
         LOG_I(F1AP, "DU Task Received F1AP_INITIAL_UL_RRC_MESSAGE\n");
-        f1ap_initial_ul_rrc_message_t *msg = &F1AP_INITIAL_UL_RRC_MESSAGE(received_msg);
-        DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(0,0,0,msg->crnti,
-                                                msg->rrc_container,
-                                                msg->rrc_container_length,
-                                                msg->du2cu_rrc_container,
-                                                msg->du2cu_rrc_container_length
+        f1ap_initial_ul_rrc_message_t *msgRrc = &F1AP_INITIAL_UL_RRC_MESSAGE(msg);
+        DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(0,0,0,msgRrc->crnti,
+                                                msgRrc->rrc_container,
+                                                msgRrc->rrc_container_length,
+                                                msgRrc->du2cu_rrc_container,
+                                                msgRrc->du2cu_rrc_container_length
                                                );
         break;
 
@@ -169,23 +185,23 @@ void *F1AP_DU_task(void *arg) {
         LOG_I(F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
 
         if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_DU) {
-          DU_send_UL_NR_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                             &F1AP_UL_RRC_MESSAGE(received_msg));
+          DU_send_UL_NR_RRC_MESSAGE_TRANSFER(myInstance,
+                                             &F1AP_UL_RRC_MESSAGE(msg));
         } else {
-          DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                          &F1AP_UL_RRC_MESSAGE(received_msg));
+          DU_send_UL_RRC_MESSAGE_TRANSFER(myInstance,
+                                          &F1AP_UL_RRC_MESSAGE(msg));
         }
 
         break;
 
       case F1AP_UE_CONTEXT_SETUP_RESP:
-        DU_send_UE_CONTEXT_SETUP_RESPONSE(ITTI_MSG_DESTINATION_INSTANCE(received_msg), &F1AP_UE_CONTEXT_SETUP_RESP(received_msg));
+        DU_send_UE_CONTEXT_SETUP_RESPONSE(myInstance, &F1AP_UE_CONTEXT_SETUP_RESP(msg));
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_REQ: // from MAC
         LOG_I(F1AP, "DU Task Received F1AP_UE_CONTEXT_RELEASE_REQ\n");
-        DU_send_UE_CONTEXT_RELEASE_REQUEST(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                           &F1AP_UE_CONTEXT_RELEASE_REQ(received_msg));
+        DU_send_UE_CONTEXT_RELEASE_REQUEST(myInstance,
+                                           &F1AP_UE_CONTEXT_RELEASE_REQ(msg));
         break;
 
       case TERMINATE_MESSAGE:
@@ -195,13 +211,12 @@ void *F1AP_DU_task(void *arg) {
 
       default:
         LOG_E(F1AP, "DU Received unhandled message: %d:%s\n",
-              ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
+              ITTI_MSG_ID(msg), ITTI_MSG_NAME(msg));
         break;
     } // switch
 
-    result = itti_free (ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
+    int result = itti_free (ITTI_MSG_ORIGIN_ID(msg), msg);
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    received_msg = NULL;
   } // while
 
   return NULL;

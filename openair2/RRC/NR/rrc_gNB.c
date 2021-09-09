@@ -1375,33 +1375,15 @@ rrc_gNB_process_RRCReconfigurationComplete(
       message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup = malloc(DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length = DRB_configList->list.count;
+      f1ap_drb_to_be_setup_t *DRBs=F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup;
       LOG_I(RRC, "Length of DRB list:%d, %d \n", DRB_configList->list.count, F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length);
       for (int i = 0; i < DRB_configList->list.count; i++){
-        //Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU
-        //create_tunnel_req.outgoing_teid[i] = 0xFFFF;
-        create_tunnel_req.outgoing_teid[i] = 0xFFFF;
-        create_tunnel_req.rnti = ue_context_pP->ue_context.rnti;
-        in_addr_t tmp_addr = inet_addr(rrc->eth_params_s.remote_addr);
-        memcpy(create_tunnel_req.dst_addr[i].buffer, &tmp_addr, sizeof(tmp_addr));
-        LOG_D(NR_RRC, "The remote tunnel IP address of the DU is: %u.%u.%u.%u \n", create_tunnel_req.dst_addr[i].buffer[0], create_tunnel_req.dst_addr[i].buffer[1],create_tunnel_req.dst_addr[i].buffer[2], create_tunnel_req.dst_addr[i].buffer[3]);
-        create_tunnel_req.dst_addr[i].length = sizeof(tmp_addr)*8;
-        create_tunnel_req.incoming_rb_id[i] = DRB_configList->list.array[i]->drb_Identity;
-
-        /* Here the callback function used as input is not the right one. Need to create a new one probably for F1-U, not sure
-         * if the kind of input parameters to the callback function are convenient though for gtp-u over F1-U.*/
-         uint32_t incoming_teid;
-         incoming_teid = newGtpuCreateTunnel(INSTANCE_DEFAULT, create_tunnel_req.rnti,
-            create_tunnel_req.incoming_rb_id[i],
-            create_tunnel_req.incoming_rb_id[i],
-            create_tunnel_req.outgoing_teid[i],
-            create_tunnel_req.dst_addr[i], 2152,
-            cu_f1u_data_req);
-
-        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
-        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].rlc_mode = RLC_MODE_AM;
-        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].teid = incoming_teid; 
-        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl[0].tl_address = inet_addr(rrc->eth_params_s.my_addr);
-        F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup[i].up_ul_tnl_length = 1;
+        DRBs[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
+        DRBs[i].rlc_mode = RLC_MODE_AM;
+        DRBs[i].up_ul_tnl[0].tl_address = inet_addr(rrc->eth_params_s.my_addr);
+        DRBs[i].up_ul_tnl_length = 1;
+	DRBs[i].up_dl_tnl[0].tl_address = inet_addr(rrc->eth_params_s.remote_addr);
+	DRBs[i].up_dl_tnl_length = 1;
       }
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_DU_ue_id = 0;
@@ -3258,8 +3240,6 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rnti);
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
-  int i;
-  int j;
 
   asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
     &asn_DEF_NR_CellGroupConfig,
@@ -3283,17 +3263,12 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
       LOG_I(NR_RRC, "rlc_BearerToAddModList not empty before filling it \n");
       free(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList);
     }
-    ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(cellGroupConfig->rlc_BearerToAddModList));
+    ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
     memcpy(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList,
         sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
   }
   xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_context_p->ue_context.masterCellGroup);
 
-  for(i=0; i<resp->drbs_to_be_setup_length; i++){
-    for(j=0; j<resp->drbs_to_be_setup[i].up_dl_tnl_length; j++){
-      GtpuUpdateTunnelOutgoingTeid(INSTANCE_DEFAULT, ue_context_p->ue_context.rnti, (ebi_t)resp->drbs_to_be_setup[i].drb_id, resp->drbs_to_be_setup[i].up_dl_tnl[j].teid);
-    }
-  }
   free(cellGroupConfig->rlc_BearerToAddModList);
   free(cellGroupConfig);
 

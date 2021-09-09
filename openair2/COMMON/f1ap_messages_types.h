@@ -108,6 +108,8 @@ typedef struct f1ap_setup_req_s {
   /* The eNB IP address to bind */
   f1ap_net_ip_address_t CU_f1_ip_address;
   f1ap_net_ip_address_t DU_f1_ip_address;
+  uint16_t CUport;
+  uint16_t DUport;
 
   /* Number of SCTP streams used for a mme association */
   uint16_t sctp_in_streams;
@@ -318,6 +320,7 @@ typedef struct f1ap_ul_rrc_message_s {
 typedef struct f1ap_up_tnl_s {
   in_addr_t tl_address; // currently only IPv4 supported
   teid_t  teid;
+  uint16_t port;
 } f1ap_up_tnl_t;
 
 typedef struct f1ap_drb_to_be_setup_s {
