@@ -3249,7 +3249,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
 
 static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const char *msg_name, instance_t instance){
 
-  f1ap_ue_context_setup_resp_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
+  f1ap_ue_context_setup_req_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
   protocol_ctxt_t ctxt;
   ctxt.rnti      = resp->rnti;
   ctxt.module_id = instance;
@@ -3273,7 +3273,7 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
     SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, cellGroupConfig, 1 );
     return;
   }
-  xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, cellGroupConfig);
+  //xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, cellGroupConfig);
 
   if(ue_context_p->ue_context.masterCellGroup == NULL){
     ue_context_p->ue_context.masterCellGroup = calloc(1, sizeof(NR_CellGroupConfig_t));
@@ -3287,10 +3287,11 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
     memcpy(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList,
         sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
   }
+  xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_context_p->ue_context.masterCellGroup);
 
-  for(i=0; i<resp->drbs_setup_length; i++){
-    for(j=0; j<resp->drbs_setup[i].up_dl_tnl_length; j++){
-      GtpuUpdateTunnelOutgoingTeid(INSTANCE_DEFAULT, ue_context_p->ue_context.rnti, (ebi_t)resp->drbs_setup[i].drb_id, resp->drbs_setup[i].up_dl_tnl[j].teid);
+  for(i=0; i<resp->drbs_to_be_setup_length; i++){
+    for(j=0; j<resp->drbs_to_be_setup[i].up_dl_tnl_length; j++){
+      GtpuUpdateTunnelOutgoingTeid(INSTANCE_DEFAULT, ue_context_p->ue_context.rnti, (ebi_t)resp->drbs_to_be_setup[i].drb_id, resp->drbs_to_be_setup[i].up_dl_tnl[j].teid);
     }
   }
   free(cellGroupConfig->rlc_BearerToAddModList);

@@ -396,13 +396,15 @@ void GtpuUpdateTunnelOutgoingTeid(instance_t instance, rnti_t rnti, ebi_t bearer
     LOG_E(GTPU,"Update tunnel for a not existing rnti %x\n", rnti);
     pthread_mutex_unlock(&globGtp.gtp_lock);
     return;
-  }  auto tmp=ptrRnti->second.bearers;
+  }
+  auto tmp=ptrRnti->second.bearers;
   auto ptrBearer=tmp.find(bearer_id); if ( ptrBearer == tmp.end() ) {
     LOG_E(GTPU,"Update tunnel for a existing rnti %x, but wrong bearer_id %u\n", rnti, bearer_id);
     pthread_mutex_unlock(&globGtp.gtp_lock);
     return;
   } //AssertFatal(ptrBearer.second.teid_outgoing == oldOutGoingTeid, "");
  ptrBearer->second.teid_outgoing = newOutgoingTeid;
+ LOG_I(GTPU, "Tunnel Outgoing TEID updated to %d \n", ptrBearer->second.teid_outgoing);
  pthread_mutex_unlock(&globGtp.gtp_lock);
  return;
 }
