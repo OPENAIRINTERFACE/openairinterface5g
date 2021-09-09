@@ -421,9 +421,9 @@ int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
 typedef struct f1ap_cudu_ue_inst_s {
   // used for eNB stats generation
   rnti_t      rnti;
-  module_id_t f1ap_uid;
-  module_id_t du_ue_f1ap_id;
-  module_id_t cu_ue_f1ap_id;
+  instance_t f1ap_uid;
+  instance_t du_ue_f1ap_id;
+  instance_t cu_ue_f1ap_id;
 } f1ap_cudu_ue_t;
 
 typedef struct f1ap_cudu_inst_s {
@@ -438,54 +438,54 @@ typedef struct f1ap_cudu_inst_s {
 
 
 
-uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_t cu_mod_idP);
+uint8_t F1AP_get_next_transaction_identifier(instance_t enb_mod_idP, instance_t cu_mod_idP);
 
-f1ap_cudu_inst_t *getCxt(bool isCU, module_id_t module_idP);
+f1ap_cudu_inst_t *getCxt(bool isCU, instance_t instanceP);
 
-void createF1inst(bool isCU, module_id_t module_idP, f1ap_setup_req_t *req);
+void createF1inst(bool isCU, instance_t instanceP, f1ap_setup_req_t *req);
 int f1ap_add_ue(bool isCu,
-                module_id_t     module_idP,
+                instance_t     instanceP,
                 rnti_t          rntiP);
 
-int f1ap_remove_ue(bool isCu, module_id_t module_idP,
+int f1ap_remove_ue(bool isCu, instance_t instanceP,
                    rnti_t            rntiP);
 
-int f1ap_get_du_ue_f1ap_id (bool isCu, module_id_t module_idP,
+int f1ap_get_du_ue_f1ap_id (bool isCu, instance_t instanceP,
                             rnti_t            rntiP);
 
-int f1ap_get_cu_ue_f1ap_id (bool isCu, module_id_t module_idP,
+int f1ap_get_cu_ue_f1ap_id (bool isCu, instance_t instanceP,
                             rnti_t            rntiP);
 
 
-int f1ap_get_rnti_by_du_id(bool isCu, module_id_t module_idP,
-                           module_id_t       du_ue_f1ap_id );
+int f1ap_get_rnti_by_du_id(bool isCu, instance_t instanceP,
+                           instance_t       du_ue_f1ap_id );
 
 
-int f1ap_get_rnti_by_cu_id(bool isCu, module_id_t module_idP,
-                           module_id_t       cu_ue_f1ap_id );
+int f1ap_get_rnti_by_cu_id(bool isCu, instance_t instanceP,
+                           instance_t       cu_ue_f1ap_id );
 
 
-int f1ap_get_du_uid(bool isCu, module_id_t module_idP,
-                    module_id_t       du_ue_f1ap_id );
+int f1ap_get_du_uid(bool isCu, instance_t instanceP,
+                    instance_t       du_ue_f1ap_id );
 
-int f1ap_get_cu_uid(bool isCu, module_id_t module_idP,
-                    module_id_t       cu_ue_f1ap_id );
+int f1ap_get_cu_uid(bool isCu, instance_t instanceP,
+                    instance_t       cu_ue_f1ap_id );
 
-int f1ap_get_uid_by_rnti(bool isCu, module_id_t module_idP,
+int f1ap_get_uid_by_rnti(bool isCu, instance_t instanceP,
                          rnti_t            rntiP );
 
-int f1ap_du_add_cu_ue_id(bool isCu, module_id_t module_idP,
-                         module_id_t       du_ue_f1ap_id,
-                         module_id_t       cu_ue_f1ap_id);
+int f1ap_du_add_cu_ue_id(bool isCu, instance_t instanceP,
+                         instance_t       du_ue_f1ap_id,
+                         instance_t       cu_ue_f1ap_id);
 
-int f1ap_cu_add_du_ue_id(bool isCu, module_id_t module_idP,
-                         module_id_t       cu_ue_f1ap_id,
-                         module_id_t       du_ue_f1ap_id);
+int f1ap_cu_add_du_ue_id(bool isCu, instance_t instanceP,
+                         instance_t       cu_ue_f1ap_id,
+                         instance_t       du_ue_f1ap_id);
 
-int f1ap_assoc_id(bool isCu, module_id_t module_idP);
+int f1ap_assoc_id(bool isCu, instance_t instanceP);
 
-static inline f1ap_setup_req_t *f1ap_req(bool isCu, module_id_t module_idP) {
-  return &getCxt(isCu, module_idP)->setupReq;
+static inline f1ap_setup_req_t *f1ap_req(bool isCu, instance_t instanceP) {
+  return &getCxt(isCu, instanceP)->setupReq;
 }
 
 #define asn1cCalloc(VaR, TyPe, lOcPtr) TyPe *lOcPtr=VaR=(TyPe*) calloc(1,sizeof(TyPe));

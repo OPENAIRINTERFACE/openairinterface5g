@@ -43,7 +43,6 @@
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
 
-int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup_req_t *req);
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                                        uint32_t         assoc_id,
                                        uint32_t         stream,
@@ -200,7 +199,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       // decode RRC Container and act on the message type
       //FIXME
       //rnti_t rnti      = f1ap_get_rnti_by_du_id(false, instance, du_ue_f1ap_id);
-      ctxt.module_id = instance;
+      ctxt.instance = instance;
       ctxt.instance  = instance;
       ctxt.enb_flag  = 1;
       mem_block_t *pdcp_pdu_p = get_free_mem_block(ieRRC->value.choice.RRCContainer.size, __func__);
@@ -648,7 +647,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   ctxt.rnti = f1ap_get_rnti_by_cu_id(false, instance, ie->value.choice.GNB_CU_UE_F1AP_ID);
-  ctxt.module_id = instance;
+  ctxt.instance = instance;
   ctxt.instance  = instance;
   ctxt.enb_flag  = 1;
   /* GNB_DU_UE_F1AP_ID */
@@ -735,7 +734,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
 
   struct rrc_eNB_ue_context_s *ue_context_p;
 
-  ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.module_id], ctxt.rnti);
+  ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.instance], ctxt.rnti);
 
   if (ue_context_p && !UE_out_of_sync) {
     /* UE exists and is in sync so we start a timer before releasing the

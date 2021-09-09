@@ -93,8 +93,8 @@ int DU_handle_ERROR_INDICATION(instance_t instance,
 
 // SETUP REQUEST
 int DU_send_F1_SETUP_REQUEST(instance_t instance) {
-  module_id_t enb_mod_idP=0;
-  module_id_t du_mod_idP=0;
+  instance_t enb_mod_idP=0;
+  instance_t du_mod_idP=0;
   F1AP_F1AP_PDU_t       pdu= {0};
   uint8_t  *buffer;
   uint32_t  len;

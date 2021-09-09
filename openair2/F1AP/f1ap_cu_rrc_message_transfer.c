@@ -68,7 +68,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  module_id_t du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+  instance_t du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
   /* NRCGI
   * Fixme: process NRCGI
   */
@@ -308,13 +308,13 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   RRC_DCCH_DATA_IND (message_p).dcch_index = srb_id;
   RRC_DCCH_DATA_IND (message_p).rnti = f1ap_get_rnti_by_cu_id(true, instance, cu_ue_f1ap_id);
-  RRC_DCCH_DATA_IND (message_p).module_id = instance;
+  RRC_DCCH_DATA_IND (message_p).instance = instance;
   RRC_DCCH_DATA_IND (message_p).eNB_index = instance; // not needed for CU
 
   itti_send_msg_to_task(TASK_RRC_ENB, instance, message_p);
   */
   protocol_ctxt_t ctxt;
-  ctxt.module_id = instance;
+  ctxt.instance = instance;
   ctxt.instance = instance;
   ctxt.rnti = f1ap_get_rnti_by_cu_id(true, instance, cu_ue_f1ap_id);
   ctxt.enb_flag = 1;

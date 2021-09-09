@@ -26,11 +26,10 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <platform_types.h>
-#include <common/utils/backtrace.h>
+#include "backtrace.h"
 
 #define _Assert_Exit_                           \
     fprintf(stderr, "\nExiting execution\n");   \
-    display_backtrace();                        \
     fflush(stdout);                             \
     fflush(stderr);                             \
     abort();

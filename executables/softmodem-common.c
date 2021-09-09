@@ -185,10 +185,12 @@ void signal_handler(int sig) {
 
   if (sig==SIGSEGV) {
     // get void*'s for all entries on the stack
+    /*
     size = backtrace(array, 10);
     // print out all the frames to stderr
     fprintf(stderr, "Error: signal %d:\n", sig);
     backtrace_symbols_fd(array, size, 2);
+    */
     exit(-1);
   } else {
     if(sig==SIGINT ||sig==SOFTMODEM_RTSIGNAL)

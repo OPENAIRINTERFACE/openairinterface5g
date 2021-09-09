@@ -418,7 +418,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   //sib1->ServCellCom->downlinkConfigCommon.frequencyInfoDL.offsetToPointA = configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
   ServCellCom->downlinkConfigCommon.frequencyInfoDL.offsetToPointA = 86;
   
-  int ref_scs;
+  int ref_scs=0;
   if (configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000)
     ref_scs = 0; // 15 khz
   if (configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA > 2016666)

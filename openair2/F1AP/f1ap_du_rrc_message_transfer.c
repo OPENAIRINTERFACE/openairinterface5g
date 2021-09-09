@@ -165,11 +165,11 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   AssertFatal(srb_id<3,"illegal srb_id\n");
   protocol_ctxt_t ctxt;
   ctxt.rnti      = f1ap_get_rnti_by_du_id(false, instance, du_ue_f1ap_id);
-  ctxt.module_id = instance;
+  ctxt.instance = instance;
   ctxt.instance  = instance;
   ctxt.enb_flag  = 1;
   struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(
-        RC.rrc[ctxt.module_id],
+        RC.rrc[ctxt.instance],
         ctxt.rnti);
 
   if (srb_id == 0) {
@@ -260,7 +260,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
           mac_MainConfig = &radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
 
         rrc_mac_config_req_eNB(
-          ctxt.module_id,
+          ctxt.instance,
           0, //primaryCC_id,
           0,0,0,0,0,0,
           ctxt.rnti,
@@ -387,7 +387,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                     message_p = itti_alloc_new_message(TASK_DU_F1, 0, RRC_MAC_DRX_CONFIG_REQ);
                     RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = ctxt.rnti;
                     RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
-                    itti_send_msg_to_task(TASK_MAC_ENB, ctxt.module_id, message_p);
+                    itti_send_msg_to_task(TASK_MAC_ENB, ctxt.instance, message_p);
                     LOG_D(F1AP, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
                   }
 
@@ -410,9 +410,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                     } else if (SRB_configList->list.array[i]->srb_Identity == 2 )  {
                       ue_context_p->ue_context.Srb2.Active=1;
                       ue_context_p->ue_context.Srb2.Srb_info.Srb_id=2;
-                      LOG_I(F1AP, "[DU %d] SRB2 is now active\n",ctxt.module_id);
+                      LOG_I(F1AP, "[DU %ld] SRB2 is now active\n",ctxt.instance);
                     } else {
-                      LOG_W(F1AP, "[DU %d] invalide SRB identity %ld\n",ctxt.module_id,
+                      LOG_W(F1AP, "[DU %ld] invalide SRB identity %ld\n",ctxt.instance,
                             SRB_configList->list.array[i]->srb_Identity);
                     }
                   }
@@ -423,8 +423,8 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                     if (DRB_configList->list.array[i]) {
                       drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
                       LOG_I(F1AP,
-                            "[DU %d] Logical Channel UL-DCCH, Received RRCConnectionReconfiguration for UE rnti %x, reconfiguring DRB %d/LCID %d\n",
-                            ctxt.module_id,
+                            "[DU %ld] Logical Channel UL-DCCH, Received RRCConnectionReconfiguration for UE rnti %x, reconfiguring DRB %d/LCID %d\n",
+                            ctxt.instance,
                             ctxt.rnti,
                             (int)DRB_configList->list.array[i]->drb_Identity,
                             (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
@@ -437,7 +437,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                         }
 
                         rrc_mac_config_req_eNB(
-                          ctxt.module_id,
+                          ctxt.instance,
                           0,0,0,0,0,0,
                           0,
                           ue_context_p->ue_context.rnti,
@@ -746,7 +746,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
 
 
 /*  UL RRC Message Transfer */
-int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
     int             CC_idP,
     int             UE_id,
     rnti_t          rntiP,
@@ -758,7 +758,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
   F1AP_InitialULRRCMessageTransfer_t    *out;
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
-  int f1ap_uid = f1ap_add_ue (false, module_idP, rntiP);
+  int f1ap_uid = f1ap_add_ue (false, instanceP, rntiP);
 
   if (f1ap_uid  < 0 ) {
     LOG_E(F1AP, "Failed to add UE \n");
@@ -779,7 +779,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie1->value.choice.GNB_DU_UE_F1AP_ID = getCxt(false, module_idP)->f1ap_ue[f1ap_uid].du_ue_f1ap_id;
+  ie1->value.choice.GNB_DU_UE_F1AP_ID = getCxt(false, instanceP)->f1ap_ue[f1ap_uid].du_ue_f1ap_id;
   /* mandatory */
   /* c2. NRCGI */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_InitialULRRCMessageTransferIEs_t, ie2);
@@ -787,7 +787,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_NRCGI;
   //Fixme: takes always the first cell
-  addnRCGI(ie2->value.choice.NRCGI, getCxt(false, module_idP)->setupReq.cell);
+  addnRCGI(ie2->value.choice.NRCGI, getCxt(false, instanceP)->setupReq.cell);
   /* mandatory */
   /* c3. C_RNTI */  // 16
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_InitialULRRCMessageTransferIEs_t, ie3);
@@ -821,7 +821,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, module_idP, buffer, len, getCxt(false, module_idP)->default_sctp_stream_id);
+  f1ap_itti_send_sctp_data_req(false, instanceP, buffer, len, getCxt(false, instanceP)->default_sctp_stream_id);
   return 0;
 }
 

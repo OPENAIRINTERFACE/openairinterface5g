@@ -96,39 +96,6 @@ static void read_pipe(int p, char *b, int size) {
   }
 }
 
-static int baseRunTimeCommand(char* cmd) {
-  return system(cmd);
-}
-
-int checkIfFedoraDistribution(void) {
-  char cmd[200];
-
-  memset(cmd, 0, 200);
-  sprintf(cmd, "cat /etc/os-release | grep ID_LIKE | grep -ic fedora");
-  return baseRunTimeCommand(cmd);
-}
-
-int checkIfGenericKernelOnFedora(void) {
-  char cmd[200];
-
-  memset(cmd, 0, 200);
-  sprintf(cmd, "uname -a | grep -c rt");
-  return (1 - baseRunTimeCommand(cmd));
-}
-
-int checkIfInsideContainer(void) {
-  char cmd[200];
-  int res = 0;
-
-  memset(cmd, 0, 200);
-  sprintf(cmd, "cat /proc/self/cgroup | egrep -c 'libpod|podman|kubepods'");
-  res = baseRunTimeCommand(cmd);
-  if (res > 0)
-    return 1;
-  else
-    return 0;
-}
-
 /********************************************************************/
 /* background process                                               */
 /********************************************************************/
@@ -242,16 +209,13 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   ret=pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
-  ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
-  
-  if (checkIfFedoraDistribution())
-    if (checkIfGenericKernelOnFedora())
-      if (checkIfInsideContainer())
-  
-  settingPriority = 0;
-  
+  /*
+  if (system("grep -iq 'ID_LIKE.*fedora' /etc/os-release && uname -a | grep -c rt")==0)
+      if (system("cat /proc/self/cgroup | egrep -c 'libpod|podman|kubepods'")==0)
+	settingPriority = 0;
   if (settingPriority) {
+    ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+    AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
     ret=pthread_attr_setschedpolicy(&attr, SCHED_OAI);
     AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
     if(priority<sched_get_priority_min(SCHED_OAI) || priority>sched_get_priority_max(SCHED_OAI)) {
@@ -270,7 +234,7 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
     ret=pthread_attr_setschedparam(&attr, &sparam);
     AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   }
-  
+  */
   ret=pthread_create(t, &attr, func, param);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   

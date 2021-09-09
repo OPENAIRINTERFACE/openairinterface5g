@@ -44,7 +44,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_message_t *msg);
 int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_message_t *msg);
 
-int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
     int             CC_idP,
     int             UE_id,
     rnti_t          rntiP,

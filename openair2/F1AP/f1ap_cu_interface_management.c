@@ -228,11 +228,11 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
 
 int CU_send_F1_SETUP_RESPONSE(instance_t instance,
                               f1ap_setup_resp_t *f1ap_setup_resp) {
-  module_id_t enb_mod_idP;
-  module_id_t cu_mod_idP;
+  instance_t enb_mod_idP;
+  instance_t cu_mod_idP;
   // This should be fixed
-  enb_mod_idP = (module_id_t)0;
-  cu_mod_idP  = (module_id_t)0;
+  enb_mod_idP = (instance_t)0;
+  cu_mod_idP  = (instance_t)0;
   F1AP_F1AP_PDU_t           pdu= {0};
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
@@ -335,8 +335,8 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
 int CU_send_F1_SETUP_FAILURE(instance_t instance) {
   LOG_D(F1AP, "CU_send_F1_SETUP_FAILURE\n");
-  module_id_t enb_mod_idP=0;
-  module_id_t cu_mod_idP=0;
+  instance_t enb_mod_idP=0;
+  instance_t cu_mod_idP=0;
   // This should be fixed
   F1AP_F1AP_PDU_t           pdu= {0};
   uint8_t  *buffer=NULL;
