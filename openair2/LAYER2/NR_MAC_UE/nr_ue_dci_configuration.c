@@ -56,7 +56,7 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
   uint8_t aggregation;
   uint8_t number_of_candidates=0;
   int i=0;
-  for (int maxL=16;maxL>0;maxL>>1) {
+  for (int maxL=16;maxL>0;maxL=maxL>>1) {
     find_aggregation_candidates(&aggregation,
                                 &number_of_candidates,
                                 ss,maxL);
