@@ -209,6 +209,10 @@ int background_system(char *command) {
 void start_background_system(void) {
   int p[2];
   pid_t son;
+
+  if (module_initialized == 1)
+    return;
+
   module_initialized = 1;
 
   if (pipe(p) == -1) {

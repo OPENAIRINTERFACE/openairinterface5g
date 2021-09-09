@@ -793,7 +793,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           nr_process_mac_pdu(gnb_mod_idP, UE_id, CC_idP, frameP, slotP, sduP, sdu_lenP);
 
           ra->state = Msg4;
-          ra->Msg4_frame = ( frameP +2 ) % 1024;
+          ra->Msg4_frame = (frameP + 2) % 1024;
           ra->Msg4_slot = 1;
           LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
 
@@ -1599,7 +1599,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       pdcch_pdu = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
-      nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, sched_ctrl->active_bwp);
+      nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
       pdcch_pdu_bwp_coreset[bwpid][coresetid] = pdcch_pdu;
     }
 
