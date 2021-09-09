@@ -3283,9 +3283,9 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
       LOG_I(NR_RRC, "rlc_BearerToAddModList not empty before filling it \n");
       free(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList);
     }
-    ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(cellGroupConfig->rlc_BearerToAddModList));
+    ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
     memcpy(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList,
-        sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
+        sizeof(*cellGroupConfig->rlc_BearerToAddModList));
   }
   xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_context_p->ue_context.masterCellGroup);
 
@@ -3800,7 +3800,6 @@ void *rrc_gnb_task(void *args_p) {
 
     case F1AP_UE_CONTEXT_SETUP_RESP:
       rrc_CU_process_ue_context_setup_response(msg_p, msg_name_p, instance);
-      LOG_W(NR_RRC, "Handling of F1 UE context setup response context at the RRC layer of the CU is pending \n");
       break;
 
       /* Messages from X2AP */
