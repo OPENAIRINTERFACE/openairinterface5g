@@ -411,7 +411,7 @@ void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,
                                   ue_context_pP->ue_context.SRB_configList,
                                   NULL,
                                   NULL,
-                                  0xff,
+                                  0,
                                   NULL,
                                   NULL,
                                   NULL,
@@ -461,7 +461,7 @@ rrc_gNB_generate_RRCSetup(
 				  ue_context_pP->ue_context.SRB_configList,
 				  NULL,
 				  NULL,
-				  0xff,
+				  0,
 				  NULL,
 				  NULL,
 				  NULL,
@@ -940,6 +940,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 )
 //-----------------------------------------------------------------------------
 {
+  gNB_RRC_INST                  *rrc = RC.nrrrc[ctxt_pP->module_id];
   NR_DRB_ToAddMod_t             *DRB_config           = NULL;
   NR_SRB_ToAddMod_t             *SRB2_config          = NULL;
   NR_SDAP_Config_t              *sdap_config          = NULL;
@@ -1039,6 +1040,17 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     DRB_config->pdcp_Config->t_Reordering = calloc(1, sizeof(*DRB_config->pdcp_Config->t_Reordering));
     *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms750;
     DRB_config->pdcp_Config->ext1 = NULL;
+
+    if (rrc->security.do_drb_integrity) {
+      DRB_config->pdcp_Config->drb->integrityProtection = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->integrityProtection));
+      *DRB_config->pdcp_Config->drb->integrityProtection = NR_PDCP_Config__drb__integrityProtection_enabled;
+    }
+
+    if (!rrc->security.do_drb_ciphering) {
+      DRB_config->pdcp_Config->ext1 = calloc(1, sizeof(*DRB_config->pdcp_Config->ext1));
+      DRB_config->pdcp_Config->ext1->cipheringDisabled = calloc(1, sizeof(*DRB_config->pdcp_Config->ext1->cipheringDisabled));
+      *DRB_config->pdcp_Config->ext1->cipheringDisabled = NR_PDCP_Config__ext1__cipheringDisabled_true;
+    }
 
     // Reference TS23501 Table 5.7.4-1: Standardized 5QI to QoS characteristics mapping
     for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
@@ -1278,6 +1290,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
   uint8_t                            *kUPenc = NULL;
+  uint8_t                            *kUPint = NULL;
   NR_DRB_ToAddModList_t              *DRB_configList = ue_context_pP->ue_context.DRB_configList2[xid];
   NR_SRB_ToAddModList_t              *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
   NR_DRB_ToReleaseList_t             *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
@@ -1288,19 +1301,49 @@ rrc_gNB_process_RRCReconfigurationComplete(
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
 
 #ifndef PHYSIM
+  uint8_t *k_kdf = NULL;
   /* Derive the keys from kgnb */
   if (DRB_configList != NULL) {
-      derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                      ue_context_pP->ue_context.kgnb,
-                      &kUPenc);
+    k_kdf = NULL;
+    nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                         ue_context_pP->ue_context.kgnb,
+                         &k_kdf);
+    /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
+    kUPenc = malloc(16);
+    if (kUPenc == NULL) exit(1);
+    memcpy(kUPenc, k_kdf+16, 16);
+    free(k_kdf);
+
+    k_kdf = NULL;
+    nr_derive_key_up_int(ue_context_pP->ue_context.integrity_algorithm,
+                         ue_context_pP->ue_context.kgnb,
+                         &k_kdf);
+    /* kUPint: last 128 bits of key derivation function which returns 256 bits */
+    kUPint = malloc(16);
+    if (kUPint == NULL) exit(1);
+    memcpy(kUPint, k_kdf+16, 16);
+    free(k_kdf);
   }
 
-  derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                      ue_context_pP->ue_context.kgnb,
-                      &kRRCenc);
-  derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
-                      ue_context_pP->ue_context.kgnb,
-                      &kRRCint);
+  k_kdf = NULL;
+  nr_derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                        ue_context_pP->ue_context.kgnb,
+                        &k_kdf);
+  /* kRRCenc: last 128 bits of key derivation function which returns 256 bits */
+  kRRCenc = malloc(16);
+  if (kRRCenc == NULL) exit(1);
+  memcpy(kRRCenc, k_kdf+16, 16);
+  free(k_kdf);
+
+  k_kdf = NULL;
+  nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
+                        ue_context_pP->ue_context.kgnb,
+                        &k_kdf);
+  /* kRRCint: last 128 bits of key derivation function which returns 256 bits */
+  kRRCint = malloc(16);
+  if (kRRCint == NULL) exit(1);
+  memcpy(kRRCint, k_kdf+16, 16);
+  free(k_kdf);
 #endif
   /* Refresh SRBs/DRBs */
   MSC_LOG_TX_MESSAGE(MSC_RRC_GNB, MSC_PDCP_ENB, NULL, 0, MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security unchanged)",
@@ -1314,11 +1357,12 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               SRB_configList, // NULL,
                               DRB_configList,
                               DRB_Release_configList2,
-                              0, // already configured during the securitymodecommand
+                              (ue_context_pP->ue_context.integrity_algorithm << 4)
+                              | ue_context_pP->ue_context.ciphering_algorithm,
                               kRRCenc,
                               kRRCint,
                               kUPenc,
-                              NULL,
+                              kUPint,
                               NULL,
                               NULL,
                               get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
@@ -1707,7 +1751,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
     nr_rrc_pdcp_config_security(
       ctxt_pP,
       ue_context_pP,
-      send_security_mode_command);
+      send_security_mode_command ? 0 : 1);
     LOG_D(NR_RRC, "set security successfully \n");
   }
 
@@ -2482,6 +2526,9 @@ rrc_gNB_decode_dcch(
         if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
           xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
         }
+
+        /* configure ciphering */
+        nr_rrc_pdcp_config_security(ctxt_pP, ue_context_p, 1);
 
         rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
         //rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);

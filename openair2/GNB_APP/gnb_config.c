@@ -707,83 +707,86 @@ void RCconfig_nr_macrlc() {
 
 void config_security(gNB_RRC_INST *rrc)
 {
-  paramdef_t logparams_defaults[] = SECURITY_GLOBALPARAMS_DESC;
-  int ret = config_get(logparams_defaults,
-                       sizeof(logparams_defaults) / sizeof(paramdef_t),
+  paramdef_t sec_params[] = SECURITY_GLOBALPARAMS_DESC;
+  int ret = config_get(sec_params,
+                       sizeof(sec_params) / sizeof(paramdef_t),
                        CONFIG_STRING_SECURITY);
   int i;
 
   if (ret < 0) {
-    LOG_W(RRC, "configuration file does not contain a \"security\" section, applying default parameters (no security)\n");
+    LOG_W(RRC, "configuration file does not contain a \"security\" section, applying default parameters (nia2 nea0, integrity disabled for DRBs)\n");
     rrc->security.ciphering_algorithms[0]    = 0;  /* nea0 = no ciphering */
     rrc->security.ciphering_algorithms_count = 1;
-    rrc->security.integrity_algorithms[0]    = 0;  /* nia0 = no integrity */
-    rrc->security.integrity_algorithms_count = 1;
+    rrc->security.integrity_algorithms[0]    = 2;  /* nia2 */
+    rrc->security.integrity_algorithms[1]    = 0;  /* nia0 = no integrity, as a fallback (but nia2 should be supported by all UEs) */
+    rrc->security.integrity_algorithms_count = 2;
+    rrc->security.do_drb_ciphering           = 1;  /* even if nea0 let's activate so that we don't generate cipheringDisabled in pdcp_Config */
+    rrc->security.do_drb_integrity           = 0;
     return;
   }
 
-  if (logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].numelt > 4) {
+  if (sec_params[SECURITY_CONFIG_CIPHERING_IDX].numelt > 4) {
     LOG_E(RRC, "too much ciphering algorithms in section \"security\" of the configuration file, maximum is 4\n");
     exit(1);
   }
-  if (logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].numelt > 4) {
+  if (sec_params[SECURITY_CONFIG_INTEGRITY_IDX].numelt > 4) {
     LOG_E(RRC, "too much integrity algorithms in section \"security\" of the configuration file, maximum is 4\n");
     exit(1);
   }
 
   /* get ciphering algorithms */
   rrc->security.ciphering_algorithms_count = 0;
-  for (i = 0; i < logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].numelt; i++) {
-    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea0")) {
+  for (i = 0; i < sec_params[SECURITY_CONFIG_CIPHERING_IDX].numelt; i++) {
+    if (!strcmp(sec_params[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea0")) {
       rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 0;
       rrc->security.ciphering_algorithms_count++;
       continue;
     }
-    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea1")) {
+    if (!strcmp(sec_params[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea1")) {
       rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 1;
       rrc->security.ciphering_algorithms_count++;
       continue;
     }
-    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea2")) {
+    if (!strcmp(sec_params[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea2")) {
       rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 2;
       rrc->security.ciphering_algorithms_count++;
       continue;
     }
-    if (!strcmp(logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea3")) {
+    if (!strcmp(sec_params[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i], "nea3")) {
       rrc->security.ciphering_algorithms[rrc->security.ciphering_algorithms_count] = 3;
       rrc->security.ciphering_algorithms_count++;
       continue;
     }
     LOG_E(RRC, "unknown ciphering algorithm \"%s\" in section \"security\" of the configuration file\n",
-          logparams_defaults[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i]);
+          sec_params[SECURITY_CONFIG_CIPHERING_IDX].strlistptr[i]);
     exit(1);
   }
 
   /* get integrity algorithms */
   rrc->security.integrity_algorithms_count = 0;
-  for (i = 0; i < logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].numelt; i++) {
-    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia0")) {
+  for (i = 0; i < sec_params[SECURITY_CONFIG_INTEGRITY_IDX].numelt; i++) {
+    if (!strcmp(sec_params[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia0")) {
       rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 0;
       rrc->security.integrity_algorithms_count++;
       continue;
     }
-    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia1")) {
+    if (!strcmp(sec_params[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia1")) {
       rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 1;
       rrc->security.integrity_algorithms_count++;
       continue;
     }
-    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia2")) {
+    if (!strcmp(sec_params[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia2")) {
       rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 2;
       rrc->security.integrity_algorithms_count++;
       continue;
     }
-    if (!strcmp(logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia3")) {
+    if (!strcmp(sec_params[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i], "nia3")) {
       rrc->security.integrity_algorithms[rrc->security.integrity_algorithms_count] = 3;
       rrc->security.integrity_algorithms_count++;
       continue;
     }
     LOG_E(RRC, "unknown integrity algorithm \"%s\" in section \"security\" of the configuration file\n",
-          logparams_defaults[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i]);
+          sec_params[SECURITY_CONFIG_INTEGRITY_IDX].strlistptr[i]);
     exit(1);
   }
 
@@ -794,9 +797,30 @@ void config_security(gNB_RRC_INST *rrc)
   }
 
   if (rrc->security.integrity_algorithms_count == 0) {
-    LOG_W(RRC, "no preferred integrity algorithm set in configuration file, applying default parameters (no security)\n");
-    rrc->security.integrity_algorithms[0]    = 0;  /* nia0 = no integrity */
-    rrc->security.integrity_algorithms_count = 1;
+    LOG_W(RRC, "no preferred integrity algorithm set in configuration file, applying default parameters (nia2)\n");
+    rrc->security.integrity_algorithms[0]    = 2;  /* nia2 */
+    rrc->security.integrity_algorithms[1]    = 0;  /* nia0 = no integrity */
+    rrc->security.integrity_algorithms_count = 2;
+  }
+
+  if (!strcmp(*sec_params[SECURITY_CONFIG_DO_DRB_CIPHERING_IDX].strptr, "yes")) {
+    rrc->security.do_drb_ciphering = 1;
+  } else if (!strcmp(*sec_params[SECURITY_CONFIG_DO_DRB_CIPHERING_IDX].strptr, "no")) {
+    rrc->security.do_drb_ciphering = 0;
+  } else {
+    LOG_E(RRC, "in configuration file, bad drb_ciphering value '%s', only 'yes' and 'no' allowed\n",
+          *sec_params[SECURITY_CONFIG_DO_DRB_CIPHERING_IDX].strptr);
+    exit(1);
+  }
+
+  if (!strcmp(*sec_params[SECURITY_CONFIG_DO_DRB_INTEGRITY_IDX].strptr, "yes")) {
+    rrc->security.do_drb_integrity = 1;
+  } else if (!strcmp(*sec_params[SECURITY_CONFIG_DO_DRB_INTEGRITY_IDX].strptr, "no")) {
+    rrc->security.do_drb_integrity = 0;
+  } else {
+    LOG_E(RRC, "in configuration file, bad drb_integrity value '%s', only 'yes' and 'no' allowed\n",
+          *sec_params[SECURITY_CONFIG_DO_DRB_INTEGRITY_IDX].strptr);
+    exit(1);
   }
 }
 
