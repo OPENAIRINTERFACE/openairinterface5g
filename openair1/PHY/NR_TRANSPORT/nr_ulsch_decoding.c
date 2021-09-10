@@ -111,7 +111,7 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint16_t N_RB_UL, uint
 {
 
   NR_gNB_ULSCH_t *ulsch;
-  uint8_t exit_flag = 0,i,r;
+  uint8_t i,r;
   uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
 
   if (N_RB_UL != 273) {

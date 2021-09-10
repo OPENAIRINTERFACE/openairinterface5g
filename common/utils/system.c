@@ -209,10 +209,11 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   ret=pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
-  /*
+  
   if (system("grep -iq 'ID_LIKE.*fedora' /etc/os-release && uname -a | grep -c rt")==0)
       if (system("cat /proc/self/cgroup | egrep -c 'libpod|podman|kubepods'")==0)
 	settingPriority = 0;
+  
   if (settingPriority) {
     ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
     AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
@@ -234,7 +235,7 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
     ret=pthread_attr_setschedparam(&attr, &sparam);
     AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   }
-  */
+  
   ret=pthread_create(t, &attr, func, param);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
   

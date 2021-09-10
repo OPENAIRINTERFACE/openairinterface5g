@@ -724,7 +724,6 @@ static void generatePduSessionEstablishRequest(uicc_t * uicc, as_nas_info_t *ini
 uint8_t get_msg_type(uint8_t *pdu_buffer, uint32_t length) {
   uint8_t          msg_type = 0;
   uint8_t          offset   = 0;
-  nas_msg_header_t nas_msg_header;
 
   if ((pdu_buffer != NULL) && (length > 0)) {
     if (((nas_msg_header_t *)(pdu_buffer))->choice.security_protected_nas_msg_header_t.security_header_type > 0) {
