@@ -45,7 +45,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/sse_intrin.h"
-#include "PHY/NR_TRANSPORT/nr_dci.h"
+#include "common/utils/nr/nr_common.h"
 
 #include "assertions.h"
 #include "T.h"

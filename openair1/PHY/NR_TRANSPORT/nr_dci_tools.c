@@ -31,6 +31,7 @@
  */
 
 #include "nr_dci.h"
+#include "common/utils/nr/nr_common.h"
 
 //#define DEBUG_FILL_DCI
 
