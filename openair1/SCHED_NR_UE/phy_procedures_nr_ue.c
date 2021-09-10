@@ -114,7 +114,6 @@ void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
     dl_ind->dci_ind = NULL;
 
   }
-
 }
 
 void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
@@ -253,7 +252,7 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
       ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling;
 
-      LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+      LOG_I(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
         __FUNCTION__,
         ue->Mod_id,
         frame_tx,
@@ -482,13 +481,17 @@ unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb
 
 int nr_ue_pdcch_procedures(uint8_t gNB_id,
 			   PHY_VARS_NR_UE *ue,
-			   UE_nr_rxtx_proc_t *proc)
+			   UE_nr_rxtx_proc_t *proc,
+                           int n_ss)
 {
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   unsigned int dci_cnt=0;
   fapi_nr_dci_indication_t dci_ind = {0};
   nr_downlink_indication_t dl_indication;
+
+  NR_UE_PDCCH *pdcch_vars = ue->pdcch_vars[proc->thread_id][gNB_id];
+  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &pdcch_vars->pdcch_config[n_ss];
 
   /*
   //  unsigned int dci_cnt=0, i;  //removed for nr_ue_pdcch_procedures and added in the loop for nb_coreset_active
@@ -674,18 +677,18 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
   */
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_IN);
-  nr_rx_pdcch(ue, proc);
+  nr_rx_pdcch(ue, proc, rel15);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_OUT);
   
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_IN);
 
 #ifdef NR_PDCCH_SCHED_DEBUG
-  printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure with (nb_searchspace_active=%d)\n",
-	 pdcch_vars->nb_search_space);
+  printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure for search space %d)\n",
+	 n_ss);
 #endif
 
-  dci_cnt = nr_dci_decoding_procedure(ue, proc, &dci_ind);
+  dci_cnt = nr_dci_decoding_procedure(ue, proc, &dci_ind, rel15);
 
 #ifdef NR_PDCCH_SCHED_DEBUG
   LOG_I(PHY,"<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%u\n",dci_cnt);
@@ -871,7 +874,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
   return 0;
 }
 
-void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
+bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
                             int gNB_id,
                             PDSCH_t pdsch,
@@ -882,7 +885,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
-
+  bool dec = false;
   int harq_pid = dlsch0->current_harq_pid;
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
@@ -936,11 +939,11 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     case PDSCH1:
       LOG_E(PHY,"Illegal PDSCH %d for ue_pdsch_procedures\n",pdsch);
       pdsch_vars = NULL;
-      return;
+      return false;
       break;
     default:
       pdsch_vars = NULL;
-      return;
+      return false;
       break;
 
     }
@@ -949,17 +952,17 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
     if (pdsch == RA_PDSCH) {
       if (ue->prach_resources[gNB_id]!=NULL)
-	      dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
+        dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
       else {
-	      LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
-	      //mac_xface->macphy_exit("prach_resources is NULL");
-	      return;
+        LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
+        //mac_xface->macphy_exit("prach_resources is NULL");
+        return false;
       }
     }
 
     // exit dlsch procedures as there are no active dlsch
     if (is_cw0_active != ACTIVE && is_cw1_active != ACTIVE)
-      return;
+      return false;
 
     // start ldpc decode for CW 0
     dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,
@@ -1031,6 +1034,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       LOG_T(PHY,"Sequential dlsch decoding , ret = %d\n", ret);
     }
 
+    if(ret<dlsch0->max_ldpc_iterations+1)
+      dec = true;
 
     switch (pdsch) {
       case RA_PDSCH:
@@ -1116,7 +1121,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 				         nr_slot_rx,
                                          harq_pid,
                                          pdsch==PDSCH?1:0,
-                                        dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+                                         dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
         LOG_T(PHY,"CW dlsch decoding is parallelized, ret1 = %d\n", ret1);
       }
       else {
@@ -1153,7 +1158,6 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 #endif
       LOG_D(PHY,"AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
             frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
-
 
       LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dlsch1->harq_processes[harq_pid]->TBS);
     }
@@ -1298,6 +1302,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       }
     }
   }
+  return dec;
 }
 
 
@@ -1747,6 +1752,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   LOG_D(PHY," ------ --> PDCCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDCCH, VCD_FUNCTION_IN);
+
   for (uint16_t l=0; l<nb_symb_pdcch; l++) {
 
 #if UE_TIMING_TRACE
@@ -1756,29 +1762,30 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                 proc,
                 l,
                 nr_slot_rx);
+  }
 
-    dci_cnt = 0;
-    for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
+  dci_cnt = 0;
+  for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
+    for (uint16_t l=0; l<nb_symb_pdcch; l++) {
 
-    // note: this only works if RBs for PDCCH are contigous!
-    LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
-          fp->first_carrier_offset, pdcch_vars->pdcch_config[n_ss].BWPStart, coreset_start_rb);
+      // note: this only works if RBs for PDCCH are contigous!
+      LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
+            fp->first_carrier_offset, pdcch_vars->pdcch_config[n_ss].BWPStart, coreset_start_rb);
 
-    if (coreset_nb_rb > 0)
-      nr_pdcch_channel_estimation(ue,
-                                  proc,
-                                  gNB_id,
-                                  nr_slot_rx,
-                                  l,
-                                  fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
-                                  coreset_nb_rb);
+      if (coreset_nb_rb > 0)
+        nr_pdcch_channel_estimation(ue,
+                                    proc,
+                                    gNB_id,
+                                    nr_slot_rx,
+                                    l,
+                                    fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
+                                    coreset_nb_rb);
 
 #if UE_TIMING_TRACE
-    stop_meas(&ue->ofdm_demod_stats);
+      stop_meas(&ue->ofdm_demod_stats);
 #endif
-
-      dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc);
     }
+    dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc, n_ss);
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDCCH, VCD_FUNCTION_OUT);
 

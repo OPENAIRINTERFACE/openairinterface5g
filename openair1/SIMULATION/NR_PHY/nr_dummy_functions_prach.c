@@ -321,7 +321,7 @@ void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint
   mac->RA_attempt_number++;
 }
 
-void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id){
+void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot_t slotP, uint8_t gNB_id){
   AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
   LOG_D(MAC,"[UE %d][RAPROC] Frame %d : Msg3_tx: Starting contention resolution timer\n", mod_id, frameP);
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);

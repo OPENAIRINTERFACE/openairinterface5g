@@ -823,7 +823,8 @@ int main( int argc, char **argv ) {
   }
 
   printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
-  end_configmodule();
+  // We have to set PARAMFLAG_NOFREE on right paramters before re-enabling end_configmodule()
+  //end_configmodule();
   printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
