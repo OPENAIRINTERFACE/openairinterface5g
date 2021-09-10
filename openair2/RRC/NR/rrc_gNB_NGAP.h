@@ -38,6 +38,7 @@
 #include "NR_RRCSetupComplete-IEs.h"
 #include "NR_RegisteredAMF.h"
 #include "NR_UL-DCCH-Message.h"
+#include "NGAP_CauseRadioNetwork.h"
 
 typedef struct rrc_ue_ngap_ids_s {
   /* Tree related data */
@@ -106,6 +107,27 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
     const char *msg_name,
     instance_t instance
 );
+
+int
+rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
+  MessageDef *msg_p,
+  const char *msg_name,
+  instance_t instance
+);
+
+int
+rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_gNB_ue_context_t     *const ue_context_pP,
+  uint8_t                   xid
+);
+
+int
+rrc_gNB_modify_dedicatedRRCReconfiguration(
+  const protocol_ctxt_t     *const ctxt_pP,
+  rrc_gNB_ue_context_t      *ue_context_pP
+);
+
 
 void
 rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(

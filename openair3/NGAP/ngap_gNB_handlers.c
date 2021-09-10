@@ -1631,11 +1631,11 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
   }
 
   /* PDUSession Resource modify request = UE-related procedure -> stream != 0 */
-  if (stream == 0) {
-    NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
-               assoc_id, stream);
-    return -1;
-  }
+//   if (stream == 0) {
+//     NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
+//                assoc_id, stream);
+//     return -1;
+//   }
 
   ue_desc_p->rx_stream = stream;
 

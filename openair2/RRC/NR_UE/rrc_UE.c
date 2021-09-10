@@ -2194,7 +2194,7 @@ nr_rrc_ue_establish_srb2(
  //      nr_rrc_ue_process_measConfig(ctxt_pP, gNB_index, ie->measConfig);
      }
 
-     if(ie->nonCriticalExtension->masterCellGroup!=NULL) {
+     if((ie->nonCriticalExtension) && (ie->nonCriticalExtension->masterCellGroup!=NULL)) {
        nr_rrc_ue_process_masterCellGroup(
            ctxt_pP,
            gNB_index,
@@ -2207,7 +2207,7 @@ nr_rrc_ue_establish_srb2(
      }
 
      /* Check if there is dedicated NAS information to forward to NAS */
-     if (ie->nonCriticalExtension->dedicatedNAS_MessageList != NULL) {
+     if ((ie->nonCriticalExtension) && (ie->nonCriticalExtension->dedicatedNAS_MessageList != NULL)) {
        int list_count;
        uint32_t pdu_length;
        uint8_t *pdu_buffer;
