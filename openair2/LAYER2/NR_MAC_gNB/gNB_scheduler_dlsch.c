@@ -465,7 +465,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-  const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+  const long f = (sched_ctrl->active_bwp ||bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp ||bwpd) ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
   int rbSize = 0;
   bool is_mixed_slot = is_xlsch_in_slot(RC.nrmac[module_id]->dlsch_slot_bitmap[slot / 64], slot) &&
@@ -701,7 +701,7 @@ void pf_dl(module_id_t module_id,
     const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : (0+(is_mixed_slot?1:0));
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-    const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+    const long f = (sched_ctrl->active_bwp || bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
     const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp || bwpd) ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
     if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, f, ps);
