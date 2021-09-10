@@ -601,8 +601,10 @@ int main(int argc, char *argv[])
   printf("n_trials %d: \n", n_trials);
   printf("SNR0 %f: \n", SNR0);
 
-
-  load_nrLDPClib(run_cuda);
+  if(run_cuda)
+    load_nrLDPClib("_cuda");
+  else
+    load_nrLDPClib(NULL); 
   load_nrLDPClib_ref("_orig", &encoder_orig);
   //for (block_length=8;block_length<=MAX_BLOCK_LENGTH;block_length+=8)
 

@@ -26,7 +26,7 @@ nrLDPC_encoderfunc_t nrLDPC_encoder;
 nrLDPC_initcallfunc_t nrLDPC_initcall;
 #else
 /* functions to load the LDPC shared lib, implemented in openair1/PHY/CODING/nrLDPC_load.c */
-extern int load_nrLDPClib(int) ;
+extern int load_nrLDPClib(char *version) ;
 extern int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_encoder_ptr); // for ldpctest
 /* ldpc coder/decoder functions, as loaded by load_nrLDPClib(). */
 extern nrLDPC_initcallfunc_t nrLDPC_initcall;

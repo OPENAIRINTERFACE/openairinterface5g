@@ -436,7 +436,7 @@ int main( int argc, char **argv ) {
   itti_init(TASK_MAX, tasks_info);
 
   init_opt() ;
-  load_nrLDPClib(0);
+  load_nrLDPClib(NULL);
 
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");
