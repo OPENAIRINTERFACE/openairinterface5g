@@ -54,10 +54,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int sib1_tda,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
-		           int add_ue,
-			   uint32_t rnti,
-			   NR_CellGroupConfig_t *CellGroup
-                           );
+		                       int add_ue,
+			                     uint32_t rnti,
+                           NR_CellGroupConfig_t *CellGroup);
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 
                                 int CC_idP,
@@ -287,14 +286,14 @@ long get_K2(NR_ServingCellConfigCommon_t *scc, NR_BWP_Uplink_t *ubwp, int time_d
 void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
                               const NR_BWP_Downlink_t *bwp,
-                              const NR_BWP_DownlinkDedicated_t *bwpd,
+                              const NR_BWP_DownlinkDedicated_t *bwpd0,
                               int tda,
                               const long dci_format,
                               NR_pdsch_semi_static_t *ps);
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
-			      const NR_BWP_UplinkDedicated_t *ubwpd,
+			                        const NR_BWP_UplinkDedicated_t *ubwpd,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
