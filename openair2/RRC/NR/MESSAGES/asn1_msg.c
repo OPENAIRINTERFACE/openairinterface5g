@@ -419,9 +419,10 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
     nrMultiBandInfo->freqBandIndicatorNR = configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[i];
     ASN_SEQUENCE_ADD(&sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list,nrMultiBandInfo);
   }
+
   int scs_scaling0 = 1<<(configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing);
   int scs_scaling  = scs_scaling0;
-  int scs_scaling2 = scs_scaling0; 
+  int scs_scaling2 = scs_scaling0;
   if (configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000) {
     scs_scaling = scs_scaling0*3;
   }
@@ -429,7 +430,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
     scs_scaling = scs_scaling0>>2;
     scs_scaling2 = scs_scaling0>>2;
   }
-  uint32_t absolute_diff = (*configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - 
+  uint32_t absolute_diff = (*configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB -
                              configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
 
   sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA = scs_scaling2 * (absolute_diff/(12*scs_scaling) - 10);
@@ -437,7 +438,8 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   LOG_I(NR_RRC,"SIB1 freq: absoluteFrequencySSB %ld, absoluteFrequencyPointA %ld\n",
                                     *configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
                                     configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
-  LOG_I(NR_RRC,"SIB1 freq: absolute_diff %d, %d*(absolute_diff/(12*%d) - 10) %d\n",absolute_diff,scs_scaling2,scs_scaling,(int)sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA);
+  LOG_I(NR_RRC,"SIB1 freq: absolute_diff %d, %d*(absolute_diff/(12*%d) - 10) %d\n",
+        absolute_diff,scs_scaling2,scs_scaling,(int)sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA);
 
   for(int i = 0; i< configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.count; i++) {
     ASN_SEQUENCE_ADD(&sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list,configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[i]);
@@ -996,8 +998,8 @@ uint8_t do_RRCReject(uint8_t Mod_id,
 }
 
 void fill_initial_SpCellConfig(rnti_t rnti,
-			       NR_SpCellConfig_t *SpCellConfig,
-			       NR_ServingCellConfigCommon_t *scc,
+                               NR_SpCellConfig_t *SpCellConfig,
+                               NR_ServingCellConfigCommon_t *scc,
                                rrc_gNB_carrier_data_t *carrier) {
 
   SpCellConfig->servCellIndex = NULL;
@@ -1037,7 +1039,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   pucchres0->format.choice.format0->nrofSymbols=1;
   pucchres0->format.choice.format0->startingSymbolIndex=13;
   ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres0);
-  initialUplinkBWP->pusch_Config = calloc(1,sizeof(*initialUplinkBWP->pusch_Config)); 
+  initialUplinkBWP->pusch_Config = calloc(1,sizeof(*initialUplinkBWP->pusch_Config));
   initialUplinkBWP->pusch_Config->present = NR_SetupRelease_PUSCH_Config_PR_setup;
   NR_PUSCH_Config_t *pusch_Config = calloc(1,sizeof(*pusch_Config));
   initialUplinkBWP->pusch_Config->choice.setup = pusch_Config;
@@ -1047,7 +1049,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA = NULL;
   pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB = calloc(1,sizeof(*pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB));
   pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->present = NR_SetupRelease_DMRS_UplinkConfig_PR_setup;
-  pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup = calloc(1,sizeof(*pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup)); 
+  pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup = calloc(1,sizeof(*pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup));
   NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
   NR_DMRS_UplinkConfig->dmrs_Type = NULL;
   NR_DMRS_UplinkConfig->dmrs_AdditionalPosition = NULL; /*calloc(1,sizeof(*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition));
@@ -1143,7 +1145,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   srs_res0->srs_ResourceId=0;
   srs_res0->nrofSRS_Ports=NR_SRS_Resource__nrofSRS_Ports_port1;
   srs_res0->ptrs_PortIndex=NULL;
-  srs_res0->transmissionComb.present=NR_SRS_Resource__transmissionComb_PR_n2; 
+  srs_res0->transmissionComb.present=NR_SRS_Resource__transmissionComb_PR_n2;
   srs_res0->transmissionComb.choice.n2=calloc(1,sizeof(*srs_res0->transmissionComb.choice.n2));
   srs_res0->transmissionComb.choice.n2->combOffset_n2=0;
   srs_res0->transmissionComb.choice.n2->cyclicShift_n2=0;
@@ -1176,8 +1178,8 @@ void fill_initial_SpCellConfig(rnti_t rnti,
     schedulingRequestResourceConfig->schedulingRequestID= 0;
     schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
     schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40;
-    // note: make sure that there is no issue here. Later choose the RNTI accordingly. 
-    //       Here we would be limited to 3 UEs on this resource (1 1/2 Frames 30 kHz SCS, 5 ms TDD periodicity => slots 7,8,9). 
+    // note: make sure that there is no issue here. Later choose the RNTI accordingly.
+    //       Here we would be limited to 3 UEs on this resource (1 1/2 Frames 30 kHz SCS, 5 ms TDD periodicity => slots 7,8,9).
     //       This should be a temporary resource until the first RRCReconfiguration gives new pucch resources.
     // Check for above configuration and exit for now if it is not the case
     AssertFatal(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing==NR_SubcarrierSpacing_kHz30,
@@ -1209,7 +1211,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList = calloc(1,sizeof(*bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList));
 
   bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList = calloc(1,sizeof(*bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList));
- 
+
   NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
   coreset->controlResourceSetId=1;
   // frequency domain resources depends on BWP size
@@ -1246,7 +1248,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
 
   ASN_SEQUENCE_ADD(&bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list,
                    coreset);
- 
+
   bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList = calloc(1,sizeof(*bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList));
   
   NR_SearchSpace_t *ss2 = calloc(1,sizeof(*ss2));
@@ -1299,7 +1301,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
 
   bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList));
   NR_TCI_State_t *tcic;
- 
+
   tcic=calloc(1,sizeof(*tcic));
   tcic->tci_StateId=0;
   tcic->qcl_Type1.cell=NULL;
@@ -1417,8 +1419,8 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
 }
 
 void fill_initial_cellGroupConfig(rnti_t rnti,
-				  NR_CellGroupConfig_t *cellGroupConfig,
-				  NR_ServingCellConfigCommon_t *scc,
+                                  NR_CellGroupConfig_t *cellGroupConfig,
+                                  NR_ServingCellConfigCommon_t *scc,
                                   rrc_gNB_carrier_data_t *carrier) {
 
   NR_RLC_BearerConfig_t                            *rlc_BearerConfig     = NULL;
@@ -1520,8 +1522,8 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
 uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
                     uint8_t                      *const buffer,
                     const uint8_t                transaction_id,
-		    OCTET_STRING_t               *masterCellGroup_from_DU,
-		    NR_ServingCellConfigCommon_t *scc,
+                    OCTET_STRING_t               *masterCellGroup_from_DU,
+                    NR_ServingCellConfigCommon_t *scc,
                     rrc_gNB_carrier_data_t *carrier)
 //------------------------------------------------------------------------------
 {

@@ -289,7 +289,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Downlink_t *bwp,
                               const NR_BWP_DownlinkDedicated_t *bwpd,
                               int tda,
-                              uint8_t num_dmrs_cdm_grps_no_data,
+                              const long dci_format,
                               NR_pdsch_semi_static_t *ps);
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
@@ -423,6 +423,8 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
                              uint8_t symbol);
 
 void find_SSB_and_RO_available(module_id_t module_idP);
+
+void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps);
 
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp);
 void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp);

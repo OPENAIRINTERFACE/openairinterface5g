@@ -122,6 +122,36 @@ static inline uint8_t get_max_cces(uint8_t scs) {
   return (nr_max_number_of_cces_per_slot[scs]);
 }
 
+void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
+
+  //TODO first basic implementation of dmrs port selection
+  //     only vaild for a single codeword
+  //     for now it assumes a selection of Nl consecutive dmrs ports
+  //     and a single front loaded symbol
+  //     dmrs_ports_id is the index of Tables 7.3.1.2.2-1/2/3/4
+
+  switch (ps->nrOfLayers) {
+    case 1:
+      ps->dmrs_ports_id = 0;
+      ps->numDmrsCdmGrpsNoData = 1;
+      break;
+    case 2:
+      ps->dmrs_ports_id = 2;
+      ps->numDmrsCdmGrpsNoData = 1;
+      break;
+    case 3:
+      ps->dmrs_ports_id = 9;
+      ps->numDmrsCdmGrpsNoData = 2;
+      break;
+    case 4:
+      ps->dmrs_ports_id = 10;
+      ps->numDmrsCdmGrpsNoData = 2;
+      break;
+    default:
+      AssertFatal(1==0,"Number of layers %d\n not supported or not valid\n",ps->nrOfLayers);
+  }
+}
+
 NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
                                      void *bwp,
                                      NR_SearchSpace_t *ss,
@@ -269,7 +299,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Downlink_t *bwp,
                               const NR_BWP_DownlinkDedicated_t *bwpd0,
                               int tda,
-                              uint8_t num_dmrs_cdm_grps_no_data,
+                              const long dci_format,
                               NR_pdsch_semi_static_t *ps)
 {
   ps->time_domain_allocation = tda;
@@ -300,13 +330,13 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   }
   else ps->mcsTableIdx = 0;
 
+  if(dci_format == 0) // format 1_0
+    ps->numDmrsCdmGrpsNoData = (ps->nrOfSymbols == 2 ? 1 : 2);
+  else
+    set_dl_dmrs_ports(ps);
+  ps->dmrsConfigType = bwp!=NULL ? (bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
 
-  ps->numDmrsCdmGrpsNoData = num_dmrs_cdm_grps_no_data;
-  ps->dmrsConfigType = bwpd!=NULL ? (bwpd->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
-
-  // if no data in dmrs cdm group is 1 only even REs have no data
-  // if no data in dmrs cdm group is 2 both odd and even REs have no data
-  ps->N_PRB_DMRS = num_dmrs_cdm_grps_no_data * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
+  ps->N_PRB_DMRS = ps->numDmrsCdmGrpsNoData * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
   ps->dl_dmrs_symb_pos = fill_dmrs_mask(bwpd ? bwpd->pdsch_Config->choice.setup : NULL, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, mapping_type);
   ps->N_DMRS_SLOT = get_num_dmrs(ps->dl_dmrs_symb_pos);
   LOG_D(NR_MAC,"bwpd0 %p, bwpd %p : Filling dmrs info, ps->N_PRB_DMRS %d, ps->dl_dmrs_symb_pos %x, ps->N_DMRS_SLOT %d\n",bwpd0,bwpd,ps->N_PRB_DMRS,ps->dl_dmrs_symb_pos,ps->N_DMRS_SLOT);
@@ -314,7 +344,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
-			      const NR_BWP_UplinkDedicated_t *ubwpd,
+			                        const NR_BWP_UplinkDedicated_t *ubwpd,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
@@ -607,7 +637,7 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 }
 
 void config_uldci(const NR_BWP_Uplink_t *ubwp,
-		  const NR_BWP_UplinkDedicated_t *ubwpd,
+		              const NR_BWP_UplinkDedicated_t *ubwpd,
                   const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
@@ -730,9 +760,9 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
 
   for (int i=0;i<6;i++)
     pdcch_pdu->FreqDomainResource[i] = coreset->frequencyDomainResources.buf[i];
- 
+
   LOG_D(MAC,"Coreset : BWPstart %d, BWPsize %d, SCS %d, freq %x, , duration %d,  \n",pdcch_pdu->BWPStart,pdcch_pdu->BWPSize,(int)pdcch_pdu->SubcarrierSpacing,(int)coreset->frequencyDomainResources.buf[0],(int)coreset->duration);
-  
+
   //cce-REG-MappingType
   pdcch_pdu->CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
     NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED : NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
@@ -1923,14 +1953,14 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     const int bwp_id = 1;
     sched_ctrl->active_bwp = bwpList ? bwpList->list.array[bwp_id - 1] : NULL;
     const int target_ss = sched_ctrl->active_bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
-    sched_ctrl->search_space = get_searchspace(scc, 
-                                               sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, 
+    sched_ctrl->search_space = get_searchspace(scc,
+                                               sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL,
                                                target_ss);
     if (*sched_ctrl->search_space->controlResourceSetId == 0)
       sched_ctrl->coreset = RC.nrmac[mod_idP]->sched_ctrlCommon->coreset; // this is coreset 0
     else
-      sched_ctrl->coreset = get_coreset(scc, 
-                                      sched_ctrl->active_bwp ? (void*)sched_ctrl->active_bwp->bwp_Dedicated : NULL, 
+      sched_ctrl->coreset = get_coreset(scc,
+                                      sched_ctrl->active_bwp ? (void*)sched_ctrl->active_bwp->bwp_Dedicated : NULL,
 	                              sched_ctrl->search_space, target_ss);
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
     if (ubwpList) AssertFatal(ubwpList->list.count == 1,
@@ -2081,8 +2111,8 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
  	 	CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count,bwp_id);
     AssertFatal(CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count >= bwp_id,
                 "CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count %d < bwp_id %d\n",
-                CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count,bwp_id);  
- 
+                CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count,bwp_id);
+
     bwpd = CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated;
     ubwpd = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated;
   }
@@ -2105,7 +2135,7 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
     int found=0;
     AssertFatal(bwpd->pdcch_Config!=NULL,"bwpd->pdcch_Config is null\n");
     AssertFatal(bwpd->pdcch_Config->choice.setup->searchSpacesToAddModList!=NULL,
-                "bwpd->pdcch_Config->choice.setup->searchSpacesToAddModList is null\n"); 
+                "bwpd->pdcch_Config->choice.setup->searchSpacesToAddModList is null\n");
     for (int i=0;i<bwpd->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;i++) {
       ss=bwpd->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
       AssertFatal(ss->controlResourceSetId != NULL,"ss->controlResourceSetId is null\n");
