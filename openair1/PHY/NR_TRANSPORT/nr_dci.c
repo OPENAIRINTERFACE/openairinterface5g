@@ -184,6 +184,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 
     /*Mapping the encoded DCI along with the DMRS */
     for(int symbol_idx = 0; symbol_idx < pdcch_pdu_rel15->DurationSymbols; symbol_idx++) {
+      int re_idx = 0;
       for (int cce_count = 0; cce_count < dci_pdu->AggregationLevel; cce_count+=pdcch_pdu_rel15->DurationSymbols) {
 
         int8_t cce_idx = reg_list_order[cce_count];
