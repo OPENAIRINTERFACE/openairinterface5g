@@ -1301,10 +1301,6 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         // reset TA flag
         ul_time_alignment->apply_ta = 0;
         LOG_D(PHY,"Frame %d slot %d -- Starting UL time alignment procedures. TA update will be applied at frame %d slot %d\n", frame_rx, nr_slot_rx, ul_time_alignment->ta_frame, ul_time_alignment->ta_slot);
-        }
-        // reset TA flag
-        ul_time_alignment->apply_ta = 0;
-        LOG_D(PHY,"Frame %d slot %d -- Starting UL time alignment procedures. TA update will be applied at frame %d slot %d\n", frame_rx, nr_slot_rx, ul_time_alignment->ta_frame, ul_time_alignment->ta_slot);
       }
     }
   }
