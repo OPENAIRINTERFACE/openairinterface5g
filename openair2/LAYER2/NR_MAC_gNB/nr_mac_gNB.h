@@ -564,6 +564,7 @@ typedef struct {
   mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
 
   int lcid_mask;
+  int lcid_to_schedule;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
