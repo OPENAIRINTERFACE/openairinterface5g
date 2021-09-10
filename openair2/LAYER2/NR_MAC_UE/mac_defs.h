@@ -300,6 +300,8 @@ typedef struct {
   /// BeamfailurerecoveryConfig
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
 
+  /// RA SearchSpace
+  NR_SearchSpace_t *ss;
 } RA_config_t;
 
 typedef struct {
@@ -422,6 +424,8 @@ typedef struct {
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
   frequency_range_t frequency_range;
+  uint16_t nr_band;
+  uint8_t ssb_subcarrier_offset;
 
   dci_pdu_rel15_t def_dci_pdu_rel15[8];
 

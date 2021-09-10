@@ -66,7 +66,6 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 
 void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id){
 
-  RA_config_t *ra = &mac->ra;
   uint16_t monitoringSymbolsWithinSlot = 0;
   uint8_t coreset_id = 1;
   int sps = 0;
@@ -90,8 +89,11 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   NR_SearchSpace_t *ss;
   NR_ControlResourceSet_t *coreset;
   if(ss_id>=0) {
-    ss = mac->SSpace[dl_bwp_id-1][coreset_id - 1][ss_id];
-    coreset = mac->coreset[dl_bwp_id-1][coreset_id - 1];
+    AssertFatal(mac->scc != NULL, "scc is null\n");
+    initialDownlinkBWP = scc->downlinkConfigCommon->initialDownlinkBWP;
+    bwp_Common = mac->DLbwp[dl_bwp_id - 1]->bwp_Common;
+    ss = mac->SSpace[dl_bwp_id - 1][coreset_id - 1][ss_id];
+    coreset = mac->coreset[dl_bwp_id - 1][coreset_id - 1];
     rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   } else {
     ss = mac->search_space_zero;
@@ -107,7 +109,8 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
   for (int i = 0; i < 6; i++)
     rel15->coreset.frequency_domain_resource[i] = coreset->frequencyDomainResources.buf[i];
-  rel15->coreset.CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved ? FAPI_NR_CCE_REG_MAPPING_TYPE_INTERLEAVED : FAPI_NR_CCE_REG_MAPPING_TYPE_NON_INTERLEAVED;
+  rel15->coreset.CceRegMappingType = coreset->cce_REG_MappingType.present ==
+    NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved ? FAPI_NR_CCE_REG_MAPPING_TYPE_INTERLEAVED : FAPI_NR_CCE_REG_MAPPING_TYPE_NON_INTERLEAVED;
   if (rel15->coreset.CceRegMappingType == FAPI_NR_CCE_REG_MAPPING_TYPE_INTERLEAVED) {
     struct NR_ControlResourceSet__cce_REG_MappingType__interleaved *interleaved = coreset->cce_REG_MappingType.choice.interleaved;
     rel15->coreset.RegBundleSize = (interleaved->reg_BundleSize == NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2 + interleaved->reg_BundleSize);
@@ -129,10 +132,6 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->coreset.pdcch_dmrs_scrambling_id = mac->physCellId;
     rel15->coreset.scrambling_rnti = 0;
   }
-
-  #ifdef DEBUG_DCI
-    LOG_D(MAC, "[DCI_CONFIG] Configure DCI PDU: ss_id %d bwp %p bwp_Id %d controlResourceSetId %d\n", ss_id, mac->DLbwp[bwp_id - 1], mac->DLbwp[bwp_id - 1]->bwp_Id, coreset->controlResourceSetId);
-  #endif
 
   // loop over RNTI type and configure resource allocation for DCI
   switch(rnti_type) {
@@ -161,7 +160,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     // we use the initial DL BWP
     sps = initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
     monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-    rel15->rnti = ra->ra_rnti;
+    rel15->rnti = mac->ra.ra_rnti;
     rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     if (get_softmodem_params()->sa) {
       rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -179,7 +178,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       // we use the initial DL BWP
       sps = initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
       monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-      rel15->rnti = ra->t_crnti;
+      rel15->rnti = mac->ra.t_crnti;
       rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
@@ -199,7 +198,11 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       rel15->rnti = SI_RNTI; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
       rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
       rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
-      rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+
+      if(mac->frequency_range == FR1)
+        rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+      else
+        rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon + 2;
 
       for (int i = 0; i < rel15->num_dci_options; i++) {
         rel15->dci_length_options[i] = nr_dci_size(initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[i]], rel15->dci_format_options[i], NR_RNTI_SI, rel15->BWPSize, 0);
@@ -429,11 +432,13 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   }
   else { // use coreset0/ss0
     NR_SearchSpace_t *ss0 = mac->search_space_zero;
-    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15;
-    rel15->num_dci_options = 1;
-    rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-    config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C , -1);
-    fill_dci_search_candidates(ss0, rel15);
-    dl_config->number_pdus = 1;
+    if(ss0) {
+      fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15;
+      rel15->num_dci_options = 1;
+      rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+      config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C , -1);
+      fill_dci_search_candidates(ss0, rel15);
+      dl_config->number_pdus = 1;
+    }
   }
 }

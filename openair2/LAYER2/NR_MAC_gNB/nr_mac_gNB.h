@@ -157,6 +157,8 @@ typedef struct {
   int msg4_TBsize;
   /// MCS used for Msg4
   int msg4_mcs;
+  /// MAC PDU length for Msg4
+  int mac_pdu_length;
   /// RA search space
   NR_SearchSpace_t *ra_ss;
   // Beam index
@@ -366,9 +368,9 @@ typedef struct NR_pdsch_semi_static {
 
   int startSymbolIndex;
   int nrOfSymbols;
-
+  uint8_t nrOfLayers;
   uint8_t mcsTableIdx;
-
+  uint8_t dmrs_ports_id;
   uint8_t N_PRB_DMRS;
   uint8_t N_DMRS_SLOT;
   uint16_t dl_dmrs_symb_pos;
@@ -384,7 +386,6 @@ typedef struct NR_sched_pdsch {
   uint8_t mcs;
 
   /// TBS-related info
-  uint8_t nrOfLayers;
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;
@@ -671,6 +672,8 @@ typedef struct gNB_MAC_INST_s {
   int                             pusch_failure_thres;
   /// Subcarrier Offset
   int                             ssb_SubcarrierOffset;
+  /// SIB1 Time domain allocation
+  int                             sib1_tda;
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
