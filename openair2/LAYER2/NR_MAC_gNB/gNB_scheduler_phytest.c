@@ -370,7 +370,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->rbSize = rbSize;
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
-  const long f = 0;
+  const long f = 1;
   ps->nrOfLayers = target_dl_Nl;
   if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
     nr_set_pdsch_semi_static(
