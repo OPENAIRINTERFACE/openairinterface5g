@@ -399,7 +399,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
 
     int lcid; 
     const uint16_t rnti = UE_info->rnti[UE_id];
-    LOG_I(NR_MAC,"UE %d/%x : lcid_mask %x\n",UE_id,rnti,sched_ctrl->lcid_mask);
+    LOG_D(NR_MAC,"UE %d/%x : lcid_mask %x\n",UE_id,rnti,sched_ctrl->lcid_mask);
     if ((sched_ctrl->lcid_mask&(1<<2)) > 0)
       sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1] = mac_rlc_status_ind(module_id,
                                                         rnti,
