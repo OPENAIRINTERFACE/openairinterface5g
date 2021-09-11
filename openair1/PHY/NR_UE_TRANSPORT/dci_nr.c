@@ -933,11 +933,22 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
 
     // Loop over possible DCI lengths
     for (int k = 0; k < rel15->num_dci_options; k++) {
+      // skip this candidate if we've already found one with the
+      // same rnti and format at a different aggregation level
+      int dci_found=0;
+      for (int ind=0;ind < dci_ind->number_of_dcis ; ind++) {
+        if (rel15->rnti== dci_ind->dci_list[ind].rnti &&
+            rel15->dci_format_options[k]==dci_ind->dci_list[ind].dci_format) {
+           dci_found=1;
+           break;
+        }
+      }
+      if (dci_found==1) continue;
       int dci_length = rel15->dci_length_options[k];
       uint64_t dci_estimation[2]= {0};
       const t_nrPolar_params *currentPtrDCI = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, dci_length, L, 1, &ue->polarList);
 
-      LOG_D(PHY, "Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d\n", j, rel15->number_of_candidates, CCEind, CCEind*9*6*2, L);
+      LOG_D(PHY, "Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d, length %d, format %s\n", j, rel15->number_of_candidates, CCEind, CCEind*9*6*2, L, dci_length,nr_dci_format_string[rel15->dci_format_options[k]]);
 
       nr_pdcch_unscrambling(&pdcch_vars->e_rx[CCEind*108], rel15->coreset.scrambling_rnti, L*108, rel15->coreset.pdcch_dmrs_scrambling_id, tmp_e);
 

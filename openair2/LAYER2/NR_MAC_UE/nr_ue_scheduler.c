@@ -1064,6 +1064,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
     // Get slot offset K2 which will be used to calculate TX slot
     k2 = get_k2(mac, tda_id);
     if (k2 < 0) { // This can happen when a false DCI is received
+      LOG_W(PHY,"%d.%d. Received k2 %d, tda_id %d\n",current_frame,current_slot,k2,tda_id);
       return -1;
     }
 
