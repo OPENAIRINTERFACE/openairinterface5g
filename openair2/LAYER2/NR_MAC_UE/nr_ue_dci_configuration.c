@@ -55,8 +55,8 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 
   uint8_t aggregation;
   uint8_t number_of_candidates=0;
-  int i=0;
   rel15->number_of_candidates=0;
+  int i=0;
   for (int maxL=16;maxL>0;maxL>>=1) {
     find_aggregation_candidates(&aggregation,
                                 &number_of_candidates,
@@ -65,8 +65,8 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
     if (number_of_candidates>0) {
       LOG_D(NR_MAC,"L %d, number of candidates %d, aggregation %d\n",maxL,number_of_candidates,aggregation);
       rel15->number_of_candidates += number_of_candidates;
-      for (; i<rel15->number_of_candidates; i++) {
-        rel15->CCE[i] = i*aggregation;
+      for (int j=0; j<number_of_candidates; i++,j++) {
+        rel15->CCE[i] = j*aggregation;
         rel15->L[i] = aggregation;
       }
     }
