@@ -267,6 +267,8 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
+  ps->nrOfLayers = g_nrOfLayers;
+
   nr_set_pdsch_semi_static(scc,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
@@ -284,7 +286,6 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   ps->mcsTableIdx = g_mcsTableIdx;
   ps->nrOfLayers = g_nrOfLayers;
 
-  sched_pdsch->nrOfLayers = g_nrOfLayers;
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
@@ -294,7 +295,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                                         ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        g_nrOfLayers)
+                                        ps->nrOfLayers)
                          >> 3;
 
   /* the simulator assumes the HARQ PID is equal to the slot number */

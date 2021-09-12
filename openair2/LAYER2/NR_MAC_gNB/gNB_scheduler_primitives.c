@@ -136,7 +136,6 @@ static inline uint8_t get_max_cces(uint8_t scs) {
   return (nr_max_number_of_cces_per_slot[scs]);
 }
 
-
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl) {
 
   // TODO check this but it should be enough for now
@@ -199,7 +198,6 @@ void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
   //     for now it assumes a selection of Nl consecutive dmrs ports
   //     and a single front loaded symbol
   //     dmrs_ports_id is the index of Tables 7.3.1.2.2-1/2/3/4
-
   //     number of front loaded symbols need to be consistent with maxLength
   //     when a more complete implementation is done
 
@@ -421,7 +419,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
     SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
   }
 
-  const long dci_format = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+  const long dci_format = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   if (dci_format == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0 ||
       pdsch_Config == NULL) {
     if (ps->nrOfSymbols == 2 && ps->mapping_type == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB)

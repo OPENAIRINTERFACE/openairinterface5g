@@ -387,7 +387,6 @@ typedef struct NR_sched_pdsch {
   uint8_t mcs;
 
   /// TBS-related info
-  uint8_t nrOfLayers;
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;
