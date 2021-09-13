@@ -182,7 +182,7 @@ static void gtpv1uSend(instance_t instance, gtpv1u_enb_tunnel_data_req_t *req, b
   if(npduNumFlag)
     ptr[rab_id].npduNum++;
 
-  // We will release the lock, let's copy data before
+
   ocp_gtpv1u_bearer_t tmp=ptr[rab_id];
   pthread_mutex_unlock(&globGtp.gtp_lock);
   gtpv1uCreateAndSendMsg(compatInst(instance),
@@ -396,8 +396,9 @@ void GtpuUpdateTunnelOutgoingTeid(instance_t instance, rnti_t rnti, ebi_t bearer
     pthread_mutex_unlock(&globGtp.gtp_lock);
     return;
   }
-  auto tmp=ptrRnti->second.bearers;
-  auto ptrBearer=tmp.find(bearer_id); if ( ptrBearer == tmp.end() ) {
+  auto tmp=&ptrRnti->second.bearers;
+  auto ptrBearer=tmp->find(bearer_id);
+  if ( ptrBearer == tmp->end() ) {
     LOG_E(GTPU,"Update tunnel for a existing rnti %x, but wrong bearer_id %u\n", rnti, bearer_id);
     pthread_mutex_unlock(&globGtp.gtp_lock);
     return;
