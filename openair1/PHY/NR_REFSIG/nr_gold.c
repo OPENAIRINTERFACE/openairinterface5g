@@ -153,3 +153,5 @@ void nr_init_csi_rs(PHY_VARS_gNB* gNB, uint32_t Nid)
   }
 
 }
+
+void nr_init_prs(PHY_VARS_gNB* gNB, uint32_t Nid, ...)

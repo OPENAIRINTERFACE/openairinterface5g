@@ -194,6 +194,23 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   nr_init_csi_rs(gNB, cfg->cell_config.phy_cell_id.value);
 
+  //PRS init
+  gNB->nr_gold_prs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
+  uint32_t ***prs = gNB->nr_gold_prs;
+  AssertFatal(prs!=NULL, "NR init: positioning reference signal malloc failed\n");
+
+  for (int slot=0; slot<fp->slots_per_frame; slot++) {
+    prs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
+    AssertFatal(prs[slot]!=NULL, "NR init: positioning reference signal for slot %d - malloc failed\n", slot);
+
+    for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+      prs[slot][symb] = (uint32_t *)malloc16(NR_MAX_PRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+      AssertFatal(prs[slot][symb]!=NULL, "NR init: positioning reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
+    }
+  }
+
+  nr_init_prs(...);
+  
   /* Generate low PAPR type 1 sequences for PUSCH DMRS, these are used if transform precoding is enabled.  */
   generate_lowpapr_typ1_refsig_sequences(SHRT_MAX);
 

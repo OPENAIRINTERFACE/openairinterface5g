@@ -960,6 +960,7 @@ int main(int argc, char **argv)
   //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
   snrRun = 0;
 
+  //TODO: configure parameters for PRS
 
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 

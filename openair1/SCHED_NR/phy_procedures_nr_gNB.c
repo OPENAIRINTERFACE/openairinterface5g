@@ -206,6 +206,9 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     }
   }
 
+  //TODO: nr_generate_prs
+  // check if we have prs to transmit in this frame and slot
+
   if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
 
   if ((frame&127) == 0) dump_pdsch_stats(gNB);
