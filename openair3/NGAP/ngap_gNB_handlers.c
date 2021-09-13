@@ -1745,6 +1745,12 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
                 /* Set the QOS informations */
                 NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
                 if(qosFlowItem_p->qosFlowLevelQosParameters) {
+                  if (qosFlowItem_p->qosFlowLevelQosParameters->qosCharacteristics.present == NGAP_QosCharacteristics_PR_nonDynamic5QI) {
+                    NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].fiveQI =
+                      qosFlowItem_p->qosFlowLevelQosParameters->qosCharacteristics.choice.nonDynamic5QI->fiveQI;
+                  } else if (qosFlowItem_p->qosFlowLevelQosParameters->qosCharacteristics.present == NGAP_QosCharacteristics_PR_dynamic5QI) {
+                    // TODO
+                  }
                   NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.priority_level =
                     qosFlowItem_p->qosFlowLevelQosParameters->allocationAndRetentionPriority.priorityLevelARP;
                   NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
