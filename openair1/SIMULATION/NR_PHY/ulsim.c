@@ -647,7 +647,7 @@ int main(int argc, char **argv)
   get_softmodem_params()->do_ra = 0;
   get_softmodem_params()->usim_test = 1;
 
-  load_nrLDPClib_offload();
+  //load_nrLDPClib_offload();
 
   if (snr1set == 0)
     snr1 = snr0 + 10;

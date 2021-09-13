@@ -87,17 +87,18 @@ int load_nrLDPClib_offload(void) {
   p_decParams->Z = 384;
   p_decParams->BG = 1;
 
-  nrLDPC_decoder_offload(p_decParams,
-                        1,
-                        0,
-                        0,
-                        25344,
-                        8,
-                        l, 
-                        llrProcBuf, 0);
+  AssertFatal(nrLDPC_decoder_offload(p_decParams,
+				     1,
+				     0,
+				     0,
+				     25344,
+				     8,
+				     l, 
+				     llrProcBuf, 0)>0,
+	      "error loading LDPC decoder offload library\n");
 
 
-return 0;
+  return 0;
 }
 
 int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_encoder_ptr) {

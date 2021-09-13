@@ -166,7 +166,7 @@ struct thread_params {
 	uint8_t iter_count;
 	double iter_average;
 	double bler;
-	struct t_nrLDPCoffload_params *p_offloadParams;	
+	struct nrLDPCoffload_params *p_offloadParams;	
 	int8_t* p_out;
 	rte_atomic16_t nb_dequeued;
 	rte_atomic16_t processing_status;
@@ -1574,46 +1574,60 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 
 	if (mode==0){
 		
-		ret = rte_eal_init(argc_re, argv_re);
-		device_setup();
-		ut_setup();
-	
-	        p_offloadParams->E = E;
-        	p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
-        	p_offloadParams->BG = p_decParams->BG;
-        	p_offloadParams->Z = p_decParams->Z;
-        	p_offloadParams->rv = rv;
-        	p_offloadParams->F = F;
-        	p_offloadParams->Qm = Qm;
-
-	        //struct test_op_params *op_params = rte_zmalloc(NULL,
-	        op_params = rte_zmalloc(NULL,
+	  ret = rte_eal_init(argc_re, argv_re);
+	  if (ret<0) {
+	    printf("Could not init EAL, ret %d\n",ret);
+	    return(-1);
+	  }
+	  ret = device_setup();
+	  if (ret != TEST_SUCCESS) {
+	    printf("Couldn't create mempools");
+	    return(-1);
+	  }
+	  ret=ut_setup();
+	  if (ret != TEST_SUCCESS) {
+	    printf("Couldn't create mempools");
+	    return(-1);
+	  }
+	  
+	  p_offloadParams->E = E;
+	  p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
+	  p_offloadParams->BG = p_decParams->BG;
+	  p_offloadParams->Z = p_decParams->Z;
+	  p_offloadParams->rv = rv;
+	  p_offloadParams->F = F;
+	  p_offloadParams->Qm = Qm;
+	  
+	  //struct test_op_params *op_params = rte_zmalloc(NULL,
+	  op_params = rte_zmalloc(NULL,
                         sizeof(struct test_op_params), RTE_CACHE_LINE_SIZE);
-       		TEST_ASSERT_NOT_NULL(op_params, "Failed to alloc %zuB for op_params",
-                        RTE_ALIGN(sizeof(struct test_op_params),
-                                RTE_CACHE_LINE_SIZE));
-
-	int socket_id;
-        int f_ret;
-        struct rte_bbdev_info info;
-        rte_bbdev_info_get(ad->dev_id, &info);
-        socket_id = GET_SOCKET(info.socket_id);
-        enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;
-        f_ret = create_mempools(ad, socket_id, op_type,
-                        get_num_ops(),p_offloadParams);
-        if (f_ret != TEST_SUCCESS) {
-                printf("Couldn't create mempools");
-        }
-        f_ret = init_test_op_params(op_params, op_type,
-                        0,
-                        0,
-                        ad->ops_mempool,
-                        1,
-                        get_num_ops(), 
-                        get_num_lcores());
-        if (f_ret != TEST_SUCCESS) {
-                printf("Couldn't init test op params");
-        }
+	  TEST_ASSERT_NOT_NULL(op_params, "Failed to alloc %zuB for op_params",
+			       RTE_ALIGN(sizeof(struct test_op_params),
+					 RTE_CACHE_LINE_SIZE));
+	  
+	  int socket_id;
+	  int f_ret;
+	  struct rte_bbdev_info info;
+	  rte_bbdev_info_get(ad->dev_id, &info);
+	  socket_id = GET_SOCKET(info.socket_id);
+	  enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;
+	  f_ret = create_mempools(ad, socket_id, op_type,
+				  get_num_ops(),p_offloadParams);
+	  if (f_ret != TEST_SUCCESS) {
+	    printf("Couldn't create mempools");
+	    return(-1);
+	  }
+	  f_ret = init_test_op_params(op_params, op_type,
+				      0,
+				      0,
+				      ad->ops_mempool,
+				      1,
+				      get_num_ops(), 
+				      get_num_lcores());
+	  if (f_ret != TEST_SUCCESS) {
+	    printf("Couldn't init test op params");
+	    return(-1);
+	  }
 
 	}
 	else{
@@ -1659,15 +1673,20 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 				socket_id);
 		if (f_ret != TEST_SUCCESS) {
 			printf("Couldn't init queue buffers");
+			return(-1);
 		}
 	}
 
 
-	start_pmd_dec(ad, op_params, p_offloadParams, p_out);
+	ret = start_pmd_dec(ad, op_params, p_offloadParams, p_out);
+	if (ret<0) {
+	  printf("Couldn't start pmd dec");
+	  return(-1);
+	}
 
- //       free_buffers(ad, op_params);
+	// free_buffers(ad, op_params);
 	
-//	rte_free(op_params);
+	// rte_free(op_params);
 	}
 	//ut_teardown();
 
