@@ -1093,7 +1093,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
 
- config_csirs(servingcellconfigcommon, csi_MeasConfig,dl_antenna_ports,do_csirs);
+ config_csirs(servingcellconfigcommon, csi_MeasConfig,dl_antenna_ports,curr_bwp,do_csirs);
 
  csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
  csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
@@ -1294,7 +1294,11 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 }
 
 
-void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon, NR_CSI_MeasConfig_t *csi_MeasConfig, int dl_antenna_ports, int do_csirs) {
+void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                  NR_CSI_MeasConfig_t *csi_MeasConfig,
+                  int dl_antenna_ports,
+                  int curr_bwp,
+                  int do_csirs) {
 
  if (do_csirs) {
    csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
