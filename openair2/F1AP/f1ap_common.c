@@ -64,17 +64,17 @@ uint8_t F1AP_get_next_transaction_identifier(instance_t enb_mod_idP, instance_t 
   return transaction_identifier[enb_mod_idP+cu_mod_idP];
 }
 
-f1ap_cudu_inst_t *getCxt(bool isCU, instance_t instanceP) {
+f1ap_cudu_inst_t *getCxt(F1_t isCU, instance_t instanceP) {
   static pid_t t=-1;
   pid_t tNew=gettid();
   AssertFatal ( t==-1 || t==tNew, "This is not thread safe\n");
   t=tNew;
   AssertFatal( instanceP < sizeofArray(f1_cu_inst), "");
-  return isCU? f1_cu_inst[ instanceP]:  f1_du_inst[ instanceP];
+  return isCU == CUtype ? f1_cu_inst[ instanceP]:  f1_du_inst[ instanceP];
 }
 
-void createF1inst(bool isCU, instance_t instanceP, f1ap_setup_req_t *req) {
-  if (isCU) {
+void createF1inst(F1_t isCU, instance_t instanceP, f1ap_setup_req_t *req) {
+  if (isCU == CUtype) {
     AssertFatal(f1_cu_inst[instanceP] == NULL, "Double call to F1 CU init\n");
     f1_cu_inst[instanceP]=( f1ap_cudu_inst_t *) calloc(1, sizeof( f1ap_cudu_inst_t));
     //memcpy(f1_cu_inst[instanceP]->setupReq, req, sizeof(f1ap_setup_req_t) );
@@ -85,7 +85,7 @@ void createF1inst(bool isCU, instance_t instanceP, f1ap_setup_req_t *req) {
   }
 }
 
-int f1ap_add_ue(bool isCu,
+int f1ap_add_ue(F1_t isCu,
                 instance_t          instanceP,
                 rnti_t               rntiP) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
@@ -114,7 +114,7 @@ int f1ap_add_ue(bool isCu,
 }
 
 
-int f1ap_remove_ue(bool isCu, instance_t instanceP,
+int f1ap_remove_ue(F1_t isCu, instance_t instanceP,
                    rnti_t            rntiP) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
 
@@ -129,7 +129,7 @@ int f1ap_remove_ue(bool isCu, instance_t instanceP,
   return 0;
 }
 
-int f1ap_get_du_ue_f1ap_id(bool isCu, instance_t instanceP,
+int f1ap_get_du_ue_f1ap_id(F1_t isCu, instance_t instanceP,
                            rnti_t            rntiP) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
 
@@ -142,7 +142,7 @@ int f1ap_get_du_ue_f1ap_id(bool isCu, instance_t instanceP,
   return -1;
 }
 
-int f1ap_get_cu_ue_f1ap_id(bool isCu, instance_t instanceP,
+int f1ap_get_cu_ue_f1ap_id(F1_t isCu, instance_t instanceP,
                            rnti_t            rntiP) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
 
@@ -155,7 +155,7 @@ int f1ap_get_cu_ue_f1ap_id(bool isCu, instance_t instanceP,
   return -1;
 }
 
-int f1ap_get_rnti_by_du_id(bool isCu, instance_t instanceP,
+int f1ap_get_rnti_by_du_id(F1_t isCu, instance_t instanceP,
                            instance_t       du_ue_f1ap_id ) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
 
@@ -168,7 +168,7 @@ int f1ap_get_rnti_by_du_id(bool isCu, instance_t instanceP,
   return -1;
 }
 
-int f1ap_get_rnti_by_cu_id(bool isCu, instance_t instanceP,
+int f1ap_get_rnti_by_cu_id(F1_t isCu, instance_t instanceP,
                            instance_t       cu_ue_f1ap_id ) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
 
@@ -181,50 +181,18 @@ int f1ap_get_rnti_by_cu_id(bool isCu, instance_t instanceP,
   return -1;
 }
 
-int f1ap_get_du_uid(bool isCu, instance_t instanceP,
-                    instance_t       du_ue_f1ap_id ) {
-  f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
-
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
-    if (f1_inst->f1ap_ue[i].du_ue_f1ap_id == du_ue_f1ap_id) {
-      return i;
-    }
-  }
-
-  return -1;
-}
-
-int f1ap_get_cu_uid(bool isCu, instance_t instanceP,
-                    instance_t       cu_ue_f1ap_id ) {
-  f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
-
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
-    if (f1_inst->f1ap_ue[i].cu_ue_f1ap_id == cu_ue_f1ap_id) {
-      return i;
-    }
-  }
-
-  return -1;
-}
-
-int f1ap_get_uid_by_rnti(bool isCu, instance_t instanceP,
-                         rnti_t            rntiP ) {
-  f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
-
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
-    if (f1_inst->f1ap_ue[i].rnti == rntiP) {
-      return i;
-    }
-  }
-
-  return -1;
-}
-
-int f1ap_du_add_cu_ue_id(bool isCu, instance_t instanceP,
+int f1ap_du_add_cu_ue_id(instance_t instanceP,
                          instance_t       du_ue_f1ap_id,
                          instance_t       cu_ue_f1ap_id) {
-  f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
-  instance_t f1ap_uid = f1ap_get_du_uid(isCu, instanceP,du_ue_f1ap_id);
+  f1ap_cudu_inst_t *f1_inst=getCxt(DUtype, instanceP);
+
+  instance_t f1ap_uid=-1;
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (f1_inst->f1ap_ue[i].du_ue_f1ap_id == du_ue_f1ap_id) {
+     f1ap_uid=i;
+     break;
+    }
+  }
 
   if (f1ap_uid < 0 || f1ap_uid >= MAX_MOBILES_PER_ENB)
     return -1;
@@ -234,21 +202,7 @@ int f1ap_du_add_cu_ue_id(bool isCu, instance_t instanceP,
   return 0;
 }
 
-int f1ap_cu_add_du_ue_id(bool isCu, instance_t instanceP,
-                         instance_t       cu_ue_f1ap_id,
-                         instance_t       du_ue_f1ap_id) {
-  f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
-  instance_t f1ap_uid = f1ap_get_cu_uid(isCu,instanceP,cu_ue_f1ap_id);
-
-  if (f1ap_uid < 0 || f1ap_uid >= MAX_MOBILES_PER_ENB)
-    return -1;
-
-  f1_inst->f1ap_ue[f1ap_uid].du_ue_f1ap_id = du_ue_f1ap_id;
-  LOG_I(F1AP, "Adding du_ue_f1ap_id %ld for UE with RNTI %x\n", du_ue_f1ap_id, f1_inst->f1ap_ue[f1ap_uid].rnti);
-  return 0;
-}
-
-int f1ap_assoc_id(bool isCu, instance_t instanceP) {
+int f1ap_assoc_id(F1_t isCu, instance_t instanceP) {
   f1ap_setup_req_t *f1_inst=f1ap_req(isCu, instanceP);
   return f1_inst->assoc_id;
 }

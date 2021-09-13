@@ -534,7 +534,8 @@ rb_found:
     req->pdusession_id = rb_id;
     LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n",
 	  __func__, rb_id, size);
-    itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
+    extern instance_t CUuniqInstance;
+    itti_send_msg_to_task(TASK_VARIABLE, CUuniqInstance, message_p);
     return;
   }
     

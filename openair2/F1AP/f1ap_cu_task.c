@@ -38,6 +38,9 @@
 #include "proto_agent.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
+//Fixme: Uniq dirty DU instance, by global var, datamodel need better management
+instance_t CUuniqInstance=0;
+
 static instance_t cu_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs) {
   openAddr_t tmp={0};
   strncpy(tmp.originHost, IPaddrs->my_addr, sizeof(tmp.originHost)-1);
@@ -56,9 +59,11 @@ static void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_as
   f1ap_cu_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
   f1ap_cu_data->sctp_out_streams = sctp_new_association_ind->out_streams;
   f1ap_cu_data->default_sctp_stream_id = 0;
-  getCxt(true, instance)->gtpInst=cu_task_create_gtpu_instance_to_du(IPaddrs);
-  AssertFatal(getCxt(true, instance)->gtpInst>0,"Failed to create CU F1-U UDP listener");
-  // Nothing
+  getCxt(CUtype, instance)->gtpInst=cu_task_create_gtpu_instance_to_du(IPaddrs);
+  AssertFatal(getCxt(CUtype, instance)->gtpInst>0,"Failed to create CU F1-U UDP listener");
+  // Fixme: fully inconsistent instances management
+  // dirty global var is a bad fix
+  CUuniqInstance=getCxt(CUtype, instance)->gtpInst;
 }
 
 static void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp) {

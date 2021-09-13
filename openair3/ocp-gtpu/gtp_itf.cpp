@@ -95,7 +95,7 @@ static  teid_t gtpv1uNewTeid(void) {
 #endif
 }
 
-instance_t legacyInstanceMapping=0;
+static instance_t legacyInstanceMapping=0;
 #define compatInst(a) ((a)==0 || (a)==INSTANCE_DEFAULT?legacyInstanceMapping:a)
 
 #define GTPV1U_HEADER_SIZE                                  (8)

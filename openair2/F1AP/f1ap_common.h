@@ -437,55 +437,45 @@ typedef struct f1ap_cudu_inst_s {
   f1ap_cudu_ue_t f1ap_ue[MAX_MOBILES_PER_ENB];
 } f1ap_cudu_inst_t;
 
+typedef enum {
+  DUtype=0,
+  CUtype
+} F1_t;
 
 
 uint8_t F1AP_get_next_transaction_identifier(instance_t enb_mod_idP, instance_t cu_mod_idP);
 
-f1ap_cudu_inst_t *getCxt(bool isCU, instance_t instanceP);
+f1ap_cudu_inst_t *getCxt(F1_t isCU, instance_t instanceP);
 
-void createF1inst(bool isCU, instance_t instanceP, f1ap_setup_req_t *req);
-int f1ap_add_ue(bool isCu,
+void createF1inst(F1_t isCU, instance_t instanceP, f1ap_setup_req_t *req);
+int f1ap_add_ue(F1_t isCu,
                 instance_t     instanceP,
                 rnti_t          rntiP);
 
-int f1ap_remove_ue(bool isCu, instance_t instanceP,
+int f1ap_remove_ue(F1_t isCu, instance_t instanceP,
                    rnti_t            rntiP);
 
-int f1ap_get_du_ue_f1ap_id (bool isCu, instance_t instanceP,
+int f1ap_get_du_ue_f1ap_id (F1_t isCu, instance_t instanceP,
                             rnti_t            rntiP);
 
-int f1ap_get_cu_ue_f1ap_id (bool isCu, instance_t instanceP,
+int f1ap_get_cu_ue_f1ap_id (F1_t isCu, instance_t instanceP,
                             rnti_t            rntiP);
 
 
-int f1ap_get_rnti_by_du_id(bool isCu, instance_t instanceP,
+int f1ap_get_rnti_by_du_id(F1_t isCu, instance_t instanceP,
                            instance_t       du_ue_f1ap_id );
 
 
-int f1ap_get_rnti_by_cu_id(bool isCu, instance_t instanceP,
+int f1ap_get_rnti_by_cu_id(F1_t isCu, instance_t instanceP,
                            instance_t       cu_ue_f1ap_id );
 
-
-int f1ap_get_du_uid(bool isCu, instance_t instanceP,
-                    instance_t       du_ue_f1ap_id );
-
-int f1ap_get_cu_uid(bool isCu, instance_t instanceP,
-                    instance_t       cu_ue_f1ap_id );
-
-int f1ap_get_uid_by_rnti(bool isCu, instance_t instanceP,
-                         rnti_t            rntiP );
-
-int f1ap_du_add_cu_ue_id(bool isCu, instance_t instanceP,
+int f1ap_du_add_cu_ue_id(instance_t instanceP,
                          instance_t       du_ue_f1ap_id,
                          instance_t       cu_ue_f1ap_id);
 
-int f1ap_cu_add_du_ue_id(bool isCu, instance_t instanceP,
-                         instance_t       cu_ue_f1ap_id,
-                         instance_t       du_ue_f1ap_id);
+int f1ap_assoc_id(F1_t isCu, instance_t instanceP);
 
-int f1ap_assoc_id(bool isCu, instance_t instanceP);
-
-static inline f1ap_setup_req_t *f1ap_req(bool isCu, instance_t instanceP) {
+static inline f1ap_setup_req_t *f1ap_req(F1_t isCu, instance_t instanceP) {
   return &getCxt(isCu, instanceP)->setupReq;
 }
 

@@ -103,7 +103,9 @@ pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 
-
+// not used in UE
+instance_t CUuniqInstance=0;
+instance_t DUuniqInstance=0;
 
 RAN_CONTEXT_t RC;
 volatile int             oai_exit = 0;

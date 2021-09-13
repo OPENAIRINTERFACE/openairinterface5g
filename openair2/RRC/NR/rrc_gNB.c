@@ -1381,8 +1381,10 @@ rrc_gNB_process_RRCReconfigurationComplete(
         DRBs[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
         DRBs[i].rlc_mode = RLC_MODE_AM;
         DRBs[i].up_ul_tnl[0].tl_address = inet_addr(rrc->eth_params_s.my_addr);
+	DRBs[i].up_ul_tnl[0].port=rrc->eth_params_s.my_portd;
         DRBs[i].up_ul_tnl_length = 1;
 	DRBs[i].up_dl_tnl[0].tl_address = inet_addr(rrc->eth_params_s.remote_addr);
+	DRBs[i].up_dl_tnl[0].port=rrc->eth_params_s.remote_portd;
 	DRBs[i].up_dl_tnl_length = 1;
       }
       F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;
@@ -3184,7 +3186,8 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
     transport_layer_addr_t addr;
     memcpy(addr.buffer, &drb_p.up_ul_tnl[0].tl_address, sizeof(drb_p.up_ul_tnl[0].tl_address));
     addr.length=sizeof(drb_p.up_ul_tnl[0].tl_address)*8;
-    incoming_teid=newGtpuCreateTunnel(INSTANCE_DEFAULT,
+    extern instance_t DUuniqInstance;
+    incoming_teid=newGtpuCreateTunnel(DUuniqInstance,
         req->rnti,
         drb_p.drb_id,
         drb_p.drb_id,

@@ -120,7 +120,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
            ie->value.choice.DUtoCURRCContainer.size);
   }
 
-  int f1ap_uid = f1ap_add_ue(true, instance, rnti);
+  int f1ap_uid = f1ap_add_ue(CUtype, instance, rnti);
 
   if (f1ap_uid  < 0 ) {
     LOG_E(F1AP, "Failed to add UE \n");
@@ -164,7 +164,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(true, instance, f1ap_dl_rrc->rnti);
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(CUtype, instance, f1ap_dl_rrc->rnti);
   LOG_I(F1AP, "Setting GNB_CU_UE_F1AP_ID %llu associated with UE RNTI %x (instance %ld)\n",
         (unsigned long long int)ie1->value.choice.GNB_CU_UE_F1AP_ID, f1ap_dl_rrc->rnti, instance);
   /* mandatory */
@@ -173,7 +173,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(true, instance, f1ap_dl_rrc->rnti);
+  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(CUtype, instance, f1ap_dl_rrc->rnti);
   LOG_I(F1AP, "GNB_DU_UE_F1AP_ID %llu associated with UE RNTI %x \n", (unsigned long long int)ie2->value.choice.GNB_DU_UE_F1AP_ID, f1ap_dl_rrc->rnti);
   /* optional */
   /* c3. oldgNB_DU_UE_F1AP_ID */
@@ -271,13 +271,13 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   cu_ue_f1ap_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
   LOG_D(F1AP, "cu_ue_f1ap_id %lu associated with RNTI %x\n",
-        cu_ue_f1ap_id, f1ap_get_rnti_by_cu_id(true, instance, cu_ue_f1ap_id));
+        cu_ue_f1ap_id, f1ap_get_rnti_by_cu_id(CUtype, instance, cu_ue_f1ap_id));
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
   LOG_D(F1AP, "du_ue_f1ap_id %lu associated with RNTI %x\n",
-        du_ue_f1ap_id, f1ap_get_rnti_by_cu_id(true, instance, du_ue_f1ap_id));
+        du_ue_f1ap_id, f1ap_get_rnti_by_cu_id(CUtype, instance, du_ue_f1ap_id));
   /* mandatory */
   /* SRBID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
@@ -307,7 +307,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
          ie->value.choice.RRCContainer.size);
 
   RRC_DCCH_DATA_IND (message_p).dcch_index = srb_id;
-  RRC_DCCH_DATA_IND (message_p).rnti = f1ap_get_rnti_by_cu_id(true, instance, cu_ue_f1ap_id);
+  RRC_DCCH_DATA_IND (message_p).rnti = f1ap_get_rnti_by_cu_id(CUtype, instance, cu_ue_f1ap_id);
   RRC_DCCH_DATA_IND (message_p).instance = instance;
   RRC_DCCH_DATA_IND (message_p).eNB_index = instance; // not needed for CU
 
@@ -316,7 +316,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   protocol_ctxt_t ctxt;
   ctxt.instance = instance;
   ctxt.instance = instance;
-  ctxt.rnti = f1ap_get_rnti_by_cu_id(true, instance, cu_ue_f1ap_id);
+  ctxt.rnti = f1ap_get_rnti_by_cu_id(CUtype, instance, cu_ue_f1ap_id);
   ctxt.enb_flag = 1;
   ctxt.eNB_index = 0;
   mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);
