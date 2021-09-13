@@ -645,7 +645,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         break;
      default:
        AssertFatal(1==0,"Shouldn't be here\n");
-  }	
+  }
 
   samples_received=0;
   while (samples_received != nsamps) {

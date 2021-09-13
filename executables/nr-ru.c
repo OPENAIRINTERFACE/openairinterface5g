@@ -1384,7 +1384,6 @@ void *ru_thread( void *param ) {
       }
     }
 
-
     // At this point, all information for subframe has been received on FH interface
     res = pullTpool(gNB->resp_L1, gNB->threadPool);
     syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
@@ -1396,7 +1395,6 @@ void *ru_thread( void *param ) {
     syncMsg->timestamp_tx = proc->timestamp_tx;
     res->key = proc->tti_rx;
     pushTpool(gNB->threadPool, res);
-
   }
 
   printf( "Exiting ru_thread \n");

@@ -787,7 +787,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
     struct rrc_gNB_ue_context_s *ue_context_p = NULL;
     protocol_ctxt_t              ctxt;
     memset(&ctxt, 0, sizeof(protocol_ctxt_t));
-
     ue_initial_id  = NGAP_DOWNLINK_NAS (msg_p).ue_initial_id;
     gNB_ue_ngap_id = NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id;
     ue_context_p = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, gNB_ue_ngap_id);
@@ -876,7 +875,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         {
           // rrc_mac_config_req_gNB
 #ifdef ITTI_SIM
-        MessageDef *message_p;
         uint8_t *message_buffer;
         message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, length);
         memcpy (message_buffer, buffer, length);

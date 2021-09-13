@@ -932,10 +932,6 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
     // TODO
   }
 
-  if (drb2release_list != NULL) {
-    // TODO
-  }
-
   free(kRRCenc);
   free(kRRCint);
   free(kUPenc);

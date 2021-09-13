@@ -325,12 +325,6 @@ static void *nr_feptx_thread(void *param) {
                (void*)&ru->gNB_list[0]->common_vars.txdataF[aa%gNB_tx][txdataF_offset + l*fp->ofdm_symbol_size],
                (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
       }
-      else if (ru->do_precoding == 0) {
-        int gNB_tx = ru->gNB_list[0]->frame_parms.nb_antennas_tx;
-        memcpy((void*)&ru->common.txdataF_BF[aa][l*fp->ofdm_symbol_size],
-               (void*)&ru->gNB_list[0]->common_vars.txdataF[aa%gNB_tx][txdataF_offset + l*fp->ofdm_symbol_size],
-               (fp->samples_per_slot_wCP>>1)*sizeof(int32_t));
-      }
       else {
         bw  = ru->beam_weights[0];
         for(i=0; i<fp->symbols_per_slot>>1; ++i){
