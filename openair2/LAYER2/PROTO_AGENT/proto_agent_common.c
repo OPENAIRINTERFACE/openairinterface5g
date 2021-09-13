@@ -525,7 +525,6 @@ int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Proto
   ctxt_pP.rnti = ctxt->fsp_rnti;
   ctxt_pP.frame = ctxt->fsp_frame;
   ctxt_pP.subframe = ctxt->fsp_subframe;
-  ctxt_pP.configured = 1;
   ctxt_pP.brOption = 0;
   ctxt_pP.eNB_index = ctxt->fsp_enb_index;
   srb_flagP = rlc_data->fsp_srb_flag;

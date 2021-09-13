@@ -691,7 +691,6 @@ static int Gtpv1uHandleEndMarker(int h,
   ctxt.frame = 0;
   ctxt.subframe = 0;
   ctxt.eNB_index = 0;
-  ctxt.configured = 0;
   ctxt.brOption = 0;
   const srb_flag_t     srb_flag=SRB_FLAG_NO;
   const rb_id_t        rb_id=tunnel->second.incoming_rb_id;
@@ -757,7 +756,6 @@ static int Gtpv1uHandleGpdu(int h,
   ctxt.frame = 0;
   ctxt.subframe = 0;
   ctxt.eNB_index = 0;
-  ctxt.configured = 0;
   ctxt.brOption = 0;
   const srb_flag_t     srb_flag=SRB_FLAG_NO;
   const rb_id_t        rb_id=tunnel->second.incoming_rb_id;

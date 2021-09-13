@@ -95,6 +95,22 @@ static void read_pipe(int p, char *b, int size) {
     size -= ret;
   }
 }
+int checkIfFedoraDistribution(void) {
+  return system("grep -iq 'ID_LIKE.*fedora' /etc/os-release ");
+}
+
+int checkIfGenericKernelOnFedora(void) {
+  int ret=system("uname -a | grep -q rt");
+  return 1 - ret;
+}
+
+int checkIfInsideContainer(void) {
+  int res=system("egrep -q 'libpod|podman|kubepods'  /proc/self/cgroup");
+  if (res > 0)
+    return 1;
+  else
+    return 0;
+}
 
 /********************************************************************/
 /* background process                                               */

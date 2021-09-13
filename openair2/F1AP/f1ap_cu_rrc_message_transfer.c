@@ -319,7 +319,6 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   ctxt.rnti = f1ap_get_rnti_by_cu_id(true, instance, cu_ue_f1ap_id);
   ctxt.enb_flag = 1;
   ctxt.eNB_index = 0;
-  ctxt.configured = 1;
   mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);
   memcpy((void *)mb->data,(void *)ie->value.choice.RRCContainer.buf,ie->value.choice.RRCContainer.size);
   LOG_I(F1AP, "Calling pdcp_data_ind for UE RNTI %x srb_id %lu with size %ld (DCCH) \n", ctxt.rnti, srb_id, ie->value.choice.RRCContainer.size);

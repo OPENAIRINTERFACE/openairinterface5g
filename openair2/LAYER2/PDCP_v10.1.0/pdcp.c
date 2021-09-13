@@ -249,12 +249,8 @@ boolean_t pdcp_data_req(
       LOG_W(PDCP, PROTOCOL_CTXT_FMT" Instance is not configured for rb_id %ld Ignoring SDU...\n",
             PROTOCOL_CTXT_ARGS(ctxt_pP),
             rb_idP);
-      ctxt_pP->configured=FALSE;
       return FALSE;
     }
-  } else {
-    // instance for a given RB is configured
-    ctxt_pP->configured=TRUE;
   }
 
   if (ctxt_pP->enb_flag == ENB_FLAG_YES) {

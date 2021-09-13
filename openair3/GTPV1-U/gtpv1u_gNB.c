@@ -191,9 +191,6 @@ NwGtpv1uRcT gtpv1u_gNB_process_stack_req(
                  );
 
         if ( result == FALSE ) {
-          if (ctxt.configured == FALSE )
-            LOG_W(GTPU, "gNB node PDCP data request failed, cause: [UE:%x]RB is not configured!\n", ctxt.rnti) ;
-          else
             LOG_W(GTPU, "PDCP data request failed\n");
 
           return NW_GTPV1U_FAILURE;
@@ -390,9 +387,6 @@ NwGtpv1uRcT nr_gtpv1u_gNB_process_stack_req(
                  );
 
         if ( result == FALSE ) {
-          if (ctxt.configured == FALSE )
-            LOG_W(GTPU, "gNB node PDCP data request failed, cause: [UE:%x]RB is not configured!\n", ctxt.rnti) ;
-          else
             LOG_W(GTPU, "PDCP data request failed\n");
 
           return NW_GTPV1U_FAILURE;

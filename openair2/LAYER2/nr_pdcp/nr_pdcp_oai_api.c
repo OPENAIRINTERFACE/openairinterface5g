@@ -263,7 +263,6 @@ static void *enb_tun_read_thread(void *_)
     ctxt.frame = 0;
     ctxt.subframe = 0;
     ctxt.eNB_index = 0;
-    ctxt.configured = 1;
     ctxt.brOption = 0;
 
     ctxt.rnti = rnti;
@@ -307,7 +306,6 @@ static void *ue_tun_read_thread(void *_)
     ctxt.frame = 0;
     ctxt.subframe = 0;
     ctxt.eNB_index = 0;
-    ctxt.configured = 1;
     ctxt.brOption = 0;
 
     ctxt.rnti = rnti;
@@ -515,11 +513,31 @@ rb_found:
   ctxt.frame = 0;
   ctxt.subframe = 0;
   ctxt.eNB_index = 0;
-  ctxt.configured = 1;
   ctxt.brOption = 0;
 
   ctxt.rnti = ue->rnti;
-
+  if (RC.nrrrc != NULL && NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+    MessageDef  *message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0,
+							  GTPV1U_GNB_TUNNEL_DATA_REQ,
+							  sizeof(gtpv1u_gnb_tunnel_data_req_t)
+							  + size
+							  + GTPU_HEADER_OVERHEAD_MAX);
+    AssertFatal(message_p != NULL, "OUT OF MEMORY");
+    gtpv1u_gnb_tunnel_data_req_t *req=&GTPV1U_GNB_TUNNEL_DATA_REQ(message_p);
+    uint8_t *gtpu_buffer_p = (uint8_t*)(req+1);
+    memcpy(gtpu_buffer_p+GTPU_HEADER_OVERHEAD_MAX, 
+	   buf, size);
+    req->buffer        = gtpu_buffer_p;
+    req->length        = size;
+    req->offset        = GTPU_HEADER_OVERHEAD_MAX;
+    req->rnti          = ue->rnti;
+    req->pdusession_id = rb_id;
+    LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n",
+	  __func__, rb_id, size);
+    itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
+    return;
+  }
+    
   memblock = get_free_mem_block(size, __FUNCTION__);
   memcpy(memblock->data, buf, size);
 
@@ -603,7 +621,6 @@ srb_found:
     ctxt.frame = 0;
     ctxt.subframe = 0;
     ctxt.eNB_index = 0;
-    ctxt.configured = 1;
     ctxt.brOption = 0;
 
     ctxt.rnti = ue->rnti;
@@ -646,7 +663,6 @@ boolean_t pdcp_data_ind(
       //ctxt_pP->enb_flag != 1 ||
       ctxt_pP->instance != 0 ||
       ctxt_pP->eNB_index != 0 ||
-      ctxt_pP->configured != 1 ||
       ctxt_pP->brOption != 0) {
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
@@ -697,7 +713,6 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
                         .frame=-1,
                         .subframe=-1,
                         .eNB_index=0,
-                        .configured=true,
                         .brOption=false
                        };
 
@@ -1223,25 +1238,21 @@ boolean_t cu_f1u_data_req(
   ,const uint32_t *const destinationL2Id
 #endif
   ) {
-  MessageDef  *message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0,
-					   GTPV1U_GNB_TUNNEL_DATA_REQ,
-					   sizeof(gtpv1u_gnb_tunnel_data_req_t)
-					   + sdu_buffer_size
-					   + GTPU_HEADER_OVERHEAD_MAX);
-  AssertFatal(message_p != NULL, "OUT OF MEMORY");
-  gtpv1u_gnb_tunnel_data_req_t *req=&GTPV1U_GNB_TUNNEL_DATA_REQ(message_p);
-  uint8_t *gtpu_buffer_p = (uint8_t*)(req+1);
-  memcpy(gtpu_buffer_p+GTPU_HEADER_OVERHEAD_MAX, 
-         sdu_buffer, sdu_buffer_size);
-  req->buffer        = gtpu_buffer_p;
-  req->length        = sdu_buffer_size;
-  req->offset        = GTPU_HEADER_OVERHEAD_MAX;
-  req->rnti          = ctxt_pP->rnti;
-  req->pdusession_id = rb_id;
-  LOG_D(PDCP, "%s() (drb %ld) sending message to gtp size %d\n",
-	__func__, rb_id, sdu_buffer_size);
-  itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
-  return true;
+
+  //Force instance id to 0, OAI incoherent instance management
+  ctxt_pP->instance=0;
+  mem_block_t *memblock = get_free_mem_block(sdu_buffer_size, __func__);
+  if (memblock == NULL) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+  memcpy(memblock->data,sdu_buffer, sdu_buffer_size);
+  int ret=pdcp_data_ind(ctxt_pP,srb_flagP, false, rb_id, sdu_buffer_size, memblock);
+  if (!ret) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
+    /* what to do in case of failure? for the moment: nothing */
+  }
+  return ret;
 }
 
 boolean_t pdcp_data_req(

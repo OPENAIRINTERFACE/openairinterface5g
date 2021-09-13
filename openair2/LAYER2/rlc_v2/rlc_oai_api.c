@@ -406,7 +406,6 @@ rb_found:
   ctx.frame = 0;
   ctx.subframe = 0;
   ctx.eNB_index = 0;
-  ctx.configured = 1;
   ctx.brOption = 0;
 
   /* used fields? */
@@ -832,10 +831,10 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
   if (0 /*||
       ctxt_pP->instance != 0 || ctxt_pP->eNB_index != 0 ||
-      ctxt_pP->configured != 1 || ctxt_pP->brOption != 0 */) {
-    LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %ld %d %d %d)\n", __FUNCTION__,
+      ctxt_pP->brOption != 0 */) {
+    LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %ld %d %d)\n", __FUNCTION__,
           ctxt_pP->enb_flag , ctxt_pP->module_id, ctxt_pP->instance,
-          ctxt_pP->eNB_index, ctxt_pP->configured, ctxt_pP->brOption);
+          ctxt_pP->eNB_index, ctxt_pP->brOption);
     exit(1);
   }
 

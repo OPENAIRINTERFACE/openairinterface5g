@@ -3586,7 +3586,6 @@ void *rrc_gnb_task(void *args_p) {
                         .frame=-1,
                         .subframe=-1,
                         .eNB_index=0,
-                        .configured=true,
                         .brOption=false
                        };
   itti_mark_task_ready(TASK_RRC_GNB);
