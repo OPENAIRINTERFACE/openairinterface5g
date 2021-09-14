@@ -268,7 +268,7 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
       }
       if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup != NULL){
 
-        if(get_softmodem_params()->sa) {
+        if(get_softmodem_params()->sa || get_softmodem_params()->nsa) {
 
           NR_CellGroupConfig_t *cellGroupConfig = NULL;
           uper_decode(NULL,
