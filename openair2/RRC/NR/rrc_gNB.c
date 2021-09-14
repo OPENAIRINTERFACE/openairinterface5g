@@ -1335,6 +1335,8 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
+
+  return 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -2516,12 +2518,14 @@ rrc_gNB_decode_dcch(
             //NGAP_PDUSESSION_RELEASE_RESPONSE
             rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(ctxt_pP, ue_context_p, xid);
           } else if (ue_context_p->ue_context.established_pdu_sessions_flag != 1) {
-            if (ue_context_p->ue_context.setup_pdu_sessions > 0) {
+            if (ue_context_p->ue_context.nb_of_pdusessions > 0) {
               rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(ctxt_pP,
                 ue_context_p,
                 ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier);
+              ue_context_p->ue_context.nb_of_pdusessions = 0;
             }
-          } else if (ue_context_p->ue_context.nb_of_modify_pdusessions > 0) {
+          }
+          if (ue_context_p->ue_context.nb_of_modify_pdusessions > 0) {
             rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(ctxt_pP,
                                                      ue_context_p,
                                                      ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier);

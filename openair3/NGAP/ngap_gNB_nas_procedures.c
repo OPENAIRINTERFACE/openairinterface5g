@@ -1257,7 +1257,7 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance,
   ie->value.choice.RAN_UE_NGAP_ID = pdusession_modify_resp_p->gNB_ue_ngap_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  /* optional */
+  /* PDUSessionResourceModifyListModRes optional */
   if (pdusession_modify_resp_p->nb_of_pdusessions > 0) {
     ie = (NGAP_PDUSessionResourceModifyResponseIEs_t *)calloc(1, sizeof(NGAP_PDUSessionResourceModifyResponseIEs_t));
     ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceModifyListModRes;
@@ -1265,13 +1265,32 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance,
     ie->value.present = NGAP_PDUSessionResourceModifyResponseIEs__value_PR_PDUSessionResourceModifyListModRes;
 
     for (i = 0; i < pdusession_modify_resp_p->nb_of_pdusessions; i++) {
-        NGAP_PDUSessionResourceModifyItemModRes_t *item;
-    
-        item = (NGAP_PDUSessionResourceModifyItemModRes_t *)calloc(1, sizeof(NGAP_PDUSessionResourceModifyItemModRes_t));
-        item->pDUSessionID = pdusession_modify_resp_p->pdusessions[i].pdusession_id;
-        
-        NGAP_DEBUG("pdusession_modify_resp: modified pdusession ID %ld\n", item->pDUSessionID);
-        ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceModifyListModRes.list, item);
+      NGAP_PDUSessionResourceModifyItemModRes_t *item;
+      NGAP_PDUSessionResourceModifyResponseTransfer_t *transfer_p = NULL;
+  
+      item = (NGAP_PDUSessionResourceModifyItemModRes_t *)calloc(1, sizeof(NGAP_PDUSessionResourceModifyItemModRes_t));
+      item->pDUSessionID = pdusession_modify_resp_p->pdusessions[i].pdusession_id;
+
+      transfer_p = (NGAP_PDUSessionResourceModifyResponseTransfer_t *)calloc(1, sizeof(NGAP_PDUSessionResourceModifyResponseTransfer_t));
+      transfer_p->qosFlowAddOrModifyResponseList = (NGAP_QosFlowAddOrModifyResponseList_t *)calloc(1, sizeof(NGAP_QosFlowAddOrModifyResponseList_t));
+
+      uint8_t qos_flow_index;
+      for (qos_flow_index = 0; qos_flow_index < pdusession_modify_resp_p->pdusessions[i].nb_of_qos_flow; qos_flow_index++) {
+        NGAP_QosFlowAddOrModifyResponseItem_t *qosFlowAddOrModifyResponseItem_p = calloc(1, sizeof(NGAP_QosFlowAddOrModifyResponseItem_t));
+        qosFlowAddOrModifyResponseItem_p->qosFlowIdentifier = 
+          pdusession_modify_resp_p->pdusessions[i].qos[qos_flow_index].qfi;
+        ASN_SEQUENCE_ADD(&transfer_p->qosFlowAddOrModifyResponseList->list, qosFlowAddOrModifyResponseItem_p);
+      }
+
+      memset(&res, 0, sizeof(res));
+      res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceModifyResponseTransfer, transfer_p);
+      item->pDUSessionResourceModifyResponseTransfer.buf = res.buffer;
+      item->pDUSessionResourceModifyResponseTransfer.size = res.result.encoded;
+
+      ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceModifyResponseTransfer, transfer_p);
+
+      NGAP_DEBUG("pdusession_modify_resp: modified pdusession ID %ld\n", item->pDUSessionID);
+      ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceModifyListModRes.list, item);
     }
 
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);

@@ -1241,12 +1241,14 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
     }
 
     if (ue_context_p->ue_context.nb_of_failed_pdusessions < ue_context_p->ue_context.nb_of_modify_pdusessions) {
+      LOG_D(NR_RRC, "generate RRCReconfiguration \n");
       if (0 == rrc_gNB_modify_dedicatedRRCReconfiguration(&ctxt, ue_context_p)) {
         return (0);
       }
     }
 
     { // modify failed
+      LOG_I(NR_RRC, "pdu session modify failed, fill NGAP_PDUSESSION_MODIFY_RESP with the pdu session information that failed to modify \n");
       uint8_t nb_of_pdu_sessions_failed = 0;
       MessageDef *msg_fail_p = NULL;
       msg_fail_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_PDUSESSION_MODIFY_RESP);
@@ -1299,6 +1301,8 @@ rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(
     return (-1);
   }
 
+  LOG_I(NR_RRC, "send message NGAP_PDUSESSION_MODIFY_RESP \n");
+
   NGAP_PDUSESSION_MODIFY_RESP(msg_p).gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
 
   for (i = 0; i < ue_context_pP->ue_context.nb_of_modify_pdusessions; i++) {
@@ -1306,12 +1310,13 @@ rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(
       if (ue_context_pP->ue_context.modify_pdusession[i].status == PDU_SESSION_STATUS_DONE) {
         for (j = 0; j < ue_context_pP->ue_context.setup_pdu_sessions; j++) {
           if (ue_context_pP->ue_context.modify_pdusession[i].param.pdusession_id == 
-            ue_context_pP->ue_context.pduSession[i].param.pdusession_id) {
+            ue_context_pP->ue_context.pduSession[j].param.pdusession_id) {
+            LOG_I(NR_RRC, "update pdu session %d \n", ue_context_pP->ue_context.pduSession[j].param.pdusession_id);
             // Update ue_context_pP->ue_context.pduSession
-            ue_context_pP->ue_context.pduSession[i].status = PDU_SESSION_STATUS_ESTABLISHED;
-            ue_context_pP->ue_context.pduSession[i].cause  = NGAP_CAUSE_NOTHING;
-            for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
-              ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index] = 
+            ue_context_pP->ue_context.pduSession[j].status = PDU_SESSION_STATUS_ESTABLISHED;
+            ue_context_pP->ue_context.pduSession[j].cause  = NGAP_CAUSE_NOTHING;
+            for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.modify_pdusession[i].param.nb_qos; qos_flow_index++) {
+              ue_context_pP->ue_context.pduSession[j].param.qos[qos_flow_index] = 
                 ue_context_pP->ue_context.modify_pdusession[i].param.qos[qos_flow_index];
             }
             break;
@@ -1321,7 +1326,13 @@ rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(
         if (j < ue_context_pP->ue_context.setup_pdu_sessions) {
           NGAP_PDUSESSION_MODIFY_RESP(msg_p).pdusessions[pdu_sessions_done].pdusession_id = 
             ue_context_pP->ue_context.modify_pdusession[i].param.pdusession_id;
-          LOG_D(NR_RRC, "gnb_gtp_addr (msg index %d, pdu session index %d, status %d, xid %d): nb_of_modify_pdusessions %d,  pdusession_id %d \n ",
+          for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.modify_pdusession[i].param.nb_qos; qos_flow_index++) {
+            NGAP_PDUSESSION_MODIFY_RESP(msg_p).pdusessions[pdu_sessions_done].qos[qos_flow_index].qfi = 
+              ue_context_pP->ue_context.modify_pdusession[i].param.qos[qos_flow_index].qfi;
+          }
+          NGAP_PDUSESSION_MODIFY_RESP(msg_p).pdusessions[pdu_sessions_done].nb_of_qos_flow = 
+            ue_context_pP->ue_context.modify_pdusession[i].param.nb_qos;
+          LOG_I(NR_RRC, "Modify Resp (msg index %d, pdu session index %d, status %d, xid %d): nb_of_modify_pdusessions %d,  pdusession_id %d \n ",
                  pdu_sessions_done,  i, ue_context_pP->ue_context.modify_pdusession[i].status, xid,
                  ue_context_pP->ue_context.nb_of_modify_pdusessions,
                  NGAP_PDUSESSION_MODIFY_RESP(msg_p).pdusessions[pdu_sessions_done].pdusession_id);

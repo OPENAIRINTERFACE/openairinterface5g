@@ -353,9 +353,18 @@ typedef struct pdusession_tobeswitched_s {
   uint32_t gtp_teid;
 } pdusession_tobeswitched_t;
 
+typedef struct qos_flow_tobe_modified_s {
+  uint8_t qfi; // 0~63
+} qos_flow_tobe_modified_t;
+
 typedef struct pdusession_modify_s {
   /* Unique pdusession_id for the UE. */
   uint8_t pdusession_id;
+
+  uint8_t nb_of_qos_flow;
+
+  // qos_flow_add_or_modify
+  qos_flow_tobe_modified_t qos[QOSFLOW_MAX_VALUE];
 } pdusession_modify_t;
 
 typedef enum ngap_Cause_e {
@@ -770,7 +779,7 @@ typedef struct ngap_pdusession_modify_req_s {
   /* Number of pdusession to be modify in the list */
   uint8_t nb_pdusessions_tomodify;
 
-  /* E RAB modify request */
+  /* pdu session modify request */
   pdusession_t pdusession_modify_params[NGAP_MAX_PDUSESSION];
 } ngap_pdusession_modify_req_t;
 
