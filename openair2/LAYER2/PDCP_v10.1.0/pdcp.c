@@ -140,6 +140,22 @@ extern volatile int oai_exit;
 
 pthread_t pdcp_stats_thread_desc;
 
+// will be called when 4G F1 implementation will use GTP-U instead of protobuf
+boolean_t cu_f1u_data_req(
+  protocol_ctxt_t  *ctxt_pP,
+  const srb_flag_t srb_flagP,
+  const rb_id_t rb_id,
+  const mui_t muiP,
+  const confirm_t confirmP,
+  const sdu_size_t sdu_buffer_size,
+  unsigned char *const sdu_buffer,
+  const pdcp_transmission_mode_t mode,
+  const uint32_t *const sourceL2Id,
+  const uint32_t *const destinationL2Id
+  )
+{
+  return true;
+}
 void *pdcp_stats_thread(void *param) {
 
    FILE *fd;

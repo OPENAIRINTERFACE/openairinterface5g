@@ -264,11 +264,9 @@ boolean_t cu_f1u_data_req(
   const confirm_t confirmP,
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer,
-  const pdcp_transmission_mode_t mode
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t *const sourceL2Id
-  ,const uint32_t *const destinationL2Id
-#endif
+  const pdcp_transmission_mode_t mode,
+  const uint32_t *const sourceL2Id,
+  const uint32_t *const destinationL2Id
   );
 
 /*! \fn boolean_t pdcp_data_ind(const protocol_ctxt_t* const, srb_flag_t, MBMS_flag_t, rb_id_t, sdu_size_t, mem_block_t*, boolean_t)
