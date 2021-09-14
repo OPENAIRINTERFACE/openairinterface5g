@@ -36,6 +36,7 @@ import re               # reg
 import logging
 import os
 import shutil
+import subprocess
 import time
 from multiprocessing import Process, Lock, SimpleQueue
 from zipfile import ZipFile
@@ -76,6 +77,9 @@ class Containerize():
 		self.eNB_instance = 0
 		self.eNB_serverId = ['', '', '']
 		self.yamlPath = ['', '', '']
+		self.services = ['', '', '']
+		self.nb_healthy = [0, 0, 0]
+		self.exitStatus = 0
 		self.eNB_logFile = ['', '', '']
 
 		self.testCase_id = ''
@@ -88,6 +92,14 @@ class Containerize():
 		self.host = ''
 		self.allImagesSize = {}
 		self.collectInfo = {}
+
+		self.pingContName = ''
+		self.pingOptions = ''
+		self.pingLossThreshold = ''
+		self.svrContName = ''
+		self.svrOptions = ''
+		self.cliContName = ''
+		self.cliOptions = ''
 
 #-----------------------------------------------------------
 # Container management functions
@@ -476,7 +488,6 @@ class Containerize():
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
 
 	def UndeployObject(self, HTML, RAN):
-		logging.info('\u001B[1m Undeploying OAI Object Pass\u001B[0m')
 		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
@@ -529,4 +540,295 @@ class Containerize():
 				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
 			else:
 				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+		logging.info('\u001B[1m Undeploying OAI Object Pass\u001B[0m')
 
+	def DeployGenObject(self, HTML):
+		self.exitStatus = 0
+		logging.info('\u001B[1m Checking Services to deploy\u001B[0m')
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose config --services'
+		logging.debug(cmd)
+		try:
+			listServices = subprocess.check_output(cmd, shell=True, universal_newlines=True)
+		except Exception as e:
+			self.exitStatus = 1
+			HTML.CreateHtmlTestRow('SVC not Found', 'KO', CONST.ALL_PROCESSES_OK)
+			return
+		for reqSvc in self.services[0].split(' '):
+			res = re.search(reqSvc, listServices)
+			if res is None:
+				logging.error(reqSvc + ' not found in specified docker-compose')
+				self.exitStatus = 1
+		if (self.exitStatus == 1):
+			HTML.CreateHtmlTestRow('SVC not Found', 'KO', CONST.ALL_PROCESSES_OK)
+			return
+
+		if (self.ranAllowMerge):
+			cmd = 'cd ' + self.yamlPath[0] + ' && sed -e "s@develop@ci-temp@" docker-compose.y*ml > docker-compose-ci.yml'
+		else:
+			cmd = 'cd ' + self.yamlPath[0] + ' && sed -e "s@develop@develop@" docker-compose.y*ml > docker-compose-ci.yml'
+		logging.debug(cmd)
+		subprocess.run(cmd, shell=True)
+
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml up -d ' + self.services[0]
+		logging.debug(cmd)
+		try:
+			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+		except Exception as e:
+			self.exitStatus = 1
+			logging.error('Could not deploy')
+			HTML.CreateHtmlTestRow('Could not deploy', 'KO', CONST.ALL_PROCESSES_OK)
+			return
+
+		logging.info('\u001B[1m Checking if all deployed healthy\u001B[0m')
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps -a'
+		count = 0
+		healthy = 0
+		while (count < 10):
+			count += 1
+			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+			healthy = 0
+			for state in deployStatus.split('\n'):
+				res = re.search('Up \(healthy\)', state)
+				if res is not None:
+					healthy += 1
+			if healthy == self.nb_healthy[0]:
+				count = 100
+			else:
+				time.sleep(10)
+
+		if count == 100 and healthy == self.nb_healthy[0]:
+			HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
+			logging.info('\u001B[1m Deploying OAI Object(s) PASS\u001B[0m')
+		else:
+			self.exitStatus = 1
+			HTML.CreateHtmlTestRow('Could not deploy in time', 'KO', CONST.ALL_PROCESSES_OK)
+			logging.error('\u001B[1m Deploying OAI Object(s) FAILED\u001B[0m')
+
+	def UndeployGenObject(self, HTML):
+		self.exitStatus = 0
+
+		if (self.ranAllowMerge):
+			cmd = 'cd ' + self.yamlPath[0] + ' && sed -e "s@develop@ci-temp@" docker-compose.y*ml > docker-compose-ci.yml'
+		else:
+			cmd = 'cd ' + self.yamlPath[0] + ' && sed -e "s@develop@develop@" docker-compose.y*ml > docker-compose-ci.yml'
+		logging.debug(cmd)
+		subprocess.run(cmd, shell=True)
+
+		# if the containers are running, recover the logs!
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps --all'
+		logging.debug(cmd)
+		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		anyLogs = False
+		for state in deployStatus.split('\n'):
+			res = re.search('Name|----------', state)
+			if res is not None:
+				continue
+			if len(state) == 0:
+				continue
+			res = re.search('^(?P<container_name>[a-zA-Z0-9\-\_]+) ', state)
+			if res is not None:
+				anyLogs = True
+				cName = res.group('container_name')
+				cmd = 'cd ' + self.yamlPath[0] + ' && docker logs ' + cName + ' > ' + cName + '.log 2>&1'
+				logging.debug(cmd)
+				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		if anyLogs:
+			cmd = 'mkdir -p ../cmake_targets/log && mv ' + self.yamlPath[0] + '/*.log ../cmake_targets/log'
+			logging.debug(cmd)
+			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml down'
+		logging.debug(cmd)
+		try:
+			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
+		except Exception as e:
+			self.exitStatus = 1
+			logging.error('Could not undeploy')
+			HTML.CreateHtmlTestRow('Could not undeploy', 'KO', CONST.ALL_PROCESSES_OK)
+			logging.error('\u001B[1m Undeploying OAI Object(s) FAILED\u001B[0m')
+			return
+
+		HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
+		logging.info('\u001B[1m Undeploying OAI Object(s) PASS\u001B[0m')
+
+	def PingFromContainer(self, HTML):
+		self.exitStatus = 0
+		cmd = 'mkdir -p ../cmake_targets/log'
+		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+
+		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ../cmake_targets/log/ping_' + HTML.testCase_id + '.log'
+		logging.debug(cmd)
+		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
+
+		result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', deployStatus)
+		if result is None:
+			self.PingExit(HTML, False, 'Packet Loss Not Found')
+			return
+
+		packetloss = result.group('packetloss')
+		if float(packetloss) == 100:
+			self.PingExit(HTML, False, 'Packet Loss is 100%')
+			return
+
+		result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', deployStatus)
+		if result is None:
+			self.PingExit(HTML, False, 'Ping RTT_Min RTT_Avg RTT_Max Not Found!')
+			return
+
+		rtt_min = result.group('rtt_min')
+		rtt_avg = result.group('rtt_avg')
+		rtt_max = result.group('rtt_max')
+		pal_msg = 'Packet Loss : ' + packetloss + '%'
+		min_msg = 'RTT(Min)    : ' + rtt_min + ' ms'
+		avg_msg = 'RTT(Avg)    : ' + rtt_avg + ' ms'
+		max_msg = 'RTT(Max)    : ' + rtt_max + ' ms'
+
+		message = 'ping result\n'
+		message += '    ' + pal_msg + '\n'
+		message += '    ' + min_msg + '\n'
+		message += '    ' + avg_msg + '\n'
+		message += '    ' + max_msg + '\n'
+		packetLossOK = True
+		if float(packetloss) > float(self.pingLossThreshold):
+			message += '\nPacket Loss too high'
+			packetLossOK = False
+		elif float(packetloss) > 0:
+			message += '\nPacket Loss is not 0%'
+		self.PingExit(HTML, packetLossOK, message)
+
+		if packetLossOK:
+			logging.debug('\u001B[1;37;44m ping result \u001B[0m')
+			logging.debug('\u001B[1;34m    ' + pal_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
+			logging.info('\u001B[1m Ping Test PASS\u001B[0m')
+
+	def PingExit(self, HTML, status, message):
+		html_queue = SimpleQueue()
+		html_cell = '<pre style="background-color:white">UE\n' + message + '</pre>'
+		html_queue.put(html_cell)
+		if status:
+			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'OK', 1, html_queue)
+		else:
+			self.exitStatus = 1
+			logging.error('\u001B[1;37;41m ' + message + ' \u001B[0m')
+			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'KO', 1, html_queue)
+
+	def IperfFromContainer(self, HTML):
+		self.exitStatus = 0
+
+		cmd = 'mkdir -p ../cmake_targets/log'
+		logStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+
+		# Start the server process
+		cmd = 'docker exec -d ' + self.svrContName + ' /bin/bash -c "nohup iperf ' + self.svrOptions + ' > /tmp/iperf_server.log 2>&1"'
+		logging.debug(cmd)
+		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		time.sleep(5)
+
+		# Start the client process
+		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee ../cmake_targets/log/iperf_client_' + HTML.testCase_id + '.log'
+		logging.debug(cmd)
+		clientStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
+
+		# Stop the server process
+		cmd = 'docker exec ' + self.svrContName + ' /bin/bash -c "pkill iperf"'
+		logging.debug(cmd)
+		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		time.sleep(5)
+		cmd = 'docker cp ' + self.svrContName + ':/tmp/iperf_server.log ../cmake_targets/log/iperf_server_' + HTML.testCase_id + '.log'
+		logging.debug(cmd)
+		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+
+		# Analyze client output
+		result = re.search('Server Report:', clientStatus)
+		if result is None:
+			result = re.search('read failed: Connection refused', clientStatus)
+			if result is not None:
+				message = 'Could not connect to iperf server!'
+			else:
+				message = 'Server Report and Connection refused Not Found!'
+			self.IperfExit(HTML, False, message)
+			return
+
+		# Computing the requested bandwidth in float
+		result = re.search('-b (?P<iperf_bandwidth>[0-9\.]+)[KMG]', self.cliOptions)
+		if result is not None:
+			req_bandwidth = result.group('iperf_bandwidth')
+			req_bw = float(req_bandwidth)
+			result = re.search('-b [0-9\.]+K', self.cliOptions)
+			if result is not None:
+				req_bandwidth = '%.1f Kbits/sec' % req_bw
+				req_bw = req_bw * 1000
+			result = re.search('-b [0-9\.]+M', self.cliOptions)
+			if result is not None:
+				req_bandwidth = '%.1f Mbits/sec' % req_bw
+				req_bw = req_bw * 1000000
+
+		reportLine = None
+		reportLineFound = False
+		for iLine in clientStatus.split('\n'):
+			if reportLineFound:
+				reportLine = iLine
+				reportLineFound = False
+			res = re.search('Server Report:', iLine)
+			if res is not None:
+				reportLineFound = True
+		result = None
+		if reportLine is not None:
+			result = re.search('(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/ ..\d+) +(\((?P<packetloss>[0-9\.]+)%\))', reportLine)
+		iperfStatus = True
+		if result is not None:
+			bitrate = result.group('bitrate')
+			packetloss = result.group('packetloss')
+			jitter = result.group('jitter')
+			logging.debug('\u001B[1;37;44m iperf result \u001B[0m')
+			iperfStatus = True
+			msg = 'Req Bitrate : ' + req_bandwidth + '\n'
+			logging.debug('\u001B[1;34m    Req Bitrate : ' + req_bandwidth + '\u001B[0m')
+			if bitrate is not None:
+				msg += 'Bitrate     : ' + bitrate + '\n'
+				logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
+				result = re.search('(?P<real_bw>[0-9\.]+) [KMG]bits/sec', str(bitrate))
+				if result is not None:
+					actual_bw = float(str(result.group('real_bw')))
+					result = re.search('[0-9\.]+ K', bitrate)
+					if result is not None:
+						actual_bw = actual_bw * 1000
+					result = re.search('[0-9\.]+ M', bitrate)
+					if result is not None:
+						actual_bw = actual_bw * 1000000
+					br_loss = 100 * actual_bw / req_bw
+					if br_loss < 90:
+						iperfStatus = False
+					bitperf = '%.2f ' % br_loss
+					msg += 'Bitrate Perf: ' + bitperf + '%\n'
+					logging.debug('\u001B[1;34m    Bitrate Perf: ' + bitperf + '%\u001B[0m')
+			if packetloss is not None:
+				msg += 'Packet Loss : ' + packetloss + '%\n'
+				logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
+				if float(packetloss) > float(5):
+					msg += 'Packet Loss too high!\n'
+					logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
+					iperfStatus = False
+			if jitter is not None:
+				msg += 'Jitter      : ' + jitter + '\n'
+				logging.debug('\u001B[1;34m    Jitter      : ' + jitter + '\u001B[0m')
+			self.IperfExit(HTML, iperfStatus, msg)
+		else:
+			iperfStatus = False
+			logging.error('problem?')
+			self.IperfExit(HTML, iperfStatus, 'problem?')
+		if iperfStatus:
+			logging.info('\u001B[1m Iperf Test PASS\u001B[0m')
+
+	def IperfExit(self, HTML, status, message):
+		html_queue = SimpleQueue()
+		html_cell = '<pre style="background-color:white">UE\n' + message + '</pre>'
+		html_queue.put(html_cell)
+		if status:
+			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'OK', 1, html_queue)
+		else:
+			self.exitStatus = 1
+			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'KO', 1, html_queue)

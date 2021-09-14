@@ -35,9 +35,8 @@
 #include "NR_MAC_UE/mac_proto.h"
 #include "NR_MAC-CellGroupConfig.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
-#include <executables/softmodem-common.h>
-
-extern uint32_t N_RB_DL;
+#include "common/utils/nr/nr_common.h"
+#include "executables/softmodem-common.h"
 
 int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
                          int mu,
@@ -145,13 +144,170 @@ int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
 }
 
 
+void config_common_ue_sa(NR_UE_MAC_INST_t *mac,
+		         module_id_t module_id,
+		         int cc_idP) {
+
+  fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
+  NR_ServingCellConfigCommonSIB_t *scc = mac->scc_SIB;
+
+  mac->phy_config.Mod_id = module_id;
+  mac->phy_config.CC_id = cc_idP;
+
+  LOG_D(MAC, "Entering SA UE Config Common\n");
+
+  // carrier config
+  cfg->carrier_config.dl_bandwidth = config_bandwidth(scc->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                                      scc->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
+                                                      *scc->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR);
+
+  uint64_t dl_bw_khz = (12*scc->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth)*
+                       (15<<scc->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing);
+  cfg->carrier_config.dl_frequency = (downlink_frequency[cc_idP][0]/1000) - (dl_bw_khz>>1);
+
+  for (int i=0; i<5; i++) {
+    if (i==scc->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
+      cfg->carrier_config.dl_grid_size[i] = scc->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+      cfg->carrier_config.dl_k0[i] = scc->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
+    }
+    else {
+      cfg->carrier_config.dl_grid_size[i] = 0;
+      cfg->carrier_config.dl_k0[i] = 0;
+    }
+  }
+
+  cfg->carrier_config.uplink_bandwidth = config_bandwidth(scc->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                                          scc->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
+                                                          scc->uplinkConfigCommon->frequencyInfoUL.frequencyBandList==NULL ?
+                                                          *scc->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR :
+                                                          *scc->uplinkConfigCommon->frequencyInfoUL.frequencyBandList->list.array[0]->freqBandIndicatorNR);
+
+
+  if (scc->uplinkConfigCommon->frequencyInfoUL.absoluteFrequencyPointA == NULL)
+    cfg->carrier_config.uplink_frequency = cfg->carrier_config.dl_frequency;
+  else
+    // TODO check if corresponds to what reported in SIB1
+    cfg->carrier_config.uplink_frequency = (downlink_frequency[cc_idP][0]/1000) + uplink_frequency_offset[cc_idP][0];
+
+  for (int i=0; i<5; i++) {
+    if (i==scc->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
+      cfg->carrier_config.ul_grid_size[i] = scc->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+      cfg->carrier_config.ul_k0[i] = scc->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
+    }
+    else {
+      cfg->carrier_config.ul_grid_size[i] = 0;
+      cfg->carrier_config.ul_k0[i] = 0;
+    }
+  }
+
+  mac->nr_band = *scc->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR;
+  mac->frame_type = get_frame_type(mac->nr_band, get_softmodem_params()->numerology);
+  // cell config
+
+  cfg->cell_config.phy_cell_id = mac->physCellId;
+  cfg->cell_config.frame_duplex_type = mac->frame_type;
+
+  // SSB config
+  cfg->ssb_config.ss_pbch_power = scc->ss_PBCH_BlockPower;
+  cfg->ssb_config.scs_common = get_softmodem_params()->numerology;
+
+  // SSB Table config
+  cfg->ssb_table.ssb_offset_point_a = scc->downlinkConfigCommon.frequencyInfoDL.offsetToPointA;
+  cfg->ssb_table.ssb_period = scc->ssb_PeriodicityServingCell;
+  cfg->ssb_table.ssb_subcarrier_offset = mac->ssb_subcarrier_offset;
+
+  if (mac->frequency_range == FR1){
+    cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst.inOneGroup.buf[0]<<24;
+    cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
+  }
+  else{
+    for (int i=0; i<8; i++){
+      if ((scc->ssb_PositionsInBurst.groupPresence->buf[0]>>(7-i))&0x01)
+        cfg->ssb_table.ssb_mask_list[i>>2].ssb_mask |= scc->ssb_PositionsInBurst.inOneGroup.buf[0]<<(24-8*(i%4));
+    }
+  }
+
+  // TDD Table Configuration
+  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 == NULL)
+    cfg->tdd_table.tdd_period = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
+  else {
+    AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL,
+		"scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
+    cfg->tdd_table.tdd_period = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+  }
+  if(cfg->cell_config.frame_duplex_type == TDD){
+    LOG_I(MAC,"Setting TDD configuration period to %d\n", cfg->tdd_table.tdd_period);
+    int return_tdd = set_tdd_config_nr_ue(cfg,
+		     scc->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
+                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
+                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
+                     scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols
+                     );
+
+    if (return_tdd !=0)
+      LOG_E(PHY,"TDD configuration can not be done\n");
+    else
+      LOG_I(PHY,"TDD has been properly configurated\n");
+  }
+
+  // PRACH configuration
+
+  uint8_t nb_preambles = 64;
+  if(scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
+     nb_preambles = *scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;
+
+  cfg->prach_config.prach_sequence_length = scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present-1;
+
+  if (scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
+    cfg->prach_config.prach_sub_c_spacing = *scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
+  else
+    cfg->prach_config.prach_sub_c_spacing = scc->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+
+  cfg->prach_config.restricted_set_config = scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->restrictedSetConfig;
+
+  switch (scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM) {
+    case 0 :
+      cfg->prach_config.num_prach_fd_occasions = 1;
+      break;
+    case 1 :
+      cfg->prach_config.num_prach_fd_occasions = 2;
+      break;
+    case 2 :
+      cfg->prach_config.num_prach_fd_occasions = 4;
+      break;
+    case 3 :
+      cfg->prach_config.num_prach_fd_occasions = 8;
+      break;
+    default:
+      AssertFatal(1==0,"msg1 FDM identifier %ld undefined (0,1,2,3) \n", scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM);
+  }
+
+  cfg->prach_config.num_prach_fd_occasions_list = (fapi_nr_num_prach_fd_occasions_t *) malloc(cfg->prach_config.num_prach_fd_occasions*sizeof(fapi_nr_num_prach_fd_occasions_t));
+  for (int i=0; i<cfg->prach_config.num_prach_fd_occasions; i++) {
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_prach_fd_occasions = i;
+    if (cfg->prach_config.prach_sequence_length)
+      cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139;
+    else
+      cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l839;
+    cfg->prach_config.num_prach_fd_occasions_list[i].k1 = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE) +
+      scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart +
+      (get_N_RA_RB(cfg->prach_config.prach_sub_c_spacing, scc->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing ) * i);
+    cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf = scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup,
+                                                                                              nb_preambles, mac->frame_type, mac->frequency_range);
+    //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences = ???
+  }
+  cfg->prach_config.ssb_per_rach = scc->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present-1;
+
+}
+
 void config_common_ue(NR_UE_MAC_INST_t *mac,
-		      module_id_t       module_id,
-		      int               cc_idP) {
+		      module_id_t module_id,
+		      int cc_idP) {
 
   fapi_nr_config_request_t        *cfg = &mac->phy_config.config_req;
   NR_ServingCellConfigCommon_t    *scc = mac->scc;
-  NR_ServingCellConfigCommonSIB_t *scc_SIB = mac->scc_SIB;
   int i;
 
   mac->phy_config.Mod_id = module_id;
@@ -160,7 +316,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
   // carrier config
   LOG_D(MAC, "Entering UE Config Common\n");
 
-  AssertFatal(scc==NULL || scc_SIB==NULL,"Both scc and scc_SIB cannot be null\n");
+  AssertFatal(scc!=NULL,"scc cannot be null\n");
 
   if (scc) {
     cfg->carrier_config.dl_bandwidth = config_bandwidth(scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
@@ -212,7 +368,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     mac->frequency_range = band<100?FR1:FR2;
     
     lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
-
+    
     // cell config
     
     cfg->cell_config.phy_cell_id = *scc->physCellId;
@@ -231,8 +387,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
     cfg->ssb_table.ssb_offset_point_a = absolute_diff/(12*scs_scaling) - 10;
     cfg->ssb_table.ssb_period = *scc->ssb_periodicityServingCell;
-    cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
-
+    cfg->ssb_table.ssb_subcarrier_offset = mac->ssb_subcarrier_offset;
+    
     switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
       cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0]<<24;
@@ -328,156 +484,6 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     cfg->prach_config.ssb_per_rach = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present-1;
     
   } // scc
-
-  else { // scc_SIB
-
-  cfg->carrier_config.dl_bandwidth = config_bandwidth(scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-                                                      scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
-                                                      *scc_SIB->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR);
-
-  cfg->carrier_config.dl_frequency = downlink_frequency[0][0] - (10+scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA)*(15<<scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing); 
-
-  for (i=0; i<5; i++) {
-    if (i==scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
-      cfg->carrier_config.dl_grid_size[i] = scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-      cfg->carrier_config.dl_k0[i] = scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
-    }
-    else {
-      cfg->carrier_config.dl_grid_size[i] = 0;
-      cfg->carrier_config.dl_k0[i] = 0;
-    }
-  }
-
-  cfg->carrier_config.uplink_bandwidth = config_bandwidth(scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-                                                          scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
-                                                          scc_SIB->uplinkConfigCommon->frequencyInfoUL.frequencyBandList==NULL ? *scc_SIB->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR : *scc_SIB->uplinkConfigCommon->frequencyInfoUL.frequencyBandList->list.array[0]->freqBandIndicatorNR);
-
-
-  if (scc_SIB->uplinkConfigCommon->frequencyInfoUL.absoluteFrequencyPointA == NULL)
-    cfg->carrier_config.uplink_frequency = cfg->carrier_config.dl_frequency;
-  else  
-    cfg->carrier_config.uplink_frequency = from_nrarfcn(*scc_SIB->uplinkConfigCommon->frequencyInfoUL.frequencyBandList->list.array[0]->freqBandIndicatorNR,
-							scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-							*scc_SIB->uplinkConfigCommon->frequencyInfoUL.absoluteFrequencyPointA)/1000; // freq in kHz
-    
-
-  for (i=0; i<5; i++) {
-    if (i==scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
-      cfg->carrier_config.ul_grid_size[i] = scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-      cfg->carrier_config.ul_k0[i] = scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
-    }
-    else {
-      cfg->carrier_config.ul_grid_size[i] = 0;
-      cfg->carrier_config.ul_k0[i] = 0;
-    }
-  }
-
-  uint32_t band = *scc_SIB->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR;
-  frequency_range_t  frequency_range = band<100?FR1:FR2;
- 
-  lte_frame_type_t frame_type = get_frame_type(band, get_softmodem_params()->numerology);
-
-  // cell config
-
-  cfg->cell_config.phy_cell_id = mac->physCellId;
-  cfg->cell_config.frame_duplex_type = frame_type;
-
-  // SSB config
-  cfg->ssb_config.ss_pbch_power = scc_SIB->ss_PBCH_BlockPower;
-  cfg->ssb_config.scs_common = get_softmodem_params()->numerology;
-
-  // SSB Table config
-
-  cfg->ssb_table.ssb_offset_point_a = scc_SIB->downlinkConfigCommon.frequencyInfoDL.offsetToPointA;
-  cfg->ssb_table.ssb_period = scc_SIB->ssb_PeriodicityServingCell;
-  cfg->ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
-
-  AssertFatal(scc_SIB->ssb_PositionsInBurst.groupPresence==NULL, "Cannot handle more than 8 SSBs for now (%x.%x.%x.%x.%x.%x.%x.%x)\n",
-	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[0],
-	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[1],
-	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[2],
-	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[3],
-	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[4],
-	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[5],
-	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[6],
-	      scc_SIB->ssb_PositionsInBurst.groupPresence->buf[7]);
-  cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc_SIB->ssb_PositionsInBurst.inOneGroup.buf[0]<<24;
-  cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
- 
-
-  // TDD Table Configuration
-  if (scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 == NULL)
-    cfg->tdd_table.tdd_period = scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
-  else {
-    AssertFatal(scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL,
-		"scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
-    cfg->tdd_table.tdd_period = *scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
-  }
-  if(cfg->cell_config.frame_duplex_type == TDD){
-    LOG_I(MAC,"Setting TDD configuration period to %d\n", cfg->tdd_table.tdd_period);
-    int return_tdd = set_tdd_config_nr_ue(cfg,
-		     scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-                     scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
-                     scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
-                     scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
-                     scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols
-                     );
-
-    if (return_tdd !=0)
-      LOG_E(PHY,"TDD configuration can not be done\n");
-    else
-      LOG_I(PHY,"TDD has been properly configurated\n");
-  }
-
-  // PRACH configuration
-
-  uint8_t nb_preambles = 64;
-  if(scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
-     nb_preambles = *scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;
-
-  cfg->prach_config.prach_sequence_length = scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present-1;
-
-  if (scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing)
-    cfg->prach_config.prach_sub_c_spacing = *scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing;
-  else 
-    cfg->prach_config.prach_sub_c_spacing = scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-
-  cfg->prach_config.restricted_set_config = scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->restrictedSetConfig;
-
-  switch (scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM) {
-    case 0 :
-      cfg->prach_config.num_prach_fd_occasions = 1;
-      break;
-    case 1 :
-      cfg->prach_config.num_prach_fd_occasions = 2;
-      break;
-    case 2 :
-      cfg->prach_config.num_prach_fd_occasions = 4;
-      break;
-    case 3 :
-      cfg->prach_config.num_prach_fd_occasions = 8;
-      break;
-    default:
-      AssertFatal(1==0,"msg1 FDM identifier %ld undefined (0,1,2,3) \n", scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM);
-  }
-
-  cfg->prach_config.num_prach_fd_occasions_list = (fapi_nr_num_prach_fd_occasions_t *) malloc(cfg->prach_config.num_prach_fd_occasions*sizeof(fapi_nr_num_prach_fd_occasions_t));
-  for (i=0; i<cfg->prach_config.num_prach_fd_occasions; i++) {
-    cfg->prach_config.num_prach_fd_occasions_list[i].num_prach_fd_occasions = i;
-    if (cfg->prach_config.prach_sequence_length)
-      cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139; 
-    else
-      cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index = scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l839;
-    cfg->prach_config.num_prach_fd_occasions_list[i].k1 = NRRIV2PRBOFFSET(scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE) + scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart + (get_N_RA_RB(cfg->prach_config.prach_sub_c_spacing, scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing ) * i);
-    cfg->prach_config.num_prach_fd_occasions_list[i].prach_zero_corr_conf = scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig;
-    cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences = compute_nr_root_seq(scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup, nb_preambles, mac->frame_type, frequency_range);
-    //cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences = ???
-  }
-
-  cfg->prach_config.ssb_per_rach = scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present-1;
-
-
-  }
     
 }
 
@@ -521,70 +527,6 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
 
   LOG_D(MAC, "In %s setting DL_BWP_Id %ld UL_BWP_Id %ld \n", __FUNCTION__, mac->DL_BWP_Id, mac->UL_BWP_Id);
 
-}
-
-
-void fill_default_coreset_zero(NR_UE_MAC_INST_t *mac) {
-
-  // Search space zero
-
-  if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
-  if(mac->search_space_zero->controlResourceSetId == NULL) mac->search_space_zero->controlResourceSetId=calloc(1,sizeof(*mac->search_space_zero->controlResourceSetId));
-  if(mac->search_space_zero->monitoringSymbolsWithinSlot == NULL) mac->search_space_zero->monitoringSymbolsWithinSlot = calloc(1,sizeof(*mac->search_space_zero->monitoringSymbolsWithinSlot));
-  if(mac->search_space_zero->monitoringSymbolsWithinSlot->buf == NULL) mac->search_space_zero->monitoringSymbolsWithinSlot->buf = calloc(1,2);
-  if(mac->search_space_zero->nrofCandidates == NULL) mac->search_space_zero->nrofCandidates = calloc(1,sizeof(*mac->search_space_zero->nrofCandidates));
-  if(mac->search_space_zero->searchSpaceType == NULL) mac->search_space_zero->searchSpaceType = calloc(1,sizeof(*mac->search_space_zero->searchSpaceType));
-  if(mac->search_space_zero->searchSpaceType->choice.common == NULL) mac->search_space_zero->searchSpaceType->choice.common=calloc(1,sizeof(*mac->search_space_zero->searchSpaceType->choice.common));
-  if(mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 == NULL) mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*mac->search_space_zero->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
-  mac->search_space_zero->searchSpaceId = 0;
-  *mac->search_space_zero->controlResourceSetId = 0;
-  mac->search_space_zero->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*mac->search_space_zero->monitoringSlotPeriodicityAndOffset));
-  mac->search_space_zero->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
-  mac->search_space_zero->duration=NULL;
-  // should be '1100 0000 0000 00'B (LSB first!), first two symbols in slot, adjust if needed
-  mac->search_space_zero->monitoringSymbolsWithinSlot->buf[1] = 0;
-  mac->search_space_zero->monitoringSymbolsWithinSlot->buf[0] = (1<<7);
-  mac->search_space_zero->monitoringSymbolsWithinSlot->size = 2;
-  mac->search_space_zero->monitoringSymbolsWithinSlot->bits_unused = 2;
-
-  // FIXME: update values from TS38.213 Section 10.1 Table 10.1-1: CCE aggregation levels and maximum number of PDCCH candidates per CCE aggregation level for CSS sets configured by searchSpaceSIB1
-  mac->search_space_zero->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
-  mac->search_space_zero->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
-  mac->search_space_zero->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n2;
-  mac->search_space_zero->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
-  mac->search_space_zero->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
-  mac->search_space_zero->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
-
-  // Coreset0
-  if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
-  mac->coreset0->controlResourceSetId = 0;
-  // frequencyDomainResources '11111111 00000000 00000000 00000000 00000000 00000'B,
-  if(mac->coreset0->frequencyDomainResources.buf == NULL) mac->coreset0->frequencyDomainResources.buf = calloc(1,6);
-  mac->coreset0->frequencyDomainResources.buf[0] = 0xff;
-  mac->coreset0->frequencyDomainResources.buf[1] = 0;
-  mac->coreset0->frequencyDomainResources.buf[2] = 0;
-  mac->coreset0->frequencyDomainResources.buf[3] = 0;
-  mac->coreset0->frequencyDomainResources.buf[4] = 0;
-  mac->coreset0->frequencyDomainResources.buf[5] = 0;
-  mac->coreset0->frequencyDomainResources.size = 6;
-  mac->coreset0->frequencyDomainResources.bits_unused = 3;
-  mac->coreset0->duration = 1;
-  mac->coreset0->cce_REG_MappingType.present=NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved;
-  mac->coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*mac->coreset0->cce_REG_MappingType.choice.interleaved));
-  mac->coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
-  mac->coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
-  mac->coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = NULL;
-  mac->coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
-  if(mac->coreset0->tci_StatesPDCCH_ToAddList == NULL) mac->coreset0->tci_StatesPDCCH_ToAddList = calloc(1,sizeof(*mac->coreset0->tci_StatesPDCCH_ToAddList));
-  NR_TCI_StateId_t *tci[8];
-  for (int i=0;i<8;i++) {
-    tci[i]=calloc(1,sizeof(*tci[i]));
-    *tci[i] = i;
-    ASN_SEQUENCE_ADD(&mac->coreset0->tci_StatesPDCCH_ToAddList->list,tci[i]);
-  }
-  mac->coreset0->tci_StatesPDCCH_ToReleaseList = NULL;
-  mac->coreset0->tci_PresentInDCI = NULL;
-  mac->coreset0->pdcch_DMRS_ScramblingID = NULL;
 }
 
 /** \brief This function is relavant for the UE procedures for control. It loads the search spaces, the BWPs and the CORESETs into the MAC instance and
@@ -667,9 +609,6 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     mac->SSpace[0][0][ss_id] = css;
     ss_id++;
   }
-
-  fill_default_coreset_zero(mac);
-
 }
 
 int nr_rrc_mac_config_req_ue(
@@ -689,16 +628,9 @@ int nr_rrc_mac_config_req_ue(
     //  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
 
     if(mibP != NULL){
-
-      // if this is the first MIB intialize coreset0 for SA
-      if (mac->mib == NULL) fill_default_coreset_zero(mac);
-
       mac->mib = mibP;    //  update by every reception
       mac->phy_config.Mod_id = module_id;
       mac->phy_config.CC_id = cc_idP;
-      mac->phy_config.config_req.ssb_table.ssb_subcarrier_offset = 0; // TODO currently not in RRC?
-      mac->phy_config.config_req.tdd_table.tdd_period_in_slots=5<<get_softmodem_params()->numerology;
-      mac->phy_config.config_req.ssb_table.ssb_offset_point_a = (N_RB_DL-20)>>1;
     }
     AssertFatal(scell_group_config == NULL || cell_group_config == NULL,
 		"both scell_group_config and cell_group_config cannot be non-NULL\n");
@@ -706,8 +638,8 @@ int nr_rrc_mac_config_req_ue(
     if (sccP != NULL) {
 
       mac->scc_SIB=sccP;
-      LOG_I(MAC,"Keeping ServingCellConfigCommonSIB\n");
-      config_common_ue(mac,module_id,cc_idP);
+      LOG_D(MAC,"Keeping ServingCellConfigCommonSIB\n");
+      config_common_ue_sa(mac,module_id,cc_idP);
       int num_slots_ul = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
       if (mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0) num_slots_ul++;
       LOG_I(MAC, "Initializing ul_config_request. num_slots_ul = %d\n", num_slots_ul);
@@ -726,7 +658,7 @@ int nr_rrc_mac_config_req_ue(
           ra->rach_ConfigDedicated = scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
         }
         mac->scc = scell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-	      mac->physCellId = *mac->scc->physCellId;
+        mac->physCellId = *mac->scc->physCellId;
         config_common_ue(mac,module_id,cc_idP);
         mac->crnti = scell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
         LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
@@ -735,7 +667,7 @@ int nr_rrc_mac_config_req_ue(
       // Setup the SSB to Rach Occasions mapping according to the config
       build_ssb_to_ro_map(mac);
     }
-    else if (cell_group_config != NULL){
+    else if (cell_group_config != NULL ){
       LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
       mac->cg = cell_group_config;
       mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;

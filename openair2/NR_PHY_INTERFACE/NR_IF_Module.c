@@ -264,7 +264,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
                   rx->timing_advance,
                   rx->ul_cqi,
                   rx->rssi);
-        handle_nr_ul_harq(UL_INFO.module_id, UL_INFO.frame, UL_INFO.slot, crc);
+        handle_nr_ul_harq(UL_INFO.CC_id, UL_INFO.module_id, UL_INFO.frame, UL_INFO.slot, crc);
         break;
       } //    for (j=0;j<UL_INFO.crc_ind.number_crcs;j++)
     } //   for (i=0;i<UL_INFO.rx_ind.number_of_pdus;i++)

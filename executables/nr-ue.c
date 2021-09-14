@@ -482,7 +482,7 @@ static void UE_synch(void *arg) {
       uint64_t dl_carrier, ul_carrier;
       nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
 
-      if (nr_initial_sync(&syncD->proc, UE, 2) == 0) {
+      if (nr_initial_sync(&syncD->proc, UE, 2, get_softmodem_params()->sa, get_nrUE_params()->nr_dlsch_parallel) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = ((UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe * UE->frame_parms.slots_per_subframe) +
                          round((float)((UE->rx_offset<<1) % UE->frame_parms.samples_per_subframe)/UE->frame_parms.samples_per_slot0);
@@ -977,15 +977,18 @@ void *UE_thread(void *arg) {
 
     if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
 
-      uint8_t    tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
+      uint8_t tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
+      int nrofUplinkSlots, nrofUplinkSymbols;
+      if (mac->scc) {
+        nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+        nrofUplinkSymbols = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
+      }
+      else {
+        nrofUplinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+        nrofUplinkSymbols = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
+      }
+      uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSymbols != 0);
 
-      int   nrofUplinkSlots = 0;
-      if (mac->scc_SIB)
-	      nrofUplinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-      else if (mac->scc)
-	      nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-
-      uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSlots != 0);
       uint8_t first_tx_slot = tdd_period - num_UL_slots;
 
       if (slot_tx_usrp % tdd_period == first_tx_slot)

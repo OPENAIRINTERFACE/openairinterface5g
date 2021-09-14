@@ -49,7 +49,7 @@ int main(int argc, char **argv)
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
   double aoa=.03,ricean_factor=1; //0.0000005;
   int channel_length;
-  struct complex **ch;
+  struct complexd **ch;
   unsigned char pbch_pdu[6];
   int sync_pos, sync_pos_slot;
   FILE *rx_frame_file;
@@ -170,10 +170,10 @@ int main(int argc, char **argv)
     bzero(r_im[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
 
-  ch = (struct complex**) malloc(4 * sizeof(struct complex*));
+  ch = (struct complexd**) malloc(4 * sizeof(struct complexd*));
 
   for (i = 0; i<4; i++)
-    ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
+    ch[i] = (struct complexd*) malloc(channel_length * sizeof(struct complexd));
 
   generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,0);
   generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,0,first_rb,nb_rb);

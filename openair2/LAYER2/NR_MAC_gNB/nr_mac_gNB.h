@@ -93,8 +93,9 @@ typedef enum {
   RA_IDLE = 0,
   Msg2 = 1,
   WAIT_Msg3 = 2,
-  Msg4 = 3,
-  WAIT_Msg4_ACK = 4
+  Msg3_retransmission = 3,
+  Msg4 = 4,
+  WAIT_Msg4_ACK = 5
 } RA_gNB_state_t;
 
 typedef struct NR_preamble_ue {
@@ -156,6 +157,8 @@ typedef struct {
   int msg4_TBsize;
   /// MCS used for Msg4
   int msg4_mcs;
+  /// MAC PDU length for Msg4
+  int mac_pdu_length;
   /// RA search space
   NR_SearchSpace_t *ra_ss;
   // Beam index
@@ -671,6 +674,8 @@ typedef struct gNB_MAC_INST_s {
   int                             pusch_failure_thres;
   /// Subcarrier Offset
   int                             ssb_SubcarrierOffset;
+  /// SIB1 Time domain allocation
+  int                             sib1_tda;
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)

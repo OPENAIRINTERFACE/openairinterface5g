@@ -639,6 +639,9 @@ typedef struct {
   uint8_t agregationLevel;
   int nb_search_space;
   fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS_PER_CORESET];
+  // frame and slot for sib1 in initial sync
+  uint16_t sfn;
+  uint16_t slot;
   /*
 #ifdef NR_PDCCH_DEFS_NR_UE
   int nb_searchSpaces;
@@ -865,7 +868,9 @@ typedef struct {
 
 
   uint32_t perfect_ce;
-
+  // flag to activate PRB based averaging of channel estimates
+  // when off, defaults to frequency domain interpolation
+  int prb_interpolation;
   int generate_ul_signal[NUMBER_OF_CONNECTED_gNB_MAX];
 
   UE_NR_SCAN_INFO_t scan_info[NB_BANDS_MAX];
@@ -1002,6 +1007,7 @@ typedef struct {
 
   time_stats_t ofdm_mod_stats;
   time_stats_t ulsch_encoding_stats;
+  time_stats_t ulsch_ldpc_encoding_stats;
   time_stats_t ulsch_modulation_stats;
   time_stats_t ulsch_segmentation_stats;
   time_stats_t ulsch_rate_matching_stats;

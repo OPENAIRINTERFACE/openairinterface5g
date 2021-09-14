@@ -85,6 +85,7 @@
 
 #include "T.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "executables/softmodem-common.h"
 #include <nfapi/oai_integration/nfapi_pnf.h>
 #include <openair1/PHY/NR_TRANSPORT/nr_ulsch.h>
 #include <PHY/NR_ESTIMATION/nr_ul_estimation.h>
@@ -559,6 +560,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
     gNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = gNB->cqi_raw_pdu_list;*/
 
     gNB->prach_energy_counter = 0;
+    gNB->prb_interpolation = get_softmodem_params()->prb_interpolation;
   }
   
 

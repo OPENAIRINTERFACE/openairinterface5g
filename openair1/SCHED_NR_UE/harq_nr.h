@@ -120,7 +120,7 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq);
     @param rnti_type type of rnti
     @returns retransmission or new transmission */
 
-void downlink_harq_process(NR_DL_UE_HARQ_t *dlsch, int harq_pid, int ndi, uint8_t rnti_type);
+void downlink_harq_process(NR_DL_UE_HARQ_t *dlsch, int harq_pid, int ndi, int rv, uint8_t rnti_type);
 
 #undef EXTERN
 #undef INIT_VARIABLES_HARQ_NR_H

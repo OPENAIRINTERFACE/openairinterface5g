@@ -461,8 +461,8 @@ include_directories ("${RRC_FULL_DIR}")
 #NR RRC
 #######
 set (NR_RRC_ASN1_VERSION "NR_Rel16" )
-make_version(NR_RRC_VERSION 16 1 0)
-set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-16.1.0.asn1)
+make_version(NR_RRC_VERSION 16 4 1)
+set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-16.4.1.asn1)
 add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/RRC_${NR_RRC_ASN1_VERSION})
 

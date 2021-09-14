@@ -292,14 +292,16 @@ typedef struct {
 
   /// Random-access Contention Resolution Timer active flag
   uint8_t RA_contention_resolution_timer_active;
-  /// Random-access Contention Resolution Timer count value
-  uint8_t RA_contention_resolution_cnt;
+  int RA_contention_resolution_target_frame;
+  int RA_contention_resolution_target_slot;
   /// Transmitted UE Contention Resolution Identifier
   uint8_t cont_res_id[6];
 
   /// BeamfailurerecoveryConfig
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
 
+  /// RA SearchSpace
+  NR_SearchSpace_t *ss;
 } RA_config_t;
 
 typedef struct {
@@ -326,6 +328,15 @@ typedef struct {
 } RAR_grant_t;
 
 typedef struct {
+
+  uint8_t  phr_reporting;
+  uint16_t truncated_bsr;
+  uint16_t short_bsr;
+  uint16_t long_bsr;
+
+} NR_UE_MAC_CE_t;
+
+typedef struct {
   int n_HARQ_ACK;
   uint32_t ack_payload;
   uint8_t sr_payload;
@@ -339,7 +350,6 @@ typedef struct {
   int N_CCE;
   int8_t delta_pucch;
 } PUCCH_sched_t;
-
 
 /*!\brief Top level UE MAC structure */
 typedef struct {
@@ -407,17 +417,15 @@ typedef struct {
   nr_ue_if_module_t       *if_module;
   nr_phy_config_t         phy_config;
 
-  /// BSR report flag management
-  uint8_t BSR_reporting_active;
   NR_UE_SCHEDULING_INFO   scheduling_info;
-
-  /// PHR
-  uint8_t PHR_reporting_active;
+  NR_UE_MAC_CE_t          nr_ue_mac_ce;
 
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
   NR_SearchSpace_t *search_space_zero;
   NR_ControlResourceSet_t *coreset0;
   frequency_range_t frequency_range;
+  uint16_t nr_band;
+  uint8_t ssb_subcarrier_offset;
 
   dci_pdu_rel15_t def_dci_pdu_rel15[8];
 

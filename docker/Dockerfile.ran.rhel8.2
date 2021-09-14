@@ -45,7 +45,7 @@ RUN rm -f /etc/rhsm-host && \
        psmisc \
        git \
        # python3-pip and pyyaml are used for conf template generation
-       python3-pip
+       python3-pip \
        #unzip is needed for protobuf
        unzip && \
     pip3 install --ignore-installed pyyaml && \

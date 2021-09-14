@@ -46,42 +46,6 @@
 
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 
-static
-uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
-{
-  const uint64_t dl_freq_khz = downlink_frequency / 1000;
-  const int32_t  delta_duplex_khz = delta_duplex / 1000;
-
-  uint64_t center_freq_diff_khz = 999999999999999999; // 2^64
-  uint16_t current_band = 0;
-
-  for (int ind = 0; ind < nr_bandtable_size; ind++) {
-
-    LOG_D(PHY, "Scanning band %d, dl_min %"PRIu64", ul_min %"PRIu64"\n", nr_bandtable[ind].band, nr_bandtable[ind].dl_min, nr_bandtable[ind].ul_min);
-
-    if (dl_freq_khz < nr_bandtable[ind].dl_min || dl_freq_khz > nr_bandtable[ind].dl_max)
-      continue;
-
-    int32_t current_offset_khz = nr_bandtable[ind].ul_min - nr_bandtable[ind].dl_min;
-
-    if (current_offset_khz != delta_duplex_khz)
-      continue;
-
-    uint64_t center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min) / 2;
-
-    if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
-      current_band = nr_bandtable[ind].band;
-      center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
-    }
-  }
-
-  LOG_I(PHY, "DL frequency %"PRIu64": band %d, UL frequency %"PRIu64"\n",
-        downlink_frequency, current_band, downlink_frequency+delta_duplex);
-
-  AssertFatal(current_band != 0, "Can't find EUTRA band for frequency %"PRIu64" and duplex_spacing %u\n", downlink_frequency, delta_duplex);
-
-  return current_band;
-}
 
 int l1_north_init_gNB() {
 
@@ -495,6 +459,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 
   nr_init_frame_parms(gNB_config, fp);
+  fp->ofdm_offset_divisor = UINT_MAX;
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");
 }
@@ -546,7 +511,9 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
 //  }
   RC.gNB[Mod_id]->configured     = 1;
 
+  fp->ofdm_offset_divisor = RC.gNB[Mod_id]->ofdm_offset_divisor;
   init_symbol_rotation(fp);
+  init_timeshift_rotation(fp);
 
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
 }

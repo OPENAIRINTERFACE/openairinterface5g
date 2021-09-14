@@ -264,7 +264,7 @@ double signal_energy_fp(double *s_re[2],double *s_im[2],uint32_t nb_antennas,uin
   return(V/length/nb_antennas);
 }
 
-double signal_energy_fp2(struct complex *s,uint32_t length)
+double signal_energy_fp2(struct complexd *s,uint32_t length)
 {
 
   int32_t i;
@@ -273,7 +273,7 @@ double signal_energy_fp2(struct complex *s,uint32_t length)
   for (i=0; i<length; i++) {
     //    printf("signal_energy_fp2 : %f,%f => %f\n",s[i].x,s[i].y,V);
     //      V= V + (s[i].y*s[i].x) + (s[i].y*s[i].x);
-    V= V + (s[i].x*s[i].x) + (s[i].y*s[i].y);
+    V= V + (s[i].r*s[i].r) + (s[i].i*s[i].i);
   }
 
   return(V/length);
