@@ -1,4 +1,3 @@
-
 # OAI 5G SA tutorial
 
 In the following tutorial we describe how to deploy configure and test the two SA OAI setups:
@@ -121,9 +120,30 @@ the Core Network also need to be set as shown below.
 In the first part (*amf_ip_address*) we specify the IP of the AMF and in the second part (*NETWORK_INTERFACES*) we specify the gNB local interface with AMF (N2 interface) and the UPF (N3 interface).
 
 ### **gNB configuration in CU/DU split mode**
-For the configuration of the gNB in CU and DU blocks the following sample configuration files are provided for the CU and DU entities respectively. 
-......
-At the point of writing this document the control-plane exchanges between the CU and the DU over *F1-C* interface have been validated. The integration of *F1-U* over gtp-u for the support of data plane traffic is ongoing.
+For the configuration of the gNB in CU and DU blocks, the following sample configuration files are provided for the [CU](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/develop/targets/PROJECTS/GENERIC-NR-5GC/CONF/cu_gnb.conf) and the [DU](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/develop/targets/PROJECTS/GENERIC-NR-5GC/CONF/du_gnb.conf) entities respectively. These configuration files have to be updated with the IP addresses of the CU and the DU over the F1 interface. For example, in the following section from the DU configuration file, *local_n_address* corresponds to the DU address and *remote_n_address* corresponds to the CU address:
+
+```bash
+MACRLCs = (
+  {
+    num_cc           = 1;
+    tr_s_preference  = "local_L1";
+    tr_n_preference  = "f1";
+    local_n_if_name = "lo";
+    local_n_address = "127.0.0.3";
+    remote_n_address = "127.0.0.4";
+    local_n_portc   = 601;
+    local_n_portd   = 2152;
+    remote_n_portc  = 600;
+    remote_n_portd  = 2152;
+
+  }
+);
+```
+
+
+At the point of writing this document the control-plane exchanges between the CU and the DU over *F1-C* interface, as well as some IP traffic tests over *F1-U* have been validated using the OAI gNB/nrUE in RFSIMULATOR mode. 
+
+*These extensions are not yet fully integrated into develop branch, as they are under merge request. Until they get fully integrated, the CU/DU functionalities can be tested in [NR_F1C_F1U_extensions](https://gitlab.eurecom.fr/oai/openairinterface5g/-/tree/NR_F1C_F1U_extensions) branch.* 
 
 ## 1.2  OAI 5G Core Network installation and configuration
 The instructions for the installation of OAI CN components (AMF, SMF, NRF, UPF) using docker compose can be found [here](https://gitlab.eurecom.fr/oai/cn5g).
@@ -154,7 +174,20 @@ The NAS configuration parameters of the OAI UE can be set as input parameters, c
 - NSSAI (*Network Slice Assistance Information*)
 - DNN (*Data Network Name*)
 
-As example, in source file ***openair3/UICC/usim_interface.c*** the values can be hardcoded/edited in the following lines:
+Below is a sample configuration file that can be parsed through the execution command (section 2.3).
+
+```bash
+uicc0 = {
+imsi = "208990000007487";
+key = "fec86ba6eb707ed08905757b1bb44b8f";
+opc= "C42449363BBAD02B66D16BC975D77CC1";
+dnn= "oai";
+nssai_sst=1;
+nssai_sd=1;
+}
+```
+
+Alternatively, the values can be hardcoded/edited in source file ***openair3/UICC/usim_interface.c*** through the following lines:
 ```bash
 #define UICC_PARAMS_DESC {\
     {"imsi",             "USIM IMSI\n",          0,         strptr:&(uicc->imsiStr),              defstrval:"2089900007487",           TYPE_STRING,    0 },\
@@ -170,7 +203,7 @@ As example, in source file ***openair3/UICC/usim_interface.c*** the values can b
 ```
 
 For interoperability with OAI or other CNs, it should be ensured that the configuration of the aforementioned parameters match the configuration of the corresponding subscribed user at the core network.
-Hardcoding of the USIM information will soon be substituted with parsing those parameters from a configuration file.
+
 
 ## 2.1 Build and configuration
 To build the gNB and OAI UE executables:  
@@ -189,12 +222,23 @@ The instructions for the installation of OAI CN components (AMF, SMF, NRF, UPF) 
 
 The order of starting the different components should be the same as the one described in section 1.3.
 
- - To launch the gNB:
+ - To launch the gNB in monolithic mode:
  ```bash
  sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --rfsim --sa
  ```
+- To launch the gNB in CU/DU split mode:
+
+1. Launch the CU component:
+ ```bash
+ sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/cu_gnb.conf --rfsim --sa
+```
+2. Launch the DU component:
+```bash
+sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/du_gnb.conf --rfsim --sa
+```
+
 - To launch the OAI UE:
  ```bash
-sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --nokrnmod
+sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --nokrnmod -O <PATH_TO_UE_CONF_FILE>
 ```
 The IP address at the execution command of the OAI UE corresponds to the target IP of the gNB host that the RFSIMULATOR at the UE will connect to. In the above example, we assume that the gNB and UE are running on the same host so the specified address (127.0.0.1) is the one of the loopback interface.  
