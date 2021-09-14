@@ -362,7 +362,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
 
   const uint16_t bwpSize = type0_PDCCH_CSS_config->num_rbs;
   int rbStart = type0_PDCCH_CSS_config->cset_start_rb;
-printf("%d %d\n",bwpSize,rbStart);
+
   // TODO: There are exceptions to this in table 5.1.2.1.1-4,5 (Default time domain allocation tables B, C)
   int mappingtype = (startSymbolIndex <= 3)? typeA: typeB;
 
