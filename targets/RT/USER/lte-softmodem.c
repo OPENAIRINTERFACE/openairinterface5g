@@ -169,8 +169,6 @@ extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
 
-extern void init_eNB_afterRU(void);
-
 RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
 
 int transmission_mode=1;
@@ -526,6 +524,8 @@ int main ( int argc, char **argv )
   int CC_id = 0;
   int ru_id;
   int node_type = ngran_eNB;
+
+  start_background_system();
 
   if ( load_configmodule(argc,argv,0) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");

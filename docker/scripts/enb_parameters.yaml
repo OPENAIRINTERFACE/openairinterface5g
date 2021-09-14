@@ -98,6 +98,8 @@
       env: "@NID_CELL@"
     - key: N_RB_DL
       env: "@NB_PRB@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
       
   - filePrefix: rru.fdd
     outputfilename: "rru.fdd.conf"
@@ -110,6 +112,8 @@
       env: "@RRU_LOCAL_IP_ADDRESS@"
     - key: bands
       env: "@UTRA_BAND_ID@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
       
   - filePrefix: rru.tdd
     outputfilename: "rru.tdd.conf"
@@ -122,8 +126,10 @@
       env: "@RRU_LOCAL_IP_ADDRESS@"
     - key: bands
       env: "@UTRA_BAND_ID@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
       
-  - filePrefix: enb.band7.tm1.25PRB.usrpb210
+  - filePrefix: enb.band7.tm1.fr1.25PRB.usrpb210.conf
     outputfilename: "enb.fdd.conf"
     config:
     - key: Active_eNBs
@@ -147,6 +153,10 @@
       env: "@NID_CELL@"
     - key: N_RB_DL
       env: "@NB_PRB@"
+    - key: enable_measurement_reports
+      env: "@ENABLE_MEASUREMENT_REPORTS@"
+    - key: enable_x2
+      env: "@ENABLE_X2@"
     - key: ipv4
       env: "@MME_S1C_IP_ADDRESS@"
     - key: ENB_INTERFACE_NAME_FOR_S1_MME
@@ -167,6 +177,8 @@
       env: "@FLEXRAN_INTERFACE_NAME@"
     - key: FLEXRAN_IPV4_ADDRESS
       env: "@FLEXRAN_IPV4_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
       
   - filePrefix: enb.band40.tm1.25PRB.FairScheduler.usrpb210
     outputfilename: "enb.tdd.conf"
@@ -204,6 +216,8 @@
       env: "@F1_CU_IP_ADDRESS@"
     - key: ENB_IPV4_ADDRESS_FOR_X2C
       env: "@F1_CU_IP_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
       
   - filePrefix: "rcc.band7.tm1.nfapi"
     outputfilename: "rcc.nfapi.fdd.conf"
@@ -247,6 +261,8 @@
       env: "@F1_CU_IP_ADDRESS@"
     - key: ENB_IPV4_ADDRESS_FOR_X2C
       env: "@F1_CU_IP_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
 
   - filePrefix: "rcc.band7.tm1.if4p5.lo.25PRB"
     outputfilename: "rcc.if4p5.fdd.conf"
@@ -290,6 +306,8 @@
       env: "@IF4P5_RRU_IP_ADDRESS@"
     - key: local_address
       env: "@IF4P5_RCC_IP_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
 
   - filePrefix: "rcc.band40.tm1.25PRB"
     outputfilename: "rcc.if4p5.tdd.conf"
@@ -333,4 +351,6 @@
       env: "@IF4P5_RRU_IP_ADDRESS@"
     - key: local_address
       env: "@IF4P5_RCC_IP_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
 

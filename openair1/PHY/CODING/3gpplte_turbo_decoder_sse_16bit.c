@@ -1105,7 +1105,7 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
   uint8_t temp;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *yp128;
-  __m128i tmp, zeros=_mm_setzero_si128();
+  __m128i tmp={0}, zeros=_mm_setzero_si128();
   __m128i tmpe;
 #elif defined(__arm__)
   int16x8_t *yp128;

@@ -56,7 +56,6 @@ extern unsigned char NB_UE_INST;*/
 extern unsigned char NB_INST;
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_RN_INST;
-extern unsigned short NODE_ID[1];
 
 /* Scheduler */
 extern RAN_CONTEXT_t RC;
@@ -138,14 +137,5 @@ extern const int32_t table_38213_13_12_c2[16];
 extern const float   table_38213_13_12_c3[16];
 
 extern const int32_t table_38213_10_1_1_c2[5];
-
-extern const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[16][3];
-extern const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[16][3];
-extern const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[16][3];
-extern const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[16][3];
-extern const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[16][3];
-extern const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[16][3];
-extern const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[16][3];
-extern const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[16][3];
 
 #endif //DEF_H

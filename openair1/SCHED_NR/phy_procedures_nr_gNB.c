@@ -149,14 +149,13 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);
-  if (NFAPI_MODE == NFAPI_MONOLITHIC || NFAPI_MODE == NFAPI_MODE_PNF) { 
-    for (int i=0; i<fp->Lmax; i++) {
-      if (msgTx->ssb[i].active) {
-        nr_common_signal_procedures(gNB,frame,slot,msgTx->ssb[i].ssb_pdu);
-        msgTx->ssb[i].active = false;
-      }
+  for (int i=0; i<fp->Lmax; i++) {
+    if (msgTx->ssb[i].active) {
+      nr_common_signal_procedures(gNB,frame,slot,msgTx->ssb[i].ssb_pdu);
+      msgTx->ssb[i].active = false;
     }
   }
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,0);
 
   int num_dl_dci = msgTx->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
@@ -372,7 +371,13 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   uint16_t bw_scaling = 16 * gNB->frame_parms.ofdm_symbol_size / 2048;
-  timing_advance_update = sync_pos / bw_scaling;
+  int sync_pos_rounded;
+  // do some integer rounding to improve TA accuracy
+  if (sync_pos > 0)
+    sync_pos_rounded = sync_pos + (bw_scaling / 2) - 1;
+  else
+    sync_pos_rounded = sync_pos - (bw_scaling / 2) - 1;
+  timing_advance_update = sync_pos_rounded / bw_scaling;
 
   // put timing advance command in 0..63 range
   timing_advance_update += 31;
@@ -558,8 +563,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
       if ((pucch->active == 1) &&
-	       (pucch->frame == frame_rx) &&
-	       (pucch->slot == slot_rx) ) {
+          (pucch->frame == frame_rx) &&
+          (pucch->slot == slot_rx) ) {
 
         pucch_decode_done = 1;
 
@@ -580,7 +585,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
           nr_decode_pucch0(gNB,
-	                         frame_rx,
+                           frame_rx,
                            slot_rx,
                            uci_pdu_format0,
                            pucch_pdu);
@@ -622,9 +627,9 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         (ulsch->rnti > 0)) {
       // for for an active HARQ process
       for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
-	      ulsch_harq = ulsch->harq_processes[harq_pid];
-    	  AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
-    	  if ((ulsch_harq->status == NR_ACTIVE) &&
+        ulsch_harq = ulsch->harq_processes[harq_pid];
+        AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
+        if ((ulsch_harq->status == NR_ACTIVE) &&
             (ulsch_harq->frame == frame_rx) &&
             (ulsch_harq->slot == slot_rx) &&
             (ulsch_harq->handled == 0)){

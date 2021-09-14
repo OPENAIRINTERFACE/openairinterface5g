@@ -445,8 +445,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
           //LOG_I(PHY, "avgs Power per SC is %d\n", avgs);
           median[(aatx*frame_parms->nb_antennas_rx)+aarx] = avg[(aatx*frame_parms->nb_antennas_rx)+aarx];
         }
-      pdsch_vars[gNB_id]->log2_maxh = (log2_approx(avgs)/2) + 1;
-      //LOG_I(PHY, "avgs Power per SC is %d lg2_maxh %d\n", avgs,  pdsch_vars[gNB_id]->log2_maxh);
 
       if (dlsch0_harq->mimo_mode == NR_DUALSTREAM) {
         nr_dlsch_channel_level_median(pdsch_vars[gNB_id]->dl_ch_estimates_ext,
@@ -461,8 +459,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
             avgs = cmax(avgs, median[aatx*n_rx + aarx]);
           }
         }
-        pdsch_vars[gNB_id]->log2_maxh = (log2_approx(avgs)/2) + 1;
       }
+
+      pdsch_vars[gNB_id]->log2_maxh = (log2_approx(avgs)/2) + 1;
+      //LOG_I(PHY, "avgs Power per SC is %d lg2_maxh %d\n", avgs,  pdsch_vars[gNB_id]->log2_maxh);
     }
     LOG_D(PHY,"[DLSCH] AbsSubframe %d.%d log2_maxh = %d [log2_maxh0 %d log2_maxh1 %d] (%d,%d)\n",
           frame%1024,
@@ -738,11 +738,11 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 }
 
 void nr_dlsch_deinterleaving(uint8_t symbol,
-							uint8_t start_symbol,
-							uint16_t L,
-							uint16_t *llr,
-							uint16_t *llr_deint,
-							uint16_t nb_rb_pdsch)
+                             uint8_t start_symbol,
+                             uint16_t L,
+                             uint16_t *llr,
+                             uint16_t *llr_deint,
+                             uint16_t nb_rb_pdsch)
 {
 
   uint32_t bundle_idx, N_bundle, R, C, r,c;
@@ -811,7 +811,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
   unsigned short rb;
   unsigned char aatx,aarx,atx;
   __m128i *dl_ch128,*dl_ch128_2,*dl_ch_mag128,*dl_ch_mag128b,*dl_ch_mag128r,*rxdataF128,*rxdataF_comp128,*rho128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b,QAM_amp128r;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0},QAM_amp128r={0};
 
   uint32_t nb_rb_0 = length/12 + ((length%12)?1:0);
   for (aatx=0; aatx<nb_aatx; aatx++) {
@@ -1303,7 +1303,7 @@ void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
   int length_mod8 = 0;
   int length2;
   __m128i *dl_ch128,*dl_ch_mag128,*dl_ch_mag128b, *dl_ch128_2, *rxdataF128,*rxdataF_comp128,*rho128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0};
   int aatx = 0, aarx = 0;
 
   for (aatx=0; aatx<n_tx; aatx++) {
@@ -2877,10 +2877,10 @@ uint8_t nr_zero_forcing_rx_2layers(int **rxdataF_comp,
      *
      *
      **************************************************************************/
-  __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*dl_ch_mag128_0,*dl_ch_mag128b_0,*dl_ch_mag128r_0,*determ_fin_128;//*dl_ch_mag128_1,*dl_ch_mag128b_1,*dl_ch_mag128r_1
+  __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*dl_ch_mag128_0=NULL,*dl_ch_mag128b_0=NULL,*dl_ch_mag128r_0=NULL,*determ_fin_128;//*dl_ch_mag128_1,*dl_ch_mag128b_1,*dl_ch_mag128r_1
   __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
   __m128i *after_mf_a_128,*after_mf_b_128, *after_mf_c_128, *after_mf_d_128;
-  __m128i QAM_amp128,QAM_amp128b,QAM_amp128r;
+  __m128i QAM_amp128={0},QAM_amp128b={0},QAM_amp128r={0};
 
   determ_fin_128      = (__m128i *)&determ_fin[0];
 

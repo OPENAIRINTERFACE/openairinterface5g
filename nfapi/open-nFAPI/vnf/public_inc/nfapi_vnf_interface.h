@@ -852,7 +852,15 @@ typedef struct nfapi_vnf_p7_config
 	 *  use the codec_config.deallocate function to release it at a future point
 	 */	
 	int (*nrach_indication)(struct nfapi_vnf_p7_config* config, nfapi_nrach_indication_t* ind);		
-	
+
+	//The NR indication functions below copy uplink information received at the VNF into the UL info struct
+	int (*nr_slot_indication)(nfapi_nr_slot_indication_scf_t* ind);
+	int (*nr_crc_indication)(nfapi_nr_crc_indication_t* ind);
+	int (*nr_rx_data_indication)(nfapi_nr_rx_data_indication_t* ind);
+	int (*nr_uci_indication)(nfapi_nr_uci_indication_t* ind);
+	int (*nr_rach_indication)(nfapi_nr_rach_indication_t* ind);
+	int (*nr_srs_indication)(nfapi_nr_srs_indication_t* ind);
+
 	/*! A callback for any vendor extension messages
      *  \param config A pointer to the vnf p7 configuration
 	 *  \param msg A data structure for the decoded vendor extention message allocated

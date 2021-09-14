@@ -124,7 +124,7 @@ void phy_init_nr_ue_PUSCH(NR_UE_PUSCH *const pusch,
   AssertFatal( pusch, "pusch==0" );
 
   for (int i=0; i<NR_MAX_NB_LAYERS; i++) {
-    pusch->txdataF_layers[i] = (int32_t *)malloc16_clear((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t *));
+    pusch->txdataF_layers[i] = (int32_t *)malloc16_clear(NR_MAX_PUSCH_ENCODED_LENGTH*sizeof(int32_t));
   }
 }
 
@@ -178,6 +178,16 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
       ue->pusch_vars[th_id][gNB_id] = (NR_UE_PUSCH *)malloc16(sizeof(NR_UE_PUSCH));
       phy_init_nr_ue_PUSCH( ue->pusch_vars[th_id][gNB_id], fp );
+    }
+  }
+
+  /////////////////////////PUCCH init/////////////////////////
+  ///////////
+  for (th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
+    for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
+      ue->pucch_vars[th_id][gNB_id] = (NR_UE_PUCCH *)malloc16(sizeof(NR_UE_PUCCH));
+      for (i=0; i<2; i++)
+        ue->pucch_vars[th_id][gNB_id]->active[i] = false;
     }
   }
 

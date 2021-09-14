@@ -427,23 +427,10 @@ typedef struct {
 *
 ************************************************************************/
 
-#define MAX_NR_OF_PUCCH_P0_PER_SET                (8)
 #define NUMBER_PUCCH_FORMAT_NR                    (5)
 
 typedef int8_t power_level_t;      /* INTEGER (-16..15) */
 
-typedef struct {
-  uint8_t         p0_PUCCH_Id;     /* INTEGER (1..8)     */
-  power_level_t   p0_PUCCH_Value;
-} P0_PUCCH_t;
-
-typedef struct {
-  power_level_t deltaF_PUCCH_f[NUMBER_PUCCH_FORMAT_NR];
-  P0_PUCCH_t    *p0_Set[MAX_NR_OF_PUCCH_P0_PER_SET];
-  // pathlossReferenceRSs        SEQUENCE (SIZE (1..maxNrofPUCCH-PathlossReferenceRSs)) OF PUCCH-PathlossReferenceRS OPTIONAL, -- Need M
-  int8_t        twoPUCCH_PC_AdjustmentStates;
-
-} PUCCH_PowerControl_t;
 
 /***********************************************************************
 *
@@ -633,8 +620,9 @@ typedef struct {
   PUCCH_FormatConfig_t   *formatConfig[NUMBER_PUCCH_FORMAT_NR-1];   /* format 0 is not there */
   uint8_t                dl_DataToUL_ACK[NB_DL_DATA_TO_UL_ACK];     /* table TS 38.213 Table 9.2.3-1: Mapping of PSDCH-to-HARQ_feedback timing indicator field values to numbers of slots */
   void                   *spatial_Relation_Info[MAX_NR_OF_SPATIAL_RELATION_INFOS];
-  PUCCH_PowerControl_t   pucch_PowerControl;
 } PUCCH_Config_t;
+
+
 
 /***********************************************************************
 *

@@ -39,23 +39,22 @@ extern openair0_config_t openair0_cfg[MAX_CARDS];
 
 int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
 {
-  int i, aa, max_pos = 0, max_val = 0;
-  
+  int max_pos = 0, max_val = 0;
+
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   NR_gNB_PUSCH *gNB_pusch_vars   = gNB->pusch_vars[UE_id];
   int32_t **ul_ch_estimates_time = gNB_pusch_vars->ul_ch_estimates_time;
-  
-  int sync_pos = frame_parms->nb_prefix_samples / 8;
 
-  for (i = 0; i < frame_parms->ofdm_symbol_size; i++) {
+  const int sync_pos = 0;
+
+  for (int i = 0; i < frame_parms->ofdm_symbol_size; i++) {
     int temp = 0;
 
-    for (aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
-      short Re = ((int16_t*)ul_ch_estimates_time[aa])[(i<<1)];
-      short Im = ((int16_t*)ul_ch_estimates_time[aa])[1+(i<<1)];
+    for (int aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
+      int Re = ((int16_t*)ul_ch_estimates_time[aa])[(i<<1)];
+      int Im = ((int16_t*)ul_ch_estimates_time[aa])[1+(i<<1)];
       temp += (Re*Re/2) + (Im*Im/2);      
     }
-
     if (temp > max_val) {
       max_pos = i;
       max_val = temp;
@@ -64,7 +63,6 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
 
   if (max_pos > frame_parms->ofdm_symbol_size/2)
     max_pos = max_pos - frame_parms->ofdm_symbol_size;
-
 
   return max_pos - sync_pos;
 }
@@ -149,7 +147,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int first_symb,int num_symb) {
 //
 // Todo:
 // - averaging IIR filter for RX power and noise
-void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol){
+void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol, uint8_t nrOfLayers){
 
   int rx_power_tot[NUMBER_OF_NR_ULSCH_MAX];
   int rx_power[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_RX];
@@ -169,9 +167,9 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
 
     rx_power[ulsch_id][aarx] = 0;
 
-    for (int aatx = 0; aatx < fp->nb_antennas_tx; aatx++){
+    for (int aatx = 0; aatx < nrOfLayers; aatx++){
 
-      meas->rx_spatial_power[ulsch_id][aatx][aarx] = (signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aarx][ch_offset], N_RB_UL * NR_NB_SC_PER_RB));
+      meas->rx_spatial_power[ulsch_id][aatx][aarx] = (signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aatx*fp->nb_antennas_rx+aarx][ch_offset], N_RB_UL * NR_NB_SC_PER_RB));
 
       if (meas->rx_spatial_power[ulsch_id][aatx][aarx] < 0) {
         meas->rx_spatial_power[ulsch_id][aatx][aarx] = 0;

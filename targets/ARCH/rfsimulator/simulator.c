@@ -810,6 +810,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->trx_read_func      = rfsimulator_read;
   /* let's pretend to be a b2x0 */
   device->type = RFSIMULATOR;
+  openair0_cfg[0].rx_gain[0] = 0;
   device->openair0_cfg=&openair0_cfg[0];
   device->priv = rfsimulator;
   device->trx_write_init = rfsimulator_write_init;

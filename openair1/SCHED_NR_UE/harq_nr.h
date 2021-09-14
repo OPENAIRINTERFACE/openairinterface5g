@@ -46,8 +46,6 @@
 
 #define NR_DEFAULT_DLSCH_HARQ_PROCESSES          (8)                      /* TS 38.214 5.1 */
 
-#define NR_DL_MAX_DAI                            (4)                      /* TS 38.213 table 9.1.3-1 Value of counter DAI for DCI format 1_0 and 1_1 */
-#define NR_DL_MAX_NB_CW                          (2)                      /* number of downlink code word */
 #define DL_ACKNACK_NO_SET                        (2)
 #define DL_NACK                                  (0)
 #define DL_ACK                                   (1)
@@ -67,18 +65,6 @@
 
 /*************** FUNCTIONS ****************************************/
 
-
-/** \brief This function updates HARQ context according to dci
-    @param PHY_VARS_NR_UE ue context
-    @param nr_dci_info_extracted extracted information from dci
-    @param dlsch downlink context
-    @param ulsch uplink context
-    @param nr_slot_rx rx slot
-    @param tx_offset slot offset for tx
-    @returns none */
-
-void get_dci_info_for_harq(PHY_VARS_NR_UE *ue, NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted,
-		                   NR_UE_DLSCH_t **dlsch, NR_UE_ULSCH_t *ulsch, uint8_t nr_slot_rx, uint8_t tx_offset);
 
 /** \brief This function configures uplink HARQ context
     @param PHY_VARS_NR_UE ue context
@@ -127,24 +113,6 @@ harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, u
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq);
 
-/** \brief This function configures downlink HARQ context
-    @param PHY_VARS_NR_UE ue context
-    @param gNB_id gNodeB identifier
-    @param TB_id transport block identifier
-    @param execution_thread_number thread_number
-    @param number_harq_processes maximum number of downlink HARQ processes
-    @returns none */
-
-void config_downlink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int TB_id, int execution_thread_number, uint8_t number_harq_processes);
-
-/** \brief This function releases downlink HARQ context
-    @param PHY_VARS_NR_UE ue context
-    @param gNB_id gNodeB identifier
-    @param TB_id transport block identifier
-    @param execution_thread_number thread_number
-    @returns none */
-
-void release_downlink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int TB_id, int execution_thread_number);
 
 /** \brief This function update downlink harq context and return reception type (new transmission or retransmission)
     @param dlsch downlink harq context
@@ -152,7 +120,7 @@ void release_downlink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int TB_id, in
     @param rnti_type type of rnti
     @returns retransmission or new transmission */
 
-harq_result_t downlink_harq_process(NR_DL_UE_HARQ_t *dlsch, int harq_pid, int ndi, uint8_t rnti_type);
+void downlink_harq_process(NR_DL_UE_HARQ_t *dlsch, int harq_pid, int ndi, int rv, uint8_t rnti_type);
 
 #undef EXTERN
 #undef INIT_VARIABLES_HARQ_NR_H
