@@ -235,6 +235,11 @@ class EPCManagement():
 			mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts', '\$', 5)
 			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
 			mySSH.command('./core-network.sh start nrf spgwu', '\$', 30)
+			#time.sleep(10)
+			#response = mySSH.command3('docker inspect --format=\'{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}\' oai-amf', 5)
+			#self.MmeIPAddress = str(response[0],'utf-8')
+			#self.MmeIPAddress.rstrip()
+			#logging.debug('AMF IP Address ' + self.MmeIPAddress)			
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
@@ -251,10 +256,12 @@ class EPCManagement():
 		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
 			mySSH = SSH.SSHConnection()
 			mySSH.open(self.IPAddress, self.UserName, self.Password)
-			mySSH.command2('docker inspect --format=\'{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}\' oai-amf', 5)
-			self.MmeIPAddress = str(mySSH.cmd2Results[0],'utf-8')
-			self.MmeIPAddress.rstrip()
-			logging.debug('AMF IP Address ' + self.MmeIPAddress)
+			response=mySSH.command3('docker container ls -f name=oai-amf', 10)
+			if len(response)>1:
+				response=mySSH.command3('docker inspect --format=\'{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}\' oai-amf', 10)
+				tmp = str(response[0],'utf-8')
+				self.MmeIPAddress = tmp.rstrip()
+				logging.debug('AMF IP Address ' + self.MmeIPAddress)
 			mySSH.close()
 
 	def CheckHSSProcess(self, status_queue):
@@ -459,7 +466,7 @@ class EPCManagement():
 			self.LogCollectOAICN5G()
 			logging.debug('Terminating OAI CN5G')
 			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
-			mySSH.command('./core-network.sh stop nrf spgwu', '\$', 5)
+			mySSH.command('./core-network.sh stop nrf spgwu', '\$', 30)
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
