@@ -1986,10 +1986,16 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index)
   AssertFatal(nr_bandP <= nr_bandtable[nr_bandtable_size-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[nr_bandtable_size-1].band);
   for (i = 0; i < nr_bandtable_size && nr_bandtable[i].band != nr_bandP; i++);
 
-  // selection of correct Deltaf raster according to SCS
-  if ((nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
+  // In frequency bands with two deltaFRaster,
+  // the higher deltaFRaster applies to channels using only the SCS that is equal to or larger than the higher deltaFRaster
+  // and SSB SCS is equal to the higher deltaFRaster.
+  while(((i+1)<nr_bandtable_size) &&
+        (nr_bandtable[i+1].band == nr_bandtable[i].band) &&
+        (nr_bandtable[i].deltaf_raster != scs_khz)) {
     i++;
+  }
 
+  AssertFatal(nr_bandtable[i].band == nr_bandP, "Found band table %d does not correspond to the input one %d\n",nr_bandtable[i].band,nr_bandP);
   LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
 
   return i;
