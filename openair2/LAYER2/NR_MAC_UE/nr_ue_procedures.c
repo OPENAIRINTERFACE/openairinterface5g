@@ -510,7 +510,6 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
     def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci->dci_format];
   }
   int8_t ret_proc = nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci);
-  memset(def_dci_pdu_rel15, 0, sizeof(dci_pdu_rel15_t));
   return ret_proc;
 }
 
@@ -1961,8 +1960,6 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
               pucch->n_CCE = current_harq->n_CCE;
               pucch->N_CCE = current_harq->N_CCE;
               pucch->delta_pucch = current_harq->delta_pucch;
-              current_harq->active = false;
-              current_harq->ack_received = false;
             }
           }
         }

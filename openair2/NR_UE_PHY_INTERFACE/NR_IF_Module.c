@@ -314,6 +314,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
             memcpy(pdu, ptr, pdu_list->TLVs[j].length);
             pdu += pdu_list->TLVs[j].length;
         }
+        dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.ack_nack = 1; // Melissa we will come back during channel modelling
         dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = length;
         if (tx_data_request->Slot == 7 && mac->ra.ra_state <= WAIT_RAR) { //Melissa this means we have an RAR, sorta hacky though
             dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
@@ -852,8 +853,26 @@ int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *u
 
   dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid = g_harq_pid;
   update_harq_status(dl_info, pdu_id);
+  NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
+  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+  nr_scheduled_response_t scheduled_response;
+  fill_scheduled_response(&scheduled_response,
+                          dl_config,
+                          NULL,
+                          NULL,
+                          dl_info->module_id,
+                          dl_info->cc_id,
+                          dl_info->frame,
+                          dl_info->slot,
+                          dl_info->thread_id);
+  nr_ue_uci_scheduled_response_stub(&scheduled_response);
+
   if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack)
     nr_ue_send_sdu(dl_info, ul_time_alignment, pdu_id);
+
+  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[g_harq_pid];
+  current_harq->active = false;
+  current_harq->ack_received = false;
 
   return 0;
 }
@@ -922,7 +941,13 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
                                 dl_info->frame,
                                 dl_info->slot,
                                 dl_info->dci_ind->dci_list+i);
-        g_harq_pid = mac->def_dci_pdu_rel15[dl_info->dci_ind->dci_list[0].dci_format].harq_pid;
+
+        fapi_nr_dci_indication_pdu_t *dci_index = dl_info->dci_ind->dci_list+i;
+        dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci_index->dci_format];
+        g_harq_pid = def_dci_pdu_rel15->harq_pid;
+        LOG_D(NR_MAC, "Setting harq_pid = %d and dci_index = %d (based on format)\n", g_harq_pid, dci_index->dci_format);
+        memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
+
         ret_mask |= (ret << FAPI_NR_DCI_IND);
         if (ret >= 0) {
           AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
