@@ -257,7 +257,8 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                 dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
                 dl_info->dci_ind->SFN = dl_tti_request->SFN;
                 dl_info->dci_ind->slot = dl_tti_request->Slot;
-                AssertFatal(num_dcis < sizeof(dl_info->dci_ind->dci_list) / sizeof(dl_info->dci_ind->dci_list[0]), "The number of DCIs is greater than dci_list");
+                AssertFatal(num_dcis < sizeof(dl_info->dci_ind->dci_list) / sizeof(dl_info->dci_ind->dci_list[0]),
+                            "The number of DCIs is greater than dci_list");
                 for (int j = 0; j < num_dcis; j++)
                 {
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
@@ -492,7 +493,12 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         LOG_I(NR_PHY, "[%d, %d] dl_tti_request\n", frame, slot);
         copy_dl_tti_req_to_dl_info(&mac->dl_info, dl_tti_request);
     }
-    else if (tx_data_request && (mac->expected_dci || mac->ra.ra_state <= WAIT_RAR))
+    /* This checks if the previously recevied DCI matches our current RNTI
+       value. The assumption is that if the DCI matches our RNTI, then the
+       incoming tx_data_request is also destined for the current UE. If the
+       RAR hasn't been processed yet, we do not want to be filtering the
+       tx_data_requests. */
+    else if (tx_data_request && (mac->expected_dci || mac->ra.ra_state == WAIT_RAR))
     {
         frame = tx_data_request->SFN;
         slot = tx_data_request->Slot;
