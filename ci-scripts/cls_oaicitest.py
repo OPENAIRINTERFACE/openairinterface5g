@@ -1539,6 +1539,8 @@ class OaiCiTest():
 					#target address is different depending on EPC type
 					if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
 						Target = EPC.MmeIPAddress
+					elif re.match('OAICN5G', EPC.Type, re.IGNORECASE):
+						Target = '8.8.8.8'
 					else:
 						Target = EPC.IPAddress
 					#ping from module NIC rather than IP address to make sure round trip is over the air	

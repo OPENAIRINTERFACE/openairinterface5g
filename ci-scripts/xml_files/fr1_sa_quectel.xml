@@ -31,6 +31,8 @@
  010000
  000001
  050000
+ 000002
+ 050001
  000001
  010002
  080000
@@ -81,7 +83,7 @@
 		<desc>Ping: 20pings in 20sec</desc>
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 20</ping_args>
-		<ping_packetloss_threshold>50</ping_packetloss_threshold>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="050001">
@@ -89,7 +91,7 @@
 		<desc>Ping: 100pings in 20sec</desc>
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 100 -i 0.2</ping_args>
-		<ping_packetloss_threshold>50</ping_packetloss_threshold>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="070000">
