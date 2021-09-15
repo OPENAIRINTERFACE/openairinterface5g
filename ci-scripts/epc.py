@@ -466,7 +466,7 @@ class EPCManagement():
 			self.LogCollectOAICN5G()
 			logging.debug('Terminating OAI CN5G')
 			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
-			mySSH.command('./core-network.sh stop nrf spgwu', '\$', 30)
+			mySSH.command('./core-network.sh stop nrf spgwu', '\$', 60)
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
