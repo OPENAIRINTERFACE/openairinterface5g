@@ -945,6 +945,7 @@ typedef struct processingData_L1 {
 
 typedef enum {
   FILLED,
+  FILLING,
   NOT_FILLED
 } msgStatus_t;
 

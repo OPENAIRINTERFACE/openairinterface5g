@@ -316,11 +316,11 @@ int get_next_downlink_slot(PHY_VARS_gNB *gNB, nfapi_nr_config_request_scf_t *cfg
   int slots_per_frame = gNB->frame_parms.slots_per_frame;
   while (true) {
     slot++;
-    frame = (slot/slots_per_frame) ? frame++ : frame;
+    if (slot/slots_per_frame) frame++;
     slot %= slots_per_frame;
     int slot_type = nr_slot_select(cfg, frame, slot);
     if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT) return slot;
-    AssertFatal(frame < nr_frame+2, "Something went worng. This shouldn't happen\n");
+    AssertFatal(frame < (nr_frame+2), "Something went worng. This shouldn't happen\n");
   }
 }
 

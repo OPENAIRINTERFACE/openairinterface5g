@@ -141,7 +141,7 @@ void tx_func(void *param) {
     res = pullTpool(gNB->resp_RU_tx, gNB->threadPool);
     syncMsg = (processingData_RU_t *)NotifiedFifoData(res);
   }
-  LOG_D(PHY,"previous tx to finished, next slot %d,%d\n",syncMsg->next_slot,slot_tx);
+  LOG_D(PHY,"previous tx finished, next slot %d,%d\n",syncMsg->next_slot,slot_tx);
   syncMsg->frame_tx = frame_tx;
   syncMsg->slot_tx = slot_tx;
   syncMsg->next_slot = get_next_downlink_slot(gNB, &gNB->gNB_config, frame_tx, slot_tx);
