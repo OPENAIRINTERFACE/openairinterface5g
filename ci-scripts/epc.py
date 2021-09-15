@@ -234,7 +234,7 @@ class EPCManagement():
 			mySSH.command('if [ -d ' + self.SourceCodePath + '/scripts ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/scripts ; fi', '\$', 5)
 			mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts', '\$', 5)
 			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
-			mySSH.command('./core-network.sh start nrf spgwu', '\$', 30)
+			mySSH.command('./core-network.sh start nrf spgwu', '\$', 60)
 			#time.sleep(10)
 			#response = mySSH.command3('docker inspect --format=\'{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}\' oai-amf', 5)
 			#self.MmeIPAddress = str(response[0],'utf-8')
