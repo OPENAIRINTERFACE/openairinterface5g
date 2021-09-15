@@ -582,17 +582,16 @@ static void
 testsuite_teardown(void)
 {
 	uint8_t dev_id;
-printf("testsuite teardown \n"); 
 	/* Unconfigure devices */
-//	RTE_BBDEV_FOREACH(dev_id)
-//		rte_bbdev_close(dev_id);
+	RTE_BBDEV_FOREACH(dev_id)
+		rte_bbdev_close(dev_id);
 
 	/* Clear active devices structs. */
-//	memset(active_devs, 0, sizeof(active_devs));
-//	nb_active_devs = 0;
+	memset(active_devs, 0, sizeof(active_devs));
+	nb_active_devs = 0;
 
 	/* Disable interrupts */
-//	intr_enabled = false;
+	intr_enabled = false;
 }
 
 static int
@@ -624,7 +623,7 @@ ut_teardown(void)
 		/* read stats and print */
 		rte_bbdev_stats_get(dev_id, &stats);
 		/* Stop the device */
-		//rte_bbdev_stop(dev_id);
+		rte_bbdev_stop(dev_id);
 	}
 }
 
@@ -756,46 +755,6 @@ allocate_buffers_on_socket(struct rte_bbdev_op_data **buffers, const int len,
 }
 
 
-static void
-ldpc_input_llr_scaling(struct rte_bbdev_op_data *input_ops,
-		const uint16_t n, const int8_t llr_size,
-		const int8_t llr_decimals)
-{
-	if (input_ops == NULL)
-		return;
-
-	uint16_t i, byte_idx;
-
-	int16_t llr_max, llr_min, llr_tmp;
-	llr_max = (1 << (llr_size - 1)) - 1;
-	llr_min = -llr_max;
-	for (i = 0; i < n; ++i) {
-		struct rte_mbuf *m = input_ops[i].data;
-		while (m != NULL) {
-			int8_t *llr = rte_pktmbuf_mtod_offset(m, int8_t *,
-					input_ops[i].offset);
-			for (byte_idx = 0; byte_idx < rte_pktmbuf_data_len(m);
-					++byte_idx) {
-
-				llr_tmp = llr[byte_idx];
-				if (llr_decimals == 4)
-					llr_tmp *= 8;
-				else if (llr_decimals == 2)
-					llr_tmp *= 2;
-				else if (llr_decimals == 0)
-					llr_tmp /= 2;
-				llr_tmp = RTE_MIN(llr_max,
-						RTE_MAX(llr_min, llr_tmp));
-				llr[byte_idx] = (int8_t) llr_tmp;
-			}
-
-			m = m->next;
-		}
-	}
-}
-
-
-
 static int
 fill_queue_buffers(struct test_op_params *op_params,int8_t* p_llr, uint32_t data_len,
 		struct rte_mempool *in_mp, struct rte_mempool *hard_out_mp,
@@ -808,9 +767,9 @@ fill_queue_buffers(struct test_op_params *op_params,int8_t* p_llr, uint32_t data
 	int ret;
 	enum op_data_type type;
 	const uint16_t n = op_params->num_to_process;
-	int ldpc_llr_decimals;
-	int ldpc_llr_size;
-	uint32_t ldpc_cap_flags;
+	//int ldpc_llr_decimals;
+	//int ldpc_llr_size;
+	//uint32_t ldpc_cap_flags;
 
 	struct rte_mempool *mbuf_pools[DATA_NUM_TYPES] = {
 		in_mp,
@@ -1064,7 +1023,7 @@ create_reference_ldpc_dec_op(struct rte_bbdev_dec_op *op, t_nrLDPCoffload_params
 
 
 
-static uint32_t
+/*static uint32_t
 calc_ldpc_dec_TB_size(struct rte_bbdev_dec_op *op)
 {
 	uint8_t i;
@@ -1085,7 +1044,7 @@ calc_ldpc_dec_TB_size(struct rte_bbdev_dec_op *op)
 	}
 	return tb_size;
 }
-
+*/
 
 static int
 init_test_op_params(struct test_op_params *op_params,
@@ -1119,123 +1078,11 @@ init_test_op_params(struct test_op_params *op_params,
 }
 
 static int
-decod_on_device(uint8_t dev_id,
-		struct test_op_params *op_params, int8_t* p_llr, 
-		t_nrLDPCoffload_params *p_offloadParams, int8_t* p_out) 
-{
-
-	int t_ret, f_ret, socket_id = SOCKET_ID_ANY;
-	unsigned int i;
-	struct active_device *ad;
-	unsigned int burst_sz = get_burst_sz();
-	enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;
-	const struct rte_bbdev_op_cap *capabilities = NULL;
-
-	ad = &active_devs[dev_id];
-
-	/* Check if device supports op_type */
-	if (!is_avail_op(ad, op_type))
-		return TEST_SUCCESS;
-
-	struct rte_bbdev_info info;
-	rte_bbdev_info_get(ad->dev_id, &info);
-	socket_id = GET_SOCKET(info.socket_id);
-
-	f_ret = create_mempools(ad, socket_id, op_type,
-			get_num_ops(),p_offloadParams);
-	if (f_ret != TEST_SUCCESS) {
-		printf("Couldn't create mempools");
-		goto fail;
-	}
-	f_ret = init_test_op_params(op_params, op_type,
-			0,
-			0,
-			ad->ops_mempool,
-			burst_sz,
-			get_num_ops(),
-			get_num_lcores());
-	if (f_ret != TEST_SUCCESS) {
-		printf("Couldn't init test op params");
-		goto fail;
-	}
-
-
-	/* Find capabilities */
-	const struct rte_bbdev_op_cap *cap = info.drv.capabilities;
-	for (i = 0; i < RTE_BBDEV_OP_TYPE_COUNT; i++) {
-		if (cap->type == op_type) {
-			capabilities = cap;
-			break;
-		}
-		cap++;
-	}
-	TEST_ASSERT_NOT_NULL(capabilities,
-			"Couldn't find capabilities");
-
-	create_reference_ldpc_dec_op(op_params->ref_dec_op, p_offloadParams);
-printf("info alig %d queue id %d nb queue %d socket id %d\n", info.drv.min_alignment, ad->queue_ids[i], ad->nb_queues, socket_id); 
-	for (i = 0; i < ad->nb_queues; ++i) {
-		f_ret = fill_queue_buffers(op_params,
-			 	p_llr,	
-			 	p_offloadParams->E,	
-				ad->in_mbuf_pool,
-				ad->hard_out_mbuf_pool,
-				ad->soft_out_mbuf_pool,
-				ad->harq_in_mbuf_pool,
-				ad->harq_out_mbuf_pool,
-				ad->queue_ids[i],
-				capabilities,
-				info.drv.min_alignment,
-				socket_id);
-		if (f_ret != TEST_SUCCESS) {
-			printf("Couldn't init queue buffers");
-			goto fail;
-		}
-	}
-
-//	t_ret = start_pmd_dec(ad, op_params, p_offloadParams, p_out);
-
-	/* Free active device resources and return */
-	//free_buffers(ad, op_params);
-	return t_ret;
-
-fail:
-	free_buffers(ad, op_params);
-	return TEST_FAILED;
-}
-
-/* Run ldpc per active device per supported op type
- * per burst size.
- */
-static int
-ldpc_decod_ut(struct test_op_params *op_params, int8_t* p_llr, t_nrLDPCoffload_params *p_offloadParams, int8_t* p_out) 
-{
-	int ret = 0;
-	uint8_t dev;
-
-	/* Alloc op_params */
-	/*struct test_op_params *op_params = rte_zmalloc(NULL,
-			sizeof(struct test_op_params), RTE_CACHE_LINE_SIZE);
-	TEST_ASSERT_NOT_NULL(op_params, "Failed to alloc %zuB for op_params",
-			RTE_ALIGN(sizeof(struct test_op_params),
-				RTE_CACHE_LINE_SIZE));
-	*/
-	/* For each device run test case function */
-	for (dev = 0; dev < nb_active_devs; ++dev)
-		ret |= decod_on_device(dev, op_params, p_llr, p_offloadParams, p_out);
-
-//	rte_free(op_params);
-
-	return ret;
-}
-
-
-static int
 pmd_lcore_ldpc_dec(void *arg)
 {
 	struct thread_params *tp = arg;
 	uint16_t enq, deq;
-	uint64_t total_time = 0, start_time;
+	//uint64_t total_time = 0, start_time;
 	const uint16_t queue_id = tp->queue_id;
 	const uint16_t burst_sz = tp->op_params->burst_sz;
 	const uint16_t num_ops = tp->op_params->num_to_process;
@@ -1389,7 +1236,7 @@ start_pmd_dec(struct active_device *ad,
 	int ret;
 	unsigned int lcore_id, used_cores = 0;
 	struct thread_params *t_params, *tp;
-	struct rte_bbdev_info info;
+	//struct rte_bbdev_info info;
 	uint16_t num_lcores;
 
 	//rte_bbdev_info_get(ad->dev_id, &info);
@@ -1572,81 +1419,75 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
   	struct active_device *ad;
         ad = &active_devs[0];
 
-	if (mode==0){
-		
-	  ret = rte_eal_init(argc_re, argv_re);
-	  if (ret<0) {
-	    printf("Could not init EAL, ret %d\n",ret);
-	    return(-1);
-	  }
-	  ret = device_setup();
-	  if (ret != TEST_SUCCESS) {
-	    printf("Couldn't create mempools");
-	    return(-1);
-	  }
-	  ret=ut_setup();
-	  if (ret != TEST_SUCCESS) {
-	    printf("Couldn't create mempools");
-	    return(-1);
-	  }
-	  
+	int socket_id;
+        int i,f_ret;
+        struct rte_bbdev_info info;
+        enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;
+	
+	switch (mode) {
+	case 0:	
+          ret = rte_eal_init(argc_re, argv_re);
+          if (ret<0) {
+            printf("Could not init EAL, ret %d\n",ret);
+            return(-1);
+          }
+          ret = device_setup();
+          if (ret != TEST_SUCCESS) {
+            printf("Couldn't setup device");
+            return(-1);
+          }
+          ret=ut_setup();
+          if (ret != TEST_SUCCESS) {
+            printf("Couldn't setup ut");
+            return(-1);
+          }
+
 	  p_offloadParams->E = E;
-	  p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
-	  p_offloadParams->BG = p_decParams->BG;
-	  p_offloadParams->Z = p_decParams->Z;
-	  p_offloadParams->rv = rv;
-	  p_offloadParams->F = F;
-	  p_offloadParams->Qm = Qm;
-	  
-	  //struct test_op_params *op_params = rte_zmalloc(NULL,
-	  op_params = rte_zmalloc(NULL,
+          p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
+          p_offloadParams->BG = p_decParams->BG;
+          p_offloadParams->Z = p_decParams->Z;
+          p_offloadParams->rv = rv;
+          p_offloadParams->F = F;
+          p_offloadParams->Qm = Qm;
+
+          op_params = rte_zmalloc(NULL,
                         sizeof(struct test_op_params), RTE_CACHE_LINE_SIZE);
-	  TEST_ASSERT_NOT_NULL(op_params, "Failed to alloc %zuB for op_params",
-			       RTE_ALIGN(sizeof(struct test_op_params),
-					 RTE_CACHE_LINE_SIZE));
-	  
-	  int socket_id;
-	  int f_ret;
-	  struct rte_bbdev_info info;
-	  rte_bbdev_info_get(ad->dev_id, &info);
-	  socket_id = GET_SOCKET(info.socket_id);
-	  enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;
-	  f_ret = create_mempools(ad, socket_id, op_type,
-				  get_num_ops(),p_offloadParams);
-	  if (f_ret != TEST_SUCCESS) {
-	    printf("Couldn't create mempools");
-	    return(-1);
-	  }
-	  f_ret = init_test_op_params(op_params, op_type,
-				      0,
-				      0,
-				      ad->ops_mempool,
-				      1,
-				      get_num_ops(), 
-				      get_num_lcores());
-	  if (f_ret != TEST_SUCCESS) {
-	    printf("Couldn't init test op params");
-	    return(-1);
-	  }
-
-	}
-	else{
-	//printf("offload param E %d BG %d F %d Z %d Qm %d\n", E,p_decParams->BG, F,p_decParams->Z, Qm);
-
-	p_offloadParams->E = E;
-	p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
-	p_offloadParams->BG = p_decParams->BG;
-	p_offloadParams->Z = p_decParams->Z;
-	p_offloadParams->rv = rv;
-	p_offloadParams->F = F;
-	p_offloadParams->Qm = Qm;
- 	int socket_id;	
-	int f_ret, i;	
-	const struct rte_bbdev_op_cap *capabilities = NULL;	
-	        struct rte_bbdev_info info;
+          TEST_ASSERT_NOT_NULL(op_params, "Failed to alloc %zuB for op_params",
+                               RTE_ALIGN(sizeof(struct test_op_params),
+                                         RTE_CACHE_LINE_SIZE));
+	
         rte_bbdev_info_get(ad->dev_id, &info);
         socket_id = GET_SOCKET(info.socket_id);
-	enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;
+        f_ret = create_mempools(ad, socket_id, op_type,
+                        get_num_ops(),p_offloadParams);
+        if (f_ret != TEST_SUCCESS) {
+                printf("Couldn't create mempools");
+        }
+        f_ret = init_test_op_params(op_params, op_type,
+                        0,
+                        0,
+                        ad->ops_mempool,
+                        1,
+                        get_num_ops(), 
+                        get_num_lcores());
+        if (f_ret != TEST_SUCCESS) {
+                printf("Couldn't init test op params");
+        }
+	break;
+	case 1:
+	  //printf("offload param E %d BG %d F %d Z %d Qm %d\n", E,p_decParams->BG, F,p_decParams->Z, Qm);
+	  p_offloadParams->E = E;
+          p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
+          p_offloadParams->BG = p_decParams->BG;
+          p_offloadParams->Z = p_decParams->Z;
+          p_offloadParams->rv = rv;
+          p_offloadParams->F = F;
+          p_offloadParams->Qm = Qm;
+
+	const struct rte_bbdev_op_cap *capabilities = NULL;	
+        rte_bbdev_info_get(ad->dev_id, &info);
+        socket_id = GET_SOCKET(info.socket_id);
+	//enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;
 	const struct rte_bbdev_op_cap *cap = info.drv.capabilities;
 
 	for (i = 0; i < RTE_BBDEV_OP_TYPE_COUNT; i++) {
@@ -1677,18 +1518,23 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 		}
 	}
 
+        ret = start_pmd_dec(ad, op_params, p_offloadParams, p_out);
+        if (ret<0) {
+          printf("Couldn't start pmd dec");
+          return(-1);
+        }
+	break;
+	case 2:
 
-	ret = start_pmd_dec(ad, op_params, p_offloadParams, p_out);
-	if (ret<0) {
-	  printf("Couldn't start pmd dec");
-	  return(-1);
-	}
-
-	// free_buffers(ad, op_params);
-	
-	// rte_free(op_params);
-	}
-	//ut_teardown();
+        free_buffers(ad, op_params);
+	rte_free(op_params);
+	ut_teardown();
+	testsuite_teardown();
+	break;
+	default:
+		printf("Unknown mode: %d\n", mode);
+		return;
+	}	
 
     return numIter;
 }

@@ -101,6 +101,26 @@ int load_nrLDPClib_offload(void) {
   return 0;
 }
 
+int free_nrLDPClib_offload(void) {
+t_nrLDPC_dec_params decParams;
+  t_nrLDPC_dec_params* p_decParams    = &decParams;
+  int8_t   l[68*384];
+  int8_t llrProcBuf[22*384];
+
+  p_decParams->Z = 384;
+  p_decParams->BG = 1;
+
+  nrLDPC_decoder_offload(p_decParams,
+                        1,
+                        0,
+                        0,
+                        25344,
+                        8,
+                        l,
+                        llrProcBuf, 2);
+return 0;
+}
+
 int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_encoder_ptr) {
 	loader_shlibfunc_t shlib_encoder_fdesc;
 

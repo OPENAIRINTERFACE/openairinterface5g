@@ -647,8 +647,6 @@ int main(int argc, char **argv)
   get_softmodem_params()->do_ra = 0;
   get_softmodem_params()->usim_test = 1;
 
-  //load_nrLDPClib_offload();
-
   if (snr1set == 0)
     snr1 = snr0 + 10;
   double sampling_frequency;
@@ -1544,6 +1542,7 @@ int main(int argc, char **argv)
   LOG_MM("ulsimStats.m","EffTP",effTP,snrRun,1,7);
   free(test_input_bit);
   free(estimated_output_bit);
+  free_nrLDPClib_offload();
 
   if (output_fd)
     fclose(output_fd);
