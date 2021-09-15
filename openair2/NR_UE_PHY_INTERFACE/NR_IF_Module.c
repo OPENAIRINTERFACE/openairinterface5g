@@ -228,6 +228,7 @@ static void fill_dl_info_with_pdcch(fapi_nr_dci_indication_t *dci, nfapi_nr_dl_d
 static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_dl_tti_request_t *dl_tti_request)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
+    mac->expected_dci = false;
     int pdu_idx = 0;
 
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
@@ -262,9 +263,11 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
                     if (dci_pdu_list->RNTI != mac->crnti)
                     {
-                        continue;
+                      LOG_D(NR_MAC, "We are filtering PDCCH DCI pdu because RNTI doesnt match!\n");
+                      continue;
                     }
                     fill_dl_info_with_pdcch(dl_info->dci_ind, dci_pdu_list, pdu_idx);
+                    mac->expected_dci = true;
                     pdu_idx++;
                 }
             }
@@ -373,6 +376,7 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
 
 static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_ul_tti_request_t *ul_tti_req)
 {
+    NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
     int num_pdus = ul_tti_req->n_pdus;
     if (num_pdus <= 0)
     {
@@ -385,8 +389,9 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_ul_tti_request_number_of_pdus_t *pdu_list = &ul_tti_req->pdus_list[i];
-        LOG_D(NR_PHY, "This is the pdu type %d in ul_tti_req\n", pdu_list->pdu_type);
-        if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE)
+        LOG_D(NR_PHY, "This is the pdu type %d and rnti %x in ul_tti_req\n",
+              pdu_list->pdu_type, ul_tti_req->pdus_list[i].pucch_pdu.rnti);
+        if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE && pdu_list->pucch_pdu.rnti == mac->crnti)
         {
             nfapi_nr_uci_indication_t *uci_ind = get_queue(&nr_uci_ind_queue);
             if (uci_ind)
@@ -487,7 +492,7 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         LOG_I(NR_PHY, "[%d, %d] dl_tti_request\n", frame, slot);
         copy_dl_tti_req_to_dl_info(&mac->dl_info, dl_tti_request);
     }
-    else if (tx_data_request)
+    else if (tx_data_request && (mac->expected_dci || mac->ra.ra_state <= WAIT_RAR))
     {
         frame = tx_data_request->SFN;
         slot = tx_data_request->Slot;
