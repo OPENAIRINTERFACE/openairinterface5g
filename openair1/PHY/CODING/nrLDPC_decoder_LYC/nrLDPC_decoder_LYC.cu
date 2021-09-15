@@ -489,7 +489,7 @@ using namespace std ;
 /* from here: entry points in decoder shared lib */
 extern "C"
 int ldpc_autoinit(void) {   // called by the library loader 
-int devices = 0; 
+/*int devices = 0; 
 
   cudaError_t err = cudaGetDeviceCount(&devices); 
   AssertFatal(devices>0,"\nNo cuda GPU found\n\n");
@@ -519,6 +519,7 @@ int devices = 0;
         wcout << "  Max grid dimensions:  [ " << props.maxGridSize[0] << ", " << props.maxGridSize[1]  << ", " << props.maxGridSize[2] << " ]" << endl;
         wcout << endl;
     }
+*/
   warmup_for_GPU();
   return 0;  
 }

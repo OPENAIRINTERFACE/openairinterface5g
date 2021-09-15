@@ -166,7 +166,7 @@ if (CUDA_FOUND)
     add_definitions("-L/usr/local/cuda/lib64")
 
     SET(CUDA_NVCC_FLAGS
-      "${CUDA_NVCC_FLAGS};--gpu-architecture=compute_60")
+      "${CUDA_NVCC_FLAGS};-arch=sm_60;")
 
     # Disable warnings for CUDA
     SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-lpthread;-w;-O3;--default-stream;per-thread;-I/usr/local/cuda/inc;-L/usr/local/cuda/lib -lcutil;-rdc=true;-lcudadevrt")
