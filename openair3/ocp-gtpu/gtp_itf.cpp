@@ -205,7 +205,7 @@ static void gtpv1uSend2(instance_t instance, gtpv1u_gnb_tunnel_data_req_t *req, 
   auto ptrRnti=inst->ue2te_mapping.find(rnti);
 
   if (  ptrRnti==inst->ue2te_mapping.end() ) {
-    LOG_E(GTPU, "GTP-U instance: %d gtpv1uSend failed: while getting ue rnti %x in hashtable ue_mapping\n", instance, rnti);
+    LOG_E(GTPU, "GTP-U instance: %ld gtpv1uSend failed: while getting ue rnti %x in hashtable ue_mapping\n", instance, rnti);
     pthread_mutex_unlock(&globGtp.gtp_lock);
     return;
   }
@@ -213,12 +213,12 @@ static void gtpv1uSend2(instance_t instance, gtpv1u_gnb_tunnel_data_req_t *req, 
   map<int, ocp_gtpv1u_bearer_t>::iterator ptr2=ptrRnti->second.bearers.find(rab_id);
 
   if ( ptr2 == ptrRnti->second.bearers.end() ) {
-    LOG_D(GTPU,"GTP-U instance: %d sending a packet to a non existant RNTI:RAB: %x/%x\n", instance, rnti, rab_id);
+    LOG_D(GTPU,"GTP-U instance: %ld sending a packet to a non existant RNTI:RAB: %x/%x\n", instance, rnti, rab_id);
     pthread_mutex_unlock(&globGtp.gtp_lock);
     return;
   }
 
-  LOG_D(GTPU,"GTP-U instance: %d sending a packet to RNTI:RAB:teid %x/%x/%x, len %lu, oldseq %d, oldnum %d\n",
+  LOG_D(GTPU,"GTP-U instance: %ld sending a packet to RNTI:RAB:teid %x/%x/%x, len %lu, oldseq %d, oldnum %d\n",
         instance, rnti, rab_id,ptr2->second.teid_outgoing,length, ptr2->second.seqNum,ptr2->second.npduNum );
 
   if(seqNumFlag)
