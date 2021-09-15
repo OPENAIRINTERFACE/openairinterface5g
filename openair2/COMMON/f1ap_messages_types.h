@@ -202,6 +202,7 @@ typedef struct served_cells_to_activate_s {
   /// SI message containers (up to 21 messages per cell)
   uint8_t *SI_container[21];
   int      SI_container_length[21];
+  int SI_type[21];
 } served_cells_to_activate_t;
 
 typedef struct f1ap_setup_resp_s {

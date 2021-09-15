@@ -122,7 +122,7 @@ void * F1AP_CU_task(void *arg) {
   itti_mark_task_ready(TASK_CU_F1);
   eth_params_t *IPaddrs;
   // Hardcoded instance id!
-  if (RC.nrrrc[0]->node_type == ngran_gNB_CU)
+  if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_CU)
     IPaddrs=&RC.nrrrc[0]->eth_params_s;
   else 
     IPaddrs=&RC.rrc[0]->eth_params_s;

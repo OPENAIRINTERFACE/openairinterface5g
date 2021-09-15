@@ -151,7 +151,9 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     // Furthermore, cell_type is not a attribute of a cell in the data structure !!!!!!!!!!
     if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU)
       f1ap_req(true, instance)->cell_type=CELL_MACRO_GNB;
-    LOG_I(F1AP, "Received Cell in %d context\n", f1ap_req(true, instance)->cell_type=CELL_MACRO_GNB);
+    else
+      f1ap_req(true, instance)->cell_type=CELL_MACRO_ENB;
+    LOG_I(F1AP, "Received Cell in %d context\n", f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB);
     // System Information
     /* mib */
     req->mib[i] = calloc(served_cells_item_p->gNB_DU_System_Information->mIB_message.size + 1, sizeof(char));

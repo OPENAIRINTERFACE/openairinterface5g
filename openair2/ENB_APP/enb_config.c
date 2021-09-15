@@ -3168,7 +3168,7 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
           (check_plmn_identity(carrier, resp->cells_to_activate[j].mcc, resp->cells_to_activate[j].mnc, resp->cells_to_activate[j].mnc_digit_length)>0 &&
            resp->cells_to_activate[j].nrpci == carrier->physCellId)) {
         // copy system information and decode it
-        for (si_ind=2; si_ind<resp->cells_to_activate[j].num_SI + 2; si_ind++)  {
+        for (si_ind=0; si_ind<resp->cells_to_activate[j].num_SI; si_ind++)  {
           //printf("SI %d size %d: ", si_ind, resp->cells_to_activate[j].SI_container_length[si_ind]);
           //for (int n=0;n<resp->cells_to_activate[j].SI_container_length[si_ind];n++)
           //  printf("%02x ",resp->cells_to_activate[j].SI_container[si_ind][n]);
@@ -3176,7 +3176,7 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
           if (si_ind==6) si_ind=9;
           if (resp->cells_to_activate[j].SI_container[si_ind] != NULL) {
             extract_and_decode_SI(i,
-                                  si_ind,
+                                  resp->cells_to_activate[j].SI_type[si_ind],
                                   resp->cells_to_activate[j].SI_container[si_ind],
                                   resp->cells_to_activate[j].SI_container_length[si_ind]);
           }

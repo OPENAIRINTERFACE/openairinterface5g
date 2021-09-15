@@ -85,12 +85,18 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
   f1ap_du_data->default_sctp_stream_id = 0;
   /* setup parameters for F1U and start the server */
-  const cudu_params_t params = {
-    .local_ipv4_address  = RC.nrmac[instance]->eth_params_n.my_addr,
-    .local_port          = RC.nrmac[instance]->eth_params_n.my_portd,
-    .remote_ipv4_address = RC.nrmac[instance]->eth_params_n.remote_addr,
-    .remote_port         = RC.nrmac[instance]->eth_params_n.remote_portd
-  };
+  eth_params_t *tmp;
+  if ( RC.nrmac )
+    tmp= &RC.nrmac[instance]->eth_params_n;
+  else
+    tmp= &RC.mac[instance]->eth_params_n;
+  const cudu_params_t  params = {
+      .local_ipv4_address  = tmp->my_addr,
+      .local_port          = tmp->my_portd,
+      .remote_ipv4_address = tmp->remote_addr,
+      .remote_port         = tmp->remote_portd
+    };
+    
   if (!RC.nrrrc)
     AssertFatal(proto_agent_start(instance, &params) == 0,
               "could not start PROTO_AGENT for F1U on instance %ld!\n", instance);
