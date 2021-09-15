@@ -36,7 +36,7 @@
 /*
  * UE Context Setup
  */
-int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup_req_t *req);
+int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup_t *req);
 
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                                        uint32_t         assoc_id,
@@ -87,7 +87,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t       instance,
     uint32_t         stream,
     F1AP_F1AP_PDU_t *pdu);
 
-int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup_req_t *req);
+int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup_t *req);
 
 /*
  * UE Inactivity Notification
