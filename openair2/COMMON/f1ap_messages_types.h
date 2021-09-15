@@ -342,7 +342,7 @@ typedef struct f1ap_rb_failed_to_be_setup_s {
   long           rb_id;
 } f1ap_rb_failed_to_be_setup_t;
 
-typedef struct f1ap_ue_context_setup_req_s {
+typedef struct f1ap_ue_context_setup_s {
   uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
   uint32_t gNB_DU_ue_id;
   uint16_t rnti; 
@@ -370,7 +370,7 @@ typedef struct f1ap_ue_context_setup_req_s {
    // coniatner for the rrc_eNB_generate_SecurityModeCommand message
   uint8_t *rrc_container;
   int      rrc_container_length;
-} f1ap_ue_context_setup_req_t;
+} f1ap_ue_context_setup_t;
 
 typedef struct f1ap_ue_context_setup_resp_s {
   uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti

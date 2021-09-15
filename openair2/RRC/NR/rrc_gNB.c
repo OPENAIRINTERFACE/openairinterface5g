@@ -3136,7 +3136,7 @@ return 0;
 
 static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const char *msg_name, instance_t instance){
 
-  f1ap_ue_context_setup_req_t * req=&F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
+  f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
   protocol_ctxt_t ctxt;
   ctxt.rnti      = req->rnti;
   ctxt.module_id = instance;
@@ -3148,7 +3148,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
       rrc_gNB_get_ue_context(rrc, ctxt.rnti);
   MessageDef *message_p;
   message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_RESP);
-  f1ap_ue_context_setup_req_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(message_p);
+  f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(message_p);
   uint32_t incoming_teid = 0;
 
 
@@ -3250,7 +3250,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
 
 static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const char *msg_name, instance_t instance){
 
-  f1ap_ue_context_setup_req_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
+  f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
   protocol_ctxt_t ctxt;
   ctxt.rnti      = resp->rnti;
   ctxt.module_id = instance;

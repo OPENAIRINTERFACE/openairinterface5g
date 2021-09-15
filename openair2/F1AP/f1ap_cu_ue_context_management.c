@@ -72,7 +72,7 @@ static void setQos(F1AP_NonDynamic5QIDescriptor_t *toFill) {
 }
 
 int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
-                                     f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req) {
+                                     f1ap_ue_context_setup_t *f1ap_ue_context_setup_req) {
   F1AP_F1AP_PDU_t  pdu= {0};
   /* Create */
   /* 0. Message Type */
@@ -649,7 +649,7 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
   F1AP_UEContextSetupResponseIEs_t *ie;
   DevAssert(pdu);
   msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_SETUP_RESP);
-  f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_resp = &F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
+  f1ap_ue_context_setup_t *f1ap_ue_context_setup_resp = &F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
   container = &pdu->choice.successfulOutcome->value.choice.UEContextSetupResponse;
   int i;
 

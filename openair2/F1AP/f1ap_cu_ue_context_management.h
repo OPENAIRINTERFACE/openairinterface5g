@@ -37,7 +37,7 @@
  * UE Context Setup
  */
 int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
-                                     f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req);
+                                     f1ap_ue_context_setup_t *f1ap_ue_context_setup_req);
 
 int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
                                         uint32_t         assoc_id,
