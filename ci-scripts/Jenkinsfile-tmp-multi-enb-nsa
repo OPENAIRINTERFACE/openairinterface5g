@@ -51,15 +51,12 @@ def StatusForDb = ""
 
 
 pipeline {
-    agent none
+    agent {label pythonExecutor}
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
         lock(extra: [[resource: ciSmartPhonesResource2]], resource: ciSmartPhonesResource1)
     }
-    stages {
-    stage ("Py Exec"){
-    agent {label pythonExecutor}
     stages {
         stage("Build Init") {
             steps {
@@ -276,31 +273,21 @@ pipeline {
                         }
                     }
                 }
-            }
-        }
-    }
-    }
-    
-
-    stage ("DB Host"){
-    agent {label DataBaseHost}
-    stages {
-        stage("SQL Collect ") {
-            steps {
-                script {
-                    if (currentBuild.result=='FAILURE') {StatusForDb = 'FAIL'} else {StatusForDb = 'PASS'}
-                    sh "python3 /home/oaicicd/mysql/sql_connect.py ${JOB_NAME} ${params.eNB_MR} ${params.eNB_Branch} ${env.BUILD_ID} ${env.BUILD_URL} ${StatusForDb} ''"
+                stage ("SQL Collect"){
+                agent {label DataBaseHost}
+                    steps {
+                        script {
+                            if (currentBuild.result=='FAILURE') {StatusForDb = 'FAIL'} else {StatusForDb = 'PASS'}
+                            sh "python3 /home/oaicicd/mysql/sql_connect.py ${JOB_NAME} ${params.eNB_MR} ${params.eNB_Branch} ${env.BUILD_ID} ${env.BUILD_URL} ${StatusForDb} ''"
+                        }
+                    }
                 }
             }
         }
-    }
-    }
-
-    }
+    } 
 
     post {
         always {
-        node(pythonExecutor){
             script {
                 if (params.pipelineZipsConsoleLog != null) {
                     if (params.pipelineZipsConsoleLog) {
@@ -313,7 +300,6 @@ pipeline {
                     }
                 }
             }
-        }
         }
     }
 }
