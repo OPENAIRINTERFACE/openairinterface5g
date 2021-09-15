@@ -1960,6 +1960,8 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
               pucch->n_CCE = current_harq->n_CCE;
               pucch->N_CCE = current_harq->N_CCE;
               pucch->delta_pucch = current_harq->delta_pucch;
+              current_harq->active = false;
+              current_harq->ack_received = false;
             }
           }
         }

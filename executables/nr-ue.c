@@ -286,7 +286,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
     nr_uplink_indication_t ul_info;
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
-    int slot_ahead = 6; // Melissa lets make this dynamic
+    int slot_ahead = 2; // Melissa lets make this dynamic
     ul_info.cc_id = CC_id;
     ul_info.gNB_index = gNB_id;
     ul_info.module_id = mod_id;

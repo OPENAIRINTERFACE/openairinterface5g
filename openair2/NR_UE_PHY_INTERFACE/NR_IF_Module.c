@@ -526,7 +526,7 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     nr_uplink_indication_t ul_info;
     memset(&ul_info, 0, sizeof(ul_info));
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
-    int slot_ahead = 6; // Melissa lets make this dynamic
+    int slot_ahead = 2; // Melissa lets make this dynamic
     ul_info.frame_rx = frame;
     ul_info.slot_rx = slot;
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
