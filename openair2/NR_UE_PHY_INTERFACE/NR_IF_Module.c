@@ -769,101 +769,15 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t
 
 }
 
-queue_t nr_uci_ind_queue;
-static void nr_ue_uci_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
-  if (scheduled_response->dl_config != NULL)
-  {
-    fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
-    AssertFatal(dl_config->number_pdus < sizeof(dl_config->dl_config_list) / sizeof(dl_config->dl_config_list[0]),
-                "Too many dl_config pdus %d", dl_config->number_pdus);
-    for (int i = 0; i < dl_config->number_pdus; ++i)
-    {
-      LOG_I(PHY, "In %s: processing PDU type (%d) with %d total DL PDUs (dl_config %p) \n",
-            __FUNCTION__, dl_config->dl_config_list[i].pdu_type, dl_config->number_pdus, dl_config);
-
-      uint8_t pdu_type = dl_config->dl_config_list[i].pdu_type;
-      switch (pdu_type)
-      {
-        case (FAPI_NR_DL_CONFIG_TYPE_DLSCH):
-        {
-          nfapi_nr_uci_indication_t *uci_ind = CALLOC(1, sizeof(*uci_ind));
-          uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
-          uci_ind->sfn = scheduled_response->frame;
-          uci_ind->slot = scheduled_response->slot;
-          uci_ind->num_ucis = 1;
-          uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
-          for (int j = 0; j < uci_ind->num_ucis; j++)
-          {
-            nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
-            uci_ind->uci_list[j].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
-            uci_ind->uci_list[j].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
-            pdu_0_1->pduBitmap = 2; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR
-            pdu_0_1->handle = 0;
-            pdu_0_1->rnti = dl_config->dl_config_list[0].dlsch_config_pdu.rnti;
-            pdu_0_1->pucch_format = 1;
-            pdu_0_1->ul_cqi = 27;
-            pdu_0_1->timing_advance = 0;
-            pdu_0_1->rssi = 0;
-            pdu_0_1->harq = CALLOC(1, sizeof(*pdu_0_1->harq));
-            pdu_0_1->harq->num_harq = 1;
-            pdu_0_1->harq->harq_confidence_level = 0;
-            pdu_0_1->harq->harq_list = CALLOC(pdu_0_1->harq->num_harq, sizeof(*pdu_0_1->harq->harq_list));
-            for (int k = 0; k < pdu_0_1->harq->num_harq; k++)
-            {
-              pdu_0_1->harq->harq_list[k].harq_value = 0;
-            }
-          }
-
-          LOG_I(NR_PHY, "In %s: Filled queue uci_ind which was filled by dlconfig.\n"
-                      "uci_num %d, uci_slot %d, uci_frame %d and num_harqs %d\n",
-                        __FUNCTION__, uci_ind->num_ucis, uci_ind->slot, uci_ind->sfn, uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->num_harq);
-
-          if (!put_queue(&nr_uci_ind_queue, uci_ind))
-          {
-            LOG_E(NR_MAC, "Put_queue failed for uci_ind\n");
-            //free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->harq_list);
-            //free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq);
-            for (int j = 0; j < uci_ind->num_ucis; j++)
-            {
-              nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
-              free(pdu_0_1->harq->harq_list);
-              free(pdu_0_1->harq);
-            }
-            free(uci_ind->uci_list);
-            free(uci_ind);
-          }
-          break;
-        }
-      }
-    }
-  }
-}
 // L2 Abstraction Layer
 // Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
 int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
 
   dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid = g_harq_pid;
   update_harq_status(dl_info, pdu_id);
-  NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-  nr_scheduled_response_t scheduled_response;
-  fill_scheduled_response(&scheduled_response,
-                          dl_config,
-                          NULL,
-                          NULL,
-                          dl_info->module_id,
-                          dl_info->cc_id,
-                          dl_info->frame,
-                          dl_info->slot,
-                          dl_info->thread_id);
-  nr_ue_uci_scheduled_response_stub(&scheduled_response);
 
   if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack)
     nr_ue_send_sdu(dl_info, ul_time_alignment, pdu_id);
-
-  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[g_harq_pid];
-  current_harq->active = false;
-  current_harq->ack_received = false;
 
   return 0;
 }
