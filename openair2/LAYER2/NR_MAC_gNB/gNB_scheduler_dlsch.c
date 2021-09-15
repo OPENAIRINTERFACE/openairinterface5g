@@ -756,15 +756,11 @@ void pf_dl(module_id_t module_id,
 void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot)
 {
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
-
   if (UE_info->num_UEs == 0)
     return;
 
-  if (slot!=1 && slot!=11) return;
-
+  NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   const int CC_id = 0;
-
 
   /* Get bwpSize from the first UE */
   int UE_id = UE_info->list.head;
