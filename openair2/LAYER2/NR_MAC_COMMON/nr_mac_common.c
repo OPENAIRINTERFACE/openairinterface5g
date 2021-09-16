@@ -3528,13 +3528,23 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
                                            uint16_t ssb_start_symbol,
                                            NR_SubcarrierSpacing_t scs_ssb,
                                            frequency_range_t frequency_range,
+                                           int nr_band,
                                            uint32_t ssb_index,
                                            uint32_t ssb_period,
                                            uint32_t ssb_offset_point_a) {
 
   NR_SubcarrierSpacing_t scs_pdcch;
 
-  channel_bandwidth_t min_channel_bw = bw_10MHz; // TODO remove hardcoding and implement Table 5.3.5-1 in 38.104
+  channel_bandwidth_t min_channel_bw;
+
+  // according to Table 5.3.5-1 in 38.104
+  // band 79 is the only one which minimum is 40
+  // for all the other channels it is either 10 or 5
+  // and there is no difference between the two for this implementation so it is set it to 10
+  if (nr_band == 79)
+    min_channel_bw = bw_40MHz;
+  else
+    min_channel_bw = bw_10MHz;
 
   if (frequency_range == FR2) {
     if(mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60)
