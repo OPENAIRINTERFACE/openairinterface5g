@@ -338,9 +338,11 @@ The following features are valid for the gNB and the 5G-NR UE.
 
 # OpenAirInterface 5G-NR UE Feature Set #
 
-**as of May 2020** only supporting "noS1" mode (DL):
-- Creates TUN interface to PDCP to inject and receive user-place traffic
-- Will only work with OAI gNB configured in the same mode
+* Supporting "noS1" mode (DL and UL):
+  - Creates TUN interface to PDCP to inject and receive user-place traffic
+  - No connection to the core network
+* Supporting Standalone (SA) mode:
+  - UE can register with the 5G Core Network, establish a PDU Session and exchange user-plane traffic  
 
 ##  NR UE PHY Layer ##
 
