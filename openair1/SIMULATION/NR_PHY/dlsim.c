@@ -269,12 +269,15 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   ps->nrOfLayers = g_nrOfLayers;
 
+  int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats ?
+      NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
+
   nr_set_pdsch_semi_static(scc,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
                            /* tda = */ 2,
-                           /* dci_format = */ 0,
+                           dci_format,
                            ps);
 
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
