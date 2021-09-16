@@ -394,12 +394,6 @@ rb_found:
   LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d",
         __FILE__, __LINE__, __FUNCTION__, ue->rnti, is_srb, rb_id, size);
 
-  memblock = get_free_mem_block(size, __func__);
-  if (memblock == NULL) {
-    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
-  }
-  memcpy(memblock->data, buf, size);
 
   /* unused fields? */
   ctx.instance = ue->module_id;
@@ -425,16 +419,23 @@ rb_found:
                 "Can't be CU, bad node type %d\n", type);
 
     if (NODE_IS_DU(type) && is_srb == 1) {
-      MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, 0, F1AP_UL_RRC_MESSAGE);
+      MessageDef *msg = itti_alloc_new_message_sized(TASK_RLC_ENB, 0, F1AP_UL_RRC_MESSAGE, sizeof(*msg) + size);
+      F1AP_UL_RRC_MESSAGE(msg).rrc_container = (uint8_t*)(msg+1);
+      memcpy(F1AP_UL_RRC_MESSAGE(msg).rrc_container, buf, size);
       F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
       F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
-      F1AP_UL_RRC_MESSAGE(msg).rrc_container = (unsigned char *)buf;
       F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = size;
       itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0 /*ctxt_pP->module_id*/), msg);
       return;
     }
   }
-
+  
+  memblock = get_free_mem_block(size, __func__);
+  if (memblock == NULL) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+  memcpy(memblock->data, buf, size);
   if (!get_pdcp_data_ind_func()(&ctx, is_srb, is_mbms, rb_id, size, memblock, NULL, NULL)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed (is_srb %d rb_id %d rnti %d)\n",
           __FILE__, __LINE__, __FUNCTION__,

@@ -64,7 +64,6 @@ All GTP-U tunnels are managed in a Linux Thread, that have partially ITTI design
 3. incoming packets are sent to the tunnel creator using a C callback (the callback function is given in tunnel creation order). The callback should not block
 
 
-
 # 3. CU F1AP messages  #
 
 ## startup
@@ -170,7 +169,17 @@ The data path by itself doesn't make any difficulty:
 The SRB are sent in DU RRC tasks via itti F1AP_UL_RRC_MESSAGE (see above the processing)
 2. For DL, pdcp (in CU for DRBs) calls rlc_data_req (by a decoupling queue and thread rlc_data_req_thread, so function du_rlc_data_req() or enqueue_rlc_data_req()). in DU, assuming the gtp-u tunnel exists, a reception call back (du_dl_recv()) decapsulate the gtp-u packet and calls du_rlc_data_req()  
 
-Hereafter the processing design, that doesn't require to setup a new context storage, as we can use the GTP-U internal tables: rnti+rb=>teid for outgoing gtp-u packets and teid=>rnti+rb for incoming gtp-u packets 
+Hereafter the processing design, that doesn't require to setup a new context storage, as we can use the GTP-U internal tables: rnti+rb=>teid for outgoing gtp-u packets and teid=>rnti+rb for incoming gtp-u packets
+
+In CU case, the DRB tunnel to DU and the tunnel on N3 have the same key (rnti, rb id), but they run in two different GTP-U instances.
+Each instance binds on diffrent sockets.
+
+For F1-U, both DU and CU binds on the full quadruplet (IP source, port source, IP destination, port destination) from the configuration file parameters: 
+local_s_address, remote_s_address,local_s_portd, remote_s_portd  
+
+These 4 values are in:  
+CU: at cell level (same level as nr_cellid parameter), they are read if tr_s_preference = "f1"; is set
+DU: in block MACRLCs, if tr_n_preference  = "f1"; is set in this block
 
 ## tunnels setup
 In GTP-U, TS 29.281 specifies a option header (NR RAN Container This extension header may be transmitted in a G-PDU over the X2-U, Xn-U and F1-U user plane interfaces), but it is not mandatory optional header (as is the N3 one).
