@@ -113,7 +113,7 @@ int main(int argc, char **argv)
   //unsigned char frame_type = 0;
   int loglvl=OAILOG_WARNING;
   int sr_flag = 0;
-  int pucch_DTX_thres = 0;
+  int pucch_DTX_thres = 100;
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
@@ -544,18 +544,17 @@ int main(int argc, char **argv)
 
       // SNR Computation
       // standard says: SNR = S / N, where S is the total signal energy, N is the noise energy in the transmission bandwidth (i.e. N_RB_DL resource blocks)
-      // txlev = S. Note: signal_energy_nodc normalizes by the length of the vector, so multiply output by ofdm_symbol_size
-      double txlev = do_DTX == 0 ? signal_energy_nodc(&txdataF[0][startingSymbolIndex*frame_parms->ofdm_symbol_size],
-                                                      frame_parms->ofdm_symbol_size) * (double)frame_parms->ofdm_symbol_size 
-                                 : 1e5;
-      int N_RB = (format == 0 || format == 1) ? 1 : nrofPRB;
+      // txlev = S.
+      int txlev = signal_energy(&txdataF[0][startingSymbolIndex*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size);
+
       // sigma2 is variance per dimension, so N/(N_RB*12)
       // so, sigma2 = N/(N_RB_DL*12) => (S/SNR)/(N_RB*12)
+      int N_RB = (format == 0 || format == 1) ? 1 : nrofPRB;
       sigma2_dB = 10*log10(txlev/(12.0*N_RB))-SNR;
       sigma2 = pow(10.0,sigma2_dB/10.0);
-      if (n_trials==1) printf("txlev %f (%f dB), offset %d, sigma2 %f ( %f dB)\n",txlev,10*log10(txlev),startingSymbolIndex*frame_parms->ofdm_symbol_size,sigma2,sigma2_dB);
-      random_channel(UE2gNB,0);
-      freq_channel(UE2gNB,N_RB_DL,1+(N_RB_DL*12),scs/1000);
+
+      if (n_trials==1) printf("txlev %d (%f dB), offset %d, sigma2 %f ( %f dB)\n",txlev,10*log10(txlev),startingSymbolIndex*frame_parms->ofdm_symbol_size,sigma2,sigma2_dB);
+
       int i0;
       double txr,txi,rxr,rxi,nr,ni;
       for (int symb=0; symb<gNB->frame_parms.symbols_per_slot;symb++) {
@@ -566,12 +565,15 @@ int main(int argc, char **argv)
             for (int aarx=0;aarx<n_rx;aarx++) {
               nr = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
               ni = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
-              ((int16_t*)rxdataF[aarx])[i<<1]    = (int16_t)(100.0*(nr)/sqrt((double)txlev));
-              ((int16_t*)rxdataF[aarx])[1+(i<<1)]= (int16_t)(100.0*(ni)/sqrt((double)txlev));
+              ((int16_t*)rxdataF[aarx])[i<<1] = (int16_t)(100.0*((double)(((int16_t *)txdataF[0])[(i<<1)]) + nr)/sqrt((double)txlev));
+              ((int16_t*)rxdataF[aarx])[1+(i<<1)]=(int16_t)(100.0*((double)(((int16_t *)txdataF[0])[(i<<1)+1]) + ni)/sqrt((double)txlev));
             }
           }
         }
       }
+
+      random_channel(UE2gNB,0);
+      freq_channel(UE2gNB,N_RB_DL,2*N_RB_DL+1,scs/1000);
       for (int symb=0; symb<nrofSymbols; symb++) {
         i0 = (startingSymbolIndex + symb)*gNB->frame_parms.ofdm_symbol_size;
         for (int re=0;re<N_RB_DL*12;re++) {
@@ -583,9 +585,9 @@ int main(int argc, char **argv)
             rxi = txr*UE2gNB->chF[aarx][re].i + txi*UE2gNB->chF[aarx][re].r;
             nr = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
             ni = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
-            ((int16_t*)rxdataF[aarx])[i<<1]    = (int16_t)(100.0*(rxr + nr)/sqrt((double)txlev));
-            ((int16_t*)rxdataF[aarx])[1+(i<<1)]= (int16_t)(100.0*(rxi + ni)/sqrt((double)txlev));
-           
+            ((int16_t*)rxdataF[aarx])[i<<1] = (int16_t)(100.0*((double)(((int16_t *)txdataF[0])[(i<<1)]) + rxr + nr)/sqrt((double)txlev));
+            ((int16_t*)rxdataF[aarx])[1+(i<<1)]=(int16_t)(100.0*((double)(((int16_t *)txdataF[0])[(i<<1)+1]) + rxi + ni)/sqrt((double)txlev));
+
             if (n_trials==1 && abs(txr) > 0) printf("symb %d, re %d , aarx %d : txr %f, txi %f, chr %f, chi %f, nr %f, ni %f, rxr %f, rxi %f => %d,%d\n",
                                                     symb, re, aarx, txr,txi,
                                                     UE2gNB->chF[aarx][re].r,UE2gNB->chF[aarx][re].i,
@@ -594,12 +596,12 @@ int main(int argc, char **argv)
           }
         }
       }
+
       int rxlev=0;
       for (int aarx=0;aarx<n_rx;aarx++) rxlev += signal_energy(&rxdataF[aarx][startingSymbolIndex*frame_parms->ofdm_symbol_size],
                                                            frame_parms->ofdm_symbol_size);
 
       // noise measurement
-
       for (int s=0;s<frame_parms->symbols_per_slot;s++){
         if (s>=startingSymbolIndex && s<(startingSymbolIndex+nrofSymbols))
           for (int rb=0; rb<N_RB; rb++) {
