@@ -243,7 +243,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   ie11->criticality                    = F1AP_Criticality_reject;  // ?
   ie11->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_SRBs_ToBeSetup_List;
 
-  for (int i=0; i<1; i++) {
+  for (int i=0; i<f1ap_ue_context_setup_req->srbs_to_be_setup_length; i++) {
     //
     asn1cSequenceAdd(ie11->value.choice.SRBs_ToBeSetup_List.list, F1AP_SRBs_ToBeSetup_ItemIEs_t, srbs_toBeSetup_item_ies);
     srbs_toBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_Item; // 73
@@ -252,7 +252,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     /* 11.1 SRBs_ToBeSetup_Item */
     F1AP_SRBs_ToBeSetup_Item_t *srbs_toBeSetup_item=&srbs_toBeSetup_item_ies->value.choice.SRBs_ToBeSetup_Item;
     /* 11.1.1 sRBID */
-    srbs_toBeSetup_item->sRBID = 2L;
+    srbs_toBeSetup_item->sRBID = f1ap_ue_context_setup_req->srbs_to_be_setup[i].srb_id;
     /* OPTIONAL */
     /* 11.1.2 duplicationIndication */
     //if (0) {
