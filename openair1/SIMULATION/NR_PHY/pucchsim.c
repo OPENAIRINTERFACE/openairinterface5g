@@ -101,8 +101,9 @@ int main(int argc, char **argv)
   uint16_t startingPRB=0,startingPRB_intraSlotHopping=0; //PRB number not sure see 9.2.1, 38.213 for more info. Should be actually present in the resource set provided
   uint16_t nrofPRB=2;
   uint8_t timeDomainOCC=0;
-  SCM_t channel_model=TDL_C;
-  double DS_TDL = .3;
+  SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
+
+  double DS_TDL = .03;
   
   int N_RB_DL=273,mu=1;
   float target_error_rate=0.001;
@@ -112,7 +113,7 @@ int main(int argc, char **argv)
   //unsigned char frame_type = 0;
   int loglvl=OAILOG_WARNING;
   int sr_flag = 0;
-  int pucch_DTX_thres = 155;
+  int pucch_DTX_thres = 0;
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
@@ -381,7 +382,7 @@ int main(int argc, char **argv)
   cfg->carrier_config.num_tx_ant.value = n_tx;
   cfg->carrier_config.num_rx_ant.value = n_rx;
   nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
-  phy_init_nr_gNB(gNB,0,1);
+  phy_init_nr_gNB(gNB,0,0);
 
   double fs,bw,scs,eps;
 
@@ -479,7 +480,6 @@ int main(int argc, char **argv)
   UE = calloc(1,sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
 
-  UE->frame_parms.nb_antennas_rx = 2;
   UE->perfect_ce = 0;
 
   if(eps!=0.0)
@@ -525,20 +525,9 @@ int main(int argc, char **argv)
     pucch_tx_pdu.second_hop_prb = startingPRB_intraSlotHopping;
   }
 
-  UE->perfect_ce = 0;
-
-  if(eps!=0.0)
-    UE->UE_fo_compensation = 1; // if a frequency offset is set then perform fo estimation and compensation
-
-  if (init_nr_ue_signal(UE, 1, 0) != 0)
-  {
-    printf("Error at UE NR initialisation\n");
-    exit(-1);
-  }
-
   pucch_GroupHopping_t PUCCH_GroupHopping = pucch_tx_pdu.group_hop_flag + (pucch_tx_pdu.sequence_hop_flag<<1);
 
-  for(SNR=snr0;SNR<=snr1;SNR=SNR+0.5){
+  for(SNR=snr0;SNR<=snr1;SNR+=1){
     ack_nack_errors=0;
     sr_errors=0;
     n_errors = 0;
@@ -552,14 +541,14 @@ int main(int argc, char **argv)
       } else if (do_DTX == 0){
         nr_generate_pucch2(UE, txdataF, frame_parms, amp, nr_slot_tx, &pucch_tx_pdu);
       }
-      
+
       // SNR Computation
       // standard says: SNR = S / N, where S is the total signal energy, N is the noise energy in the transmission bandwidth (i.e. N_RB_DL resource blocks)
       // txlev = S. Note: signal_energy_nodc normalizes by the length of the vector, so multiply output by ofdm_symbol_size
       double txlev = do_DTX == 0 ? signal_energy_nodc(&txdataF[0][startingSymbolIndex*frame_parms->ofdm_symbol_size],
                                                       frame_parms->ofdm_symbol_size) * (double)frame_parms->ofdm_symbol_size 
                                  : 1e5;
-      int N_RB = (format == 0) ? 1 : nrofPRB;
+      int N_RB = (format == 0 || format == 1) ? 1 : nrofPRB;
       // sigma2 is variance per dimension, so N/(N_RB*12)
       // so, sigma2 = N/(N_RB_DL*12) => (S/SNR)/(N_RB*12)
       sigma2_dB = 10*log10(txlev/(12.0*N_RB))-SNR;
@@ -640,7 +629,7 @@ int main(int argc, char **argv)
         pucch_pdu.prb_start             = startingPRB;
         pucch_pdu.bwp_start             = 0;
         pucch_pdu.bwp_size              = N_RB_DL;
-        if (nrofSymbols>1) { 
+        if (nrofSymbols>1) {
           pucch_pdu.freq_hop_flag       = 1;
           pucch_pdu.second_hop_prb      = N_RB_DL-1;
         }
@@ -691,7 +680,7 @@ int main(int argc, char **argv)
         pucch_pdu.prb_start             = startingPRB;
         pucch_pdu.dmrs_scrambling_id    = dmrs_scrambling_id;
         pucch_pdu.data_scrambling_id    = data_scrambling_id;
-        if (nrofSymbols>1) { 
+        if (nrofSymbols>1) {
           pucch_pdu.freq_hop_flag       = 1;
           pucch_pdu.second_hop_prb      = N_RB_DL-1;
         }
