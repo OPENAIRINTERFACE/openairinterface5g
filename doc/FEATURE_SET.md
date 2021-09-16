@@ -416,10 +416,37 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Configuration of fapi PDU according to DCI
 
 
-
 **RLC**
+* Tx/Rx operations according to 38.322 Rel.16
+   - RLC Acknowledged mode
+   - RLC Unacknowledged mode
+   - DRBs and SRBs establishment and handling
+   - Timers
 
 **PDCP**
+* Tx/Rx operations according to 38.323 Rel.16  
+   - Integrity protection and ciphering procedures
+   - SDU dicard and in-order delivery
+   - Radio bearer establishment and handling 
+   - Interfaces with RRC, RLC
+
+**RRC**
+* Integration of RRC messages and procedures supporting UE 5G SA connection according to 38.331 Rel.16 
+   - RRCSetupRequest/RRCSetup/RRCSetupComplete
+   - RRC Uplink/Downlink Information transfer carrying NAS messages transparently
+   - RRC Reconfiguration/Reconfiguration complete
+   - Support for master cell group configuration
+* Interface with PDCP: configuration, DCCH and CCCH message handling
+* Interface with RLC and MAC for configuration
+
+**NAS**
+* Transfer of NAS messages between the AMF and the UE supporting the UE registration with the core network and the PDU session  establishment according to 24.501 Rel.16
+  - Identity Request/Response
+  - Authentication Request/Response
+  - Security Mode Command/Complete
+  - Registration Request/Accept/Complete
+  - PDU Session Establishment Request/Accept
+  - NAS configuration and basic interfacing with RRC
 
 
 
