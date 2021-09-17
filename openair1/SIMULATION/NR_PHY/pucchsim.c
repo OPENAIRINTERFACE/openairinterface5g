@@ -565,8 +565,8 @@ int main(int argc, char **argv)
             for (int aarx=0;aarx<n_rx;aarx++) {
               nr = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
               ni = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
-              ((int16_t*)rxdataF[aarx])[i<<1] = (int16_t)(100.0*((double)(((int16_t *)txdataF[0])[(i<<1)]) + nr)/sqrt((double)txlev));
-              ((int16_t*)rxdataF[aarx])[1+(i<<1)]=(int16_t)(100.0*((double)(((int16_t *)txdataF[0])[(i<<1)+1]) + ni)/sqrt((double)txlev));
+              ((int16_t*)rxdataF[aarx])[i<<1] = (int16_t)(100.0*(nr)/sqrt((double)txlev));
+              ((int16_t*)rxdataF[aarx])[1+(i<<1)] = (int16_t)(100.0*(ni)/sqrt((double)txlev));
             }
           }
         }
@@ -585,8 +585,8 @@ int main(int argc, char **argv)
             rxi = txr*UE2gNB->chF[aarx][re].i + txi*UE2gNB->chF[aarx][re].r;
             nr = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
             ni = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
-            ((int16_t*)rxdataF[aarx])[i<<1] = (int16_t)(100.0*((double)(((int16_t *)txdataF[0])[(i<<1)]) + rxr + nr)/sqrt((double)txlev));
-            ((int16_t*)rxdataF[aarx])[1+(i<<1)]=(int16_t)(100.0*((double)(((int16_t *)txdataF[0])[(i<<1)+1]) + rxi + ni)/sqrt((double)txlev));
+            ((int16_t*)rxdataF[aarx])[i<<1] = (int16_t)(100.0*(rxr + nr)/sqrt((double)txlev));
+            ((int16_t*)rxdataF[aarx])[1+(i<<1)]=(int16_t)(100.0*(rxi + ni)/sqrt((double)txlev));
 
             if (n_trials==1 && abs(txr) > 0) printf("symb %d, re %d , aarx %d : txr %f, txi %f, chr %f, chi %f, nr %f, ni %f, rxr %f, rxi %f => %d,%d\n",
                                                     symb, re, aarx, txr,txi,
