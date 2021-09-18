@@ -22,13 +22,13 @@
  *       create the UE RLC AM entity with given parameters
  *
  * GNB_UM <rx_maxsize> <tx_maxsize> <t_reassembly> <sn_field_length>
- *     create the eNB RLC UM entity with given parameters
+ *     create the gNB RLC UM entity with given parameters
  *
  * UE_UM <rx_maxsize> <tx_maxsize> <t_reassembly> <sn_field_length>
  *     create the UE RLC UM entity with given parameters
  *
  * GNB_TM <tx_maxsize>
- *     create the eNB RLC TM entity with given parameters
+ *     create the gNB RLC TM entity with given parameters
  *
  * UE_UM <tx_maxsize>
  *     create the UE RLC TM entity with given parameters
@@ -39,7 +39,7 @@
  *     You must end your test definition with a line 'TIME, -1'.
  *
  * GNB_SDU <id> <size>
- *     send an SDU to eNB with id <i> and size <size>
+ *     send an SDU to gNB with id <i> and size <size>
  *     the SDU is [00 01 ... ff 01 ...]
  *     (ie. start byte is 00 then we increment for each byte, loop if needed)
  *
@@ -47,10 +47,10 @@
  *     same as GNB_SDU but the SDU is sent to the UE
  *
  * GNB_PDU <size> <'size' bytes>
- *     send a custom PDU from eNB to UE (eNB does not see this PDU at all)
+ *     send a custom PDU from gNB to UE (gNB does not see this PDU at all)
  *
  * UE_PDU <size> <'size' bytes>
- *     send a custom PDU from UE to eNB (UE does not see this PDU at all)
+ *     send a custom PDU from UE to gNB (UE does not see this PDU at all)
  *
  * GNB_PDU_SIZE <size>
  *     set 'gnb_pdu_size'
@@ -70,7 +70,7 @@
  *     that the test must fail (ie. exit with non zero, crash not allowed)
  *
  * GNB_BUFFER_STATUS
- *     call buffer_status for eNB and print result
+ *     call buffer_status for gNB and print result
  *
  * UE_BUFFER_STATUS
  *     call buffer_status for UE and print result
@@ -82,7 +82,7 @@
  *     discards given SDU
  *
  * RE_ESTABLISH
- *     re-establish both eNB and UE
+ *     re-establish both gNB and UE
  */
 
 enum action {
@@ -368,7 +368,7 @@ int test_main(void)
           pos += 2;
           break;
         case RE_ESTABLISH:
-          printf("TEST: %d: re-establish eNB and UE\n", i);
+          printf("TEST: %d: re-establish gNB and UE\n", i);
           gnb->reestablishment(gnb);
           ue->reestablishment(ue);
           pos++;
