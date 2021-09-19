@@ -615,6 +615,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
   openair0_timestamp ts,old_ts;
   AssertFatal(*slot<fp->slots_per_frame && *slot>=0, "slot %d is illegal (%d)\n",*slot,fp->slots_per_frame);
 
+  start_meas(&ru->rx_fhaul);
   for (i=0; i<ru->nb_rx; i++)
     rxp[i] = (void *)&ru->common.rxdata[i][fp->get_samples_slot_timestamp(*slot,fp,0)];
 
@@ -694,6 +695,8 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
     //exit_fun( "problem receiving samples" );
     LOG_E(PHY, "problem receiving samples\n");
   }
+
+  stop_meas(&ru->rx_fhaul);
 }
 
 
@@ -742,6 +745,9 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
         flags = 3; // end of burst
     }
 
+    // if this is the first TX, flags=2 => flags=2 (Start of burst), flags=1 => flags=2 (start of burst), flags=3 => flags = 4 (start and end of burst)
+    if (flags != 2 && proc->first_tx==1) flags += 1;
+
     if (fp->freq_range==nr_FR2) {
       // the beam index is written in bits 8-10 of the flags
       // bit 11 enables the gpio programming
@@ -763,6 +769,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       flags |= beam<<8;
       LOG_D(HW,"slot %d, beam %d\n",slot,ru->common.beam_id[0][slot*fp->symbols_per_slot]);
     }
+    if (proc->first_tx == 1) proc->first_tx = 0;
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS, flags );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame );
@@ -780,8 +787,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
                                       siglen+sf_extension,
                                       ru->nb_tx,
                                       flags);
-    LOG_D(PHY,"[TXPATH] RU %d aa %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d, returned %d, E %f\n",ru->idx,i,
-	  (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot, txs,10*log10((double)signal_energy(txp[0],siglen+sf_extension)));
+    LOG_D(PHY,"[TXPATH] RU %d aa %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d, flags %d, siglen+sf_extension %d, returned %d, E %f\n",ru->idx,i,
+	  (long long unsigned int)timestamp,frame,proc->frame_tx_unwrap,slot, flags, siglen+sf_extension, txs,10*log10((double)signal_energy(txp[0],siglen+sf_extension)));
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       //AssertFatal(txs == 0,"trx write function error %d\n", txs);
   }
@@ -1164,8 +1171,7 @@ void *ru_stats_thread(void *param) {
         print_meas(&ru->ofdm_total_stats,"feptx_total",NULL,NULL);
       }
 
-      if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
-
+      print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
       print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
 
       if (ru->fh_north_out) {
@@ -1241,7 +1247,14 @@ void *ru_thread( void *param ) {
   int                slot     = fp->slots_per_frame-1;
   int                frame    = 1023;
   char               threadname[40];
+  int                initial_wait=1;
+  int                opp_enabled0 = opp_enabled;
+
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
+
+  // set the timing measurements for startup phase, for RX fronthaul settling measurements, put it to configured value after
+  opp_enabled = 1;
+
   // set default return value
   ru_thread_status = 0;
   // set default return value
@@ -1343,6 +1356,18 @@ void *ru_thread( void *param ) {
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
+    if (initial_wait == 1 && proc->frame_rx < 1000 && ru->fh_south_in == rx_rf) {
+       if (proc->frame_rx>0 && ((proc->frame_rx % 100) == 0) && proc->tti_rx==0) {
+          LOG_I(PHY,"delay processing to let RX stream settle, frame %d (trials %d)\n",proc->frame_rx,ru->rx_fhaul.trials);
+          print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
+          reset_meas(&ru->rx_fhaul);
+       }
+       continue;
+    }
+    if (proc->frame_rx>=800)  {
+      initial_wait=0;
+      opp_enabled = opp_enabled0;
+    } 
     proc->timestamp_tx = proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
     proc->frame_tx     = (proc->tti_rx > (fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
     proc->tti_tx      = (proc->tti_rx + (fp->slots_per_subframe*sf_ahead))%fp->slots_per_frame;
@@ -1701,6 +1726,7 @@ void set_function_spec_param(RU_t *ru) {
 
   switch (ru->if_south) {
     case LOCAL_RF:   // this is an RU with integrated RF (RRU, gNB)
+      reset_meas(&ru->rx_fhaul);
       if (ru->function ==  NGFI_RRU_IF5) {                 // IF5 RRU
         ru->do_prach              = 0;                      // no prach processing in RU
         ru->fh_north_in           = NULL;                   // no shynchronous incoming fronthaul from north
@@ -1738,7 +1764,6 @@ void set_function_spec_param(RU_t *ru) {
         ru->ifdevice.host_type    = RRU_HOST;
         ru->rfdevice.host_type    = RRU_HOST;
         ru->ifdevice.eth_params   = &ru->eth_params;
-        reset_meas(&ru->rx_fhaul);
         reset_meas(&ru->tx_fhaul);
         reset_meas(&ru->compression);
         reset_meas(&ru->transport);
