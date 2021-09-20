@@ -1170,6 +1170,7 @@ void *ru_stats_thread(void *param) {
       }
 
       print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
+
       print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
 
       if (ru->fh_north_out) {
@@ -1366,6 +1367,7 @@ void *ru_thread( void *param ) {
       initial_wait=0;
       opp_enabled = opp_enabled0;
     } 
+    if (initial_wait == 0 && ru->rx_fhaul.trials > 1000) reset_meas(&ru->rx_fhaul);
     proc->timestamp_tx = proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
     proc->frame_tx     = (proc->tti_rx > (fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
     proc->tti_tx      = (proc->tti_rx + (fp->slots_per_subframe*sf_ahead))%fp->slots_per_frame;
