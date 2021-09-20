@@ -1285,7 +1285,7 @@ int nr_acknack_scheduling(int mod_id,
     pucch->timing_indicator = i;
     pucch->dai_c++;
     // retain old resource indicator, and we are good
-    LOG_D(NR_MAC,"pucch_acknak : %d.%d. DAI > 0, pucch allocated for %d.%d\n",frame,slot,pucch->frame,pucch->ul_slot);
+    LOG_I(NR_MAC,"pucch_acknak : %d.%d. DAI > 0, pucch allocated for %d.%d timing_indicator %d\n",frame,slot,pucch->frame,pucch->ul_slot, pucch->timing_indicator);
     return 0;
   }
 
@@ -1353,7 +1353,7 @@ int nr_acknack_scheduling(int mod_id,
 
   pucch->timing_indicator = ind_found; // index in the list of timing indicators
 
-  LOG_D(NR_MAC,"pucch_acknak 2. DAI 0 DL %d.%d, UL_ACK %d.%d (index %d)\n",frame,slot,pucch->frame,pucch->ul_slot,ind_found);
+  LOG_I(NR_MAC,"pucch_acknak 2. DAI 0 DL %d.%d, UL_ACK %d.%d (index %d)\n",frame,slot,pucch->frame,pucch->ul_slot,ind_found);
 
   pucch->dai_c++;
   pucch->resource_indicator = 0; // each UE has dedicated PUCCH resources
