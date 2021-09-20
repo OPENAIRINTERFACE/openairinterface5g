@@ -302,18 +302,6 @@ The following features are valid for the gNB and the 5G-NR UE.
    
 ## gNB Higher Layers ##
 
-**gNB RRC**
-- NR RRC (38.331) Rel 15 messages using new asn1c 
-- LTE RRC (36.331) also updated to Rel 15 
-- Generation of CellGroupConfig (for eNB) and MIB
-- Generation of system information block 1 (SIB1)
-- Application to read configuration file and program gNB RRC
-- RRC can configure PDCP, RLC, MAC
-
-**gNB X2AP**
-- X2 setup with eNB
-- Handling of SgNB Addition Request / Addition Request Acknowledge / Reconfiguration Complete 
-
 **gNB MAC**
 - MAC -> PHY configuration using NR FAPI P5 interface
 - MAC <-> PHY data interface using FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
@@ -335,6 +323,74 @@ The following features are valid for the gNB and the 5G-NR UE.
   - evalution of RSRP report
   - evaluation of CQI report
 - MAC scheduling of SR reception
+
+**gNB RLC**
+- Send/Receive operations according to 38.322 Rel.16
+  - Segmentation and reassembly procedures
+  - RLC Acknowledged mode supporting PDU retransmissions
+  - RLC Unacknowledged mode
+  - DRBs and SRBs establishment/handling and association with RLC entities 
+  - Timers implementation
+  - Interfaces with PDCP, MAC 
+  - Interfaces with gtp-u (data Tx/Rx over F1-U at the DU)
+
+**gNB PDCP**
+- Send/Receive operations according to 38.323 Rel.16
+  - Integrity protection and ciphering procedures
+  - Sequence number management, SDU dicard and in-order delivery
+  - Radio bearer establishment/handling and association with PDCP entities
+  - Interfaces with RRC, RLC 
+  - Interfaces with gtp-u (data Tx/Rx over N3 and F1-U interfaces)
+
+**gNB RRC**
+- NR RRC (38.331) Rel 16 messages using new asn1c 
+- LTE RRC (36.331) also updated to Rel 15 
+- Generation of CellGroupConfig (for eNB) and MIB
+- Generation of system information block 1 (SIB1)
+- Generation of system information block 2 (SIB2)
+- Application to read configuration file and program gNB RRC
+- RRC can configure PDCP, RLC, MAC
+- Interface with gtp-u (tunnel creation/handling for S1-U (NSA), N3 (SA) interfaces)
+- Integration of RRC messages and procedures supporting UE 5G SA connection
+  - RRCSetupRequest/RRCSetup/RRCSetupComplete
+  - RRC Uplink/Downlink Information transfer carrying NAS messages transparently
+  - RRC Reconfiguration/Reconfiguration complete
+  - Support for master cell group configuration 
+  - Interface with NGAP for the interactions with the AMF
+  - Interface with F1AP for CU/DU split deployment option
+
+**gNB X2AP**
+- Integration of X2AP messages and procedures for the exchanges with the eNB over X2 interface supporting the NSA setup according to 36.423 Rel. 15
+  - X2 setup with eNB
+  - Handling of SgNB Addition Request / Addition Request Acknowledge / Reconfiguration Complete 
+
+**gNB NGAP**
+
+- Integration of NGAP messages and procedures for the exchanges with the AMF over N2 interface according to 38.413 Rel. 15
+  - NGAP Setup request/response
+  - NGAP Initial UE message
+  - NGAP Initial context setup request/response
+  - NGAP Downlink/Uplink NAS transfer
+  - NGAP UE context release request/complete
+  - NGAP UE radio capability info indication
+  - NGAP PDU session resource setup request/response
+- Interface with RRC
+
+**gNB F1AP**
+
+- Integration of F1AP messages and procedures for the control plane exchanges between the CU and DU entities according to 38.473 Rel. 16
+  - F1 Setup request/response
+  - F1 DL/UL RRC message transfer
+  - F1 Initial UL RRC message transfer
+  - F1 UE Context setup request/response
+  - F1 gNB CU configuration update
+- Interface with RRC
+- Interface with gtp-u (tunnel creation/handling for F1-U interface)
+
+**gNB GTP-U**
+- New gtp-u implementation supporting both N3 and F1-U interfaces according to 29.281 Rel.15
+  - Interfaces with RRC, F1AP for tunnel creation
+  - Interfaces with PDCP and RLC for data send/receive at the CU and DU respectively (F1-U interface)
 
 # OpenAirInterface 5G-NR UE Feature Set #
 
@@ -418,21 +474,23 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Configuration of fapi PDU according to DCI
 
 
-**RLC**
+**UE RLC**
 * Tx/Rx operations according to 38.322 Rel.16
-   - RLC Acknowledged mode
+   - Segmentation and reassembly procedures
+   - RLC Acknowledged mode supporting PDU retransmissions
    - RLC Unacknowledged mode
-   - DRBs and SRBs establishment and handling
-   - Timers
+   - DRBs and SRBs establishment and handling 
+   - Timers implementation
+   - Interfaces with PDCP, MAC
 
-**PDCP**
+**UE PDCP**
 * Tx/Rx operations according to 38.323 Rel.16  
    - Integrity protection and ciphering procedures
-   - SDU dicard and in-order delivery
-   - Radio bearer establishment and handling 
-   - Interfaces with RRC, RLC
+   - Sequence number management, SDU dicard and in-order delivery
+   - Radio bearer establishment/handling and association with PDCP entities
+   - Interfaces with RRC, RLC 
 
-**RRC**
+**UE RRC**
 * Integration of RRC messages and procedures supporting UE 5G SA connection according to 38.331 Rel.16 
    - RRCSetupRequest/RRCSetup/RRCSetupComplete
    - RRC Uplink/Downlink Information transfer carrying NAS messages transparently
@@ -441,7 +499,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 * Interface with PDCP: configuration, DCCH and CCCH message handling
 * Interface with RLC and MAC for configuration
 
-**NAS**
+**UE NAS**
 * Transfer of NAS messages between the AMF and the UE supporting the UE registration with the core network and the PDU session  establishment according to 24.501 Rel.16
   - Identity Request/Response
   - Authentication Request/Response
