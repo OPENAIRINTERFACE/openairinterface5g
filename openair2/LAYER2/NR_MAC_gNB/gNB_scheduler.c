@@ -151,10 +151,6 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
   nfapi_nr_tx_data_request_t   *TX_req = &gNB->TX_req[0];
 
   gNB->pdu_index[CC_idP] = 0;
-  if (NFAPI_MODE == NFAPI_MODE_VNF)
-  {
-    memset(pdcch, 0, sizeof(**pdcch) * MAX_NUM_BWP * MAX_NUM_CORESET);
-  }
 
   DL_req[CC_idP].SFN                                   = frameP;
   DL_req[CC_idP].Slot                                  = slotP;
@@ -358,12 +354,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
 
   const int bwp_id = 1;
+
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-  if (frame == gNB->handled_frame && slot== gNB->handled_slot) {
-    LOG_E(NR_MAC, "Dropping becasue frame %d == gNB frame %d, slot %d == gNb slot %d\n",
-          frame, gNB->handled_frame, slot, gNB->handled_slot);
-    return;
-  }
 
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -408,6 +400,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     const int last_slot = (slot + num_slots - 1) % num_slots;
     uint16_t *vrb_map_UL = cc[CC_id].vrb_map_UL;
     memset(&vrb_map_UL[last_slot * MAX_BWP_SIZE], 0, sizeof(uint16_t) * MAX_BWP_SIZE);
+
     clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frame, slot);
 
     /*VNF first entry into scheduler. Since frame numbers for future_ul_tti_req of some future slots 
@@ -460,8 +453,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_csirs_scheduling(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
   // Schedule CSI measurement reporting: check in slot 0 for the whole frame
-  //if (slot == 0)
-    // nr_csi_meas_reporting(module_idP, frame, slot); Melissa Elkadi, hack to keep from crashing
+  if (slot == 0)
+    nr_csi_meas_reporting(module_idP, frame, slot);
 
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected

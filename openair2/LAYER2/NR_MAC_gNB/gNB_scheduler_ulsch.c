@@ -826,7 +826,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   }
 }
 
-
 long get_K2(NR_ServingCellConfigCommon_t *scc,NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu) {
   DevAssert(scc);
   const NR_PUSCH_TimeDomainResourceAllocation_t *tda_list = ubwp ?
@@ -1278,6 +1277,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
   const uint16_t symb = ((1 << nrOfSymbols) - 1) << startSymbolIndex;
+
   int st = 0, e = 0, len = 0;
   for (int i = 0; i < bwpSize; i++) {
     while ((vrb_map_UL[i] & symb) != 0 && i < bwpSize)
@@ -1291,7 +1291,6 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
     }
   }
   st = e - len + 1;
-
 
   uint8_t rballoc_mask[bwpSize];
 
@@ -1309,23 +1308,6 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
         rballoc_mask);
   return true;
 }
-
-static inline int timespec_diff_in_milliseconds(struct timespec *a, struct timespec *b)
-{
-    int diff_in_ms = (a->tv_sec - b->tv_sec) * 1000 + a->tv_nsec /1000000 - b->tv_nsec / 1000000;
-    return diff_in_ms;
-}
-
-typedef struct _sched_info
-{
-  uint16_t rnti;
-  uint16_t sfn;
-  uint16_t slot;
-  int8_t harq_id;
-  struct timespec ts;
-} sched_info;
-
-sched_info prev_sched[MAX_MOBILES_PER_GNB];
 
 nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id)
 {
@@ -1393,55 +1375,6 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     LOG_D(NR_MAC,"UE %x : sched_pusch->rbSize %d\n",UE_info->rnti[UE_id],sched_pusch->rbSize);
     if (sched_pusch->rbSize <= 0)
       continue;
-
-    struct timespec ts;
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
-        abort();
-
-    if (prev_sched[UE_id].rnti != 0)
-    {
-      uint16_t prev_frame = prev_sched[UE_id].sfn;
-      uint16_t prev_slot = prev_sched[UE_id].slot;
-      int sfnslot_delta = NFAPI_SFNSLOT2DEC(frame, slot) - NFAPI_SFNSLOT2DEC(prev_frame, prev_slot);
-      if (sfnslot_delta < 0)
-      {
-        sfnslot_delta += NFAPI_SFNSLOT2DEC(1024,0);
-      }
-      // If diff is more than half of maximum frame: we ignore it.
-      if (sfnslot_delta > NFAPI_SFNSLOT2DEC(512, 0))
-      {
-        LOG_D(NR_MAC, "%s() SFN/SLOT DELTA between Sched and Previous. UEID %d, rnti %x Delta %d. "
-                  "Current:%d.%d Prev(%d):%d.%d --> Skip\n\n\n\n\n\n\n\n\n",
-                  __func__, UE_id, UE_info->rnti[UE_id], sfnslot_delta - NFAPI_SFNSLOT2DEC(1024,0),
-                  frame, slot,
-                  prev_sched[UE_id].harq_id, prev_frame, prev_slot);
-        continue;
-      }
-      else
-      {
-        LOG_D(NR_MAC, "%s() SFN/SLOT DELTA between Sched and Previous. UEID %d, rnti %x Delta %d. "
-                  "Current:%d.%d Prev(%d):%d.%d\n\n\n\n\n\n\n\n\n",
-                  __func__, UE_id, UE_info->rnti[UE_id], sfnslot_delta,
-                  frame, slot,
-                  prev_sched[UE_id].harq_id, prev_frame, prev_slot);
-      }
-
-      int time_diff_in_ms = timespec_diff_in_milliseconds (&ts, &prev_sched[UE_id].ts);
-
-      // The sched tx duration between ul dci req is assumed between 4 ms to 6 ms.
-      if (vnf_pnf_sfnslot_delta < 0 || time_diff_in_ms < 4 * (sfnslot_delta / 10)
-                                    || time_diff_in_ms > 6 * (sfnslot_delta / 10))
-      {
-        continue;
-      }
-      else
-      {
-        LOG_D(NR_MAC, "%s() SFN/SLOT DELTA between Proxy and gNB. UEID %d, rnti %x Delta %3d. "
-                  "gNB:%4d.%-2d slot_diff %4d  time_diff %d\n\n\n\n\n\n\n\n\n",
-                  __func__, UE_id, UE_info->rnti[UE_id], vnf_pnf_sfnslot_delta,
-                  frame, slot, sfnslot_delta, time_diff_in_ms);
-      }
-    }
 
     uint16_t rnti = UE_info->rnti[UE_id];
     sched_ctrl->SR = false;
@@ -1525,24 +1458,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
           sched_ctrl->sched_ul_bytes,
           sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes);
 
-
-    gNB_MAC_INST *gNB = RC.nrmac[0];
-    if (sched_pusch->frame == gNB->handled_frame && sched_pusch->slot == gNB->handled_slot) {
-      LOG_E(NR_MAC, "Dropping because frame %d == gNB frame %d, slot %d == gNb slot %d\n",
-            sched_pusch->frame, gNB->handled_frame, sched_pusch->slot, gNB->handled_slot);
-      return;
-    }
-    gNB->handled_frame = frame;
-    gNB->handled_slot = slot;
-    prev_sched[UE_id].rnti = rnti;
-    prev_sched[UE_id].sfn = frame;
-    prev_sched[UE_id].slot = slot;
-    prev_sched[UE_id].harq_id = harq_id;
-    prev_sched[UE_id].ts = ts;
-
     /* PUSCH in a later slot, but corresponding DCI now! */
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_pusch->slot];
-    future_ul_tti_req->SFN = sched_pusch->frame; // Melissa Elkadi, we hacked this to keep gNB from crashing
     AssertFatal(future_ul_tti_req->SFN == sched_pusch->frame
                 && future_ul_tti_req->Slot == sched_pusch->slot,
                 "%d.%d future UL_tti_req's frame.slot %d.%d does not match PUSCH %d.%d\n",

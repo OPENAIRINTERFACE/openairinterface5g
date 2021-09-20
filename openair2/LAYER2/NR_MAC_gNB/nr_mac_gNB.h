@@ -641,7 +641,6 @@ typedef struct {
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
   bool Msg4_ACKed[MAX_MOBILES_PER_GNB];
-  int loop_dcch_dtch[MAX_MOBILES_PER_GNB];
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
@@ -753,9 +752,6 @@ typedef struct gNB_MAC_INST_s {
 
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
-
-  frame_t handled_frame;
-  sub_frame_t handled_slot;
 
   bool first_MIB;
 } gNB_MAC_INST;

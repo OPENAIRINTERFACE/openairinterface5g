@@ -56,7 +56,7 @@
 #define HALFWORD 16
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
-//static int loop_dcch_dtch = DL_SCH_LCID_DTCH;
+static int loop_dcch_dtch = DL_SCH_LCID_DTCH;
 
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp)
 {
@@ -135,8 +135,6 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
   }
 }
 
-int harq_rounds = 0;
-int harq_pid = 0;
 
 // Compute and write all MAC CEs and subheaders, and return number of written
 // bytes
@@ -394,14 +392,14 @@ void nr_store_dlsch_buffer(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
     sched_ctrl->num_total_bytes = 0;
-    if ((sched_ctrl->lcid_mask&(1<<4)) > 0 && UE_info->loop_dcch_dtch[UE_id] == DL_SCH_LCID_DCCH1)
-      UE_info->loop_dcch_dtch[UE_id] = DL_SCH_LCID_DTCH;
-    else if ((sched_ctrl->lcid_mask&(1<<1)) > 0 && UE_info->loop_dcch_dtch[UE_id] == DL_SCH_LCID_DTCH)
-      UE_info->loop_dcch_dtch[UE_id] = DL_SCH_LCID_DCCH;
-    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && UE_info->loop_dcch_dtch[UE_id] == DL_SCH_LCID_DCCH)
-      UE_info->loop_dcch_dtch[UE_id] = DL_SCH_LCID_DCCH1;
+    if ((sched_ctrl->lcid_mask&(1<<4)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH1)
+      loop_dcch_dtch = DL_SCH_LCID_DTCH;
+    else if ((sched_ctrl->lcid_mask&(1<<1)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DTCH)
+      loop_dcch_dtch = DL_SCH_LCID_DCCH;
+    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH)
+      loop_dcch_dtch = DL_SCH_LCID_DCCH1;
 
-    const int lcid = UE_info->loop_dcch_dtch[UE_id];
+    const int lcid = loop_dcch_dtch;
     // const int lcid = DL_SCH_LCID_DTCH;
     const uint16_t rnti = UE_info->rnti[UE_id];
     sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
@@ -416,25 +414,25 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                       0);
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
     LOG_D(NR_MAC,
-        "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. sched_ctrl %p RC %p module_id %d UE_info %p UE_id %d \n",
+        "%d.%d, LCID%d:->DLSCH, RLC status %d bytes. \n",
         frame,
         slot,
         lcid,
-        sched_ctrl->num_total_bytes, sched_ctrl, &RC, module_id, UE_info, UE_id);
+        sched_ctrl->num_total_bytes);
 
     if (sched_ctrl->num_total_bytes == 0
         && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
-      continue;
+      return;
 
     LOG_D(NR_MAC,
-          "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d sched_ctrl %p UE_id %d\n",
+          "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
           __func__,
           frame,
           slot,
           lcid<4?"DCCH":"DTCH",
           lcid,
           sched_ctrl->rlc_status[lcid].bytes_in_buffer,
-          sched_ctrl->ta_apply, sched_ctrl, UE_id);
+          sched_ctrl->ta_apply);
   }
 }
 
@@ -884,15 +882,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int bwpid = bwp ? bwp->bwp_Id : 0;
     const int coresetid = bwp ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
-    //nfapi_nr_dl_tti_pdcch_pdu_rel15_t temp;
-    // if(NFAPI_MODE == NFAPI_MODE_VNF){
-    //   memcpy(temp,gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid],sizeof(nfapi_nr_dl_tti_pdcch_pdu_rel15_t));
-    //   pdcch_pdu = temp;
-
-    // }
-
     if (!pdcch_pdu) {
-      printf("creating pdcch pdu, pdcch_pdu = NULL. \n");
+      LOG_I(NR_MAC, "creating pdcch pdu, pdcch_pdu = NULL. \n");
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
       dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
@@ -1106,7 +1097,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       /* next, get RLC data */
 
       // const int lcid = DL_SCH_LCID_DTCH;
-      const int lcid = UE_info->loop_dcch_dtch[UE_id];
+      const int lcid = loop_dcch_dtch;
       int dlsch_total_bytes = 0;
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
@@ -1133,8 +1124,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                  0,
                                  0);
 
-          LOG_I(NR_MAC,
-                "Melissa Elkadi %4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
+          LOG_D(NR_MAC,
+                "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
                 frame,
                 slot,
                 rnti,

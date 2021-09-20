@@ -81,7 +81,6 @@ void mac_top_init_gNB(void)
         
       RC.nrmac[i]->ul_handle = 0;
 
-      RC.nrmac[i]->handled_frame = 1025;
       RC.nrmac[i]->first_MIB = true;
 
       if (get_softmodem_params()->phy_test) {

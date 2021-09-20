@@ -47,7 +47,6 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
 
   nfapi_nr_ul_tti_request_t *future_ul_tti_req =
       &RC.nrmac[mod_id]->UL_tti_req_ahead[0][pucch->ul_slot];
-  future_ul_tti_req->SFN = pucch->frame; // Melissa Elkadi, hack so gNB doesnt crash below
   AssertFatal(future_ul_tti_req->SFN == pucch->frame
               && future_ul_tti_req->Slot == pucch->ul_slot,
               "future UL_tti_req's frame.slot %d.%d does not match PUCCH %d.%d\n",
@@ -1113,9 +1112,6 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                sub_frame_t slot,
                                const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234)
 {
-  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
-  UE_info->active[0] = 1;
-  UE_info->rnti[0] = uci_234->rnti;
   int UE_id = find_nr_UE_id(mod_id, uci_234->rnti);
   if (UE_id < 0) {
     LOG_E(MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_234->rnti);
@@ -1127,6 +1123,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   if ( RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig==NULL) return;
 
   NR_CSI_MeasConfig_t *csi_MeasConfig = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   // tpc (power control)
@@ -1240,7 +1237,7 @@ int nr_acknack_scheduling(int mod_id,
   get_pdsch_to_harq_feedback(mod_id, UE_id, ss_type, pdsch_to_harq_feedback);
 
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
-  if (pucch->dai_c > 0 && pucch->frame == frame) {
+  if (pucch->dai_c > 0) {
     /* this UE already has a PUCCH occasion */
     DevAssert(pucch->frame == frame);
 
@@ -1276,10 +1273,6 @@ int nr_acknack_scheduling(int mod_id,
    * scheduled a lot and used all AckNacks, pucch->frame might have been
    * wrapped around to next frame */
   if (frame != pucch->frame || pucch->ul_slot < first_ul_slot_tdd) {
-    if (pucch->dai_c != 0) //Melissa Elkadi, hacking this code to stop gNB from crashing
-    {
-        pucch->dai_c = 0;
-    }
 
     AssertFatal(pucch->sr_flag + pucch->dai_c == 0,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
