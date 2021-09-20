@@ -30,6 +30,8 @@ nrmodule2_quectel:
   HostUsername : nrmodule2 
   HostPassword : linux 
   HostSourceCodePath : none
+  StartCommands :
+    - sudo -S ip link set dev wwan1 mtu 1500
 dummy:
   ID: ''
   State : ''

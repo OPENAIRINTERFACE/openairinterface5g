@@ -400,10 +400,18 @@ class OaiCiTest():
 				if status==0:
 					HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
 					logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
+					#execute additional commands from yaml file after UE attach
+					SSH = sshconnection.SSHConnection()
+					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+					for startcommand in Module_UE.StartCommands:
+						cmd = 'echo ' + EPC.Password + ' | ' + startcommand 
+					SSH.command(cmd,'\$',5)	
+					SSH.close()
 				else: #status==-1 failed to retrieve IP address
 					HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
 					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE)
 					return
+			
 
 
 	def InitializeOAIUE(self,HTML,RAN,EPC,COTS_UE,InfraUE):
@@ -2231,12 +2239,6 @@ class OaiCiTest():
 
 	def Iperf_Module(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC, Module_UE):
 		SSH = sshconnection.SSHConnection()
-		#RH temporary quick n dirty for test
-		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-		cmd = 'echo ' + EPC.Password + ' | sudo -S ip link set dev tun5 mtu 1358'
-		SSH.command(cmd,'\$',5)	
-		SSH.close()
-			
 
 		#kill iperf processes before (in case there are still some remaining)
 		SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
