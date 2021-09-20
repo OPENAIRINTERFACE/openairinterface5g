@@ -399,7 +399,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   uci_stats->pucch0_thres = gNB->pucch0_thres; /* + (10*max_n0);*/
   bool no_conf=false;
   if (nr_sequences>1) {
-    if (xrtmag_dBtimes10 < uci_stats->pucch0_thres+xrtmag_next_dBtimes10)
+    if (xrtmag_dBtimes10 < (50+xrtmag_next_dBtimes10) || SNRtimes10 < uci_stats->pucch0_thres)
       no_conf=true;
   }
   gNB->bad_pucch += no_conf;
