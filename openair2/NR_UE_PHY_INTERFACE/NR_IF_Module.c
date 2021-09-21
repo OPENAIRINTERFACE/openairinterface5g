@@ -262,9 +262,11 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                 for (int j = 0; j < num_dcis; j++)
                 {
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                    if (dci_pdu_list->RNTI != mac->crnti)
+                    if ((dci_pdu_list->RNTI != mac->crnti) && 
+                       ((dci_pdu_list->RNTI != mac->ra.ra_rnti) || mac->ra.RA_RAPID_found))
                     {
                       LOG_D(NR_MAC, "We are filtering PDCCH DCI pdu because RNTI doesnt match!\n");
+                      LOG_D(NR_MAC, "dci_pdu_list->RNTI (%x) != mac->crnti (%x)\n", dci_pdu_list->RNTI, mac->crnti);
                       continue;
                     }
                     fill_dl_info_with_pdcch(dl_info->dci_ind, dci_pdu_list, pdu_idx);
@@ -600,9 +602,16 @@ uint16_t sfn_slot_id;
 
 void *nrue_standalone_pnf_task(void *context)
 {
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   struct sockaddr_in server_address;
   socklen_t addr_len = sizeof(server_address);
   char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
+  char buffer_for_tx_data_req[NFAPI_MAX_PACKED_MESSAGE_SIZE];
+  ssize_t len_of_tx_data_req = 0;
+  int sfn_of_tx_data_req = 0;
+  int slot_of_tx_data_req = 0;
+  int sfn_of_dl_tti_req = 0;
+  int slot_of_dl_tti_req = 0;
   int sfn = 0;
   int slot = 0;
   int delta = 0;
@@ -698,6 +707,26 @@ void *nrue_standalone_pnf_task(void *context)
                   dl_tti_request.SFN, dl_tti_request.Slot);
             save_nr_measurement_info(&dl_tti_request);
             check_and_process_dci(&dl_tti_request, NULL, NULL, NULL);
+            if (mac->expected_dci)
+            { 
+                sfn_of_dl_tti_req = dl_tti_request.SFN;
+                slot_of_dl_tti_req = dl_tti_request.Slot;
+            }
+            if (len_of_tx_data_req > 0
+                && sfn_of_dl_tti_req == sfn_of_tx_data_req
+                && slot_of_dl_tti_req == slot_of_tx_data_req)
+            {
+                if (nfapi_nr_p7_message_unpack((void *)buffer_for_tx_data_req, len_of_tx_data_req, &tx_data_request,
+                                              sizeof(tx_data_request), NULL) < 0)
+                {
+                    LOG_E(NR_PHY, "Message tx_data_request failed to unpack\n");
+                    break;
+                }
+                LOG_I(NR_PHY, "Processing an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message in SFN/slot %d %d. \n",
+                      tx_data_request.SFN, tx_data_request.Slot);
+                check_and_process_dci(NULL, &tx_data_request, NULL, NULL);
+                len_of_tx_data_req = 0;
+            }
             break;
           case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
             if (nfapi_nr_p7_message_unpack((void *)buffer, len, &tx_data_request,
@@ -708,7 +737,21 @@ void *nrue_standalone_pnf_task(void *context)
             }
             LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message in SFN/slot %d %d. \n",
                   tx_data_request.SFN, tx_data_request.Slot);
-            check_and_process_dci(NULL, &tx_data_request, NULL, NULL);
+
+            if (tx_data_request.SFN == sfn_of_dl_tti_req && tx_data_request.Slot == slot_of_dl_tti_req
+                && (mac->expected_dci || mac->ra.ra_state <= WAIT_RAR))
+            {
+                check_and_process_dci(NULL, &tx_data_request, NULL, NULL);
+            }
+            else
+            {
+                len_of_tx_data_req = len;
+                sfn_of_tx_data_req = tx_data_request.SFN;
+                slot_of_tx_data_req = tx_data_request.Slot;
+                memcpy(buffer_for_tx_data_req, buffer, len);
+                LOG_I(NR_PHY, "Saved an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message in SFN/slot %d %d. \n",
+                      tx_data_request.SFN, tx_data_request.Slot);
+            }
             break;
           case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
             if (nfapi_nr_p7_message_unpack((void *)buffer, len, &ul_dci_request,

@@ -56,7 +56,7 @@ struct nlmsghdr *nas_nlh_rx = NULL;
 struct iovec nas_iov_tx;
 struct iovec nas_iov_rx = {nl_rx_buf, sizeof(nl_rx_buf)};
 
-int nas_sock_fd[MAX_MOBILES_PER_ENB];
+int nas_sock_fd[MAX_MOBILES_PER_ENB*2]; //Allocated for both LTE UE and NR UE.
 
 int nas_sock_mbms_fd;
 
