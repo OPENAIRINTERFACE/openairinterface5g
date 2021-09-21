@@ -1771,8 +1771,6 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
       ra->Msg4_frame = (frame + 1) % 1024;
       ra->Msg4_slot = 1;
       ra->state = Msg4;
-      UE_info->active[UE_id] = false;
-      UE_info->Msg4_ACKed[UE_id] = false;
     }
   }
 }

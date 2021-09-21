@@ -212,6 +212,7 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int UE_id,
                                 int bwp_id,
                                 NR_SearchSpace__searchSpaceType_PR ss_type,
+                                int *max_fb_time,
                                 uint8_t *pdsch_to_harq_feedback);
   
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
