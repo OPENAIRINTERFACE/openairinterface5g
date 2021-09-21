@@ -1194,7 +1194,7 @@ int nr_acknack_scheduling(int mod_id,
    * * each UE has dedicated PUCCH Format 0 resources, and we use index 0! */
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
   NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
-  LOG_I(NR_MAC,"pucch_acknak %d.%d Trying to allocate pucch, current DAI %d\n",frame,slot,pucch->dai_c);
+  LOG_D(NR_MAC,"pucch_acknak %d.%d Trying to allocate pucch, current DAI %d\n",frame,slot,pucch->dai_c);
   pucch->r_pucch=r_pucch;
   AssertFatal(pucch->csi_bits == 0,
               "%s(): csi_bits %d in sched_pucch[0]\n",
@@ -1206,11 +1206,11 @@ int nr_acknack_scheduling(int mod_id,
      * the same slot again */
     const int f = pucch->frame;
     const int s = pucch->ul_slot;
-    LOG_I(NR_MAC,"pucch_acknak : %d.%d DAI = 2 pucch currently in %d.%d, advancing by 1 slot\n",frame,slot,f,s);
+    LOG_D(NR_MAC,"pucch_acknak : %d.%d DAI = 2 pucch currently in %d.%d, advancing by 1 slot\n",frame,slot,f,s);
     nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
     memset(pucch, 0, sizeof(*pucch));
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-    if(((s + 1)%nr_slots_period) == nr_slots_period)
+    if(((s + 1)%nr_slots_period) == 0)
       pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
     else
       pucch->ul_slot = (s + 1) % n_slots_frame;
@@ -1226,14 +1226,14 @@ int nr_acknack_scheduling(int mod_id,
       nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
       memset(csi_pucch, 0, sizeof(*csi_pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-      if(((s + 1)%nr_slots_period) == nr_slots_period)
+      if(((s + 1)%nr_slots_period) == 0)
         pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
       else
         pucch->ul_slot = (s + 1) % n_slots_frame;
     }
   }
 
-  LOG_D(NR_MAC,"pucch_acknak 1. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
+  LOG_I(NR_MAC,"pucch_acknak 1. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
 
   // this is hardcoded for now as ue specific only if we are not on the initialBWP (to be fixed to allow ue_Specific also on initialBWP
   NR_CellGroupConfig_t *cg = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id];
@@ -1275,7 +1275,7 @@ int nr_acknack_scheduling(int mod_id,
       nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-      if(((s + 1)%nr_slots_period) == nr_slots_period)
+      if(((s + 1)%nr_slots_period) == 0)
         pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
       else
         pucch->ul_slot = (s + 1) % n_slots_frame;
@@ -1285,7 +1285,7 @@ int nr_acknack_scheduling(int mod_id,
     pucch->timing_indicator = i;
     pucch->dai_c++;
     // retain old resource indicator, and we are good
-    LOG_D(NR_MAC,"pucch_acknak : %d.%d. DAI > 0, pucch allocated for %d.%d (index %d)\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
+    LOG_I(NR_MAC,"pucch_acknak : %d.%d. DAI > 0, pucch allocated for %d.%d (index %d)\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
     return 0;
   }
 
@@ -1321,7 +1321,7 @@ int nr_acknack_scheduling(int mod_id,
     const int f = pucch->frame;
     const int s = pucch->ul_slot;
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-    if(((s + 1)%nr_slots_period) == nr_slots_period)
+    if(((s + 1)%nr_slots_period) == 0)
       pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
     else
       pucch->ul_slot = (s + 1) % n_slots_frame;
@@ -1356,7 +1356,7 @@ int nr_acknack_scheduling(int mod_id,
       const int s = pucch->ul_slot;
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-      if(((s + 1)%nr_slots_period) == nr_slots_period)
+      if(((s + 1)%nr_slots_period) == 0)
         pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
       else
         pucch->ul_slot = (s + 1) % n_slots_frame;
@@ -1372,7 +1372,7 @@ int nr_acknack_scheduling(int mod_id,
 
   pucch->timing_indicator = ind_found; // index in the list of timing indicators
 
-  LOG_D(NR_MAC,"pucch_acknak 2. DAI 0 DL %d.%d, UL_ACK %d.%d (index %d)\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
+  LOG_I(NR_MAC,"pucch_acknak 2. DAI 0 DL %d.%d, UL_ACK %d.%d (index %d)\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
 
   pucch->dai_c++;
   pucch->resource_indicator = 0; // each UE has dedicated PUCCH resources
