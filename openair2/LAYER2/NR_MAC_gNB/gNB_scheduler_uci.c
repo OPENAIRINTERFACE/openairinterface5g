@@ -1177,6 +1177,7 @@ int nr_acknack_scheduling(int mod_id,
   const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
   const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
   const int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
+  const int first_ul_slot_period = first_ul_slot_tdd%nr_slots_period;
   const int CC_id = 0;
   NR_sched_pucch_t *csi_pucch;
 
@@ -1211,7 +1212,7 @@ int nr_acknack_scheduling(int mod_id,
     memset(pucch, 0, sizeof(*pucch));
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
     if(((s + 1)%nr_slots_period) == 0)
-      pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
+      pucch->ul_slot = (s + 1 + first_ul_slot_period) % n_slots_frame;
     else
       pucch->ul_slot = (s + 1) % n_slots_frame;
     // we assume that only two indices over the array sched_pucch exist
@@ -1227,7 +1228,7 @@ int nr_acknack_scheduling(int mod_id,
       memset(csi_pucch, 0, sizeof(*csi_pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
       if(((s + 1)%nr_slots_period) == 0)
-        pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
+        pucch->ul_slot = (s + 1 + first_ul_slot_period) % n_slots_frame;
       else
         pucch->ul_slot = (s + 1) % n_slots_frame;
     }
@@ -1276,7 +1277,7 @@ int nr_acknack_scheduling(int mod_id,
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
       if(((s + 1)%nr_slots_period) == 0)
-        pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
+        pucch->ul_slot = (s + 1 + first_ul_slot_period) % n_slots_frame;
       else
         pucch->ul_slot = (s + 1) % n_slots_frame;
       return nr_acknack_scheduling(mod_id, UE_id, frame, slot, r_pucch,is_common);
@@ -1298,7 +1299,7 @@ int nr_acknack_scheduling(int mod_id,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
     pucch->frame = frame;
-    pucch->ul_slot = first_ul_slot_tdd + (slot/nr_slots_period);
+    pucch->ul_slot = first_ul_slot_tdd;
   }
 
   // Find the right timing_indicator value.
@@ -1322,7 +1323,7 @@ int nr_acknack_scheduling(int mod_id,
     const int s = pucch->ul_slot;
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
     if(((s + 1)%nr_slots_period) == 0)
-      pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
+      pucch->ul_slot = (s + 1 + first_ul_slot_period) % n_slots_frame;
     else
       pucch->ul_slot = (s + 1) % n_slots_frame;
   }
@@ -1357,7 +1358,7 @@ int nr_acknack_scheduling(int mod_id,
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
       if(((s + 1)%nr_slots_period) == 0)
-        pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
+        pucch->ul_slot = (s + 1 + first_ul_slot_period) % n_slots_frame;
       else
         pucch->ul_slot = (s + 1) % n_slots_frame;
       return nr_acknack_scheduling(mod_id, UE_id, frame, slot, r_pucch,is_common);
