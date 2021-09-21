@@ -148,15 +148,15 @@ static void init_pdcp(void) {
 
     if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
       LOG_I(PDCP, "node is CU, pdcp send rlc_data_req by proto_agent \n");
-      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+      pdcp_set_rlc_data_req_func(proto_agent_send_rlc_data_req);
     } else {
       LOG_I(PDCP, "node is gNB \n");
-      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+      pdcp_set_rlc_data_req_func(rlc_data_req);
+      pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
     }
   } else {
     LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
-    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+    pdcp_set_pdcp_data_ind_func(proto_agent_send_pdcp_data_ind);
   }
 }
 

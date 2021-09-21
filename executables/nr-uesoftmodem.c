@@ -397,8 +397,8 @@ static void init_pdcp(void) {
   nr_DRB_preconfiguration();*/
   pdcp_layer_init();
   pdcp_module_init(pdcp_initmask);
-  pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-  pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+  pdcp_set_rlc_data_req_func(rlc_data_req);
+  pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
 }
 
 // Stupid function addition because UE itti messages queues definition is common with eNB

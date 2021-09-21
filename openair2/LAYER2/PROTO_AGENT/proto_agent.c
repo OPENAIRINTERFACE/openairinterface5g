@@ -157,7 +157,7 @@ void proto_agent_stop(mod_id_t mod_id) {
 rlc_op_status_t  proto_agent_send_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
     const srb_flag_t srb_flagP, const MBMS_flag_t MBMS_flagP,
     const rb_id_t rb_idP, const mui_t muiP,
-    confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP) {
+    confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP,const uint32_t *const SrcID, const uint32_t *const DstID) {
   uint8_t *msg = NULL;
   Protocol__FlexsplitMessage *init_msg=NULL;
   int msg_flag = 0;
@@ -191,10 +191,10 @@ error:
 }
 
 
-boolean_t
-
-proto_agent_send_pdcp_data_ind(const protocol_ctxt_t *const ctxt_pP, const srb_flag_t srb_flagP,
-                               const MBMS_flag_t MBMS_flagP, const rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP) {
+boolean_t proto_agent_send_pdcp_data_ind(const protocol_ctxt_t *const ctxt_pP, const srb_flag_t srb_flagP,
+					       const MBMS_flag_t MBMS_flagP, const rb_id_t rb_idP,
+					       sdu_size_t sdu_sizeP, mem_block_t *sdu_pP,
+					       const uint32_t *const SrcID, const uint32_t *const DstID) {
   uint8_t *msg = NULL;
   Protocol__FlexsplitMessage *init_msg = NULL;
   int msg_flag = 0;

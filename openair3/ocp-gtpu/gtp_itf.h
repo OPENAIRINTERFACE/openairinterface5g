@@ -1,5 +1,6 @@
 #ifndef __GTPUNEW_ITF_H__
 #define __GTPUNEW_ITF_H__
+
 #define GTPNOK -1
 
 # define GTPU_HEADER_OVERHEAD_MAX 64
@@ -31,7 +32,7 @@ typedef boolean_t (*gtpCallback)(
   const pdcp_transmission_mode_t modeP,
   const uint32_t *sourceL2Id,
   const uint32_t *destinationL2Id);
-
+  
 typedef struct openAddr_s {
   char originHost[HOST_NAME_MAX];
   char originService[HOST_NAME_MAX];

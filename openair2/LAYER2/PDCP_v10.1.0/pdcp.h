@@ -47,12 +47,14 @@
 
 
 typedef rlc_op_status_t  (*send_rlc_data_req_func_t)(const protocol_ctxt_t *const,
-    const srb_flag_t, const MBMS_flag_t,
-    const rb_id_t, const mui_t,
+						     const srb_flag_t, const MBMS_flag_t,
+						     const rb_id_t, const mui_t,
     confirm_t, sdu_size_t, mem_block_t *,const uint32_t *const, const uint32_t *const);
-typedef boolean_t (*pdcp_data_ind_func_t)( const protocol_ctxt_t *, const srb_flag_t,
-    const MBMS_flag_t, const rb_id_t, const sdu_size_t,
-    mem_block_t *,const uint32_t *const, const uint32_t *const);
+
+typedef boolean_t (pdcp_data_ind_t)( const protocol_ctxt_t *, const srb_flag_t,
+						 const MBMS_flag_t, const rb_id_t, const sdu_size_t,
+						 mem_block_t *,const uint32_t *const, const uint32_t *const);
+typedef pdcp_data_ind_t* pdcp_data_ind_func_t;
 
 #define ENB_NAS_USE_TUN_W_MBMS_BIT      (1<< 10)
 #define PDCP_USE_NETLINK_BIT            (1<< 11)
@@ -282,13 +284,7 @@ boolean_t cu_f1u_data_req(
 * \note None
 * @ingroup _pdcp
 */
-boolean_t pdcp_data_ind(
-  const protocol_ctxt_t *const  ctxt_pP,
-  const srb_flag_t srb_flagP,
-  const MBMS_flag_t MBMS_flagP,
-  const rb_id_t rb_id,
-  const sdu_size_t sdu_buffer_size,
-  mem_block_t *const sdu_buffer);
+pdcp_data_ind_t pdcp_data_ind;
 
 /*! \fn void rrc_pdcp_config_req(const protocol_ctxt_t* const ,uint32_t,rb_id_t,uint8_t)
 * \brief This functions initializes relevant PDCP entity
@@ -434,7 +430,10 @@ pdcp_data_ind_func_t get_pdcp_data_ind_func(void);
 //-----------------------------------------------------------------------------
 int pdcp_fifo_flush_mbms_sdus                      ( const protocol_ctxt_t *const  ctxt_pP);
 int pdcp_fifo_read_input_mbms_sdus_fromtun       ( const protocol_ctxt_t *const  ctxt_pP);
-
+rlc_op_status_t cu_send_to_du(const protocol_ctxt_t *const ctxt_pP,
+			       const srb_flag_t srb_flagP, const MBMS_flag_t MBMS_flagP,
+			       const rb_id_t rb_idP, const mui_t muiP,
+			       confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP, const uint32_t *const, const uint32_t *const);
 
 /*
  * Following two types are utilized between NAS driver and PDCP

@@ -194,7 +194,7 @@ uint8_t abstraction_flag=0;
 
 // needed for pdcp.c
 RAN_CONTEXT_t RC;
-
+instance_t CUuniqInstance=0;
 /* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
@@ -535,8 +535,8 @@ static void init_pdcp(void) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
 
   pdcp_module_init(pdcp_initmask);
-  pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-  pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+  pdcp_set_rlc_data_req_func(rlc_data_req);
+  pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
 }
 
 // Stupid function addition because UE itti messages queues definition is common with eNB

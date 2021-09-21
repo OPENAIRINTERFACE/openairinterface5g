@@ -463,7 +463,8 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
     rb_found:
     {
       int offset=0;
-      if (entity->has_sdap == 1 && entity->has_sdapULheader == 1) offset = 1; // this is the offset of the SDAP header in bytes
+      if (entity->has_sdap == 1 && entity->has_sdapULheader == 1)
+	offset = 1; // this is the offset of the SDAP header in bytes
 
       message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0,
 					       GTPV1U_GNB_TUNNEL_DATA_REQ,
@@ -654,7 +655,9 @@ boolean_t pdcp_data_ind(
   const MBMS_flag_t MBMS_flagP,
   const rb_id_t rb_id,
   const sdu_size_t sdu_buffer_size,
-  mem_block_t *const sdu_buffer)
+  mem_block_t *const sdu_buffer,
+  const uint32_t *const sourceL2Id,
+  const uint32_t *const destinationL2Id)
 {
   nr_pdcp_ue_t *ue;
   nr_pdcp_entity_t *rb;
@@ -1234,10 +1237,8 @@ boolean_t cu_f1u_data_req(
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer,
   const pdcp_transmission_mode_t mode
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t *const sourceL2Id
   ,const uint32_t *const destinationL2Id
-#endif
   ) {
 
   //Force instance id to 0, OAI incoherent instance management
@@ -1248,7 +1249,7 @@ boolean_t cu_f1u_data_req(
     exit(1);
   }
   memcpy(memblock->data,sdu_buffer, sdu_buffer_size);
-  int ret=pdcp_data_ind(ctxt_pP,srb_flagP, false, rb_id, sdu_buffer_size, memblock);
+  int ret=pdcp_data_ind(ctxt_pP,srb_flagP, false, rb_id, sdu_buffer_size, memblock, NULL, NULL);
   if (!ret) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
     /* what to do in case of failure? for the moment: nothing */
@@ -1265,10 +1266,8 @@ boolean_t pdcp_data_req(
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer,
   const pdcp_transmission_mode_t mode
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t *const sourceL2Id
   ,const uint32_t *const destinationL2Id
-#endif
   )
 {
   if (srb_flagP) {
