@@ -427,6 +427,20 @@ rb_found:
       F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = size;
       itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0 /*ctxt_pP->module_id*/), msg);
       return;
+    }  else {
+      // Fixme: very dirty workaround of incomplete F1-U implementation
+      instance_t DUuniqInstance=0;
+      MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
+      gtpv1u_enb_tunnel_data_req_t *req=&GTPV1U_ENB_TUNNEL_DATA_REQ(msg);
+      req->buffer=malloc(size);
+      memcpy(req->buffer,buf,size);
+      req->length=size;
+      req->offset=0;
+      req->rnti=ue->rnti;
+      req->rab_id=rb_id+4;
+      LOG_D(RLC, "Received uplink user-plane traffic at RLC-DU to be sent to the CU, size %d \n", size);
+      itti_send_msg_to_task(OCP_GTPV1_U, DUuniqInstance, msg);      
+      return;
     }
   }
   

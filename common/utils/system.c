@@ -236,7 +236,7 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
     ret=pthread_attr_setschedpolicy(&attr, SCHED_OAI);
     AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
     if(priority<sched_get_priority_min(SCHED_OAI) || priority>sched_get_priority_max(SCHED_OAI)) {
-      LOG_E(TMR,"Prio not possible: %d, min is %d, max: %d, forced in the range\n",
+      LOG_E(UTIL,"Prio not possible: %d, min is %d, max: %d, forced in the range\n",
 	    priority,
 	    sched_get_priority_min(SCHED_OAI),
 	    sched_get_priority_max(SCHED_OAI));

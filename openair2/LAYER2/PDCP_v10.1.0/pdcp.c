@@ -154,7 +154,19 @@ boolean_t cu_f1u_data_req(
   const uint32_t *const destinationL2Id
   )
 {
-  return true;
+  mem_block_t *memblock = get_free_mem_block(sdu_buffer_size, __func__);
+  if (memblock == NULL) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+  memcpy(memblock->data,sdu_buffer, sdu_buffer_size);
+  // These -4 are boring
+  int ret=pdcp_data_ind(ctxt_pP,srb_flagP, false, rb_id-4, sdu_buffer_size, memblock);
+  if (!ret) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
+    /* what to do in case of failure? for the moment: nothing */
+  }
+  return ret;
 }
 void *pdcp_stats_thread(void *param) {
 

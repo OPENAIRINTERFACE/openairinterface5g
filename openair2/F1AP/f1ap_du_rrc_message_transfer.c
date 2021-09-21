@@ -744,7 +744,6 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
   return 0;
 }
 
-
 /*  UL RRC Message Transfer */
 int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
     int             CC_idP,
@@ -764,7 +763,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
     LOG_E(F1AP, "Failed to add UE \n");
     return -1;
   }
-
+  
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;

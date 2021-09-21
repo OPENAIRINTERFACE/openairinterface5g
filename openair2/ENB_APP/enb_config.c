@@ -1970,8 +1970,11 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
         LOG_I(ENB_APP,"FIAP: DU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.my_addr));
         F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6 = 0;
         F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4 = 1;
+	
         //strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6_address, "");
         strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address, RC.mac[k]->eth_params_n.my_addr);
+	F1AP_SETUP_REQ (msg_p).DUport= RC.mac[k]->eth_params_n.my_portd;
+	F1AP_SETUP_REQ (msg_p).CUport= RC.mac[k]->eth_params_n.remote_portd;
         //strcpy(F1AP_SETUP_REQ (msg_p).CU_ip_address[l].ipv6_address,*(F1ParamList.paramarray[l][ENB_CU_IPV6_ADDRESS_IDX].strptr));
         //F1AP_SETUP_REQ (msg_p).CU_port = RC.mac[k]->eth_params_n.remote_portc; // maybe we dont need it
         sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);

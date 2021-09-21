@@ -1370,17 +1370,18 @@ rrc_gNB_process_RRCReconfigurationComplete(
   else if(SRB_configList!=NULL || DRB_configList!=NULL){
     MessageDef *message_p;
     message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_DU_ue_id = 0;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).rnti = ue_context_pP->ue_context.rnti;
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).mcc              = RC.nrrrc[0]->configuration.mcc[0];
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).mnc              = RC.nrrrc[0]->configuration.mnc[0];
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).mnc_digit_length = RC.nrrrc[0]->configuration.mnc_digit_length[0];
-    F1AP_UE_CONTEXT_SETUP_REQ (message_p).nr_cellid        = RC.nrrrc[0]->nr_cellid;
+    f1ap_ue_context_setup_t *req=&F1AP_UE_CONTEXT_SETUP_REQ (message_p);
+    req->gNB_CU_ue_id     = 0;
+    req->gNB_DU_ue_id = 0;
+    req->rnti = ue_context_pP->ue_context.rnti;
+    req->mcc              = RC.nrrrc[0]->configuration.mcc[0];
+    req->mnc              = RC.nrrrc[0]->configuration.mnc[0];
+    req->mnc_digit_length = RC.nrrrc[0]->configuration.mnc_digit_length[0];
+    req->nr_cellid        = RC.nrrrc[0]->nr_cellid;
     if(SRB_configList!=NULL){
-      F1AP_UE_CONTEXT_SETUP_REQ (message_p).srbs_to_be_setup = malloc(SRB_configList->list.count*sizeof(f1ap_srb_to_be_setup_t));
-      F1AP_UE_CONTEXT_SETUP_REQ (message_p).srbs_to_be_setup_length = SRB_configList->list.count;
-      f1ap_srb_to_be_setup_t *SRBs=F1AP_UE_CONTEXT_SETUP_REQ (message_p).srbs_to_be_setup;
+      req->srbs_to_be_setup = malloc(SRB_configList->list.count*sizeof(f1ap_srb_to_be_setup_t));
+      req->srbs_to_be_setup_length = SRB_configList->list.count;
+      f1ap_srb_to_be_setup_t *SRBs=req->srbs_to_be_setup;
       for (int i = 0; i < SRB_configList->list.count; i++){
         if(SRB_configList->list.array[i]->srb_Identity > 1){
           SRBs[i].srb_id = SRB_configList->list.array[i]->srb_Identity;
@@ -1391,10 +1392,10 @@ rrc_gNB_process_RRCReconfigurationComplete(
     if(DRB_configList!=NULL){
       gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
       memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
-      F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup = malloc(DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
-      F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length = DRB_configList->list.count;
-      f1ap_drb_to_be_setup_t *DRBs=F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup;
-      LOG_I(RRC, "Length of DRB list:%d, %d \n", DRB_configList->list.count, F1AP_UE_CONTEXT_SETUP_REQ (message_p).drbs_to_be_setup_length);
+      req->drbs_to_be_setup = malloc(DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
+      req->drbs_to_be_setup_length = DRB_configList->list.count;
+      f1ap_drb_to_be_setup_t *DRBs=req->drbs_to_be_setup;
+      LOG_I(RRC, "Length of DRB list:%d, %d \n", DRB_configList->list.count, req->drbs_to_be_setup_length);
       for (int i = 0; i < DRB_configList->list.count; i++){
         DRBs[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
         DRBs[i].rlc_mode = RLC_MODE_AM;

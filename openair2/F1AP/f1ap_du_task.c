@@ -96,10 +96,12 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
       .remote_ipv4_address = tmp->remote_addr,
       .remote_port         = tmp->remote_portd
     };
-    
+
+  /*
   if (!RC.nrrrc)
     AssertFatal(proto_agent_start(instance, &params) == 0,
               "could not start PROTO_AGENT for F1U on instance %ld!\n", instance);
+  */
   DU_send_F1_SETUP_REQUEST(instance);
 }
 
@@ -149,7 +151,8 @@ void *F1AP_DU_task(void *arg) {
 	AssertFatal(getCxt(DUtype, myInstance)->gtpInst>0,"Failed to create CU F1-U UDP listener");
 	// Fixme: fully inconsistent instances management
 	// dirty global var is a bad fix
-	DUuniqInstance=getCxt(DUtype, myInstance)->gtpInst;
+	extern instance_t legacyInstanceMapping;
+	legacyInstanceMapping =	DUuniqInstance = getCxt(DUtype, myInstance)->gtpInst;
         du_task_send_sctp_association_req(myInstance,msgSetup);
         break;
 

@@ -42,6 +42,22 @@
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
+boolean_t lteDURecvCb( protocol_ctxt_t  *ctxt_pP,
+                    const srb_flag_t     srb_flagP,
+                    const rb_id_t        rb_idP,
+                    const mui_t          muiP,
+                    const confirm_t      confirmP,
+                    const sdu_size_t     sdu_buffer_sizeP,
+                    unsigned char *const sdu_buffer_pP,
+                    const pdcp_transmission_mode_t modeP,
+                    const uint32_t *sourceL2Id,
+                    const uint32_t *destinationL2Id) {
+  // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
+  mem_block_t *sdu=get_free_mem_block(sdu_buffer_sizeP, __func__);
+  memcpy(sdu->data,  sdu_buffer_pP,  sdu_buffer_sizeP);
+  du_rlc_data_req(ctxt_pP,srb_flagP, false,  rb_idP,muiP, confirmP,  sdu_buffer_sizeP, sdu);
+  return true;
+}
 
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                                        uint32_t         assoc_id,
@@ -111,75 +127,75 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     f1ap_ue_context_setup_req->cellULConfigured = NULL;
   }
 
-  if (RC.nrrrc) {
-    /* RRCContainer */
-    F1AP_UEContextSetupRequestIEs_t *ieDrb;
-    F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieDrb, container,
-                               F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_List, true);
-
-    if(ieDrb!=NULL) {
-      f1ap_ue_context_setup_req->drbs_to_be_setup_length = ieDrb->value.choice.DRBs_ToBeSetup_List.list.count;
-      f1ap_ue_context_setup_req->drbs_to_be_setup = calloc(f1ap_ue_context_setup_req->drbs_to_be_setup_length,
-          sizeof(f1ap_drb_to_be_setup_t));
-      AssertFatal(f1ap_ue_context_setup_req->drbs_to_be_setup,
-                  "could not allocate memory for f1ap_ue_context_setup_req->drbs_to_be_setup\n");
-
-      for (i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; ++i) {
-        f1ap_drb_to_be_setup_t *drb_p = &f1ap_ue_context_setup_req->drbs_to_be_setup[i];
-        F1AP_DRBs_ToBeSetup_Item_t *drbs_tobesetup_item_p =
-          &((F1AP_DRBs_ToBeSetup_ItemIEs_t *)ieDrb->value.choice.DRBs_ToBeSetup_List.list.array[i])->value.choice.DRBs_ToBeSetup_Item;
-        drb_p->drb_id = drbs_tobesetup_item_p->dRBID;
-        /* TODO in the following, assume only one UP UL TNL is present.
-        * this matches/assumes OAI CU implementation, can be up to 2! */
-        drb_p->up_ul_tnl_length = 1;
-        AssertFatal(drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.count > 0,
-                    "no UL UP TNL Information in DRBs to be Setup list\n");
-        F1AP_ULUPTNLInformation_ToBeSetup_Item_t *ul_up_tnl_info_p = (F1AP_ULUPTNLInformation_ToBeSetup_Item_t *)drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.array[0];
-        F1AP_GTPTunnel_t *ul_up_tnl0 = ul_up_tnl_info_p->uLUPTNLInformation.choice.gTPTunnel;
-        BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
-        OCTET_STRING_TO_INT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
-
-        switch (drbs_tobesetup_item_p->rLCMode) {
-          case F1AP_RLCMode_rlc_am:
-            drb_p->rlc_mode = RLC_MODE_AM;
-            break;
-
-          default:
-            drb_p->rlc_mode = RLC_MODE_TM;
-            break;
-        }
-
-        /*transport_layer_addr_t addr;
+  /* DRB */
+  F1AP_UEContextSetupRequestIEs_t *ieDrb;
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieDrb, container,
+			     F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_List, true);
+  
+  if(ieDrb!=NULL) {
+    f1ap_ue_context_setup_req->drbs_to_be_setup_length = ieDrb->value.choice.DRBs_ToBeSetup_List.list.count;
+    f1ap_ue_context_setup_req->drbs_to_be_setup = calloc(f1ap_ue_context_setup_req->drbs_to_be_setup_length,
+							 sizeof(f1ap_drb_to_be_setup_t));
+    AssertFatal(f1ap_ue_context_setup_req->drbs_to_be_setup,
+		"could not allocate memory for f1ap_ue_context_setup_req->drbs_to_be_setup\n");
+    
+    for (i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; ++i) {
+      f1ap_drb_to_be_setup_t *drb_p = &f1ap_ue_context_setup_req->drbs_to_be_setup[i];
+      F1AP_DRBs_ToBeSetup_Item_t *drbs_tobesetup_item_p =
+	&((F1AP_DRBs_ToBeSetup_ItemIEs_t *)ieDrb->value.choice.DRBs_ToBeSetup_List.list.array[i])->value.choice.DRBs_ToBeSetup_Item;
+      drb_p->drb_id = drbs_tobesetup_item_p->dRBID;
+      /* TODO in the following, assume only one UP UL TNL is present.
+       * this matches/assumes OAI CU implementation, can be up to 2! */
+      drb_p->up_ul_tnl_length = 1;
+      AssertFatal(drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.count > 0,
+		  "no UL UP TNL Information in DRBs to be Setup list\n");
+      F1AP_ULUPTNLInformation_ToBeSetup_Item_t *ul_up_tnl_info_p = (F1AP_ULUPTNLInformation_ToBeSetup_Item_t *)drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.array[0];
+      F1AP_GTPTunnel_t *ul_up_tnl0 = ul_up_tnl_info_p->uLUPTNLInformation.choice.gTPTunnel;
+      BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
+      OCTET_STRING_TO_INT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
+      
+      switch (drbs_tobesetup_item_p->rLCMode) {
+      case F1AP_RLCMode_rlc_am:
+	drb_p->rlc_mode = RLC_MODE_AM;
+	break;
+	
+      default:
+	drb_p->rlc_mode = RLC_MODE_TM;
+	break;
+      }
+      if (!(RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_DU)) {
+	transport_layer_addr_t addr;
         memcpy(addr.buffer, &drb_p->up_ul_tnl[0].tl_address, sizeof(drb_p->up_ul_tnl[0].tl_address));
         addr.length=sizeof(drb_p->up_ul_tnl[0].tl_address)*8;
         drb_p->up_dl_tnl[0].teid=newGtpuCreateTunnel(INSTANCE_DEFAULT,
-                                 f1ap_ue_context_setup_req->rnti,
-                                 drb_p->drb_id,
-                                 drb_p->drb_id,
-                                 drb_p->up_ul_tnl[0].teid,
-                                 addr,
-                                 2152,
-                                 DURecvCb);*/
+						     f1ap_ue_context_setup_req->rnti,
+						     drb_p->drb_id,
+						     drb_p->drb_id,
+						     drb_p->up_ul_tnl[0].teid,
+						     addr,
+						     2152,
+						     lteDURecvCb);
       }
     }
+  }
 
-    F1AP_UEContextSetupRequestIEs_t *ieSrb;
-    F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieSrb, container,
-                               F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_List, true);
-
-    if(ieSrb != NULL) {
-      f1ap_ue_context_setup_req->srbs_to_be_setup_length = ieSrb->value.choice.SRBs_ToBeSetup_List.list.count;
-      f1ap_ue_context_setup_req->srbs_to_be_setup = calloc(f1ap_ue_context_setup_req->srbs_to_be_setup_length,
-          sizeof(f1ap_srb_to_be_setup_t));
-      AssertFatal(f1ap_ue_context_setup_req->srbs_to_be_setup,
-                  "could not allocate memory for f1ap_ue_context_setup_req->srbs_to_be_setup\n");
-
-      for (i = 0; i < f1ap_ue_context_setup_req->srbs_to_be_setup_length; ++i) {
-        f1ap_srb_to_be_setup_t *srb_p = &f1ap_ue_context_setup_req->srbs_to_be_setup[i];
-        F1AP_SRBs_ToBeSetup_Item_t *srbs_tobesetup_item_p;
-        srbs_tobesetup_item_p = &((F1AP_SRBs_ToBeSetup_ItemIEs_t *)ieSrb->value.choice.SRBs_ToBeSetup_List.list.array[i])->value.choice.SRBs_ToBeSetup_Item;
-        srb_p->srb_id = srbs_tobesetup_item_p->sRBID;
-      }
+  /* SRB */
+  F1AP_UEContextSetupRequestIEs_t *ieSrb;
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieSrb, container,
+			     F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_List, true);
+  
+  if(ieSrb != NULL) {
+    f1ap_ue_context_setup_req->srbs_to_be_setup_length = ieSrb->value.choice.SRBs_ToBeSetup_List.list.count;
+    f1ap_ue_context_setup_req->srbs_to_be_setup = calloc(f1ap_ue_context_setup_req->srbs_to_be_setup_length,
+							 sizeof(f1ap_srb_to_be_setup_t));
+    AssertFatal(f1ap_ue_context_setup_req->srbs_to_be_setup,
+		"could not allocate memory for f1ap_ue_context_setup_req->srbs_to_be_setup\n");
+    
+    for (i = 0; i < f1ap_ue_context_setup_req->srbs_to_be_setup_length; ++i) {
+      f1ap_srb_to_be_setup_t *srb_p = &f1ap_ue_context_setup_req->srbs_to_be_setup[i];
+      F1AP_SRBs_ToBeSetup_Item_t *srbs_tobesetup_item_p;
+      srbs_tobesetup_item_p = &((F1AP_SRBs_ToBeSetup_ItemIEs_t *)ieSrb->value.choice.SRBs_ToBeSetup_List.list.array[i])->value.choice.SRBs_ToBeSetup_Item;
+      srb_p->srb_id = srbs_tobesetup_item_p->sRBID;
     }
   }
 
@@ -214,7 +230,8 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
   }
 
   //DU_send_UE_CONTEXT_SETUP_RESPONSE(instance,  f1ap_ue_context_setup_req);
-  itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
+  if (RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_DU) 
+    itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
   return 0;
 }
 
@@ -658,9 +675,10 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   AssertFatal(ctxt.rnti == rnti,
               "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
               rnti, ctxt.rnti);
+
   int UE_out_of_sync = 0;
 
-  if (RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
+  if (RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
     for (int n = 0; n < MAX_MOBILES_PER_GNB; ++n) {
       if (RC.nrmac[instance]->UE_info.active[n] == TRUE
           && rnti == RC.nrmac[instance]->UE_info.rnti[n]) {
@@ -724,55 +742,56 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
     }
   }
 
-  if (RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
+  if (RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
     // struct rrc_gNB_ue_context_s *ue_context_p;
     f1ap_ue_context_release_cplt_t cplt;
     cplt.rnti = ctxt.rnti;
     DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance, &cplt);
     return 0;
-  }
-
-  struct rrc_eNB_ue_context_s *ue_context_p;
-
-  ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.instance], ctxt.rnti);
-
-  if (ue_context_p && !UE_out_of_sync) {
-    /* UE exists and is in sync so we start a timer before releasing the
-     * connection */
-    pthread_mutex_lock(&rrc_release_freelist);
-
-    for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
-      if (rrc_release_info.RRC_release_ctrl[release_num].flag == 0) {
-        if (ue_context_p->ue_context.ue_release_timer_s1 > 0)
-          rrc_release_info.RRC_release_ctrl[release_num].flag = 1;
-        else
-          rrc_release_info.RRC_release_ctrl[release_num].flag = 2;
-
-        rrc_release_info.RRC_release_ctrl[release_num].rnti = ctxt.rnti;
-        LOG_D(F1AP, "add rrc_release_info RNTI %x\n", ctxt.rnti);
-        // TODO: how to provide the correct MUI?
-        rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui = 0;
-        rrc_release_info.num_UEs++;
-        LOG_D(RRC,"Generate DLSCH Release send: index %d rnti %x mui %d flag %d \n",release_num,
-              ctxt.rnti, 0, rrc_release_info.RRC_release_ctrl[release_num].flag);
-        break;
-      }
-    }
-
-    pthread_mutex_unlock(&rrc_release_freelist);
-    ue_context_p->ue_context.ue_release_timer_s1 = 0;
-  } else if (ue_context_p && UE_out_of_sync) {
-    /* UE exists and is out of sync, drop the connection */
-    mac_eNB_rrc_ul_failure(instance, 0, 0, 0, rnti);
   } else {
-    LOG_E(F1AP, "no ue_context for RNTI %x, acknowledging release\n", rnti);
+    
+    struct rrc_eNB_ue_context_s *ue_context_p;
+    
+    ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.instance], ctxt.rnti);
+    
+    if (ue_context_p && !UE_out_of_sync) {
+      /* UE exists and is in sync so we start a timer before releasing the
+       * connection */
+      pthread_mutex_lock(&rrc_release_freelist);
+      
+      for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
+	if (rrc_release_info.RRC_release_ctrl[release_num].flag == 0) {
+	  if (ue_context_p->ue_context.ue_release_timer_s1 > 0)
+	    rrc_release_info.RRC_release_ctrl[release_num].flag = 1;
+	  else
+	    rrc_release_info.RRC_release_ctrl[release_num].flag = 2;
+	  
+	  rrc_release_info.RRC_release_ctrl[release_num].rnti = ctxt.rnti;
+	  LOG_D(F1AP, "add rrc_release_info RNTI %x\n", ctxt.rnti);
+	  // TODO: how to provide the correct MUI?
+	  rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui = 0;
+	  rrc_release_info.num_UEs++;
+	  LOG_D(RRC,"Generate DLSCH Release send: index %d rnti %x mui %d flag %d \n",release_num,
+		ctxt.rnti, 0, rrc_release_info.RRC_release_ctrl[release_num].flag);
+	  break;
+	}
+      }
+      
+      pthread_mutex_unlock(&rrc_release_freelist);
+      ue_context_p->ue_context.ue_release_timer_s1 = 0;
+    } else if (ue_context_p && UE_out_of_sync) {
+      /* UE exists and is out of sync, drop the connection */
+      mac_eNB_rrc_ul_failure(instance, 0, 0, 0, rnti);
+    } else {
+      LOG_E(F1AP, "no ue_context for RNTI %x, acknowledging release\n", rnti);
+    }
+    
+    /* TODO send this once the connection has really been released */
+    f1ap_ue_context_release_cplt_t cplt;
+    cplt.rnti = ctxt.rnti;
+    DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance, &cplt);
+    return 0;
   }
-
-  /* TODO send this once the connection has really been released */
-  f1ap_ue_context_release_cplt_t cplt;
-  cplt.rnti = ctxt.rnti;
-  DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance, &cplt);
-  return 0;
 }
 int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
                                         f1ap_ue_context_release_cplt_t *cplt) {
