@@ -359,6 +359,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     if (temp>xrtmag) {
       xrtmag_next = xrtmag;
       xrtmag=temp;
+      LOG_I(PHY,"Sequence %d xrtmag %ld xrtmag_next %ld\n", i, xrtmag, xrtmag_next);
       maxpos=i;
       uci_stats->current_pucch0_stat0 = 0;
       int64_t temp2=0,temp3=0;;
