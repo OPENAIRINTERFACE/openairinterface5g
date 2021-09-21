@@ -370,6 +370,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       uci_stats->current_pucch0_stat0= dB_fixed64(temp2);
       if (l==2) uci_stats->current_pucch0_stat1= dB_fixed64(temp3);
     }
+    else if (temp>xrtmag_next)
+      xrtmag_next = temp;
   }
 
   av_corr/=nr_sequences/l;
