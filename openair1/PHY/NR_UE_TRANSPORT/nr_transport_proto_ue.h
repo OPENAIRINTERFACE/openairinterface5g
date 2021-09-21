@@ -1120,7 +1120,8 @@ uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
                              uint8_t eNB_id);
 
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
-                    UE_nr_rxtx_proc_t *proc);
+                    UE_nr_rxtx_proc_t *proc,
+                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
 
 /*! \brief Extract PSS and SSS resource elements
@@ -1455,7 +1456,9 @@ void generate_RIV_tables(void);
 */
 int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                     PHY_VARS_NR_UE *phy_vars_ue, 
-                    int n_frames);
+                    int n_frames,
+                    int sa,
+                    int dlsch_parallel);
 
 /*!
   \brief This function gets the carrier frequencies either from FP or command-line-set global variables, depending on the availability of the latter
@@ -1709,7 +1712,8 @@ uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
 
 uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                   UE_nr_rxtx_proc_t *proc,
-                                  fapi_nr_dci_indication_t *dci_ind);
+                                  fapi_nr_dci_indication_t *dci_ind,
+                                  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
 
 /** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
@@ -1744,6 +1748,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 		unsigned char harq_pid);
 
 int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe);
+
+void dump_nrdlsch(PHY_VARS_NR_UE *ue,uint8_t gNB_id,uint8_t nr_slot_rx,unsigned int *coded_bits_per_codeword,int round,  unsigned char harq_pid);
 
 void *dlsch_thread(void *arg);
 /**@}*/

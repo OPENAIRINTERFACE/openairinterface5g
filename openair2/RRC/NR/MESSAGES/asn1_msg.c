@@ -419,8 +419,28 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
     nrMultiBandInfo->freqBandIndicatorNR = configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[i];
     ASN_SEQUENCE_ADD(&sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list,nrMultiBandInfo);
   }
-  //sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA = configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
-  sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA = 86;
+
+  int scs_scaling0 = 1<<(configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing);
+  int scs_scaling  = scs_scaling0;
+  int scs_scaling2 = scs_scaling0;
+  if (configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000) {
+    scs_scaling = scs_scaling0*3;
+  }
+  if (configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA > 2016666) {
+    scs_scaling = scs_scaling0>>2;
+    scs_scaling2 = scs_scaling0>>2;
+  }
+  uint32_t absolute_diff = (*configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB -
+                             configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
+
+  sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA = scs_scaling2 * (absolute_diff/(12*scs_scaling) - 10);
+
+  LOG_I(NR_RRC,"SIB1 freq: absoluteFrequencySSB %ld, absoluteFrequencyPointA %ld\n",
+                                    *configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
+                                    configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
+  LOG_I(NR_RRC,"SIB1 freq: absolute_diff %d, %d*(absolute_diff/(12*%d) - 10) %d\n",
+        absolute_diff,scs_scaling2,scs_scaling,(int)sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA);
+
   for(int i = 0; i< configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.count; i++) {
     ASN_SEQUENCE_ADD(&sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list,configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[i]);
   }

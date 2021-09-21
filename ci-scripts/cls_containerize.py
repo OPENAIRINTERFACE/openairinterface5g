@@ -596,20 +596,6 @@ class Containerize():
 			else:
 				time.sleep(10)
 
-		#  HACK TO REMOVE LATER WHEN FIX
-		res = re.search('oai-nr-ue', self.services[0])
-		if res is not None:
-			cmd = 'docker exec rfsim5g-oai-nr-ue /bin/bash -c "ip route del default"'
-			logging.debug(cmd)
-			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-			cmd = 'docker exec rfsim5g-oai-nr-ue /bin/bash -c "ip route del 12.1.1.0/24"'
-			logging.debug(cmd)
-			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-			cmd = 'docker exec rfsim5g-oai-nr-ue /bin/bash -c "ip route add default via 12.1.1.2 dev oaitun_ue1"'
-			logging.debug(cmd)
-			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-		#  END OF HACK TO REMOVE LATER WHEN FIX
-
 		if count == 100 and healthy == self.nb_healthy[0]:
 			HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
 			logging.info('\u001B[1m Deploying OAI Object(s) PASS\u001B[0m')
@@ -628,7 +614,7 @@ class Containerize():
 		logging.debug(cmd)
 		subprocess.run(cmd, shell=True)
 
-# if the containers are running, recover the logs!
+		# if the containers are running, recover the logs!
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps --all'
 		logging.debug(cmd)
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
@@ -831,7 +817,9 @@ class Containerize():
 				logging.debug('\u001B[1;34m    Jitter      : ' + jitter + '\u001B[0m')
 			self.IperfExit(HTML, iperfStatus, msg)
 		else:
+			iperfStatus = False
 			logging.error('problem?')
+			self.IperfExit(HTML, iperfStatus, 'problem?')
 		if iperfStatus:
 			logging.info('\u001B[1m Iperf Test PASS\u001B[0m')
 
