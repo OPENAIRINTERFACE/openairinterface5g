@@ -125,8 +125,12 @@
       env: "@F1_IF_NAME@"
     - key: local_s_address
       env: "@F1_CU_IP_ADDRESS@"
+    - key: local_s_portd
+      env: "@F1_CU_D_PORT@"
     - key: remote_s_address
       env: "@F1_DU_IP_ADDRESS@"
+    - key: remote_s_portd
+      env: "@F1_DU_D_PORT@"
 
   - filePrefix: gNB_SA_DU.conf
     outputfilename: "gnb.sa.du.tdd.conf"
@@ -161,6 +165,10 @@
       env: "@F1_IF_NAME@"
     - key: local_n_address
       env: "@F1_DU_IP_ADDRESS@"
+    - key: local_n_portd
+      env: "@F1_DU_D_PORT@"
     - key: remote_n_address
       env: "@F1_CU_IP_ADDRESS@"
+    - key: remote_n_portd
+      env: "@F1_CU_D_PORT@"
 
