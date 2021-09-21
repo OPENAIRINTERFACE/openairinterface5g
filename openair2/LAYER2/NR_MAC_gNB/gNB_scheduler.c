@@ -101,10 +101,9 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
           stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
           stats->pucch0_DTX,
           avg_rsrp, stats->num_rsrp_meas);
-    LOG_I(NR_MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d\n",
-      UE_id,
-      stats->dlsch_rounds[0], stats->dlsch_rounds[1],
-      stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors);
+    LOG_I(NR_MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, pucch0_DTX %d\n",
+          UE_id, stats->dlsch_rounds[0], stats->dlsch_rounds[1], stats->dlsch_rounds[2], stats->dlsch_rounds[3],
+          stats->dlsch_errors, stats->pucch0_DTX);
     stats->num_rsrp_meas = 0;
     stats->cumul_rsrp = 0 ;
     stroff+=sprintf(output+stroff,"UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
@@ -119,11 +118,9 @@ void dump_mac_stats(gNB_MAC_INST *gNB)
                     UE_id,
                     stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
     LOG_I(NR_MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
-    LOG_I(NR_MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_errors %d\n",
-          UE_id,
-          stats->ulsch_rounds[0], stats->ulsch_rounds[1],
-          stats->ulsch_rounds[2], stats->ulsch_rounds[3],
-          stats->ulsch_errors);
+    LOG_I(NR_MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_errors %d, ulsch_DTX %d\n",
+          UE_id, stats->ulsch_rounds[0], stats->ulsch_rounds[1], stats->ulsch_rounds[2], stats->ulsch_rounds[3],
+          stats->ulsch_errors, stats->ulsch_DTX);
     LOG_I(NR_MAC,
           "UE %d: ulsch_total_bytes (scheduled/received): %d / %d\n",
           UE_id,
