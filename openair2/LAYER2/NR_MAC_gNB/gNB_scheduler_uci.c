@@ -1305,8 +1305,6 @@ int nr_acknack_scheduling(int mod_id,
   int ind_found = -1;
   // while we are within the feedback limits and it has not been
   while ((pucch->frame*n_slots_frame + pucch->ul_slot) <= max_absslot) {
-    if (ind_found!=-1)
-      break;
     int i = 0;
     while (i < 8) {
       LOG_D(NR_MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
@@ -1317,6 +1315,8 @@ int nr_acknack_scheduling(int mod_id,
       }
       ++i;
     }
+    if (ind_found!=-1)
+      break;
     // advance to the next ul slot
     const int f = pucch->frame;
     const int s = pucch->ul_slot;
