@@ -416,7 +416,6 @@ static int trx_usrp_write(openair0_device *device,
     s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet_state;
     s->tx_md.end_of_burst   = last_packet_state;
     s->tx_md.time_spec      = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
-
     s->tx_count++;
 
 VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHING_GPIO,1);
@@ -942,7 +941,7 @@ extern "C" {
     LOG_I(HW, "openair0_cfg[0].sdr_addrs == '%s'\n", openair0_cfg[0].sdr_addrs);
     LOG_I(HW, "openair0_cfg[0].clock_source == '%d' (internal = %d, external = %d)\n", openair0_cfg[0].clock_source,internal,external);
     usrp_state_t *s ;
-    int choffset = 1;
+    int choffset = 0;
 
     if ( device->priv == NULL) {
       s=(usrp_state_t *)calloc(sizeof(usrp_state_t),1);

@@ -1169,7 +1169,6 @@ void *ru_stats_thread(void *param) {
       }
 
       print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
-
       print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
 
       if (ru->fh_north_out) {
