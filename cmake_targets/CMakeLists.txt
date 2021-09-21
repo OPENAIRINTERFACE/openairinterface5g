@@ -1592,6 +1592,11 @@ set(PHY_LDPC_CUDA_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
 )
 
+set(PHY_LDPC_CL_SRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_CL.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
+)
+
 set(PHY_NR_CODINGIF
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_load.c;
 )
@@ -1599,6 +1604,9 @@ set(PHY_NR_CODINGIF
 add_library(ldpc_orig MODULE ${PHY_LDPC_ORIG_SRC} )
 add_library(ldpc_optim MODULE ${PHY_LDPC_OPTIM_SRC} )
 add_library(ldpc_optim8seg MODULE ${PHY_LDPC_OPTIM8SEG_SRC} )
+add_library(ldpc_cl MODULE ${PHY_LDPC_CL_SRC} )
+target_link_libraries(ldpc_cl OpenCL)
+
 if (CUDA_FOUND)
   cuda_add_library(ldpc_cuda MODULE ${PHY_LDPC_CUDA_SRC} )
   set_target_properties(ldpc_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
