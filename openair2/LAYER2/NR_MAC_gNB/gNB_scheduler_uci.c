@@ -1293,6 +1293,14 @@ int nr_acknack_scheduling(int mod_id,
 
   // advance ul_slot if it is not reachable by UE
   pucch->ul_slot = max(pucch->ul_slot, slot + pdsch_to_harq_feedback[0]);
+  /* We are not sure sure what is happening with this max() above.
+     It seems that the ul_slot will be updated to be
+     max(current ul_slot, curernt dl_slot + sf_ahead). Is this
+     the intention/correct? */
+  if (pucch->ul_slot > 19) {
+    pucch->ul_slot = pucch->ul_slot % 20;
+    pucch->frame = (pucch->frame + 1) % 1024;
+  }
 
   // Find the right timing_indicator value.
   int i = 0;

@@ -87,8 +87,9 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
                 rx_ind->pdu_list[j].handle = pusch_config_pdu->handle;
                 rx_ind->pdu_list[j].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
-                rx_ind->pdu_list[j].pdu = tx_req_body->pdu;
                 rx_ind->pdu_list[j].pdu_length = tx_req_body->pdu_length;
+                rx_ind->pdu_list[j].pdu = CALLOC(tx_req_body->pdu_length, sizeof(*rx_ind->pdu_list[j].pdu));
+                memcpy(rx_ind->pdu_list[j].pdu, tx_req_body->pdu, tx_req_body->pdu_length * sizeof(*rx_ind->pdu_list[j].pdu));
                 rx_ind->pdu_list[j].rnti = pusch_config_pdu->rnti;
                 rx_ind->pdu_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
                 rx_ind->pdu_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
@@ -120,14 +121,24 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               if (!put_queue(&nr_rx_ind_queue, rx_ind))
               {
                 LOG_E(NR_MAC, "Put_queue failed for rx_ind\n");
+                for (int i = 0; i < rx_ind->number_of_pdus; i++)
+                {
+                  free(rx_ind->pdu_list[i].pdu);
+                  rx_ind->pdu_list[i].pdu = NULL;
+                }
+
                 free(rx_ind->pdu_list);
+                rx_ind->pdu_list = NULL;
                 free(rx_ind);
+                rx_ind = NULL;
               }
               if (!put_queue(&nr_crc_ind_queue, crc_ind))
               {
                 LOG_E(NR_MAC, "Put_queue failed for crc_ind\n");
                 free(crc_ind->crc_list);
+                crc_ind->crc_list = NULL;
                 free(crc_ind);
+                crc_ind = NULL;
               }
 
               LOG_I(PHY, "In %s: Filled queue rx/crc_ind which was filled by ulconfig. \n", __FUNCTION__);
