@@ -1210,7 +1210,7 @@ int nr_acknack_scheduling(int mod_id,
     nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
     memset(pucch, 0, sizeof(*pucch));
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-    if((s + 1) == nr_slots_period)
+    if(((s + 1)%nr_slots_period) == nr_slots_period)
       pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
     else
       pucch->ul_slot = (s + 1) % n_slots_frame;
@@ -1226,7 +1226,7 @@ int nr_acknack_scheduling(int mod_id,
       nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
       memset(csi_pucch, 0, sizeof(*csi_pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-      if((s + 1) == nr_slots_period)
+      if(((s + 1)%nr_slots_period) == nr_slots_period)
         pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
       else
         pucch->ul_slot = (s + 1) % n_slots_frame;
@@ -1275,7 +1275,7 @@ int nr_acknack_scheduling(int mod_id,
       nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-      if((s + 1) == nr_slots_period)
+      if(((s + 1)%nr_slots_period) == nr_slots_period)
         pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
       else
         pucch->ul_slot = (s + 1) % n_slots_frame;
@@ -1321,7 +1321,7 @@ int nr_acknack_scheduling(int mod_id,
     const int f = pucch->frame;
     const int s = pucch->ul_slot;
     pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-    if((s + 1) == nr_slots_period)
+    if(((s + 1)%nr_slots_period) == nr_slots_period)
       pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
     else
       pucch->ul_slot = (s + 1) % n_slots_frame;
@@ -1356,7 +1356,7 @@ int nr_acknack_scheduling(int mod_id,
       const int s = pucch->ul_slot;
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-      if((s + 1) == nr_slots_period)
+      if(((s + 1)%nr_slots_period) == nr_slots_period)
         pucch->ul_slot = (s + 1 + first_ul_slot_tdd) % n_slots_frame;
       else
         pucch->ul_slot = (s + 1) % n_slots_frame;
