@@ -899,7 +899,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x DCI L %d start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
           frame,
           slot,
@@ -1076,7 +1076,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_payload.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
     LOG_D(NR_MAC,
           "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "
-          "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d tpc %d\n",
+          "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d tpc %d ti %d\n",
           frame,
           slot,
           dci_payload.frequency_domain_assignment.val,
@@ -1089,7 +1089,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.tb_scaling,
           dci_payload.ndi,
           dci_payload.rv,
-          dci_payload.tpc);
+          dci_payload.tpc,
+          pucch->timing_indicator);
 
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
     int dci_format;
