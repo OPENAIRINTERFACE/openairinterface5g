@@ -159,7 +159,11 @@ boolean_t cu_f1u_data_req(
     exit(1);
   }
   memcpy(memblock->data,sdu_buffer, sdu_buffer_size);
-  int ret=pdcp_data_ind(ctxt_pP,srb_flagP, false, rb_id, sdu_buffer_size, memblock, NULL, NULL);
+  // weird rb id management in 4G, not fully understand (looks bad design)
+  // overcomplex: if i understand, on the interface DRB start at 4 because there can be SRB 0..3
+  // but it would be much simpler to use absolute numbering
+  // instead of this "srb flag" associated to these +/-4
+  int ret=pdcp_data_ind(ctxt_pP,srb_flagP, false, rb_id-4, sdu_buffer_size, memblock, NULL, NULL);
   if (!ret) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
     /* what to do in case of failure? for the moment: nothing */
@@ -221,7 +225,7 @@ rlc_op_status_t cu_send_to_du(const protocol_ctxt_t *const ctxt,
   req->length        = size;
   req->offset        = GTPU_HEADER_OVERHEAD_MAX;
   req->rnti          = ctxt->rnti;
-  req->rab_id = rb_id;
+  req->rab_id = rb_id+4;
   LOG_D(PDCP, "%s() (drb %ld) sending message to gtp size %d\n",
 	__func__, rb_id, size);
   extern instance_t CUuniqInstance;

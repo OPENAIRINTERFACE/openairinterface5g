@@ -522,8 +522,8 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
       f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid=
 	newGtpuCreateTunnel(getCxt(CUtype, instance)->gtpInst,
 			    f1ap_ue_context_setup_req->rnti,
-			    f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id-4,
-			    f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id-4,
+			    f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
+			    f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
 			    0xFFFF, // We will set the right value from DU answer
 			    addr,
 			    f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].port,

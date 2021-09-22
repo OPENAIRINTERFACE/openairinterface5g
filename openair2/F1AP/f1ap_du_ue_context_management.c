@@ -55,7 +55,11 @@ boolean_t lteDURecvCb( protocol_ctxt_t  *ctxt_pP,
   // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
   mem_block_t *sdu=get_free_mem_block(sdu_buffer_sizeP, __func__);
   memcpy(sdu->data,  sdu_buffer_pP,  sdu_buffer_sizeP);
-  du_rlc_data_req(ctxt_pP,srb_flagP, false,  rb_idP,muiP, confirmP,  sdu_buffer_sizeP, sdu);
+  // weird rb id management in 4G, not fully understand (looks bad design)
+  // overcomplex: if i understand, on the interface DRB start at 4 because there can be SRB 0..3
+  // but it would be much simpler to use absolute numbering
+  // instead of this "srb flag" associated to these +/-4
+  du_rlc_data_req(ctxt_pP,srb_flagP, false,  rb_idP-4,muiP, confirmP,  sdu_buffer_sizeP, sdu);
   return true;
 }
 
@@ -175,6 +179,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
 						     addr,
 						     2152,
 						     lteDURecvCb);
+	drb_p->up_dl_tnl_length++;
       }
     }
   }
@@ -220,7 +225,6 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       ctxt.enb_flag  = 1;
       mem_block_t *pdcp_pdu_p = get_free_mem_block(ieRRC->value.choice.RRCContainer.size, __func__);
       memcpy(&pdcp_pdu_p->data[0], ieRRC->value.choice.RRCContainer.buf, ieRRC->value.choice.RRCContainer.size);
-      /* for rfsim */
       du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, ieRRC->value.choice.RRCContainer.size, pdcp_pdu_p);
     } else {
       LOG_E(F1AP, " RRCContainer in UEContextSetupRequestIEs size id 0\n");
@@ -229,9 +233,11 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     LOG_W(F1AP, "can't find RRCContainer in UEContextSetupRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
   }
 
-  //DU_send_UE_CONTEXT_SETUP_RESPONSE(instance,  f1ap_ue_context_setup_req);
   if (RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_DU) 
     itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
+  else
+    // in 4G, race conditon is to fix
+    DU_send_UE_CONTEXT_SETUP_RESPONSE(instance,  f1ap_ue_context_setup_req);
   return 0;
 }
 

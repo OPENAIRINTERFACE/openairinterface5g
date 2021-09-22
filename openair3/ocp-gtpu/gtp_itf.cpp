@@ -171,7 +171,7 @@ static void gtpv1uSend(instance_t instance, gtpv1u_enb_tunnel_data_req_t *req, b
   map<int, ocp_gtpv1u_bearer_t>::iterator ptr2=ptrRnti->second.bearers.find(rab_id);
 
   if ( ptr2 == ptrRnti->second.bearers.end() ) {
-    LOG_E(GTPU,"sending a packet to a non existant RNTI:RAB: %x/%x\n", rnti, rab_id);
+    LOG_E(GTPU,"GTP-U instance: %ld sending a packet to a non existant RNTI:RAB: %x/%x\n", instance, rnti, rab_id);
     pthread_mutex_unlock(&globGtp.gtp_lock);
     return;
   }
@@ -253,7 +253,7 @@ static void gtpv1uEndTunnel(instance_t instance, gtpv1u_enb_tunnel_data_req_t *r
   map<int, ocp_gtpv1u_bearer_t>::iterator ptr2=ptrRnti->second.bearers.find(rab_id);
 
   if ( ptr2 == ptrRnti->second.bearers.end() ) {
-    LOG_E(GTPU,"sending a packet to a non existant RNTI:RAB: %x/%x\n", rnti, rab_id);
+    LOG_E(GTPU,"GTP-U instance: %ld sending a packet to a non existant RNTI:RAB: %x/%x\n", instance, rnti, rab_id);
     pthread_mutex_unlock(&globGtp.gtp_lock);
     return;
   }
