@@ -452,7 +452,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
         && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
       return;
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
           __func__,
           frame,
@@ -1076,7 +1076,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_payload.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
     LOG_D(NR_MAC,
           "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "
-          "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d tpc %d\n",
+          "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d tpc %d ti %d\n",
           frame,
           slot,
           dci_payload.frequency_domain_assignment.val,
@@ -1089,7 +1089,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.tb_scaling,
           dci_payload.ndi,
           dci_payload.rv,
-          dci_payload.tpc);
+          dci_payload.tpc,
+          pucch->timing_indicator);
 
     const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
     int dci_format;
@@ -1180,7 +1181,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                  0,
                                  0);
 
-          LOG_I(NR_MAC,
+          LOG_D(NR_MAC,
                 "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
                 frame,
                 slot,
