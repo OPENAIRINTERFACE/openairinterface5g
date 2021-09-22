@@ -61,7 +61,7 @@ int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
 
     long referenceSignalPower = ue->nrUE_config.ssb_config.ss_pbch_power;
 
-    pathloss = (int16_t)(referenceSignalPower - 30 + ue->rx_total_gain_dB);
+    pathloss = (int16_t)(referenceSignalPower - ue->measurements.rsrp_dBm[gNB_index]);
 
     LOG_D(MAC, "In %s: pathloss %d dB, UE RX total gain %d dB, referenceSignalPower %ld dBm/RE (%f mW), RSRP %d dBm (%f mW)\n",
       __FUNCTION__,
