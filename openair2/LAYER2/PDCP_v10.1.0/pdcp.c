@@ -1546,7 +1546,7 @@ void pdcp_add_UE(const protocol_ctxt_t *const  ctxt_pP) {
         pdcp_enb[ctxt_pP->module_id].rnti[i]=ctxt_pP->rnti;
         pdcp_enb[ctxt_pP->module_id].uid[i]=i;
         pdcp_enb[ctxt_pP->module_id].num_ues++;
-        printf("add new uid is %d %x\n\n", i, ctxt_pP->rnti);
+        LOG_I(PDCP,"add new uid is %d %x\n", i, ctxt_pP->rnti);
         pdcp_init_stats_UE(ctxt_pP->module_id, i);
         // ret=1;
         break;
