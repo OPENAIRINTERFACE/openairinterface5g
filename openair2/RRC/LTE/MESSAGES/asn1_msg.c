@@ -2380,7 +2380,6 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
 
 static void assign_scg_ConfigResponseNR_r15(LTE_RRCConnectionReconfigurationComplete_t *rrc, OCTET_STRING_t *str)
 {
-  /* Melissa TODO: Need to free this memory when we are done. */
   LTE_RRCConnectionReconfigurationComplete_r8_IEs_t *rrc_r8 = &rrc->criticalExtensions.choice.
                                                     rrcConnectionReconfigurationComplete_r8;
   typeof(rrc_r8->nonCriticalExtension) nce1;
@@ -2444,7 +2443,7 @@ do_RRCConnectionReconfigurationComplete(
                                    buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-  LOG_I(RRC,"RRCConnectionReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_D(RRC,"RRCConnectionReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
 }
 
@@ -4313,67 +4312,6 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
   ASN_SEQUENCE_ADD(&measResultListEUTRA2->list, measresulteutra_list);
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA=*(measResultListEUTRA2);
 
-  #if 0 //Melissa: This was a hack. Incomplete filling of ul_dcch_msg is done above
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array =
-    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array));
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0] =
-    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0]));
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult =
-    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult));
-      measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult =
-    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult));
-  if (measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells == NULL)
-    LOG_E(MAC, "Melissa, the calloc failed on neighcells.....!!\n");
-  LTE_MeasResults_t *mr_r8 = &measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults;
-  mr_r8->measId = measid;
-  mr_r8->measResultPCell.rsrpResult = rsrp_s;
-  mr_r8->measResultPCell.rsrqResult = rsrq_s;
-  mr_r8->measResultNeighCells = CALLOC(1, sizeof(*mr_r8->measResultNeighCells));
-  mr_r8->measResultNeighCells->present = LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
-  mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.count = 1;
-
-  mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array =
-       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array));
-  mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0] =
-       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]));
-  mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15 =
-       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15));
-  mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15 =
-       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15));
-  //mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15 = rsrp_tar;
-  //mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15 = rsrq_tar;
-  LOG_D(RRC, "Melissa Elkadi RSRQ of Target %ld\n",
-            *mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrqResult_r15);
-  LOG_D(RRC, "Melissa Elkadi RSRP of Target %ld\n",
-            *mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15);
-
-  //mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.count = 1;
-  //mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId = 0;
-  mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array =
-       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array));
-  mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0] =
-       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]));
-  mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult =
-       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrpResult));
-  mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult =
-       calloc(1, sizeof(*mr_r8->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult));
-
-  LTE_MeasResultCellNR_r15_t *measResultCellNR_r15;
-  measResultCellNR_r15 = CALLOC(1, sizeof(*measResultCellNR_r15));
-  measResultCellNR_r15->ext1 //Melissa should be null
-  measResultCellNR_r15->pci_r15 = phy_id;
-  measResultCellNR_r15->measResultCell_r15.rsrpResult_r15 = &rsrp_tar;
-  measResultCellNR_r15->measResultCell_r15.rsrqResult_r15 = &rsrq_tar;
-
-  LTE_MeasResultCellListNR_r15_t *measResultListNR_r15;
-  measResultListNR_r15 = CALLOC(1, sizeof(*measResultListNR_r15));
-  ASN_SEQUENCE_ADD(&measResultListNR_r15->list, measResultCellNR_r15);
-
-  ASN_SEQUENCE_ADD(&mr_r8->measResultNeighCells->choice.measResultNeighCellListNR_r15.list, measResultListNR_r15);
-
-  //xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, &ul_dcch_msg);
-  #endif
-
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message,
                                    NULL,
                                    &ul_dcch_msg,
@@ -4385,28 +4323,7 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
     SEQUENCE_free(&asn_DEF_LTE_UL_DCCH_Message, &ul_dcch_msg, ASFM_FREE_UNDERLYING_AND_RESET);
     return -1;
   }
-  #if 0
-  LTE_UL_DCCH_Message_t               *ul_dcch_msg_dec = NULL;
-  asn_dec_rval_t dec_rval = uper_decode(
-               NULL,
-               &asn_DEF_LTE_UL_DCCH_Message,
-               (void **)&ul_dcch_msg_dec,
-               buffer,
-               bufsize,
-               0,
-               0);
-   if (1) {
-    xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg_dec);
-  }
-  LOG_I(RRC, "Melissa, this is rsrp_result %ld\n",
-          *ul_dcch_msg_dec->message.choice.c1.choice.measurementReport.criticalExtensions.
-          choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->
-          choice.measResultNeighCellListNR_r15.list.array[0]->measResultCell_r15.rsrpResult_r15);
-  AssertFatal(ul_dcch_msg_dec->message.choice.c1.choice.measurementReport.criticalExtensions.
-          choice.c1.choice.measurementReport_r8.measResults.
-          measResultNeighCells->choice.measResultListEUTRA.list.array[0]->measResult.rsrqResult != NULL, "rsrq not allocated! and dec_val = %lu", dec_rval.consumed);
-  SEQUENCE_free(&asn_DEF_LTE_UL_DCCH_Message, &ul_dcch_msg, ASFM_FREE_UNDERLYING_AND_RESET); Melissa, might want to figure this out!
-  #endif
+
   return((enc_rval.encoded+7)/8);
 }
 

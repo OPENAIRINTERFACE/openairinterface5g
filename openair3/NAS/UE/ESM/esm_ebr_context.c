@@ -263,7 +263,7 @@ int esm_ebr_context_create(
                 netmask = 32;
                 strcpy(broadcast, ipv4_addr);
               }
-              LOG_I(NAS, "Melissa Elkadi setting commandline string: "
+              LOG_D(NAS, "setting commandline string: "
                             "ip address add %s/%d broadcast %s dev %s%d && "
                             "ip link set %s%d up && "
                             "ip rule add from %s/32 table %d && "
@@ -276,7 +276,7 @@ int esm_ebr_context_create(
                             ipv4_addr, ueid + 10000,
                             UE_NAS_USE_TUN ? "oaitun_ue" : "oip",
                             ueid + 1, ueid + 10000);
-              if (get_softmodem_params()->nsa == 0)
+              if (!get_softmodem_params()->nsa)
               {
                 res = sprintf(command_line,
                               "ip address add %s/%d broadcast %s dev %s%d && "
@@ -307,7 +307,7 @@ int esm_ebr_context_create(
                 * common/utils/system.c for details.
                 */
 
-                LOG_TRACE(INFO, "Melissa Elkadi ESM-PROC  - executing %s ",
+                LOG_TRACE(INFO, "ESM-PROC  - executing %s ",
                         command_line);
                 if (background_system(command_line) != 0)
                 {
@@ -332,7 +332,7 @@ int esm_ebr_context_create(
                 if ( res<0 ) {
                   LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
                 }
-                LOG_I(NAS, "Melissa Elkadi, sending NAS_OAI_TUN_NSA msg to LTE UE via itti\n");
+                LOG_D(NAS, "Sending NAS_OAI_TUN_NSA msg to LTE UE via itti\n");
                 MessageDef *msg_p = itti_alloc_new_message(TASK_NAS_UE, 0, NAS_OAI_TUN_NSA);
                 memcpy(NAS_OAI_TUN_NSA(msg_p).buffer, command_line, sizeof(NAS_OAI_TUN_NSA(msg_p).buffer));
                 itti_send_msg_to_task(TASK_RRC_UE, 0, msg_p);
