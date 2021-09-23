@@ -2508,26 +2508,22 @@ int vnf_nr_p7_read_dispatch_message(vnf_p7_t* vnf_p7)
 			}
 
 			// read the segment
-			recvfrom_result = recvfrom(vnf_p7->socket, vnf_p7->rx_message_buffer, header.message_length, MSG_WAITALL, (struct sockaddr*)&remote_addr, &remote_addr_size);
+			recvfrom_result = recvfrom(vnf_p7->socket, vnf_p7->rx_message_buffer, header.message_length, MSG_WAITALL | MSG_TRUNC, (struct sockaddr*)&remote_addr, &remote_addr_size);
+			NFAPI_TRACE(NFAPI_TRACE_DEBUG, "recvfrom_result = %d from %s():%d\n", recvfrom_result, __FUNCTION__, __LINE__);
 
 			// todo : how to handle incomplete readfroms, need some sort of buffer/select
 
-			if(recvfrom_result == 0)
+			if (recvfrom_result > 0)
 			{
-				NFAPI_TRACE(NFAPI_TRACE_ERROR, "recvfrom returned 0\n");
-			}
-			else if(recvfrom_result != header.message_length)
-			{
-				NFAPI_TRACE(NFAPI_TRACE_NOTE, "did not receive the entire message %d %d\n", recvfrom_result, header.message_length); 
-				
-				recvfrom_result += recvfrom(vnf_p7->socket, &vnf_p7->rx_message_buffer[recvfrom_result], header.message_length - recvfrom_result, MSG_WAITALL, (struct sockaddr*)&remote_addr, &remote_addr_size);
-	
-			}
-			
-			
-			if(recvfrom_result > 0)
-			{
+				if (recvfrom_result != header.message_length)
+				{
+					NFAPI_TRACE(NFAPI_TRACE_ERROR, "(%d) Received unexpected number of bytes. %d != %d",
+						    __LINE__, recvfrom_result, header.message_length);
+					break;
+				}
+				NFAPI_TRACE(NFAPI_TRACE_DEBUG, "Calling vnf_nr_handle_p7_message from %d\n", __LINE__);
 				vnf_nr_handle_p7_message(vnf_p7->rx_message_buffer, recvfrom_result, vnf_p7);
+				return 0;
 			}
 			else
 			{
