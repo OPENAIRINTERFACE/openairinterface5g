@@ -21,7 +21,7 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>rfsim-5gnr-down</htmlTabRef>
+        <htmlTabRef>rfsim-5gnr-down-f1</htmlTabRef>
         <htmlTabName>CleanUp 5G RF</htmlTabName>
         <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>

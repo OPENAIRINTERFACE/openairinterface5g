@@ -606,6 +606,8 @@ class Containerize():
 
 	def UndeployGenObject(self, HTML):
 		self.exitStatus = 0
+		ymlPath = self.yamlPath[0].split('/')
+		logPath = '../cmake_targets/log/' + ymlPath[1]
 
 		if (self.ranAllowMerge):
 			cmd = 'cd ' + self.yamlPath[0] + ' && sed -e "s@develop@ci-temp@" docker-compose.y*ml > docker-compose-ci.yml'
@@ -633,7 +635,7 @@ class Containerize():
 				logging.debug(cmd)
 				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		if anyLogs:
-			cmd = 'mkdir -p ../cmake_targets/log && mv ' + self.yamlPath[0] + '/*.log ../cmake_targets/log'
+			cmd = 'mkdir -p '+ logPath + ' && mv ' + self.yamlPath[0] + '/*.log ' + logPath
 			logging.debug(cmd)
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
@@ -653,10 +655,12 @@ class Containerize():
 
 	def PingFromContainer(self, HTML):
 		self.exitStatus = 0
-		cmd = 'mkdir -p ../cmake_targets/log'
+		ymlPath = self.yamlPath[0].split('/')
+		logPath = '../cmake_targets/log/' + ymlPath[1]
+		cmd = 'mkdir -p ' + logPath
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
-		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ../cmake_targets/log/ping_' + HTML.testCase_id + '.log'
+		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ' + logPath + '/ping_' + HTML.testCase_id + '.log'
 		logging.debug(cmd)
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
@@ -718,7 +722,9 @@ class Containerize():
 	def IperfFromContainer(self, HTML):
 		self.exitStatus = 0
 
-		cmd = 'mkdir -p ../cmake_targets/log'
+		ymlPath = self.yamlPath[0].split('/')
+		logPath = '../cmake_targets/log/' + ymlPath[1]
+		cmd = 'mkdir -p ' + logPath
 		logStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
 		# Start the server process
@@ -728,7 +734,7 @@ class Containerize():
 		time.sleep(5)
 
 		# Start the client process
-		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee ../cmake_targets/log/iperf_client_' + HTML.testCase_id + '.log'
+		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee ' + logPath + '/iperf_client_' + HTML.testCase_id + '.log'
 		logging.debug(cmd)
 		clientStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
@@ -737,7 +743,7 @@ class Containerize():
 		logging.debug(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		time.sleep(5)
-		cmd = 'docker cp ' + self.svrContName + ':/tmp/iperf_server.log ../cmake_targets/log/iperf_server_' + HTML.testCase_id + '.log'
+		cmd = 'docker cp ' + self.svrContName + ':/tmp/iperf_server.log '+ logPath + '/iperf_server_' + HTML.testCase_id + '.log'
 		logging.debug(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
