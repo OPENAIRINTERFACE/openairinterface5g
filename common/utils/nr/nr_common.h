@@ -50,6 +50,7 @@ typedef struct nr_bandentry_s {
 extern const size_t nr_bandtable_size;
 extern nr_bandentry_t nr_bandtable[];
 
+uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex);
 int NRRIV2BW(int locationAndBandwidth,int N_RB);
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);
 int PRBalloc_to_locationandbandwidth0(int NPRB,int RBstart,int BWPsize);

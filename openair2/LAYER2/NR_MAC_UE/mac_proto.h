@@ -259,7 +259,9 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
                                                       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
                                                       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
                                                       uint8_t time_domain_ind,
+                                                      int default_abc,
                                                       bool use_default);
+
 
 uint8_t nr_ue_get_sdu(module_id_t module_idP,
                       frame_t frameP,
@@ -366,6 +368,15 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
                           sub_frame_t current_slot,
                           uint8_t Msg3_tda_id);
 
+void nr_ue_sib1_scheduler(module_id_t module_idP,
+                          int cc_id,
+                          uint16_t ssb_start_symbol,
+                          uint16_t frame,
+                          uint8_t ssb_subcarrier_offset,
+                          uint32_t ssb_index,
+                          uint16_t ssb_start_subcarrier,
+                          frequency_range_t frequency_range);
+
 /* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance
 @param CC_id Index to a component carrier
@@ -422,7 +433,7 @@ void nr_get_prach_resources(module_id_t mod_id,
 
 void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
 
-void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
+void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot_t slotP, uint8_t gNB_id);
 
 void nr_ue_msg2_scheduler(module_id_t mod_id, uint16_t rach_frame, uint16_t rach_slot, uint16_t *msg2_frame, uint16_t *msg2_slot);
 
@@ -431,6 +442,9 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
                                                       uint16_t n_RB_ULBWP,
                                                       uint16_t n_RB_DLBWP,
                                                       uint16_t riv);
+
+void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id);
+void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
 void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
                      uint8_t *nb_dmrs_re_per_rb,

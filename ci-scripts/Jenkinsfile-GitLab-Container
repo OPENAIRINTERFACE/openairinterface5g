@@ -198,6 +198,26 @@ pipeline {
             }
           }
         }
+        stage ("RF Simulators") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-RF-Sim-Test', 'Test-RF-Sim-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-RF-Sim-Test')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
       }
     }
   }

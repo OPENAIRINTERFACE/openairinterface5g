@@ -166,150 +166,224 @@ const float   table_38213_13_12_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 0.5f, 0.5f
 const int32_t table_38213_10_1_1_c2[5] = { 0, 0, 4, 2, 1 };
 
 // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[16][3]={
-    {0,2,12},   // row index 1
-    {0,2,10},   // row index 2
-    {0,2,9},    // row index 3
-    {0,2,7},    // row index 4
-    {0,2,5},    // row index 5
-    {0,9,4},    // row index 6
-    {0,4,4},    // row index 7
-    {0,5,7},    // row index 8
-    {0,5,2},    // row index 9
-    {0,9,2},    // row index 10
-    {0,12,2},   // row index 11
-    {0,1,13},   // row index 12
-    {0,1,6},    // row index 13
-    {0,2,4},    // row index 14
-    {0,4,7},    // row index 15
-    {0,8,4}     // row index 16
+const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[16][4]={
+    {1,0,2,12},   // row index 1
+    {1,0,2,10},   // row index 2
+    {1,0,2,9},    // row index 3
+    {1,0,2,7},    // row index 4
+    {1,0,2,5},    // row index 5
+    {0,0,9,4},    // row index 6
+    {0,0,4,4},    // row index 7
+    {0,0,5,7},    // row index 8
+    {0,0,5,2},    // row index 9
+    {0,0,9,2},    // row index 10
+    {0,0,12,2},   // row index 11
+    {1,0,1,13},   // row index 12
+    {1,0,1,6},    // row index 13
+    {1,0,2,4},    // row index 14
+    {0,0,4,7},    // row index 15
+    {0,0,8,4}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[16][3]={
-    {0,3,11},   // row index 1
-    {0,3,9},    // row index 2
-    {0,3,8},    // row index 3
-    {0,3,6},    // row index 4
-    {0,3,4},    // row index 5
-    {0,10,4},   // row index 6
-    {0,6,4},    // row index 7
-    {0,5,7},    // row index 8
-    {0,5,2},    // row index 9
-    {0,9,2},    // row index 10
-    {0,12,2},   // row index 11
-    {0,1,13},   // row index 12
-    {0,1,6},    // row index 13
-    {0,2,4},    // row index 14
-    {0,4,7},    // row index 15
-    {0,8,4}     // row index 16
+const uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[16][4]={
+    {1,0,3,11},   // row index 1
+    {1,0,3,9},    // row index 2
+    {1,0,3,8},    // row index 3
+    {1,0,3,6},    // row index 4
+    {1,0,3,4},    // row index 5
+    {0,0,10,4},   // row index 6
+    {0,0,6,4},    // row index 7
+    {0,0,5,7},    // row index 8
+    {0,0,5,2},    // row index 9
+    {0,0,9,2},    // row index 10
+    {0,0,12,2},   // row index 11
+    {1,0,1,13},   // row index 12
+    {1,0,1,6},    // row index 13
+    {1,0,2,4},    // row index 14
+    {0,0,4,7},    // row index 15
+    {0,0,8,4}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[16][3]={
-    {0,2,6},    // row index 1
-    {0,2,10},   // row index 2
-    {0,2,9},    // row index 3
-    {0,2,7},    // row index 4
-    {0,2,5},    // row index 5
-    {0,6,4},    // row index 6
-    {0,4,4},    // row index 7
-    {0,5,6},    // row index 8
-    {0,5,2},    // row index 9
-    {0,9,2},    // row index 10
-    {0,10,2},   // row index 11
-    {0,1,11},   // row index 12
-    {0,1,6},    // row index 13
-    {0,2,4},    // row index 14
-    {0,4,6},    // row index 15
-    {0,8,4}     // row index 16
+const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[16][4]={
+    {1,0,2,6},    // row index 1
+    {1,0,2,10},   // row index 2
+    {1,0,2,9},    // row index 3
+    {1,0,2,7},    // row index 4
+    {1,0,2,5},    // row index 5
+    {0,0,6,4},    // row index 6
+    {0,0,4,4},    // row index 7
+    {0,0,5,6},    // row index 8
+    {0,0,5,2},    // row index 9
+    {0,0,9,2},    // row index 10
+    {0,0,10,2},   // row index 11
+    {1,0,1,11},   // row index 12
+    {1,0,1,6},    // row index 13
+    {1,0,2,4},    // row index 14
+    {0,0,4,6},    // row index 15
+    {0,0,8,4}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[16][3]={
-    {0,3,5},    // row index 1
-    {0,3,9},    // row index 2
-    {0,3,8},    // row index 3
-    {0,3,6},    // row index 4
-    {0,3,4},    // row index 5
-    {0,8,2},    // row index 6
-    {0,6,4},    // row index 7
-    {0,5,6},    // row index 8
-    {0,5,2},    // row index 9
-    {0,9,2},    // row index 10
-    {0,10,2},   // row index 11
-    {0,1,11},   // row index 12
-    {0,1,6},    // row index 13
-    {0,2,4},    // row index 14
-    {0,4,6},    // row index 15
-    {0,8,4}     // row index 16
+const uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[16][4]={
+    {1,0,3,5},    // row index 1
+    {1,0,3,9},    // row index 2
+    {1,0,3,8},    // row index 3
+    {1,0,3,6},    // row index 4
+    {1,0,3,4},    // row index 5
+    {0,0,8,2},    // row index 6
+    {0,0,6,4},    // row index 7
+    {0,0,5,6},    // row index 8
+    {0,0,5,2},    // row index 9
+    {0,0,9,2},    // row index 10
+    {0,0,10,2},   // row index 11
+    {1,0,1,11},   // row index 12
+    {1,0,1,6},    // row index 13
+    {1,0,2,4},    // row index 14
+    {0,0,4,6},    // row index 15
+    {0,0,8,4}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[16][3]={
-    {0,2,2},    // row index 1
-    {0,4,2},    // row index 2
-    {0,6,2},    // row index 3
-    {0,8,2},    // row index 4
-    {0,10,2},   // row index 5
-    {1,2,2},    // row index 6
-    {1,4,2},    // row index 7
-    {0,2,4},    // row index 8
-    {0,4,4},    // row index 9
-    {0,6,4},    // row index 10
-    {0,8,4},    // row index 11
-    {0,10,4},   // row index 12
-    {0,2,7},    // row index 13
-    {0,2,12},   // row index 14
-    {1,2,4},    // row index 15
-    {0,0,0}     // row index 16
+const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[16][4]={
+    {0,0,2,2},    // row index 1
+    {0,0,4,2},    // row index 2
+    {0,0,6,2},    // row index 3
+    {0,0,8,2},    // row index 4
+    {0,0,10,2},   // row index 5
+    {0,1,2,2},    // row index 6
+    {0,1,4,2},    // row index 7
+    {0,0,2,4},    // row index 8
+    {0,0,4,4},    // row index 9
+    {0,0,6,4},    // row index 10
+    {0,0,8,4},    // row index 11
+    {0,0,10,4},   // row index 12
+    {0,0,2,7},    // row index 13
+    {1,0,2,12},   // row index 14
+    {0,1,2,4},    // row index 15
+    {0,0,0,0}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[16][3]={
-    {0,2,2},    // row index 1
-    {0,4,2},    // row index 2
-    {0,6,2},    // row index 3
-    {0,8,2},    // row index 4
-    {0,10,2},   // row index 5
-    {1,2,2},    // row index 6
-    {1,4,2},    // row index 7
-    {0,2,4},    // row index 8
-    {0,4,4},    // row index 9
-    {0,6,4},    // row index 10
-    {0,8,4},    // row index 11
-    {0,10,4},   // row index 12
-    {0,2,7},    // row index 13
-    {0,3,11},   // row index 14
-    {1,2,4},    // row index 15
-    {0,0,0}     // row index 16
+const uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[16][4]={
+    {0,0,2,2},    // row index 1
+    {0,0,4,2},    // row index 2
+    {0,0,6,2},    // row index 3
+    {0,0,8,2},    // row index 4
+    {0,0,10,2},   // row index 5
+    {0,1,2,2},    // row index 6
+    {0,1,4,2},    // row index 7
+    {0,0,2,4},    // row index 8
+    {0,0,4,4},    // row index 9
+    {0,0,6,4},    // row index 10
+    {0,0,8,4},    // row index 11
+    {0,0,10,4},   // row index 12
+    {0,0,2,7},    // row index 13
+    {1,0,3,11},   // row index 14
+    {0,1,2,4},    // row index 15
+    {0,0,0,0}     // row index 16
 };
-const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[16][3]={
-    {0,2,2},  // row index 1
-    {0,4,2},  // row index 2
-    {0,6,2},  // row index 3
-    {0,8,2},  // row index 4
-    {0,10,2}, // row index 5
-    {0,0,0},  // row index 6
-    {0,0,0},  // row index 7
-    {0,2,4},  // row index 8
-    {0,4,4},  // row index 9
-    {0,6,4},  // row index 10
-    {0,8,4},  // row index 11
-    {0,10,4}, // row index 12
-    {0,2,7},  // row index 13
-    {0,2,12},  // row index 14
-    {0,0,6},  // row index 15
-    {0,2,6}   // row index 16
+const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[16][4]={
+    {0,0,2,2},  // row index 1
+    {0,0,4,2},  // row index 2
+    {0,0,6,2},  // row index 3
+    {0,0,8,2},  // row index 4
+    {0,0,10,2}, // row index 5
+    {0,0,0,0},  // row index 6
+    {0,0,0,0},  // row index 7
+    {0,0,2,4},  // row index 8
+    {0,0,4,4},  // row index 9
+    {0,0,6,4},  // row index 10
+    {0,0,8,4},  // row index 11
+    {0,0,10,4}, // row index 12
+    {0,0,2,7},  // row index 13
+    {1,0,2,12},  // row index 14
+    {1,0,0,6},  // row index 15
+    {1,0,2,6}   // row index 16
 };
-const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[16][3]={
-    {0,2,2},  // row index 1
-    {0,4,2},  // row index 2
-    {0,6,2},  // row index 3
-    {0,8,2},  // row index 4
-    {0,10,2}, // row index 5
-    {0,0,0},  // row index 6
-    {0,0,0},  // row index 7
-    {0,2,4},  // row index 8
-    {0,4,4},  // row index 9
-    {0,6,4},  // row index 10
-    {0,8,4},  // row index 11
-    {0,10,4}, // row index 12
-    {0,2,7},  // row index 13
-    {0,3,11},  // row index 14
-    {0,0,6},  // row index 15
-    {0,2,6}   // row index 16
+const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[16][4]={
+    {0,0,2,2},  // row index 1
+    {0,0,4,2},  // row index 2
+    {0,0,6,2},  // row index 3
+    {0,0,8,2},  // row index 4
+    {0,0,10,2}, // row index 5
+    {0,0,0,0},  // row index 6
+    {0,0,0,0},  // row index 7
+    {0,0,2,4},  // row index 8
+    {0,0,4,4},  // row index 9
+    {0,0,6,4},  // row index 10
+    {0,0,8,4},  // row index 11
+    {0,0,10,4}, // row index 12
+    {0,0,2,7},  // row index 13
+    {1,0,3,11},  // row index 14
+    {1,0,0,6},  // row index 15
+    {1,0,2,6}   // row index 16
 };
+
+void get_info_from_tda_tables(int default_abc,
+                              int tda,
+                              int dmrs_TypeA_Position,
+                              int normal_CP,
+                              int *startSymbolIndex,
+                              int *nrOfSymbols) {
+  int k0 = 0;
+  int is_mapping_typeA = 1;
+  switch(default_abc){
+    case 1:
+      if (normal_CP){
+        if (dmrs_TypeA_Position){
+          is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][0];
+          k0 = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][1];
+          *startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][2];
+          *nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][3];
+        }
+        else{
+          is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][0];
+          k0 = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][1];
+          *startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][2];
+          *nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][3];
+        }
+      }
+      else{
+        if (dmrs_TypeA_Position){
+          is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][0];
+          k0 = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][1];
+          *startSymbolIndex = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][2];
+          *nrOfSymbols = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][3];
+        }
+        else{
+          is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][0];
+          k0 = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][1];
+          *startSymbolIndex = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][2];
+          *nrOfSymbols = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][3];
+        }
+      }
+      break;
+    case 2:
+      if (dmrs_TypeA_Position){
+        is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][0];
+        k0 = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][1];
+        *startSymbolIndex = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][2];
+        *nrOfSymbols = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][3];
+      }
+      else{
+        is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][0];
+        k0 = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][1];
+        *startSymbolIndex = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][2];
+        *nrOfSymbols = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][3];
+      }
+      break;
+    case 3:
+      if (dmrs_TypeA_Position){
+        is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][0];
+        k0 = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][1];
+        *startSymbolIndex = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][2];
+        *nrOfSymbols = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][3];
+      }
+      else{
+        is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][0];
+        k0 = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][1];
+        *startSymbolIndex = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][2];
+        *nrOfSymbols = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][3];
+      }
+      break;
+    default:
+     AssertFatal(1==0,"Invalid default time domaing allocation type\n");
+  }
+  AssertFatal(k0==0,"Only k0 = 0 is supported\n");
+  AssertFatal(is_mapping_typeA==1,"Only mapping type A is currently supported\n");
+}
 
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
 const char *duplex_mode[]={"FDD","TDD"};
@@ -1260,6 +1334,79 @@ void find_aggregation_candidates(uint8_t *aggregation_level,
   if (ss->nrofCandidates->aggregationLevel16 != NR_SearchSpace__nrofCandidates__aggregationLevel16_n0) {
     *aggregation_level = 16;
     *nr_of_candidates = ss->nrofCandidates->aggregationLevel16;
+  }
+  // n8 does not correspont to a value of 8 but 7, the following corrects this
+  if(*nr_of_candidates == 7)
+    *nr_of_candidates = 8;
+}
+
+
+void set_monitoring_periodicity_offset(NR_SearchSpace_t *ss,
+                                       uint16_t period,
+                                       uint16_t offset) {
+
+  switch(period) {
+    case 1:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
+      break;
+    case 2:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl2 = offset;
+      break;
+    case 4:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl4 = offset;
+      break;
+    case 5:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl5 = offset;
+      break;
+    case 8:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl8 = offset;
+      break;
+    case 10:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl10 = offset;
+      break;
+    case 16:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl16 = offset;
+      break;
+    case 20:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl20 = offset;
+      break;
+    case 40:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl40;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl40 = offset;
+      break;
+    case 80:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl80;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl80 = offset;
+      break;
+    case 160:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl160;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl160 = offset;
+      break;
+    case 320:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl320;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl320 = offset;
+      break;
+    case 640:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl640;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl640 = offset;
+      break;
+    case 1280:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1280;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl1280 = offset;
+      break;
+    case 2560:
+      ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2560;
+      ss->monitoringSlotPeriodicityAndOffset->choice.sl2560 = offset;      break;
+  default:
+    AssertFatal(1==0,"Invalid monitoring slot periodicity value\n");
+    break;
   }
 }
 
@@ -3409,6 +3556,7 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
                                            NR_SubcarrierSpacing_t scs_ssb,
                                            frequency_range_t frequency_range,
                                            uint32_t ssb_index,
+                                           uint32_t ssb_period,
                                            uint32_t ssb_offset_point_a) {
 
   NR_SubcarrierSpacing_t scs_pdcch;
@@ -3428,7 +3576,7 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
     else
       scs_pdcch = NR_SubcarrierSpacing_kHz30;
   }
-
+  type0_PDCCH_CSS_config->scs_pdcch = scs_pdcch;
   type0_PDCCH_CSS_config->ssb_index = ssb_index;
   type0_PDCCH_CSS_config->frame = frameP;
 
@@ -3621,6 +3769,8 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
     }
     //  38.213 chapter 13: over two consecutive slots
     type0_PDCCH_CSS_config->search_space_duration = 2;
+    // two frames
+    type0_PDCCH_CSS_config->search_space_frame_period = nr_slots_per_frame[scs_ssb]<<1;
   }
 
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR2){
@@ -3637,6 +3787,8 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
     }
     //  38.213 chapter 13: over two consecutive slots
     type0_PDCCH_CSS_config->search_space_duration = 2;
+    // two frames
+    type0_PDCCH_CSS_config->search_space_frame_period = nr_slots_per_frame[scs_ssb]<<1;
   }
 
   /// MUX PATTERN 2
@@ -3702,6 +3854,8 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
     }else{ ; }
     //  38.213 chapter 13: over one slot
     type0_PDCCH_CSS_config->search_space_duration = 1;
+    // SSB periodicity in slots
+    type0_PDCCH_CSS_config->search_space_frame_period = ssb_period*nr_slots_per_frame[scs_ssb];
   }
 
   /// MUX PATTERN 3
@@ -3730,6 +3884,8 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
     }else{ ; }
     //  38.213 chapter 13: over one slot
     type0_PDCCH_CSS_config->search_space_duration = 1;
+    // SSB periodicity in slots
+    type0_PDCCH_CSS_config->search_space_frame_period = ssb_period*nr_slots_per_frame[scs_ssb];
   }
 
   AssertFatal(type0_PDCCH_CSS_config->number_of_search_space_per_slot!=UINT_MAX,"");
@@ -3752,6 +3908,135 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
   type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
 
 }
+
+void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
+
+  int32_t duration;
+
+  if (coreset0 == NULL)
+    coreset0 = calloc(1,sizeof(*coreset0));
+
+  coreset0->controlResourceSetId = 0;
+
+  AssertFatal(type0_PDCCH_CSS_config!=NULL,"No type0 CSS configuration\n");
+
+  duration = type0_PDCCH_CSS_config->num_symbols;
+
+  if(coreset0->frequencyDomainResources.buf == NULL) coreset0->frequencyDomainResources.buf = calloc(1,6);
+
+  switch(type0_PDCCH_CSS_config->num_rbs){
+    case 24:
+      coreset0->frequencyDomainResources.buf[0] = 0xf0;
+      coreset0->frequencyDomainResources.buf[1] = 0;
+      break;
+    case 48:
+      coreset0->frequencyDomainResources.buf[0] = 0xff;
+      coreset0->frequencyDomainResources.buf[1] = 0;
+      break;
+    case 96:
+      coreset0->frequencyDomainResources.buf[0] = 0xff;
+      coreset0->frequencyDomainResources.buf[1] = 0xff;
+      break;
+  default:
+    AssertFatal(1==0,"Invalid number of PRBs %d for Coreset0\n",type0_PDCCH_CSS_config->num_rbs);
+  }
+  coreset0->frequencyDomainResources.buf[2] = 0;
+  coreset0->frequencyDomainResources.buf[3] = 0;
+  coreset0->frequencyDomainResources.buf[4] = 0;
+  coreset0->frequencyDomainResources.buf[5] = 0;
+  coreset0->frequencyDomainResources.size = 6;
+  coreset0->frequencyDomainResources.bits_unused = 3;
+
+  coreset0->duration = duration;
+  coreset0->cce_REG_MappingType.present=NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved;
+  coreset0->cce_REG_MappingType.choice.interleaved=calloc(1,sizeof(*coreset0->cce_REG_MappingType.choice.interleaved));
+  coreset0->cce_REG_MappingType.choice.interleaved->reg_BundleSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
+  coreset0->cce_REG_MappingType.choice.interleaved->interleaverSize = NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n2;
+  coreset0->cce_REG_MappingType.choice.interleaved->shiftIndex = NULL; // -> use cell_id
+  coreset0->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
+
+  coreset0->tci_StatesPDCCH_ToAddList = NULL;
+  coreset0->tci_StatesPDCCH_ToReleaseList = NULL;
+  coreset0->tci_PresentInDCI = NULL;
+  coreset0->pdcch_DMRS_ScramblingID = NULL;
+
+}
+
+uint8_t fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config, int L) {
+
+  if(ss0 == NULL) ss0=calloc(1,sizeof(*ss0));
+  if(ss0->controlResourceSetId == NULL) ss0->controlResourceSetId=calloc(1,sizeof(*ss0->controlResourceSetId));
+  if(ss0->monitoringSymbolsWithinSlot == NULL) ss0->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss0->monitoringSymbolsWithinSlot));
+  if(ss0->monitoringSymbolsWithinSlot->buf == NULL) ss0->monitoringSymbolsWithinSlot->buf = calloc(1,2);
+  if(ss0->nrofCandidates == NULL) ss0->nrofCandidates = calloc(1,sizeof(*ss0->nrofCandidates));
+  if(ss0->searchSpaceType == NULL) ss0->searchSpaceType = calloc(1,sizeof(*ss0->searchSpaceType));
+  if(ss0->searchSpaceType->choice.common == NULL) ss0->searchSpaceType->choice.common=calloc(1,sizeof(*ss0->searchSpaceType->choice.common));
+  if(ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 == NULL)
+    ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
+
+  uint32_t duration,periodicity,offset;
+  uint16_t symbols,max_agg;
+
+  AssertFatal(type0_PDCCH_CSS_config!=NULL,"No type0 CSS configuration\n");
+
+  max_agg = (type0_PDCCH_CSS_config->num_symbols*type0_PDCCH_CSS_config->num_rbs)/6;
+  if (L>max_agg) return 0;
+
+  symbols = (1-(1<<type0_PDCCH_CSS_config->num_symbols))<<type0_PDCCH_CSS_config->first_symbol_index;
+  duration = type0_PDCCH_CSS_config->search_space_duration;
+  periodicity = type0_PDCCH_CSS_config->search_space_frame_period;
+  if (type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1)
+    offset = type0_PDCCH_CSS_config->n_0;
+  else
+    offset = type0_PDCCH_CSS_config->n_c;
+
+  ss0->searchSpaceId = 0;
+  *ss0->controlResourceSetId = 0;
+  ss0->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*ss0->monitoringSlotPeriodicityAndOffset));
+  set_monitoring_periodicity_offset(ss0,periodicity,offset);
+  if (duration==1)
+    ss0->duration = NULL;
+  else{
+    ss0->duration = calloc(1,sizeof(*ss0->duration));
+    *ss0->duration = duration;
+  }
+
+  ss0->monitoringSymbolsWithinSlot->size = 2;
+  ss0->monitoringSymbolsWithinSlot->bits_unused = 2;
+  ss0->monitoringSymbolsWithinSlot->buf[1] = 0;
+  ss0->monitoringSymbolsWithinSlot->buf[0] = 0;
+  for (int i=0; i<8; i++) {
+    ss0->monitoringSymbolsWithinSlot->buf[1] |= ((symbols>>(i+8))&0x01)<<(7-i);
+    ss0->monitoringSymbolsWithinSlot->buf[0] |= ((symbols>>i)&0x01)<<(7-i);
+  }
+
+  // max values are set according to TS38.213 Section 10.1 Table 10.1-1
+  ss0->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
+  ss0->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
+  switch(L){
+    case 4:
+      ss0->nrofCandidates->aggregationLevel4 = (((max_agg>>2) > 4)? 4 : max_agg>>2);
+      ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
+      ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
+      break;
+    case 8:
+      ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n0;
+      ss0->nrofCandidates->aggregationLevel8 = (((max_agg>>3) > 2)? 2 : max_agg>>3);
+      ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
+      break;
+    case 16:
+      ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n0;
+      ss0->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
+      ss0->nrofCandidates->aggregationLevel16 = (((max_agg>>4) > 1)? 1 : max_agg>>4);
+      break;
+  default:
+    AssertFatal(1==0,"Invalid aggregation level %d for SS0\n",L);
+  }
+
+  ss0->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
+  return 1;
+}
+
 
 void find_period_offest_SR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset) {
   NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR P_O = SchedulingReqRec->periodicityAndOffset->present;
@@ -3888,7 +4173,6 @@ uint16_t compute_pucch_prb_size(uint8_t format,
     AssertFatal(1==0,"Not yet implemented");
   }
 }
-
 
 /* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */
 bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,

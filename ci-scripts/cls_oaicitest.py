@@ -2005,6 +2005,7 @@ class OaiCiTest():
 					curr_br = curr_br * 1000 * 1000
 				br_sum = curr_br + br_sum
 				ji_sum = float(ji[0]) + ji_sum
+
 		if (row_idx > 0):
 			br_sum = br_sum / row_idx
 			ji_sum = ji_sum / row_idx
@@ -2025,10 +2026,12 @@ class OaiCiTest():
 				pl = float(100 * pl_sum / ps_sum)
 				packetloss = '%2.1f ' % (pl)
 				packetloss += '%'
-			else:
-				packetloss = 'unknown'
+				if float(pl) > float(self.iperf_packetloss_threshold):
+					pal_too_high_msg = 'Packet Loss too high :  actual = '+packetloss+', target = '+self.iperf_packetloss_threshold+'%\n'
+				else:
+					pal_too_high_msg=''			
 			lock.acquire()
-			if (br_loss < 90):
+			if (br_loss < 90) or (float(pl) > float(self.iperf_packetloss_threshold)):
 				statusQueue.put(1)
 			else:
 				statusQueue.put(0)
@@ -2039,13 +2042,14 @@ class OaiCiTest():
 			brl_msg = 'Bitrate Perf: ' + bitperf
 			jit_msg = 'Jitter      : ' + jitter
 			pal_msg = 'Packet Loss : ' + packetloss
-			statusQueue.put(req_msg + '\n' + bir_msg + '\n' + brl_msg + '\n' + jit_msg + '\n' + pal_msg + '\n')
+			statusQueue.put(req_msg + '\n' + bir_msg + '\n' + brl_msg + '\n' + jit_msg + '\n' + pal_msg + '\n' + pal_too_high_msg + '\n')
 			logging.debug('\u001B[1;37;45m iperf result (' + UE_IPAddress + ') \u001B[0m')
 			logging.debug('\u001B[1;35m    ' + req_msg + '\u001B[0m')
 			logging.debug('\u001B[1;35m    ' + bir_msg + '\u001B[0m')
 			logging.debug('\u001B[1;35m    ' + brl_msg + '\u001B[0m')
 			logging.debug('\u001B[1;35m    ' + jit_msg + '\u001B[0m')
 			logging.debug('\u001B[1;35m    ' + pal_msg + '\u001B[0m')
+			logging.debug('\u001B[1;35m    ' + pal_too_high_msg + '\u001B[0m')
 			lock.release()
 		else:
 			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Could not analyze from server log')
@@ -2705,7 +2709,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfaUE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE)
 		else:
 			iperf_status = True
 			iperf_noperf = False

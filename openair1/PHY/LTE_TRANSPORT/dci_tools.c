@@ -1527,7 +1527,9 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
   if (dlsch0->active)
     T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(0), T_INT(frame), T_INT(subframe),
       T_INT(rel8->rnti), T_INT(rel8->dci_format), T_INT(rel8->harq_process),
-      T_INT(rel8->mcs_1), T_INT(dlsch0_harq->TBS));
+      T_INT(rel8->mcs_1), T_INT(dlsch0_harq->TBS), T_INT(rel8->new_data_indicator_1),
+      T_INT(rel8->redundancy_version_1), T_INT(rel8->resource_block_coding),
+      T_INT(dlsch0_harq->nb_rb), T_INT(dlsch0_harq->rb_alloc[0]));
 
 #endif
 }

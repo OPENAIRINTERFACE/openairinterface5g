@@ -38,6 +38,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "NR_SubcarrierSpacing.h"
+
 #define NR_SHORT_BSR_TABLE_SIZE 32
 #define NR_LONG_BSR_TABLE_SIZE 256
 
@@ -460,9 +462,11 @@ typedef struct Type0_PDCCH_CSS_config_s {
   uint32_t number_of_search_space_per_slot;
   uint32_t first_symbol_index;
   uint32_t search_space_duration;
+  uint32_t search_space_frame_period;  // in slots
   uint32_t ssb_length;
   uint32_t ssb_index;
   uint32_t cset_start_rb;
+  NR_SubcarrierSpacing_t scs_pdcch;
   bool active;
 } NR_Type0_PDCCH_CSS_config_t;
 
