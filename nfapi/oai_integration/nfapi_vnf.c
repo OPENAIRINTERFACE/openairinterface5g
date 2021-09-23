@@ -176,6 +176,7 @@ queue_t gnb_rach_ind_queue;
 queue_t gnb_rx_ind_queue;
 queue_t gnb_crc_ind_queue;
 queue_t gnb_uci_ind_queue;
+queue_t gnb_slot_ind_queue;
 
 int vnf_pack_vendor_extension_tlv(void *ve, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t *codec) {
   //NFAPI_TRACE(NFAPI_TRACE_INFO, "vnf_pack_vendor_extension_tlv\n");
@@ -1230,17 +1231,23 @@ int phy_cqi_indication(struct nfapi_vnf_p7_config *config, nfapi_cqi_indication_
 //NR phy indication
 
 int phy_nr_slot_indication(nfapi_nr_slot_indication_scf_t *ind) {
-  
+
   uint8_t vnf_slot_ahead = 0;
   uint32_t vnf_sfn_slot = sfnslot_add_slot(ind->sfn, ind->slot, vnf_slot_ahead);
   uint16_t vnf_sfn = NFAPI_SFNSLOT2SFN(vnf_sfn_slot);
-  uint8_t vnf_slot = NFAPI_SFNSLOT2SLOT(vnf_sfn_slot); //offsetting the vnf from pnf by vnf_slot_head slots
-  struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
-  pthread_mutex_lock(&gNB->UL_INFO_mutex);
-  gNB->UL_INFO.frame     = vnf_sfn;
-  gNB->UL_INFO.slot      = vnf_slot;
-  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-  LOG_D(MAC, "VNF SFN/Slot %d.%d \n", gNB->UL_INFO.frame, gNB->UL_INFO.slot);
+  uint8_t vnf_slot = NFAPI_SFNSLOT2SLOT(vnf_sfn_slot);
+  LOG_D(MAC, "VNF SFN/Slot %d.%d \n", vnf_sfn, vnf_slot);
+
+  nfapi_nr_slot_indication_scf_t *nr_slot_ind = CALLOC(1, sizeof(*nr_slot_ind));
+  nr_slot_ind->header = ind->header;
+  nr_slot_ind->sfn = vnf_sfn;
+  nr_slot_ind->slot = vnf_slot;
+  if (!put_queue(&gnb_slot_ind_queue, nr_slot_ind))
+  {
+    LOG_E(NR_MAC, "Put_queue failed for slot_ind\n");
+    free(nr_slot_ind);
+    nr_slot_ind = NULL;
+  }
 
   return 1;
 }
@@ -1424,6 +1431,7 @@ void *vnf_nr_p7_thread_start(void *ptr) {
   init_queue(&gnb_rx_ind_queue);
   init_queue(&gnb_crc_ind_queue);
   init_queue(&gnb_uci_ind_queue);
+  init_queue(&gnb_slot_ind_queue);
 
   vnf_p7_info *p7_vnf = (vnf_p7_info *)ptr;
   p7_vnf->config->port = p7_vnf->local_port;
