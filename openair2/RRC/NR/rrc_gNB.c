@@ -1374,10 +1374,10 @@ rrc_gNB_process_RRCReconfigurationComplete(
     req->gNB_CU_ue_id     = 0;
     req->gNB_DU_ue_id = 0;
     req->rnti = ue_context_pP->ue_context.rnti;
-    req->mcc              = RC.nrrrc[0]->configuration.mcc[0];
-    req->mnc              = RC.nrrrc[0]->configuration.mnc[0];
-    req->mnc_digit_length = RC.nrrrc[0]->configuration.mnc_digit_length[0];
-    req->nr_cellid        = RC.nrrrc[0]->nr_cellid;
+    req->mcc              = rrc->configuration.mcc[0];
+    req->mnc              = rrc->configuration.mnc[0];
+    req->mnc_digit_length = rrc->configuration.mnc_digit_length[0];
+    req->nr_cellid        = rrc->nr_cellid;
     if(SRB_configList!=NULL){
       req->srbs_to_be_setup = malloc(SRB_configList->list.count*sizeof(f1ap_srb_to_be_setup_t));
       req->srbs_to_be_setup_length = SRB_configList->list.count;
