@@ -2177,7 +2177,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       ue->prach_vars[gNB_id]->amp);
 
     if (ue->mac_enabled == 1)
-      nr_Msg1_transmitted(mod_id, ue->CC_id, frame_tx, gNB_id); //Once rach is = 1, then call this
+      nr_Msg1_transmitted(mod_id, ue->CC_id, frame_tx, gNB_id);
 
   } else if (nr_prach == WAIT_CONTENTION_RESOLUTION) {
     LOG_D(PHY, "In %s: [UE %d] RA waiting contention resolution\n", __FUNCTION__, mod_id);

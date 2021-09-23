@@ -27,8 +27,8 @@
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "executables/softmodem-common.h"
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
-//#include "executables/softmodem-common.h"
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 
 /*

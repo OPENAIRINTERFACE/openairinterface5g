@@ -99,11 +99,11 @@ int netlink_init_mbms_tun(char *ifprefix, int id) {//for UE, id = 1, 2, ...,
   int ret;
   char ifname[64];
 
-    if ( id > 0 ){
-      sprintf(ifname, "oaitun_%.3s%d",ifprefix, id-1); 
+    if (id > 0) {
+      sprintf(ifname, "oaitun_%.3s%d", ifprefix, id-1);
     }
-    else{
-      sprintf(ifname, "oaitun_%.3s1",ifprefix); // added "1": for historical reasons
+    else {
+      sprintf(ifname, "oaitun_%.3s1", ifprefix); // added "1": for historical reasons
     }
     nas_sock_mbms_fd = tun_alloc(ifname);
 

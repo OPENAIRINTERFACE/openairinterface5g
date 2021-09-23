@@ -541,13 +541,6 @@ int main( int argc, char **argv ) {
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
 
-#if 0
-  if (create_tasks_nrue(1) < 0) {
-    printf("cannot create ITTI tasks\n");
-    exit(-1); // need a softer mode
-  }
-#endif
-
   // Sleep a while before checking all parameters have been used
   // Some are used directly in external threads, asynchronously
   sleep(20);

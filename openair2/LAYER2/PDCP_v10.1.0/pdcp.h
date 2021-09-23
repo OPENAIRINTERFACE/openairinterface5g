@@ -45,6 +45,7 @@
 #include "LTE_MBMS-SessionInfoList-r9.h"
 #include "LTE_PMCH-InfoList-r9.h"
 
+
 typedef rlc_op_status_t  (*send_rlc_data_req_func_t)(const protocol_ctxt_t *const,
     const srb_flag_t, const MBMS_flag_t,
     const rb_id_t, const mui_t,
@@ -90,9 +91,6 @@ extern int             pdcp_instance_cnt;
 
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
-
-// Global variable to identify each UE. Updated in main() of lte-uesoftmodem.c
-//extern uint16_t ue_id_g;
 
 extern uint32_t Pdcp_stats_tx_window_ms[MAX_eNB][MAX_MOBILES_PER_ENB];
 extern uint32_t Pdcp_stats_tx_bytes[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];

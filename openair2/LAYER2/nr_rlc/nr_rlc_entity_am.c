@@ -204,7 +204,6 @@ static void reassemble_and_deliver(nr_rlc_entity_am_t *entity, int sn)
   int so = 0;
   int bad_sdu = 0;
 
-  LOG_I(RLC, "Melissa Elkadi, we are in %s(): at %d\n", __FUNCTION__, __LINE__);
   /* go to first segment of sn */
   pdu = entity->rx_list;
   while (pdu->sn != sn)
@@ -232,7 +231,6 @@ static void reassemble_and_deliver(nr_rlc_entity_am_t *entity, int sn)
     return;
 
   /* deliver */
-  LOG_I(RLC, "Melissa Elkadi, we are in %s(): at %d\n", __FUNCTION__, __LINE__);
   entity->common.deliver_sdu(entity->common.deliver_sdu_data,
                              (nr_rlc_entity_t *)entity,
                              sdu, so);
@@ -246,16 +244,13 @@ static void reception_actions(nr_rlc_entity_am_t *entity, nr_rlc_pdu_t *pdu)
     entity->rx_next_highest = (x + 1) % entity->sn_modulus;
 
   /* todo: room for optimization: we can run through rx_list only once */
-  LOG_I(RLC, "Melissa Elkadi, checking if sdu_full is true %s()\n", __FUNCTION__);
   if (sdu_full(entity, x)) {
-    LOG_I(RLC, "Melissa Elkadi, we are in %s(): at %d\n", __FUNCTION__, __LINE__);
     reassemble_and_deliver(entity, x);
 
     if (x == entity->rx_highest_status) {
       int rx_highest_status = entity->rx_highest_status;
       while (sdu_delivered(entity, rx_highest_status))
         rx_highest_status = (rx_highest_status + 1) % entity->sn_modulus;
-      LOG_I(RLC, "Melissa Elkadi, we are in %s(): at %d\n", __FUNCTION__, __LINE__);
       entity->rx_highest_status = rx_highest_status;
     }
 
@@ -278,10 +273,8 @@ static void reception_actions(nr_rlc_entity_am_t *entity, nr_rlc_pdu_t *pdu)
       entity->rx_next = rx_next;
     }
   }
-  LOG_I(RLC, "Melissa Elkadi, we are in %s(): at %d\n", __FUNCTION__, __LINE__);
 
   if (entity->t_reassembly_start) {
-    LOG_I(RLC, "Melissa Elkadi, we are in %s(): at %d\n", __FUNCTION__, __LINE__);
     if (entity->rx_next_status_trigger == entity->rx_next ||
         (entity->rx_next_status_trigger == (entity->rx_next + 1)
                                              % entity->sn_modulus &&
@@ -294,7 +287,6 @@ static void reception_actions(nr_rlc_entity_am_t *entity, nr_rlc_pdu_t *pdu)
   }
 
   if (entity->t_reassembly_start == 0) {
-    LOG_I(RLC, "Melissa Elkadi, we are in %s(): at %d\n", __FUNCTION__, __LINE__);
     if (sn_compare_rx(entity, entity->rx_next_highest,
                       (entity->rx_next + 1) % entity->sn_modulus) > 0 ||
         (entity->rx_next_highest == (entity->rx_next + 1)
@@ -552,13 +544,9 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
   int control_e2;
   int control_e3;
   unsigned char sn_set[32768];  /* used to dec retx_count only once per sdu */
-  char buf_3[1024];
-  hexdump(buffer, size, buf_3, sizeof(buf_3));
-  LOG_I(MAC, "Melissa Elkadi, %s in %s():%d\n",
-        buf_3, __FUNCTION__, __LINE__);
+
   nr_rlc_pdu_decoder_init(&decoder, buffer, size);
   dc = nr_rlc_pdu_decoder_get_bits(&decoder, 1); R(decoder);
-  LOG_I(RLC, "Melissa Elkadi, we are here %s(): %d. dc = %d\n", __FUNCTION__, __LINE__, dc);
   if (dc == 0) goto control;
 
   /* data PDU */
@@ -622,7 +610,6 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
                                         entity->rx_list, pdu);
 
   /* do reception actions (38.322 5.2.3.2.3) */
-  LOG_I(RLC, "Melissa Elkadi, we are calling reception_actions from %s()\n", __FUNCTION__);
   reception_actions(entity, pdu);
 
   if (p) {
@@ -831,20 +818,9 @@ static int serialize_sdu(nr_rlc_entity_am_t *entity,
 
   nr_rlc_pdu_encoder_put_bits(&encoder, 1, 1);             /* D/C: 1 = data */
   nr_rlc_pdu_encoder_put_bits(&encoder, 0, 1);     /* P: reserve, set later */
-  char buf_1[1024];
-  hexdump(sdu->sdu->data, sdu->size, buf_1, sizeof(buf_1));
-  LOG_I(MAC, "Melissa Elkadi, %s in %s():%d\n",
-        buf_1, __FUNCTION__, __LINE__);
+
   nr_rlc_pdu_encoder_put_bits(&encoder, 1-sdu->is_first,1);/* 1st bit of SI */
-  char buf_2[1024];
-  hexdump(sdu->sdu->data, sdu->size, buf_2, sizeof(buf_2));
-  LOG_I(MAC, "Melissa Elkadi, %s in %s():%d\n",
-        buf_2, __FUNCTION__, __LINE__);
   nr_rlc_pdu_encoder_put_bits(&encoder, 1-sdu->is_last,1); /* 2nd bit of SI */
-  char buf_3[1024];
-  hexdump(sdu->sdu->data, sdu->size, buf_3, sizeof(buf_3));
-  LOG_I(MAC, "Melissa Elkadi, %s in %s():%d\n",
-        buf_3, __FUNCTION__, __LINE__);
 
   if (entity->sn_field_length == 18)
     nr_rlc_pdu_encoder_put_bits(&encoder, 0, 2);                       /* R */
@@ -860,10 +836,7 @@ static int serialize_sdu(nr_rlc_entity_am_t *entity,
 
   if (p)
     include_poll(entity, buffer);
-  char buf[1024];
-  hexdump(buffer + encoder.byte, sdu->size, buf, sizeof(buf));
-  LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right after calling generate_pdu in %s\n",
-        buf, __FUNCTION__);
+
   return encoder.byte + sdu->size;
 }
 
@@ -1599,6 +1572,7 @@ int nr_rlc_entity_am_generate_pdu(nr_rlc_entity_t *_entity,
     if (ret != 0)
       return ret;
   }
+
   return generate_tx_pdu(entity, buffer, size);
 }
 

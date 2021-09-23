@@ -220,7 +220,7 @@ typedef struct kenb_refresh_req_s {
 } kenb_refresh_req_t;
 
 typedef struct nsa_oai_tun_nsa_s {
-  uint8_t buffer[500]; //Melissa TODO
+  uint8_t buffer[500];
 } nas_oai_tun_nsa_t;
 
 /*
