@@ -132,21 +132,31 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   ie6->id                             = F1AP_ProtocolIE_ID_id_CUtoDURRCInformation;
   ie6->criticality                    = F1AP_Criticality_reject;
   ie6->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_CUtoDURRCInformation;
-  /* optional */
-  /* 6.1 cG_ConfigInfo */
-  if (0) {
-    const char cG_ConfigInfoStr[]="asdsa1d32sa1d31asd31as";
-    asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.cG_ConfigInfo, F1AP_CG_ConfigInfo_t, cG_ConfigInfo);
-    OCTET_STRING_fromBuf(cG_ConfigInfo, cG_ConfigInfoStr, strlen( cG_ConfigInfoStr )) ;
+
+  if (f1ap_ue_context_setup_req->cu_to_du_rrc_information!=NULL) {
+    /* optional */
+    /* 6.1 cG_ConfigInfo */
+    if(f1ap_ue_context_setup_req->cu_to_du_rrc_information->cG_ConfigInfo!=NULL){
+      const char cG_ConfigInfoStr[]="asdsa1d32sa1d31asd31as";
+      asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.cG_ConfigInfo, F1AP_CG_ConfigInfo_t, cG_ConfigInfo);
+      OCTET_STRING_fromBuf(cG_ConfigInfo, cG_ConfigInfoStr, strlen(cG_ConfigInfoStr)) ;
+    }
     /* optional */
     /* 6.2 uE_CapabilityRAT_ContainerList */
-    asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList, F1AP_UE_CapabilityRAT_ContainerList_t, uE_CapabilityRAT_ContainerList );
-    OCTET_STRING_fromBuf(uE_CapabilityRAT_ContainerList, cG_ConfigInfoStr, strlen( cG_ConfigInfoStr )) ;
+    if(f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList!=NULL){
+      asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList, F1AP_UE_CapabilityRAT_ContainerList_t, uE_CapabilityRAT_ContainerList );
+      OCTET_STRING_fromBuf(uE_CapabilityRAT_ContainerList, (const char *)f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
+          f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length) ;
+    }
     /* optional */
     /* 6.3 measConfig */
-    asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.measConfig, F1AP_MeasConfig_t, measConfig);
-    OCTET_STRING_fromBuf(measConfig, cG_ConfigInfoStr, strlen( cG_ConfigInfoStr )) ;
+    if(f1ap_ue_context_setup_req->cu_to_du_rrc_information->measConfig!=NULL){
+      const char measConfigStr[]="asdsa1d32sa1d31asd31as";
+      asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.measConfig, F1AP_MeasConfig_t, measConfig);
+      OCTET_STRING_fromBuf(measConfig, measConfigStr, strlen(measConfigStr)) ;
+    }
   }
+  
 
   /* mandatory */
   /* c7. Candidate_SpCell_List */
@@ -238,6 +248,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   /* mandatory */
   /* c11. SRBs_ToBeSetup_List */
+  if(f1ap_ue_context_setup_req->srbs_to_be_setup_length > 0){
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie11);
   ie11->id                             = F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_List;
   ie11->criticality                    = F1AP_Criticality_reject;  // ?
@@ -260,9 +271,11 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
                    F1AP_DuplicationIndication_t, F1AP_DuplicationIndication_true); // enum
     //}
   }
+  }
 
   /* mandatory */
   /* c12. DRBs_ToBeSetup_List */
+  if(f1ap_ue_context_setup_req->drbs_to_be_setup_length){
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie12);
   ie12->id                             = F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_List;
   ie12->criticality                    = F1AP_Criticality_reject;
@@ -511,16 +524,14 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
     /* 12.1.3 uLUPTNLInformation_ToBeSetup_List */
     for (int j = 0; j < f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl_length; j++) {
-      /* Here the callback function used as input is not the right one. Need to create a new one probably for F1-U, not sure
-       * if the kind of input parameters to the callback function are convenient though for gtp-u over F1-U.*/
-      //Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU
+      /*Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU*/
       transport_layer_addr_t addr;
       int sz=sizeof(f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].tl_address);
       memcpy(addr.buffer,&f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].tl_address, sz);
       addr.length = sz*8;
 
       f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid=
-	newGtpuCreateTunnel(getCxt(CUtype, instance)->gtpInst,
+	  newGtpuCreateTunnel(getCxt(CUtype, instance)->gtpInst,
 			    f1ap_ue_context_setup_req->rnti,
 			    f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
 			    f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
@@ -566,6 +577,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
       asn1cCalloc(drbs_toBeSetup_item->duplicationActivation, F1AP_DuplicationActivation_t, tmp);
       *tmp = F1AP_DuplicationActivation_active;  // enum
     }
+  }
   }
 
   /* OPTIONAL */

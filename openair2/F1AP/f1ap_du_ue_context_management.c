@@ -134,7 +134,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
   /* DRB */
   F1AP_UEContextSetupRequestIEs_t *ieDrb;
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieDrb, container,
-			     F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_List, true);
+			     F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_List, false);
   
   if(ieDrb!=NULL) {
     f1ap_ue_context_setup_req->drbs_to_be_setup_length = ieDrb->value.choice.DRBs_ToBeSetup_List.list.count;
@@ -187,7 +187,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
   /* SRB */
   F1AP_UEContextSetupRequestIEs_t *ieSrb;
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieSrb, container,
-			     F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_List, true);
+			     F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_List, false);
   
   if(ieSrb != NULL) {
     f1ap_ue_context_setup_req->srbs_to_be_setup_length = ieSrb->value.choice.SRBs_ToBeSetup_List.list.count;
@@ -580,6 +580,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
                                getCxt(false, instance)->default_sctp_stream_id);
   return 0;
 }
+
 int DU_send_UE_CONTEXT_SETUP_FAILURE(instance_t instance) {
   AssertFatal(1==0,"Not implemented yet\n");
 }

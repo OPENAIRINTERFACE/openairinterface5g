@@ -1347,7 +1347,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               NULL,
                               get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
   /* Refresh SRBs/DRBs */
-
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
     rrc_mac_config_req_gNB(rrc->module_id,
                            rrc->carrier.ssb_SubcarrierOffset,
@@ -1367,7 +1366,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                                NULL,
                                get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
   }
-  else if(SRB_configList!=NULL || DRB_configList!=NULL){
+  /*else if(SRB_configList!=NULL || DRB_configList!=NULL){
     MessageDef *message_p;
     message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
     f1ap_ue_context_setup_t *req=&F1AP_UE_CONTEXT_SETUP_REQ (message_p);
@@ -1409,7 +1408,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
       LOG_I(RRC, "Send F1AP_UE_CONTEXT_SETUP_REQ with ITTI\n");
     }
     itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
-  }
+  }*/
 #endif
 
   /* Set the SRB active in UE context */
@@ -2690,11 +2689,69 @@ rrc_gNB_decode_dcch(
                                     ul_dcch_msg);
       }
 
-      if (ue_context_p->ue_context.established_pdu_sessions_flag == 1) {
-        rrc_gNB_generate_dedicatedRRCReconfiguration(ctxt_pP, ue_context_p);
-      } else {
-        rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
+      if(!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)){
+        if (ue_context_p->ue_context.established_pdu_sessions_flag == 1) {
+          rrc_gNB_generate_dedicatedRRCReconfiguration(ctxt_pP, ue_context_p);
+        } else {
+          rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
+        }
       }
+      else{
+        /*Generate a UE context setup request message towards the DU to provide the UE
+         *capability info and get the updates on master cell group config from the DU*/
+        MessageDef *message_p;
+        message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
+        f1ap_ue_context_setup_t *req=&F1AP_UE_CONTEXT_SETUP_REQ (message_p);
+        //UE_IDs will be extracted from F1AP layer
+        req->gNB_CU_ue_id     = 0;
+        req->gNB_DU_ue_id = 0;
+        req->rnti             = ue_context_p->ue_context.rnti;
+        req->mcc              = RC.nrrrc[ctxt_pP->module_id]->configuration.mcc[0];
+        req->mnc              = RC.nrrrc[ctxt_pP->module_id]->configuration.mnc[0];
+        req->mnc_digit_length = RC.nrrrc[ctxt_pP->module_id]->configuration.mnc_digit_length[0];
+        req->nr_cellid        = RC.nrrrc[ctxt_pP->module_id]->nr_cellid;
+
+        if (ue_context_p->ue_context.established_pdu_sessions_flag == 1) {
+          /*Instruction towards the DU for SRB2 configuration*/
+          req->srbs_to_be_setup = malloc(1*sizeof(f1ap_srb_to_be_setup_t));
+          req->srbs_to_be_setup_length = 1;
+          f1ap_srb_to_be_setup_t *SRBs=req->srbs_to_be_setup;
+          SRBs[0].srb_id = 2;
+          SRBs[0].lcid = 2;
+
+          /*Instruction towards the DU for DRB configuration and tunnel creation*/
+          gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
+          memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
+          req->drbs_to_be_setup = malloc(1*sizeof(f1ap_drb_to_be_setup_t));
+          req->drbs_to_be_setup_length = 1;
+          f1ap_drb_to_be_setup_t *DRBs=req->drbs_to_be_setup;
+          LOG_I(RRC, "Length of DRB list:%d \n", req->drbs_to_be_setup_length);
+          DRBs[0].drb_id = 1;
+          DRBs[0].rlc_mode = RLC_MODE_AM;
+          DRBs[0].up_ul_tnl[0].tl_address = inet_addr(RC.nrrrc[ctxt_pP->module_id]->eth_params_s.my_addr);
+          DRBs[0].up_ul_tnl[0].port=RC.nrrrc[ctxt_pP->module_id]->eth_params_s.my_portd;
+          DRBs[0].up_ul_tnl_length = 1;
+          DRBs[0].up_dl_tnl[0].tl_address = inet_addr(RC.nrrrc[ctxt_pP->module_id]->eth_params_s.remote_addr);
+          DRBs[0].up_dl_tnl[0].port=RC.nrrrc[ctxt_pP->module_id]->eth_params_s.remote_portd;
+          DRBs[0].up_dl_tnl_length = 1;
+        }
+        if( ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.present ==
+                NR_UECapabilityInformation__criticalExtensions_PR_ueCapabilityInformation ) {
+          struct NR_UE_CapabilityRAT_ContainerList  *ue_CapabilityRAT_ContainerList =
+              ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList;
+
+          req->cu_to_du_rrc_information = calloc(1,sizeof(cu_to_du_rrc_information_t));
+          req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList = calloc(1,1024);
+          asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList,
+              NULL,
+              (void *)ue_CapabilityRAT_ContainerList,
+              req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
+              1024);
+          req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length = (enc_rval.encoded+7)>>3;
+        }
+        itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+      }
+
 
       break;
 
