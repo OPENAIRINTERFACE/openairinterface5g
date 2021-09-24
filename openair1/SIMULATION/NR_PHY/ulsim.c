@@ -312,6 +312,7 @@ int main(int argc, char **argv)
   uint8_t snrRun;
   int prb_inter = 0;
   int ldpc_offload_flag = 0;
+  uint8_t max_rounds = 4;
 
   int enable_ptrs = 0;
   int modify_dmrs = 0;
@@ -345,7 +346,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:o:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:o:p:q:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -464,6 +465,10 @@ int main(int argc, char **argv)
       
     case 'p':
       extended_prefix_flag = 1;
+      break;
+
+    case 'q':
+      max_rounds = atoi(optarg);
       break;
       
     case 'r':
@@ -756,7 +761,11 @@ int main(int argc, char **argv)
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   cfg->carrier_config.num_tx_ant.value = n_tx;
   cfg->carrier_config.num_rx_ant.value = n_rx;
+
 //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
+
+  gNB->ldpc_offload_flag = ldpc_offload_flag;
+
   phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
 
@@ -810,7 +819,6 @@ int main(int argc, char **argv)
 
   unsigned char harq_pid = 0;
   
-  gNB->ldpc_offload_flag = ldpc_offload_flag;
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = malloc(sizeof(*UL_tti_req));
@@ -845,7 +853,6 @@ int main(int argc, char **argv)
   uint16_t n_rb1 = 75;
   
   uint16_t pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA; // | PUSCH_PDU_BITMAP_PUSCH_PTRS;
-  uint8_t max_rounds = 4;
   uint8_t crc_status = 0;
 
   unsigned char mod_order = nr_get_Qm_ul(Imcs, mcs_table);
@@ -1014,12 +1021,14 @@ int main(int argc, char **argv)
   double blerStats[4][100];
   double berStats[4][100];
   double snrStats[100];
+  double ldpcDecStats[100];
   memset(errors_scrambling, 0, sizeof(uint32_t)*4*100);
   memset(n_errors, 0, sizeof(int)*4*100);
   memset(round_trials, 0, sizeof(int)*4*100);
   memset(blerStats, 0, sizeof(double)*4*100);
   memset(berStats, 0, sizeof(double)*4*100);
   memset(snrStats, 0, sizeof(double)*100);
+  memset(ldpcDecStats, 0, sizeof(double)*100);
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
     varArray_t *table_rx=initVarArray(1000,sizeof(double));
     int error_flag = 0;
@@ -1421,16 +1430,16 @@ int main(int argc, char **argv)
 	errors_decoding++;
       }
     }
-    if (n_trials == 1) {
+    /*if (n_trials == 1) {
       for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
 	for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
-	  if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
-	    /*printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
+	  if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) 
+	    printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
 	    i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
 	    i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
-	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
+	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);
 	}
-    }
+    }*/
     if (errors_decoding > 0 && error_flag == 0) {
       n_false_positive++;
       if (n_trials==1)
@@ -1496,6 +1505,8 @@ int main(int argc, char **argv)
       printf("\n");
     }
 
+    ldpcDecStats[snrRun] = gNB->ulsch_decoding_stats.trials?inMicroS(gNB->ulsch_decoding_stats.diff/gNB->ulsch_decoding_stats.trials):0;
+
     if(n_trials==1)
       break;
 
@@ -1540,9 +1551,11 @@ int main(int argc, char **argv)
   LOG_MM("ulsimStats.m","BER_round3",berStats[3],snrRun,1,7);
   LOG_MM("ulsimStats.m","EffRate",effRate,snrRun,1,7);
   LOG_MM("ulsimStats.m","EffTP",effTP,snrRun,1,7);
+  LOG_MM("ulsimStats.m","LDPC_dec_time",ldpcDecStats,snrRun,1,7);
   free(test_input_bit);
   free(estimated_output_bit);
-  free_nrLDPClib_offload();
+  if (gNB->ldpc_offload_flag)
+    free_nrLDPClib_offload();
 
   if (output_fd)
     fclose(output_fd);

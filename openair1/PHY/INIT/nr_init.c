@@ -109,7 +109,9 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   init_pucch2_luts();
 
   load_nrLDPClib(NULL);
-  load_nrLDPClib_offload(); 
+
+  if (gNB->ldpc_offload_flag)
+    load_nrLDPClib_offload(); 
 
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);

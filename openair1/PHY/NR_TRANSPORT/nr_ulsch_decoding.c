@@ -609,24 +609,31 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 			Qm,
  			(int8_t*)&pl_ol128[0],
 			llrProcBuf, 1);
-       
-	 for (int m=0; m < Kr>>3; m ++) {
-	    harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
-  	}
-
-  if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
+   
+  if (ret<0) {
+    no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
+  }
+  else {
+    
+    for (int m=0; m < Kr>>3; m ++) {
+      harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
+    }
+    
+    if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
 #ifdef PRINT_CRC_CHECK
       LOG_I(PHY, "Segment %d CRC OK\n",r);
 #endif
-    no_iteration_ldpc = 2;
-  } else {
+      no_iteration_ldpc = 2;
+    } else {
 #ifdef PRINT_CRC_CHECK
       LOG_I(PHY, "CRC NOK\n");
 #endif
-    no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
+      no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
+    }
   }
 
   r_offset += E;
+
       	/*for (int k=0;k<8;k++)
         {
         printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
@@ -646,6 +653,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       		LOG_I(PHY,"uplink segment error %d/%d\n",r,harq_process->C);
    		LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
       		harq_process->processedSegments=harq_process->C;
+      		r=harq_process->C;
     	 }
   	}  	
 	if (harq_process->processedSegments==harq_process->C){

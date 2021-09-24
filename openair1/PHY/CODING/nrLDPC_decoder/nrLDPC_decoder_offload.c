@@ -1161,17 +1161,27 @@ pmd_lcore_ldpc_dec(void *arg)
 			deq += rte_bbdev_dequeue_ldpc_dec_ops(tp->dev_id,
 					queue_id, &ops_deq[deq], enq - deq);
 
+			//printf("enq %d, deq %d\n",enq,deq);
+
                 }
 
 		/* dequeue the remaining */
+		int trials=0;
 		while (deq < enq) {
 			deq += rte_bbdev_dequeue_ldpc_dec_ops(tp->dev_id,
 					queue_id, &ops_deq[deq], enq - deq);
+			usleep(10);
+			trials++;
+			if (trials>=100) {
+			  printf("aborting decoding after 100 dequeue tries\n");
+			  break;
+			}
 		}
 
 //		total_time += rte_rdtsc_precise() - start_time;
 	}
 
+	if (deq==enq) {
 	tp->iter_count = 0;
 	/* get the max of iter_count for all dequeued ops */
 	for (i = 0; i < num_ops; ++i) {
@@ -1182,6 +1192,10 @@ pmd_lcore_ldpc_dec(void *arg)
 	ret = retrieve_ldpc_dec_op(ops_deq, num_ops, ref_op,
 				tp->op_params->vector_mask, p_out);
 		TEST_ASSERT_SUCCESS(ret, "Validation failed!");
+	}
+	else {
+	  ret = TEST_FAILED;
+	}
 
 	rte_bbdev_dec_op_free_bulk(ops_enq, num_ops);
 
@@ -1193,7 +1207,7 @@ pmd_lcore_ldpc_dec(void *arg)
 			1000000.0) / ((double)total_time /
 			(double)rte_get_tsc_hz());
 	*/	
-	return TEST_SUCCESS;
+	return ret;
 }
 
 
@@ -1513,14 +1527,14 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 				info.drv.min_alignment,
 				socket_id);
 		if (f_ret != TEST_SUCCESS) {
-			printf("Couldn't init queue buffers");
+			printf("Couldn't init queue buffers\n");
 			return(-1);
 		}
 	}
 
         ret = start_pmd_dec(ad, op_params, p_offloadParams, p_out);
         if (ret<0) {
-          printf("Couldn't start pmd dec");
+          printf("Couldn't start pmd dec\n");
           return(-1);
         }
 	break;
