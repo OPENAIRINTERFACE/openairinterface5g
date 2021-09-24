@@ -190,7 +190,7 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_p
     free(rach_ind->pdu_list);
     free(rach_ind);
   }
-  LOG_I(NR_MAC, "Melissa, We have successfully filled the rach_ind queue with the recently filled rach ind\n");
+  LOG_D(NR_MAC, "We have successfully filled the rach_ind queue with the recently filled rach ind\n");
 }
 
 static bool sfn_slot_matcher(void *wanted, void *candidate)
@@ -286,7 +286,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
     nr_uplink_indication_t ul_info;
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
-    int slot_ahead = 2; // Melissa lets make this dynamic
+    int slot_ahead = 2; // TODO: Make this dynamic
     ul_info.cc_id = CC_id;
     ul_info.gNB_index = gNB_id;
     ul_info.module_id = mod_id;
