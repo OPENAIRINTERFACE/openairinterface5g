@@ -682,7 +682,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       		LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
 		nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 1);
 	  } 
-  	ulsch->last_iteration_cnt = no_iteration_ldpc;	
+	  //ulsch->last_iteration_cnt = no_iteration_ldpc;	
 	}
     } 
   } 

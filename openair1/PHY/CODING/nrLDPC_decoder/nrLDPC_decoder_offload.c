@@ -630,6 +630,7 @@ ut_teardown(void)
 static int
 init_op_data_objs(struct rte_bbdev_op_data *bufs, 
 		int8_t* p_llr, uint32_t data_len,
+		struct rte_mbuf *m_head,
 		struct rte_mempool *mbuf_pool, const uint16_t n,
 		enum op_data_type op_type, uint16_t min_alignment)
 {
@@ -640,12 +641,7 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 
 	for (i = 0; i < n; ++i) {
 		char *data;
-		struct rte_mbuf *m_head = rte_pktmbuf_alloc(mbuf_pool);
-		TEST_ASSERT_NOT_NULL(m_head,
-				"Not enough mbufs in %d data type mbuf pool (needed %u, available %u)",
-				op_type, n * nb_segments,
-				mbuf_pool->size);
-
+		
 		if (data_len > RTE_BBDEV_LDPC_E_MAX_MBUF) {
 			/*
 			 * Special case when DPDK mbuf cannot handle
@@ -669,7 +665,9 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 				m_head->data_off = 0;
 				m_head->data_len = data_len;
 			} else {
+			        rte_pktmbuf_reset(m_head);
 				data = rte_pktmbuf_append(m_head, data_len);
+				
 				TEST_ASSERT_NOT_NULL(data,
 					"Couldn't append %u bytes to mbuf from %d data type mbuf pool",
 					data_len, op_type);
@@ -755,55 +753,6 @@ allocate_buffers_on_socket(struct rte_bbdev_op_data **buffers, const int len,
 }
 
 
-static int
-fill_queue_buffers(struct test_op_params *op_params,int8_t* p_llr, uint32_t data_len,
-		struct rte_mempool *in_mp, struct rte_mempool *hard_out_mp,
-		struct rte_mempool *soft_out_mp,
-		struct rte_mempool *harq_in_mp, struct rte_mempool *harq_out_mp,
-		uint16_t queue_id,
-		const struct rte_bbdev_op_cap *capabilities,
-		uint16_t min_alignment, const int socket_id)
-{
-	int ret;
-	enum op_data_type type;
-	const uint16_t n = op_params->num_to_process;
-	//int ldpc_llr_decimals;
-	//int ldpc_llr_size;
-	//uint32_t ldpc_cap_flags;
-
-	struct rte_mempool *mbuf_pools[DATA_NUM_TYPES] = {
-		in_mp,
-		soft_out_mp,
-		hard_out_mp,
-		harq_in_mp,
-		harq_out_mp,
-	};
-
-	struct rte_bbdev_op_data **queue_ops[DATA_NUM_TYPES] = {
-		&op_params->q_bufs[socket_id][queue_id].inputs,
-		&op_params->q_bufs[socket_id][queue_id].soft_outputs,
-		&op_params->q_bufs[socket_id][queue_id].hard_outputs,
-		&op_params->q_bufs[socket_id][queue_id].harq_inputs,
-		&op_params->q_bufs[socket_id][queue_id].harq_outputs,
-	};
-
-	for (type = DATA_INPUT; type < 3; type+=2) {
-
-		ret = allocate_buffers_on_socket(queue_ops[type],
-				n * sizeof(struct rte_bbdev_op_data),
-				socket_id);
-		TEST_ASSERT_SUCCESS(ret,
-				"Couldn't allocate memory for rte_bbdev_op_data structs");
-
-		ret = init_op_data_objs(*queue_ops[type], p_llr, data_len,
-				mbuf_pools[type], n, type, min_alignment);
-		TEST_ASSERT_SUCCESS(ret,
-				"Couldn't init rte_bbdev_op_data structs");
-	
-	}
-
-	return 0;
-}
 
 static void
 free_buffers(struct active_device *ad, struct test_op_params *op_params)
@@ -1166,16 +1115,16 @@ pmd_lcore_ldpc_dec(void *arg)
                 }
 
 		/* dequeue the remaining */
-		int trials=0;
+		//int trials=0;
 		while (deq < enq) {
 			deq += rte_bbdev_dequeue_ldpc_dec_ops(tp->dev_id,
 					queue_id, &ops_deq[deq], enq - deq);
-			usleep(10);
+			/*usleep(10);
 			trials++;
 			if (trials>=100) {
 			  printf("aborting decoding after 100 dequeue tries\n");
 			  break;
-			}
+			  }*/
 		}
 
 //		total_time += rte_rdtsc_precise() - start_time;
@@ -1412,6 +1361,9 @@ get_init_device(void)
 struct test_op_params op_params_e; 
 struct test_op_params *op_params = &op_params_e; 
 
+struct rte_mbuf *m_head[DATA_NUM_TYPES];
+
+
 int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_t rv, uint16_t F, 
 			uint32_t E, uint8_t Qm, int8_t* p_llr, int8_t* p_out, uint8_t mode) 
 {
@@ -1430,10 +1382,10 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 	test_params.burst_sz=1;
 	test_params.num_lcores=1;		
 	test_params.num_tests = 1;
-  	struct active_device *ad;
+	struct active_device *ad;
         ad = &active_devs[0];
 
-	int socket_id;
+	int socket_id=0;
         int i,f_ret;
         struct rte_bbdev_info info;
         enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;
@@ -1469,24 +1421,86 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
           TEST_ASSERT_NOT_NULL(op_params, "Failed to alloc %zuB for op_params",
                                RTE_ALIGN(sizeof(struct test_op_params),
                                          RTE_CACHE_LINE_SIZE));
+	  
+	  rte_bbdev_info_get(ad->dev_id, &info);
+	  socket_id = GET_SOCKET(info.socket_id);
+	  f_ret = create_mempools(ad, socket_id, op_type,
+				  get_num_ops(),p_offloadParams);
+	  if (f_ret != TEST_SUCCESS) {
+	    printf("Couldn't create mempools");
+	  }
+	  f_ret = init_test_op_params(op_params, op_type,
+				      0,
+				      0,
+				      ad->ops_mempool,
+				      1,
+				      get_num_ops(),
+				      get_num_lcores());
+	  if (f_ret != TEST_SUCCESS) {
+	    printf("Couldn't init test op params");
+	  }
 	
-        rte_bbdev_info_get(ad->dev_id, &info);
-        socket_id = GET_SOCKET(info.socket_id);
-        f_ret = create_mempools(ad, socket_id, op_type,
-                        get_num_ops(),p_offloadParams);
-        if (f_ret != TEST_SUCCESS) {
-                printf("Couldn't create mempools");
-        }
-        f_ret = init_test_op_params(op_params, op_type,
-                        0,
-                        0,
-                        ad->ops_mempool,
-                        1,
-                        get_num_ops(), 
-                        get_num_lcores());
-        if (f_ret != TEST_SUCCESS) {
-                printf("Couldn't init test op params");
-        }
+	  const struct rte_bbdev_op_cap *capabilities = NULL;
+	  rte_bbdev_info_get(ad->dev_id, &info);
+	  socket_id = GET_SOCKET(info.socket_id);
+	  //enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;                                                                                                
+	  const struct rte_bbdev_op_cap *cap = info.drv.capabilities;
+
+	  for (i = 0; i < RTE_BBDEV_OP_TYPE_COUNT; i++) {
+	    if (cap->type == op_type) {
+	      capabilities = cap;
+	      break;
+	    }
+	    cap++;
+	  }
+	  ad->nb_queues =  1;
+	  enum op_data_type type;
+
+	  for (i = 0; i < ad->nb_queues; ++i) {
+
+	    const uint16_t n = op_params->num_to_process;
+
+	    struct rte_mempool *in_mp = ad->in_mbuf_pool;
+	    struct rte_mempool *hard_out_mp = ad->hard_out_mbuf_pool;
+	    struct rte_mempool *soft_out_mp = ad->soft_out_mbuf_pool;
+	    struct rte_mempool *harq_in_mp = ad->harq_in_mbuf_pool;
+	    struct rte_mempool *harq_out_mp = ad->harq_out_mbuf_pool;
+
+	    struct rte_mempool *mbuf_pools[DATA_NUM_TYPES] = {
+	      in_mp,
+	      soft_out_mp,
+	      hard_out_mp,
+	      harq_in_mp,
+	      harq_out_mp,
+	    };
+
+	    uint8_t queue_id =ad->queue_ids[i];
+	    struct rte_bbdev_op_data **queue_ops[DATA_NUM_TYPES] = {
+	      &op_params->q_bufs[socket_id][queue_id].inputs,
+	      &op_params->q_bufs[socket_id][queue_id].soft_outputs,
+	      &op_params->q_bufs[socket_id][queue_id].hard_outputs,
+	      &op_params->q_bufs[socket_id][queue_id].harq_inputs,
+	      &op_params->q_bufs[socket_id][queue_id].harq_outputs,
+	    };
+
+	    for (type = DATA_INPUT; type < 3; type+=2) {
+
+	      ret = allocate_buffers_on_socket(queue_ops[type],
+					     n * sizeof(struct rte_bbdev_op_data),
+					     socket_id);
+	      TEST_ASSERT_SUCCESS(ret,
+				"Couldn't allocate memory for rte_bbdev_op_data structs");
+
+	      m_head[type] = rte_pktmbuf_alloc(mbuf_pools[type]);	  
+	
+	      TEST_ASSERT_NOT_NULL(m_head[type],
+			     "Not enough mbufs in %d data type mbuf pool (needed %u, available %u)",
+			     op_type, 1,
+			     mbuf_pools[type]->size);
+	
+	    }
+	  }
+
 	break;
 	case 1:
 	  //printf("offload param E %d BG %d F %d Z %d Qm %d\n", E,p_decParams->BG, F,p_decParams->Z, Qm);
@@ -1498,56 +1512,60 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
           p_offloadParams->F = F;
           p_offloadParams->Qm = Qm;
 
-	const struct rte_bbdev_op_cap *capabilities = NULL;	
-        rte_bbdev_info_get(ad->dev_id, &info);
-        socket_id = GET_SOCKET(info.socket_id);
-	//enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;
-	const struct rte_bbdev_op_cap *cap = info.drv.capabilities;
+	  rte_bbdev_info_get(ad->dev_id, &info);
+	  socket_id = GET_SOCKET(info.socket_id);
 
-	for (i = 0; i < RTE_BBDEV_OP_TYPE_COUNT; i++) {
-		if (cap->type == op_type) {
-			capabilities = cap;
-			break;
-		}
-		cap++;
-	}
-	create_reference_ldpc_dec_op(op_params->ref_dec_op, p_offloadParams);
-	ad->nb_queues =  1;
-	for (i = 0; i < ad->nb_queues; ++i) {
-		f_ret = fill_queue_buffers(op_params,
-			 	p_llr,	
-			 	p_offloadParams->E,	
-				ad->in_mbuf_pool,
-				ad->hard_out_mbuf_pool,
-				ad->soft_out_mbuf_pool,
-				ad->harq_in_mbuf_pool,
-				ad->harq_out_mbuf_pool,
-				ad->queue_ids[i],
-				capabilities,
-				info.drv.min_alignment,
-				socket_id);
-		if (f_ret != TEST_SUCCESS) {
-			printf("Couldn't init queue buffers\n");
-			return(-1);
-		}
-	}
+	  create_reference_ldpc_dec_op(op_params->ref_dec_op, p_offloadParams);
 
-        ret = start_pmd_dec(ad, op_params, p_offloadParams, p_out);
-        if (ret<0) {
-          printf("Couldn't start pmd dec\n");
-          return(-1);
-        }
+	  struct rte_mempool *in_mp = ad->in_mbuf_pool;
+          struct rte_mempool *hard_out_mp = ad->hard_out_mbuf_pool;
+          struct rte_mempool *soft_out_mp = ad->soft_out_mbuf_pool;
+          struct rte_mempool *harq_in_mp = ad->harq_in_mbuf_pool;
+          struct rte_mempool *harq_out_mp = ad->harq_out_mbuf_pool;
+
+          struct rte_mempool *mbuf_pools[DATA_NUM_TYPES] = {
+            in_mp,
+            soft_out_mp,
+            hard_out_mp,
+            harq_in_mp,
+            harq_out_mp,
+          };
+
+          uint8_t queue_id =ad->queue_ids[0];
+          struct rte_bbdev_op_data **queue_ops[DATA_NUM_TYPES] = {
+            &op_params->q_bufs[socket_id][queue_id].inputs,
+            &op_params->q_bufs[socket_id][queue_id].soft_outputs,
+            &op_params->q_bufs[socket_id][queue_id].hard_outputs,
+            &op_params->q_bufs[socket_id][queue_id].harq_inputs,
+            &op_params->q_bufs[socket_id][queue_id].harq_outputs,
+          };
+
+	  for (type = DATA_INPUT; type < 3; type+=2) {
+
+	    ret = init_op_data_objs(*queue_ops[type], p_llr, p_offloadParams->E,
+				    m_head[type], mbuf_pools[type], 1, type, info.drv.min_alignment);
+	    TEST_ASSERT_SUCCESS(ret,
+				"Couldn't init rte_bbdev_op_data structs");
+
+	  }
+	  
+	  ret = start_pmd_dec(ad, op_params, p_offloadParams, p_out);
+	  if (ret<0) {
+	    printf("Couldn't start pmd dec");
+	    return(-1);
+	  }
+	
 	break;
 	case 2:
 
-        free_buffers(ad, op_params);
-	rte_free(op_params);
-	ut_teardown();
-	testsuite_teardown();
+	  free_buffers(ad, op_params);
+	  rte_free(op_params);
+	  ut_teardown();
+	  testsuite_teardown();
 	break;
 	default:
-		printf("Unknown mode: %d\n", mode);
-		return;
+	  printf("Unknown mode: %d\n", mode);
+	  return;
 	}	
 
     return numIter;
