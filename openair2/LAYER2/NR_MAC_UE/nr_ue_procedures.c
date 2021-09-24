@@ -2017,7 +2017,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   uint32_t V_temp = 0;
   uint32_t V_temp2 = 0;
   int O_ACK = 0;
-  int o_ACK = 0;
+  uint8_t o_ACK = 0;
   int O_bit_number_cw0 = 0;
   int O_bit_number_cw1 = 0;
 
@@ -2045,6 +2045,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
     }
 
     o_ACK = o_ACK | (ack_data[0][m] << O_bit_number_cw0);
+    LOG_D(MAC,"m %d bit number %d o_ACK %d\n",m,O_bit_number_cw0,o_ACK);
   }
 
   if (V_temp2 < V_temp) {
@@ -2063,7 +2064,10 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
     return (0);
   }
 
+  reverse_n_bits(&o_ACK,number_harq_feedback);
   pucch->ack_payload = o_ACK;
+
+  LOG_D(MAC,"frame %d slot %d pucch payload %d\n",frame,slot,o_ACK);
 
   return(number_harq_feedback);
 }
