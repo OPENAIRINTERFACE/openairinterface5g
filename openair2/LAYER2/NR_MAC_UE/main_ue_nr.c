@@ -54,7 +54,6 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
 
     for (int j=0;j<NB_NR_UE_MAC_INST;j++) {
 	nr_ue_init_mac(j);
-	for (int i=0;i<NR_MAX_HARQ_PROCESSES;i++) nr_ue_mac_inst[j].first_ul_tx[i]=1;
     }
 
 

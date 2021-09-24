@@ -197,6 +197,7 @@ void nr_ue_init_mac(module_id_t module_idP) {
     mac->scheduling_info.LCID_status[i] =
       LCID_EMPTY;
     mac->scheduling_info.LCID_buffer_remain[i] = 0;
+    for (int i=0;i<NR_MAX_HARQ_PROCESSES;i++) mac->first_ul_tx[i]=1;
   }
 }
 
@@ -2214,61 +2215,6 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
   // no UL-SCH resources available for this tti && UE has a valid PUCCH resources for SR configuration for this tti
   DevCheck(module_idP < (int) NB_UE_INST, module_idP, NB_NR_UE_MAC_INST, 0);
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
-#if 0 // todo
-  //  int MGL=6;// measurement gap length in ms
-  int MGRP = 0;   // measurement gap repetition period in ms
-  int gapOffset = -1;
-  int T = 0;
-  // determin the measurement gap
-  if (mac->measGapConfig != NULL) {
-    if (mac->measGapConfig->choice.setup.
-        gapOffset.present == LTE_MeasGapConfig__setup__gapOffset_PR_gp0) {
-      MGRP = 40;
-      gapOffset =
-        mac->measGapConfig->choice.
-        setup.gapOffset.choice.gp0;
-    } else if (mac->measGapConfig->choice.
-               setup.gapOffset.present ==
-               LTE_MeasGapConfig__setup__gapOffset_PR_gp1) {
-      MGRP = 80;
-      gapOffset =
-        mac->measGapConfig->choice.
-        setup.gapOffset.choice.gp1;
-    } else {
-      LOG_W(NR_MAC, "Measurement GAP offset is unknown\n");
-    }
-
-    T = MGRP / 10;
-    DevAssert(T != 0);
-
-    //check the measurement gap and sr prohibit timer
-    if ((subframe == gapOffset % 10)
-        && ((frameP % T) == (floor(gapOffset / 10)))
-        && (mac->
-            scheduling_info.sr_ProhibitTimer_Running == 0)) {
-      mac->scheduling_info.SR_pending = 1;
-      return (0);
-    }
-  }
-  if ((mac->physicalConfigDedicated != NULL) &&
-      (mac->scheduling_info.SR_pending == 1) &&
-      (mac->scheduling_info.SR_COUNTER <
-       (1 <<
-        (2 +
-         mac->
-         physicalConfigDedicated->schedulingRequestConfig->choice.setup.
-         dsr_TransMax)))) {
-    LOG_D(NR_MAC,
-          "[UE %d] Frame %d slot %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",
-          module_idP, frameP, slot,
-          mac->scheduling_info.SR_COUNTER,
-          (1 <<
-           (2 +
-            mac->
-            physicalConfigDedicated->schedulingRequestConfig->choice.
-            setup.dsr_TransMax)),
-          mac->scheduling_info.SR_pending);
-#endif
   DSR_TRANSMAX_t dsr_TransMax = sr_n64; // todo
   LOG_D(NR_MAC,
         "[UE %d] Frame %d slot %d send SR indication (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",

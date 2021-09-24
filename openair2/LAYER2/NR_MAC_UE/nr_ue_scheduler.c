@@ -1011,50 +1011,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
   // Handle the SR/BSR procedures per subframe
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   uint8_t gNB_indexP=0;
-#if 0 // todo
-  // Get RLC status info and update Bj for all lcids that are active
-  int lcid;     // lcid index
-  for (lcid = DCCH; lcid < NR_MAX_NUM_LCID; lcid++) {
-    if (mac->logicalChannelConfig[lcid]) {
-      // meausre the Bj
-      if ((directionP == SF_UL)
-          && (mac->scheduling_info.Bj[lcid] >= 0)) {
-        if (mac->
-            logicalChannelConfig[lcid]->ul_SpecificParameters) {
-          bucketsizeduration =
-            mac->logicalChannelConfig
-            [lcid]->ul_SpecificParameters->prioritisedBitRate *
-            TTI;
-          bucketsizeduration_max =
-            get_ms_bucketsizeduration(mac->logicalChannelConfig
-                                      [lcid]->ul_SpecificParameters->bucketSizeDuration);
-        } else {
-          LOG_E(NR_MAC,
-                "[UE %d] lcid %d, NULL ul_SpecificParameters\n",
-                mod_id, lcid);
-          AssertFatal(1 == 0, "");
-        }
 
-        if (mac->scheduling_info.Bj[lcid] >
-            bucketsizeduration_max) {
-          mac->scheduling_info.Bj[lcid] =
-            bucketsizeduration_max;
-        } else {
-          mac->scheduling_info.Bj[lcid] =
-            bucketsizeduration;
-        }
-      }
-
-      /*
-         if (lcid == DCCH) {
-         LOG_D(NR_MAC,"[UE %d][SR] Frame %d slot %d Pending data for SRB1=%d for LCGID %d \n",
-         mod_id, txFrameP,txSlotP,mac->scheduling_info.BSR[mac->scheduling_info.LCGID[lcid]],
-         //         mac->scheduling_info.LCGID[lcid]);
-         }
-       */
-    }
-  }
-#endif
   // Call BSR procedure as described in Section 5.4.5 in 38.321
 
   // First check ReTxBSR Timer because it is always configured
@@ -1084,33 +1041,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           "[UE %d][BSR] Regular BSR Triggered Frame %d slot %d SR for PUSCH is pending\n",
           mod_id, txFrameP, txSlotP);
   }
-#if 0
-  // UE has no valid phy config dedicated ||  no valid/released  SR
-  if ((mac->physicalConfigDedicated == NULL)) {
-    // cancel all pending SRs
-    mac->scheduling_info.SR_pending = 0;
-    mac->ul_active = 0;
-    LOG_T(NR_MAC, "[UE %d] Release all SRs \n", mod_id);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
-    (VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SCHEDULER, VCD_FUNCTION_OUT);
-#if UE_TIMING_TRACE
-    stop_meas(&mac->nr_ue_scheduler);
-#endif
-    return (CONNECTION_OK);
-  }
-
-  if ((mac->
-       physicalConfigDedicated->schedulingRequestConfig == NULL)
-      || (mac->
-          physicalConfigDedicated->schedulingRequestConfig->present ==
-          LTE_SchedulingRequestConfig_PR_release)) {
-    // initiate RA with CRNTI included in msg3 (no contention) as descibed in 38.321 sec 5.1.5
-    // cancel all pending SRs
-    mac->scheduling_info.SR_pending = 0;
-    mac->ul_active = 0;
-    LOG_T(NR_MAC, "[UE %d] Release all SRs \n", mod_id);
-  }
-#endif
   return UE_CONNECTION_OK;
 
 }
@@ -2548,23 +2478,6 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
   }
 
   bsr_len = bsr_ce_len + bsr_header_len;
-#if 0 // todo
-  phr_ce_len =
-    (mac->PHR_reporting_active ==
-     1) ? 1 /* sizeof(POWER_HEADROOM_CMD) */ : 0;
-
-  if ((phr_ce_len > 0)
-      && ((phr_ce_len + phr_header_len + bsr_len) <= buflen)) {
-    phr_len = phr_ce_len + phr_header_len;
-    LOG_D(NR_MAC,
-          "[UE %d] header size info: PHR len %d (ce%d,hdr%d) buff_len %d\n",
-          module_idP, phr_len, phr_ce_len, phr_header_len, buflen);
-  } else {
-    phr_len = 0;
-    phr_header_len = 0;
-    phr_ce_len = 0;
-  }
-#endif
   int tot_mac_ce_len = bsr_len + phr_len;
   uint8_t total_mac_pdu_header_len = tot_mac_ce_len;
 
@@ -2665,25 +2578,6 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
                                         scheduling_info.LCGID[lcid]]
               == 0)) {
         num_lcg_id_with_data--;
-#if 0   // Disable the following to simplify the logic
-        // Change BSR size to BSR SHORT if num_lcg_id_with_data becomes to 1
-        if (bsr_len) {
-          if (num_lcg_id_with_data == 1) {
-            bsr_ce_len = sizeof(NR_BSR_SHORT);
-            bsr_header_len = sizeof(NR_MAC_SUBHEADER_FIXED);
-            bsr_len = bsr_ce_len + bsr_header_len;
-            total_mac_pdu_header_len = total_mac_pdu_header_len - tot_mac_ce_len + bsr_len +  phr_len;
-            tot_mac_ce_len = bsr_len + phr_len;
-          }
-          else if (num_lcg_id_with_data > 1) {
-        	bsr_ce_len = num_lcg_id_with_data + 1;
-	        bsr_header_len = sizeof(NR_MAC_SUBHEADER_SHORT);
-            bsr_len = bsr_ce_len + bsr_header_len;
-            total_mac_pdu_header_len = total_mac_pdu_header_len - tot_mac_ce_len + bsr_len +  phr_len;
-            tot_mac_ce_len = bsr_len + phr_len;
-          }
-        }
-#endif
       }
     }
   }
@@ -2709,30 +2603,6 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
       lcg_id_bsr_trunc = lcg_id;
     }
   }
-
-#if 0 // todo
-  // build PHR and update the timers
-  if (phr_ce_len == sizeof(POWER_HEADROOM_CMD)) {
-    if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
-      //Substitute with a static value for the MAC layer abstraction (phy_stub mode)
-      phr_p->PH = 60;
-    } else {
-      phr_p->PH = get_phr_mapping(module_idP, CC_id, eNB_index);
-    }
-
-    phr_p->R = 0;
-    LOG_D(NR_MAC,
-          "[UE %d] Frame %d report PHR with mapping (%d->%d) for LCID %d\n",
-          module_idP, frameP, get_PHR(module_idP, CC_id, eNB_index),
-          phr_p->PH, POWER_HEADROOM);
-    update_phr(module_idP, CC_id);
-  } else {
-    phr_p = NULL;
-  }
-
-  LOG_T(NR_MAC, "[UE %d] Frame %d: bsr s %p bsr_l %p, phr_p %p\n",
-        module_idP, frameP, bsr_s, bsr_l, phr_p);
-#endif
 
   // TS 38.321 Section 5.4.5
   // Check BSR padding: it is done after PHR according to Logical Channel Prioritization order
