@@ -1,0 +1,12 @@
+LTE-2x2 : #short name used in the dashboard
+  job : 'RAN-LTE-2x2-Module-OAIEPC' #job name from Jenkins, used in the database
+  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-LTE-2x2-Module-OAIEPC' 
+NSA-B200 : 
+  job : 'RAN-NSA-B200-Module-LTEBOX'
+  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-NSA-B200-Module-LTEBOX'
+NSA-2x2 : 
+  job : 'RAN-NSA-2x2-Module-OAIEPC'
+  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-NSA-2x2-Module-OAIEPC'
+SA-N310 : 
+  job : 'RAN-SA-Module-CN5G'
+  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-Module-CN5G'
