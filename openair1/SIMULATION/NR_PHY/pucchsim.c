@@ -104,7 +104,8 @@ int main(int argc, char **argv)
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
   double DS_TDL = .03;
-  
+ 
+  double delay_us = 0;
   int N_RB_DL=273,mu=1;
   float target_error_rate=0.001;
   int frame_length_complex_samples;
@@ -113,7 +114,7 @@ int main(int argc, char **argv)
   //unsigned char frame_type = 0;
   int loglvl=OAILOG_WARNING;
   int sr_flag = 0;
-  int pucch_DTX_thres = 100;
+  int pucch_DTX_thres = 50;
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
@@ -123,7 +124,7 @@ int main(int argc, char **argv)
   randominit(0);
   logInit();
 
-  while ((c = getopt (argc, argv, "f:hA:f:g:i:I:P:B:b:t:T:m:n:r:o:s:S:x:y:z:N:F:GR:IL:q:c")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:f:g:i:I:P:B:b:t:T:m:n:r:o:s:S:x:y:z:N:F:GR:IL:q:cd:")) != -1) {
     switch (c) {
     case 'f':
       //write_output_file=1;
@@ -228,6 +229,9 @@ int main(int argc, char **argv)
       }
       break;
       */
+    case 'd':
+       delay_us=atof(optarg);
+       break;
     case 'x':
       transmission_mode=atoi(optarg);
 
@@ -345,6 +349,8 @@ int main(int argc, char **argv)
       break;
     }
   }
+
+  double phase = (1<<mu)*30e-3*delay_us;
 
   set_glog(loglvl);
 
@@ -479,7 +485,7 @@ int main(int argc, char **argv)
   //configure UE
   UE = calloc(1,sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
-
+  UE->frame_parms.nb_antennas_rx=1;
   UE->perfect_ce = 0;
 
   if(eps!=0.0)
@@ -550,7 +556,7 @@ int main(int argc, char **argv)
       // sigma2 is variance per dimension, so N/(N_RB*12)
       // so, sigma2 = N/(N_RB_DL*12) => (S/SNR)/(N_RB*12)
       int N_RB = (format == 0 || format == 1) ? 1 : nrofPRB;
-      sigma2_dB = 10*log10(txlev/(12.0*N_RB))-SNR;
+      sigma2_dB = 10*log10(txlev*(N_RB_DL/N_RB))-SNR;
       sigma2 = pow(10.0,sigma2_dB/10.0);
 
       if (n_trials==1) printf("txlev %d (%f dB), offset %d, sigma2 %f ( %f dB)\n",txlev,10*log10(txlev),startingSymbolIndex*frame_parms->ofdm_symbol_size,sigma2,sigma2_dB);
@@ -574,15 +580,22 @@ int main(int argc, char **argv)
 
       random_channel(UE2gNB,0);
       freq_channel(UE2gNB,N_RB_DL,2*N_RB_DL+1,scs/1000);
+      struct complexd phasor;
+      double rxr_tmp;
       for (int symb=0; symb<nrofSymbols; symb++) {
         i0 = (startingSymbolIndex + symb)*gNB->frame_parms.ofdm_symbol_size;
         for (int re=0;re<N_RB_DL*12;re++) {
           i=i0+((gNB->frame_parms.first_carrier_offset + re)%gNB->frame_parms.ofdm_symbol_size);
+          phasor.r = cos(2*M_PI*phase*re);
+          phasor.i = sin(2*M_PI*phase*re);
           for (int aarx=0;aarx<n_rx;aarx++) {
             txr = (double)(((int16_t *)txdataF[0])[(i<<1)]);
             txi = (double)(((int16_t *)txdataF[0])[1+(i<<1)]);
             rxr = txr*UE2gNB->chF[aarx][re].r - txi*UE2gNB->chF[aarx][re].i;
             rxi = txr*UE2gNB->chF[aarx][re].i + txi*UE2gNB->chF[aarx][re].r;
+            rxr_tmp = rxr*phasor.r - rxi*phasor.i;
+            rxi     = rxr*phasor.i + rxi*phasor.r;
+            rxr = rxr_tmp;
             nr = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
             ni = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
             ((int16_t*)rxdataF[aarx])[i<<1] = (int16_t)(100.0*(rxr + nr)/sqrt((double)txlev));
@@ -601,7 +614,12 @@ int main(int argc, char **argv)
       for (int aarx=0;aarx<n_rx;aarx++) rxlev += signal_energy(&rxdataF[aarx][startingSymbolIndex*frame_parms->ofdm_symbol_size],
                                                            frame_parms->ofdm_symbol_size);
 
-      // noise measurement
+      int rxlev_pucch=0;
+
+      for (int aarx=0;aarx<n_rx;aarx++) rxlev_pucch += signal_energy(&rxdataF[aarx][startingSymbolIndex*frame_parms->ofdm_symbol_size],
+                                                           12);
+
+      // set UL mask for pucch allocation
       for (int s=0;s<frame_parms->symbols_per_slot;s++){
         if (s>=startingSymbolIndex && s<(startingSymbolIndex+nrofSymbols))
           for (int rb=0; rb<N_RB; rb++) {
@@ -609,9 +627,11 @@ int main(int argc, char **argv)
             gNB->rb_mask_ul[s][rb2>>5] |= (1<<(rb2&31));
           }
       }
+
+      // noise measurement (all PRBs)
       gNB_I0_measurements(gNB, nr_slot_tx, 0, gNB->frame_parms.symbols_per_slot);
 
-      if (n_trials==1) printf("rxlev %d (%d dB), sigma2 %f dB, SNR %f, TX %f\n",rxlev,dB_fixed(rxlev),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12));
+      if (n_trials==1) printf("noise rxlev %d (%d dB), rxlev pucch %d dB sigma2 %f dB, SNR %f, TX %f, I0 (pucch) %d, I0 (avg) %d\n",rxlev,dB_fixed(rxlev),dB_fixed(rxlev_pucch),sigma2_dB,SNR,10*log10((double)txlev*UE->frame_parms.ofdm_symbol_size/12),gNB->measurements.n0_subband_power_tot_dB[startingPRB],gNB->measurements.n0_subband_power_avg_dB);
       if(format==0){
         nfapi_nr_uci_pucch_pdu_format_0_1_t uci_pdu;
         nfapi_nr_pucch_pdu_t pucch_pdu;
@@ -643,7 +663,7 @@ int main(int argc, char **argv)
             sr_errors+=1;
         }
         if(nr_bit>0){
-          if(nr_bit==1 && do_DTX == 0)
+          if (nr_bit==1 && do_DTX == 0)
             ack_nack_errors+=(actual_payload^uci_pdu.harq->harq_list[0].harq_value);
           else if (do_DTX == 0)
             ack_nack_errors+=(((actual_payload&1)^uci_pdu.harq->harq_list[0].harq_value)+((actual_payload>>1)^uci_pdu.harq->harq_list[1].harq_value));

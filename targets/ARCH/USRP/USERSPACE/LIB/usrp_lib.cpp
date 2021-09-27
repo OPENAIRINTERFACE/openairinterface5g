@@ -1024,6 +1024,7 @@ extern "C" {
       // USRP recommended: https://files.ettus.com/manual/page_usrp_x3x0_config.html
       if ( 0 != system("sysctl -w net.core.rmem_max=33554432 net.core.wmem_max=33554432") )
         LOG_W(HW,"Can't set kernel parameters for X3xx\n");
+
     }
 
     s->usrp = uhd::usrp::multi_usrp::make(args);
@@ -1096,6 +1097,7 @@ extern "C" {
   if (device->type==USRP_X300_DEV) {
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
     std::cerr << "-- Using calibration table: calib_table_x310" << std::endl;
+    s->usrp->set_rx_dc_offset(true);
   }
 
   if (device->type==USRP_N300_DEV) {
