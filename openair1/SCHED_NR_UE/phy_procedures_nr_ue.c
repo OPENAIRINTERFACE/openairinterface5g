@@ -52,7 +52,8 @@
 #endif
 #include "executables/softmodem-common.h"
 #include "executables/nr-uesoftmodem.h"
-#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_UE/nr_l1_helpers.h"
 
 //#define DEBUG_PHY_PROC
 #define NR_PDCCH_SCHED
@@ -64,8 +65,6 @@
 #define PUCCH
 #endif
 
-#include "LAYER2/NR_MAC_UE/mac_defs.h"
-#include "LAYER2/NR_MAC_UE/mac_proto.h"
 #include "common/utils/LOG/log.h"
 
 #ifdef EMOS
@@ -213,12 +212,6 @@ int get_tx_amp_prach(int power_dBm, int power_max_dBm, int N_RB_UL){
 
 UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_id){
   return(PHY_vars_UE_g[Mod_id][CC_id]->UE_mode[gNB_id]);
-}
-
-uint8_t get_ra_PreambleIndex(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_id){
-
-  return PHY_vars_UE_g[Mod_id][CC_id]->prach_resources[gNB_id]->ra_PreambleIndex;
-
 }
 
 // convert time factor "16 * 64 * T_c / (2^mu)" in N_TA calculation in TS38.213 section 4.2 to samples by multiplying with samples per second

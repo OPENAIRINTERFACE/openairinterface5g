@@ -35,7 +35,6 @@
 
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_gNB.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 #define NR_PBCH_PDU_BITS 24
 
@@ -314,6 +313,7 @@ int nr_find_pucch(uint16_t rnti,
 void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
+uint8_t get_nr_prach_duration(uint8_t prach_format);
 
 void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
                         int16_t amp,

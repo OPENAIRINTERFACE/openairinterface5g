@@ -21,6 +21,7 @@
 
 #include "executables/nr-softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
+#include "common/ran_context.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
@@ -35,7 +36,6 @@
 #include "MBSFN-SubframeConfigList.h"*/
 #include "openair1/PHY/defs_RU.h"
 #include "openair1/PHY/CODING/nrLDPC_extern.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "assertions.h"
 #include <math.h>
 

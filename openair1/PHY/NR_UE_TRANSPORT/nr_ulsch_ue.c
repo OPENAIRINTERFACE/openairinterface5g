@@ -44,9 +44,8 @@
 #include "PHY/TOOLS/tools_defs.h"
 #include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
-#include "LAYER2/NR_MAC_UE/mac_proto.h"
-
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include "LAYER2/NR_MAC_UE/nr_l1_helpers.h"
 
 //#define DEBUG_PUSCH_MAPPING
 //#define DEBUG_MAC_PDU

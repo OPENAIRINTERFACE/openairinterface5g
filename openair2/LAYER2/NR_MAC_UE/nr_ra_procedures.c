@@ -38,15 +38,13 @@
 #include "RRC/NR_UE/rrc_proto.h"
 
 /* PHY */
-#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
-#include "PHY/defs_common.h"
-#include "PHY/defs_nr_common.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
 /* MAC */
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_UE/nr_l1_helpers.h"
 
 #include <executables/softmodem-common.h>
 

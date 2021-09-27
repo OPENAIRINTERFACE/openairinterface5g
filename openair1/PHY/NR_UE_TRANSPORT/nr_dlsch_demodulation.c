@@ -41,6 +41,7 @@
 #include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
+#include "common/utils/nr/nr_common.h"
 
 #ifndef USER_MODE
 #define NOCYGWIN_STATIC static

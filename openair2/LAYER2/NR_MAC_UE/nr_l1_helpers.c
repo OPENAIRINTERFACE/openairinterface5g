@@ -35,6 +35,7 @@
 #include "mac_defs.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_UE/nr_l1_helpers.h"
 #include "NR_P-Max.h"
 
 /* TS 38.321 subclause 7.3 - return DELTA_PREAMBLE values in dB */
