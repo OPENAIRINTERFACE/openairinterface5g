@@ -331,6 +331,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
   rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
+  rrc->carrier.minRXTXTIMEpdsch = configuration->minRXTXTIMEpdsch;
   rrc->carrier.sib1_tda = configuration->sib1_tda;
   rrc->carrier.do_CSIRS = configuration->do_CSIRS;
    /// System Information INIT

@@ -1137,14 +1137,17 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     uint8_t feedback_ti =
       mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
 
-   // set the harq status at MAC for feedback
-   set_harq_status(mac,dci->pucch_resource_indicator,
-                   dci->harq_pid,
-                   dlsch_config_pdu_1_1->accumulated_delta_PUCCH,
-                   feedback_ti,
-                   dci->dai[0].val,
-                   dci_ind->n_CCE,dci_ind->N_CCE,
-                   frame,slot);
+    AssertFatal(feedback_ti>=DURATION_RX_TO_TX,"PDSCH to HARQ feedback time (%d) cannot be less than DURATION_RX_TO_TX (%d)\n",
+                feedback_ti,DURATION_RX_TO_TX);
+
+    // set the harq status at MAC for feedback
+    set_harq_status(mac,dci->pucch_resource_indicator,
+                    dci->harq_pid,
+                    dlsch_config_pdu_1_1->accumulated_delta_PUCCH,
+                    feedback_ti,
+                    dci->dai[0].val,
+                    dci_ind->n_CCE,dci_ind->N_CCE,
+                    frame,slot);
 
     dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
     LOG_D(MAC,"(nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
