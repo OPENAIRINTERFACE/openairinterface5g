@@ -4258,6 +4258,13 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size
   return((enc_rval.encoded+7)/8);
 }
 
+#define asn1cCallocOne(VaR, VaLue) \
+  VaR = calloc(1,sizeof(*VaR)); *VaR=VaLue;
+#define asn1cCalloc(VaR, lOcPtr) \
+  typeof(VaR) lOcPtr = VaR = calloc(1,sizeof(*VaR));
+#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) \
+  TyPe *lOcPtr= calloc(1,sizeof(TyPe)); \
+  ASN_SEQUENCE_ADD(&VaR,lOcPtr);
 
 ssize_t do_nrMeasurementReport(uint8_t *buffer,
                                size_t bufsize,
@@ -4268,8 +4275,7 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
                                long rsrp_tar,
                                long rsrq_tar) {
 
-  LTE_UL_DCCH_Message_t ul_dcch_msg;
-  memset(&ul_dcch_msg, 0, sizeof(ul_dcch_msg));
+  LTE_UL_DCCH_Message_t ul_dcch_msg={0};
   ul_dcch_msg.message.present = LTE_UL_DCCH_MessageType_PR_c1;
   ul_dcch_msg.message.choice.c1.present = LTE_UL_DCCH_MessageType__c1_PR_measurementReport;
 
@@ -4281,37 +4287,20 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measId = measid;
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrpResult = rsrp_s;
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrqResult = rsrq_s;
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells =
-    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells));
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->present =
-    LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
-  LTE_MeasResultListEUTRA_t  *measResultListEUTRA2;
-  measResultListEUTRA2 = CALLOC(1, sizeof(*measResultListEUTRA2));
-  struct LTE_MeasResultEUTRA *measresulteutra_list;
-  measresulteutra_list = CALLOC(1, sizeof(*measresulteutra_list));
+  asn1cCalloc(measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells,  
+              measResultNeighCells); 
+  measResultNeighCells->present = LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
+  LTE_MeasResultListEUTRA_t  *measResultListEUTRA2=&measResultNeighCells->choice.measResultListEUTRA;
+  asn1cSequenceAdd(measResultListEUTRA2->list, struct LTE_MeasResultEUTRA, measresulteutra_list);
   measresulteutra_list->physCellId = phy_id;
-  //struct LTE_MeasResultEUTRA *eutra_array;
-  //eutra_array = CALLOC(1, sizeof(*eutra_array));
-  struct LTE_MeasResultEUTRA__cgi_Info *measresult_cgi2;
-  measresult_cgi2 = CALLOC(1, sizeof(*measresult_cgi2));
-  memset(&measresult_cgi2->cellGlobalId, 0, sizeof(measresult_cgi2->cellGlobalId));
-  memset(&measresult_cgi2->trackingAreaCode, 0, sizeof(measresult_cgi2->trackingAreaCode));
-  struct LTE_PLMN_IdentityList2 *plmn_id_list;
-  plmn_id_list = CALLOC(1, sizeof(*plmn_id_list));
-  struct LTE_MeasResultEUTRA__measResult measResult;
-  //measResult = CALLOC(1, sizeof(*measResult));
-  //measResult->rsrpResult = CALLOC(1, sizeof(*measResult->rsrpResult));
-  measResult.rsrpResult = &rsrp_tar;
-  //measResult->rsrqResult = CALLOC(1, sizeof(*measResult->rsrqResult));
-  measResult.rsrqResult = &rsrq_tar;
-  measResult.ext1 = NULL;
-  //struct LTE_MeasResultEUTRA__measResult__ext1 *measResult_ext;
-  //measResult_ext = CALLOC(1, sizeof(*measResult_ext));
-  measresulteutra_list->measResult = measResult;
-  measresulteutra_list->cgi_Info = measresult_cgi2;
-  ASN_SEQUENCE_ADD(&measResultListEUTRA2->list, measresulteutra_list);
-  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA=*(measResultListEUTRA2);
-
+  asn1cCalloc(measresulteutra_list->cgi_Info, measresult_cgi2);
+  //measresult_cgi2->cellGlobalId= {0};
+  //measresult_cgi2->trackingAreaCode= {0};
+  struct LTE_MeasResultEUTRA__measResult* measResult= &measresulteutra_list->measResult;
+  asn1cCallocOne(measResult->rsrpResult, rsrp_tar);
+  asn1cCallocOne(measResult->rsrqResult, rsrq_tar);
+  
+  
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message,
                                    NULL,
                                    &ul_dcch_msg,
