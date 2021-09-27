@@ -712,7 +712,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   int slot_type         = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
   int prevslot_type     = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
   int nextslot_type     = nr_slot_select(cfg,frame,(slot+1)%fp->slots_per_frame);
-  int sf_extension  = 0;                 //sf_extension = ru->sf_extension;
+  int sf_extension = 0;
   int siglen=fp->get_samples_per_slot(slot,fp);
   int flags=1;
 
@@ -738,9 +738,10 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
         flags = 3; // end of burst
       }
 
-      if (slot_type == NR_DOWNLINK_SLOT && prevslot_type == NR_UPLINK_SLOT)
+      if (slot_type == NR_DOWNLINK_SLOT && prevslot_type == NR_UPLINK_SLOT) {
         flags = 2; // start of burst
-
+        sf_extension = ru->sf_extension;
+      }
       if (slot_type == NR_DOWNLINK_SLOT && nextslot_type == NR_UPLINK_SLOT)
         flags = 3; // end of burst
     }
@@ -773,7 +774,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot );
 
     for (i=0; i<ru->nb_tx; i++)
-      txp[i] = (void *)&ru->common.txdata[i][fp->get_samples_slot_timestamp(slot,fp,0)-sf_extension];
+      txp[i] = (void *)&ru->common.txdata[i][fp->get_samples_slot_timestamp(slot,fp,0)]-sf_extension*sizeof(int32_t);
     
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
@@ -784,8 +785,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
                                       siglen+sf_extension,
                                       ru->nb_tx,
                                       flags);
-    LOG_D(PHY,"[TXPATH] RU %d aa %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, slot %d, flags %d, siglen+sf_extension %d, returned %d, E %f\n",ru->idx,i,
-	  (long long unsigned int)(timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension),frame,proc->frame_tx_unwrap,slot, flags, siglen+sf_extension, txs,10*log10((double)signal_energy(txp[0],siglen+sf_extension)));
+    LOG_D(PHY,"[TXPATH] RU %d aa %d tx_rf, writing to TS %llu, %d.%d, unwrapped_frame %d, slot %d, flags %d, siglen+sf_extension %d, returned %d, E %f\n",ru->idx,i,
+	  (long long unsigned int)(timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension),frame,slot,proc->frame_tx_unwrap,slot, flags, siglen+sf_extension, txs,10*log10((double)signal_energy(txp[0],siglen+sf_extension)));
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       //AssertFatal(txs == 0,"trx write function error %d\n", txs);
   }
@@ -2070,7 +2071,7 @@ static void NRRCconfig_RU(void) {
         RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
         RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
         RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
-
+        RC.ru[j]->sf_extension                      = *(RUParamList.paramarray[j][RU_SF_EXTENSION_IDX].uptr);
         for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
       } //strcmp(local_rf, "yes") == 0
       else {
