@@ -1364,6 +1364,7 @@ int nr_acknack_scheduling(int mod_id,
     }
     // multiplexing harq and csi in a pucch
     else {
+      memset(pucch, 0, sizeof(*pucch));
       csi_pucch->timing_indicator = ind_found;
       csi_pucch->dai_c++;
       return 1;
