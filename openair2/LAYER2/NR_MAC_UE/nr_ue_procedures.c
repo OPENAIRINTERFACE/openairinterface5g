@@ -171,7 +171,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                         uint16_t ssb_start_subcarrier,
                         uint16_t cell_id)
 {
-  LOG_I(MAC,"[L2][MAC] decode mib\n");
+  LOG_D(MAC,"[L2][MAC] decode mib\n");
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   mac->physCellId = cell_id;
@@ -1233,23 +1233,6 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
 }
 
 
-void update_harq_status(nr_downlink_indication_t *dl_info, int pdu_id) {
-
-  NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
-  uint8_t harq_pid = dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid;
-  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[harq_pid];
-
-  if (current_harq->active) {
-    current_harq->ack = dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack;
-    current_harq->ack_received = true;
-  }
-  else {
-    //shouldn't get here
-    LOG_E(MAC, "Trying to process acknack for an inactive harq process (%d)\n", harq_pid);
-  }
-}
-
-
 void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                            int slot,
                            uint16_t rnti,
@@ -2067,7 +2050,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   reverse_n_bits(&o_ACK,number_harq_feedback);
   pucch->ack_payload = o_ACK;
 
-  LOG_D(MAC,"frame %d slot %d pucch payload %d\n",frame,slot,o_ACK);
+  LOG_D(MAC,"frame %d slot %d pucch acknack payload %d\n",frame,slot,o_ACK);
 
   return(number_harq_feedback);
 }

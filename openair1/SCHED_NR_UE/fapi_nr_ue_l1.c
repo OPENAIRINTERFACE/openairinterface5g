@@ -131,9 +131,10 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
             downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch_config_pdu->rv, dlsch0->rnti_type);
             if (dlsch0_harq->status != ACTIVE) {
-              // dlsch0_harq->status not ACTIVE may be due to false retransmission. Reset the 
-              // following flag to skip PDSCH procedures in that case.
+              // dlsch0_harq->status not ACTIVE due to false retransmission
+              // Reset the following flag to skip PDSCH procedures in that case and retrasmit harq status
               dlsch0->active = 0;
+              update_harq_status(module_id,dlsch0->current_harq_pid,dlsch0_harq->ack);
             }
             /* PTRS */
             dlsch0_harq->PTRSFreqDensity = dlsch_config_pdu->PTRSFreqDensity;

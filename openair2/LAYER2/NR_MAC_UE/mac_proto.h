@@ -215,9 +215,6 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
                      frame_t frame,
                      int slot);
 
-void update_harq_status(nr_downlink_indication_t *dl_info,
-                        int pdu_id);
-
 uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
                          frame_t frame,
                          int slot,
