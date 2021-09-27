@@ -114,12 +114,13 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
 
       if (s==first_symb) {
         nb_symb[rb]=0;
+        for (int aarx=0; aarx<frame_parms->nb_antennas_rx;aarx++) 
+           measurements->n0_subband_power[aarx][rb]=0;   
       }
       offset0 = (slot&3)*(frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size) + (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
       if ((gNB->rb_mask_ul[s][rb>>5]&(1<<(rb&31))) == 0) {  // check that rb was not used in this subframe
         nb_symb[rb]++;          
         for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-          if (s==first_symb) measurements->n0_subband_power[aarx][rb]=0;
           offset = offset0 + (s*frame_parms->ofdm_symbol_size);
           ul_ch  = &common_vars->rxdataF[aarx][offset];
           len = 12;
@@ -129,7 +130,6 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
           }
           AssertFatal(ul_ch, "RX signal buffer (freq) problem\n");
           measurements->n0_subband_power[aarx][rb] += signal_energy_nodc(ul_ch,len);
-          measurements->n0_subband_power_dB[aarx][rb] = dB_fixed(measurements->n0_subband_power[aarx][rb]);
         } //antenna
       }
     } //rb
@@ -144,6 +144,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
     if (nb_symb[rb] > 0) {
       for (int aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
         measurements->n0_subband_power[aarx][rb]/=nb_symb[rb];
+        measurements->n0_subband_power_dB[aarx][rb] = dB_fixed(measurements->n0_subband_power[aarx][rb]);
         n0_subband_tot_perPRB+=measurements->n0_subband_power[aarx][rb];
         if (rb==0) n0_subband_tot_perANT[aarx]=measurements->n0_subband_power[aarx][rb];
         else       n0_subband_tot_perANT[aarx]+=measurements->n0_subband_power[aarx][rb];
@@ -151,7 +152,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
       n0_subband_tot_perPRB/=frame_parms->nb_antennas_rx;
       measurements->n0_subband_power_tot_dB[rb] = dB_fixed(n0_subband_tot_perPRB);
       measurements->n0_subband_power_tot_dBm[rb] = measurements->n0_subband_power_tot_dB[rb] - gNB->rx_total_gain_dB - dB_fixed(frame_parms->N_RB_UL);
-      //printf("n0_subband_power_tot_dB[%d] => %d, over %d symbols\n",rb,measurements->n0_subband_power_tot_dB[rb],nb_symb[rb]);
+      LOG_D(PHY,"n0_subband_power_tot_dB[%d] => %d, over %d symbols\n",rb,measurements->n0_subband_power_tot_dB[rb],nb_symb[rb]);
       n0_subband_tot += n0_subband_tot_perPRB;
       nb_rb++;
     }
