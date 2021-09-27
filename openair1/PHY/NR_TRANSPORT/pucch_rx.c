@@ -392,8 +392,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = no_conf ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
-    LOG_D(PHY, "Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d n0 %d pucch0_thres %d\n",
-          slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB,max_n0,uci_stats->pucch0_thres);
+    LOG_D(PHY, "Frame %d Slot %d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d n0 %d pucch0_thres %d\n",
+          frame, slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB,max_n0,uci_stats->pucch0_thres);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
@@ -409,8 +409,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);
     uci_pdu->harq->harq_list[1].harq_value = index&0x01;
     uci_pdu->harq->harq_list[0].harq_value = (index>>1)&0x01;
-    LOG_D(PHY, "Slot %d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d, xrt_mag %d\n",
-          slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB);
+    LOG_D(PHY, "Frame %d Slot %d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d, xrt_mag %d\n",
+          frame, slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dB);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
