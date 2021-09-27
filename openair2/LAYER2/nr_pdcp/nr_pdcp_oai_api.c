@@ -448,10 +448,18 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
 
   if(IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN){
     LOG_D(PDCP, "IP packet received, to be sent to TUN interface");
-    len = write(nas_sock_fd[0], buf, size);
+
+    if(entity->has_sdapDLheader){
+      size -= SDAP_HDR_LENGTH;
+      len = write(nas_sock_fd[0], &buf[SDAP_HDR_LENGTH], size);
+    } else {
+      len = write(nas_sock_fd[0], buf, size);
+    }
+
     if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     }
+    
   }
   else{
     for (i = 0; i < 5; i++) {
@@ -811,10 +819,6 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
     has_sdap = 1;
     has_sdapULheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present ? 1 : 0;
     has_sdapDLheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present ? 1 : 0;
-    if (has_sdapDLheader==1) {
-      LOG_E(PDCP,"%s:%d:%s: fatal, no support for SDAP DL yet\n",__FILE__,__LINE__,__FUNCTION__);
-      exit(-1);
-    }
   }
   /* TODO(?): accept different UL and DL SN sizes? */
   if (sn_size_ul != sn_size_dl) {
