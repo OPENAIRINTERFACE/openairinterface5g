@@ -1111,7 +1111,7 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
     // TEST 
     // ue_context_p->ue_context.pdusession[0].status = PDU_SESSION_STATUS_DONE;
     // rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(&ctxt, ue_context_p, 0);
-    rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p);
+    rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, NULL);
     return(0);
   }
 }

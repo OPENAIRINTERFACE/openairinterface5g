@@ -131,6 +131,18 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     f1ap_ue_context_setup_req->cellULConfigured = NULL;
   }
 
+  F1AP_UEContextSetupRequestIEs_t *ieCuRrcInfo;
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieCuRrcInfo, container,
+      F1AP_ProtocolIE_ID_id_CUtoDURRCInformation, false);
+  if(ieCuRrcInfo!=NULL){
+    f1ap_ue_context_setup_req->cu_to_du_rrc_information = (cu_to_du_rrc_information_t *)calloc(1,sizeof(cu_to_du_rrc_information_t));
+    if(ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList!=NULL){
+      f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList = (uint8_t *)calloc(1,ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->size);
+      memcpy(f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList, ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->buf, ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->size);
+      f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length = ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->size;
+    }
+  }
+
   /* DRB */
   F1AP_UEContextSetupRequestIEs_t *ieDrb;
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieDrb, container,
@@ -334,6 +346,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
 
   /* mandatory */
   /* c7. DRBs_Setup_List */
+  if(req->drbs_to_be_setup_length > 0){
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie7);
   ie7->id                             = F1AP_ProtocolIE_ID_id_DRBs_Setup_List;
   ie7->criticality                    = F1AP_Criticality_ignore;
@@ -374,6 +387,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
       INT32_TO_OCTET_STRING(req->drbs_to_be_setup[i].up_dl_tnl[j].teid, &gTPTunnel->gTP_TEID);
     } // for j
   } // for i
+  }
 
   /* mandatory */
   /* c8. SRBs_FailedToBeSetup_List */
@@ -523,6 +537,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
 
   /* mandatory */
   /* c11. SRBs_Setup_List */
+  if(req->srbs_to_be_setup_length > 0){
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupResponseIEs_t, ie11);
   ie11->id                             = F1AP_ProtocolIE_ID_id_SRBs_Setup_List;
   ie11->criticality                    = F1AP_Criticality_ignore;
@@ -539,6 +554,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
     F1AP_SRBs_Setup_Item_t *srbs_setup_item=&srbs_setup_item_ies->value.choice.SRBs_Setup_Item;
     /* sRBID */
     srbs_setup_item->sRBID = req->srbs_to_be_setup[i].srb_id;
+  }
   }
 
   /* Optional */

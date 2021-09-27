@@ -696,7 +696,7 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
 
   // DRBs_Setup_List 
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
-                             F1AP_ProtocolIE_ID_id_DRBs_Setup_List, true);
+                             F1AP_ProtocolIE_ID_id_DRBs_Setup_List, false);
   if(ie!=NULL){
     f1ap_ue_context_setup_resp->drbs_to_be_setup_length = ie->value.choice.DRBs_Setup_List.list.count;
     f1ap_ue_context_setup_resp->drbs_to_be_setup = calloc(f1ap_ue_context_setup_resp->drbs_to_be_setup_length,
@@ -762,7 +762,7 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
 
   // SRBs_Setup_List 
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
-      F1AP_ProtocolIE_ID_id_SRBs_Setup_List, true);
+      F1AP_ProtocolIE_ID_id_SRBs_Setup_List, false);
   if(ie!=NULL){
     f1ap_ue_context_setup_resp->srbs_to_be_setup_length = ie->value.choice.SRBs_Setup_List.list.count;
     f1ap_ue_context_setup_resp->srbs_to_be_setup = calloc(f1ap_ue_context_setup_resp->srbs_to_be_setup_length,

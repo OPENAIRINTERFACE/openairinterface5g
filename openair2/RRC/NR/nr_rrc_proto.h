@@ -204,4 +204,5 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 void 
 rrc_gNB_generate_dedicatedRRCReconfiguration(
     const protocol_ctxt_t     *const ctxt_pP,
-    rrc_gNB_ue_context_t      *ue_context_pP);
+    rrc_gNB_ue_context_t      *ue_context_pP,
+    NR_CellGroupConfig_t      *cell_groupConfig_from_DU);
