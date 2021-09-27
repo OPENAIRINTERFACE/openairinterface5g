@@ -1289,8 +1289,10 @@ int nr_acknack_scheduling(int mod_id,
   LOG_D(NR_MAC,"pucch_acknak : %d.%d DAI = 0, looking for new pucch occasion\n",frame,slot);
   /* we need to find a new PUCCH occasion */
 
-  /*Inizialization of timing information*/
-  if (pucch->frame == 0 && pucch->ul_slot == 0) {
+  /*(Re)Inizialization of timing information*/
+  if ((pucch->frame == 0 && pucch->ul_slot == 0) ||
+      ((pucch->frame*n_slots_frame + pucch->ul_slot) <
+      (frame*n_slots_frame + slot))) {
     AssertFatal(pucch->sr_flag + pucch->dai_c == 0,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
@@ -1364,7 +1366,6 @@ int nr_acknack_scheduling(int mod_id,
     }
     // multiplexing harq and csi in a pucch
     else {
-      memset(pucch, 0, sizeof(*pucch));
       csi_pucch->timing_indicator = ind_found;
       csi_pucch->dai_c++;
       return 1;
