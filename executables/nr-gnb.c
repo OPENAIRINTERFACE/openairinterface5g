@@ -88,6 +88,7 @@
 #include "executables/softmodem-common.h"
 #include <nfapi/oai_integration/nfapi_pnf.h>
 #include <openair1/PHY/NR_TRANSPORT/nr_ulsch.h>
+#include <openair1/PHY/NR_TRANSPORT/nr_dlsch.h>
 #include <PHY/NR_ESTIMATION/nr_ul_estimation.h>
 //#define DEBUG_THREADS 1
 
@@ -184,7 +185,7 @@ void rx_func(void *param) {
   int down_removed = 0;
   int pucch_removed = 0;
   for (int i = 0; i < rnti_to_remove_count; i++) {
-    LOG_W(PHY, "to remove rnti %d\n", rnti_to_remove[i]);
+    LOG_W(NR_PHY, "to remove rnti %d\n", rnti_to_remove[i]);
     void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
     void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
     int j;
@@ -224,7 +225,7 @@ void rx_func(void *param) {
       gNB->prach_vars.list[j].frame = -1;
 #endif
   }
-  if (rnti_to_remove_count) LOG_W(PHY, "to remove rnti_to_remove_count=%d, up_removed=%d down_removed=%d pucch_removed=%d\n", rnti_to_remove_count, up_removed, down_removed, pucch_removed);
+  if (rnti_to_remove_count) LOG_W(NR_PHY, "to remove rnti_to_remove_count=%d, up_removed=%d down_removed=%d pucch_removed=%d\n", rnti_to_remove_count, up_removed, down_removed, pucch_removed);
   rnti_to_remove_count = 0;
   if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 
@@ -381,6 +382,7 @@ void *nrL1_stats_thread(void *param) {
     fd=fopen("nrL1_stats.log","w");
     AssertFatal(fd!=NULL,"Cannot open nrL1_stats.log\n");
     dump_nr_I0_stats(fd,gNB);
+    dump_pdsch_stats(fd,gNB);
     dump_pusch_stats(fd,gNB);
     //    nr_dump_uci_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
     fclose(fd);
