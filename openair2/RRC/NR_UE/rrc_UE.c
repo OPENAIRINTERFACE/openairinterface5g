@@ -187,9 +187,7 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     uint8_t                  *const kRRCint,
     uint8_t                  *const kUPenc,
     uint8_t                  *const kUPint
-  #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-  #endif
     ,rb_id_t                 *const defaultDRB,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
@@ -1655,37 +1653,16 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    uint8_t *kRRCenc = NULL;
    uint8_t *kUPenc = NULL;
    uint8_t *kRRCint = NULL;
-   uint8_t  *k_kdf  = NULL;
 #ifndef PHYSIM
-  k_kdf = NULL;
   nr_derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
                        NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
-                       &k_kdf);
-  /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
-  kUPenc = malloc(16);
-  if (kUPenc == NULL) exit(1);
-  memcpy(kUPenc, k_kdf+16, 16);
-  free(k_kdf);
-
-  k_kdf = NULL;
+                       &kUPenc);
   nr_derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
                         NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
-                        &k_kdf);
-  /* kRRCenc: last 128 bits of key derivation function which returns 256 bits */
-  kRRCenc = malloc(16);
-  if (kRRCenc == NULL) exit(1);
-  memcpy(kRRCenc, k_kdf+16, 16);
-  free(k_kdf);
-
-  k_kdf = NULL;
+                       &kRRCenc);
   nr_derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
                         NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
-                        &k_kdf);
-  /* kRRCint: last 128 bits of key derivation function which returns 256 bits */
-  kRRCint = malloc(16);
-  if (kRRCint == NULL) exit(1);
-  memcpy(kRRCint, k_kdf+16, 16);
-  free(k_kdf);
+                       &kRRCint);
 #endif
    LOG_I(NR_RRC, "driving kRRCenc, kRRCint and kUPenc from KgNB="
    "%02x%02x%02x%02x"
@@ -2060,17 +2037,9 @@ nr_rrc_ue_establish_srb2(
      uint8_t *kRRCenc = NULL;
      uint8_t *kRRCint = NULL;
      nr_derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
-     kRRCenc = malloc(16);
-     if (kRRCenc == NULL) exit(1);
-     memcpy(kRRCenc, k_kdf + 16, 16);
-     free(k_kdf);
+                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCenc);
      nr_derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
-     kRRCint = malloc(16);
-     if (kRRCint == NULL) exit(1);
-     memcpy(kRRCint, k_kdf + 16, 16);
-     free(k_kdf);
+                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
 
      // Refresh SRBs
       nr_rrc_pdcp_config_asn1_req(ctxt_pP,
@@ -2157,18 +2126,9 @@ nr_rrc_ue_establish_srb2(
      uint8_t *kUPint = NULL;
 
      nr_derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
-     kUPenc = malloc(16);
-     if (kUPenc == NULL) exit(1);
-     memcpy(kUPenc, k_kdf + 16, 16);
-     free(k_kdf);
-
+                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPenc);
      nr_derive_key_up_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
-     kUPint = malloc(16);
-     if (kUPint == NULL) exit(1);
-     memcpy(kUPint, k_kdf + 16, 16);
-     free(k_kdf);
+                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPint);
 
      MSC_LOG_TX_MESSAGE(
 	 MSC_RRC_UE,
