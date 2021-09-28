@@ -38,6 +38,7 @@
 #define F1AP_COMMON_H_
 
 #include "openairinterface5g_limits.h"
+#include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
 
 #define F1AP_UE_IDENTIFIER_NUMBER 3
 #define F1AP_TRANSACTION_IDENTIFIER_NUMBER 3
@@ -478,10 +479,6 @@ int f1ap_assoc_id(F1_t isCu, instance_t instanceP);
 static inline f1ap_setup_req_t *f1ap_req(F1_t isCu, instance_t instanceP) {
   return &getCxt(isCu, instanceP)->setupReq;
 }
-
-#define asn1cCalloc(VaR, TyPe, lOcPtr) TyPe *lOcPtr=VaR=(TyPe*) calloc(1,sizeof(TyPe));
-#define asn1cCallocOne(VaR, TyPe, VaLue) VaR=(TyPe*) calloc(1,sizeof(TyPe)); *VaR=VaLue;
-#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) TyPe *lOcPtr=(TyPe*) calloc(1,sizeof(TyPe)); ASN_SEQUENCE_ADD(&VaR,lOcPtr);
 
 #define TASK_F1APP f1ap_req(false, instance)->cell_type==CELL_MACRO_GNB?TASK_GNB_APP:TASK_ENB_APP
 

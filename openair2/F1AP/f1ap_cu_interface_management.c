@@ -241,7 +241,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_successfulOutcome;
-  asn1cCalloc(pdu.choice.successfulOutcome, F1AP_SuccessfulOutcome_t, tmp);
+  asn1cCalloc(pdu.choice.successfulOutcome, tmp);
   tmp->procedureCode = F1AP_ProcedureCode_id_F1Setup;
   tmp->criticality   = F1AP_Criticality_reject;
   tmp->value.present = F1AP_SuccessfulOutcome__value_PR_F1SetupResponse;
@@ -345,7 +345,7 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
   uint32_t  len=0;
   /* Create */
   /* 0. Message Type */
-  asn1cCalloc(pdu.choice.unsuccessfulOutcome, F1AP_UnsuccessfulOutcome_t, UnsuccessfulOutcome);
+  asn1cCalloc(pdu.choice.unsuccessfulOutcome, UnsuccessfulOutcome);
   pdu.present = F1AP_F1AP_PDU_PR_unsuccessfulOutcome;
   UnsuccessfulOutcome->procedureCode = F1AP_ProcedureCode_id_F1Setup;
   UnsuccessfulOutcome->criticality   = F1AP_Criticality_reject;
@@ -385,13 +385,13 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
     ie4->criticality               = F1AP_Criticality_ignore;
     ie4->value.present             = F1AP_F1SetupFailureIEs__value_PR_CriticalityDiagnostics;
     asn1cCallocOne(ie4->value.choice.CriticalityDiagnostics.procedureCode,
-                   F1AP_ProcedureCode_t, F1AP_ProcedureCode_id_UEContextSetup);
+                   F1AP_ProcedureCode_id_UEContextSetup);
     asn1cCallocOne(ie4->value.choice.CriticalityDiagnostics.triggeringMessage,
-                   F1AP_TriggeringMessage_t, F1AP_TriggeringMessage_initiating_message);
+                   F1AP_TriggeringMessage_initiating_message);
     asn1cCallocOne(ie4->value.choice.CriticalityDiagnostics.procedureCriticality,
-                   F1AP_Criticality_t, F1AP_Criticality_reject);
+                   F1AP_Criticality_reject);
     asn1cCallocOne(ie4->value.choice.CriticalityDiagnostics.transactionID,
-                   F1AP_TransactionID_t, 0);
+                   0);
   }
 
   /* encode */
@@ -438,7 +438,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
-  asn1cCalloc(pdu.choice.initiatingMessage, F1AP_InitiatingMessage_t, initMsg);
+  asn1cCalloc(pdu.choice.initiatingMessage, initMsg);
   initMsg->procedureCode = F1AP_ProcedureCode_id_gNBCUConfigurationUpdate;
   initMsg->criticality   = F1AP_Criticality_reject;
   initMsg->value.present = F1AP_InitiatingMessage__value_PR_GNBCUConfigurationUpdate;
@@ -472,7 +472,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
       addnRCGI(cells_to_be_activated_list_item->nRCGI, f1ap_gnb_cu_configuration_update->cells_to_activate+i);
       // optional
       // -nRPCI
-      asn1cCalloc(cells_to_be_activated_list_item->nRPCI, F1AP_NRPCI_t, tmp);
+      asn1cCalloc(cells_to_be_activated_list_item->nRPCI, tmp);
       *tmp = f1ap_gnb_cu_configuration_update->cells_to_activate[i].nrpci;  // int 0..1007
       // optional
       // 3.1.2 gNB-CUSystem Information
