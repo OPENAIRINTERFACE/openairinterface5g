@@ -2031,7 +2031,6 @@ nr_rrc_ue_establish_srb2(
        }
      }
 
-     uint8_t *k_kdf = NULL;
      uint8_t *kRRCenc = NULL;
      uint8_t *kRRCint = NULL;
      nr_derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
@@ -2119,7 +2118,6 @@ nr_rrc_ue_establish_srb2(
        }
      }
 
-     uint8_t *k_kdf = NULL;
      uint8_t *kUPenc = NULL;
      uint8_t *kUPint = NULL;
 
