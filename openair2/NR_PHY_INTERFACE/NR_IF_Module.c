@@ -78,7 +78,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
   UL_INFO.module_id = UL_info->module_id;
   UL_INFO.CC_id = UL_info->CC_id;
 
-  int frame_diff = UL_info->frame -  rach_ind->sfn;
+  int frame_diff = UL_info->frame - rach_ind->sfn;
   if (frame_diff < 0)
   {
     frame_diff += 1024;
@@ -209,7 +209,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
   if (!crc_ind)
   {
     LOG_D(NR_PHY, "No crc indication with the same SFN SLOT of rx indication %u %u\n", rx_ind->sfn, rx_ind->slot);
-    requeue(&gnb_rx_ind_queue, rx_ind);
+    put_queue(&gnb_rx_ind_queue, rx_ind);
     return;
   }
 
@@ -228,7 +228,8 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
 
   if (rx_ind && UL_INFO.rx_ind.number_of_pdus > 0 && crc_ind && UL_INFO.crc_ind.number_crcs > 0) {
     for (int i = 0; i < UL_INFO.rx_ind.number_of_pdus; i++) {
-      for (int j = 0; j < UL_INFO.crc_ind.number_crcs; j++) {
+      int j;
+      for (j = 0; j < UL_INFO.crc_ind.number_crcs; j++) {
         // find crc_indication j corresponding rx_indication i
         const nfapi_nr_rx_data_pdu_t *rx = &UL_INFO.rx_ind.pdu_list[i];
         const nfapi_nr_crc_t *crc = &UL_INFO.crc_ind.crc_list[j];
@@ -267,14 +268,56 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
         handle_nr_ul_harq(UL_INFO.CC_id, UL_INFO.module_id, UL_INFO.frame, UL_INFO.slot, crc);
         break;
       } //    for (j=0;j<UL_INFO.crc_ind.number_crcs;j++)
+      int last = UL_INFO.crc_ind.number_crcs - 1;
+      if (j < last)
+      {
+        crc_ind->crc_list[j] = crc_ind->crc_list[last];
+        UL_INFO.crc_ind.number_crcs--;
+      }
+      else if (j == last)
+      {
+        UL_INFO.crc_ind.number_crcs--;
+      }
+
+      last = UL_INFO.rx_ind.number_of_pdus - 1;
+      if (i < last)
+      {
+        rx_ind->pdu_list[i] = rx_ind->pdu_list[last];
+        UL_INFO.rx_ind.number_of_pdus--;
+        i--;
+      }
+      else if (i == last)
+      {
+        UL_INFO.rx_ind.number_of_pdus--;
+      }
     } //   for (i=0;i<UL_INFO.rx_ind.number_of_pdus;i++)
 
-    if (crc_ind && crc_ind->number_crcs > 0)
+    if (UL_INFO.crc_ind.number_crcs > 0)
+    {
+      crc_ind->number_crcs = UL_INFO.crc_ind.number_crcs;
+      requeue(&gnb_crc_ind_queue, crc_ind);
+    }
+
+    if (UL_INFO.rx_ind.number_of_pdus > 0)
+    {
+      rx_ind->number_of_pdus = UL_INFO.rx_ind.number_of_pdus;
+      requeue(&gnb_rx_ind_queue, rx_ind);
+    }
+
+    if (UL_INFO.crc_ind.number_crcs == 0)
+    {
       free(crc_ind->crc_list);
-    free(crc_ind);
-    if (rx_ind && rx_ind->number_of_pdus > 0)
+      crc_ind->crc_list = NULL;
+      free(crc_ind);
+      crc_ind = NULL;
+    }
+    if (UL_INFO.rx_ind.number_of_pdus == 0)
+    {
       free(rx_ind->pdu_list);
-    free(rx_ind);
+      rx_ind->pdu_list = NULL;
+      free(rx_ind);
+      rx_ind = NULL;
+    }
   } else if ((rx_ind && UL_INFO.rx_ind.number_of_pdus != 0)
              || (crc_ind && UL_INFO.crc_ind.number_crcs != 0)) {
      LOG_E(NR_PHY,
