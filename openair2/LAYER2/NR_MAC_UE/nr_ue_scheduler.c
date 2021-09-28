@@ -1053,7 +1053,7 @@ nr_update_bsr(module_id_t module_idP, frame_t frameP,
   uint8_t lcid;
   uint8_t lcgid;
   uint8_t num_lcid_with_data = 0; // for LCID with data only if LCGID is defined
-  uint16_t lcgid_buffer_remain[NR_MAX_NUM_LCGID] = {0,0,0,0,0,0,0,0};
+  uint32_t lcgid_buffer_remain[NR_MAX_NUM_LCGID] = {0,0,0,0,0,0,0,0};
   int32_t lcid_bytes_in_buffer[NR_MAX_NUM_LCID];
   /* Array for ordering LCID with data per decreasing priority order */
   uint8_t lcid_reordered_array[NR_MAX_NUM_LCID]=
@@ -1146,13 +1146,7 @@ nr_update_bsr(module_id_t module_idP, frame_t frameP,
          either the data belongs to a logical channel with higher priority than the priorities of the logical channels
          which belong to any LCG and for which data is already available for transmission
        */
-      if ((mac->
-           scheduling_info.LCID_buffer_remain[lcid] == 0)
-          /* or there is no data available for any of the logical channels which belong to a LCG */
-          ||
-          (lcgid_buffer_remain
-           [mac->scheduling_info.LCGID[lcid]] ==
-           0)) {
+      {
         bsr_regular_triggered = TRUE;
         LOG_D(NR_MAC,
               "[UE %d] PDCCH Tick : MAC BSR Triggered LCID%d LCGID%d data become available at frame %d slot %d\n",
