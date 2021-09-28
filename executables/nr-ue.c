@@ -407,14 +407,6 @@ static void UE_synch(void *arg) {
 
   if (UE->UE_scan == 0) {
 
-    #ifdef FR2_TEST
-    // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0){
-       UE->frame_parms.dl_CarrierFreq = downlink_frequency[0][0];
-       UE->frame_parms.ul_CarrierFreq = downlink_frequency[0][0];
-    }
-    #endif
-
     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
 
       LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %f, UL %f (RF card %d, oai_exit %d, channel %d, rx_num_channels %d)\n",
@@ -480,7 +472,7 @@ static void UE_synch(void *arg) {
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
       uint64_t dl_carrier, ul_carrier;
-      nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
+      nr_get_carrier_frequencies(UE, &dl_carrier, &ul_carrier);
 
       if (nr_initial_sync(&syncD->proc, UE, 2, get_softmodem_params()->sa, get_nrUE_params()->nr_dlsch_parallel) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
