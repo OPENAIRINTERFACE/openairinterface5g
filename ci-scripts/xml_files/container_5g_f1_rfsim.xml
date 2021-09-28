@@ -22,7 +22,7 @@
 -->
 <testCaseList>
         <htmlTabRef>rfsim-5gnr-f1</htmlTabRef>
-	<htmlTabName>Testing 5G NR RF sim in containers (CU/DU)</htmlTabName>
+        <htmlTabName>Testing 5G NR RF sim in containers - CU-DU F1 split</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
         <TestCaseRequestedList>
  100021

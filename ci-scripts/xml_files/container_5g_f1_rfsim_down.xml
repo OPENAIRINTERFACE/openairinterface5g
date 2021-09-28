@@ -22,7 +22,7 @@
 -->
 <testCaseList>
         <htmlTabRef>rfsim-5gnr-down-f1</htmlTabRef>
-        <htmlTabName>CleanUp 5G RF</htmlTabName>
+        <htmlTabName>CleanUp 5G RF - CU-DU F1 split</htmlTabName>
         <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>
  100022
