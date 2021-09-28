@@ -1571,7 +1571,6 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
  }
 
 
-extern uint8_t global_kgnb[32];
  //-----------------------------------------------------------------------------
  void
  nr_rrc_ue_process_securityModeCommand(
@@ -1658,7 +1657,6 @@ extern uint8_t global_kgnb[32];
    uint8_t *kRRCint = NULL;
    uint8_t  *k_kdf  = NULL;
 #ifndef PHYSIM
-  memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,global_kgnb,32);
   k_kdf = NULL;
   nr_derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
                        NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
@@ -2523,6 +2521,28 @@ nr_rrc_ue_establish_srb2(
           NR_RRC_DCCH_DATA_IND (msg_p).dcch_index,
           NR_RRC_DCCH_DATA_IND (msg_p).sdu_p,
           NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
+        break;
+
+      case NAS_KENB_REFRESH_REQ:
+        memcpy((void *)NR_UE_rrc_inst[ue_mod_id].kgnb, (void *)NAS_KENB_REFRESH_REQ(msg_p).kenb, sizeof(NR_UE_rrc_inst[ue_mod_id].kgnb));
+        LOG_D(RRC, "[UE %d] Received %s: refreshed RRC::KgNB = "
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x\n",
+              ue_mod_id, ITTI_MSG_NAME (msg_p),
+              NR_UE_rrc_inst[ue_mod_id].kgnb[0],  NR_UE_rrc_inst[ue_mod_id].kgnb[1],  NR_UE_rrc_inst[ue_mod_id].kgnb[2],  NR_UE_rrc_inst[ue_mod_id].kgnb[3],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[4],  NR_UE_rrc_inst[ue_mod_id].kgnb[5],  NR_UE_rrc_inst[ue_mod_id].kgnb[6],  NR_UE_rrc_inst[ue_mod_id].kgnb[7],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[8],  NR_UE_rrc_inst[ue_mod_id].kgnb[9],  NR_UE_rrc_inst[ue_mod_id].kgnb[10], NR_UE_rrc_inst[ue_mod_id].kgnb[11],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[12], NR_UE_rrc_inst[ue_mod_id].kgnb[13], NR_UE_rrc_inst[ue_mod_id].kgnb[14], NR_UE_rrc_inst[ue_mod_id].kgnb[15],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[16], NR_UE_rrc_inst[ue_mod_id].kgnb[17], NR_UE_rrc_inst[ue_mod_id].kgnb[18], NR_UE_rrc_inst[ue_mod_id].kgnb[19],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[20], NR_UE_rrc_inst[ue_mod_id].kgnb[21], NR_UE_rrc_inst[ue_mod_id].kgnb[22], NR_UE_rrc_inst[ue_mod_id].kgnb[23],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[24], NR_UE_rrc_inst[ue_mod_id].kgnb[25], NR_UE_rrc_inst[ue_mod_id].kgnb[26], NR_UE_rrc_inst[ue_mod_id].kgnb[27],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[28], NR_UE_rrc_inst[ue_mod_id].kgnb[29], NR_UE_rrc_inst[ue_mod_id].kgnb[30], NR_UE_rrc_inst[ue_mod_id].kgnb[31]);
         break;
 
       case NAS_UPLINK_DATA_REQ: {
