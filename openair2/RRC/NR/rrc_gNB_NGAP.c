@@ -308,7 +308,6 @@ nr_rrc_pdcp_config_security(
   uint8_t                            *kUPenc = NULL;
   static int                         print_keys= 1;
 
-#ifndef PHYSIM
   /* Derive the keys from kgnb */
   if (SRB_configList != NULL) {
     nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
@@ -322,7 +321,6 @@ nr_rrc_pdcp_config_security(
   nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
                         ue_context_pP->ue_context.kgnb,
                         &kRRCint);
-#endif
   if (!IS_SOFTMODEM_IQPLAYER) {
     SET_LOG_DUMP(DEBUG_SECURITY) ;
   }

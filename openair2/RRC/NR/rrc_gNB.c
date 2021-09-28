@@ -1298,7 +1298,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
 
-#ifndef PHYSIM
   /* Derive the keys from kgnb */
   if (DRB_configList != NULL) {
     nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
@@ -1315,7 +1314,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
   nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
                         ue_context_pP->ue_context.kgnb,
                         &kRRCint);
-#endif
   /* Refresh SRBs/DRBs */
   MSC_LOG_TX_MESSAGE(MSC_RRC_GNB, MSC_PDCP_ENB, NULL, 0, MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security unchanged)",
                    MSC_AS_TIME_ARGS(ctxt_pP),

@@ -1653,7 +1653,6 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    uint8_t *kRRCenc = NULL;
    uint8_t *kUPenc = NULL;
    uint8_t *kRRCint = NULL;
-#ifndef PHYSIM
   nr_derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
                        NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
                        &kUPenc);
@@ -1663,7 +1662,6 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
   nr_derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
                         NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
                        &kRRCint);
-#endif
    LOG_I(NR_RRC, "driving kRRCenc, kRRCint and kUPenc from KgNB="
    "%02x%02x%02x%02x"
    "%02x%02x%02x%02x"
