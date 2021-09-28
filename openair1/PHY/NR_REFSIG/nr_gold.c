@@ -66,7 +66,7 @@ void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
 
       reset = 1;
       x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid<<1));
-      LOG_I(PHY,"PDCCH DMRS slot %d, symb %d, Nid %d, x2 %x\n",slot,symb,Nid,x2);
+      LOG_D(PHY,"PDCCH DMRS slot %d, symb %d, Nid %d, x2 %x\n",slot,symb,Nid,x2);
       for (uint32_t n=0; n<NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD; n++) {
         pdcch_dmrs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
@@ -92,7 +92,7 @@ void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
     for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
         reset = 1;
         x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((N_n_scid[n_scid]<<1)+1) +((N_n_scid[n_scid]<<1)+n_scid));
-	      LOG_I(PHY,"PDSCH DMRS slot %d, symb %d x2 %x, N_n_scid %d,n_scid %d\n",slot,symb,x2,N_n_scid[n_scid],n_scid);
+	      LOG_D(PHY,"PDSCH DMRS slot %d, symb %d x2 %x, N_n_scid %d,n_scid %d\n",slot,symb,x2,N_n_scid[n_scid],n_scid);
         for (uint32_t n=0; n<NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD; n++) {
           pdsch_dmrs[slot][symb][0][n] = lte_gold_generic(&x1, &x2, reset);
           reset = 0;

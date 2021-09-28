@@ -102,7 +102,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     // DMRS length is per OFDM symbol
     uint32_t dmrs_length = n_rb*6; //2(QPSK)*3(per RB)*6(REG per CCE)
     uint32_t encoded_length = dci_pdu->AggregationLevel*108; //2(QPSK)*9(per RB)*6(REG per CCE)
-    if (dci_pdu->RNTI!=0xFFFF) LOG_D(PHY, "DL_DCI : rb_offset %d, nb_rb %d, DMRS length per symbol %d\t DCI encoded length %d (precoder_granularity %d,reg_mapping %d),Scrambling_Id %d,ScramblingRNTI %x,PayloadSizeBits %d\n", 
+    LOG_D(PHY, "DL_DCI : rb_offset %d, nb_rb %d, DMRS length per symbol %d\t DCI encoded length %d (precoder_granularity %d,reg_mapping %d),Scrambling_Id %d,ScramblingRNTI %x,PayloadSizeBits %d\n",
     rb_offset, n_rb,dmrs_length, encoded_length,pdcch_pdu_rel15->precoderGranularity,pdcch_pdu_rel15->CceRegMappingType,
     dci_pdu->ScramblingId,dci_pdu->ScramblingRNTI,dci_pdu->PayloadSizeBits);
     dmrs_length += rb_offset*6; // To accommodate more DMRS symbols in case of rb offset
@@ -213,7 +213,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
                   (amp * mod_dmrs[l][(dmrs_idx << 1) + 1]) >> 15;
 
 #ifdef DEBUG_PDCCH_DMRS
-              if (dci_pdu->RNTI!=0xFFFF) LOG_D(PHY,"PDCCH DMRS %d: l %d position %d => (%d,%d)\n",dmrs_idx,l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+              LOG_D(PHY,"PDCCH DMRS %d: l %d position %d => (%d,%d)\n",dmrs_idx,l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
                ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
 
@@ -225,7 +225,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
               ((int16_t *) txdataF)[((l * frame_parms->ofdm_symbol_size + k) << 1) + 1] =
                   (amp * mod_dci[(dci_idx << 1) + 1]) >> 15;
 #ifdef DEBUG_DCI
-              if (dci_pdu->RNTI!=0xFFFF) LOG_D(PHY,"PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+              LOG_D(PHY,"PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
                ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
 
