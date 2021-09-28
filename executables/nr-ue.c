@@ -366,15 +366,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
         free(rach_ind);
         nr_Msg1_transmitted(mod_id, CC_id, frame, gNB_id);
     }
-    if (rx_ind && rx_ind->number_of_pdus > 0)
-    {
-      NR_UL_IND_t UL_INFO = {
-        .rx_ind = *rx_ind,
-      };
-      send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
-      free(rx_ind->pdu_list);
-      free(rx_ind);
-    }
     if (crc_ind && crc_ind->number_crcs > 0)
     {
       NR_UL_IND_t UL_INFO = {
@@ -383,6 +374,15 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
       free(crc_ind->crc_list);
       free(crc_ind);
+    }
+    if (rx_ind && rx_ind->number_of_pdus > 0)
+    {
+      NR_UL_IND_t UL_INFO = {
+        .rx_ind = *rx_ind,
+      };
+      send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
+      free(rx_ind->pdu_list);
+      free(rx_ind);
     }
   }
   return NULL;
