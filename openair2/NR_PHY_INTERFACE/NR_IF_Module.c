@@ -227,8 +227,8 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
                   );
 
   if (rx_ind && UL_INFO.rx_ind.number_of_pdus > 0 && crc_ind && UL_INFO.crc_ind.number_crcs > 0) {
-    int i, j;
-    for (i = 0; i < UL_INFO.rx_ind.number_of_pdus; i++) {
+    for (int i = 0; i < UL_INFO.rx_ind.number_of_pdus; i++) {
+      int j;
       for (j = 0; j < UL_INFO.crc_ind.number_crcs; j++) {
         // find crc_indication j corresponding rx_indication i
         const nfapi_nr_rx_data_pdu_t *rx = &UL_INFO.rx_ind.pdu_list[i];
@@ -268,35 +268,21 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
         handle_nr_ul_harq(UL_INFO.CC_id, UL_INFO.module_id, UL_INFO.frame, UL_INFO.slot, crc);
         break;
       } //    for (j=0;j<UL_INFO.crc_ind.number_crcs;j++)
-      int last = UL_INFO.crc_ind.number_crcs -1;
+      int last = UL_INFO.crc_ind.number_crcs - 1;
       if (j < last)
       {
-        crc_ind->crc_list[j].handle = crc_ind->crc_list[last].handle;
-        crc_ind->crc_list[j].harq_id = crc_ind->crc_list[last].harq_id;
-        crc_ind->crc_list[j].num_cb = crc_ind->crc_list[last].num_cb;
-        crc_ind->crc_list[j].rnti = crc_ind->crc_list[last].rnti;
-        crc_ind->crc_list[j].tb_crc_status = crc_ind->crc_list[last].tb_crc_status;
-        crc_ind->crc_list[j].timing_advance = crc_ind->crc_list[last].timing_advance;
-        crc_ind->crc_list[j].ul_cqi = crc_ind->crc_list[last].ul_cqi;
+        crc_ind->crc_list[j] = rc_ind->crc_list[last];
         UL_INFO.crc_ind.number_crcs--;
-        
       }
       else if (j == last)
       {
         UL_INFO.crc_ind.number_crcs--;
       }
-      
-      last = UL_INFO.rx_ind.number_of_pdus -1;
+
+      last = UL_INFO.rx_ind.number_of_pdus - 1;
       if (i < last)
       {
-        int last = UL_INFO.rx_ind.number_of_pdus -1;
-        rx_ind->pdu_list[i].handle = rx_ind->pdu_list[last].handle;
-        rx_ind->pdu_list[i].harq_id = rx_ind->pdu_list[last].harq_id;
-        rx_ind->pdu_list[i].pdu = rx_ind->pdu_list[last].pdu;
-        rx_ind->pdu_list[i].pdu_length = rx_ind->pdu_list[last].pdu_length;
-        rx_ind->pdu_list[i].rnti = rx_ind->pdu_list[last].rnti;
-        rx_ind->pdu_list[i].timing_advance = rx_ind->pdu_list[last].timing_advance;
-        rx_ind->pdu_list[i].ul_cqi = rx_ind->pdu_list[last].ul_cqi;
+        rx_ind->pdu_list[i] = rx_ind->pdu_list[last];
         UL_INFO.rx_ind.number_of_pdus--;
         i--;
       }
