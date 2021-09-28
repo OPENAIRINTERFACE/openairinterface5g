@@ -30,6 +30,7 @@
 
  */
 
+#include <softmodem-common.h>
 #include "assertions.h"
 
 #include "NR_MAC_gNB/nr_mac_gNB.h"
@@ -1933,6 +1934,9 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
     sched_ctrl->lcid_mask = 0;
+    if (!get_softmodem_params()->phy_test && !get_softmodem_params()->do_ra && !get_softmodem_params()->sa) {
+      sched_ctrl->lcid_mask = 1<<DL_SCH_LCID_DTCH;
+    }
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;

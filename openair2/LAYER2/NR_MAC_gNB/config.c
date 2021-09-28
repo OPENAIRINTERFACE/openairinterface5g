@@ -318,7 +318,17 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
     scs_scaling = scs_scaling>>2;
   uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   uint16_t sco = absolute_diff%(12*scs_scaling);
-  AssertFatal(sco==(scs_scaling * ssb_SubcarrierOffset),"absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
+
+  if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
+    AssertFatal(sco==(scs_scaling * ssb_SubcarrierOffset),"absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
+  } else {
+    if(frequency_range == FR1) {
+      AssertFatal(ssb_SubcarrierOffset>=24,"ssb_SubcarrierOffset must be equal or higher than 24\n");
+    } else {
+      AssertFatal(ssb_SubcarrierOffset>=12,"ssb_SubcarrierOffset must be equal or higher than 12\n");
+    }
+  }
+
   cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scs_scaling) - 10; //absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
   cfg->num_tlv++;
