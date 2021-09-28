@@ -271,7 +271,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
       int last = UL_INFO.crc_ind.number_crcs - 1;
       if (j < last)
       {
-        crc_ind->crc_list[j] = rc_ind->crc_list[last];
+        crc_ind->crc_list[j] = crc_ind->crc_list[last];
         UL_INFO.crc_ind.number_crcs--;
       }
       else if (j == last)
