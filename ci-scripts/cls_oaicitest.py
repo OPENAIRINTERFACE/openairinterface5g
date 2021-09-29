@@ -402,9 +402,9 @@ class OaiCiTest():
 					logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
 					#execute additional commands from yaml file after UE attach
 					SSH = sshconnection.SSHConnection()
-					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 					for startcommand in Module_UE.StartCommands:
-						cmd = 'echo ' + EPC.Password + ' | ' + startcommand 
+						cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand 
 					SSH.command(cmd,'\$',5)	
 					SSH.close()
 					#check that the MTU is as expected / requested
@@ -2240,79 +2240,124 @@ class OaiCiTest():
 
 
 	def Iperf_Module(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC, Module_UE):
-		SSH = sshconnection.SSHConnection()
-
-		#kill iperf processes before (in case there are still some remaining)
-		SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-		cmd = 'killall --signal=SIGKILL iperf'
-		SSH.command(cmd,'\$',5)
-		SSH.close()
-		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-		cmd = 'killall --signal=SIGKILL iperf'
-		SSH.command(cmd,'\$',5)
-		SSH.close()
-
-
-		iperf_time = self.Iperf_ComputeTime()	
-		if self.iperf_direction=="DL":
-			logging.debug("Iperf for Module in DL mode detected")
-			#server side UE
-			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-			cmd = 'rm iperf_server_' +  self.testCase_id + '_' + self.ue_id + '.log'
-			SSH.command(cmd,'\$',5)
-			cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
-			SSH.command(cmd,'\$',5)
-			SSH.close()
-			#client side EPC
+		if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+			#retrieve trf-gen container IP address
+			SSH = sshconnection.SSHConnection()
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
-			SSH.command(cmd,'\$',5)
-			cmd = 'iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
-			SSH.command(cmd,'\$',int(iperf_time)*5.0)
+			SSH.command('docker inspect --format="TRF_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" prod-trf-gen', '\$', 5)
+			result = re.search('TRF_IP_ADDR = (?P<trf_ip_addr>[0-9\.]+)', SSH.getBefore())
+			if result is not None:
+				EPC_Iperf_UE_IPAddress = result.group('trf_ip_addr')
 			SSH.close()
-			#copy the 2 resulting files locally
-			SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
-			SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
-			#send for analysis
-			filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)	
-
-		elif self.iperf_direction=="UL":#does not work at the moment
-			logging.debug("Iperf for Module in UL mode detected")
-			#server side EPC
-			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-			SSH.command(cmd,'\$',5)
-			cmd = 'echo $USER; nohup iperf -s -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-			SSH.command(cmd,'\$',5)
-			SSH.close()
-
-			#client side UE
+			#kill iperf processes on UE side before (in case there are still some remaining)
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-			cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+			cmd = 'killall --signal=SIGKILL iperf'
 			SSH.command(cmd,'\$',5)
-			SSH.command('/opt/iperf-2.0.10/iperf -c 192.172.0.1 ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', int(iperf_time)*5.0)
 			SSH.close()
 
-			#copy the 2 resulting files locally
-			SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
-			SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
-			#send for analysis
-			filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)
-		else :
-			logging.debug("Incorrect or missing IPERF direction in XML")
+			iperf_time = self.Iperf_ComputeTime()	
+			if self.iperf_direction=="DL":
+				logging.debug("Iperf for Module in DL mode detected")
+				#server side UE
+				server_filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				cmd = 'rm ' + server_filename
+				SSH.command(cmd,'\$',5)
+				cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > ' + server_filename
+				SSH.command(cmd,'\$',5)
+				SSH.close()
+				#client side EPC
+				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+				client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+				iperf_cmd = 'bin/iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > ' + client_filename
+				cmd = 'docker exec -it prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
+				SSH.command(cmd,'\$',int(iperf_time)*5.0)
+				SSH.command('docker cp prod-trf-gen:' + client_filename + ' ' + EPC.SourceCodePath, '\$', 5)
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/' + client_filename, '.')
+				SSH.close()
 
-		#kill iperf processes after to be clean
-		SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-		cmd = 'killall --signal=SIGKILL iperf'
-		SSH.command(cmd,'\$',5)
-		SSH.close()
-		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-		cmd = 'killall --signal=SIGKILL iperf'
-		SSH.command(cmd,'\$',5)
-		SSH.close()
-		return
+
+				#copy the 2 resulting files locally
+				SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, server_filename, '.')
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, client_filename, '.')
+				#send for analysis
+				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,server_filename,1)	
+
+		else:
+		#default is ltebox
+			SSH = sshconnection.SSHConnection()
+
+			#kill iperf processes before (in case there are still some remaining)
+			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+			cmd = 'killall --signal=SIGKILL iperf'
+			SSH.command(cmd,'\$',5)
+			SSH.close()
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			cmd = 'killall --signal=SIGKILL iperf'
+			SSH.command(cmd,'\$',5)
+			SSH.close()
+
+
+			iperf_time = self.Iperf_ComputeTime()	
+			if self.iperf_direction=="DL":
+				logging.debug("Iperf for Module in DL mode detected")
+				#server side UE
+				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				cmd = 'rm iperf_server_' +  self.testCase_id + '_' + self.ue_id + '.log'
+				SSH.command(cmd,'\$',5)
+				cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u  2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log' 
+				SSH.command(cmd,'\$',5)
+				SSH.close()
+				#client side EPC
+				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+				cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+				SSH.command(cmd,'\$',5)
+				cmd = 'iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
+				SSH.command(cmd,'\$',int(iperf_time)*5.0)
+				SSH.close()
+				#copy the 2 resulting files locally
+				SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
+				#send for analysis
+				filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)	
+
+			elif self.iperf_direction=="UL":#does not work at the moment
+				logging.debug("Iperf for Module in UL mode detected")
+				#server side EPC
+				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+				cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+				SSH.command(cmd,'\$',5)
+				cmd = 'echo $USER; nohup iperf -s -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+				SSH.command(cmd,'\$',5)
+				SSH.close()
+
+				#client side UE
+				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+				SSH.command(cmd,'\$',5)
+				SSH.command('/opt/iperf-2.0.10/iperf -c 192.172.0.1 ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', int(iperf_time)*5.0)
+				SSH.close()
+
+				#copy the 2 resulting files locally
+				SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
+				#send for analysis
+				filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)
+			else :
+				logging.debug("Incorrect or missing IPERF direction in XML")
+
+			#kill iperf processes after to be clean
+			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+			cmd = 'killall --signal=SIGKILL iperf'
+			SSH.command(cmd,'\$',5)
+			SSH.close()
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			cmd = 'killall --signal=SIGKILL iperf'
+			SSH.command(cmd,'\$',5)
+			SSH.close()
+			return
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC):
 		try:

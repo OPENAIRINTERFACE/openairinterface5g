@@ -148,8 +148,8 @@ class Module_UE:
 		else: #check response
 			result = re.search('mtu (?P<mtu>[0-9]+)', response[0].decode("utf-8") )
 			if result is not None: 
-				if (result.group('mtu') is not None) and (result.group('mtu')==self.MTU) : 
-					logging.debug('\u001B[1mUE Module NIC MTU is ' + self.MTU + ' as requested\u001B[0m')
+				if (result.group('mtu') is not None) and (str(result.group('mtu'))==str(self.MTU)) : 
+					logging.debug('\u001B[1mUE Module NIC MTU is ' + str(self.MTU) + ' as expected\u001B[0m')
 					return 0
 				else:
 					logging.debug('\u001B[1;37;41m Incorrect Module NIC MTU ' + str(result.group('mtu')) + '! Expected : ' + str(self.MTU) + '\u001B[0m')
