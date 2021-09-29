@@ -145,6 +145,7 @@ typedef struct {
   int power[NB_ANTENNAS_RX];
   int noise_power[NB_ANTENNAS_RX];
   int DTX;
+  int sync_pos;
 } NR_gNB_SCH_STATS_t;
 
 typedef struct {
@@ -661,33 +662,33 @@ typedef struct {
   //! estimated noise power (linear)
   unsigned int   n0_power[MAX_NUM_RU_PER_gNB];
   //! estimated noise power (dB)
-  unsigned short n0_power_dB[MAX_NUM_RU_PER_gNB];
+  unsigned int n0_power_dB[MAX_NUM_RU_PER_gNB];
   //! total estimated noise power (linear)
   unsigned int   n0_power_tot;
   //! estimated avg noise power (dB)
-  unsigned short n0_power_tot_dB;
+  unsigned int n0_power_tot_dB;
   //! estimated avg noise power (dB)
-  short n0_power_tot_dBm;
+  int n0_power_tot_dBm;
   //! estimated avg noise power per RB per RX ant (lin)
-  unsigned short n0_subband_power[MAX_NUM_RU_PER_gNB][275];
+  unsigned int n0_subband_power[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg noise power per RB per RX ant (dB)
-  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_gNB][275];
+  unsigned int n0_subband_power_dB[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg subband noise power (dB)
-  unsigned short n0_subband_power_avg_dB;
+  unsigned int n0_subband_power_avg_dB;
   //! estimated avg subband noise power per antenna (dB)
-  unsigned short n0_subband_power_avg_perANT_dB[NB_ANTENNAS_RX];
+  unsigned int n0_subband_power_avg_perANT_dB[NB_ANTENNAS_RX];
   //! estimated avg noise power per RB (dB)
-  short n0_subband_power_tot_dB[275];
+  int n0_subband_power_tot_dB[275];
   //! estimated avg noise power per RB (dBm)
-  short n0_subband_power_tot_dBm[275];
+  int n0_subband_power_tot_dBm[275];
 
   // gNB measurements (per user)
   //! estimated received spatial signal power (linear)
   unsigned int   rx_spatial_power[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_TX][NB_ANTENNAS_RX];
   //! estimated received spatial signal power (dB)
-  unsigned short rx_spatial_power_dB[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_TX][NB_ANTENNAS_RX];
+  unsigned int rx_spatial_power_dB[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_TX][NB_ANTENNAS_RX];
   //! estimated rssi (dBm)
-  short          rx_rssi_dBm[NUMBER_OF_NR_ULSCH_MAX];
+  int            rx_rssi_dBm[NUMBER_OF_NR_ULSCH_MAX];
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
   int            rx_correlation[NUMBER_OF_NR_ULSCH_MAX][2];
   //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)

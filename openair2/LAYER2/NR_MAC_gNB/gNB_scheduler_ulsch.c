@@ -1044,7 +1044,7 @@ void pf_ul(module_id_t module_id,
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nrmac->UE_info;
-  const int min_rb = 5;
+  const int min_rb = 40;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];
@@ -1218,7 +1218,7 @@ void pf_ul(module_id_t module_id,
 	    UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
       return;
     }
-    else LOG_I(NR_MAC,"allocating UL data for UE %d/RNTI %04x (rbStsart %d, min_rb %d, bwpSize %d\n",UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
+    else LOG_D(NR_MAC,"allocating UL data for UE %d/RNTI %04x (rbStsart %d, min_rb %d, bwpSize %d\n",UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
 
     /* Save PUSCH field */
     /* we want to avoid a lengthy deduction of DMRS and other parameters in
@@ -1247,7 +1247,7 @@ void pf_ul(module_id_t module_id,
                   &rbSize);
     sched_pusch->rbSize = rbSize;
     sched_pusch->tb_size = TBS;
-    LOG_I(NR_MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
+    LOG_D(NR_MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
           rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
 
     /* Mark the corresponding RBs as used */
