@@ -616,6 +616,7 @@ typedef struct {
   int ulsch_total_bytes_scheduled;
   int ulsch_total_bytes_rx;
   int ulsch_current_bytes;
+  int pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;
 } NR_mac_stats_t;
@@ -662,6 +663,7 @@ typedef struct gNB_MAC_INST_s {
   NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
+  pthread_t                       stats_thread;
   /// Pusch target SNR
   int                             pusch_target_snrx10;
   /// Pucch target SNR

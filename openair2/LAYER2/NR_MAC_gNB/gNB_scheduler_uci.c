@@ -1084,6 +1084,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
+      if (harq_confidence == 1)  UE_info->mac_stats[UE_id].pucch0_DTX++;
     }
   }
 
