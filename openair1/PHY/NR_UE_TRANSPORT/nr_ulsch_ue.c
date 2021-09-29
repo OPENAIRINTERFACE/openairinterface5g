@@ -45,7 +45,6 @@
 #include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
-#include "LAYER2/NR_MAC_UE/nr_l1_helpers.h"
 
 //#define DEBUG_PUSCH_MAPPING
 //#define DEBUG_MAC_PDU
@@ -142,7 +141,12 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     ulsch_ue->Nid_cell    = Nid_cell;
 
-    get_num_re_dmrs(pusch_pdu, &nb_dmrs_re_per_rb, &number_dmrs_symbols);
+    for (int i = start_symbol; i < start_symbol + number_of_symbols; i++) {
+      if((ul_dmrs_symb_pos >> i) & 0x01)
+        number_dmrs_symbols += 1;
+    }
+
+    nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6:4)*cdm_grps_no_data;
 
     LOG_D(PHY,"ulsch %x : start_rb %d bwp_start %d start_sc %d start_symbol %d num_symbols %d cdmgrpsnodata %d num_dmrs %d dmrs_re_per_rb %d\n",
           rnti,start_rb,pusch_pdu->bwp_start,start_sc,start_symbol,number_of_symbols,cdm_grps_no_data,number_dmrs_symbols,nb_dmrs_re_per_rb);

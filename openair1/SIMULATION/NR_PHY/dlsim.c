@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
