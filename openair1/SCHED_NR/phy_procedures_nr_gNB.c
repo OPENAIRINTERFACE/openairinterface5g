@@ -554,8 +554,9 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           LOG_D(PHY,"%d.%d pucch %d : start_symbol %d, nb_symbols %d, prb_size %d\n",frame_rx,slot_rx,i,pucch_pdu->start_symbol_index,pucch_pdu->nr_of_symbols,pucch_pdu->prb_size);
           for (int symbol=pucch_pdu->start_symbol_index ; symbol<(pucch_pdu->start_symbol_index+pucch_pdu->nr_of_symbols);symbol++) {
             for (rb=0; rb<pucch_pdu->prb_size; rb++) {
-              rb2 = rb+(symbol < pucch_pdu->start_symbol_index+(pucch_pdu->nr_of_symbols>>1) ? pucch_pdu->prb_start : pucch_pdu->second_hop_prb)+pucch_pdu->bwp_start;
-              LOG_D(PHY,"%d.%d pucch %d : symbol %d, rb %d\n",frame_rx,slot_rx,i,symbol,rb2);
+              rb2 = rb + pucch_pdu->bwp_start +
+                  ((symbol < pucch_pdu->start_symbol_index+(pucch_pdu->nr_of_symbols>>1)) || (pucch_pdu->freq_hop_flag == 0) ?
+                  pucch_pdu->prb_start : pucch_pdu->second_hop_prb);
               gNB->rb_mask_ul[symbol][rb2>>5] |= (1<<(rb2&31));
             }
             if (symbol==pucch_pdu->start_symbol_index) nb_rb+=pucch_pdu->prb_size;
