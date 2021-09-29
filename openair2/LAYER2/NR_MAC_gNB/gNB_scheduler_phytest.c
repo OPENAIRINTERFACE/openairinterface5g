@@ -329,7 +329,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                                     0,
                                                     0);
   sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-  sched_ctrl->lcid_to_schedule = lcid;
 
   uint8_t nr_of_candidates;
   for (int i=0; i<5; i++) {
