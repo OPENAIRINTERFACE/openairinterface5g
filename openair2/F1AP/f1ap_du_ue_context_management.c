@@ -261,7 +261,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_successfulOutcome;
-  asn1cCalloc(pdu.choice.successfulOutcome, F1AP_SuccessfulOutcome_t,tmp);
+  asn1cCalloc(pdu.choice.successfulOutcome, tmp);
   tmp->procedureCode = F1AP_ProcedureCode_id_UEContextSetup;
   tmp->criticality   = F1AP_Criticality_reject;
   tmp->value.present = F1AP_SuccessfulOutcome__value_PR_UEContextSetupResponse;
@@ -296,16 +296,14 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
       /* OPTIONAL */
       /* measGapConfig */
       if (0) {
-        asn1cCalloc(ie3->value.choice.DUtoCURRCInformation.measGapConfig,
-                    F1AP_MeasGapConfig_t, tmp);
+        asn1cCalloc(ie3->value.choice.DUtoCURRCInformation.measGapConfig, tmp);
         OCTET_STRING_fromBuf(tmp, "asdsa", strlen("asdsa"));
       }
 
       /* OPTIONAL */
       /* requestedP_MaxFR1 */
       if (0) {
-        asn1cCalloc(ie3->value.choice.DUtoCURRCInformation.requestedP_MaxFR1,
-                    OCTET_STRING_t, tmp);
+        asn1cCalloc(ie3->value.choice.DUtoCURRCInformation.requestedP_MaxFR1, tmp);
         OCTET_STRING_fromBuf(tmp, "asdsa", strlen("asdsa"));
       }
     }
@@ -375,8 +373,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
                        F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);
       dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
       /* gTPTunnel */
-      asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,
-                  F1AP_GTPTunnel_t, gTPTunnel);
+      asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,gTPTunnel);
       /* transportLayerAddress */
       struct sockaddr_in addr= {0};
       inet_pton(AF_INET, getCxt(false,instance)->setupReq.DU_f1_ip_address.ipv4_address,
@@ -410,7 +407,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
     /* sRBID */
     srbs_failedToBeSetup_item->sRBID = 13L;
     /* cause */
-    asn1cCalloc(srbs_failedToBeSetup_item->cause, F1AP_Cause_t,tmp);
+    asn1cCalloc(srbs_failedToBeSetup_item->cause, tmp);
     // dummy value
     tmp->present = F1AP_Cause_PR_radioNetwork;
 
@@ -459,7 +456,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
     /* dRBID */
     drbs_failedToBeSetup_item->dRBID = 14;
     /* cause */
-    asn1cCalloc(drbs_failedToBeSetup_item->cause, F1AP_Cause_t,tmp);
+    asn1cCalloc(drbs_failedToBeSetup_item->cause,tmp);
     // dummy value
     tmp->present = F1AP_Cause_PR_radioNetwork;
 
@@ -507,7 +504,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
     /* sCell_ID */
     addnRCGI(sCell_FailedtoSetup_item->sCell_ID,f1ap_req(false, instance)->cell+i);
     /* cause */
-    asn1cCalloc(sCell_FailedtoSetup_item->cause, F1AP_Cause_t, tmp);
+    asn1cCalloc(sCell_FailedtoSetup_item->cause, tmp);
     // dummy value
     tmp->present = F1AP_Cause_PR_radioNetwork;
 
@@ -575,13 +572,13 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
     ie12->criticality                    = F1AP_Criticality_ignore;
     ie12->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_CriticalityDiagnostics;
     asn1cCallocOne(ie12->value.choice.CriticalityDiagnostics.procedureCode,
-                   F1AP_ProcedureCode_t, F1AP_ProcedureCode_id_UEContextSetup);
+                   F1AP_ProcedureCode_id_UEContextSetup);
     asn1cCallocOne(ie12->value.choice.CriticalityDiagnostics.triggeringMessage,
-                   F1AP_TriggeringMessage_t, F1AP_TriggeringMessage_initiating_message);
+                   F1AP_TriggeringMessage_initiating_message);
     asn1cCallocOne(ie12->value.choice.CriticalityDiagnostics.procedureCriticality,
-                   F1AP_Criticality_t, F1AP_Criticality_reject);
+                   F1AP_Criticality_reject);
     asn1cCallocOne(ie12->value.choice.CriticalityDiagnostics.transactionID,
-                   F1AP_TransactionID_t, 0);
+                   0);
   }
 
   /* encode */
@@ -609,7 +606,7 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
-  asn1cCalloc(pdu.choice.initiatingMessage, F1AP_InitiatingMessage_t, tmp);
+  asn1cCalloc(pdu.choice.initiatingMessage, tmp);
   tmp->procedureCode = F1AP_ProcedureCode_id_UEContextReleaseRequest;
   tmp->criticality   = F1AP_Criticality_reject;
   tmp->value.present = F1AP_InitiatingMessage__value_PR_UEContextReleaseRequest;
@@ -823,7 +820,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_successfulOutcome;
-  asn1cCalloc(pdu.choice.successfulOutcome, F1AP_SuccessfulOutcome_t, tmp);
+  asn1cCalloc(pdu.choice.successfulOutcome, tmp);
   tmp->procedureCode = F1AP_ProcedureCode_id_UEContextRelease;
   tmp->criticality   = F1AP_Criticality_reject;
   tmp->value.present = F1AP_SuccessfulOutcome__value_PR_UEContextReleaseComplete;
@@ -921,7 +918,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_successfulOutcome;
-  asn1cCalloc(pdu.choice.successfulOutcome,F1AP_SuccessfulOutcome_t, tmp);
+  asn1cCalloc(pdu.choice.successfulOutcome,tmp);
   tmp->procedureCode = F1AP_ProcedureCode_id_UEContextModification;
   tmp->criticality   = F1AP_Criticality_reject;
   tmp->value.present = F1AP_SuccessfulOutcome__value_PR_UEContextModificationResponse;
@@ -998,7 +995,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
                        F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);
       dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
       asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,
-                  F1AP_GTPTunnel_t, gTPTunnel);
+                  gTPTunnel);
       TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
       OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "1204",
                            strlen("1204"));
@@ -1031,10 +1028,9 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
       /*  DLTunnels_Modified_Item */
       asn1cSequenceAdd(drbs_modified_item->dLUPTNLInformation_ToBeSetup_List.list,
                        F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);
-      asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item, F1AP_DLUPTNLInformation_ToBeSetup_Item_t, tmp);
+      asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item, tmp);
       tmp->dLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
-      asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,
-                  F1AP_GTPTunnel_t, gTPTunnel);
+      asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel, gTPTunnel);
       TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
       OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "1204", strlen("1204"));
     }
@@ -1059,7 +1055,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
       &srbs_failedToBeSetupMod_item_ies->value.choice.SRBs_FailedToBeSetupMod_Item;
     /* - sRBID */
     srbs_failedToBeSetupMod_item->sRBID = 50L;
-    asn1cCalloc(srbs_failedToBeSetupMod_item->cause, F1AP_Cause_t, tmp)
+    asn1cCalloc(srbs_failedToBeSetupMod_item->cause, tmp)
     tmp->present = F1AP_Cause_PR_radioNetwork;
     tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
   }
@@ -1106,7 +1102,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
     F1AP_SCell_FailedtoSetupMod_Item_t *scell_failedtoSetupMod_item=&scell_failedtoSetupMod_item_ies->value.choice.SCell_FailedtoSetupMod_Item;
     /* - sCell_ID */
     addnRCGI(scell_failedtoSetupMod_item->sCell_ID, &f1ap_req(false, instance)->cell[i]);
-    asn1cCalloc(scell_failedtoSetupMod_item->cause, F1AP_Cause_t, tmp);
+    asn1cCalloc(scell_failedtoSetupMod_item->cause, tmp);
     tmp->present = F1AP_Cause_PR_radioNetwork;
     tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
   }
@@ -1130,7 +1126,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
       &drbs_failedToBeModified_item_ies->value.choice.DRBs_FailedToBeModified_Item ;
     /* dRBID */
     drbs_failedToBeModified_item->dRBID = 30L;
-    asn1cCalloc(drbs_failedToBeModified_item->cause, F1AP_Cause_t, tmp);
+    asn1cCalloc(drbs_failedToBeModified_item->cause, tmp);
     tmp->present = F1AP_Cause_PR_radioNetwork;
     tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
   }

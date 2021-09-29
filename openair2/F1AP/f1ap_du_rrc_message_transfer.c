@@ -767,7 +767,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
-  asn1cCalloc(pdu.choice.initiatingMessage, F1AP_InitiatingMessage_t, tmp);
+  asn1cCalloc(pdu.choice.initiatingMessage, tmp);
   tmp->procedureCode = F1AP_ProcedureCode_id_InitialULRRCMessageTransfer;
   tmp->criticality   = F1AP_Criticality_ignore;
   tmp->value.present = F1AP_InitiatingMessage__value_PR_InitialULRRCMessageTransfer;
@@ -841,7 +841,7 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
-  asn1cCalloc(pdu.choice.initiatingMessage, F1AP_InitiatingMessage_t, tmp);
+  asn1cCalloc(pdu.choice.initiatingMessage, tmp);
   tmp->procedureCode = F1AP_ProcedureCode_id_ULRRCMessageTransfer;
   tmp->criticality   = F1AP_Criticality_ignore;
   tmp->value.present = F1AP_InitiatingMessage__value_PR_ULRRCMessageTransfer;

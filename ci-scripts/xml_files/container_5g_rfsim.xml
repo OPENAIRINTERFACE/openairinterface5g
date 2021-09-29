@@ -22,7 +22,7 @@
 -->
 <testCaseList>
         <htmlTabRef>rfsim-5gnr</htmlTabRef>
-        <htmlTabName>Testing 5G NR RF sim in containers</htmlTabName>
+        <htmlTabName>Testing 5G NR RF sim - Monolithic gNB</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
         <TestCaseRequestedList>
  100001

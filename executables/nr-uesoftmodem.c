@@ -368,7 +368,7 @@ void init_openair0(void) {
       openair0_cfg[card].rx_num_channels,
       duplex_mode[openair0_cfg[card].duplex_mode]);
 
-    nr_get_carrier_frequencies(frame_parms, &dl_carrier, &ul_carrier);
+    nr_get_carrier_frequencies(PHY_vars_UE_g[0][0], &dl_carrier, &ul_carrier);
 
     nr_rf_card_config_freq(&openair0_cfg[card], ul_carrier, dl_carrier, freq_off);
     nr_rf_card_config_gain(&openair0_cfg[card], rx_gain_off);
@@ -425,7 +425,7 @@ int main( int argc, char **argv ) {
 
   get_options (); //Command-line options specific for NRUE
 
-  get_common_options(SOFTMODEM_5GUE_BIT );
+  get_common_options(SOFTMODEM_5GUE_BIT);
   init_tpools(nrUE_params.nr_dlsch_parallel);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 #if T_TRACER
@@ -495,14 +495,6 @@ int main( int argc, char **argv ) {
     init_timeshift_rotation(&UE[CC_id]->frame_parms);
     init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
 
-    #ifdef FR2_TEST
-    // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0){
-      frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
-      if (frame_parms[CC_id]->frame_type == TDD)
-        frame_parms[CC_id]->ul_CarrierFreq = downlink_frequency[0][0];
-    }
-    #endif
   }
 
   init_openair0();

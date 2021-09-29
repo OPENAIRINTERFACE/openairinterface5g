@@ -22,7 +22,7 @@
 -->
 <testCaseList>
         <htmlTabRef>rfsim-4glte</htmlTabRef>
-        <htmlTabName>Testing 4G LTE RF sim in containers</htmlTabName>
+        <htmlTabName>Testing 4G LTE RF sim - Monolithic eNB</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
         <TestCaseRequestedList>
  100011

@@ -102,7 +102,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
   /* Create */
   /* 0. pdu Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
-  asn1cCalloc(pdu.choice.initiatingMessage, F1AP_InitiatingMessage_t, initMsg);
+  asn1cCalloc(pdu.choice.initiatingMessage, initMsg);
   initMsg->procedureCode = F1AP_ProcedureCode_id_F1Setup;
   initMsg->criticality   = F1AP_Criticality_reject;
   initMsg->value.present = F1AP_InitiatingMessage__value_PR_F1SetupRequest;
@@ -159,7 +159,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
     served_cell_information->nRPCI = cell->nr_pci;  // int 0..1007
     /* - fiveGS_TAC */
     uint32_t tac=htonl(cell->tac);
-    asn1cCalloc(served_cell_information->fiveGS_TAC, F1AP_FiveGS_TAC_t, netOrder);
+    asn1cCalloc(served_cell_information->fiveGS_TAC, netOrder);
     OCTET_STRING_fromBuf(netOrder, ((char *)&tac)+1, 3);
 
     /* - Configured_EPS_TAC */
@@ -176,14 +176,14 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
     if (f1ap_req(false, instance)->fdd_flag) { // FDD
       nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_fDD;
-      asn1cCalloc(nR_Mode_Info->choice.fDD, F1AP_FDD_Info_t, fDD_Info);
+      asn1cCalloc(nR_Mode_Info->choice.fDD, fDD_Info);
       /* FDD.1 UL NRFreqInfo */
       /* FDD.1.1 UL NRFreqInfo ARFCN */
       fDD_Info->uL_NRFreqInfo.nRARFCN = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_nr_arfcn; // Integer
 
       /* FDD.1.2 F1AP_SUL_Information */
       if(0) { // Optional
-        asn1cCalloc(fDD_Info->uL_NRFreqInfo.sul_Information, F1AP_SUL_Information_t, fdd_sul_info);
+        asn1cCalloc(fDD_Info->uL_NRFreqInfo.sul_Information, fdd_sul_info);
         fdd_sul_info->sUL_NRARFCN = 0;
         fdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
         fdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
@@ -247,7 +247,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
       fDD_Info->dL_Transmission_Bandwidth.nRNRB = to_NRNRB(f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_nrb);
     } else { // TDD
       nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_tDD;
-      asn1cCalloc(nR_Mode_Info->choice.tDD, F1AP_TDD_Info_t, tDD_Info);
+      asn1cCalloc(nR_Mode_Info->choice.tDD, tDD_Info);
       /* TDD.1 nRFreqInfo */
       /* TDD.1.1 nRFreqInfo ARFCN */
       tDD_Info->nRFreqInfo.nRARFCN = f1ap_req(false,instance)->nr_mode_info[i].tdd.nr_arfcn; // Integer
@@ -289,7 +289,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
     OCTET_STRING_fromBuf(&served_cell_information->measurementTimingConfiguration,
                          measurementTimingConfiguration,
                          strlen(measurementTimingConfiguration));
-    asn1cCalloc(gnb_du_served_cells_item->gNB_DU_System_Information, F1AP_GNB_DU_System_Information_t, gNB_DU_System_Information);
+    asn1cCalloc(gnb_du_served_cells_item->gNB_DU_System_Information, gNB_DU_System_Information);
     /* 4.1.2 gNB-DU System Information */
     OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
                          (const char *)f1ap_req(false,instance)->mib[i], //f1ap_du_data->mib,
@@ -535,7 +535,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
-  asn1cCalloc(pdu.choice.initiatingMessage,F1AP_InitiatingMessage_t,  initMsg);
+  asn1cCalloc(pdu.choice.initiatingMessage, initMsg);
   initMsg->procedureCode = F1AP_ProcedureCode_id_gNBDUConfigurationUpdate;
   initMsg->criticality   = F1AP_Criticality_reject;
   initMsg->value.present = F1AP_InitiatingMessage__value_PR_GNBDUConfigurationUpdate;
@@ -587,7 +587,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     if (f1ap_setup_req->fdd_flag) {
       nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_fDD;
       /* > FDD >> FDD Info */
-      asn1cCalloc(nR_Mode_Info->choice.fDD, F1AP_FDD_Info_t, fDD_Info);
+      asn1cCalloc(nR_Mode_Info->choice.fDD, fDD_Info);
       /* >>> UL NRFreqInfo */
       fDD_Info->uL_NRFreqInfo.nRARFCN = 999L;
       asn1cSequenceAdd(fDD_Info->uL_NRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, ul_freqBandNrItem);
@@ -609,7 +609,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     } else { // TDD
       nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_tDD;
       /* > TDD >> TDD Info */
-      asn1cCalloc(nR_Mode_Info->choice.tDD, F1AP_TDD_Info_t, tDD_Info);
+      asn1cCalloc(nR_Mode_Info->choice.tDD, tDD_Info);
       /* >>> ARFCN */
       tDD_Info->nRFreqInfo.nRARFCN = 999L; // Integer
       asn1cSequenceAdd(tDD_Info->nRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, nr_freqBandNrItem);
@@ -626,7 +626,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
                          measurementTimingConfiguration,
                          strlen(measurementTimingConfiguration));
     /* 2.1.2 gNB-DU System Information */
-    asn1cCalloc(served_cells_to_add_item->gNB_DU_System_Information, F1AP_GNB_DU_System_Information_t, gNB_DU_System_Information);
+    asn1cCalloc(served_cells_to_add_item->gNB_DU_System_Information, gNB_DU_System_Information);
     OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
                          "1",
                          sizeof("1"));
@@ -659,14 +659,14 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     /* - nRPCI */
     served_cell_information->nRPCI = f1ap_setup_req->cell[i].nr_pci;  // int 0..1007
     /* - fiveGS_TAC */
-    asn1cCalloc(served_cell_information->fiveGS_TAC,F1AP_FiveGS_TAC_t, tac );
+    asn1cCalloc(served_cell_information->fiveGS_TAC, tac );
     OCTET_STRING_fromBuf(tac,
                          (const char *) &f1ap_setup_req->cell[i].tac,
                          3);
 
     /* - Configured_EPS_TAC */
     if(1) {
-      asn1cCalloc(served_cell_information->configured_EPS_TAC, F1AP_Configured_EPS_TAC_t, tmp2);
+      asn1cCalloc(served_cell_information->configured_EPS_TAC, tmp2);
       OCTET_STRING_fromBuf(tmp2,
                            "2",
                            2);
@@ -680,7 +680,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     if (f1ap_setup_req->fdd_flag) {
       nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_fDD;
       /* > FDD >> FDD Info */
-      asn1cCalloc(nR_Mode_Info->choice.fDD, F1AP_FDD_Info_t, fDD_Info);
+      asn1cCalloc(nR_Mode_Info->choice.fDD, fDD_Info);
       /* >>> UL NRFreqInfo */
       fDD_Info->uL_NRFreqInfo.nRARFCN = 999L;
       asn1cSequenceAdd(fDD_Info->uL_NRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, ul_freqBandNrItem);
@@ -703,7 +703,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     } else { // TDD
       nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_tDD;
       /* > TDD >> TDD Info */
-      asn1cCalloc(nR_Mode_Info->choice.tDD, F1AP_TDD_Info_t, tDD_Info);
+      asn1cCalloc(nR_Mode_Info->choice.tDD, tDD_Info);
       /* >>> ARFCN */
       tDD_Info->nRFreqInfo.nRARFCN = 999L; // Integer
       asn1cSequenceAdd(tDD_Info->nRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, nr_freqBandNrItem);
@@ -720,7 +720,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
                          measurementTimingConfiguration,
                          strlen(measurementTimingConfiguration));
     /* 3.2.2 gNB-DU System Information */
-    asn1cCalloc( served_cells_to_modify_item->gNB_DU_System_Information, F1AP_GNB_DU_System_Information_t, gNB_DU_System_Information);
+    asn1cCalloc( served_cells_to_modify_item->gNB_DU_System_Information, gNB_DU_System_Information);
     OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
                          "1",
                          sizeof("1"));
@@ -949,7 +949,7 @@ int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
   /* Create */
   /* 0. pdu Type */
   pdu.present = F1AP_F1AP_PDU_PR_successfulOutcome;
-  asn1cCalloc(pdu.choice.successfulOutcome, F1AP_SuccessfulOutcome_t, tmp);
+  asn1cCalloc(pdu.choice.successfulOutcome, tmp);
   tmp->procedureCode = F1AP_ProcedureCode_id_gNBCUConfigurationUpdate;
   tmp->criticality   = F1AP_Criticality_reject;
   tmp->value.present = F1AP_SuccessfulOutcome__value_PR_GNBCUConfigurationUpdateAcknowledge;

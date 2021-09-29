@@ -24,6 +24,7 @@
 
 // Location of the python executor node shall be in the same subnet as the others servers
 def pythonExecutor = params.pythonExecutor
+def DataBaseHost = params.DataBaseHost
 
 // Location of the test XML file to be run
 def testXMLFile = params.pythonTestXmlFile
@@ -45,10 +46,12 @@ def eNB_CommitID
 def eNB_AllowMergeRequestProcess
 def eNB_TargetBranch
 
+//Status fed to the database
+def StatusForDb = ""
+
+
 pipeline {
-    agent {
-        label pythonExecutor
-    }
+    agent {label pythonExecutor}
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
@@ -270,9 +273,18 @@ pipeline {
                         }
                     }
                 }
+                stage ("SQL Collect"){
+                agent {label DataBaseHost}
+                    steps {
+                        script {
+                            if (currentBuild.result=='FAILURE') {StatusForDb = 'FAIL'} else {StatusForDb = 'PASS'}
+                            sh "python3 /home/oaicicd/mysql/sql_connect.py ${JOB_NAME} ${params.eNB_MR} ${params.eNB_Branch} ${env.BUILD_ID} ${env.BUILD_URL} ${StatusForDb} ''"
+                        }
+                    }
+                }
             }
         }
-    }
+    } 
 
     post {
         always {
