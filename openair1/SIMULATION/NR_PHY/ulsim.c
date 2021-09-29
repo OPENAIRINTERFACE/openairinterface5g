@@ -796,7 +796,7 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
   UE->frame_parms.nb_antennas_tx = n_tx;
-  UE->frame_parms.nb_antennas_rx = 1;
+  UE->frame_parms.nb_antennas_rx = 0;
 
   if (init_nr_ue_signal(UE, 1) != 0) {
     printf("Error at UE NR initialisation\n");
