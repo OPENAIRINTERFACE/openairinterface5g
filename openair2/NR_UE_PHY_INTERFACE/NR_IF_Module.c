@@ -905,7 +905,6 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
         dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci_index->dci_format];
         g_harq_pid = def_dci_pdu_rel15->harq_pid;
         LOG_D(NR_MAC, "Setting harq_pid = %d and dci_index = %d (based on format)\n", g_harq_pid, dci_index->dci_format);
-        memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
 
         ret_mask |= (ret << FAPI_NR_DCI_IND);
         if (ret >= 0) {
