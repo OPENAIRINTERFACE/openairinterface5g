@@ -371,7 +371,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->pucch_allocation = alloc;
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
+  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : nr_find_default_tda(module_id, slot);
+  AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
   const long f = 1;
   ps->nrOfLayers = target_dl_Nl;
