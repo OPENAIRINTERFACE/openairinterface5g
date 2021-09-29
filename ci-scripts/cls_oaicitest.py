@@ -407,6 +407,8 @@ class OaiCiTest():
 						cmd = 'echo ' + EPC.Password + ' | ' + startcommand 
 					SSH.command(cmd,'\$',5)	
 					SSH.close()
+					#check that the MTU is as expected / requested
+					Module_UE.CheckModuleMTU()
 				else: #status==-1 failed to retrieve IP address
 					HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
 					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE)

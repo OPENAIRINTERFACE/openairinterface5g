@@ -131,6 +131,33 @@ class Module_UE:
 				logging.debug('\u001B[1;37;41m Module IP Address Not Found! \u001B[0m')
 				return -1
 
+	def CheckModuleMTU(self):
+		HOST=self.HostUsername+'@'+self.HostIPAddress
+		response= []
+		tentative = 3 
+		while (len(response)==0) and (tentative>0):
+			COMMAND="ip a show dev " + self.UENetwork + " | grep mtu"
+			logging.debug(COMMAND)
+			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+			response = ssh.stdout.readlines()
+			tentative-=1
+			time.sleep(10)
+		if (tentative==0) and (len(response)==0):
+			logging.debug('\u001B[1;37;41m Module NIC MTU Not Found! Time expired \u001B[0m')
+			return -1
+		else: #check response
+			result = re.search('mtu (?P<mtu>[0-9]+)', response[0].decode("utf-8") )
+			if result is not None: 
+				if (result.group('mtu') is not None) and (result.group('mtu')==self.MTU) : 
+					logging.debug('\u001B[1mUE Module NIC MTU is ' + self.MTU + ' as requested\u001B[0m')
+					return 0
+				else:
+					logging.debug('\u001B[1;37;41m Incorrect Module NIC MTU ' + str(result.group('mtu')) + '! Expected : ' + str(self.MTU) + '\u001B[0m')
+					return -1
+			else:
+				logging.debug('\u001B[1;37;41m Module NIC MTU Not Found! \u001B[0m')
+				return -1
+
 	def EnableTrace(self):
 		if self.ue_trace=="yes":
 			mySSH = sshconnection.SSHConnection()

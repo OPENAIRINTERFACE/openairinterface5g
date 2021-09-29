@@ -24,7 +24,7 @@ nrmodule2_quectel:
   WakeupScript : ci_ctl_qtel.py /dev/ttyUSB7 wup
   DetachScript : ci_ctl_qtel.py /dev/ttyUSB7 detach
   LogStore : /media/ci_qlogs  
-  PLMN : 20899 
+  PLMN : 20897
   UENetwork : wwan1
   HostIPAddress : 192.168.18.189
   HostUsername : nrmodule2 
@@ -32,6 +32,7 @@ nrmodule2_quectel:
   HostSourceCodePath : none
   StartCommands :
     - sudo -S ip link set dev wwan1 mtu 1500
+  MTU : 1500
 dummy:
   ID: ''
   State : ''
