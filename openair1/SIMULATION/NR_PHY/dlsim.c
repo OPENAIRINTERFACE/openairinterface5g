@@ -273,7 +273,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            /* tda = */ 2,
-                           /* num_dmrs_cdm_grps_no_data = */ 1,
+                           /*dci format*/ 1,
                            ps);
 
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
