@@ -553,14 +553,12 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB) {
   LTE_eNB_PRACH *const prach_vars_br = &eNB->prach_vars_br;
   int i, UE_id;
 
-  if (common_vars->txdataF) {
-    for (i = 0; i < NB_ANTENNA_PORTS_ENB; i++) {
-      if (i < fp->nb_antenna_ports_eNB || i == 5) {
-        free_and_zero(common_vars->txdataF[i]);
-      }
+  for (i = 0; i < NB_ANTENNA_PORTS_ENB; i++) {
+    if (i < fp->nb_antenna_ports_eNB || i == 5) {
+      free_and_zero(common_vars->txdataF[i]);
+      /* rxdataF[i] is not allocated -> don't free */
     }
   }
-  /* rxdataF[i] is not allocated -> don't free */
 
   free_and_zero(common_vars->txdataF);
   free_and_zero(common_vars->rxdataF);
@@ -582,20 +580,14 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB) {
 
   free_and_zero(prach_vars->prachF);
 
-  if (prach_vars->prach_ifft[0]) {
-    for (i = 0; i < 64; i++) {
-      free_and_zero(prach_vars->prach_ifft[0][i]);
-    }
-    free_and_zero(prach_vars->prach_ifft[0]);
-  }
+  for (i = 0; i < 64; i++) free_and_zero(prach_vars->prach_ifft[0][i]);
+
+  free_and_zero(prach_vars->prach_ifft[0]);
 
   for (int ce_level = 0; ce_level < 4; ce_level++) {
-    if (prach_vars_br->prach_ifft[ce_level]) {
-      for (i = 0; i < 64; i++) {
-        free_and_zero(prach_vars_br->prach_ifft[ce_level][i]);
-      }
-      free_and_zero(prach_vars_br->prach_ifft[ce_level]);
-    }
+    for (i = 0; i < 64; i++) free_and_zero(prach_vars_br->prach_ifft[ce_level][i]);
+
+    free_and_zero(prach_vars_br->prach_ifft[ce_level]);
     free_and_zero(prach_vars->rxsigF[ce_level]);
   }
 

@@ -296,9 +296,6 @@ static void *ue_tun_read_thread(void *_)
     }
 
     LOG_D(PDCP, "%s(): nas_sock_fd read returns len %d\n", __func__, len);
-    char buffer[1024];
-    hexdump(rx_buf, len, buffer, sizeof(buffer));
-    LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s from tunnel interface\n", buffer);
 
     nr_pdcp_manager_lock(nr_pdcp_ue_manager);
     rnti = nr_pdcp_get_first_rnti(nr_pdcp_ue_manager);
@@ -416,9 +413,6 @@ uint64_t nr_pdcp_module_init(uint64_t _pdcp_optmask, int id)
     nas_getparams();
 
     if(UE_NAS_USE_TUN) {
-      /* Melissa TODO: Brute force changes made below to allow nr-UE to have unique tunnel interfaces.
-         When the NODE_NUMBER param is not used to determine functionality and LTE tunnel
-         interfaces, we should update the netlink_init_tun() and nas_config() calls below as well. */
       int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF)? MAX_MOBILES_PER_ENB : 1;
       netlink_init_tun("nrue", num_if, id);
       //Add --nr-ip-over-lte option check for next line
@@ -836,10 +830,9 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
   if (ue->drb[drb_id-1] != NULL) {
-    LOG_I(PDCP, "Melissa Elkadi %s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
+    LOG_D(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
-    LOG_I(PDCP, "%s:%d:%s: Melissa Elkadi, we will call deliver_sdu_drb\n", __FILE__, __LINE__, __FUNCTION__);
     pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id,pdusession_id,has_sdap,
                                   has_sdapULheader,has_sdapDLheader,
                                   deliver_sdu_drb, ue, deliver_pdu_drb, ue,
@@ -1207,10 +1200,7 @@ static boolean_t pdcp_data_req_drb(
     nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
     return 0;
   }
-  char buffer[1024];
-  hexdump((char *)sdu_buffer, sdu_buffer_size, buffer, sizeof(buffer));
-  LOG_I(PDCP, "Melissa Elkadi in %s, this is hexdump of pdu %s from tunnel interface in PDCP layer\n",
-        __FUNCTION__, buffer);
+
   rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);

@@ -90,6 +90,7 @@
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "intertask_interface.h"
+#include "softmodem-common.h"
 
 #if ENABLE_RAL
   #include "rrc_eNB_ral.h"
@@ -4600,8 +4601,8 @@ rrc_eNB_process_MeasurementReport(
 
       if(is_en_dc_supported(ue_context_pP->ue_context.UE_Capability)) {
 
-        //AssertFatal(measResults2->measResultNeighCells!=NULL,"no measResultNeighCells, shouldn't happen!\n");
-        //AssertFatal(measResults2->measResultNeighCells->present==LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15,"field is not LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15");
+        AssertFatal(measResults2->measResultNeighCells!=NULL,"no measResultNeighCells, shouldn't happen!\n");
+        AssertFatal(measResults2->measResultNeighCells->present==LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15,"field is not LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15");
         /** to add gNB as Secondary node CG-ConfigInfo to be added as per 36.423 r15 **/
         if(encode_CG_ConfigInfo(enc_buf,sizeof(enc_buf),ue_context_pP,&enc_size) == RRC_OK)
           LOG_I(RRC,"CG-ConfigInfo encoded successfully\n");
@@ -7990,7 +7991,7 @@ rrc_eNB_decode_dcch(
           /*FK: left the condition as is for the case MME is used (S1 mode) but setting  dedicated_DRB = 1 otherwise (noS1 mode) so that no second RRCReconfiguration message activationg more DRB is sent as this causes problems with the nasmesh driver.*/
           int flexran_agent_handover = 0;
 
-          if (1) { //Melissa: This is a hack. We are bypassing EPC mode here. if(EPC_MODE_ENABLED)
+          if (EPC_MODE_ENABLED || get_softmodem_params()->nsa) {
             if (ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED) {
               dedicated_DRB = 1;
               LOG_I(RRC,

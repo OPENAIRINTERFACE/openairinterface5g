@@ -206,8 +206,8 @@ void *gNB_app_task(void *args_p)
     configure_nr_rrc(gnb_id);
   }
 
-  if (RC.nb_nr_inst > 0)  {
-    //init_pdcp();
+  if (RC.nb_nr_inst > 0 && !get_softmodem_params()->nsa)  {
+    init_pdcp();
   }
 
   if (is_x2ap_enabled() ) { //&& !NODE_IS_DU(RC.rrc[0]->node_type)
