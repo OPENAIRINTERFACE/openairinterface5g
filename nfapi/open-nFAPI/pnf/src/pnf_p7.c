@@ -3283,9 +3283,7 @@ int pnf_nr_p7_message_pump(pnf_p7_t* pnf_p7)
 		FD_ZERO(&rfds);
 		FD_SET(pnf_p7->p7_sock, &rfds);
 
-		struct timespec timeout;
-		timeout.tv_sec = 100;
-		timeout.tv_nsec = 0;
+		clock_gettime(CLOCK_MONOTONIC, &pselect_start);
 
 		//setting the timeout
 
