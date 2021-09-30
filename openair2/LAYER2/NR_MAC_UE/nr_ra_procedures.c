@@ -589,7 +589,8 @@ void nr_get_prach_resources(module_id_t mod_id,
   if (rach_ConfigDedicated) {
     if (rach_ConfigDedicated->cfra){
       uint8_t cfra_ssb_resource_idx = 0;
-      prach_resources->ra_PreambleIndex = rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[cfra_ssb_resource_idx]->ra_PreambleIndex;
+      ra->ra_PreambleIndex = rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[cfra_ssb_resource_idx]->ra_PreambleIndex;
+      prach_resources->ra_PreambleIndex = ra->ra_PreambleIndex;
       LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure for SSB with Id %d\n", __FUNCTION__, prach_resources->ra_PreambleIndex, cfra_ssb_resource_idx);
     }
   } else {
