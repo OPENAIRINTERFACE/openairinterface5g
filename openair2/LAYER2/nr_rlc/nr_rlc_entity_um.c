@@ -353,20 +353,9 @@ static int serialize_sdu(nr_rlc_entity_um_t *entity,
   /* generate header */
   nr_rlc_pdu_encoder_init(&encoder, buffer, bufsize);
 
-  char buf_1[1024];
-  hexdump(sdu->sdu->data, sdu->size, buf_1, sizeof(buf_1));
-  LOG_I(MAC, "Melissa Elkadi, %s in %s():%d\n",
-        buf_1, __FUNCTION__, __LINE__);
   nr_rlc_pdu_encoder_put_bits(&encoder, 1-sdu->is_first,1);/* 1st bit of SI */
-  char buf_2[1024];
-  hexdump(sdu->sdu->data, sdu->size, buf_2, sizeof(buf_2));
-  LOG_I(MAC, "Melissa Elkadi, %s in %s():%d\n",
-        buf_2, __FUNCTION__, __LINE__);
   nr_rlc_pdu_encoder_put_bits(&encoder, 1-sdu->is_last,1); /* 2nd bit of SI */
-  char buf_3[1024];
-  hexdump(sdu->sdu->data, sdu->size, buf_3, sizeof(buf_3));
-  LOG_I(MAC, "Melissa Elkadi, %s in %s():%d\n",
-        buf_3, __FUNCTION__, __LINE__);
+
   /* SN, if required */
   if (sdu->is_first == 1 && sdu->is_last == 1) {
     nr_rlc_pdu_encoder_put_bits(&encoder, 0, 6);                       /* R */
@@ -380,23 +369,9 @@ static int serialize_sdu(nr_rlc_entity_um_t *entity,
   if (!sdu->is_first)
     nr_rlc_pdu_encoder_put_bits(&encoder, sdu->so, 16);               /* SO */
 
-  char buf_sdu[1024];
-  hexdump(sdu->sdu->data, sdu->size, buf_sdu, sizeof(buf_sdu));
-  LOG_I(MAC, "Melissa Elkadi, this is hexdump of sdu->data %s in %s\n",
-        buf_sdu, __FUNCTION__);
-
   /* data */
   memcpy(buffer + encoder.byte, sdu->sdu->data + sdu->so, sdu->size);
 
-  char buf_5[1024];
-  hexdump(buffer, sdu->size, buf_5, sizeof(buf_5));
-  LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right after memcpy of just buffer %s\n",
-        buf_5, __FUNCTION__);
-
-  char buf[1024];
-  hexdump(buffer + encoder.byte, sdu->size, buf, sizeof(buf));
-  LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right after memcpy sdu into buffer in %s\n",
-        buf, __FUNCTION__);
   return encoder.byte + sdu->size;
 }
 
@@ -504,15 +479,9 @@ static int generate_tx_pdu(nr_rlc_entity_um_t *entity, char *buffer, int size)
   /* update tx_next if the SDU is an SDU segment and is the last */
   if (!sdu->is_first && sdu->is_last)
     entity->tx_next = (entity->tx_next + 1) % entity->sn_modulus;
-  char buf[1024];
-  hexdump(buffer, sdu->size, buf, sizeof(buf));
-  LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right before calling serialize_sdu in %s\n",
-        buf, __FUNCTION__);
+
   ret = serialize_sdu(entity, sdu, buffer, size);
-  char buf_1[1024];
-  hexdump(buffer, size, buf_1, sizeof(buf_1));
-  LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right after calling serialize_sdu in %s\n",
-        buf_1, __FUNCTION__);
+
   entity->tx_size -= sdu->size;
   nr_rlc_free_sdu_segment(sdu);
 
@@ -554,7 +523,6 @@ int nr_rlc_entity_um_generate_pdu(nr_rlc_entity_t *_entity,
                                   char *buffer, int size)
 {
   nr_rlc_entity_um_t *entity = (nr_rlc_entity_um_t *)_entity;
-  LOG_I(MAC, "Melissa Elkadi, in %s(): %d\n", __FUNCTION__, __LINE__);
 
   return generate_tx_pdu(entity, buffer, size);
 }

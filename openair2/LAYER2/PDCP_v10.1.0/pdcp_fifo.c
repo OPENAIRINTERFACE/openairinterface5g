@@ -89,7 +89,7 @@ extern struct msghdr nas_msg_rx;
 
 
 extern int gtpv1u_new_data_req( uint8_t  enb_module_idP, rnti_t   ue_rntiP, uint8_t  rab_idP, uint8_t *buffer_pP, uint32_t buf_lenP, uint32_t buf_offsetP);
-uint16_t ue_id_g;// global variable to identify ue id for each ue. Change happens only in main function of lte-uesoftmodem.c
+uint16_t ue_id_g; // Global variable to identify the ID for each UE. It is updated in main() of lte-uesoftmodem.c
 
 void debug_pdcp_pc5s_sdu(sidelink_pc5s_element *sl_pc5s_msg, char *title) {
   LOG_I(PDCP,"%s: \nPC5S message, header traffic_type: %d)\n", title, sl_pc5s_msg->pc5s_header.traffic_type);
@@ -147,7 +147,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
       nas_nlh_tx->nlmsg_len = sizeToWrite;
       ret = sendmsg(nas_sock_fd[0],&nas_msg_tx,0);
     }  //  PDCP_USE_NETLINK
-
+    
     AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s), nas_sock_fd[0]: %d\n", errno, strerror(errno), nas_sock_fd[0]);
 
     if( LOG_DEBUGFLAG(DEBUG_PDCP) )
@@ -562,8 +562,8 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                   pdcp_read_header_g.data_size,
                   (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                   PDCP_TRANSMISSION_MODE_DATA,
-                  (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF)?NULL:&pdcp_read_header_g.sourceL2Id,
-                  (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF)?NULL:&pdcp_read_header_g.destinationL2Id
+                  (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) ? NULL : &pdcp_read_header_g.sourceL2Id,
+                  (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) ? NULL : &pdcp_read_header_g.destinationL2Id
                 );
               } else { /* else of h_rc == HASH_TABLE_OK */
                 MSC_LOG_RX_DISCARDED_MESSAGE(
@@ -607,8 +607,8 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                 pdcp_read_header_g.data_size,
                 (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                 PDCP_TRANSMISSION_MODE_DATA,
-                (NFAPI_MODE == NFAPI_UE_STUB_PNF|| NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) ? NULL :&pdcp_read_header_g.sourceL2Id,
-                (NFAPI_MODE == NFAPI_UE_STUB_PNF|| NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) ? NULL :&pdcp_read_header_g.destinationL2Id
+                (NFAPI_MODE == NFAPI_UE_STUB_PNF|| NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) ? NULL : &pdcp_read_header_g.sourceL2Id,
+                (NFAPI_MODE == NFAPI_UE_STUB_PNF|| NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) ? NULL : &pdcp_read_header_g.destinationL2Id
               );
             } /* rab_id == 0 */
           } /*pdcp_read_state_g != 0 */
@@ -875,3 +875,4 @@ pdcp_pc5_socket_init() {
     exit(1);
   }
 }
+

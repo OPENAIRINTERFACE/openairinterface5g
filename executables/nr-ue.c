@@ -27,8 +27,8 @@
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "executables/softmodem-common.h"
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
-//#include "executables/softmodem-common.h"
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 
 /*
@@ -190,7 +190,7 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_p
     free(rach_ind->pdu_list);
     free(rach_ind);
   }
-  LOG_I(NR_MAC, "Melissa, We have successfully filled the rach_ind queue with the recently filled rach ind\n");
+  LOG_D(NR_MAC, "We have successfully filled the rach_ind queue with the recently filled rach ind\n");
 }
 
 static bool sfn_slot_matcher(void *wanted, void *candidate)
@@ -286,7 +286,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
     nr_uplink_indication_t ul_info;
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
-    int slot_ahead = 2; // Melissa lets make this dynamic
+    int slot_ahead = 2; // TODO: Make this dynamic
     ul_info.cc_id = CC_id;
     ul_info.gNB_index = gNB_id;
     ul_info.module_id = mod_id;
@@ -407,14 +407,6 @@ static void UE_synch(void *arg) {
 
   if (UE->UE_scan == 0) {
 
-    #ifdef FR2_TEST
-    // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0){
-       UE->frame_parms.dl_CarrierFreq = downlink_frequency[0][0];
-       UE->frame_parms.ul_CarrierFreq = downlink_frequency[0][0];
-    }
-    #endif
-
     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
 
       LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %f, UL %f (RF card %d, oai_exit %d, channel %d, rx_num_channels %d)\n",
@@ -480,7 +472,7 @@ static void UE_synch(void *arg) {
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
       uint64_t dl_carrier, ul_carrier;
-      nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
+      nr_get_carrier_frequencies(UE, &dl_carrier, &ul_carrier);
 
       if (nr_initial_sync(&syncD->proc, UE, 2, get_softmodem_params()->sa, get_nrUE_params()->nr_dlsch_parallel) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync

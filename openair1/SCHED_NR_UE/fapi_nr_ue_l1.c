@@ -95,7 +95,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 rx_ind->pdu_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
                 char buffer[1024];
                 hexdump(rx_ind->pdu_list[j].pdu, rx_ind->pdu_list[j].pdu_length, buffer, sizeof(buffer));
-                LOG_D(MAC, "Melissa Elkadi, this is hexdump of pdu %s before queuing rx_ind\n",
+                LOG_D(NR_MAC, "Hexdump of pdu %s before queuing rx_ind\n",
                       buffer);
               }
 
@@ -184,7 +184,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               uci_ind->uci_list[j].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
               pdu_0_1->pduBitmap = 2; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR
               pdu_0_1->handle = 0;
-              pdu_0_1->rnti = dl_config->dl_config_list[0].dlsch_config_pdu.rnti;
+              pdu_0_1->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
               pdu_0_1->pucch_format = 1;
               pdu_0_1->ul_cqi = 27;
               pdu_0_1->timing_advance = 0;

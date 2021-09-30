@@ -958,7 +958,6 @@ void init_eNB_proc(int inst) {
       // Original Code from Fujitsu w/ old structure/field name
       //pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
       //pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
-
       pthread_create( &L1_proc->pthread, attr0, L1_thread, L1_proc );
       if (pthread_setname_np(L1_proc->pthread, "oai:enb-L1-rx") != 0)
       {

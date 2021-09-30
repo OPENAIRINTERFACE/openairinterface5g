@@ -320,9 +320,9 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
             memcpy(pdu, ptr, pdu_list->TLVs[j].length);
             pdu += pdu_list->TLVs[j].length;
         }
-        dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.ack_nack = 1; // Melissa we will come back during channel modelling
+        dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.ack_nack = 1;
         dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = length;
-        if (tx_data_request->Slot == 7 && mac->ra.ra_state <= WAIT_RAR) { //Melissa this means we have an RAR, sorta hacky though
+        if (tx_data_request->Slot == 7 && mac->ra.ra_state <= WAIT_RAR) {
             dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
         }
         else {
@@ -539,7 +539,7 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     nr_uplink_indication_t ul_info;
     memset(&ul_info, 0, sizeof(ul_info));
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
-    int slot_ahead = 2; // Melissa lets make this dynamic
+    int slot_ahead = 2; // TODO: Make this dynamic
     ul_info.frame_rx = frame;
     ul_info.slot_rx = slot;
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
@@ -551,7 +551,7 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     }
 
 
-    #if 0 //Melissa may want to free this
+    #if 0 // TODO: Heap use after free caught by sanitizer
     free(dl_info.dci_ind);
     dl_info.dci_ind = NULL;
 
@@ -884,7 +884,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
 
-  if ((!dl_info->dci_ind && !dl_info->rx_ind)) { //Melissa review this with Raymond|| !def_dci_pdu_rel15
+  if ((!dl_info->dci_ind && !dl_info->rx_ind)) {
     // UL indication to schedule DCI reception
     nr_ue_scheduler(dl_info, NULL);
   } else {
@@ -980,7 +980,7 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     nr_ue_if_module_inst[module_id]->current_frame = 0;
     nr_ue_if_module_inst[module_id]->current_slot = 0;
     nr_ue_if_module_inst[module_id]->phy_config_request = nr_ue_phy_config_request;
-    if (get_softmodem_params()->nsa) //Melissa, this is also a hack. Get a better flag.
+    if (get_softmodem_params()->nsa) //TODO: Get a better flag for using stub
       nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response_stub;
     else
       nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response;

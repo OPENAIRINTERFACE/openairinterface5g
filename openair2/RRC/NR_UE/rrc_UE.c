@@ -2025,15 +2025,6 @@ nr_rrc_ue_establish_srb2(
      }
    }
 
-  /*rrc_data_req_nr_ue (
-    ctxt_pP,
-    DCCH,
-    nr_rrc_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL); Melissa Elkadi come back here!*/
-
    if (measConfig->s_MeasureConfig->present == NR_MeasConfig__s_MeasureConfig_PR_ssb_RSRP) {
      NR_UE_rrc_inst[ctxt_pP->module_id].s_measure = measConfig->s_MeasureConfig->choice.ssb_RSRP;
    } else if (measConfig->s_MeasureConfig->present == NR_MeasConfig__s_MeasureConfig_PR_csi_RSRP) {
@@ -2699,38 +2690,6 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   }
 }
 
-//-----------------------------------------------------------------------------
-#if 0
-static void nr_rrc_ue_generate_RRCReestablishmentRequest( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index ) 
-{
-  NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size =
-    do_RRCReestablishmentRequest(
-      ctxt_pP->module_id,
-      (uint8_t *)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload, 1);
-  LOG_I(NR_RRC,"[UE %d] : Frame %d, Logical Channel UL-CCCH (SRB0), Generating RRCReestablishmentRequest (bytes %d, gNB %d)\n",
-        ctxt_pP->module_id, ctxt_pP->frame, NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size, gNB_index);
-
-  for (int i=0; i<NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size; i++) {
-    LOG_T(NR_RRC,"%x.",NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload[i]);
-  }
-
-  LOG_T(NR_RRC,"\n");
-
-#ifdef ITTI_SIM
-  MessageDef *message_p;
-  uint8_t *message_buffer;
-  message_buffer = itti_malloc (TASK_RRC_NRUE,TASK_RRC_GNB_SIM,
-        NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size);
-  memcpy (message_buffer, (uint8_t*)NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.Payload,
-        NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size);
-  message_p = itti_alloc_new_message (TASK_RRC_NRUE, 0, UE_RRC_CCCH_DATA_IND);
-  UE_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
-  UE_RRC_CCCH_DATA_IND (message_p).size  = NR_UE_rrc_inst[ctxt_pP->module_id].Srb0[gNB_index].Tx_buffer.payload_size;
-  itti_send_msg_to_task (TASK_RRC_GNB_SIM, ctxt_pP->instance, message_p);
-#endif
-}
-#endif
-
 void
 nr_rrc_ue_generate_rrcReestablishmentComplete(
   const protocol_ctxt_t *const ctxt_pP,
@@ -2890,7 +2849,7 @@ static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
   UECap->sdu_size = (enc_rval.encoded + 7) / 8;
   LOG_A(NR_RRC, "[NR_RRC] NRUE Capability encoded, %d bytes (%zd bits)\n",
         UECap->sdu_size, enc_rval.encoded + 7);
-  /* Melissa: Hack. Need to add ctxt->mod_id as array indices */
+
   NR_UE_rrc_inst[0].UECap = UECap;
   NR_UE_rrc_inst[0].UECapability = UECap->sdu;
   NR_UE_rrc_inst[0].UECapability_size = UECap->sdu_size;
@@ -3031,7 +2990,7 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
           LOG_I(NR_RRC, "We got an OAI_TUN_IFACE_NSA!!\n");
           char cmd_line[RRC_BUF_SIZE];
           memcpy(cmd_line, msg_buffer, sizeof(cmd_line));
-          LOG_I(NR_RRC, "Melissa Elkadi, this is the command line we got: %s\n", cmd_line);
+          LOG_D(NR_RRC, "Command line: %s\n", cmd_line);
           if (background_system(cmd_line) != 0)
           {
             LOG_E(NR_RRC, "ESM-PROC - failed command '%s'", cmd_line);
