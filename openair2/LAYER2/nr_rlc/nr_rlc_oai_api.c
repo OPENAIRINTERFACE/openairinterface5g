@@ -218,10 +218,6 @@ tbs_size_t mac_rlc_data_req(
     rb->set_time(rb, nr_rlc_current_time);
     maxsize = tb_sizeP;
     ret = rb->generate_pdu(rb, buffer_pP, maxsize);
-    char buffer[1024];
-    hexdump(buffer_pP, ret, buffer, sizeof(buffer));
-    LOG_I(MAC, "Melissa Elkadi, this is hexdump of pdu %s right after calling generate_pdu in %s\n",
-              buffer, __FUNCTION__);
   } else {
     ret = 0;
   }
@@ -508,7 +504,7 @@ rb_found:
       return;
     }
   }
-  LOG_I(PDCP, "Melissa Elkadi we are calling PDCP layer from RLC in %s\n", __FUNCTION__);
+  LOG_D(PDCP, "Calling PDCP layer from RLC in %s\n", __FUNCTION__);
   if (!pdcp_data_ind(&ctx, is_srb, 0, rb_id, size, memblock)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
     /* what to do in case of failure? for the moment: nothing */

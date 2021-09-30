@@ -42,10 +42,7 @@ void nr_pdcp_entity_srb_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int si
   nr_pdcp_entity_srb_t *entity = (nr_pdcp_entity_srb_t *)_entity;
   int sn;
   char buf[size+6];
-  char buf_mel[1024];
-  hexdump(buffer, size, buf_mel, sizeof(buf_mel));
-  LOG_I(PDCP, "Melissa Elkadi in %s, this is hexdump of pdu %s recevied in PDCP layer directly\n",
-        __FUNCTION__, buf_mel);
+
   sn = entity->common.next_nr_pdcp_tx_sn;
 
   entity->common.next_nr_pdcp_tx_sn++;
@@ -65,10 +62,6 @@ void nr_pdcp_entity_srb_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int si
 
   entity->common.deliver_pdu(entity->common.deliver_pdu_data,
                              (nr_pdcp_entity_t *)entity, buf, size+6, sdu_id);
-  char buf_meli[1024];
-  hexdump(buf, size + 3, buf_meli, sizeof(buf_meli));
-  LOG_I(PDCP, "Melissa Elkadi in %s, this is hexdump of pdu %s After delivering to RLC\n",
-        __FUNCTION__, buf_meli);
 }
 
 void nr_pdcp_entity_srb_set_integrity_key(nr_pdcp_entity_t *_entity, char *key)

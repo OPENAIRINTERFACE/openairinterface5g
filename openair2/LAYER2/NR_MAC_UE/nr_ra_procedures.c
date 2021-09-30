@@ -421,7 +421,6 @@ uint16_t set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_p
   uint8_t s_id = prach_pdu->prach_start_symbol;
 
   ra->ra_rnti = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
-  //gNB: ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
 
   LOG_D(MAC, "Computed ra_RNTI is %x \n", ra->ra_rnti);
 
@@ -543,7 +542,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
   uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
-  uint8_t lcid = UL_SCH_LCID_CCCH;
   uint8_t *payload;
   uint16_t size_sdu = 0;
   unsigned short post_padding;
@@ -554,9 +552,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = ra->rach_ConfigDedicated;
 
-  uint8_t sdu_lcids[NB_RB_MAX] = {0};
   uint16_t sdu_lengths[NB_RB_MAX] = {0};
-  int num_sdus = 0;
   int offset = 0;
   int TBS_bytes = 848;
   int header_length_total=0;
@@ -564,8 +560,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
   if (!prach_resources->init_msg1) {
-    if ( (mac->common_configuration_complete>0 || get_softmodem_params()->do_ra==1 || get_softmodem_params()->nsa) &&
-        ((MAX_FRAME_NUMBER + frame - prach_resources->sync_frame) % MAX_FRAME_NUMBER) > 150){
+    if ((mac->common_configuration_complete > 0 || get_softmodem_params()->do_ra || get_softmodem_params()->nsa) &&
+       ((MAX_FRAME_NUMBER + frame - prach_resources->sync_frame) % MAX_FRAME_NUMBER) > 150) {
       prach_resources->init_msg1 = 1;
     } else {
       LOG_D(NR_MAC,"PRACH Condition not met: frame %d, prach_resources->sync_frame %d\n",frame,prach_resources->sync_frame);
@@ -574,7 +570,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   }
 
   LOG_D(NR_MAC,"frame %d prach_resources->init_msg1 %d, ra->ra_state %d, ra->RA_active %d\n",
-	frame,prach_resources->init_msg1,ra->ra_state,ra->RA_active);
+	frame, prach_resources->init_msg1, ra->ra_state, ra->RA_active);
 
   if (prach_resources->init_msg1 && ra->ra_state != RA_SUCCEEDED) {
 
@@ -586,9 +582,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       int TBS_max = 848; //8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
       payload = (uint8_t*) mac->CCCH_pdu.payload;
       mac_ce_len = 0;
-      num_sdus = 1;
       post_padding = 1;
-      sdu_lcids[0] = lcid;
 
       // initialisation by RRC
 
@@ -605,8 +599,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
           mac_sdus[i] = (unsigned char) (lrand48()&0xff);
         }
         //Sending SDUs with size 1
-        //Initialize elements of sdu_lcids and sdu_lengths
-        sdu_lcids[0] = lcid;
+        //Initialize elements of sdu_lengths
         sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
         header_length_total += 2 + (sdu_lengths[0] >= 128);
         size_sdu += sdu_lengths[0];

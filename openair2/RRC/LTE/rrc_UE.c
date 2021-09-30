@@ -788,6 +788,7 @@ rrc_ue_establish_drb(
   return(0);
 }
 
+
 //-----------------------------------------------------------------------------
 void
 rrc_ue_process_measConfig(
@@ -1734,7 +1735,7 @@ rrc_ue_process_nrueCapabilityEnquiry(
   OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ue_CapabilityRAT_Container,
                        (const char *)nrue_cap_info->mesg,
                        nrue_cap_info->mesg_len);
-  # if(1) //Melissa: This is a hack. The MRDC capabilites should be filled in the NR UE
+  # if(1) // TODO: The MRDC capabilites should be filled in the NR UE
   NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container_mrdc;
   memset(&ue_CapabilityRAT_Container_mrdc, 0, sizeof(ue_CapabilityRAT_Container_mrdc));
   uint8_t buffer_mrdc[RRC_BUF_SIZE];
@@ -1971,15 +1972,6 @@ rrc_ue_process_rrcConnectionReconfiguration(
 
           nsa_sendmsg_to_nrue(&msg, sizeof(msg), RRC_CONFIG_COMPLETE_REQ);
           LOG_A(RRC, "Sent RRC_CONFIG_COMPLETE_REQ to the NR UE\n");
-          #if 0 //Melissa, this is a hack. We need the transaction_id from latest dl_dcch_msg the LTE UE received. (Ln 6658)
-          LTE_RRCConnectionReconfiguration_t *rrc = &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].dl_dcch_msg->message.
-                                                    choice.c1.choice.rrcConnectionReconfiguration;
-          if (rrc != NULL) {
-            SEQUENCE_free(&asn_DEF_LTE_RRCConnectionReconfiguration, rrc, ASFM_FREE_EVERYTHING);
-          }
-          rrc->rrc_TransactionIdentifier = rrcConnectionReconfiguration->rrc_TransactionIdentifier;
-          rrcConnectionReconfiguration = NULL;
-          #endif
       }
 
       if (r_r8->mobilityControlInfo) {
@@ -2059,7 +2051,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
           NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.data = pdu_buffer;
           itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
         }
-        LOG_I(RRC, "Melissa Elkadi, we have sent NAS_CONN_ESTABLI_CNF to NAS layer via itti!\n");
+        LOG_D(RRC, "Sent NAS_CONN_ESTABLI_CNF to NAS layer via itti!\n");
 
         free (r_r8->dedicatedInfoNASList);
       }
@@ -2517,7 +2509,6 @@ rrc_ue_decode_dcch(
                 UE_RRC_INFO *info = &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_indexP];
                 if (info->dl_dcch_msg != NULL) {
                   info->dl_dcch_msg = NULL;
-                  //SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, info->dl_dcch_msg, ASFM_FREE_EVERYTHING); Melissa
                 }
                 info->dl_dcch_msg = dl_dcch_msg;
                 dl_dcch_msg = NULL;
@@ -2533,7 +2524,6 @@ rrc_ue_decode_dcch(
               UE_RRC_INFO *info = &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_indexP];
               if (info->dl_dcch_msg != NULL) {
                 info->dl_dcch_msg = NULL;
-                //SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, info->dl_dcch_msg, ASFM_FREE_EVERYTHING); Melissa
               }
               info->dl_dcch_msg = dl_dcch_msg;
               dl_dcch_msg = NULL;
@@ -2571,7 +2561,7 @@ rrc_ue_decode_dcch(
 #ifndef NO_RRM
   send_msg(&S_rrc,msg_rrc_end_scan_req(ctxt_pP->module_id,eNB_indexP));
 #endif
-  if (0) //Melissa hack: Were not done with underlying members of dl_dcch_msg (Use after free)
+  if (0) //We're not done with underlying members of dl_dcch_msg (Use after free error when enabled)
   {
     SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, dl_dcch_msg, ASFM_FREE_EVERYTHING);
   }
@@ -5067,7 +5057,7 @@ void *rrc_ue_task( void *args_p ) {
       }
       case NAS_OAI_TUN_NSA:
       {
-        LOG_I(NAS, "Melissa Elkadi Received %s: length %lu. About to send this to the NR UE\n", ITTI_MSG_NAME (msg_p),
+        LOG_D(NAS, "Received %s: length %lu. About to send this to the NR UE\n", ITTI_MSG_NAME (msg_p),
               sizeof(NAS_OAI_TUN_NSA (msg_p).buffer));
         char buffer[RRC_BUF_SIZE];
         memcpy(buffer, NAS_OAI_TUN_NSA(msg_p).buffer, sizeof(buffer));

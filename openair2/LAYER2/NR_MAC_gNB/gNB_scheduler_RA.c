@@ -288,6 +288,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
       }else if (N_RA_slot <= 1) { //1 PRACH slot in a subframe
         slot_index = 0;
       }
+
       UL_tti_req->SFN = frameP;
       UL_tti_req->Slot = slotP;
       for (int fdm_index=0; fdm_index < fdm; fdm_index++) { // one structure per frequency domain occasion
