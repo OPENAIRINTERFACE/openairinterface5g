@@ -81,11 +81,12 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
   const NR_ControlResourceSet_t *coreset = get_coreset(scc, bwp ? bwp->bwp_Dedicated : NULL, search_space, target_ss);
 
   // get coreset symbol "map"
-  const uint16_t symb_coreset = (1 << coreset->duration) - 1;
+  const uint16_t symb_coreset = coreset ? (1 << coreset->duration) - 1 : 1;
 
   /* check that TDA index 0 fits into DL and does not overlap CORESET */
-  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
-      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = bwp ?
+      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :
+      scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
   AssertFatal(tdaList->list.count >= 1, "need to have at least one TDA for DL slots\n");
   const NR_PDSCH_TimeDomainResourceAllocation_t *tdaP_DL = tdaList->list.array[0];
   AssertFatal(!tdaP_DL->k0 || *tdaP_DL->k0 == 0,
@@ -490,7 +491,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   const long f = (sched_ctrl->active_bwp ||bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   int rbSize = 0;
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : nr_find_default_tda(module_id, slot);
+  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
   AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
   if (tda == retInfo->time_domain_allocation) {
     /* Check that there are enough resources for retransmission */
@@ -715,7 +716,7 @@ void pf_dl(module_id_t module_id,
 
     /* MCS has been set above */
 
-    const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : nr_find_default_tda(module_id, slot);
+    const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
     AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;

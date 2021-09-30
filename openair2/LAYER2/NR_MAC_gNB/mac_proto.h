@@ -284,8 +284,6 @@ NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
 
 long get_K2(NR_ServingCellConfigCommon_t *scc, NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
 
-int nr_find_default_tda(module_id_t module_id, sub_frame_t slot);
-
 void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
                               const NR_BWP_Downlink_t *bwp,

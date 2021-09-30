@@ -295,39 +295,6 @@ bool nr_find_nb_rb(uint16_t Qm,
   return *tbs >= bytes && *nb_rb <= nb_rb_max;
 }
 
-int nr_find_default_tda(module_id_t module_id, sub_frame_t slot) {
-
-  int tda = -1;
-  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
-  NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList =
-      scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-
-  bool is_mixed_slot = is_xlsch_in_slot(RC.nrmac[module_id]->dlsch_slot_bitmap[slot / 64], slot) &&
-                       is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[slot / 64], slot);
-
-  int startSymbolAndLength = 0;
-  int StartSymbolIndex = 0;
-  int NrOfSymbols = 0;
-  int NrOfSymbols_sel = -1;
-  for (int i=0; i<pdsch_TimeDomainAllocationList->list.count; i++) {
-    startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
-    SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
-    if (is_mixed_slot) {
-      if(StartSymbolIndex + NrOfSymbols <= scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols && NrOfSymbols>NrOfSymbols_sel) {
-        NrOfSymbols_sel = NrOfSymbols;
-        tda = i;
-      }
-    } else {
-      if(NrOfSymbols>NrOfSymbols_sel) {
-        NrOfSymbols_sel = NrOfSymbols;
-        tda = i;
-      }
-    }
-  }
-
-  return tda;
-}
-
 void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
                               const NR_BWP_Downlink_t *bwp,
