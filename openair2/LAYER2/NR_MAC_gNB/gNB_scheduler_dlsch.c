@@ -489,7 +489,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   const long f = (sched_ctrl->active_bwp ||bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
-  const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp ||bwpd) ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
   int rbSize = 0;
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : nr_find_default_tda(module_id, slot);
   AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
@@ -509,7 +508,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
     }
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
-    if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
+    if (ps->time_domain_allocation != tda)
       nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, f, ps);
   } else {
     /* the retransmission will use a different time domain allocation, check
@@ -721,8 +720,7 @@ void pf_dl(module_id_t module_id,
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
     const long f = (sched_ctrl->active_bwp || bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
-    const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp || bwpd) ? (f ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2)) : (ps->nrOfSymbols == 2 ? 1 : 2);
-    if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
+    if (ps->time_domain_allocation != tda)
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, f, ps);
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
