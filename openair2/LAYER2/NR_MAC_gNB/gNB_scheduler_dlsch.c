@@ -78,10 +78,13 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
     target_ss = NR_SearchSpace__searchSpaceType_PR_common;
   }
   NR_SearchSpace_t *search_space = get_searchspace(scc, bwp ? bwp->bwp_Dedicated : NULL, target_ss);
-  const NR_ControlResourceSet_t *coreset = get_coreset(scc, bwp ? bwp->bwp_Dedicated : NULL, search_space, target_ss);
-
+  NR_ControlResourceSet_t *coreset;
+  if (*search_space->controlResourceSetId == 0)
+    coreset = nrmac->sched_ctrlCommon->coreset; // this is coreset 0
+  else
+    coreset = get_coreset(scc, bwp ? bwp->bwp_Dedicated : NULL, search_space, target_ss);
   // get coreset symbol "map"
-  const uint16_t symb_coreset = coreset ? (1 << coreset->duration) - 1 : 1;
+  const uint16_t symb_coreset = (1 << coreset->duration) - 1;
 
   /* check that TDA index 0 fits into DL and does not overlap CORESET */
   const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = bwp ?
