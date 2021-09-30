@@ -3572,8 +3572,6 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     return 0;
   }
 
-  int cc_id                = dl_info->cc_id;
-  uint8_t gNB_id           = dl_info->gNB_index;
   NR_UE_MAC_INST_t *mac    = get_mac_inst(mod_id);
   RA_config_t *ra          = &mac->ra;
   uint8_t n_subPDUs        = 0;  // number of RAR payloads
