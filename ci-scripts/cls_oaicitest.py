@@ -2273,7 +2273,7 @@ class OaiCiTest():
 				iperf_cmd = 'bin/iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > ' + client_filename
 				cmd = 'docker exec -it prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
 				SSH.command(cmd,'\$',int(iperf_time)*5.0)
-				SSH.command('docker cp prod-trf-gen:bin/' + client_filename + ' ' + EPC.SourceCodePath, '\$', 5)
+				SSH.command('docker cp prod-trf-gen:/iperf-2.0.13/'+ client_filename + ' ' + EPC.SourceCodePath, '\$', 5)
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/' + client_filename, '.')
 				SSH.close()
 
@@ -2304,7 +2304,7 @@ class OaiCiTest():
 
 				#once client is done, retrieve the server file from container to EPC Host
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-				SSH.command('docker cp prod-trf-gen:bin/' + server_filename + ' ' + EPC.SourceCodePath, '\$', 5)
+				SSH.command('docker cp prod-trf-gen:/iperf-2.0.13/' + server_filename + ' ' + EPC.SourceCodePath, '\$', 5)
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/' + server_filename, '.')
 				SSH.close()
 
