@@ -3217,7 +3217,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
   frame_t frameP         = dl_info->frame;
   int slot               = dl_info->slot;
   uint8_t *pduP          = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu;
-  int16_t pdu_len        = (int16_t)(dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
+  int32_t pdu_len        = (int32_t)(dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
   uint8_t gNB_index      = dl_info->gNB_index;
   uint8_t CC_id          = dl_info->cc_id;
   uint8_t done           = 0;
