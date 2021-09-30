@@ -547,7 +547,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
     if(ubwpList) {
-      AssertFatal(ubwpList->list.count > 0, "downlinkBWP_ToAddModList no BWPs!\n");
+      AssertFatal(ubwpList->list.count > 0, "uplinkBWP_ToAddModList no BWPs!\n");
       for (int i = 0; i < ubwpList->list.count; ++i) {
         const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
         calculate_preferred_ul_tda(Mod_idP, ubwp);
