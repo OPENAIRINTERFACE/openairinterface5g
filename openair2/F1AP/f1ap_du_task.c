@@ -90,18 +90,7 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
     tmp= &RC.nrmac[instance]->eth_params_n;
   else
     tmp= &RC.mac[instance]->eth_params_n;
-  const cudu_params_t  params = {
-      .local_ipv4_address  = tmp->my_addr,
-      .local_port          = tmp->my_portd,
-      .remote_ipv4_address = tmp->remote_addr,
-      .remote_port         = tmp->remote_portd
-    };
 
-  /*
-  if (!RC.nrrrc)
-    AssertFatal(proto_agent_start(instance, &params) == 0,
-              "could not start PROTO_AGENT for F1U on instance %ld!\n", instance);
-  */
   DU_send_F1_SETUP_REQUEST(instance);
 }
 

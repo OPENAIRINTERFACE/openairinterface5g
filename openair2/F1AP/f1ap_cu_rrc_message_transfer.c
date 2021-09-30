@@ -68,7 +68,6 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  instance_t du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
   /* NRCGI
   * Fixme: process NRCGI
   */
