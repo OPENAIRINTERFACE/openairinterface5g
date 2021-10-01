@@ -39,8 +39,6 @@
 
 extern const uint8_t nr_slots_per_frame[5];
 
-extern dci_pdu_rel15_t def_dci_pdu_rel15[8];
-
 /* extern const uint32_t BSR_TABLE[BSR_TABLE_SIZE];
 extern const uint32_t Extended_BSR_TABLE[BSR_TABLE_SIZE];
 extern const uint8_t cqi2fmt0_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
