@@ -411,7 +411,7 @@ void GtpuUpdateTunnelOutgoingTeid(instance_t instance, rnti_t rnti, ebi_t bearer
   }
 
   ptr2->second.teid_outgoing = newOutgoingTeid;
-  LOG_I(GTPU, "[%ld] Tunnel Outgoing TEID updated to %d \n", instance, ptr2->second.teid_outgoing);
+  LOG_I(GTPU, "[%ld] Tunnel Outgoing TEID updated to %x \n", instance, ptr2->second.teid_outgoing);
   pthread_mutex_unlock(&globGtp.gtp_lock);
   return;
 }
@@ -471,7 +471,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   pthread_mutex_unlock(&globGtp.gtp_lock);
   char ip4[INET_ADDRSTRLEN];
   char ip6[INET6_ADDRSTRLEN];
-  LOG_I(GTPU, "[%ld] Created tunnel for RNTI %x, teid for DL: %u, teid for UL %u to remote IPv4: %s, IPv6 %s\n",
+  LOG_I(GTPU, "[%ld] Created tunnel for RNTI %x, teid for DL: %x, teid for UL %x to remote IPv4: %s, IPv6 %s\n",
 	instance,
         rnti,
         tmp->teid_incoming,
