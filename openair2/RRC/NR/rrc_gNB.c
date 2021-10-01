@@ -3253,10 +3253,11 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
   resp->du_to_cu_rrc_information = calloc(1,1024*sizeof(uint8_t));
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                 NULL,
-                                (void *)ue_context_p->ue_context.masterCellGroup,
+                                (void *)cellGroupConfig,
                                 resp->du_to_cu_rrc_information,
                                 1024);
   resp->du_to_cu_rrc_information_length = (enc_rval.encoded+7)>>3;
+  free(cellGroupConfig);
   itti_send_msg_to_task (TASK_DU_F1, ctxt.module_id, message_p);
 }
 
