@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <pthread.h>
 
 /* exe */
 #include <common/utils/nr/nr_common.h>
@@ -59,11 +60,12 @@ static prach_association_pattern_t prach_assoc_pattern;
 static ssb_list_info_t ssb_list;
 
 void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type){
-
+  pthread_mutex_lock(&ul_config->mutex_ul_config);
   ul_config->ul_config_list[ul_config->number_pdus].pdu_type = pdu_type;
   ul_config->slot = slot_tx;
   ul_config->sfn = frame_tx;
   ul_config->number_pdus++;
+  pthread_mutex_unlock(&ul_config->mutex_ul_config);
 
   LOG_D(NR_MAC, "In %s: Set config request for UL transmission in [%d.%d], number of UL PDUs: %d\n", __FUNCTION__, ul_config->sfn, ul_config->slot, ul_config->number_pdus);
 

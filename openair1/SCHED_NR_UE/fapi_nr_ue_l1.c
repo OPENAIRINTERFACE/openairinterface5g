@@ -153,6 +153,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
       fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
 
+      pthread_mutex_lock(&ul_config->mutex_ul_config);
       for (i = 0; i < ul_config->number_pdus; ++i){
 
         AssertFatal(ul_config->ul_config_list[i].pdu_type <= FAPI_NR_UL_CONFIG_TYPES,"pdu_type %d out of bounds\n",ul_config->ul_config_list[i].pdu_type);
@@ -229,6 +230,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         }
       }
       memset(ul_config, 0, sizeof(fapi_nr_ul_config_request_t));
+      pthread_mutex_unlock(&ul_config->mutex_ul_config);
     }
   }
   return 0;
