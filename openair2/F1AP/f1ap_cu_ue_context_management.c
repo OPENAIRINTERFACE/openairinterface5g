@@ -644,7 +644,7 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
 
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
-                             F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, false);
+                             F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   f1ap_ue_context_setup_resp->gNB_CU_ue_id = ie->value.choice.GNB_CU_UE_F1AP_ID;  
   
   LOG_D(F1AP, "f1ap_ue_context_setup_resp->gNB_CU_ue_id is: %d \n", f1ap_ue_context_setup_resp->gNB_CU_ue_id);
