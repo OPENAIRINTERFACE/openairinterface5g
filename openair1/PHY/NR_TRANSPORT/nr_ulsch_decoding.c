@@ -505,8 +505,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
-//  harq_process->round = nr_rv_round_map[pusch_pdu->pusch_data.rv_index];
-  if (pusch_pdu->pusch_data.rv_index == 0) harq_process->round = 0;
+  harq_process->round = nr_rv_round_map[pusch_pdu->pusch_data.rv_index];
+
+  // If the first detected transmission starts with RV 2 it would never decode. So we needed a way to set the round to 0
+  if( (pusch_pdu->pusch_data.rv_index==0) && (harq_process->round!=0) ) {
+    LOG_E(NR_PHY, "Mismatch between harq round %i and rv_index %i\n", harq_process->round, pusch_pdu->pusch_data.rv_index);
+    harq_process->round = 0;
+  }
  
   A   = (harq_process->TBS)<<3;
 
