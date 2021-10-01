@@ -392,46 +392,70 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_ul_tti_request_number_of_pdus_t *pdu_list = &ul_tti_req->pdus_list[i];
-        LOG_D(NR_PHY, "This is the pdu type %d and rnti %x in ul_tti_req\n",
-              pdu_list->pdu_type, ul_tti_req->pdus_list[i].pucch_pdu.rnti);
+        LOG_D(NR_PHY, "This is the pdu type %d and rnti %x and SR flag %d and harq_pdu_len %d in in ul_tti_req\n",
+              pdu_list->pdu_type, ul_tti_req->pdus_list[i].pucch_pdu.rnti, pdu_list->pucch_pdu.sr_flag, pdu_list->pucch_pdu.bit_len_harq);
         if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE && pdu_list->pucch_pdu.rnti == mac->crnti)
         {
             LOG_I(NR_MAC, "This is the number of UCIs in the queue %ld\n", nr_uci_ind_queue.num_items);
             nfapi_nr_uci_indication_t *uci_ind = get_queue(&nr_uci_ind_queue);
-            if (uci_ind)
+            if (uci_ind && uci_ind->num_ucis > 0)
             {
-                LOG_I(NR_MAC, "This is the SFN/SF [%d, %d] of the UCI ind. \n", uci_ind->sfn, uci_ind->slot);
-                if (uci_ind->num_ucis > 0)
+                LOG_D(NR_MAC, "This is the SFN/SF [%d, %d] and RNTI %x of the UCI ind. ul_tti_req.pdu[%d]->rnti = %x \n",
+                        uci_ind->sfn, uci_ind->slot, uci_ind->uci_list[0].pucch_pdu_format_0_1.rnti, i, ul_tti_req->pdus_list[i].pucch_pdu.rnti);
+                uci_ind->sfn = ul_tti_req->SFN;
+                uci_ind->slot = ul_tti_req->Slot;
+                for (int j = 0; j < uci_ind->num_ucis; j++)
                 {
-                    uci_ind->sfn = ul_tti_req->SFN;
-                    uci_ind->slot = ul_tti_req->Slot;
+                    nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
                     if (pdu_list->pucch_pdu.sr_flag)
                     {
-                        for (int j = 0; j < uci_ind->num_ucis; j++)
-                        {
-                          nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
-                          pdu_0_1->sr = CALLOC(1, sizeof(*pdu_0_1->sr));
-                          pdu_0_1->sr->sr_confidence_level = 0;
-                          pdu_0_1->sr->sr_indication = 0;
-                        }
-
+                        LOG_D(NR_MAC, "We have the SR flag in pdu i %d\n", i);
+                        pdu_0_1->pduBitmap = 1; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR
+                        pdu_0_1->sr = CALLOC(1, sizeof(*pdu_0_1->sr));
+                        pdu_0_1->sr->sr_confidence_level = 0;
+                        pdu_0_1->sr->sr_indication = 1;
                     }
-                    LOG_I(NR_MAC, "We have dequeued the previously filled uci_ind and updated the snf/slot to %d/%d.\n",
-                          uci_ind->sfn, uci_ind->slot);
-                    NR_UL_IND_t UL_INFO = {
-                        .uci_ind = *uci_ind,
-                    };
-                    send_nsa_standalone_msg(&UL_INFO, uci_ind->header.message_id);
+                    if (pdu_list->pucch_pdu.bit_len_harq > 0)
+                    {
+                        LOG_D(NR_MAC, "We have the Harq len bits %d\n", pdu_list->pucch_pdu.bit_len_harq);
+                        pdu_0_1->pduBitmap = 2; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR
+                        pdu_0_1->harq = CALLOC(1, sizeof(*pdu_0_1->harq));
+                        pdu_0_1->harq->num_harq = 1;
+                        pdu_0_1->harq->harq_confidence_level = 0;
+                        pdu_0_1->harq->harq_list = CALLOC(pdu_0_1->harq->num_harq, sizeof(*pdu_0_1->harq->harq_list));
+                        for (int k = 0; k < pdu_0_1->harq->num_harq; k++)
+                        {
+                            pdu_0_1->harq->harq_list[k].harq_value = 0;
+                        }
+                    }
                 }
+                LOG_I(NR_MAC, "We have dequeued the previously filled uci_ind and updated the snf/slot to %d/%d.\n",
+                      uci_ind->sfn, uci_ind->slot);
+                NR_UL_IND_t UL_INFO = {
+                    .uci_ind = *uci_ind,
+                };
+                send_nsa_standalone_msg(&UL_INFO, uci_ind->header.message_id);
+
                 for (int k = 0; k < uci_ind->num_ucis; k++)
                 {
-                  nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[k].pucch_pdu_format_0_1;
-                  free(pdu_0_1->sr);
-                  free(pdu_0_1->harq->harq_list);
-                  free(pdu_0_1->harq);
+                    nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[k].pucch_pdu_format_0_1;
+                    if (pdu_list->pucch_pdu.sr_flag)
+                    {
+                        free(pdu_0_1->sr);
+                        pdu_0_1->sr = NULL;
+                    }
+                    if (pdu_list->pucch_pdu.bit_len_harq > 1)
+                    {
+                        free(pdu_0_1->harq->harq_list);
+                        pdu_0_1->harq->harq_list = NULL;
+                        free(pdu_0_1->harq);
+                        pdu_0_1->harq = NULL;
+                    }
                 }
                 free(uci_ind->uci_list);
+                uci_ind->uci_list = NULL;
                 free(uci_ind);
+                uci_ind = NULL;
             }
 
         }
@@ -898,7 +922,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
 
-  if ((!dl_info->dci_ind && !dl_info->rx_ind)) { //Melissa review this with Raymond|| !def_dci_pdu_rel15
+  if ((!dl_info->dci_ind && !dl_info->rx_ind)) {
     // UL indication to schedule DCI reception
     nr_ue_scheduler(dl_info, NULL);
   } else {

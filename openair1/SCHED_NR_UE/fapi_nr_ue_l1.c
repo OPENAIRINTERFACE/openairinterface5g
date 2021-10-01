@@ -92,7 +92,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 memcpy(rx_ind->pdu_list[j].pdu, tx_req_body->pdu, tx_req_body->pdu_length * sizeof(*rx_ind->pdu_list[j].pdu));
                 rx_ind->pdu_list[j].rnti = pusch_config_pdu->rnti;
                 rx_ind->pdu_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
-                rx_ind->pdu_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
+                rx_ind->pdu_list[j].ul_cqi = 255; // scheduled_response->tx_request->tx_config.ul_cqi;
                 char buffer[1024];
                 hexdump(rx_ind->pdu_list[j].pdu, rx_ind->pdu_list[j].pdu_length, buffer, sizeof(buffer));
                 LOG_D(MAC, "Melissa Elkadi, this is hexdump of pdu %s before queuing rx_ind\n",
@@ -183,38 +183,21 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               uci_ind->uci_list[j].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
               uci_ind->uci_list[j].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
               memset(pdu_0_1, 0, sizeof(*pdu_0_1));
-              pdu_0_1->pduBitmap = 2; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR
               pdu_0_1->handle = 0;
               pdu_0_1->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
               pdu_0_1->pucch_format = 1;
-              pdu_0_1->ul_cqi = 27;
+              pdu_0_1->ul_cqi = 255;
               pdu_0_1->timing_advance = 0;
               pdu_0_1->rssi = 0;
-              pdu_0_1->harq = CALLOC(1, sizeof(*pdu_0_1->harq));
-              pdu_0_1->harq->num_harq = 1;
-              pdu_0_1->harq->harq_confidence_level = 0;
-              pdu_0_1->harq->harq_list = CALLOC(pdu_0_1->harq->num_harq, sizeof(*pdu_0_1->harq->harq_list));
-              for (int k = 0; k < pdu_0_1->harq->num_harq; k++)
-              {
-                pdu_0_1->harq->harq_list[k].harq_value = 0;
-              }
             }
 
             LOG_I(NR_PHY, "In %s: Filled queue uci_ind which was filled by dlconfig.\n"
-                       "uci_num %d, uci_slot %d, uci_frame %d and num_harqs %d\n",
-                          __FUNCTION__, uci_ind->num_ucis, uci_ind->slot, uci_ind->sfn, uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->num_harq);
+                       "uci_num %d, SFN/SLOT: [%d, %d]\n",
+                          __FUNCTION__, uci_ind->num_ucis, uci_ind->sfn, uci_ind->slot);
 
             if (!put_queue(&nr_uci_ind_queue, uci_ind))
             {
               LOG_E(NR_MAC, "Put_queue failed for uci_ind\n");
-              //free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq->harq_list);
-              //free(uci_ind->uci_list[0].pucch_pdu_format_0_1.harq);
-              for (int j = 0; j < uci_ind->num_ucis; j++)
-              {
-                nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
-                free(pdu_0_1->harq->harq_list);
-                free(pdu_0_1->harq);
-              }
               free(uci_ind->uci_list);
               free(uci_ind);
             }

@@ -156,8 +156,16 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
   for (int i = 0; i < num_ucis; i++) {
     switch (uci_list[i].pdu_type) {
       case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE:
+        if (uci_list[i].pucch_pdu_format_0_1.harq) {
         free(uci_list[i].pucch_pdu_format_0_1.harq->harq_list);
+        uci_list[i].pucch_pdu_format_0_1.harq->harq_list = NULL;
         free(uci_list[i].pucch_pdu_format_0_1.harq);
+        uci_list[i].pucch_pdu_format_0_1.harq = NULL;
+        }
+        if (uci_list[i].pucch_pdu_format_0_1.sr) {
+          free(uci_list[i].pucch_pdu_format_0_1.sr);
+          uci_list[i].pucch_pdu_format_0_1.sr = NULL;
+        }
         break;
 
       case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE:
@@ -167,9 +175,12 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
         break;
     }
   }
-  if (uci_ind && num_ucis > 0)
+  if (uci_ind && num_ucis > 0) {
     free(uci_list);
+    uci_list = NULL;
+  }
   free(uci_ind);
+  uci_ind = NULL;
 }
 
 static bool crc_sfn_slot_matcher(void *wanted, void *candidate)
