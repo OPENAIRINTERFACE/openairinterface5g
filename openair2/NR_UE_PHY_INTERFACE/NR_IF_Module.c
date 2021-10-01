@@ -396,13 +396,26 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
               pdu_list->pdu_type, ul_tti_req->pdus_list[i].pucch_pdu.rnti);
         if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE && pdu_list->pucch_pdu.rnti == mac->crnti)
         {
+            LOG_I(NR_MAC, "This is the number of UCIs in the queue %ld\n", nr_uci_ind_queue.num_items);
             nfapi_nr_uci_indication_t *uci_ind = get_queue(&nr_uci_ind_queue);
             if (uci_ind)
             {
+                LOG_I(NR_MAC, "This is the SFN/SF [%d, %d] of the UCI ind. \n", uci_ind->sfn, uci_ind->slot);
                 if (uci_ind->num_ucis > 0)
                 {
                     uci_ind->sfn = ul_tti_req->SFN;
                     uci_ind->slot = ul_tti_req->Slot;
+                    if (pdu_list->pucch_pdu.sr_flag)
+                    {
+                        for (int j = 0; j < uci_ind->num_ucis; j++)
+                        {
+                          nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
+                          pdu_0_1->sr = CALLOC(1, sizeof(*pdu_0_1->sr));
+                          pdu_0_1->sr->sr_confidence_level = 0;
+                          pdu_0_1->sr->sr_indication = 0;
+                        }
+
+                    }
                     LOG_I(NR_MAC, "We have dequeued the previously filled uci_ind and updated the snf/slot to %d/%d.\n",
                           uci_ind->sfn, uci_ind->slot);
                     NR_UL_IND_t UL_INFO = {
@@ -410,9 +423,10 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
                     };
                     send_nsa_standalone_msg(&UL_INFO, uci_ind->header.message_id);
                 }
-                for (int j = 0; j < uci_ind->num_ucis; j++)
+                for (int k = 0; k < uci_ind->num_ucis; k++)
                 {
-                  nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
+                  nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[k].pucch_pdu_format_0_1;
+                  free(pdu_0_1->sr);
                   free(pdu_0_1->harq->harq_list);
                   free(pdu_0_1->harq);
                 }
