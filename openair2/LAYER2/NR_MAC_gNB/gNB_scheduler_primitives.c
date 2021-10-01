@@ -1937,11 +1937,13 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     if (!get_softmodem_params()->phy_test && !get_softmodem_params()->do_ra && !get_softmodem_params()->sa) {
       sched_ctrl->lcid_mask = 1<<DL_SCH_LCID_DTCH;
     }
+    if (get_softmodem_params()->do_ra) {
+      sched_ctrl->maxL = 4;
+    }
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
     sched_ctrl->ul_rssi = 0;
-    sched_ctrl->maxL = 4;
     sched_ctrl->pucch_consecutive_dtx_cnt = 0;
     sched_ctrl->pusch_consecutive_dtx_cnt = 0;
     sched_ctrl->ul_failure                = 0;
