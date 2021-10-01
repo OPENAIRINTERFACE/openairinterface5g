@@ -1289,15 +1289,17 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_pdu->beta_PDCCH_1_0 = 0;
     dci_pdu->powerControlOffsetSS = 1;
 
+    int effective_BWPSize = get_softmodem_params()->sa == 1 ? (pdcch_pdu_rel15->FreqDomainResource[0]==0xFF ?
+        (pdcch_pdu_rel15->FreqDomainResource[1]==0xFF ? 96 : 48) : 24) : pdsch_pdu_rel15->BWPSize;
+
     dci_pdu_rel15_t dci_payload;
-    int effective_BWPSize = get_softmodem_params()->sa == 1 ? (pdcch_pdu_rel15->FreqDomainResource[0]==0xFF ? 48 : 24) : pdsch_pdu_rel15->BWPSize;
     dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize,
                                                                                     pdsch_pdu_rel15->rbStart,
                                                                                     effective_BWPSize);
 
     LOG_D(NR_MAC,"Msg2 rbSize.rbStart.BWPsize %d.%d.%d\n",pdsch_pdu_rel15->rbSize,
-	  pdsch_pdu_rel15->rbStart,
-	  effective_BWPSize);
+          pdsch_pdu_rel15->rbStart,
+          effective_BWPSize);
 
     dci_payload.time_domain_assignment.val = time_domain_assignment;
     dci_payload.vrb_to_prb_mapping.val = 0;
