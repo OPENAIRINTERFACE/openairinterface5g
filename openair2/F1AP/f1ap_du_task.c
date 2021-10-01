@@ -85,11 +85,6 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
   f1ap_du_data->default_sctp_stream_id = 0;
   /* setup parameters for F1U and start the server */
-  eth_params_t *tmp;
-  if ( RC.nrmac )
-    tmp= &RC.nrmac[instance]->eth_params_n;
-  else
-    tmp= &RC.mac[instance]->eth_params_n;
 
   DU_send_F1_SETUP_REQUEST(instance);
 }

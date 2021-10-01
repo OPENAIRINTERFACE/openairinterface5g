@@ -601,7 +601,7 @@ int newGtpuDeleteTunnel(instance_t instance, rnti_t rnti) {
   auto it=inst->ue2te_mapping.find(rnti);
 
   if ( it == inst->ue2te_mapping.end() ) {
-    LOG_W(GTPU,"[%ld] Delete a non existing GTP tunnel\n", instance);
+    LOG_W(GTPU,"[%ld] Delete GTP tunnels for rnti: %x, but no tunnel exits\n", instance, rnti);
     pthread_mutex_unlock(&globGtp.gtp_lock);
     return -1;
   }
@@ -617,7 +617,7 @@ int newGtpuDeleteTunnel(instance_t instance, rnti_t rnti) {
 
   inst->ue2te_mapping.erase(it);
   pthread_mutex_unlock(&globGtp.gtp_lock);
-  LOG_I(GTPU, "[%ld] Deleted all tunnels for RNTI %d (%d tunnels deleted)\n", instance, rnti, nb);
+  LOG_I(GTPU, "[%ld] Deleted all tunnels for RNTI %x (%d tunnels deleted)\n", instance, rnti, nb);
   return !GTPNOK;
 }
 
@@ -639,7 +639,7 @@ static int Gtpv1uHandleEchoReq(int h,
                                uint32_t msgBufLen,
                                uint16_t peerPort,
                                uint32_t peerIp) {
-  LOG_E(GTPU,"to be dev\n");
+  LOG_E(GTPU,"EchoReq reply to be dev\n");
   int rc = GTPNOK;
   return rc;
 }
@@ -649,7 +649,7 @@ static int Gtpv1uHandleError(int h,
                              uint32_t msgBufLen,
                              uint16_t peerPort,
                              uint32_t peerIp) {
-  LOG_E(GTPU,"to be dev\n");
+  LOG_E(GTPU,"Hadle error to be dev\n");
   int rc = GTPNOK;
   return rc;
 }
@@ -659,7 +659,7 @@ static int Gtpv1uHandleSupportedExt(int h,
                                     uint32_t msgBufLen,
                                     uint16_t peerPort,
                                     uint32_t peerIp) {
-  LOG_E(GTPU,"to be dev\n");
+  LOG_E(GTPU,"Supported extensions to be dev\n");
   int rc = GTPNOK;
   return rc;
 }

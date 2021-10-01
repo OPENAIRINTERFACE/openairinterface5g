@@ -221,7 +221,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     }
   } else {
     CU_send_F1_SETUP_FAILURE(instance);
-    itti_free(TASK_RRC_GNB,message_p);
+    itti_free(TASK_CU_F1,message_p);
     return -1;
   }
 

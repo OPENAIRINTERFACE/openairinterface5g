@@ -288,28 +288,9 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   /* RRC Container */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
-  // print message in debug mode
-  // create an ITTI message and copy SDU
-  /*
-
-  message_p = itti_alloc_new_message (TASK_CU_F1, 0, RRC_DCCH_DATA_IND);
-
-  RRC_DCCH_DATA_IND (message_p).sdu_p = malloc(ie->value.choice.RRCContainer.size);
-
-  RRC_DCCH_DATA_IND (message_p).sdu_size = ie->value.choice.RRCContainer.size;
-  memcpy(RRC_DCCH_DATA_IND (message_p).sdu_p, ie->value.choice.RRCContainer.buf,
-         ie->value.choice.RRCContainer.size);
-
-  RRC_DCCH_DATA_IND (message_p).dcch_index = srb_id;
-  RRC_DCCH_DATA_IND (message_p).rnti = f1ap_get_rnti_by_cu_id(CUtype, instance, cu_ue_f1ap_id);
-  RRC_DCCH_DATA_IND (message_p).instance = instance;
-  RRC_DCCH_DATA_IND (message_p).eNB_index = instance; // not needed for CU
-
-  itti_send_msg_to_task(TASK_RRC_ENB, instance, message_p);
-  */
   protocol_ctxt_t ctxt;
   ctxt.instance = instance;
-  ctxt.instance = instance;
+  ctxt.module_id = instance;
   ctxt.rnti = f1ap_get_rnti_by_cu_id(CUtype, instance, cu_ue_f1ap_id);
   ctxt.enb_flag = 1;
   ctxt.eNB_index = 0;
