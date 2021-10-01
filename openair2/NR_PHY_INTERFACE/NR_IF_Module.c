@@ -78,7 +78,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
   UL_INFO.module_id = UL_info->module_id;
   UL_INFO.CC_id = UL_info->CC_id;
 
-  int frame_diff = UL_info->frame -  rach_ind->sfn;
+  int frame_diff = UL_info->frame - rach_ind->sfn;
   if (frame_diff < 0)
   {
     frame_diff += 1024;
