@@ -848,7 +848,6 @@ void gtpv1uReceiver(int h) {
 #include <openair2/ENB_APP/enb_paramdef.h>
 
 void *ocp_gtpv1uTask(void *args)  {
-  set_log(GTPU,  OAILOG_DEBUG);
   while(1) {
     /* Trying to fetch a message from the message queue.
        If the queue is empty, this function will block till a
