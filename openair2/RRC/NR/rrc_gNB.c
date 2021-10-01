@@ -3210,7 +3210,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
           drb_p.drb_id,
           drb_p.up_ul_tnl[0].teid,
           addr,
-          2152,
+          drb_p.up_ul_tnl[0].port,
           DURecvCb);
     }
   }
