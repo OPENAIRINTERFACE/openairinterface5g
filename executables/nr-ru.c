@@ -1122,37 +1122,6 @@ int setup_RU_buffers(RU_t *ru) {
   return(0);
 }
 
-void *ru_stats_thread(void *param) {
-  RU_t               *ru      = (RU_t *)param;
-  wait_sync("ru_stats_thread");
-
-  while (!oai_exit) {
-    sleep(1);
-
-    if (opp_enabled == 1) {
-      if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
-
-      if (ru->feptx_ofdm) {
-        print_meas(&ru->precoding_stats,"feptx_prec",NULL,NULL);
-        print_meas(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL);
-        print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
-        print_meas(&ru->ofdm_total_stats,"feptx_total",NULL,NULL);
-      }
-
-      if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
-
-      print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
-
-      if (ru->fh_north_out) {
-        print_meas(&ru->compression,"compression",NULL,NULL);
-        print_meas(&ru->transport,"transport",NULL,NULL);
-      }
-    }
-  }
-
-  return(NULL);
-}
-
 void ru_tx_func(void *param) {
   processingData_RU_t *info = (processingData_RU_t *) param;
   RU_t *ru = info->ru;
@@ -1459,7 +1428,6 @@ void init_RU_proc(RU_t *ru) {
     if (ru->feptx_ofdm) nr_init_feptx_thread(ru);
   }
 
-  if (opp_enabled == 1) threadCreate(&ru->ru_stats_thread,ru_stats_thread,(void *)ru, "emulateRF", -1, OAI_PRIORITY_RT_LOW);
 }
 
 void kill_NR_RU_proc(int inst) {
