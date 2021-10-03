@@ -85,7 +85,6 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
   f1ap_du_data->default_sctp_stream_id = 0;
   /* setup parameters for F1U and start the server */
-
   DU_send_F1_SETUP_REQUEST(instance);
 }
 
@@ -98,8 +97,8 @@ void du_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_dat
   AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 }
 
-static instance_t du_create_gtpu_instance_to_cu(char* CUaddr, uint16_t CUport, char * DUaddr, uint16_t DUport) {
-  openAddr_t tmp={0};
+static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, char *DUaddr, uint16_t DUport) {
+  openAddr_t tmp= {0};
   strncpy(tmp.originHost, DUaddr, sizeof(tmp.originHost)-1);
   strncpy(tmp.destinationHost, CUaddr, sizeof(tmp.destinationHost)-1);
   sprintf(tmp.originService, "%d", DUport);
@@ -121,22 +120,22 @@ void *F1AP_DU_task(void *arg) {
 
     switch (ITTI_MSG_ID(msg)) {
       case F1AP_SETUP_REQ:
-	// this is not a true F1 message, but rather an ITTI message sent by enb_app
+        // this is not a true F1 message, but rather an ITTI message sent by enb_app
         // 1. save the itti msg so that you can use it to sen f1ap_setup_req, fill the f1ap_setup_req message,
         // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
-	LOG_I(F1AP, "DU Task Received F1AP_SETUP_REQ\n");
-	f1ap_setup_req_t * msgSetup=&F1AP_SETUP_REQ(msg);
+        LOG_I(F1AP, "DU Task Received F1AP_SETUP_REQ\n");
+        f1ap_setup_req_t *msgSetup=&F1AP_SETUP_REQ(msg);
         createF1inst(false, myInstance, msgSetup);
-	getCxt(DUtype, myInstance)->gtpInst=du_create_gtpu_instance_to_cu(msgSetup->CU_f1_ip_address.ipv4_address,
-					   msgSetup->CUport,
-					   msgSetup->DU_f1_ip_address.ipv4_address,
-					   msgSetup->DUport);
-	AssertFatal(getCxt(DUtype, myInstance)->gtpInst>0,"Failed to create CU F1-U UDP listener");
-	// Fixme: fully inconsistent instances management
-	// dirty global var is a bad fix
-	extern instance_t legacyInstanceMapping;
-	legacyInstanceMapping =	DUuniqInstance = getCxt(DUtype, myInstance)->gtpInst;
+        getCxt(DUtype, myInstance)->gtpInst=du_create_gtpu_instance_to_cu(msgSetup->CU_f1_ip_address.ipv4_address,
+                                            msgSetup->CUport,
+                                            msgSetup->DU_f1_ip_address.ipv4_address,
+                                            msgSetup->DUport);
+        AssertFatal(getCxt(DUtype, myInstance)->gtpInst>0,"Failed to create CU F1-U UDP listener");
+        // Fixme: fully inconsistent instances management
+        // dirty global var is a bad fix
+        extern instance_t legacyInstanceMapping;
+        legacyInstanceMapping = DUuniqInstance = getCxt(DUtype, myInstance)->gtpInst;
         du_task_send_sctp_association_req(myInstance,msgSetup);
         break;
 

@@ -100,7 +100,6 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   }
 
   LOG_I(F1AP, "%s() RRCContainer (CCCH) size %ld: ", __func__, ie->value.choice.RRCContainer.size);
-
   /* DUtoCURRCContainer */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_DUtoCURRCContainer, false);

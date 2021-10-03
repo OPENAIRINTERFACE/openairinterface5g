@@ -472,7 +472,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   char ip4[INET_ADDRSTRLEN];
   char ip6[INET6_ADDRSTRLEN];
   LOG_I(GTPU, "[%ld] Created tunnel for RNTI %x, teid for DL: %x, teid for UL %x to remote IPv4: %s, IPv6 %s\n",
-	instance,
+        instance,
         rnti,
         tmp->teid_incoming,
         tmp->teid_outgoing,
@@ -485,7 +485,7 @@ int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
                                  const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
                                  gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
   LOG_D(GTPU, "[%ld] Start create tunnels for RNTI %x, num_tunnels %d, sgw_S1u_teid %x\n",
-	instance,
+        instance,
         create_tunnel_req->rnti,
         create_tunnel_req->num_tunnels,
         create_tunnel_req->sgw_S1u_teid[0]);
@@ -520,7 +520,7 @@ int ocp_gtpv1u_update_s1u_tunnel(
   const rnti_t                                  prior_rnti
 ) {
   LOG_D(GTPU, "[%ld] Start update tunnels for old RNTI %x, new RNTI %x, num_tunnels %d, sgw_S1u_teid %x, eps_bearer_id %x\n",
-	instance,
+        instance,
         prior_rnti,
         create_tunnel_req->rnti,
         create_tunnel_req->num_tunnels,
@@ -553,7 +553,7 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
                                const gtpv1u_gnb_create_tunnel_req_t   *const create_tunnel_req,
                                gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp) {
   LOG_D(GTPU, "[%ld] Start create tunnels for RNTI %x, num_tunnels %d, sgw_S1u_teid %x\n",
-	instance,
+        instance,
         create_tunnel_req->rnti,
         create_tunnel_req->num_tunnels,
         create_tunnel_req->outgoing_teid[0]);

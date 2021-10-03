@@ -44,8 +44,10 @@ int to_NRNRB(int nrb) {
   for (int i=0; i<sizeofArray(nrb_lut); i++)
     if (nrb_lut[i] == nrb)
       return i;
+
   if(!RC.nrrrc)
     return 0;
+
   AssertFatal(1==0,"nrb %d is not in the list of possible NRNRB\n",nrb);
 }
 
@@ -435,7 +437,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                   memcpy((void *)F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[si],
                          (void *)sib_item->sIBmessage.buf,
                          size);
-		  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_type[si]=sib_item->sIBtype;
+                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_type[si]=sib_item->sIBtype;
                 }
 
                 break;
@@ -869,7 +871,7 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
                   memcpy((void *)F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container[si],
                          (void *)sib_item->sIBmessage.buf,
                          size);
-		  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_type[si]=sib_item->sIBtype;
+                  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_type[si]=sib_item->sIBtype;
                 }
 
                 break;
