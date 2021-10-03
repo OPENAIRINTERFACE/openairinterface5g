@@ -94,6 +94,7 @@ class RANManagement():
 		self.runtime_stats= ''
 		self.datalog_rt_stats={}
 		self.eNB_Trace = '' #if 'yes', Tshark will be launched at initialization
+		self.eNB_Stats = '' #if 'yes', Statistics Monitor will be launched at initialization		
 		self.USRPIPAddress = ''
 
 
@@ -539,6 +540,23 @@ class RANManagement():
 			self.eNBstatuses[int(self.eNB_instance)] = int(self.eNB_serverId[self.eNB_instance])
 
 		mySSH.close()
+
+
+		#if enabled in the xml, 
+		#copyout the monitor script and launch it
+		if self.eNB_Stats=='yes':
+
+			mySSH.open(lIpAddr, lUserName, lPassWord)
+
+			monitor_file='stats_monitor.py'
+			mySSH.command('echo ' + lPassWord + ' | sudo -S cp ' + self.eNBSourceCodePath + '/ci-scripts/'+ monitor_file + ' ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/.','\$', 5)
+
+			#launch, it will stop when the softmodem stops
+			mySSH.command('echo $USER; nohup python3 ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/' + monitor_file + ' 2>&1 &', '\$', 5)
+
+			mySSH.close()
+
+
 		HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
 		logging.debug('\u001B[1m Initialize eNB/gNB/ocp-eNB Completed\u001B[0m')
 
@@ -690,8 +708,10 @@ class RANManagement():
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/*monitor.pickle .','\$',20)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/*monitor.png .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor.png', '\$', 60)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log', '\$', 5)
 		mySSH.close()
 

@@ -6,19 +6,20 @@ import sys
 import matplotlib.pyplot as plt
 import pickle
 import numpy as np
+import os
 
 def collect(d):
-        cmd='cat L1_stats.log MAC_stats.log PDCP_stats.log RRC_stats.log'
-        process=subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
-        output = process.stdout.readlines()
-        for l in output:
-            tmp=l.decode("utf-8")
-            result=re.match(rf'^.*\bPHR\b ([0-9]+).+\bbler\b ([0-9]+\.[0-9]+).+\bmcsoff\b ([0-9]+).+\bmcs\b ([0-9]+)',tmp)
-            if result is not None:
-                d['PHR'].append(int(result.group(1)))
-                d['bler'].append(float(result.group(2)))
-                d['mcsoff'].append(int(result.group(3)))
-                d['mcs'].append(int(result.group(4)))
+    cmd='cat L1_stats.log MAC_stats.log PDCP_stats.log RRC_stats.log'
+    process=subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
+    output = process.stdout.readlines()
+    for l in output:
+        tmp=l.decode("utf-8")
+        result=re.match(rf'^.*\bPHR\b ([0-9]+).+\bbler\b ([0-9]+\.[0-9]+).+\bmcsoff\b ([0-9]+).+\bmcs\b ([0-9]+)',tmp)
+        if result is not None:
+            d['PHR'].append(int(result.group(1)))
+            d['bler'].append(float(result.group(2)))
+            d['mcsoff'].append(int(result.group(3)))
+            d['mcs'].append(int(result.group(4)))
 
 
 def graph(d):
@@ -60,7 +61,7 @@ def graph(d):
 
     plt.tight_layout()
     # Combine all the operations and display
-    plt.savefig('/tmp/radio_monitor_dump.png')
+    plt.savefig('/tmp/stats_monitor.png')
     plt.show()
 
 if __name__ == "__main__":
@@ -82,7 +83,7 @@ if __name__ == "__main__":
         output = process.stdout.readlines()
         time.sleep(1)
     print('process stopped')
-    with open('/tmp/radio_monitor_dump.pickle', 'wb') as handle:
+    with open('/tmp/stats_monitor.pickle', 'wb') as handle:
         pickle.dump(d, handle, protocol=pickle.HIGHEST_PROTOCOL)
     graph(d)
 

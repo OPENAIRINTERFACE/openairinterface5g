@@ -64,19 +64,10 @@
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>lte</air_interface>
 		<eNB_Trace>yes</eNB_Trace>
+		<eNB_Stats>yes</eNB_Stats>
 		<USRP_IPAddress>192.168.18.241</USRP_IPAddress>
 	</testCase>
 
-
-	<testCase id="040000">
-		<class>Initialize_eNB</class>
-		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.nsa_2x2.106PRB.usrpn310.conf -q</Initialize_eNB_args>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
-		<air_interface>nr</air_interface>
-		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
-	</testCase>
 
 	<testCase id="000001">
 		<class>IdleSleep</class>
