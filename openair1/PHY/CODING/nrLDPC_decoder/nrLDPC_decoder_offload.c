@@ -167,7 +167,8 @@ struct thread_params {
 	double iter_average;
 	double bler;
 	struct nrLDPCoffload_params *p_offloadParams;	
-	int8_t* p_out;
+        int8_t* p_out;
+        uint8_t r;
 	rte_atomic16_t nb_dequeued;
 	rte_atomic16_t processing_status;
 	rte_atomic16_t burst_sz;
@@ -796,7 +797,8 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 		struct rte_bbdev_op_data *soft_outputs,
 		struct rte_bbdev_op_data *harq_inputs,
 		struct rte_bbdev_op_data *harq_outputs,
-		struct rte_bbdev_dec_op *ref_op, 
+		struct rte_bbdev_dec_op *ref_op,
+		uint8_t r,
 		t_nrLDPCoffload_params *p_offloadParams)
 {
 	unsigned int i;
@@ -825,9 +827,13 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 		ops[i]->ldpc_dec.n_cb = p_offloadParams->n_cb;
 		ops[i]->ldpc_dec.iter_max = 20; 
 		ops[i]->ldpc_dec.rv_index = p_offloadParams->rv; 
-		ops[i]->ldpc_dec.op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE;
+		ops[i]->ldpc_dec.op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_IN_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE|RTE_BBDEV_LDPC_CRC_TYPE_24B_DROP; 
 		ops[i]->ldpc_dec.code_block_mode = 1; //ldpc_dec->code_block_mode;
 		
+		ops[i]->ldpc_dec.harq_combined_input.offset =r*1024*32;
+		ops[i]->ldpc_dec.harq_combined_output.offset =r*1024*32;
+		
+
 		if (hard_outputs != NULL)
 			ops[i]->ldpc_dec.hard_output =
 					hard_outputs[start_idx + i];
@@ -967,6 +973,7 @@ create_reference_ldpc_dec_op(struct rte_bbdev_dec_op *op, t_nrLDPCoffload_params
 		op->ldpc_dec.z_c = p_offloadParams->Z; 
 		op->ldpc_dec.n_filler = p_offloadParams->F; 
 		op->ldpc_dec.code_block_mode = 1;
+		op->ldpc_dec.op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_IN_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE|RTE_BBDEV_LDPC_CRC_TYPE_24B_DROP;
 }
 
 
@@ -1038,6 +1045,7 @@ pmd_lcore_ldpc_dec(void *arg)
 	struct rte_bbdev_dec_op *ops_enq[num_ops];
 	struct rte_bbdev_dec_op *ops_deq[num_ops];
 	struct rte_bbdev_dec_op *ref_op = tp->op_params->ref_dec_op;
+	uint8_t r= tp->r;
 	struct test_buffers *bufs = NULL;
 	int i, j, ret;
 	struct rte_bbdev_info info;
@@ -1081,7 +1089,7 @@ pmd_lcore_ldpc_dec(void *arg)
 
 	set_ldpc_dec_op(ops_enq, num_ops, 0, bufs->inputs,
 				bufs->hard_outputs, bufs->soft_outputs,
-				bufs->harq_inputs, bufs->harq_outputs, ref_op, p_offloadParams);
+			bufs->harq_inputs, bufs->harq_outputs, ref_op, r, p_offloadParams);
 
 	/* Set counter to validate the ordering */
 	for (j = 0; j < num_ops; ++j)
@@ -1192,9 +1200,10 @@ print_dec_throughput(struct thread_params *t_params, unsigned int used_cores)
  */
 int
 start_pmd_dec(struct active_device *ad,
-		struct test_op_params *op_params, 
-                t_nrLDPCoffload_params *p_offloadParams,
-		int8_t* p_out)
+	      struct test_op_params *op_params, 
+              t_nrLDPCoffload_params *p_offloadParams,
+	      uint8_t r,
+	      int8_t* p_out)
 {
 	int ret;
 	unsigned int lcore_id, used_cores = 0;
@@ -1233,6 +1242,7 @@ start_pmd_dec(struct active_device *ad,
 	t_params[0].iter_count = 0;
 	t_params[0].p_out = p_out;
 	t_params[0].p_offloadParams = p_offloadParams;
+	t_params[0].r = r;
 
 	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
 		if (used_cores >= num_lcores)
@@ -1244,6 +1254,7 @@ start_pmd_dec(struct active_device *ad,
 		t_params[used_cores].iter_count = 0;
 		t_params[used_cores].p_out = p_out; 
 		t_params[used_cores].p_offloadParams = p_offloadParams; 
+		t_params[used_cores].r = r;
 
 		rte_eal_remote_launch(pmd_lcore_ldpc_dec,
 				&t_params[used_cores++], lcore_id);
@@ -1264,7 +1275,7 @@ start_pmd_dec(struct active_device *ad,
 
 	/* Print throughput if interrupts are disabled and test passed */
 	if (!intr_enabled) {
-			//print_dec_throughput(t_params, num_lcores);
+	  //print_dec_throughput(t_params, num_lcores);
 		rte_free(t_params);
 		return ret;
 	}
@@ -1549,7 +1560,7 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 
 	  }
 	  
-	  ret = start_pmd_dec(ad, op_params, p_offloadParams, p_out);
+	  ret = start_pmd_dec(ad, op_params, p_offloadParams, C, p_out);
 	  if (ret<0) {
 	    printf("Couldn't start pmd dec");
 	    return(-1);
