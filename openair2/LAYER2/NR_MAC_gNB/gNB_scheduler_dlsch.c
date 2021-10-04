@@ -575,7 +575,6 @@ void pf_dl(module_id_t module_id,
     if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-    if (sched_ctrl->ul_failure==1) continue;
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
