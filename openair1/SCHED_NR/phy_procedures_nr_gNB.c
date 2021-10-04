@@ -553,7 +553,8 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
         LOG_D(PHY,"%d.%d pucch %d : start_symbol %d, nb_symbols %d, prb_size %d\n",frame_rx,slot_rx,i,pucch_pdu->start_symbol_index,pucch_pdu->nr_of_symbols,pucch_pdu->prb_size);
         for (int symbol=pucch_pdu->start_symbol_index ; symbol<(pucch_pdu->start_symbol_index+pucch_pdu->nr_of_symbols);symbol++) {
-          if(gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1) {
+          if(gNB->frame_parms.frame_type == FDD ||
+              (gNB->frame_parms.frame_type == TDD && gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1)) {
             for (rb=0; rb<pucch_pdu->prb_size; rb++) {
               rb2 = rb + pucch_pdu->bwp_start +
                     ((symbol < pucch_pdu->start_symbol_index+(pucch_pdu->nr_of_symbols>>1)) || (pucch_pdu->freq_hop_flag == 0) ?
@@ -582,7 +583,8 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
           uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
           for (int symbol=symbol_start ; symbol<symbol_end ; symbol++) {
-            if(gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1) {
+            if(gNB->frame_parms.frame_type == FDD ||
+                (gNB->frame_parms.frame_type == TDD && gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1)) {
               LOG_D(PHY,"symbol %d Filling rb_mask_ul rb_size %d\n",symbol,ulsch_harq->ulsch_pdu.rb_size);
               for (rb=0; rb<ulsch_harq->ulsch_pdu.rb_size; rb++) {
                 rb2 = rb+ulsch_harq->ulsch_pdu.rb_start+ulsch_harq->ulsch_pdu.bwp_start;
@@ -632,8 +634,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,1);
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
-  if (gNB->frame_parms.frame_type == TDD)
-    fill_ul_rb_mask(gNB, frame_rx, slot_rx);
+  fill_ul_rb_mask(gNB, frame_rx, slot_rx);
 
   int first_symb=0,num_symb=0;
   if (gNB->frame_parms.frame_type == TDD)
