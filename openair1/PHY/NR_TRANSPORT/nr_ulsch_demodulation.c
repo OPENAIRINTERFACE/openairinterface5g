@@ -1890,6 +1890,92 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
 
 //==============================================================================================
 
+int get_first_dmrs_symbol(uint16_t dmrs_bitmap,
+                          uint8_t start_symbol,
+                          uint8_t num_symbols)
+{
+  for (int i=start_symbol; i<start_symbol+num_symbols; i++)
+    if ((dmrs_bitmap >> i) & 0x01) return i;
+
+  return -1;
+}
+
+void nr_chest_time_domain_avg(NR_DL_FRAME_PARMS *frame_parms,
+                              int **ul_ch,
+                              uint8_t num_symbols,
+                              uint8_t start_symbol,
+                              uint16_t dmrs_bitmap,
+                              uint16_t num_rbs)
+{
+  __m128i *ul_ch128_0;
+  __m128i *ul_ch128_1;
+  int16_t *ul_ch16_0;
+  int total_symbols = start_symbol + num_symbols;
+  int num_dmrs_symb = get_dmrs_symbols_in_slot(dmrs_bitmap, total_symbols);
+  int first_dmrs_symb = get_first_dmrs_symbol(dmrs_bitmap, start_symbol, num_symbols);
+  AssertFatal(first_dmrs_symb > -1, "No DMRS symbol present in this slot\n");
+  for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
+    ul_ch128_0 = (__m128i *)&ul_ch[aarx][first_dmrs_symb*frame_parms->ofdm_symbol_size];
+    for (int symb = first_dmrs_symb+1; symb < total_symbols; symb++) {
+      if ((dmrs_bitmap >> symb) & 0x01) {
+        ul_ch128_1 = (__m128i *)&ul_ch[aarx][symb*frame_parms->ofdm_symbol_size];
+        for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+          ul_ch128_0[0] = _mm_adds_epi16(ul_ch128_0[0], ul_ch128_1[0]);
+          ul_ch128_0[1] = _mm_adds_epi16(ul_ch128_0[1], ul_ch128_1[1]);
+          ul_ch128_0[2] = _mm_adds_epi16(ul_ch128_0[2], ul_ch128_1[2]);
+          ul_ch128_0 += 3;
+          ul_ch128_1 += 3;
+        }
+      }
+    }
+    ul_ch128_0 = (__m128i *)&ul_ch[aarx][first_dmrs_symb*frame_parms->ofdm_symbol_size];
+    if (num_dmrs_symb == 2) {
+      for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+        ul_ch128_0[0] = _mm_srai_epi16(ul_ch128_0[0], 1);
+        ul_ch128_0[1] = _mm_srai_epi16(ul_ch128_0[1], 1);
+        ul_ch128_0[2] = _mm_srai_epi16(ul_ch128_0[2], 1);
+        ul_ch128_0 += 3;
+      }
+    } else if (num_dmrs_symb == 4) {
+      for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+        ul_ch128_0[0] = _mm_srai_epi16(ul_ch128_0[0], 2);
+        ul_ch128_0[1] = _mm_srai_epi16(ul_ch128_0[1], 2);
+        ul_ch128_0[2] = _mm_srai_epi16(ul_ch128_0[2], 2);
+        ul_ch128_0 += 3;
+      }
+    } else if (num_dmrs_symb == 3) {
+      ul_ch16_0 = (int16_t *)&ul_ch[aarx][first_dmrs_symb*frame_parms->ofdm_symbol_size];
+      for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+        ul_ch16_0[0] /= 3;
+        ul_ch16_0[1] /= 3;
+        ul_ch16_0[2] /= 3;
+        ul_ch16_0[3] /= 3;
+        ul_ch16_0[4] /= 3;
+        ul_ch16_0[5] /= 3;
+        ul_ch16_0[6] /= 3;
+        ul_ch16_0[7] /= 3;
+        ul_ch16_0[8] /= 3;
+        ul_ch16_0[9] /= 3;
+        ul_ch16_0[10] /= 3;
+        ul_ch16_0[11] /= 3;
+        ul_ch16_0[12] /= 3;
+        ul_ch16_0[13] /= 3;
+        ul_ch16_0[14] /= 3;
+        ul_ch16_0[15] /= 3;
+        ul_ch16_0[16] /= 3;
+        ul_ch16_0[17] /= 3;
+        ul_ch16_0[18] /= 3;
+        ul_ch16_0[19] /= 3;
+        ul_ch16_0[20] /= 3;
+        ul_ch16_0[21] /= 3;
+        ul_ch16_0[22] /= 3;
+        ul_ch16_0[23] /= 3;
+        ul_ch16_0 += 24;
+      }
+    } else AssertFatal((num_dmrs_symb < 5) && (num_dmrs_symb > 0), "Illegal number of DMRS symbols in the slot\n");
+  }
+}
+
 /* Main Function */
 int nr_rx_pusch(PHY_VARS_gNB *gNB,
                 uint8_t ulsch_id,
@@ -1963,6 +2049,13 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       }
     }
   }
+
+  nr_chest_time_domain_avg(frame_parms,
+                           gNB->pusch_vars[ulsch_id]->ul_ch_estimates,
+                           rel15_ul->nr_of_symbols,
+                           rel15_ul->start_symbol_index,
+                           rel15_ul->ul_dmrs_symb_pos,
+                           rel15_ul->rb_size);
   stop_meas(&gNB->ulsch_channel_estimation_stats);
 
 #ifdef __AVX2__
@@ -1972,13 +2065,12 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 #endif
   uint32_t rxdataF_ext_offset = 0;
 
+  gNB->pusch_vars[ulsch_id]->dmrs_symbol = get_first_dmrs_symbol(rel15_ul->ul_dmrs_symb_pos, rel15_ul->start_symbol_index, rel15_ul->nr_of_symbols);
   for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
     uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
     if (dmrs_symbol_flag == 1) {
       if ((rel15_ul->ul_dmrs_symb_pos >> ((symbol + 1) % frame_parms->symbols_per_slot)) & 0x01)
         AssertFatal(1==0,"Double DMRS configuration is not yet supported\n");
-
-      gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
 
       if (rel15_ul->dmrs_config_type == 0) {
         // if no data in dmrs cdm group is 1 only even REs have no data
