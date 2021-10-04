@@ -38,8 +38,6 @@ void set_cset_offset(uint16_t);
 
 void mac_top_init_gNB(void);
 
-int mac_init_codebook_gNB(PHY_VARS_gNB *gNB, gNB_MAC_INST *mac);
-
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
                    int pdsch_AntennaPorts,

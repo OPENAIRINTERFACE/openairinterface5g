@@ -794,7 +794,7 @@ int main(int argc, char **argv)
   // rrc_mac_config_req_gNB
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
   phy_init_nr_gNB(gNB,0,1);
-  mac_init_codebook_gNB(gNB,gNB_mac);
+  init_codebook_gNB(gNB,gNB_mac);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   NR_UE_info_t *UE_info = &RC.nrmac[0]->UE_info;
   UE_info->num_UEs=1;

@@ -37,6 +37,8 @@
 #include "LTE_SCellToAddMod-r10.h"
 #include "LTE_NonMBSFN-SubframeConfig-r14.h"
 
+typedef struct gNB_MAC_INST_s gNB_MAC_INST;
+
 /** @addtogroup _PHY_STRUCTURES_
  * @{
  */
@@ -400,6 +402,7 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag);
 void init_N_TA_offset(PHY_VARS_NR_UE *ue);
 void nr_dump_frame_parms(NR_DL_FRAME_PARMS *frame_parms);
 int phy_init_nr_gNB(PHY_VARS_gNB *gNB, unsigned char is_secondary_gNB, unsigned char lowmem_flag);
+int init_codebook_gNB(PHY_VARS_gNB *gNB, gNB_MAC_INST *mac);
 void nr_phy_config_request(NR_PHY_Config_t *gNB);
 void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell,uint64_t position_in_burst);
 void phy_free_nr_gNB(PHY_VARS_gNB *gNB);
