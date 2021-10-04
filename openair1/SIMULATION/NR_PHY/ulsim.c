@@ -983,7 +983,6 @@ int main(int argc, char **argv)
   int slot_length = slot_offset - frame_parms->get_samples_slot_timestamp(slot-1,frame_parms,0);
 
   if (input_fd != NULL)	{
-    AssertFatal(frame_parms->nb_antennas_rx == 1, "nb_ant != 1\n");
     // 800 samples is N_TA_OFFSET for FR1 @ 30.72 Ms/s,
     AssertFatal(frame_parms->subcarrier_spacing==30000,"only 30 kHz for file input for now (%d)\n",frame_parms->subcarrier_spacing);
   
@@ -1011,18 +1010,21 @@ int main(int argc, char **argv)
       printf("harq_pid %d\n",harq_pid);
     }
     fseek(input_fd,file_offset*sizeof(int16_t)*2,SEEK_SET);
-    read_errors+=fread((void*)&gNB->common_vars.rxdata[0][slot_offset-delay],
-    sizeof(int16_t),
-    slot_length<<1,
-    input_fd);
-    if (read_errors==0) {
-      printf("error reading file\n");
-      exit(1);
+    for (int irx=0; irx<frame_parms->nb_antennas_rx; irx++) {
+      fseek(input_fd,irx*(slot_length+15)*sizeof(int16_t)*2,SEEK_SET); // matlab adds samlples to the end to emulate channel delay
+      read_errors+=fread((void*)&gNB->common_vars.rxdata[irx][slot_offset-delay],
+      sizeof(int16_t),
+      slot_length<<1,
+      input_fd);
+      if (read_errors==0) {
+        printf("error reading file\n");
+        exit(1);
+      }
+      for (int i=0;i<16;i+=2) printf("slot_offset %d : %d,%d\n",
+             slot_offset,
+             ((int16_t*)&gNB->common_vars.rxdata[irx][slot_offset])[i],
+             ((int16_t*)&gNB->common_vars.rxdata[irx][slot_offset])[1+i]);
     }
-    for (int i=0;i<16;i+=2) printf("slot_offset %d : %d,%d\n",
-				   slot_offset,
-				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
-				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
 
     mod_order = nr_get_Qm_ul(Imcs, mcs_table);
     code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
@@ -1389,11 +1391,11 @@ int main(int argc, char **argv)
             &gNB->pusch_vars[0]->llr_layers[0][0],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
 
       if (precod_nbr_layers==2) {
-         LOG_M("rxsigF1_ext.m","rxsF1_ext",
-            &gNB->pusch_vars[0]->rxdataF_ext[1][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+        LOG_M("rxsigF1_ext.m","rxsF1_ext",
+             &gNB->pusch_vars[0]->rxdataF_ext[1][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
 
         LOG_M("chestF3.m","chF3",
-            &gNB->pusch_vars[0]->ul_ch_estimates[3][start_symbol*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
+             &gNB->pusch_vars[0]->ul_ch_estimates[3][start_symbol*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
 
         LOG_M("chestF3_ext.m","chF3_ext",
         &gNB->pusch_vars[0]->ul_ch_estimates_ext[3][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
@@ -1613,17 +1615,19 @@ int main(int argc, char **argv)
           length_dmrs,
           num_dmrs_cdm_grps_no_data);
               
-  LOG_M("ulsimStats.m","SNR",snrStats,snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round0",blerStats[0],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round1",blerStats[1],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round2",blerStats[2],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round3",blerStats[3],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round0",berStats[0],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round1",berStats[1],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round2",berStats[2],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round3",berStats[3],snrRun,1,7);
-  LOG_MM("ulsimStats.m","EffRate",effRate,snrRun,1,7);
-  LOG_MM("ulsimStats.m","EffTP",effTP,snrRun,1,7);
+  char opStatsFile[50];
+  sprintf(opStatsFile, "ulsimStats_z%d.m", n_rx);
+  LOG_M(opStatsFile,"SNR",snrStats,snrRun,1,7);
+  LOG_MM(opStatsFile,"BLER_round0",blerStats[0],snrRun,1,7);
+  LOG_MM(opStatsFile,"BLER_round1",blerStats[1],snrRun,1,7);
+  LOG_MM(opStatsFile,"BLER_round2",blerStats[2],snrRun,1,7);
+  LOG_MM(opStatsFile,"BLER_round3",blerStats[3],snrRun,1,7);
+  LOG_MM(opStatsFile,"BER_round0",berStats[0],snrRun,1,7);
+  LOG_MM(opStatsFile,"BER_round1",berStats[1],snrRun,1,7);
+  LOG_MM(opStatsFile,"BER_round2",berStats[2],snrRun,1,7);
+  LOG_MM(opStatsFile,"BER_round3",berStats[3],snrRun,1,7);
+  LOG_MM(opStatsFile,"EffRate",effRate,snrRun,1,7);
+  LOG_MM(opStatsFile,"EffTP",effTP,snrRun,1,7);
   free(test_input_bit);
   free(estimated_output_bit);
 
