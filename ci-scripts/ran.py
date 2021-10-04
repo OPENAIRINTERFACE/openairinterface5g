@@ -466,6 +466,18 @@ class RANManagement():
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
 		mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
+
+
+		#tentative
+		time.sleep(20)
+		if self.eNB_Stats=='yes':
+			monitor_file='stats_monitor.py'
+			mySSH.command('echo ' + lPassWord + ' | sudo -S cp ' + self.eNBSourceCodePath + '/ci-scripts/'+ monitor_file + ' ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/.','\$', 5)
+			mySSH.command('echo $USER; nohup python3 ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/' + monitor_file + ' 2>&1 &', '\$', 5)
+
+
+
+
 		self.eNBLogFiles[int(self.eNB_instance)] = 'enb_' + self.testCase_id + '.log'
 		if extra_options != '':
 			self.eNBOptions[int(self.eNB_instance)] = extra_options
@@ -543,18 +555,14 @@ class RANManagement():
 
 
 		#if enabled in the xml, 
-		#copyout the monitor script and launch it
-		if self.eNB_Stats=='yes':
-
-			mySSH.open(lIpAddr, lUserName, lPassWord)
-
-			monitor_file='stats_monitor.py'
-			mySSH.command('echo ' + lPassWord + ' | sudo -S cp ' + self.eNBSourceCodePath + '/ci-scripts/'+ monitor_file + ' ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/.','\$', 5)
-
-			#launch, it will stop when the softmodem stops
-			mySSH.command('echo $USER; nohup python3 ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/' + monitor_file + ' 2>&1 &', '\$', 5)
-
-			mySSH.close()
+		#copyout the monitor script and launch itg
+#		if self.eNB_Stats=='yes':
+#			mySSH.open(lIpAddr, lUserName, lPassWord)
+#			monitor_file='stats_monitor.py'
+#			mySSH.command('echo ' + lPassWord + ' | sudo -S cp ' + self.eNBSourceCodePath + '/ci-scripts/'+ monitor_file + ' ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/.','\$', 5)
+#			#launch, it will stop when the softmodem stops
+#			mySSH.command('echo $USER; nohup python3 ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/' + monitor_file + ' 2>&1 &', '\$', 5)
+#			mySSH.close()
 
 
 		HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
