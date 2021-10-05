@@ -50,7 +50,7 @@ f1ap_message_processing_t f1ap_messages_processing[][3] = {
   { DU_handle_gNB_CU_CONFIGURATION_UPDATE, CU_handle_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE, CU_handle_gNB_CU_CONFIGURATION_UPDATE_FAILURE }, /* gNBCUConfigurationUpdate */
   { DU_handle_UE_CONTEXT_SETUP_REQUEST, CU_handle_UE_CONTEXT_SETUP_RESPONSE, 0 }, /* UEContextSetup */
   { DU_handle_UE_CONTEXT_RELEASE_COMMAND, CU_handle_UE_CONTEXT_RELEASE_COMPLETE, 0 }, /* UEContextRelease */
-  { 0, 0, 0 }, /* UEContextModification */
+  { DU_handle_UE_CONTEXT_MODIFICATION_REQUEST, 0, 0 }, /* UEContextModification */
   { 0, 0, 0 }, /* UEContextModificationRequired */
   { 0, 0, 0 }, /* UEMobilityCommand */
   { CU_handle_UE_CONTEXT_RELEASE_REQUEST, 0, 0 }, /* UEContextReleaseRequest */

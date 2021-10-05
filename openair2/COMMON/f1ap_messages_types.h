@@ -357,6 +357,11 @@ typedef enum QoS_information_e {
   EUTRAN_QoS    = 1,
 } QoS_information_t;
 
+typedef enum ReconfigurationCompl_e {
+  RRCreconf_failure = 0,
+  RRCreconf_success = 1,
+} ReconfigurationCompl_t;
+
 typedef struct f1ap_ue_context_setup_s {
   uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
   uint32_t gNB_DU_ue_id;
@@ -383,6 +388,7 @@ typedef struct f1ap_ue_context_setup_s {
   uint8_t  srbs_failed_to_be_setup_length;
   f1ap_rb_failed_to_be_setup_t *srbs_failed_to_be_setup;
   s1ap_initial_context_setup_req_t *s1ap_initial_context_setup_req;
+  ReconfigurationCompl_t ReconfigComplOutcome;
    // coniatner for the rrc_eNB_generate_SecurityModeCommand message
   uint8_t *rrc_container;
   int      rrc_container_length;
