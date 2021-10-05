@@ -229,6 +229,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
     mac->expected_dci = false;
+    memset(mac->index_has_dci, 0, sizeof(*mac->index_has_dci));
     int pdu_idx = 0;
 
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
@@ -262,7 +263,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                 for (int j = 0; j < num_dcis; j++)
                 {
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                    if ((dci_pdu_list->RNTI != mac->crnti) && 
+                    if ((dci_pdu_list->RNTI != mac->crnti) &&
                        ((dci_pdu_list->RNTI != mac->ra.ra_rnti) || mac->ra.RA_RAPID_found))
                     {
                       LOG_D(NR_MAC, "We are filtering PDCCH DCI pdu because RNTI doesnt match!\n");
@@ -271,6 +272,8 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                     }
                     fill_dl_info_with_pdcch(dl_info->dci_ind, dci_pdu_list, pdu_idx);
                     mac->expected_dci = true;
+                    LOG_D(NR_MAC, "Setting index_has_dci[%d] = true\n", j);
+                    mac->index_has_dci[j] = true;
                     pdu_idx++;
                 }
             }
@@ -279,6 +282,36 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
     dl_info->slot = dl_tti_request->Slot;
     dl_info->frame = dl_tti_request->SFN;
 }
+
+static void fill_rx_ind(nfapi_nr_pdu_t *pdu_list, fapi_nr_rx_indication_t *rx_ind, int pdu_idx, int pdu_type)
+{
+    AssertFatal(pdu_list->num_TLV < sizeof(pdu_list->TLVs) / sizeof(pdu_list->TLVs[0]), "Num TLVs exceeds TLV array size");
+    int length = 0;
+    for (int j = 0; j < pdu_list->num_TLV; j++)
+    {
+        length += pdu_list->TLVs[j].length;
+    }
+    LOG_I(NR_PHY, "%s: num_tlv %d and length %d, pdu index %d\n",
+        __FUNCTION__, pdu_list->num_TLV, length, pdu_idx);
+    uint8_t *pdu = malloc(length);
+    AssertFatal(pdu != NULL, "%s: Out of memory in malloc", __FUNCTION__);
+    rx_ind->rx_indication_body[pdu_idx].pdsch_pdu.pdu = pdu;
+    for (int j = 0; j < pdu_list->num_TLV; j++)
+    {
+        const uint32_t *ptr;
+        if (pdu_list->TLVs[j].tag)
+            ptr = pdu_list->TLVs[j].value.ptr;
+        else
+            ptr = pdu_list->TLVs[j].value.direct;
+        memcpy(pdu, ptr, pdu_list->TLVs[j].length);
+        pdu += pdu_list->TLVs[j].length;
+    }
+    rx_ind->rx_indication_body[pdu_idx].pdsch_pdu.ack_nack = 1;
+    rx_ind->rx_indication_body[pdu_idx].pdsch_pdu.pdu_length = length;
+    rx_ind->rx_indication_body[pdu_idx].pdu_type = pdu_type;
+
+}
+
 
 static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_tx_data_request_t *tx_data_request)
 {
@@ -292,45 +325,34 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
 
     dl_info->rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
     AssertFatal(dl_info->rx_ind != NULL, "%s: Out of memory in calloc", __FUNCTION__);
-    dl_info->rx_ind->sfn = tx_data_request->SFN;
-    dl_info->rx_ind->slot = tx_data_request->Slot;
-    dl_info->rx_ind->number_pdus = num_pdus;
+    fapi_nr_rx_indication_t *rx_ind = dl_info->rx_ind;
+    rx_ind->sfn = tx_data_request->SFN;
+    rx_ind->slot = tx_data_request->Slot;
+
+    int pdu_idx = 0;
 
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
-        AssertFatal(pdu_list->num_TLV < sizeof(pdu_list->TLVs) / sizeof(pdu_list->TLVs[0]), "Num TLVs exceeds TLV array size");
-        int length = 0;
-        for (int j = 0; j < pdu_list->num_TLV; j++)
+        if(mac->ra.ra_state <= WAIT_RAR)
         {
-            length += pdu_list->TLVs[j].length;
+            fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_RAR);
+            pdu_idx++;
         }
-        LOG_I(NR_PHY, "%s: num_tlv %d and length %d, pdu index %d\n",
-              __FUNCTION__, pdu_list->num_TLV, length, i);
-        uint8_t *pdu = malloc(length);
-        AssertFatal(pdu != NULL, "%s: Out of memory in malloc", __FUNCTION__);
-        dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu = pdu;
-        for (int j = 0; j < pdu_list->num_TLV; j++)
+        else if (mac->index_has_dci[i])
         {
-            const uint32_t *ptr;
-            if (pdu_list->TLVs[j].tag)
-                ptr = pdu_list->TLVs[j].value.ptr;
-            else
-                ptr = pdu_list->TLVs[j].value.direct;
-            memcpy(pdu, ptr, pdu_list->TLVs[j].length);
-            pdu += pdu_list->TLVs[j].length;
+            fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_DLSCH);
+            pdu_idx++;
         }
-        dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.ack_nack = 1; // Melissa we will come back during channel modelling
-        dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.pdu_length = length;
-        if (tx_data_request->Slot == 7 && mac->ra.ra_state <= WAIT_RAR) { //Melissa this means we have an RAR, sorta hacky though
-            dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_RAR;
+        else
+        {
+            LOG_D(NR_MAC, "mac->index_has_dci[%d] = 0, so this index contained a DCI for a different UE\n", i);
         }
-        else {
-            dl_info->rx_ind->rx_indication_body[i].pdu_type = FAPI_NR_RX_PDU_TYPE_DLSCH;
-        }
+
     }
     dl_info->slot = tx_data_request->Slot;
     dl_info->frame = tx_data_request->SFN;
+    dl_info->rx_ind->number_pdus = pdu_idx;
 }
 
 static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_ul_dci_request_t *ul_dci_req)
@@ -587,16 +609,6 @@ static void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     {
         nr_ue_ul_indication(&ul_info);
     }
-
-
-    #if 0 //Melissa may want to free this
-    free(dl_info.dci_ind);
-    dl_info.dci_ind = NULL;
-
-    free(dl_info.rx_ind);
-    dl_info.rx_ind = NULL;
-    #endif
-
 }
 
 static void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
@@ -746,7 +758,7 @@ void *nrue_standalone_pnf_task(void *context)
             save_nr_measurement_info(&dl_tti_request);
             check_and_process_dci(&dl_tti_request, NULL, NULL, NULL);
             if (mac->expected_dci)
-            { 
+            {
                 sfn_of_dl_tti_req = dl_tti_request.SFN;
                 slot_of_dl_tti_req = dl_tti_request.Slot;
             }
@@ -955,6 +967,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
         }
         memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
       }
+      free(dl_info->dci_ind);
+      dl_info->dci_ind = NULL;
     }
 
     if (dl_info->rx_ind != NULL) {
@@ -995,6 +1009,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
             break;
         }
       }
+      free(dl_info->rx_ind);
+      dl_info->rx_ind = NULL;
     }
 
     //clean up nr_downlink_indication_t *dl_info
