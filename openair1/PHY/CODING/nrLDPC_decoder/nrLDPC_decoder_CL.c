@@ -39,8 +39,8 @@
 #define MAX_ITERATION 2
 #define MC	1
 
-#define MAX_OCLDEV 10
-
+#define MAX_OCLDEV   10
+#define MAX_OCLRUNTIME 5
 typedef struct{
   char x;
   char y;
@@ -51,14 +51,20 @@ typedef struct{
   cl_uint max_CU;
   cl_uint max_WID;
   size_t  *max_WIS;
-  cl_context context;
-  cl_program program;
-  cl_kernel kernel;
-  cl_command_queue queue;
 } ocldev_t;
 
 typedef struct{
+  cl_uint num_devices;
+  cl_device_id devices[MAX_OCLDEV];
   ocldev_t ocldev[MAX_OCLDEV];
+  cl_context context;
+  cl_program program;
+  cl_kernel kernel;
+  cl_command_queue queue[MAX_OCLDEV];
+} oclruntime_t;
+
+typedef struct{
+  oclruntime_t runtime[MAX_OCLRUNTIME];
 } ocl_t;
 
 
@@ -86,7 +92,8 @@ void init_LLR_DMA(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out
 //	cudaDeviceSynchronize();
 	
 }
-cl_error_callback(const char* errinfo, const void* private_info, size_t cb, void* user_data) {
+void cl_error_callback(const char* errinfo, const void* private_info, size_t cb, void* user_data) {
+  oclruntime_t *runtime = (oclruntime_t *)user_data;
   LOG_E(HW,"OpenCL accelerator error  %s\n", errinfo );
 }
 
@@ -103,11 +110,25 @@ char *clutil_getstrdev(int intdev) {
   return retstring;
 }
 
+size_t load_source(char **source_str) {
+	int MAX_SOURCE_SIZE=(500*132);
+    FILE *fp;
+    size_t source_size;
+ 
+    fp = fopen("nrLDPC_decoder_kernels_CL.cl", "r");
+    AssertFatal(fp,"failed to open cl source: %s\n",strerror(errno));
+    
+    *source_str = (char*)malloc(MAX_SOURCE_SIZE);
+    source_size = fread( *source_str, 1, MAX_SOURCE_SIZE, fp);
+    fclose( fp );
+    return source_size;
+}
+
 /* from here: entry points in decoder shared lib */
 int ldpc_autoinit(void) {   // called by the library loader 
   cl_platform_id platforms[10];
   cl_uint         num_platforms_found;
-  
+  int             context_ok=0;
   cl_uint rt = clGetPlatformIDs( sizeof(platforms)/sizeof(cl_platform_id), platforms, &num_platforms_found );
   AssertFatal(rt == CL_SUCCESS, "clGetPlatformIDs error %d\n" , (int)rt);
   AssertFatal( num_platforms_found>0 , "clGetPlatformIDs: no cl compatible platform found\n");
@@ -119,33 +140,50 @@ int ldpc_autoinit(void) {   // called by the library loader
 	  rt = clGetPlatformInfo(platforms[i],CL_PLATFORM_VERSION, sizeof(stringval),stringval,NULL);	
 	  AssertFatal(rt == CL_SUCCESS, "clGetPlatformInfo VERSION error %d\n" , (int)rt);  
 	  LOG_I(HW,"Platform %i, OpenCL version %s\n", i,stringval );	  
-	  cl_device_id devices[20];
-	  cl_uint       num_devices_found;
-	  rt = clGetDeviceIDs(platforms[i],CL_DEVICE_TYPE_ALL, sizeof(devices)/sizeof(cl_device_id),devices,&num_devices_found);
+	  rt = clGetDeviceIDs(platforms[i],CL_DEVICE_TYPE_ALL, sizeof(ocl.runtime[i].devices)/sizeof(cl_device_id),ocl.runtime[i].devices,&(ocl.runtime[i].num_devices));
 	  AssertFatal(rt == CL_SUCCESS, "clGetDeviceIDs error %d\n" , (int)rt);
-	  for (int j=0; j<num_devices_found; j++) {
+	  int devok=0;
+	  for (int j=0; j<ocl.runtime[i].num_devices; j++) {
 		cl_bool abool;
-		rt = clGetDeviceInfo(devices[j],CL_DEVICE_AVAILABLE, sizeof(abool),&abool,NULL);
+		rt = clGetDeviceInfo(ocl.runtime[i].devices[j],CL_DEVICE_AVAILABLE, sizeof(abool),&abool,NULL);
 		AssertFatal(rt == CL_SUCCESS, "clGetDeviceInfo DEVICE_AVAILABLE error %d\n" , (int)rt); 
 		LOG_I(HW,"Device %i is %s available\n", j, (abool==CL_TRUE?"":"not"));
 		cl_device_type devtype;		
-		rt = clGetDeviceInfo(devices[j],CL_DEVICE_TYPE, sizeof(cl_device_type),&devtype,NULL);
+		rt = clGetDeviceInfo(ocl.runtime[i].devices[j],CL_DEVICE_TYPE, sizeof(cl_device_type),&devtype,NULL);
 		AssertFatal(rt == CL_SUCCESS, "clGetDeviceInfo DEVICE_TYPE error %d\n" , (int)rt); 
 		LOG_I(HW,"Device %i, type %d = %s\n", j,(int)devtype, clutil_getstrdev(devtype));
-		rt = clGetDeviceInfo(devices[j],CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(ocl.ocldev[j].max_CU),&(ocl.ocldev[j].max_CU),NULL);
+		rt = clGetDeviceInfo(ocl.runtime[i].devices[j],CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(ocl.runtime[i].ocldev[j].max_CU),&(ocl.runtime[i].ocldev[j].max_CU),NULL);
 		AssertFatal(rt == CL_SUCCESS, "clGetDeviceInfo MAX_COMPUTE_UNITS error %d\n" , (int)rt);
-		LOG_I(HW,"Device %i, number of Compute Units: %d\n", j,ocl.ocldev[j].max_CU);
-		rt = clGetDeviceInfo(devices[j],CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,sizeof(ocl.ocldev[j].max_WID),&(ocl.ocldev[j].max_WID),NULL);
+		LOG_I(HW,"Device %i, number of Compute Units: %d\n", j,ocl.runtime[i].ocldev[j].max_CU);
+		rt = clGetDeviceInfo(ocl.runtime[i].devices[j],CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,sizeof(ocl.runtime[i].ocldev[j].max_WID),&(ocl.runtime[i].ocldev[j].max_WID),NULL);
 		AssertFatal(rt == CL_SUCCESS, "clGetDeviceInfo MAX_WORK_ITEM_DIMENSIONS error %d\n" , (int)rt);
-		LOG_I(HW,"Device %i, max Work Items dimension: %d\n", j,ocl.ocldev[j].max_WID);	
-		ocl.ocldev[j].max_WIS = (size_t *)malloc(ocl.ocldev[j].max_WID * sizeof(size_t));
-		rt = clGetDeviceInfo(devices[j],CL_DEVICE_MAX_WORK_ITEM_SIZES,sizeof(ocl.ocldev[j].max_WID)*sizeof(size_t),ocl.ocldev[j].max_WIS,NULL);
+		LOG_I(HW,"Device %i, max Work Items dimension: %d\n", j,ocl.runtime[i].ocldev[j].max_WID);	
+		ocl.runtime[i].ocldev[j].max_WIS = (size_t *)malloc(ocl.runtime[i].ocldev[j].max_WID * sizeof(size_t));
+		rt = clGetDeviceInfo(ocl.runtime[i].devices[j],CL_DEVICE_MAX_WORK_ITEM_SIZES,sizeof(ocl.runtime[i].ocldev[j].max_WID)*sizeof(size_t),ocl.runtime[i].ocldev[j].max_WIS,NULL);
 		AssertFatal(rt == CL_SUCCESS, "clGetDeviceInfo MAX_WORK_ITEM_SIZES error %d\n" , (int)rt);
-		for(int k=0; k<ocl.ocldev[j].max_WID;k++)
-		  LOG_I(HW,"Device %i, max Work Items size for dimension: %d %u\n", j,k,(uint32_t)ocl.ocldev[j].max_WIS[k]);
-		
+		for(int k=0; k<ocl.runtime[i].ocldev[j].max_WID;k++)
+		  LOG_I(HW,"Device %i, max Work Items size for dimension: %d %u\n", j,k,(uint32_t)ocl.runtime[i].ocldev[j].max_WIS[k]); 
+		devok++;
       }
+      if (devok >0) {
+        ocl.runtime[i].context = clCreateContext(NULL, ocl.runtime[i].num_devices, ocl.runtime[i].devices, cl_error_callback, &(ocl.runtime[i]), (cl_int *)&rt); 
+        AssertFatal(rt == CL_SUCCESS, "Error %d creating context for platform %i\n" , (int)rt, i);
+        for(int dev=0; dev<ocl.runtime[i].num_devices; dev++) {
+          ocl.runtime[i].queue[dev] = clCreateCommandQueueWithProperties(ocl.runtime[i].context,ocl.runtime[i].devices[dev] , 0, (cl_int *)&rt);
+          AssertFatal(rt == CL_SUCCESS, "Error %d creating command queue for platform %i device %i\n" , (int)rt, i,dev);
+        }
+        char *source_str;
+        size_t source_size=load_source(&source_str);
+        cl_program program = clCreateProgramWithSource(ocl.runtime[i].context, 1, 
+                                                       (const char **)&source_str, (const size_t *)&source_size,  (cl_int *)&rt);
+        AssertFatal(rt == CL_SUCCESS, "Error %d creating program for platform %i \n" , (int)rt, i); 
+        rt = clBuildProgram(program, ocl.runtime[i].num_devices,ocl.runtime[i].devices, NULL, NULL, NULL);   
+        AssertFatal(rt == CL_SUCCESS, "Error %d buildding program for platform %i \n" , rt, i);                                            
+        context_ok++;
+      }
+      devok=0;
   }
+  AssertFatal(context_ok>0, "No openCL device available to accelerate ldpc\n"); 
   return 0;  
 }
 
