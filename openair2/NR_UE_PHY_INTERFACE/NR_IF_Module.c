@@ -480,7 +480,7 @@ static void fill_dci_from_dl_config(nr_downlink_indication_t*dl_ind, fapi_nr_dl_
     int num_dci_options = rel15_dci->num_dci_options;
     if (num_dci_options <= 0)
     {
-      LOG_I(NR_MAC, "num_dci_opts = %d for %dth pdu in dl_config_list\n", rel15_dci->num_dci_options, i);
+      LOG_I(NR_MAC, "num_dci_opts = %d for pdu[%d] in dl_config_list\n", rel15_dci->num_dci_options, i);
     }
     AssertFatal(num_dci_options <= sizeof(rel15_dci->dci_length_options) / sizeof(rel15_dci->dci_length_options[0]),
                 "num_dci_options %d > dci_length_options array\n", num_dci_options);
@@ -932,6 +932,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
       for (int i = 0; i < dl_info->dci_ind->number_of_dcis; i++) {
         LOG_D(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
         nr_scheduled_response_t scheduled_response;
+        nr_dcireq_t dcireq;
+        nr_ue_dcireq(&dcireq);
         int8_t ret = handle_dci(dl_info->module_id,
                                 dl_info->cc_id,
                                 dl_info->gNB_index,
