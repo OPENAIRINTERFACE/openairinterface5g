@@ -461,7 +461,19 @@ class RANManagement():
 			mySSH.command('if [ -e rbconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
 			mySSH.command('if [ -e reconfig.raw ]; then echo ' + lPassWord + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
 		# NOTE: WE SHALL do a check if the executable is present (in case build went wrong)
-		mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+
+		#hack UHD_RFNOC_DIR variable for gNB / N310 on RHEL8 server:
+		#if the USRP address is in the xml then we are using an eth USRP (N3xx)
+		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
+			gNB = False
+		else:
+			gNB = True
+		if ((self.USRPIPAddress!='') and (gNB==True)):
+			mySSH.command('echo ' + lPassWord + ' | echo "ulimit -c unlimited && sudo UHD_RFNOC_DIR=/usr/local/share/uhd/rfnoc ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		#otherwise the regular command is ok
+		else:
+			mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
 		mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
