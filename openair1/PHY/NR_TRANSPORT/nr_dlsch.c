@@ -146,6 +146,8 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
     uint8_t dmrs_Type = rel15->dmrsConfigType;
     int nb_re_dmrs;
     uint16_t n_dmrs;
+    LOG_D(PHY,"pdsch: BWPStart %d, BWPSize %d, rbStart %d, rbsize %d\n",
+          rel15->BWPStart,rel15->BWPSize,rel15->rbStart,rel15->rbSize);
     if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1) {
       nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
     }

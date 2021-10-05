@@ -68,7 +68,7 @@ int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame, int slot, find_type_t type) {
 		}
     else if ((type == SEARCH_EXIST) &&
 		  (gNB->prach_vars.list[i].frame == frame) &&
-      (gNB->prach_vars.list[i].slot  == slot)) {
+                  (gNB->prach_vars.list[i].slot  == slot)) {
 		  return i;
 		}
   }
@@ -107,15 +107,15 @@ int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type) {
   for (uint16_t i=0; i<NUMBER_OF_NR_RU_PRACH_MAX; i++) {
     LOG_D(PHY,"searching for PRACH in %d.%d : prach_index %d=> %d.%d\n", frame,slot,i,
 	  ru->prach_list[i].frame,ru->prach_list[i].slot);
-		if((type == SEARCH_EXIST_OR_FREE) &&
-		  (ru->prach_list[i].frame == -1) &&
-		  (ru->prach_list[i].slot == -1)) {
-      pthread_mutex_unlock(&ru->prach_list_mutex);
-		  return i;
-		}	
+    if((type == SEARCH_EXIST_OR_FREE) &&
+       (ru->prach_list[i].frame == -1) &&
+       (ru->prach_list[i].slot == -1)) {
+          pthread_mutex_unlock(&ru->prach_list_mutex);
+          return i;
+    }	
     else if ((type == SEARCH_EXIST) &&
-		  (ru->prach_list[i].frame == frame) &&
-      (ru->prach_list[i].slot  == slot)) {
+             (ru->prach_list[i].frame == frame) &&
+             (ru->prach_list[i].slot  == slot)) {
       pthread_mutex_unlock(&ru->prach_list_mutex);
       return i;
     }
@@ -185,7 +185,8 @@ void rx_nr_prach_ru(RU_t *ru,
 
   rxsigF            = ru->prach_rxsigF[prachOccasion];
 
-  AssertFatal(ru->if_south == LOCAL_RF,"we shouldn't call this if if_south != LOCAL_RF\n");
+  AssertFatal(ru->if_south == LOCAL_RF || ru->if_south == REMOTE_IF5,
+              "we shouldn't call this if if_south != LOCAL_RF or REMOTE_IF5\n");
 
   for (int aa=0; aa<ru->nb_rx; aa++){ 
     if (prach_sequence_length == 0) slot2=(slot/fp->slots_per_subframe)*fp->slots_per_subframe; 

@@ -861,7 +861,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
   // msg3 is scheduled in mixed slot in the following TDD period
 
-  uint16_t msg3_nb_rb = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // sdu has 6 or 8 bytes
+  uint16_t msg3_nb_rb = 8; // sdu has 6 or 8 bytes
 
   int mu = ubwp ?
     ubwp->bwp_Common->genericParameters.subcarrierSpacing :

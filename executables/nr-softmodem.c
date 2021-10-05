@@ -335,12 +335,14 @@ int create_gNB_tasks(uint32_t gnb_nb) {
 
   for(int i = GNB_INTERFACE_NAME_FOR_NG_AMF_IDX; i <= GNB_IPV4_ADDRESS_FOR_NG_AMF_IDX; i++) {
     if( NETParams[i].strptr == NULL) {
-      LOG_E(NGAP, "No configuration in the file.\n");
+      LOG_E(NGAP, "No configuration in the file (%d).\n",i);
       NGAP_CONF_MODE = 0;
     } else {
       LOG_D(NGAP, "Configuration in the file: %s.\n",*NETParams[i].strptr);
     }
   }
+
+  LOG_E(NGAP,"aprefix %s : %s %s %s %s %d %s %d\n",aprefix,NETParams[0].strptr,NETParams[1].strptr,NETParams[2].strptr,NETParams[3].strptr,NETParams[4].iptr,NETParams[5].strptr,NETParams[6].iptr);
 
   if (AMF_MODE_ENABLED) {
     if (gnb_nb > 0) {
