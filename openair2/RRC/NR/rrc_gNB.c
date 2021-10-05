@@ -3979,6 +3979,10 @@ void *rrc_gnb_task(void *args_p) {
       rrc_CU_process_ue_context_setup_response(msg_p, msg_name_p, instance);
       break;
 
+    case F1AP_UE_CONTEXT_MODIFICATION_REQ:
+      LOG_I(NR_RRC, "F1AP_UE_CONTEXT_MODIFICATION_REQ itti message received from the F1AP layer of the DU \n");
+      break;
+
       /* Messages from X2AP */
       case X2AP_ENDC_SGNB_ADDITION_REQ:
         LOG_I(NR_RRC, "Received ENDC sgNB addition request from X2AP \n");

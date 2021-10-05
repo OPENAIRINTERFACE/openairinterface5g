@@ -39,15 +39,15 @@
 #define F1AP_INITIAL_UL_RRC_MESSAGE(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_initial_ul_rrc_message
 #define F1AP_UL_RRC_MESSAGE(mSGpTR)                (mSGpTR)->ittiMsg.f1ap_ul_rrc_message
 #define F1AP_UE_CONTEXT_SETUP_REQ(mSGpTR)          (mSGpTR)->ittiMsg.f1ap_ue_context_setup_req
-#define F1AP_UE_CONTEXT_SETUP_RESP(mSGpTR)          (mSGpTR)->ittiMsg.f1ap_ue_context_setup_resp
+#define F1AP_UE_CONTEXT_SETUP_RESP(mSGpTR)         (mSGpTR)->ittiMsg.f1ap_ue_context_setup_resp
 #define F1AP_UE_CONTEXT_RELEASE_RESP(mSGpTR)       (mSGpTR)->ittiMsg.f1ap_ue_context_release_resp
+#define F1AP_UE_CONTEXT_MODIFICATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_ue_context_modification_req
 #define F1AP_UE_CONTEXT_MODIFICATION_RESP(mSGpTR)  (mSGpTR)->ittiMsg.f1ap_ue_context_modification_resp
 #define F1AP_UE_CONTEXT_MODIFICATION_FAIL(mSGpTR)  (mSGpTR)->ittiMsg.f1ap_ue_context_modification_fail
 
 #define F1AP_DL_RRC_MESSAGE(mSGpTR)                (mSGpTR)->ittiMsg.f1ap_dl_rrc_message
 #define F1AP_UE_CONTEXT_RELEASE_REQ(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_ue_context_release_req
 #define F1AP_UE_CONTEXT_RELEASE_CMD(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_ue_context_release_req
-#define F1AP_UE_CONTEXT_MODIFICATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_ue_context_modification_req
 
 /* Length of the transport layer address string
  * 160 bits / 8 bits by char.
@@ -352,6 +352,11 @@ typedef struct cu_to_du_rrc_information_s {
   uint8_t   measConfig_length;
 }cu_to_du_rrc_information_t;
 
+typedef enum QoS_information_e {
+  NG_RAN_QoS    = 0,
+  EUTRAN_QoS    = 1,
+} QoS_information_t;
+
 typedef struct f1ap_ue_context_setup_s {
   uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
   uint32_t gNB_DU_ue_id;
@@ -370,6 +375,7 @@ typedef struct f1ap_ue_context_setup_s {
   uint8_t  du_to_cu_rrc_information_length;
   f1ap_drb_to_be_setup_t *drbs_to_be_setup; // BK: need to replace by s1ap_initial_context_setup_req
   uint8_t  drbs_to_be_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
+  QoS_information_t QoS_information_type;
   uint8_t  drbs_failed_to_be_setup_length;
   f1ap_rb_failed_to_be_setup_t *drbs_failed_to_be_setup;
   f1ap_srb_to_be_setup_t *srbs_to_be_setup;

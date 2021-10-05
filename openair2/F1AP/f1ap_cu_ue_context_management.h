@@ -72,7 +72,8 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
 /*
  * UE Context Modification (gNB-CU initiated)
  */
-int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance);
+int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance,
+    f1ap_ue_context_setup_t *f1ap_ue_context_modification_req);
 int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
     uint32_t         assoc_id,
     uint32_t         stream,

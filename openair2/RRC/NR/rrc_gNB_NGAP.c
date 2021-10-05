@@ -1111,7 +1111,51 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
     // TEST 
     // ue_context_p->ue_context.pdusession[0].status = PDU_SESSION_STATUS_DONE;
     // rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(&ctxt, ue_context_p, 0);
-    rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, NULL);
+    if(!NODE_IS_CU(RC.nrrrc[ctxt.module_id]->node_type)){
+      rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, NULL);
+    }
+    else{
+      /*Generate a UE context modification request message towards the DU to instruct the DU
+       *for SRB2 and DRB configuration and get the updates on master cell group config from the DU*/
+      MessageDef *message_p;
+      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_REQ);
+      f1ap_ue_context_setup_t *req=&F1AP_UE_CONTEXT_MODIFICATION_REQ (message_p);
+      //UE_IDs will be extracted from F1AP layer
+      req->gNB_CU_ue_id     = 0;
+      req->gNB_DU_ue_id = 0;
+      req->rnti             = ue_context_p->ue_context.rnti;
+      req->mcc              = RC.nrrrc[ctxt.module_id]->configuration.mcc[0];
+      req->mnc              = RC.nrrrc[ctxt.module_id]->configuration.mnc[0];
+      req->mnc_digit_length = RC.nrrrc[ctxt.module_id]->configuration.mnc_digit_length[0];
+      req->nr_cellid        = RC.nrrrc[ctxt.module_id]->nr_cellid;
+
+      //if (ue_context_p->ue_context.established_pdu_sessions_flag == 1) {
+        /*Instruction towards the DU for SRB2 configuration*/
+        req->srbs_to_be_setup = malloc(1*sizeof(f1ap_srb_to_be_setup_t));
+        req->srbs_to_be_setup_length = 1;
+        f1ap_srb_to_be_setup_t *SRBs=req->srbs_to_be_setup;
+        SRBs[0].srb_id = 2;
+        SRBs[0].lcid = 2;
+
+        /*Instruction towards the DU for DRB configuration and tunnel creation*/
+        gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
+        memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
+        req->drbs_to_be_setup = malloc(1*sizeof(f1ap_drb_to_be_setup_t));
+        req->drbs_to_be_setup_length = 1;
+        f1ap_drb_to_be_setup_t *DRBs=req->drbs_to_be_setup;
+        LOG_I(RRC, "Length of DRB list:%d \n", req->drbs_to_be_setup_length);
+        DRBs[0].drb_id = 1;
+        DRBs[0].rlc_mode = RLC_MODE_AM;
+        DRBs[0].up_ul_tnl[0].tl_address = inet_addr(RC.nrrrc[ctxt.module_id]->eth_params_s.my_addr);
+        DRBs[0].up_ul_tnl[0].port=RC.nrrrc[ctxt.module_id]->eth_params_s.my_portd;
+        DRBs[0].up_ul_tnl_length = 1;
+        DRBs[0].up_dl_tnl[0].tl_address = inet_addr(RC.nrrrc[ctxt.module_id]->eth_params_s.remote_addr);
+        DRBs[0].up_dl_tnl[0].port=RC.nrrrc[ctxt.module_id]->eth_params_s.remote_portd;
+        DRBs[0].up_dl_tnl_length = 1;
+      //}
+
+      itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
+    }
     return(0);
   }
 }
