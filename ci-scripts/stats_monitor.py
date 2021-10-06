@@ -9,7 +9,7 @@ import numpy as np
 import os
 
 def collect(d):
-    cmd='cat L1_stats.log MAC_stats.log PDCP_stats.log RRC_stats.log'
+    cmd='cat L1_stats.log MAC_stats.log PDCP_stats.log RRC_stats.log nrL1_stats.log nrMAC_stats.log nrPDCP_stats.log nrRRC_stats.log'
     process=subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
     output = process.stdout.readlines()
     for l in output:
