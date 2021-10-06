@@ -944,8 +944,6 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
       for (int i = 0; i < dl_info->dci_ind->number_of_dcis; i++) {
         LOG_D(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
         nr_scheduled_response_t scheduled_response;
-        nr_dcireq_t dcireq;
-        nr_ue_dcireq(&dcireq);
         int8_t ret = handle_dci(dl_info->module_id,
                                 dl_info->cc_id,
                                 dl_info->gNB_index,
