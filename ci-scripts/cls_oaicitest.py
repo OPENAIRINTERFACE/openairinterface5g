@@ -1998,7 +1998,7 @@ class OaiCiTest():
 			if type==0:
 				result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(?P<lostPack>[0-9]+)/ +(?P<sentPack>[0-9]+)', str(line))
 			else:
-				result = re.search('^\[  \d\].+ +(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(?P<lostPack>[0-9]+)\/(?P<sentPack>[0-9]+)', str(line))
+				result = re.search('^\[\s+\d\].+  (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(?P<lostPack>[0-9]+)\/.*(?P<sentPack>[0-9]+)', str(line))
 
 			if result is not None:
 				bitrate = result.group('bitrate')
