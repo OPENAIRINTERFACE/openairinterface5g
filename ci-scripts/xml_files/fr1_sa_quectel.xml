@@ -63,6 +63,7 @@
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>nr</air_interface>
 		<eNB_Trace>yes</eNB_Trace>
+		<eNB_Stats>yes</eNB_Stats>
 		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
 	</testCase>
 
