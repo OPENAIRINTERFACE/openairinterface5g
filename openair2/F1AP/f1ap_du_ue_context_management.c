@@ -672,7 +672,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   ctxt.rnti = f1ap_get_rnti_by_cu_id(DUtype, instance, ie->value.choice.GNB_CU_UE_F1AP_ID);
   ctxt.instance = instance;
-  ctxt.instance  = instance;
+  ctxt.module_id = instance;
   ctxt.enb_flag  = 1;
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,

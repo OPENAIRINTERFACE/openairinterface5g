@@ -165,7 +165,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   protocol_ctxt_t ctxt;
   ctxt.rnti      = f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id);
   ctxt.instance = instance;
-  ctxt.instance  = instance;
+  ctxt.module_id = instance;
   ctxt.enb_flag  = 1;
   struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(
         RC.rrc[ctxt.instance],
