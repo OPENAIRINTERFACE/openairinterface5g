@@ -358,8 +358,9 @@ typedef enum QoS_information_e {
 } QoS_information_t;
 
 typedef enum ReconfigurationCompl_e {
-  RRCreconf_failure = 0,
-  RRCreconf_success = 1,
+  RRCreconf_info_not_present = 0,
+  RRCreconf_failure          = 1,
+  RRCreconf_success          = 2,
 } ReconfigurationCompl_t;
 
 typedef struct f1ap_ue_context_setup_s {

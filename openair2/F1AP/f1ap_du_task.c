@@ -209,6 +209,11 @@ void *F1AP_DU_task(void *arg) {
         DU_send_UE_CONTEXT_SETUP_RESPONSE(myInstance, &F1AP_UE_CONTEXT_SETUP_RESP(msg));
         break;
 
+      case F1AP_UE_CONTEXT_MODIFICATION_RESP:
+        LOG_I(F1AP, "DU task received itti message from RRC for F1AP_UE_CONTEXT_MODIFICATION_RESP message generation \n");
+        //DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(myInstance, &F1AP_UE_CONTEXT_MODIFICATION_RESP(msg));
+        break;
+
       case F1AP_UE_CONTEXT_RELEASE_REQ: // from MAC
         LOG_I(F1AP, "DU Task Received F1AP_UE_CONTEXT_RELEASE_REQ\n");
         DU_send_UE_CONTEXT_RELEASE_REQUEST(myInstance,

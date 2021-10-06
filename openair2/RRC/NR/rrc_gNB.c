@@ -3318,8 +3318,6 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
     }
   }
 
-
-
   NR_CellGroupConfig_t *cellGroupConfig;
   cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
   update_cellGroupConfig(cellGroupConfig, ue_context_p->ue_context.masterCellGroup);
@@ -3423,6 +3421,137 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
                                 resp->du_to_cu_rrc_information,
                                 1024);
   resp->du_to_cu_rrc_information_length = (enc_rval.encoded+7)>>3;
+  itti_send_msg_to_task (TASK_DU_F1, ctxt.module_id, message_p);
+}
+
+static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, const char *msg_name, instance_t instance){
+
+  f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_MODIFICATION_REQ(msg_p);
+  protocol_ctxt_t ctxt;
+  ctxt.rnti      = req->rnti;
+  ctxt.module_id = instance;
+  ctxt.instance  = instance;
+  ctxt.enb_flag  = 1;
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
+  gNB_MAC_INST *mac = RC.nrmac[ctxt.module_id];
+  struct rrc_gNB_ue_context_s *ue_context_p =
+      rrc_gNB_get_ue_context(rrc, ctxt.rnti);
+  MessageDef *message_p;
+  message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_RESP);
+  f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_MODIFICATION_RESP(message_p);
+  uint32_t incoming_teid = 0;
+  NR_CellGroupConfig_t *cellGroupConfig = NULL;
+
+  /* Configure SRB2 */
+  NR_SRB_ToAddMod_t            *SRB2_config          = NULL;
+  NR_SRB_ToAddModList_t        *SRB_configList       = NULL;
+  uint8_t SRBs_before_new_addition = 0;
+
+  if(req->srbs_to_be_setup_length>0){
+    if(ue_context_p->ue_context.SRB_configList == NULL){
+      LOG_W(NR_RRC, "The SRB list of the UE context is empty before the addition of new SRB at the DU \n");
+      ue_context_p->ue_context.SRB_configList = CALLOC(1, sizeof(*ue_context_p->ue_context.SRB_configList));
+    }
+    SRB_configList = ue_context_p->ue_context.SRB_configList;
+    SRBs_before_new_addition = SRB_configList->list.count;
+    for (int i=0; i<req->srbs_to_be_setup_length; i++){
+      SRB2_config = CALLOC(1, sizeof(*SRB2_config));
+      SRB2_config->srb_Identity = req->srbs_to_be_setup[i].srb_id;
+      ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
+    }
+  }
+
+  /* Configure DRB */
+  NR_DRB_ToAddMod_t            *DRB_config          = NULL;
+  NR_DRB_ToAddModList_t        *DRB_configList      = NULL;
+  if(req->drbs_to_be_setup_length>0){
+    if(ue_context_p->ue_context.DRB_configList == NULL){
+      ue_context_p->ue_context.DRB_configList = CALLOC(1, sizeof(*ue_context_p->ue_context.DRB_configList));
+    }
+    DRB_configList = ue_context_p->ue_context.DRB_configList;
+    for (int i=0; i<req->drbs_to_be_setup_length; i++){
+      DRB_config = CALLOC(1, sizeof(*DRB_config));
+      DRB_config->drb_Identity = req->drbs_to_be_setup[i].drb_id;
+      ASN_SEQUENCE_ADD(&DRB_configList->list, DRB_config);
+      f1ap_drb_to_be_setup_t drb_p = req->drbs_to_be_setup[i];
+      transport_layer_addr_t addr;
+      memcpy(addr.buffer, &drb_p.up_ul_tnl[0].tl_address, sizeof(drb_p.up_ul_tnl[0].tl_address));
+      addr.length=sizeof(drb_p.up_ul_tnl[0].tl_address)*8;
+      extern instance_t DUuniqInstance;
+      incoming_teid=newGtpuCreateTunnel(DUuniqInstance,
+          req->rnti,
+          drb_p.drb_id,
+          drb_p.drb_id,
+          drb_p.up_ul_tnl[0].teid,
+          addr,
+          2152,
+          DURecvCb);
+    }
+  }
+
+  if(req->srbs_to_be_setup_length>0 || req->drbs_to_be_setup_length>0){
+    cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
+    fill_mastercellGroupConfig(cellGroupConfig, ue_context_p->ue_context.masterCellGroup,
+      req->srbs_to_be_setup_length>0 ? 1:0,
+      req->drbs_to_be_setup_length>0 ? 1:0);
+    nr_rrc_rlc_config_asn1_req(&ctxt,
+                               ue_context_p->ue_context.SRB_configList,
+                               ue_context_p->ue_context.DRB_configList,
+                               NULL,
+                               NULL,
+                               get_softmodem_params()->sa ? ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
+  }
+  if(req->ReconfigComplOutcome == RRCreconf_failure){
+    LOG_W(NR_RRC, "CU reporting RRC Reconfiguration failure \n");
+  }
+  else if(req->ReconfigComplOutcome == RRCreconf_success){
+    LOG_I(NR_RRC, "CU reporting RRC Reconfiguration success \n");
+  }
+
+  /* Fill the UE context setup response ITTI message to send to F1AP */
+  resp->gNB_CU_ue_id = req->gNB_CU_ue_id;
+  resp->rnti = ctxt.rnti;
+  if(DRB_configList){
+    if(DRB_configList->list.count > 0){
+      resp->drbs_to_be_setup = calloc(1,DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
+      resp->drbs_to_be_setup_length = DRB_configList->list.count;
+      for (int i=0; i<DRB_configList->list.count; i++){
+        resp->drbs_to_be_setup[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
+        resp->drbs_to_be_setup[i].rlc_mode = RLC_MODE_AM;
+        resp->drbs_to_be_setup[i].up_dl_tnl[0].teid = incoming_teid;
+        resp->drbs_to_be_setup[i].up_dl_tnl[0].tl_address = inet_addr(mac->eth_params_n.my_addr);
+        resp->drbs_to_be_setup[i].up_dl_tnl_length = 1;
+      }
+    }
+    else{
+      LOG_W(NR_RRC, "No DRB added upon reception of F1 UE context modification request with a DRB to setup list\n");
+    }
+  }
+  if(SRB_configList){
+    if(SRB_configList->list.count >0 && SRBs_before_new_addition < SRB_configList->list.count){
+      resp->srbs_to_be_setup = calloc(1,req->srbs_to_be_setup_length*sizeof(f1ap_srb_to_be_setup_t));
+      resp->srbs_to_be_setup_length = req->srbs_to_be_setup_length;
+      for (int i=SRBs_before_new_addition; i<SRB_configList->list.count; i++){
+        resp->srbs_to_be_setup[i-SRBs_before_new_addition].srb_id = SRB_configList->list.array[i]->srb_Identity;
+      }
+    }
+    else{
+      LOG_W(NR_RRC, "No SRB added upon reception of F1 UE Context modification request at the DU\n");
+    }
+  }
+  else{
+    LOG_W(NR_RRC, "No SRB added upon reception of F1 UE Context modification request at the DU\n");
+  }
+
+  if(cellGroupConfig != NULL) {
+    resp->du_to_cu_rrc_information = calloc(1,1024*sizeof(uint8_t));
+    asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
+                                NULL,
+                                (void *)cellGroupConfig,
+                                resp->du_to_cu_rrc_information,
+                                1024);
+    resp->du_to_cu_rrc_information_length = (enc_rval.encoded+7)>>3;
+  }
   itti_send_msg_to_task (TASK_DU_F1, ctxt.module_id, message_p);
 }
 
@@ -3967,21 +4096,21 @@ void *rrc_gnb_task(void *args_p) {
         rrc_gNB_process_f1_setup_req(&F1AP_SETUP_REQ(msg_p));
         break;
 	
-    case NR_DU_RRC_DL_INDICATION:
-      rrc_process_DU_DL(msg_p, msg_name_p, instance);
-      break;
+      case NR_DU_RRC_DL_INDICATION:
+        rrc_process_DU_DL(msg_p, msg_name_p, instance);
+        break;
       
-    case F1AP_UE_CONTEXT_SETUP_REQ:
-      rrc_DU_process_ue_context_setup_request(msg_p, msg_name_p, instance);
-      break;
+      case F1AP_UE_CONTEXT_SETUP_REQ:
+        rrc_DU_process_ue_context_setup_request(msg_p, msg_name_p, instance);
+        break;
 
-    case F1AP_UE_CONTEXT_SETUP_RESP:
-      rrc_CU_process_ue_context_setup_response(msg_p, msg_name_p, instance);
-      break;
+      case F1AP_UE_CONTEXT_SETUP_RESP:
+        rrc_CU_process_ue_context_setup_response(msg_p, msg_name_p, instance);
+        break;
 
-    case F1AP_UE_CONTEXT_MODIFICATION_REQ:
-      LOG_I(NR_RRC, "F1AP_UE_CONTEXT_MODIFICATION_REQ itti message received from the F1AP layer of the DU \n");
-      break;
+      case F1AP_UE_CONTEXT_MODIFICATION_REQ:
+        rrc_DU_process_ue_context_modification_request(msg_p, msg_name_p, instance);
+        break;
 
       /* Messages from X2AP */
       case X2AP_ENDC_SGNB_ADDITION_REQ:
