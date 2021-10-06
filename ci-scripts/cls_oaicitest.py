@@ -2232,13 +2232,7 @@ class OaiCiTest():
 
 
 	def Iperf_Module(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC, Module_UE):
-		SSH = sshconnection.SSHConnection()
-		#RH temporary quick n dirty for test
-		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-		cmd = 'echo ' + EPC.Password + ' | sudo -S ip link set dev tun5 mtu 1358'
-		SSH.command(cmd,'\$',5)	
-		SSH.close()
-			
+		SSH = sshconnection.SSHConnection()	
 
 		#kill iperf processes before (in case there are still some remaining)
 		SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
