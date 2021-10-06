@@ -1367,7 +1367,10 @@ void *ru_thread( void *param ) {
       initial_wait=0;
       opp_enabled = opp_enabled0;
     } 
-    if (initial_wait == 0 && ru->rx_fhaul.trials > 1000) reset_meas(&ru->rx_fhaul);
+    if (initial_wait == 0 && ru->rx_fhaul.trials > 1000)  reset_meas(&ru->rx_fhaul); 
+    
+
+    
     proc->timestamp_tx = proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
     proc->frame_tx     = (proc->tti_rx > (fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
     proc->tti_tx      = (proc->tti_rx + (fp->slots_per_subframe*sf_ahead))%fp->slots_per_frame;
@@ -1387,6 +1390,7 @@ void *ru_thread( void *param ) {
       if (ru->feprx) {
         ru->feprx(ru,proc->tti_rx);
         //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
+      if (initial_wait == 0 && proc->frame_rx == 127 ) {LOG_M("rxdata.m","rxs",ru->common.rxdata[0],fp->samples_per_frame,1,1); LOG_M("rxdataF.m","rxsF",RC.gNB[0]->common_vars.rxdataF[0],fp->symbols_per_slot*fp->ofdm_symbol_size,1,1); exit(-1);}
         LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
 /*
         LOG_D(PHY,"Copying rxdataF from RU to gNB\n");

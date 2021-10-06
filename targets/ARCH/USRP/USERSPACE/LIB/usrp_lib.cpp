@@ -676,25 +676,53 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 
     // bring RX data into 12 LSBs for softmodem RX
     for (int i=0; i<cc; i++) {
-      for (int j=0; j<nsamps2; j++) {
+
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-        // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
+      __m256i mean=_mm256_setzero_si256();
+      int16_t mean16[2];
 
-        if ((((uintptr_t) buff[i])&0x1F)==0) {
-          ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
-        } else {
-          ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],rxshift);
-          ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],rxshift);
-        }
+      for (int j=0; j<nsamps2<<1; j++) {
+        mean=_mm256_add_epi32(mean,_mm256_cvtepi16_epi32(((__m128i*)buff_tmp[i])[j]));        
+      }
+      mean16[0] =(int16_t)((_mm256_extract_epi32(mean,0) + _mm256_extract_epi32(mean,2) + _mm256_extract_epi32(mean,4) + _mm256_extract_epi32(mean,6))/nsamps);
+      mean16[1] =(int16_t)((_mm256_extract_epi32(mean,1) + _mm256_extract_epi32(mean,3) + _mm256_extract_epi32(mean,5) + _mm256_extract_epi32(mean,7))/nsamps);
+/*
+      LOG_I(PHY,"mean16[0] %d mean16[1] %d (%d,%d,%d,%d,%d,%d,%d,%d)\n",mean16[0],mean16[1],
+            _mm256_extract_epi32(mean,0),
+            _mm256_extract_epi32(mean,1),
+            _mm256_extract_epi32(mean,2),
+            _mm256_extract_epi32(mean,3),
+            _mm256_extract_epi32(mean,4),
+            _mm256_extract_epi32(mean,5),
+            _mm256_extract_epi32(mean,6),
+            _mm256_extract_epi32(mean,7)); */
+      if ((((uintptr_t) buff[i])&0x1F)==0) {
+        mean = _mm256_set1_epi32(*(uint32_t*)mean16);// FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
 
-#else
-        ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
+        for (int j=0; j<nsamps2; j++) 
+           ((__m256i *)buff[i])[j] = _mm256_srai_epi16(_mm256_subs_epi16(buff_tmp[i][j],mean),rxshift);
+      } else {
+        __m128i mean128 = _mm_set1_epi32(*(uint32_t*)mean16);
+        for (int j=0; j<(nsamps2<<1); j++) 
+          ((__m128i *)buff[i])[j]  = _mm_srai_epi16(_mm_subs_epi16(((__m128i *)buff_tmp[i])[j],mean128),rxshift);
+      }
+#else    
+      __m128i mean=mm_setzero_si128();
+      for (int j=0; j<nsamps2<<1; j++) {
+        mean=_mm_adds_epi32(mean,_mm_cvtepi16_epi32(((__m64*)buff_tmp[i])[j]));        
+      }
+      mean16[0] =(int16_t)(( _mm_extract_epi32(mean,0) + _mm_extract_epi32(mean,2))/nsamps);
+      mean16[1] =(int16_t)(( _mm_extract_epi32(mean,1) + _mm_extract_epi32(mean,3))/nsamps);
+      mean = _mm_set1_epi32(*(uint32_t*)mean16);
+      for (int j=0; j<nsamps2; j++) 
+        ((__m128i *)buff[i])[j] = _mm_srai_epi16(_mm_subs_epi16(buff_tmp[i][j],mean),rxshift);
 #endif
 #elif defined(__arm__)
+      for (int j=0; j<nsamps2; j++) 
         ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
 #endif
-      }
+      
     }
 
     if (samples_received < nsamps) {
@@ -1098,7 +1126,7 @@ extern "C" {
   if (device->type==USRP_X300_DEV) {
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
     std::cerr << "-- Using calibration table: calib_table_x310" << std::endl;
-    s->usrp->set_rx_dc_offset(true);
+ //   s->usrp->set_rx_dc_offset(true);
   }
 
   if (device->type==USRP_N300_DEV) {
