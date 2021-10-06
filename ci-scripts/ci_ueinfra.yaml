@@ -20,7 +20,7 @@ nrmodule2_quectel:
   Kind : quectel
   Process :
     Name : quectel-CM
-    Cmd : /home/nrmodule2/quectel-CM/quectel-CM -s oai.ipv4 -4
+    Cmd : /home/nrmodule2/quectel-CM/quectel-CM -s oai -4 #oai is the dnn for OAI CN5G (hardcoded in CN)
   WakeupScript : ci_ctl_qtel.py /dev/ttyUSB7 wup
   DetachScript : ci_ctl_qtel.py /dev/ttyUSB7 detach
   LogStore : /media/ci_qlogs  
