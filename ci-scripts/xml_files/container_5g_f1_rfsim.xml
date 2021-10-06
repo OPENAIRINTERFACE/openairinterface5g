@@ -26,6 +26,7 @@
         <htmlTabIcon>wrench</htmlTabIcon>
         <TestCaseRequestedList>
  100021
+ 000020
  000021
  000022
  000023
@@ -33,16 +34,23 @@
  020021
  020022
  030021
- 030022
  100021
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
+
+        <testCase id="000020">
+                <class>DeployGenObject</class>
+                <desc>Deploy MySql Database</desc>
+                <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
+                <services>mysql</services>
+                <nb_healthy>1</nb_healthy>
+        </testCase>
 
         <testCase id="000021">
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G CoreNetwork</desc>
                 <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
-                <services>mysql oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
+                <services>oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
                 <nb_healthy>6</nb_healthy>
         </testCase>
 
@@ -92,7 +100,7 @@
                 <server_container_name>rfsim5g-oai-nr-ue</server_container_name>
                 <client_container_name>rfsim5g-oai-ext-dn</client_container_name>
                 <server_options>-B 12.1.1.2 -u -i 1 -s</server_options>
-                <client_options>-c 12.1.1.2 -u -i 1 -t 30 -b 400K</client_options>
+                <client_options>-c 12.1.1.2 -u -i 1 -t 30 -b 200K</client_options>
         </testCase>
 
         <testCase id="030022">
@@ -101,7 +109,7 @@
                 <server_container_name>rfsim5g-oai-ext-dn</server_container_name>
                 <client_container_name>rfsim5g-oai-nr-ue</client_container_name>
                 <server_options>-u -i 1 -s</server_options>
-                <client_options>-B 12.1.1.2 -c 192.168.72.135 -u -i 1 -t 30 -b 20K</client_options>
+                <client_options>-B 12.1.1.2 -c 192.168.72.135 -u -i 1 -t 30 -b 5K</client_options>
         </testCase>
 
         <testCase id="100021">
