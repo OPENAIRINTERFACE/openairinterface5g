@@ -2000,33 +2000,29 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
   if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
   if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
 
-  for (int i=0; i<3; i++) { // loop over possible aggregation levels
+  fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
+  fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config,4<<i);
+  rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
+  rel15->num_dci_options = 1;
+  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
+  fill_dci_search_candidates(mac->search_space_zero, rel15);
 
-    fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
-    ret = fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config,4<<i);
-    if (ret) {
-      rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-      rel15->num_dci_options = 1;
-      rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-      config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
-      fill_dci_search_candidates(mac->search_space_zero, rel15);
-
-      if(mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern == 1){
-        // same frame as ssb
-        if ((mac->type0_PDCCH_CSS_config.frame & 0x1) == mac->type0_PDCCH_CSS_config.sfn_c)
-          frame_s = 0;
-        else
-          frame_s = 1;
-        slot_s = mac->type0_PDCCH_CSS_config.n_0;
-      }
-      else{
-        frame_s = 0; // same frame as ssb
-        slot_s = mac->type0_PDCCH_CSS_config.n_c;
-      }
-      LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
-      fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, 0); // TODO fix thread_id, for now assumed 0
-    }
+  if(mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern == 1){
+    // same frame as ssb
+    if ((mac->type0_PDCCH_CSS_config.frame & 0x1) == mac->type0_PDCCH_CSS_config.sfn_c)
+      frame_s = 0;
+    else
+      frame_s = 1;
+    slot_s = mac->type0_PDCCH_CSS_config.n_0;
   }
+  else{
+    frame_s = 0; // same frame as ssb
+    slot_s = mac->type0_PDCCH_CSS_config.n_c;
+  }
+  LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
+  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, 0); // TODO fix thread_id, for now assumed 0
+
   if (dl_config->number_pdus) {
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
       mac->if_module->scheduled_response(&scheduled_response);
