@@ -1978,7 +1978,7 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   nr_scheduled_response_t scheduled_response;
-  int frame_s,slot_s,ret;
+  int frame_s,slot_s;
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
 
@@ -2001,7 +2001,7 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
   if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
 
   fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
-  fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config,4<<i);
+  fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config);
   rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
   rel15->num_dci_options = 1;
   rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;

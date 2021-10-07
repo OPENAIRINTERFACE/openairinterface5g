@@ -328,15 +328,13 @@ uint32_t schedule_control_sib1(module_id_t module_id,
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
-  int ret;
 
   if (gNB_mac->sched_ctrlCommon == NULL){
     LOG_D(NR_MAC,"schedule_control_common: Filling nr_mac->sched_ctrlCommon\n");
     gNB_mac->sched_ctrlCommon = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon));
     gNB_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->search_space));
     gNB_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->coreset));
-    ret = fill_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space,type0_PDCCH_CSS_config);
-    AssertFatal(ret==1,"No aggregation level for type0_PDCCH_CSS found\n");
+    fill_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space,type0_PDCCH_CSS_config);
     fill_coresetZero(gNB_mac->sched_ctrlCommon->coreset,type0_PDCCH_CSS_config);
   }
 
