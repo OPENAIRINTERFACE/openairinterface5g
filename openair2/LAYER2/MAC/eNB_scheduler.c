@@ -592,7 +592,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
           eNB->frame, eNB->subframe, frameP, subframeP, delta);
     return;
   }
-  LOG_I(MAC, "Entering dlsch_ulsch scheduler %d.%d -> %d.%d = %d\n",
+  LOG_D(MAC, "Entering dlsch_ulsch scheduler %d.%d -> %d.%d = %d\n",
         eNB->frame, eNB->subframe, frameP, subframeP, delta);
 
   eNB->frame    = frameP;
