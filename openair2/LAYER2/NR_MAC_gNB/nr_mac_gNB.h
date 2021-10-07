@@ -370,9 +370,9 @@ typedef struct NR_pdsch_semi_static {
 
   int startSymbolIndex;
   int nrOfSymbols;
-
+  uint8_t nrOfLayers;
   uint8_t mcsTableIdx;
-
+  uint8_t dmrs_ports_id;
   uint8_t N_PRB_DMRS;
   uint8_t N_DMRS_SLOT;
   uint16_t dl_dmrs_symb_pos;
@@ -388,7 +388,6 @@ typedef struct NR_sched_pdsch {
   uint8_t mcs;
 
   /// TBS-related info
-  uint8_t nrOfLayers;
   uint16_t R;
   uint8_t Qm;
   uint32_t tb_size;
