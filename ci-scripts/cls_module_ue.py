@@ -61,7 +61,7 @@ class Module_UE:
 
 	#this method checks if the specified Process is running on the server hosting the module
 	#if not it will be started
-	def CheckCMProcess(self):
+	def CheckCMProcess(self,CNType):
 		HOST=self.HostUsername+'@'+self.HostIPAddress
 		COMMAND="ps aux | grep " + self.Process['Name'] + " | grep -v grep "
 		logging.debug(COMMAND)
@@ -76,7 +76,7 @@ class Module_UE:
 			logging.debug('Starting ' + self.Process['Name'])
 			mySSH = sshconnection.SSHConnection()
 			mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S ' + self.Process['Cmd'] + ' &','\$',5)
+			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S ' + self.Process['Cmd'] + ' ' +  self.Process['Apn'][CNType]  + ' &','\$',5)
 			mySSH.close()
 			#checking the process
 			time.sleep(5)

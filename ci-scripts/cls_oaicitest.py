@@ -388,7 +388,7 @@ class OaiCiTest():
 			#RH
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
 			Module_UE.ue_trace=ue_trace
-			is_module=Module_UE.CheckCMProcess()
+			is_module=Module_UE.CheckCMProcess(EPC.Type)
 			if is_module:
 				Module_UE.EnableTrace()
 				time.sleep(5)

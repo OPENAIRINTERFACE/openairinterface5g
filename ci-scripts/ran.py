@@ -486,7 +486,7 @@ class RANManagement():
 			monitor_file='stats_monitor.py'
 			#mySSH.command('echo ' + lPassWord + ' | sudo -S cp ' + self.eNBSourceCodePath + '/ci-scripts/'+ monitor_file + ' ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/.','\$', 5)
 			#mySSH.command('echo $USER; nohup python3 ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/' + monitor_file + ' 2>&1 &', '\$', 5)
-			mySSH.command('echo $USER; nohup python3 ../ci-scripts/' + monitor_file + ' 2>&1 &', '\$', 5)
+			mySSH.command('echo $USER; nohup python3 ../ci-scripts/' + monitor_file + ' 2>&1 > stats_monitor_execution.log &', '\$', 5)
 
 
 
