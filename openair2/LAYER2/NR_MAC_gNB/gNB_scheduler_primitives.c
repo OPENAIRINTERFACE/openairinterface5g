@@ -1937,9 +1937,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     if (!get_softmodem_params()->phy_test && !get_softmodem_params()->do_ra && !get_softmodem_params()->sa) {
       sched_ctrl->lcid_mask = 1<<DL_SCH_LCID_DTCH;
     }
-    if (!get_softmodem_params()->phy_test && !get_softmodem_params()->sa) {
-      sched_ctrl->maxL = 4;
-    }
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
@@ -2387,10 +2384,15 @@ bool find_free_CCE(module_id_t module_id,
                    int UE_id){
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id];
   uint8_t nr_of_candidates;
-  find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                              &nr_of_candidates,
-                              sched_ctrl->search_space,
-                              sched_ctrl->maxL);
+  for (int i=0; i<5; i++) {
+    // for now taking the lowest value among the available aggregation levels
+    find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                                &nr_of_candidates,
+                                sched_ctrl->search_space,
+                                1<<i);
+    if(nr_of_candidates>0) break;
+  }
+  AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid][slot];
   const int m = RC.nrmac[module_id]->UE_info.num_pdcch_cand[UE_id][cid];

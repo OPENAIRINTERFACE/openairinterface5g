@@ -795,7 +795,12 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     uint8_t aggregation_level;
     uint8_t nr_of_candidates;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 4);
+    for (int i=0; i<5; i++) {
+      // for now taking the lowest value among the available aggregation levels
+      find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 1<<i);
+      if(nr_of_candidates>0) break;
+    }
+    AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
     int CCEIndex = allocate_nr_CCEs(nr_mac, NULL, coreset, aggregation_level, 0, 0, nr_of_candidates);
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
@@ -1170,7 +1175,12 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     uint8_t aggregation_level;
     uint8_t nr_of_candidates;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss,4);
+    for (int i=0; i<5; i++) {
+      // for now taking the lowest value among the available aggregation levels
+      find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 1<<i);
+      if(nr_of_candidates>0) break;
+    }
+    AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
     int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
@@ -1442,7 +1452,12 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // get CCEindex, needed also for PUCCH and then later for PDCCH
     uint8_t aggregation_level;
     uint8_t nr_of_candidates;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss,4);
+    for (int i=0; i<5; i++) {
+      // for now taking the lowest value among the available aggregation levels
+      find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 1<<i);
+      if(nr_of_candidates>0) break;
+    }
+    AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
     int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
