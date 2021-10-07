@@ -262,10 +262,9 @@ static void process_queued_nr_nfapi_msgs(int sfn_slot)
   nfapi_nr_rach_indication_t *rach_ind = unqueue_matching(&nr_rach_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
   nfapi_nr_rx_data_indication_t *rx_ind = unqueue_matching(&nr_rx_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
   nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&nr_crc_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
-  nfapi_nr_dl_tti_request_t *dl_tti_request = unqueue_matching(&nr_dl_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
-  nfapi_nr_tx_data_request_t *tx_data_request = unqueue_matching(&nr_tx_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
-  nfapi_nr_ul_dci_request_t *ul_dci_request = unqueue_matching(&nr_ul_dci_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
-  nfapi_nr_ul_tti_request_t *ul_tti_request = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
+  nfapi_nr_dl_tti_request_t *dl_tti_request = get_queue(&nr_dl_tti_req_queue);
+  nfapi_nr_ul_dci_request_t *ul_dci_request = get_queue(&nr_ul_dci_req_queue);
+  nfapi_nr_ul_tti_request_t *ul_tti_request = get_queue(&nr_ul_tti_req_queue);
 
   if (rach_ind && rach_ind->number_of_pdus > 0)
   {
@@ -299,29 +298,19 @@ static void process_queued_nr_nfapi_msgs(int sfn_slot)
     free(rx_ind->pdu_list);
     free(rx_ind);
   }
-  if (dl_tti_request || tx_data_request)
+  if (dl_tti_request)
   {
+    int dl_tti_sfn_slot = NFAPI_SFNSLOT2HEX(dl_tti_request->SFN, dl_tti_request->Slot);
+    nfapi_nr_tx_data_request_t *tx_data_request = unqueue_matching(&nr_tx_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &dl_tti_sfn_slot);
     if (!tx_data_request)
     {
-      save_nr_measurement_info(dl_tti_request);
-      LOG_E(NR_MAC, "[%d %d] No corresponding tx_data_request for given dl_tti_request\n",
-            NFAPI_SFNSLOT2SFN(sfn_slot), NFAPI_SFNSLOT2SLOT(sfn_slot));
+      LOG_E(NR_MAC, "[%d %d] No corresponding tx_data_request for given dl_tti_request sfn/slot\n",
+            NFAPI_SFNSLOT2SFN(dl_tti_sfn_slot), NFAPI_SFNSLOT2SLOT(dl_tti_sfn_slot));
       if (!put_queue(&nr_dl_tti_req_queue, dl_tti_request))
       {
           LOG_E(NR_PHY, "put_queue failed for dl_tti_request.\n");
           free(dl_tti_request);
           dl_tti_request = NULL;
-      }
-    }
-    else if (!dl_tti_request)
-    {
-      LOG_E(NR_MAC, "[%d %d] No corresponding dl_tti_request for given tx_data_request \n",
-            NFAPI_SFNSLOT2SFN(sfn_slot), NFAPI_SFNSLOT2SLOT(sfn_slot));
-      if (!put_queue(&nr_tx_req_queue, tx_data_request))
-      {
-          LOG_E(NR_PHY, "put_queue failed for tx_request.\n");
-          free(tx_data_request);
-          tx_data_request = NULL;
       }
     }
     else if (dl_tti_request->dl_tti_request_body.nPDUs > 0 && tx_data_request->Number_of_PDUs > 0)
@@ -333,14 +322,10 @@ static void process_queued_nr_nfapi_msgs(int sfn_slot)
   if (ul_dci_request && ul_dci_request->numPdus > 0)
   {
     check_and_process_dci(NULL, NULL, ul_dci_request, NULL);
-    //free(ul_dci_request);
-    //ul_dci_request = NULL;
   }
   if (ul_tti_request && ul_tti_request->n_pdus > 0)
   {
     check_and_process_dci(NULL, NULL, NULL, ul_tti_request);
-    //free(ul_tti_request);
-    //ul_tti_request = NULL;
   }
 }
 
@@ -457,10 +442,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     mac->dl_info.dci_ind = NULL;
     mac->dl_info.rx_ind = NULL;
 
-    if (is_nr_DL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_rx))
-    {
-      nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
-    }
+    nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
 
     if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
 

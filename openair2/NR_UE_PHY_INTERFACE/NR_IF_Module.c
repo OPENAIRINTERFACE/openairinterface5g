@@ -654,93 +654,7 @@ void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
     nsa_sendmsg_to_lte_ue(buffer, pack_len, NR_UE_RRC_MEASUREMENT);
     LOG_A(NR_RRC, "Populated NR_UE_RRC_MEASUREMENT information and sent to LTE UE\n");
 }
-# if 0
-static void process_nr_dl_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_header_t header)
-{
-    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-    char buffer_for_tx_data_req[NFAPI_MAX_PACKED_MESSAGE_SIZE];
-    ssize_t len_of_tx_data_req = 0;
-    int sfn_of_tx_data_req = 0;
-    int slot_of_tx_data_req = 0;
-    int sfn_of_dl_tti_req = 0;
-    int slot_of_dl_tti_req = 0;
-    int delta = 0;
-    nfapi_nr_dl_tti_request_t dl_tti_request;
-    nfapi_nr_ul_tti_request_t ul_tti_request;
-    nfapi_nr_tx_data_request_t tx_data_request;
-    nfapi_nr_ul_dci_request_t ul_dci_request;
-    if (dl_tti_req)
-    {
-        LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST message in sfn/slot %d %d. \n",
-                dl_tti_request.SFN, dl_tti_request.Slot);
-        save_nr_measurement_info(&dl_tti_request);
-        check_and_process_dci(&dl_tti_request, NULL, NULL, NULL);
-        if (mac->expected_dci)
-        {
-            sfn_of_dl_tti_req = dl_tti_request.SFN;
-            slot_of_dl_tti_req = dl_tti_request.Slot;
-        }
-        if (len_of_tx_data_req > 0
-            && sfn_of_dl_tti_req == sfn_of_tx_data_req
-            && slot_of_dl_tti_req == slot_of_tx_data_req)
-        {
-            if (nfapi_nr_p7_message_unpack((void *)buffer_for_tx_data_req, len_of_tx_data_req, &tx_data_request,
-                                            sizeof(tx_data_request), NULL) < 0)
-            {
-                LOG_E(NR_PHY, "Message tx_data_request failed to unpack\n");
-                break;
-            }
-            LOG_I(NR_PHY, "Processing an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message in SFN/slot %d %d. \n",
-                    tx_data_request.SFN, tx_data_request.Slot);
-            check_and_process_dci(NULL, &tx_data_request, NULL, NULL);
-            len_of_tx_data_req = 0;
-        }
-    }
-    if (tx_request)
-    {
-        LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message in SFN/slot %d %d. \n",
-                tx_data_request.SFN, tx_data_request.Slot);
 
-        if (tx_data_request.SFN == sfn_of_dl_tti_req && tx_data_request.Slot == slot_of_dl_tti_req
-            && (mac->expected_dci || mac->ra.ra_state <= WAIT_RAR))
-        {
-            check_and_process_dci(NULL, &tx_data_request, NULL, NULL);
-        }
-        else
-        {
-            len_of_tx_data_req = len;
-            sfn_of_tx_data_req = tx_data_request.SFN;
-            slot_of_tx_data_req = tx_data_request.Slot;
-            memcpy(buffer_for_tx_data_req, buffer, len);
-            LOG_I(NR_PHY, "Saved an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message in SFN/slot %d %d. \n",
-                    tx_data_request.SFN, tx_data_request.Slot);
-        }
-    }
-    if (ul_dci_request)
-    {
-        LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message in SFN/slot %d %d. \n",
-                ul_dci_request.SFN, ul_dci_request.Slot);
-        delta = NFAPI_SFNSLOT2DEC(sfn, slot) - NFAPI_SFNSLOT2DEC(ul_dci_request.SFN, ul_dci_request.Slot);
-        if (delta < -NFAPI_SFNSLOT2DEC(512, 0))
-        {
-            delta += NFAPI_SFNSLOT2DEC(1024, 0);
-        }
-        if (delta < 6)
-        {
-            check_and_process_dci(NULL, NULL, &ul_dci_request, NULL);
-        }
-    }
-    if (ul_tti_request)
-    {
-        LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message in SFN/slot %d %d. \n",
-                ul_tti_request.SFN, ul_tti_request.Slot);
-        check_and_process_dci(NULL, NULL, NULL, &ul_tti_request);
-    }
-    else
-        LOG_E(NR_PHY, "Case Statement has no corresponding nfapi message, this is the header ID %d\n", header.message_id);
-
-}
-#endif
 static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_header_t header)
 {
     nfapi_nr_dl_tti_request_t dl_tti_request;
@@ -850,61 +764,6 @@ void *nrue_standalone_pnf_task(void *context)
     {
       uint16_t sfn_slot = 0;
       memcpy((void *)&sfn_slot, buffer, sizeof(sfn_slot));
-      sfn = NFAPI_SFNSLOT2SFN(sfn_slot);
-      slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
-      if (slot == 5)
-      {
-        slot = 19;
-        if (sfn == 0)
-          sfn = 1023;
-        else
-          sfn = sfn - 1;
-      }
-      else if (slot == 4)
-      {
-        slot = 18;
-        if (sfn == 0)
-          sfn = 1023;
-        else
-          sfn = sfn - 1;
-      }
-      else if (slot == 3)
-      {
-        slot = 17;
-        if (sfn == 0)
-          sfn = 1023;
-        else
-          sfn = sfn - 1;
-      }
-      else if (slot == 2)
-      {
-        slot = 16;
-        if (sfn == 0)
-          sfn = 1023;
-        else
-          sfn = sfn - 1;
-      }
-      else if (slot == 1)
-      {
-        slot = 15;
-        if (sfn == 0)
-          sfn = 1023;
-        else
-          sfn = sfn - 1;
-      }
-      else if (slot == 0)
-      {
-        slot = 14;
-        if (sfn == 0)
-          sfn = 1023;
-        else
-          sfn = sfn - 1;
-      }
-      else
-      {
-        slot = slot - 6;
-      }
-      sfn_slot = NFAPI_SFNSLOT2HEX(sfn, slot);
       current_sfn_slot = sfn_slot;
 
       sfn_slot_pool[sfn_slot_id] = sfn_slot;
@@ -922,6 +781,8 @@ void *nrue_standalone_pnf_task(void *context)
         abort();
       }
 
+      sfn = NFAPI_SFNSLOT2SFN(sfn_slot);
+      slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
       LOG_I(NR_PHY, "Received from proxy sfn %d slot %d\n", sfn, slot);
     }
     else if (len == sizeof(nr_phy_channel_params_t))
