@@ -827,7 +827,7 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 		ops[i]->ldpc_dec.n_cb = p_offloadParams->n_cb;
 		ops[i]->ldpc_dec.iter_max = 20; 
 		ops[i]->ldpc_dec.rv_index = p_offloadParams->rv; 
-		ops[i]->ldpc_dec.op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_IN_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE|RTE_BBDEV_LDPC_CRC_TYPE_24B_DROP; 
+		ops[i]->ldpc_dec.op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_IN_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE; //|RTE_BBDEV_LDPC_CRC_TYPE_24B_DROP; 
 		ops[i]->ldpc_dec.code_block_mode = 1; //ldpc_dec->code_block_mode;
 		
 		ops[i]->ldpc_dec.harq_combined_input.offset =r*1024*32;

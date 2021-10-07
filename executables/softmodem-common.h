@@ -269,6 +269,7 @@ extern int usrp_tx_thread;
 extern uint16_t sl_ahead;
 extern uint16_t sf_ahead;
 extern volatile int  oai_exit;
+extern uint32_t ldpc_offload_flag;
 
 void tx_func(void *param);
 void rx_func(void *param);
