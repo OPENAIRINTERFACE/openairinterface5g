@@ -152,6 +152,7 @@ rfsim5g-traffic: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 The gNB can be deployed either in monolithic mode, or in CU/DU split mode.
 - For a deployment with a monolithic gNB:
+
 ```bash
 $ docker-compose up -d oai-gnb
 rfsim5g-oai-nrf is up-to-date
