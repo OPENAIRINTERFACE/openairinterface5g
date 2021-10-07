@@ -951,16 +951,20 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
       LOG_D(NR_MAC, "In %s:[%d.%d]: number of UL PDUs: %d with UL transmission in [%d.%d]\n", __FUNCTION__, frame_tx, slot_tx, ul_config->number_pdus, ul_config->sfn, ul_config->slot);
 
-      uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
+      uint8_t ulsch_input_buffer_array[NFAPI_MAX_NUM_UL_PDU][MAX_ULSCH_PAYLOAD_BYTES];
       nr_scheduled_response_t scheduled_response;
       fapi_nr_tx_request_t tx_req;
+      tx_req.slot = slot_tx;
+      tx_req.sfn = frame_tx;
+      tx_req.number_of_pdus = 0;
 
       for (int j = 0; j < ul_config->number_pdus; j++) {
+         uint8_t *ulsch_input_buffer = &(ulsch_input_buffer_array[tx_req.number_of_pdus][MAX_ULSCH_PAYLOAD_BYTES]);
 
         fapi_nr_ul_config_request_pdu_t *ulcfg_pdu = &ul_config->ul_config_list[j];
 
         if (ulcfg_pdu->pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUSCH) {
-
+          int mac_pdu_exist=0;
           uint16_t TBS_bytes = ulcfg_pdu->pusch_config_pdu.pusch_data.tb_size;
           LOG_D(NR_MAC,"harq_id %d, NDI %d NDI_DCI %d, TBS_bytes %d (ra_state %d)\n",
                 ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id,
@@ -976,6 +980,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
             LOG_D(NR_MAC,"Flipping NDI for harq_id %d (Msg3)\n",ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
             mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
             mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
+            mac_pdu_exist = 1;
           } else {
 
             if ((mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] != ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator ||
@@ -986,6 +991,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
               // Getting IP traffic to be transmitted
               nr_ue_get_sdu(mod_id, cc_id,frame_tx, slot_tx, gNB_index, ulsch_input_buffer, TBS_bytes);
+              mac_pdu_exist=1;
             }
 
             LOG_D(NR_MAC,"Flipping NDI for harq_id %d\n",ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
@@ -995,20 +1001,19 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
           }
 
           // Config UL TX PDU
-          tx_req.slot = slot_tx;
-          tx_req.sfn = frame_tx;
-          tx_req.number_of_pdus++;
-          tx_req.tx_request_body[0].pdu_length = TBS_bytes;
-          tx_req.tx_request_body[0].pdu_index = j;
-          tx_req.tx_request_body[0].pdu = ulsch_input_buffer;
-
+          if (mac_pdu_exist) {
+            tx_req.tx_request_body[tx_req.number_of_pdus].pdu_length = TBS_bytes;
+            tx_req.tx_request_body[tx_req.number_of_pdus].pdu_index = j;
+            tx_req.tx_request_body[tx_req.number_of_pdus].pdu = ulsch_input_buffer;
+            tx_req.number_of_pdus++;
+          }
           if (ra->ra_state == WAIT_CONTENTION_RESOLUTION && !ra->cfra){
-            LOG_I(NR_MAC,"[RAPROC] RA-Msg3 retransmitted\n");
+            LOG_I(NR_MAC,"[RAPROC][%d.%d] RA-Msg3 retransmitted\n", frame_tx, slot_tx);
             // 38.321 restart the ra-ContentionResolutionTimer at each HARQ retransmission in the first symbol after the end of the Msg3 transmission
             nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->gNB_index);
           }
           if (ra->ra_state == WAIT_RAR && !ra->cfra){
-            LOG_I(NR_MAC,"[RAPROC] RA-Msg3 transmitted\n");
+            LOG_I(NR_MAC,"[RAPROC][%d.%d] RA-Msg3 transmitted\n", frame_tx, slot_tx);
             nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->gNB_index);
           }
         }
@@ -2725,7 +2730,11 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
 
       if (sdu_length > 0) {
 
-        LOG_D(NR_MAC, "In %s: Generating UL MAC sub-PDU for SDU %d, length %d bytes, RB with LCID 0x%02x (buflen (TBS) %d bytes)\n", __FUNCTION__,
+        LOG_D(NR_MAC, "In %s: [UE %d] [%d.%d] UL-DXCH -> ULSCH, Generating UL MAC sub-PDU for SDU %d, length %d bytes, RB with LCID 0x%02x (buflen (TBS) %d bytes)\n",
+          __FUNCTION__,
+          module_idP,
+          frameP,
+          subframe,
           num_sdus + 1,
           sdu_length,
           lcid,
