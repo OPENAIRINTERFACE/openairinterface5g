@@ -1283,8 +1283,10 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   // FIXME k0 != 0 currently not taken into consideration
   current_harq->dl_frame = frame;
   current_harq->dl_slot = slot;
+  mac->active_harq_sfn_sf = NFAPI_SFNSLOT2HEX(frame, (slot + data_toul_fb));
 
-  LOG_D(PHY,"Setting harq_status for harq_id %d, dl %d.%d\n",harq_id,frame,slot);
+  LOG_D(NR_PHY,"Setting harq_status for harq_id %d, dl %d.%d, sched ul %d.%d\n",
+        harq_id, frame, slot, frame, (slot + data_toul_fb));
 }
 
 

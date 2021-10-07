@@ -257,14 +257,17 @@ static bool sfn_slot_matcher(void *wanted, void *candidate)
   return false;
 }
 
-static void process_queued_nr_nfapi_msgs(int sfn_slot)
+static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
 {
   nfapi_nr_rach_indication_t *rach_ind = unqueue_matching(&nr_rach_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
   nfapi_nr_rx_data_indication_t *rx_ind = unqueue_matching(&nr_rx_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
   nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&nr_crc_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
   nfapi_nr_dl_tti_request_t *dl_tti_request = get_queue(&nr_dl_tti_req_queue);
   nfapi_nr_ul_dci_request_t *ul_dci_request = get_queue(&nr_ul_dci_req_queue);
-  nfapi_nr_ul_tti_request_t *ul_tti_request = get_queue(&nr_ul_tti_req_queue);
+
+  LOG_D(NR_MAC, "Try to get a ul_tti_req for sfn/slot %d %d from queue with %d items\n",
+        NFAPI_SFNSLOT2SFN(mac->active_harq_sfn_sf),NFAPI_SFNSLOT2SLOT(mac->active_harq_sfn_sf), nr_ul_tti_req_queue.num_items);
+  nfapi_nr_ul_tti_request_t *ul_tti_request = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->active_harq_sfn_sf);
 
   if (rach_ind && rach_ind->number_of_pdus > 0)
   {
@@ -317,6 +320,11 @@ static void process_queued_nr_nfapi_msgs(int sfn_slot)
     {
       save_nr_measurement_info(dl_tti_request);
       check_and_process_dci(dl_tti_request, tx_data_request, NULL, NULL);
+    }
+    else
+    {
+      AssertFatal(false, "We dont have PDUs in either dl_tti %d or tx_req %d\n",
+                  dl_tti_request->dl_tti_request_body.nPDUs, tx_data_request->Number_of_PDUs);
     }
   }
   if (ul_dci_request && ul_dci_request->numPdus > 0)
@@ -373,6 +381,10 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   reset_queue(&nr_rx_ind_queue);
   reset_queue(&nr_crc_ind_queue);
   reset_queue(&nr_uci_ind_queue);
+  reset_queue(&nr_dl_tti_req_queue);
+  reset_queue(&nr_tx_req_queue);
+  reset_queue(&nr_ul_dci_req_queue);
+  reset_queue(&nr_ul_tti_req_queue);
 
   NR_PRACH_RESOURCES_t prach_resources;
   memset(&prach_resources, 0, sizeof(prach_resources));
@@ -452,7 +464,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       nr_ue_ul_indication(&ul_info);
       check_nr_prach(mac, &ul_info, &prach_resources);
     }
-    process_queued_nr_nfapi_msgs(sfn_slot);
+    process_queued_nr_nfapi_msgs(mac, sfn_slot);
   }
   return NULL;
 }

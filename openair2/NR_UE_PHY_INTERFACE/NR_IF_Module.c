@@ -93,7 +93,7 @@ void nrue_init_standalone_socket(int tx_port, int rx_port)
     }
     assert(ue_tx_sock_descriptor == -1);
     ue_tx_sock_descriptor = sd;
-    LOG_D(NR_RRC, "Sucessfully set up tx_socket in %s.\n", __FUNCTION__);
+    LOG_D(NR_RRC, "Successfully set up tx_socket in %s.\n", __FUNCTION__);
   }
 
   {
@@ -119,7 +119,7 @@ void nrue_init_standalone_socket(int tx_port, int rx_port)
     }
     assert(ue_rx_sock_descriptor == -1);
     ue_rx_sock_descriptor = sd;
-    LOG_D(NR_RRC, "Sucessfully set up rx_socket in %s.\n", __FUNCTION__);
+    LOG_D(NR_RRC, "Successfully set up rx_socket in %s.\n", __FUNCTION__);
   }
   LOG_I(NR_RRC, "NRUE standalone socket info: tx_port %d  rx_port %d on %s.\n",
         tx_port, rx_port, stub_eth_params.remote_addr);
@@ -745,7 +745,7 @@ void *nrue_standalone_pnf_task(void *context)
   int slot = 0;
 
 
-  LOG_I(NR_RRC, "Sucessfully started %s.\n", __FUNCTION__);
+  LOG_I(NR_RRC, "Successfully started %s.\n", __FUNCTION__);
 
   while (true)
   {
