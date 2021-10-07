@@ -404,26 +404,6 @@ pipeline {
                               }
                             }
                         }
-                        stage ("Test L2 simulator") {
-                            when {
-                                expression {doFullTestsuite}
-                            }
-                            steps {
-                              lock (vmResource) {
-                                script {
-                                    timeout (time: 30, unit: 'MINUTES') {
-                                        try {
-                                            gitlabCommitStatus(name: "Test L2-sim") {
-                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                                            }
-                                        } catch (Exception e) {
-                                            currentBuild.result = 'FAILURE'
-                                        }
-                                    }
-                                }
-                              }
-                            }
-                        }
                         stage ("Destroy all Virtual Machines") {
                             when {
                                 expression {doMandatoryTests}
