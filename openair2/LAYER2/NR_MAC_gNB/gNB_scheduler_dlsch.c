@@ -741,11 +741,11 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   uint8_t rballoc_mask[bwpSize];
   int n_rb_sched = 0;
-  for (int i = BWPStart; i < bwpSize; i++) {
+  for (int i = 0; i < bwpSize; i++) {
     // calculate mask: init with "NOT" vrb_map:
     // if any RB in vrb_map is blocked (1), the current RBG will be 0
-    rballoc_mask[i-BWPStart] = !vrb_map[i];
-    n_rb_sched += rballoc_mask[i-BWPStart];
+    rballoc_mask[i] = !vrb_map[i+BWPStart];
+    n_rb_sched += rballoc_mask[i];
   }
 
   /* Retrieve amount of data to send for this UE */
