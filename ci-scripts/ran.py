@@ -340,6 +340,8 @@ class RANManagement():
 			sys.exit('Insufficient Parameter')
 		logging.debug('Starting eNB/gNB on server: ' + lIpAddr)
 
+		SSH.copyout(lIpAddr,lUserName,lPassWord, cwd + "/active_net_interfaces.awk", "/tmp")
+
 		self.testCase_id = HTML.testCase_id
 		mySSH = SSH.SSHConnection()
 		
