@@ -110,6 +110,23 @@ char *clutil_getstrdev(int intdev) {
   return retstring;
 }
 
+void get_CompilErr(cl_program program, int pltf) {
+
+    // Determine the size of the log
+    size_t log_size;
+    for(int i=0; i<ocl.runtime[pltf].num_devices;i++) {
+      clGetProgramBuildInfo(program, ocl.runtime[pltf].devices[i], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+    // Allocate memory for the log
+      char *log = (char *) malloc(log_size);
+    // Get the log
+      clGetProgramBuildInfo(program, ocl.runtime[pltf].devices[i], CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
+    // Print the log
+      printf("%s\n", log);
+      free(log);
+    }
+
+}
+
 size_t load_source(char **source_str) {
 	int MAX_SOURCE_SIZE=(500*132);
     FILE *fp;
@@ -177,7 +194,10 @@ int ldpc_autoinit(void) {   // called by the library loader
         cl_program program = clCreateProgramWithSource(ocl.runtime[i].context, 1, 
                                                        (const char **)&source_str, (const size_t *)&source_size,  (cl_int *)&rt);
         AssertFatal(rt == CL_SUCCESS, "Error %d creating program for platform %i \n" , (int)rt, i); 
-        rt = clBuildProgram(program, ocl.runtime[i].num_devices,ocl.runtime[i].devices, NULL, NULL, NULL);   
+        rt = clBuildProgram(program, ocl.runtime[i].num_devices,ocl.runtime[i].devices, NULL, NULL, NULL);  
+        if (rt == CL_BUILD_PROGRAM_FAILURE) {
+			get_CompilErr(program,i);
+		} 
         AssertFatal(rt == CL_SUCCESS, "Error %d buildding program for platform %i \n" , rt, i);                                            
         context_ok++;
       }
