@@ -48,7 +48,6 @@ const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 queue_t nr_rx_ind_queue;
 queue_t nr_crc_ind_queue;
 queue_t nr_uci_ind_queue;
-queue_t nr_sfn_slot_queue;
 
 int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
 

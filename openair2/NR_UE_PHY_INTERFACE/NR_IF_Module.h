@@ -234,6 +234,13 @@ typedef struct nfapi_dl_tti_config_req_tx_data_req_t
 
 void send_nsa_standalone_msg(NR_UL_IND_t *UL_INFO, uint16_t msg_id);
 
+void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request);
+
+void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
+                           nfapi_nr_tx_data_request_t *tx_data_request,
+                           nfapi_nr_ul_dci_request_t *ul_dci_request,
+                           nfapi_nr_ul_tti_request_t *ul_tti_request);
+
 /**\brief done free of memory allocation by module_id and release to pointer pool.
    \param module_id module id*/
 int nr_ue_if_module_kill(uint32_t module_id);
