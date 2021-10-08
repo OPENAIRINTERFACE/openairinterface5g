@@ -73,8 +73,9 @@ void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
     int min_I0=1000,max_I0=0;
     int amin=0,amax=0;
+    fprintf(fd,"Blacklisted PRBs %d/%d\n",gNB->num_ulprbbl,gNB->frame_parms.N_RB_UL);
     for (int i=0; i<gNB->frame_parms.N_RB_UL; i++) {
-      if (i==(gNB->frame_parms.N_RB_UL>>1) - 1) i+=2;
+      if (gNB->ulprbbl[i] > 0) continue;
 
       if (gNB->measurements.n0_subband_power_tot_dB[i]<min_I0) {min_I0 = gNB->measurements.n0_subband_power_tot_dB[i]; amin=i;}
 
@@ -82,7 +83,8 @@ void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB) {
     }
 
     for (int i=0; i<gNB->frame_parms.N_RB_UL; i++) {
-     fprintf(fd,"%2d.",gNB->measurements.n0_subband_power_tot_dB[i]-gNB->measurements.n0_subband_power_avg_dB);
+     if (gNB->ulprbbl[i] ==0) fprintf(fd,"%2d.",gNB->measurements.n0_subband_power_tot_dB[i]-gNB->measurements.n0_subband_power_avg_dB);
+     else fprintf(fd,"X ."); 
      if (i%25 == 24) fprintf(fd,"\n");
     }
     fprintf(fd,"\n");

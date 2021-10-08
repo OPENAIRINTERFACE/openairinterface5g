@@ -539,11 +539,18 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   int rb2, rb, nb_rb;
+  int prbpos=0;
   if (1/*(gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1*/){
     nb_rb = 0;
     for (int symbol=0;symbol<14;symbol++)
-      for (int m=0;m<9;m++) gNB->rb_mask_ul[symbol][m] = 0;
-
+      for (int m=0;m<9;m++) {
+        gNB->rb_mask_ul[symbol][m] = 0;
+        for (int i=0;i<32;i++) {
+          prbpos = (m*32)+i;
+          if (prbpos>gNB->frame_parms.N_RB_UL) break;
+          gNB->rb_mask_ul[symbol][m] |= (gNB->ulprbbl[prbpos]>0 ? 1 : 0)<<i;
+        }
+      }
     for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
       NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
       if (pucch) {

@@ -1390,7 +1390,6 @@ void *ru_thread( void *param ) {
       if (ru->feprx) {
         ru->feprx(ru,proc->tti_rx);
         //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
-      if (initial_wait == 0 && proc->frame_rx == 127 ) {LOG_M("rxdata.m","rxs",ru->common.rxdata[0],fp->samples_per_frame,1,1); LOG_M("rxdataF.m","rxsF",RC.gNB[0]->common_vars.rxdataF[0],fp->symbols_per_slot*fp->ofdm_symbol_size,1,1); exit(-1);}
         LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
 /*
         LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
