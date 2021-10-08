@@ -1249,10 +1249,6 @@ void *ru_thread( void *param ) {
   int                opp_enabled0 = opp_enabled;
 
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
-
-  // set the timing measurements for startup phase, for RX fronthaul settling measurements, put it to configured value after
-  opp_enabled = 0;
-
   // set default return value
   ru_thread_status = 0;
   // set default return value
