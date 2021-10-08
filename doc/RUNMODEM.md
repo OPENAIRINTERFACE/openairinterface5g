@@ -171,15 +171,9 @@ With the RF simulator (on the same machine):
 
 ## IF setup with OAI
 
-The -C and --CO flags can be used together at UE side to set custom downlink and uplink FR1 arbitrary frequencies for the IF equipment.
+The `if_freq` and `if_freq_off` options can be used to set (via command line) custom downlink and uplink FR1 arbitrary frequencies for the IF equipment both.
 
-In order to run this setup, the following flags are needed at the UE side:
-
-`-C` 
-
-`--CO`
-
-and the following parameters must be configured in the RUs section of the gNB configuration file:
+In the same way, the following parameters must be configured in the RUs section of the gNB configuration file:
 
 `if_freq`
 
@@ -199,7 +193,7 @@ gNB on machine 1:
 
 UE on machine 2:
 
-`sudo ./nr-uesoftmodem -C 2169080000 --CO -400000000`
+`sudo ./nr-uesoftmodem --if_freq 2169080000 --if_freq_off -400000000`
 
 
 
