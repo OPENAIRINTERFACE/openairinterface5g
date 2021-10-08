@@ -655,60 +655,173 @@ void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
     LOG_A(NR_RRC, "Populated NR_UE_RRC_MEASUREMENT information and sent to LTE UE\n");
 }
 
-static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_header_t header)
+#if 0
+static void *memcpy_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_tti)
 {
+  nfapi_nr_dl_tti_request_t *p = malloc(sizeof(nfapi_nr_dl_tti_request_t));
+
+  p->header = dl_tti->header;
+  p->SFN = dl_tti->SFN;
+  p->Slot = dl_tti->Slot;
+  p->dl_tti_request_body = dl_tti->dl_tti_request_body;
+  p->vendor_extension = dl_tti->vendor_extension;
+
+  p->dl_tti_request_body.nGroup = dl_tti->dl_tti_request_body.nGroup;
+  p->dl_tti_request_body.nPDUs = dl_tti->dl_tti_request_body.nPDUs;
+
+  for (int i = 0; i < p->dl_tti_request_body.nPDUs; i++)
+  {
+    p->dl_tti_request_body.dl_tti_pdu_list[i] =
+        dl_tti->dl_tti_request_body.dl_tti_pdu_list[i];
+    p->dl_tti_request_body.dl_tti_pdu_list[i].pdcch_pdu =
+        dl_tti->dl_tti_request_body.dl_tti_pdu_list[i].pdcch_pdu;
+    p->dl_tti_request_body.dl_tti_pdu_list[i].pdsch_pdu =
+        dl_tti->dl_tti_request_body.dl_tti_pdu_list[i].pdsch_pdu;
+    p->dl_tti_request_body.dl_tti_pdu_list[i].ssb_pdu =
+        dl_tti->dl_tti_request_body.dl_tti_pdu_list[i].ssb_pdu;
+    p->dl_tti_request_body.dl_tti_pdu_list[i].csi_rs_pdu =
+        dl_tti->dl_tti_request_body.dl_tti_pdu_list[i].csi_rs_pdu;
+  }
+  return p;
+}
+
+static void *memcpy_tx_data_req(nfapi_nr_tx_data_request_t *tx_data)
+{
+  nfapi_nr_tx_data_request_t *p = malloc(sizeof(nfapi_nr_tx_data_request_t));
+
+  p->header = tx_data->header;
+  p->SFN = tx_data->SFN;
+  p->Slot = tx_data->Slot;
+  p->Number_of_PDUs = tx_data->Number_of_PDUs;
+
+  for (int i = 0; i < p->Number_of_PDUs; i++)
+  {
+    p->pdu_list[i] = tx_data->pdu_list[i];
+    for (int j = 0; j < p->pdu_list[i].num_TLV; j++)
+        p->pdu_list[i].TLVs[j] = tx_data->pdu_list[i].TLVs[j];
+
+  }
+  return p;
+}
+
+static void *memcpy_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci)
+{
+  nfapi_nr_ul_dci_request_t *p = malloc(sizeof(nfapi_nr_ul_dci_request_t));
+
+  p->header = ul_dci->header;
+  p->SFN = ul_dci->SFN;
+  p->Slot = ul_dci->Slot;
+  p->numPdus = ul_dci->numPdus;
+
+  for (int i = 0; i < p->numPdus; i++)
+  {
+    p->ul_dci_pdu_list[i] = ul_dci->ul_dci_pdu_list[i];
+    p->ul_dci_pdu_list[i].pdcch_pdu = ul_dci->ul_dci_pdu_list[i].pdcch_pdu;
+  }
+  return p;
+}
+
+static void *memcpy_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti)
+{
+  nfapi_nr_ul_tti_request_t *p = malloc(sizeof(nfapi_nr_ul_tti_request_t));
+
+  p->header = ul_tti->header;
+  p->SFN = ul_tti->SFN;
+  p->Slot = ul_tti->Slot;
+  p->n_pdus = ul_tti->n_pdus;
+  p->n_ulcch = ul_tti->n_ulcch;
+  p->n_ulsch = ul_tti->n_ulsch;
+  p->rach_present = ul_tti->rach_present;
+
+  for (int i = 0; i < p->n_pdus; i++)
+  {
+    p->pdus_list[i] = ul_tti->pdus_list[i];
+    p->pdus_list[i].prach_pdu = ul_tti->pdus_list[i].prach_pdu;
+    p->pdus_list[i].pucch_pdu = ul_tti->pdus_list[i].pucch_pdu;
+    p->pdus_list[i].pusch_pdu = ul_tti->pdus_list[i].pusch_pdu;
+    p->pdus_list[i].srs_pdu = ul_tti->pdus_list[i].srs_pdu;
+  }
+  return p;
+}
     nfapi_nr_dl_tti_request_t dl_tti_request;
     nfapi_nr_tx_data_request_t tx_data_request;
     nfapi_nr_ul_dci_request_t ul_dci_request;
     nfapi_nr_ul_tti_request_t ul_tti_request;
+
+            nfapi_nr_dl_tti_request_t *dl_tti_req_temp = memcpy_dl_tti_req(&dl_tti_request);
+            nfapi_nr_tx_data_request_t *tx_data_req_temp = memcpy_tx_data_req(&tx_data_request);
+            nfapi_nr_ul_dci_request_t *ul_dci_req_temp = memcpy_ul_dci_req(&ul_dci_request);
+            nfapi_nr_ul_tti_request_t *ul_tti_req_temp = memcpy_ul_tti_req(&ul_tti_request);
+#endif
+
+static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_header_t header)
+{
+
     switch (header.message_id)
     {
         case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
-            if (nfapi_nr_p7_message_unpack((void *)buffer, len, &dl_tti_request,
-                                            sizeof(dl_tti_request), NULL) < 0)
+        {
+            nfapi_nr_dl_tti_request_t *dl_tti_request = MALLOC(sizeof(*dl_tti_request));
+            if (nfapi_nr_p7_message_unpack((void *)buffer, len, dl_tti_request,
+                                            sizeof(*dl_tti_request), NULL) < 0)
             {
                 LOG_E(NR_PHY, "Message dl_tti_request failed to unpack\n");
                 break;
             }
             LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST message in sfn/slot %d %d. \n",
-                    dl_tti_request.SFN, dl_tti_request.Slot);
-            if (!put_queue(&nr_dl_tti_req_queue, &dl_tti_request))
+                    dl_tti_request->SFN, dl_tti_request->Slot);
+            if (!put_queue(&nr_dl_tti_req_queue, dl_tti_request))
             {
                 LOG_E(NR_PHY, "put_queue failed for dl_tti_request.\n");
+                free(dl_tti_request);
+                dl_tti_request = NULL;
             }
             break;
+        }
 
         case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
-            if (nfapi_nr_p7_message_unpack((void *)buffer, len, &tx_data_request,
-                                        sizeof(tx_data_request), NULL) < 0)
+        {
+            nfapi_nr_tx_data_request_t *tx_data_request = MALLOC(sizeof(*tx_data_request));
+            if (nfapi_nr_p7_message_unpack((void *)buffer, len, tx_data_request,
+                                        sizeof(*tx_data_request), NULL) < 0)
             {
                 LOG_E(NR_PHY, "Message tx_data_request failed to unpack\n");
                 break;
             }
             LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST message in SFN/slot %d %d. \n",
-                    tx_data_request.SFN, tx_data_request.Slot);
-            if (!put_queue(&nr_tx_req_queue, &tx_data_request))
+                    tx_data_request->SFN, tx_data_request->Slot);
+            if (!put_queue(&nr_tx_req_queue, tx_data_request))
             {
                 LOG_E(NR_PHY, "put_queue failed for tx_request.\n");
+                free(tx_data_request);
+                tx_data_request = NULL;
             }
             break;
+        }
 
         case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
-            if (nfapi_nr_p7_message_unpack((void *)buffer, len, &ul_dci_request,
-                                            sizeof(ul_dci_request), NULL) < 0)
+        {
+            nfapi_nr_ul_dci_request_t *ul_dci_request = MALLOC(sizeof(*ul_dci_request));
+            if (nfapi_nr_p7_message_unpack((void *)buffer, len, ul_dci_request,
+                                            sizeof(*ul_dci_request), NULL) < 0)
             {
                 LOG_E(NR_PHY, "Message ul_dci_request failed to unpack\n");
                 break;
             }
             LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST message in SFN/slot %d %d. \n",
-                    ul_dci_request.SFN, ul_dci_request.Slot);
-            if (!put_queue(&nr_ul_dci_req_queue, &ul_dci_request))
+                    ul_dci_request->SFN, ul_dci_request->Slot);
+            if (!put_queue(&nr_ul_dci_req_queue, ul_dci_request))
             {
                 LOG_E(NR_PHY, "put_queue failed for ul_dci_request.\n");
+                free(ul_dci_request);
+                ul_dci_request = NULL;
             }
             break;
+        }
 
         case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
+        {
+            nfapi_nr_ul_tti_request_t *ul_tti_request = MALLOC(sizeof(*ul_tti_request));
             if (nfapi_nr_p7_message_unpack((void *)buffer, len, &ul_tti_request,
                                            sizeof(ul_tti_request), NULL) < 0)
             {
@@ -716,12 +829,15 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                 break;
             }
             LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message in SFN/slot %d %d. \n",
-                  ul_tti_request.SFN, ul_tti_request.Slot);
-            if (!put_queue(&nr_ul_tti_req_queue, &ul_tti_request))
+                  ul_tti_request->SFN, ul_tti_request->Slot);
+            if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
             {
                 LOG_E(NR_PHY, "put_queue failed for ul_tti_request.\n");
+                free(ul_tti_request);
+                ul_tti_request = NULL;
             }
             break;
+        }
 
         default:
             LOG_E(NR_PHY, "Invalid nFAPI message. Header ID %d\n",
