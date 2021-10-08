@@ -663,7 +663,7 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
         case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
         {
             nfapi_nr_dl_tti_request_t *dl_tti_request = MALLOC(sizeof(*dl_tti_request));
-            if (nfapi_nr_p7_message_unpack((void *)buffer, len, dl_tti_request,
+            if (nfapi_nr_p7_message_unpack(buffer, len, dl_tti_request,
                                             sizeof(*dl_tti_request), NULL) < 0)
             {
                 LOG_E(NR_PHY, "Message dl_tti_request failed to unpack\n");
@@ -683,7 +683,7 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
         case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
         {
             nfapi_nr_tx_data_request_t *tx_data_request = MALLOC(sizeof(*tx_data_request));
-            if (nfapi_nr_p7_message_unpack((void *)buffer, len, tx_data_request,
+            if (nfapi_nr_p7_message_unpack(buffer, len, tx_data_request,
                                         sizeof(*tx_data_request), NULL) < 0)
             {
                 LOG_E(NR_PHY, "Message tx_data_request failed to unpack\n");
@@ -703,7 +703,7 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
         case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
         {
             nfapi_nr_ul_dci_request_t *ul_dci_request = MALLOC(sizeof(*ul_dci_request));
-            if (nfapi_nr_p7_message_unpack((void *)buffer, len, ul_dci_request,
+            if (nfapi_nr_p7_message_unpack(buffer, len, ul_dci_request,
                                             sizeof(*ul_dci_request), NULL) < 0)
             {
                 LOG_E(NR_PHY, "Message ul_dci_request failed to unpack\n");
@@ -723,8 +723,8 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
         case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
         {
             nfapi_nr_ul_tti_request_t *ul_tti_request = MALLOC(sizeof(*ul_tti_request));
-            if (nfapi_nr_p7_message_unpack((void *)buffer, len, &ul_tti_request,
-                                           sizeof(ul_tti_request), NULL) < 0)
+            if (nfapi_nr_p7_message_unpack(buffer, len, ul_tti_request,
+                                           sizeof(*ul_tti_request), NULL) < 0)
             {
                 LOG_E(NR_PHY, "Message ul_tti_request failed to unpack\n");
                 break;
@@ -829,7 +829,7 @@ void *nrue_standalone_pnf_task(void *context)
     else
     {
       nfapi_p7_message_header_t header;
-      if (nfapi_p7_message_header_unpack((void *)buffer, len, &header, sizeof(header), NULL) < 0)
+      if (nfapi_p7_message_header_unpack(buffer, len, &header, sizeof(header), NULL) < 0)
       {
         LOG_E(NR_PHY, "Header unpack failed for nrue_standalone pnf\n");
         continue;
