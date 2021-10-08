@@ -3606,6 +3606,10 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
 
 }
 
+static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, const char *msg_name, instance_t instance){
+  LOG_I(NR_RRC, "RRC processing of F1 ue_context modification response at the CU is pending \n");
+}
+
 unsigned int mask_flip(unsigned int x) {
   return((((x>>8) + (x<<8))&0xffff)>>6);
 }
@@ -4106,6 +4110,10 @@ void *rrc_gnb_task(void *args_p) {
 
       case F1AP_UE_CONTEXT_SETUP_RESP:
         rrc_CU_process_ue_context_setup_response(msg_p, msg_name_p, instance);
+        break;
+
+      case F1AP_UE_CONTEXT_MODIFICATION_RESP:
+        rrc_CU_process_ue_context_modification_response(msg_p, msg_name_p, instance);
         break;
 
       case F1AP_UE_CONTEXT_MODIFICATION_REQ:
