@@ -1322,6 +1322,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 
   int st = 0, e = 0, len = 0;
   for (int i = 0; i < bwpSize; i++) {
+    if (RC.nrmac[module_id]->ulprbbl[i] == 1) vrb_map_UL[i]=1;
     while ((vrb_map_UL[i] & symb) != 0 && i < bwpSize)
       i++;
     st = i;

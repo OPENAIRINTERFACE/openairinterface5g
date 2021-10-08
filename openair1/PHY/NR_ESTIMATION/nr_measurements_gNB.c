@@ -84,7 +84,7 @@ void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
     for (int i=0; i<gNB->frame_parms.N_RB_UL; i++) {
      if (gNB->ulprbbl[i] ==0) fprintf(fd,"%2d.",gNB->measurements.n0_subband_power_tot_dB[i]-gNB->measurements.n0_subband_power_avg_dB);
-     else fprintf(fd,"X ."); 
+     else fprintf(fd," X."); 
      if (i%25 == 24) fprintf(fd,"\n");
     }
     fprintf(fd,"\n");
