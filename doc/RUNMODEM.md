@@ -151,6 +151,14 @@ At the UE the --sa flag will:
   4) 5G-NR RRC Reconfiguration
   5) Start Downlink and Uplink Data Transfer
 
+Command line parameters for UE in --sa mode:
+- `C` : downlink carrier frequency in Hz (default value 0)
+- `CO` : uplink frequency offset for FDD in Hz (default value 0)
+- `numerology` : numerology index (default value 1)
+- `r` : bandwidth in terms of RBs (default value 106)
+- `band` : NR band number (default value 78)
+- `s` : SSB start subcarrier (default value 512)
+
 ### Run OAI in SA mode
 
 From the `cmake_targets/ran_build/build` folder:
