@@ -3494,12 +3494,7 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
     fill_mastercellGroupConfig(cellGroupConfig, ue_context_p->ue_context.masterCellGroup,
       req->srbs_to_be_setup_length>0 ? 1:0,
       req->drbs_to_be_setup_length>0 ? 1:0);
-    nr_rrc_rlc_config_asn1_req(&ctxt,
-                               ue_context_p->ue_context.SRB_configList,
-                               ue_context_p->ue_context.DRB_configList,
-                               NULL,
-                               NULL,
-                               get_softmodem_params()->sa ? ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
+     apply_macrlc_config(rrc, ue_context_p, &ctxt);
   }
   if(req->ReconfigComplOutcome == RRCreconf_failure){
     LOG_W(NR_RRC, "CU reporting RRC Reconfiguration failure \n");
@@ -3607,7 +3602,52 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
 }
 
 static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, const char *msg_name, instance_t instance){
-  LOG_I(NR_RRC, "RRC processing of F1 ue_context modification response at the CU is pending \n");
+
+  f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
+  protocol_ctxt_t ctxt;
+  ctxt.rnti      = resp->rnti;
+  ctxt.module_id = instance;
+  ctxt.instance  = instance;
+  ctxt.enb_flag  = 1;
+  ctxt.eNB_index = instance;
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
+  struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rnti);
+  NR_CellGroupConfig_t *cellGroupConfig = NULL;
+
+  if(resp->du_to_cu_rrc_information!=NULL){
+    asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+      &asn_DEF_NR_CellGroupConfig,
+      (void **)&cellGroupConfig,
+      (uint8_t *)resp->du_to_cu_rrc_information,
+      (int) resp->du_to_cu_rrc_information_length);
+
+    if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+      AssertFatal(1==0,"Cell group config decode error\n");
+      // free the memory
+      SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, cellGroupConfig, 1 );
+      return;
+    }
+    //xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, cellGroupConfig);
+
+    if(ue_context_p->ue_context.masterCellGroup == NULL){
+      ue_context_p->ue_context.masterCellGroup = calloc(1, sizeof(NR_CellGroupConfig_t));
+    }
+    if(cellGroupConfig->rlc_BearerToAddModList!=NULL){
+      if(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList != NULL){
+        LOG_I(NR_RRC, "rlc_BearerToAddModList not empty before filling it \n");
+        free(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList);
+      }
+      ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
+      memcpy(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList,
+          sizeof(*cellGroupConfig->rlc_BearerToAddModList));
+    }
+    xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_context_p->ue_context.masterCellGroup);
+
+    rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, cellGroupConfig);
+
+    free(cellGroupConfig->rlc_BearerToAddModList);
+    free(cellGroupConfig);
+  }
 }
 
 unsigned int mask_flip(unsigned int x) {

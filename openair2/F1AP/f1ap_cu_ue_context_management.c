@@ -1675,15 +1675,13 @@ int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
 
     // DUtoCURRCInformation
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextModificationResponseIEs_t, ie, container,
-                               F1AP_ProtocolIE_ID_id_DUtoCURRCInformation, true);
-    if (ie == NULL){
-      LOG_E(F1AP,"%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
-      return -1;
-    }
-    f1ap_ue_context_modification_resp->du_to_cu_rrc_information = (uint8_t *)calloc(1,ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
+                               F1AP_ProtocolIE_ID_id_DUtoCURRCInformation, false);
+    if(ie!=NULL){
+      f1ap_ue_context_modification_resp->du_to_cu_rrc_information = (uint8_t *)calloc(1,ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
 
-    memcpy(f1ap_ue_context_modification_resp->du_to_cu_rrc_information, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.buf, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
-    f1ap_ue_context_modification_resp->du_to_cu_rrc_information_length = ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size;
+      memcpy(f1ap_ue_context_modification_resp->du_to_cu_rrc_information, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.buf, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
+      f1ap_ue_context_modification_resp->du_to_cu_rrc_information_length = ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size;
+    }
 
     // DRBs_SetupMod_List
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextModificationResponseIEs_t, ie, container,
