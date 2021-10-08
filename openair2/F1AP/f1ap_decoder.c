@@ -127,6 +127,10 @@ static int f1ap_decode_successful_outcome(F1AP_F1AP_PDU_t *pdu) {
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_UEContextSetup\n", __func__);
       break;
 
+    case F1AP_ProcedureCode_id_UEContextModification:
+      LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_UEContextModification\n", __func__);
+      break;
+
     default:
       LOG_E(F1AP,"Unknown procedure ID (%d) for successfull outcome message\n",
             (int)pdu->choice.successfulOutcome->procedureCode);
