@@ -42,6 +42,11 @@ import datetime   #now() and date formating
 from datetime import datetime
 import re
 import gitlab
+import yaml
+import os
+import pickle
+
+from sqlconnect import SQLConnect
 
 #-----------------------------------------------------------
 # Class Declaration
@@ -58,58 +63,76 @@ class gDashboard:
         self.sheet = self.ss.worksheet(worksheet)
         self.ss.del_worksheet(self.sheet) #start by deleting the old sheet
         self.sheet = self.ss.add_worksheet(title=worksheet, rows="100", cols="30") #create a new one
-        
-        self.d = {} #data dictionary
+
+        #init with data sources : git, yaml config file, test results databases
+        cmd="""curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100" """       
+        self.git = self.__getGitData(cmd) #git data from Gitlab
+        self.tests = self.__loadCfg('ran_dashboard_cfg.yaml') #tests table setup from yaml
+        self.db = self.__loadFromDB() #test results from database
 
 
-    def fetchData(self,cmd):
+    def __loadCfg(self,yaml_file):
+        with open(yaml_file,'r') as f:
+            tests = yaml.load(f)
+        return tests
+
+    def __getGitData(self,cmd):
         #cmd="""curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100" """
         process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
         output = process.stdout.readline()
         tmp=output.decode("utf-8") 
-        self.d = json.loads(tmp)
+        d = json.loads(tmp)
+        return d
+
+    def __loadFromDB(self):
+        mr_list=[] 
+        for x in range(len(self.git)):
+            mr_list.append(str(self.git[x]['iid']))
+        mydb=SQLConnect()
+        for MR in mr_list: 
+            mydb.get(MR)
+        mydb.close_connection()
+        return mydb.data
+
 
 
     def gBuild(self, destinationSheetName):
 
-        #line 1 : update date/time, format dd/mm/YY H:M:S
+        ###line 1 : update date/time, format dd/mm/YY H:M:S
         now = datetime.now()
         dt_string = "Update : " + now.strftime("%d/%m/%Y %H:%M")	
         row =[dt_string]
         self.sheet.insert_row(row, index=1, value_input_option='RAW')
 
-        #line 2 is for the test names (links to jenkins pipeline), updated at the end 
+        ###line 2 is for the test short names (links to jenkins pipeline), updated at the end 
 
-        #line 3 is for the column names
+        ###line 3 is for the column names
         i=3
         row =["MR","Created_at","Author","Title","Assignee", "Reviewer", "CAN START","IN PROGRESS","COMPLETED","Review Form","OK MERGE","Merge conflicts"]
 
-        #test 1
-        row.append("# PASS")
-        row.append("# FAIL")
-        row.append("Last Fail")
-        #test 2
-        row.append("# PASS")
-        row.append("# FAIL")
-        row.append("Last Fail")
+        #tests
+        for t in range(0,len(self.tests)):
+            row.append("# PASS")
+            row.append("# FAIL")
+            row.append("Last Fail")
 
         self.sheet.insert_row(row, index=i, value_input_option='RAW')
 
-        #line 4 onward, MR data lines
-        for x in range(len(self.d)):
+        ###line 4 onward, MR data lines
+        for x in range(len(self.git)):
             i=i+1                        
-            date_time_str = self.d[x]['created_at']
+            date_time_str = self.git[x]['created_at']
             date_time_obj = datetime.strptime(date_time_str, '%Y-%m-%dT%H:%M:%S.%fZ')
     
             milestone1=milestone2=milestone3=milestone4=""
-            if self.d[x]['milestone']!=None:
-                if self.d[x]['milestone']['title']=="REVIEW_CAN_START":
+            if self.git[x]['milestone']!=None:
+                if self.git[x]['milestone']['title']=="REVIEW_CAN_START":
                     milestone1="X"
-                elif self.d[x]['milestone']['title']=="REVIEW_IN_PROGRESS":
+                elif self.git[x]['milestone']['title']=="REVIEW_IN_PROGRESS":
                     milestone2="X"
-                elif self.d[x]['milestone']['title']=="REVIEW_COMPLETED_AND_APPROVED":
+                elif self.git[x]['milestone']['title']=="REVIEW_COMPLETED_AND_APPROVED":
                     milestone3="X"
-                elif self.d[x]['milestone']['title']=="OK_TO_BE_MERGED": 
+                elif self.git[x]['milestone']['title']=="OK_TO_BE_MERGED": 
                     milestone4="X" 
                 else:
                     pass
@@ -117,18 +140,18 @@ class gDashboard:
                 pass
 
             #check if empty or not
-            if self.d[x]['assignee']!=None:
-                assignee = str(self.d[x]['assignee']['name'])
+            if self.git[x]['assignee']!=None:
+                assignee = str(self.git[x]['assignee']['name'])
             else:
                 assignee = ""
  
             #check if empty or not       
-            if len(self.d[x]['reviewers'])!=0:
-                reviewer = str(self.d[x]['reviewers'][0]['name'])
+            if len(self.git[x]['reviewers'])!=0:
+                reviewer = str(self.git[x]['reviewers'][0]['name'])
             else:
                 reviewer = ""
 
-            if self.d[x]['has_conflicts']==True:
+            if self.git[x]['has_conflicts']==True:
                 conflicts = "YES"
             else:
                 conflicts = ""
@@ -141,12 +164,12 @@ class gDashboard:
             project = gl.projects.get(project_id)
             #get the opened MR in the project
             mrs = project.mergerequests.list(state='opened')
+            review_form=''
             for m in range (0,len(mrs)):
-                if mrs[m].iid==self.d[x]['iid']:#check the iid is the one we are on
+                if mrs[m].iid==self.git[x]['iid']:#check the iid is the one we are on
                     mr_notes = mrs[m].notes.list(all=True)
                     n=0
                     found=False
-                    review_form=""
                     while found==False and n<len(mr_notes):
                         res=re.search('Code Review by',mr_notes[n].body)#this is the marker we are looking for in all notes
                         if res!=None:
@@ -154,69 +177,71 @@ class gDashboard:
                             found=True
                         n+=1
 
-            #add test results, notice : NSA only for the moment (code to be refactored for multiple tests afterwards) 
-            cmd="python3 /home/oaicicd/mysql/sql_connect_dev.py "+str(self.d[x]['iid'])
-
-            process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
-            output = process.stdout.readline()
-
-            tmp=output.decode("utf-8")
-            tmp=tmp.replace('\'','"')
-            tmp=tmp.rstrip()
-            testres = json.loads(tmp)
-
-
             #build final row to be inserted, the first column is left empty for now, will be filled afterward with hyperlinks to gitlab MR
-            row =["", str(date_time_obj.date()),str(self.d[x]['author']['name']),str(self.d[x]['title']),\
+            row =["", str(date_time_obj.date()),str(self.git[x]['author']['name']),	str(self.git[x]['title']),\
             assignee, reviewer,\
-            milestone1,milestone2,milestone3,review_form,milestone4,conflicts,\
-            testres['PASS'],testres['FAIL']]
-            
+            milestone1,milestone2,milestone3,review_form,milestone4,conflicts]
+            #and append the test results coming from self.db 
+            mr=str(self.git[x]['iid'])
+            for t in self.tests:
+                if mr in self.db:
+                    job=self.tests[t]['job']
+                    if job in self.db[mr]:
+                        if 'PASS' in self.db[mr][job]:
+                            row.append(self.db[mr][job]['PASS'])
+                        else:
+                            row.append('')
+                        if 'FAIL' in self.db[mr][job]:
+                            row.append(self.db[mr][job]['FAIL'])
+                        else:
+                            row.append('')
+                        row.append('')
+                    else:
+                        row.append('') 
+                        row.append('')
+                        row.append('')
 
-            #insert the row to worksheet
+            #insert the final row to worksheet
             self.sheet.insert_row(row, index=i, value_input_option='RAW')
 
 
-        
         #add MR hyperlinks in a list of requests to be sent as one update batch; this to save API calls (quotas) 
         i=3
         requests=[]
-        for x in range(len(self.d)):              
+        for x in range(len(self.git)):              
             rowIndex=i
             colIndex=0
-            hyperlink= '\"'+"https://gitlab.eurecom.fr/oai/openairinterface5g/-/merge_requests/"+ str(self.d[x]['iid']) +'\"'
-            text= '\"'+str(self.d[x]['iid'])+'"'
+            hyperlink= '\"'+"https://gitlab.eurecom.fr/oai/openairinterface5g/-/merge_requests/"+ str(self.git[x]['iid']) +'\"'
+            text= '\"'+str(self.git[x]['iid'])+'"'
             requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex))
 
-            cmd="python3 /home/oaicicd/mysql/sql_connect_dev.py "+str(self.d[x]['iid'])
-            process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
-            output = process.stdout.readline()
-            tmp=output.decode("utf-8")
-            tmp=tmp.replace('\'','"')
-            tmp=tmp.rstrip()
-            testres = json.loads(tmp)
-            if len(testres['fails list'])>0:
-                colIndex=14
-                hyperlink= '\"'+ testres['fails link'][0] +'\"'
-                text= '\"'+testres['fails list'][0]+'"'
-                requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex))
-            i=i+1
+            mr=str(self.git[x]['iid'])
+            colIndex=14
+            for t in self.tests:
+                job=self.tests[t]['job']
+                if job in self.db[mr]:
+                    if len(self.db[mr][job]['last_fail'])>0:
+                        hyperlink= '\"'+ self.db[mr][job]['last_fail'][1] +'\"'
+                        text= '\"'+self.db[mr][job]['last_fail'][0]+'"'
+                        requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex))
+                colIndex+=3
+            i=i+1 #increment row index for next MR
+
+
+
         body = {"requests": requests}    
         self.ss.batch_update(body)        
             
-        #line 2 is for the test names 
+        ###line 2 is for the test names 
         #add MR hyperlinks in a list of requests to be sent as one update batch; this to save API calls (quotas) 
         requests=[]
         rowIndex=1
         colIndex=12
-        hyperlink= '\"'+"https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-NSA-Mini-Module/"+'\"'
-        text= '\"'+'NSA Mini'+'"'
-        requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex))
-        rowIndex=1
-        colIndex=15
-        hyperlink= '\"'+"https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-Module/"+'\"'
-        text= '\"'+'NR SA'+'"'
-        requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex))
+        for t in self.tests :
+            hyperlink= '\"'+self.tests[t]['link']+'\"'
+            short_name= '\"'+ t +'\"'
+            requests.append(self.addHyperlink(hyperlink, short_name, destinationSheetName, rowIndex, colIndex))
+            colIndex+=3
 
         body = {"requests": requests}
         self.ss.batch_update(body)
@@ -264,14 +289,14 @@ class gDashboard:
                             "startRowIndex": 1,
                             "endRowIndex": 40,
                             "startColumnIndex": 0,
-                            "endColumnIndex": 19
+                            "endColumnIndex": 26 
                         },
                         "destination": {
                             "sheetId": destinationSheetId,
                             "startRowIndex": 1,
                             "endRowIndex": 40,
                             "startColumnIndex": 0,
-                            "endColumnIndex": 19
+                            "endColumnIndex": 26 
                         },
                         "pasteType": "PASTE_FORMAT"
                     }
@@ -358,8 +383,6 @@ class gDashboard:
 
 def main():
     my_gDashboard=gDashboard("/opt/dashboard/g_creds.json", 'OAI RAN Dashboard', 'MR Status')
-    cmd="""curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100" """ 
-    my_gDashboard.fetchData(cmd)
     my_gDashboard.gBuild("MR Status")
     my_gDashboard.gFormat("Formating" , "MR Status")
 
