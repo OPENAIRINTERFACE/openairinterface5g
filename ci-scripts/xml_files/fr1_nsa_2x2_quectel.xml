@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-NSA-FR1-TM1</htmlTabRef>
-	<htmlTabName>NSA Ping DL UL with QUECTEL</htmlTabName>
+	<htmlTabRef>TEST-NSA-FR1-TM2</htmlTabRef>
+	<htmlTabName>NSA 2x2 Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
@@ -32,6 +32,9 @@
  010000
  000001
  050000
+ 000002
+ 070000
+ 070001
  000001
  010002
  080001
@@ -111,7 +114,7 @@
 		<iperf_args>-u -b 20M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
-		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
@@ -121,7 +124,7 @@
 		<iperf_args>-u -b 3M -t 60</iperf_args>
 		<direction>UL</direction>
 		<id>nrmodule2_quectel</id>
-		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
