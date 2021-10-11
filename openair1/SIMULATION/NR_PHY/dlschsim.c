@@ -426,7 +426,9 @@ int main(int argc, char **argv)
 	UE->dlsch_SI[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
 	UE->dlsch_ra[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
-	NR_gNB_DLSCH_t *dlsch = gNB->dlsch[0][0];
+  processingData_L1tx_t msgDataTx;
+  init_DLSCH_struct(gNB, &msgDataTx);
+	NR_gNB_DLSCH_t *dlsch = msgDataTx.dlsch[0][0];
 	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
 	uint8_t is_crnti = 0, llr8_flag = 0;
@@ -634,7 +636,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < 2; i++) {
 		printf("gNB %d\n", i);
-		free_gNB_dlsch(&(gNB->dlsch[0][i]),N_RB_DL);
+		free_gNB_dlsch(&(msgDataTx.dlsch[0][i]),N_RB_DL);
 		printf("UE %d\n", i);
 		free_nr_ue_dlsch(&(UE->dlsch[0][0][i]),N_RB_DL);
 	}
