@@ -482,13 +482,14 @@ class RANManagement():
 		mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
 
 
-		#tentative
+		#stats monitoring during runtime
 		time.sleep(20)
+		monitor_file='stats_monitor.py'
 		if self.eNB_Stats=='yes':
-			monitor_file='stats_monitor.py'
-			#mySSH.command('echo ' + lPassWord + ' | sudo -S cp ' + self.eNBSourceCodePath + '/ci-scripts/'+ monitor_file + ' ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/.','\$', 5)
-			#mySSH.command('echo $USER; nohup python3 ' + self.eNBSourceCodePath + '/cmake_targets/ran_build/build/' + monitor_file + ' 2>&1 &', '\$', 5)
-			mySSH.command('echo $USER; nohup python3 ../ci-scripts/' + monitor_file + ' 2>&1 > stats_monitor_execution.log &', '\$', 5)
+			if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
+				mySSH.command('echo $USER; nohup python3 ../ci-scripts/' + monitor_file + ' \'enb\' 2>&1 > enb_stats_monitor_execution.log &', '\$', 5)
+			else:
+				mySSH.command('echo $USER; nohup python3 ../ci-scripts/' + monitor_file + ' \'gnb\' 2>&1 > gnb_stats_monitor_execution.log &', '\$', 5)
 
 
 
@@ -686,6 +687,11 @@ class RANManagement():
 				fileToAnalyze = self.eNBLogFiles[int(self.eNB_instance)]
 				self.eNBLogFiles[int(self.eNB_instance)] = ''
 			if analyzeFile:
+				#*stats.log files + pickle + png
+				mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/*stats.log', '.')
+				mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/*.pickle', '.')
+				mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/*.png', '.')
+				#
 				copyin_res = mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + fileToAnalyze, '.')
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy ' + nodeB_prefix + 'NB logfile to analyze it! \u001B[0m')
@@ -694,6 +700,11 @@ class RANManagement():
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				if self.eNB_serverId[self.eNB_instance] != '0':
+					#*stats.log files + pickle + png
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*stats.log', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*.pickle', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*.png', self.eNBSourceCodePath + '/cmake_targets/')
+					#
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
 				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze, HTML)

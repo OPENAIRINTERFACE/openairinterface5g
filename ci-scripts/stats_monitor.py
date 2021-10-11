@@ -8,8 +8,11 @@ import pickle
 import numpy as np
 import os
 
-def collect(d):
-    cmd='cat L1_stats.log MAC_stats.log PDCP_stats.log RRC_stats.log nrL1_stats.log nrMAC_stats.log nrPDCP_stats.log nrRRC_stats.log'
+def collect(d, node_type):
+    if node_type=='enb':
+        cmd='cat L1_stats.log MAC_stats.log PDCP_stats.log RRC_stats.log'
+    else: #'gnb'
+        cmd='cat nrL1_stats.log nrMAC_stats.log nrPDCP_stats.log nrRRC_stats.log'
     process=subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
     output = process.stdout.readlines()
     for l in output:
@@ -22,7 +25,7 @@ def collect(d):
             d['mcs'].append(int(result.group(4)))
 
 
-def graph(d):
+def graph(d, node_type):
 
 
     figure, axis = plt.subplots(4, 1,figsize=(10, 10)) 
@@ -61,11 +64,12 @@ def graph(d):
 
     plt.tight_layout()
     # Combine all the operations and display
-    plt.savefig('/tmp/stats_monitor.png')
+    plt.savefig('/tmp/'+node_type+'_stats_monitor.png')
     plt.show()
 
 if __name__ == "__main__":
 
+    node_type = sys.argv[1]#enb or gnb
 
     d={}
     d['PHR']=[]
@@ -78,13 +82,13 @@ if __name__ == "__main__":
     process=subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = process.stdout.readlines()
     while len(output)!=0 :
-        collect(d)
+        collect(d, node_type)
         process=subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         output = process.stdout.readlines()
         time.sleep(1)
     print('process stopped')
-    with open('/tmp/stats_monitor.pickle', 'wb') as handle:
+    with open('/tmp/'+node_type+'_stats_monitor.pickle', 'wb') as handle:
         pickle.dump(d, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    graph(d)
+    graph(d, node_type)
 
 
