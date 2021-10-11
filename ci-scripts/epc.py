@@ -235,7 +235,6 @@ class EPCManagement():
 			mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts', '\$', 5)
 			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
 			mySSH.command('./core-network.sh start nrf spgwu', '\$', 60)
-			mySSH.command('docker-compose up -d trf_gen', '\$', 5)
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
