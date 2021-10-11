@@ -137,7 +137,6 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   /* RRC Container */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
-
   rrc_dl_sdu_len = ie->value.choice.RRCContainer.size;
 
   /* optional */
@@ -166,7 +165,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   protocol_ctxt_t ctxt;
   ctxt.rnti      = f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id);
   ctxt.instance = instance;
-  ctxt.instance  = instance;
+  ctxt.module_id = instance;
   ctxt.enb_flag  = 1;
   struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(
         RC.rrc[ctxt.instance],
@@ -763,7 +762,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
     LOG_E(F1AP, "Failed to add UE \n");
     return -1;
   }
-  
+
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
@@ -920,7 +919,7 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
     LOG_E(F1AP, "Failed to find the F1AP UID \n");
     //return -1;
   }
-  
+
   /* optional */
   /* oldgNB_DU_UE_F1AP_ID */
   if (0) {
@@ -932,7 +931,6 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
   /* SRBID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_SRBID, true);
-
   uint64_t  srb_id = ie->value.choice.SRBID;
   LOG_D(F1AP, "srb_id %lu \n", srb_id);
 
@@ -985,13 +983,12 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   // decode RRC Container and act on the message type
   AssertFatal(srb_id<3,"illegal srb_id\n");
-  MessageDef * msg = itti_alloc_new_message(TASK_DU_F1, 0, NR_DU_RRC_DL_INDICATION);
-  NRDuDlReq_t * req=&NRDuDlReq(msg);
+  MessageDef *msg = itti_alloc_new_message(TASK_DU_F1, 0, NR_DU_RRC_DL_INDICATION);
+  NRDuDlReq_t *req=&NRDuDlReq(msg);
   req->rnti=f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id);
   req->srb_id=srb_id;
   req->buf= get_free_mem_block( ie->value.choice.RRCContainer.size, __func__);
   memcpy(req->buf->data, ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
   itti_send_msg_to_task(TASK_RRC_GNB, instance, msg);
-
   return 0;
 }

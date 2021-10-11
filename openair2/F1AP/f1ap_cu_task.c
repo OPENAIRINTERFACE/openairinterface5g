@@ -42,7 +42,7 @@
 instance_t CUuniqInstance=0;
 
 static instance_t cu_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs) {
-  openAddr_t tmp={0};
+  openAddr_t tmp= {0};
   strncpy(tmp.originHost, IPaddrs->my_addr, sizeof(tmp.originHost)-1);
   strncpy(tmp.destinationHost, IPaddrs->remote_addr, sizeof(tmp.destinationHost)-1);
   sprintf(tmp.originService, "%d",  IPaddrs->my_portd);
@@ -51,7 +51,7 @@ static instance_t cu_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs) {
 }
 
 static void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind,
-						eth_params_t *IPaddrs) {
+    eth_params_t *IPaddrs) {
   createF1inst(true, instance, NULL);
   // save the assoc id
   f1ap_setup_req_t *f1ap_cu_data=f1ap_req(true, instance);
@@ -90,7 +90,7 @@ static void cu_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *s
   AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 }
 
-static void cu_task_send_sctp_init_req(instance_t instance, char * my_addr) {
+static void cu_task_send_sctp_init_req(instance_t instance, char *my_addr) {
   // 1. get the itti msg, and retrive the enb_id from the message
   // 2. use RC.rrc[enb_id] to fill the sctp_init_t with the ip, port
   // 3. creat an itti message to init
@@ -103,7 +103,6 @@ static void cu_task_send_sctp_init_req(instance_t instance, char * my_addr) {
   message_p->ittiMsg.sctp_init.ipv6 = 0;
   message_p->ittiMsg.sctp_init.nb_ipv4_addr = 1;
   message_p->ittiMsg.sctp_init.ipv4_address[0] = inet_addr(my_addr);
-
   /*
    * SR WARNING: ipv6 multi-homing fails sometimes for localhost.
    * * * * Disable it for now.
@@ -113,7 +112,7 @@ static void cu_task_send_sctp_init_req(instance_t instance, char * my_addr) {
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 
-void * F1AP_CU_task(void *arg) {
+void *F1AP_CU_task(void *arg) {
   MessageDef *received_msg = NULL;
   int         result;
   LOG_I(F1AP, "Starting F1AP at CU\n");
@@ -121,13 +120,15 @@ void * F1AP_CU_task(void *arg) {
   pool_buffer_init();
   itti_mark_task_ready(TASK_CU_F1);
   eth_params_t *IPaddrs;
+
   // Hardcoded instance id!
   if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_CU)
     IPaddrs=&RC.nrrrc[0]->eth_params_s;
-  else 
+  else
     IPaddrs=&RC.rrc[0]->eth_params_s;
+
   cu_task_send_sctp_init_req(0, IPaddrs->my_addr);
-  
+
   while (1) {
     itti_receive_msg(TASK_CU_F1, &received_msg);
 
@@ -137,7 +138,7 @@ void * F1AP_CU_task(void *arg) {
               ITTI_MSG_DESTINATION_INSTANCE(received_msg));
         cu_task_handle_sctp_association_ind(ITTI_MSG_ORIGIN_INSTANCE(received_msg),
                                             &received_msg->ittiMsg.sctp_new_association_ind,
-					    IPaddrs);
+                                            IPaddrs);
         break;
 
       case SCTP_NEW_ASSOCIATION_RESP:

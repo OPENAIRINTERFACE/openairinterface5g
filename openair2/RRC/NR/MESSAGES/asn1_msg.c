@@ -153,15 +153,6 @@ typedef struct xer_sprint_string_s {
   size_t string_index;
 } xer_sprint_string_t;
 
-
-#define asn1cCallocOne(VaR, VaLue) \
-  VaR = calloc(1,sizeof(*VaR)); *VaR=VaLue;
-#define asn1cCalloc(VaR, lOcPtr) \
-  typeof(VaR) lOcPtr = VaR = calloc(1,sizeof(*VaR));
-#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) \
-  TyPe *lOcPtr= calloc(1,sizeof(TyPe)); \
-  ASN_SEQUENCE_ADD(&VaR,lOcPtr);
-
 //replace LTE
 //extern unsigned char NB_eNB_INST;
 extern unsigned char NB_gNB_INST;
@@ -310,9 +301,6 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
 
   return((enc_rval.encoded+7)/8);
 }
-#define asn1cCalloc(VaR, TyPe, lOcPtr) TyPe *lOcPtr=VaR=(TyPe*) calloc(1,sizeof(TyPe));
-#define asn1cCallocOne(VaR, VaLue) VaR=calloc(1,sizeof(*VaR)); *VaR=VaLue;
-#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) TyPe *lOcPtr=(TyPe*) calloc(1,sizeof(TyPe)); ASN_SEQUENCE_ADD(&VaR,lOcPtr);
 
 uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier, 
 	               gNB_RrcConfigurationReq *configuration
@@ -342,7 +330,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   asn1cSequenceAdd(sib1->cellAccessRelatedInfo.plmn_IdentityList.list, struct NR_PLMN_IdentityInfo, nr_plmn_info);
   for (int i = 0; i < num_plmn; ++i) {
     asn1cSequenceAdd(nr_plmn_info->plmn_IdentityList.list, struct NR_PLMN_Identity, nr_plmn);
-    asn1cCalloc(nr_plmn->mcc, struct NR_MCC, mcc);
+    asn1cCalloc(nr_plmn->mcc,  mcc);
     int confMcc=configuration->mcc[i];
     asn1cSequenceAdd(mcc->list, NR_MCC_MNC_Digit_t, mcc0);
     *mcc0=(confMcc/100)%10;
@@ -411,8 +399,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   ASN_SEQUENCE_ADD(&sib1->si_SchedulingInfo->schedulingInfoList.list,schedulingInfo);*/
 
   // servingCellConfigCommon
-  asn1cCalloc(sib1->servingCellConfigCommon,
-	      struct NR_ServingCellConfigCommonSIB, ServCellCom);
+  asn1cCalloc(sib1->servingCellConfigCommon,  ServCellCom);
   NR_BWP_DownlinkCommon_t  *initialDownlinkBWP=&ServCellCom->downlinkConfigCommon.initialDownlinkBWP;
   initialDownlinkBWP->genericParameters=
     configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
@@ -547,19 +534,17 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   ServCellCom->downlinkConfigCommon.pcch_Config.ns = NR_PCCH_Config__ns_one;
 
   asn1cCalloc(ServCellCom->downlinkConfigCommon.pcch_Config.firstPDCCH_MonitoringOccasionOfPO,
-	      struct NR_PCCH_Config__firstPDCCH_MonitoringOccasionOfPO,
 	      P0);
   P0->present = NR_PCCH_Config__firstPDCCH_MonitoringOccasionOfPO_PR_sCS120KHZoneT_SCS60KHZhalfT_SCS30KHZquarterT_SCS15KHZoneEighthT;
 
   asn1cCalloc(P0->choice.sCS120KHZoneT_SCS60KHZhalfT_SCS30KHZquarterT_SCS15KHZoneEighthT,
-	      struct NR_PCCH_Config__firstPDCCH_MonitoringOccasionOfPO__sCS120KHZoneT_SCS60KHZhalfT_SCS30KHZquarterT_SCS15KHZoneEighthT,
 	      Z8);
   asn1cSequenceAdd(Z8->list,
 		   long,
 		   ZoneEight);
   asn1cCallocOne(ZoneEight, 0);
 
-  asn1cCalloc(ServCellCom->uplinkConfigCommon, struct NR_UplinkConfigCommonSIB, UL)
+  asn1cCalloc(ServCellCom->uplinkConfigCommon, UL)
   asn_set_empty(&UL->frequencyInfoUL.scs_SpecificCarrierList.list);
   for(int i = 0; i< configuration->scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.count; i++) {
     ASN_SEQUENCE_ADD(&UL->frequencyInfoUL.scs_SpecificCarrierList.list,

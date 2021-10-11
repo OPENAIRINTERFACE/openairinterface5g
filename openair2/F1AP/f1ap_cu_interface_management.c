@@ -97,8 +97,6 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
 
   /* assoc_id */
   f1ap_setup_req_t *req=&getCxt(true, instance)->setupReq;
-
-
   req->assoc_id = assoc_id;
   /* gNB_DU_id */
   // this function exits if the ie is mandatory
@@ -124,8 +122,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   for (i=0; i<num_cells_available; i++) {
     F1AP_GNB_DU_Served_Cells_Item_t *served_cells_item_p;
     served_cells_item_p = &(((F1AP_GNB_DU_Served_Cells_ItemIEs_t *)
-			     ie->value.choice.GNB_DU_Served_Cells_List.list.array[i])->
-			    value.choice.GNB_DU_Served_Cells_Item);
+                             ie->value.choice.GNB_DU_Served_Cells_List.list.array[i])->
+                            value.choice.GNB_DU_Served_Cells_Item);
 
     /* tac */
     if (served_cells_item_p->served_Cell_Information.fiveGS_TAC) {
@@ -153,6 +151,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
       f1ap_req(true, instance)->cell_type=CELL_MACRO_GNB;
     else
       f1ap_req(true, instance)->cell_type=CELL_MACRO_ENB;
+
     LOG_I(F1AP, "Received Cell in %d context\n", f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB);
     // System Information
     /* mib */
@@ -209,10 +208,10 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   //     uint16_t nr_sul_band[32];
   //   } tdd;
   // } nr_mode_info[F1AP_MAX_NB_CELLS];
-
   // We copy and store in F1 task data, RRC will free "req" as it frees all itti received messages
   message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
   memcpy(&F1AP_SETUP_REQ(message_p), req, sizeof(f1ap_setup_req_t) );
+
   if (num_cells_available > 0) {
     if (f1ap_req(true, instance)->cell_type == CELL_MACRO_GNB) {
       itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
@@ -221,7 +220,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     }
   } else {
     CU_send_F1_SETUP_FAILURE(instance);
-    itti_free(TASK_RRC_GNB,message_p);
+    itti_free(TASK_CU_F1,message_p);
     return -1;
   }
 
@@ -521,14 +520,14 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
     ieC3->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_Cells_to_be_Deactivated_List;
 
     for (int i=0; i<1; i++) {
-      asn1cSequenceAdd(ieC3->value.choice.Cells_to_be_Deactivated_List.list, 
-		       F1AP_Cells_to_be_Deactivated_List_ItemIEs_t, cells_to_be_deactivated);
+      asn1cSequenceAdd(ieC3->value.choice.Cells_to_be_Deactivated_List.list,
+           F1AP_Cells_to_be_Deactivated_List_ItemIEs_t, cells_to_be_deactivated);
       cells_to_be_deactivated->id = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item;
       cells_to_be_deactivated->criticality = F1AP_Criticality_reject;
       cells_to_be_deactivated->value.present = F1AP_Cells_to_be_Deactivated_List_ItemIEs__value_PR_Cells_to_be_Deactivated_List_Item;
       // 3.1 cells to be Deactivated list item
       F1AP_Cells_to_be_Deactivated_List_Item_t *cells_to_be_deactivated_list=
-	cells_to_be_deactivated->value.choice.Cells_to_be_Deactivated_List_Item;
+  cells_to_be_deactivated->value.choice.Cells_to_be_Deactivated_List_Item;
       addnRCGI(cells_to_be_deactivated_item->nRCGI, f1ap_setup_resp->cells_to_deactivate+i);
       }
   }
@@ -543,19 +542,19 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
   for (int i=0; i<1; i++) {
     asn1cSequenceAdd(ieC4->value.choice.GNB_CU_TNL_Association_To_Add_List.list,
-		     F1AP_GNB_CU_TNL_Association_To_Add_ItemIEs_t, gnb_cu_tnl_association_to_add;
+         F1AP_GNB_CU_TNL_Association_To_Add_ItemIEs_t, gnb_cu_tnl_association_to_add;
        gnb_cu_tnl_association_to_add->id = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Add_Item;
        gnb_cu_tnl_association_to_add->criticality = F1AP_Criticality_reject;
        gnb_cu_tnl_association_to_add->value.present = F1AP_GNB_CU_TNL_Association_To_Add_ItemIEs__value_PR_GNB_CU_TNL_Association_To_Add_Item;
 
        // 4.1 GNB_CU_TNL_Association_To_Add_Item
        F1AP_GNB_CU_TNL_Association_To_Add_Item_t *gnb_cu_tnl_association_to_add_item=
-		     &gnb_cu_tnl_association_to_add_item_ies->value.choice.GNB_CU_TNL_Association_To_Add_Item;    
+         &gnb_cu_tnl_association_to_add_item_ies->value.choice.GNB_CU_TNL_Association_To_Add_Item;
 
        // 4.1.1 tNLAssociationTransportLayerAddress
        F1AP_CP_TransportLayerAddress_t *transportLayerAddress=;
-		     gnb_cu_tnl_association_to_add->value.choice.GNB_CU_TNL_Association_To_Add_Item;
-		     
+         gnb_cu_tnl_association_to_add->value.choice.GNB_CU_TNL_Association_To_Add_Item;
+
        transportLayerAddress->present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address;
        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress->choice.endpoint_IP_address);
 
@@ -577,18 +576,18 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
     ieC5->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_GNB_CU_TNL_Association_To_Remove_List;
     for (int i=0; i<1; i++) {
       asn1cSequenceAdd(ieC5->value.choice.GNB_CU_TNL_Association_To_Remove_List.list,
-		       F1AP_GNB_CU_TNL_Association_To_Remove_ItemIEs_t, gnb_cu_tnl_association_to_remove);
+           F1AP_GNB_CU_TNL_Association_To_Remove_ItemIEs_t, gnb_cu_tnl_association_to_remove);
       gnb_cu_tnl_association_to_remove->id = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Remove_Item;
       gnb_cu_tnl_association_to_remove->criticality = F1AP_Criticality_reject;
       gnb_cu_tnl_association_to_remove->value.present = F1AP_GNB_CU_TNL_Association_To_Remove_ItemIEs__value_PR_GNB_CU_TNL_Association_To_Remove_Item;
 
          // 4.1 GNB_CU_TNL_Association_To_Remove_Item
          F1AP_GNB_CU_TNL_Association_To_Remove_Item_t *gnb_cu_tnl_association_to_remove_item=
-	   &gnb_cu_tnl_association_to_remove->value.choice.GNB_CU_TNL_Association_To_Remove_Item;
+     &gnb_cu_tnl_association_to_remove->value.choice.GNB_CU_TNL_Association_To_Remove_Item;
 
          // 4.1.1 tNLAssociationTransportLayerAddress
          F1AP_CP_TransportLayerAddress_t *transportLayerAddress=
-	   &gnb_cu_tnl_association_to_remove_item->tNLAssociationTransportLayerAddress;
+     &gnb_cu_tnl_association_to_remove_item->tNLAssociationTransportLayerAddress;
          transportLayerAddress->present = F1AP_CP_TransportLayerAddress_PR_endpoint_IP_address;
          TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &transportLayerAddress->choice.endpoint_IP_address);
 
@@ -609,7 +608,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
    for (int i=0;  i<1; i++) {
     asn1cSequenceAdd(ieC3->value.choice.GNB_CU_TNL_Association_To_Update_List.list,
-		     F1AP_GNB_CU_TNL_Association_To_Update_ItemIEs_t, gnb_cu_tnl_association_to_update);
+         F1AP_GNB_CU_TNL_Association_To_Update_ItemIEs_t, gnb_cu_tnl_association_to_update);
      gnb_cu_tnl_association_to_update->id = F1AP_ProtocolIE_ID_id_GNB_CU_TNL_Association_To_Update_Item;
      gnb_cu_tnl_association_to_update->criticality = F1AP_Criticality_reject;
      gnb_cu_tnl_association_to_update->value.present = F1AP_GNB_CU_TNL_Association_To_Update_ItemIEs__value_PR_GNB_CU_TNL_Association_To_Update_Item;
@@ -642,7 +641,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
   for (int i=0; i<1; i++) {
     asn1cSequenceAdd(ieC7->value.choice.Cells_to_be_Barred_List.list,
-		     F1AP_Cells_to_be_Barred_ItemIEs_t,cells_to_be_barred);
+         F1AP_Cells_to_be_Barred_ItemIEs_t,cells_to_be_barred);
    cells_to_be_barred->id = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item;
    cells_to_be_barred->criticality = F1AP_Criticality_reject;
    cells_to_be_barred->value.present = F1AP_Cells_to_be_Barred_ItemIEs__value_PR_Cells_to_be_Barred_Item;
@@ -665,7 +664,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
    for (int i=0; i<1; i++) {
      asn1cSequenceAdd(ieC8->value.choice.Protected_EUTRA_Resources_List.list,
-		      F1AP_Protected_EUTRA_Resources_ItemIEs_t, protected_eutra_resources);
+          F1AP_Protected_EUTRA_Resources_ItemIEs_t, protected_eutra_resources);
      // 8.1 SpectrumSharingGroupID
      protected_eutra_resources->id = F1AP_ProtocolIE_ID_id_Protected_EUTRA_Resources_List;
      protected_eutra_resources->criticality = F1AP_Criticality_reject;
@@ -675,11 +674,11 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
             sizeof(F1AP_Protected_EUTRA_Resources_Item_t));
 
      asn1cSequenceAdd(protected_eutra_resources->value.choice.ListofEUTRACellsinGNBDUCoordination.list,
-		      F1AP_Served_EUTRA_Cells_Information_t, served_eutra_cells_information);
+          F1AP_Served_EUTRA_Cells_Information_t, served_eutra_cells_information);
       memset((void *)&served_eutra_cells_information, 0, sizeof(F1AP_Served_EUTRA_Cells_Information_t));
 
       F1AP_EUTRA_Mode_Info_t *eUTRA_Mode_Info=
-	&served_eutra_cells_information.eUTRA_Mode_Info;
+  &served_eutra_cells_information.eUTRA_Mode_Info;
 
       // eUTRAFDD
       eUTRA_Mode_Info->present = F1AP_EUTRA_Mode_Info_PR_eUTRAFDD;

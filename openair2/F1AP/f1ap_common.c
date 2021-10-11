@@ -100,6 +100,7 @@ int f1ap_add_ue(F1_t isCu,
       return i;
     }
   }
+
   // We didn't find the rnti
   for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     if (f1_inst->f1ap_ue[i].rnti == 0 ) {
@@ -188,12 +189,12 @@ int f1ap_du_add_cu_ue_id(instance_t instanceP,
                          instance_t       du_ue_f1ap_id,
                          instance_t       cu_ue_f1ap_id) {
   f1ap_cudu_inst_t *f1_inst=getCxt(DUtype, instanceP);
-
   instance_t f1ap_uid=-1;
+
   for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     if (f1_inst->f1ap_ue[i].du_ue_f1ap_id == du_ue_f1ap_id) {
-     f1ap_uid=i;
-     break;
+      f1ap_uid=i;
+      break;
     }
   }
 

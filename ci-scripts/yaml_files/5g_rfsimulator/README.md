@@ -14,6 +14,8 @@
 
 This page is only valid for an `Ubuntu18` host.
 
+**NOTE: this version (2021-10-05) is valid for the `v1.1.0` and `v1.2.0` versions of the `OAI 5G CN`.**
+
 **TABLE OF CONTENTS**
 
 1. [Retrieving the images on Docker-Hub](#1-retrieving-the-images-on-docker-hub)
@@ -26,6 +28,9 @@ This page is only valid for an `Ubuntu18` host.
    2. [Start the iperf server inside the NR-UE container](#32-start-the-iperf-server-inside-the-nr-ue-container)
    3. [Start the iperf client inside the ext-dn container](#33-start-the-iperf-client-inside-the-ext-dn-container)
 4. [Un-deployment](#4-un-deployment)
+5. [Explanations on the configuration in the docker-compose.yaml](##5-explanations-on-the-configuration-in-the-docker-composeyaml)
+   1. [Making the NR-UE connect to the core network](#51-making-the-nr-ue-connect-to-the-core-network)
+   2. [Making the gNB connect to the core network](#52-making-the-gnb-connect-to-the-core-network)
 
 # 1. Retrieving the images on Docker-Hub #
 
@@ -71,6 +76,10 @@ $ docker image tag rdefosseoai/oai-nr-ue:develop oai-nr-ue:develop
 $ docker logout
 ```
 
+**CAUTION: 2021/10/05 with the release `v1.2.0` of the `CN5G`, the previous version was not compatible any-more.**
+
+**This new version is working for both the `v1.1.0` and `v1.2.0` of the `CN5G`.**
+
 # 2. Deploy containers #
 
 ![Deployment](./oai-end-to-end.jpg)
@@ -79,7 +88,9 @@ $ docker logout
 
 **Just `docker-compose up -d` WILL NOT WORK!**
 
-All the following commands **SHALL** be run from the `ci-scripts/yaml_files/5g_rfsimulator` folder.
+All the following commands **SHALL** be run from the `ci-scripts/yaml_files/5g_rfsimulator` folder for a deployment with monolithic gNB.
+
+For a deployment with the gNB split in CU and DU components, the following commands **SHALL** be run from the `ci-scripts/yaml_files/5g_f1_rfsimulator` folder. 
 
 ## 2.1. Deploy OAI 5G Core Network ##
 
@@ -137,6 +148,11 @@ rfsim5g-traffic: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 ## 2.2. Deploy OAI gNB in RF simulator mode and in Standalone Mode ##
 
+**CAUTION: To execute this 2nd step, the whole `CN5G` SHALL be in `healthy` state (especially the `mysql` container).**
+
+The gNB can be deployed either in monolithic mode, or in CU/DU split mode.
+- For a deployment with a monolithic gNB:
+
 ```bash
 $ docker-compose up -d oai-gnb
 rfsim5g-oai-nrf is up-to-date
@@ -144,7 +160,16 @@ rfsim5g-oai-spgwu is up-to-date
 rfsim5g-oai-ext-dn is up-to-date
 Creating rfsim5g-oai-gnb ... done
 ```
+- For a deployment with the gNB split in CU and DU components:
+```bash
+#Deployment of the CU
+$ docker-compose up -d oai-cu
+```
 
+```bash
+#Deployment of the DU
+$ docker-compose up -d oai-du
+```
 Wait for a bit.
 
 ```bash
@@ -158,6 +183,18 @@ rfsim5g-oai-gnb      /opt/oai-gnb/bin/entrypoin ...   Up (healthy)
 rfsim5g-oai-nrf      /bin/bash /openair-nrf/bin ...   Up (healthy)   80/tcp, 9090/tcp            
 rfsim5g-oai-smf      /bin/bash -c /openair-smf/ ...   Up (healthy)   80/tcp, 8805/udp, 9090/tcp  
 rfsim5g-oai-spgwu    /openair-spgwu-tiny/bin/en ...   Up (healthy)   2152/udp, 8805/udp          
+```
+
+You can verify that the `gNB` is connected with the `AMF`:
+
+```bagh
+$ docker logs rfsim5g-oai-amf
+...
+[AMF] [amf_app] [info ] |----------------------------------------------------gNBs' information-------------------------------------------|
+[AMF] [amf_app] [info ] |    Index    |      Status      |       Global ID       |       gNB Name       |               PLMN             |
+[AMF] [amf_app] [info ] |      1      |    Connected     |         0x0       |         gnb-rfsim        |            208, 99             |
+[AMF] [amf_app] [info ] |----------------------------------------------------------------------------------------------------------------|
+...
 ```
 
 ## 2.3. Deploy OAI NR-UE in RF simulator mode and in Standalone Mode ##
@@ -366,3 +403,47 @@ Removing rfsim5g-mysql      ... done
 Removing network rfsim5g-oai-public-net
 Removing network rfsim5g-oai-traffic_net-net
 ```
+
+# 5. Explanations on the configuration in the `docker-compose.yaml` #
+
+## 5.1. Making the NR-UE connect to the core network ##
+
+The NR-UE **SHALL** be provisioned in the core network, especially in the `SQL` database and in the `AMF`.
+
+* in AMF section of `docker-compose.yaml` --> `OPERATOR_KEY=c42449363bbad02b66d16bc975d77cc1`
+* in NR-UE section                        --> `OPC: 'C42449363BBAD02B66D16BC975D77CC1'
+
+Both values shall match!
+
+This value is also present in the `oai_db.sql` file:
+
+```bash
+INSERT INTO `users` VALUES ('208990100001100','1','55000000000000',NULL,'PURGED',50,40000000,100000000,47,0000000000,1,0xfec86ba6eb707ed08905757b1bb44b8f,0,0,0x40,'ebd07771ace8677a',0xc42449363bbad02b66d16bc975d77cc1);
+```
+
+As you can see, 2 other values shall match in the NR-UE section of `docker-compose.yaml`:
+
+* `FULL_IMSI: '208990100001100'`
+* `FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'`
+
+We are also using a dedicated `oai-smf.conf` for the `SMF` container: the `oai` DNN shall match the one in  the NR-UE section of `docker-compose.yaml` (`DNN: oai`).
+
+## 5.2. Making the gNB connect to the core network ##
+
+Mainly you need to match the PLMN in `gNB`, `AMF` and `SPGWU` parameters:
+
+* `AMF`
+  - `MCC=208`
+  - `MNC=99`
+  - `PLMN_SUPPORT_TAC=0x0001`
+  - ...
+* `SPGWU`
+  - `MCC=208`
+  - `MNC=99`
+  - `TAC=1`
+* `gNB`
+  - `MCC: '208'`
+  - `MNC: '99'`
+  - `TAC: 1`
+
+The `ST` and `SD` values shall also match.

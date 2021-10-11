@@ -90,11 +90,14 @@ services:
             - USE_FQDN_DNS=yes
             - NRF_API_VERSION=v1
             - NRF_FQDN=oai-nrf
-            - AUSF_IPV4_ADDRESS=127.0.0.1
+            - EXTERNAL_AUSF=no
+            - AUSF_IPV4_ADDRESS=0.0.0.0
             - AUSF_PORT=80
             - AUSF_API_VERSION=v1
+            - AUSF_FQDN=localhost
         depends_on:
             - oai-nrf
+            - mysql
         volumes:
             - ./amf-healthcheck.sh:/openair-amf/bin/amf-healthcheck.sh
         healthcheck:
@@ -139,6 +142,7 @@ services:
             - USE_FQDN_DNS=yes
         depends_on:
             - oai-nrf
+            - oai-amf
         volumes:
             - ./smf-healthcheck.sh:/openair-smf/bin/smf-healthcheck.sh
             - ./oai-smf.conf:/openair-smf/bin/oai-smf.conf
@@ -183,6 +187,7 @@ services:
             - DNN_0=oai
         depends_on:
             - oai-nrf
+            - oai-smf
         cap_add:
             - NET_ADMIN
             - SYS_ADMIN
