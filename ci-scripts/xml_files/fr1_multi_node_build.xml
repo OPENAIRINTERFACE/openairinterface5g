@@ -26,7 +26,7 @@
 	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>
  000001 000002
- 000003 000004
+ 000004 000005 000003
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -64,5 +64,10 @@
 		<eNB_serverId>1</eNB_serverId>
 	</testCase>
 
+	<testCase id="000005">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>120</idle_sleep_time_in_sec>
+	</testCase>
 
 </testCaseList>
