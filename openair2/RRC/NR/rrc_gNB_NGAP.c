@@ -603,20 +603,9 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_key);
 
       /* configure only integrity, ciphering comes after receiving SecurityModeComplete */
-      nr_rrc_pdcp_config_security(
-          &ctxt,
-          ue_context_p,
-          0);
+      nr_rrc_pdcp_config_security(&ctxt, ue_context_p, 0);
 
-      uint8_t send_security_mode_command = TRUE;
-
-      if (send_security_mode_command) {
-          rrc_gNB_generate_SecurityModeCommand (&ctxt, ue_context_p);
-          send_security_mode_command = FALSE;
-      } else {
-          /* rrc_gNB_generate_UECapabilityEnquiry */
-          rrc_gNB_generate_UECapabilityEnquiry(&ctxt, ue_context_p);
-      }
+      rrc_gNB_generate_SecurityModeCommand (&ctxt, ue_context_p);
 
     // in case, send the S1SP initial context response if it is not sent with the attach complete message
     if (ue_context_p->ue_context.StatusRrc == NR_RRC_RECONFIGURED) {
