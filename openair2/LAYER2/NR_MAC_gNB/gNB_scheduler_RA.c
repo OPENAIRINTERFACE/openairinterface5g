@@ -772,10 +772,8 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     // generation of DCI 0_0 to schedule msg3 retransmission
     NR_SearchSpace_t *ss = ra->ra_ss;
-    NR_ControlResourceSet_t *coreset = NULL;
     NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = *ss->controlResourceSetId==0 ? &nr_mac->type0_PDCCH_CSS_config[ra->beam_id] : NULL;
-
-    coreset = nr_mac->sched_ctrlCommon->coreset; // this is coreset 0
+    NR_ControlResourceSet_t *coreset = get_coreset(module_idP, scc, NULL, ss, NR_SearchSpace__searchSpaceType_PR_common);
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg3 retransmission\n");
 
     nfapi_nr_ul_dci_request_t *ul_dci_req = &nr_mac->UL_dci_req[CC_id];
@@ -795,7 +793,12 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     uint8_t aggregation_level;
     uint8_t nr_of_candidates;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 4);
+    for (int i=0; i<5; i++) {
+      // for now taking the lowest value among the available aggregation levels
+      find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 1<<i);
+      if(nr_of_candidates>0) break;
+    }
+    AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
     int CCEIndex = allocate_nr_CCEs(nr_mac, NULL, coreset, aggregation_level, 0, 0, nr_of_candidates);
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
@@ -1141,10 +1144,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       BWPSize = type0_PDCCH_CSS_config->num_rbs;
     }
 
-    if (*ss->controlResourceSetId == 0)
-      coreset = nr_mac->sched_ctrlCommon->coreset; // this is coreset 0
-    else
-      coreset = get_coreset(scc, bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
+    coreset = get_coreset(module_idP, scc, bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg2\n");
 
@@ -1170,7 +1170,12 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     uint8_t aggregation_level;
     uint8_t nr_of_candidates;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss,4);
+    for (int i=0; i<5; i++) {
+      // for now taking the lowest value among the available aggregation levels
+      find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 1<<i);
+      if(nr_of_candidates>0) break;
+    }
+    AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
     int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
@@ -1290,14 +1295,13 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_pdu->powerControlOffsetSS = 1;
 
     dci_pdu_rel15_t dci_payload;
-    int effective_BWPSize = get_softmodem_params()->sa == 1 ? (pdcch_pdu_rel15->FreqDomainResource[0]==0xFF ? 48 : 24) : pdsch_pdu_rel15->BWPSize;
     dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize,
                                                                                     pdsch_pdu_rel15->rbStart,
-                                                                                    effective_BWPSize);
+                                                                                    BWPSize);
 
-    LOG_D(NR_MAC,"Msg2 rbSize.rbStart.BWPsize %d.%d.%d\n",pdsch_pdu_rel15->rbSize,
-	  pdsch_pdu_rel15->rbStart,
-	  effective_BWPSize);
+    LOG_D(NR_MAC,"Msg2 rbSize.rbStart.BWPsize %d.%d.%ld\n",pdsch_pdu_rel15->rbSize,
+          pdsch_pdu_rel15->rbStart,
+          BWPSize);
 
     dci_payload.time_domain_assignment.val = time_domain_assignment;
     dci_payload.vrb_to_prb_mapping.val = 0;
@@ -1305,11 +1309,11 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dci_payload.tb_scaling = tb_scaling;
 
     LOG_D(NR_MAC,
-          "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%d), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
+          "[RAPROC] DCI type 1 payload: freq_alloc %d (%d,%d,%ld), time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d \n",
           dci_payload.frequency_domain_assignment.val,
           pdsch_pdu_rel15->rbStart,
           pdsch_pdu_rel15->rbSize,
-          effective_BWPSize,
+          BWPSize,
           dci_payload.time_domain_assignment.val,
           dci_payload.vrb_to_prb_mapping.val,
           dci_payload.mcs,
@@ -1330,7 +1334,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        &dci_payload,
                        NR_DL_DCI_FORMAT_1_0,
                        NR_RNTI_RA,
-                       effective_BWPSize,
+                       BWPSize,
                        bwpid);
 
     // DL TX request
@@ -1397,10 +1401,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     }
 
-    if (*ss->controlResourceSetId == 0)
-      coreset = nr_mac->sched_ctrlCommon->coreset; // this is coreset 0
-    else
-      coreset = get_coreset(scc, bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
+    coreset = get_coreset(module_idP, scc, bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg4\n");
 
@@ -1440,7 +1441,12 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // get CCEindex, needed also for PUCCH and then later for PDCCH
     uint8_t aggregation_level;
     uint8_t nr_of_candidates;
-    find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss,4);
+    for (int i=0; i<5; i++) {
+      // for now taking the lowest value among the available aggregation levels
+      find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 1<<i);
+      if(nr_of_candidates>0) break;
+    }
+    AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
     int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
@@ -1475,7 +1481,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
       ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
       ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
-      LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, (int)sizeof(NR_MAC_SUBHEADER_SHORT), ra->mac_pdu_length);
+      LOG_I(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, (int)sizeof(NR_MAC_SUBHEADER_SHORT), ra->mac_pdu_length);
     }
 
     // Calculate number of symbols

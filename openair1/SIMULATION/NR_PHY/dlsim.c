@@ -262,7 +262,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space,4);
-  sched_ctrl->coreset = get_coreset(scc, sched_ctrl->active_bwp->bwp_Dedicated, sched_ctrl->search_space, target_ss);
+  sched_ctrl->coreset = get_coreset(module_id, scc, sched_ctrl->active_bwp->bwp_Dedicated, sched_ctrl->search_space, target_ss);
   sched_ctrl->cce_index = 0;
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;

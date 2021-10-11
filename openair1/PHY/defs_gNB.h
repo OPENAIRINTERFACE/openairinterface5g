@@ -251,6 +251,8 @@ typedef struct {
   uint32_t slot;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
+  uint8_t ndi;
+  bool new_rx;
   /// Last TPC command
   uint8_t TPC;
   /// MIMO mode for this DLSCH

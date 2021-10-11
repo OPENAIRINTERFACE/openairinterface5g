@@ -767,6 +767,10 @@ typedef struct {
   int UE_scan_carrier;
   /// \brief Indicator that UE should enable estimation and compensation of frequency offset
   int UE_fo_compensation;
+  /// IF frequency for RF
+  uint64_t if_freq;
+  /// UL IF frequency offset for RF
+  int if_freq_off;
   /// \brief Indicator that UE is synchronized to a gNB
   int is_synchronized;
   /// \brief Indicator that UE lost frame synchronization

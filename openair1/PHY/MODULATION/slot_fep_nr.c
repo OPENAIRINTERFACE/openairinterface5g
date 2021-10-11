@@ -370,9 +370,9 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 
     int16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
 
-    multadd_cpx_vector((int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
+    multadd_cpx_vector((int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
           shift_rot,
-          (int16_t *)&rxdataF[frame_parms->ofdm_symbol_size*symbol],
+          (int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
           1,
           length,
           15);

@@ -842,6 +842,14 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       if( (frameP!=ra->Msg3_frame) || (slotP!=ra->Msg3_slot))
         continue;
 
+      // for CFRA (NSA) do not schedule retransmission of msg3
+      if (ra->cfra) {
+        LOG_W(NR_MAC, "Random Access %i failed at state %i (NSA msg3 reception failed)\n", i, ra->state);
+        nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+        nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+        return;
+      }
+
       if (ra->msg3_round >= MAX_HARQ_ROUNDS - 1) {
         LOG_W(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
         nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
@@ -1044,7 +1052,7 @@ void pf_ul(module_id_t module_id,
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nrmac->UE_info;
-  const int min_rb = 40;
+  const int min_rb = 5;
   float coeff_ue[MAX_MOBILES_PER_GNB];
   // UEs that could be scheduled
   int ue_array[MAX_MOBILES_PER_GNB];

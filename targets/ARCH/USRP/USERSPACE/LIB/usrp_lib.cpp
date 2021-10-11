@@ -416,7 +416,6 @@ static int trx_usrp_write(openair0_device *device,
     s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet_state;
     s->tx_md.end_of_burst   = last_packet_state;
     s->tx_md.time_spec      = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
-
     s->tx_count++;
 
 VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHING_GPIO,1);
@@ -1026,7 +1025,6 @@ extern "C" {
       // USRP recommended: https://files.ettus.com/manual/page_usrp_x3x0_config.html
       if ( 0 != system("sysctl -w net.core.rmem_max=33554432 net.core.wmem_max=33554432") )
         LOG_W(HW,"Can't set kernel parameters for X3xx\n");
-
     }
 
     s->usrp = uhd::usrp::multi_usrp::make(args);

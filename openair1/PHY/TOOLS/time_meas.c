@@ -80,9 +80,9 @@ void print_meas_now(time_stats_t *ts,
 }
 
 void print_meas(time_stats_t *ts,
-	        const char *name,
-		time_stats_t *total_exec_time,
-		time_stats_t *sf_exec_time)
+                const char *name,
+                time_stats_t *total_exec_time,
+                time_stats_t *sf_exec_time)
 {
   if (opp_enabled) {
     static int first_time = 0;

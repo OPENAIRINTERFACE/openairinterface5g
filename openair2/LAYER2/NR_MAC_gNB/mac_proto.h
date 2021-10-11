@@ -272,7 +272,8 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  int bwp_id);
 
 /* find coreset within the search space */
-NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
+NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
+                                     NR_ServingCellConfigCommon_t *scc,
                                      void *bwp,
                                      NR_SearchSpace_t *ss,
                                      NR_SearchSpace__searchSpaceType_PR ss_type);

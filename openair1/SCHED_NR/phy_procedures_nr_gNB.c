@@ -164,7 +164,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 	gNB->Mod_id,frame,slot,pdcch_pdu_id,ul_pdcch_pdu_id);
 
   if (pdcch_pdu_id >= 0 || ul_pdcch_pdu_id >= 0) {
-    if (slot>0) LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
+    LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
 	  gNB->Mod_id, frame, slot,
 	  gNB->ul_pdcch_pdu[ul_pdcch_pdu_id].pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci,
 	  gNB->pdcch_pdu[pdcch_pdu_id].pdcch_pdu.pdcch_pdu_rel15.numDlDci);
@@ -538,70 +538,72 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 // Function to fill UL RB mask to be used for N0 measurements
 void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
-  int rb2, rb, nb_rb;
-  int prbpos=0;
-  if (1/*(gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1*/){
-    nb_rb = 0;
-    for (int symbol=0;symbol<14;symbol++)
-      for (int m=0;m<9;m++) {
-        gNB->rb_mask_ul[symbol][m] = 0;
-        for (int i=0;i<32;i++) {
-          prbpos = (m*32)+i;
-          if (prbpos>gNB->frame_parms.N_RB_UL) break;
-          gNB->rb_mask_ul[symbol][m] |= (gNB->ulprbbl[prbpos]>0 ? 1 : 0)<<i;
-        }
+  int rb = 0;
+  int rb2 = 0;
+  int prbpos;
+
+  for (int symbol=0;symbol<14;symbol++)
+    for (int m=0;m<9;m++) {
+      gNB->rb_mask_ul[symbol][m] = 0;
+      for (int i=0;i<32;i++) {
+        prbpos = (m*32)+i;
+        if (prbpos>gNB->frame_parms.N_RB_UL) break;
+        gNB->rb_mask_ul[symbol][m] |= (gNB->ulprbbl[prbpos]>0 ? 1 : 0)<<i;
       }
-    for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
-      NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
-      if (pucch) {
-        if ((pucch->active == 1) &&
-           (pucch->frame == frame_rx) &&
-           (pucch->slot == slot_rx) ) {
-          nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
-          LOG_D(PHY,"%d.%d pucch %d : start_symbol %d, nb_symbols %d, prb_size %d\n",frame_rx,slot_rx,i,pucch_pdu->start_symbol_index,pucch_pdu->nr_of_symbols,pucch_pdu->prb_size);
-          for (int symbol=pucch_pdu->start_symbol_index ; symbol<(pucch_pdu->start_symbol_index+pucch_pdu->nr_of_symbols);symbol++) {
+    }
+  for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
+    NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
+    if (pucch) {
+      if ((pucch->active == 1) &&
+          (pucch->frame == frame_rx) &&
+          (pucch->slot == slot_rx) ) {
+        nfapi_nr_pucch_pdu_t  *pucch_pdu = &pucch->pucch_pdu;
+        LOG_D(PHY,"%d.%d pucch %d : start_symbol %d, nb_symbols %d, prb_size %d\n",frame_rx,slot_rx,i,pucch_pdu->start_symbol_index,pucch_pdu->nr_of_symbols,pucch_pdu->prb_size);
+        for (int symbol=pucch_pdu->start_symbol_index ; symbol<(pucch_pdu->start_symbol_index+pucch_pdu->nr_of_symbols);symbol++) {
+          if(gNB->frame_parms.frame_type == FDD ||
+              (gNB->frame_parms.frame_type == TDD && gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1)) {
             for (rb=0; rb<pucch_pdu->prb_size; rb++) {
-              rb2 = rb+(symbol < pucch_pdu->start_symbol_index+(pucch_pdu->nr_of_symbols>>1) ? pucch_pdu->prb_start : pucch_pdu->second_hop_prb)+pucch_pdu->bwp_start;
-              LOG_D(PHY,"%d.%d pucch %d : symbol %d, rb %d\n",frame_rx,slot_rx,i,symbol,rb2);
+              rb2 = rb + pucch_pdu->bwp_start +
+                    ((symbol < pucch_pdu->start_symbol_index+(pucch_pdu->nr_of_symbols>>1)) || (pucch_pdu->freq_hop_flag == 0) ?
+                     pucch_pdu->prb_start : pucch_pdu->second_hop_prb);
               gNB->rb_mask_ul[symbol][rb2>>5] |= (1<<(rb2&31));
             }
-            if (symbol==pucch_pdu->start_symbol_index) nb_rb+=pucch_pdu->prb_size;
           }
         }
       }
     }
-    for (int ULSCH_id=0;ULSCH_id<gNB->number_of_nr_ulsch_max;ULSCH_id++) {
-      NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
-      int harq_pid;
-      NR_UL_gNB_HARQ_t *ulsch_harq;
+  }
 
-      if ((ulsch) &&
-          (ulsch->rnti > 0)) {
-        for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
-          ulsch_harq = ulsch->harq_processes[harq_pid];
-          AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
-          if ((ulsch_harq->status == NR_ACTIVE) &&
-              (ulsch_harq->frame == frame_rx) &&
-              (ulsch_harq->slot == slot_rx) &&
-              (ulsch_harq->handled == 0)){
-            uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
-            uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
-            for (int symbol=symbol_start ; symbol<symbol_end ; symbol++) {
+  for (int ULSCH_id=0;ULSCH_id<gNB->number_of_nr_ulsch_max;ULSCH_id++) {
+    NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id][0];
+    int harq_pid;
+    NR_UL_gNB_HARQ_t *ulsch_harq;
+    if ((ulsch) &&
+        (ulsch->rnti > 0)) {
+      for (harq_pid=0;harq_pid<NR_MAX_ULSCH_HARQ_PROCESSES;harq_pid++) {
+        ulsch_harq = ulsch->harq_processes[harq_pid];
+        AssertFatal(ulsch_harq!=NULL,"harq_pid %d is not allocated\n",harq_pid);
+        if ((ulsch_harq->status == NR_ACTIVE) &&
+            (ulsch_harq->frame == frame_rx) &&
+            (ulsch_harq->slot == slot_rx) &&
+            (ulsch_harq->handled == 0)){
+          uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
+          uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
+          for (int symbol=symbol_start ; symbol<symbol_end ; symbol++) {
+            if(gNB->frame_parms.frame_type == FDD ||
+                (gNB->frame_parms.frame_type == TDD && gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1)) {
               LOG_D(PHY,"symbol %d Filling rb_mask_ul rb_size %d\n",symbol,ulsch_harq->ulsch_pdu.rb_size);
               for (rb=0; rb<ulsch_harq->ulsch_pdu.rb_size; rb++) {
                 rb2 = rb+ulsch_harq->ulsch_pdu.rb_start+ulsch_harq->ulsch_pdu.bwp_start;
                 gNB->rb_mask_ul[symbol][rb2>>5] |= (1<<(rb2&31));
               }
-              if (symbol==symbol_start) nb_rb+=ulsch_harq->ulsch_pdu.rb_size;
             }
           }
         }
       }
     }
-    //TODO Add check for PRACH as well?
-    if (nb_rb<gNB->frame_parms.N_RB_UL)
-      return;
   }
+
 }
 
 void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
@@ -639,8 +641,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,1);
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
 
-  if (gNB->frame_parms.frame_type == TDD)
-    fill_ul_rb_mask(gNB, frame_rx, slot_rx);
+  fill_ul_rb_mask(gNB, frame_rx, slot_rx);
 
   int first_symb=0,num_symb=0;
   if (gNB->frame_parms.frame_type == TDD)
