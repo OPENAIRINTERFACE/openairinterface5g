@@ -342,6 +342,7 @@ class RANManagement():
 
 		self.testCase_id = HTML.testCase_id
 		mySSH = SSH.SSHConnection()
+		cwd = os.getcwd()
 		mySSH.copyout(lIpAddr,lUserName,lPassWord, cwd + "/active_net_interfaces.awk", "/tmp")
 		
 		#reboot USRP if requested in xml
