@@ -64,7 +64,7 @@ def graph(d, node_type):
 
     plt.tight_layout()
     # Combine all the operations and display
-    plt.savefig('/tmp/'+node_type+'_stats_monitor.png')
+    plt.savefig(node_type+'_stats_monitor.png')
     plt.show()
 
 if __name__ == "__main__":
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         output = process.stdout.readlines()
         time.sleep(1)
     print('process stopped')
-    with open('/tmp/'+node_type+'_stats_monitor.pickle', 'wb') as handle:
+    with open(node_type+'_stats_monitor.pickle', 'wb') as handle:
         pickle.dump(d, handle, protocol=pickle.HIGHEST_PROTOCOL)
     graph(d, node_type)
 
