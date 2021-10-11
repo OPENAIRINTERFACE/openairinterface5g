@@ -261,7 +261,7 @@ static inline void polar_rate_matching(const t_nrPolar_params *polarParams,void 
     AssertFatal(polarParams->encoderLength<=512,"Need to handle groupsize(%d)<8 and N(%d)>512\n",polarParams->groupsize,polarParams->encoderLength);
     uint128_t *out128=(uint128_t*)out;
     uint128_t *in128=(uint128_t*)in;
-    for (int i=0;i<=polarParams->encoderLength>>7;i++)
+    for (int i=0;i<polarParams->encoderLength>>7;i++)
       out128[i]=0;
     uint128_t tmp0;
 #ifdef DEBUG_POLAR_ENCODER
