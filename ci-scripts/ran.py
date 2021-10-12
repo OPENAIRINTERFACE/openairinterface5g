@@ -38,7 +38,10 @@ import os
 import time
 from multiprocessing import Process, Lock, SimpleQueue
 import yaml
+<<<<<<< HEAD
 
+=======
+>>>>>>> 90c6b8b58b... copyout workaround
 
 #-----------------------------------------------------------
 # OAI Testing modules
@@ -701,9 +704,12 @@ class RANManagement():
 					return
 				if self.eNB_serverId[self.eNB_instance] != '0':
 					#*stats.log files + pickle + png
-					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*stats.log', self.eNBSourceCodePath + '/cmake_targets/')
-					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*.pickle', self.eNBSourceCodePath + '/cmake_targets/')
-					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*.png', self.eNBSourceCodePath + '/cmake_targets/')
+
+					#debug / tentative
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './nrL1_stats.log', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './nrMAC_stats.log', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.pickle.pickle', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.png', self.eNBSourceCodePath + '/cmake_targets/')
 					#
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
