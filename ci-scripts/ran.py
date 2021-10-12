@@ -38,7 +38,6 @@ import os
 import time
 from multiprocessing import Process, Lock, SimpleQueue
 import yaml
-import subprocess
 
 #-----------------------------------------------------------
 # OAI Testing modules
@@ -703,17 +702,10 @@ class RANManagement():
 					#*stats.log files + pickle + png
 
 					#debug / tentative
-					target =  self.eNBUserName + '@' + self.eNBIPAddress + ':'
-					cmd = 'scp ./*stats.log '+ target + self.eNBSourceCodePath + '/cmake_targets/'
-					lSsh = subprocess.Popen(cmd,shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-					cmd = 'scp ./*.pickle '+ target + self.eNBSourceCodePath + '/cmake_targets/'
-					lSsh = subprocess.Popen(cmd,shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-					cmd = 'scp ./*.png '+ target + self.eNBSourceCodePath + '/cmake_targets/'
-					lSsh = subprocess.Popen(cmd,shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-
-					#mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*stats.log', self.eNBSourceCodePath + '/cmake_targets/')
-					#mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*.pickle', self.eNBSourceCodePath + '/cmake_targets/')
-					#mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*.png', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './nrL1_stats.log', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './nrMAC_stats.log', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.pickle.pickle', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.png', self.eNBSourceCodePath + '/cmake_targets/')
 					#
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
