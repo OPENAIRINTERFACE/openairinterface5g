@@ -175,6 +175,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
           current_harq_pid = pusch_config_pdu->pusch_data.harq_process_id;
           NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch0->harq_processes[current_harq_pid];
+          harq_process_ul_ue->status = 0;
 
           if (harq_process_ul_ue){
 
