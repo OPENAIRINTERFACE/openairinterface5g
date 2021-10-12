@@ -40,7 +40,7 @@
 #define ENB_NAME        "Eurecom ENB"
 #define ENB_NAME_FORMAT (ENB_NAME" %u")
 
-#define F1AP_PORT_NUMBER        (30923)
+#define F1AP_PORT_NUMBER        (38472)
 #define F1AP_SCTP_PPID          (62)
 
 #endif /* F1AP_DEFAULT_VALUES_H_ */
