@@ -1308,10 +1308,20 @@
                                  (Test12: SC-FDMA, 216 PRBs),
                                  (Test13: SC-FDMA, 273 PRBs),
                                  (Test14: SC-FDMA, 3 DMRS),
+<<<<<<< HEAD
                                  (Test15: MCS 19 50 PRBs 2 RX_Antenna),
                                  (Test16: MCS 9 106 PRBs MIMO 2 layers),
                                  (Test17: MCS 9 106 PRBs MIMO 4 layers),
                                  (Test18: 25 PRBs, 15 kHz SCS)</desc>
+=======
+                                 (Test15: MCS 19 50 PRBs 2 RX_Antenna)
+                                 (Test16: MCS 9 106 PRBs MIMO 2 layers)
+                                 (Test17: MCS 9 106 PRBs MIMO 4 layers)</desc>
+                                 (Test18: MCS 16 50 PRBs 2 RX_Antenna),
+                                 (Test19: 3GPP G-FR1-A4-13 2 RX Antennas Requirements Test),
+                                 (Test20: 3GPP G-FR1-A4-13 4 RX Antennas Requirements Test),
+                                 (Test21: 3GPP G-FR1-A4-13 8 RX Antennas Requirements Test)</desc>
+>>>>>>> Added 3GPP TS 38104 8.2.1.2-13 16QAM CI test cases
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1335,8 +1345,17 @@
                       -n100 -m19 -s10 -S15 -z2
                       -n100 -m9 -r106 -s10 -W2 -y2 -z2
                       -n100 -m9 -r106 -s20 -W4 -y4 -z4
+<<<<<<< HEAD
                       -n100 -u0 -m0 -R25 -r25 -i</main_exec_args>
       <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5 nr_ulsim.test6 nr_ulsim.test7 nr_ulsim.test8 nr_ulsim.test9 nr_ulsim.test10 nr_ulsim.test11 nr_ulsim.test12 nr_ulsim.test13 nr_ulsim.test14 nr_ulsim.test15 nr_ulsim.test16 nr_ulsim.test17 nr_ulsim.test18</tags>
+=======
+                      -n100 -m16 -s10 -z2
+                      -m16 -r106 -s8.8 -S9 -z2 -n1000 -U 3 1 1 2 -gI -b14 -t70 -I15
+                      -m16 -r106 -s5 -S6 -z4 -n1000 -U 3 1 1 2 -gI -b14 -t70 -I15
+                      -m16 -r106 -s3 -S4 -z8 -n1000 -U 3 1 1 2 -gI -b14 -t70 -I15</main_exec_args>
+
+      <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5 nr_ulsim.test6 nr_ulsim.test7 nr_ulsim.test8 nr_ulsim.test9 nr_ulsim.test10 nr_ulsim.test11 nr_ulsim.test12 nr_ulsim.test13 nr_ulsim.test14 nr_ulsim.test15 nr_ulsim.test16 nr_ulsim.test17 nr_ulsim.test18 nr_ulsim.test19 nr_ulsim.test20 nr_ulsim.test21</tags>
+>>>>>>> Added 3GPP TS 38104 8.2.1.2-13 16QAM CI test cases
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

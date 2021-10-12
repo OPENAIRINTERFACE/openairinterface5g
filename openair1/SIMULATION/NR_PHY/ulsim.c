@@ -312,7 +312,7 @@ int main(int argc, char **argv)
   float roundStats[100];
   double effRate[100]; 
   double effTP[100]; 
-  float eff_tp_check = 0.7;
+  float eff_tp_check = 100;
   uint8_t snrRun;
   int prb_inter = 0;
 
@@ -487,7 +487,7 @@ int main(int argc, char **argv)
       break;
 
     case 't':
-      eff_tp_check = (float)atoi(optarg)/100;
+      eff_tp_check = (float)atoi(optarg);
       break;
 
       /*
@@ -1602,10 +1602,11 @@ int main(int argc, char **argv)
     if(n_trials==1)
       break;
 
-    if (effRate[snrRun] > (eff_tp_check*TBS)) {
+    if ((float)effTP[snrRun] >= eff_tp_check) {
       printf("*************\n");
       printf("PUSCH test OK\n");
       printf("*************\n");
+      break;
     }
 
     snrStats[snrRun] = SNR;
