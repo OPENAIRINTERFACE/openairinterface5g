@@ -391,8 +391,9 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
   memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
   int last_sfn_slot = -1;
-  uint16_t *sfn_slot_p;
   int sfn_slot;
+  uint64_t last_time_stamp = 0;
+  sfn_slot_info_t *sfn_slot_info;
 
   while (!oai_exit)
   {
@@ -401,14 +402,14 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       LOG_E(NR_MAC, "sem_wait() error\n");
       abort();
     }
-    sfn_slot_p = get_queue(&nr_sfn_slot_queue);
-    if (sfn_slot_p == NULL)
+    sfn_slot_info = get_queue(&nr_sfn_slot_queue);
+    if (sfn_slot_info == NULL)
     {
       LOG_D(MAC, "get_queue(&nr_sfn_slot_queue) == NULL!\n");
       continue;
     }
 
-    sfn_slot = *sfn_slot_p;
+    sfn_slot = sfn_slot_info->sfn_slot;
     if (sfn_slot == last_sfn_slot)
     {
       LOG_D(NR_MAC, "repeated sfn_sf = %d.%d\n",
@@ -416,6 +417,17 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       continue;
     }
     last_sfn_slot = sfn_slot;
+     LOG_D(NR_MAC, "The received sfn/slot [%d %d], last time stamp %ld, current time stamp %ld\n",
+            NFAPI_SFNSLOT2SFN(sfn_slot), NFAPI_SFNSLOT2SLOT(sfn_slot), last_time_stamp, sfn_slot_info->time_stamp);
+
+    uint64_t delta = sfn_slot_info->time_stamp - last_time_stamp;
+    if (delta < 500)
+    {
+      LOG_D(NR_MAC, "sfn/slot [%d %d] has been received too quickly! Delta = %ld. Will sleep for %ld us\n",
+            NFAPI_SFNSLOT2SFN(sfn_slot), NFAPI_SFNSLOT2SLOT(sfn_slot), delta, 500 - delta);
+      usleep(500 - delta);
+    }
+    last_time_stamp = sfn_slot_info->time_stamp;
 
     module_id_t mod_id = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);

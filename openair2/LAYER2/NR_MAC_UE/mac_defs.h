@@ -443,6 +443,11 @@ typedef struct {
 
 } NR_UE_MAC_INST_t;
 
+typedef struct sfn_slot_info {
+    uint16_t sfn_slot;
+    uint64_t time_stamp;
+} sfn_slot_info_t;
+
 typedef enum seach_space_mask_e {
     type0_pdcch  = 0x1, 
     type0a_pdcch = 0x2,

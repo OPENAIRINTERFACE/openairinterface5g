@@ -748,7 +748,17 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
     return;
 }
 
-uint16_t sfn_slot_pool[512];
+static uint64_t clock_usec()
+{
+    struct timespec t;
+    if (clock_gettime(CLOCK_MONOTONIC, &t) == -1)
+    {
+        abort();
+    }
+    return (uint64_t)t.tv_sec * 1000000 + (t.tv_nsec / 1000);
+}
+
+sfn_slot_info_t sfn_slot_pool[512];
 uint16_t sfn_slot_id;
 void *nrue_standalone_pnf_task(void *context)
 {
@@ -783,7 +793,12 @@ void *nrue_standalone_pnf_task(void *context)
       memcpy((void *)&sfn_slot, buffer, sizeof(sfn_slot));
       current_sfn_slot = sfn_slot;
 
-      sfn_slot_pool[sfn_slot_id] = sfn_slot;
+      sfn_slot_pool[sfn_slot_id].sfn_slot = sfn_slot;
+      sfn_slot_pool[sfn_slot_id].time_stamp = clock_usec();
+      sfn = NFAPI_SFNSLOT2SFN(sfn_slot);
+      slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
+      LOG_I(NR_PHY, "Received from proxy sfn %d slot %d and time_stamp = %ld\n",
+            sfn, slot, sfn_slot_pool[sfn_slot_id].time_stamp);
 
       if (!put_queue(&nr_sfn_slot_queue, &sfn_slot_pool[sfn_slot_id]))
       {
@@ -797,10 +812,6 @@ void *nrue_standalone_pnf_task(void *context)
         LOG_E(NR_PHY, "sem_post() error\n");
         abort();
       }
-
-      sfn = NFAPI_SFNSLOT2SFN(sfn_slot);
-      slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
-      LOG_I(NR_PHY, "Received from proxy sfn %d slot %d\n", sfn, slot);
     }
     else if (len == sizeof(nr_phy_channel_params_t))
     {
@@ -808,7 +819,8 @@ void *nrue_standalone_pnf_task(void *context)
       memcpy(&ch_info, buffer, sizeof(nr_phy_channel_params_t));
       current_sfn_slot = ch_info.sfn_slot;
 
-      sfn_slot_pool[sfn_slot_id] = ch_info.sfn_slot;
+      sfn_slot_pool[sfn_slot_id].sfn_slot = ch_info.sfn_slot;
+      sfn_slot_pool[sfn_slot_id].time_stamp = clock_usec();
 
       if (!put_queue(&nr_sfn_slot_queue, &sfn_slot_pool[sfn_slot_id]))
       {
