@@ -38,7 +38,7 @@ import os
 import time
 from multiprocessing import Process, Lock, SimpleQueue
 import yaml
-
+import subprocess
 
 #-----------------------------------------------------------
 # OAI Testing modules
@@ -701,9 +701,19 @@ class RANManagement():
 					return
 				if self.eNB_serverId[self.eNB_instance] != '0':
 					#*stats.log files + pickle + png
-					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*stats.log', self.eNBSourceCodePath + '/cmake_targets/')
-					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*.pickle', self.eNBSourceCodePath + '/cmake_targets/')
-					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*.png', self.eNBSourceCodePath + '/cmake_targets/')
+
+					#debug / tentative
+					target =  self.eNBUserName + '@' + self.eNBIPAddress + ':'
+					cmd = 'scp ./*stats.log '+ target + self.eNBSourceCodePath + '/cmake_targets/'
+					lSsh = subprocess.Popen(cmd,shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					cmd = 'scp ./*.pickle '+ target + self.eNBSourceCodePath + '/cmake_targets/'
+					lSsh = subprocess.Popen(cmd,shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+					cmd = 'scp ./*.png '+ target + self.eNBSourceCodePath + '/cmake_targets/'
+					lSsh = subprocess.Popen(cmd,shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+
+					#mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*stats.log', self.eNBSourceCodePath + '/cmake_targets/')
+					#mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*.pickle', self.eNBSourceCodePath + '/cmake_targets/')
+					#mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './*.png', self.eNBSourceCodePath + '/cmake_targets/')
 					#
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
@@ -732,7 +742,7 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor.png', '\$', 60)
-#		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *.pickle *.png', '\$', 5)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *.pickle *.png', '\$', 5)
 		mySSH.close()
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML):
