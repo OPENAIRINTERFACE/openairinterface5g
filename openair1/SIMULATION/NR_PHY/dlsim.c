@@ -435,6 +435,7 @@ int main(int argc, char **argv)
   uint8_t  mcsIndex = 9;
   uint8_t  dlsch_threads = 0;
   int      prb_inter = 0;
+  uint8_t  max_ldpc_iterations = 5;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
   }
@@ -636,6 +637,10 @@ int main(int argc, char **argv)
       output_fd = fopen("txdata.dat", "w+");
       break;
 
+    case 'Q':
+      max_ldpc_iterations = atoi(optarg);
+      break;
+
     case 'T':
       enable_ptrs=1;
       for(i=0; i < atoi(optarg); i++) {
@@ -688,6 +693,7 @@ int main(int argc, char **argv)
       printf("-q MCS Table index\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
+      printf("-Q Maximum LDPC decoder iterations\n");
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
@@ -983,6 +989,7 @@ int main(int argc, char **argv)
   UE->if_inst->dl_indication = nr_ue_dl_indication;
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
   UE->prb_interpolation = prb_inter;
+  UE->max_ldpc_iterations = max_ldpc_iterations;
 
 
   UE_mac->if_module = nr_ue_if_module_init(0);

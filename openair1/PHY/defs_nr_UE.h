@@ -865,6 +865,8 @@ typedef struct {
   /// N0 (used for abstraction)
   double N0;
 
+  uint8_t max_ldpc_iterations;
+
   /// PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_CONNECTED_gNB_MAX];
 

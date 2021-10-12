@@ -1050,7 +1050,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
 
     LOG_I(PHY,"Allocating Transport Channel Buffers for ULSCH  %d/%d\n",i,gNB->number_of_nr_ulsch_max);
 
-    gNB->ulsch[i] = new_gNB_ulsch(MAX_LDPC_ITERATIONS, fp->N_RB_UL);
+    gNB->ulsch[i] = new_gNB_ulsch(gNB->max_ldpc_iterations, fp->N_RB_UL);
 
     if (!gNB->ulsch[i]) {
       LOG_E(PHY,"Can't get gNB ulsch structures\n");
