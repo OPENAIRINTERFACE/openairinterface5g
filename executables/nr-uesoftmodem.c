@@ -159,7 +159,6 @@ char         uecap_xer[1024];
  */
 uint8_t abstraction_flag=0;
 
-uint16_t ue_id_g;
 uint16_t ue_idx_standalone = 0xFFFF;
 
 /*---------------------BMC: timespec helpers -----------------------------*/
