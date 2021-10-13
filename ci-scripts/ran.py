@@ -1074,7 +1074,7 @@ class RANManagement():
 				for k in datalog_rt_stats['Data']:
 					if float(datalog_rt_stats['Data'][k][2])> datalog_rt_stats['Threshold'][k]: #condition for fail : avg/ref is greater than the fixed threshold
 						#setting prematureExit is ok although not the best option
-						self.prematureExit=True
+						self.prematureExit=False #temp for debug : do not stop the test if RT stats are excedeed
 			else:
 				statMsg = 'No real time stats found in the log file\n'
 				logging.debug('No real time stats found in the log file')
