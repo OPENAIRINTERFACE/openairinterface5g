@@ -729,13 +729,22 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                 LOG_E(NR_PHY, "Message ul_tti_request failed to unpack\n");
                 break;
             }
-            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message in SFN/slot %d %d. \n",
+            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message in SFN/slot %d %d.\n",
                   ul_tti_request->SFN, ul_tti_request->Slot);
-            if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
+            if (nr_uci_ind_queue.num_items > 0)
             {
-                LOG_E(NR_PHY, "put_queue failed for ul_tti_request.\n");
-                free(ul_tti_request);
-                ul_tti_request = NULL;
+                LOG_I(NR_MAC, "Melissa, we added UL_TTI_REQ to queue for sfn slot %d %d\n",
+                      ul_tti_request->SFN, ul_tti_request->Slot);
+                if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
+                {
+                    reset_queue(&nr_ul_tti_req_queue);
+                    if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
+                    {
+                        LOG_E(NR_PHY, "put_queue failed for ul_tti_request.\n");
+                        free(ul_tti_request);
+                        ul_tti_request = NULL;
+                    }
+                }
             }
             break;
         }
