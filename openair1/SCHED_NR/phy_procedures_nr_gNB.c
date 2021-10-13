@@ -260,9 +260,14 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       LOG_D(PHY, "ULSCH received ok \n");
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0);
     } else {
-      LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
+      LOG_I(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, prb_start %d, prb_size %d, TBS %d) r %d\n",
             gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
-            rdata->harq_pid,ulsch_harq->status, ulsch_harq->round,ulsch_harq->TBS,r);
+            rdata->harq_pid,ulsch_harq->status, 
+	    ulsch_harq->round,
+	    ulsch_harq->ulsch_pdu.rb_start,
+	    ulsch_harq->ulsch_pdu.rb_size,
+	    ulsch_harq->TBS,
+	    r);
       if (ulsch_harq->round >= ulsch->Mlimit) {
         ulsch_harq->status = SCH_IDLE;
         ulsch_harq->round  = 0;
