@@ -1472,13 +1472,18 @@ function run_test_on_vm {
     echo "############################################################"
     echo "OAI CI VM script"
     echo "############################################################"
-    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* ))  ]] ||  [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* ))  ]]
+    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* ))  ]]
     then
-        ENB_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#enb-ethernet#" -e "s#rf-sim#enb-ethernet#"`
+        echo "This VM test type is no longer supported in the pipeline framework"
+        return
+    fi
+    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* ))  ]]
+    then
+        ENB_VM_NAME=`echo $VM_NAME | sed -e "s#rf-sim#enb-ethernet#"`
         ENB_VM_CMDS=${ENB_VM_NAME}_cmds.txt
         echo "ENB_VM_NAME         = $ENB_VM_NAME"
         echo "ENB_VM_CMD_FILE     = $ENB_VM_CMDS"
-        UE_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#ue-ethernet#" -e "s#rf-sim#ue-ethernet#"`
+        UE_VM_NAME=`echo $VM_NAME | sed -e "s#rf-sim#ue-ethernet#"`
         UE_VM_CMDS=${UE_VM_NAME}_cmds.txt
         echo "UE_VM_NAME          = $UE_VM_NAME"
         echo "UE_VM_CMD_FILE      = $UE_VM_CMDS"
@@ -1499,7 +1504,7 @@ function run_test_on_vm {
     echo "JENKINS_WKSP        = $JENKINS_WKSP"
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
 
-    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-l2-sim.* ))  ]] ||  [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* ))  ]]
+    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* ))  ]]
     then
         echo "############################################################"
         echo "Waiting for ENB VM to be started"

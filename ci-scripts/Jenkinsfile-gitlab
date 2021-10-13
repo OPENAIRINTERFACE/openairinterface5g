@@ -404,26 +404,6 @@ pipeline {
                               }
                             }
                         }
-                        stage ("Test L2 simulator") {
-                            when {
-                                expression {doFullTestsuite}
-                            }
-                            steps {
-                              lock (vmResource) {
-                                script {
-                                    timeout (time: 30, unit: 'MINUTES') {
-                                        try {
-                                            gitlabCommitStatus(name: "Test L2-sim") {
-                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                                            }
-                                        } catch (Exception e) {
-                                            currentBuild.result = 'FAILURE'
-                                        }
-                                    }
-                                }
-                              }
-                            }
-                        }
                         stage ("Destroy all Virtual Machines") {
                             when {
                                 expression {doMandatoryTests}
@@ -494,6 +474,29 @@ pipeline {
                         always {
                             script {
                                 finalizeSlaveJob('eNB-CI-IF4p5-FDD-Band7-B210')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
+                stage ("Test F1 - FDD - Band 7 - B210") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
+                    steps {
+                        script {
+                            sh "sleep 60"
+                            triggerSlaveJob ('eNB-CI-F1-FDD-Band7-B210', 'Test-F1-FDD-Band7')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                finalizeSlaveJob('eNB-CI-F1-FDD-Band7-B210')
                             }
                         }
                         failure {
