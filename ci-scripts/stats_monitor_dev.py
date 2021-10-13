@@ -19,13 +19,7 @@ class Stat_Monitor():
                 self.d[node][metric]=[]
 
 
-    def collect(self,node_type):
-        if node_type=='enb':
-            cmd='cat L1_stats.log MAC_stats.log PDCP_stats.log RRC_stats.log'
-        else: #'gnb'
-            cmd='cat nrL1_stats.log nrMAC_stats.log nrPDCP_stats.log nrRRC_stats.log'
-        process=subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
-        output = process.stdout.readlines()
+    def process_enb (self,node_type,output):
         for l in output:
             tmp=l.decode("utf-8")
             result=re.match(rf'^.*\bPHR\b ([0-9]+).+\bbler\b ([0-9]+\.[0-9]+).+\bmcsoff\b ([0-9]+).+\bmcs\b ([0-9]+)',tmp)
@@ -35,6 +29,33 @@ class Stat_Monitor():
                 self.d[node_type]['mcsoff'].append(int(result.group(3)))
                 self.d[node_type]['mcs'].append(int(result.group(4)))
 
+
+
+    def process_gnb (self,node_type,output):
+        for l in output:
+            tmp=l.decode("utf-8")
+            result=re.match(rf'^.*\bPHR\b ([0-9]+).+\bbler\b ([0-9]+\.[0-9]+).+\bmcsoff\b ([0-9]+).+\bmcs\b ([0-9]+)',tmp)
+            if result is not None:
+                self.d[node_type]['PHR'].append(int(result.group(1)))
+                self.d[node_type]['bler'].append(float(result.group(2)))
+                self.d[node_type]['mcsoff'].append(int(result.group(3)))
+                self.d[node_type]['mcs'].append(int(result.group(4)))
+
+
+
+
+
+    def collect(self,node_type):
+        if node_type=='enb':
+            cmd='cat L1_stats.log MAC_stats.log PDCP_stats.log RRC_stats.log'
+        else: #'gnb'
+            cmd='cat nrL1_stats.log nrMAC_stats.log nrPDCP_stats.log nrRRC_stats.log'
+        process=subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
+        output = process.stdout.readlines()
+        if node_type=='enb':
+            self.process_enb(node_type,output)
+        else: #'gnb'
+            self.process_gnb(node_type,output)          
 
     def graph(self,node_type):
 
