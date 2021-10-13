@@ -168,6 +168,10 @@ void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, MessagesIds msg_
    \param gNB_index  gNB index  */
 void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index);
 
+void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len);
+
+int get_from_lte_ue_fd();
+
 /** @}*/
 #endif
 
