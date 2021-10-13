@@ -3668,6 +3668,7 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, c
           sizeof(*cellGroupConfig->rlc_BearerToAddModList));
       }
     }
+    LOG_I(NR_RRC, "Updated master cell group configuration stored at the UE context of the CU:\n");
     xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_context_p->ue_context.masterCellGroup);
 
     rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, cellGroupConfig);

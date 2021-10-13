@@ -1090,52 +1090,52 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
   }
 
   /* optional */
-  /* c5. CUtoDURRCInformation */
+  /* c6. CUtoDURRCInformation */
   if (f1ap_ue_context_modification_req->cu_to_du_rrc_information!=NULL) {
-    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie5);
-    ie5->id                             = F1AP_ProtocolIE_ID_id_CUtoDURRCInformation;
-    ie5->criticality                    = F1AP_Criticality_reject;
-    ie5->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_CUtoDURRCInformation;
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie6);
+    ie6->id                             = F1AP_ProtocolIE_ID_id_CUtoDURRCInformation;
+    ie6->criticality                    = F1AP_Criticality_reject;
+    ie6->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_CUtoDURRCInformation;
     /* 6.1 cG_ConfigInfo */
     if(f1ap_ue_context_modification_req->cu_to_du_rrc_information->cG_ConfigInfo!=NULL){
-      const char cG_ConfigInfoStr[]="asdsa1d32sa1d31asd31as";
-      asn1cCalloc(ie5->value.choice.CUtoDURRCInformation.cG_ConfigInfo, cG_ConfigInfo);
-      OCTET_STRING_fromBuf(cG_ConfigInfo, cG_ConfigInfoStr, strlen(cG_ConfigInfoStr)) ;
+      asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.cG_ConfigInfo, cG_ConfigInfo);
+      OCTET_STRING_fromBuf(cG_ConfigInfo, (const char *)f1ap_ue_context_modification_req->cu_to_du_rrc_information->cG_ConfigInfo,
+        f1ap_ue_context_modification_req->cu_to_du_rrc_information->cG_ConfigInfo_length);
     }
     /* optional */
     /* 6.2 uE_CapabilityRAT_ContainerList */
     if(f1ap_ue_context_modification_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList!=NULL){
-      asn1cCalloc(ie5->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList, uE_CapabilityRAT_ContainerList );
+      asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList, uE_CapabilityRAT_ContainerList );
       OCTET_STRING_fromBuf(uE_CapabilityRAT_ContainerList, (const char *)f1ap_ue_context_modification_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
           f1ap_ue_context_modification_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length) ;
     }
     /* optional */
     /* 6.3 measConfig */
     if(f1ap_ue_context_modification_req->cu_to_du_rrc_information->measConfig!=NULL){
-      const char measConfigStr[]="asdsa1d32sa1d31asd31as";
-      asn1cCalloc(ie5->value.choice.CUtoDURRCInformation.measConfig,  measConfig);
-      OCTET_STRING_fromBuf(measConfig, measConfigStr, strlen(measConfigStr)) ;
+      asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.measConfig,  measConfig);
+      OCTET_STRING_fromBuf(measConfig, (const char *)f1ap_ue_context_modification_req->cu_to_du_rrc_information->measConfig,
+          f1ap_ue_context_modification_req->cu_to_du_rrc_information->measConfig_length);
     }
   }
 
   /* optional */
-  /* c6. TransmissionActionIndicator */
+  /* c7. TransmissionActionIndicator */
   if (0) {
-    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie6);
-    ie6->id                                     = F1AP_ProtocolIE_ID_id_TransmissionActionIndicator;
-    ie6->criticality                            = F1AP_Criticality_ignore;
-    ie6->value.present                          = F1AP_UEContextModificationRequestIEs__value_PR_TransmissionActionIndicator;
-    ie6->value.choice.TransmissionActionIndicator = F1AP_TransmissionActionIndicator_stop;
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie7);
+    ie7->id                                     = F1AP_ProtocolIE_ID_id_TransmissionActionIndicator;
+    ie7->criticality                            = F1AP_Criticality_ignore;
+    ie7->value.present                          = F1AP_UEContextModificationRequestIEs__value_PR_TransmissionActionIndicator;
+    ie7->value.choice.TransmissionActionIndicator = F1AP_TransmissionActionIndicator_stop;
   }
 
   /* optional */
-  /* c7. ResourceCoordinationTransferContainer */
+  /* c8. ResourceCoordinationTransferContainer */
   if (0) {
-    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie7);
-    ie7->id                             = F1AP_ProtocolIE_ID_id_ResourceCoordinationTransferContainer;
-    ie7->criticality                    = F1AP_Criticality_ignore;
-    ie7->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_ResourceCoordinationTransferContainer;
-    OCTET_STRING_fromBuf(&ie7->value.choice.ResourceCoordinationTransferContainer, "asdsa1d32sa1d31asd31as",
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie8);
+    ie8->id                             = F1AP_ProtocolIE_ID_id_ResourceCoordinationTransferContainer;
+    ie8->criticality                    = F1AP_Criticality_ignore;
+    ie8->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_ResourceCoordinationTransferContainer;
+    OCTET_STRING_fromBuf(&ie8->value.choice.ResourceCoordinationTransferContainer, "asdsa1d32sa1d31asd31as",
                          strlen("asdsa1d32sa1d31asd31as"));
   }
 
@@ -1152,11 +1152,11 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
   /* optional */
   /* c8. RRCContainer */
   if (0) {
-    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie8);
-    ie8->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
-    ie8->criticality                    = F1AP_Criticality_ignore;
-    ie8->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_RRCContainer;
-    OCTET_STRING_fromBuf(&ie8->value.choice.RRCContainer, "asdsa1d32sa1d31asd31as",
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie81);
+    ie81->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
+    ie81->criticality                    = F1AP_Criticality_ignore;
+    ie81->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_RRCContainer;
+    OCTET_STRING_fromBuf(&ie81->value.choice.RRCContainer, "asdsa1d32sa1d31asd31as",
                          strlen("asdsa1d32sa1d31asd31as"));
   }
 
@@ -1661,7 +1661,7 @@ int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
 
     /* GNB_CU_UE_F1AP_ID */
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextModificationResponseIEs_t, ie, container,
-                               F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, false);
+                               F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
     f1ap_ue_context_modification_resp->gNB_CU_ue_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
 
     LOG_D(F1AP, "f1ap_ue_context_setup_resp->gNB_CU_ue_id is: %d \n", f1ap_ue_context_modification_resp->gNB_CU_ue_id);

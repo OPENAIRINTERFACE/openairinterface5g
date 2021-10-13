@@ -970,20 +970,20 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
 
     for (i = 0; i < f1ap_ue_context_modification_req->drbs_to_be_setup_length; ++i) {
       f1ap_drb_to_be_setup_t *drb_p = &f1ap_ue_context_modification_req->drbs_to_be_setup[i];
-      F1AP_DRBs_ToBeSetup_Item_t *drbs_tobesetup_item_p =
-          &((F1AP_DRBs_ToBeSetup_ItemIEs_t *)ieDrb->value.choice.DRBs_ToBeSetupMod_List.list.array[i])->value.choice.DRBs_ToBeSetup_Item;
-      drb_p->drb_id = drbs_tobesetup_item_p->dRBID;
+      F1AP_DRBs_ToBeSetupMod_Item_t *drbs_tobesetupmod_item_p =
+          &((F1AP_DRBs_ToBeSetupMod_ItemIEs_t *)ieDrb->value.choice.DRBs_ToBeSetupMod_List.list.array[i])->value.choice.DRBs_ToBeSetupMod_Item;
+      drb_p->drb_id = drbs_tobesetupmod_item_p->dRBID;
       /* TODO in the following, assume only one UP UL TNL is present.
        * this matches/assumes OAI CU implementation, can be up to 2! */
       drb_p->up_ul_tnl_length = 1;
-      AssertFatal(drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.count > 0,
+      AssertFatal(drbs_tobesetupmod_item_p->uLUPTNLInformation_ToBeSetup_List.list.count > 0,
           "no UL UP TNL Information in DRBs to be Setup list\n");
-      F1AP_ULUPTNLInformation_ToBeSetup_Item_t *ul_up_tnl_info_p = (F1AP_ULUPTNLInformation_ToBeSetup_Item_t *)drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.array[0];
+      F1AP_ULUPTNLInformation_ToBeSetup_Item_t *ul_up_tnl_info_p = (F1AP_ULUPTNLInformation_ToBeSetup_Item_t *)drbs_tobesetupmod_item_p->uLUPTNLInformation_ToBeSetup_List.list.array[0];
       F1AP_GTPTunnel_t *ul_up_tnl0 = ul_up_tnl_info_p->uLUPTNLInformation.choice.gTPTunnel;
       BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
       OCTET_STRING_TO_INT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
 
-      switch (drbs_tobesetup_item_p->rLCMode) {
+      switch (drbs_tobesetupmod_item_p->rLCMode) {
       case F1AP_RLCMode_rlc_am:
         drb_p->rlc_mode = RLC_MODE_AM;
         break;
@@ -1042,8 +1042,9 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
       //FIXME
       //rnti_t rnti      = f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id);
       ctxt.instance = instance;
-      ctxt.instance  = instance;
+      ctxt.module_id  = instance;
       ctxt.enb_flag  = 1;
+      ctxt.eNB_index = instance;
       mem_block_t *pdcp_pdu_p = get_free_mem_block(ieRRC->value.choice.RRCContainer.size, __func__);
       memcpy(&pdcp_pdu_p->data[0], ieRRC->value.choice.RRCContainer.buf, ieRRC->value.choice.RRCContainer.size);
       du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, ieRRC->value.choice.RRCContainer.size, pdcp_pdu_p);
@@ -1099,7 +1100,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
   }
 
   /* mandatory */
-  /* c3. DUtoCURRCInformation */
+  /* c4. DUtoCURRCInformation */
     asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie4);
     ie4->id                             = F1AP_ProtocolIE_ID_id_DUtoCURRCInformation;
     ie4->criticality                    = F1AP_Criticality_reject;
@@ -1127,185 +1128,177 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
 
   /* optional */
   /* c5. DRBs_Setup_List */
-  if(resp->drbs_to_be_setup_length > 0){
-  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie5);
-  ie5->id                             = F1AP_ProtocolIE_ID_id_DRBs_SetupMod_List;
-  ie5->criticality                    = F1AP_Criticality_ignore;
-  ie5->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_DRBs_SetupMod_List;
-  for (int i=0;  i< resp->drbs_to_be_setup_length; i++) {
-    //
-    asn1cSequenceAdd(ie5->value.choice.DRBs_SetupMod_List.list,
-                     F1AP_DRBs_SetupMod_ItemIEs_t, drbs_setupmod_item_ies);
-    drbs_setupmod_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_SetupMod_Item;
-    drbs_setupmod_item_ies->criticality   = F1AP_Criticality_ignore;
-    drbs_setupmod_item_ies->value.present = F1AP_DRBs_SetupMod_ItemIEs__value_PR_DRBs_SetupMod_Item;
-    /* 7.1 DRBs_Setup_Item */
-    /* ADD */
-    F1AP_DRBs_SetupMod_Item_t *drbs_setupmod_item=&drbs_setupmod_item_ies->value.choice.DRBs_SetupMod_Item;
-    /* dRBID */
-    drbs_setupmod_item->dRBID = resp->drbs_to_be_setup[i].drb_id;
-
-    /* OPTIONAL */
-    /* lCID */
-    //drbs_setup_item.lCID = (F1AP_LCID_t *)calloc(1, sizeof(F1AP_LCID_t));
-    //drbs_setup_item.lCID = 1L;
-
-    for (int j=0;  j<resp->drbs_to_be_setup[i].up_dl_tnl_length; j++) {
+  if(resp->drbs_to_be_setup_length > 0) {
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie5);
+    ie5->id                             = F1AP_ProtocolIE_ID_id_DRBs_SetupMod_List;
+    ie5->criticality                    = F1AP_Criticality_ignore;
+    ie5->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_DRBs_SetupMod_List;
+    for (int i=0;  i< resp->drbs_to_be_setup_length; i++) {
+      asn1cSequenceAdd(ie5->value.choice.DRBs_SetupMod_List.list, F1AP_DRBs_SetupMod_ItemIEs_t, drbs_setupmod_item_ies);
+      drbs_setupmod_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_SetupMod_Item;
+      drbs_setupmod_item_ies->criticality   = F1AP_Criticality_ignore;
+      drbs_setupmod_item_ies->value.present = F1AP_DRBs_SetupMod_ItemIEs__value_PR_DRBs_SetupMod_Item;
+      /* 7.1 DRBs_Setup_Item */
       /* ADD */
-      asn1cSequenceAdd(drbs_setupmod_item->dLUPTNLInformation_ToBeSetup_List.list,
-                       F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);
-      dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
-      /* gTPTunnel */
-      asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,gTPTunnel);
-      /* transportLayerAddress */
-      struct sockaddr_in addr= {0};
-      inet_pton(AF_INET, getCxt(false,instance)->setupReq.DU_f1_ip_address.ipv4_address,
-                &addr.sin_addr.s_addr);
-      TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr,
+      F1AP_DRBs_SetupMod_Item_t *drbs_setupmod_item=&drbs_setupmod_item_ies->value.choice.DRBs_SetupMod_Item;
+      /* dRBID */
+      drbs_setupmod_item->dRBID = resp->drbs_to_be_setup[i].drb_id;
+
+      /* OPTIONAL */
+      /* lCID */
+      //drbs_setup_item.lCID = (F1AP_LCID_t *)calloc(1, sizeof(F1AP_LCID_t));
+      //drbs_setup_item.lCID = 1L;
+
+      for (int j=0;  j<resp->drbs_to_be_setup[i].up_dl_tnl_length; j++) {
+        /* ADD */
+        asn1cSequenceAdd(drbs_setupmod_item->dLUPTNLInformation_ToBeSetup_List.list,
+          F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);
+        dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
+        /* gTPTunnel */
+        asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,gTPTunnel);
+        /* transportLayerAddress */
+        struct sockaddr_in addr= {0};
+        inet_pton(AF_INET, getCxt(false,instance)->setupReq.DU_f1_ip_address.ipv4_address,
+          &addr.sin_addr.s_addr);
+        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr,
           &gTPTunnel->transportLayerAddress);
-      /* gTP_TEID */
-      INT32_TO_OCTET_STRING(resp->drbs_to_be_setup[i].up_dl_tnl[j].teid, &gTPTunnel->gTP_TEID);
-    } // for j
-  } // for i
+        /* gTP_TEID */
+        INT32_TO_OCTET_STRING(resp->drbs_to_be_setup[i].up_dl_tnl[j].teid, &gTPTunnel->gTP_TEID);
+      } // for j
+    } // for i
   }
 
   /* optional */
   /* c6. DRBs_Modified_List */
   if(0){
-  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie6);
-  ie6->id                             = F1AP_ProtocolIE_ID_id_DRBs_Modified_List;
-  ie6->criticality                    = F1AP_Criticality_reject;
-  ie6->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_DRBs_Modified_List;
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie6);
+    ie6->id                             = F1AP_ProtocolIE_ID_id_DRBs_Modified_List;
+    ie6->criticality                    = F1AP_Criticality_reject;
+    ie6->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_DRBs_Modified_List;
 
-  for (int i=0;  i<1; i++) {
-    //
-    asn1cSequenceAdd(ie6->value.choice.DRBs_Modified_List.list,
-                     F1AP_DRBs_Modified_ItemIEs_t, drbs_modified_item_ies);
-    drbs_modified_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_Modified_Item;
-    drbs_modified_item_ies->criticality   = F1AP_Criticality_reject;
-    drbs_modified_item_ies->value.present = F1AP_DRBs_Modified_ItemIEs__value_PR_DRBs_Modified_Item;
-    /* 13.1 SRBs_modified_Item */
-    F1AP_DRBs_Modified_Item_t *drbs_modified_item=
-      &drbs_modified_item_ies->value.choice.DRBs_Modified_Item;
-    /* dRBID */
-    drbs_modified_item->dRBID = 25L;
-    /* ULTunnels_Modified_List */
-    int maxnoofULTunnels = 1; // 2;
+    for (int i=0;  i<1; i++) {
+      asn1cSequenceAdd(ie6->value.choice.DRBs_Modified_List.list,
+        F1AP_DRBs_Modified_ItemIEs_t, drbs_modified_item_ies);
+      drbs_modified_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_Modified_Item;
+      drbs_modified_item_ies->criticality   = F1AP_Criticality_reject;
+      drbs_modified_item_ies->value.present = F1AP_DRBs_Modified_ItemIEs__value_PR_DRBs_Modified_Item;
+      /* DRBs_modified_Item */
+      F1AP_DRBs_Modified_Item_t *drbs_modified_item= &drbs_modified_item_ies->value.choice.DRBs_Modified_Item;
+      /* dRBID */
+      drbs_modified_item->dRBID = 25L;
+      /* ULTunnels_Modified_List */
+      int maxnoofULTunnels = 1; // 2;
 
-    for (int j=0;  j<maxnoofULTunnels;  j++) {
-      /*  DLTunnels_Modified_Item */
-      asn1cSequenceAdd(drbs_modified_item->dLUPTNLInformation_ToBeSetup_List.list,
-                       F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);
-      asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item, tmp);
-      tmp->dLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
-      asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel, gTPTunnel);
-      TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
-      OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "1204", strlen("1204"));
+      for (int j=0;  j<maxnoofULTunnels;  j++) {
+        /*  DLTunnels_Modified_Item */
+        asn1cSequenceAdd(drbs_modified_item->dLUPTNLInformation_ToBeSetup_List.list,
+          F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);
+        asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item, tmp);
+        tmp->dLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
+        asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel, gTPTunnel);
+        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
+        OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "1204", strlen("1204"));
+      }
     }
-  }
   }
 
   /* optional */
   /* c7. SRBs_FailedToBeSetupMod_List */
   if(0){
-  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie7);
-  ie7->id                             = F1AP_ProtocolIE_ID_id_SRBs_FailedToBeSetupMod_List;
-  ie7->criticality                    = F1AP_Criticality_reject;
-  ie7->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_SRBs_FailedToBeSetupMod_List;
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie7);
+    ie7->id                             = F1AP_ProtocolIE_ID_id_SRBs_FailedToBeSetupMod_List;
+    ie7->criticality                    = F1AP_Criticality_reject;
+    ie7->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_SRBs_FailedToBeSetupMod_List;
 
-  for (int i=0; i<1; i++) {
-    //
-    asn1cSequenceAdd(ie7->value.choice.SRBs_FailedToBeSetupMod_List.list,
-                     F1AP_SRBs_FailedToBeSetupMod_ItemIEs_t, srbs_failedToBeSetupMod_item_ies);
-    srbs_failedToBeSetupMod_item_ies->id            = F1AP_ProtocolIE_ID_id_SRBs_FailedToBeSetupMod_Item;
-    srbs_failedToBeSetupMod_item_ies->criticality   = F1AP_Criticality_ignore;
-    srbs_failedToBeSetupMod_item_ies->value.present = F1AP_SRBs_FailedToBeSetupMod_ItemIEs__value_PR_SRBs_FailedToBeSetupMod_Item;
-    /* 9.1 SRBs_FailedToBeSetupMod_Item */
-    F1AP_SRBs_FailedToBeSetupMod_Item_t *srbs_failedToBeSetupMod_item=
-      &srbs_failedToBeSetupMod_item_ies->value.choice.SRBs_FailedToBeSetupMod_Item;
-    /* - sRBID */
-    srbs_failedToBeSetupMod_item->sRBID = 50L;
-    asn1cCalloc(srbs_failedToBeSetupMod_item->cause, tmp)
-    tmp->present = F1AP_Cause_PR_radioNetwork;
-    tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
-  }
+    for (int i=0; i<1; i++) {
+      asn1cSequenceAdd(ie7->value.choice.SRBs_FailedToBeSetupMod_List.list,
+        F1AP_SRBs_FailedToBeSetupMod_ItemIEs_t, srbs_failedToBeSetupMod_item_ies);
+      srbs_failedToBeSetupMod_item_ies->id            = F1AP_ProtocolIE_ID_id_SRBs_FailedToBeSetupMod_Item;
+      srbs_failedToBeSetupMod_item_ies->criticality   = F1AP_Criticality_ignore;
+      srbs_failedToBeSetupMod_item_ies->value.present = F1AP_SRBs_FailedToBeSetupMod_ItemIEs__value_PR_SRBs_FailedToBeSetupMod_Item;
+      /* 9.1 SRBs_FailedToBeSetupMod_Item */
+      F1AP_SRBs_FailedToBeSetupMod_Item_t *srbs_failedToBeSetupMod_item=
+        &srbs_failedToBeSetupMod_item_ies->value.choice.SRBs_FailedToBeSetupMod_Item;
+      /* - sRBID */
+      srbs_failedToBeSetupMod_item->sRBID = 50L;
+      asn1cCalloc(srbs_failedToBeSetupMod_item->cause, tmp)
+      tmp->present = F1AP_Cause_PR_radioNetwork;
+      tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
+    }
   }
 
   /* optional */
   /* c8. DRBs_FailedToBeSetupMod_List */
   if(0){
-  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie8);
-  ie8->id                             = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeSetupMod_List;
-  ie8->criticality                    = F1AP_Criticality_reject;
-  ie8->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_DRBs_FailedToBeSetupMod_List;
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie8);
+    ie8->id                             = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeSetupMod_List;
+    ie8->criticality                    = F1AP_Criticality_reject;
+    ie8->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_DRBs_FailedToBeSetupMod_List;
 
-  for (int i=0;   i<1; i++) {
-    //
-    asn1cSequenceAdd(ie8->value.choice.DRBs_FailedToBeSetupMod_List.list,
-                     F1AP_DRBs_FailedToBeSetupMod_ItemIEs_t, drbs_failedToBeSetupMod_item_ies);
-    drbs_failedToBeSetupMod_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeSetupMod_Item;
-    drbs_failedToBeSetupMod_item_ies->criticality   = F1AP_Criticality_reject;
-    drbs_failedToBeSetupMod_item_ies->value.present = F1AP_DRBs_FailedToBeSetupMod_ItemIEs__value_PR_DRBs_FailedToBeSetupMod_Item;
-    /* 10.1 DRBs_ToBeSetupMod_Item */
-    F1AP_DRBs_FailedToBeSetupMod_Item_t *drbs_failedToBeSetupMod_item=
-      &drbs_failedToBeSetupMod_item_ies->value.choice.DRBs_FailedToBeSetupMod_Item;
-    /* dRBID */
-    drbs_failedToBeSetupMod_item->dRBID = 30L;
-    drbs_failedToBeSetupMod_item->cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
-    drbs_failedToBeSetupMod_item->cause->present = F1AP_Cause_PR_radioNetwork;
-    drbs_failedToBeSetupMod_item->cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
-  }
+    for (int i=0;   i<1; i++) {
+      asn1cSequenceAdd(ie8->value.choice.DRBs_FailedToBeSetupMod_List.list,
+        F1AP_DRBs_FailedToBeSetupMod_ItemIEs_t, drbs_failedToBeSetupMod_item_ies);
+      drbs_failedToBeSetupMod_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeSetupMod_Item;
+      drbs_failedToBeSetupMod_item_ies->criticality   = F1AP_Criticality_reject;
+      drbs_failedToBeSetupMod_item_ies->value.present = F1AP_DRBs_FailedToBeSetupMod_ItemIEs__value_PR_DRBs_FailedToBeSetupMod_Item;
+      /* DRBs_FailedToBeSetupMod_Item */
+      F1AP_DRBs_FailedToBeSetupMod_Item_t *drbs_failedToBeSetupMod_item=
+        &drbs_failedToBeSetupMod_item_ies->value.choice.DRBs_FailedToBeSetupMod_Item;
+      /* dRBID */
+      drbs_failedToBeSetupMod_item->dRBID = 30L;
+      drbs_failedToBeSetupMod_item->cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
+      drbs_failedToBeSetupMod_item->cause->present = F1AP_Cause_PR_radioNetwork;
+      drbs_failedToBeSetupMod_item->cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
+    }
   }
 
   /* optional */
   /* c9. SCell_FailedtoSetupMod_List */
   if(0){
-  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie9);
-  ie9->id                             = F1AP_ProtocolIE_ID_id_SCell_FailedtoSetupMod_List;
-  ie9->criticality                    = F1AP_Criticality_ignore;
-  ie9->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_SCell_FailedtoSetupMod_List;
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie9);
+    ie9->id                             = F1AP_ProtocolIE_ID_id_SCell_FailedtoSetupMod_List;
+    ie9->criticality                    = F1AP_Criticality_ignore;
+    ie9->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_SCell_FailedtoSetupMod_List;
 
-  for (int i=0; i<1; i++) {
-    //
-    asn1cSequenceAdd(ie9->value.choice.SCell_FailedtoSetupMod_List.list,
-                     F1AP_SCell_FailedtoSetupMod_ItemIEs_t, scell_failedtoSetupMod_item_ies);
-    scell_failedtoSetupMod_item_ies->id            = F1AP_ProtocolIE_ID_id_SCell_FailedtoSetupMod_Item;
-    scell_failedtoSetupMod_item_ies->criticality   = F1AP_Criticality_ignore;
-    scell_failedtoSetupMod_item_ies->value.present = F1AP_SCell_FailedtoSetupMod_ItemIEs__value_PR_SCell_FailedtoSetupMod_Item;
-    /* 8.1 SCell_ToBeSetup_Item */
-    F1AP_SCell_FailedtoSetupMod_Item_t *scell_failedtoSetupMod_item=&scell_failedtoSetupMod_item_ies->value.choice.SCell_FailedtoSetupMod_Item;
-    /* - sCell_ID */
-    addnRCGI(scell_failedtoSetupMod_item->sCell_ID, &f1ap_req(false, instance)->cell[i]);
-    asn1cCalloc(scell_failedtoSetupMod_item->cause, tmp);
-    tmp->present = F1AP_Cause_PR_radioNetwork;
-    tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
-  }
+    for (int i=0; i<1; i++) {
+      asn1cSequenceAdd(ie9->value.choice.SCell_FailedtoSetupMod_List.list,
+        F1AP_SCell_FailedtoSetupMod_ItemIEs_t, scell_failedtoSetupMod_item_ies);
+      scell_failedtoSetupMod_item_ies->id            = F1AP_ProtocolIE_ID_id_SCell_FailedtoSetupMod_Item;
+      scell_failedtoSetupMod_item_ies->criticality   = F1AP_Criticality_ignore;
+      scell_failedtoSetupMod_item_ies->value.present = F1AP_SCell_FailedtoSetupMod_ItemIEs__value_PR_SCell_FailedtoSetupMod_Item;
+      /* 8.1 SCell_ToBeSetup_Item */
+      F1AP_SCell_FailedtoSetupMod_Item_t *scell_failedtoSetupMod_item=&scell_failedtoSetupMod_item_ies->value.choice.SCell_FailedtoSetupMod_Item;
+      /* - sCell_ID */
+      addnRCGI(scell_failedtoSetupMod_item->sCell_ID, &f1ap_req(false, instance)->cell[i]);
+      asn1cCalloc(scell_failedtoSetupMod_item->cause, tmp);
+      tmp->present = F1AP_Cause_PR_radioNetwork;
+      tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
+    }
   }
 
   /* optional */
   /* c10. DRBs_FailedToBeModified_List */
   if(0){
-  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie10);
-  ie10->id                             = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeModified_List;
-  ie10->criticality                    = F1AP_Criticality_reject;
-  ie10->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_DRBs_FailedToBeModified_List;
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie10);
+    ie10->id                             = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeModified_List;
+    ie10->criticality                    = F1AP_Criticality_reject;
+    ie10->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_DRBs_FailedToBeModified_List;
 
-  for (int i=0; i<1; i++) {
-    //
-    asn1cSequenceAdd(ie10->value.choice.DRBs_FailedToBeModified_List.list,
-                     F1AP_DRBs_FailedToBeModified_ItemIEs_t, drbs_failedToBeModified_item_ies);
-    drbs_failedToBeModified_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeModified_Item;
-    drbs_failedToBeModified_item_ies->criticality   = F1AP_Criticality_reject;
-    drbs_failedToBeModified_item_ies->value.present = F1AP_DRBs_FailedToBeModified_ItemIEs__value_PR_DRBs_FailedToBeModified_Item;
-    /* 13.1 DRBs_FailedToBeModified_Item */
-    F1AP_DRBs_FailedToBeModified_Item_t *drbs_failedToBeModified_item=
-      &drbs_failedToBeModified_item_ies->value.choice.DRBs_FailedToBeModified_Item ;
-    /* dRBID */
-    drbs_failedToBeModified_item->dRBID = 30L;
-    asn1cCalloc(drbs_failedToBeModified_item->cause, tmp);
-    tmp->present = F1AP_Cause_PR_radioNetwork;
-    tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
-  }
+    for (int i=0; i<1; i++) {
+      asn1cSequenceAdd(ie10->value.choice.DRBs_FailedToBeModified_List.list,
+        F1AP_DRBs_FailedToBeModified_ItemIEs_t, drbs_failedToBeModified_item_ies);
+      drbs_failedToBeModified_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeModified_Item;
+      drbs_failedToBeModified_item_ies->criticality   = F1AP_Criticality_reject;
+      drbs_failedToBeModified_item_ies->value.present = F1AP_DRBs_FailedToBeModified_ItemIEs__value_PR_DRBs_FailedToBeModified_Item;
+      /* 13.1 DRBs_FailedToBeModified_Item */
+      F1AP_DRBs_FailedToBeModified_Item_t *drbs_failedToBeModified_item=
+        &drbs_failedToBeModified_item_ies->value.choice.DRBs_FailedToBeModified_Item ;
+      /* dRBID */
+      drbs_failedToBeModified_item->dRBID = 30L;
+      asn1cCalloc(drbs_failedToBeModified_item->cause, tmp);
+      tmp->present = F1AP_Cause_PR_radioNetwork;
+      tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
+    }
   }
 
   // /*  */
@@ -1359,24 +1352,24 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
   /* optional */
   /* c12. SRBs_Setup_List */
   if(resp->srbs_to_be_setup_length > 0){
-  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie12);
-  ie12->id                             = F1AP_ProtocolIE_ID_id_SRBs_SetupMod_List;
-  ie12->criticality                    = F1AP_Criticality_ignore;
-  ie12->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_SRBs_SetupMod_List;
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationResponseIEs_t, ie12);
+    ie12->id                             = F1AP_ProtocolIE_ID_id_SRBs_SetupMod_List;
+    ie12->criticality                    = F1AP_Criticality_ignore;
+    ie12->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_SRBs_SetupMod_List;
 
-  for (int i=0;  i< resp->srbs_to_be_setup_length; i++) {//
-    asn1cSequenceAdd(ie12->value.choice.SRBs_SetupMod_List.list,
+    for (int i=0;  i< resp->srbs_to_be_setup_length; i++) {//
+      asn1cSequenceAdd(ie12->value.choice.SRBs_SetupMod_List.list,
         F1AP_SRBs_SetupMod_ItemIEs_t, srbs_setupmod_item_ies);
-    srbs_setupmod_item_ies->id            = F1AP_ProtocolIE_ID_id_SRBs_SetupMod_Item;
-    srbs_setupmod_item_ies->criticality   = F1AP_Criticality_ignore;
-    srbs_setupmod_item_ies->value.present = F1AP_SRBs_SetupMod_ItemIEs__value_PR_SRBs_SetupMod_Item;
-    /* 11.1 SRBs_Setup_Item */
-    /* ADD */
-    F1AP_SRBs_SetupMod_Item_t *srbs_setupmod_item=&srbs_setupmod_item_ies->value.choice.SRBs_SetupMod_Item;
-    /* sRBID */
-    srbs_setupmod_item->sRBID = resp->srbs_to_be_setup[i].srb_id;
-    srbs_setupmod_item->lCID = resp->srbs_to_be_setup[i].srb_id;
-  }
+      srbs_setupmod_item_ies->id            = F1AP_ProtocolIE_ID_id_SRBs_SetupMod_Item;
+      srbs_setupmod_item_ies->criticality   = F1AP_Criticality_ignore;
+      srbs_setupmod_item_ies->value.present = F1AP_SRBs_SetupMod_ItemIEs__value_PR_SRBs_SetupMod_Item;
+      /* 11.1 SRBs_Setup_Item */
+      /* ADD */
+      F1AP_SRBs_SetupMod_Item_t *srbs_setupmod_item=&srbs_setupmod_item_ies->value.choice.SRBs_SetupMod_Item;
+      /* sRBID */
+      srbs_setupmod_item->sRBID = resp->srbs_to_be_setup[i].srb_id;
+      srbs_setupmod_item->lCID = resp->srbs_to_be_setup[i].srb_id;
+    }
   }
 
   /* encode */
