@@ -483,6 +483,29 @@ pipeline {
                         }
                     }
                 }
+                stage ("Test F1 - FDD - Band 7 - B210") {
+                    when {
+                        expression {doFullTestsuite}
+                    }
+                    steps {
+                        script {
+                            sh "sleep 60"
+                            triggerSlaveJob ('eNB-CI-F1-FDD-Band7-B210', 'Test-F1-FDD-Band7')
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                finalizeSlaveJob('eNB-CI-F1-FDD-Band7-B210')
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
                 stage ("Test IF4p5 - TDD - Band 40 - B210") {
                     when {
                         expression {doFullTestsuite}
