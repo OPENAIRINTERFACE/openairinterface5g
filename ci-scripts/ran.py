@@ -38,10 +38,6 @@ import os
 import time
 from multiprocessing import Process, Lock, SimpleQueue
 import yaml
-<<<<<<< HEAD
-
-=======
->>>>>>> 90c6b8b58b... copyout workaround
 
 #-----------------------------------------------------------
 # OAI Testing modules
