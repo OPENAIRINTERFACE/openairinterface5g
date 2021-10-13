@@ -751,6 +751,8 @@ int main ( int argc, char **argv )
     create_tasks_mbms(1);
     config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
+  else
+    create_tasks_mbms(1);
   //create_tasks_mbms(1);
 
   // wait for end of program
