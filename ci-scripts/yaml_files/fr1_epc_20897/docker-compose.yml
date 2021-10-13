@@ -143,6 +143,7 @@ services:
             TAC: 1
             GW_ID: 1
             REALM: openairinterface.org
+            UE_MTU_IPV4: 1500
         healthcheck:
             test: /bin/bash -c "pgrep oai_spgwc"
             interval: 10s
