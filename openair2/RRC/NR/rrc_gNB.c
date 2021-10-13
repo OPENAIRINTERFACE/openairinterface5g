@@ -1124,6 +1124,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup,1,1);
   }
   else{
+    LOG_I(NR_RRC, "Master cell group originating from the DU \n");
     cellGroupConfig = cell_groupConfig_from_DU;
   }
   size = do_RRCReconfiguration(ctxt_pP, buffer,
@@ -3411,8 +3412,8 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
     LOG_W(NR_RRC, "No SRB added upon reception of F1 UE Context setup request at the DU\n");
   }
   /* fixme:
-   * Here we should be probably be encoding to UE ctxt setup response the updates on cellgroupconfig (i.e., cellGroupConfig)
-   * instead of the whole masterCellGroup configuration stored at the UE context (i.e., ue_context_p->ue_context.masterCellGroup).
+   * Here we should be encoding the updates on cellgroupconfig. Currently the content of
+   * celGroupConfig is empty because update_cellGroupConfig() function that is previously called is empty.
    */
   resp->du_to_cu_rrc_information = calloc(1,1024*sizeof(uint8_t));
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
@@ -3420,6 +3421,10 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
                                 (void *)cellGroupConfig,
                                 resp->du_to_cu_rrc_information,
                                 1024);
+  if (enc_rval.encoded == -1) {
+        LOG_E(F1AP,"Could not encode ue_context.masterCellGroup, failed element %s\n",enc_rval.failed_type->name);
+        exit(-1);
+  }
   resp->du_to_cu_rrc_information_length = (enc_rval.encoded+7)>>3;
   free(cellGroupConfig);
   itti_send_msg_to_task (TASK_DU_F1, ctxt.module_id, message_p);
@@ -3582,12 +3587,18 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
   }
   if(cellGroupConfig->rlc_BearerToAddModList!=NULL){
     if(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList != NULL){
-      LOG_I(NR_RRC, "rlc_BearerToAddModList not empty before filling it \n");
-      free(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList);
+      int ue_ctxt_rlc_Bearers = ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList->list.count;
+      for(int i=ue_ctxt_rlc_Bearers; i<ue_ctxt_rlc_Bearers + cellGroupConfig->rlc_BearerToAddModList->list.count; i++){
+        ASN_SEQUENCE_ADD(&ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList->list,
+          cellGroupConfig->rlc_BearerToAddModList->list.array[i-ue_ctxt_rlc_Bearers]);
+      }
     }
-    ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
-    memcpy(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList,
+    else{
+      LOG_W(NR_RRC, "Empty rlc_BearerToAddModList at ue_context of the CU before filling the updates from UE context setup response \n");
+      ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
+      memcpy(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList,
         sizeof(*cellGroupConfig->rlc_BearerToAddModList));
+    }
   }
   xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_context_p->ue_context.masterCellGroup);
 
@@ -3633,7 +3644,7 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, c
     if(ue_context_p->ue_context.masterCellGroup == NULL){
       ue_context_p->ue_context.masterCellGroup = calloc(1, sizeof(NR_CellGroupConfig_t));
     }
-    if(cellGroupConfig->rlc_BearerToAddModList!=NULL){
+    /*if(cellGroupConfig->rlc_BearerToAddModList!=NULL){
       if(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList != NULL){
         LOG_I(NR_RRC, "rlc_BearerToAddModList not empty before filling it \n");
         free(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList);
@@ -3641,6 +3652,21 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, c
       ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
       memcpy(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList,
           sizeof(*cellGroupConfig->rlc_BearerToAddModList));
+    }*/
+    if(cellGroupConfig->rlc_BearerToAddModList!=NULL){
+      if(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList != NULL){
+        int ue_ctxt_rlc_Bearers = ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList->list.count;
+        for(int i=ue_ctxt_rlc_Bearers; i<ue_ctxt_rlc_Bearers + cellGroupConfig->rlc_BearerToAddModList->list.count; i++){
+          ASN_SEQUENCE_ADD(&ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList->list,
+              cellGroupConfig->rlc_BearerToAddModList->list.array[i-ue_ctxt_rlc_Bearers]);
+        }
+      }
+      else{
+        LOG_W(NR_RRC, "Empty rlc_BearerToAddModList at ue_context of the CU before filling the updates from UE context setup response \n");
+        ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
+        memcpy(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList,
+          sizeof(*cellGroupConfig->rlc_BearerToAddModList));
+      }
     }
     xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_context_p->ue_context.masterCellGroup);
 
