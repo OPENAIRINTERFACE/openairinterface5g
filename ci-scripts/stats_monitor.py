@@ -78,7 +78,7 @@ if __name__ == "__main__":
     d['mcs']=[]
 
 
-    cmd='ps aux | grep mode | grep -v grep'
+    cmd='ps aux | grep modem | grep -v grep'
     process=subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = process.stdout.readlines()
     while len(output)!=0 :
