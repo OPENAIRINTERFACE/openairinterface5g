@@ -712,7 +712,7 @@ class RANManagement():
 				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze, HTML)
 				if (logStatus < 0):
 					HTML.CreateHtmlTestRow('N/A', 'KO', logStatus)
-					self.preamtureExit = True
+					self.prematureExit = True
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
 				else:
