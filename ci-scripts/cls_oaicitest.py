@@ -403,9 +403,10 @@ class OaiCiTest():
 					#execute additional commands from yaml file after UE attach
 					SSH = sshconnection.SSHConnection()
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-					for startcommand in Module_UE.StartCommands:
-						cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand 
-					SSH.command(cmd,'\$',5)	
+					if hasattr(Module_UE,StartCommands):
+						for startcommand in Module_UE.StartCommands:
+							cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand 
+							SSH.command(cmd,'\$',5)	
 					SSH.close()
 					#check that the MTU is as expected / requested
 					Module_UE.CheckModuleMTU()

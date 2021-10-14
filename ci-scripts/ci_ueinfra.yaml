@@ -16,6 +16,7 @@ idefix:
   HostUsername : oaicicd
   HostPassword : oaicicd
   HostSourceCodePath : none
+  MTU : 1500
 nrmodule2_quectel:
   ID: nrmodule2_quectel
   State : enabled
