@@ -1301,7 +1301,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   }
   st = e - len + 1;
 
-  LOG_I(NR_MAC,"UL %d.%d : start_prb %d, end PRB %d\n",frame,slot,st,e);
+  LOG_D(NR_MAC,"UL %d.%d : start_prb %d, end PRB %d\n",frame,slot,st,e);
   
   uint8_t rballoc_mask[bwpSize];
 
