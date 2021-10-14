@@ -14,8 +14,8 @@ import yaml
 
 
 class StatMonitor():
-    def __init__(self,):
-        with open('stats_monitor_conf.yaml','r') as file:
+    def __init__(self,cfg_file):
+        with open(cfg_file,'r') as file:
             self.d = yaml.load(file)
         for node in self.d:
             for metric in self.d[node]:
@@ -83,8 +83,9 @@ class StatMonitor():
 
 if __name__ == "__main__":
 
-    node = sys.argv[1]#enb or gnb
-    mon=StatMonitor()
+    cfg_filename = sys.argv[1] #yaml file as metrics config
+    node = sys.argv[2]#enb or gnb
+    mon=StatMonitor(cfg_filename)
 
     #collecting stats when modem process is stopped
     CMD='ps aux | grep mode | grep -v grep'
