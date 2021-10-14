@@ -4,7 +4,9 @@ idefix:
   Kind : quectel
   Process : 
     Name : quectel-CM
-    Cmd : /home/oaicicd/quectel-CM/quectel-CM -s oai.ipv4 -4
+    Cmd : /home/oaicicd/quectel-CM/quectel-CM -4 -s
+    Apn :
+      ltebox : oai.ipv4
   WakeupScript : ci_ctl_qtel.py /dev/ttyUSB2 wup
   DetachScript : ci_ctl_qtel.py /dev/ttyUSB2 detach
   LogStore : /media/usb-drive/ci_qlogs
@@ -20,16 +22,22 @@ nrmodule2_quectel:
   Kind : quectel
   Process :
     Name : quectel-CM
-    Cmd : /home/nrmodule2/quectel-CM/quectel-CM -s oai.ipv4 -4
+    Cmd : /home/nrmodule2/quectel-CM/quectel-CM -4 -s
+    Apn :
+      OAICN5G : oai
+      OAI-Rel14-Docker : oai.ipv4
   WakeupScript : ci_ctl_qtel.py /dev/ttyUSB7 wup
   DetachScript : ci_ctl_qtel.py /dev/ttyUSB7 detach
   LogStore : /media/ci_qlogs  
-  PLMN : 20899 
+  PLMN : 20897
   UENetwork : wwan1
   HostIPAddress : 192.168.18.189
   HostUsername : nrmodule2 
   HostPassword : linux 
   HostSourceCodePath : none
+  StartCommands :
+    - sudo -S ip link set dev wwan1 mtu 1500
+  MTU : 1500
 dummy:
   ID: ''
   State : ''

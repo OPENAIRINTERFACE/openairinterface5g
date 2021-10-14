@@ -120,6 +120,8 @@ typedef enum {
 #define GNB_CONFIG_STRING_DOCSIRS                       "do_CSIRS"
 #define GNB_CONFIG_STRING_NRCELLID                      "nr_cellid"
 #define GNB_CONFIG_STRING_MINRXTXTIMEPDSCH              "min_rxtxtime_pdsch"
+#define GNB_CONFIG_STRING_ULPRBBLACKLIST                "ul_prbblacklist"
+
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
@@ -147,7 +149,8 @@ typedef enum {
 {GNB_CONFIG_STRING_DOCSIRS,                      NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_NRCELLID,                     NULL,   0,            u64ptr:NULL, defint64val:1,               TYPE_UINT64,    0},  \
 {GNB_CONFIG_STRING_MINRXTXTIMEPDSCH,             NULL,   0,            iptr:NULL,   defintval:2,                 TYPE_INT,       0}   \
-}															     	
+{GNB_CONFIG_STRING_ULPRBBLACKLIST,               NULL,   0,            strptr:NULL, defstrval:"",                 TYPE_STRING,   0}   \
+}
 
 #define GNB_GNB_ID_IDX                  0
 #define GNB_CELL_TYPE_IDX               1
@@ -170,6 +173,7 @@ typedef enum {
 #define GNB_DO_CSIRS_IDX                18
 #define GNB_NRCELLID_IDX                19
 #define GNB_MINRXTXTIMEPDSCH_IDX        20
+#define GNB_ULPRBBLACKLIST_IDX          21
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define GNBPARAMS_CHECK {                                         \

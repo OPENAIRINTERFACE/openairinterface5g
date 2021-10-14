@@ -1303,14 +1303,9 @@ void *ru_thread( void *param ) {
   pthread_cond_signal(&RC.ru_cond);
   pthread_mutex_unlock(&RC.ru_mutex);
   wait_sync("ru_thread");
-  notifiedFIFO_elt_t *msg = newNotifiedFIFO_elt(sizeof(processingData_L1_t),0,gNB->resp_L1,rx_func);
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1_t),0,gNB->resp_L1_tx,tx_func);
-  notifiedFIFO_elt_t *msgRUTx = newNotifiedFIFO_elt(sizeof(processingData_L1_t),0,gNB->resp_RU_tx,ru_tx_func);
+
   processingData_L1_t *syncMsg;
   notifiedFIFO_elt_t *res;
-  pushNotifiedFIFO(gNB->resp_L1,msg); // to unblock the process in the beginning
-  pushNotifiedFIFO(gNB->resp_L1_tx,msgL1Tx); // to unblock the process in the beginning
-  pushNotifiedFIFO(gNB->resp_RU_tx,msgRUTx); // to unblock the process in the beginning
 
   if(!emulate_rf) {
     // Start RF device if any
@@ -1453,9 +1448,15 @@ void *ru_thread( void *param ) {
     else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
   }
 
-  delNotifiedFIFO_elt(msg);
-  delNotifiedFIFO_elt(msgL1Tx);
-  delNotifiedFIFO_elt(msgRUTx);
+  res = pullNotifiedFIFO(gNB->resp_L1);
+  delNotifiedFIFO_elt(res);
+  res = pullNotifiedFIFO(gNB->resp_L1_tx);
+  delNotifiedFIFO_elt(res);
+  res = pullNotifiedFIFO(gNB->resp_L1_tx);
+  delNotifiedFIFO_elt(res);
+  res = pullNotifiedFIFO(gNB->resp_RU_tx);
+  delNotifiedFIFO_elt(res);
+
   ru_thread_status = 0;
   return &ru_thread_status;
 }

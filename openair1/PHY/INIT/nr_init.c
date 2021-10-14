@@ -519,45 +519,38 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   LOG_I(PHY,"gNB %d configured\n",Mod_id);
 }
 
-
-void init_nr_transport(PHY_VARS_gNB *gNB) {
-  int i;
-  int j;
+void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg) {
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
-  LOG_I(PHY, "Initialise nr transport\n");
   uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
+  msg->num_pdsch_slot = 0;
+
+  for (int i=0; i<gNB->number_of_nr_dlsch_max; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n",i,gNB->number_of_nr_dlsch_max);
+    for (int j=0; j<2; j++) {
+      msg->dlsch[i][j] = new_gNB_dlsch(fp,1,16,NSOFT,0,grid_size);
+      AssertFatal(msg->dlsch[i][j]!=NULL,"Can't initialize dlsch %d \n", i);
+    }
+  }
+}
+
+void init_nr_transport(PHY_VARS_gNB *gNB) {
+  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  LOG_I(PHY, "Initialise nr transport\n");
 
   memset(gNB->num_pdsch_rnti, 0, sizeof(uint16_t)*80);
 
-  for (i=0; i <NUMBER_OF_NR_PDCCH_MAX; i++) {
-    LOG_I(PHY,"Initializing PDCCH list for PDCCH %d/%d\n",i,NUMBER_OF_NR_PDCCH_MAX);
-    gNB->pdcch_pdu[i].frame=-1;
-    LOG_I(PHY,"Initializing UL PDCCH list for UL PDCCH %d/%d\n",i,NUMBER_OF_NR_PDCCH_MAX);
-    gNB->ul_pdcch_pdu[i].frame=-1;
-  }
-    
-  for (i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
+  for (int i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
     LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n",i,NUMBER_OF_NR_PUCCH_MAX);
     gNB->pucch[i] = new_gNB_pucch();
     AssertFatal(gNB->pucch[i]!=NULL,"Can't initialize pucch %d \n", i);
   }
 
-  for (i=0; i<gNB->number_of_nr_dlsch_max; i++) {
-
-    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n",i,gNB->number_of_nr_dlsch_max);
-
-    for (j=0; j<2; j++) {
-      gNB->dlsch[i][j] = new_gNB_dlsch(fp,1,16,NSOFT,0,grid_size);
-      AssertFatal(gNB->dlsch[i][j]!=NULL,"Can't initialize dlsch %d \n", i);
-    }
-  }
-
-  for (i=0; i<gNB->number_of_nr_ulsch_max; i++) {
+  for (int i=0; i<gNB->number_of_nr_ulsch_max; i++) {
 
     LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH  %d/%d\n",i,gNB->number_of_nr_ulsch_max);
 
-    for (j=0; j<2; j++) {
+    for (int j=0; j<2; j++) {
       // ULSCH for data
       gNB->ulsch[i][j] = new_gNB_ulsch(MAX_LDPC_ITERATIONS, fp->N_RB_UL, 0);
 
