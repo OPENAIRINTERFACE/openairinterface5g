@@ -71,6 +71,14 @@ pipeline {
                             string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
                             booleanParam(name: 'eNB_AllowMergeRequestProcess', value: Boolean.valueOf(ALLOW_MERGE))
                         ]
+                        //calling SA 
+                        build job: "RAN-SA-Module-CN5G", wait : true, propagate : false, parameters: [
+                            string(name: 'eNB_MR', value: String.valueOf(MR)),
+                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
+                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
+                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
+                            booleanParam(name: 'eNB_AllowMergeRequestProcess', value: Boolean.valueOf(ALLOW_MERGE))
+                        ]
 
                     }
                 }                                  
