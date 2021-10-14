@@ -754,7 +754,7 @@ void RCconfig_nr_macrlc() {
       } 
       RC.nrmac[j]->ulsch_max_slots_inactivity = *(MacRLC_ParamList.paramarray[j][MACRLC_ULSCH_MAX_SLOTS_INACTIVITY].uptr);
       RC.nrmac[j]->num_ulprbbl = num_prbbl;
-      memcpy(RC.nrmac[j]->ulprbbl,prbbl,num_prbbl*sizeof(prbbl[0]));
+      memcpy(RC.nrmac[j]->ulprbbl,prbbl,275*sizeof(prbbl[0]));
     }//  for (j=0;j<RC.nb_nr_macrlc_inst;j++)
   }else {// MacRLC_ParamList.numelt > 0
     LOG_E(PHY,"No %s configuration found\n", CONFIG_STRING_MACRLC_LIST);
