@@ -532,20 +532,20 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 // Function to fill UL RB mask to be used for N0 measurements
 void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
-  int rb2, rb, nb_rb;
-  int prbpos;
+  int rb = 0;
+  int rb2 = 0;
+  int prbpos = 0;
+
   for (int symbol=0;symbol<14;symbol++) {
-    if (gNB->gNB_config.tdd_table.max_tdd_periodicity_list[slot_rx].max_num_of_symbol_per_slot_list[symbol].slot_config.value==1){
-      nb_rb = 0;
-      for (int m=0;m<9;m++) {
-	 gNB->rb_mask_ul[m] = 0;
-	 for (int i=0;i<32;i++) {
-          prbpos = (m*32)+i;
-          if (prbpos>gNB->frame_parms.N_RB_UL) break;
-          gNB->rb_mask_ul[m] |= (gNB->ulprbbl[prbpos]>0 ? 1 : 0)<<i;
-         }
+    for (int m=0;m<9;m++) {
+      gNB->rb_mask_ul[symbol][m] = 0;
+      for (int i=0;i<32;i++) {
+        prbpos = (m*32)+i;
+        if (prbpos>gNB->frame_parms.N_RB_UL) break;
+        gNB->rb_mask_ul[symbol][m] |= (gNB->ulprbbl[prbpos]>0 ? 1 : 0)<<i;
       }
-      gNB->ulmask_symb = -1;
+    }
+  }
 
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
