@@ -503,11 +503,10 @@ int main(int argc, char *argv[])
   unsigned int errors, errors_bit, crc_misses;
   double errors_bit_uncoded;
   short block_length=8448; // decoder supports length: 1201 -> 1280, 2401 -> 2560
-
+  char *ldpc_version=NULL; /* version of the ldpc decoder library to use (XXX suffix to use when loading libldpc_XXX.so */
   short No_iteration=5;
   int n_segments=1;
   //double rate=0.333;
-  short run_cuda = 0;
   
   int nom_rate=1;
   int denom_rate=3;
@@ -527,7 +526,7 @@ int main(int argc, char *argv[])
 
   short BG=0,Zc,Kb=0;
 
-  while ((c = getopt (argc, argv, "q:r:s:S:l:G:n:d:i:t:u:h")) != -1)
+  while ((c = getopt (argc, argv, "q:r:s:S:l:G:n:d:i:t:u:hv:")) != -1)
     switch (c)
     {
       case 'q':
@@ -547,7 +546,7 @@ int main(int argc, char *argv[])
         break;
 		
       case 'G':
-        run_cuda = atoi(optarg);
+        ldpc_version="_cuda";
         break;
 
       case 'n':
@@ -573,9 +572,11 @@ int main(int argc, char *argv[])
       case 'u':
         test_uncoded = atoi(optarg);
         break;
-
+      case 'v':
+          ldpc_version=strdup(optarg);
+        break;
       case 'h':
-            default:
+      default:
               printf("CURRENTLY SUPPORTED CODE RATES: \n");
               printf("BG1 (blocklength > 3840): 1/3, 2/3, 22/25 (8/9) \n");
               printf("BG2 (blocklength <= 3840): 1/5, 1/3, 2/3 \n\n");
@@ -592,6 +593,7 @@ int main(int argc, char *argv[])
               printf("-t SNR simulation step, Default: 0.1\n");
               printf("-i Max decoder iterations, Default: 5\n");
               printf("-u Set SNR per coded bit, Default: 0\n");
+              printf("-v XXX Set ldpc shared library version. libldpc_XXX.so will be used \n");
               exit(1);
               break;
     }
@@ -601,8 +603,9 @@ int main(int argc, char *argv[])
   printf("n_trials %d: \n", n_trials);
   printf("SNR0 %f: \n", SNR0);
 
-  if(run_cuda)
-    load_nrLDPClib("_cuda");
+
+  if (ldpc_version != NULL)
+    load_nrLDPClib(ldpc_version);
   else
     load_nrLDPClib(NULL); 
   load_nrLDPClib_ref("_orig", &encoder_orig);

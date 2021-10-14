@@ -10,7 +10,6 @@ typedef struct{
   short value;
 } h_element;
 
-__constant char dev_const_llr[68*384]= {};
 //__global char dev_dt [46*68*384];
 //__local char *dev_t;
 //__global char dev_llr[68*384];
@@ -239,9 +238,9 @@ ldpc_vnp_kernel_normal(__local char * dev_llr, __local char * dev_dt, /* char * 
 }
 
 
-__kernel void pack_decoded_bit(__local unsigned char * dev_llr, __local unsigned char * dev_tmp, int col, int Zc)
+__kernel void pack_decoded_bit(__global unsigned char * dev_llr, __global unsigned char * dev_tmp, int col, int Zc)
 {
-	__local unsigned char tmp[128];
+	unsigned char tmp[128];
 	int iMCW = get_group_id(1);
 	int btid = get_local_id(0);
 	int tid = iMCW * col*Zc + get_group_id(0)*128 + btid;	

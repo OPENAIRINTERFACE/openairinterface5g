@@ -53,13 +53,24 @@ typedef struct{
   size_t  *max_WIS;
 } ocldev_t;
 
+typedef struct {
+  cl_kernel cnp_kernel_1st;
+  cl_kernel cnp_kernel;
+  cl_kernel vnp_kernel_normal;
+  cl_kernel pack_decoded_bit;
+} oclkernels_t;
+
 typedef struct{
   cl_uint num_devices;
   cl_device_id devices[MAX_OCLDEV];
   ocldev_t ocldev[MAX_OCLDEV];
   cl_context context;
   cl_program program;
-  cl_kernel kernel;
+  cl_mem dev_const_llr;
+  cl_mem dev_llr;
+  cl_mem dev_dt;
+  cl_mem dev_tmp;  
+  oclkernels_t kernels[MAX_OCLDEV];
   cl_command_queue queue[MAX_OCLDEV];
 } oclruntime_t;
 
@@ -189,16 +200,35 @@ int ldpc_autoinit(void) {   // called by the library loader
           ocl.runtime[i].queue[dev] = clCreateCommandQueueWithProperties(ocl.runtime[i].context,ocl.runtime[i].devices[dev] , 0, (cl_int *)&rt);
           AssertFatal(rt == CL_SUCCESS, "Error %d creating command queue for platform %i device %i\n" , (int)rt, i,dev);
         }
+        ocl.runtime[i].dev_const_llr = clCreateBuffer(ocl.runtime[i].context, CL_MEM_READ_ONLY|CL_MEM_HOST_WRITE_ONLY, 68*384, NULL, (cl_int *)&rt);
+        AssertFatal(rt == CL_SUCCESS, "Error %d creating buffer dev_const_llr for platform %i \n" , (int)rt, i);
+        ocl.runtime[i].dev_llr = clCreateBuffer(ocl.runtime[i].context, CL_MEM_READ_WRITE|CL_MEM_HOST_WRITE_ONLY, 68*384, NULL, (cl_int *)&rt);
+        AssertFatal(rt == CL_SUCCESS, "Error %d creating buffer dev_llr for platform %i \n" , (int)rt, i); 
+        ocl.runtime[i].dev_dt = clCreateBuffer(ocl.runtime[i].context, CL_MEM_READ_WRITE|CL_MEM_HOST_NO_ACCESS, 46*68*384, NULL, (cl_int *)&rt);
+        AssertFatal(rt == CL_SUCCESS, "Error %d creating buffer dev_dt for platform %i \n" , (int)rt, i);                
+        ocl.runtime[i].dev_tmp = clCreateBuffer(ocl.runtime[i].context, CL_MEM_READ_ONLY|CL_MEM_HOST_WRITE_ONLY, 68*384, NULL, (cl_int *)&rt);
+        AssertFatal(rt == CL_SUCCESS, "Error %d creating buffer dev_tmp for platform %i \n" , (int)rt, i);      
         char *source_str;
-        size_t source_size=load_source(&source_str);
+        size_t source_size=load_source(&source_str);      
         cl_program program = clCreateProgramWithSource(ocl.runtime[i].context, 1, 
                                                        (const char **)&source_str, (const size_t *)&source_size,  (cl_int *)&rt);
         AssertFatal(rt == CL_SUCCESS, "Error %d creating program for platform %i \n" , (int)rt, i); 
         rt = clBuildProgram(program, ocl.runtime[i].num_devices,ocl.runtime[i].devices, NULL, NULL, NULL);  
         if (rt == CL_BUILD_PROGRAM_FAILURE) {
-			get_CompilErr(program,i);
-		} 
-        AssertFatal(rt == CL_SUCCESS, "Error %d buildding program for platform %i \n" , rt, i);                                            
+          get_CompilErr(program,i);
+	    } 
+        AssertFatal(rt == CL_SUCCESS, "Error %d buildding program for platform %i \n" , rt, i); 
+        
+	    for(int dev=0; dev<ocl.runtime[i].num_devices; dev++) {
+		  ocl.runtime[i].kernels[dev].cnp_kernel_1st = clCreateKernel(program, "ldpc_cnp_kernel_1st_iter", (cl_int *)&rt);
+		  AssertFatal(rt == CL_SUCCESS, "Error %d creating kernel %s platform %i, dev %i\n" , (int)rt,"ldpc_cnp_kernel_1st_iter", i,dev); 
+		  ocl.runtime[i].kernels[dev].cnp_kernel = clCreateKernel(program, "ldpc_cnp_kernel", (cl_int *)&rt);
+		  AssertFatal(rt == CL_SUCCESS, "Error %d creating kernel %s platform %i, dev %i\n" , (int)rt,"ldpc_cnp_kernel", i,dev); 
+		  ocl.runtime[i].kernels[dev].vnp_kernel_normal = clCreateKernel(program, "ldpc_vnp_kernel_normal", (cl_int *)&rt);
+		  AssertFatal(rt == CL_SUCCESS, "Error %d creating kernel %s platform %i, dev %i\n" , (int)rt,"ldpc_vnp_kernel_normal", i,dev); 
+		  ocl.runtime[i].kernels[dev].pack_decoded_bit = clCreateKernel(program, "pack_decoded_bit", (cl_int *)&rt);
+		  AssertFatal(rt == CL_SUCCESS, "Error %d creating kernel %s platform %i, dev %i\n" , (int)rt,"pack_decoded_bit", i,dev); 		  		  		  
+        }
         context_ok++;
       }
       devok=0;
@@ -234,10 +264,15 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
 //	alloc memory
 	unsigned char *hard_decision = (unsigned char*)p_out;
 //	gpu
-	int memorySize_llr_cuda = col * Zc * sizeof(char) * MC;
+	int memorySize_llr = col * Zc * sizeof(char) * MC;
 //	cudaCheck( cudaMemcpyToSymbol(dev_const_llr, p_llr, memorySize_llr_cuda) );
 //	cudaCheck( cudaMemcpyToSymbol(dev_llr, p_llr, memorySize_llr_cuda) );
-	
+    int rt = clEnqueueWriteBuffer(ocl.runtime[0].queue[0], ocl.runtime[0].dev_const_llr, CL_TRUE, 0,
+                               memorySize_llr, p_llr, 0, NULL, NULL);
+	AssertFatal(rt == CL_SUCCESS, "Error %d moving p_llr data to  read only memory in pltf %i dev %i\n" , (int)rt, 0,0); 
+    rt = clEnqueueWriteBuffer(ocl.runtime[0].queue[0], ocl.runtime[0].dev_llr, CL_TRUE, 0,
+                               memorySize_llr, p_llr, 0, NULL, NULL);
+	AssertFatal(rt == CL_SUCCESS, "Error %d moving p_llr data to  read-write memory in pltf %i dev %i\n" , (int)rt, 0,0); 	
 // Define CUDA kernel dimension
 	int blockSizeX = Zc;
 //	dim3 dimGridKernel1(row, MC, 1); 	// dim of the thread blocks
@@ -266,15 +301,26 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
 		// (dev_llr, dev_const_llr,BG, row, col, Zc);
 		(BG, row, col, Zc);
 	}
-	
-	int pack = (block_length/128)+1;
-	dim3 pack_block(pack, MC, 1);
-	pack_decoded_bit<<<pack_block,128>>>( col, Zc);
-	
-	cudaCheck( cudaMemcpyFromSymbol((void*)hard_decision, (const void*)dev_tmp, (block_length/8)*sizeof(unsigned char)) );
-	cudaDeviceSynchronize();
 */	
-
+//	int pack = (block_length/128)+1;
+//	dim3 pack_block(pack, MC, 1);
+//	pack_decoded_bit<<<pack_block,128>>>( col, Zc);
+	rt = clSetKernelArg(ocl.runtime[0].kernels[0].pack_decoded_bit, 0, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_llr));
+	rt = clSetKernelArg(ocl.runtime[0].kernels[0].pack_decoded_bit, 1, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_tmp));
+	rt = clSetKernelArg(ocl.runtime[0].kernels[0].pack_decoded_bit, 2, sizeof(int), (void *)&(col));
+	rt = clSetKernelArg(ocl.runtime[0].kernels[0].pack_decoded_bit, 3, sizeof(int), (void *)&(Zc));
+ 
+    // Execute the OpenCL kernel on the list
+    size_t global_item_size = block_length; // Process the entire lists
+    size_t local_item_size = 128; // Divide work items into groups of 128
+    rt = clEnqueueNDRangeKernel(ocl.runtime[0].queue[0], ocl.runtime[0].kernels[0].pack_decoded_bit, 2, NULL, 
+            &global_item_size, &local_item_size, 0, NULL, NULL);
+//	cudaCheck( cudaMemcpyFromSymbol((void*)hard_decision, (const void*)dev_tmp, (block_length/8)*sizeof(unsigned char)) );
+//	cudaDeviceSynchronize();
+	
+    rt = clEnqueueReadBuffer(ocl.runtime[0].queue[0], ocl.runtime[0].dev_tmp, CL_TRUE, 0,
+                              (block_length/8)*sizeof(unsigned char) , p_llr, 0, NULL, NULL);
+	AssertFatal(rt == CL_SUCCESS, "Error %d moving p_llr data to  pltf %i dev %i\n" , (int)rt, 0,0); 
 	return MAX_ITERATION;
 	
 }
