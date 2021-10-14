@@ -5,7 +5,7 @@ enb :
   mcs:  
 
 gnb :
-  PHR:
-  bler:
-  mcsoff:
-  mcs:
+  dlsch_err:
+  dlsch_err_perc_round_1:
+  ulsch_err:
+  ulsch_err_perc_round_1:

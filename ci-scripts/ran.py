@@ -483,12 +483,13 @@ class RANManagement():
 
 		#stats monitoring during runtime
 		time.sleep(20)
-		monitor_file='stats_monitor.py'
+		monitor_file='../ci-scripts/stats_monitor.py'
+		conf_file='../ci-scripts/stats_monitor_conf.yaml'
 		if self.eNB_Stats=='yes':
 			if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
-				mySSH.command('echo $USER; nohup python3 ../ci-scripts/' + monitor_file + ' enb 2>&1 > enb_stats_monitor_execution.log &', '\$', 5)
+				mySSH.command('echo $USER; nohup python3 ' + monitor_file + ' ' + conf_file + ' enb 2>&1 > enb_stats_monitor_execution.log &', '\$', 5)
 			else:
-				mySSH.command('echo $USER; nohup python3 ../ci-scripts/' + monitor_file + ' gnb 2>&1 > gnb_stats_monitor_execution.log &', '\$', 5)
+				mySSH.command('echo $USER; nohup python3 ' + monitor_file + ' ' + conf_file + ' gnb 2>&1 > gnb_stats_monitor_execution.log &', '\$', 5)
 
 
 
