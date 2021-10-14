@@ -22,19 +22,22 @@ class StatMonitor():
                 self.d[node][metric]=[]
 
 
-    def process_enb (self,node_type,output):
+    def process_gnb (self,node_type,output):
         for line in output:
             tmp=line.decode("utf-8")
-            result=re.match(r'^.*\bPHR\b ([0-9]+).+\bbler\b ([0-9]+\.[0-9]+).+\bmcsoff\b ([0-9]+).+\bmcs\b ([0-9]+)',tmp)
+            result=re.match(r'^.*\bdlsch_rounds\b ([0-9]+)\/([0-9]+).*\bdlsch_errors\b ([0-9]+)',tmp)
             if result is not None:
-                self.d[node_type]['PHR'].append(int(result.group(1)))
-                self.d[node_type]['bler'].append(float(result.group(2)))
-                self.d[node_type]['mcsoff'].append(int(result.group(3)))
-                self.d[node_type]['mcs'].append(int(result.group(4)))
+                self.d[node_type]['dlsch_err'].append(int(result.group(3)))
+                percentage=float(result.group(2))/float(result.group(1))
+                self.d[node_type]['dlsch_err_perc_round_1'].append(percentage)
+            result=re.match(r'^.*\bulsch_rounds\b ([0-9]+)\/([0-9]+).*\bulsch_errors\b ([0-9]+)',tmp)
+            if result is not None:
+                self.d[node_type]['ulsch_err'].append(int(result.group(3)))
+                percentage=float(result.group(2))/float(result.group(1))
+                self.d[node_type]['ulsch_err_perc_round_1'].append(percentage)
 
 
-
-    def process_gnb (self,node_type,output):
+    def process_enb (self,node_type,output):
         for line in output:
             tmp=line.decode("utf-8")
             result=re.match(r'^.*\bPHR\b ([0-9]+).+\bbler\b ([0-9]+\.[0-9]+).+\bmcsoff\b ([0-9]+).+\bmcs\b ([0-9]+)',tmp)
