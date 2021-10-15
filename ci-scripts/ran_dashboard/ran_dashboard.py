@@ -30,6 +30,8 @@
 # Import
 #-----------------------------------------------------------
 
+#author Remi
+
 #import google spreadsheet API
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -110,12 +112,13 @@ class gDashboard:
 
         ###line 3 is for the column names
         i=3
-        row =["MR","Created_at","Author","Title","Assignee", "Reviewer", "CAN START","IN PROGRESS","COMPLETED","Review Form","OK MERGE","Merge conflicts"]
+        row =["MR","Created_at","Author","Title","Assignee", "Reviewer", "CAN START","IN PROGRESS","COMPLETED","Review Form","OK MERGE","Merge conflicts",""]
 
         #tests
         for t in range(0,len(self.tests)):
             row.append("# PASS")
             row.append("# FAIL")
+            row.append("Last Pass")
             row.append("Last Fail")
 
         self.sheet.insert_row(row, index=i, value_input_option='RAW')
@@ -182,7 +185,7 @@ class gDashboard:
             #build final row to be inserted, the first column is left empty for now, will be filled afterward with hyperlinks to gitlab MR
             row =["", str(date_time_obj.date()),str(self.git[x]['author']['name']),	str(self.git[x]['title']),\
             assignee, reviewer,\
-            milestone1,milestone2,milestone3,review_form,milestone4,conflicts]
+            milestone1,milestone2,milestone3,review_form,milestone4,conflicts,""]
             #and append the test results coming from self.db 
             mr=str(self.git[x]['iid'])
             for t in self.tests:
@@ -205,7 +208,7 @@ class gDashboard:
 
             #insert the final row to worksheet
             self.sheet.insert_row(row, index=i, value_input_option='RAW')
-            time.sleep(20)
+            time.sleep(10)
 
 
         #add MR hyperlinks in a list of requests to be sent as one update batch; this to save API calls (quotas) 
@@ -223,14 +226,16 @@ class gDashboard:
             for t in self.tests:
                 job=self.tests[t]['job']
                 if job in self.db[mr]:
+                    if len(self.db[mr][job]['last_pass'])>0:
+                        hyperlink= '\"'+ self.db[mr][job]['last_pass'][1] +'\"'
+                        text= '\"'+self.db[mr][job]['last_pass'][0]+'"'
+                        requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex))
                     if len(self.db[mr][job]['last_fail'])>0:
                         hyperlink= '\"'+ self.db[mr][job]['last_fail'][1] +'\"'
                         text= '\"'+self.db[mr][job]['last_fail'][0]+'"'
-                        requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex))
-                colIndex+=3
+                        requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex+1))
+                colIndex+=4 #move to next test
             i=i+1 #increment row index for next MR
-
-
 
         body = {"requests": requests}    
         self.ss.batch_update(body)        
@@ -292,14 +297,14 @@ class gDashboard:
                             "startRowIndex": 1,
                             "endRowIndex": 40,
                             "startColumnIndex": 0,
-                            "endColumnIndex": 26 
+                            "endColumnIndex": 30 
                         },
                         "destination": {
                             "sheetId": destinationSheetId,
                             "startRowIndex": 1,
                             "endRowIndex": 40,
                             "startColumnIndex": 0,
-                            "endColumnIndex": 26 
+                            "endColumnIndex": 30
                         },
                         "pasteType": "PASTE_FORMAT"
                     }
