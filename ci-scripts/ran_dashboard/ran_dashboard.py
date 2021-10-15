@@ -230,11 +230,11 @@ class gDashboard:
             for t in self.tests:
                 job=self.tests[t]['job']
                 if job in self.db[mr]:
-                    if len(self.db[mr][job]['last_pass'])>0:
+                    if 'last_pass' in self.db[mr][job]:
                         hyperlink= '\"'+ self.db[mr][job]['last_pass'][1] +'\"'
                         text= '\"'+self.db[mr][job]['last_pass'][0]+'"'
                         requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex))
-                    if len(self.db[mr][job]['last_fail'])>0:
+                    if 'last_fail' in self.db[mr][job]:
                         hyperlink= '\"'+ self.db[mr][job]['last_fail'][1] +'\"'
                         text= '\"'+self.db[mr][job]['last_fail'][0]+'"'
                         requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex+1))
