@@ -403,7 +403,7 @@ class OaiCiTest():
 					#execute additional commands from yaml file after UE attach
 					SSH = sshconnection.SSHConnection()
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-					if hasattr(Module_UE,StartCommands):
+					if hasattr(Module_UE,'StartCommands'):
 						for startcommand in Module_UE.StartCommands:
 							cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand 
 							SSH.command(cmd,'\$',5)	
