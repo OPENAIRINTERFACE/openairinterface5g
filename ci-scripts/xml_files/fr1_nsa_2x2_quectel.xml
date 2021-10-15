@@ -107,7 +107,7 @@
 		<class>Ping</class>
 		<desc>Ping: 100pings in 20sec</desc>
 		<id>nrmodule2_quectel</id>
-		<ping_args>-c 100 -i 0.2</ping_args>
+		<ping_args>-c 100 -i 0,2</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
