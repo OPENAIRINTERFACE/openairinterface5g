@@ -200,9 +200,13 @@ class gDashboard:
                             row.append(self.db[mr][job]['FAIL'])
                         else:
                             row.append('')
+                        #leave 2 columns for last_pass and last_fail links
+                        row.append('')
                         row.append('')
                     else:
+                        #4 columns are empty
                         row.append('') 
+                        row.append('')
                         row.append('')
                         row.append('')
 
