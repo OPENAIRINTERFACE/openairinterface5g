@@ -45,6 +45,8 @@ import gitlab
 import yaml
 import os
 import pickle
+import time
+
 
 from sqlconnect import SQLConnect
 
@@ -203,6 +205,7 @@ class gDashboard:
 
             #insert the final row to worksheet
             self.sheet.insert_row(row, index=i, value_input_option='RAW')
+            time.sleep(20)
 
 
         #add MR hyperlinks in a list of requests to be sent as one update batch; this to save API calls (quotas) 
