@@ -286,7 +286,7 @@ class gDashboard:
 
 
 def main():
-    my_gDashboard=gDashboard("/home/oaicicd/remi/creds.json", 'OAI RAN Dashboard', 'MR Status')
+    my_gDashboard=gDashboard("/opt/dashboard/g_creds.json", 'OAI RAN Dashboard', 'MR Status')
     cmd="""curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100" """ 
     my_gDashboard.fetchData(cmd)
     my_gDashboard.gBuild("MR Status")
