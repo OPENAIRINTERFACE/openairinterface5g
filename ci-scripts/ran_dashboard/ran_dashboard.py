@@ -226,7 +226,7 @@ class gDashboard:
             requests.append(self.addHyperlink(hyperlink, text, destinationSheetName, rowIndex, colIndex))
 
             mr=str(self.git[x]['iid'])
-            colIndex=14
+            colIndex=15
             for t in self.tests:
                 job=self.tests[t]['job']
                 if job in self.db[mr]:
@@ -248,12 +248,12 @@ class gDashboard:
         #add MR hyperlinks in a list of requests to be sent as one update batch; this to save API calls (quotas) 
         requests=[]
         rowIndex=1
-        colIndex=12
+        colIndex=13
         for t in self.tests :
             hyperlink= '\"'+self.tests[t]['link']+'\"'
             short_name= '\"'+ t +'\"'
             requests.append(self.addHyperlink(hyperlink, short_name, destinationSheetName, rowIndex, colIndex))
-            colIndex+=3
+            colIndex+=4
 
         body = {"requests": requests}
         self.ss.batch_update(body)
