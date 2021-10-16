@@ -1290,6 +1290,9 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   const uint16_t symb = ((1 << nrOfSymbols) - 1) << startSymbolIndex;
 
   int st = 0, e = 0, len = 0;
+  for (int i = 0; i < bwpSize; i++) 
+    if (RC.nrmac[module_id]->ulprbbl[i] == 1) vrb_map_UL[i]=symb;
+
   for (int i = 0; i < bwpSize; i++) {
     while ((vrb_map_UL[i] & symb) != 0 && i < bwpSize)
       i++;
@@ -1303,6 +1306,8 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   }
   st = e - len + 1;
 
+  LOG_D(NR_MAC,"UL %d.%d : start_prb %d, end PRB %d\n",frame,slot,st,e);
+  
   uint8_t rballoc_mask[bwpSize];
 
   /* Calculate mask: if any RB in vrb_map_UL is blocked (1), the current RB will be 0 */
