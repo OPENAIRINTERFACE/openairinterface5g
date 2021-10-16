@@ -1915,8 +1915,8 @@ void nr_chest_time_domain_avg(NR_DL_FRAME_PARMS *frame_parms,
   int first_dmrs_symb = get_first_dmrs_symbol(dmrs_bitmap, start_symbol, num_symbols);
   AssertFatal(first_dmrs_symb > -1, "No DMRS symbol present in this slot\n");
   for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
-    ul_ch128_0 = (__m128i *)&ul_ch[aarx][first_dmrs_symb*frame_parms->ofdm_symbol_size];
     for (int symb = first_dmrs_symb+1; symb < total_symbols; symb++) {
+      ul_ch128_0 = (__m128i *)&ul_ch[aarx][first_dmrs_symb*frame_parms->ofdm_symbol_size];
       if ((dmrs_bitmap >> symb) & 0x01) {
         ul_ch128_1 = (__m128i *)&ul_ch[aarx][symb*frame_parms->ofdm_symbol_size];
         for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
