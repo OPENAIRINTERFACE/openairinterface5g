@@ -362,6 +362,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
   struct NR_CSI_ResourceConfig *csi_resourceconfig;
 
   // for each CSI measurement report configuration (list of CSI-ReportConfig)
+  LOG_I(NR_MAC,"Searching %d csi_reports\n",csi_MeasConfig->csi_ReportConfigToAddModList->list.count);
   for (csi_report_id=0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
     struct NR_CSI_ReportConfig *csi_reportconfig = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
     // MAC structure for CSI measurement reports (per UE and per report)
@@ -416,7 +417,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
       }
       else AssertFatal(1==0,"Only periodic resource configuration currently supported\n");
     }
-
+    LOG_I(NR_MAC,"nb_resources %d\n",nb_resources);
     // computation of bit length depending on the report type
     switch(reportQuantity_type){
       case (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP):
@@ -504,7 +505,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       // preparation is done in first slot of tdd period
       if (frame % (period / n_slots_frame) != offset / n_slots_frame)
         continue;
-      LOG_D(NR_MAC, "CSI reporting in frame %d slot %d\n", frame, sched_slot);
+      LOG_I(NR_MAC, "CSI reporting in frame %d slot %d\n", frame, sched_slot);
 
       const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
       const NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
@@ -530,7 +531,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->resource_indicator = res_index;
       curr_pucch->csi_bits +=
           nr_get_csi_bitlen(Mod_idP,UE_id,csi_report_id);
-
+      LOG_I(NR_MAC,"Programmed CSI pucch for %d.%d, resource %d, csi_bits %d\n",frame,sched_slot,res_index,curr_pucch->csi_bits);
       // going through the list of PUCCH resources to find the one indexed by resource_id
       uint16_t *vrb_map_UL = &RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
       const int m = pucch_Config->resourceToAddModList->list.count;
@@ -695,18 +696,27 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   int ssb_index[MAX_NUM_SSB] = {0};
   int ssb_rsrp[MAX_NUM_SSB] = {0};
   uint8_t idx = 0;
-  int bwp_id  = 1;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  int bwp_id  = sched_ctrl->active_bwp ? 1 : 0;
   NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
-  NR_BWP_Downlink_t *bwp = CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
+  NR_BWP_Downlink_t *bwp = bwp_id>0 ? 
+                           sched_ctrl->active_bwp:
+                           NULL;
+
+                               
   //bwp indicator
-  int n_dl_bwp = CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
+  int n_dl_bwp=0;
+  if (CellGroup->spCellConfig->spCellConfigDedicated &&
+      CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList)
+      n_dl_bwp = CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
+
   uint8_t nr_ssbri_cri = 0;
   uint8_t nb_of_csi_ssb_report = UE_info->csi_report_template[UE_id][cqi_idx].nb_of_csi_ssb_report;
   int better_rsrp_reported = -140-(-0); /*minimum_measured_RSRP_value - minimum_differntail_RSRP_value*///considering the minimum RSRP value as better RSRP initially
   uint8_t diff_rsrp_idx = 0;
   uint8_t i, j;
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
   NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
 
   if (n_dl_bwp < 4)
@@ -831,7 +841,10 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
       }
     }
 
-    sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tci_present_inDCI = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1]->tci_PresentInDCI;
+    sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tci_present_inDCI = bwp ? 
+                                                                   bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1]->tci_PresentInDCI :
+                                                                   CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[0]->tci_PresentInDCI;
+
 
     //filling pdsch tci state activation deactivation mac ce structure fields
     if(sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tci_present_inDCI) {
