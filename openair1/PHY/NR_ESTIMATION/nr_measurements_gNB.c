@@ -75,7 +75,7 @@ void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB) {
     int amin=0,amax=0;
     fprintf(fd,"Blacklisted PRBs %d/%d\n",gNB->num_ulprbbl,gNB->frame_parms.N_RB_UL);
     for (int i=0; i<gNB->frame_parms.N_RB_UL; i++) {
-      if (gNB->ulprbbl[i] > 0) continue;
+      if (gNB->ulprbbl[i] > 0) continue;	    
 
       if (gNB->measurements.n0_subband_power_tot_dB[i]<min_I0) {min_I0 = gNB->measurements.n0_subband_power_tot_dB[i]; amin=i;}
 

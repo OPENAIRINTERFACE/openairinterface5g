@@ -682,7 +682,6 @@ typedef struct gNB_MAC_INST_s {
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
-
   int num_ulprbbl;
   int ulprbbl[275];
   /// NFAPI Config Request Structure

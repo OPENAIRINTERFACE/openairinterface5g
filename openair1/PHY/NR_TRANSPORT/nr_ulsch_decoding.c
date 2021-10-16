@@ -306,8 +306,8 @@ void nr_processULSegment(void* arg) {
   int max_ldpc_iterations = p_decoderParms->numMaxIter;
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
 
-  int16_t  z [68*384];
-  int8_t   l [68*384];
+  int16_t  z [68*384 + 16] __attribute__ ((aligned(16)));
+  int8_t   l [68*384 + 16] __attribute__ ((aligned(16)));
 
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;

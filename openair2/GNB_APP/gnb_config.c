@@ -558,7 +558,6 @@ void RCconfig_NR_L1(void) {
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
   int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
   AssertFatal (num_gnbs > 0,"Failed to parse config file no gnbs %s \n",GNB_CONFIG_STRING_ACTIVE_GNBS);
-  
   config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
   char *ulprbbl = *GNBParamList.paramarray[0][GNB_ULPRBBLACKLIST_IDX].strptr; 
   if (ulprbbl) LOG_I(NR_PHY,"PRB blacklist %s\n",ulprbbl);
@@ -660,7 +659,6 @@ void RCconfig_NR_L1(void) {
 
 void RCconfig_nr_macrlc() {
   int               j;
-
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   ////////// Identification parameters

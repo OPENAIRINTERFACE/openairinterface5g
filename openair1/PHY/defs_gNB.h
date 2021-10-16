@@ -122,8 +122,6 @@ typedef struct {
 
 typedef struct {
   uint8_t active;
-  int frame;
-  int slot;
   nfapi_nr_dl_tti_csi_rs_pdu csirs_pdu;
 } NR_gNB_CSIRS_t;
 
@@ -766,7 +764,6 @@ typedef struct PHY_VARS_gNB_s {
   //  nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
   //  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
   uint16_t num_pdsch_rnti[80];
-  NR_gNB_SSB_t       ssb[64];
   NR_gNB_PBCH        pbch;
   nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   NR_gNB_COMMON      common_vars;
@@ -774,7 +771,6 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
   NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
-  NR_gNB_CSIRS_t     csirs_pdu[NUMBER_OF_NR_CSIRS_MAX];
   NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
@@ -862,7 +858,8 @@ typedef struct PHY_VARS_gNB_s {
   /*
   time_stats_t phy_proc;
   */
-  time_stats_t phy_proc_tx;
+  time_stats_t *phy_proc_tx_0;
+  time_stats_t *phy_proc_tx_1;
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;
   /*
@@ -953,5 +950,25 @@ typedef struct processingData_L1 {
   openair0_timestamp timestamp_tx;
   PHY_VARS_gNB *gNB;
 } processingData_L1_t;
+
+typedef enum {
+  FILLED,
+  FILLING,
+  NOT_FILLED
+} msgStatus_t;
+
+typedef struct processingData_L1tx {
+  int frame;
+  int slot;
+  openair0_timestamp timestamp_tx;
+  PHY_VARS_gNB *gNB;
+  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu;
+  nfapi_nr_ul_dci_request_pdus_t ul_pdcch_pdu;
+  NR_gNB_CSIRS_t csirs_pdu[NUMBER_OF_NR_CSIRS_MAX];
+  NR_gNB_DLSCH_t *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];
+  NR_gNB_SSB_t ssb[64];
+  uint16_t num_pdsch_slot;
+  time_stats_t phy_proc_tx;
+} processingData_L1tx_t;
 
 #endif
