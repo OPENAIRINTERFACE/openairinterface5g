@@ -418,7 +418,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 
   NR_PDSCH_Config_t *pdsch_Config=NULL;
   if (bwpd) pdsch_Config = bwpd->pdsch_Config->choice.setup;
-  LOG_I(NR_MAC,"tda %d, ps->time_domain_allocation %d,layers %d, ps->nrOfLayers %d, pdsch_config %p\n",tda,ps->time_domain_allocation,layers,ps->nrOfLayers,pdsch_Config);
+  LOG_D(NR_MAC,"tda %d, ps->time_domain_allocation %d,layers %d, ps->nrOfLayers %d, pdsch_config %p\n",tda,ps->time_domain_allocation,layers,ps->nrOfLayers,pdsch_Config);
   if (ps->time_domain_allocation != tda) {
     reset_dmrs = true;
     ps->time_domain_allocation = tda;
@@ -440,7 +440,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   }
 
   const long dci_format = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-  LOG_I(NR_MAC,"dci_format %d\n",(int)dci_format);
+  LOG_D(NR_MAC,"dci_format %d\n",(int)dci_format);
   if (dci_format == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0 ||
       pdsch_Config == NULL) {
     if (ps->nrOfSymbols == 2 && ps->mapping_type == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB)
@@ -456,7 +456,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
     ps->nrOfLayers = 1;
   }
   else {
-    LOG_I(NR_MAC,"checking layers\n");
+    LOG_D(NR_MAC,"checking layers\n");
     if (ps->nrOfLayers != layers) {
       reset_dmrs = true;
       ps->nrOfLayers = layers;
@@ -468,7 +468,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   if (reset_dmrs) {
     ps->dl_dmrs_symb_pos = fill_dmrs_mask(bwpd ? bwpd->pdsch_Config->choice.setup : NULL, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, ps->mapping_type, ps->frontloaded_symb);
     ps->N_DMRS_SLOT = get_num_dmrs(ps->dl_dmrs_symb_pos);
-    LOG_I(NR_MAC,"bwpd0 %p, bwpd %p : Filling dmrs info, ps->N_PRB_DMRS %d, ps->dl_dmrs_symb_pos %x, ps->N_DMRS_SLOT %d\n",bwpd0,bwpd,ps->N_PRB_DMRS,ps->dl_dmrs_symb_pos,ps->N_DMRS_SLOT);
+    LOG_D(NR_MAC,"bwpd0 %p, bwpd %p : Filling dmrs info, ps->N_PRB_DMRS %d, ps->dl_dmrs_symb_pos %x, ps->N_DMRS_SLOT %d\n",bwpd0,bwpd,ps->N_PRB_DMRS,ps->dl_dmrs_symb_pos,ps->N_DMRS_SLOT);
   }
 }
 
@@ -2349,7 +2349,7 @@ void nr_csirs_scheduling(int Mod_idP,
 
         if((frame*n_slots_frame+slot-offset)%period == 0) {
 
-          LOG_I(MAC,"Scheduling CSI-RS in frame %d slot %d\n",frame,slot);
+          LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d\n",frame,slot);
 
           nfapi_nr_dl_tti_request_pdu_t *dl_tti_csirs_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
           memset((void*)dl_tti_csirs_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));

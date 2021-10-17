@@ -1342,7 +1342,8 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
    nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
    nzpcsi0->periodicityAndOffset->choice.slots320 = 0;
-   nzpcsi0->qcl_InfoPeriodicCSI_RS = NULL;
+   nzpcsi0->qcl_InfoPeriodicCSI_RS = calloc(1,sizeof(*nzpcsi0->qcl_InfoPeriodicCSI_RS)); 
+   *nzpcsi0->qcl_InfoPeriodicCSI_RS=0;
    ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
  }
  else

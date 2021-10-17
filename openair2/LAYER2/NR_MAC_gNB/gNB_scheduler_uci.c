@@ -60,7 +60,7 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
   memset(pucch_pdu, 0, sizeof(nfapi_nr_pucch_pdu_t));
   future_ul_tti_req->n_pdus += 1;
 
-  LOG_I(NR_MAC,
+  LOG_D(NR_MAC,
         "%s %4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, DAI %d, CSI %d on res %d\n",
         pucch->dai_c>0 ? "pucch_acknak" : "",
         frame,
@@ -78,7 +78,7 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
   NR_BWP_UplinkDedicated_t *ubwpd;
   ubwpd = cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
 
-  LOG_I(NR_MAC,"pucch_acknak: %d.%d Calling nr_configure_pucch (ubwpd %p,r_pucch %d) pucch in %d.%d\n",frame,slot,ubwpd,pucch->r_pucch,pucch->frame,pucch->ul_slot);
+  LOG_D(NR_MAC,"pucch_acknak: %d.%d Calling nr_configure_pucch (ubwpd %p,r_pucch %d) pucch in %d.%d\n",frame,slot,ubwpd,pucch->r_pucch,pucch->frame,pucch->ul_slot);
   nr_configure_pucch(pucch_pdu,
                      scc,
                      UE_info->CellGroup[UE_id],
@@ -556,7 +556,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
   struct NR_CSI_ResourceConfig *csi_resourceconfig;
 
   // for each CSI measurement report configuration (list of CSI-ReportConfig)
-  LOG_I(NR_MAC,"Searching %d csi_reports\n",csi_MeasConfig->csi_ReportConfigToAddModList->list.count);
+  LOG_D(NR_MAC,"Searching %d csi_reports\n",csi_MeasConfig->csi_ReportConfigToAddModList->list.count);
   for (csi_report_id=0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
     struct NR_CSI_ReportConfig *csi_reportconfig = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
     // MAC structure for CSI measurement reports (per UE and per report)
@@ -611,7 +611,7 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_in
       }
       else AssertFatal(1==0,"Only periodic resource configuration currently supported\n");
     }
-    LOG_I(NR_MAC,"nb_resources %d\n",nb_resources);
+    LOG_D(NR_MAC,"nb_resources %d\n",nb_resources);
     // computation of bit length depending on the report type
     switch(reportQuantity_type){
       case (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP):
@@ -724,7 +724,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       // preparation is done in first slot of tdd period
       if (frame % (period / n_slots_frame) != offset / n_slots_frame)
         continue;
-      LOG_I(NR_MAC, "CSI reporting in frame %d slot %d\n", frame, sched_slot);
+      LOG_D(NR_MAC, "CSI reporting in frame %d slot %d\n", frame, sched_slot);
 
       const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
       const NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
@@ -750,7 +750,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->resource_indicator = res_index;
       curr_pucch->csi_bits +=
           nr_get_csi_bitlen(Mod_idP,UE_id,csi_report_id);
-      LOG_I(NR_MAC,"Programmed CSI pucch for %d.%d, resource %d, csi_bits %d\n",frame,sched_slot,res_index,curr_pucch->csi_bits);
+      LOG_D(NR_MAC,"Programmed CSI pucch for %d.%d, resource %d, csi_bits %d\n",frame,sched_slot,res_index,curr_pucch->csi_bits);
       // going through the list of PUCCH resources to find the one indexed by resource_id
       uint16_t *vrb_map_UL = &RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
       const int m = pucch_Config->resourceToAddModList->list.count;
@@ -1188,7 +1188,7 @@ int evaluate_ri_report(uint8_t *payload,
      if ((ri_restriction>>i)&0x01) {
        if(count == ri_index) {
          sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.ri = i;
-         LOG_I(MAC,"CSI Reported Rank %d\n", i+1);
+         LOG_D(MAC,"CSI Reported Rank %d\n", i+1);
          return i;
        }
        count++;
@@ -1218,7 +1218,7 @@ void evaluate_cqi_report(uint8_t *payload,
   else
     AssertFatal(1==0,"CQI Table not present in RRC configuration\n");
   sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb = temp_cqi;
-  LOG_I(MAC,"Wide-band CQI for the first TB %d\n", temp_cqi);
+  LOG_D(MAC,"Wide-band CQI for the first TB %d\n", temp_cqi);
   if (cqi_bitlen > 4) {
     temp_cqi = pickandreverse_bits(payload, 4, cumul_bits);
     sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_2tb = temp_cqi;
@@ -1243,7 +1243,7 @@ uint8_t evaluate_pmi_report(uint8_t *payload,
 
   sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1 = temp_pmi&((1<<x1_bitlen)-1);
   sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2 = (temp_pmi>>x1_bitlen)&((1<<x2_bitlen)-1);
-  LOG_I(MAC,"PMI Report: X1 %d X2 %d\n",
+  LOG_D(MAC,"PMI Report: X1 %d X2 %d\n",
         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
 
@@ -1262,7 +1262,7 @@ int evaluate_li_report(uint8_t *payload,
 
   if (li_bitlen>0) {
     int temp_li = pickandreverse_bits(payload, li_bitlen, cumul_bits);
-    LOG_I(MAC,"LI %d\n",temp_li);
+    LOG_D(MAC,"LI %d\n",temp_li);
     sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.li = temp_li;
   }
   return li_bitlen;

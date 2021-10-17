@@ -1406,7 +1406,6 @@ void fill_initial_SpCellConfig(rnti_t rnti,
     }
 
     csi_MeasConfig->csi_IM_ResourceToReleaseList = NULL;
-    csi_MeasConfig->csi_IM_ResourceSetToAddModList = NULL;
     csi_MeasConfig->csi_IM_ResourceSetToReleaseList = NULL;
 
     csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList));
