@@ -126,7 +126,6 @@ void tx_func(void *param) {
                         slot_tx,
                         1);
   info->slot = -1;
-  if ((frame_tx&127) == 0) dump_pdsch_stats(gNB);
 
   // If the later of the 2 L1 tx thread finishes first,
   // we wait for the earlier one to finish and start the RU thread

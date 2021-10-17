@@ -366,10 +366,10 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
 }
 
 void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,
-                            const int CC_idP,
-                            const frame_t frameP,
-                            const sub_frame_t subframeP,
-                            const rnti_t rntiP) {
+                               const int CC_idP,
+                               const frame_t frameP,
+                               const sub_frame_t subframeP,
+                               const rnti_t rntiP) {
   struct rrc_gNB_ue_context_s *ue_context_p = NULL;
   ue_context_p = rrc_gNB_get_ue_context(
                    RC.nrrrc[Mod_instP],

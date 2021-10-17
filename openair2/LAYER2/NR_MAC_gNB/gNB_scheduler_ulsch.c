@@ -971,6 +971,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
                                  retInfo->R,
+                                 1, // layers
                                  temp_ps.nrOfSymbols,
                                  temp_ps.N_PRB_DMRS * temp_ps.num_dmrs_symb,
                                  retInfo->tb_size,
@@ -988,6 +989,9 @@ bool allocate_ul_retransmission(module_id_t module_id,
     retInfo->rbSize = new_rbSize;
     retInfo->time_domain_allocation = tda;
     sched_ctrl->pusch_semi_static = temp_ps;
+
+    // Get previous PUSCH filed info
+    sched_ctrl->sched_pusch = *retInfo;
   }
 
   /* Find free CCE */
@@ -1248,6 +1252,7 @@ void pf_ul(module_id_t module_id,
     
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
+                  1, // layers
                   ps->nrOfSymbols,
                   ps->N_PRB_DMRS * ps->num_dmrs_symb,
                   B,

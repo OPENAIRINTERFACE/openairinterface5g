@@ -1267,8 +1267,8 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   // frequency domain resources depends on BWP size
   // options are 24, 48 or 96
   coreset->frequencyDomainResources.buf = calloc(1,6);
+  int curr_bwp = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
   if (0) {
-     int curr_bwp = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
      if (curr_bwp < 48)
        coreset->frequencyDomainResources.buf[0] = 0xf0;
      else
@@ -1422,7 +1422,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
 
     csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
 
-    config_csirs(scc, csi_MeasConfig,carrier->pdsch_AntennaPorts,carrier->do_CSIRS);
+    config_csirs(scc, csi_MeasConfig,carrier->pdsch_AntennaPorts,curr_bwp,carrier->do_CSIRS);
 
     csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
     csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
@@ -1493,6 +1493,8 @@ void fill_initial_SpCellConfig(rnti_t rnti,
      NR_CSI_IM_ResourceSetId_t *csiim00 = calloc(1,sizeof(*csiim00));
      *csiim00 = 0;
      ASN_SEQUENCE_ADD(&csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList->list,csiim00);
+     csires2->bwp_Id=0;
+     csires2->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
      ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires2);
    }
 
@@ -1522,14 +1524,15 @@ void fill_initial_SpCellConfig(rnti_t rnti,
      *csirep1->reportFreqConfiguration->cqi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI;
      csirep1->reportFreqConfiguration->pmi_FormatIndicator = calloc(1,sizeof(*csirep1->reportFreqConfiguration->pmi_FormatIndicator));
      *csirep1->reportFreqConfiguration->pmi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__pmi_FormatIndicator_widebandPMI;
-     csirep1->reportFreqConfiguration->csi_ReportingBand = calloc(1,sizeof(*csirep1->reportFreqConfiguration->csi_ReportingBand));
+     csirep1->reportFreqConfiguration->csi_ReportingBand = NULL; 
+/*calloc(1,sizeof(*csirep1->reportFreqConfiguration->csi_ReportingBand));
      csirep1->reportFreqConfiguration->csi_ReportingBand->present = NR_CSI_ReportConfig__reportFreqConfiguration__csi_ReportingBand_PR_subbands7;
      csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.size=1;
      csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.bits_unused=1;
      csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.buf=malloc(1);
-     csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.buf[0]=254;
-     csirep1->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_configured;
-     csirep1->timeRestrictionForInterferenceMeasurements=NR_CSI_ReportConfig__timeRestrictionForInterferenceMeasurements_configured;
+     csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.buf[0]=254;*/
+     csirep1->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_notConfigured;
+     csirep1->timeRestrictionForInterferenceMeasurements=NR_CSI_ReportConfig__timeRestrictionForInterferenceMeasurements_notConfigured;
      csirep1->codebookConfig=calloc(1,sizeof(*csirep1->codebookConfig));
      csirep1->codebookConfig->codebookType.present = NR_CodebookConfig__codebookType_PR_type1;
      csirep1->codebookConfig->codebookType.choice.type1 = calloc(1,sizeof(*csirep1->codebookConfig->codebookType.choice.type1));
@@ -1593,40 +1596,6 @@ void fill_initial_SpCellConfig(rnti_t rnti,
    csirep2->ext1 = NULL;
    ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep2);
  }
- /*
-   NR_CSI_ReportConfig_t *csirep2 = calloc(1,sizeof(*csirep2));
-   csirep2->reportConfigId=1;
-   csirep2->carrier=NULL;
-   csirep2->resourcesForChannelMeasurement=1;
-   csirep2->csi_IM_ResourcesForInterference=NULL;
-   csirep2->nzp_CSI_RS_ResourcesForInterference=NULL;
-   csirep2->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
-   csirep2->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep2->reportConfigType.choice.periodic));
-   csirep2->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
-   csirep2->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 29 + (20 * uid) % 320;
-   ASN_SEQUENCE_ADD(&csirep2->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
-   csirep2->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP;
-   csirep2->reportQuantity.choice.ssb_Index_RSRP=(NULL_t)0;
-   csirep2->reportFreqConfiguration = calloc(1,sizeof(*csirep2->reportFreqConfiguration));
-   csirep2->reportFreqConfiguration->cqi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI;
-   csirep2->reportFreqConfiguration->pmi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__pmi_FormatIndicator_widebandPMI;
-   csirep2->reportFreqConfiguration->csi_ReportingBand=NULL;
-   csirep2->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_configured;
-   csirep2->timeRestrictionForInterferenceMeasurements=NR_CSI_ReportConfig__timeRestrictionForInterferenceMeasurements_configured;
-   csirep2->codebookConfig= NULL;
-   csirep2->dummy = NULL;
-   csirep2->groupBasedBeamReporting.present = NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled;
-   csirep2->groupBasedBeamReporting.choice.disabled=calloc(1,sizeof(*csirep2->groupBasedBeamReporting.choice.disabled));
-   csirep2->groupBasedBeamReporting.choice.disabled->nrofReportedRS = calloc(1,sizeof(*csirep2->groupBasedBeamReporting.choice.disabled->nrofReportedRS));
-   *csirep2->groupBasedBeamReporting.choice.disabled->nrofReportedRS=NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
-   csirep2->cqi_Table = calloc(1,sizeof(*csirep2->cqi_Table));
-   *csirep2->cqi_Table = NR_CSI_ReportConfig__cqi_Table_table1;
-   csirep2->subbandSize = NR_CSI_ReportConfig__subbandSize_value1;
-   csirep2->non_PMI_PortIndication = NULL;
-   csirep2->ext1 = NULL;
-   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep2);
-*/
-
   pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
   pdsch_servingcellconfig->xOverhead = NULL;
   pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = calloc(1, sizeof(*pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH));

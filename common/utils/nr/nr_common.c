@@ -230,7 +230,6 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
   }
 }
 
-
 int get_dmrs_port(int nl, uint16_t dmrs_ports) {
 
   if (dmrs_ports == 0) return 0; // dci 1_0
@@ -248,7 +247,6 @@ int get_dmrs_port(int nl, uint16_t dmrs_ports) {
   AssertFatal(p>-1,"No dmrs port corresponding to layer %d found\n",nl);
   return p;
 }
-
 
 int get_subband_size(int NPRB,int size) {
   // implements table  5.2.1.4-2 from 36.214

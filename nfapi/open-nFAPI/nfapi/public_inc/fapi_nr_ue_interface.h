@@ -404,7 +404,7 @@ typedef struct {
   double scaling_factor_S;
   int8_t accumulated_delta_PUCCH;
   uint8_t n_dmrs_cdm_groups;
-  uint8_t dmrs_ports[10];
+  uint16_t dmrs_ports;
   uint8_t n_front_load_symb;
   uint8_t tci_state;
   fapi_nr_dl_srs_config_t srs_config;

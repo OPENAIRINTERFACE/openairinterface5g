@@ -277,7 +277,8 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                            sched_ctrl->active_bwp,
                            NULL,
                            /* tda = */ 2,
-                           dci_format,
+                           g_nrOfLayers,
+                           sched_ctrl,
                            ps);
 
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
@@ -287,6 +288,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   /* the following might override the table that is mandated by RRC
    * configuration */
   ps->mcsTableIdx = g_mcsTableIdx;
+  ps->nrOfLayers = g_nrOfLayers;
 
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -765,7 +767,7 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0, 0);
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0);
 
   /* RRC parameter validation for secondaryCellGroup */
   fix_scd(scd);
@@ -1194,6 +1196,7 @@ int main(int argc, char **argv)
         }
 
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
+        UE_harq_process->Nl = g_nrOfLayers;
         nr_ue_scheduled_response(&scheduled_response);
         
         phy_procedures_nrUE_RX(UE,
