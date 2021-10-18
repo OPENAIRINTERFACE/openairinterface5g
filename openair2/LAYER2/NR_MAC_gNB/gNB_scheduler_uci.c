@@ -1219,11 +1219,11 @@ int nr_acknack_scheduling(int mod_id,
         && !csi_pucch->simultaneous_harqcsi) {
       nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
       memset(csi_pucch, 0, sizeof(*csi_pucch));
-      pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-      if(((s + 1)%nr_slots_period) == 0)
-        pucch->ul_slot = (s + 1 + first_ul_slot_period) % n_slots_frame;
+      pucch->frame = pucch->ul_slot == n_slots_frame - 1 ? (pucch->frame + 1) % 1024 : pucch->frame;
+      if(((pucch->ul_slot + 1)%nr_slots_period) == 0)
+        pucch->ul_slot = (pucch->ul_slot + 1 + first_ul_slot_period) % n_slots_frame;
       else
-        pucch->ul_slot = (s + 1) % n_slots_frame;
+        pucch->ul_slot = (pucch->ul_slot + 1) % n_slots_frame;
     }
   }
 
