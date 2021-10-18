@@ -1247,8 +1247,7 @@ int nr_acknack_scheduling(int mod_id,
 
   int max_fb_time = 0;
   get_pdsch_to_harq_feedback(mod_id, UE_id, bwp_Id, ss_type, &max_fb_time, pdsch_to_harq_feedback);
-  int max_absslot = frame*n_slots_frame + slot + max_fb_time;
-
+ 
   LOG_D(NR_MAC,"pucch_acknak 1b. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
   if (pucch->dai_c > 0) {
@@ -1303,7 +1302,7 @@ int nr_acknack_scheduling(int mod_id,
   // Find the right timing_indicator value.
   int ind_found = -1;
   // while we are within the feedback limits
-  while ((pucch->frame*n_slots_frame + pucch->ul_slot) <= max_absslot) {
+  while ((n_slots_frame + pucch->ul_slot - slot) % n_slots_frame <= max_fb_time) {
     int i = 0;
     while (i < 8) {
       LOG_D(NR_MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
