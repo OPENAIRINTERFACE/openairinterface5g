@@ -415,6 +415,13 @@ void *rrc_enb_process_msg(void *notUsed) {
 
 
 int main( int argc, char **argv ) {
+  set_priority(79);
+  if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
+  {
+    fprintf(stderr, "mlockall: %s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
+
   //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
   PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
   start_background_system();
