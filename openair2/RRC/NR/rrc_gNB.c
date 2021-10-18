@@ -1515,6 +1515,18 @@ rrc_gNB_process_RRCReconfigurationComplete(
     free(DRB_Release_configList2);
     ue_context_pP->ue_context.DRB_Release_configList2[xid] = NULL;
   }
+  //Temporarily trigger artificially UE context release for the CU case just to be able to test it with OAI UE. To be removed later
+  if(0){
+    if(NODE_IS_CU(RC.nrrrc[ctxt_pP->instance]->node_type)){
+      MessageDef *message_p;
+      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
+      f1ap_ue_context_release_cmd_t *rel_cmd=&F1AP_UE_CONTEXT_RELEASE_CMD (message_p);
+      rel_cmd->rnti = ctxt_pP->rnti;
+      rel_cmd->cause = F1AP_CAUSE_RADIO_NETWORK;
+      rel_cmd->cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
+      itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, message_p);
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -3925,15 +3937,27 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
 
         // Remove here the MAC and RRC context when RRC is not connected or gNB is not connected to CN5G
         if(ue_context_p->ue_context.StatusRrc < NR_RRC_CONNECTED || ue_context_p->ue_context.gNB_ue_ngap_id == 0) {
-          mac_remove_nr_ue(ctxt_pP->module_id, ctxt_pP->rnti);
-          rrc_rlc_remove_ue(ctxt_pP);
-          pdcp_remove_UE(ctxt_pP);
+          if(!NODE_IS_CU(RC.nrrrc[ctxt_pP->instance]->node_type)){
+            mac_remove_nr_ue(ctxt_pP->module_id, ctxt_pP->rnti);
+            rrc_rlc_remove_ue(ctxt_pP);
+            pdcp_remove_UE(ctxt_pP);
 
-          /* remove RRC UE Context */
-          ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rnti);
-          if (ue_context_p) {
-            rrc_gNB_remove_ue_context(ctxt_pP, RC.nrrrc[ctxt_pP->module_id], ue_context_p);
-            LOG_I(NR_RRC, "remove UE %x \n", ctxt_pP->rnti);
+            /* remove RRC UE Context */
+            ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rnti);
+            if (ue_context_p) {
+              rrc_gNB_remove_ue_context(ctxt_pP, RC.nrrrc[ctxt_pP->module_id], ue_context_p);
+              LOG_I(NR_RRC, "remove UE %x \n", ctxt_pP->rnti);
+            }
+          }
+          // In case of CU trigger UE context release command towards the DU
+          else{
+            MessageDef *message_p;
+            message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
+            f1ap_ue_context_release_cmd_t *rel_cmd=&F1AP_UE_CONTEXT_RELEASE_CMD (message_p);
+            rel_cmd->rnti = ctxt_pP->rnti;
+            rel_cmd->cause = F1AP_CAUSE_RADIO_NETWORK;
+            rel_cmd->cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
+            itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, message_p);
           }
         }
 

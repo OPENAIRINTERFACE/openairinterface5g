@@ -683,14 +683,14 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   protocol_ctxt_t ctxt;
   DevAssert(pdu);
   container = &pdu->choice.initiatingMessage->value.choice.UEContextReleaseCommand;
-  /* GNB_CU_UE_F1AP_ID */
+  // GNB_CU_UE_F1AP_ID 
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   ctxt.rnti = f1ap_get_rnti_by_cu_id(DUtype, instance, ie->value.choice.GNB_CU_UE_F1AP_ID);
   ctxt.instance = instance;
   ctxt.module_id = instance;
   ctxt.enb_flag  = 1;
-  /* GNB_DU_UE_F1AP_ID */
+  // GNB_DU_UE_F1AP_ID 
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   const rnti_t rnti = f1ap_get_rnti_by_du_id(DUtype, instance,
@@ -700,7 +700,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
               rnti, ctxt.rnti);
   int UE_out_of_sync = 0;
 
-  if (RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
+  /*if (RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
     for (int n = 0; n < MAX_MOBILES_PER_GNB; ++n) {
       if (RC.nrmac[instance]->UE_info.active[n] == TRUE
           && rnti == RC.nrmac[instance]->UE_info.rnti[n]) {
@@ -718,13 +718,13 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
     }
   }
 
-  /* We don't need the Cause */
-  /* Optional RRC Container: if present, send to UE */
+  // We don't need the Cause 
+  // Optional RRC Container: if present, send to UE 
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, false);
 
   if (ie && !UE_out_of_sync) {
-    /* RRC message and UE is reachable, send message */
+    // RRC message and UE is reachable, send message 
     const sdu_size_t sdu_len = ie->value.choice.RRCContainer.size;
     mem_block_t *pdu_p = NULL;
     pdu_p = get_free_mem_block(sdu_len, __func__);
@@ -775,8 +775,8 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
     ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.instance], ctxt.rnti);
 
     if (ue_context_p && !UE_out_of_sync) {
-      /* UE exists and is in sync so we start a timer before releasing the
-       * connection */
+      // UE exists and is in sync so we start a timer before releasing the
+      //  connection 
       pthread_mutex_lock(&rrc_release_freelist);
 
       for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
@@ -800,18 +800,18 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
       pthread_mutex_unlock(&rrc_release_freelist);
       ue_context_p->ue_context.ue_release_timer_s1 = 0;
     } else if (ue_context_p && UE_out_of_sync) {
-      /* UE exists and is out of sync, drop the connection */
+      // UE exists and is out of sync, drop the connection 
       mac_eNB_rrc_ul_failure(instance, 0, 0, 0, rnti);
     } else {
       LOG_E(F1AP, "no ue_context for RNTI %x, acknowledging release\n", rnti);
     }
 
-    /* TODO send this once the connection has really been released */
+    // TODO send this once the connection has really been released 
     f1ap_ue_context_release_cplt_t cplt;
     cplt.rnti = ctxt.rnti;
     DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance, &cplt);
     return 0;
-  }
+  }*/
 }
 int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
                                         f1ap_ue_context_release_cplt_t *cplt) {

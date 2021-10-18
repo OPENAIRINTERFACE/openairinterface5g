@@ -907,12 +907,14 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
 
   /* optional */
   /* c4. RRCContainer */
-  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextReleaseCommandIEs_t, ie4);
-  ie4->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
-  ie4->criticality                    = F1AP_Criticality_ignore;
-  ie4->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie4->value.choice.RRCContainer, (const char *)cmd->rrc_container,
+  if(cmd->rrc_container!=NULL){
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextReleaseCommandIEs_t, ie4);
+    ie4->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
+    ie4->criticality                    = F1AP_Criticality_ignore;
+    ie4->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_RRCContainer;
+    OCTET_STRING_fromBuf(&ie4->value.choice.RRCContainer, (const char *)cmd->rrc_container,
                        cmd->rrc_container_length);
+  }
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
