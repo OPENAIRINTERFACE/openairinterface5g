@@ -2341,7 +2341,7 @@ class OaiCiTest():
 				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 				cmd = 'rm iperf_server_' +  self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command(cmd,'\$',5)
-				cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u 2&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log &' 
+				cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log &' 
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 				#client side EPC
