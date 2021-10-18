@@ -299,7 +299,6 @@ int main(int argc, char **argv)
   int32_t txlev=0;
   int start_rb = 0;
   int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
-  float target_error_rate = 0.01;
   int print_perf = 0;
   cpuf = get_cpu_freq_GHz();
   int msg3_flag = 0;
@@ -307,7 +306,7 @@ int main(int argc, char **argv)
   float roundStats[100];
   double effRate[100]; 
   double effTP[100]; 
-  //float eff_tp_check = 0.7;
+  float eff_tp_check = 0.7;
   uint8_t snrRun;
   int prb_inter = 0;
 
@@ -315,8 +314,8 @@ int main(int argc, char **argv)
   int modify_dmrs = 0;
   /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */
   int ptrs_arg[2] = {-1,-1};// Invalid values
-  /* DMRS TYPE = dmrs_arg[0], Add Pos = dmrs_arg[1] */
-  int dmrs_arg[2] = {-1,-1};// Invalid values
+  /* mapping type = dmrs_arg[0], Add Pos = dmrs_arg[1], dmrs config type = dmrs_arg[2] */
+  int dmrs_arg[3] = {-1,-1,-1};// Invalid values
   uint16_t ptrsSymPos = 0;
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t ptrsRePerSymb = 0;
@@ -343,7 +342,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:t:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -477,11 +476,10 @@ int main(int argc, char **argv)
       start_rb = atoi(optarg);
       break;
 
-/*
     case 't':
       eff_tp_check = (float)atoi(optarg)/100;
       break;
-*/
+
       /*
 	case 'r':
 	ricean_factor = pow(10,-.1*atof(optarg));
@@ -592,7 +590,7 @@ int main(int argc, char **argv)
 
     default:
     case 'h':
-      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId -Z Enable SC-FDMA in Uplink \n", argv[0]);
+      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId -Z Enable SC-FDMA in Uplink \n", argv[0]);
       //printf("-d Use TDD\n");
       printf("-d Introduce delay in terms of number of samples\n");
       printf("-f Number of frames to simulate\n");
@@ -604,7 +602,7 @@ int main(int argc, char **argv)
       printf("-m MCS value\n");
       printf("-n Number of trials to simulate\n");
       printf("-p Use extended prefix mode\n");
-      printf("-t Delay spread for multipath channel\n");
+      //printf("-t Delay spread for multipath channel\n");
       printf("-u Set the numerology\n");
       printf("-w Start PRB for PUSCH\n");
       //printf("-x Transmission mode (1,2,6 for the moment)\n");
@@ -865,8 +863,15 @@ int main(int argc, char **argv)
     {
       add_pos = dmrs_arg[1];
     }
+    /* DMRS Conf Type 1 or 2 */
+    if(dmrs_arg[2] == 1) {
+      dmrs_config_type = pusch_dmrs_type1;
+    } else if(dmrs_arg[2] == 2) {
+      dmrs_config_type = pusch_dmrs_type2;
+    }
+
+    printf("NOTE: DMRS config is modified with Mapping Type %d , Additional Position %d \n", mapping_type, add_pos );
   }
-  printf("NOTE: DMRS config is modified with Mapping Type %d , Additional Position %d \n", mapping_type, add_pos );
 
   uint8_t  length_dmrs         = pusch_len1;
   uint16_t l_prime_mask        = get_l_prime(nb_symb_sch, mapping_type, add_pos, length_dmrs, start_symbol, NR_MIB__dmrs_TypeA_Position_pos2);
@@ -883,6 +888,7 @@ int main(int argc, char **argv)
 	  AssertFatal(index >= 0, "Num RBs not configured according to 3GPP 38.211 section 6.3.1.4. For PUSCH with transform precoding, num RBs cannot be multiple of any other primenumber other than 2,3,5\n");
     
     dmrs_config_type = pusch_dmrs_type1;
+    nb_re_dmrs       = 6;
 
     printf("[ULSIM]: TRANSFORM PRECODING ENABLED. Num RBs: %d, index for DMRS_SEQ: %d\n", nb_rb, index);
   }
@@ -1492,7 +1498,7 @@ int main(int argc, char **argv)
     if(n_trials==1)
       break;
 
-    if ((float)n_errors[0][snrRun]/(float)n_trials <= target_error_rate) {
+    if (effRate[snrRun] > (eff_tp_check*TBS)) {
       printf("*************\n");
       printf("PUSCH test OK\n");
       printf("*************\n");
