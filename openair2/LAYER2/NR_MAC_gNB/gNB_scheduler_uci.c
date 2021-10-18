@@ -1170,7 +1170,7 @@ int nr_acknack_scheduling(int mod_id,
   const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
   const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
   const int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
-  const int first_ul_slot_period = first_ul_slot_tdd%nr_slots_period;
+  const int first_ul_slot_period = tdd->nrofDownlinkSlots;
   const int CC_id = 0;
   NR_sched_pucch_t *csi_pucch;
 
