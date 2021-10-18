@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <sched.h>
+#include <errno.h>
 #include "utils.h"
 
 void *calloc_or_fail(size_t size) {
@@ -136,4 +139,33 @@ void *memcpy1(void *dst,const void *src,size_t n) {
   void *ret=dst;
   asm volatile("rep movsb" : "+D" (dst) : "c"(n), "S"(src) : "cc","memory");
   return(ret);
+}
+
+void set_priority(int priority)
+{
+  /* When running with a realtime scheduler, a buggy run-away process can take
+     down the host requiring a reboot to recover.  To avoid this scenario, we
+     use alarm(2) to set a maximum running time */
+  unsigned max_runtime_seconds = 10 * 60; /* default */
+  const char *env = getenv("MAX_RUNTIME_SECONDS");
+  if (env != NULL)
+  {
+    max_runtime_seconds = atoi(env);
+  }
+  unsigned was_alarm = alarm(max_runtime_seconds);
+  /* Normally, was_alarm should be 0 indicating there was no previous alarm set.
+     A non-zero value could indicate a mistake */
+  fprintf(stderr, "Set alarm for %u seconds, was %u (see $MAX_RUNTIME_SECONDS)\n",
+          max_runtime_seconds, was_alarm);
+
+  struct sched_param param =
+  {
+    .sched_priority = priority,
+  };
+  fprintf(stderr, "Calling sched_setscheduler(%d)\n", priority);
+  if (sched_setscheduler(0, SCHED_RR, &param) == -1)
+  {
+    fprintf(stderr, "sched_setscheduler: %s\n", strerror(errno));
+    abort();
+  }
 }

@@ -218,14 +218,9 @@ void pnf_nfapi_trace(nfapi_trace_level_t nfapi_level, const char *message, ...) 
 }
 
 void pnf_set_thread_priority(int priority) {
+  set_priority(priority);
+
   pthread_attr_t ptAttr;
-  struct sched_param schedParam;
-  schedParam.__sched_priority = priority;
-
-  if(sched_setscheduler(0, SCHED_RR, &schedParam) != 0) {
-    printf("failed to set SCHED_RR\n");
-  }
-
   if(pthread_attr_setschedpolicy(&ptAttr, SCHED_RR) != 0) {
     printf("failed to set pthread SCHED_RR %d\n", errno);
   }
