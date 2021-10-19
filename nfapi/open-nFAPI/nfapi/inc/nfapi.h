@@ -50,7 +50,7 @@ uint32_t pullarrays32(uint8_t **in, int32_t out[], uint32_t max_len, uint32_t le
 uint32_t pusharray8(uint8_t in[], uint32_t max_len, uint32_t len, uint8_t **out, uint8_t *end);
 uint32_t pusharray16(uint16_t in[], uint32_t max_len, uint32_t len, uint8_t **out, uint8_t *end);
 uint32_t pusharrays16(int16_t in[], uint32_t max_len, uint32_t len, uint8_t **out, uint8_t *end);
-uint32_t pusharray32(uint32_t in[], uint32_t max_len, uint32_t len, uint8_t **out, uint8_t *end);
+uint32_t pusharray32(uint32_t in[], uint32_t max_len, uint16_t len, uint8_t **out, uint8_t *end);
 uint32_t pusharrays32(int32_t in[], uint32_t max_len, uint32_t len, uint8_t **out, uint8_t *end);
 
 typedef uint8_t (*pack_array_elem_fn)(void* elem, uint8_t **ppWritePackedMsg, uint8_t *end);

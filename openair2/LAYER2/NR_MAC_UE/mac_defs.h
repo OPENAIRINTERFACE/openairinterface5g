@@ -437,7 +437,7 @@ typedef struct {
 
   bool expected_dci;
   bool index_has_dci[16];
-  int active_harq_sfn_sf;
+  int active_harq_sfn_slot;
 
   pthread_mutex_t mutex_dl_info;
 

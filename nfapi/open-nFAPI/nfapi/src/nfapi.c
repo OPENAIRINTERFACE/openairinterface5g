@@ -363,7 +363,7 @@ uint32_t pullarrays32(uint8_t **in, int32_t out[], uint32_t max_len, uint32_t le
     return 0;
   }
 }
-uint32_t pusharray32(uint32_t in[], uint32_t max_len, uint32_t len, uint8_t **out, uint8_t *end) {
+uint32_t pusharray32(uint32_t in[], uint32_t max_len, uint16_t len, uint8_t **out, uint8_t *end) {
   if(len == 0)
     return 1;
 

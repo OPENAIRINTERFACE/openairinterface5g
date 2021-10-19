@@ -60,6 +60,7 @@ queue_t nr_dl_tti_req_queue;
 queue_t nr_tx_req_queue;
 queue_t nr_ul_dci_req_queue;
 queue_t nr_ul_tti_req_queue;
+queue_t nr_wait_ul_tti_req_queue;
 
 void nrue_init_standalone_socket(int tx_port, int rx_port)
 {
@@ -731,7 +732,7 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
             }
             LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message in SFN/slot %d %d.\n",
                   ul_tti_request->SFN, ul_tti_request->Slot);
-            if (nr_uci_ind_queue.num_items > 0)
+            if (nr_uci_ind_queue.num_items > 0) //TODO: In the future UL_TTIs can be for ULSCH and SRS.
             {
                 LOG_I(NR_MAC, "Melissa, we added UL_TTI_REQ to queue for sfn slot %d %d\n",
                       ul_tti_request->SFN, ul_tti_request->Slot);
@@ -746,6 +747,27 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                     }
                 }
             }
+            /* TODO: This indicates that dl_tti_req was late or never arrived. If there are
+               not any prepared uci indications, the NRUE likely never had time to
+               populate the message is the dl_tti_req came in late and we received a
+               ul_tti_req immediately after the dl_tti_request. This is an attempt to
+               mitigate proxy timing issues. */
+            else if (nr_uci_ind_queue.num_items == 0)
+            {
+                LOG_I(NR_MAC, "Melissa, we added UL_TTI_REQ to queue for sfn slot %d %d\n",
+                      ul_tti_request->SFN, ul_tti_request->Slot);
+                if (!put_queue(&nr_wait_ul_tti_req_queue, ul_tti_request))
+                {
+                    reset_queue(&nr_wait_ul_tti_req_queue);
+                    if (!put_queue(&nr_wait_ul_tti_req_queue, ul_tti_request))
+                    {
+                        LOG_E(NR_PHY, "put_queue failed for nr_wait_ul_tti_req_queue.\n");
+                        free(ul_tti_request);
+                        ul_tti_request = NULL;
+                    }
+                }
+            }
+
             break;
         }
 

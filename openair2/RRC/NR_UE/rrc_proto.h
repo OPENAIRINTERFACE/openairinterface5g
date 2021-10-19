@@ -50,6 +50,7 @@ extern queue_t nr_dl_tti_req_queue;
 extern queue_t nr_tx_req_queue;
 extern queue_t nr_ul_dci_req_queue;
 extern queue_t nr_ul_tti_req_queue;
+extern queue_t nr_wait_ul_tti_req_queue;
 //
 //  main_rrc.c
 //
