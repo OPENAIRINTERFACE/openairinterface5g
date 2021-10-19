@@ -1405,6 +1405,12 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg4\n");
 
+    // If UE is known by the network, to use C-RNTI instead of TC-RNTI
+    rnti_t tc_rnti = ra->rnti;
+    if(ra->crnti != 0) {
+      ra->rnti = ra->crnti;
+    }
+
     int UE_id = find_nr_UE_id(module_idP, ra->rnti);
     NR_UE_info_t *UE_info = &nr_mac->UE_info;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
@@ -1437,6 +1443,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
     harq->is_waiting = true;
     ra->harq_pid = current_harq_pid;
+
+    // Remove UE associated to TC-RNTI
+    if(harq->round==0 && ra->rnti!=tc_rnti) {
+      mac_remove_nr_ue(module_idP, tc_rnti);
+    }
 
     // get CCEindex, needed also for PUCCH and then later for PDCCH
     uint8_t aggregation_level;
@@ -1769,7 +1780,6 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
         LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);
         nr_mac_remove_ra_rnti(module_id, ra->rnti);
         nr_clear_ra_proc(module_id, CC_id, frame, ra);
-        mac_remove_nr_ue(module_id, ra->rnti);
       }
     }
     else {
@@ -1787,6 +1797,7 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t
   ra->timing_offset = 0;
   ra->RRC_timer = 20;
   ra->msg3_round = 0;
+  ra->crnti = 0;
   if(ra->cfra == false) {
     ra->rnti = 0;
   }
