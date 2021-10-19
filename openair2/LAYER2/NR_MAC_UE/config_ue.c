@@ -670,7 +670,8 @@ int nr_rrc_mac_config_req_ue(
     else if (cell_group_config != NULL ){
       LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
       mac->cg = cell_group_config;
-      mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
+      mac->servCellIndex = cell_group_config->spCellConfig && cell_group_config->spCellConfig->servCellIndex ?
+                           *cell_group_config->spCellConfig->servCellIndex : 0;
       if(get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || get_softmodem_params()->nsa) {
         config_control_ue(mac);
         if (cell_group_config->spCellConfig->reconfigurationWithSync) {
