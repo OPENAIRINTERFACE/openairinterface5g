@@ -20,11 +20,10 @@
  */
  /*! \file nrLDPC_decoder_CL.c
 * \brief ldpc decoder, openCL implementaion
-* \author 
+* \author Francois TABURET
 * \date 2021
 * \version 1.0
-* @ingroup 
-
+* \note initial implem - translation of cuda version
 */
 /* uses HW  component id for log messages ( --log_config.hw_log_level <warning| info|debug|trace>) */
 #include <stdio.h>
