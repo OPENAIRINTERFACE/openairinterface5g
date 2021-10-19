@@ -61,9 +61,10 @@ int create_tasks(uint32_t enb_nb) {
   rc = itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL);
   AssertFatal(rc >= 0, "Create task for RRC eNB failed\n");
 
-  rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
-  AssertFatal(rc >= 0, "Create task for SCTP failed\n");
-
+  if (get_softmodem_params()->nsa || (EPC_MODE_ENABLED && split73 != SPLIT73_DU)) {
+    rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
+    AssertFatal(rc >= 0, "Create task for SCTP failed\n");
+  }
 
   if (EPC_MODE_ENABLED && !NODE_IS_DU(type) && ! ( split73==SPLIT73_DU ) ) {
     rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);

@@ -397,7 +397,7 @@ void init_pdcp(int ue_id) {
   if (IS_SOFTMODEM_NOKRNMOD) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }
-  if (rlc_module_init(0) != 0) {
+  if (get_softmodem_params()->nsa && rlc_module_init(0) != 0) {
     LOG_I(RLC, "Problem at RLC initiation \n");
   }
   pdcp_layer_init();
