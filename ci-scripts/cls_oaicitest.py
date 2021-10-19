@@ -2266,7 +2266,7 @@ class OaiCiTest():
 				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 				cmd = 'rm ' + server_filename
 				SSH.command(cmd,'\$',5)
-				cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u &  2>&1 > ' + server_filename
+				cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u 2>&1 > ' + server_filename + ' &'
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 				#client side EPC
