@@ -633,6 +633,9 @@ void init_pdcp(void) {
         pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
         pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
       }
+    } else {
+      LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
+      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
     }
   } else if (get_softmodem_params()->nsa) {
     pdcp_layer_init();
@@ -712,9 +715,11 @@ int main( int argc, char **argv ) {
 
 #ifdef PDCP_USE_NETLINK
 
-  if(!IS_SOFTMODEM_NOS1) {
+  if (!IS_SOFTMODEM_NOS1) {
     netlink_init();
-    init_pdcp();
+    if (get_softmodem_params()->nsa) {
+      init_pdcp();
+    }
   }
 #if defined(PDCP_USE_NETLINK_QUEUES)
   pdcp_netlink_init();
