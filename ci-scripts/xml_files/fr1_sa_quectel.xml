@@ -92,7 +92,7 @@
 		<class>Ping</class>
 		<desc>Ping: 100pings in 20sec</desc>
 		<id>nrmodule2_quectel</id>
-		<ping_args>-c 100 -i 0.2</ping_args>
+		<ping_args>-c 100 -i 0,2</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
@@ -108,8 +108,8 @@
 
 	<testCase id="070001">
 		<class>Iperf</class>
-		<desc>iperf (UL/1Mbps/UDP)(20 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 1M -t 20</iperf_args>
+		<desc>iperf (UL/3Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 3M -t 60</iperf_args>
 		<direction>UL</direction>
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
