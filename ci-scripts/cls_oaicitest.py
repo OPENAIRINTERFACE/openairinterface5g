@@ -392,12 +392,24 @@ class OaiCiTest():
 			if is_module:
 				Module_UE.EnableTrace()
 				time.sleep(5)
-				Module_UE.Command("wup")
-				logging.debug("Waiting for IP address to be assigned")
-				time.sleep(20)
-				logging.debug("Retrieve IP address")
-				status=Module_UE.GetModuleIPAddress()
-				if status==0:
+
+				# Looping attach / detach / wait to be successful at least once
+				cnt = 0
+				status = -1
+				while cnt < 4:
+					Module_UE.Command("wup")
+					logging.debug("Waiting for IP address to be assigned")
+					time.sleep(20)
+					logging.debug("Retrieve IP address")
+					status=Module_UE.GetModuleIPAddress()
+					if status==0:
+						cnt = 10
+					else:
+						cnt += 1
+						Module_UE.Command("detach")
+						time.sleep(20)
+
+				if cnt == 10 and status == 0:
 					HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
 					logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
 					#execute additional commands from yaml file after UE attach
@@ -405,8 +417,8 @@ class OaiCiTest():
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 					if hasattr(Module_UE,'StartCommands'):
 						for startcommand in Module_UE.StartCommands:
-							cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand 
-							SSH.command(cmd,'\$',5)	
+							cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand
+							SSH.command(cmd,'\$',5)
 					SSH.close()
 					#check that the MTU is as expected / requested
 					Module_UE.CheckModuleMTU()
@@ -1044,14 +1056,34 @@ class OaiCiTest():
 			#Attention, as opposed to InitializeUE, the connect manager process is not checked as it is supposed to be active already
 			#only 1- module wakeup, 2- check IP address
 			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			Module_UE.Command("wup")
-			logging.debug("Waiting for IP address to be assigned")
-			time.sleep(20)
-			logging.debug("Retrieve IP address")
-			status=Module_UE.GetModuleIPAddress()
-			if status==0:
+			status = -1
+			cnt = 0
+			while cnt < 4:
+				Module_UE.Command("wup")
+				logging.debug("Waiting for IP address to be assigned")
+				time.sleep(20)
+				logging.debug("Retrieve IP address")
+				status=Module_UE.GetModuleIPAddress()
+				if status==0:
+					cnt = 10
+				else:
+					cnt += 1
+					Module_UE.Command("detach")
+					time.sleep(20)
+
+			if cnt == 10 and status == 0:
 				HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
 				logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
+				#execute additional commands from yaml file after UE attach
+				SSH = sshconnection.SSHConnection()
+				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				if hasattr(Module_UE,'StartCommands'):
+					for startcommand in Module_UE.StartCommands:
+						cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand
+						SSH.command(cmd,'\$',5)
+				SSH.close()
+				#check that the MTU is as expected / requested
+				Module_UE.CheckModuleMTU()
 			else: #status==-1 failed to retrieve IP address
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE)
