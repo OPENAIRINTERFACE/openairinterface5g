@@ -61,7 +61,7 @@ class Module_UE:
 
 	#this method checks if the specified Process is running on the server hosting the module
 	#if not it will be started
-	def CheckCMProcess(self):
+	def CheckCMProcess(self,CNType):
 		HOST=self.HostUsername+'@'+self.HostIPAddress
 		COMMAND="ps aux | grep " + self.Process['Name'] + " | grep -v grep "
 		logging.debug(COMMAND)
@@ -76,7 +76,7 @@ class Module_UE:
 			logging.debug('Starting ' + self.Process['Name'])
 			mySSH = sshconnection.SSHConnection()
 			mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S ' + self.Process['Cmd'] + ' &','\$',5)
+			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S ' + self.Process['Cmd'] + ' ' +  self.Process['Apn'][CNType]  + ' &','\$',5)
 			mySSH.close()
 			#checking the process
 			time.sleep(5)
@@ -129,6 +129,33 @@ class Module_UE:
 					return -1
 			else:
 				logging.debug('\u001B[1;37;41m Module IP Address Not Found! \u001B[0m')
+				return -1
+
+	def CheckModuleMTU(self):
+		HOST=self.HostUsername+'@'+self.HostIPAddress
+		response= []
+		tentative = 3 
+		while (len(response)==0) and (tentative>0):
+			COMMAND="ip a show dev " + self.UENetwork + " | grep mtu"
+			logging.debug(COMMAND)
+			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+			response = ssh.stdout.readlines()
+			tentative-=1
+			time.sleep(10)
+		if (tentative==0) and (len(response)==0):
+			logging.debug('\u001B[1;37;41m Module NIC MTU Not Found! Time expired \u001B[0m')
+			return -1
+		else: #check response
+			result = re.search('mtu (?P<mtu>[0-9]+)', response[0].decode("utf-8") )
+			if result is not None: 
+				if (result.group('mtu') is not None) and (str(result.group('mtu'))==str(self.MTU)) : 
+					logging.debug('\u001B[1mUE Module NIC MTU is ' + str(self.MTU) + ' as expected\u001B[0m')
+					return 0
+				else:
+					logging.debug('\u001B[1;37;41m Incorrect Module NIC MTU ' + str(result.group('mtu')) + '! Expected : ' + str(self.MTU) + '\u001B[0m')
+					return -1
+			else:
+				logging.debug('\u001B[1;37;41m Module NIC MTU Not Found! \u001B[0m')
 				return -1
 
 	def EnableTrace(self):

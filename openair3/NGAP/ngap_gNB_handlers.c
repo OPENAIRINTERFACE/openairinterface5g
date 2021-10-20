@@ -1127,12 +1127,11 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
       BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.eUTRAencryptionAlgorithms);
     NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_capabilities.eUTRAintegrity_algorithms =
       BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.eUTRAintegrityProtectionAlgorithms);
-    /* id-SecurityKey : Copy the security key */
   } else {/* ie != NULL */
     return -1;
   }
 
-  /* id-MobilityRestrictionList */
+  /* id-SecurityKey : Copy the security key */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_InitialContextSetupRequestIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_SecurityKey, true);
 
@@ -1144,7 +1143,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
     return -1;
   }
 
-  /* id-NAS-PDU */
+  /* id-MobilityRestrictionList */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_InitialContextSetupRequestIEs_t, ie, container,
                                NGAP_ProtocolIE_ID_id_MobilityRestrictionList, false);
   
@@ -1160,6 +1159,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
   } 
 
 
+  /* id-NAS-PDU */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_InitialContextSetupRequestIEs_t, ie, container,
                                  NGAP_ProtocolIE_ID_id_NAS_PDU, false);
     
@@ -1171,7 +1171,6 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
       memcpy(NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nas_pdu.buffer,
              ie->value.choice.NAS_PDU.buf, ie->value.choice.NAS_PDU.size);
     }
-      
   } 
 
   itti_send_msg_to_task(TASK_RRC_GNB, ue_desc_p->gNB_instance->instance, message_p);
