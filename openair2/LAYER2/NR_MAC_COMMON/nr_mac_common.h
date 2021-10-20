@@ -47,7 +47,8 @@ int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slo
 
 int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, slot_t slotP, lte_frame_type_t frame_type);
 
-uint16_t nr_dci_size(const NR_BWP_UplinkCommon_t *initialULBWP,
+uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,
+                     const NR_BWP_UplinkCommon_t *initialULBWP,
                      const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
@@ -57,7 +58,8 @@ uint16_t nr_dci_size(const NR_BWP_UplinkCommon_t *initialULBWP,
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
-                                 NR_SearchSpace_t *ss);
+                                 NR_SearchSpace_t *ss,
+                                 int maxL);
 
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
@@ -139,7 +141,7 @@ void get_info_from_tda_tables(int default_abc,
                               int *nrOfSymbols);
 
 void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
-uint8_t fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config, int L);
+void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
 
 uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t nr_prbs,
@@ -183,7 +185,7 @@ uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Posi
 @returns                   transformPrecoding value */
 uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
                                const NR_PUSCH_Config_t *pusch_config,
-                               const NR_BWP_Uplink_t *ubwp,
+                               const NR_BWP_UplinkDedicated_t *ubwp,
                                uint8_t *dci_format,
                                int rnti_type,
                                uint8_t configuredGrant);

@@ -269,7 +269,7 @@ lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
   else
     current_type = FDD;
 
-  LOG_I(MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[current_type], delta_duplex);
+  LOG_I(NR_MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[current_type], delta_duplex);
 
   return current_type;
 }
@@ -281,7 +281,7 @@ int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index)
 
   int32_t delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
 
-  LOG_I(PHY, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
+  LOG_I(NR_MAC, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
 
   return delta_duplex;
 }

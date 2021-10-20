@@ -101,7 +101,7 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, int N_RB_DL)
       if (fp->nr_band == 5 || fp->nr_band == 66) 
         fp->ssb_type = nr_ssb_type_B;
       else{  
-      	if (fp->nr_band == 41 || ( fp->nr_band > 76 && fp->nr_band < 80) )
+      	if (fp->nr_band == 41 || fp->nr_band == 38 || ( fp->nr_band > 76 && fp->nr_band < 80) )
 	  fp->ssb_type = nr_ssb_type_C;
 	else
 	  AssertFatal(1==0,"NR Operating Band n%d not available for SS block SCS with mu=%d\n", fp->nr_band, mu);
@@ -140,6 +140,8 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, int N_RB_DL)
   fp->first_carrier_offset = fp->ofdm_symbol_size - (N_RB_DL * 12 / 2);
   fp->nb_prefix_samples    = fp->ofdm_symbol_size / 128 * 9;
   fp->nb_prefix_samples0   = fp->ofdm_symbol_size / 128 * (9 + (1 << mu));
+  LOG_I(PHY,"Init: N_RB_DL %d, first_carrier_offset %d, nb_prefix_samples %d,nb_prefix_samples0 %d\n",
+        N_RB_DL,fp->first_carrier_offset,fp->nb_prefix_samples,fp->nb_prefix_samples0);
 }
 
 uint32_t get_samples_per_slot(int slot, NR_DL_FRAME_PARMS* fp)

@@ -111,10 +111,11 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
 }
 
 
-uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
+uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
 			  int frame,
 			  int slot) {
 
+  PHY_VARS_gNB *gNB = msgTx->gNB;
   NR_gNB_DLSCH_t *dlsch;
   uint32_t ***pdsch_dmrs = gNB->nr_gold_pdsch_dmrs[slot];
   int32_t** txdataF = gNB->common_vars.txdataF;
@@ -132,9 +133,8 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
   time_stats_t *dlsch_interleaving_stats=&gNB->dlsch_interleaving_stats;
   time_stats_t *dlsch_segmentation_stats=&gNB->dlsch_segmentation_stats;
 
-  for (int dlsch_id=0;dlsch_id<gNB->number_of_nr_dlsch_max;dlsch_id++) {
-    dlsch = gNB->dlsch[dlsch_id][0];
-    if (dlsch->slot_tx[slot] == 0) continue;
+  for (int dlsch_id=0; dlsch_id<msgTx->num_pdsch_slot; dlsch_id++) {
+    dlsch = msgTx->dlsch[dlsch_id][0];
 
     NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
@@ -527,15 +527,17 @@ uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
   return 0;
 }
 
-void dump_pdsch_stats(PHY_VARS_gNB *gNB) {
+void dump_pdsch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
   for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++)
-    if (gNB->dlsch_stats[i].rnti > 0)
-      LOG_D(PHY,"DLSCH RNTI %x: current_Qm %d, current_RI %d, total_bytes TX %d\n",
+    if (gNB->dlsch_stats[i].rnti > 0 && gNB->dlsch_stats[i].frame != gNB->dlsch_stats[i].dump_frame) {
+      gNB->dlsch_stats[i].dump_frame = gNB->dlsch_stats[i].frame;
+      fprintf(fd,"DLSCH RNTI %x: current_Qm %d, current_RI %d, total_bytes TX %d\n",
 	    gNB->dlsch_stats[i].rnti,
 	    gNB->dlsch_stats[i].current_Qm,
 	    gNB->dlsch_stats[i].current_RI,
 	    gNB->dlsch_stats[i].total_bytes_tx);
+    }
 
 }
 
