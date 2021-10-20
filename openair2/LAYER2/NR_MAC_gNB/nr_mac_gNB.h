@@ -531,7 +531,8 @@ typedef struct {
   /// corresponding to the sched_pusch/sched_pdsch structures below
   int cce_index;
   uint8_t aggregation_level;
-
+  /// maximum aggregation level for UE, can be used to select level
+  int maxL;
   /// PUCCH scheduling information. Array of two: HARQ+SR in the first field,
   /// CSI in second.  This order is important for nr_acknack_scheduling()!
   NR_sched_pucch_t sched_pucch[2];
@@ -565,6 +566,7 @@ typedef struct {
   mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
 
   int lcid_mask;
+  int lcid_to_schedule;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
@@ -618,6 +620,7 @@ typedef struct {
   int ulsch_total_bytes_scheduled;
   int ulsch_total_bytes_rx;
   int ulsch_current_bytes;
+  int pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;
 } NR_mac_stats_t;
@@ -680,7 +683,8 @@ typedef struct gNB_MAC_INST_s {
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
-
+  int num_ulprbbl;
+  int ulprbbl[275];
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
