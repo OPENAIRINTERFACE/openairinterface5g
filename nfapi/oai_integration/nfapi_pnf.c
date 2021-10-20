@@ -1104,24 +1104,69 @@ void pnf_phy_deallocate_p7_vendor_ext(nfapi_p7_message_header_t *header) {
   free(header);
 }
 
+notifiedFIFO_elt_t *l1tx_message_extract(PHY_VARS_gNB *gNB, int frame, int slot) {
+  notifiedFIFO_elt_t *res;
+  notifiedFIFO_elt_t *freeRes = NULL;
+
+  // check first message
+  res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
+  processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
+  if (msgTx->slot == slot) {
+    return res;
+  }
+  if (msgTx->slot == -1) {
+    freeRes = res;
+  }
+
+  // check second message
+  pushNotifiedFIFO(gNB->resp_L1_tx,res);
+  res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
+  msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
+  if (msgTx->slot == slot) {
+    return res;
+  }
+  if (msgTx->slot == -1) {
+    freeRes = res;
+  }
+
+  if (freeRes) {
+    msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
+    msgTx->num_pdsch_slot=0;
+    msgTx->pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
+    msgTx->ul_pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
+    msgTx->slot = slot;
+    msgTx->frame = frame;
+    return freeRes;
+  }
+  pushNotifiedFIFO(gNB->resp_L1_tx,res);
+  AssertFatal(1==0, "It means both L1 Tx messages are still waiting to be processed. This happens when L1 Tx processing is too slow. Message slot %d, scheduled slot %d\n",
+    msgTx->slot, slot);
+}
 
 int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_ul_dci_request_t *req) {
   
   //   LOG_D(PHY,"[PNF] HI_DCI0_REQUEST SFN/SF:%05d dci:%d hi:%d\n", NFAPI_SFNSF2DEC(req->sfn_sf), req->hi_dci0_request_body.number_of_dci, req->hi_dci0_request_body.number_of_hi);
 
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+
+  // extract the next available thread message (priority to message with current slot, then free message)
+  notifiedFIFO_elt_t *res;
+  res = l1tx_message_extract(gNB, req->SFN, req->Slot);
+  processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
+
   if (proc ==NULL) 
     proc = &gNB->proc.L1_proc;
 
-  for (int i=0; i<req->numPdus; i++) {
-    if (req->ul_dci_pdu_list[i].PDUType == 0) {
-      nfapi_nr_ul_dci_request_pdus_t *ul_dci_req_pdu = &req->ul_dci_pdu_list[i]; 
-      handle_nfapi_nr_ul_dci_pdu(gNB, req->SFN, req->Slot, ul_dci_req_pdu); 
+  if (req->numPdus > 0) {
+    if (req->ul_dci_pdu_list[req->numPdus-1].PDUType == 0) { // copy only the last PDU (PHY can have only one UL PDCCH pdu)
+      msgTx->ul_pdcch_pdu = req->ul_dci_pdu_list[req->numPdus-1]; // copy the last pdu
     } 
     else {
-      LOG_E(PHY,"[PNF] UL_DCI_REQ sfn_slot:%d PDU[%d] - unknown pdu type:%d\n", NFAPI_SFNSLOT2DEC(req->SFN, req->Slot), i, req->ul_dci_pdu_list[i].PDUType);
+      LOG_E(PHY,"[PNF] UL_DCI_REQ sfn_slot:%d PDU[%d] - unknown pdu type:%d\n", NFAPI_SFNSLOT2DEC(req->SFN, req->Slot), req->numPdus-1, req->ul_dci_pdu_list[req->numPdus-1].PDUType);
     }
   }
+
+  pushNotifiedFIFO(gNB->resp_L1_tx,res);
 
   return 0;
 }
@@ -1193,14 +1238,17 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
 
   for (int i=0; i<req->dl_tti_request_body.nPDUs; i++) {
     // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() sfn/sf:%d PDU[%d] size:%d pdcch_vars->num_dci:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), i, dl_config_pdu_list[i].pdu_size,pdcch_vars->num_dci);
+    notifiedFIFO_elt_t *res;
+    res = l1tx_message_extract(gNB, sfn, slot);
+    processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
 
     if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE) {
-      nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu=&dl_tti_pdu_list[i];
-      handle_nfapi_nr_pdcch_pdu(gNB, sfn, slot, &dl_tti_pdu->pdcch_pdu);
+      // we trust the scheduler sends only one PDCCH PDU per slot
+      msgTx->pdcch_pdu = dl_tti_pdu_list[i].pdcch_pdu; // fills the last received PDCCH PDU
     } 
     else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE) {
       //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() PDU:%d BCH: pdu_index:%u pdu_length:%d sdu_length:%d BCH_SDU:%x,%x,%x\n", __FUNCTION__, i, pdu_index, bch_pdu->bch_pdu_rel8.length, tx_request_pdu[sfn][sf][pdu_index]->segments[0].segment_length, sdu[0], sdu[1], sdu[2]);
-      handle_nr_nfapi_ssb_pdu(gNB, sfn, slot, &dl_tti_pdu_list[i]);
+      handle_nr_nfapi_ssb_pdu(msgTx, sfn, slot, &dl_tti_pdu_list[i]);
       gNB->pbch_configured=1;
     } 
     else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE) {
@@ -1209,21 +1257,11 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
       nfapi_nr_pdu_t *tx_data = tx_data_request[sfn][slot][rel15_pdu->pduIndex];
 
       if (tx_data != NULL) {
-        int UE_id = find_nr_dlsch(rel15_pdu->rnti,gNB,SEARCH_EXIST_OR_FREE);
-        AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
-        AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
-        NR_gNB_DLSCH_t *dlsch0 = gNB->dlsch[UE_id][0];
-        int harq_pid = dlsch0->harq_ids[sfn%2][slot];
-
-        if(harq_pid >= dlsch0->Mdlharq) {
-          LOG_E(PHY,"pnf_phy_dl_config_req illegal harq_pid %d\n", harq_pid);
-          return(-1);
-        }
-
-        uint8_t *dlsch_sdu = nr_tx_pdus[UE_id][harq_pid];
-        memcpy(dlsch_sdu, tx_data->TLVs[0].value.direct,tx_data->PDU_length);
+        uint8_t *dlsch_sdu = (uint8_t *)tx_data->TLVs[0].value.direct;
         //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() DLSCH:pdu_index:%d handle_nfapi_dlsch_pdu(eNB, proc_rxtx, dlsch_pdu, transport_blocks:%d sdu:%p) eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols:%d\n", __FUNCTION__, rel8_pdu->pdu_index, rel8_pdu->transport_blocks, dlsch_sdu, eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols);
-        handle_nr_nfapi_pdsch_pdu(gNB, sfn, slot,pdsch_pdu, dlsch_sdu);
+        AssertFatal(msgTx->num_pdsch_slot < gNB->number_of_nr_dlsch_max,"Number of PDSCH PDUs %d exceeded the limit %d\n",
+          msgTx->num_pdsch_slot,gNB->number_of_nr_dlsch_max);
+        handle_nr_nfapi_pdsch_pdu(msgTx, pdsch_pdu, dlsch_sdu);
       } 
       else {
         NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() DLSCH NULL TX PDU SFN/SF:%d PDU_INDEX:%d\n", __FUNCTION__, NFAPI_SFNSLOT2DEC(sfn,slot), rel15_pdu->pduIndex);     
@@ -1231,11 +1269,12 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     }
     else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE) {
       nfapi_nr_dl_tti_csi_rs_pdu *csi_rs_pdu = &dl_tti_pdu_list[i].csi_rs_pdu;
-      handle_nfapi_nr_csirs_pdu(gNB, sfn, slot, csi_rs_pdu);
+      handle_nfapi_nr_csirs_pdu(msgTx, sfn, slot, csi_rs_pdu);
     }
     else {
       NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() UNKNOWN:%d\n", __FUNCTION__, dl_tti_pdu_list[i].PDUType);
     }
+    pushNotifiedFIFO(gNB->resp_L1_tx,res);
   }
 
   if(req->vendor_extension)

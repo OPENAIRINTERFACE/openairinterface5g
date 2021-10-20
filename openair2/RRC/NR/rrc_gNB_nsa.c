@@ -142,6 +142,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
   protocol_ctxt_t ctxt={0};
   unsigned char *kUPenc = NULL;
+  unsigned char *kUPint = NULL;
   int i;
   // NR RRCReconfiguration
   AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
@@ -223,6 +224,16 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     if (kUPenc == NULL) exit(1);
     memcpy(kUPenc, kUPenc_kdf+16, 16);
     free(kUPenc_kdf);
+
+    unsigned char *kUPint_kdf;
+    nr_derive_key_up_int(ue_context_p->ue_context.integrity_algorithm,
+                         ue_context_p->ue_context.kgnb,
+                         &kUPint_kdf);
+    /* kUPint: last 128 bits of key derivation function which returns 256 bits */
+    kUPint = malloc(16);
+    if (kUPint == NULL) exit(1);
+    memcpy(kUPint, kUPint_kdf+16, 16);
+    free(kUPint_kdf);
 
     e_NR_CipheringAlgorithm cipher_algo;
     switch (ue_context_p->ue_context.ciphering_algorithm) {
@@ -357,6 +368,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 			   rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
                            rrc->carrier.servingcellconfigcommon,
+                           &rrc->carrier.mib,
                            1, // add_ue flag
                            ue_context_p->ue_id_rnti,
                            ue_context_p->ue_context.secondaryCellGroup);
@@ -366,6 +378,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                            rrc->carrier.pdsch_AntennaPorts,
                            rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
+                           NULL,
                            NULL,
                            1, // add_ue flag
                            ue_context_p->ue_id_rnti,
@@ -389,7 +402,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                               NULL,          /* kRRCenc - unused */
                               NULL,          /* kRRCint - unused */
                               kUPenc,        /* kUPenc  */
-                              NULL,          /* kUPint  - unused */
+                              kUPint,        /* kUPint */
                               NULL,
                               NULL,
                               ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);

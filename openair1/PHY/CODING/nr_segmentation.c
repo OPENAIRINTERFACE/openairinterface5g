@@ -92,9 +92,7 @@ if ((Kprime%Kb) > 0)
 else
   Z = (Kprime/Kb);
 
-#ifdef DEBUG_SEGMENTATION
- printf("nr segmetation B %u Bprime %u Kprime %u z %u \n", B, Bprime, Kprime, Z);
-#endif
+ LOG_D(PHY,"nr segmetation B %u Bprime %u Kprime %u z %u \n", B, Bprime, Kprime, Z);
 	  
   if (Z <= 2) {
     *K = 2;
@@ -148,10 +146,8 @@ else
 
   *F = ((*K) - Kprime);
 
-#ifdef DEBUG_SEGMENTATION
-  printf("final nr seg output Z %u K %u F %u \n", *Zout, *K, *F);
-  printf("C %u, K %u, Bprime_bytes %u, Bprime %u, F %u\n",*C,*K,Bprime>>3,Bprime,*F);
-#endif
+  LOG_D(PHY,"final nr seg output Z %u K %u F %u \n", *Zout, *K, *F);
+  LOG_D(PHY,"C %u, K %u, Bprime_bytes %u, Bprime %u, F %u\n",*C,*K,Bprime>>3,Bprime,*F);
 
   if ((input_buffer) && (output_buffers)) {
 

@@ -98,12 +98,14 @@ void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nac
   if (current_harq->active) {
     current_harq->ack = ack_nack;
     current_harq->ack_received = true;
+    LOG_D(PHY,"Updating harq_status for harq_id %d,ack/nak %d\n",harq_pid,current_harq->ack);
   }
   else {
     //shouldn't get here
     LOG_E(MAC, "Trying to process acknack for an inactive harq process (%d)\n", harq_pid);
   }
 }
+
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
