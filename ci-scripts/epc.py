@@ -220,7 +220,7 @@ class EPCManagement():
 		mySSH = SSH.SSHConnection()
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		if re.match('ltebox', self.Type, re.IGNORECASE):
-			logging.debug('Using the sabox simulated HSS')
+			logging.debug('Using the SABOX simulated HSS')
 			mySSH.command('if [ -d ' + self.SourceCodePath + '/scripts ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/scripts ; fi', '\$', 5)
 			mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts', '\$', 5)
 			mySSH.command('cd /opt/hss_sim0609', '\$', 5)
@@ -229,6 +229,12 @@ class EPCManagement():
 			logging.debug('Using the sabox')
 			mySSH.command('cd /opt/ltebox/tools', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S ./start_sabox', '\$', 5)
+		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
+			logging.debug('Starting OAI CN5G')
+			mySSH.command('if [ -d ' + self.SourceCodePath + '/scripts ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/scripts ; fi', '\$', 5)
+			mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts', '\$', 5)
+			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
+			mySSH.command('./core-network.sh start nrf spgwu', '\$', 60)
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
@@ -242,6 +248,16 @@ class EPCManagement():
 			return
 		if re.match('ltebox', self.Type, re.IGNORECASE):
 			self.MmeIPAddress = self.IPAddress
+		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
+			mySSH = SSH.SSHConnection()
+			mySSH.open(self.IPAddress, self.UserName, self.Password)
+			response=mySSH.command3('docker container ls -f name=oai-amf', 10)
+			if len(response)>1:
+				response=mySSH.command3('docker inspect --format=\'{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}\' oai-amf', 10)
+				tmp = str(response[0],'utf-8')
+				self.MmeIPAddress = tmp.rstrip()
+				logging.debug('AMF IP Address ' + self.MmeIPAddress)
+			mySSH.close()
 
 	def CheckHSSProcess(self, status_queue):
 		try:
@@ -433,6 +449,7 @@ class EPCManagement():
 		mySSH = SSH.SSHConnection()
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		if re.match('ltebox', self.Type, re.IGNORECASE):
+			logging.debug('Terminating SA BOX')
 			mySSH.command('cd /opt/ltebox/tools', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S ./stop_sabox', '\$', 5)
 			time.sleep(1)
@@ -440,6 +457,12 @@ class EPCManagement():
 			mySSH.command('cd scripts', '\$', 5)
 			time.sleep(1)
 			mySSH.command('echo ' + self.Password + ' | sudo -S screen -S simulated_5g_hss -X quit', '\$', 5)
+		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
+			self.LogCollectOAICN5G()
+			logging.debug('Terminating OAI CN5G')
+			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
+			mySSH.command('docker-compose down', '\$', 5)
+			mySSH.command('./core-network.sh stop nrf spgwu', '\$', 60)
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
@@ -677,5 +700,18 @@ class EPCManagement():
 			mySSH.command('zip spgw.log.zip xGwLog.0 upfLog.0', '\$', 60)
 		else:
 			logging.error('This option should not occur!')
+		mySSH.close()
+
+	def LogCollectOAICN5G(self):
+		mySSH = SSH.SSHConnection()
+		mySSH.open(self.IPAddress, self.UserName, self.Password)
+		logging.debug('OAI CN5G Collecting Log files to workspace')
+		mySSH.command('echo ' + self.Password + ' | sudo rm -rf ' + self.SourceCodePath + '/logs', '\$', 5)
+		mySSH.command('mkdir ' + self.SourceCodePath + '/logs','\$', 5)	
+		containers_list=['oai-smf','oai-spgwu','oai-amf','oai-nrf']
+		for c in containers_list:
+			mySSH.command('docker logs ' + c + ' > ' + self.SourceCodePath + '/logs/' + c + '.log', '\$', 5)
+		mySSH.command('cd ' + self.SourceCodePath + '/logs', '\$', 5)		
+		mySSH.command('zip oai-cn5g.log.zip *.log', '\$', 60)
 		mySSH.close()
 

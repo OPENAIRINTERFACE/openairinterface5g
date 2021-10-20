@@ -840,6 +840,9 @@ void *nas_nrue_task(void *args_p)
         else if((pdu_buffer + 16) != NULL){
           msg_type = *(pdu_buffer + 16);
           if(msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC){
+            if(baseNetAddress==NULL) {
+              baseNetAddress = calloc(1,8);
+            }
             sprintf(baseNetAddress, "%d.%d", *(pdu_buffer + 39),*(pdu_buffer + 40));
             int third_octet = *(pdu_buffer + 41);
             int fourth_octet = *(pdu_buffer + 42);

@@ -63,13 +63,11 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
                                   uint32_t n_RNTI,
                                   uint32_t* out);
 
-void nr_fill_dlsch(PHY_VARS_gNB *gNB,
-                   int frame,
-                   int slot,
+void nr_fill_dlsch(processingData_L1tx_t *msgTx,
                    nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                    unsigned char *sdu); 
 
-uint8_t nr_generate_pdsch(PHY_VARS_gNB *gNB,
+uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
 			  int frame,
 			  int slot);
 void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB);
@@ -98,7 +96,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 void init_dlsch_tpool(uint8_t nun_dlsch_threads);
 void nr_emulate_dlsch_payload(uint8_t* payload, uint16_t size);
 
-void dump_pdsch_stats(PHY_VARS_gNB *gNB);
+void dump_pdsch_stats(FILE *fd,PHY_VARS_gNB *gNB);
 
 void clear_pdsch_stats(PHY_VARS_gNB *gNB);
 
