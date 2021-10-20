@@ -4212,6 +4212,11 @@ void *rrc_gnb_task(void *args_p) {
         rrc_DU_process_ue_context_modification_request(msg_p, msg_name_p, instance);
         break;
 
+      case F1AP_UE_CONTEXT_RELEASE_CMD:
+        LOG_W(NR_RRC, "Received F1AP_UE_CONTEXT_RELEASE_CMD for processing at the RRC layer of the DU. Processing function "
+            "implementation is pending\n");
+        break;
+
       /* Messages from X2AP */
       case X2AP_ENDC_SGNB_ADDITION_REQ:
         LOG_I(NR_RRC, "Received ENDC sgNB addition request from X2AP \n");
