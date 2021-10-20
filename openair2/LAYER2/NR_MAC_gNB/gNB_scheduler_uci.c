@@ -1170,7 +1170,7 @@ int nr_acknack_scheduling(int mod_id,
   const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
   const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
   const int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
-  const int first_ul_slot_period = first_ul_slot_tdd%nr_slots_period;
+  const int first_ul_slot_period = tdd->nrofDownlinkSlots;
   const int CC_id = 0;
   NR_sched_pucch_t *csi_pucch;
 
@@ -1219,11 +1219,11 @@ int nr_acknack_scheduling(int mod_id,
         && !csi_pucch->simultaneous_harqcsi) {
       nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
       memset(csi_pucch, 0, sizeof(*csi_pucch));
-      pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-      if(((s + 1)%nr_slots_period) == 0)
-        pucch->ul_slot = (s + 1 + first_ul_slot_period) % n_slots_frame;
+      pucch->frame = pucch->ul_slot == n_slots_frame - 1 ? (pucch->frame + 1) % 1024 : pucch->frame;
+      if(((pucch->ul_slot + 1)%nr_slots_period) == 0)
+        pucch->ul_slot = (pucch->ul_slot + 1 + first_ul_slot_period) % n_slots_frame;
       else
-        pucch->ul_slot = (s + 1) % n_slots_frame;
+        pucch->ul_slot = (pucch->ul_slot + 1) % n_slots_frame;
     }
   }
 
@@ -1247,8 +1247,7 @@ int nr_acknack_scheduling(int mod_id,
 
   int max_fb_time = 0;
   get_pdsch_to_harq_feedback(mod_id, UE_id, bwp_Id, ss_type, &max_fb_time, pdsch_to_harq_feedback);
-  int max_absslot = frame*n_slots_frame + slot + max_fb_time;
-
+ 
   LOG_D(NR_MAC,"pucch_acknak 1b. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
   if (pucch->dai_c > 0) {
@@ -1303,7 +1302,7 @@ int nr_acknack_scheduling(int mod_id,
   // Find the right timing_indicator value.
   int ind_found = -1;
   // while we are within the feedback limits
-  while ((pucch->frame*n_slots_frame + pucch->ul_slot) <= max_absslot) {
+  while ((n_slots_frame + pucch->ul_slot - slot) % n_slots_frame <= max_fb_time) {
     int i = 0;
     while (i < 8) {
       LOG_D(NR_MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
