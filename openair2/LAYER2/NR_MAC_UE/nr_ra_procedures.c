@@ -38,15 +38,13 @@
 #include "RRC/NR_UE/rrc_proto.h"
 
 /* PHY */
-#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
-#include "PHY/defs_common.h"
-#include "PHY/defs_nr_common.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
 /* MAC */
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_UE/nr_l1_helpers.h"
 
 #include <executables/softmodem-common.h>
 
@@ -196,6 +194,130 @@ void init_RA(module_id_t mod_id,
       LOG_D(MAC, "In %s:%d: Missing implementation for Access Identity initialization procedures\n", __FUNCTION__, __LINE__);
     }
   }
+}
+
+
+/* TS 38.321 subclause 7.3 - return DELTA_PREAMBLE values in dB */
+int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format){
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (mac->scc!=NULL) ?
+    mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup:
+    mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
+  NR_SubcarrierSpacing_t scs = *nr_rach_ConfigCommon->msg1_SubcarrierSpacing;
+  int prach_sequence_length = (mac->scc!=NULL)?(mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present - 1) : (mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present-1);
+  uint8_t prachConfigIndex, mu;
+
+  AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
+
+  // SCS configuration from msg1_SubcarrierSpacing and table 4.2-1 in TS 38.211
+
+  switch (scs){
+    case NR_SubcarrierSpacing_kHz15:
+    mu = 0;
+    break;
+
+    case NR_SubcarrierSpacing_kHz30:
+    mu = 1;
+    break;
+
+    case NR_SubcarrierSpacing_kHz60:
+    mu = 2;
+    break;
+
+    case NR_SubcarrierSpacing_kHz120:
+    mu = 3;
+    break;
+
+    case NR_SubcarrierSpacing_kHz240:
+    mu = 4;
+    break;
+
+    case NR_SubcarrierSpacing_spare3:
+    mu = 5;
+    break;
+
+    case NR_SubcarrierSpacing_spare2:
+    mu = 6;
+    break;
+
+    case NR_SubcarrierSpacing_spare1:
+    mu = 7;
+    break;
+
+    default:
+    AssertFatal(1 == 0,"Unknown msg1_SubcarrierSpacing %lu\n", scs);
+  }
+
+  // Preamble formats given by prach_ConfigurationIndex and tables 6.3.3.2-2 and 6.3.3.2-2 in TS 38.211
+
+  prachConfigIndex = nr_rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
+
+  if (prach_sequence_length == 0) {
+    AssertFatal(prach_format < 4, "Illegal PRACH format %d for sequence length 839\n", prach_format);
+    switch (prach_format) {
+
+      // long preamble formats
+      case 0:
+      case 3:
+      return  0;
+
+      case 1:
+      return -3;
+
+      case 2:
+      return -6;
+    }
+  } else {
+    switch (prach_format) { // short preamble formats
+      case 0:
+      case 3:
+      return 8 + 3*mu;
+
+      case 1:
+      case 4:
+      case 8:
+      return 5 + 3*mu;
+
+      case 2:
+      case 5:
+      return 3 + 3*mu;
+
+      case 6:
+      return 3*mu;
+
+      case 7:
+      return 5 + 3*mu;
+
+      default:
+      AssertFatal(1 == 0, "[UE %d] ue_procedures.c: FATAL, Illegal preambleFormat %d, prachConfigIndex %d\n", mod_id, prach_format, prachConfigIndex);
+    }
+  }
+  return 0;
+}
+
+// TS 38.321 subclause 5.1.3 - RA preamble transmission - ra_PREAMBLE_RECEIVED_TARGET_POWER configuration
+// Measurement units:
+// - preambleReceivedTargetPower      dBm (-202..-60, 2 dBm granularity)
+// - delta_preamble                   dB
+// - RA_PREAMBLE_POWER_RAMPING_STEP   dB
+// - POWER_OFFSET_2STEP_RA            dB
+// returns receivedTargerPower in dBm
+int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t mod_id, uint8_t CC_id){
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  int8_t receivedTargerPower;
+  int8_t delta_preamble;
+
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (mac->scc != NULL) ? mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup: mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
+  long preambleReceivedTargetPower = nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower;
+  delta_preamble = nr_get_DELTA_PREAMBLE(mod_id, CC_id, prach_resources->prach_format);
+
+  receivedTargerPower = preambleReceivedTargetPower + delta_preamble + (prach_resources->RA_PREAMBLE_POWER_RAMPING_COUNTER - 1) * prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP + prach_resources->POWER_OFFSET_2STEP_RA;
+
+  LOG_D(MAC, "In %s: receivedTargerPower is %d dBm \n", __FUNCTION__, receivedTargerPower);
+
+  return receivedTargerPower;
 }
 
 void ssb_rach_config(RA_config_t *ra, NR_PRACH_RESOURCES_t *prach_resources, NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon, fapi_nr_ul_config_prach_pdu *prach_pdu){
@@ -467,7 +589,8 @@ void nr_get_prach_resources(module_id_t mod_id,
   if (rach_ConfigDedicated) {
     if (rach_ConfigDedicated->cfra){
       uint8_t cfra_ssb_resource_idx = 0;
-      prach_resources->ra_PreambleIndex = rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[cfra_ssb_resource_idx]->ra_PreambleIndex;
+      ra->ra_PreambleIndex = rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[cfra_ssb_resource_idx]->ra_PreambleIndex;
+      prach_resources->ra_PreambleIndex = ra->ra_PreambleIndex;
       LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure for SSB with Id %d\n", __FUNCTION__, prach_resources->ra_PreambleIndex, cfra_ssb_resource_idx);
     }
   } else {

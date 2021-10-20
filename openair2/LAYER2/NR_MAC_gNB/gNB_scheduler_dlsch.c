@@ -29,11 +29,7 @@
 
  */
 
-/*PHY*/
-#include "PHY/CODING/coding_defs.h"
-#include "PHY/defs_nr_common.h"
 #include "common/utils/nr/nr_common.h"
-#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 /*MAC*/
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "NR_MAC_gNB/nr_mac_gNB.h"

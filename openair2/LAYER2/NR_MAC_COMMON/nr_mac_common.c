@@ -359,7 +359,6 @@ void get_info_from_tda_tables(int default_abc,
 }
 
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
-const char *duplex_mode[]={"FDD","TDD"};
 
 uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config) {
 
@@ -1573,60 +1572,6 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
 }
 
 
-uint8_t get_nr_prach_duration(uint8_t prach_format){
-
-  switch(prach_format){
-
-      case 0:  // format 0
-         return 0;
-
-      case 1:  // format 1
-         return 0;
-
-      case 2:  // format 2
-         return 0;
-
-      case 3:  // format 3
-         return 0;
-
-      case 4:  // format A1
-         return 2;
-
-      case 5:  // format A2
-         return 4;
-
-      case 6:  // format A3
-         return 6;
-
-      case 7:  // format B1
-         return 2;
-
-      case 8:  // format B4
-         return 12;
-
-      case 9:  // format C0
-         return 2;
-
-      case 10:  // format C2
-         return 6;
-
-      case 11:  // format A1/B1
-         return 2;
-
-      case 12:  // format A2/B2
-         return 4;
-
-      case 13:  // format A3/B3
-         return 6;
-
-      default :
-         AssertFatal(1==0,"Invalid Prach format\n");
-         break;
-
-  }
-
-}
-
 int get_nr_prach_info_from_index(uint8_t index,
                                  int frame,
                                  int slot,
@@ -1981,170 +1926,6 @@ int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                    
 {0,         3072,          -1,         -1,          3,       1539,        -1,         -1},       //14              // (DMRS l' position)
 };
 
-// Returns the corresponding row index of the NR table
-int get_nr_table_idx(int nr_bandP, uint8_t scs_index)
-{
-  int i, j;
-  int scs_khz = 15 << scs_index;
-  int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
-  size_t s = sizeof(supplementary_bands)/sizeof(supplementary_bands[0]);
-
-  for(j = 0; j < s; j++){
-    if (nr_bandP == supplementary_bands[j])
-      AssertFatal(0 == 1, "Band %d is a supplementary band (%d). This is not supported yet.\n", nr_bandP, supplementary_bands[j]);
-  }
-
-  AssertFatal(nr_bandP <= nr_bandtable[nr_bandtable_size-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[nr_bandtable_size-1].band);
-  for (i = 0; i < nr_bandtable_size && nr_bandtable[i].band != nr_bandP; i++);
-
-  // selection of correct Deltaf raster according to SCS
-  if ((nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
-    i++;
-
-  LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
-
-  return i;
-}
-
-// Computes the duplex spacing (either positive or negative) in KHz
-int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index)
-{
-  int nr_table_idx = get_nr_table_idx(nr_bandP, scs_index);
-
-  int32_t delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
-
-  LOG_I(NR_MAC, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
-
-  return delta_duplex;
-}
-
-lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
-{
-  lte_frame_type_t current_type;
-  int32_t delta_duplex = get_delta_duplex(current_band, scs_index);
-
-  if (delta_duplex == 0)
-    current_type = TDD;
-  else
-    current_type = FDD;
-
-  LOG_I(NR_MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[current_type], delta_duplex);
-
-  return current_type;
-}
-
-uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
-{
-
-  if (nr_band < 100)  { //FR1
-   switch(mu) {
-    case 0 :
-      if (nb_rb<=25)
-        return 5; 
-      if (nb_rb<=52)
-        return 10;
-      if (nb_rb<=79)
-        return 15;
-      if (nb_rb<=106)
-        return 20;
-      if (nb_rb<=133)
-        return 25;
-      if (nb_rb<=160)
-        return 30;
-      if (nb_rb<=216)
-        return 40;
-      if (nb_rb<=270)
-        return 50;
-      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
-      break;
-    case 1 :
-      if (nb_rb<=11)
-        return 5; 
-      if (nb_rb<=24)
-        return 10;
-      if (nb_rb<=38)
-        return 15;
-      if (nb_rb<=51)
-        return 20;
-      if (nb_rb<=65)
-        return 25;
-      if (nb_rb<=78)
-        return 30;
-      if (nb_rb<=106)
-        return 40;
-      if (nb_rb<=133)
-        return 50;
-      if (nb_rb<=162)
-        return 60;
-      if (nb_rb<=189)
-        return 70;
-      if (nb_rb<=217)
-        return 80;
-      if (nb_rb<=245)
-        return 90;
-      if (nb_rb<=273)
-        return 100;
-      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
-      break;
-    case 2 :
-      if (nb_rb<=11)
-        return 10; 
-      if (nb_rb<=18)
-        return 15;
-      if (nb_rb<=24)
-        return 20;
-      if (nb_rb<=31)
-        return 25;
-      if (nb_rb<=38)
-        return 30;
-      if (nb_rb<=51)
-        return 40;
-      if (nb_rb<=65)
-        return 50;
-      if (nb_rb<=79)
-        return 60;
-      if (nb_rb<=93)
-        return 70;
-      if (nb_rb<=107)
-        return 80;
-      if (nb_rb<=121)
-        return 90;
-      if (nb_rb<=135)
-        return 100;
-      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
-      break;
-    default:
-      AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
-   }
-  }
-  else {
-   switch(mu) {
-    case 2 :
-      if (nb_rb<=66)
-        return 50;
-      if (nb_rb<=132)
-        return 100;
-      if (nb_rb<=264)
-        return 200;
-      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
-      break;
-    case 3 :
-      if (nb_rb<=32)
-        return 50;
-      if (nb_rb<=66)
-        return 100;
-      if (nb_rb<=132)
-        return 200;
-      if (nb_rb<=264)
-        return 400;
-      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
-      break;
-    default:
-      AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
-   }
-  }
-
-}
 
 void get_delta_arfcn(int i, uint32_t nrarfcn, uint64_t N_OFFs){
 
@@ -2516,13 +2297,7 @@ static inline uint8_t get_table_idx(uint8_t mcs_table, uint8_t dci_format, uint8
     return 1;
 }
 
-int get_num_dmrs(uint16_t dmrs_mask ) {
 
-  int num_dmrs=0;
-
-  for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
-  return(num_dmrs);
-}
 /* returns the total DMRS symbols in a slot*/
 uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols, int startSymbol, int mappingtype){
   return get_num_dmrs(fill_dmrs_mask(pdsch_Config,dmrs_TypeA_Position,NrOfSymbols, startSymbol, mappingtype));

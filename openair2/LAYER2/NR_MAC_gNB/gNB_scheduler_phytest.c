@@ -29,11 +29,8 @@
  */
 
 #include "nr_mac_gNB.h"
-#include "SCHED_NR/sched_nr.h"
 #include "NR_MAC_gNB/mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
-#include "PHY/NR_TRANSPORT/nr_dlsch.h"
-#include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/nr-softmodem.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "executables/softmodem-common.h"

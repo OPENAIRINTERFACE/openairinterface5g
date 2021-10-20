@@ -46,9 +46,6 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#include "openair1/PHY/defs_gNB.h"
-#include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
-
 #include "intertask_interface.h"
 
 #include "executables/softmodem-common.h"
