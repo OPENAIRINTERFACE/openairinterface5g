@@ -688,17 +688,18 @@ void run_telnetclt(void) {
   inet_aton("127.0.0.1", &addr) ;
   name.sin_addr.s_addr = addr.s_addr;   
   name.sin_port = htons((unsigned short)(telnetparams.listenport));
-
-  sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock < 0)
-    fprintf(stderr,"[TELNETSRV] Error %s on socket call\n",strerror(errno));  
-  if(connect(sock, (void *) &name, sizeof(name)))
-    fprintf(stderr,"[TELNETSRV] Error %s on connect call\n",strerror(errno));
- 
-  struct timeval ts;
-  ts.tv_sec = 1; // 1 second
-  ts.tv_usec = 0;
   while (1) {
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0)
+      fprintf(stderr,"[TELNETSRV] Error %s on socket call\n",strerror(errno));
+
+    if(connect(sock, (void *) &name, sizeof(name)))
+      fprintf(stderr,"[TELNETSRV] Error %s on connect call\n",strerror(errno));
+ 
+    struct timeval ts;
+    ts.tv_sec = 1; // 1 second
+    ts.tv_usec = 0;
+    while (1) {
       fd_set fds;   
       FD_ZERO(&fds);
       FD_SET(sock, &fds);
@@ -740,8 +741,9 @@ void run_telnetclt(void) {
           }
         free(inbuf); 
       }
-  }
-  close(sock);
+    }
+    close(sock);
+    }
   return;
 } /* run_telnetclt */
 

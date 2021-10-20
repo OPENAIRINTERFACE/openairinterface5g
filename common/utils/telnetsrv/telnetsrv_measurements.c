@@ -162,7 +162,7 @@ int measurcmd_show(char *buf, int debug, telnet_printfunc_t prnt) {
                 notifiedFIFO_elt_t *msg =newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
                 time_stats_msg_t *msgdata=NotifiedFifoData(msg);
                 msgdata->msgid = TIMESTAT_MSGID_DISPLAY;
-                msgdata->displayFunc = (void (*)(void *))prnt;
+                msgdata->displayFunc = prnt;
                 pushNotifiedFIFO(&measur_fifo, msg);
     } else if ( strcmp(subcmd,"groups") == 0){
       measurcmd_display_groups(prnt,measurgroups,num_measurgroups);
