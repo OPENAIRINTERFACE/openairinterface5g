@@ -1,12 +1,21 @@
 LTE-2x2 : #short name used in the dashboard
   job : 'RAN-LTE-2x2-Module-OAIEPC' #job name from Jenkins, used in the database
-  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-LTE-2x2-Module-OAIEPC' 
-NSA-B200 : 
+  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-LTE-2x2-Module-OAIEPC'
+  bench : 'Obelix-N310-OAIEPC-Quectel(nrmodule2)'
+  test : 'TM2, TDD, 20MHz, MCS9, 26Mb DL, 7Mb UL'
+NSA-B200 :
   job : 'RAN-NSA-B200-Module-LTEBOX'
   link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-NSA-B200-Module-LTEBOX'
-NSA-2x2 : 
+  bench : 'Nepes-B200-Obelix-B200-LTEBOX-Quectel(idefix)'
+  test : 'TM1, 20MHz, 20Mb DL, 3Mb UL'
+NSA-2x2 :
   job : 'RAN-NSA-2x2-Module-OAIEPC'
   link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-NSA-2x2-Module-OAIEPC'
-SA-N310 : 
+  bench : 'Asterix-N310-Obelix-N310-OAIEPC-Quectel(nrmodule2)'
+  test : 'TM2, TDD, 20MHz, MCS9, 20Mb DL, 3Mb UL'
+SA-N310 :
   job : 'RAN-SA-Module-CN5G'
   link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-Module-CN5G'
+  bench : 'Asterix-N310-OAICN5G-Quectel(nrmodule2)'
+  test : 'TM2, TDD, 20MHz, 20Mb DL, 3Mb UL'
+

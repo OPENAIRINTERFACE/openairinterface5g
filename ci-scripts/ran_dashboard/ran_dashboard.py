@@ -168,7 +168,7 @@ class gDashboard:
             project_id = 223
             project = gl.projects.get(project_id)
             #get the opened MR in the project
-            mrs = project.mergerequests.list(state='opened')
+            mrs = project.mergerequests.list(state='opened',per_page=100)
             review_form=''
             for m in range (0,len(mrs)):
                 if mrs[m].iid==self.git[x]['iid']:#check the iid is the one we are on
