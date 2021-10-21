@@ -408,7 +408,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
           for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
             NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[CC_id].ra[i];
             if (ra->state >= WAIT_Msg3 && ra->rnti == UE_info->rnti[UE_id]) {
-              char *next_subpduP = pduP + mac_subheader_len + mac_sdu_len;
+              uint8_t *next_subpduP = pduP + mac_subheader_len + mac_sdu_len;
               if ((pduP[mac_subheader_len+mac_sdu_len] & 0x3F) == UL_SCH_LCID_C_RNTI) {
                 crnti = ((next_subpduP[1]&0xFF)<<8)|(next_subpduP[2]&0xFF);
                 UE_idx = find_nr_UE_id(module_idP, crnti);
