@@ -163,6 +163,18 @@ class SSHConnection():
 		lSsh = subprocess.Popen(["ssh", "%s" % myHost, commandline],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		self.cmd2Results = str(lSsh.stdout.readlines())
 
+	def command3(self, commandline, timeout, silent=False):
+		if not silent:
+			logging.debug(commandline)
+		self.cmd2Results = ''
+		myHost = self.username + '@' + self.ipaddress
+		# CAUTION: THIS METHOD IMPLIES THAT THERE ARE VALID SSH KEYS
+		# BETWEEN THE PYTHON EXECUTOR NODE AND THE REMOTE HOST
+		# OTHERWISE IT WON'T WORK
+		lSsh = subprocess.Popen(["ssh", "%s" % myHost, commandline],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		return lSsh.stdout.readlines()
+
+		
 	def close(self):
 		self.ssh.timeout = 5
 		self.ssh.sendline('exit')

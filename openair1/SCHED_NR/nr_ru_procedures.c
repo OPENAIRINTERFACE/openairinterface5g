@@ -531,12 +531,12 @@ void nr_fep0(RU_t *ru, int first_half) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+proc->tti_rx, 1);
 
-  // remove_7_5_kHz(ru,(slot&1)+(proc->tti_rx<<1));
+  int offset = (proc->tti_rx&3) * fp->symbols_per_slot * fp->ofdm_symbol_size;
   for (l = start_symbol; l < end_symbol; l++) {
     for (aa = 0; aa < fp->nb_antennas_rx; aa++) {
       nr_slot_fep_ul(fp,
                      ru->common.rxdata[aa],
-                     ru->common.rxdataF[aa],
+                     &ru->common.rxdataF[aa][offset],
                      l,
                      proc->tti_rx,
                      ru->N_TA_offset);
@@ -665,14 +665,15 @@ void nr_fep_full(RU_t *ru, int slot) {
   start_meas(&ru->ofdm_demod_stats);
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
 
+
   // remove_7_5_kHz(ru,proc->tti_rx<<1);
   // remove_7_5_kHz(ru,1+(proc->tti_rx<<1));
-
+  int offset = (proc->tti_rx&3)*(fp->symbols_per_slot * fp->ofdm_symbol_size);
   for (l = 0; l < fp->symbols_per_slot; l++) {
     for (aa = 0; aa < fp->nb_antennas_rx; aa++) {
       nr_slot_fep_ul(fp,
                      ru->common.rxdata[aa],
-                     ru->common.rxdataF[aa],
+                     &ru->common.rxdataF[aa][offset],
                      l,
                      proc->tti_rx,
                      ru->N_TA_offset);

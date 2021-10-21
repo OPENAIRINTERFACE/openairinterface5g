@@ -237,8 +237,9 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id,
 
 int8_t nr_rrc_ue_process_RadioBearerConfig(NR_RadioBearerConfig_t *RadioBearerConfig){
 
-
-  xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)RadioBearerConfig);
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void *) RadioBearerConfig);
+  }
   // Configure PDCP
 
   return 0;
@@ -268,7 +269,9 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
                       (uint8_t *)rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->buf,
                       rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->size, 0, 0);
 
-          xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
+          if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+            xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) cellGroupConfig);
+          }
 
           if(NR_UE_rrc_inst[module_id].cell_group_config == NULL){
             //  first time receive the configuration, just use the memory allocated from uper_decoder. TODO this is not good implementation, need to maintain RRC_INST own structure every time.
@@ -1258,7 +1261,10 @@ nr_rrc_ue_process_masterCellGroup(
               (void **)&cellGroupConfig,
               (uint8_t *)masterCellGroup->buf,
               masterCellGroup->size, 0, 0);
-  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) cellGroupConfig);
+  }
 
   if( cellGroupConfig->spCellConfig != NULL &&  cellGroupConfig->spCellConfig->reconfigurationWithSync != NULL){
     //TODO (perform Reconfiguration with sync according to 5.3.5.5.2)
@@ -1413,11 +1419,11 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 			  &asn_DEF_NR_DL_CCCH_Message,
 			  (void **)&dl_ccch_msg,
 			  (uint8_t *)Srb_info->Rx_buffer.Payload,
-			  100,0,0);
+			  Srb_info->Rx_buffer.payload_size,0,0);
 
-	 if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+//	 if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
      xer_fprint(stdout,&asn_DEF_NR_DL_CCCH_Message,(void *)dl_ccch_msg);
-	 }
+//	 }
 
    if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
      LOG_E(RRC,"[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",ctxt_pP->module_id,ctxt_pP->frame,dec_rval.consumed);
@@ -2038,12 +2044,22 @@ nr_rrc_ue_establish_srb2(
        }
      }
 
+     uint8_t *k_kdf = NULL;
      uint8_t *kRRCenc = NULL;
      uint8_t *kRRCint = NULL;
-     derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-		     NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCenc);
-     derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-		     NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
+     nr_derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
+                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
+     kRRCenc = malloc(16);
+     if (kRRCenc == NULL) exit(1);
+     memcpy(kRRCenc, k_kdf + 16, 16);
+     free(k_kdf);
+     nr_derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
+                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
+     kRRCint = malloc(16);
+     if (kRRCint == NULL) exit(1);
+     memcpy(kRRCint, k_kdf + 16, 16);
+     free(k_kdf);
+
      // Refresh SRBs
       nr_rrc_pdcp_config_asn1_req(ctxt_pP,
                                   radioBearerConfig->srb_ToAddModList,
@@ -2141,9 +2157,24 @@ nr_rrc_ue_establish_srb2(
        }
      }
 
+     uint8_t *k_kdf = NULL;
      uint8_t *kUPenc = NULL;
-     derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-		     NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPenc);
+     uint8_t *kUPint = NULL;
+
+     nr_derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
+                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
+     kUPenc = malloc(16);
+     if (kUPenc == NULL) exit(1);
+     memcpy(kUPenc, k_kdf + 16, 16);
+     free(k_kdf);
+
+     nr_derive_key_up_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
+                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
+     kUPint = malloc(16);
+     if (kUPint == NULL) exit(1);
+     memcpy(kUPint, k_kdf + 16, 16);
+     free(k_kdf);
+
      MSC_LOG_TX_MESSAGE(
 	 MSC_RRC_UE,
 	 MSC_PDCP_UE,
@@ -2164,7 +2195,7 @@ nr_rrc_ue_establish_srb2(
                                     NULL,
                                     NULL,
                                     kUPenc,
-                                    NULL,
+                                    kUPint,
                                     NULL,
                                     NR_UE_rrc_inst[ctxt_pP->module_id].defaultDRB,
                                     NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
@@ -2330,9 +2361,9 @@ nr_rrc_ue_establish_srb2(
      return -1;
    }
 
-   // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-       xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message,(void *)dl_dcch_msg);
-   // }
+   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message,(void *)dl_dcch_msg);
+   }
 
      if (dl_dcch_msg->message.present == NR_DL_DCCH_MessageType_PR_c1) {
 	 switch (dl_dcch_msg->message.choice.c1->present) {

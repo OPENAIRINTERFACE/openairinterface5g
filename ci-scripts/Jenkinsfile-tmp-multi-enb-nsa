@@ -265,6 +265,21 @@ pipeline {
                             if(fileExists("enb.log.${env.BUILD_ID}.zip")) {
                                 archiveArtifacts "enb.log.${env.BUILD_ID}.zip"
                             }
+                        }
+                    }
+                }
+                stage('Log Collection (CN)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Transfer (CN)\u001B[0m'
+                            sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/logs/oai-cn5g.log.zip ./oai-cn5g.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("oai-cn5g.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "oai-cn5g.log.${env.BUILD_ID}.zip"
+                            }
                             if(fileExists("ci-scripts/test_results.html")) {
                                 sh "mv ci-scripts/test_results.html test_results-${JOB_NAME}.html"
                                 sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's@build #TEMPLATE_BUILD_ID@build #${BUILD_ID}@' -e 's#Build-ID: TEMPLATE_BUILD_ID#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' -e 's#TEMPLATE_STAGE_NAME#${testStageName}#' test_results-${JOB_NAME}.html"
