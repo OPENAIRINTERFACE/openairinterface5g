@@ -272,9 +272,14 @@
 #define NB_NUMEROLOGIES_NR                       (5)
 #define TDD_CONFIG_NB_FRAMES                     (2)
 #define NR_MAX_SLOTS_PER_FRAME                   (160)                    /* number of slots per frame */
-#define NR_UE_CAPABILITY_SLOT_RX_TO_TX           (6)                      /* FFS_NR_TODO it defines ue capability which is the number of slots */
-                                                                          /* - between reception of pdsch and tarnsmission of its acknowlegment */
-                                                                          /* - between reception of un uplink grant and its related transmission */
+
+/* FFS_NR_TODO it defines ue capability which is the number of slots     */
+/* - between reception of pdsch and tarnsmission of its acknowlegment    */
+/* - between reception of un uplink grant and its related transmission   */
+/* - FIXME temprarily set to 5 to avoid timing issues at OAI UE in rfsimulator */
+/* - issues caused by no rendez-vous point between TX and RX in the OAI UE     */
+#define NR_UE_CAPABILITY_SLOT_RX_TO_TX           (5) 
+
 #ifndef NO_RAT_NR
   #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
 #else

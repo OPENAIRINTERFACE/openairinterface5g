@@ -252,7 +252,7 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
       ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling;
 
-      LOG_I(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+      LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
         __FUNCTION__,
         ue->Mod_id,
         frame_tx,
@@ -480,8 +480,8 @@ unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb
 #ifdef NR_PDCCH_SCHED
 
 int nr_ue_pdcch_procedures(uint8_t gNB_id,
-			   PHY_VARS_NR_UE *ue,
-			   UE_nr_rxtx_proc_t *proc,
+                           PHY_VARS_NR_UE *ue,
+                           UE_nr_rxtx_proc_t *proc,
                            int n_ss)
 {
   int frame_rx = proc->frame_rx;
@@ -1688,7 +1688,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
 
-  LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_slot_rx);
+  LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d (energy %d dB)******  \n",
+        frame_rx%1024, nr_slot_rx,
+        dB_fixed(signal_energy(ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0],2048*14)));
 
   /*
   uint8_t next1_thread_id = proc->thread_id== (RX_NB_TH-1) ? 0:(proc->thread_id+1);
@@ -1749,9 +1751,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   }
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {
-    LOG_I(PHY,"============================================\n");
-    LOG_I(PHY,"Harq round stats for Downlink: %d/%d/%d/%d DLSCH errors: %d\n",ue->dl_stats[0],ue->dl_stats[1],ue->dl_stats[2],ue->dl_stats[3],ue->dl_stats[4]);
-    LOG_I(PHY,"============================================\n");
+    LOG_I(NR_PHY,"============================================\n");
+    LOG_I(NR_PHY,"Harq round stats for Downlink: %d/%d/%d/%d DLSCH errors: %d\n",ue->dl_stats[0],ue->dl_stats[1],ue->dl_stats[2],ue->dl_stats[3],ue->dl_stats[4]);
+    LOG_I(NR_PHY,"============================================\n");
   }
 
 #ifdef NR_PDCCH_SCHED
