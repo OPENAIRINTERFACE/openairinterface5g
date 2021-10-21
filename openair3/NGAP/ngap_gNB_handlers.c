@@ -1630,13 +1630,6 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
     return -1;
   }
 
-  /* PDUSession Resource modify request = UE-related procedure -> stream != 0 */
-//   if (stream == 0) {
-//     NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
-//                assoc_id, stream);
-//     return -1;
-//   }
-
   ue_desc_p->rx_stream = stream;
 
   if (ue_desc_p->amf_ue_ngap_id != amf_ue_ngap_id) {
@@ -1718,14 +1711,20 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
         switch(pdusessionTransfer_ies->id) {
           /* optional PDUSessionAggregateMaximumBitRate */
           case NGAP_ProtocolIE_ID_id_PDUSessionAggregateMaximumBitRate:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_PDUSessionAggregateMaximumBitRate\n");
             break;
         
           /* optional UL-NGU-UP-TNLModifyList */
           case NGAP_ProtocolIE_ID_id_UL_NGU_UP_TNLModifyList:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_UL_NGU_UP_TNLModifyList\n");
             break;
             
           /* optional NetworkInstance */
           case NGAP_ProtocolIE_ID_id_NetworkInstance:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_NetworkInstance\n");
             break;
 
           /* optional QosFlowAddOrModifyRequestList */
@@ -1764,14 +1763,20 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
 
           /* optional QosFlowToReleaseList */
           case NGAP_ProtocolIE_ID_id_QosFlowToReleaseList:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_QosFlowToReleaseList\n");
             break;
 
           /* optional AdditionalUL-NGU-UP-TNLInformation */
           case NGAP_ProtocolIE_ID_id_AdditionalUL_NGU_UP_TNLInformation:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_AdditionalUL_NGU_UP_TNLInformation\n");
             break;
 
           /* optional CommonNetworkInstance */
           case NGAP_ProtocolIE_ID_id_CommonNetworkInstance:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_CommonNetworkInstance\n");
             break;
             
           default:

@@ -1158,7 +1158,8 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
         if (is_treated[i] == TRUE) {
           continue;
         }
-
+        
+        //Check same PDU session ID to handle multiple pdu session id
         for (j = i+1; j < nb_pdusessions_tomodify; j++) {
           if (is_treated[j] == FALSE &&
               NGAP_PDUSESSION_MODIFY_REQ(msg_p).pdusession_modify_params[j].pdusession_id == 
@@ -1175,9 +1176,8 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
             is_treated[j] = TRUE;
           }
         }
-
+        // handle multiple pdu session id case
         if (is_treated[i] == TRUE) {
-          // handle multiple pdu session id
           LOG_D(NR_RRC, "handle multiple pdu session id \n");
           ue_context_p->ue_context.modify_pdusession[i].status              = PDU_SESSION_STATUS_NEW;
           ue_context_p->ue_context.modify_pdusession[i].param.pdusession_id = 
@@ -1188,6 +1188,7 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
           continue;
         }
 
+        // Check pdu session ID is established
         for (j = 0; j < NR_NB_RB_MAX -3; j++) {
           if (ue_context_p->ue_context.pduSession[j].param.pdusession_id == 
             NGAP_PDUSESSION_MODIFY_REQ(msg_p).pdusession_modify_params[i].pdusession_id) {
@@ -1223,8 +1224,8 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
           }
         }
 
+        // handle Unknown pdu session ID
         if (is_treated[i] == FALSE) {
-          // handle Unknown pdu session ID
           LOG_D(NR_RRC, "handle Unknown pdu session ID \n");
           ue_context_p->ue_context.modify_pdusession[i].status              = PDU_SESSION_STATUS_NEW;
           ue_context_p->ue_context.modify_pdusession[i].param.pdusession_id = 
@@ -1245,9 +1246,7 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
       if (0 == rrc_gNB_modify_dedicatedRRCReconfiguration(&ctxt, ue_context_p)) {
         return (0);
       }
-    }
-
-    { // modify failed
+    } else { // all pdu modification failed
       LOG_I(NR_RRC, "pdu session modify failed, fill NGAP_PDUSESSION_MODIFY_RESP with the pdu session information that failed to modify \n");
       uint8_t nb_of_pdu_sessions_failed = 0;
       MessageDef *msg_fail_p = NULL;
