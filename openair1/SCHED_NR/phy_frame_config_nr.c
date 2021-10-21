@@ -30,6 +30,7 @@
 ************************************************************************/
 
 #include "PHY/defs_nr_common.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_UE.h"
 #include "SCHED_NR/phy_frame_config_nr.h"
 
@@ -307,6 +308,21 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms) {
 *                see TS 38.213 11.1 Slot configuration
 *
 *********************************************************************/
+
+int get_next_downlink_slot(PHY_VARS_gNB *gNB, nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_slot) {
+
+  int slot = nr_slot;
+  int frame = nr_frame;
+  int slots_per_frame = gNB->frame_parms.slots_per_frame;
+  while (true) {
+    slot++;
+    if (slot/slots_per_frame) frame++;
+    slot %= slots_per_frame;
+    int slot_type = nr_slot_select(cfg, frame, slot);
+    if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT) return slot;
+    AssertFatal(frame < (nr_frame+2), "Something went worng. This shouldn't happen\n");
+  }
+}
 
 int nr_slot_select(nfapi_nr_config_request_scf_t *cfg, int nr_frame, int nr_slot) {
   /* for FFD all slot can be considered as an uplink */
