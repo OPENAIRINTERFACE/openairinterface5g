@@ -109,7 +109,7 @@
 #define MACRLC_ULSCH_MAX_SLOTS_INACTIVITY                      17
 #define MACRLC_PUSCHTARGETSNRX10_IDX                           18
 #define MACRLC_PUCCHTARGETSNRX10_IDX                           19
-#define MACRLC_PUCCHFAILURETHRES_IDX                           20
+#define MACRLC_PUCCHFAILURETHRES_IDX                           20 
 #define MACRLC_PUSCHFAILURETHRES_IDX                           21
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif

@@ -285,7 +285,7 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
 
     LOG_D(NR_RRC,"[gNB %d] Frame %d CCCH request (Srb_id %ld)\n", Mod_idP, frameP, Srb_id);
 
-    AssertFatal(ue_context_p!=NULL,"failed to get ue_context\n");
+    AssertFatal(ue_context_p!=NULL,"failed to get ue_context, rnti %x\n",rnti);
     char payload_size = ue_context_p->ue_context.Srb0.Tx_buffer.payload_size;
 
     // check if data is there for MAC
@@ -324,9 +324,11 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
     NR_CellGroupConfig_t cellGroupConfig;
     NR_ServingCellConfigCommon_t *scc=RC.nrrrc[module_idP]->carrier.servingcellconfigcommon;
     memset(&cellGroupConfig,0,sizeof(cellGroupConfig));
-    fill_initial_cellGroupConfig(rntiP,&cellGroupConfig,scc);
+
+    fill_initial_cellGroupConfig(rntiP,&cellGroupConfig,scc,&RC.nrrrc[module_idP]->carrier);
     MessageDef* tmp=itti_alloc_new_message_sized(TASK_RRC_GNB, 0, F1AP_INITIAL_UL_RRC_MESSAGE, sizeof(f1ap_initial_ul_rrc_message_t) + sdu_lenP);
     f1ap_initial_ul_rrc_message_t *msg = &F1AP_INITIAL_UL_RRC_MESSAGE(tmp);
+
     asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
 						    NULL,
 						    (void *)&cellGroupConfig,

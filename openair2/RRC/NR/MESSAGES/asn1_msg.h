@@ -100,11 +100,13 @@ uint8_t do_RRCReject(uint8_t Mod_id,
 
 void fill_initial_SpCellConfig(rnti_t rnti,
 			       NR_SpCellConfig_t *SpCellConfig,
-			       NR_ServingCellConfigCommon_t *scc);
+			       NR_ServingCellConfigCommon_t *scc,
+                               rrc_gNB_carrier_data_t *carrier);
 
 void fill_initial_cellGroupConfig(rnti_t rnti,
 				  NR_CellGroupConfig_t *cellGroupConfig,
-				  NR_ServingCellConfigCommon_t *scc);
+				  NR_ServingCellConfigCommon_t *scc,
+                                  rrc_gNB_carrier_data_t *carrier);
 
 void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup);
 
@@ -112,7 +114,8 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
                     uint8_t                      *const buffer,
                     const uint8_t                transaction_id,
                     OCTET_STRING_t               *masterCellGroup_from_DU,
-                    NR_ServingCellConfigCommon_t *scc);
+                    NR_ServingCellConfigCommon_t *scc,
+                    rrc_gNB_carrier_data_t *carrier);
 
 uint8_t do_NR_SecurityModeCommand(
                     const protocol_ctxt_t *const ctxt_pP,
