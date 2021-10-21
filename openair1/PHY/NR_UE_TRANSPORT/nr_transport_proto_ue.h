@@ -1466,7 +1466,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   @param dl_Carrier Pointer to DL carrier to be set
   @param ul_Carrier Pointer to UL carrier to be set
 */
-void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp,
+void nr_get_carrier_frequencies(PHY_VARS_NR_UE *ue,
                                 uint64_t *dl_Carrier,
                                 uint64_t *ul_Carrier);
 
