@@ -21,19 +21,30 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>epc-deploy-tab</htmlTabRef>
-	<htmlTabName>EPC-Deploy</htmlTabName>
-	<htmlTabIcon>log-in</htmlTabIcon>
+	<htmlTabRef>build-tab</htmlTabRef>
+	<htmlTabName>Build</htmlTabName>
+	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>
- 000100
+ 000001
+ 000002
 	</TestCaseRequestedList>
-	<TestCaseExclusionList>
-	</TestCaseExclusionList>
+	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="000100">
-		<class>Deploy_EPC</class>
-		<desc>Deploy all EPC containers</desc>
-		<parameters>yaml_files/fr1_epc_20897</parameters>
+	<testCase id="000001">
+		<class>Build_eNB</class>
+		<desc>Build eNB</desc>
+		<Build_eNB_args>-w USRP -c --eNB --ninja</Build_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+		<backgroundBuild>True</backgroundBuild>
+		<forced_workspace_cleanup>True</forced_workspace_cleanup>
+	</testCase>
+
+	<testCase id="000002">
+		<class>WaitEndBuild_eNB</class>
+		<desc>Wait for end of Build eNB</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
 	</testCase>
 
 </testCaseList>
