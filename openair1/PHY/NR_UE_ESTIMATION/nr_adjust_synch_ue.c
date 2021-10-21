@@ -42,7 +42,6 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                         short coef)
 {
 
-  static int max_pos_fil = 0;
   static int count_max_pos_ok = 0;
   static int first_time = 1;
   int max_val = 0, max_pos = 0;
@@ -74,14 +73,14 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
   // filter position to reduce jitter
   if (clear == 1)
-    max_pos_fil = max_pos;
+    ue->max_pos_fil = max_pos;
   else
-    max_pos_fil = ((max_pos_fil * coef) + (max_pos * ncoef)) >> 15;
+    ue->max_pos_fil = ((ue->max_pos_fil * coef) + (max_pos * ncoef)) >> 15;
 
   // do not filter to have proactive timing adjustment
-  //max_pos_fil = max_pos;
+  //ue->max_pos_fil = max_pos;
 
-  int diff = max_pos_fil - sync_pos;
+  int diff = ue->max_pos_fil - sync_pos;
 
   if (frame_parms->freq_range==nr_FR2) 
     sync_offset = 2;
@@ -129,7 +128,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
         ue->rx_offset,
         clear,
         max_pos,
-        max_pos_fil,
+        ue->max_pos_fil,
         max_val,
         sync_pos);
 #endif //DEBUG_PHY
