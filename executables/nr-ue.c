@@ -464,12 +464,14 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
   if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&
        UE->rx_offset > 0 ) {
     //LOG_I(PHY,"!!!adjusting -1 samples!!!\n");
+    UE->rx_offset = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
     return -1 ;
   }
 
   if ( UE->rx_offset > UE->frame_parms.samples_per_frame/2 &&
        UE->rx_offset < UE->frame_parms.samples_per_frame ) {
     //LOG_I(PHY,"!!!adjusting +1 samples!!!\n");
+    UE->rx_offset = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
     return 1;
   }
 

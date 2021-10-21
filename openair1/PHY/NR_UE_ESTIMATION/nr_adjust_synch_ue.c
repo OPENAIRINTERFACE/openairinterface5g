@@ -55,13 +55,14 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
   LOG_D(PHY,"AbsSubframe %d: rx_offset (before) = %d\n",subframe,ue->rx_offset);
 
-  // we only use channel estimates from tx antenna 0 here
-  for (int i = 0; i < frame_parms->nb_prefix_samples; i++) {
+  // search for maximum position within the cyclic prefix
+  for (int i = -frame_parms->nb_prefix_samples/2; i < frame_parms->nb_prefix_samples/2; i++) {
     int temp = 0;
 
+    int j = (i < 0) ? (i + frame_parms->ofdm_symbol_size) : i;
     for (int aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
-      int Re = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[(i<<1)];
-      int Im = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[1+(i<<1)];
+      int Re = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[(j<<1)];
+      int Im = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[1+(j<<1)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
 
@@ -70,9 +71,6 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       max_val = temp;
     }
   }
-
-  if (max_pos > frame_parms->ofdm_symbol_size/2)
-    max_pos = max_pos - frame_parms->ofdm_symbol_size;
 
   // filter position to reduce jitter
   if (clear == 1)
