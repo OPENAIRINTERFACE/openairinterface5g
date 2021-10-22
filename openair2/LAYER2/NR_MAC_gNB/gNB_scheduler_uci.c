@@ -294,6 +294,7 @@ uint8_t compute_ri_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
   }
   else
     AssertFatal(1==0,"Other configurations not yet implemented\n");
+  return -1;
 }
 
 void compute_li_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,

@@ -238,7 +238,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
   // x_n contains the sequence r_u_v_alpha_delta(n)
 
-  int n,i,l;
+  int n,i;
   int prb_offset[2] = {pucch_pdu->bwp_start+pucch_pdu->prb_start, pucch_pdu->bwp_start+pucch_pdu->prb_start};
 
   nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,0,slot,&u[0],&v[0]); // calculating u and v value first hop
@@ -266,14 +266,14 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int64_t xrtmag=0,xrtmag_next=0;
   uint8_t maxpos=0;
   uint8_t index=0;
-  for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
+  for (int l=0; l<pucch_pdu->nr_of_symbols; l++) {
     for (int aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
       memset((void*)xr[aarx][l],0,24*sizeof(int16_t));
     }
   }
   int n2;
 
-  for (l=0; l<pucch_pdu->nr_of_symbols; l++) {
+  for (int l=0; l<pucch_pdu->nr_of_symbols; l++) {
     l2 = l+pucch_pdu->start_symbol_index;
     re_offset[l] = (12*prb_offset[l]) + frame_parms->first_carrier_offset;
     if (re_offset[l]>= frame_parms->ofdm_symbol_size)
@@ -300,11 +300,10 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   //int32_t no_corr = 0;
   int seq_index;
   int64_t temp;
-  int64_t av_corr=0;
 
   for(i=0;i<nr_sequences;i++){
 
-    for (l=0;l<pucch_pdu->nr_of_symbols;l++) {
+    for (int l=0;l<pucch_pdu->nr_of_symbols;l++) {
       seq_index = (pucch_pdu->initial_cyclic_shift+
 		   mcs[i]+
 		   gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index])%12;
@@ -323,14 +322,14 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       }
     }
     LOG_D(PHY,"PUCCH IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[0][0],corr_im[0][0],10*log10((double)corr_re[0][0]*corr_re[0][0] + (double)corr_im[0][0]*corr_im[0][0]));
-    if (l>1) LOG_D(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[0][1],corr_im[0][1],10*log10((double)corr_re[0][1]*corr_re[0][1] + (double)corr_im[0][1]*corr_im[0][1]));
-    if (pucch_pdu->freq_hop_flag == 0 && l==1) {// non-coherent correlation
+    if (pucch_pdu->nr_of_symbols) LOG_D(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[0][1],corr_im[0][1],10*log10((double)corr_re[0][1]*corr_re[0][1] + (double)corr_im[0][1]*corr_im[0][1]));
+    if (pucch_pdu->freq_hop_flag == 0 && pucch_pdu->nr_of_symbols==1) {// non-coherent correlation
       temp=0;
       for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
         temp+=(int64_t)corr_re[aa][0]*corr_re[aa][0] + (int64_t)corr_im[aa][0]*corr_im[aa][0];
     }
 
-    else if (pucch_pdu->freq_hop_flag == 0 && l==2) {
+    else if (pucch_pdu->freq_hop_flag == 0 && pucch_pdu->nr_of_symbols==2) {
       int64_t corr_re2=0;
       int64_t corr_im2=0;
       temp=0;
@@ -349,7 +348,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     }
     else AssertFatal(1==0,"shouldn't happen\n");
 
-    av_corr+=temp;
     if (temp>xrtmag) {
       xrtmag_next = xrtmag;
       xrtmag=temp;
@@ -359,19 +357,19 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       int64_t temp2=0,temp3=0;;
       for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
         temp2 += ((int64_t)corr_re[aa][0]*corr_re[aa][0] + (int64_t)corr_im[aa][0]*corr_im[aa][0]);
-        if (l==2) temp3 += ((int64_t)corr_re[aa][1]*corr_re[aa][1] + (int64_t)corr_im[aa][1]*corr_im[aa][1]);
+        if (pucch_pdu->nr_of_symbols==2)
+	  temp3 += ((int64_t)corr_re[aa][1]*corr_re[aa][1] + (int64_t)corr_im[aa][1]*corr_im[aa][1]);
       }
       uci_stats->current_pucch0_stat0= dB_fixed64(temp2);
-      if (l==2) uci_stats->current_pucch0_stat1= dB_fixed64(temp3);
+      if ( pucch_pdu->nr_of_symbols==2)
+	uci_stats->current_pucch0_stat1= dB_fixed64(temp3);
     }
     else if (temp>xrtmag_next)
       xrtmag_next = temp;
   }
 
-  av_corr/=nr_sequences/l;
-
-  int xrtmag_dBtimes10 = 10*(int)dB_fixed64(xrtmag/(12*l));
-  int xrtmag_next_dBtimes10 = 10*(int)dB_fixed64(xrtmag_next/(12*l));
+  int xrtmag_dBtimes10 = 10*(int)dB_fixed64(xrtmag/(12*pucch_pdu->nr_of_symbols));
+  int xrtmag_next_dBtimes10 = 10*(int)dB_fixed64(xrtmag_next/(12*pucch_pdu->nr_of_symbols));
 #ifdef DEBUG_NR_PUCCH_RX
   printf("PUCCH 0 : maxpos %d\n",maxpos);
 #endif

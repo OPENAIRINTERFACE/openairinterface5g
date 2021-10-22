@@ -164,13 +164,26 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
 void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci) {
 
   NR_ServingCellConfigCommon_t *scc = mac->scc;
-  NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup;
+  NR_BWP_UplinkDedicated_t *ubwpd=NULL;
+
+  if (mac->cg &&
+      mac->cg->spCellConfig &&
+      mac->cg->spCellConfig->spCellConfigDedicated &&
+      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)
+    ubwpd = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
+
+  NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0] ?
+    mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup :
+    (ubwpd?
+     ubwpd->pusch_Config->choice.setup:
+     NULL);
 
   long	transformPrecoder;
-  if (pusch_Config->transformPrecoder)
+  if (pusch_Config && pusch_Config->transformPrecoder)
     transformPrecoder = *pusch_Config->transformPrecoder;
   else {
-    if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder)
+    if(scc && scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder)
       transformPrecoder = NR_PUSCH_Config__transformPrecoder_enabled;
     else
       transformPrecoder = NR_PUSCH_Config__transformPrecoder_disabled;
