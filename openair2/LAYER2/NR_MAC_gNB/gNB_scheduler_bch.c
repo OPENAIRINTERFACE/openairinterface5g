@@ -327,18 +327,13 @@ uint32_t schedule_control_sib1(module_id_t module_id,
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
-  int ret;
 
   if (gNB_mac->sched_ctrlCommon == NULL){
     LOG_D(NR_MAC,"schedule_control_common: Filling nr_mac->sched_ctrlCommon\n");
     gNB_mac->sched_ctrlCommon = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon));
     gNB_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->search_space));
     gNB_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->coreset));
-    for (int i=0; i<3; i++){ // loop over possible aggregation levels
-      ret = fill_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space,type0_PDCCH_CSS_config,4<<i);
-      if (ret == 1) break;
-    }
-    AssertFatal(ret==1,"No aggregation level for type0_PDCCH_CSS found\n");
+    fill_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space,type0_PDCCH_CSS_config);
     fill_coresetZero(gNB_mac->sched_ctrlCommon->coreset,type0_PDCCH_CSS_config);
   }
 
@@ -348,8 +343,12 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   gNB_mac->sched_ctrlCommon->num_total_bytes = num_total_bytes;
 
   uint8_t nr_of_candidates;
-  find_aggregation_candidates(&gNB_mac->sched_ctrlCommon->aggregation_level, &nr_of_candidates, gNB_mac->sched_ctrlCommon->search_space);
 
+  for (int i=0; i<3; i++) {
+    find_aggregation_candidates(&gNB_mac->sched_ctrlCommon->aggregation_level, &nr_of_candidates, gNB_mac->sched_ctrlCommon->search_space,4<<i);
+    if (nr_of_candidates>0) break; // choosing the lower value of aggregation level available
+  }
+  AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
   gNB_mac->sched_ctrlCommon->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
                                                           NULL,
                                                           gNB_mac->sched_ctrlCommon->coreset,
