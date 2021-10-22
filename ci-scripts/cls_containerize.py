@@ -832,3 +832,114 @@ class Containerize():
 		else:
 			self.exitStatus = 1
 			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'KO', 1, html_queue)
+
+	def CheckAndAddRoute(self, svrName, ipAddr, userName, password):
+		logging.debug('Checking IP routing on ' + svrName)
+		mySSH = SSH.SSHConnection()
+		if svrName == 'porcepix':
+			mySSH.open(ipAddr, userName, password)
+			# Check if route to asterix gnb exists
+			mySSH.command('ip route | grep "192.168.68.64/26"', '\$', 10)
+			result = re.search('192.168.18.194', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 192.168.18.194 dev eno1', '\$', 10)
+			# Check if route to obelix enb exists
+			mySSH.command('ip route | grep "192.168.68.128/26"', '\$', 10)
+			result = re.search('192.168.18.193', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev eno1', '\$', 10)
+			# Check if route to nepes gnb exists
+			mySSH.command('ip route | grep "192.168.68.192/26"', '\$', 10)
+			result = re.search('192.168.18.209', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 192.168.18.209 dev eno1', '\$', 10)
+			# Check if forwarding is enabled
+			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
+			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
+			# Check if iptables forwarding is accepted
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
+			mySSH.close()
+		if svrName == 'asterix':
+			mySSH.open(ipAddr, userName, password)
+			# Check if route to porcepix epc exists
+			mySSH.command('ip route | grep "192.168.61.192/26"', '\$', 10)
+			result = re.search('192.168.18.210', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev em1', '\$', 10)
+			# Check if route to porcepix cn5g exists
+			mySSH.command('ip route | grep "192.168.70.128/26"', '\$', 10)
+			result = re.search('192.168.18.210', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.70.128/26 via 192.168.18.210 dev em1', '\$', 10)
+			# Check if X2 route to obelix enb exists
+			mySSH.command('ip route | grep "192.168.68.128/26"', '\$', 10)
+			result = re.search('192.168.18.193', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev em1', '\$', 10)
+			# Check if forwarding is enabled
+			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
+			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
+			# Check if iptables forwarding is accepted
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
+			mySSH.close()
+		if svrName == 'obelix':
+			mySSH.open(ipAddr, userName, password)
+			# Check if route to porcepix epc exists
+			mySSH.command('ip route | grep "192.168.61.192/26"', '\$', 10)
+			result = re.search('192.168.18.210', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev eno1', '\$', 10)
+			# Check if X2 route to asterix gnb exists
+			mySSH.command('ip route | grep "192.168.68.64/26"', '\$', 10)
+			result = re.search('192.168.18.194', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 192.168.18.194 dev eno1', '\$', 10)
+			# Check if X2 route to nepes gnb exists
+			mySSH.command('ip route | grep "192.168.68.192/26"', '\$', 10)
+			result = re.search('192.168.18.209', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 192.168.18.209 dev eno1', '\$', 10)
+			# Check if forwarding is enabled
+			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
+			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
+			# Check if iptables forwarding is accepted
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
+			mySSH.close()
+		if svrName == 'nepes':
+			mySSH.open(ipAddr, userName, password)
+			# Check if route to porcepix epc exists
+			mySSH.command('ip route | grep "192.168.61.192/26"', '\$', 10)
+			result = re.search('192.168.18.210', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev enp0s31f6', '\$', 10)
+			# Check if X2 route to obelix enb exists
+			mySSH.command('ip route | grep "192.168.68.128/26"', '\$', 10)
+			result = re.search('192.168.18.193', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev enp0s31f6', '\$', 10)
+			# Check if forwarding is enabled
+			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
+			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
+			# Check if iptables forwarding is accepted
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
+			mySSH.close()

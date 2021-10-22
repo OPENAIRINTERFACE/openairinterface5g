@@ -734,6 +734,22 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	HTML.SethtmlUEConnected(len(CiTestObj.UEDevices) + len(CiTestObj.CatMDevices))
 	HTML.CreateHtmlTabHeader()
 
+	# On CI bench w/ containers, we need to validate if IP routes are set
+	if EPC.IPAddress == '192.168.18.210':
+		CONTAINERS.CheckAndAddRoute('porcepix', EPC.IPAddress, EPC.UserName, EPC.Password)
+	if CONTAINERS.eNBIPAddress == '192.168.18.194':
+		CONTAINERS.CheckAndAddRoute('asterix', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
+	if CONTAINERS.eNB1IPAddress == '192.168.18.194':
+		CONTAINERS.CheckAndAddRoute('asterix', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
+	if CONTAINERS.eNBIPAddress == '192.168.18.193':
+		CONTAINERS.CheckAndAddRoute('obelix', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
+	if CONTAINERS.eNB1IPAddress == '192.168.18.193':
+		CONTAINERS.CheckAndAddRoute('obelix', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
+	if CONTAINERS.eNBIPAddress == '192.168.18.209':
+		CONTAINERS.CheckAndAddRoute('nepes', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
+	if CONTAINERS.eNB1IPAddress == '192.168.18.209':
+		CONTAINERS.CheckAndAddRoute('nepes', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
+
 	CiTestObj.FailReportCnt = 0
 	RAN.prematureExit=True
 	HTML.startTime=int(round(time.time() * 1000))
