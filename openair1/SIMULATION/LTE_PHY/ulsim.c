@@ -1102,7 +1102,7 @@ int main(int argc, char **argv) {
             if(saving_bler==0)
               if (trials==0 && round==0) {
                 // calculate freq domain representation to compute SINR
-                freq_channel(UE2eNB, N_RB_DL,12*N_RB_DL + 1);
+                freq_channel(UE2eNB, N_RB_DL,12*N_RB_DL + 1, 15);
                 // snr=pow(10.0,.1*SNR);
                 fprintf(csv_fdUL,"%f,%u,%u,%f,%f,%f,",SNR,tx_lev,tx_lev_dB,sigma2_dB,tx_gain,SNR2);
 

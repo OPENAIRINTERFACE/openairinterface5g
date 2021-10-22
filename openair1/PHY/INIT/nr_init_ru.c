@@ -60,10 +60,12 @@ int nr_phy_init_RU(RU_t *ru) {
 
     for (i=0; i<ru->nb_tx; i++) {
       // Allocate 10 subframes of I/Q TX signal data (time) if not
-      ru->common.txdata[i]  = (int32_t*)malloc16_clear( fp->samples_per_frame*sizeof(int32_t) );
+      ru->common.txdata[i]  = (int32_t*)malloc16_clear( ru->sf_extension + (fp->samples_per_frame*sizeof(int32_t) ));
+      LOG_I(PHY,"[INIT] common.txdata[%d] = %p (%lu bytes,sf_extension %d)\n",i,ru->common.txdata[i],
+	     (ru->sf_extension + fp->samples_per_frame)*sizeof(int32_t),ru->sf_extension);
+      ru->common.txdata[i] =  &ru->common.txdata[i][ru->sf_extension];
 
-      LOG_I(PHY,"[INIT] common.txdata[%d] = %p (%lu bytes)\n",i,ru->common.txdata[i],
-	     fp->samples_per_frame*sizeof(int32_t));
+      LOG_I(PHY,"[INIT] common.txdata[%d] = %p \n",i,ru->common.txdata[i]);
 
     }
     for (i=0;i<ru->nb_rx;i++) {
@@ -100,8 +102,8 @@ int nr_phy_init_RU(RU_t *ru) {
     // allocate FFT output buffers (RX)
     ru->common.rxdataF     = (int32_t**)malloc16(ru->nb_rx*sizeof(int32_t*) );
     for (i=0; i<ru->nb_rx; i++) {    
-      // allocate 2 subframes of I/Q signal data (frequency)
-      ru->common.rxdataF[i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(2*fp->samples_per_subframe_wCP) ); 
+      // allocate 4 slots of I/Q signal data (frequency)
+      ru->common.rxdataF[i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(4*fp->symbols_per_slot*fp->ofdm_symbol_size) ); 
       LOG_I(PHY,"rxdataF[%d] %p for RU %d\n",i,ru->common.rxdataF[i],ru->idx);
     }
 
@@ -176,7 +178,11 @@ void nr_phy_free_RU(RU_t *ru)
   free_and_zero(ru->frame_parms);
 
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so free memory for time-domain signals
-    for (i = 0; i < ru->nb_tx; i++) free_and_zero(ru->common.txdata[i]);
+    int32_t *ptr;
+    for (i = 0; i < ru->nb_tx; i++) {
+      ptr=&ru->common.txdata[i][-ru->sf_extension];
+      free_and_zero(ptr);
+    }
     for (i = 0; i < ru->nb_rx; i++) free_and_zero(ru->common.rxdata[i]);
     free_and_zero(ru->common.txdata);
     free_and_zero(ru->common.rxdata);
