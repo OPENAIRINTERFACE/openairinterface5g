@@ -416,7 +416,7 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
     bler_stats->last_frame_slot = now;
     bler_stats->mcs = max(9, bler_stats->mcs - 5);
     memcpy(bler_stats->dlsch_rounds, stats->dlsch_rounds, sizeof(stats->dlsch_rounds));
-    LOG_D(MAC, "%4d.%2d: %d retx in 3rd round, setting MCS to %d and restarting window\n", frame, slot, dret3x, bler_stats->mcs);
+    LOG_I(MAC, "%4d.%2d: %d retx in 3rd round, setting MCS to %d and restarting window\n", frame, slot, dret3x, bler_stats->mcs);
     return bler_stats->mcs;
   }
   if (diff < BLER_UPDATE_FRAME * n)
@@ -447,7 +447,8 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   bler_stats->last_frame_slot = now;
   bler_stats->mcs = new_mcs;
   memcpy(bler_stats->dlsch_rounds, stats->dlsch_rounds, sizeof(stats->dlsch_rounds));
-  LOG_D(MAC, "%4d.%2d MCS %d -> %d (dtx %d, dretx %d, BLER wnd %.3f avg %.6f, dretx2 %d, RD2 BLER wnd %.3f avg %.6f)\n", frame, slot, old_mcs, new_mcs, dtx, dretx, bler_window, bler_stats->bler, dretx2, rd2_bler_wnd, bler_stats->rd2_bler);
+  LOG_I(MAC, "%4d.%2d MCS %d -> %d (dtx %d, dretx %d, BLER wnd %.3f avg %.6f, dretx2 %d, RD2 BLER wnd %.3f avg %.6f)\n",
+        frame, slot, old_mcs, new_mcs, dtx, dretx, bler_window, bler_stats->bler, dretx2, rd2_bler_wnd, bler_stats->rd2_bler);
   return new_mcs;
 }
 
@@ -958,7 +959,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x DCI L %d start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
           frame,
           slot,
