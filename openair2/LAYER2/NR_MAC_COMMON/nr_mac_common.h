@@ -127,6 +127,7 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
                                            uint16_t ssb_start_symbol,
                                            NR_SubcarrierSpacing_t scs_ssb,
                                            frequency_range_t frequency_range,
+                                           int nr_band,
                                            uint32_t ssb_index,
                                            uint32_t ssb_period,
                                            uint32_t ssb_offset_point_a);

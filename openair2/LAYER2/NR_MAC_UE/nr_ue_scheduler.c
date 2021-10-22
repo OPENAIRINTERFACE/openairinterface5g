@@ -2000,6 +2000,7 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
                                         ssb_start_symbol,
                                         scs_ssb,
                                         frequency_range,
+                                        mac->nr_band,
                                         ssb_index,
                                         1, // If the UE is not configured with a periodicity, the UE assumes a periodicity of a half frame
                                         ssb_offset_point_a);
