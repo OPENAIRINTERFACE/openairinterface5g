@@ -414,7 +414,7 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
     /* if there is a third retransmission, decrease MCS for stabilization and
      * restart averaging window to stabilize transmission */
     bler_stats->last_frame_slot = now;
-    bler_stats->mcs = max(9, bler_stats->mcs - 5);
+    bler_stats->mcs = max(9, bler_stats->mcs - 1);
     memcpy(bler_stats->dlsch_rounds, stats->dlsch_rounds, sizeof(stats->dlsch_rounds));
     LOG_I(MAC, "%4d.%2d: %d retx in 3rd round, setting MCS to %d and restarting window\n", frame, slot, dret3x, bler_stats->mcs);
     return bler_stats->mcs;
