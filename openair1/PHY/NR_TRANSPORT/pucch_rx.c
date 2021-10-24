@@ -321,26 +321,30 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
         }
       }
     }
-    LOG_D(PHY,"PUCCH IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[0][0],corr_im[0][0],10*log10((double)corr_re[0][0]*corr_re[0][0] + (double)corr_im[0][0]*corr_im[0][0]));
-    if (pucch_pdu->nr_of_symbols) LOG_D(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",mcs[i],seq_index,corr_re[0][1],corr_im[0][1],10*log10((double)corr_re[0][1]*corr_re[0][1] + (double)corr_im[0][1]*corr_im[0][1]));
-    if (pucch_pdu->freq_hop_flag == 0 && pucch_pdu->nr_of_symbols==1) {// non-coherent correlation
-      temp=0;
-      for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
-        temp+=(int64_t)corr_re[aa][0]*corr_re[aa][0] + (int64_t)corr_im[aa][0]*corr_im[aa][0];
-    }
-
-    else if (pucch_pdu->freq_hop_flag == 0 && pucch_pdu->nr_of_symbols==2) {
-      int64_t corr_re2=0;
-      int64_t corr_im2=0;
-      temp=0;
-      for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-        corr_re2 = (int64_t)corr_re[aa][0]+corr_re[aa][1];
-        corr_im2 = (int64_t)corr_im[aa][0]+corr_im[aa][1];
-      // coherent combining of 2 symbols and then complex modulus for single-frequency case
-        temp+=corr_re2*corr_re2 + corr_im2*corr_im2;
-      }
-    }
-    else if (pucch_pdu->freq_hop_flag == 1) {
+    LOG_D(PHY,"PUCCH IDFT[%d/%d] = (%d,%d)=>%f\n",
+          mcs[i],seq_index,corr_re[0][0],corr_im[0][0],
+          10*log10((double)corr_re[0][0]*corr_re[0][0] + (double)corr_im[0][0]*corr_im[0][0]));
+    if (pucch_pdu->nr_of_symbols==2) 
+       LOG_D(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",
+             mcs[i],seq_index,corr_re[0][1],corr_im[0][1],
+             10*log10((double)corr_re[0][1]*corr_re[0][1] + (double)corr_im[0][1]*corr_im[0][1]));
+    if (pucch_pdu->freq_hop_flag == 0) {
+       if (pucch_pdu->nr_of_symbols==1) {// non-coherent correlation
+          temp=0;
+          for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
+             temp+=(int64_t)corr_re[aa][0]*corr_re[aa][0] + (int64_t)corr_im[aa][0]*corr_im[aa][0];
+        } else {
+          int64_t corr_re2=0;
+          int64_t corr_im2=0;
+          temp=0;
+          for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+             corr_re2 = (int64_t)corr_re[aa][0]+corr_re[aa][1];
+             corr_im2 = (int64_t)corr_im[aa][0]+corr_im[aa][1];
+             // coherent combining of 2 symbols and then complex modulus for single-frequency case
+             temp+=corr_re2*corr_re2 + corr_im2*corr_im2;
+          }
+        }
+    } else if (pucch_pdu->freq_hop_flag == 1) {
       // full non-coherent combining of 2 symbols for frequency-hopping case
       temp=0;
       for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
