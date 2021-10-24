@@ -19,6 +19,7 @@
  *      contact@openairinterface.org
  */
 
+#include <openair1/PHY/impl_defs_top.h>
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/INIT/phy_init.h"
@@ -87,11 +88,7 @@
  *
  */
 
-#ifndef NO_RAT_NR
-  #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
-#else
-  #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
-#endif
+
 #define RX_JOB_ID 0x1010
 #define TX_JOB_ID 100
 

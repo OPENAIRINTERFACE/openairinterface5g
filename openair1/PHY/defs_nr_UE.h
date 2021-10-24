@@ -51,16 +51,12 @@
 #ifdef MEX
   #define msg mexPrintf
 #else
-  #ifdef OPENAIR2
     #if ENABLE_RAL
       #include "common/utils/hashtable/hashtable.h"
       #include "COMMON/ral_messages_types.h"
       #include "UTIL/queue.h"
     #endif
     #define msg(aRGS...) LOG_D(PHY, ##aRGS)
-  #else
-    #define msg printf
-  #endif
 #endif
 //use msg in the real-time thread context
 #define msg_nrt printf

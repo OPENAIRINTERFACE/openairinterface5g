@@ -87,7 +87,6 @@
   #define LOG_W(x, ...) mexPrintf(__VA_ARGS__)
   #define LOG_M(x, ...) mexPrintf(__VA_ARGS__)
 #else
-  #ifdef OPENAIR2
     #if ENABLE_RAL
       #include "collection/hashtable/hashtable.h"
       #include "COMMON/ral_messages_types.h"
@@ -95,9 +94,6 @@
     #endif
     #include "common/utils/LOG/log.h"
     #define msg(aRGS...) LOG_D(PHY, ##aRGS)
-  #else
-    #define msg printf
-  #endif
 #endif
 
 

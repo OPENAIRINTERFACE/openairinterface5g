@@ -42,10 +42,7 @@
 #include "ngap_messages_types.h"
 #include "f1ap_messages_types.h"
 
-#ifdef CMAKER
 #include "rrc_messages_types.h"
-#endif
-
 #include "intertask_interface.h"
 #include "RRC/NR/nr_rrc_defs.h"
 
