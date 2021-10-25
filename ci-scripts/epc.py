@@ -500,6 +500,9 @@ class EPCManagement():
 		# - docker-compose config | grep container_name
 		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 		mySSH.copyout(self.IPAddress, self.UserName, self.Password, './' + self.yamlPath + '/docker-compose.yml', self.SourceCodePath + '/scripts')
+		mySSH.copyout(self.IPAddress, self.UserName, self.Password, './' + self.yamlPath + '/entrypoint.sh', self.SourceCodePath + '/scripts')
+		mySSH.copyout(self.IPAddress, self.UserName, self.Password, './' + self.yamlPath + '/mme.conf', self.SourceCodePath + '/scripts')
+		mySSH.command('chmod 775 entrypoint.sh', '\$', 60)
 		mySSH.command('wget --quiet --tries=3 --retry-connrefused https://raw.githubusercontent.com/OPENAIRINTERFACE/openair-hss/develop/src/hss_rel14/db/oai_db.cql', '\$', 30)
 		mySSH.command('docker-compose down', '\$', 60)
 		mySSH.command('docker-compose up -d db_init', '\$', 60)
