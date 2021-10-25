@@ -129,10 +129,6 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 
 mui_t nr_rrc_mui=0;
 
-static const char nsa_ipaddr[] = "127.0.0.1";
-static int from_lte_ue_fd = -1;
-static int to_lte_ue_fd = -1;
-
 static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
   return NR_UE_rrc_inst[ue_mod_idP].nrRrcState;
 }
@@ -205,7 +201,6 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
-static void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len);
 static void start_oai_nrue_threads(void);
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
@@ -2752,6 +2747,7 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 void *recv_msgs_from_lte_ue(void *args_p)
 {
     itti_mark_task_ready (TASK_RRC_NSA_NRUE);
+    int from_lte_ue_fd = get_from_lte_ue_fd();
     for (;;)
     {
         nsa_msg_t msg;
@@ -2771,77 +2767,6 @@ void *recv_msgs_from_lte_ue(void *args_p)
     }
     return NULL;
 }
-
-void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, MessagesIds msg_type)
-{
-    LOG_I(NR_RRC, "Entered %s \n", __FUNCTION__);
-    nsa_msg_t n_msg;
-    if (msg_len > sizeof(n_msg.msg_buffer))
-    {
-        LOG_E(NR_RRC, "%s: message too big: %zu\n", __func__, msg_len);
-        abort();
-    }
-    n_msg.msg_type = msg_type;
-    memcpy(n_msg.msg_buffer, message, msg_len);
-    size_t to_send = sizeof(n_msg.msg_type) + msg_len;
-
-    struct sockaddr_in sa =
-    {
-        .sin_family = AF_INET,
-        .sin_port = htons(6007 + ue_id_g * 2),
-    };
-    int sent = sendto(from_lte_ue_fd, &n_msg, to_send, 0,
-                      (struct sockaddr *)&sa, sizeof(sa));
-    if (sent == -1)
-    {
-        LOG_E(NR_RRC, "%s: sendto: %s\n", __func__, strerror(errno));
-        return;
-    }
-    if (sent != to_send)
-    {
-        LOG_E(RRC, "%s: Short send %d != %zu\n", __func__, sent, to_send);
-        return;
-    }
-    LOG_D(NR_RRC, "Sent a %d message to the LTE UE (%d bytes) \n", msg_type, sent);
-}
-
-void init_connections_with_lte_ue(void)
-{
-    struct sockaddr_in sa =
-    {
-        .sin_family = AF_INET,
-        .sin_port = htons(6008 + ue_id_g * 2),
-    };
-    AssertFatal(from_lte_ue_fd == -1, "from_lte_ue_fd %d was assigned already", from_lte_ue_fd);
-    from_lte_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (from_lte_ue_fd == -1)
-    {
-        LOG_E(NR_RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, from_lte_ue_fd, errno, strerror(errno));
-        abort();
-    }
-
-    if (inet_aton(nsa_ipaddr, &sa.sin_addr) == 0)
-    {
-        LOG_E(NR_RRC, "Bad nsa_ipaddr '%s'\n", nsa_ipaddr);
-        abort();
-    }
-
-    if (bind(from_lte_ue_fd, (struct sockaddr *) &sa, sizeof(sa)) == -1)
-    {
-        LOG_E(NR_RRC,"%s: Failed to bind the socket\n", __FUNCTION__);
-        abort();
-    }
-
-    AssertFatal(to_lte_ue_fd == -1, "to_lte_ue_fd was assigned already");
-    to_lte_ue_fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (to_lte_ue_fd == -1)
-    {
-        LOG_E(NR_RRC, "%s: Error opening socket %d (%d:%s)\n", __FUNCTION__, to_lte_ue_fd, errno, strerror(errno));
-        abort();
-    }
-    LOG_I(NR_RRC, "Started LTE-NR link in the nr-UE\n");
-}
-
 static void start_oai_nrue_threads()
 {
     init_queue(&nr_rach_ind_queue);

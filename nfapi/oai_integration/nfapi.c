@@ -40,15 +40,9 @@ typedef struct {
 static nfapi_params_t nfapi_params = {0};
 
 void set_thread_priority(int priority) {
-  //printf("%s(priority:%d)\n", __FUNCTION__, priority);
+  set_priority(priority);
+
   pthread_attr_t ptAttr;
-  struct sched_param schedParam;
-  schedParam.__sched_priority = priority; //79;
-
-  if(sched_setscheduler(0, SCHED_RR, &schedParam) != 0) {
-    printf("Failed to set scheduler to SCHED_RR\n");
-  }
-
   if(pthread_attr_setschedpolicy(&ptAttr, SCHED_RR) != 0) {
     printf("Failed to set pthread sched policy SCHED_RR\n");
   }
