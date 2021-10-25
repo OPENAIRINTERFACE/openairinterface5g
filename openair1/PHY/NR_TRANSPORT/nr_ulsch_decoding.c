@@ -429,22 +429,20 @@ void nr_processULSegment(void* arg) {
 
   if (check_crc((uint8_t*)llrProcBuf,length_dec,ulsch_harq->F,crc_type)) {
 #ifdef PRINT_CRC_CHECK
-      LOG_I(PHY, "Segment %d CRC OK, iterations %d/%d\n",r,no_iteration_ldpc,max_ldpc_iterations);
+      LOG_I(PHY, "Segment %d CRC OK\n",r);
 #endif
     rdata->decodeIterations = no_iteration_ldpc;
     if (rdata->decodeIterations > p_decoderParms->numMaxIter) rdata->decodeIterations--;
   } else {
-// #ifdef PRINT_CRC_CHECK
+#ifdef PRINT_CRC_CHECK
       LOG_I(PHY, "CRC NOK\n");
-// #endif
+#endif
     rdata->decodeIterations = max_ldpc_iterations + 1;
   }
 
   for (int m=0; m < Kr>>3; m ++) {
     ulsch_harq->c[r][m]= (uint8_t) llrProcBuf[m];
-    //printf("%x ", ulsch_harq->c[r][m]);
   }
-  //printf("\n");
 
   //stop_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
 }
@@ -524,7 +522,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   A   = (harq_process->TBS)<<3;
 
-  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d, Coderate %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers, R);
+  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers);
 
   if (R<1024)
     Coderate = (float) R /(float) 1024;

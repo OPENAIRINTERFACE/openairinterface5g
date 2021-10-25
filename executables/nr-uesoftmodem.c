@@ -159,7 +159,6 @@ char         uecap_xer[1024];
  */
 uint8_t abstraction_flag=0;
 
-uint16_t ue_id_g;
 uint16_t ue_idx_standalone = 0xFFFF;
 
 /*---------------------BMC: timespec helpers -----------------------------*/
@@ -398,13 +397,11 @@ void init_pdcp(int ue_id) {
   if (IS_SOFTMODEM_NOKRNMOD) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }
-  if (rlc_module_init(0) != 0) {
+  if (get_softmodem_params()->nsa && rlc_module_init(0) != 0) {
     LOG_I(RLC, "Problem at RLC initiation \n");
   }
   pdcp_layer_init();
   nr_pdcp_module_init(pdcp_initmask, ue_id);
-
-
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
 }
@@ -416,6 +413,13 @@ void *rrc_enb_process_msg(void *notUsed) {
 
 
 int main( int argc, char **argv ) {
+  set_priority(79);
+  if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
+  {
+    fprintf(stderr, "mlockall: %s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
+
   //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
   PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
   start_background_system();
@@ -463,14 +467,13 @@ int main( int argc, char **argv ) {
   uint16_t node_number = get_softmodem_params()->node_number;
   ue_id_g = (node_number == 0) ? 0 : node_number - 2;
   AssertFatal(ue_id_g >= 0, "UE id is expected to be nonnegative.\n");
-
-  if(node_number == 0)
-  {
-    init_pdcp(0);
-  }
-  else
-  {
-    init_pdcp(mode_offset + ue_id_g);
+  if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa || get_softmodem_params()->nsa) {
+    if(node_number == 0) {
+      init_pdcp(0);
+    }
+    else {
+      init_pdcp(mode_offset + ue_id_g);
+    }
   }
 
   NB_UE_INST=1;
@@ -540,13 +543,6 @@ int main( int argc, char **argv ) {
   config_sync_var=0;
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-
-#if 0
-  if (create_tasks_nrue(1) < 0) {
-    printf("cannot create ITTI tasks\n");
-    exit(-1); // need a softer mode
-  }
-#endif
 
   // Sleep a while before checking all parameters have been used
   // Some are used directly in external threads, asynchronously

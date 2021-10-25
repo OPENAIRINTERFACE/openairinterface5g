@@ -210,7 +210,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
 
 /*
 
-  if ((cfg->subframe_config.duplex_mode.value == TDD) &&
+  if ((cfg->subframe_config.duplex_mode.value == TDD) && 
       ((nr_slot_select(fp,frame,slot)&NR_DOWNLINK_SLOT)==SF_DL)) return;
 
   //  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,1);
@@ -230,7 +230,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
 	rdata->segment_r, ulsch_harq->processedSegments, rdata->nbSegments);
   gNB->nbDecode--;
   LOG_D(PHY,"remain to decoded in subframe: %d\n", gNB->nbDecode);
-
+  
   if (decodeSuccess) {
     memcpy(ulsch_harq->b+rdata->offset,
            ulsch_harq->c[r],
@@ -328,7 +328,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 {
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   nfapi_nr_pusch_pdu_t *pusch_pdu = &gNB->ulsch[ULSCH_id][0]->harq_processes[harq_pid]->ulsch_pdu;
-
+  
   uint8_t l, number_dmrs_symbols = 0;
   uint32_t G;
   uint16_t start_symbol, number_symbols, nb_re_dmrs;
@@ -350,7 +350,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
                pusch_pdu->qam_mod_order,
                pusch_pdu->nrOfLayers);
-
+  
   AssertFatal(G>0,"G is 0 : rb_size %u, number_symbols %d, nb_re_dmrs %d, number_dmrs_symbols %d, qam_mod_order %u, nrOfLayer %u\n",
 	      pusch_pdu->rb_size,
 	      number_symbols,

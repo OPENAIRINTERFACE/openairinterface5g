@@ -1734,7 +1734,7 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
         X2AP_ERROR("Failed to encode ENDC X2 SgNB_addition request message\n");
         return -1;
     }
-    # if 0 //Melissa: This is a hack becasue we are trying to access this after free.
+    # if 0 // TODO: Sanitizer complains we are trying to access this after free.
 	free(ie->value.choice.MeNBtoSgNBContainer.buf);
     #endif
     MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Setup/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);

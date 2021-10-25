@@ -44,6 +44,7 @@
 
 #include "common/ran_context.h"
 #include "openair2/PHY_INTERFACE/queue.h"
+#include "gnb_ind_vars.h"
 
 #define TEST
 
@@ -171,12 +172,6 @@ typedef struct {
   vnf_p7_info p7_vnfs[2];
 
 } vnf_info;
-
-queue_t gnb_rach_ind_queue;
-queue_t gnb_rx_ind_queue;
-queue_t gnb_crc_ind_queue;
-queue_t gnb_uci_ind_queue;
-queue_t gnb_slot_ind_queue;
 
 int vnf_pack_vendor_extension_tlv(void *ve, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t *codec) {
   //NFAPI_TRACE(NFAPI_TRACE_INFO, "vnf_pack_vendor_extension_tlv\n");

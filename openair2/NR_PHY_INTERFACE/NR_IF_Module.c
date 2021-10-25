@@ -37,6 +37,7 @@
 #include "common/ran_context.h"
 #include "executables/softmodem-common.h"
 #include "nfapi/oai_integration/vendor_ext.h" 
+#include "nfapi/oai_integration/gnb_ind_vars.h"
 #include "openair2/PHY_INTERFACE/queue.h"
 
 #define MAX_IF_MODULES 100
@@ -58,11 +59,6 @@ extern int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind);
 extern uint8_t nfapi_mode;
 extern uint16_t sf_ahead;
 extern uint16_t sl_ahead;
-
-extern queue_t gnb_rach_ind_queue;
-extern queue_t gnb_rx_ind_queue;
-extern queue_t gnb_crc_ind_queue;
-extern queue_t gnb_uci_ind_queue;
 
 
 void handle_nr_rach(NR_UL_IND_t *UL_info)

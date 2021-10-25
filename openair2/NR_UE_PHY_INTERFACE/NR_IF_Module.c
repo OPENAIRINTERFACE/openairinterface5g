@@ -607,7 +607,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     nr_uplink_indication_t ul_info;
     memset(&ul_info, 0, sizeof(ul_info));
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
-    int slot_ahead = 2; // Melissa lets make this dynamic
+    int slot_ahead = 2; // TODO: Make this dynamic
     ul_info.frame_rx = frame;
     ul_info.slot_rx = slot;
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
@@ -617,6 +617,16 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     {
         nr_ue_ul_indication(&ul_info);
     }
+
+
+    #if 0 // TODO: Heap use after free caught by sanitizer
+    free(dl_info.dci_ind);
+    dl_info.dci_ind = NULL;
+
+    free(dl_info.rx_ind);
+    dl_info.rx_ind = NULL;
+    #endif
+
 }
 
 void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
@@ -1074,7 +1084,7 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     nr_ue_if_module_inst[module_id]->current_frame = 0;
     nr_ue_if_module_inst[module_id]->current_slot = 0;
     nr_ue_if_module_inst[module_id]->phy_config_request = nr_ue_phy_config_request;
-    if (get_softmodem_params()->nsa) //Melissa, this is also a hack. Get a better flag.
+    if (get_softmodem_params()->nsa) //TODO: Get a better flag for using stub
       nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response_stub;
     else
       nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response;

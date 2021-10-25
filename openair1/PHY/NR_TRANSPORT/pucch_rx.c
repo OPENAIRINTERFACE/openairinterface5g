@@ -169,7 +169,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
-  printf("Inside nr_decode_pucch0. \n"); 
+
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   int soffset=(slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
@@ -1103,7 +1103,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
-  printf("Inside nr_decode_pucch2. \n");                     
+
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   //pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);

@@ -612,7 +612,32 @@ static  void wait_nfapi_init(char *thread_name) {
 }
 
 void init_pdcp(void) {
-  //if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+  if (!get_softmodem_params()->nsa) {
+      if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+      //pdcp_layer_init();
+      uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+                              (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+
+      if (IS_SOFTMODEM_NOS1) {
+        printf("IS_SOFTMODEM_NOS1 option enabled \n");
+        pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT;
+      }
+
+      nr_pdcp_module_init(pdcp_initmask, 0);
+
+      if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+        LOG_I(PDCP, "node is CU, pdcp send rlc_data_req by proto_agent \n");
+        pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+      } else {
+        LOG_I(PDCP, "node is gNB \n");
+        pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+        pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+      }
+    } else {
+      LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
+      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+    }
+  } else if (get_softmodem_params()->nsa) {
     pdcp_layer_init();
     uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
                              (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
@@ -623,17 +648,12 @@ void init_pdcp(void) {
     }
 
     nr_pdcp_module_init(pdcp_initmask, 0);
-
-  /*if (NODE_IS_CU(RC.rrc[0]->node_type)) {
-    pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
-  } else {*/
     pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
     pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
-  //}
-  /*} else {
+  } else {
+    LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
     pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
-  }*/
-
+  }
 }
 
 
@@ -694,20 +714,21 @@ int main( int argc, char **argv ) {
   init_opt();
 
 #ifdef PDCP_USE_NETLINK
-if(!IS_SOFTMODEM_NOS1)
-  netlink_init();
+
+  if (!IS_SOFTMODEM_NOS1) {
+    netlink_init();
+    if (get_softmodem_params()->nsa) {
+      init_pdcp();
+    }
+  }
 #if defined(PDCP_USE_NETLINK_QUEUES)
   pdcp_netlink_init();
 #endif
 #endif
-
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-
-  if(!IS_SOFTMODEM_NOS1)
-    init_pdcp();
 
   if (RC.nb_nr_L1_inst > 0)
     RCconfig_NR_L1();

@@ -589,7 +589,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   else if (mac->scc_SIB) n_RB_DLBWP =  NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
   else n_RB_DLBWP = mac->type0_PDCCH_CSS_config.num_rbs;
 
-  LOG_I(MAC, "In %s: Processing received DCI format %s (DL BWP %d)\n", __FUNCTION__, dci_formats[dci_format], n_RB_DLBWP);
+  LOG_D(MAC, "In %s: Processing received DCI format %s (DL BWP %d)\n", __FUNCTION__, dci_formats[dci_format], n_RB_DLBWP);
 
   switch(dci_format){
   case NR_UL_DCI_FORMAT_0_0: {
@@ -3440,7 +3440,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                   mac_subheader_len = 2;
                 }
 
-                LOG_I(MAC, "Melissa Elkadi [UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_sdu_len);
+                LOG_D(NR_MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_sdu_len);
 
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
                     LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
@@ -3633,8 +3633,6 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     return 0;
   }
 
-  int cc_id                = dl_info->cc_id;
-  uint8_t gNB_id           = dl_info->gNB_index;
   NR_UE_MAC_INST_t *mac    = get_mac_inst(mod_id);
   RA_config_t *ra          = &mac->ra;
   uint8_t n_subPDUs        = 0;  // number of RAR payloads

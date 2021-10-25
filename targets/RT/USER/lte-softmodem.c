@@ -524,15 +524,7 @@ static  void wait_nfapi_init(char *thread_name) {
 
 int main ( int argc, char **argv )
 {
-  struct sched_param param =
-  {
-    .sched_priority = 79
-  };
-  if (sched_setscheduler( 0, SCHED_RR, &param ) == -1 )
-  {
-    fprintf(stderr, "sched_setscheduler: %s\n", strerror(errno));
-    return EXIT_FAILURE;
-  }
+  set_priority(79);
   if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
   {
     fprintf(stderr, "mlockall: %s\n", strerror(errno));
@@ -751,6 +743,8 @@ int main ( int argc, char **argv )
     create_tasks_mbms(1);
     config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
+  else
+    create_tasks_mbms(1);
   //create_tasks_mbms(1);
 
   // wait for end of program

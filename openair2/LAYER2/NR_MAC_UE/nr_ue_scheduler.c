@@ -1893,7 +1893,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
       prach_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
       memset(prach_config_pdu, 0, sizeof(fapi_nr_ul_config_prach_pdu));
-      ul_config->number_pdus += 1; //Melissa Elkadi come back here!
+      ul_config->number_pdus += 1;
       fill_ul_config(ul_config, frameP, slotP, FAPI_NR_UL_CONFIG_TYPE_PRACH);
 
       LOG_D(PHY, "In %s: (%p) %d UL PDUs:\n", __FUNCTION__, ul_config, ul_config->number_pdus);

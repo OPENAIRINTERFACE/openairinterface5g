@@ -361,7 +361,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   const int bwp_id = 1;
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
 
