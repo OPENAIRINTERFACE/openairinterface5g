@@ -154,6 +154,7 @@ def GetParametersFromXML(action):
 
 	elif action == 'Initialize_eNB':
 		RAN.eNB_Trace=test.findtext('eNB_Trace')
+		RAN.eNB_Stats=test.findtext('eNB_Stats')
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
 		USRPIPAddress=test.findtext('USRP_IPAddress')
