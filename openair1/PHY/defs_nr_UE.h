@@ -638,7 +638,7 @@ typedef struct {
   uint8_t dciFormat;
   uint8_t agregationLevel;
   int nb_search_space;
-  fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS_PER_CORESET];
+  fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS];
   // frame and slot for sib1 in initial sync
   uint16_t sfn;
   uint16_t slot;
