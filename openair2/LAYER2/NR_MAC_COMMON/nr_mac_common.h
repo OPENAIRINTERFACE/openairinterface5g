@@ -150,7 +150,7 @@ void get_info_from_tda_tables(int default_abc,
                               int *nrOfSymbols);
 
 void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
-uint8_t fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config, int L);
+void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
 
 uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t nr_prbs,

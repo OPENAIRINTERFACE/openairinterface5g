@@ -153,17 +153,23 @@ void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
   }
 }
 
-NR_ControlResourceSet_t *get_coreset(NR_ServingCellConfigCommon_t *scc,
+NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
+                                     NR_ServingCellConfigCommon_t *scc,
                                      void *bwp,
                                      NR_SearchSpace_t *ss,
                                      NR_SearchSpace__searchSpaceType_PR ss_type) {
   NR_ControlResourceSetId_t coreset_id = *ss->controlResourceSetId;
   if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) { // common search space
     NR_ControlResourceSet_t *coreset;
-    if (bwp) coreset = ((NR_BWP_Downlink_t*)bwp)->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
-    else if (scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet)
+    if(coreset_id == 0) {
+      coreset =  RC.nrmac[module_idP]->sched_ctrlCommon->coreset; // this is coreset 0
+    } else if (bwp) {
+      coreset = ((NR_BWP_Downlink_t*)bwp)->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
+    } else if (scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet) {
       coreset = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
-    else coreset = NULL;
+    } else {
+      coreset = NULL;
+    }
 
     if (coreset) AssertFatal(coreset_id == coreset->controlResourceSetId,
 			     "ID of common ss coreset does not correspond to id set in the "
@@ -1198,7 +1204,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // indicating a DL DCI format 1bit
       pos++;
       *dci_pdu |= ((uint64_t)1) << (dci_size - pos);
-      LOG_I(NR_MAC,
+      LOG_D(NR_MAC,
             "DCI1_0 (size %d): Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",
             dci_size,
             dci_pdu_rel15->format_indicator,
@@ -1941,7 +1947,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
     sched_ctrl->ul_rssi = 0;
-    sched_ctrl->maxL = 4;
     sched_ctrl->pucch_consecutive_dtx_cnt = 0;
     sched_ctrl->pusch_consecutive_dtx_cnt = 0;
     sched_ctrl->ul_failure                = 0;
@@ -1961,12 +1966,9 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     sched_ctrl->search_space = get_searchspace(scc,
                                                sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL,
                                                target_ss);
-    if (*sched_ctrl->search_space->controlResourceSetId == 0)
-      sched_ctrl->coreset = RC.nrmac[mod_idP]->sched_ctrlCommon->coreset; // this is coreset 0
-    else
-      sched_ctrl->coreset = get_coreset(scc,
+    sched_ctrl->coreset = get_coreset(mod_idP, scc,
                                       sched_ctrl->active_bwp ? (void*)sched_ctrl->active_bwp->bwp_Dedicated : NULL,
-	                              sched_ctrl->search_space, target_ss);
+                                      sched_ctrl->search_space, target_ss);
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
     if (ubwpList) AssertFatal(ubwpList->list.count == 1,
 			      "uplinkBWP_ToAddModList has %d BWP!\n",
@@ -2083,8 +2085,8 @@ uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
   // al values passed to this function are x10
   int snrx10 = (cqi*5) - 640;
   if (snrx10 > target + incr) return 0; // decrease 1dB
-  if (snrx10 < target - incr) return 2; // increase 1dB
   if (snrx10 < target - (3*incr)) return 3; // increase 3dB
+  if (snrx10 < target - incr) return 2; // increase 1dB
   LOG_D(NR_MAC,"tpc : target %d, snrx10 %d\n",target,snrx10);
   return 1; // no change
 }
@@ -2385,10 +2387,15 @@ bool find_free_CCE(module_id_t module_id,
                    int UE_id){
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id];
   uint8_t nr_of_candidates;
-  find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                              &nr_of_candidates,
-                              sched_ctrl->search_space,
-                              sched_ctrl->maxL);
+  for (int i=0; i<5; i++) {
+    // for now taking the lowest value among the available aggregation levels
+    find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                                &nr_of_candidates,
+                                sched_ctrl->search_space,
+                                1<<i);
+    if(nr_of_candidates>0) break;
+  }
+  AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid][slot];
   const int m = RC.nrmac[module_id]->UE_info.num_pdcch_cand[UE_id][cid];

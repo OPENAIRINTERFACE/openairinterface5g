@@ -1172,31 +1172,28 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   srs_res0->spatialRelationInfo->referenceSignal.choice.csi_RS_Index=0;
   ASN_SEQUENCE_ADD(&srs_Config->srs_ResourceToAddModList->list,srs_res0);
 
-
-
-  if (0) {
   // configure Scheduling request
   // 40 slot period 
-    pucch_Config->schedulingRequestResourceToAddModList = calloc(1,sizeof(*pucch_Config->schedulingRequestResourceToAddModList));
-    NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig = calloc(1,sizeof(*schedulingRequestResourceConfig));
-    schedulingRequestResourceConfig->schedulingRequestResourceId = 1;
-    schedulingRequestResourceConfig->schedulingRequestID= 0;
-    schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
-    schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40;
-    // note: make sure that there is no issue here. Later choose the RNTI accordingly.
-    //       Here we would be limited to 3 UEs on this resource (1 1/2 Frames 30 kHz SCS, 5 ms TDD periodicity => slots 7,8,9).
-    //       This should be a temporary resource until the first RRCReconfiguration gives new pucch resources.
-    // Check for above configuration and exit for now if it is not the case
-    AssertFatal(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing==NR_SubcarrierSpacing_kHz30,
-  	      "SCS != 30kHz\n");
-    AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity==NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5,
-  	      "TDD period != 5ms : %ld\n",scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
-  
-    schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 =  8+(10*((rnti>>1)&3)) + (rnti&1);
-    schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
-    *schedulingRequestResourceConfig->resource = 0;
-    ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
-  }
+  pucch_Config->schedulingRequestResourceToAddModList = calloc(1,sizeof(*pucch_Config->schedulingRequestResourceToAddModList));
+  NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig = calloc(1,sizeof(*schedulingRequestResourceConfig));
+  schedulingRequestResourceConfig->schedulingRequestResourceId = 1;
+  schedulingRequestResourceConfig->schedulingRequestID= 0;
+  schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
+  schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40;
+  // note: make sure that there is no issue here. Later choose the RNTI accordingly.
+  //       Here we would be limited to 3 UEs on this resource (1 1/2 Frames 30 kHz SCS, 5 ms TDD periodicity => slots 7,8,9).
+  //       This should be a temporary resource until the first RRCReconfiguration gives new pucch resources.
+  // Check for above configuration and exit for now if it is not the case
+  AssertFatal(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing==NR_SubcarrierSpacing_kHz30,
+              "SCS != 30kHz\n");
+  AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity==NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5,
+              "TDD period != 5ms : %ld\n",scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+
+  schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 =  8+(10*((rnti>>1)&3)) + (rnti&1);
+  schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
+  *schedulingRequestResourceConfig->resource = 0;
+  ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
+
  pucch_Config->dl_DataToUL_ACK = calloc(1,sizeof(*pucch_Config->dl_DataToUL_ACK));
  long *delay[8];
  for (int i=0;i<8;i++) {

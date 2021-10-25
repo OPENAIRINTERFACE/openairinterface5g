@@ -624,7 +624,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
       }
       UE_info->UE_sched_ctrl[UE_id].search_space = get_searchspace(scc, bwpd, target_ss);
-      UE_info->UE_sched_ctrl[UE_id].coreset = get_coreset(scc, bwpd, UE_info->UE_sched_ctrl[UE_id].search_space, target_ss);
+      UE_info->UE_sched_ctrl[UE_id].coreset = get_coreset(Mod_idP, scc, bwpd, UE_info->UE_sched_ctrl[UE_id].search_space, target_ss);
       UE_info->UE_sched_ctrl[UE_id].maxL = 2;
     }
   }
