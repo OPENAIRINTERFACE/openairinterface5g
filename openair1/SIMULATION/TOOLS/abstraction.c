@@ -39,7 +39,7 @@ double **cos_lut=NULL,* *sin_lut=NULL;
 
 
 
-int init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
+int init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples,int scs) {
   double delta_f,freq;  // 90 kHz spacing
   double delay;
   int16_t f;
@@ -52,7 +52,7 @@ int init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
 
   cos_lut = (double **)malloc(n_samples*sizeof(double *));
   sin_lut = (double **)malloc(n_samples*sizeof(double *));
-  delta_f = nb_rb*180000/(n_samples-1);
+  delta_f = nb_rb*12*scs*1000/(n_samples-1);
 
   for (f=-(n_samples>>1); f<=(n_samples>>1); f++) {
     freq=delta_f*(double)f*1e-6;// due to the fact that delays is in mus
@@ -67,14 +67,14 @@ int init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
 
       cos_lut[f+(n_samples>>1)][l] = cos(2*M_PI*freq*delay);
       sin_lut[f+(n_samples>>1)][l] = sin(2*M_PI*freq*delay);
-      //printf("values cos:%d, sin:%d\n", cos_lut[f][l], sin_lut[f][l]);
+      //      printf("values cos:%f, sin:%f\n", cos_lut[f+(n_samples>>1)][l], sin_lut[f+(n_samples>>1)][l]);
     }
   }
 
   return(0);
 }
 
-int freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
+int freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples,int scs) {
   int16_t f,f2,d;
   uint8_t aarx,aatx,l;
   double *clut,*slut;
@@ -95,14 +95,14 @@ int freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
     // if called with n_samples<12*nb_rb+1, we decimate the lut
     n_samples_max=12*nb_rb+1;
 
-    if (init_freq_channel(desc,nb_rb,n_samples_max)==0)
+    if (init_freq_channel(desc,nb_rb,n_samples_max,scs)==0)
       freq_channel_init=1;
     else
       return(-1);
   }
 
   d=(n_samples_max-1)/(n_samples-1);
-  //printf("no_samples=%d, n_samples_max=%d, d=%d\n",n_samples,n_samples_max,d);
+  //  printf("no_samples=%d, n_samples_max=%d, d=%d,nb_taps %d\n",n_samples,n_samples_max,d,desc->nb_taps);
   start_meas(&desc->interp_freq);
 
   for (f=-n_samples_max/2,f2=-n_samples/2; f<n_samples_max/2; f+=d,f2++) {
@@ -111,6 +111,7 @@ int freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
 
     for (aarx=0; aarx<desc->nb_rx; aarx++) {
       for (aatx=0; aatx<desc->nb_tx; aatx++) {
+        AssertFatal(n_samples/2+f2 < (2+(275*12)),"reading past chF %d (n_samples %d, f2 %d)\n",n_samples/2+f2,n_samples,f2);
         desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f2].r=0.0;
         desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f2].i=0.0;
 

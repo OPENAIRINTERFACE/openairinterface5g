@@ -516,12 +516,12 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
     else if (scd->defaultDownlinkBWP_Id)
       mac->DL_BWP_Id = *scd->defaultDownlinkBWP_Id;
     else
-      mac->DL_BWP_Id = 1;
+      mac->DL_BWP_Id = 0;
 
     if (scd->uplinkConfig && scd->uplinkConfig->firstActiveUplinkBWP_Id)
       mac->UL_BWP_Id = *scd->uplinkConfig->firstActiveUplinkBWP_Id;
     else
-      mac->UL_BWP_Id = 1;
+      mac->UL_BWP_Id = 0;
 
   }
 
@@ -537,20 +537,22 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
 void config_control_ue(NR_UE_MAC_INST_t *mac){
 
   uint8_t coreset_id = 1, ss_id;
-
-  NR_ServingCellConfig_t *scd = mac->cg->spCellConfig->spCellConfigDedicated;
-  AssertFatal(scd->downlinkBWP_ToAddModList != NULL, "downlinkBWP_ToAddModList is null\n");
-  AssertFatal(scd->downlinkBWP_ToAddModList->list.count == 1, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
-
-  config_bwp_ue(mac, NULL, NULL);
   NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
-  AssertFatal(dl_bwp_id != 0, "DL_BWP_Id is 0!");
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
+  NR_ServingCellConfig_t *scd = mac->cg->spCellConfig->spCellConfigDedicated;
+  if (dl_bwp_id==0) AssertFatal(mac->scc_SIB,"dl_bwp_id 0 (DL %d,UL %d) means mac->scc_SIB should exist here!\n",(int)mac->DL_BWP_Id,(int)mac->UL_BWP_Id);
+  NR_BWP_DownlinkCommon_t *bwp_Common = dl_bwp_id>0 ? scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common :
+                                                      &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
 
-  NR_BWP_DownlinkCommon_t *bwp_Common = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common;
-  AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
 
-  NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Dedicated;
+  if (dl_bwp_id > 0 ) {
+    AssertFatal(scd->downlinkBWP_ToAddModList != NULL, "downlinkBWP_ToAddModList is null\n");
+    AssertFatal(scd->downlinkBWP_ToAddModList->list.count == 1, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
+  }
+  NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = dl_bwp_id>0 ? scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Dedicated:
+                                                               scd->initialDownlinkBWP;
   AssertFatal(dl_bwp_Dedicated != NULL, "dl_bwp_Dedicated is null\n");
+  config_bwp_ue(mac, NULL, NULL);
 
   NR_SetupRelease_PDCCH_Config_t *pdcch_Config = dl_bwp_Dedicated->pdcch_Config;
   AssertFatal(pdcch_Config != NULL, "pdcch_Config is null\n");
@@ -574,16 +576,17 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   AssertFatal(searchSpacesToAddModList->list.count < FAPI_NR_MAX_SS_PER_CORESET, "too many searchpaces per coreset %d\n", searchSpacesToAddModList->list.count);
 
   struct NR_UplinkConfig__uplinkBWP_ToAddModList *uplinkBWP_ToAddModList = scd->uplinkConfig->uplinkBWP_ToAddModList;
-  AssertFatal(uplinkBWP_ToAddModList != NULL, "uplinkBWP_ToAddModList is null\n");
-  AssertFatal(uplinkBWP_ToAddModList->list.count == 1, "uplinkBWP_ToAddModList->list->count is %d\n", uplinkBWP_ToAddModList->list.count);
-
+  if (ul_bwp_id > 0) {
+     AssertFatal(uplinkBWP_ToAddModList != NULL, "uplinkBWP_ToAddModList is null\n");
+     AssertFatal(uplinkBWP_ToAddModList->list.count == 1, "uplinkBWP_ToAddModList->list->count is %d\n", uplinkBWP_ToAddModList->list.count);
+  }
   // check pdcch_Config, pdcch_ConfigCommon and DL BWP
-  mac->DLbwp[0] = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1];
-  mac->coreset[dl_bwp_id - 1][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
+  mac->DLbwp[0] = dl_bwp_id>0?scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]:NULL;
+  mac->coreset[dl_bwp_id][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
 
   // Check dedicated UL BWP and pass to MAC
-  mac->ULbwp[0] = uplinkBWP_ToAddModList->list.array[0];
-  AssertFatal(mac->ULbwp[0]->bwp_Dedicated != NULL, "UL bwp_Dedicated is null\n");
+  mac->ULbwp[0] = ul_bwp_id>0?uplinkBWP_ToAddModList->list.array[0]:NULL;
+  if (mac->ULbwp[0]) AssertFatal(mac->ULbwp[0]->bwp_Dedicated != NULL, "UL bwp_Dedicated is null\n");
 
   // check available Search Spaces in the searchSpacesToAddModList and pass to MAC
   // note: the network configures at most 10 Search Spaces per BWP per cell (including UE-specific and common Search Spaces).
@@ -591,10 +594,10 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     NR_SearchSpace_t *ss = searchSpacesToAddModList->list.array[ss_id];
     AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
-    AssertFatal(*ss->controlResourceSetId == mac->coreset[dl_bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
+    AssertFatal(*ss->controlResourceSetId == mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[0][0][ss_id] = ss;
+    mac->SSpace[dl_bwp_id][0][ss_id] = ss;
   }
 
   // Check available CSSs in the commonSearchSpaceList (list of additional common search spaces)
@@ -602,11 +605,12 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   for (int css_id = 0; css_id < commonSearchSpaceList->list.count; css_id++) {
     NR_SearchSpace_t *css = commonSearchSpaceList->list.array[css_id];
     AssertFatal(css->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
-    AssertFatal(*css->controlResourceSetId == mac->coreset[dl_bwp_id - 1][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
+    AssertFatal(*css->controlResourceSetId == 0 || *css->controlResourceSetId == mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId, "css->controlResourceSetId %ld is unknown, mac->coreset[%ld][%d]->controlResourceSetId %ld\n",*css->controlResourceSetId,dl_bwp_id,coreset_id-1,mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId);
+ 
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[0][0][ss_id] = css;
+    mac->SSpace[dl_bwp_id][0][ss_id] = css;
     ss_id++;
   }
 }
@@ -652,6 +656,9 @@ int nr_rrc_mac_config_req_ue(
     if(scell_group_config != NULL ){
       mac->cg = scell_group_config;
       mac->servCellIndex = *scell_group_config->spCellConfig->servCellIndex;
+      mac->DL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id : 0;
+      mac->UL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id : 0;
+
       config_control_ue(mac);
       if (scell_group_config->spCellConfig->reconfigurationWithSync) {
         if (scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
@@ -670,10 +677,18 @@ int nr_rrc_mac_config_req_ue(
     else if (cell_group_config != NULL ){
       LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
       mac->cg = cell_group_config;
-      mac->servCellIndex = cell_group_config->spCellConfig && cell_group_config->spCellConfig->servCellIndex ?
-                           *cell_group_config->spCellConfig->servCellIndex : 0;
-      if(get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || get_softmodem_params()->nsa) {
-        config_control_ue(mac);
+      if (cell_group_config->spCellConfig) {
+        mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
+        mac->DL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id : 0;
+        mac->UL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id : 0;
+      }
+      else {
+        mac->servCellIndex = 0;
+        mac->DL_BWP_Id = 0;
+        mac->UL_BWP_Id = 0;
+      }
+      config_control_ue(mac);
+      if (get_softmodem_params()->nsa) {
         if (cell_group_config->spCellConfig->reconfigurationWithSync) {
           if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
             ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;

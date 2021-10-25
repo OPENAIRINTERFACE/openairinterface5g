@@ -490,7 +490,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).offset              = GTPU_HEADER_OVERHEAD_MAX;
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti                = ue->rnti;
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id       = entity->pdusession_id;
-      if (offset==1) LOG_I(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
+      if (offset==1) LOG_D(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
       LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size-offset);
       itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
    }
@@ -747,7 +747,11 @@ void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
   }
 }
 
-static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
+static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s,
+                    int ciphering_algorithm,
+                    int integrity_algorithm,
+                    unsigned char *ciphering_key,
+                    unsigned char *integrity_key)
 {
   nr_pdcp_entity_t *pdcp_srb;
   nr_pdcp_ue_t *ue;
@@ -768,8 +772,10 @@ static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s)
                                   0, 0, 0, 0, // sdap parameters
                                   deliver_sdu_srb, ue, deliver_pdu_srb, ue,
                                   12, t_Reordering, -1,
-                                  0, 0,
-                                  NULL, NULL);
+                                  ciphering_algorithm,
+                                  integrity_algorithm,
+                                  ciphering_key,
+                                  integrity_key);
     nr_pdcp_ue_add_srb_pdcp_entity(ue, srb_id, pdcp_srb);
 
     LOG_D(PDCP, "%s:%d:%s: added srb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
@@ -791,11 +797,26 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   int sn_size_dl = decode_sn_size_dl(*s->pdcp_Config->drb->pdcp_SN_SizeDL);
   int discard_timer = decode_discard_timer(*s->pdcp_Config->drb->discardTimer);
 
+  int has_integrity;
+  int has_ciphering;
+
   /* if pdcp_Config->t_Reordering is not present, it means infinity (-1) */
   int t_reordering = -1;
   if (s->pdcp_Config->t_Reordering != NULL) {
     t_reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
   }
+
+  if (s->pdcp_Config->drb != NULL
+      && s->pdcp_Config->drb->integrityProtection != NULL)
+    has_integrity = 1;
+  else
+    has_integrity = 0;
+
+  if (s->pdcp_Config->ext1 != NULL
+     && s->pdcp_Config->ext1->cipheringDisabled != NULL)
+    has_ciphering = 0;
+  else
+    has_ciphering = 1;
 
   if ((!s->cnAssociation) || s->cnAssociation->present == NR_DRB_ToAddMod__cnAssociation_PR_NOTHING) {
     LOG_E(PDCP,"%s:%d:%s: fatal, cnAssociation is missing or present is NR_DRB_ToAddMod__cnAssociation_PR_NOTHING\n",__FILE__,__LINE__,__FUNCTION__);
@@ -838,15 +859,17 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
   if (ue->drb[drb_id-1] != NULL) {
-    LOG_D(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
+    LOG_W(PDCP, "%s:%d:%s: warning DRB %d already exist for ue %d, do nothing\n",
           __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
   } else {
     pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id,pdusession_id,has_sdap,
                                   has_sdapULheader,has_sdapDLheader,
                                   deliver_sdu_drb, ue, deliver_pdu_drb, ue,
                                   sn_size_dl, t_reordering, discard_timer,
-                                  ciphering_algorithm, integrity_algorithm,
-                                  ciphering_key, integrity_key);
+                                  has_ciphering ? ciphering_algorithm : 0,
+                                  has_integrity ? integrity_algorithm : 0,
+                                  has_ciphering ? ciphering_key : NULL,
+                                  has_integrity ? integrity_key : NULL);
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
 
     LOG_D(PDCP, "%s:%d:%s: added drb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
@@ -920,7 +943,9 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
 
   if (srb2add_list != NULL) {
     for (i = 0; i < srb2add_list->list.count; i++) {
-      add_srb(ctxt_pP->enb_flag,rnti, srb2add_list->list.array[i]);
+      add_srb(ctxt_pP->enb_flag,rnti, srb2add_list->list.array[i],
+              security_modeP & 0x0f, (security_modeP >> 4) & 0x0f,
+              kRRCenc, kRRCint);
     }
   }
 

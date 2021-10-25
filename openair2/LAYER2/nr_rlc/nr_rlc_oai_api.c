@@ -399,15 +399,22 @@ int rlc_module_init(int enb_flag)
 {
   static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
   static int inited = 0;
+  static int inited_ue = 0;
 
   if (pthread_mutex_lock(&lock)) abort();
 
-  if (inited) {
-    LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+  if (enb_flag == 1 && inited) {
+    LOG_E(RLC, "%s:%d:%s: fatal, inited already 1\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
 
-  inited = 1;
+  if (enb_flag == 0 && inited_ue) {
+    LOG_E(RLC, "%s:%d:%s: fatal, inited_ue already 1\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  if (enb_flag == 1) inited = 1;
+  if (enb_flag == 0) inited_ue = 1;
 
   nr_rlc_ue_manager = new_nr_rlc_ue_manager(enb_flag);
 
@@ -453,7 +460,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   exit(1);
 
 rb_found:
-  LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d",
+  LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d\n",
         __FILE__, __LINE__, __FUNCTION__, ue->rnti, is_srb, rb_id, size);
 
   memblock = get_free_mem_block(size, __func__);
