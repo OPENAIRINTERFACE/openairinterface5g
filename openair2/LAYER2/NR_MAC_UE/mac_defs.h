@@ -309,6 +309,7 @@ typedef struct {
   bool ack_received;
   uint8_t  pucch_resource_indicator;
   uint16_t feedback_to_ul;
+  int is_common;
   frame_t dl_frame;
   int dl_slot;
   uint8_t ack;
@@ -344,6 +345,7 @@ typedef struct {
   uint32_t csi_part2_payload;
   int resource_indicator;
   int resource_set_id;
+  int is_common;
   int initial_pucch_id;
   NR_PUCCH_Resource_t *pucch_resource;
   int n_CCE;
