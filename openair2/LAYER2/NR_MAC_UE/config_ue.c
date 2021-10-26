@@ -677,12 +677,19 @@ int nr_rrc_mac_config_req_ue(
     else if (cell_group_config != NULL ){
       LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
       mac->cg = cell_group_config;
-      mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
-      mac->DL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id : 0;
-      mac->UL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id : 0;
-      if(get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || get_softmodem_params()->nsa) {
-        config_control_ue(mac);
-        if (cell_group_config->spCellConfig->reconfigurationWithSync) {
+      if (cell_group_config->spCellConfig) {
+        mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
+        mac->DL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id : 0;
+        mac->UL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id : 0;
+      }
+      else {
+        mac->servCellIndex = 0;
+        mac->DL_BWP_Id = 0;
+        mac->UL_BWP_Id = 0;
+      }
+      config_control_ue(mac);
+      if (get_softmodem_params()->nsa) {
+        if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
           if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
             ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
           }

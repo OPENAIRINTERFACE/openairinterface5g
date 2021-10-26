@@ -1000,8 +1000,8 @@ uint8_t do_RRCReject(uint8_t Mod_id,
 }
 
 void fill_initial_SpCellConfig(rnti_t rnti,
-			       NR_SpCellConfig_t *SpCellConfig,
-			       NR_ServingCellConfigCommon_t *scc,
+                               NR_SpCellConfig_t *SpCellConfig,
+                               NR_ServingCellConfigCommon_t *scc,
                                rrc_gNB_carrier_data_t *carrier) {
 
   int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
