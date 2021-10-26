@@ -257,7 +257,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 
   LOG_I(NR_RRC,"Done init_NR_SI\n");
 
-  if (NODE_IS_MONOLITHIC(rrc->node_type)){
+  if (NODE_IS_MONOLITHIC(rrc->node_type) || NODE_IS_DU(rrc->node_type)){
     rrc_mac_config_req_gNB(rrc->module_id,
 			   rrc->carrier.ssb_SubcarrierOffset,
 			   rrc->carrier.pdsch_AntennaPorts,
