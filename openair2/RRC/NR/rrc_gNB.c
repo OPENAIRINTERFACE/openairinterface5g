@@ -2895,11 +2895,11 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         memset(mib->message.choice.mib,0,sizeof(struct NR_MIB));
         memcpy(mib->message.choice.mib, mib_DU->message.choice.mib, sizeof(struct NR_MIB));
 
-        rrc->carrier.SIB1 = malloc(f1_setup_req->sib1_length[i]);
+        /*rrc->carrier.SIB1 = malloc(f1_setup_req->sib1_length[i]);
         rrc->carrier.sizeof_SIB1 = f1_setup_req->sib1_length[i];
-        memcpy((void *)rrc->carrier.SIB1,f1_setup_req->sib1[i],f1_setup_req->sib1_length[i]);
+        memcpy((void *)rrc->carrier.SIB1,f1_setup_req->sib1[i],f1_setup_req->sib1_length[i]);*/
         dec_rval = uper_decode_complete(NULL,
-                                        &asn_DEF_NR_BCCH_DL_SCH_Message,
+                                        &asn_DEF_NR_SIB1, //&asn_DEF_NR_BCCH_DL_SCH_Message,
                                         (void **)&rrc->carrier.siblock1_DU,
                                         f1_setup_req->sib1[i],
                                         f1_setup_req->sib1_length[i]);
@@ -2909,12 +2909,18 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
                     dec_rval.consumed );
 
         // Parse message and extract SystemInformationBlockType1 field
-        NR_BCCH_DL_SCH_Message_t *bcch_message = rrc->carrier.siblock1_DU;
+        rrc->carrier.sib1 = rrc->carrier.siblock1_DU;
+        if ( LOG_DEBUGFLAG(DEBUG_ASN1)){
+          LOG_I(NR_RRC, "Printing received SIB1 container inside F1 setup request message:\n");
+          xer_fprint(stdout, &asn_DEF_NR_SIB1,(void *)rrc->carrier.sib1);
+        }
+
+        /*NR_BCCH_DL_SCH_Message_t *bcch_message = rrc->carrier.siblock1_DU;
         AssertFatal(bcch_message->message.present == NR_BCCH_DL_SCH_MessageType_PR_c1,
                     "bcch_message->message.present != NR_BCCH_DL_SCH_MessageType_PR_c1\n");
         AssertFatal(bcch_message->message.choice.c1->present == NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1,
                     "bcch_message->message.choice.c1->present != NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1\n");
-        rrc->carrier.sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
+        rrc->carrier.sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;*/
         rrc->carrier.physCellId = f1_setup_req->cell[i].nr_pci;
 
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).gNB_CU_name                                = rrc->node_name;

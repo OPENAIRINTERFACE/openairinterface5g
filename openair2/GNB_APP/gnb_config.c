@@ -1736,7 +1736,7 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         f1Setup->ranac[k]                                      = 0;
         f1Setup->mib[k]                                        = rrc->carrier.MIB;
         f1Setup->mib_length[k]                                 = rrc->carrier.sizeof_MIB;
-        if(1){
+        if(0){
           f1Setup->sib1[k]                                       = rrc->carrier.SIB1;
           f1Setup->sib1_length[k]                                = rrc->carrier.sizeof_SIB1;
         }
