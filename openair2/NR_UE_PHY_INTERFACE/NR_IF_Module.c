@@ -958,14 +958,11 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
     }
 
     //clean up nr_downlink_indication_t *dl_info
-    if(dl_info->dci_ind != NULL){
-      free(dl_info->dci_ind);
-      dl_info->dci_ind = NULL;
-    }
-    if(dl_info->rx_ind != NULL){
-      free(dl_info->rx_ind);
-      dl_info->rx_ind  = NULL;
-    }
+    free(dl_info->dci_ind);
+    dl_info->dci_ind = NULL;
+    free(dl_info->rx_ind);
+    dl_info->rx_ind  = NULL;
+
   }
   return 0;
 }
