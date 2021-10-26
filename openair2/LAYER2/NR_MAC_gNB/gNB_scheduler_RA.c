@@ -1463,7 +1463,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     int r_pucch = ((CCEIndex<<1)/N_cce)+(delta_PRI<<1);
 
     int alloc = nr_acknack_scheduling(module_idP, UE_id, frameP, slotP, r_pucch);
-    AssertFatal(alloc>=0,"Couldn't find a pucch allocation for ack nack (msg4)\n");
+    AssertFatal(alloc>=0,"%d.%d Couldn't find a pucch allocation for ack nack (msg4), r_pucch %d (CCEindex%d,N_cce%d\n",frameP,slotP,r_pucch,CCEIndex,N_cce);
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[alloc];
     harq->feedback_slot = pucch->ul_slot;
     harq->feedback_frame = pucch->frame;
