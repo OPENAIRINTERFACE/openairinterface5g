@@ -1043,7 +1043,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     DRB_config->pdcp_Config->moreThanOneRLC = NULL;
 
     DRB_config->pdcp_Config->t_Reordering = calloc(1, sizeof(*DRB_config->pdcp_Config->t_Reordering));
-    *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms750;
+    *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
     DRB_config->pdcp_Config->ext1 = NULL;
 
     if (rrc->security.do_drb_integrity) {
