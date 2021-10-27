@@ -2601,7 +2601,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   NR_UL_DCCH_Message_t ul_dcch_msg;
   NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container;
   char UE_NR_Capability_xer_fname[1024];
-  char UE_NR_Capability_xer[8192];
+  char UE_NR_Capability_xer[65536];
   size_t size;
   uint8_t buffer[200];
   int i;
@@ -2610,7 +2610,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
         ctxt_pP->frame,
         gNB_index);
 
-  sprintf(UE_NR_Capability_xer_fname,"%stargets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml",getenv("OPENAIR_HOME"));
+  sprintf(UE_NR_Capability_xer_fname,"../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml");
   FILE *f = fopen(UE_NR_Capability_xer_fname, "r");
 
   memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
@@ -2627,7 +2627,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   if(f){
     size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
     if (size == 0 || size == sizeof UE_NR_Capability_xer) {
-      LOG_E(NR_RRC,"UE Capabilities XER file %s is too large\n", UE_NR_Capability_xer_fname);
+      LOG_E(NR_RRC,"UE Capabilities XER file %s is too large (%ld)\n", UE_NR_Capability_xer_fname,size);
       free(UE_Capability_nr);
       return;
     }
@@ -2644,9 +2644,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   OAI_NR_UECapability_t *UECap;
   UECap = CALLOC(1,sizeof(OAI_NR_UECapability_t));
   UECap->UE_NR_Capability = UE_Capability_nr;
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    xer_fprint(stdout,&asn_DEF_NR_UE_NR_Capability,(void *)UE_Capability_nr);
-  }
+  xer_fprint(stdout,&asn_DEF_NR_UE_NR_Capability,(void *)UE_Capability_nr);
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_NR_Capability,
                                    NULL,
