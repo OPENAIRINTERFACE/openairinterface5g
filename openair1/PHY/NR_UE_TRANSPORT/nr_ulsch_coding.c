@@ -39,7 +39,6 @@
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include <openair2/UTIL/OPT/opt.h>
 
 //#define DEBUG_ULSCH_CODING
