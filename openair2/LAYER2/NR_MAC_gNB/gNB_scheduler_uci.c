@@ -520,6 +520,11 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->csi_bits +=
           nr_get_csi_bitlen(Mod_idP,UE_id,csi_report_id);
 
+      NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
+        &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
+        &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+      int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+
       // going through the list of PUCCH resources to find the one indexed by resource_id
       uint16_t *vrb_map_UL = &RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
       const int m = pucch_Config->resourceToAddModList->list.count;
@@ -550,7 +555,7 @@ void nr_csi_meas_reporting(int Mod_idP,
         }
         // verify resources are free
         for (int i = start; i < start + len; ++i) {
-          vrb_map_UL[i] |= mask;
+          vrb_map_UL[i+bwp_start] |= mask;
         }
       }
     }
@@ -1390,18 +1395,32 @@ int nr_acknack_scheduling(int mod_id,
     pucch_Config = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
   }
 
+  NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
+    &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
+    &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+
   /* verify that at that slot and symbol, resources are free. We only do this
    * for initialCyclicShift 0 (we assume it always has that one), so other
    * initialCyclicShifts can overlap with ICS 0!*/
   if (pucch_Config) {
     const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[pucch->resource_indicator];
     DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
+    int second_hop_prb = resource->secondHopPRB!= NULL ?  *resource->secondHopPRB : 0;
+    int nr_of_symbols = resource->format.choice.format0->nrofSymbols;
     if (resource->format.choice.format0->initialCyclicShift == 0) {
       uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
-      const uint16_t symb = 1 << resource->format.choice.format0->startingSymbolIndex;
-      if ((vrb_map_UL[resource->startingPRB] & symb) != 0)
-        LOG_W(NR_MAC, "symbol 0x%x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d.%d\n", symb, resource->startingPRB, pucch->frame, pucch->ul_slot);
-      vrb_map_UL[resource->startingPRB] |= symb;
+      for (int l=0; l<nr_of_symbols; l++) {
+        uint16_t symb = 1 << (resource->format.choice.format0->startingSymbolIndex + l);
+        int prb;
+        if (l==1 && second_hop_prb != 0)
+          prb = second_hop_prb;
+        else
+          prb = resource->startingPRB;
+        if ((vrb_map_UL[bwp_start+prb] & symb) != 0)
+          LOG_W(MAC, "symbol 0x%x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d.%d\n", symb, resource->startingPRB, pucch->frame, pucch->ul_slot);
+        vrb_map_UL[bwp_start+prb] |= symb;
+      }
     }
   }
   return 0;
