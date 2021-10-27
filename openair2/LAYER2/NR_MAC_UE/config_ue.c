@@ -689,7 +689,7 @@ int nr_rrc_mac_config_req_ue(
       }
       config_control_ue(mac);
       if (get_softmodem_params()->nsa) {
-        if (cell_group_config->spCellConfig->reconfigurationWithSync) {
+        if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
           if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
             ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
           }
