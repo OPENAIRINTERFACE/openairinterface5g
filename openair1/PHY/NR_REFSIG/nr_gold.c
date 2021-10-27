@@ -154,4 +154,43 @@ void nr_init_csi_rs(PHY_VARS_gNB* gNB, uint32_t Nid)
 
 }
 
-void nr_init_prs(PHY_VARS_gNB* gNB, uint32_t Nid, ...)
+void nr_init_prs(PHY_VARS_gNB* gNB, uint32_t symNum)
+{
+  unsigned int x1, x2;
+  uint16_t Nid, i_ssb, i_ssb2;
+  //unsigned char Lmax, l, n_hf, N_hf;
+  nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
+  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  uint8_t reset;
+  uint8_t slotNum, symNum;
+
+  Nid = cfg->cell_config.phy_cell_id.value;
+
+  //Lmax = fp->Lmax;
+  //N_hf = (Lmax == 4)? 2:1;
+
+  for (slotNum = 0; slotNum < fp->slots_per_frame-1; slotNum++) {
+    for (symNum = 0; symNum < fp->symbols_per_slot-1 ; symNum++) {
+      i_ssb = sumNum & (symbols_per_slot-1);
+      i_ssb2 = i_ssb + (slot<<2);
+
+      reset = 1;
+      // initial x2 for prs as 38.211
+      uint32_t c_init1, c_init2, c_init3;
+      uint32_t pow22=1<<22;
+      uint32_t pow10=1<<10;
+      c_init1 = pow22*ceil(Nid/1024);
+      c_init2 = pow10*(slotnum+symNum+1)*(2*(Nid%1024)+1);
+      c_init3 = Nid%1024;
+      x2 = c_init1 + c_init2 + c_init3;
+
+
+      for (uint8_t n=0; n<NR_MAX_PRS_INIT_LENGTH_DWORD; n++) {
+        gNB->nr_gold_prs[slotNum][symNum][n] = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
+      }
+
+    }
+  }
+
+}
