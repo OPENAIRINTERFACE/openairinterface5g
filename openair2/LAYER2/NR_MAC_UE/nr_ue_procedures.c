@@ -54,7 +54,6 @@
 /* PHY */
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/softmodem-common.h"
-#include "SCHED_NR_UE/defs.h"
 
 /* utils */
 #include "assertions.h"
@@ -1405,7 +1404,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         mac->cg->physicalCellGroupConfig &&
         (mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL ||
         mac->cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook != 1)) {
-      LOG_E(PHY,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+      LOG_E(MAC,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
       return;
     }
     else if (mac->cg &&
@@ -3644,7 +3643,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
   int ret                  = 0;
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer; // RAR subheader pointer
   NR_MAC_RAR *rar          = (NR_MAC_RAR *) (dlsch_buffer + 1);   // RAR subPDU pointer
-  uint8_t preamble_index   = mac->ra.rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[0]->ra_PreambleIndex;
+  uint8_t preamble_index   = ra->ra_PreambleIndex;
 
   LOG_D(NR_MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
 

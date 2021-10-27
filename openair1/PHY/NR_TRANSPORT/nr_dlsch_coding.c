@@ -39,10 +39,10 @@
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
-#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "SCHED_NR/sched_nr.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
+#include "common/utils/nr/nr_common.h"
 #include <syscall.h>
 #include <openair2/UTIL/OPT/opt.h>
 
