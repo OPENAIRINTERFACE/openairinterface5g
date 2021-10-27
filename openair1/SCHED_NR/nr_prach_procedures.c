@@ -49,7 +49,58 @@
 
 extern uint8_t nfapi_mode;
 
-extern int oai_nfapi_nr_rach_ind(nfapi_rach_indication_t *rach_ind);
+uint8_t get_nr_prach_duration(uint8_t prach_format){
+
+  switch(prach_format){
+
+      case 0:  // format 0
+         return 0;
+
+      case 1:  // format 1
+         return 0;
+
+      case 2:  // format 2
+         return 0;
+
+      case 3:  // format 3
+         return 0;
+
+      case 4:  // format A1
+         return 2;
+
+      case 5:  // format A2
+         return 4;
+
+      case 6:  // format A3
+         return 6;
+
+      case 7:  // format B1
+         return 2;
+
+      case 8:  // format B4
+         return 12;
+
+      case 9:  // format C0
+         return 2;
+
+      case 10:  // format C2
+         return 6;
+
+      case 11:  // format A1/B1
+         return 2;
+
+      case 12:  // format A2/B2
+         return 4;
+
+      case 13:  // format A3/B3
+         return 6;
+
+      default :
+         AssertFatal(1==0,"Invalid Prach format\n");
+         break;
+
+  }
+}
 
 void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
 

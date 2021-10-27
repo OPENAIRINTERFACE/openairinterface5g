@@ -635,7 +635,7 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
   pdcp_t                        *pdcp_p    = NULL;
   int bytes_received;
   sidelink_pc5s_element *sl_pc5s_msg_send = NULL;
-  pc5s_header_t *pc5s_header = NULL;
+  pc5s_header_t *pc5s_header  = NULL;
   rb_id_t          rab_id  = 0;
   //TTN for D2D (PC5S)
   // receive a message from ProSe App
@@ -750,6 +750,12 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
                 pc5s_header->rb_id,
                 rab_id,
                 pc5s_header->data_size);
+            /* pointers to pc5s_header fields possibly not aligned because pc5s_header points to a packed structure
+             * Using these possibly unaligned pointers in a function call may trigger alignment errors at run time and
+             * gcc, from v9,  now warns about it. fix these warnings by using  local variables
+             */
+              uint32_t sourceL2Id = pc5s_header->sourceL2Id;
+              uint32_t destinationL2Id = pc5s_header->destinationL2Id;
               pdcp_data_req(
                 &ctxt,
                 SRB_FLAG_NO,
@@ -759,9 +765,11 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
                 pc5s_header->data_size,
                 (unsigned char *)receive_buf,
                 PDCP_TRANSMISSION_MODE_DATA,
-                &pc5s_header->sourceL2Id,
-                &pc5s_header->destinationL2Id
+                &sourceL2Id,
+                &destinationL2Id
               );
+              pc5s_header->sourceL2Id = sourceL2Id;
+              pc5s_header->destinationL2Id=destinationL2Id;             
             } else { /* else of h_rc == HASH_TABLE_OK */
               MSC_LOG_RX_DISCARDED_MESSAGE(
                 (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
@@ -805,6 +813,12 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
               pc5s_header->rb_id,
               DEFAULT_RAB_ID,
               pc5s_header->data_size);
+            /* pointers to pc5s_header fields possibly not aligned because pc5s_header points to a packed structure
+             * Using these possibly unaligned pointers in a function call may trigger alignment errors at run time and
+             * gcc, from v9,  now warns about it. fix these warnings by using  local variables
+             */
+            uint32_t sourceL2Id = pc5s_header->sourceL2Id;
+            uint32_t destinationL2Id = pc5s_header->destinationL2Id;
             pdcp_data_req (
               &ctxt,
               SRB_FLAG_NO,
@@ -814,9 +828,11 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
               pc5s_header->data_size,
               (unsigned char *)receive_buf,
               PDCP_TRANSMISSION_MODE_DATA,
-              &pc5s_header->sourceL2Id,
-              &pc5s_header->destinationL2Id
+              &sourceL2Id,
+              &destinationL2Id
             );
+            pc5s_header->sourceL2Id = sourceL2Id;
+            pc5s_header->destinationL2Id=destinationL2Id; 
           }
         } /* end of !ctxt.enb_flag */
 

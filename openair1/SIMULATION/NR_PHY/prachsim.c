@@ -47,6 +47,7 @@
 #include "nr_unitary_defs.h"
 #include "OCG_vars.h"
 #include <openair2/LAYER2/MAC/mac_vars.h>
+#include <openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
 #include <executables/softmodem-common.h>
 #include <openair2/RRC/NR_UE/rrc_defs.h>
