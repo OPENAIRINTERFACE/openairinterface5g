@@ -37,7 +37,6 @@
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "T.h"
 
 

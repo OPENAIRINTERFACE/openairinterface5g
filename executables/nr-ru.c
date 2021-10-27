@@ -33,6 +33,7 @@
 
 #include "common/utils/assertions.h"
 #include "common/utils/system.h"
+#include "common/ran_context.h"
 
 #include "../../ARCH/COMMON/common_lib.h"
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
@@ -46,8 +47,6 @@
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/INIT/phy_init.h"
 #include "SCHED_NR/sched_nr.h"
-
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"

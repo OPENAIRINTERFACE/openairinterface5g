@@ -45,11 +45,6 @@
 
 //#define DEBUG_HARQ
 
-//#include "LAYER2/MAC/extern.h"
-//#include "LAYER2/MAC/defs.h"
-//#include "../openair2/LAYER2/MAC/extern.h"
-//#include "../openair2/LAYER2/MAC/defs.h"
-
 //#define DEBUG_DCI
 #define NR_PDCCH_DCI_TOOLS
 //#define NR_PDCCH_DCI_TOOLS_DEBUG

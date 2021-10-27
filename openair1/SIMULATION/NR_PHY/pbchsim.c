@@ -28,6 +28,7 @@
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h" 
+#include "common/utils/nr/nr_common.h"
 #include "PHY/types.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"

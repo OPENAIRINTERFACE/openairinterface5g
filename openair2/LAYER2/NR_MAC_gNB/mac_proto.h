@@ -31,8 +31,6 @@
 #ifndef __LAYER2_NR_MAC_PROTO_H__
 #define __LAYER2_NR_MAC_PROTO_H__
 
-#include "PHY/defs_gNB.h"
-
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_TAG-Id.h"
 
@@ -444,4 +442,5 @@ bool nr_find_nb_rb(uint16_t Qm,
 
 void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
 
+void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen);
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
