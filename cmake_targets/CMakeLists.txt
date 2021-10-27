@@ -1983,6 +1983,10 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
   )
 
+set(NR_SDAP_SRC
+  ${OPENAIR2_DIR}/SDAP/nr_sdap/nr_sdap_gnb.c
+  )
+  
 set(L2_SRC
   ${PDCP_DIR}/pdcp.c
   ${PDCP_DIR}/pdcp_fifo.c
@@ -2026,6 +2030,7 @@ set(L2_LTE_SRC
 set(L2_NR_SRC
   ${NR_RLC_SRC}
   ${NR_PDCP_SRC}
+  ${NR_SDAP_SRC}
   ${NR_RRC_DIR}/rrc_gNB.c
   ${NR_RRC_DIR}/nr_rrc_common.c
   ${NR_RRC_DIR}/L2_nr_interface.c
@@ -2061,6 +2066,7 @@ set(L2_RRC_SRC_UE
 set(NR_L2_SRC_UE
   ${NR_RLC_SRC}
   ${NR_PDCP_SRC}
+  ${NR_SDAP_SRC}
   ${NR_UE_RRC_DIR}/L2_interface_ue.c
   ${NR_UE_RRC_DIR}/main_ue.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
