@@ -40,6 +40,12 @@
 
 #define MAX_OCLDEV   10
 #define MAX_OCLRUNTIME 5
+
+
+#define CLSETKERNELARG(A,B,C,D) \
+rt=clSetKernelArg(A,B,C,D) ;\
+AssertFatal(rt == CL_SUCCESS, "Error %d setting kernel argument index %d\n" , (int)rt, B);
+
 typedef struct{
   char x;
   char y;
@@ -304,10 +310,10 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
 //	int pack = (block_length/128)+1;
 //	dim3 pack_block(pack, MC, 1);
 //	pack_decoded_bit<<<pack_block,128>>>( col, Zc);
-	rt = clSetKernelArg(ocl.runtime[0].kernels[0].pack_decoded_bit, 0, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_llr));
-	rt = clSetKernelArg(ocl.runtime[0].kernels[0].pack_decoded_bit, 1, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_tmp));
-	rt = clSetKernelArg(ocl.runtime[0].kernels[0].pack_decoded_bit, 2, sizeof(int), (void *)&(col));
-	rt = clSetKernelArg(ocl.runtime[0].kernels[0].pack_decoded_bit, 3, sizeof(int), (void *)&(Zc));
+	CLSETKERNELARG(ocl.runtime[0].kernels[0].pack_decoded_bit, 0, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_llr));
+	CLSETKERNELARG(ocl.runtime[0].kernels[0].pack_decoded_bit, 1, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_tmp));
+	CLSETKERNELARG(ocl.runtime[0].kernels[0].pack_decoded_bit, 2, sizeof(int), (void *)&(col));
+	CLSETKERNELARG(ocl.runtime[0].kernels[0].pack_decoded_bit, 3, sizeof(int), (void *)&(Zc));
  
     // Execute the OpenCL kernel on the list
     size_t global_item_size = block_length; // Process the entire lists
