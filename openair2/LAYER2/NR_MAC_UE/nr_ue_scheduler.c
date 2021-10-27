@@ -850,7 +850,14 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     return -1;
   }
 
-  get_num_re_dmrs(pusch_config_pdu, &nb_dmrs_re_per_rb, &number_dmrs_symbols);
+  int start_symbol = pusch_config_pdu->start_symbol_index;
+  int number_of_symbols = pusch_config_pdu->nr_of_symbols;
+  for (int i = start_symbol; i < start_symbol + number_of_symbols; i++) {
+    if((pusch_config_pdu->ul_dmrs_symb_pos >> i) & 0x01)
+      number_dmrs_symbols += 1;
+  }
+
+  nb_dmrs_re_per_rb = ((pusch_config_pdu->dmrs_config_type == pusch_dmrs_type1) ? 6:4)*pusch_config_pdu->num_dmrs_cdm_grps_no_data;
 
   // Compute TBS
   pusch_config_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_config_pdu->qam_mod_order,
@@ -2005,6 +2012,7 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
                                         ssb_start_symbol,
                                         scs_ssb,
                                         frequency_range,
+                                        mac->nr_band,
                                         ssb_index,
                                         1, // If the UE is not configured with a periodicity, the UE assumes a periodicity of a half frame
                                         ssb_offset_point_a);

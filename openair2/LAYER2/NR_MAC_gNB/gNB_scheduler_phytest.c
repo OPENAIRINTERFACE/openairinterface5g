@@ -29,11 +29,8 @@
  */
 
 #include "nr_mac_gNB.h"
-#include "SCHED_NR/sched_nr.h"
 #include "NR_MAC_gNB/mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
-#include "PHY/NR_TRANSPORT/nr_dlsch.h"
-#include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/nr-softmodem.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "executables/softmodem-common.h"
@@ -378,13 +375,11 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
-  const uint8_t num_dmrs_cdm_grps_no_data = 1;
-  const long f = 1;
+  const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   ps->nrOfLayers = target_dl_Nl;
-  if (ps->time_domain_allocation != tda || ps->numDmrsCdmGrpsNoData != num_dmrs_cdm_grps_no_data)
+  if (ps->time_domain_allocation != tda)
     nr_set_pdsch_semi_static(
         scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, f, ps);
-
 
   sched_pdsch->mcs = target_dl_mcs;
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
