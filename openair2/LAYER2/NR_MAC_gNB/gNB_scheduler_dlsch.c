@@ -124,8 +124,7 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
     }
   }
 
-  const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
-  const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   nrmac->preferred_dl_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_dl_tda[bwp_id]));
 
   const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;

@@ -206,17 +206,6 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
 
-
-
-/*
-
-  if ((cfg->subframe_config.duplex_mode.value == TDD) && 
-      ((nr_slot_select(fp,frame,slot)&NR_DOWNLINK_SLOT)==SF_DL)) return;
-
-  //  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,1);
-
-*/
-
 void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   ldpcDecode_t *rdata = (ldpcDecode_t*) NotifiedFifoData(req);
   NR_UL_gNB_HARQ_t *ulsch_harq = rdata->ulsch_harq;

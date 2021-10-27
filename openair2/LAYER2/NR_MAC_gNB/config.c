@@ -58,6 +58,7 @@ void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *
                              struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_bearer2release_list,
                              NR_UE_sched_ctrl_t *sched_ctrl) {
 
+
   if (rlc_bearer2add_list)
   // keep lcids
     for (int i=0;i<rlc_bearer2add_list->list.count;i++) {
@@ -394,18 +395,17 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   cfg->num_tlv++;
 
   // TDD Table Configuration
-  //cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
-  cfg->tdd_table.tdd_period.tl.tag = NFAPI_NR_CONFIG_TDD_PERIOD_TAG;
-  cfg->num_tlv++;
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 == NULL)
-    cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
-  else {
-    AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL,
-		"scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
-    cfg->tdd_table.tdd_period.value = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
-  }
-  if(cfg->cell_config.frame_duplex_type.value == TDD){
-    LOG_I(NR_MAC,"Setting TDD configuration period to %d\n",cfg->tdd_table.tdd_period.value);
+  if (cfg->cell_config.frame_duplex_type.value == TDD){
+    cfg->tdd_table.tdd_period.tl.tag = NFAPI_NR_CONFIG_TDD_PERIOD_TAG;
+    cfg->num_tlv++;
+    if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 == NULL) {
+      cfg->tdd_table.tdd_period.value = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
+    } else {
+      AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL,
+                  "In %s: scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n", __FUNCTION__);
+      cfg->tdd_table.tdd_period.value = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+    }
+    LOG_I(NR_MAC, "Setting TDD configuration period to %d\n", cfg->tdd_table.tdd_period.value);
     int periods_per_frame = set_tdd_config_nr(cfg,
                                               scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                               scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
@@ -439,8 +439,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
 
     /* dimension UL_tti_req_ahead for number of slots in frame */
-    const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
-    const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
+    const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
     RC.nrmac[Mod_idP]->UL_tti_req_ahead[0] = calloc(n, sizeof(nfapi_nr_ul_tti_request_t));
     AssertFatal(RC.nrmac[Mod_idP]->UL_tti_req_ahead[0],
                 "could not allocate memory for RC.nrmac[]->UL_tti_req_ahead[]\n");
@@ -490,19 +489,23 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     find_SSB_and_RO_available(Mod_idP);
 
-    const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-    const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-    const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
-    const int nr_dlmix_slots = tdd->nrofDownlinkSlots + (tdd->nrofDownlinkSymbols != 0);
-    const int nr_ulstart_slot = tdd->nrofDownlinkSlots + (tdd->nrofUplinkSymbols == 0);
+    const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+    const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
+    const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
+    const int nr_dlmix_slots = tdd ? tdd->nrofDownlinkSlots + (tdd->nrofDownlinkSymbols != 0) : 0;
+    const int nr_dl_slots = tdd ? nr_dlmix_slots : n;
+    const int nr_ulstart_slot = tdd ? tdd->nrofDownlinkSlots + (tdd->nrofUplinkSymbols == 0) : 1;
 
     for (int slot = 0; slot < n; ++slot) {
       /* FIXME: it seems there is a problem with slot 0/10/slots right after UL:
        * we just get retransmissions. Thus, do not schedule such slots in DL */
-      if (slot % nr_slots_period != 0)
-        RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dlmix_slots) << (slot % 64);
+      if (slot % nr_slots_period != 0){
+        RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
+      }
       RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);
-      LOG_D(NR_MAC, "slot %d DL %d UL %d\n",
+
+      LOG_I(NR_MAC, "In %s: slot %d DL %d UL %d\n",
+            __FUNCTION__,
             slot,
             (RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] & ((uint64_t)1 << (slot % 64))) != 0,
             (RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] & ((uint64_t)1 << (slot % 64))) != 0);

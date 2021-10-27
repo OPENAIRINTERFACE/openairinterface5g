@@ -228,27 +228,28 @@ void config_common_ue_sa(NR_UE_MAC_INST_t *mac,
   }
 
   // TDD Table Configuration
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 == NULL)
-    cfg->tdd_table.tdd_period = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
-  else {
-    AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL,
-		"scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
-    cfg->tdd_table.tdd_period = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
-  }
   if(cfg->cell_config.frame_duplex_type == TDD){
+    if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 == NULL) {
+      cfg->tdd_table.tdd_period = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
+    } else {
+      AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL,
+                  "scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
+      cfg->tdd_table.tdd_period = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+    }
     LOG_I(MAC,"Setting TDD configuration period to %d\n", cfg->tdd_table.tdd_period);
     int return_tdd = set_tdd_config_nr_ue(cfg,
-		     scc->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+         scc->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                      scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots,
                      scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols,
                      scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
                      scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols
                      );
 
-    if (return_tdd !=0)
+    if (return_tdd !=0) {
       LOG_E(PHY,"TDD configuration can not be done\n");
-    else
+    } else {
       LOG_I(PHY,"TDD has been properly configurated\n");
+    }
   }
 
   // PRACH configuration
@@ -411,14 +412,14 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     }
     
     // TDD Table Configuration
-    if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 == NULL)
-      cfg->tdd_table.tdd_period = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
-    else {
-      AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL,
-		  "scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
-      cfg->tdd_table.tdd_period = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
-    }
     if(cfg->cell_config.frame_duplex_type == TDD){
+      if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 == NULL) {
+        cfg->tdd_table.tdd_period = scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity;
+      } else {
+        AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL,
+        "scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
+        cfg->tdd_table.tdd_period = *scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+      }
       LOG_I(MAC,"Setting TDD configuration period to %d\n", cfg->tdd_table.tdd_period);
       int return_tdd = set_tdd_config_nr_ue(cfg,
 					    scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
@@ -427,15 +428,14 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 					    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots,
 					    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols
 					    );
-      
-      if (return_tdd !=0)
-	LOG_E(PHY,"TDD configuration can not be done\n");
-      else
-	LOG_I(PHY,"TDD has been properly configurated\n");
+      if (return_tdd !=0) {
+        LOG_E(PHY, "TDD configuration can not be done\n");
+      } else {
+        LOG_I(PHY, "TDD has been properly configurated\n");
+      }
     }
-    
+
     // PRACH configuration
-    
     uint8_t nb_preambles = 64;
     if(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles != NULL)
       nb_preambles = *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->totalNumberOfRA_Preambles;
@@ -628,6 +628,7 @@ int nr_rrc_mac_config_req_ue(
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
     RA_config_t *ra = &mac->ra;
+    fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
 
     //  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
 
@@ -642,11 +643,20 @@ int nr_rrc_mac_config_req_ue(
     if (sccP != NULL) {
 
       mac->scc_SIB=sccP;
-      LOG_D(MAC,"Keeping ServingCellConfigCommonSIB\n");
+      LOG_D(NR_MAC, "In %s: Keeping ServingCellConfigCommonSIB\n", __FUNCTION__);
       config_common_ue_sa(mac,module_id,cc_idP);
-      int num_slots_ul = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-      if (mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0) num_slots_ul++;
-      LOG_I(MAC, "Initializing ul_config_request. num_slots_ul = %d\n", num_slots_ul);
+
+      int num_slots_ul = nr_slots_per_frame[mac->mib->subCarrierSpacingCommon];
+      if(cfg->cell_config.frame_duplex_type == FDD){
+        free(mac->scc_SIB->tdd_UL_DL_ConfigurationCommon);
+        mac->scc_SIB->tdd_UL_DL_ConfigurationCommon = NULL;
+      } else {
+        num_slots_ul = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+        if (mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0) {
+          num_slots_ul++;
+        }
+      }
+      LOG_I(NR_MAC, "Initializing ul_config_request. num_slots_ul = %d\n", num_slots_ul);
       mac->ul_config_request = (fapi_nr_ul_config_request_t *)calloc(num_slots_ul, sizeof(fapi_nr_ul_config_request_t));
       // Setup the SSB to Rach Occasions mapping according to the config
       build_ssb_to_ro_map(mac);//->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
@@ -665,6 +675,10 @@ int nr_rrc_mac_config_req_ue(
           ra->rach_ConfigDedicated = scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
         }
         mac->scc = scell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+        if(cfg->cell_config.frame_duplex_type == FDD){
+          free(mac->scc->tdd_UL_DL_ConfigurationCommon);
+          mac->scc->tdd_UL_DL_ConfigurationCommon = NULL;
+        }
         mac->physCellId = *mac->scc->physCellId;
         config_common_ue(mac,module_id,cc_idP);
         mac->crnti = scell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;

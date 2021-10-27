@@ -148,12 +148,14 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
   int mu = mac->ULbwp[0] ?
     mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing :
     mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.subcarrierSpacing;
-  NR_TDD_UL_DL_Pattern_t *tdd_pattern = &tdd_config->pattern1;
-  const int num_slots_per_tdd = nr_slots_per_frame[mu] >> (7 - tdd_pattern->dl_UL_TransmissionPeriodicity);
-  const int num_slots_ul = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
+  const int n = nr_slots_per_frame[mu];
+  const int num_slots_per_tdd = tdd_config ? (n >> (7 - tdd_config->pattern1.dl_UL_TransmissionPeriodicity)) : n;
+  const int num_slots_ul = tdd_config ? (tdd_config->pattern1.nrofUplinkSlots + (tdd_config->pattern1.nrofUplinkSymbols != 0)) : n;
   int index = slot % num_slots_ul;
 
-  LOG_D(NR_MAC, "In %s slots per tdd %d, num_slots_ul %d, index %d\n", __FUNCTION__,
+  LOG_D(NR_MAC, "In %s slots per %s: %d, num_slots_ul %d, index %d\n",
+                __FUNCTION__,
+                tdd_config ? "TDD" : "FDD",
                 num_slots_per_tdd,
                 num_slots_ul,
                 index);

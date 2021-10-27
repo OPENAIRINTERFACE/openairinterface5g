@@ -1753,9 +1753,11 @@ int get_nr_prach_info_from_index(uint8_t index,
         subframe = slot >> mu;
         s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
         if ( (s_map>>subframe)&0x01 ) {
+          *N_RA_slot = table_6_3_3_2_2_prachConfig_Index[index][6]; // Number of RACH slots within a subframe
           if (mu == 1) {
-            if ( (table_6_3_3_2_2_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
+            if ((*N_RA_slot <= 1) && (slot % 2 == 0)){
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
+            }
           }
           for(int i = 0; i <= subframe ; i++) {
             if ( (s_map >> i) & 0x01) {
@@ -1764,6 +1766,7 @@ int get_nr_prach_info_from_index(uint8_t index,
           }
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
             *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
+            *config_period = x;
             *N_t_slot = table_6_3_3_2_2_prachConfig_Index[index][7];
             *N_dur = table_6_3_3_2_2_prachConfig_Index[index][8];
             if (table_6_3_3_2_2_prachConfig_Index[index][1] != -1)

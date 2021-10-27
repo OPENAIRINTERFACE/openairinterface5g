@@ -291,9 +291,16 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
       asn_sequence_del(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,i,1); 
     }
   }
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity > 320 ) {
-    free(scc->tdd_UL_DL_ConfigurationCommon->pattern2);
-    scc->tdd_UL_DL_ConfigurationCommon->pattern2=NULL;
+
+  lte_frame_type_t frame_type = get_frame_type((int)*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+  if (frame_type == FDD) {
+    free(scc->tdd_UL_DL_ConfigurationCommon);
+    scc->tdd_UL_DL_ConfigurationCommon = NULL;
+  } else { // TDD
+    if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity > 320 ) {
+      free(scc->tdd_UL_DL_ConfigurationCommon->pattern2);
+      scc->tdd_UL_DL_ConfigurationCommon->pattern2 = NULL;
+    }
   }
 
   if ((int)*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing == -1) {

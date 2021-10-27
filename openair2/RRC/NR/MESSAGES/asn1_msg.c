@@ -619,10 +619,12 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   }
 
   sib1->servingCellConfigCommon->ssb_PeriodicityServingCell = *configuration->scc->ssb_periodicityServingCell;
-  sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon = CALLOC(1,sizeof(struct NR_TDD_UL_DL_ConfigCommon));
-  sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing = configuration->scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
-  sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon->pattern1 = configuration->scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon->pattern2 = configuration->scc->tdd_UL_DL_ConfigurationCommon->pattern2;
+  if (configuration->scc->tdd_UL_DL_ConfigurationCommon) {
+    sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon = CALLOC(1,sizeof(struct NR_TDD_UL_DL_ConfigCommon));
+    sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing = configuration->scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
+    sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon->pattern1 = configuration->scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+    sib1->servingCellConfigCommon->tdd_UL_DL_ConfigurationCommon->pattern2 = configuration->scc->tdd_UL_DL_ConfigurationCommon->pattern2;
+  }
   sib1->servingCellConfigCommon->ss_PBCH_BlockPower = configuration->scc->ss_PBCH_BlockPower;
 
   // ims-EmergencySupport
@@ -1181,8 +1183,11 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   // Check for above configuration and exit for now if it is not the case
   AssertFatal(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing==NR_SubcarrierSpacing_kHz30,
               "SCS != 30kHz\n");
-  AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity==NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5,
-              "TDD period != 5ms : %ld\n",scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+
+  if (scc->tdd_UL_DL_ConfigurationCommon) {
+    AssertFatal(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity == NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5,
+      "TDD period != 5ms : %ld\n", scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+  }
 
   schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 =  8+(10*((rnti>>1)&3)) + (rnti&1);
   schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));

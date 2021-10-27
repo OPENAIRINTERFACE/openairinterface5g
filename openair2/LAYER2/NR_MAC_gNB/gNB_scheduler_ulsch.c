@@ -165,10 +165,8 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
           symb_tda_mi);
   }
 
-  const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
-  const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   nrmac->preferred_ul_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_ul_tda[bwp_id]));
-
   const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
   const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
   for (int slot = 0; slot < n; ++slot) {
@@ -181,11 +179,12 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
     LOG_D(MAC, "DL slot %d UL slot %d preferred_ul_tda %d\n", slot, sched_slot, nrmac->preferred_ul_tda[bwp_id][slot]);
   }
 
-  if (k2 < tdd->nrofUplinkSlots)
+  if (tdd && k2 < tdd->nrofUplinkSlots) {
     LOG_W(NR_MAC,
           "k2 %d < tdd->nrofUplinkSlots %ld: not all UL slots can be scheduled\n",
           k2,
           tdd->nrofUplinkSlots);
+  }
 }
 
 //  For both UL-SCH except:
@@ -882,8 +881,7 @@ long get_K2(NR_ServingCellConfigCommon_t *scc,NR_BWP_Uplink_t *ubwp, int time_do
 bool nr_UE_is_to_be_scheduled(module_id_t mod_id, int CC_id, int UE_id, frame_t frame, sub_frame_t slot)
 {
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
-  const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
-  const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const int now = frame * n + slot;
 
   const struct gNB_MAC_INST_s *nrmac = RC.nrmac[mod_id];

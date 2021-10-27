@@ -170,7 +170,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   /* advance last round's future UL_tti_req to be ahead of current frame/slot */
   future_ul_tti_req->SFN = (slotP == 0 ? frameP : frameP + 1) % 1024;
-  LOG_D(MAC,"Future_ul_tti SFN = %d for slot %d \n", future_ul_tti_req->SFN, (slotP + num_slots - 1) % num_slots);
+  LOG_D(NR_MAC, "In %s: UL_tti_req_ahead SFN.slot = %d.%d for slot %d \n", __FUNCTION__, future_ul_tti_req->SFN, future_ul_tti_req->Slot, (slotP + num_slots - 1) % num_slots);
   /* future_ul_tti_req->Slot is fixed! */
   future_ul_tti_req->n_pdus = 0;
   future_ul_tti_req->n_ulsch = 0;
@@ -367,9 +367,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (slot==0 && (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]>=257)) {
     const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
     const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-    const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-    const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
+    const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
+    const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
     const int nb_periods_per_frame = n / nr_slots_period;
+
     // re-initialization of tdd_beam_association at beginning of frame (only for FR2)
     for (int i=0; i<nb_periods_per_frame; i++)
       gNB->tdd_beam_association[i] = -1;

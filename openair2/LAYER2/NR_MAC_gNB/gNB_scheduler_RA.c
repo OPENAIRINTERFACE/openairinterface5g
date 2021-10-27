@@ -406,14 +406,19 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
   uint8_t mu = *scc->ssbSubcarrierSpacing;
   uint8_t response_window = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.ra_ResponseWindow;
   uint8_t slot_window;
+  const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   // number of mixed slot or of last dl slot if there is no mixed slot
-  uint8_t last_dl_slot_period = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+  uint8_t last_dl_slot_period = tdd ? tdd->nrofDownlinkSlots : 0;
   // lenght of tdd period in slots
-  uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols == 0)
+  uint8_t tdd_period_slot = tdd ? scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots : n_slots_frame;
+
+  if (tdd && (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols == 0)) {
     last_dl_slot_period--;
-  if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
+  }
+  if (tdd && ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))) {
     tdd_period_slot++;
+  }
 
   switch(response_window){
     case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
@@ -714,10 +719,17 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     // beam association for FR2
     int16_t *tdd_beam_association = nr_mac->tdd_beam_association;
     if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
-      uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-      if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
+
+      const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+      const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+      uint8_t tdd_period_slot = tdd ? scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots : n_slots_frame;
+
+      if (tdd && ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))) {
         tdd_period_slot++;
+      }
+
       int num_tdd_period = sched_slot/tdd_period_slot;
+
       if((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=ra->beam_id))
         return; // can't schedule retransmission in this slot
       else
@@ -879,15 +891,18 @@ void nr_get_Msg3alloc(module_id_t module_id,
     ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList:
     scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
 
+  const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  const int n_slots_frame = nr_slots_per_frame[mu];
+  const int nrofUplinkSymbols = tdd ? tdd->nrofUplinkSymbols : 4;
   uint8_t k2 = 0;
   for (int i=0; i<pusch_TimeDomainAllocationList->list.count; i++) {
     startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
     SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
     // we want to transmit in the uplink symbols of mixed slot
-    if (NrOfSymbols == scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols) {
+    if (NrOfSymbols == nrofUplinkSymbols) {
       k2 = *pusch_TimeDomainAllocationList->list.array[i]->k2;
       temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
-      ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
+      ra->Msg3_slot = temp_slot % n_slots_frame;
       if (is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[ra->Msg3_slot / 64], ra->Msg3_slot)) {
         ra->Msg3_tda_id = i;
         break;
@@ -897,16 +912,17 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
   AssertFatal(ra->Msg3_tda_id<16,"Unable to find Msg3 time domain allocation in list\n");
 
-  if (nr_slots_per_frame[mu]>temp_slot)
+  if (n_slots_frame > temp_slot)
     ra->Msg3_frame = current_frame;
   else
-    ra->Msg3_frame = (current_frame + (temp_slot/nr_slots_per_frame[mu]))%1024;
+    ra->Msg3_frame = (current_frame + (temp_slot / n_slots_frame)) % 1024;
 
   // beam association for FR2
   if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
-    uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-    if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
+    uint8_t tdd_period_slot = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots : n_slots_frame;
+    if (tdd && ((tdd->nrofDownlinkSymbols > 0) || (tdd->nrofUplinkSymbols > 0))) {
       tdd_period_slot++;
+    }
     int num_tdd_period = ra->Msg3_slot/tdd_period_slot;
     if((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=ra->beam_id))
       AssertFatal(1==0,"Cannot schedule MSG3\n");
@@ -979,7 +995,6 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->dmrs_ports = 1;  // 6.2.2 in 38.214 only port 0 to be used
   pusch_pdu->num_dmrs_cdm_grps_no_data = 2;  // no data in dmrs symbols as in 6.2.2 in 38.214
   pusch_pdu->resource_alloc = 1; //type 1
-
   pusch_pdu->rb_start = msg3_first_rb;
   if (msg3_nb_rb > pusch_pdu->bwp_size)
     AssertFatal(1==0,"MSG3 allocated number of RBs exceed the BWP size\n");
