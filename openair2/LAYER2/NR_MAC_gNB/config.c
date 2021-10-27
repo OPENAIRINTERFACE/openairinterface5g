@@ -33,7 +33,7 @@
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
 #include "common/ran_context.h"
-
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 

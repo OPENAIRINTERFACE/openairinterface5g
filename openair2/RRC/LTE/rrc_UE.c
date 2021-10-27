@@ -2969,6 +2969,12 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIwindowsize = siWindowLength_int[sib1->si_WindowLength];
   LOG_I( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
          ctxt_pP->module_id, eNB_index, ctxt_pP->module_id );
+  /* pointers to  SIperiod inthe Info struct points to a packed structure
+ * Using these possibly unaligned pointers in a function call may trigger alignment errors at run time and
+ * gcc, from v9,  now warns about it. fix these warnings by removing the indirection on data
+ * Not sure if SiPeriod can be modified, reassign after function call for security
+ */
+  uint16_t Aligned_SIperiod = UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod;
   rrc_mac_config_req_ue(ctxt_pP->module_id, 0, eNB_index,
                         (LTE_RadioResourceConfigCommonSIB_t *)NULL,
                         (struct LTE_PhysicalConfigDedicated *)NULL,
@@ -2981,7 +2987,7 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
                         UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->tdd_Config,
                         (LTE_MobilityControlInfo_t *) NULL,
                         &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIwindowsize,
-                        &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod,
+                        &Aligned_SIperiod,
                         NULL,
                         NULL,
                         NULL,
@@ -2995,6 +3001,7 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *)NULL
                        );
+  UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod=Aligned_SIperiod;
   LOG_I(RRC,"Setting SIStatus bit 0 to 1\n");
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus = 1;
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIB1systemInfoValueTag = sib1->systemInfoValueTag;

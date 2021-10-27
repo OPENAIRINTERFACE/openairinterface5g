@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
@@ -429,7 +430,9 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:d:e:m:w:T:U:q")) != -1) {
+
+  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:D:e:m:w:T:U:q")) != -1) {
+
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -595,7 +598,7 @@ int main(int argc, char **argv)
     case 'b':
       g_rbSize = atoi(optarg);
       break;
-    case 'd':
+    case 'D':
       dlsch_threads = atoi(optarg);
       break;    
     case 'e':
@@ -668,7 +671,7 @@ int main(int argc, char **argv)
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
-      printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
+      printf("-D number of dlsch threads, 0: no dlsch parallelization\n");
       exit (-1);
       break;
     }
@@ -685,7 +688,7 @@ int main(int argc, char **argv)
 
   if (snr1set==0)
     snr1 = snr0+10;
-  init_dlsch_tpool(dlsch_threads);
+
 
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
@@ -977,7 +980,11 @@ int main(int argc, char **argv)
   reset_meas(&msgDataTx->phy_proc_tx);
   gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
   pushTpool(gNB->threadPool,msgL1Tx);
-
+  if (dlsch_threads ) { 
+    init_dlsch_tpool(dlsch_threads);
+    pthread_t dlsch0_threads;
+    threadCreate(&dlsch0_threads, dlsch_thread, (void *)UE, "DLthread", -1, OAI_PRIORITY_RT_MAX-1);
+  }
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
     varArray_t *table_tx=initVarArray(1000,sizeof(double));
