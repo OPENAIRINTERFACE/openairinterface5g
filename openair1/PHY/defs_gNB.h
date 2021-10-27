@@ -868,6 +868,9 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
   time_stats_t dlsch_scrambling_stats;
+  time_stats_t dlsch_resource_mapping_stats;
+  time_stats_t dlsch_layer_mapping_stats;
+  time_stats_t dlsch_precoding_stats;
   time_stats_t tinput;
   time_stats_t tprep;
   time_stats_t tparity;

@@ -1302,6 +1302,9 @@ int main(int argc, char **argv)
       printStatIndent3(&gNB->dlsch_interleaving_stats,  "DLSCH Interleaving time");
       printStatIndent2(&gNB->dlsch_modulation_stats,"DLSCH modulation time");
       printStatIndent2(&gNB->dlsch_scrambling_stats,  "DLSCH scrambling time");
+      printStatIndent2(&gNB->dlsch_layer_mapping_stats, "DLSCH Layer Mapping time");
+      printStatIndent2(&gNB->dlsch_resource_mapping_stats, "DLSCH Resource Mapping time");
+      printStatIndent2(&gNB->dlsch_precoding_stats,"DLSCH Layer Precoding time");
 
 
       printf("\nUE RX function statistics (per %d us slot)\n",1000>>*scc->ssbSubcarrierSpacing);
