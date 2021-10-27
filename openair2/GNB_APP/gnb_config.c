@@ -754,7 +754,7 @@ void RCconfig_nr_macrlc() {
       }else { // other midhaul
         AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
       } 
-      RC.nrmac[j]->ulsch_max_slots_inactivity = *(MacRLC_ParamList.paramarray[j][MACRLC_ULSCH_MAX_SLOTS_INACTIVITY].uptr);
+      RC.nrmac[j]->ulsch_max_frame_inactivity = *(MacRLC_ParamList.paramarray[j][MACRLC_ULSCH_MAX_FRAME_INACTIVITY].uptr);
       RC.nrmac[j]->num_ulprbbl = num_prbbl;
       LOG_I(NR_MAC,"Blacklisted PRBS %d\n",num_prbbl);
       memcpy(RC.nrmac[j]->ulprbbl,prbbl,275*sizeof(prbbl[0]));
