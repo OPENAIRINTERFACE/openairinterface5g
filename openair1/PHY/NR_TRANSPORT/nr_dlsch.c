@@ -415,17 +415,18 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
         }
         else { // no PTRS or DMRS in this symbol
           // Loop Over SCs:
-          int16_t *txF=&txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size+start_sc+txdataF_offset)<<1)];
+          __m64 *txF=(__m64*)&txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size+start_sc+txdataF_offset)<<1)];
           int upper_limit=rel15->rbSize*NR_NB_SC_PER_RB;
           int remaining_re = 0;
           if (start_sc + upper_limit > frame_parms->ofdm_symbol_size) {
             remaining_re = upper_limit + start_sc - frame_parms->ofdm_symbol_size;
             upper_limit = frame_parms->ofdm_symbol_size - start_sc;
           }
-          int16_t *txl = &tx_layers[ap][m<<1];
-          for (int i=0; i<(upper_limit<<1); i++) {
+          __m64 *txl = (__m64*)&tx_layers[ap][m<<1];
+          __m64 amp64=_mm_set1_pi16(amp);
+          for (int i=0; i<(upper_limit>>1); i++) {
 
-            txF[i] = (amp * txl[i]) >> 15;
+            txF[i] = _mm_mulhrs_pi16(amp64,txl[i]);
 #ifdef DEBUG_DLSCH_MAPPING
             if ((i&1) > 0)
                 printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
@@ -440,11 +441,10 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
           } //RE loop, first part
           m+=upper_limit;
           if (remaining_re > 0) {
-             txF = &txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size+txdataF_offset)<<1)];
-             txl = &tx_layers[ap][m<<1];
-             for (int i=0; i<(remaining_re<<1); i++) {
-
-               txF[i] = (amp * txl[i]) >> 15;
+             txF = (__m64*)&txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size+txdataF_offset)<<1)];
+             txl = (__m64*)&tx_layers[ap][m<<1];
+             for (int i=0; i<(remaining_re>>1); i++) {
+               txF[i] = _mm_mulhrs_pi16(amp64,txl[i]);
 #ifdef DEBUG_DLSCH_MAPPING
                if ((i&1) > 0)
                  printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
