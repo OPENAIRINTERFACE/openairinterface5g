@@ -22,7 +22,6 @@
 #include "phy_init.h"
 #include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 /// Subcarrier spacings in Hz indexed by numerology index
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
