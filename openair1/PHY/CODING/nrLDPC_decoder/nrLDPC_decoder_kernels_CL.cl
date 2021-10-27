@@ -45,11 +45,11 @@ typedef struct{
 //__global char dev_llr[68*384];
 //__global unsigned char dev_tmp[68*384];
 
-__constant h_element h_compact1 [46*19] = {};
-__constant h_element h_compact2 [68*30] = {};
 
-__constant h_element dev_h_compact1[46*19] = {};  // used in kernel 1
-__constant h_element dev_h_compact2[68*30] = {};  // used in kernel 2
+
+
+//__constant h_element dev_h_compact1[46*19] = {};  // used in kernel 1
+//__constant h_element dev_h_compact2[68*30] = {};  // used in kernel 2
 
 // __device__ __constantant__ h_element dev_h_compact1[46*19];  // used in kernel 1
 // __device__ __constantant__ h_element dev_h_compact2[68*30];  // used in kernel 2
@@ -86,7 +86,7 @@ __constant char h_ele_col_bg2_count[52] = {
 
 
 // Kernel 1
-__kernel void ldpc_cnp_kernel_1st_iter( __local char * dev_llr, __local char * dev_dt, int BG, int row, int col, int Zc)
+__kernel void ldpc_cnp_kernel_1st_iter( __global char * dev_llr, __global char * dev_dt,  __local h_element *dev_h_compact1, int BG, int row, int col, int Zc)
 {
 //	int iMCW = blockIdx.y;		// codeword id
 //	int iBlkRow = blockIdx.x;	// block row in h_base
@@ -158,7 +158,7 @@ __kernel void ldpc_cnp_kernel_1st_iter( __local char * dev_llr, __local char * d
 }
 
 // Kernel_1
-__kernel void ldpc_cnp_kernel( __local char * dev_llr, __local char * dev_dt, int BG, int row, int col, int Zc)
+__kernel void ldpc_cnp_kernel( __global char * dev_llr, __global char * dev_dt, __local h_element *dev_h_compact1, int BG, int row, int col, int Zc)
 {
 //	if(blockIdx.x == 0 && threadIdx.x == 1) printf("cnp\n");
 //	int iMCW = blockIdx.y;
@@ -234,8 +234,11 @@ __kernel void ldpc_cnp_kernel( __local char * dev_llr, __local char * dev_dt, in
 
 // Kernel 2: VNP processing
 __kernel void
-ldpc_vnp_kernel_normal(__local char * dev_llr, __local char * dev_dt, /* char * dev_const_llr,*/ int BG, int row, int col, int Zc)
-{	
+ldpc_vnp_kernel_normal(__global char * dev_llr, __global char * dev_dt,  __global char * dev_const_llr, __local h_element *dev_h_compact2, int BG, int row, int col, int Zc)
+{
+//	int iMCW = blockIdx.y;
+//	int iBlkCol = blockIdx.x;
+//	int iSubCol = threadIdx.x;	
 	int iMCW = get_group_id(1);
 	int iBlkCol = get_group_id(0);
 	int iBlkRow;

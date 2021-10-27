@@ -51,6 +51,7 @@ typedef struct{
   char y;
   short value;
 } h_element;
+#include "../nrLDPC_decoder_LYC/bgs/BG1_compact_in_C.h"
 
 typedef struct{
   cl_uint max_CU;
@@ -71,6 +72,8 @@ typedef struct{
   ocldev_t ocldev[MAX_OCLDEV];
   cl_context context;
   cl_program program;
+  cl_mem dev_h_compact1;
+  cl_mem dev_h_compact2;
   cl_mem dev_const_llr;
   cl_mem dev_llr;
   cl_mem dev_dt;
@@ -87,12 +90,10 @@ typedef struct{
 
 ocl_t ocl;
 
-void init_LLR_DMA(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out){
-	
-	uint16_t Zc          = p_decParams->Z;
-    uint8_t  BG         = p_decParams->BG;
-    int block_length     = p_decParams->block_length;
-	uint8_t row,col;
+
+void set_compact_BG(int Zc,short BG){
+	cl_uint rt;
+	int row,col;
 	if(BG == 1){
 		row = 46;
 		col = 68;
@@ -101,12 +102,81 @@ void init_LLR_DMA(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out
 		row = 42;
 		col = 52;
 	}
-	unsigned char *hard_decision = (unsigned char*)p_out;
-	int memorySize_llr_cuda = col * Zc * sizeof(char) * MC;
-//	cudaCheck( cudaMemcpyToSymbol(dev_const_llr, p_llr, memorySize_llr_cuda) );
-//	cudaCheck( cudaMemcpyToSymbol(dev_llr, p_llr, memorySize_llr_cuda) );
-//	cudaDeviceSynchronize();
+	int compact_row = 30; 
+	int compact_col = 19;
+	if(BG==2){compact_row = 10, compact_col = 23;}
+	int memorySize_h_compact1 = row * compact_col * sizeof(h_element);
+	int memorySize_h_compact2 = compact_row * col * sizeof(h_element);
+	int lift_index = 0;
+	short lift_set[][9] = {
+		{2,4,8,16,32,64,128,256},
+		{3,6,12,24,48,96,192,384},
+		{5,10,20,40,80,160,320},
+		{7,14,28,56,112,224},
+		{9,18,36,72,144,288},
+		{11,22,44,88,176,352},
+		{13,26,52,104,208},
+		{15,30,60,120,240},
+		{0}
+	};
 	
+	for(int i = 0; lift_set[i][0] != 0; i++){
+		for(int j = 0; lift_set[i][j] != 0; j++){
+			if(Zc == lift_set[i][j]){
+				lift_index = i;
+				break;
+			}
+		}
+	}
+	printf("\nZc = %d BG = %d\n",Zc,BG);
+    ocl.runtime[0].dev_h_compact1 = clCreateBuffer(ocl.runtime[0].context, CL_MEM_READ_ONLY|CL_MEM_HOST_WRITE_ONLY, memorySize_h_compact1, NULL, (cl_int *)&rt);
+    AssertFatal(rt == CL_SUCCESS, "Error %d creating buffer dev_h_compact1 for platform %i \n" , (int)rt, 0);	
+    ocl.runtime[0].dev_h_compact2 = clCreateBuffer(ocl.runtime[0].context, CL_MEM_READ_ONLY|CL_MEM_HOST_WRITE_ONLY, memorySize_h_compact2, NULL, (cl_int *)&rt);
+    AssertFatal(rt == CL_SUCCESS, "Error %d creating buffer dev_h_compact2 for platform %i \n" , (int)rt, 0);  
+    h_element *h1;
+    h_element *h2; 
+	switch(lift_index){
+			case 0:
+				h1 = host_h_compact1_I0;
+				h2 = host_h_compact2_I0;
+				break;
+			case 1:
+				h1 = host_h_compact1_I1;
+				h2 = host_h_compact2_I1;
+				break;
+			case 2:
+				h1 = host_h_compact1_I2;
+				h2 = host_h_compact2_I2;
+				break;
+			case 3:
+				h1 = host_h_compact1_I3;
+				h2 = host_h_compact2_I3;
+				break;
+			case 4:
+				h1 = host_h_compact1_I4;
+				h2 = host_h_compact2_I4;
+				break;
+			case 5:
+				h1 = host_h_compact1_I5;
+				h2 = host_h_compact2_I5;
+				break;
+			case 6:
+				h1 = host_h_compact1_I6;
+				h2 = host_h_compact2_I6;
+				break;
+			case 7:
+				h1 = host_h_compact1_I7;
+				h2 = host_h_compact2_I7;
+				break;
+			default:
+				AssertFatal(0, "Invalid lift_index value %i\n" , lift_index); 
+				break;
+		}
+     rt = clEnqueueWriteBuffer(ocl.runtime[0].queue[0], ocl.runtime[0].dev_h_compact1, CL_TRUE, 0,memorySize_h_compact1, h1, 0, NULL, NULL);
+	 AssertFatal(rt == CL_SUCCESS, "Error %d moving  h_compact1 memory to pltf %i dev %i\n" , (int)rt, 0,0); 
+     rt = clEnqueueWriteBuffer(ocl.runtime[0].queue[0], ocl.runtime[0].dev_h_compact2, CL_TRUE, 0,memorySize_h_compact2, h2, 0, NULL, NULL);
+	 AssertFatal(rt == CL_SUCCESS, "Error %d moving  h_compact2 memory to pltf %i dev %i\n" , (int)rt, 0,0); 	 	
+	// return 0;
 }
 void cl_error_callback(const char* errinfo, const void* private_info, size_t cb, void* user_data) {
   oclruntime_t *runtime = (oclruntime_t *)user_data;
@@ -244,7 +314,8 @@ int ldpc_autoinit(void) {   // called by the library loader
 
 
 void nrLDPC_initcall(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out) {
-
+	set_compact_BG(p_decParams->Z,p_decParams->BG);
+//	init_LLR_DMA(p_decParams, p_llr,  p_out);
 }
 
 
@@ -252,10 +323,9 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
 {
     uint16_t Zc          = p_decParams->Z;
     uint8_t  BG         = p_decParams->BG;
-    uint8_t  numMaxIter = p_decParams->numMaxIter;
+//    uint8_t  numMaxIter = p_decParams->numMaxIter;
     int block_length    = p_decParams->block_length;
-    e_nrLDPC_outMode outMode = p_decParams->outMode;
-	cudaError_t cudaStatus;
+//    e_nrLDPC_outMode outMode = p_decParams->outMode;
 	uint8_t row,col;
 	if(BG == 1){
 		row = 46;
@@ -267,7 +337,7 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
 	}
 
 //	alloc memory
-	unsigned char *hard_decision = (unsigned char*)p_out;
+//	unsigned char *hard_decision = (unsigned char*)p_out;
 //	gpu
 	int memorySize_llr = col * Zc * sizeof(char) * MC;
 //	cudaCheck( cudaMemcpyToSymbol(dev_const_llr, p_llr, memorySize_llr_cuda) );
@@ -279,7 +349,7 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
                                memorySize_llr, p_llr, 0, NULL, NULL);
 	AssertFatal(rt == CL_SUCCESS, "Error %d moving p_llr data to  read-write memory in pltf %i dev %i\n" , (int)rt, 0,0); 	
 // Define CUDA kernel dimension
-	int blockSizeX = Zc;
+//	int blockSizeX = Zc;
 //	dim3 dimGridKernel1(row, MC, 1); 	// dim of the thread blocks
 //	dim3 dimBlockKernel1(blockSizeX, 1, 1);
 
@@ -288,26 +358,60 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
 //	cudaDeviceSynchronize();
 
 // lauch kernel 
-/*
+    size_t global_item_sizek0[2] = {row*Zc,MC}; // Process the entire lists
+    size_t global_item_sizek1[2] = {col*Zc,MC}; // Process the entire lists
+    size_t local_item_sizek[2] = {128,1}; // Divide work items into groups of 128
+    
 	for(int ii = 0; ii < MAX_ITERATION; ii++){
 		// first kernel	
 		if(ii == 0){
-			ldpc_cnp_kernel_1st_iter 
-			<<<dimGridKernel1, dimBlockKernel1>>>
-			( BG, row, col, Zc);
+//			ldpc_cnp_kernel_1st_iter 
+//			<<<dimGridKernel1, dimBlockKernel1>>>
+//			( BG, row, col, Zc);
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel_1st, 0, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_llr));
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel_1st, 1, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_dt));
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel_1st, 2, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_h_compact1));
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel_1st, 3, sizeof(int), (void *)&(BG));
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel_1st, 4, sizeof(int), (void *)&(row));	 	      
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel_1st, 5, sizeof(int), (void *)&(col));
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel_1st, 6, sizeof(int), (void *)&(Zc));	      
+          rt = clEnqueueNDRangeKernel(ocl.runtime[0].queue[0], ocl.runtime[0].kernels[0].cnp_kernel_1st, 2, NULL, 
+                                      global_item_sizek0, local_item_sizek, 0, NULL, NULL);
+	      AssertFatal(rt == CL_SUCCESS, "Error %d enqueing cnp_kernel_1st \n" , (int)rt);  
 		}else{
-			ldpc_cnp_kernel
-			<<<dimGridKernel1, dimBlockKernel1>>>
-			( BG, row, col, Zc);
+//		 	ldpc_cnp_kernel
+//			<<<dimGridKernel1, dimBlockKernel1>>>
+//			( BG, row, col, Zc);
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel, 0, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_llr));
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel, 1, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_dt));
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel, 2, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_h_compact1));
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel, 3, sizeof(int), (void *)&(BG));
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel, 4, sizeof(int), (void *)&(row));	 	      
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel, 5, sizeof(int), (void *)&(col));
+	      CLSETKERNELARG(ocl.runtime[0].kernels[0].cnp_kernel, 6, sizeof(int), (void *)&(Zc));	  
+          rt = clEnqueueNDRangeKernel(ocl.runtime[0].queue[0], ocl.runtime[0].kernels[0].cnp_kernel, 2, NULL, 
+                                      global_item_sizek0, local_item_sizek, 0, NULL, NULL);
+	      AssertFatal(rt == CL_SUCCESS, "Error %d enqueing  cnp_kernel\n" , (int)rt);  
 		}
 		// second kernel
-		ldpc_vnp_kernel_normal
-		<<<dimGridKernel2, dimBlockKernel2>>>
-		// (dev_llr, dev_const_llr,BG, row, col, Zc);
-		(BG, row, col, Zc);
+//		ldpc_vnp_kernel_normal
+//		<<<dimGridKernel2, dimBlockKernel2>>>
+//		// (dev_llr, dev_const_llr,BG, row, col, Zc);
+//		(BG, row, col, Zc);
+	  CLSETKERNELARG(ocl.runtime[0].kernels[0].vnp_kernel_normal, 0, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_llr));
+	  CLSETKERNELARG(ocl.runtime[0].kernels[0].vnp_kernel_normal, 1, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_dt));
+	  CLSETKERNELARG(ocl.runtime[0].kernels[0].vnp_kernel_normal, 2, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_const_llr));
+	  CLSETKERNELARG(ocl.runtime[0].kernels[0].vnp_kernel_normal, 3, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_h_compact2));
+	  CLSETKERNELARG(ocl.runtime[0].kernels[0].vnp_kernel_normal, 4, sizeof(int), (void *)&(BG));
+	  CLSETKERNELARG(ocl.runtime[0].kernels[0].vnp_kernel_normal, 5, sizeof(int), (void *)&(row));	 	      
+	  CLSETKERNELARG(ocl.runtime[0].kernels[0].vnp_kernel_normal, 6, sizeof(int), (void *)&(col));
+	  CLSETKERNELARG(ocl.runtime[0].kernels[0].vnp_kernel_normal, 7, sizeof(int), (void *)&(Zc));	 
+      rt = clEnqueueNDRangeKernel(ocl.runtime[0].queue[0], ocl.runtime[0].kernels[0].vnp_kernel_normal, 2, NULL, 
+                                      global_item_sizek1, local_item_sizek, 0, NULL, NULL);
+	  AssertFatal(rt == CL_SUCCESS, "Error %d enqueing vnp_kernel_normal \n" , (int)rt);  
 	}
-*/	
-//	int pack = (block_length/128)+1;
+	
+//   int pack = (block_length/128)+1;
 //	dim3 pack_block(pack, MC, 1);
 //	pack_decoded_bit<<<pack_block,128>>>( col, Zc);
 	CLSETKERNELARG(ocl.runtime[0].kernels[0].pack_decoded_bit, 0, sizeof(cl_mem), (void *)&(ocl.runtime[0].dev_llr));
@@ -316,10 +420,11 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
 	CLSETKERNELARG(ocl.runtime[0].kernels[0].pack_decoded_bit, 3, sizeof(int), (void *)&(Zc));
  
     // Execute the OpenCL kernel on the list
-    size_t global_item_size = block_length; // Process the entire lists
-    size_t local_item_size = 128; // Divide work items into groups of 128
+    size_t global_item_size[2] = {block_length,MC}; // Process the entire lists
+    size_t local_item_size[2] = {128,1}; // Divide work items into groups of 128
     rt = clEnqueueNDRangeKernel(ocl.runtime[0].queue[0], ocl.runtime[0].kernels[0].pack_decoded_bit, 2, NULL, 
-            &global_item_size, &local_item_size, 0, NULL, NULL);
+            global_item_size, local_item_size, 0, NULL, NULL);
+	AssertFatal(rt == CL_SUCCESS, "Error %d enqueing pack_decoded_bit \n" , (int)rt);             
 //	cudaCheck( cudaMemcpyFromSymbol((void*)hard_decision, (const void*)dev_tmp, (block_length/8)*sizeof(unsigned char)) );
 //	cudaDeviceSynchronize();
 	
