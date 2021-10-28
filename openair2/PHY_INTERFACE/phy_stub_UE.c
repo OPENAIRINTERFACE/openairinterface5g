@@ -37,6 +37,7 @@
 #include "openair1/PHY/defs_gNB.h"
 #include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h"
 #include "openair1/PHY/LTE_TRANSPORT/transport_common.h"
+#include "softmodem-common.h"
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr,
@@ -2061,7 +2062,7 @@ static inline bool is_channel_modeling(void)
 {
   /* TODO: For now we enable channel modeling based on the node_number.
      Replace with a command line option to enable/disable channel modeling. */
-  return node_number == 0;
+  return node_number == 0 && !get_softmodem_params()->nsa;
 }
 
 static bool should_drop_transport_block(int sf, uint16_t rnti)
