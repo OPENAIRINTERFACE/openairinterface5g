@@ -55,6 +55,7 @@ static int g_harq_pid;
 sem_t sfn_slot_semaphore;
 
 queue_t nr_sfn_slot_queue;
+queue_t nr_chan_param_queue;
 queue_t nr_dl_tti_req_queue;
 queue_t nr_tx_req_queue;
 queue_t nr_ul_dci_req_queue;
@@ -839,7 +840,7 @@ void *nrue_standalone_pnf_task(void *context)
       LOG_I(NR_PHY, "Received_SINR = %f, sfn:slot %d:%d\n",
             ch_info->sinr, NFAPI_SFNSLOT2SFN(ch_info->sfn_slot), NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot));
 
-      if (!put_queue(&nr_sfn_slot_queue, ch_info))
+      if (!put_queue(&nr_chan_param_queue, ch_info))
       {
         LOG_E(NR_PHY, "put_queue failed for sfn slot.\n");
       }

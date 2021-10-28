@@ -46,6 +46,7 @@ extern queue_t nr_rx_ind_queue;
 extern queue_t nr_crc_ind_queue;
 extern queue_t nr_uci_ind_queue;
 extern queue_t nr_sfn_slot_queue;
+extern queue_t nr_chan_param_queue;
 extern queue_t nr_dl_tti_req_queue;
 extern queue_t nr_tx_req_queue;
 extern queue_t nr_ul_dci_req_queue;

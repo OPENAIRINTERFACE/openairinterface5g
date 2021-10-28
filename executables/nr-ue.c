@@ -394,6 +394,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
   memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
   int last_sfn_slot = -1;
+  uint16_t sfn_slot = 0;
 
   while (!oai_exit)
   {
@@ -402,23 +403,29 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       LOG_E(NR_MAC, "sem_wait() error\n");
       abort();
     }
-
-    uint16_t *sfn_slot = get_queue(&nr_sfn_slot_queue);
-    if (sfn_slot == NULL)
+    uint16_t *slot_ind = get_queue(&nr_sfn_slot_queue);
+    nr_phy_channel_params_t *ch_info = get_queue(&nr_chan_param_queue);
+    if (!slot_ind && !ch_info)
     {
-      LOG_D(MAC, "get_queue(&nr_sfn_slot_queue) == NULL!\n");
-      continue;
+        LOG_D(MAC, "get nr_sfn_slot_queue and nr_chan_param_queue == NULL!\n");
+        continue;
+    }
+    if (slot_ind) {
+      sfn_slot = *slot_ind;
+    }
+    else if (ch_info) {
+      sfn_slot = ch_info->sfn_slot;
     }
 
-    frame_t frame = NFAPI_SFNSLOT2SFN(*sfn_slot);
-    int slot = NFAPI_SFNSLOT2SLOT(*sfn_slot);
-    if (*sfn_slot == last_sfn_slot)
+    frame_t frame = NFAPI_SFNSLOT2SFN(sfn_slot);
+    int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
+    if (sfn_slot == last_sfn_slot)
     {
       LOG_D(NR_MAC, "repeated sfn_sf = %d.%d\n",
             frame, slot);
       continue;
     }
-    last_sfn_slot = *sfn_slot;
+    last_sfn_slot = sfn_slot;
 
     LOG_D(NR_MAC, "The received sfn/slot [%d %d] from proxy\n",
           frame, slot);
@@ -471,9 +478,11 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       nr_ue_ul_indication(&ul_info);
       check_nr_prach(mac, &ul_info, &prach_resources);
     }
-    process_queued_nr_nfapi_msgs(mac, *sfn_slot);
-    free(sfn_slot);
-    sfn_slot = NULL;
+    process_queued_nr_nfapi_msgs(mac, sfn_slot);
+    free(slot_ind);
+    slot_ind = NULL;
+    free(ch_info);
+    ch_info = NULL;
   }
   return NULL;
 }

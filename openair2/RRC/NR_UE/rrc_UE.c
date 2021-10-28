@@ -2774,6 +2774,7 @@ static void start_oai_nrue_threads()
     init_queue(&nr_crc_ind_queue);
     init_queue(&nr_uci_ind_queue);
     init_queue(&nr_sfn_slot_queue);
+    init_queue(&nr_chan_param_queue);
     init_queue(&nr_dl_tti_req_queue);
     init_queue(&nr_tx_req_queue);
     init_queue(&nr_ul_dci_req_queue);
