@@ -617,16 +617,6 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     {
         nr_ue_ul_indication(&ul_info);
     }
-
-
-    #if 0 // TODO: Heap use after free caught by sanitizer
-    free(dl_info.dci_ind);
-    dl_info.dci_ind = NULL;
-
-    free(dl_info.rx_ind);
-    dl_info.rx_ind = NULL;
-    #endif
-
 }
 
 void save_nr_measurement_info(nfapi_nr_dl_tti_request_t *dl_tti_request)
