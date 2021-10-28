@@ -2061,7 +2061,11 @@ static float get_bler_val(uint8_t mcs, int sinr)
 static inline bool is_channel_modeling(void)
 {
   /* TODO: For now we enable channel modeling based on the node_number.
-     Replace with a command line option to enable/disable channel modeling. */
+     Replace with a command line option to enable/disable channel modeling.
+     The LTE UE will crash when channel modeling is conducted for NSA
+     mode. It does not crash for LTE mode. We have not implemented channel
+     modeling for NSA mode yet. For now, we ensure only do do chanel modeling
+     in LTE mode. */
   return node_number == 0 && !get_softmodem_params()->nsa;
 }
 

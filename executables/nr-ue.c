@@ -407,8 +407,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     nr_phy_channel_params_t *ch_info = get_queue(&nr_chan_param_queue);
     if (!slot_ind && !ch_info)
     {
-        LOG_D(MAC, "get nr_sfn_slot_queue and nr_chan_param_queue == NULL!\n");
-        continue;
+      LOG_D(MAC, "get nr_sfn_slot_queue and nr_chan_param_queue == NULL!\n");
+      continue;
     }
     if (slot_ind) {
       sfn_slot = *slot_ind;
