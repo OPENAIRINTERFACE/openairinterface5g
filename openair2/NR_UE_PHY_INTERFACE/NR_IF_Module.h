@@ -223,7 +223,6 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id);
 void nrue_init_standalone_socket(int tx_port, int rx_port);
 
 void *nrue_standalone_pnf_task(void *context);
-extern int current_sfn_slot;
 extern sem_t sfn_slot_semaphore;
 
 typedef struct nfapi_dl_tti_config_req_tx_data_req_t

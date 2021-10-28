@@ -265,7 +265,7 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
   nfapi_nr_dl_tti_request_t *dl_tti_request = get_queue(&nr_dl_tti_req_queue);
   nfapi_nr_ul_dci_request_t *ul_dci_request = get_queue(&nr_ul_dci_req_queue);
 
-  LOG_D(NR_MAC, "Try to get a ul_tti_req for sfn/slot %d %d from queue with %d items\n",
+  LOG_D(NR_MAC, "Try to get a ul_tti_req for sfn/slot %d %d from queue with %lu items\n",
         NFAPI_SFNSLOT2SFN(mac->active_harq_sfn_slot),NFAPI_SFNSLOT2SLOT(mac->active_harq_sfn_slot), nr_ul_tti_req_queue.num_items);
   nfapi_nr_ul_tti_request_t *ul_tti_request = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->active_harq_sfn_slot);
   if (!ul_tti_request)
@@ -394,9 +394,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
   memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
   int last_sfn_slot = -1;
-  int sfn_slot;
-  uint64_t last_time_stamp = 0;
-  sfn_slot_info_t *sfn_slot_info;
 
   while (!oai_exit)
   {
@@ -405,32 +402,26 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       LOG_E(NR_MAC, "sem_wait() error\n");
       abort();
     }
-    sfn_slot_info = get_queue(&nr_sfn_slot_queue);
-    if (sfn_slot_info == NULL)
+
+    uint16_t *sfn_slot = get_queue(&nr_sfn_slot_queue);
+    if (sfn_slot == NULL)
     {
       LOG_D(MAC, "get_queue(&nr_sfn_slot_queue) == NULL!\n");
       continue;
     }
 
-    sfn_slot = sfn_slot_info->sfn_slot;
-    if (sfn_slot == last_sfn_slot)
+    frame_t frame = NFAPI_SFNSLOT2SFN(*sfn_slot);
+    int slot = NFAPI_SFNSLOT2SLOT(*sfn_slot);
+    if (*sfn_slot == last_sfn_slot)
     {
       LOG_D(NR_MAC, "repeated sfn_sf = %d.%d\n",
-            sfn_slot >> 6, sfn_slot & 0x3F);
+            frame, slot);
       continue;
     }
-    last_sfn_slot = sfn_slot;
-     LOG_D(NR_MAC, "The received sfn/slot [%d %d], last time stamp %ld, current time stamp %ld\n",
-            NFAPI_SFNSLOT2SFN(sfn_slot), NFAPI_SFNSLOT2SLOT(sfn_slot), last_time_stamp, sfn_slot_info->time_stamp);
+    last_sfn_slot = *sfn_slot;
 
-    uint64_t delta = sfn_slot_info->time_stamp - last_time_stamp;
-    if (delta < 500)
-    {
-      LOG_D(NR_MAC, "sfn/slot [%d %d] has been received too quickly! Delta = %ld. Will sleep for %ld us\n",
-            NFAPI_SFNSLOT2SFN(sfn_slot), NFAPI_SFNSLOT2SLOT(sfn_slot), delta, 500 - delta);
-      usleep(500 - delta);
-    }
-    last_time_stamp = sfn_slot_info->time_stamp;
+    LOG_D(NR_MAC, "The received sfn/slot [%d %d] from proxy\n",
+          frame, slot);
 
     module_id_t mod_id = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
@@ -443,8 +434,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     mac->ra.generate_nr_prach = 0;
     int CC_id = 0;
     uint8_t gNB_id = 0;
-    frame_t frame = NFAPI_SFNSLOT2SFN(sfn_slot);
-    int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
     nr_uplink_indication_t ul_info;
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
     int slot_ahead = 2; // TODO: Make this dynamic
@@ -479,7 +468,9 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       nr_ue_ul_indication(&ul_info);
       check_nr_prach(mac, &ul_info, &prach_resources);
     }
-    process_queued_nr_nfapi_msgs(mac, sfn_slot);
+    process_queued_nr_nfapi_msgs(mac, *sfn_slot);
+    free(sfn_slot);
+    sfn_slot = NULL;
   }
   return NULL;
 }

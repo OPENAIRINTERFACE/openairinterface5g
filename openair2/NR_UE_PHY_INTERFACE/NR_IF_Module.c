@@ -52,7 +52,6 @@ static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
 static int ue_tx_sock_descriptor = -1;
 static int ue_rx_sock_descriptor = -1;
 static int g_harq_pid;
-int current_sfn_slot;
 sem_t sfn_slot_semaphore;
 
 queue_t nr_sfn_slot_queue;
@@ -789,18 +788,6 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
     return;
 }
 
-static uint64_t clock_usec()
-{
-    struct timespec t;
-    if (clock_gettime(CLOCK_MONOTONIC, &t) == -1)
-    {
-        abort();
-    }
-    return (uint64_t)t.tv_sec * 1000000 + (t.tv_nsec / 1000);
-}
-
-sfn_slot_info_t sfn_slot_pool[512];
-uint16_t sfn_slot_id;
 void *nrue_standalone_pnf_task(void *context)
 {
   struct sockaddr_in server_address;
@@ -809,9 +796,6 @@ void *nrue_standalone_pnf_task(void *context)
   assert(sd > 0);
 
   char buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
-  int sfn = 0;
-  int slot = 0;
-
 
   LOG_I(NR_RRC, "Successfully started %s.\n", __FUNCTION__);
 
@@ -830,23 +814,16 @@ void *nrue_standalone_pnf_task(void *context)
     }
     if (len == sizeof(uint16_t))
     {
-      uint16_t sfn_slot = 0;
-      memcpy((void *)&sfn_slot, buffer, sizeof(sfn_slot));
-      current_sfn_slot = sfn_slot;
+      uint16_t *sfn_slot = CALLOC(1, sizeof(*sfn_slot));
+      memcpy(sfn_slot, buffer, sizeof(*sfn_slot));
 
-      sfn_slot_pool[sfn_slot_id].sfn_slot = sfn_slot;
-      sfn_slot_pool[sfn_slot_id].time_stamp = clock_usec();
-      sfn = NFAPI_SFNSLOT2SFN(sfn_slot);
-      slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
-      LOG_I(NR_PHY, "Received from proxy sfn %d slot %d and time_stamp = %ld\n",
-            sfn, slot, sfn_slot_pool[sfn_slot_id].time_stamp);
+      LOG_I(NR_PHY, "Received from proxy sfn %d slot %d\n",
+            NFAPI_SFNSLOT2SFN(*sfn_slot), NFAPI_SFNSLOT2SLOT(*sfn_slot));
 
-      if (!put_queue(&nr_sfn_slot_queue, &sfn_slot_pool[sfn_slot_id]))
+      if (!put_queue(&nr_sfn_slot_queue, sfn_slot))
       {
         LOG_E(NR_PHY, "put_queue failed for sfn slot.\n");
       }
-
-      sfn_slot_id = (sfn_slot_id + 1) % 512;
 
       if (sem_post(&sfn_slot_semaphore) != 0)
       {
@@ -856,28 +833,22 @@ void *nrue_standalone_pnf_task(void *context)
     }
     else if (len == sizeof(nr_phy_channel_params_t))
     {
-      nr_phy_channel_params_t ch_info;
-      memcpy(&ch_info, buffer, sizeof(nr_phy_channel_params_t));
-      current_sfn_slot = ch_info.sfn_slot;
+      nr_phy_channel_params_t *ch_info = CALLOC(1, sizeof(*ch_info));
+      memcpy(ch_info, buffer, sizeof(*ch_info));
 
-      sfn_slot_pool[sfn_slot_id].sfn_slot = ch_info.sfn_slot;
-      sfn_slot_pool[sfn_slot_id].time_stamp = clock_usec();
+      LOG_I(NR_PHY, "Received_SINR = %f, sfn:slot %d:%d\n",
+            ch_info->sinr, NFAPI_SFNSLOT2SFN(ch_info->sfn_slot), NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot));
 
-      if (!put_queue(&nr_sfn_slot_queue, &sfn_slot_pool[sfn_slot_id]))
+      if (!put_queue(&nr_sfn_slot_queue, ch_info))
       {
         LOG_E(NR_PHY, "put_queue failed for sfn slot.\n");
       }
-
-      sfn_slot_id = (sfn_slot_id + 1) % 512;
 
       if (sem_post(&sfn_slot_semaphore) != 0)
       {
         LOG_E(MAC, "sem_post() error\n");
         abort();
       }
-      sfn = NFAPI_SFNSLOT2SFN(ch_info.sfn_slot);
-      slot = NFAPI_SFNSLOT2SLOT(ch_info.sfn_slot);
-      LOG_I(NR_PHY, "Received_SINR = %f, sfn:slot %d:%d\n", ch_info.sinr, sfn, slot);
     }
     else
     {
