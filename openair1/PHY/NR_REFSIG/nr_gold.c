@@ -174,7 +174,7 @@ void nr_init_prs(PHY_VARS_gNB* gNB)
       uint32_t pow22=1<<22;
       uint32_t pow10=1<<10;
       c_init1 = pow22*ceil(Nid/1024);
-      c_init2 = pow10*(slotnum+symNum+1)*(2*(Nid%1024)+1);
+      c_init2 = pow10*(slotNum+symNum+1)*(2*(Nid%1024)+1);
       c_init3 = Nid%1024;
       x2 = c_init1 + c_init2 + c_init3;
       for (uint8_t n=0; n<NR_MAX_PRS_INIT_LENGTH_DWORD; n++) {
