@@ -169,6 +169,8 @@ void nr_init_prs(PHY_VARS_gNB* gNB)
   for (slotNum = 0; slotNum < fp->slots_per_frame; slotNum++) {
     for (symNum = 0; symNum < fp->symbols_per_slot ; symNum++) {
       reset = 1;
+	printf("%d \n",slotNum);
+	printf("%d \n",symNum);
       // initial x2 for prs as 38.211
       uint32_t c_init1, c_init2, c_init3;
       uint32_t pow22=1<<22;
@@ -177,11 +179,11 @@ void nr_init_prs(PHY_VARS_gNB* gNB)
       c_init2 = pow10*(slotNum+symNum+1)*(2*(Nid%1024)+1);
       c_init3 = Nid%1024;
       x2 = c_init1 + c_init2 + c_init3;
+	printf("%d \n",x2);
       for (uint8_t n=0; n<NR_MAX_PRS_INIT_LENGTH_DWORD; n++) {
         gNB->nr_gold_prs[slotNum][symNum][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
-
     }
   }
 
