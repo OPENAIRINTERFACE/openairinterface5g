@@ -341,8 +341,10 @@ int8_t nr_rrc_ue_process_scg_config(const module_id_t module_id, NR_CellGroupCon
   }else{
     //  maintain list
     if(cell_group_config->spCellConfig != NULL){
+      if (get_softmodem_params()->nsa) {
         nr_rrc_mac_config_req_ue(0, 0, 0, NULL, NULL, cell_group_config, NULL);
         LOG_D(NR_RRC, "Filled scc now \n");
+      }
       if(cell_group_config->spCellConfig->spCellConfigDedicated != NULL){
         //  process element of list to be add by RRC message
         if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList != NULL){
