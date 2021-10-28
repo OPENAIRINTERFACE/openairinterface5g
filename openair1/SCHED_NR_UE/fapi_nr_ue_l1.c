@@ -91,7 +91,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 memcpy(rx_ind->pdu_list[j].pdu, tx_req_body->pdu, tx_req_body->pdu_length * sizeof(*rx_ind->pdu_list[j].pdu));
                 rx_ind->pdu_list[j].rnti = pusch_config_pdu->rnti;
                 rx_ind->pdu_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
-                rx_ind->pdu_list[j].ul_cqi = 255; // scheduled_response->tx_request->tx_config.ul_cqi;
+                rx_ind->pdu_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
                 char buffer[1024];
                 hexdump(rx_ind->pdu_list[j].pdu, rx_ind->pdu_list[j].pdu_length, buffer, sizeof(buffer));
                 LOG_D(NR_MAC, "Hexdump of pdu %s before queuing rx_ind\n",

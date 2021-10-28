@@ -3303,6 +3303,7 @@ static uint8_t pack_nr_uci_indication(void *msg, uint8_t **ppWritePackedMsg, uin
 	{
 		if (!pack_nr_uci_indication_body(&pNfapiMsg->uci_list[i], ppWritePackedMsg, end))
 		        return 0;
+
 	}
 
 return 1;
