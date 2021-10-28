@@ -458,7 +458,10 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     mac->dl_info.dci_ind = NULL;
     mac->dl_info.rx_ind = NULL;
 
-    nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+    if (is_nr_DL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_rx))
+    {
+      nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+    }
 
     if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
 
