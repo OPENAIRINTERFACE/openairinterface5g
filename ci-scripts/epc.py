@@ -165,7 +165,15 @@ class EPCManagement():
 		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
 			mySSH = SSH.SSHConnection()
 			mySSH.open(self.IPAddress, self.UserName, self.Password)
-			mySSH.command('docker inspect --format="MME_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" ' + self.containerPrefix + '-oai-mme', '\$', 5)
+			self.isMagmaUsed = False
+			mySSH.command('docker ps -a', '\$', 5)
+			result = re.search('magma', mySSH.getBefore())
+			if result is not None:
+				self.isMagmaUsed = True
+			if self.isMagmaUsed:
+				mySSH.command('docker inspect --format="MME_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" ' + self.containerPrefix + '-magma-mme', '\$', 5)
+			else:
+				mySSH.command('docker inspect --format="MME_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" ' + self.containerPrefix + '-oai-mme', '\$', 5)
 			result = re.search('MME_IP_ADDR = (?P<mme_ip_addr>[0-9\.]+)', mySSH.getBefore())
 			if result is not None:
 				self.MmeIPAddress = result.group('mme_ip_addr')
@@ -290,7 +298,15 @@ class EPCManagement():
 			mySSH = SSH.SSHConnection()
 			mySSH.open(self.IPAddress, self.UserName, self.Password)
 			if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
-				mySSH.command('docker top ' + self.containerPrefix + '-oai-mme', '\$', 5)
+				self.isMagmaUsed = False
+				mySSH.command('docker ps -a', '\$', 5)
+				result = re.search('magma', mySSH.getBefore())
+				if result is not None:
+					self.isMagmaUsed = True
+				if self.isMagmaUsed:
+					mySSH.command('docker top ' + self.containerPrefix + '-magma-mme', '\$', 5)
+				else:
+					mySSH.command('docker top ' + self.containerPrefix + '-oai-mme', '\$', 5)
 			else:
 				mySSH.command('stdbuf -o0 ps -aux | grep --color=never mme | grep -v grep', '\$', 5)
 			if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
