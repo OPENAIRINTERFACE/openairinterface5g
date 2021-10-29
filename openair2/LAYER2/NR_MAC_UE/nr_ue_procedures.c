@@ -550,7 +550,7 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci->dci_format];
 
-  if ((dci->rnti != mac->crnti) && (dci->rnti != mac->ra.ra_rnti)) {
+  if ((dci->rnti != mac->crnti) && (dci->rnti != mac->ra.ra_rnti) && (dci->rnti != 0xffff)) {
       LOG_D(MAC,"We skip for the received dci indication rnti %4x != mac->crnti %4x  frame slot %4d.%2d  RA state %d\n",
                     dci->rnti, mac->crnti, frame, slot, mac->ra.ra_state);
       return 0;
@@ -2512,7 +2512,8 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     N_RB_UL = NRRIV2BW(mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   }
 
-  LOG_D(MAC,"nr_extract_dci_info : dci_pdu %lx, size %d\n",*dci_pdu,dci_size);
+  LOG_D(MAC,"nr_extract_dci_info : dci_pdu %lx, size %d, rnti_type %d, dci_format %d\n",
+        *dci_pdu, dci_size, rnti_type, dci_format);
   switch(dci_format) {
 
   case NR_DL_DCI_FORMAT_1_0:
@@ -2568,7 +2569,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         dci_pdu_rel15 = &mac->def_dci_pdu_rel15[NR_UL_DCI_FORMAT_0_0];
         return 2+nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, dci_pdu, dci_pdu_rel15);
       }
-#ifdef DEBUG_EXTRACT_DCI
+#if 1
       LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,N_RB,dci_size-pos,*dci_pdu);
 #endif
 

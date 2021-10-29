@@ -887,8 +887,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
     nr_scheduled_response_t scheduled_response;
     nr_dcireq_t dcireq;
+    LOG_D(MAC,"Melissa we got herre %s():%d\n", __FUNCTION__, __LINE__);
 
     if(mac->cg != NULL){ // we have a cg
+      LOG_D(MAC,"Melissa we got herre %s():%d\n", __FUNCTION__, __LINE__);
       dcireq.module_id = mod_id;
       dcireq.gNB_index = gNB_index;
       dcireq.cc_id     = cc_id;

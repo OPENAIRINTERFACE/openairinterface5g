@@ -493,7 +493,10 @@ int main( int argc, char **argv ) {
     exit(-1);
   }
 
-  if (!get_softmodem_params()->nsa) {
+  if (get_softmodem_params()->emulate_l2)
+    start_oai_nrue_threads();
+
+  if (!get_softmodem_params()->nsa && !get_softmodem_params()->emulate_l2) {
     for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
       UE[CC_id] = PHY_vars_UE_g[0][CC_id];

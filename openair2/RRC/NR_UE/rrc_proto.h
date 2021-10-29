@@ -169,6 +169,8 @@ void init_connections_with_lte_ue(void);
 
 void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, MessagesIds msg_type);
 
+void start_oai_nrue_threads(void);
+
 /**\brief RRC UE generate RRCSetupRequest message.
    \param module_id  module id
    \param gNB_index  gNB index  */

@@ -314,13 +314,15 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
     {
       LOG_E(NR_MAC, "[%d %d] No corresponding tx_data_request for given dl_tti_request sfn/slot\n",
             NFAPI_SFNSLOT2SFN(dl_tti_sfn_slot), NFAPI_SFNSLOT2SLOT(dl_tti_sfn_slot));
-      save_nr_measurement_info(dl_tti_request);
+      if (get_softmodem_params()->nsa)
+        save_nr_measurement_info(dl_tti_request);
       free(dl_tti_request);
       dl_tti_request = NULL;
     }
     else if (dl_tti_request->dl_tti_request_body.nPDUs > 0 && tx_data_request->Number_of_PDUs > 0)
     {
-      save_nr_measurement_info(dl_tti_request);
+      if (get_softmodem_params()->nsa)
+        save_nr_measurement_info(dl_tti_request);
       check_and_process_dci(dl_tti_request, tx_data_request, NULL, NULL);
     }
     else
@@ -432,9 +434,15 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     module_id_t mod_id = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-    if (mac->scc == NULL)
+    if (mac->scc == NULL || mac->scc_SIB == NULL) //Melissa TODO this isnt correct
     {
-      LOG_D(MAC, "mac->scc == NULL!\n");
+      if (get_softmodem_params()->sa && get_softmodem_params()->emulate_l2)
+      {
+        LOG_D(NR_MAC, "We haven't gotten MIB or SIB yet. Lets see if we received it\n");
+        nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+        process_queued_nr_nfapi_msgs(mac, sfn_slot);
+      }
+      LOG_D(MAC, "mac->scc == NULL or mac->scc_SIB == NULL!\n");
       continue;
     }
 

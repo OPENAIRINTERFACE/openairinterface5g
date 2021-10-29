@@ -271,6 +271,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                 {
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
                     if ((dci_pdu_list->RNTI != mac->crnti) &&
+                        (dci_pdu_list->RNTI != 0xffff) &&
                        ((dci_pdu_list->RNTI != mac->ra.ra_rnti) || mac->ra.RA_RAPID_found))
                     {
                       LOG_D(NR_MAC, "We are filtering PDCCH DCI pdu because RNTI doesnt match!\n");
@@ -341,7 +342,12 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
-        if(mac->ra.ra_state <= WAIT_RAR)
+        if (dl_info->dci_ind->number_of_dcis > 0 && dl_info->dci_ind->dci_list[i].rnti == 0xffff) //Melissa this is bad find a better way
+        {
+            fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_SIB);
+            pdu_idx++;
+        }
+        else if(mac->ra.ra_state <= WAIT_RAR)
         {
             fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_RAR);
             pdu_idx++;
@@ -548,7 +554,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     int slot = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
-    if (mac->scc == NULL)
+    if (mac->scc == NULL) //Melissa, if we comment this out, we see the SIB!
     {
       return;
     }
@@ -734,10 +740,11 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                   ul_tti_request->SFN, ul_tti_request->Slot);
             if (nr_uci_ind_queue.num_items > 0) //TODO: In the future UL_TTIs can be for ULSCH and SRS.
             {
-                LOG_I(NR_MAC, "Melissa, we added UL_TTI_REQ to queue for sfn slot %d %d\n",
+                LOG_D(NR_MAC, "We added UL_TTI_REQ to queue for sfn slot %d %d\n",
                       ul_tti_request->SFN, ul_tti_request->Slot);
                 if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
                 {
+                    LOG_D(NR_PHY, "put_queue failed for nr_ul_tti_req_queue.\n");
                     reset_queue(&nr_ul_tti_req_queue);
                     if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
                     {
@@ -754,10 +761,11 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                mitigate proxy timing issues. */
             else if (nr_uci_ind_queue.num_items == 0)
             {
-                LOG_I(NR_MAC, "Melissa, we added UL_TTI_REQ to queue for sfn slot %d %d\n",
+                LOG_D(NR_MAC, "We added UL_TTI_REQ to  wait queue for sfn slot %d %d\n",
                       ul_tti_request->SFN, ul_tti_request->Slot);
                 if (!put_queue(&nr_wait_ul_tti_req_queue, ul_tti_request))
                 {
+                    LOG_D(NR_PHY, "put_queue failed for nr_wait_ul_tti_req_queue.\n");
                     reset_queue(&nr_wait_ul_tti_req_queue);
                     if (!put_queue(&nr_wait_ul_tti_req_queue, ul_tti_request))
                     {

@@ -201,8 +201,6 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
-static void start_oai_nrue_threads(void);
-
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id,
                                                    const uint8_t *buffer,
@@ -2767,7 +2765,8 @@ void *recv_msgs_from_lte_ue(void *args_p)
     }
     return NULL;
 }
-static void start_oai_nrue_threads()
+
+void start_oai_nrue_threads()
 {
     init_queue(&nr_rach_ind_queue);
     init_queue(&nr_rx_ind_queue);
