@@ -734,7 +734,7 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                   ul_tti_request->SFN, ul_tti_request->Slot);
             if (nr_uci_ind_queue.num_items > 0) //TODO: In the future UL_TTIs can be for ULSCH and SRS.
             {
-                LOG_I(NR_MAC, "Melissa, we added UL_TTI_REQ to queue for sfn slot %d %d\n",
+                LOG_D(NR_MAC, "We added UL_TTI_REQ to queue for sfn slot %d %d\n",
                       ul_tti_request->SFN, ul_tti_request->Slot);
                 if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
                 {
@@ -754,7 +754,7 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                mitigate proxy timing issues. */
             else if (nr_uci_ind_queue.num_items == 0)
             {
-                LOG_I(NR_MAC, "Melissa, we added UL_TTI_REQ to queue for sfn slot %d %d\n",
+                LOG_D(NR_MAC, "We added UL_TTI_REQ to queue for sfn slot %d %d\n",
                       ul_tti_request->SFN, ul_tti_request->Slot);
                 if (!put_queue(&nr_wait_ul_tti_req_queue, ul_tti_request))
                 {
