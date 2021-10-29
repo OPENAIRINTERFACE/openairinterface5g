@@ -330,7 +330,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
         AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
                     "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
         fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
-        uint8_t nr_prach = nr_ue_get_rach(&prach_resources, prach_pdu, mod_id, CC_id, ul_info.frame_tx, gNB_id, ul_info.slot_tx);
+        uint8_t nr_prach = nr_ue_get_rach_nsa(&prach_resources, prach_pdu, mod_id, CC_id, ul_info.frame_tx, gNB_id, ul_info.slot_tx);
         if (nr_prach == 1)
         {
           L1_nsa_prach_procedures(ul_info.frame_tx, ul_info.slot_tx, prach_pdu);
