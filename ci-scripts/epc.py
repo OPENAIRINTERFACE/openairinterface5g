@@ -66,6 +66,7 @@ class EPCManagement():
 		self.containerPrefix = 'prod'
 		self.mmeConfFile = 'mme.conf'
 		self.yamlPath = ''
+		self.isMagmaUsed = False
 
 
 #-----------------------------------------------------------
@@ -489,6 +490,12 @@ class EPCManagement():
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit('docker-compose not installed on ' + self.IPAddress)
 
+		# Checking if it is a MAGMA deployment
+		self.isMagmaUsed = False
+		if os.path.isfile('./' + self.yamlPath + '/redis_extern.conf'):
+			self.isMagmaUsed = True
+			logging.debug('MAGMA MME is used!')
+
 		mySSH.command('if [ -d ' + self.SourceCodePath + '/scripts ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/scripts ; fi', '\$', 5)
 		mySSH.command('if [ -d ' + self.SourceCodePath + '/logs ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/logs ; fi', '\$', 5)
 		mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts ' + self.SourceCodePath + '/logs', '\$', 5)
@@ -500,10 +507,15 @@ class EPCManagement():
 		# - docker-compose config | grep container_name
 		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
 		mySSH.copyout(self.IPAddress, self.UserName, self.Password, './' + self.yamlPath + '/docker-compose.yml', self.SourceCodePath + '/scripts')
+		if self.isMagmaUsed:
+			mySSH.copyout(self.IPAddress, self.UserName, self.Password, './' + self.yamlPath + '/entrypoint.sh', self.SourceCodePath + '/scripts')
+			mySSH.copyout(self.IPAddress, self.UserName, self.Password, './' + self.yamlPath + '/mme.conf', self.SourceCodePath + '/scripts')
+			mySSH.copyout(self.IPAddress, self.UserName, self.Password, './' + self.yamlPath + '/mme_fd.sprint.conf', self.SourceCodePath + '/scripts')
+			mySSH.copyout(self.IPAddress, self.UserName, self.Password, './' + self.yamlPath + '/redis_extern.conf', self.SourceCodePath + '/scripts')
+			mySSH.command('chmod a+x ' + self.SourceCodePath + '/scripts/entrypoint.sh', '\$', 5)
 		mySSH.command('wget --quiet --tries=3 --retry-connrefused https://raw.githubusercontent.com/OPENAIRINTERFACE/openair-hss/develop/src/hss_rel14/db/oai_db.cql', '\$', 30)
 		mySSH.command('docker-compose down', '\$', 60)
 		mySSH.command('docker-compose up -d db_init', '\$', 60)
-
 		# databases take time...
 		time.sleep(10)
 		cnt = 0
@@ -525,8 +537,12 @@ class EPCManagement():
 
 		# deploying EPC cNFs
 		mySSH.command('docker-compose up -d oai_spgwu', '\$', 60)
-		listOfContainers = 'prod-cassandra prod-oai-hss prod-oai-mme prod-oai-spgwc prod-oai-spgwu-tiny'
-		expectedHealthyContainers = 5
+		if self.isMagmaUsed:
+			listOfContainers = 'prod-cassandra prod-oai-hss prod-magma-mme prod-oai-spgwc prod-oai-spgwu-tiny prod-redis'
+			expectedHealthyContainers = 6
+		else:
+			listOfContainers = 'prod-cassandra prod-oai-hss prod-oai-mme prod-oai-spgwc prod-oai-spgwu-tiny'
+			expectedHealthyContainers = 5
 
 		# Checking for additional services
 		mySSH.command('docker-compose config', '\$', 5)
@@ -557,7 +573,10 @@ class EPCManagement():
 		logging.debug(' -- ' + str(startingNb) + ' still starting container(s)')
 		if healthyNb == expectedHealthyContainers:
 			mySSH.command('docker exec -d prod-oai-hss /bin/bash -c "nohup tshark -i any -f \'port 9042 or port 3868\' -w /tmp/hss_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
-			mySSH.command('docker exec -d prod-oai-mme /bin/bash -c "nohup tshark -i any -f \'port 3868 or port 2123 or port 36412\' -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
+			if self.isMagmaUsed:
+				mySSH.command('docker exec -d prod-magma-mme /bin/bash -c "nohup tshark -i any -f \'port 3868 or port 2123 or port 36412\' -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
+			else:
+				mySSH.command('docker exec -d prod-oai-mme /bin/bash -c "nohup tshark -i any -f \'port 3868 or port 2123 or port 36412\' -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
 			mySSH.command('docker exec -d prod-oai-spgwc /bin/bash -c "nohup tshark -i any -f \'port 2123 or port 8805\' -w /tmp/spgwc_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
 			# on SPGW-U, not capturing on SGI to avoid huge file
 			mySSH.command('docker exec -d prod-oai-spgwu-tiny /bin/bash -c "nohup tshark -i any -f \'port 8805\'  -w /tmp/spgwu_check_run.pcap 2>&1 > /dev/null"', '\$', 10)
@@ -575,24 +594,45 @@ class EPCManagement():
 
 		mySSH = SSH.SSHConnection()
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
+		# Checking if it is a MAGMA deployment.
+		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
+		mySSH.command('docker-compose ps -a', '\$', 5)
+		self.isMagmaUsed = False
+		result = re.search('magma', mySSH.getBefore())
+		if result is not None:
+			self.isMagmaUsed = True
+			logging.debug('MAGMA MME is used!')
 		# Recovering logs and pcap files
 		mySSH.command('cd ' + self.SourceCodePath + '/logs', '\$', 5)
 		mySSH.command('docker exec -it prod-oai-hss /bin/bash -c "killall --signal SIGINT oai_hss tshark"', '\$', 5)
-		mySSH.command('docker exec -it prod-oai-mme /bin/bash -c "killall --signal SIGINT tshark"', '\$', 5)
+		if self.isMagmaUsed:
+			mySSH.command('docker exec -it prod-magma-mme /bin/bash -c "killall --signal SIGINT tshark"', '\$', 5)
+		else:
+			mySSH.command('docker exec -it prod-oai-mme /bin/bash -c "killall --signal SIGINT tshark"', '\$', 5)
 		mySSH.command('docker exec -it prod-oai-spgwc /bin/bash -c "killall --signal SIGINT oai_spgwc tshark"', '\$', 5)
 		mySSH.command('docker exec -it prod-oai-spgwu-tiny /bin/bash -c "killall --signal SIGINT tshark"', '\$', 5)
 		mySSH.command('docker logs prod-oai-hss > hss_' + self.testCase_id + '.log', '\$', 5)
-		mySSH.command('docker logs prod-oai-mme > mme_' + self.testCase_id + '.log', '\$', 5)
+		if self.isMagmaUsed:
+			mySSH.command('docker cp --follow-link prod-magma-mme:/var/log/mme.log mme_' + self.testCase_id + '.log', '\$', 15)
+		else:
+			mySSH.command('docker logs prod-oai-mme > mme_' + self.testCase_id + '.log', '\$', 5)
 		mySSH.command('docker logs prod-oai-spgwc > spgwc_' + self.testCase_id + '.log', '\$', 5)
 		mySSH.command('docker logs prod-oai-spgwu-tiny > spgwu_' + self.testCase_id + '.log', '\$', 5)
 		mySSH.command('docker cp prod-oai-hss:/tmp/hss_check_run.pcap hss_' + self.testCase_id + '.pcap', '\$', 60)
-		mySSH.command('docker cp prod-oai-mme:/tmp/mme_check_run.pcap mme_' + self.testCase_id + '.pcap', '\$', 60)
+		if self.isMagmaUsed:
+			mySSH.command('docker cp prod-magma-mme:/tmp/mme_check_run.pcap mme_' + self.testCase_id + '.pcap', '\$', 60)
+		else:
+			mySSH.command('docker cp prod-oai-mme:/tmp/mme_check_run.pcap mme_' + self.testCase_id + '.pcap', '\$', 60)
 		mySSH.command('docker cp prod-oai-spgwc:/tmp/spgwc_check_run.pcap spgwc_' + self.testCase_id + '.pcap', '\$', 60)
 		mySSH.command('docker cp prod-oai-spgwu-tiny:/tmp/spgwu_check_run.pcap spgwu_' + self.testCase_id + '.pcap', '\$', 60)
 		# Remove all
 		mySSH.command('cd ' + self.SourceCodePath + '/scripts', '\$', 5)
-		listOfContainers = 'prod-cassandra prod-oai-hss prod-oai-mme prod-oai-spgwc prod-oai-spgwu-tiny'
-		nbContainers = 5
+		if self.isMagmaUsed:
+			listOfContainers = 'prod-cassandra prod-oai-hss prod-magma-mme prod-oai-spgwc prod-oai-spgwu-tiny prod-redis'
+			nbContainers = 6
+		else:
+			listOfContainers = 'prod-cassandra prod-oai-hss prod-oai-mme prod-oai-spgwc prod-oai-spgwu-tiny'
+			nbContainers = 5
 		# Checking for additional services
 		mySSH.command('docker-compose config', '\$', 5)
 		configResponse = mySSH.getBefore()
