@@ -408,6 +408,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
           SEQUENCE_free( &asn_DEF_NR_RadioBearerConfig, RadioBearerConfig, 1 );
           return;
         }
+#if 0
         protocol_ctxt_t ctxt;
         NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_id, ENB_FLAG_YES, mac->crnti, 0, 0, 0);
@@ -418,6 +419,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
                         RadioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm,
                         *RadioBearerConfig->securityConfig->keyToUse);
         nr_rrc_ue_process_RadioBearerConfig(&ctxt, 0, RadioBearerConfig);
+#endif
 
       }
       break;

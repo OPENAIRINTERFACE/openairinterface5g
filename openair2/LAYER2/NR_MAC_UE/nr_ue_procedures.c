@@ -550,7 +550,7 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci->dci_format];
 
-  if ((dci->rnti != mac->crnti) && (dci->rnti != mac->ra.ra_rnti)) {
+  if ((dci->rnti != mac->crnti) && (dci->rnti != mac->ra.ra_rnti) && (dci->rnti != 0xFFFF)) {
       LOG_D(MAC,"We skip for the received dci indication rnti %4x != mac->crnti %4x  frame slot %4d.%2d  RA state %d\n",
                     dci->rnti, mac->crnti, frame, slot, mac->ra.ra_state);
       return 0;
