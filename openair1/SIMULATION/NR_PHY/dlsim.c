@@ -1301,9 +1301,10 @@ int main(int argc, char **argv)
     printf("\n");
 
     if (print_perf==1) {
-      printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, TBS %d, Kr %d (Zc %d))\n",
+      printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, TBS %d, C %d, Kr %d (Zc %d))\n",
 	     1000>>*scc->ssbSubcarrierSpacing, g_rbSize, g_mcsIndex,
 	     msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3,
+       msgDataTx->dlsch[0][0]->harq_process.C,
 	     msgDataTx->dlsch[0][0]->harq_process.K,
 	     msgDataTx->dlsch[0][0]->harq_process.K/((msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3)>3824?22:10));
       printDistribution(gNB->phy_proc_tx_0,table_tx,"PHY proc tx");

@@ -380,7 +380,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   impp.tparity = tparity;
   impp.toutput = toutput;
 
-  for(int j=0;j<(harq->C/8+1);j++) {
+  for(int j=0;j<(harq->C/8+((harq->C&7)==0 ? 0 : 1));j++) {
     impp.macro_num=j;
     nrLDPC_encoder(harq->c,harq->d,*Zc,Kb,Kr,harq->BG,&impp);
   }
