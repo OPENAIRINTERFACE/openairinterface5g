@@ -22,6 +22,7 @@
 // encoder interface
 #ifndef __NRLDPC_DEFS__H__
 #define __NRLDPC_DEFS__H__
+#include <openair1/PHY/defs_nr_common.h>
 #include "openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 /**
    \brief LDPC encoder
@@ -36,13 +37,27 @@
    \param 9-12 time_stats_t *tinput,*tprep, *tparity,*toutput
 */
 typedef struct {
-	int n_segments;          // optim8seg
+  unsigned int n_segments;          // optim8seg
 	unsigned int macro_num; // optim8segmulti
 	unsigned char gen_code; //orig
 	time_stats_t *tinput;
 	time_stats_t *tprep;
 	time_stats_t *tparity;
 	time_stats_t *toutput;
+  int Kr;
+  uint32_t Kb;
+  uint32_t *Zc;
+  void *harq;
+  /// Encoder BG
+  uint8_t BG;
+  /// Interleaver outputs
+  unsigned char *output;
+  /// Number of bits in "small" code segments
+  uint32_t K;
+  /// Number of "Filler" bits
+  uint32_t F;
+  /// LDPC-code outputs
+  uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
 }encoder_implemparams_t;
 #define INIT0_LDPCIMPLEMPARAMS {0,0,0,NULL,NULL,NULL,NULL}
 typedef int(*nrLDPC_encoderfunc_t)(unsigned char **,unsigned char **,int,int,short, short, encoder_implemparams_t*);

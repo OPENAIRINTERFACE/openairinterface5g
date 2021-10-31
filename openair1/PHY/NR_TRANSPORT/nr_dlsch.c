@@ -180,9 +180,12 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
+    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
+    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
     start_meas(dlsch_encoding_stats);
     nr_dlsch_encoding(gNB,
-		      harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
+		      harq->pdu, frame, slot, dlsch, frame_parms, output,
+		      tinput,tprep,tparity,toutput,
 		      dlsch_rate_matching_stats,
 		      dlsch_interleaving_stats,
 		      dlsch_segmentation_stats);
@@ -197,7 +200,7 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
     printf("\nEncoded payload:\n");
     for (int i=0; i<encoded_length>>3; i++) {
       for (int j=0; j<8; j++)
-	printf("%d", harq->f[(i<<3)+j]);
+	printf("%d", output[(i<<3)+j]);
       printf("\t");
     }
     printf("\n");
@@ -210,7 +213,7 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
     for (int q=0; q<rel15->NrOfCodewords; q++)
       memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
     for (int q=0; q<rel15->NrOfCodewords; q++)
-      nr_pdsch_codeword_scrambling_optim(harq->f,
+      nr_pdsch_codeword_scrambling_optim(output,
 					 encoded_length,
 					 q,
 					 rel15->dataScramblingId,

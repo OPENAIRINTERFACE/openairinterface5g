@@ -96,20 +96,6 @@ typedef struct {
   uint32_t subframe;
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
-  /// Concatenated sequences
-  uint8_t *e;
-  /// LDPC-code outputs
-  uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
-  /// Interleaver outputs
-  uint8_t *f;
-  /// Number of code segments
-  uint32_t C;
-  /// Number of bits in "small" code segments
-  uint32_t K;
-  /// Number of "Filler" bits
-  uint32_t F;
-  /// Encoder BG
-  uint8_t BG;
   /// LDPC lifting size
   uint32_t Z;
 } NR_DL_gNB_HARQ_t;

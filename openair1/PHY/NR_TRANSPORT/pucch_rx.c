@@ -368,7 +368,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       xrtmag_next = temp;
   }
 
-  av_corr/=nr_sequences/l;
+  //av_corr/=nr_sequences/l;
 
   int xrtmag_dBtimes10 = 10*(int)dB_fixed64(xrtmag/(12*l));
   int xrtmag_next_dBtimes10 = 10*(int)dB_fixed64(xrtmag_next/(12*l));
