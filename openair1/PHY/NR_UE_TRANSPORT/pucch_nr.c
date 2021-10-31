@@ -34,7 +34,6 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 //#include "PHY/extern.h"
-//#include "LAYER2/MAC/extern.h"
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
