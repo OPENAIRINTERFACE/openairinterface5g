@@ -826,6 +826,14 @@ int main(int argc, char **argv)
     fs = 61.44e6;
     bw = 40e6;
   }
+  else if (mu == 1 && N_RB_DL == 133) { 
+    fs = 61.44e6;
+    bw = 50e6;
+  }
+  else if (mu == 1 && N_RB_DL == 162) { 
+    fs = 61.44e6;
+    bw = 60e6;
+  }
   else if (mu == 3 && N_RB_DL == 66) {
     fs = 122.88e6;
     bw = 100e6;
