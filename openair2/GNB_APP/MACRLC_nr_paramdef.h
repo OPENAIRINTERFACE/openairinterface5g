@@ -96,7 +96,7 @@
 {CONFIG_STRING_MACRLC_DL_BLER_TARGET_UPPER,   "Upper threshold of BLER to decrease DL MCS",   0, dblptr:NULL,  defdblval:0.15,  TYPE_DOUBLE,  0},        \
 {CONFIG_STRING_MACRLC_DL_BLER_TARGET_LOWER,   "Lower threshold of BLER to increase DL MCS",   0, dblptr:NULL,  defdblval:0.05,  TYPE_DOUBLE,  0},        \
 {CONFIG_STRING_MACRLC_DL_RD2_BLER_THRESHOLD,  "Threshold of RD2/RETX2 BLER to decrease DL MCS", 0, dblptr:NULL,  defdblval:0.01,  TYPE_DOUBLE,  0},      \
-{CONFIG_STRING_MACRLC_DL_MAX_MCS,             "Maximum DL MCS that should be used", 0, u8ptr:NULL,  defintval:20,  TYPE_UINT8,  0},      \
+{CONFIG_STRING_MACRLC_DL_MAX_MCS,             "Maximum DL MCS that should be used", 0, u8ptr:NULL,  defintval:28,  TYPE_UINT8,  0},      \
 }
 #define MACRLC_CC_IDX                                          0
 #define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1

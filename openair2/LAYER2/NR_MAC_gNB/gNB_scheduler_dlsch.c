@@ -410,13 +410,13 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   const uint8_t old_mcs = bler_stats->mcs;
   const NR_mac_stats_t *stats = &nrmac->UE_info.mac_stats[UE_id];
   const int dret3x = stats->dlsch_rounds[3] - bler_stats->dlsch_rounds[3];
-  if (dret3x > 0) {
+  if (0/*dret3x > 0*/) {
     /* if there is a third retransmission, decrease MCS for stabilization and
      * restart averaging window to stabilize transmission */
     bler_stats->last_frame_slot = now;
     bler_stats->mcs = max(9, bler_stats->mcs - 1);
     memcpy(bler_stats->dlsch_rounds, stats->dlsch_rounds, sizeof(stats->dlsch_rounds));
-    LOG_I(MAC, "%4d.%2d: %d retx in 3rd round, setting MCS to %d and restarting window\n", frame, slot, dret3x, bler_stats->mcs);
+    LOG_D(MAC, "%4d.%2d: %d retx in 3rd round, setting MCS to %d and restarting window\n", frame, slot, dret3x, bler_stats->mcs);
     return bler_stats->mcs;
   }
   if (diff < BLER_UPDATE_FRAME * n)
@@ -434,20 +434,21 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   int new_mcs = old_mcs;
   /* first ensure that number of 2nd retx is below threshold. If this is the
    * case, use 1st retx to adjust faster */
+  /*
   if (bler_stats->rd2_bler > nrmac->dl_rd2_bler_threshold && old_mcs > 6) {
     new_mcs -= 2;
-  } else if (bler_stats->rd2_bler < nrmac->dl_rd2_bler_threshold) {
+  } else if (bler_stats->rd2_bler < nrmac->dl_rd2_bler_threshold) {*/
     if (bler_stats->bler < nrmac->dl_bler_target_lower && old_mcs < nrmac->dl_max_mcs && dtx > 9)
       new_mcs += 1;
     else if (bler_stats->bler > nrmac->dl_bler_target_upper && old_mcs > 6)
       new_mcs -= 1;
     // else we are within threshold boundaries
-  }
+  /*}*/
 
   bler_stats->last_frame_slot = now;
   bler_stats->mcs = new_mcs;
   memcpy(bler_stats->dlsch_rounds, stats->dlsch_rounds, sizeof(stats->dlsch_rounds));
-  LOG_I(MAC, "%4d.%2d MCS %d -> %d (dtx %d, dretx %d, BLER wnd %.3f avg %.6f, dretx2 %d, RD2 BLER wnd %.3f avg %.6f)\n",
+  LOG_D(MAC, "%4d.%2d MCS %d -> %d (dtx %d, dretx %d, BLER wnd %.3f avg %.6f, dretx2 %d, RD2 BLER wnd %.3f avg %.6f)\n",
         frame, slot, old_mcs, new_mcs, dtx, dretx, bler_window, bler_stats->bler, dretx2, rd2_bler_wnd, bler_stats->rd2_bler);
   return new_mcs;
 }

@@ -1103,7 +1103,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
 
   // tpc (power control) only if we received AckNack or positive SR. For a
   // negative SR, the UE won't have sent anything, and the SNR is not valid
-  if (((uci_01->pduBitmap >> 1) & 0x1) || sched_ctrl->SR) {
+  if (((uci_01->pduBitmap >> 1) & 0x1) ) {
     if ((uci_01->harq) && (uci_01->harq->harq_confidence_level==0)) sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10, uci_01->ul_cqi, 30);
     else                                        sched_ctrl->tpc1 = 3;
     sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
