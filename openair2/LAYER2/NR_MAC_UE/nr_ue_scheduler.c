@@ -1895,6 +1895,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       format = prach_occasion_info_p->format;
       format0 = format & 0xff;        // single PRACH format
       format1 = (format >> 8) & 0xff; // dual PRACH format
+      LOG_D(NR_MAC,"We are here with format %u,  %s %d\n", format, __FUNCTION__, __LINE__);
       AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
                   "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
 
