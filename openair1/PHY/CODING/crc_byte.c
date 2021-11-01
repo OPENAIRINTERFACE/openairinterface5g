@@ -30,10 +30,14 @@
    Modified in June, 2001, to include  the length non multiple of 8
 */
 
+#define USE_INTEL_CRC 1
 
 #include "coding_defs.h"
 #include "assertions.h"
-
+#ifdef USE_INTEL_CRC
+#include "crc_intel.h"
+#include "crc.h"
+#endif
 /*ref 36-212 v8.6.0 , pp 8-9 */
 /* the highest degree is set by default */
 
@@ -94,6 +98,28 @@ static unsigned short      crc11Table[256];
 static unsigned char       crc8Table[256];
 static unsigned char       crc6Table[256];
 
+#ifdef USE_INTEL_CRC
+static DECLARE_ALIGNED(struct crc_pclmulqdq_ctx lte_crc24a_pclmulqdq, 16) = {
+        0x64e4d700,     /**< k1 */
+        0x2c8c9d00,     /**< k2 */
+        0xd9fe8c00,     /**< k3 */
+        0xf845fe24,     /**< q */
+        0x864cfb00,     /**< p */
+        0ULL            /**< res */
+};
+__m128i crc_xmm_be_le_swap128;
+
+DECLARE_ALIGNED(const uint8_t crc_xmm_shift_tab[48], 16) = {
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+};
+
+#endif
+
 void crcTableInit (void)
 {
   unsigned char c = 0;
@@ -108,14 +134,20 @@ void crcTableInit (void)
     crc8Table[c] = (unsigned char) (crcbit (&c, 1, poly8) >> 24);
     crc6Table[c] = (unsigned char) (crcbit (&c, 1, poly6) >> 24);
   } while (++c);
+#ifdef USE_INTEL_CRC
+  crc_xmm_be_le_swap128 = _mm_setr_epi32(0x0c0d0e0f, 0x08090a0b,
+                                         0x04050607, 0x00010203);
+
+#endif
 }
 
 /*********************************************************
 
-Byte by byte implementations,
+Byte by byte LUT implementations,
 assuming initial byte is 0 padded (in MSB) if necessary
-
+can use SIMD optimized Intel CRC for LTE/NR 24a/24b variants
 *********************************************************/
+
 unsigned int crc24a (unsigned char * inptr,
 					 int bitlen)
 {
@@ -124,7 +156,7 @@ unsigned int crc24a (unsigned char * inptr,
   unsigned int             crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
-
+#ifndef USE_INTEL_CRC
   while (octetlen-- > 0) {
     //   printf("crc24a: in %x => crc %x\n",crc,*inptr);
     crc = (crc << 8) ^ crc24aTable[(*inptr++) ^ (crc >> 24)];
@@ -132,18 +164,32 @@ unsigned int crc24a (unsigned char * inptr,
 
   if (resbit > 0)
     crc = (crc << resbit) ^ crc24aTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
-
   return crc;
+#else
+  return crc32_calc_pclmulqdq(inptr, octetlen, 0,
+                              &lte_crc24a_pclmulqdq) >> 8;
+#endif
+
 }
 
+#ifdef USE_INTEL_CRC
+static DECLARE_ALIGNED(struct crc_pclmulqdq_ctx lte_crc24b_pclmulqdq, 16) = {
+        0x80140500,     /**< k1 */
+        0x42000100,     /**< k2 */
+        0x90042100,     /**< k3 */
+        0xffff83ff,     /**< q */
+        0x80006300,     /**< p */
+        0ULL            /**< res */
+};
+#endif
 unsigned int crc24b (unsigned char * inptr,
-					 int bitlen)
+	   	     int bitlen)
 {
   int octetlen, resbit;
   unsigned int crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
-
+#ifndef USE_INTEL_CRC
   while (octetlen-- > 0) {
     //    printf("crc24b: in %x => crc %x (%x)\n",crc,*inptr,crc24bTable[(*inptr) ^ (crc >> 24)]);
     crc = (crc << 8) ^ crc24bTable[(*inptr++) ^ (crc >> 24)];
@@ -153,6 +199,10 @@ unsigned int crc24b (unsigned char * inptr,
     crc = (crc << resbit) ^ crc24bTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
 
   return crc;
+#else
+  return crc32_calc_pclmulqdq(inptr, octetlen, 0,
+                              &lte_crc24b_pclmulqdq) >> 8;
+#endif
 }
 
 unsigned int crc24c (unsigned char * inptr,
