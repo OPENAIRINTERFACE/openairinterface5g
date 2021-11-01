@@ -675,6 +675,7 @@ typedef struct gNB_MAC_INST_s {
   NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
+  pthread_t                       stats_thread;
   /// Pusch target SNR
   int                             pusch_target_snrx10;
   /// Pucch target SNR
