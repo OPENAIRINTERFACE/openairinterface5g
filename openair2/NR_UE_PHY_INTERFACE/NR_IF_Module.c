@@ -738,13 +738,9 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                       ul_tti_request->SFN, ul_tti_request->Slot);
                 if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
                 {
-                    reset_queue(&nr_ul_tti_req_queue);
-                    if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
-                    {
-                        LOG_E(NR_PHY, "put_queue failed for ul_tti_request.\n");
-                        free(ul_tti_request);
-                        ul_tti_request = NULL;
-                    }
+                    LOG_E(NR_PHY, "put_queue failed for ul_tti_request.\n");
+                    free(ul_tti_request);
+                    ul_tti_request = NULL;
                 }
             }
             /* TODO: This indicates that dl_tti_req was late or never arrived. If there are
