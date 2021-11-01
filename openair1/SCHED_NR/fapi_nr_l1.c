@@ -30,6 +30,7 @@
  * \warning
  */
 #include "fapi_nr_l1.h"
+#include "common/ran_context.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
@@ -146,7 +147,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
 
-  gNB         = RC.gNB[Mod_id];
+  gNB = RC.gNB[Mod_id];
 
   notifiedFIFO_elt_t *res;
   res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);

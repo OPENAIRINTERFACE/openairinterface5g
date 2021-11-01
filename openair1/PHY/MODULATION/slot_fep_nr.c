@@ -129,18 +129,14 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
       rxdata_ptr = (int16_t *)tmp_dft_in;
     }
 
-#if UE_TIMING_TRACE
     start_meas(&ue->rx_dft_stats);
-#endif
 
     dft(dftsize,
         rxdata_ptr,
         (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
         1);
 
-#if UE_TIMING_TRACE
     stop_meas(&ue->rx_dft_stats);
-#endif
 
     int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
     int32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation[0])[symbol+symb_offset];
@@ -249,18 +245,14 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 
     }
 
-#if UE_TIMING_TRACE
     start_meas(&ue->rx_dft_stats);
-#endif
 
     dft(dftsize,
         rxdata_ptr,
         (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
         1);
 
-#if UE_TIMING_TRACE
     stop_meas(&ue->rx_dft_stats);
-#endif
 
     int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
     int32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation[0])[symbol + symb_offset];
