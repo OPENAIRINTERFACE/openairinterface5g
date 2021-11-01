@@ -512,7 +512,10 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
     default:
       LOG_E(MAC, "In %s: failed to configure BWP Id from DCI with format %d \n", __FUNCTION__, *dci_format);
     }
-
+    // configure ss coreset after switching BWP
+    configure_ss_coreset(mac,
+                         scd,
+                         mac->DL_BWP_Id);
   } else {
 
     if (scd->firstActiveDownlinkBWP_Id)
@@ -540,82 +543,103 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
     */
 void config_control_ue(NR_UE_MAC_INST_t *mac){
 
-  uint8_t coreset_id = 1, ss_id;
-
-  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
-  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
+  int bwp_id;
   NR_ServingCellConfig_t *scd = mac->cg->spCellConfig->spCellConfigDedicated;
-  if (dl_bwp_id==0) AssertFatal(mac->scc_SIB,"dl_bwp_id 0 (DL %d,UL %d) means mac->scc_SIB should exist here!\n",(int)mac->DL_BWP_Id,(int)mac->UL_BWP_Id);
-  NR_BWP_DownlinkCommon_t *bwp_Common = dl_bwp_id>0 ? scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common :
-                                                      &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
-
-  if (dl_bwp_id > 0 ) {
-    AssertFatal(scd->downlinkBWP_ToAddModList != NULL, "downlinkBWP_ToAddModList is null\n");
-    AssertFatal(scd->downlinkBWP_ToAddModList->list.count == 1, "downlinkBWP_ToAddModList->list->count is %d\n", scd->downlinkBWP_ToAddModList->list.count);
-  }
-  NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = dl_bwp_id>0 ? scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Dedicated:
-                                                               scd->initialDownlinkBWP;
-  AssertFatal(dl_bwp_Dedicated != NULL, "dl_bwp_Dedicated is null\n");
   config_bwp_ue(mac, NULL, NULL);
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
 
-  NR_SetupRelease_PDCCH_Config_t *pdcch_Config = dl_bwp_Dedicated->pdcch_Config;
-  AssertFatal(pdcch_Config != NULL, "pdcch_Config is null\n");
+  // configure DLbwp
+  if (scd->downlinkBWP_ToAddModList) {
+    for (int i = 0; i < scd->downlinkBWP_ToAddModList->list.count; i++) {
+      bwp_id = scd->downlinkBWP_ToAddModList->list.array[i]->bwp_Id;
+      mac->DLbwp[bwp_id-1] = scd->downlinkBWP_ToAddModList->list.array[i];
+    }
+  }
+
+  // configure ULbwp
+  if (scd->uplinkConfig->uplinkBWP_ToAddModList) {
+    for (int i = 0; i < scd->uplinkConfig->uplinkBWP_ToAddModList->list.count; i++) {
+      bwp_id = scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[i]->bwp_Id;
+      mac->ULbwp[bwp_id-1] = scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[i];
+    }
+  }
+
+  configure_ss_coreset(mac, scd, dl_bwp_id);
+}
+
+
+void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
+                          NR_ServingCellConfig_t *scd,
+                          NR_BWP_Id_t dl_bwp_id) {
+
+
+  NR_BWP_DownlinkCommon_t *bwp_Common;
+  if (dl_bwp_id>0)
+     bwp_Common = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common;
+  else {
+    if (mac->scc_SIB)
+      bwp_Common = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
+    else
+      bwp_Common = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
+  }
 
   NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
   AssertFatal(pdcch_ConfigCommon != NULL, "pdcch_ConfigCommon is null\n");
   AssertFatal(pdcch_ConfigCommon->choice.setup->ra_SearchSpace != NULL, "ra_SearchSpace must be available in DL BWP\n");
 
-  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-  AssertFatal(commonSearchSpaceList != NULL, "commonSearchSpaceList is null\n");
-  AssertFatal(commonSearchSpaceList->list.count > 0, "PDCCH CSS list has 0 elements\n");
+  // configuring eventual common coreset
+  NR_ControlResourceSet_t *coreset = pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
+  if (coreset)
+    mac->coreset[dl_bwp_id][coreset->controlResourceSetId - 1] = coreset;
+
+  NR_BWP_DownlinkDedicated_t *dl_bwp_Dedicated = dl_bwp_id>0 ? scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Dedicated:
+                                                               scd->initialDownlinkBWP;
+
+  AssertFatal(dl_bwp_Dedicated != NULL, "dl_bwp_Dedicated is null\n");
+
+  NR_SetupRelease_PDCCH_Config_t *pdcch_Config = dl_bwp_Dedicated->pdcch_Config;
+  AssertFatal(pdcch_Config != NULL, "pdcch_Config is null\n");
 
   struct NR_PDCCH_Config__controlResourceSetToAddModList *controlResourceSetToAddModList = pdcch_Config->choice.setup->controlResourceSetToAddModList;
   AssertFatal(controlResourceSetToAddModList != NULL, "controlResourceSetToAddModList is null\n");
-  AssertFatal(controlResourceSetToAddModList->list.count == 1, "controlResourceSetToAddModList->list.count=%d\n", controlResourceSetToAddModList->list.count);
-  AssertFatal(controlResourceSetToAddModList->list.array[0] != NULL, "coreset[0][0] is null\n");
+
+  // configuring dedicated coreset
+  // In case network reconfigures control resource set with the same ControlResourceSetId as used for commonControlResourceSet configured via PDCCH-ConfigCommon,
+  // the configuration from PDCCH-Config always takes precedence
+  for (int i=0; i<controlResourceSetToAddModList->list.count; i++) {
+    coreset = controlResourceSetToAddModList->list.array[i];
+    mac->coreset[dl_bwp_id][coreset->controlResourceSetId - 1] = coreset;
+  }
 
   struct NR_PDCCH_Config__searchSpacesToAddModList *searchSpacesToAddModList = pdcch_Config->choice.setup->searchSpacesToAddModList;
   AssertFatal(searchSpacesToAddModList != NULL, "searchSpacesToAddModList is null\n");
   AssertFatal(searchSpacesToAddModList->list.count > 0, "list of UE specifically configured Search Spaces is empty\n");
   AssertFatal(searchSpacesToAddModList->list.count < FAPI_NR_MAX_SS_PER_CORESET, "too many searchpaces per coreset %d\n", searchSpacesToAddModList->list.count);
 
-  struct NR_UplinkConfig__uplinkBWP_ToAddModList *uplinkBWP_ToAddModList = scd->uplinkConfig->uplinkBWP_ToAddModList;
-  if (ul_bwp_id > 0) {
-     AssertFatal(uplinkBWP_ToAddModList != NULL, "uplinkBWP_ToAddModList is null\n");
-     AssertFatal(uplinkBWP_ToAddModList->list.count == 1, "uplinkBWP_ToAddModList->list->count is %d\n", uplinkBWP_ToAddModList->list.count);
-  }
-  // check pdcch_Config, pdcch_ConfigCommon and DL BWP
-  mac->DLbwp[0] = dl_bwp_id>0?scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]:NULL;
-  mac->coreset[dl_bwp_id][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
-
-  // Check dedicated UL BWP and pass to MAC
-  mac->ULbwp[ul_bwp_id] = ul_bwp_id>0?uplinkBWP_ToAddModList->list.array[0]:NULL;
-  if (mac->ULbwp[ul_bwp_id]) AssertFatal(mac->ULbwp[ul_bwp_id]->bwp_Dedicated != NULL, "UL bwp_Dedicated is null\n");
-
   // check available Search Spaces in the searchSpacesToAddModList and pass to MAC
   // note: the network configures at most 10 Search Spaces per BWP per cell (including UE-specific and common Search Spaces).
-  for (ss_id = 0; ss_id < searchSpacesToAddModList->list.count; ss_id++) {
+  for (int ss_id = 0; ss_id < searchSpacesToAddModList->list.count; ss_id++) {
     NR_SearchSpace_t *ss = searchSpacesToAddModList->list.array[ss_id];
     AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
-    AssertFatal(*ss->controlResourceSetId == mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id][0][ss_id] = ss;
+    mac->SSpace[dl_bwp_id][ss->searchSpaceId - 1] = ss;
   }
+
+  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+  AssertFatal(commonSearchSpaceList != NULL, "commonSearchSpaceList is null\n");
+  AssertFatal(commonSearchSpaceList->list.count > 0, "PDCCH CSS list has 0 elements\n");
 
   // Check available CSSs in the commonSearchSpaceList (list of additional common search spaces)
   // note: commonSearchSpaceList SIZE(1..4)
   for (int css_id = 0; css_id < commonSearchSpaceList->list.count; css_id++) {
     NR_SearchSpace_t *css = commonSearchSpaceList->list.array[css_id];
     AssertFatal(css->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
-    AssertFatal(*css->controlResourceSetId == 0 || *css->controlResourceSetId == mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId, "css->controlResourceSetId %ld is unknown, mac->coreset[%ld][%d]->controlResourceSetId %ld\n",*css->controlResourceSetId,dl_bwp_id,coreset_id-1,mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId);
- 
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id][coreset_id -1][ss_id] = css;
-    ss_id++;
+    mac->SSpace[dl_bwp_id][css->searchSpaceId - 1] = css;
   }
 }
 

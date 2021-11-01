@@ -97,7 +97,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   NR_SearchSpace_t *ss;
   NR_ControlResourceSet_t *coreset;
   if(ss_id>=0) {
-    ss = mac->SSpace[dl_bwp_id][coreset_id - 1][ss_id];
+    ss = mac->SSpace[dl_bwp_id][ss_id-1];
     coreset = mac->coreset[dl_bwp_id][coreset_id - 1];
     rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   } else {
@@ -255,18 +255,19 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   RA_config_t *ra = &mac->ra;
   int ss_id;
 
-  uint8_t bwp_id = (mac->cg) ? mac->DL_BWP_Id : 0, coreset_id = (mac->cg) ? 1 : 0;
+  uint8_t bwp_id = (mac->cg) ? mac->DL_BWP_Id : 0;
   //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   NR_BWP_DownlinkDedicated_t *bwpd  = (bwp_id>0) ? mac->DLbwp[bwp_id-1]->bwp_Dedicated : mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
   NR_BWP_DownlinkCommon_t *bwp_Common = (bwp_id>0) ? mac->DLbwp[bwp_id-1]->bwp_Common : &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
 
   LOG_D(NR_MAC, "[DCI_CONFIG] ra_rnti %p (%x) crnti %p (%x) t_crnti %p (%x)\n", &ra->ra_rnti, ra->ra_rnti, &mac->crnti, mac->crnti, &ra->t_crnti, ra->t_crnti);
 
-  // loop over all available SS for CORESET ID 1
+  // loop over all available SS for bwp_id
   if (bwpd) {
-      for (ss_id = 0; ss_id < FAPI_NR_MAX_SS_PER_CORESET && mac->SSpace[bwp_id][coreset_id - 1][ss_id] != NULL; ss_id++){
+      for (ss_id = 1; ss_id <= FAPI_NR_MAX_SS_PER_CORESET && mac->SSpace[bwp_id][ss_id-1] != NULL; ss_id++){
 	LOG_D(NR_MAC, "[DCI_CONFIG] ss_id %d\n",ss_id);
-	NR_SearchSpace_t *ss = mac->SSpace[bwp_id][coreset_id - 1][ss_id];
+	NR_SearchSpace_t *ss = mac->SSpace[bwp_id][ss_id-1];
+        AssertFatal(ss_id == ss->searchSpaceId,"SS IDs don't correspond\n");
 	fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
 	NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
 	struct NR_PhysicalCellGroupConfig *phy_cgc = mac->cg->physicalCellGroupConfig;
@@ -274,15 +275,6 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 	case NR_SearchSpace__searchSpaceType_PR_common:
 	  // this is for CSSs, we use BWP common and pdcch_ConfigCommon
 
-	  // Fetch configuration for searchSpaceZero
-	  // note: The search space with the SearchSpaceId = 0 identifies the search space configured via PBCH (MIB) and in ServingCellConfigCommon (searchSpaceZero).
-	  if (pdcch_ConfigCommon->choice.setup->searchSpaceZero){
-	    if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 == NULL){
-	      pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=calloc(1,sizeof(*pdcch_ConfigCommon->choice.setup->searchSpaceSIB1));
-	    }
-	    *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 = 0;
-	    LOG_D(NR_MAC, "[DCI_CONFIG] Configure SearchSpace#0 of the initial BWP\n");
-	  }
 	  if (ss->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0){
 	    // check available SS IDs
 	    if (pdcch_ConfigCommon->choice.setup->ra_SearchSpace){
