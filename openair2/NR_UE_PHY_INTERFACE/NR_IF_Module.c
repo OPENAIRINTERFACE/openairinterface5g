@@ -232,6 +232,28 @@ static void fill_dl_info_with_pdcch(fapi_nr_dci_indication_t *dci, nfapi_nr_dl_d
     dci->number_of_dcis = idx + 1;
 }
 
+static void fill_mib_in_rx_ind(nfapi_nr_dl_tti_request_pdu_t *pdu_list, fapi_nr_rx_indication_t *rx_ind, int pdu_idx, int pdu_type)
+{
+    AssertFatal(pdu_list->PDUSize < sizeof(rx_ind->rx_indication_body) / sizeof(rx_ind->rx_indication_body[0]),
+                "PDU size (%d) is greater than rx_indication_body size!\n", pdu_list->PDUSize);
+    nfapi_nr_dl_tti_ssb_pdu_rel15_t *ssb_pdu = &pdu_list->ssb_pdu.ssb_pdu_rel15;
+
+    LOG_D(NR_MAC, "Recevied an SSB and are filling rx_ind with the MIB!\n");
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.cell_id = ssb_pdu->PhysCellId;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu = CALLOC(3,
+                                                      sizeof(*rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu));
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[0] = (ssb_pdu->bchPayload) & 0xffff;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[1] = (ssb_pdu->bchPayload >> 8) & 0xffff;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[2] = (ssb_pdu->bchPayload >> 16) & 0xffff;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.rsrp_dBm = ssb_pdu->ssbRsrp;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_index = ssb_pdu->SsbBlockIndex;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_length = pdu_list->PDUSize;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_start_subcarrier = ssb_pdu->SsbSubcarrierOffset;
+    rx_ind->rx_indication_body[pdu_idx].pdu_type = pdu_type;
+    rx_ind->number_pdus = pdu_idx + 1;
+
+}
+
 static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_dl_tti_request_t *dl_tti_request)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
@@ -240,6 +262,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
     int pdu_idx = 0;
 
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
+    LOG_D(NR_MAC, "This is the total number of PDUS in dl_tti_req = %d\n", num_pdus);
     if (num_pdus <= 0)
     {
         LOG_E(NR_PHY, "%s: dl_tti_request number of PDUS <= 0\n", __FUNCTION__);
@@ -285,6 +308,24 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                     pdu_idx++;
                 }
             }
+        }
+        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE)
+        {
+            /* If we get a MIB, we want to handle it right away and then come back.
+               The MIB and SIB come in the same dl_tti_req but the MIB should be
+               processed first and then the DCI and payload of the SIB1 can be
+               processed. The MIB should be handled first and then the rx_ind
+               will be freed after handling. This is why the PDU index will
+               always be zero for the RX_IND becasue we should not have more than
+               one MIB. */
+            dl_info->rx_ind = CALLOC(1, sizeof(*dl_info->rx_ind));
+            fapi_nr_rx_indication_t *rx_ind = dl_info->rx_ind;
+            rx_ind->sfn = dl_tti_request->SFN;
+            rx_ind->slot = dl_tti_request->Slot;
+            fill_mib_in_rx_ind(pdu_list, rx_ind, 0, FAPI_NR_RX_PDU_TYPE_SSB);
+            NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
+            memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
+            nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
         }
     }
     dl_info->slot = dl_tti_request->Slot;
@@ -342,7 +383,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
-        if (dl_info->dci_ind->number_of_dcis > 0 && dl_info->dci_ind->dci_list[i].rnti == 0xffff) //Melissa this is bad find a better way
+        if (dl_info->dci_ind->dci_list[i].rnti == 0xffff)
         {
             fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_SIB);
             pdu_idx++;
@@ -554,11 +595,6 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     int slot = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
-    if (mac->scc == NULL) //Melissa, if we comment this out, we see the SIB!
-    {
-      return;
-    }
-
     if (pthread_mutex_lock(&mac->mutex_dl_info)) abort();
 
     if (dl_tti_request)
@@ -619,8 +655,13 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
     ul_info.ue_sched_mode = SCHED_ALL;
-    if (mac->scc && is_nr_UL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_tx, mac->frame_type))
+    if (mac->scc || mac->scc_SIB)
     {
+        if (is_nr_UL_slot(mac->scc ?
+                          mac->scc->tdd_UL_DL_ConfigurationCommon :
+                          mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
+                          ul_info.slot_tx,
+                          mac->frame_type))
         nr_ue_ul_indication(&ul_info);
     }
 }
@@ -1051,7 +1092,7 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     nr_ue_if_module_inst[module_id]->current_frame = 0;
     nr_ue_if_module_inst[module_id]->current_slot = 0;
     nr_ue_if_module_inst[module_id]->phy_config_request = nr_ue_phy_config_request;
-    if (get_softmodem_params()->nsa) //TODO: Get a better flag for using stub
+    if (get_softmodem_params()->emulate_l2)
       nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response_stub;
     else
       nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response;

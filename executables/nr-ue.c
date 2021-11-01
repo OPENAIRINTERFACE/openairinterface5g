@@ -434,15 +434,18 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     module_id_t mod_id = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-    if (mac->scc == NULL || mac->scc_SIB == NULL) //Melissa TODO this isnt correct
+    if (mac->mib == NULL)
     {
       if (get_softmodem_params()->sa && get_softmodem_params()->emulate_l2)
       {
-        LOG_D(NR_MAC, "We haven't gotten MIB or SIB yet. Lets see if we received it\n");
+        LOG_D(NR_MAC, "We haven't gotten MIB. Lets see if we received it\n");
         nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
         process_queued_nr_nfapi_msgs(mac, sfn_slot);
       }
-      LOG_D(MAC, "mac->scc == NULL or mac->scc_SIB == NULL!\n");
+    }
+    if (mac->scc == NULL && mac->scc_SIB == NULL )
+    {
+      LOG_D(MAC, "[NSA] mac->scc == NULL and [SA] mac->scc_SIB == NULL!\n");
       continue;
     }
 
@@ -473,14 +476,20 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     mac->dl_info.dci_ind = NULL;
     mac->dl_info.rx_ind = NULL;
 
-    if (is_nr_DL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_rx))
+    if (is_nr_DL_slot(get_softmodem_params()->nsa ?
+                      mac->scc->tdd_UL_DL_ConfigurationCommon :
+                      mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
+                      ul_info.slot_rx))
     {
       nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
     }
 
     if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
 
-    if (is_nr_UL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_tx, mac->frame_type))
+    if (is_nr_UL_slot(get_softmodem_params()->nsa ?
+                      mac->scc->tdd_UL_DL_ConfigurationCommon :
+                      mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
+                      ul_info.slot_tx, mac->frame_type))
     {
       LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", ul_info.slot_tx, __FUNCTION__);
       nr_ue_ul_indication(&ul_info);
