@@ -167,7 +167,7 @@ unsigned int crc24a (unsigned char * inptr,
   return crc;
 #else
   return crc32_calc_pclmulqdq(inptr, octetlen, 0,
-                              &lte_crc24a_pclmulqdq) >> 8;
+                              &lte_crc24a_pclmulqdq);
 #endif
 
 }
@@ -201,7 +201,7 @@ unsigned int crc24b (unsigned char * inptr,
   return crc;
 #else
   return crc32_calc_pclmulqdq(inptr, octetlen, 0,
-                              &lte_crc24b_pclmulqdq) >> 8;
+                              &lte_crc24b_pclmulqdq);
 #endif
 }
 
