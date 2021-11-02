@@ -349,8 +349,19 @@ install_usrp_uhd_driver_from_source(){
 check_install_usrp_uhd_driver(){
     if [[ "$OS_DISTRO" == "ubuntu" ]]; then
         #first we remove old installation
-        $SUDO apt-get remove -y uhd || true
-        $SUDO apt-get remove libuhd-dev uhd-host libuhd003 libuhd3.13.1 libuhd3.14.0 libuhd3.14.1 libuhd3.15.0 libuhd4.0.0 libuhd4.1.0 -y || true
+        $SUDO apt-get remove uhd -y || true
+        $SUDO apt-get remove uhd-host -y || true
+        $SUDO apt-get remove libuhd-dev -y || true
+        $SUDO apt-get remove libuhd003 -y || true
+        $SUDO apt-get remove libuhd3.13.1 -y || true
+        $SUDO apt-get remove libuhd3.14.0 -y || true
+        $SUDO apt-get remove libuhd3.14.1 -y || true
+        $SUDO apt-get remove libuhd3.15.0 -y || true
+        local distribution=$(get_distribution_release)
+        if [[ "$distribution" == "ubuntu18.04" ]]; then
+            $SUDO apt-get remove libuhd4.0.0 -y || true
+            $SUDO apt-get remove libuhd4.1.0 -y || true
+        fi
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
         if [[ -v BUILD_UHD_FROM_SOURCE ]]; then
@@ -377,11 +388,10 @@ check_install_usrp_uhd_driver(){
         done
         $SUDO apt-get update
         $SUDO apt-get -y install  python python-tk libboost-all-dev libusb-1.0-0-dev
-        local distribution=$(get_distribution_release)
-        if [[ "$local distribution" == "ubuntu16.04" ]]; then
+        if [[ "$distribution" == "ubuntu16.04" ]]; then
             $SUDO apt-get -y install libuhd-dev libuhd3.15.0 uhd-host
         fi
-        if [[ "$local distribution" == "ubuntu18.04" ]]; then
+        if [[ "$distribution" == "ubuntu18.04" ]]; then
             $SUDO apt-get -y install libuhd-dev libuhd4.1.0 uhd-host
         fi
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
