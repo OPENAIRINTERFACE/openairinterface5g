@@ -752,18 +752,9 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
             {
                 LOG_D(NR_MAC, "We added UL_TTI_REQ to queue for sfn slot %d %d\n",
                       ul_tti_request->SFN, ul_tti_request->Slot);
-                if (!put_queue(&nr_wait_ul_tti_req_queue, ul_tti_request))
-                {
-                    reset_queue(&nr_wait_ul_tti_req_queue);
-                    if (!put_queue(&nr_wait_ul_tti_req_queue, ul_tti_request))
-                    {
-                        LOG_E(NR_PHY, "put_queue failed for nr_wait_ul_tti_req_queue.\n");
-                        free(ul_tti_request);
-                        ul_tti_request = NULL;
-                    }
-                }
+                nfapi_nr_ul_tti_request_t *evicted_ul_tti_req = put_queue_replace(&nr_wait_ul_tti_req_queue, ul_tti_request);
+                free(evicted_ul_tti_req);
             }
-
             break;
         }
 
