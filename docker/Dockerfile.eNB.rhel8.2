@@ -41,17 +41,23 @@ RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-enb
+ENV TZ=Europe/Paris
 
 RUN yum update -y && \
     yum install -y --enablerepo="ubi-8-codeready-builder" \
         lksctp-tools \
         nettle \
+        tzdata \
         procps-ng \
         atlas \
+        python3 \
+        python3-pip \
         net-tools \
         iputils \
         iproute \
         libyaml && \
+    pip3 install six && \
+    pip3 install requests && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
@@ -78,6 +84,8 @@ COPY --from=enb-build /lib64/libconfig.so.9 /lib64
 COPY --from=enb-build /lib64/libblas.so.3 /lib64
 COPY --from=enb-build /lib64/liblapack.so.3 /lib64
 COPY --from=enb-build /lib64/liblapacke.so.3 /lib64
+
+# Now we are copying from builder-image the UHD files.
 COPY --from=enb-build /lib64/libboost_chrono.so.1.66.0 /lib64
 COPY --from=enb-build /lib64/libboost_date_time.so.1.66.0 /lib64
 COPY --from=enb-build /lib64/libboost_filesystem.so.1.66.0 /lib64
@@ -88,7 +96,14 @@ COPY --from=enb-build /lib64/libboost_system.so.1.66.0 /lib64
 COPY --from=enb-build /lib64/libboost_unit_test_framework.so.1.66.0 /lib64
 COPY --from=enb-build /lib64/libboost_atomic.so.1.66.0 /lib64
 COPY --from=enb-build /lib64/libboost_timer.so.1.66.0 /lib64
-COPY --from=enb-build /usr/local/lib64/libuhd.so.4.0.0 /usr/local/lib64
+COPY --from=enb-build /lib64/libboost_regex.so.1.66.0 /lib64
+
+COPY --from=enb-build /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=enb-build /usr/local/lib64/libuhd.so.3.15.0 /usr/local/lib64
+COPY --from=enb-build /usr/local/lib64/uhd/utils/uhd_images_downloader.py /opt/oai-enb/bin
+
+WORKDIR /usr/local/share/uhd/rfnoc
+COPY --from=enb-build /usr/local/share/uhd/rfnoc/ .
 
 RUN ldconfig
 
