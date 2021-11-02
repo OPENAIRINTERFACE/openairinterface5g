@@ -408,7 +408,7 @@ static void SendFrameNR(guint8 radioType, guint8 direction, guint8 rntiType,
 			guint8 isPredefinedData, guint8 retx, guint8 crcStatus,
 			guint8 oob_event, guint8 oob_event_value,
 			uint8_t *pdu_buffer, unsigned int pdu_buffer_size) {
-  unsigned char frameBuffer[9000];
+  unsigned char frameBuffer[12000];
   unsigned int frameOffset;
   ssize_t bytesSent;
   frameOffset = 0;
