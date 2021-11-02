@@ -560,6 +560,7 @@ void processSlotTX(void *arg) {
       ul_indication.thread_id = proc->thread_id;
       ul_indication.ue_sched_mode = rxtxD->ue_sched_mode;
 
+      LOG_I(PHY,"We are here to call ul_indication\n");
       UE->if_inst->ul_indication(&ul_indication);
     }
 
@@ -621,6 +622,7 @@ void processSlotRX(void *arg) {
 
   } else {
     rxtxD->ue_sched_mode = SCHED_ALL;
+    LOG_I(PHY, "We are calling processSlotTX in processSlotRX \n");
     processSlotTX(rxtxD);
   }
 
@@ -639,6 +641,7 @@ void processSlotRX(void *arg) {
     }
 
     if (UE->UE_mode[gNB_id] > NOT_SYNCHED && UE->UE_mode[gNB_id] < PUSCH) {
+      LOG_I(PHY, "We are calling nr_ue_prach_procedures in processSlotRX\n");
       nr_ue_prach_procedures(UE, proc, gNB_id);
     }
     LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", proc->frame_tx, proc->nr_slot_tx);

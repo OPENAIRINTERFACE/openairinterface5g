@@ -2079,10 +2079,12 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
     prach_resources->init_msg1 = 1;
 
   } else {
-
     nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
     LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources : %d\n", __FUNCTION__, frame_tx, nr_slot_tx,nr_prach);
   }
+
+  if (nr_prach > 0)
+    LOG_I(PHY, "In %s: We are here with nr_prach = %u  (GENERATE_PREAMBLE: 1)\n", __FUNCTION__, nr_prach);
 
   if (nr_prach == GENERATE_PREAMBLE) {
 
@@ -2115,7 +2117,9 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_IN);
 
+    LOG_I(PHY, "In %s: We are here to call generate_nr_prach \n", __FUNCTION__);
     prach_power = generate_nr_prach(ue, gNB_id, nr_slot_tx);
+    LOG_I(PHY, "In %s: We are here after calling generate_nr_prach \n", __FUNCTION__);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_OUT);
 
@@ -2128,8 +2132,10 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       dB_fixed(prach_power),
       ue->prach_vars[gNB_id]->amp);
 
-    if (ue->mac_enabled == 1)
+    if (ue->mac_enabled == 1){
       nr_Msg1_transmitted(mod_id, ue->CC_id, frame_tx, gNB_id);
+      LOG_I(PHY, "In %s: We are here after nr_Msg1_transmitted\n", __FUNCTION__);
+    }
 
   } else if (nr_prach == WAIT_CONTENTION_RESOLUTION) {
     LOG_D(PHY, "In %s: [UE %d] RA waiting contention resolution\n", __FUNCTION__, mod_id);

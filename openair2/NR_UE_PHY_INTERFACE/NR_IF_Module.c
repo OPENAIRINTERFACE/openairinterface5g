@@ -844,6 +844,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   if (ul_info->ue_sched_mode == ONLY_PUSCH) {
     ret = nr_ue_scheduler(NULL, ul_info);
+    LOG_I(NR_MAC, "In nr_ue_ul_indication: We are to return due to ul_info->ue_sched_mode == ONLY_PUSCH\n");
     return 0;
   }
   if (ul_info->ue_sched_mode == SCHED_ALL) {
@@ -856,7 +857,10 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
 
   if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
+  {  
+    LOG_I(NR_MAC, "In nr_ue_ul_indication: We are here to call nr_ue_prach_scheduler \n");
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
+  }
 
   if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
     nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);

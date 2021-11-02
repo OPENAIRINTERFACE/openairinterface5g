@@ -161,7 +161,7 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
                 num_slots_ul,
                 index);
 
-  if(!mac->ul_config_request)
+  if(!mac->ul_config_request && get_softmodem_params()->nsa)
     return NULL;
   return &mac->ul_config_request[index];
 }
@@ -896,7 +896,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       dcireq.slot      = rx_slot;
       dcireq.dl_config_req.number_pdus = 0;
       nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
-      mac->dl_config_request = dcireq.dl_config_req;
+      if (get_softmodem_params()->nsa)
+        mac->dl_config_request = dcireq.dl_config_req;
 
       fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
@@ -945,7 +946,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
       nr_scheduled_response_t scheduled_response;
       fapi_nr_tx_request_t tx_req;
-      memset(&tx_req, 0, sizeof(tx_req));
+      if (get_softmodem_params()->nsa)
+        memset(&tx_req, 0, sizeof(tx_req));
 
       for (int j = 0; j < ul_config->number_pdus; j++) {
 
@@ -1853,11 +1855,18 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   RA_config_t *ra = &mac->ra;
-  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
-  if (!ul_config) {
-    LOG_E(NR_MAC, "mac->ul_config is null! \n");
-    return;
+  fapi_nr_ul_config_request_t *ul_config;
+  if (get_softmodem_params()->nsa) {
+    ul_config = get_ul_config_request(mac, slotP);
+    if (!ul_config) {
+      LOG_E(NR_MAC, "mac->ul_config is null! \n");
+      return;
+    }
   }
+  else {
+    ul_config = &mac->ul_config_request[0];
+  }
+  LOG_I(NR_MAC, "We are here to check calling nr_ue_prach_scheduler\n");
 
   fapi_nr_ul_config_prach_pdu *prach_config_pdu;
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
@@ -1888,6 +1897,8 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
                                                         &prach_occasion_info_p);
 
     if (is_nr_prach_slot && ra->ra_state == RA_UE_IDLE) {
+      LOG_I(NR_MAC, "We are here to see is_nr_prach_slot = %d, ra->ra_state = %d (RA_UE_IDLE: 0)\n",
+                                                    is_nr_prach_slot, ra->ra_state);
       AssertFatal(NULL != prach_occasion_info_p,"PRACH Occasion Info not returned in a valid NR Prach Slot\n");
 
       ra->generate_nr_prach = GENERATE_PREAMBLE;
@@ -1895,13 +1906,15 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       format = prach_occasion_info_p->format;
       format0 = format & 0xff;        // single PRACH format
       format1 = (format >> 8) & 0xff; // dual PRACH format
-      LOG_D(NR_MAC,"We are here with format %u,  %s %d\n", format, __FUNCTION__, __LINE__);
+      LOG_I(NR_MAC,"We are here with format0 %u, format1 %u, %s %d\n", 
+                                     format0, format1, __FUNCTION__, __LINE__);
       AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
                   "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
 
       prach_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
       memset(prach_config_pdu, 0, sizeof(fapi_nr_ul_config_prach_pdu));
-      ul_config->number_pdus += 1;
+      if (get_softmodem_params()->nsa)
+        ul_config->number_pdus += 1;
       fill_ul_config(ul_config, frameP, slotP, FAPI_NR_UL_CONFIG_TYPE_PRACH);
 
       LOG_D(PHY, "In %s: (%p) %d UL PDUs:\n", __FUNCTION__, ul_config, ul_config->number_pdus);
@@ -1919,7 +1932,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       prach_config_pdu->restricted_set = prach_config->restricted_set_config;
       prach_config_pdu->freq_msg1 = prach_config->num_prach_fd_occasions_list[prach_occasion_info_p->fdm].k1;
 
-      LOG_D(NR_MAC,"Selected RO Frame %u, Slot %u, Symbol %u, Fdm %u\n", frameP, prach_config_pdu->prach_slot, prach_config_pdu->prach_start_symbol, prach_config_pdu->num_ra);
+      LOG_I(NR_MAC,"Selected RO Frame %u, Slot %u, Symbol %u, Fdm %u\n", frameP, prach_config_pdu->prach_slot, prach_config_pdu->prach_start_symbol, prach_config_pdu->num_ra);
 
       // Search which SSB is mapped in the RO (among all the SSBs mapped to this RO)
       for (prach_config_pdu->ssb_nb_in_ro=0; prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb; prach_config_pdu->ssb_nb_in_ro++) {
@@ -1927,7 +1940,8 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
           break;
       }
       AssertFatal(prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb, "%u not found in the mapped SSBs to the PRACH occasion", selected_gnb_ssb_idx);
-
+      LOG_I(NR_MAC,"We are here Before set prach_config_pdu->prach_format %x, %s %d\n", 
+                                     prach_config_pdu->prach_format, __FUNCTION__, __LINE__);
       if (format1 != 0xff) {
         switch(format0) { // dual PRACH format
           case 0xa1:
@@ -1981,11 +1995,18 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
             AssertFatal(1 == 0, "Invalid PRACH format");
         }
       } // if format1
+      LOG_I(NR_MAC,"We are here After set prach_config_pdu->prach_format %x, %s %d\n", 
+                                     prach_config_pdu->prach_format, __FUNCTION__, __LINE__);
       fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         mac->if_module->scheduled_response(&scheduled_response);
     } // is_nr_prach_slot
+    else
+      LOG_I(NR_MAC, "We are here to see is_nr_prach_slot = %d, ra->ra_state = %d (RA_UE_IDLE: 0)\n",
+                                                    is_nr_prach_slot, ra->ra_state);
   } // if is_nr_UL_slot
+  else
+    LOG_I(NR_MAC, "We are here It is not is_nr_UL_slot\n");
 }
 
 // This function schedules the reception of SIB1 after initial sync and before going to real time state

@@ -565,6 +565,8 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
     def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci->dci_format];
   }
   int8_t ret_proc = nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci);
+  if (!get_softmodem_params()->nsa)
+    memset(def_dci_pdu_rel15, 0, sizeof(dci_pdu_rel15_t));
   return ret_proc;
 }
 
@@ -684,9 +686,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
         LOG_W(MAC, "In %s: ul_config request is NULL. Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n", __FUNCTION__, frame, slot);
         return -1;
       }
-      ul_config->number_pdus = 0;
-      AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
-                  "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
+      if (get_softmodem_params()->nsa) {
+        ul_config->number_pdus = 0;
+        AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
+                    "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
+      }
       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
 
       fill_ul_config(ul_config, frame_tx, slot_tx, FAPI_NR_UL_CONFIG_TYPE_PUSCH);

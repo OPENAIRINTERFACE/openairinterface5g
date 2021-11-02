@@ -928,6 +928,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         AssertFatal(TBS_max > ra->Msg3_size, "In %s: allocated resources are not enough for Msg3!\n", __FUNCTION__);
 
         // Init RA procedure
+        LOG_I(NR_MAC, "   We are here in nr_ue_get_rach: prach_format %d\n", prach_pdu->prach_format);
         init_RA(mod_id, prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
         nr_get_RA_window(mac);
         // Fill in preamble and PRACH resources
