@@ -1282,8 +1282,10 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   // FIXME k0 != 0 currently not taken into consideration
   current_harq->dl_frame = frame;
   current_harq->dl_slot = slot;
+  mac->active_harq_sfn_slot = NFAPI_SFNSLOT2HEX(frame, (slot + data_toul_fb));
 
-  LOG_D(PHY,"Setting harq_status for harq_id %d, dl %d.%d\n",harq_id,frame,slot);
+  LOG_D(NR_PHY,"Setting harq_status for harq_id %d, dl %d.%d, sched ul %d.%d\n",
+        harq_id, frame, slot, frame, (slot + data_toul_fb));
 }
 
 
@@ -2756,7 +2758,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       // check BWP id
       if (mac->DLbwp[0]) N_RB=NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       else         N_RB=mac->type0_PDCCH_CSS_config.num_rbs;
-;
+
 
       // indicating a DL DCI format 1bit
       pos++;

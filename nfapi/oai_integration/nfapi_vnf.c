@@ -783,17 +783,21 @@ int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind)
         case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE: {
           nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_ind_pdu = &uci_ind->uci_list[i].pucch_pdu_format_0_1;
           nfapi_nr_uci_pucch_pdu_format_0_1_t *ind_pdu = &ind->uci_list[i].pucch_pdu_format_0_1;
-          
-          uci_ind_pdu->harq = CALLOC(1, sizeof(*uci_ind_pdu->harq));
-          AssertFatal(uci_ind_pdu->harq != NULL, "Memory not allocated for uci_ind_pdu->harq in phy_nr_uci_indication.");
+          if (ind_pdu->sr) {
+            uci_ind_pdu->sr = CALLOC(1, sizeof(*uci_ind_pdu->sr));
+            AssertFatal(uci_ind_pdu->sr != NULL, "Memory not allocated for uci_ind_pdu->harq in phy_nr_uci_indication.");
+            *uci_ind_pdu->sr = *ind_pdu->sr;
+          }
+          if (ind_pdu->harq) {
+            uci_ind_pdu->harq = CALLOC(1, sizeof(*uci_ind_pdu->harq));
+            AssertFatal(uci_ind_pdu->harq != NULL, "Memory not allocated for uci_ind_pdu->harq in phy_nr_uci_indication.");
 
-          *uci_ind_pdu->harq = *ind_pdu->harq;
-
-          uci_ind_pdu->harq->harq_list = CALLOC(uci_ind_pdu->harq->num_harq, sizeof(*uci_ind_pdu->harq->harq_list));
-          AssertFatal(uci_ind_pdu->harq->harq_list != NULL, "Memory not allocated for uci_ind_pdu->harq->harq_list in phy_nr_uci_indication.");
-          for (int j = 0; j < uci_ind_pdu->harq->num_harq; j++)
-              uci_ind_pdu->harq->harq_list[j].harq_value =  ind_pdu->harq->harq_list[j].harq_value;
-          
+            *uci_ind_pdu->harq = *ind_pdu->harq;
+            uci_ind_pdu->harq->harq_list = CALLOC(uci_ind_pdu->harq->num_harq, sizeof(*uci_ind_pdu->harq->harq_list));
+            AssertFatal(uci_ind_pdu->harq->harq_list != NULL, "Memory not allocated for uci_ind_pdu->harq->harq_list in phy_nr_uci_indication.");
+            for (int j = 0; j < uci_ind_pdu->harq->num_harq; j++)
+                uci_ind_pdu->harq->harq_list[j].harq_value =  ind_pdu->harq->harq_list[j].harq_value;
+          }
           break;
         }
 
@@ -827,8 +831,16 @@ int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind)
       {
           if (uci_ind->uci_list[i].pdu_type == NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE)
           {
-            free(uci_ind->uci_list[i].pucch_pdu_format_0_1.harq->harq_list);
-            free(uci_ind->uci_list[i].pucch_pdu_format_0_1.harq);
+            if (uci_ind->uci_list[i].pucch_pdu_format_0_1.harq) {
+              free(uci_ind->uci_list[i].pucch_pdu_format_0_1.harq->harq_list);
+              uci_ind->uci_list[i].pucch_pdu_format_0_1.harq->harq_list = NULL;
+              free(uci_ind->uci_list[i].pucch_pdu_format_0_1.harq);
+              uci_ind->uci_list[i].pucch_pdu_format_0_1.harq = NULL;
+            }
+            if (uci_ind->uci_list[i].pucch_pdu_format_0_1.sr) {
+              free(uci_ind->uci_list[i].pucch_pdu_format_0_1.sr);
+              uci_ind->uci_list[i].pucch_pdu_format_0_1.sr = NULL;
+            }
           }
           if (uci_ind->uci_list[i].pdu_type == NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE)
           {
@@ -838,7 +850,9 @@ int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind)
           }
       }
       free(uci_ind->uci_list);
+      uci_ind->uci_list = NULL;
       free(uci_ind);
+      uci_ind = NULL;
     }
   }
   else {

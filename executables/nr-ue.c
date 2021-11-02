@@ -30,6 +30,7 @@
 #include "executables/softmodem-common.h"
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
+#include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -224,12 +225,155 @@ static bool sfn_slot_matcher(void *wanted, void *candidate)
       return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->sfn && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->slot;
     }
 
+    case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
+    {
+      nfapi_nr_dl_tti_request_t *ind = candidate;
+      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->SFN && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->Slot;
+    }
+
+    case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
+    {
+      nfapi_nr_tx_data_request_t *ind = candidate;
+      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->SFN && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->Slot;
+    }
+
+    case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
+    {
+      nfapi_nr_ul_dci_request_t *ind = candidate;
+      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->SFN && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->Slot;
+    }
+
+    case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
+    {
+      nfapi_nr_ul_tti_request_t *ind = candidate;
+      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->SFN && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->Slot;
+    }
+
     default:
       LOG_E(NR_MAC, "sfn_slot_match bad ID: %d\n", msg->message_id);
 
   }
 
   return false;
+}
+
+static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
+{
+  nfapi_nr_rach_indication_t *rach_ind = unqueue_matching(&nr_rach_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
+  nfapi_nr_rx_data_indication_t *rx_ind = unqueue_matching(&nr_rx_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
+  nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&nr_crc_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
+  nfapi_nr_dl_tti_request_t *dl_tti_request = get_queue(&nr_dl_tti_req_queue);
+  nfapi_nr_ul_dci_request_t *ul_dci_request = get_queue(&nr_ul_dci_req_queue);
+
+  LOG_D(NR_MAC, "Try to get a ul_tti_req for sfn/slot %d %d from queue with %lu items\n",
+        NFAPI_SFNSLOT2SFN(mac->active_harq_sfn_slot),NFAPI_SFNSLOT2SLOT(mac->active_harq_sfn_slot), nr_ul_tti_req_queue.num_items);
+  nfapi_nr_ul_tti_request_t *ul_tti_request = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->active_harq_sfn_slot);
+  if (!ul_tti_request)
+  {
+      LOG_D(NR_MAC, "Try to get a ul_tti_req from seprate queue because dl_tti_req was late\n");
+      ul_tti_request = unqueue_matching(&nr_wait_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->active_harq_sfn_slot);
+  }
+
+  if (rach_ind && rach_ind->number_of_pdus > 0)
+  {
+      NR_UL_IND_t UL_INFO = {
+        .rach_ind = *rach_ind,
+      };
+      send_nsa_standalone_msg(&UL_INFO, rach_ind->header.message_id);
+      for (int i = 0; i < rach_ind->number_of_pdus; i++)
+      {
+        free(rach_ind->pdu_list[i].preamble_list);
+      }
+      free(rach_ind->pdu_list);
+      free(rach_ind);
+      nr_Msg1_transmitted(0, 0, NFAPI_SFNSLOT2SFN(sfn_slot), 0);
+  }
+  if (crc_ind && crc_ind->number_crcs > 0)
+  {
+    NR_UL_IND_t UL_INFO = {
+      .crc_ind = *crc_ind,
+    };
+    send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
+    free(crc_ind->crc_list);
+    free(crc_ind);
+  }
+  if (rx_ind && rx_ind->number_of_pdus > 0)
+  {
+    NR_UL_IND_t UL_INFO = {
+      .rx_ind = *rx_ind,
+    };
+    send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
+    free(rx_ind->pdu_list);
+    free(rx_ind);
+  }
+  if (dl_tti_request)
+  {
+    int dl_tti_sfn_slot = NFAPI_SFNSLOT2HEX(dl_tti_request->SFN, dl_tti_request->Slot);
+    nfapi_nr_tx_data_request_t *tx_data_request = unqueue_matching(&nr_tx_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &dl_tti_sfn_slot);
+    if (!tx_data_request)
+    {
+      LOG_E(NR_MAC, "[%d %d] No corresponding tx_data_request for given dl_tti_request sfn/slot\n",
+            NFAPI_SFNSLOT2SFN(dl_tti_sfn_slot), NFAPI_SFNSLOT2SLOT(dl_tti_sfn_slot));
+      save_nr_measurement_info(dl_tti_request);
+      free(dl_tti_request);
+      dl_tti_request = NULL;
+    }
+    else if (dl_tti_request->dl_tti_request_body.nPDUs > 0 && tx_data_request->Number_of_PDUs > 0)
+    {
+      save_nr_measurement_info(dl_tti_request);
+      check_and_process_dci(dl_tti_request, tx_data_request, NULL, NULL);
+    }
+    else
+    {
+      AssertFatal(false, "We dont have PDUs in either dl_tti %d or tx_req %d\n",
+                  dl_tti_request->dl_tti_request_body.nPDUs, tx_data_request->Number_of_PDUs);
+    }
+  }
+  if (ul_dci_request && ul_dci_request->numPdus > 0)
+  {
+    check_and_process_dci(NULL, NULL, ul_dci_request, NULL);
+  }
+  if (ul_tti_request && ul_tti_request->n_pdus > 0)
+  {
+    check_and_process_dci(NULL, NULL, NULL, ul_tti_request);
+  }
+}
+
+static void check_nr_prach(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info, NR_PRACH_RESOURCES_t *prach_resources)
+{
+  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info->slot_tx);
+  if (!ul_config)
+  {
+    LOG_E(NR_MAC, "mac->ul_config is null! \n");
+    return;
+  }
+  if (mac->ra.ra_state != RA_SUCCEEDED)
+  {
+    AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
+                "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
+    fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
+    uint8_t nr_prach = nr_ue_get_rach(prach_resources,
+                                      prach_pdu,
+                                      ul_info->module_id,
+                                      ul_info->cc_id,
+                                      ul_info->frame_tx,
+                                      ul_info->gNB_index,
+                                      ul_info->slot_tx);
+    if (nr_prach == 1)
+    {
+      L1_nsa_prach_procedures(ul_info->frame_tx, ul_info->slot_tx, prach_pdu);
+      ul_config->number_pdus = 0;
+      ul_info->ue_sched_mode = SCHED_ALL;
+    }
+    else if (nr_prach == 2)
+    {
+      LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, ul_info->module_id);
+    }
+    else if(nr_prach == 3)
+    {
+      LOG_I(NR_PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, ul_info->module_id);
+    }
+  }
 }
 
 static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
@@ -239,14 +383,18 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   reset_queue(&nr_rx_ind_queue);
   reset_queue(&nr_crc_ind_queue);
   reset_queue(&nr_uci_ind_queue);
+  reset_queue(&nr_dl_tti_req_queue);
+  reset_queue(&nr_tx_req_queue);
+  reset_queue(&nr_ul_dci_req_queue);
+  reset_queue(&nr_ul_tti_req_queue);
+  reset_queue(&nr_wait_ul_tti_req_queue);
 
   NR_PRACH_RESOURCES_t prach_resources;
   memset(&prach_resources, 0, sizeof(prach_resources));
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
   memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
   int last_sfn_slot = -1;
-  uint16_t *sfn_slot_p;
-  int sfn_slot;
+  uint16_t sfn_slot = 0;
 
   while (!oai_exit)
   {
@@ -255,21 +403,32 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       LOG_E(NR_MAC, "sem_wait() error\n");
       abort();
     }
-    sfn_slot_p = get_queue(&nr_sfn_slot_queue);
-    if (sfn_slot_p == NULL)
+    uint16_t *slot_ind = get_queue(&nr_sfn_slot_queue);
+    nr_phy_channel_params_t *ch_info = get_queue(&nr_chan_param_queue);
+    if (!slot_ind && !ch_info)
     {
-      LOG_D(MAC, "get_queue(&nr_sfn_slot_queue) == NULL!\n");
+      LOG_D(MAC, "get nr_sfn_slot_queue and nr_chan_param_queue == NULL!\n");
       continue;
     }
+    if (slot_ind) {
+      sfn_slot = *slot_ind;
+    }
+    else if (ch_info) {
+      sfn_slot = ch_info->sfn_slot;
+    }
 
-    sfn_slot = *sfn_slot_p;
+    frame_t frame = NFAPI_SFNSLOT2SFN(sfn_slot);
+    int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
     if (sfn_slot == last_sfn_slot)
     {
       LOG_D(NR_MAC, "repeated sfn_sf = %d.%d\n",
-            sfn_slot >> 6, sfn_slot & 0x3F);
+            frame, slot);
       continue;
     }
     last_sfn_slot = sfn_slot;
+
+    LOG_D(NR_MAC, "The received sfn/slot [%d %d] from proxy\n",
+          frame, slot);
 
     module_id_t mod_id = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
@@ -282,8 +441,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     mac->ra.generate_nr_prach = 0;
     int CC_id = 0;
     uint8_t gNB_id = 0;
-    frame_t frame = NFAPI_SFNSLOT2SFN(sfn_slot);
-    int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
     nr_uplink_indication_t ul_info;
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
     int slot_ahead = 2; // TODO: Make this dynamic
@@ -319,71 +476,13 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     {
       LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", ul_info.slot_tx, __FUNCTION__);
       nr_ue_ul_indication(&ul_info);
-      fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info.slot_tx);
-      if (!ul_config)
-      {
-        LOG_E(NR_MAC, "mac->ul_config is null! \n");
-        continue;
-      }
-      if (mac->ra.ra_state != RA_SUCCEEDED)
-      {
-        AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
-                    "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
-        fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
-        uint8_t nr_prach = nr_ue_get_rach(&prach_resources, prach_pdu, mod_id, CC_id, ul_info.frame_tx, gNB_id, ul_info.slot_tx);
-        if (nr_prach == 1)
-        {
-          L1_nsa_prach_procedures(ul_info.frame_tx, ul_info.slot_tx, prach_pdu);
-          ul_config->number_pdus = 0;
-          ul_info.ue_sched_mode = SCHED_ALL;
-        }
-        else if (nr_prach == 2)
-        {
-          LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
-        }
-        else if(nr_prach == 3)
-        {
-          LOG_I(NR_PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
-        }
-      }
+      check_nr_prach(mac, &ul_info, &prach_resources);
     }
-
-    nfapi_nr_rach_indication_t *rach_ind = unqueue_matching(&nr_rach_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
-    nfapi_nr_rx_data_indication_t *rx_ind = unqueue_matching(&nr_rx_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
-    nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&nr_crc_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
-
-    if (rach_ind && rach_ind->number_of_pdus > 0)
-    {
-        NR_UL_IND_t UL_INFO = {
-          .rach_ind = *rach_ind,
-        };
-        send_nsa_standalone_msg(&UL_INFO, rach_ind->header.message_id);
-        for (int i = 0; i < rach_ind->number_of_pdus; i++)
-        {
-          free(rach_ind->pdu_list[i].preamble_list);
-        }
-        free(rach_ind->pdu_list);
-        free(rach_ind);
-        nr_Msg1_transmitted(mod_id, CC_id, frame, gNB_id);
-    }
-    if (crc_ind && crc_ind->number_crcs > 0)
-    {
-      NR_UL_IND_t UL_INFO = {
-        .crc_ind = *crc_ind,
-      };
-      send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
-      free(crc_ind->crc_list);
-      free(crc_ind);
-    }
-    if (rx_ind && rx_ind->number_of_pdus > 0)
-    {
-      NR_UL_IND_t UL_INFO = {
-        .rx_ind = *rx_ind,
-      };
-      send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
-      free(rx_ind->pdu_list);
-      free(rx_ind);
-    }
+    process_queued_nr_nfapi_msgs(mac, sfn_slot);
+    free(slot_ind);
+    slot_ind = NULL;
+    free(ch_info);
+    ch_info = NULL;
   }
   return NULL;
 }

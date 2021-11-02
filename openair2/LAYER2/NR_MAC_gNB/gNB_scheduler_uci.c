@@ -1268,7 +1268,7 @@ int nr_acknack_scheduling(int mod_id,
     // Find the right timing_indicator value.
     int i = 0;
     while (i < 8) {
-      if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot)
+      if (pdsch_to_harq_feedback[i] == (pucch->ul_slot - slot) % n_slots_frame)
         break;
       ++i;
     }
@@ -1315,7 +1315,7 @@ int nr_acknack_scheduling(int mod_id,
     while (i < 8) {
       LOG_D(NR_MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
             i,pdsch_to_harq_feedback[i],pucch->ul_slot,slot);
-      if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot) {
+      if (pdsch_to_harq_feedback[i] == (pucch->ul_slot - slot) % n_slots_frame) {
         ind_found = i;
         break;
       }
