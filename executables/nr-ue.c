@@ -436,7 +436,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
     if (mac->mib == NULL)
     {
-      if (get_softmodem_params()->sa && get_softmodem_params()->emulate_l2)
+      if (get_softmodem_params()->sa)
       {
         LOG_D(NR_MAC, "We haven't gotten MIB. Lets see if we received it\n");
         nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
