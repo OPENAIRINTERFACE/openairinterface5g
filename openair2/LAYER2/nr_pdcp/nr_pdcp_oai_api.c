@@ -36,6 +36,7 @@
 #include "pdcp.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
+#include "openair2/SDAP/nr_sdap/nr_sdap_gnb.h"
 
 #define TODO do { \
     printf("%s:%d:%s: todo\n", __FILE__, __LINE__, __FUNCTION__); \
@@ -450,11 +451,17 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   if (IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN) {
     LOG_D(PDCP, "IP packet received, to be sent to TUN interface");
 
-    len = write(nas_sock_fd[0], buf, size);
-    LOG_D(PDCP, "len = %d bytes to tunnel interface %d\n", len, nas_sock_fd[0]);
+    if(entity->has_sdapDLheader){
+      size -= SDAP_HDR_LENGTH;
+      len = write(nas_sock_fd[0], &buf[SDAP_HDR_LENGTH], size);
+    } else {
+      len = write(nas_sock_fd[0], buf, size);
+    }
+
     if (len != size) {
       LOG_E(PDCP, "%s:%d:%s: fatal error %d: %s\n", __FILE__, __LINE__, __FUNCTION__, errno, strerror(errno));
     }
+    
   }
   else{
     for (i = 0; i < 5; i++) {
@@ -484,7 +491,10 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).offset              = GTPU_HEADER_OVERHEAD_MAX;
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti                = ue->rnti;
       GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id       = entity->pdusession_id;
-      if (offset==1) LOG_D(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
+      if (offset==1) {
+        LOG_I(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
+        sdap_gnb_ul_header_handler(buf[0]); // Handler for the UL gNB SDAP Header
+      }
       LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size-offset);
       itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
    }
@@ -832,10 +842,6 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
     has_sdap = 1;
     has_sdapULheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present ? 1 : 0;
     has_sdapDLheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present ? 1 : 0;
-    if (has_sdapDLheader==1) {
-      LOG_E(PDCP,"%s:%d:%s: fatal, no support for SDAP DL yet\n",__FILE__,__LINE__,__FUNCTION__);
-      exit(-1);
-    }
   }
   /* TODO(?): accept different UL and DL SN sizes? */
   if (sn_size_ul != sn_size_dl) {
@@ -907,9 +913,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
   uint8_t                  *const kRRCint,
   uint8_t                  *const kUPenc,
   uint8_t                  *const kUPint
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-#endif
   ,rb_id_t                 *const defaultDRB,
   struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
   //struct NR_RLC_Config     *rlc_Config)
@@ -979,9 +983,7 @@ boolean_t rrc_pdcp_config_asn1_req(
   uint8_t                  *const kRRCenc,
   uint8_t                  *const kRRCint,
   uint8_t                  *const kUPenc
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-#endif
   ,rb_id_t                 *const defaultDRB)
 {
   return 0;
@@ -1244,10 +1246,8 @@ boolean_t pdcp_data_req(
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer,
   const pdcp_transmission_mode_t mode
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t *const sourceL2Id
   ,const uint32_t *const destinationL2Id
-#endif
   )
 {
   if (srb_flagP) {
