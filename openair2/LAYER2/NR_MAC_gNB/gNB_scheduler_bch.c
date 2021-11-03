@@ -339,6 +339,8 @@ uint32_t schedule_control_sib1(module_id_t module_id,
     gNB_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->coreset));
     fill_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space,type0_PDCCH_CSS_config);
     fill_coresetZero(gNB_mac->sched_ctrlCommon->coreset,type0_PDCCH_CSS_config);
+    gNB_mac->cset0_bwp_start = type0_PDCCH_CSS_config->cset_start_rb;
+    gNB_mac->cset0_bwp_size = type0_PDCCH_CSS_config->num_rbs;
   }
 
   gNB_mac->sched_ctrlCommon->pdsch_semi_static.time_domain_allocation = time_domain_allocation;
@@ -437,7 +439,8 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
   dl_req->nPDUs += 1;
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-  nr_configure_pdcch(pdcch_pdu_rel15,
+  nr_configure_pdcch(NULL,
+                     pdcch_pdu_rel15,
                      gNB_mac->sched_ctrlCommon->search_space,
                      gNB_mac->sched_ctrlCommon->coreset,
                      scc,
