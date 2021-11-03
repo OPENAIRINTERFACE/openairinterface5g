@@ -410,6 +410,17 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.cliOptions = string_field
 
+	elif action == 'Copy_Image_to_Test':
+		string_field = test.findtext('image_name')
+		if (string_field is not None):
+			CONTAINERS.imageToCopy = string_field
+		string_field = test.findtext('registry_svr_id')
+		if (string_field is not None):
+			CONTAINERS.registrySvrId = string_field
+		string_field = test.findtext('test_svr_id')
+		if (string_field is not None):
+			CONTAINERS.testSvrId = string_field
+
 	else: # ie action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
 		
@@ -869,6 +880,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				elif action == 'Build_Image':
 					CONTAINERS.BuildImage(HTML)
+				elif action == 'Copy_Image_to_Test':
+					CONTAINERS.Copy_Image_to_Test_Server(HTML)
 				elif action == 'Deploy_Object':
 					CONTAINERS.DeployObject(HTML, EPC)
 				elif action == 'Undeploy_Object':

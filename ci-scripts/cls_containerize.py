@@ -101,9 +101,42 @@ class Containerize():
 		self.cliContName = ''
 		self.cliOptions = ''
 
+		self.imageToCopy = ''
+		self.registrySvrId = ''
+		self.testSvrId = ''
+
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
+
+	def _createWorkspace(self, sshSession, password, sourcePath):
+		# on RedHat/CentOS .git extension is mandatory
+		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
+		if result is not None:
+			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
+		else:
+			full_ran_repo_name = self.ranRepository + '.git'
+		sshSession.command('mkdir -p ' + sourcePath, '\$', 5)
+		sshSession.command('cd ' + sourcePath, '\$', 5)
+		sshSession.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
+		# Raphael: here add a check if git clone or git fetch went smoothly
+		sshSession.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
+		sshSession.command('git config user.name "OAI Jenkins"', '\$', 5)
+
+		sshSession.command('echo ' + password + ' | sudo -S git clean -x -d -ff', '\$', 30)
+		sshSession.command('mkdir -p cmake_targets/log', '\$', 5)
+		# if the commit ID is provided use it to point to it
+		if self.ranCommitID != '':
+			sshSession.command('git checkout -f ' + self.ranCommitID, '\$', 30)
+		# if the branch is not develop, then it is a merge request and we need to do
+		# the potential merge. Note that merge conflicts should already been checked earlier
+		if (self.ranAllowMerge):
+			if self.ranTargetBranch == '':
+				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
+					sshSession.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+			else:
+				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
+				sshSession.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 
 	def BuildImage(self, HTML):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
@@ -173,37 +206,7 @@ class Containerize():
 	
 		self.testCase_id = HTML.testCase_id
 	
-		# on RedHat/CentOS .git extension is mandatory
-		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
-		if result is not None:
-			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
-		else:
-			full_ran_repo_name = self.ranRepository + '.git'
-		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
-		mySSH.command('cd ' + lSourcePath, '\$', 5)
-		mySSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
-		# Raphael: here add a check if git clone or git fetch went smoothly
-		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
-		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
-
-		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
-		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
-		# if the commit ID is provided use it to point to it
-		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
-		# if the branch is not develop, then it is a merge request and we need to do 
-		# the potential merge. Note that merge conflicts should already been checked earlier
-		imageTag = 'develop'
-		sharedTag = 'develop'
-		if (self.ranAllowMerge):
-			imageTag = 'ci-temp'
-			if self.ranTargetBranch == '':
-				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
-					mySSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
-			else:
-				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
-				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
-
+		self._createWorkspace(mySSH, lPassword, lSourcePath)
  		# if asterix, copy the entitlement and subscription manager configurations
 		if self.host == 'Red Hat':
 			mySSH.command('mkdir -p  tmp/ca/', '\$', 5)
@@ -211,6 +214,10 @@ class Containerize():
 			mySSH.command('sudo cp /etc/rhsm/ca/redhat-uep.pem tmp/ca/', '\$', 5)
 			mySSH.command('sudo cp /etc/pki/entitlement/*.pem tmp/entitlement/', '\$', 5)
 
+		imageTag = 'develop'
+		sharedTag = 'develop'
+		if (self.ranAllowMerge):
+			imageTag = 'ci-temp'
 		sharedimage = 'ran-build'
 		# Let's remove any previous run artifacts if still there
 		mySSH.command(self.cli + ' image prune --force', '\$', 30)
@@ -388,6 +395,56 @@ class Containerize():
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 
+	def Copy_Image_to_Test_Server(self, HTML):
+		imageTag = 'develop'
+		if (self.ranAllowMerge):
+			imageTag = 'ci-temp'
+
+		lSsh = SSH.SSHConnection()
+		# Going to the Docker Registry server
+		if self.registrySvrId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+		elif self.registrySvrId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+		elif self.registrySvrId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+		lSsh.open(lIpAddr, lUserName, lPassWord)
+		lSsh.command('docker save ' + self.imageToCopy + ':' + imageTag + ' | gzip > ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		lSsh.copyin(lIpAddr, lUserName, lPassWord, '~/' + self.imageToCopy + '-' + imageTag + '.tar.gz', '.')
+		lSsh.command('rm ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		lSsh.close()
+
+		# Going to the Test Server
+		if self.testSvrId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+		elif self.testSvrId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+		elif self.testSvrId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+		lSsh.open(lIpAddr, lUserName, lPassWord)
+		lSsh.copyout(lIpAddr, lUserName, lPassWord, './' + self.imageToCopy + '-' + imageTag + '.tar.gz', '~')
+		lSsh.command('docker rmi ' + self.imageToCopy + ':' + imageTag, '\$', 10)
+		lSsh.command('docker load < ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		lSsh.command('rm ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		lSsh.close()
+
+		if os.path.isfile('./' + self.imageToCopy + '-' + imageTag + '.tar.gz'):
+			os.remove('./' + self.imageToCopy + '-' + imageTag + '.tar.gz')
+
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+
 	def DeployObject(self, HTML, EPC):
 		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
@@ -408,35 +465,33 @@ class Containerize():
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		logging.debug('\u001B[1m Deploying OAI Object on server: ' + lIpAddr + '\u001B[0m')
+
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
-		# Putting the CPUs in a good state, we do that only on a few servers
-		mySSH.command('hostname', '\$', 5)
-		result = re.search('obelix|asterix',  mySSH.getBefore())
-		if result is not None:
-			mySSH.command('if command -v cpupower &> /dev/null; then echo ' + lPassWord + ' | sudo -S cpupower idle-set -D 0; fi', '\$', 5)
-			time.sleep(5)
 		
+		self._createWorkspace(mySSH, lPassWord, lSourcePath)
+
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
 		mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
 		imageTag = 'develop'
 		if (self.ranAllowMerge):
 			imageTag = 'ci-temp'
-		mySSH.command('sed -i -e "s/image: oai-enb:latest/image: oai-enb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
+		mySSH.command('sed -i -e "s/image: oai-enb:develop/image: oai-enb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
+		mySSH.command('sed -i -e "s/image: oai-gnb:develop/image: oai-gnb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
 		localMmeIpAddr = EPC.MmeIPAddress
 		mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
-		if self.flexranCtrlDeployed:
-			mySSH.command('sed -i -e \'s/FLEXRAN_ENABLED:.*/FLEXRAN_ENABLED: "yes"/\' ci-docker-compose.yml', '\$', 2)
-			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/' + self.flexranCtrlIpAddress + '/" ci-docker-compose.yml', '\$', 2)
-		else:
-			mySSH.command('sed -i -e "s/FLEXRAN_ENABLED:.*$/FLEXRAN_ENABLED: \"no\"/" ci-docker-compose.yml', '\$', 2)
-			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/127.0.0.1/" ci-docker-compose.yml', '\$', 2)
+#		if self.flexranCtrlDeployed:
+#			mySSH.command('sed -i -e "s/FLEXRAN_ENABLED:.*/FLEXRAN_ENABLED: \'yes\'/" ci-docker-compose.yml', '\$', 2)
+#			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/' + self.flexranCtrlIpAddress + '/" ci-docker-compose.yml', '\$', 2)
+#		else:
+#			mySSH.command('sed -i -e "s/FLEXRAN_ENABLED:.*$/FLEXRAN_ENABLED: \'no\'/" ci-docker-compose.yml', '\$', 2)
+#			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/127.0.0.1/" ci-docker-compose.yml', '\$', 2)
 		# Currently support only one
-		mySSH.command('docker-compose --file ci-docker-compose.yml config --services | sed -e "s@^@service=@"', '\$', 2)
+		mySSH.command('docker-compose --file ci-docker-compose.yml config --services | sed -e "s@^@service=@" 2>&1', '\$', 10)
 		result = re.search('service=(?P<svc_name>[a-zA-Z0-9\_]+)', mySSH.getBefore())
 		if result is not None:
 			svcName = result.group('svc_name')
-			mySSH.command('docker-compose --file ci-docker-compose.yml up -d ' + svcName, '\$', 2)
+			mySSH.command('docker-compose --file ci-docker-compose.yml up -d ' + svcName, '\$', 10)
 
 		# Checking Status
 		mySSH.command('docker-compose --file ci-docker-compose.yml config', '\$', 5)
@@ -450,7 +505,7 @@ class Containerize():
 			time.sleep(5)
 			cnt = 0
 			while (cnt < 3):
-				mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' ' + containerName, '\$', 5)
+				mySSH.command('docker inspect --format="{{.State.Health.Status}}" ' + containerName, '\$', 5)
 				unhealthyNb = mySSH.getBefore().count('unhealthy')
 				healthyNb = mySSH.getBefore().count('healthy') - unhealthyNb
 				startingNb = mySSH.getBefore().count('starting')
@@ -519,12 +574,9 @@ class Containerize():
 			time.sleep(5)
 			mySSH.command('docker logs ' + containerName + ' > ' + lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '\$', 30)
 			mySSH.command('docker rm -f ' + containerName, '\$', 30)
+		# Forcing the down now to remove the networks and any artifacts
+		mySSH.command('docker-compose --file ci-docker-compose.yml down', '\$', 5)
 
-		# Putting the CPUs back in a idle state, we do that only on a few servers
-		mySSH.command('hostname', '\$', 5)
-		result = re.search('obelix|asterix',  mySSH.getBefore())
-		if result is not None:
-			mySSH.command('if command -v cpupower &> /dev/null; then echo ' + lPassWord + ' | sudo -S cpupower idle-set -E; fi', '\$', 5)
 		mySSH.close()
 
 		# Analyzing log file!

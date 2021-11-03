@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
     enb_mono_fdd:
-        image: oai-enb:develop
+        image: oai-enb:latest
         privileged: true
         container_name: nsa-b200-enb
         environment:
