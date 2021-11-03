@@ -69,7 +69,7 @@ extern inline  uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t res
   *x1 = *x1 ^ (*x1<<31) ^ (*x1<<28);
   *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x2>>4);
   *x2 = *x2 ^ (*x2<<31) ^ (*x2<<30) ^ (*x2<<29) ^ (*x2<<28);
-
+  //printf("printing c= %d \n",*x1^*x2);
   // c(n) = [x1(n+Nc) + x2(n+Nc)]mod2
   return(*x1^*x2);
 }
