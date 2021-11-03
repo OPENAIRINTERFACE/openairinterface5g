@@ -38,6 +38,7 @@
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include "SCHED_NR_UE/defs.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "common/utils/nr/nr_common.h"
 
 #include "common_lib.h"
 #include <math.h>
