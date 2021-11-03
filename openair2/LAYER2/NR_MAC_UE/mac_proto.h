@@ -390,10 +390,6 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
 void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id);
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
-void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu,
-                     uint8_t *nb_dmrs_re_per_rb,
-                     uint16_t *number_dmrs_symbols);
-
 void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac);
 
 void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format);

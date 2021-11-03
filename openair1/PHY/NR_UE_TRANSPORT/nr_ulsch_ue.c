@@ -143,7 +143,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     ulsch_ue->Nid_cell    = Nid_cell;
 
-    get_num_re_dmrs(pusch_pdu, &nb_dmrs_re_per_rb, &number_dmrs_symbols);
+    get_num_re_dmrs(pusch_pdu->start_symbol_index,
+                    pusch_pdu->nr_of_symbols,
+                    pusch_pdu->ul_dmrs_symb_pos,
+                    pusch_pdu->dmrs_config_type,
+                    pusch_pdu->num_dmrs_cdm_grps_no_data,
+                    &nb_dmrs_re_per_rb,
+                    &number_dmrs_symbols);
 
     LOG_D(PHY,"ulsch %x : start_rb %d bwp_start %d start_sc %d start_symbol %d num_symbols %d cdmgrpsnodata %d num_dmrs %d dmrs_re_per_rb %d\n",
           rnti,start_rb,pusch_pdu->bwp_start,start_sc,start_symbol,number_of_symbols,cdm_grps_no_data,number_dmrs_symbols,nb_dmrs_re_per_rb);

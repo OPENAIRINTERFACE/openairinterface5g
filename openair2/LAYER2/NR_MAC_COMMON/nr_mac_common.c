@@ -4294,3 +4294,22 @@ bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
   return valid;
 }
 
+void get_num_re_dmrs(int start_symbol,
+                     uint8_t number_of_symbols,
+                     uint16_t ul_dmrs_symb_pos,
+                     uint8_t dmrs_type,
+                     uint8_t cdm_grps_no_data,
+                     uint8_t *nb_dmrs_re_per_rb,
+                     uint16_t *number_dmrs_symbols){
+
+  *number_dmrs_symbols = 0;
+
+  for (int i = start_symbol; i < start_symbol + number_of_symbols; i++) {
+    if((ul_dmrs_symb_pos >> i) & 0x01){
+      *number_dmrs_symbols += 1;
+    }
+  }
+
+  *nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6 : 4) * cdm_grps_no_data;
+
+}

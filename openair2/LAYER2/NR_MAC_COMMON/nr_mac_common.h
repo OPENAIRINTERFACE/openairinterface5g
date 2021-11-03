@@ -62,6 +62,15 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,
                      uint16_t N_RB,
                      int bwp_id);
 
+
+void get_num_re_dmrs(int start_symbol,
+                     uint8_t number_of_symbols,
+                     uint16_t ul_dmrs_symb_pos,
+                     uint8_t dmrs_type,
+                     uint8_t cdm_grps_no_data,
+                     uint8_t *nb_dmrs_re_per_rb,
+                     uint16_t *number_dmrs_symbols);
+
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
                                  NR_SearchSpace_t *ss,

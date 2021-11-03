@@ -842,7 +842,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     return -1;
   }
 
-  get_num_re_dmrs(pusch_config_pdu, &nb_dmrs_re_per_rb, &number_dmrs_symbols);
+  get_num_re_dmrs(pusch_config_pdu->start_symbol_index,
+                  pusch_config_pdu->nr_of_symbols,
+                  pusch_config_pdu->ul_dmrs_symb_pos,
+                  pusch_config_pdu->dmrs_config_type,
+                  pusch_config_pdu->num_dmrs_cdm_grps_no_data,
+                  &nb_dmrs_re_per_rb,
+                  &number_dmrs_symbols);
 
   // Compute TBS
   pusch_config_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_config_pdu->qam_mod_order,

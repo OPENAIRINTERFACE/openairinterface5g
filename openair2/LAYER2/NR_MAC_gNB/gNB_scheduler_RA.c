@@ -968,6 +968,9 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
 
 
   int start_symbol_index,nr_of_symbols;
+  uint8_t nb_dmrs_re_per_rb = 0;
+  uint16_t number_dmrs_symbols = 0;
+
   SLIV2SL(startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
 
   pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
@@ -1013,11 +1016,20 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->pusch_data.harq_process_id = 0;
   pusch_pdu->pusch_data.new_data_indicator = 1;
   pusch_pdu->pusch_data.num_cb = 0;
+
+  get_num_re_dmrs(pusch_pdu->start_symbol_index,
+                  pusch_pdu->nr_of_symbols,
+                  pusch_pdu->ul_dmrs_symb_pos,
+                  pusch_pdu->dmrs_config_type,
+                  pusch_pdu->num_dmrs_cdm_grps_no_data,
+                  &nb_dmrs_re_per_rb,
+                  &number_dmrs_symbols);
+
   pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
                                                  pusch_pdu->target_code_rate,
                                                  pusch_pdu->rb_size,
                                                  pusch_pdu->nr_of_symbols,
-                                                 12, // nb dmrs set for no data in dmrs symbol
+                                                 nb_dmrs_re_per_rb*number_dmrs_symbols, // nb dmrs set for no data in dmrs symbol
                                                  0, //nb_rb_oh
                                                  0, // to verify tb scaling
                                                  pusch_pdu->nrOfLayers)>>3;
