@@ -154,6 +154,10 @@ void nr_init_csi_rs(PHY_VARS_gNB* gNB, uint32_t Nid)
 
 }
 
+void nr_init_prs(PHY_VARS_gNB* gNB, uint32_t symNum)
+{
+  unsigned int x1, x2;
+  uint16_t Nid, i_ssb, i_ssb2;
 void nr_init_prs(PHY_VARS_gNB* gNB)
 {
   unsigned int x1, x2;
@@ -166,6 +170,14 @@ void nr_init_prs(PHY_VARS_gNB* gNB)
 
   Nid = cfg->cell_config.phy_cell_id.value;
 
+  //Lmax = fp->Lmax;
+  //N_hf = (Lmax == 4)? 2:1;
+
+  for (slotNum = 0; slotNum < fp->slots_per_frame-1; slotNum++) {
+    for (symNum = 0; symNum < fp->symbols_per_slot-1 ; symNum++) {
+      i_ssb = sumNum & (symbols_per_slot-1);
+      i_ssb2 = i_ssb + (slot<<2);
+
   for (slotNum = 0; slotNum < fp->slots_per_frame; slotNum++) {
     for (symNum = 0; symNum < fp->symbols_per_slot ; symNum++) {
       reset = 1;
@@ -176,6 +188,11 @@ void nr_init_prs(PHY_VARS_gNB* gNB)
       uint32_t pow22=1<<22;
       uint32_t pow10=1<<10;
       c_init1 = pow22*ceil(Nid/1024);
+      c_init2 = pow10*(slotnum+symNum+1)*(2*(Nid%1024)+1);
+      c_init3 = Nid%1024;
+      x2 = c_init1 + c_init2 + c_init3;
+
+
       c_init2 = pow10*(slotNum+symNum+1)*(2*(Nid%1024)+1);
       c_init3 = Nid%1024;
       x2 = c_init1 + c_init2 + c_init3;
