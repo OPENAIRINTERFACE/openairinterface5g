@@ -209,7 +209,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
-  nr_init_prs(...);
+  nr_init_prs(gNB);
+
   
   /* Generate low PAPR type 1 sequences for PUSCH DMRS, these are used if transform precoding is enabled.  */
   generate_lowpapr_typ1_refsig_sequences(SHRT_MAX);
