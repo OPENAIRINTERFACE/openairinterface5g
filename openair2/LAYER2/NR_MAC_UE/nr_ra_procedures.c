@@ -680,16 +680,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
     ((MAX_FRAME_NUMBER+frame-prach_resources->sync_frame)%MAX_FRAME_NUMBER)>150){
       prach_resources->init_msg1 = 1;
     } else {
-      LOG_I(NR_MAC, "Melissa: mac->common_configuration_complete = %d \n"
-                    " MAX_FRAME_NUMBER (%d) + frame (%d) - prach_resources->sync_frame (%d)"
-                    " = (%d) mod MAX_FRAME_NUMBER (%d)   = %d ??? >150\n",
-                    mac->common_configuration_complete,
-                    MAX_FRAME_NUMBER,
-                    frame,
-                    prach_resources->sync_frame,
-                    MAX_FRAME_NUMBER + frame - prach_resources->sync_frame,
-                    MAX_FRAME_NUMBER,
-                    MAX_FRAME_NUMBER+frame-prach_resources->sync_frame%MAX_FRAME_NUMBER);
       LOG_D(NR_MAC,"PRACH Condition not met: frame %d, prach_resources->sync_frame %d\n",
             frame,prach_resources->sync_frame);
       return 0;
