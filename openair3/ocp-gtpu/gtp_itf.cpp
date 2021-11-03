@@ -74,6 +74,12 @@ class gtpEndPoint {
   int ipVersion;
   map<int,teidData_t> ue2te_mapping;
   map<int,rntiData_t> te2ue_mapping;
+  // we use the same port number for source and destination address
+  // this allow using non standard gtp port number (different from 2152)
+  // and so, for example tu run 4G and 5G cores on one system
+  tcp_udp_port_t get_dstport() {
+	  return (tcp_udp_port_t)atol(addr.destinationService);
+  }
 };
 
 class gtpEndPoints {
@@ -99,6 +105,8 @@ instance_t legacyInstanceMapping=0;
 #define compatInst(a) ((a)==0 || (a)==INSTANCE_DEFAULT?legacyInstanceMapping:a)
 
 #define GTPV1U_HEADER_SIZE                                  (8)
+
+
 static  int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, teid_t teid, uint8_t *Msg,int msgLen,
                                    bool seqNumFlag, bool  npduNumFlag, bool extHdrFlag, int seqNum, int npduNum, int extHdrType) {
   AssertFatal(extHdrFlag==false,"Not developped");
@@ -302,7 +310,6 @@ static  int udpServerSocket(openAddr_s addr) {
     LOG_E(GTPU,"getaddrinfo error: %s\n", gai_strerror(status));
     return -1;
   }
-
   int sockfd=-1;
 
   // loop through all the results and bind to the first we can
@@ -489,17 +496,18 @@ int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
         create_tunnel_req->rnti,
         create_tunnel_req->num_tunnels,
         create_tunnel_req->sgw_S1u_teid[0]);
-
+  tcp_udp_port_t dstport=globGtp.instances[compatInst(instance)].get_dstport();
   for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
     AssertFatal(create_tunnel_req->eps_bearer_id[i] > 4,
                 "From legacy code not clear, seems impossible (bearer=%d)\n",
                 create_tunnel_req->eps_bearer_id[i]);
     int incoming_rb_id=create_tunnel_req->eps_bearer_id[i]-4;
-    teid_t teid=newGtpuCreateTunnel(instance, create_tunnel_req->rnti,
+
+    teid_t teid=newGtpuCreateTunnel(compatInst(instance), create_tunnel_req->rnti,
                                     incoming_rb_id,
                                     create_tunnel_req->eps_bearer_id[i],
                                     create_tunnel_req->sgw_S1u_teid[i],
-                                    create_tunnel_req->sgw_addr[i], 2152,
+                                    create_tunnel_req->sgw_addr[i],  dstport,
                                     pdcp_data_req);
     create_tunnel_resp->status=0;
     create_tunnel_resp->rnti=create_tunnel_req->rnti;
@@ -557,13 +565,14 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
         create_tunnel_req->rnti,
         create_tunnel_req->num_tunnels,
         create_tunnel_req->outgoing_teid[0]);
-
+  tcp_udp_port_t dstport=globGtp.instances[compatInst(instance)].get_dstport();
   for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
     teid_t teid=newGtpuCreateTunnel(instance, create_tunnel_req->rnti,
                                     create_tunnel_req->incoming_rb_id[i],
                                     create_tunnel_req->pdusession_id[i],
                                     create_tunnel_req->outgoing_teid[i],
-                                    create_tunnel_req->dst_addr[i], 2152,
+                                    create_tunnel_req->dst_addr[i], dstport,
+
                                     pdcp_data_req);
     create_tunnel_resp->status=0;
     create_tunnel_resp->rnti=create_tunnel_req->rnti;
@@ -898,6 +907,7 @@ void *ocp_gtpv1uTask(void *args)  {
           // to be dev: should be removed, to use API
           strcpy(addr.originHost, GTPV1U_ENB_S1_REQ(message_p).addrStr);
           strcpy(addr.originService, GTPV1U_ENB_S1_REQ(message_p).portStr);
+          strcpy(addr.destinationService,addr.originService);
           AssertFatal((legacyInstanceMapping=ocp_gtpv1Init(addr))!=0,"Instance 0 reserved for legacy\n");
           break;
 
@@ -905,6 +915,7 @@ void *ocp_gtpv1uTask(void *args)  {
           // to be dev: should be removed, to use API
           strcpy(addr.originHost, GTPV1U_GNB_NG_REQ(message_p).addrStr);
           strcpy(addr.originService, GTPV1U_GNB_NG_REQ(message_p).portStr);
+          strcpy(addr.destinationService,addr.originService);
           AssertFatal((legacyInstanceMapping=ocp_gtpv1Init(addr))!=0,"Instance 0 reserved for legacy\n");
           break;
 
