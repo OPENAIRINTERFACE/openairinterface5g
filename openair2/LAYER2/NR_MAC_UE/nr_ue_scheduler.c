@@ -601,7 +601,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->nr_of_symbols = NrOfSymbols;
 
     l_prime_mask = get_l_prime(NrOfSymbols, mappingtype, add_pos, dmrslength, StartSymbolIndex, mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
-    LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , DMRS_MASK:%x\n", pusch_config_pdu->start_symbol_index, pusch_config_pdu->nr_of_symbols, mappingtype, l_prime_mask);
+    LOG_D(NR_MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d, DMRS_MASK:%x\n", pusch_config_pdu->start_symbol_index, pusch_config_pdu->nr_of_symbols, mappingtype, l_prime_mask);
 
     #ifdef DEBUG_MSG3
     LOG_D(NR_MAC, "In %s BWP assignment (BWP (start %d, size %d) \n", __FUNCTION__, pusch_config_pdu->bwp_start, pusch_config_pdu->bwp_size);

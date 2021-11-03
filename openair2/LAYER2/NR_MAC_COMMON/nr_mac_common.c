@@ -2597,7 +2597,14 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
   uint8_t row, colomn;
   int32_t l_prime;
 
-  LOG_D(NR_MAC, "PUSCH: NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", duration_in_symbols, start_symbol, mapping_type, dmrs_typeA_position);
+  LOG_D(NR_MAC, "In %s: PUSCH NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d additional_pos:%d, pusch_maxLength:%d\n",
+    __FUNCTION__,
+    duration_in_symbols,
+    start_symbol,
+    mapping_type,
+    dmrs_typeA_position,
+    additional_pos,
+    pusch_maxLength);
 
   // Section 6.4.1.1.3 in Spec 38.211
   // For PDSCH Mapping TypeA, ld is duration between first OFDM of the slot and last OFDM symbol of the scheduled PUSCH resources

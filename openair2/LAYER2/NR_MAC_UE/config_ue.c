@@ -246,9 +246,9 @@ void config_common_ue_sa(NR_UE_MAC_INST_t *mac,
                      );
 
     if (return_tdd !=0) {
-      LOG_E(PHY,"TDD configuration can not be done\n");
+      LOG_E(NR_PHY, "TDD configuration cannot be done\n");
     } else {
-      LOG_I(PHY,"TDD has been properly configurated\n");
+      LOG_I(NR_PHY, "TDD has been properly configurated\n");
     }
   }
 
@@ -429,9 +429,9 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 					    scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols
 					    );
       if (return_tdd !=0) {
-        LOG_E(PHY, "TDD configuration can not be done\n");
+        LOG_E(NR_PHY, "TDD configuration can not be done\n");
       } else {
-        LOG_I(PHY, "TDD has been properly configurated\n");
+        LOG_I(NR_PHY, "TDD has been properly configurated\n");
       }
     }
 

@@ -988,7 +988,7 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->data_scrambling_id = *scc->physCellId;
   pusch_pdu->nrOfLayers = 1;
   pusch_pdu->ul_dmrs_symb_pos = get_l_prime(nr_of_symbols,mappingtype,pusch_dmrs_pos2,pusch_len1,start_symbol_index, scc->dmrs_TypeA_Position);
-  LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , ul_dmrs_symb_pos:%x\n", start_symbol_index, nr_of_symbols, mappingtype, pusch_pdu->ul_dmrs_symb_pos);
+  LOG_D(NR_MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d, ul_dmrs_symb_pos:%x\n", start_symbol_index, nr_of_symbols, mappingtype, pusch_pdu->ul_dmrs_symb_pos);
   pusch_pdu->dmrs_config_type = 0;
   pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
@@ -1912,25 +1912,16 @@ void nr_fill_rar(uint8_t Mod_idP,
   rar->UL_GRANT_4 = (uint8_t) ul_grant & 0xff;
 
 #ifdef DEBUG_RAR
-  //LOG_I(NR_MAC, "rarbi->E = 0x%x\n", rarbi->E);
-  //LOG_I(NR_MAC, "rarbi->T = 0x%x\n", rarbi->T);
-  //LOG_I(NR_MAC, "rarbi->R = 0x%x\n", rarbi->R);
-  //LOG_I(NR_MAC, "rarbi->BI = 0x%x\n", rarbi->BI);
-
   LOG_I(NR_MAC, "rarh->E = 0x%x\n", rarh->E);
   LOG_I(NR_MAC, "rarh->T = 0x%x\n", rarh->T);
   LOG_I(NR_MAC, "rarh->RAPID = 0x%x (%i)\n", rarh->RAPID, rarh->RAPID);
-
   LOG_I(NR_MAC, "rar->R = 0x%x\n", rar->R);
   LOG_I(NR_MAC, "rar->TA1 = 0x%x\n", rar->TA1);
-
   LOG_I(NR_MAC, "rar->TA2 = 0x%x\n", rar->TA2);
   LOG_I(NR_MAC, "rar->UL_GRANT_1 = 0x%x\n", rar->UL_GRANT_1);
-
   LOG_I(NR_MAC, "rar->UL_GRANT_2 = 0x%x\n", rar->UL_GRANT_2);
   LOG_I(NR_MAC, "rar->UL_GRANT_3 = 0x%x\n", rar->UL_GRANT_3);
   LOG_I(NR_MAC, "rar->UL_GRANT_4 = 0x%x\n", rar->UL_GRANT_4);
-
   LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
   LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
 #endif
