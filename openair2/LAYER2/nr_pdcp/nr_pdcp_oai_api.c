@@ -911,9 +911,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
   uint8_t                  *const kRRCint,
   uint8_t                  *const kUPenc,
   uint8_t                  *const kUPint
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-#endif
   ,rb_id_t                 *const defaultDRB,
   struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
   //struct NR_RLC_Config     *rlc_Config)
@@ -983,9 +981,7 @@ boolean_t rrc_pdcp_config_asn1_req(
   uint8_t                  *const kRRCenc,
   uint8_t                  *const kRRCint,
   uint8_t                  *const kUPenc
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-#endif
   ,rb_id_t                 *const defaultDRB)
 {
   return 0;
@@ -1248,10 +1244,8 @@ boolean_t pdcp_data_req(
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer,
   const pdcp_transmission_mode_t mode
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t *const sourceL2Id
   ,const uint32_t *const destinationL2Id
-#endif
   )
 {
   if (srb_flagP) {
