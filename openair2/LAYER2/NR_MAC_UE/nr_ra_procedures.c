@@ -595,7 +595,9 @@ void nr_get_prach_resources(module_id_t mod_id,
       LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure for SSB with Id %d\n", __FUNCTION__, prach_resources->ra_PreambleIndex, cfra_ssb_resource_idx);
     }
   } else {
-    int16_t dl_pathloss = get_nr_PL(mod_id, CC_id, gNB_id);
+    /* TODO: This controls the tx_power of UE and the ramping procedure of RA of UE. Later we
+             can abstract this, perhaps in the proxy. But for the time being lets leave it as below. */
+    int16_t dl_pathloss = !get_softmodem_params()->emulate_l2 ? get_nr_PL(mod_id, CC_id, gNB_id) : 0;
     ssb_rach_config(ra, prach_resources, nr_rach_ConfigCommon, prach_pdu);
     ra_preambles_config(prach_resources, mac, dl_pathloss);
     LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", prach_resources->ra_PreambleIndex);

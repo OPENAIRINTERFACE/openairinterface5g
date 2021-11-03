@@ -177,7 +177,10 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_p
   rach_ind->pdu_list[pdu_index].num_preamble                        = 1;
   const int num_p = rach_ind->pdu_list[pdu_index].num_preamble;
   rach_ind->pdu_list[pdu_index].preamble_list = calloc(num_p, sizeof(nfapi_nr_prach_indication_preamble_t));
-  rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_index     = mac->ra.rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[0]->ra_PreambleIndex;
+  uint8_t preamble_index = get_softmodem_params()->nsa ?
+                           mac->ra.rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[0]->ra_PreambleIndex :
+                           mac->ra.ra_PreambleIndex;
+  rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_index     = preamble_index;
 
   rach_ind->pdu_list[pdu_index].preamble_list[0].timing_advance     = 0;
   rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_pwr       = 0xffffffff;

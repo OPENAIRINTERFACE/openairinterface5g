@@ -388,7 +388,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
             fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_SIB);
             pdu_idx++;
         }
-        else if(mac->ra.ra_state <= WAIT_RAR)
+        else if (dl_info->dci_ind->dci_list[i].rnti == 0x10b)
         {
             fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_RAR);
             pdu_idx++;
