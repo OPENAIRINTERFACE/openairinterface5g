@@ -643,6 +643,18 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
   }
 }
 
+// todo handle mac_LogicalChannelConfig
+int nr_rrc_mac_config_req_ue_logicalChannelBearer(
+    module_id_t                     module_id,
+    int                             cc_idP,
+    uint8_t                         gNB_index,
+    long                            logicalChannelIdentity,
+    boolean_t                       status){
+    NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+    mac->logicalChannelBearer_exist[logicalChannelIdentity] = status;
+    return 0;
+}
+
 int nr_rrc_mac_config_req_ue(
     module_id_t                     module_id,
     int                             cc_idP,
@@ -706,6 +718,17 @@ int nr_rrc_mac_config_req_ue(
       LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
       mac->cg = cell_group_config;
       mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
+
+      mac->scheduling_info.periodicBSR_SF =
+        MAC_UE_BSR_TIMER_NOT_RUNNING;
+      mac->scheduling_info.retxBSR_SF =
+        MAC_UE_BSR_TIMER_NOT_RUNNING;
+      mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
+      LOG_D(MAC, "[UE %d]: periodic BSR %d (SF), retx BSR %d (SF)\n",
+			module_id,
+            mac->scheduling_info.periodicBSR_SF,
+            mac->scheduling_info.retxBSR_SF);
+
       config_control_ue(mac);
       //config_common_ue(mac,module_id,cc_idP);
       /*      
