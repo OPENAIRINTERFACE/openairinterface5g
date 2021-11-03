@@ -433,6 +433,10 @@ typedef struct {
   // Defined for abstracted mode
   nr_downlink_indication_t dl_info;
   NR_UE_HARQ_STATUS_t dl_harq_info[16];
+  bool expected_sib;
+  bool index_has_sib[16];
+  bool expected_rar;
+  bool index_has_rar[16];
   bool expected_dci;
   bool index_has_dci[16];
   int active_harq_sfn_slot;

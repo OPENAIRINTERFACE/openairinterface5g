@@ -257,6 +257,10 @@ static void fill_mib_in_rx_ind(nfapi_nr_dl_tti_request_pdu_t *pdu_list, fapi_nr_
 static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_dl_tti_request_t *dl_tti_request)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
+    mac->expected_sib = false;
+    memset(mac->index_has_sib, 0, sizeof(*mac->index_has_sib));
+    mac->expected_rar = false;
+    memset(mac->index_has_rar, 0, sizeof(*mac->index_has_rar));
     mac->expected_dci = false;
     memset(mac->index_has_dci, 0, sizeof(*mac->index_has_dci));
     int pdu_idx = 0;
@@ -292,19 +296,41 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                             "The number of DCIs is greater than dci_list");
                 for (int j = 0; j < num_dcis; j++)
                 {
+                    /* For multiple UEs, we need to be able to filter the rx'd messages by
+                       the RNTI. However, we do not have the RNTI value until the CFRA (NSA)
+                       or CBRA (SA) procedure is complete. The check below will handle this.
+                       Also, depending on the RNTI value, we can have a SIB (0xffff), RAR (0x10b),
+                       Msg3 (TC_RNTI) or an actual DCI message (CRNTI). When we get Msg3, the
+                       MAC instance of the UE still has a CRNTI = 0. Only once the RA procedure
+                       succeeds is the CRNTI value updated to the TC_RNTI. */
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
                     if ((dci_pdu_list->RNTI != mac->crnti) &&
-                        (dci_pdu_list->RNTI != 0xffff) &&
-                       ((dci_pdu_list->RNTI != mac->ra.ra_rnti) || mac->ra.RA_RAPID_found))
+                        (mac->ra.ra_state == RA_SUCCEEDED))
                     {
-                      LOG_D(NR_MAC, "We are filtering PDCCH DCI pdu because RNTI doesnt match!\n");
-                      LOG_D(NR_MAC, "dci_pdu_list->RNTI (%x) != mac->crnti (%x)\n", dci_pdu_list->RNTI, mac->crnti);
+                      LOG_D(NR_MAC, "We are filtering PDCCH DCI pdu because RNTI doesnt match! "
+                                    "dci_pdu_list->RNTI (%x) != mac->crnti (%x)\n",
+                                    dci_pdu_list->RNTI, mac->crnti);
                       continue;
                     }
                     fill_dl_info_with_pdcch(dl_info->dci_ind, dci_pdu_list, pdu_idx);
-                    mac->expected_dci = true;
-                    LOG_D(NR_MAC, "Setting index_has_dci[%d] = true\n", j);
-                    mac->index_has_dci[j] = true;
+                    if (dci_pdu_list->RNTI == 0xffff)
+                    {
+                        mac->expected_sib = true;
+                        mac->index_has_sib[j] = true;
+                        LOG_D(NR_MAC, "Setting index_has_sib[%d] = true\n", j);
+                    }
+                    else if (dci_pdu_list->RNTI == 0x10b)
+                    {
+                        mac->expected_rar = true;
+                        mac->index_has_rar[j] = true;
+                        LOG_D(NR_MAC, "Setting index_has_rar[%d] = true\n", j);
+                    }
+                    else
+                    {
+                        mac->expected_dci = true;
+                        mac->index_has_dci[j] = true;
+                        LOG_D(NR_MAC, "Setting index_has_dci[%d] = true\n", j);
+                    }
                     pdu_idx++;
                 }
             }
@@ -383,12 +409,12 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
-        if (dl_info->dci_ind->dci_list[i].rnti == 0xffff)
+        if (mac->index_has_sib[i])
         {
             fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_SIB);
             pdu_idx++;
         }
-        else if (dl_info->dci_ind->dci_list[i].rnti == 0x10b)
+        else if (mac->index_has_rar[i])
         {
             fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_RAR);
             pdu_idx++;
@@ -609,7 +635,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
        incoming tx_data_request is also destined for the current UE. If the
        RAR hasn't been processed yet, we do not want to be filtering the
        tx_data_requests. */
-    if (tx_data_request && (mac->expected_dci || mac->ra.ra_state == WAIT_RAR))
+    if (tx_data_request && (mac->expected_sib || mac->expected_rar || mac->expected_dci))
     {
         frame = tx_data_request->SFN;
         slot = tx_data_request->Slot;
