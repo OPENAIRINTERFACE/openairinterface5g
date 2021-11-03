@@ -45,6 +45,9 @@
 @param
 @returns 0 on success
  */
+
+int nr_generate_prs();
+
 int nr_generate_pss(int16_t *d_pss,
                     int32_t *txdataF,
                     int16_t amp,
