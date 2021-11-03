@@ -329,11 +329,11 @@ endif ()
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -ggdb3 -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -ggdb2 -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
 #########################
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
-set(debugOpt "-ggdb3 -DMALLOC_CHECK_=3 -fno-delete-null-pointer-checks")
+set(debugOpt "-ggdb2 -DMALLOC_CHECK_=3 -fno-delete-null-pointer-checks")
 set(CMAKE_C_FLAGS_DEBUG "${debugOpt} -O0")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${debugOpt} -O2")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
