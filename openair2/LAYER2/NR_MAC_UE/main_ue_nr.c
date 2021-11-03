@@ -52,8 +52,9 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
     //init mac here
     nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(sizeof(NR_UE_MAC_INST_t),NB_NR_UE_MAC_INST);
 
-    for (int j=0;j<NB_NR_UE_MAC_INST;j++)
-	for (int i=0;i<NR_MAX_HARQ_PROCESSES;i++) nr_ue_mac_inst[j].first_ul_tx[i]=1;
+    for (int j=0;j<NB_NR_UE_MAC_INST;j++) {
+	nr_ue_init_mac(j);
+    }
 
 
     if (rrc_inst && rrc_inst->scell_group_config) {
