@@ -274,7 +274,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 #ifdef DEBUG_ULSCH_CODING
   printf("encoding thinks this is a new packet \n");
 #endif
-  harq_process->first_tx = 0;
+    harq_process->first_tx = 0;
 ///////////////////////// a---->| add CRC |---->b /////////////////////////
 ///////////
    /* 
