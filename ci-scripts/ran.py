@@ -792,6 +792,8 @@ class RANManagement():
 		pb_receiving_samples_cnt = 0
 		#count "removing UE" msg
 		removing_ue = 0
+		#count"X2AP-PDU"
+		x2ap_pdu = 0
 		#NSA specific log markers
 		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
 	
@@ -993,7 +995,10 @@ class RANManagement():
 			result = re.search('\[MAC\]\s+Removing UE', str(line))
 			if result is not None:
 				removing_ue += 1
-
+			#count "X2AP-PDU"
+			result = re.search('X2AP-PDU', str(line))
+			if result is not None:
+				x2ap_pdu += 1
 			#nsa markers logging
 			for k in nsa_markers:
 				result = re.search(k, line)
@@ -1084,6 +1089,11 @@ class RANManagement():
 		else:
 			#Removing UE log
 			statMsg = '[MAC] Removing UE msg count =  '+str(removing_ue)
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			#X2AP-PDU log
+			statMsg = 'X2AP-PDU msg count =  '+str(x2ap_pdu)
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
