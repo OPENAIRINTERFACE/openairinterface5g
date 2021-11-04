@@ -1007,9 +1007,9 @@ class RANManagement():
 		else:
 			logging.debug("NR Stats files for RT analysis not found")
 		if stat_files_present:
-			nrL1_stat = open('./nrL1_stats.log', 'r')
-			nrMAC_stat = open('./nrMAC_stats.log', 'r')
-			for line in nrL1_stat.readlines():		
+			nrL1_stats = open('./nrL1_stats.log', 'r')
+			nrMAC_stats = open('./nrMAC_stats.log', 'r')
+			for line in nrL1_stats.readlines():
 				for k in rt_keys:
 					result = re.search(k, line)     
 					if result is not None:
@@ -1017,7 +1017,7 @@ class RANManagement():
 						tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex
 						if tmp!=None: 
 							real_time_stats[k]=tmp.group(1)
-			for line in nrMAC_stat.readlines():		
+			for line in nrMAC_stats.readlines():
 				for k in rt_keys:
 					result = re.search(k, line)     
 					if result is not None:
