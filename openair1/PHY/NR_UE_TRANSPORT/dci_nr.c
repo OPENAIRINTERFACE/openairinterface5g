@@ -36,10 +36,8 @@
   #include <string.h>
 #endif
 
-#include <LAYER2/NR_MAC_UE/mac_defs.h>
-#include <LAYER2/NR_MAC_UE/mac_proto.h>
-#include "executables/softmodem-common.h"
 
+#include "executables/softmodem-common.h"
 #include "nr_transport_proto_ue.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
 #include "PHY/phy_extern_nr_ue.h"
@@ -148,7 +146,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
   }
 
 
-  int f_bundle_j_list[NR_MAX_PDCCH_AGG_LEVEL] = {};
+  int f_bundle_j_list[(2*NR_MAX_PDCCH_AGG_LEVEL) - 1] = {};
 
   for (int reg = 0; reg < coreset_nbr_rb; reg++) {
     if ((reg % reg_bundle_size_L) == 0) {
@@ -170,12 +168,14 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
   // Get cce_list indices by reg_idx in ascending order
   int f_bundle_j_list_id = 0;
-  int f_bundle_j_list_ord[NR_MAX_PDCCH_AGG_LEVEL] = {};
+  int f_bundle_j_list_ord[(2*NR_MAX_PDCCH_AGG_LEVEL)-1] = {};
   for (int c_id = 0; c_id < number_of_candidates; c_id++ ) {
     f_bundle_j_list_id = CCE[c_id];
     for (int p = 0; p < NR_MAX_PDCCH_AGG_LEVEL; p++) {
       for (int p2 = CCE[c_id]; p2 < CCE[c_id] + L[c_id]; p2++) {
+        AssertFatal(p2<2*NR_MAX_PDCCH_AGG_LEVEL,"number_of_candidates %d : p2 %d,  CCE[%d] %d, L[%d] %d\n",number_of_candidates,p2,c_id,CCE[c_id],c_id,L[c_id]);
         if (f_bundle_j_list[p2] == p) {
+          AssertFatal(f_bundle_j_list_id < 2*NR_MAX_PDCCH_AGG_LEVEL,"f_bundle_j_list_id %d\n",f_bundle_j_list_id);
           f_bundle_j_list_ord[f_bundle_j_list_id] = p;
           f_bundle_j_list_id++;
           break;
@@ -413,7 +413,6 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
      * we have to point the pointer at (1+c_rb-N_RB_DL/2) in rxdataF
      */
 
-    LOG_DDD("n_BWP_start=%d, coreset_nbr_rb=%d\n",n_BWP_start,coreset_nbr_rb);
     int c_rb_by6;
     c_rb = 0;
     for (int rb=0;rb<coreset_nbr_rb;rb++,c_rb++) {
@@ -425,7 +424,6 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         c_rb_by6 = c_rb/6;
       }
 
-      LOG_DDD("c_rb=%d\n",c_rb);
       rxF=NULL;
 
       // first we set initial conditions for pointer to rxdataF depending on the situation of the first RB within the CORESET (c_rb = n_BWP_start)
@@ -547,6 +545,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
 #endif
 
 
+#define print_shorts(s,x) printf("%s %d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7])
 
 void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
                                    int32_t **dl_ch_estimates_ext,
@@ -581,16 +580,15 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
 #endif
 
     for (rb=0; rb<(coreset_nbr_rb*3)>>2; rb++) {
-      //printf("rb %d\n",rb);
 #if defined(__x86_64__) || defined(__i386__)
       // multiply by conjugated channel
       mmtmpP0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
-      //  print_ints("re",&mmtmpP0);
+      //print_ints("re",&mmtmpP0);
       // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
       mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
       mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
       mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i *)&conjugate[0]);
-      //  print_ints("im",&mmtmpP1);
+      //print_ints("im",&mmtmpP1);
       mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[0]);
       // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
       mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
@@ -599,12 +597,12 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
       //  print_ints("im(shift)",&mmtmpP1);
       mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
       mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
-      //      print_ints("c0",&mmtmpP2);
-      //  print_ints("c1",&mmtmpP3);
+      //print_ints("c0",&mmtmpP2);
+      //print_ints("c1",&mmtmpP3);
       rxdataF_comp128[0] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-      //print_shorts("rx:",rxdataF128);
-      //print_shorts("ch:",dl_ch128);
-      //print_shorts("pack:",rxdataF_comp128);
+//      print_shorts("rx:",(int16_t*)rxdataF128);
+//      print_shorts("ch:",(int16_t*)dl_ch128);
+//      print_shorts("pack:",(int16_t*)rxdataF_comp128);
       // multiply by conjugated channel
       mmtmpP0 = _mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
       // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
@@ -800,7 +798,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 #endif
   }
 
-  LOG_D(PHY,"we enter nr_pdcch_demapping_deinterleaving()\n");
+  LOG_D(PHY,"we enter nr_pdcch_demapping_deinterleaving(), number of candidates %d\n",rel15->number_of_candidates);
   nr_pdcch_demapping_deinterleaving((uint32_t *) pdcch_vars->llr,
                                     (uint32_t *) pdcch_vars->e_rx,
                                     rel15->coreset.duration,
@@ -933,11 +931,22 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
 
     // Loop over possible DCI lengths
     for (int k = 0; k < rel15->num_dci_options; k++) {
+      // skip this candidate if we've already found one with the
+      // same rnti and format at a different aggregation level
+      int dci_found=0;
+      for (int ind=0;ind < dci_ind->number_of_dcis ; ind++) {
+        if (rel15->rnti== dci_ind->dci_list[ind].rnti &&
+            rel15->dci_format_options[k]==dci_ind->dci_list[ind].dci_format) {
+           dci_found=1;
+           break;
+        }
+      }
+      if (dci_found==1) continue;
       int dci_length = rel15->dci_length_options[k];
       uint64_t dci_estimation[2]= {0};
       const t_nrPolar_params *currentPtrDCI = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, dci_length, L, 1, &ue->polarList);
 
-      LOG_D(PHY, "Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d\n", j, rel15->number_of_candidates, CCEind, CCEind*9*6*2, L);
+      LOG_D(PHY, "Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d, length %d, format %s\n", j, rel15->number_of_candidates, CCEind, CCEind*9*6*2, L, dci_length,nr_dci_format_string[rel15->dci_format_options[k]]);
 
       nr_pdcch_unscrambling(&pdcch_vars->e_rx[CCEind*108], rel15->coreset.scrambling_rnti, L*108, rel15->coreset.pdcch_dmrs_scrambling_id, tmp_e);
 

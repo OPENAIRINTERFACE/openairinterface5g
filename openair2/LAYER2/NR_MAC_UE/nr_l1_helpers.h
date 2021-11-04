@@ -1,4 +1,4 @@
- /*
+/*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -19,20 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _NR_PDCP_ENTITY_SRB_H_
-#define _NR_PDCP_ENTITY_SRB_H_
-
-#include "nr_pdcp_entity.h"
-
-typedef struct {
-  nr_pdcp_entity_t common;
-  int srb_id;
-} nr_pdcp_entity_srb_t;
-
-void nr_pdcp_entity_srb_recv_pdu(nr_pdcp_entity_t *_entity, char *buffer, int size);
-void nr_pdcp_entity_srb_recv_sdu(nr_pdcp_entity_t *_entity, char *buffer, int size, int sdu_id);
-void nr_pdcp_entity_srb_set_integrity_key(nr_pdcp_entity_t *_entity, char *key);
-void nr_pdcp_entity_srb_delete(nr_pdcp_entity_t *_entity);
-
-
-#endif /* _NR_PDCP_ENTITY_SRB_H_ */
+/** \brief Function to compute configured maximum output power according to clause 6.2.4 of 3GPP TS 38.101-1 version 16.5.0 Release 16
+    @param Mod_id Module id of UE
+*/
+long nr_get_Pcmax(module_id_t mod_id);
+/** @}*/
