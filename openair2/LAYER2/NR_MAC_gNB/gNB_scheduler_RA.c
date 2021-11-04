@@ -542,13 +542,19 @@ void nr_initiate_ra_proc(module_id_t module_idP,
         ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
 
       // This should be handled differently when we use the initialBWP for RA
-      ra->bwp_id = 0;//TODO
+      ra->dl_bwp_id = 0;//TODO
+      ra->ul_bwp_id = 0;
       NR_BWP_Downlink_t *bwp=NULL;
-      if (ra->CellGroup && ra->CellGroup->spCellConfig && ra->CellGroup->spCellConfig->spCellConfigDedicated &&
+      if (ra->CellGroup && ra->CellGroup->spCellConfig && ra->CellGroup->spCellConfig->spCellConfigDedicated) {
+        if (ra->CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id &&
           ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
-        ra->bwp_id = 1;
-        bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
-      }
+          ra->dl_bwp_id = *ra->CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
+          bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->dl_bwp_id - 1];
+        }
+        if (ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+            ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id)
+          ra->ul_bwp_id = *ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id;
+     }
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
 
@@ -698,7 +704,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
   NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
   NR_BWP_t *genericParameters = NULL;
   if(ra->CellGroup) {
-    ubwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+    ubwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->ul_bwp_id-1];
     ubwpd = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
     genericParameters = &ubwp->bwp_Common->genericParameters;
     pusch_TimeDomainAllocationList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -780,7 +786,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     nfapi_nr_ul_dci_request_t *ul_dci_req = &nr_mac->UL_dci_req[CC_id];
 
     const int coresetid = coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][ra->bwp_id][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][ra->ul_bwp_id][coresetid];
     if (!pdcch_pdu_rel15) {
       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu = &ul_dci_req->ul_dci_pdu_list[ul_dci_req->numPdus];
       memset(ul_dci_request_pdu, 0, sizeof(nfapi_nr_ul_dci_request_pdus_t));
@@ -789,7 +795,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
       pdcch_pdu_rel15 = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
       nr_configure_pdcch(nr_mac, pdcch_pdu_rel15, ss, coreset, scc, genericParameters, NULL);
-      nr_mac->pdcch_pdu_idx[CC_id][ra->bwp_id][coresetid] = pdcch_pdu_rel15;
+      nr_mac->pdcch_pdu_idx[CC_id][ra->ul_bwp_id][coresetid] = pdcch_pdu_rel15;
     }
 
     uint8_t aggregation_level;
@@ -829,7 +835,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                  ra->Msg3_tda_id,
                  ra->msg3_TPC,
                  0, // not used in format 0_0
-                 ra->bwp_id);
+                 ra->ul_bwp_id);
 
     fill_dci_pdu_rel15(scc,
                        ra->CellGroup,
@@ -838,7 +844,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                        NR_UL_DCI_FORMAT_0_0,
                        NR_RNTI_TC,
                        pusch_pdu->bwp_size,
-                       ra->bwp_id);
+                       ra->ul_bwp_id);
 
     // Mark the corresponding RBs as used
     for (int rb = 0; rb < ra->msg3_nb_rb; rb++) {
@@ -923,9 +929,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
   int bwpStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   if (ra->CellGroup) {
-    AssertFatal(ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
-		"downlinkBWP_ToAddModList has %d BWP!\n", ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
-    NR_BWP_Uplink_t *ubwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
+    NR_BWP_Uplink_t *ubwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->ul_bwp_id - 1];
     int act_bwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     int act_bwp_size  = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     if (!((bwpStart >= act_bwp_start) && ((bwpStart+bwpSize) <= (act_bwp_start+act_bwp_size))))
@@ -1064,9 +1068,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   int mappingtype = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
 
   if (ra->CellGroup) {
-    AssertFatal(ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count <= 4,
-		"downlinkBWP_ToAddModList has %d BWP!\n", ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
-    NR_BWP_Uplink_t *ubwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id - 1];
+    NR_BWP_Uplink_t *ubwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->ul_bwp_id - 1];
 
     startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
     mappingtype = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
@@ -1122,8 +1124,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
         ra->CellGroup->spCellConfig &&
         ra->CellGroup->spCellConfig->spCellConfigDedicated &&
         ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList &&
-        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]) {
-      bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->dl_bwp_id-1]) {
+      bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->dl_bwp_id-1];
       genericParameters = &bwp->bwp_Common->genericParameters;
       pdsch_TimeDomainAllocationList = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     }
@@ -1342,7 +1344,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // Program UL processing for Msg3
     NR_BWP_Uplink_t *ubwp = ra->CellGroup ?
-      ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->bwp_id-1] :
+      ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->dl_bwp_id-1] :
       NULL;
     nr_get_Msg3alloc(module_idP, CC_id, scc, ubwp, slotP, frameP, ra, nr_mac->tdd_beam_association);
     nr_add_msg3(module_idP, CC_id, frameP, slotP, ra, (uint8_t *) &tx_req->TLVs[0].value.direct[0]);
@@ -1393,8 +1395,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
         ra->CellGroup->spCellConfig &&
         ra->CellGroup->spCellConfig->spCellConfigDedicated &&
         ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList &&
-        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1]) {
-      bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->bwp_id-1];
+        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->dl_bwp_id-1]) {
+      bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->dl_bwp_id-1];
       pdsch_TimeDomainAllocationList = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     }
     else {

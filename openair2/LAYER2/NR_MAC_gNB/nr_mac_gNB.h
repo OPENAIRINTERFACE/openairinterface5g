@@ -107,8 +107,10 @@ typedef struct NR_preamble_ue {
 typedef struct {
   /// Flag to indicate this process is active
   RA_gNB_state_t state;
-  /// BWP id of RA process
-  int bwp_id;
+  /// DL BWP id of RA process
+  int dl_bwp_id;
+  /// UL BWP id of RA process
+  int ul_bwp_id;
   /// CORESET0 configured flag
   int coreset0_configured;
   /// Slot where preamble was received
