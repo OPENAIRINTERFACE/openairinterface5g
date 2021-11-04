@@ -603,7 +603,7 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
       LOG_D(MAC,"[%d %d] Discarding the received dci indication because rnti %4x "
                 "!= mac->crnti %4x after RA procedure is complete: (RA state %d)\n",
                 frame, slot, dci->rnti, mac->crnti, mac->ra.ra_state);
-      return 0;
+      return -1;
   }
 
   LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
