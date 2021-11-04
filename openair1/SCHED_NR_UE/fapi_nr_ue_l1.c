@@ -185,14 +185,13 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
             ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
 
-            if (scheduled_response->tx_request && scheduled_response->tx_request->number_of_pdus) {
+            if (scheduled_response->tx_request) {
               for (int j=0; j<scheduled_response->tx_request->number_of_pdus; j++) {
                 fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
                 if (tx_req_body->pdu_index == i) {
                   LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
                   memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
                   harq_process_ul_ue->status = ACTIVE;
-                  scheduled_response->tx_request->number_of_pdus--;
                   break;
                 }
               }
@@ -233,7 +232,13 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         break;
         }
       }
-      memset(ul_config, 0, sizeof(fapi_nr_ul_config_request_t));
+      if (scheduled_response->tx_request)
+        scheduled_response->tx_request->number_of_pdus = 0;
+      ul_config->sfn = 0;
+      ul_config->slot = 0;
+      ul_config->number_pdus = 0;
+      for (int i=0; i < FAPI_NR_UL_CONFIG_LIST_NUM; i++) 
+        memset(&(ul_config->ul_config_list[i]), 0, sizeof(fapi_nr_ul_config_request_pdu_t));
       pthread_mutex_unlock(&ul_config->mutex_ul_config);
     }
   }
