@@ -797,20 +797,6 @@ class RANManagement():
 		#NSA specific log markers
 		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
 	
-		#the datalog config file has to be loaded
-		datalog_rt_stats_file='datalog_rt_stats.yaml'
-		if (os.path.isfile(datalog_rt_stats_file)):
-			yaml_file=datalog_rt_stats_file
-		elif (os.path.isfile('ci-scripts/'+datalog_rt_stats_file)):
-			yaml_file='ci-scripts/'+datalog_rt_stats_file
-		else:
-			logging.error("Datalog RT stats yaml file cannot be found")
-			sys.exit("Datalog RT stats yaml file cannot be found")
-
-		with open(yaml_file,'r') as f:
-			datalog_rt_stats = yaml.load(f,Loader=yaml.FullLoader)
-		rt_keys = datalog_rt_stats['Ref'] #we use the keys from the Ref field  
-
 		line_cnt=0 #log file line counter
 		for line in enb_log_file.readlines():
 			line_cnt+=1
@@ -977,15 +963,7 @@ class RANManagement():
 				if result is not None:
 					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
 					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
-			#real time statistics for gNB
-			for k in rt_keys:
-				result = re.search(k, line)     
-				if result is not None:
-					#remove 1- all useless char before relevant info  2- trailing char
-					line=line.replace('[0m','')
-					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex
-					if tmp!=None: #with ULULULUULULULLLL at the head of the line, we skip it
-						real_time_stats[k]=tmp.group(1)
+
 
 			#count "problem receiving samples" msg
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
@@ -1006,7 +984,54 @@ class RANManagement():
 					nsa_markers[k].append(line_cnt)					
 
 		enb_log_file.close()
-		logging.debug('   File analysis completed')
+
+
+		#the following part takes the *_stats.log files as source (not the stdout log file)
+
+		#the datalog config file has to be loaded
+		datalog_rt_stats_file='datalog_rt_stats.yaml'
+		if (os.path.isfile(datalog_rt_stats_file)):
+			yaml_file=datalog_rt_stats_file
+		elif (os.path.isfile('ci-scripts/'+datalog_rt_stats_file)):
+			yaml_file='ci-scripts/'+datalog_rt_stats_file
+		else:
+			logging.error("Datalog RT stats yaml file cannot be found")
+			sys.exit("Datalog RT stats yaml file cannot be found")
+
+		with open(yaml_file,'r') as f:
+			datalog_rt_stats = yaml.load(f,Loader=yaml.FullLoader)
+		rt_keys = datalog_rt_stats['Ref'] #we use the keys from the Ref field  
+
+		if (os.path.isfile('./nrL1_stats.log')) and (os.path.isfile('./nrL1_stats.log')):
+			stat_files_present=True
+		else:
+			logging.debug("NR Stats files for RT analysis not found")
+		if stat_files_present:
+			nrL1_stat = open('./nrL1_stats.log', 'r')
+			nrMAC_stat = open('./nrMAC_stats.log', 'r')
+			for line in nrL1_stat.readlines():		
+				for k in rt_keys:
+					result = re.search(k, line)     
+					if result is not None:
+						#remove 1- all useless char before relevant info  2- trailing char
+						tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex
+						if tmp!=None: 
+							real_time_stats[k]=tmp.group(1)
+			for line in nrMAC_stat.readlines():		
+				for k in rt_keys:
+					result = re.search(k, line)     
+					if result is not None:
+						#remove 1- all useless char before relevant info  2- trailing char
+						tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex
+						if tmp!=None: 
+							real_time_stats[k]=tmp.group(1)
+			nrL1_stats.close()
+			nrMAC_stats.close()
+
+		#stdout log file and stat log files analysis completed
+		logging.debug('   File analysis (stdout, stats) completed')
+
+		#post processing depending on the node type
 		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
 			nodeB_prefix = 'e'
 		else:
