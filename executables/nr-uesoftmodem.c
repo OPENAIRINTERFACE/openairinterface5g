@@ -194,17 +194,17 @@ int create_tasks_nrue(uint32_t ue_nb) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
     }
-  }
-  if (ue_nb > 0 && get_softmodem_params()->nsa == 1) {
-    init_connections_with_lte_ue();
-    if (itti_create_task (TASK_RRC_NSA_NRUE, recv_msgs_from_lte_ue, NULL) < 0) {
-      LOG_E(NR_RRC, "Create task for RRC NSA nr-UE failed\n");
+    if (get_softmodem_params()->nsa) {
+      init_connections_with_lte_ue();
+      if (itti_create_task (TASK_RRC_NSA_NRUE, recv_msgs_from_lte_ue, NULL) < 0) {
+        LOG_E(NR_RRC, "Create task for RRC NSA nr-UE failed\n");
+        return -1;
+      }
+    }
+    if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for NAS UE failed\n");
       return -1;
     }
-  }
-  if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
-    LOG_E(NR_RRC, "Create task for NAS UE failed\n");
-    return -1;
   }
 
   itti_wait_ready(0);
@@ -482,16 +482,12 @@ int main( int argc, char **argv ) {
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
   RCconfig_nr_ue_L1();
 
+
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
 
   if (get_softmodem_params()->sa)
     AssertFatal(get_softmodem_params()->phy_test == 0,"Standalone mode and phy_test are mutually exclusive\n");
-
-  if (create_tasks_nrue(1) < 0) {
-    LOG_E(NR_RRC,"Cannot create ITTI tasks for RRC layer of nr-UE\n");
-    exit(-1);
-  }
 
   if (get_softmodem_params()->emulate_l2)
     start_oai_nrue_threads();
@@ -503,34 +499,32 @@ int main( int argc, char **argv ) {
       memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
 
       set_options(CC_id, UE[CC_id]);
-
       NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-      if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
-        mac->if_module->phy_config_request(&mac->phy_config);
 
-      fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
       if (get_softmodem_params()->sa) { // set frame config to initial values from command line and assume that the SSB is centered on the grid
-        nrUE_config->ssb_config.scs_common = get_softmodem_params()->numerology;
-        nrUE_config->carrier_config.dl_grid_size[nrUE_config->ssb_config.scs_common] = UE[CC_id]->frame_parms.N_RB_DL;
-        nrUE_config->carrier_config.ul_grid_size[nrUE_config->ssb_config.scs_common] = UE[CC_id]->frame_parms.N_RB_DL;
-        nrUE_config->carrier_config.dl_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
-        nrUE_config->carrier_config.uplink_frequency =  (downlink_frequency[0][0] -(6*UE[CC_id]->frame_parms.N_RB_DL*(15000<<nrUE_config->ssb_config.scs_common)))/1000;
-        nrUE_config->ssb_table.ssb_offset_point_a = (UE[CC_id]->frame_parms.N_RB_DL - 20)>>1;
-
-        // Initialize values, will be updated upon SIB1 reception
-        nrUE_config->cell_config.frame_duplex_type = TDD;
-        nrUE_config->ssb_table.ssb_mask_list[0].ssb_mask = 0xFFFFFFFF;
-        nrUE_config->ssb_table.ssb_period = 1;
+        uint16_t nr_band = get_band(downlink_frequency[CC_id][0],uplink_frequency_offset[CC_id][0]);
+        mac->nr_band = nr_band;
+        nr_init_frame_parms_ue_sa(&UE[CC_id]->frame_parms,
+                                  downlink_frequency[CC_id][0],
+                                  uplink_frequency_offset[CC_id][0],
+                                  get_softmodem_params()->numerology,
+                                  nr_band);
       }
-      nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config,
-          mac->scc == NULL ? 78 : *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+      else{
+        if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
+          mac->if_module->phy_config_request(&mac->phy_config);
+
+        fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+
+        nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config,
+            *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+      }
 
       init_symbol_rotation(&UE[CC_id]->frame_parms);
+      init_timeshift_rotation(&UE[CC_id]->frame_parms);
       init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
     }
 
-    init_NR_UE_threads(1);
-    printf("UE threads created by %ld\n", gettid());
     init_openair0();
     // init UE_PF_PO and mutex lock
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
@@ -541,11 +535,18 @@ int main( int argc, char **argv ) {
     if(IS_SOFTMODEM_DOSCOPE) {
       load_softscope("nr",PHY_vars_UE_g[0][0]);
     }
+
+    init_NR_UE_threads(1);
+    printf("UE threads created by %ld\n", gettid());
   }
 
-  config_sync_var=0;
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
+
+  if (create_tasks_nrue(1) < 0) {
+    printf("cannot create ITTI tasks\n");
+    exit(-1); // need a softer mode
+  }
 
   // Sleep a while before checking all parameters have been used
   // Some are used directly in external threads, asynchronously
