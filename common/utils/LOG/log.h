@@ -426,7 +426,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 # define LOG_W(COMPONENT, ...) do if (1) logMinimal(COMPONENT, 'W', __VA_ARGS__); while (0)
 # define LOG_A(COMPONENT, ...) do if (1) logMinimal(COMPONENT, 'A', __VA_ARGS__); while (0) /* logs intended for analysis */
 # define LOG_I(COMPONENT, ...) do if (1) logMinimal(COMPONENT, 'I', __VA_ARGS__); while (0)
-# define LOG_D(COMPONENT, ...) do if (1) logMinimal(COMPONENT, 'D', __VA_ARGS__); while (0)
+# define LOG_D(COMPONENT, ...) do if (0) logMinimal(COMPONENT, 'D', __VA_ARGS__); while (0)
 # define LOG_T(COMPONENT, ...) do if (0) logMinimal(COMPONENT, 'T', __VA_ARGS__); while (0)
 
 # define LOG_M(FILE, VECTOR, DATA, LEN, DEC, FORMAT) ((void) 0)

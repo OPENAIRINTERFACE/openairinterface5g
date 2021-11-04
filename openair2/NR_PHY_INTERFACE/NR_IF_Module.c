@@ -433,12 +433,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         UL_info->frame,UL_info->slot,
         module_id,CC_id, gnb_rach_ind_queue.num_items,
         gnb_rx_ind_queue.num_items, gnb_crc_ind_queue.num_items);
-/*
-  LOG_I(MAC, "uci_01->harq->num_harq %u  with uci_pdu %p  harq %p\n",
-    UL_info->uci_ind.uci_list->pucch_pdu_format_0_1.harq->num_harq,
-    &UL_info->uci_ind.uci_list->pucch_pdu_format_0_1,
-    UL_info->uci_ind.uci_list->pucch_pdu_format_0_1.harq);
-*/
+
   handle_nr_rach(UL_info);
   
   handle_nr_uci(UL_info);

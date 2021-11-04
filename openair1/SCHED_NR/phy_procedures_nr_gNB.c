@@ -682,7 +682,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           offset = pucch_pdu->start_symbol_index*gNB->frame_parms.ofdm_symbol_size + (gNB->frame_parms.first_carrier_offset+pucch_pdu->prb_start*12);
           power_rxF = signal_energy_nodc(&gNB->common_vars.rxdataF[0][offset],12);
           LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
-          LOG_D(PHY,"num_ucis = %d *expecting 0 since it is index in array also (case 0)\n",num_ucis);
 
           nr_decode_pucch0(gNB,
                            frame_rx,
@@ -692,11 +691,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
           gNB->UL_INFO.uci_ind.num_ucis += 1;
           pucch->active = 0;
-          if (((uci_pdu_format0->pduBitmap >> 1) & 0x01)){
-            LOG_I(NR_PHY, "uci_01->harq->num_harq     with uci_pdu %p\n", uci_pdu_format0);
-            LOG_I(NR_PHY, "uci_01->harq->num_harq     with uci_pdu %p  harq %p\n", uci_pdu_format0, uci_pdu_format0->harq);
-            LOG_I(NR_PHY, "uci_01->harq->num_harq %u\n", uci_pdu_format0->harq->num_harq);
-          }
 	        break;
         case 2:
           num_ucis = gNB->UL_INFO.uci_ind.num_ucis;
@@ -706,7 +700,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           gNB->uci_pdu_list[num_ucis].pdu_type = NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE;
           gNB->uci_pdu_list[num_ucis].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_2_3_4_t);
           nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu_format2 = &gNB->uci_pdu_list[num_ucis].pucch_pdu_format_2_3_4;
-          LOG_D(PHY,"num_ucis = %d in case 1\n",num_ucis);
 
           nr_decode_pucch2(gNB,
                            slot_rx,

@@ -3422,7 +3422,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
       case DL_SCH_LCID_DCCH1:
         //  check if LCID is valid at current time.
       default:
-            if (get_softmodem_params()->nsa) {
+            {
                 //  check if LCID is valid at current time.
                 if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
                   return;
@@ -3471,50 +3471,6 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 
 
             break;
-            }
-            else
-            {
-        //  check if LCID is valid at current time.
-        if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
-          //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
-          mac_subheader_len = 3;
-          mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)
-                        | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pduP)->L2 & 0xff);
-
-        } else {
-          mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
-          mac_subheader_len = 2;
-        }
-
-        LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_sdu_len);
-
-        #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-          LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
-
-          for (i = 0; i < 32; i++)
-            LOG_T(MAC, "%x.", (pduP + mac_subheader_len)[i]);
-
-          LOG_T(MAC, "\n");
-        #endif
-
-        if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DCCH) {
-
-          mac_rlc_data_ind(module_idP,
-                           mac->crnti,
-                           gNB_index,
-                           frameP,
-                           ENB_FLAG_NO,
-                           MBMS_FLAG_NO,
-                           rx_lcid,
-                           (char *) (pduP + mac_subheader_len),
-                           mac_sdu_len,
-                           1,
-                           NULL);
-        } else {
-          LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, gNB_index);
-        }
-
-        break;
             }
       }
       pduP += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
@@ -3695,7 +3651,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 
   if ((mac->crnti == ra->t_crnti) && (get_softmodem_params()->nsa))
   {
-    LOG_D(MAC, "Discarding the received RAR.\n");
+    LOG_I(MAC, "Discarding the received RAR.\n");
     return -1;
   }
   while (1) {

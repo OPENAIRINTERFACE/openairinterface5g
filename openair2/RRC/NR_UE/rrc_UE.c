@@ -248,18 +248,8 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
         if(NR_UE_rrc_inst[module_id].radio_bearer_config == NULL){
           NR_UE_rrc_inst[module_id].radio_bearer_config = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig;                
         }else{
-          //protocol_ctxt_t ctxt;
-          //NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-          //PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_id, ENB_FLAG_YES, mac->crnti, 0, 0, 0);
-          struct NR_RadioBearerConfig *RadioBearerConfig = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig;
-          //xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)RadioBearerConfig);
-          LOG_D(NR_RRC, "Calling fill_default_rbconfig_ue at %d with: e_rab_id = %ld, drbID = %ld, cipher_algo = %ld, key = %ld \n",
-                        __LINE__, RadioBearerConfig->drb_ToAddModList->list.array[0]->cnAssociation->choice.eps_BearerIdentity,
-                        RadioBearerConfig->drb_ToAddModList->list.array[0]->drb_Identity,
-                        RadioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm,
-                        *RadioBearerConfig->securityConfig->keyToUse);
-          //nr_rrc_ue_process_RadioBearerConfig(&ctxt, 0, RadioBearerConfig);
           if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+            struct NR_RadioBearerConfig *RadioBearerConfig = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig;
             xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void *) RadioBearerConfig);
           }
         }
@@ -414,18 +404,6 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
         if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
           xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void *) RadioBearerConfig);
         }
-#if 0
-        protocol_ctxt_t ctxt;
-        NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_id, ENB_FLAG_YES, mac->crnti, 0, 0, 0);
-        xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)RadioBearerConfig);
-        LOG_D(NR_RRC, "Calling fill_default_rbconfig_ue at %d with: e_rab_id = %ld, drbID = %ld, cipher_algo = %ld, key = %ld \n",
-                        __LINE__, RadioBearerConfig->drb_ToAddModList->list.array[0]->cnAssociation->choice.eps_BearerIdentity,
-                        RadioBearerConfig->drb_ToAddModList->list.array[0]->drb_Identity,
-                        RadioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm,
-                        *RadioBearerConfig->securityConfig->keyToUse);
-        nr_rrc_ue_process_RadioBearerConfig(&ctxt, 0, RadioBearerConfig);
-#endif
       }
       break;
     
