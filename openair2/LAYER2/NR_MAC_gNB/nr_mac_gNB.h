@@ -145,6 +145,8 @@ typedef struct {
   uint8_t msg3_first_rb;
   /// Msg3 number of RB
   uint8_t msg3_nb_rb;
+  /// Msg3 BWP start
+  uint8_t msg3_bwp_start;
   /// Msg3 TPC command
   uint8_t msg3_TPC;
   /// Msg3 ULdelay command
@@ -665,6 +667,7 @@ typedef struct gNB_MAC_INST_s {
   NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
+  pthread_t                       stats_thread;
   /// Pusch target SNR
   int                             pusch_target_snrx10;
   /// Pucch target SNR
@@ -747,7 +750,7 @@ typedef struct gNB_MAC_INST_s {
   int *preferred_ul_tda[MAX_NUM_BWP];
 
   /// maximum number of slots before a UE will be scheduled ULSCH automatically
-  uint32_t ulsch_max_slots_inactivity;
+  uint32_t ulsch_max_frame_inactivity;
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
@@ -755,6 +758,8 @@ typedef struct gNB_MAC_INST_s {
   nr_pp_impl_ul pre_processor_ul;
 
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
+  uint16_t cset0_bwp_start;
+  uint16_t cset0_bwp_size;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
   bool first_MIB;

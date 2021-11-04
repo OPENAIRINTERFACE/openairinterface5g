@@ -64,6 +64,16 @@
 
 #define INITIAL_REGISTRATION                               0b001
 
+/* Security Key for SA UE */
+typedef struct {
+  uint8_t kausf[32];
+  uint8_t kseaf[32];
+  uint8_t kamf[32];
+  uint8_t knas_int[16];
+  uint8_t res[16];
+  uint8_t rand[16];
+  uint8_t kgnb[32];
+} ue_sa_security_key_t;
 
 typedef enum fgs_protocol_discriminator_e {
   /* Protocol discriminator identifier for 5GS Mobility Management */

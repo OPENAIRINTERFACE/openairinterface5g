@@ -54,7 +54,6 @@
 /* PHY */
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/softmodem-common.h"
-#include "SCHED_NR_UE/defs.h"
 
 /* utils */
 #include "assertions.h"
@@ -134,6 +133,55 @@ const initial_pucch_resource_t initial_pucch_resource[16] = {
 /* 15  */ {  1,       0,                 14,                   0,            4,       {    0,   3,    6,    9  }   },
 };
 
+
+void nr_ue_init_mac(module_id_t module_idP) {
+  int i;
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  // default values as deined in 38.331 sec 9.2.2
+  LOG_I(NR_MAC, "[UE%d] Applying default macMainConfig\n", module_idP);
+  //mac->scheduling_info.macConfig=NULL;
+  mac->scheduling_info.retxBSR_Timer = NR_BSR_Config__retxBSR_Timer_sf10240;
+  mac->scheduling_info.periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_infinity;
+//  mac->scheduling_info.periodicPHR_Timer = NR_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
+//  mac->scheduling_info.prohibitPHR_Timer = NR_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
+//  mac->scheduling_info.PathlossChange_db = NR_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
+//  mac->PHR_state = NR_MAC_MainConfig__phr_Config_PR_setup;
+  mac->scheduling_info.SR_COUNTER = 0;
+  mac->scheduling_info.sr_ProhibitTimer = 0;
+  mac->scheduling_info.sr_ProhibitTimer_Running = 0;
+//  mac->scheduling_info.maxHARQ_Tx = NR_MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+//  mac->scheduling_info.ttiBundling = 0;
+//  mac->scheduling_info.extendedBSR_Sizes_r10 = 0;
+//  mac->scheduling_info.extendedPHR_r10 = 0;
+//  mac->scheduling_info.drx_config = NULL;
+//  mac->scheduling_info.phr_config = NULL;
+  // set init value 0xFFFF, make sure periodic timer and retx time counters are NOT active, after bsr transmission set the value configured by the NW.
+  mac->scheduling_info.periodicBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
+  mac->scheduling_info.retxBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
+  mac->BSR_reporting_active = BSR_TRIGGER_NONE;
+//  mac->scheduling_info.periodicPHR_SF = nr_get_sf_perioidicPHR_Timer(mac->scheduling_info.periodicPHR_Timer);
+//  mac->scheduling_info.prohibitPHR_SF = nr_get_sf_prohibitPHR_Timer(mac->scheduling_info.prohibitPHR_Timer);
+//  mac->scheduling_info.PathlossChange_db = nr_get_db_dl_PathlossChange(mac->scheduling_info.PathlossChange);
+//  mac->PHR_reporting_active = 0;
+
+  for (i = 0; i < NR_MAX_NUM_LCID; i++) {
+    LOG_D(NR_MAC, "[UE%d] Applying default logical channel config for LCGID %d\n",
+		  module_idP, i);
+    mac->scheduling_info.Bj[i] = -1;
+    mac->scheduling_info.bucket_size[i] = -1;
+
+    if (i < UL_SCH_LCID_DTCH) {   // initialize all control channels lcgid to 0
+      mac->scheduling_info.LCGID[i] = 0;
+    } else {    // initialize all the data channels lcgid to 1
+      mac->scheduling_info.LCGID[i] = 1;
+    }
+
+    mac->scheduling_info.LCID_status[i] = LCID_EMPTY;
+    mac->scheduling_info.LCID_buffer_remain[i] = 0;
+    for (int i=0;i<NR_MAX_HARQ_PROCESSES;i++) mac->first_ul_tx[i]=1;
+  }
+}
 
 void get_bwp_info(NR_UE_MAC_INST_t *mac,
                   int dl_bwp_id,
@@ -1396,7 +1444,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         mac->cg->physicalCellGroupConfig &&
         (mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL ||
         mac->cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook != 1)) {
-      LOG_E(PHY,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+      LOG_E(MAC,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
       return;
     }
     else if (mac->cg &&
@@ -2203,9 +2251,54 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
   return false;
 }
 
+int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
+  // no UL-SCH resources available for this tti && UE has a valid PUCCH resources for SR configuration for this tti
+  DevCheck(module_idP < (int) NB_UE_INST, module_idP, NB_NR_UE_MAC_INST, 0);
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  DSR_TRANSMAX_t dsr_TransMax = sr_n64; // todo
+  LOG_D(NR_MAC, "[UE %d] Frame %d slot %d send SR indication (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",
+        module_idP, frameP, slot,
+        mac->scheduling_info.SR_COUNTER,
+        (1 << (2 + dsr_TransMax)),
+        mac->scheduling_info.SR_pending); // todo
 
-int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, int slotP){
-  return 0;
+  if ((mac->scheduling_info.SR_pending == 1) &&
+      (mac->scheduling_info.SR_COUNTER < (1 << (2 + dsr_TransMax)))) {
+    LOG_D(NR_MAC, "[UE %d] Frame %d slot %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d, increment SR_COUNTER\n",
+          module_idP, frameP, slot,
+          mac->scheduling_info.SR_COUNTER,
+          (1 << (2 + dsr_TransMax)),
+          mac->scheduling_info.SR_pending); // todo
+    mac->scheduling_info.SR_COUNTER++;
+
+    // start the sr-prohibittimer : rel 9 and above
+    if (mac->scheduling_info.sr_ProhibitTimer > 0) { // timer configured
+      mac->scheduling_info.sr_ProhibitTimer--;
+      mac->scheduling_info.
+      sr_ProhibitTimer_Running = 1;
+    } else {
+      mac->scheduling_info.
+      sr_ProhibitTimer_Running = 0;
+    }
+    //mac->ul_active =1;
+    return (1);   //instruct phy to signal SR
+  } else {
+    // notify RRC to relase PUCCH/SRS
+    // clear any configured dl/ul
+    // initiate RA
+    if (mac->scheduling_info.SR_pending) {
+      // release all pucch resource
+      //mac->physicalConfigDedicated = NULL; // todo
+      //mac->ul_active = 0; // todo
+      mac->BSR_reporting_active =
+        NR_BSR_TRIGGER_NONE;
+      LOG_I(NR_MAC, "[UE %d] Release all SRs \n", module_idP);
+    }
+
+    mac->scheduling_info.SR_pending = 0;
+    mac->scheduling_info.SR_COUNTER = 0;
+    return (0);
+  }
 }
 
 
@@ -3467,13 +3560,17 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
  * Return:        number of written bytes
  */
 int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
-                          NR_UE_MAC_INST_t *mac) {
+                          NR_UE_MAC_INST_t *mac,
+                          uint8_t power_headroom,  // todo: NR_POWER_HEADROOM_CMD *power_headroom,
+                          uint16_t *crnti,
+                          NR_BSR_SHORT *truncated_bsr,
+                          NR_BSR_SHORT *short_bsr,
+                          NR_BSR_LONG  *long_bsr) {
 
   int      mac_ce_len = 0;
   uint8_t mac_ce_size = 0;
-  NR_UE_MAC_CE_t *nr_ue_mac_ce = &mac->nr_ue_mac_ce;
-
-  if (nr_ue_mac_ce->phr_reporting && mac->phr_Config != NULL) {
+  uint8_t *pdu = mac_ce;
+  if (power_headroom) {
 
     // MAC CE fixed subheader
     ((NR_MAC_SUBHEADER_FIXED *) mac_ce)->R = 0;
@@ -3481,21 +3578,22 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
     mac_ce++;
 
     // PHR MAC CE (1 octet)
-    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->PH = 0;
+    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->PH = power_headroom;
     ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->R1 = 0;
-    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->PCMAX = 0;
+    ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->PCMAX = 0; // todo
     ((NR_SINGLE_ENTRY_PHR_MAC_CE *) mac_ce)->R2 = 0;
 
     // update pointer and length
     mac_ce_size = sizeof(NR_SINGLE_ENTRY_PHR_MAC_CE);
     mac_ce += mac_ce_size;
     mac_ce_len += mac_ce_size + sizeof(NR_MAC_SUBHEADER_FIXED);
-
+    LOG_D(NR_MAC, "[UE] Generating ULSCH PDU : power_headroom pdu %p mac_ce %p b\n",
+          pdu, mac_ce);
   }
 
-  if (!get_softmodem_params()->sa && get_softmodem_params()->do_ra && mac->ra.ra_state != RA_SUCCEEDED) {
+  if (crnti && (!get_softmodem_params()->sa && get_softmodem_params()->do_ra && mac->ra.ra_state != RA_SUCCEEDED)) {
 
-    LOG_D(NR_MAC, "In %s: generating C-RNTI MAC CE with C-RNTI %x\n", __FUNCTION__, mac->crnti);
+    LOG_D(NR_MAC, "In %s: generating C-RNTI MAC CE with C-RNTI %x\n", __FUNCTION__, (*crnti));
 
     // MAC CE fixed subheader
     ((NR_MAC_SUBHEADER_FIXED *) mac_ce)->R = 0;
@@ -3503,7 +3601,7 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
     mac_ce++;
 
     // C-RNTI MAC CE (2 octets)
-    *(uint16_t *) mac_ce = mac->crnti;
+    *(uint16_t *) mac_ce = (*crnti);
 
     // update pointer and length
     mac_ce_size = sizeof(uint16_t);
@@ -3512,55 +3610,110 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
 
   }
 
-  if (nr_ue_mac_ce->truncated_bsr) {
+  if (truncated_bsr) {
 
-    LOG_D(NR_MAC, "In %s: generating short truncated BSR MAC CE with command %x\n", __FUNCTION__, nr_ue_mac_ce->truncated_bsr);
-
-    // MAC CE fixed subheader
+	// MAC CE fixed subheader
     ((NR_MAC_SUBHEADER_FIXED *) mac_ce)->R = 0;
     ((NR_MAC_SUBHEADER_FIXED *) mac_ce)->LCID = UL_SCH_LCID_S_TRUNCATED_BSR;
     mac_ce++;
 
     // Short truncated BSR MAC CE (1 octet)
-    ((NR_BSR_SHORT_TRUNCATED *) mac_ce)-> Buffer_size = 0;
-    ((NR_BSR_SHORT_TRUNCATED *) mac_ce)-> LcgID = 0;
+    ((NR_BSR_SHORT_TRUNCATED *) mac_ce)-> Buffer_size = truncated_bsr->Buffer_size;
+    ((NR_BSR_SHORT_TRUNCATED *) mac_ce)-> LcgID = truncated_bsr->LcgID;;
 
     // update pointer and length
     mac_ce_size = sizeof(NR_BSR_SHORT_TRUNCATED);
     mac_ce += mac_ce_size;
     mac_ce_len += mac_ce_size + sizeof(NR_MAC_SUBHEADER_FIXED);
+    LOG_D(NR_MAC, "[UE] Generating ULSCH PDU : truncated_bsr Buffer_size %d LcgID %d pdu %p mac_ce %p\n",
+          truncated_bsr->Buffer_size, truncated_bsr->LcgID, pdu, mac_ce);
 
-  } else if (nr_ue_mac_ce->short_bsr) {
+  } else if (short_bsr) {
 
-    LOG_D(NR_MAC, "In %s: generating short BSR MAC CE with command %x\n", __FUNCTION__, nr_ue_mac_ce->short_bsr);
-
-    // MAC CE fixed subheader
+	// MAC CE fixed subheader
     ((NR_MAC_SUBHEADER_FIXED *) mac_ce)->R = 0;
     ((NR_MAC_SUBHEADER_FIXED *) mac_ce)->LCID = UL_SCH_LCID_S_BSR;
     mac_ce++;
 
     // Short truncated BSR MAC CE (1 octet)
-    ((NR_BSR_SHORT *) mac_ce)->Buffer_size = nr_ue_mac_ce->short_bsr;
-    ((NR_BSR_SHORT *) mac_ce)->LcgID = 0;
+    ((NR_BSR_SHORT *) mac_ce)->Buffer_size = short_bsr->Buffer_size;
+    ((NR_BSR_SHORT *) mac_ce)->LcgID = short_bsr->LcgID;
 
     // update pointer and length
     mac_ce_size = sizeof(NR_BSR_SHORT);
     mac_ce += mac_ce_size;
     mac_ce_len += mac_ce_size + sizeof(NR_MAC_SUBHEADER_FIXED);
+    LOG_D(NR_MAC, "[UE] Generating ULSCH PDU : short_bsr Buffer_size %d LcgID %d pdu %p mac_ce %p\n",
+          short_bsr->Buffer_size, short_bsr->LcgID, pdu, mac_ce);
+  } else if (long_bsr) {
 
-  } else if (nr_ue_mac_ce->long_bsr) {
-    // MAC CE variable subheader
-    // todo ch 6.1.3.1. TS 38.321
-    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->R = 0;
-    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->F = 0;
-    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->LCID = UL_SCH_LCID_L_BSR;
-    // ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_ptr)->L = 0;
-    // sh_size = 2;
+	// MAC CE variable subheader
+    // ch 6.1.3.1. TS 38.321
+    ((NR_MAC_SUBHEADER_SHORT *) mac_ce)->R = 0;
+    ((NR_MAC_SUBHEADER_SHORT *) mac_ce)->F = 0;
+    ((NR_MAC_SUBHEADER_SHORT *) mac_ce)->LCID = UL_SCH_LCID_L_BSR;
 
-    // Short truncated BSR MAC CE (1 octet)
-    // ((NR_BSR_LONG *) mac_ce)->Buffer_size0 = short_bsr;
-    // ((NR_BSR_LONG *) mac_ce)->LCGID0 = 0;
-    // mac_ce_size = sizeof(NR_BSR_LONG); // size is variable
+    NR_MAC_SUBHEADER_SHORT *mac_pdu_subheader_ptr = (NR_MAC_SUBHEADER_SHORT *) mac_ce;
+    mac_ce += 2;
+
+    // Could move to nr_get_sdu()
+    uint8_t *Buffer_size_ptr= (uint8_t*) mac_ce + 1;
+    //int NR_BSR_LONG_SIZE = 1;
+    if (long_bsr->Buffer_size0 == 0) {
+      ((NR_BSR_LONG *) mac_ce)->LcgID0 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_ce)->LcgID0 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size0;
+    }
+    if (long_bsr->Buffer_size1 == 0) {
+      ((NR_BSR_LONG *) mac_ce)->LcgID1 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_ce)->LcgID1 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size1;
+    }
+    if (long_bsr->Buffer_size2 == 0) {
+      ((NR_BSR_LONG *) mac_ce)->LcgID2 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_ce)->LcgID2 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size2;
+    }
+    if (long_bsr->Buffer_size3 == 0) {
+      ((NR_BSR_LONG *) mac_ce)->LcgID3 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_ce)->LcgID3 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size3;
+    }
+    if (long_bsr->Buffer_size4 == 0) {
+      ((NR_BSR_LONG *) mac_ce)->LcgID4 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_ce)->LcgID4 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size4;
+    }
+    if (long_bsr->Buffer_size5 == 0) {
+      ((NR_BSR_LONG *) mac_ce)->LcgID5 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_ce)->LcgID5 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size5;
+    }
+    if (long_bsr->Buffer_size6 == 0) {
+      ((NR_BSR_LONG *) mac_ce)->LcgID6 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_ce)->LcgID6 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size6;
+    }
+    if (long_bsr->Buffer_size7 == 0) {
+      ((NR_BSR_LONG *) mac_ce)->LcgID7 = 0;
+    } else {
+      ((NR_BSR_LONG *) mac_ce)->LcgID7 = 1;
+      *Buffer_size_ptr++ = long_bsr->Buffer_size7;
+    }
+    ((NR_MAC_SUBHEADER_SHORT *) mac_pdu_subheader_ptr)->L = mac_ce_size = (uint8_t*) Buffer_size_ptr - (uint8_t*) mac_ce;
+    LOG_D(NR_MAC, "[UE] Generating ULSCH PDU : long_bsr size %d Lcgbit 0x%02x Buffer_size %d %d %d %d %d %d %d %d\n", mac_ce_size, *((uint8_t*) mac_ce),
+          ((NR_BSR_LONG *) mac_ce)->Buffer_size0, ((NR_BSR_LONG *) mac_ce)->Buffer_size1, ((NR_BSR_LONG *) mac_ce)->Buffer_size2, ((NR_BSR_LONG *) mac_ce)->Buffer_size3,
+          ((NR_BSR_LONG *) mac_ce)->Buffer_size4, ((NR_BSR_LONG *) mac_ce)->Buffer_size5, ((NR_BSR_LONG *) mac_ce)->Buffer_size6, ((NR_BSR_LONG *) mac_ce)->Buffer_size7);
+    // update pointer and length
+    mac_ce = Buffer_size_ptr;
+    mac_ce_len += mac_ce_size + sizeof(NR_MAC_SUBHEADER_SHORT);
   }
 
   return mac_ce_len;
@@ -3612,8 +3765,6 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     return 0;
   }
 
-  int cc_id                = dl_info->cc_id;
-  uint8_t gNB_id           = dl_info->gNB_index;
   NR_UE_MAC_INST_t *mac    = get_mac_inst(mod_id);
   RA_config_t *ra          = &mac->ra;
   uint8_t n_subPDUs        = 0;  // number of RAR payloads
@@ -3625,7 +3776,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
   int ret                  = 0;
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer; // RAR subheader pointer
   NR_MAC_RAR *rar          = (NR_MAC_RAR *) (dlsch_buffer + 1);   // RAR subPDU pointer
-  uint8_t preamble_index   = get_ra_PreambleIndex(mod_id, cc_id, gNB_id); //prach_resources->ra_PreambleIndex;
+  uint8_t preamble_index   = ra->ra_PreambleIndex;
 
   LOG_D(NR_MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
 

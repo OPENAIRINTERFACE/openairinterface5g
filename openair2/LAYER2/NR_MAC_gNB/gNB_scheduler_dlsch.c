@@ -29,11 +29,7 @@
 
  */
 
-/*PHY*/
-#include "PHY/CODING/coding_defs.h"
-#include "PHY/defs_nr_common.h"
 #include "common/utils/nr/nr_common.h"
-#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 /*MAC*/
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "NR_MAC_gNB/nr_mac_gNB.h"
@@ -485,7 +481,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 &RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
 
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-  int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  int rbStart = 0; // start wrt BWPstart
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   const long f = (sched_ctrl->active_bwp ||bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
@@ -569,11 +565,11 @@ bool allocate_dl_retransmission(module_id_t module_id,
     return false;
   }
 
-  sched_ctrl->sched_pdsch.pucch_allocation = alloc;
-
   /* just reuse from previous scheduling opportunity, set new start RB */
   sched_ctrl->sched_pdsch = *retInfo;
   sched_ctrl->sched_pdsch.rbStart = rbStart;
+
+  sched_ctrl->sched_pdsch.pucch_allocation = alloc;
 
   /* retransmissions: directly allocate */
   *n_rb_sched -= sched_ctrl->sched_pdsch.rbSize;
@@ -675,7 +671,7 @@ void pf_dl(module_id_t module_id,
       &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
 
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
-    int rbStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    int rbStart = 0; // start wrt BWPstart
 
     /* Find a free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
@@ -764,6 +760,10 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 				    sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
 				    scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
 				    MAX_BWP_SIZE);
+  const uint16_t BWPStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp ?
+				            sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
+				            scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
+				            MAX_BWP_SIZE);
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   uint8_t rballoc_mask[bwpSize];
@@ -771,7 +771,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   for (int i = 0; i < bwpSize; i++) {
     // calculate mask: init with "NOT" vrb_map:
     // if any RB in vrb_map is blocked (1), the current RBG will be 0
-    rballoc_mask[i] = !vrb_map[i];
+    rballoc_mask[i] = !vrb_map[i+BWPStart];
     n_rb_sched += rballoc_mask[i];
   }
 
@@ -894,7 +894,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
     LOG_D(NR_MAC,
-          "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x DCI L %d start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) TPC %d\n",
+          "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x DCI L %d start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) PUCCH allocation %d TPC %d\n",
           frame,
           slot,
           UE_id,
@@ -914,6 +914,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           pucch->timing_indicator,
           pucch->frame,
           pucch->ul_slot,
+          sched_pdsch->pucch_allocation,
           sched_ctrl->tpc1);
 
     NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
@@ -937,7 +938,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       LOG_D(NR_MAC,"Trying to configure DL pdcch for UE %d, bwp %d, cs %d\n",UE_id,bwpid,coresetid);
       NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space:gNB_mac->sched_ctrlCommon->search_space;
       NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
-      nr_configure_pdcch(pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
+      nr_configure_pdcch(gNB_mac, pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
       gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu;
     }
 

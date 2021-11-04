@@ -63,7 +63,7 @@ void loader_init(void) {
 }
 
 /* build the full shared lib name from the module name */
-char *loader_format_shlibpath(char *modname)
+char *loader_format_shlibpath(char *modname, char *version)
 {
 
 char *tmpstr;
@@ -97,7 +97,10 @@ int ret;
        shlibpath =  loader_data.shlibpath ;
    } 
 /* no specific shared lib version */
-   if (shlibversion == NULL) {
+   if (version != NULL) {    // version specified as a function parameter
+	   shlibversion=version;
+   }
+   if (shlibversion == NULL) {  // no specific version specified, neither as a config param or as a function param
        shlibversion = "" ;
    } 
 /* alloc memory for full module shared lib file name */
@@ -118,7 +121,7 @@ int ret;
    return tmpstr; 
 }
 
-int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *autoinit_arg)
+int load_module_version_shlib(char *modname, char *version, loader_shlibfunc_t *farray, int numf, void *autoinit_arg)
 {
   void *lib_handle = NULL;
   initfunc_t fpi;
@@ -138,7 +141,7 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *
      loader_init();
   }
 
-  shlib_path = loader_format_shlibpath(modname);
+  shlib_path = loader_format_shlibpath(modname, version);
 
   for (int i = 0; i < loader_data.numshlibs; i++) {
     if (strcmp(loader_data.shlibs[i].name, modname) == 0) {

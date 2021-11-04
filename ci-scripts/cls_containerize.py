@@ -207,6 +207,7 @@ class Containerize():
 		self.testCase_id = HTML.testCase_id
 	
 		self._createWorkspace(mySSH, lPassword, lSourcePath)
+
  		# if asterix, copy the entitlement and subscription manager configurations
 		if self.host == 'Red Hat':
 			mySSH.command('mkdir -p  tmp/ca/', '\$', 5)
@@ -214,20 +215,29 @@ class Containerize():
 			mySSH.command('sudo cp /etc/rhsm/ca/redhat-uep.pem tmp/ca/', '\$', 5)
 			mySSH.command('sudo cp /etc/pki/entitlement/*.pem tmp/entitlement/', '\$', 5)
 
-		imageTag = 'develop'
+		sharedimage = 'ran-build'
 		sharedTag = 'develop'
+		forceSharedImageBuild = False
+		imageTag = 'develop'
 		if (self.ranAllowMerge):
 			imageTag = 'ci-temp'
-		sharedimage = 'ran-build'
+			if self.ranTargetBranch == 'develop':
+				mySSH.command('git diff HEAD..origin/develop -- docker/Dockerfile.ran' + self.dockerfileprefix + ' | grep -i INDEX', '\$', 5)
+				result = re.search('index', mySSH.getBefore())
+				if result is not None:
+					forceSharedImageBuild = True
+					sharedTag = 'ci-temp'
+
 		# Let's remove any previous run artifacts if still there
 		mySSH.command(self.cli + ' image prune --force', '\$', 30)
-		if (not self.ranAllowMerge):
-			mySSH.command(self.cli + ' image rm ' + sharedimage + ':' + sharedTag, '\$', 30)
+		if forceSharedImageBuild:
+			mySSH.command(self.cli + ' image rm ' + sharedimage + ':' + sharedTag + ' || true', '\$', 30)
 		for image,pattern in imageNames:
-			mySSH.command(self.cli + ' image rm ' + image + ':' + imageTag, '\$', 30)
+			mySSH.command(self.cli + ' image rm ' + image + ':' + imageTag + ' || true', '\$', 30)
 
 		# Build the shared image only on Push Events (not on Merge Requests)
-		if (not self.ranAllowMerge):
+		# On when the shared image docker file is being modified.
+		if forceSharedImageBuild:
 			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + sharedimage + ' --tag ' + sharedimage + ':' + sharedTag + ' --file docker/Dockerfile.ran' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-build.log 2>&1', '\$', 1600)
 		# First verify if the shared image was properly created.
 		status = True

@@ -36,16 +36,14 @@
   #include <string.h>
 #endif
 
-#include <LAYER2/NR_MAC_UE/mac_defs.h>
-#include <LAYER2/NR_MAC_UE/mac_proto.h>
-#include "executables/softmodem-common.h"
 
+#include "executables/softmodem-common.h"
 #include "nr_transport_proto_ue.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/sse_intrin.h"
-#include "PHY/NR_TRANSPORT/nr_dci.h"
+#include "common/utils/nr/nr_common.h"
 
 #include "assertions.h"
 #include "T.h"
