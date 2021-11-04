@@ -55,7 +55,7 @@
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTC                "remote_s_portc"
 #define CONFIG_STRING_MACRLC_LOCAL_S_PORTD                 "local_s_portd"
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
-#define CONFIG_STRING_MACRLC_ULSCH_MAX_SLOTS_INACTIVITY    "ulsch_max_slots_inactivity"
+#define CONFIG_STRING_MACRLC_ULSCH_MAX_FRAME_INACTIVITY    "ulsch_max_frame_inactivity"
 #define CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10             "pusch_TargetSNRx10"
 #define CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10             "pucch_TargetSNRx10"
 #define CONFIG_STRING_MACRLC_PUCCHFAILURETHRES             "pucch_FailureThres"
@@ -83,7 +83,7 @@
 {CONFIG_STRING_MACRLC_REMOTE_S_PORTC,                    NULL,     0,          uptr:NULL,           defintval:50020,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_LOCAL_S_PORTD,                     NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_REMOTE_S_PORTD,                    NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_ULSCH_MAX_SLOTS_INACTIVITY,        "Maximum number of slots before a UE is scheduled ULSCH due to inactivity", 0, uptr:NULL, defintval:200, TYPE_UINT, 0}, \
+{CONFIG_STRING_MACRLC_ULSCH_MAX_FRAME_INACTIVITY,        NULL,     0,          uptr:NULL,           defintval:10,              TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:200,             TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:150,             TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_PUCCHFAILURETHRES,                 NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
@@ -106,7 +106,7 @@
 #define MACRLC_REMOTE_S_PORTC_IDX                              14
 #define MACRLC_LOCAL_S_PORTD_IDX                               15
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
-#define MACRLC_ULSCH_MAX_SLOTS_INACTIVITY                      17
+#define MACRLC_ULSCH_MAX_FRAME_INACTIVITY                      17
 #define MACRLC_PUSCHTARGETSNRX10_IDX                           18
 #define MACRLC_PUCCHTARGETSNRX10_IDX                           19
 #define MACRLC_PUCCHFAILURETHRES_IDX                           20 

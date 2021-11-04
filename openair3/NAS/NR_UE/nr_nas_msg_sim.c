@@ -48,6 +48,8 @@
 uint8_t  *registration_request_buf;
 uint32_t  registration_request_len;
 extern char *baseNetAddress;
+extern uint16_t NB_UE_INST;
+static ue_sa_security_key_t ** ue_security_key;
 
 static int nas_protected_security_header_encode(
   char                                       *buffer,
@@ -252,6 +254,108 @@ void derive_knas(algorithm_type_dist_t nas_alg_type, uint8_t nas_alg_id, uint8_t
     knas_int[i] = out[16 + i];
 }
 
+void derive_kgnb(uint8_t kamf[32], uint32_t count, uint8_t *kgnb){
+  /* Compute the KDF input parameter
+   * S = FC(0x6E) || UL NAS Count || 0x00 0x04 || 0x01 || 0x00 0x01
+   */
+  uint8_t  input[32];
+  //    uint16_t length    = 4;
+  //    int      offset    = 0;
+  uint8_t out[32] = { 0 };
+
+  LOG_TRACE(INFO, "%s  with count= %d", __FUNCTION__, count);
+  memset(input, 0, 32);
+  input[0] = 0x6E;
+  // P0
+  input[1] = count >> 24;
+  input[2] = (uint8_t)(count >> 16);
+  input[3] = (uint8_t)(count >> 8);
+  input[4] = (uint8_t)count;
+  // L0
+  input[5] = 0;
+  input[6] = 4;
+  // P1
+  input[7] = 0x01;
+  // L1
+  input[8] = 0;
+  input[9] = 1;
+
+  kdf(kamf, 32, input, 10, out, 32);
+  for (int i = 0; i < 32; i++)
+    kgnb[i] = out[i];
+  printf("kgnb : ");
+  for(int pp=0;pp<32;pp++)
+   printf("%02x ",kgnb[pp]);
+  printf("\n");
+}
+
+void derive_ue_keys(int Mod_id, uint8_t *buf, uicc_t *uicc) {
+  uint8_t ak[6];
+  uint8_t sqn[6];
+
+  AssertFatal (Mod_id < NB_UE_INST, "Failed, Mod_id %d is over NB_UE_INST!\n", Mod_id);
+  if(ue_security_key[Mod_id]){
+    // clear old key
+    memset(ue_security_key[Mod_id],0,sizeof(ue_sa_security_key_t));
+  }else{
+    // Allocate new memory
+    ue_security_key[Mod_id]=(ue_sa_security_key_t *)calloc(1,sizeof(ue_sa_security_key_t));
+  }
+  uint8_t *kausf = ue_security_key[Mod_id]->kausf;
+  uint8_t *kseaf = ue_security_key[Mod_id]->kseaf;
+  uint8_t *kamf = ue_security_key[Mod_id]->kamf;
+  uint8_t *knas_int = ue_security_key[Mod_id]->knas_int;
+  uint8_t *output = ue_security_key[Mod_id]->res;
+  uint8_t *rand = ue_security_key[Mod_id]->rand;
+  uint8_t *kgnb = ue_security_key[Mod_id]->kgnb;
+
+  // get RAND for authentication request
+  for(int index = 0; index < 16;index++){
+    rand[index] = buf[8+index];
+  }
+
+  uint8_t resTemp[16];
+  uint8_t ck[16], ik[16];
+  f2345(uicc->key, rand, resTemp, ck, ik, ak, uicc->opc);
+
+  transferRES(ck, ik, resTemp, rand, output, uicc);
+
+  for(int index = 0; index < 6; index++){
+    sqn[index] = buf[26+index];
+  }
+
+  derive_kausf(ck, ik, sqn, kausf, uicc);
+  derive_kseaf(kausf, kseaf, uicc);
+  derive_kamf(kseaf, kamf, 0x0000, uicc);
+  derive_knas(0x02, 2, kamf, knas_int);
+  derive_kgnb(kamf,0,kgnb);
+
+  printf("kausf:");
+  for(int i = 0; i < 32; i++){
+    printf("%x ", kausf[i]);
+  }
+  printf("\n");
+
+  printf("kseaf:");
+  for(int i = 0; i < 32; i++){
+    printf("%x ", kseaf[i]);
+  }
+
+  printf("\n");
+
+  printf("kamf:");
+  for(int i = 0; i < 32; i++){
+    printf("%x ", kamf[i]);
+  }
+  printf("\n");
+
+  printf("knas_int:\n");
+  for(int i = 0; i < 16; i++){
+    printf("%x ", knas_int[i]);
+  }
+  printf("\n");
+}
+
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg, int Mod_id) {
   int size = sizeof(mm_msg_header_t);
   fgs_nas_message_t nas_msg={0};
@@ -374,69 +478,13 @@ void generateIdentityResponse(as_nas_info_t *initialNasMsg, uint8_t identitytype
 
 }
 
-OctetString knas_int;
-static void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *buf, uicc_t *uicc){
+static void generateAuthenticationResp(int Mod_id,as_nas_info_t *initialNasMsg, uint8_t *buf, uicc_t *uicc){
 
-  uint8_t ak[6];
-
-  uint8_t kausf[32];
-  uint8_t sqn[6];
-  uint8_t kseaf[32];
-  uint8_t kamf[32];
+  derive_ue_keys(Mod_id,buf,uicc);
   OctetString res;
-
-  // get RAND for authentication request
-  unsigned char rand[16];
-  for(int index = 0; index < 16;index++){
-    rand[index] = buf[8+index];
-  }
-
-  uint8_t resTemp[16];
-  uint8_t ck[16], ik[16], output[16];
-  f2345(uicc->key, rand, resTemp, ck, ik, ak, uicc->opc);
-
-  transferRES(ck, ik, resTemp, rand, output, uicc);
-
-  // get knas_int
-  knas_int.length = 16;
-  knas_int.value = malloc(knas_int.length);
-  for(int index = 0; index < 6; index++){
-    sqn[index] = buf[26+index];
-  }
-
-  derive_kausf(ck, ik, sqn, kausf, uicc);
-  derive_kseaf(kausf, kseaf, uicc);
-  derive_kamf(kseaf, kamf, 0x0000, uicc);
-  derive_knas(0x02, 2, kamf, knas_int.value);
-
-  printf("kausf:");
-  for(int i = 0; i < 32; i++){
-    printf("%x ", kausf[i]);
-  }
-  printf("\n");
-
-  printf("kseaf:");
-  for(int i = 0; i < 32; i++){
-    printf("%x ", kseaf[i]);
-  }
-
-  printf("\n");
-
-  printf("kamf:");
-  for(int i = 0; i < 32; i++){
-    printf("%x ", kamf[i]);
-  }
-  printf("\n");
-
-  printf("knas_int:\n");
-  for(int i = 0; i < 16; i++){
-    printf("%x ", knas_int.value[i]);
-  }
-  printf("\n");
-
-  // set res
   res.length = 16;
-  res.value = output;
+  res.value = calloc(1,16);
+  memcpy(res.value,ue_security_key[Mod_id]->res,16);
 
   int size = sizeof(mm_msg_header_t);
   fgs_nas_message_t nas_msg;
@@ -466,7 +514,14 @@ static void generateAuthenticationResp(as_nas_info_t *initialNasMsg, uint8_t *bu
   initialNasMsg->length = mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data), size);
 }
 
-static void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
+int nas_itti_kgnb_refresh_req(const uint8_t kgnb[32], int instance) {
+  MessageDef *message_p;
+  message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_KENB_REFRESH_REQ);
+  memcpy(NAS_KENB_REFRESH_REQ(message_p).kenb, kgnb, sizeof(NAS_KENB_REFRESH_REQ(message_p).kenb));
+  return itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
+}
+
+static void generateSecurityModeComplete(int Mod_id,as_nas_info_t *initialNasMsg)
 {
   int size = sizeof(mm_msg_header_t);
   fgs_nas_message_t nas_msg;
@@ -513,7 +568,7 @@ static void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
 
   initialNasMsg->length = security_header_len + mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data+security_header_len), size-security_header_len);
 
-  stream_cipher.key        = knas_int.value;
+  stream_cipher.key        = ue_security_key[Mod_id]->knas_int;
   stream_cipher.key_length = 16;
   stream_cipher.count      = 0;
   stream_cipher.bearer     = 1;
@@ -533,7 +588,7 @@ static void generateSecurityModeComplete(as_nas_info_t *initialNasMsg)
   }
 }
 
-static void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransparentContainer               *sortransparentcontainer) {
+static void generateRegistrationComplete(int Mod_id, as_nas_info_t *initialNasMsg, SORTransparentContainer               *sortransparentcontainer) {
   //wait send RRCReconfigurationComplete and InitialContextSetupResponse
   sleep(1);
   int length = 0;
@@ -593,7 +648,7 @@ static void generateRegistrationComplete(as_nas_info_t *initialNasMsg, SORTransp
   }
   
   initialNasMsg->length = length;
-  stream_cipher.key        = knas_int.value;
+  stream_cipher.key        = ue_security_key[Mod_id]->knas_int;
   stream_cipher.key_length = 16;
   stream_cipher.count      = 1;
   stream_cipher.bearer     = 1;
@@ -626,7 +681,7 @@ void decodeDownlinkNASTransport(as_nas_info_t *initialNasMsg, uint8_t * pdu_buff
   }
 }
 
-static void generatePduSessionEstablishRequest(uicc_t * uicc, as_nas_info_t *initialNasMsg){
+static void generatePduSessionEstablishRequest(int Mod_id, uicc_t * uicc, as_nas_info_t *initialNasMsg){
   //wait send RegistrationComplete
   usleep(100*150);
   int size = 0;
@@ -700,7 +755,7 @@ static void generatePduSessionEstablishRequest(uicc_t * uicc, as_nas_info_t *ini
 
   initialNasMsg->length = security_header_len + mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data+security_header_len), size-security_header_len);
 
-  stream_cipher.key        = knas_int.value;
+  stream_cipher.key        = ue_security_key[Mod_id]->knas_int;
   stream_cipher.key_length = 16;
   stream_cipher.count      = 0;
   stream_cipher.bearer     = 1;
@@ -754,6 +809,8 @@ void *nas_nrue_task(void *args_p)
   uint8_t               msg_type = 0;
   uint8_t              *pdu_buffer = NULL;
 
+
+  ue_security_key=(ue_sa_security_key_t **)calloc(1,sizeof(ue_sa_security_key_t*)*NB_UE_INST);
   itti_mark_task_ready (TASK_NAS_NRUE);
   MSC_START_USE();
   
@@ -823,7 +880,7 @@ void *nas_nrue_task(void *args_p)
 
           as_nas_info_t initialNasMsg;
           memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
-          generateRegistrationComplete(&initialNasMsg, NULL);
+          generateRegistrationComplete(Mod_id,&initialNasMsg, NULL);
           if(initialNasMsg.length > 0){
             MessageDef *message_p;
             message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
@@ -836,7 +893,7 @@ void *nas_nrue_task(void *args_p)
 
           as_nas_info_t pduEstablishMsg;
           memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
-          generatePduSessionEstablishRequest(uicc, &pduEstablishMsg);
+          generatePduSessionEstablishRequest(Mod_id, uicc, &pduEstablishMsg);
           if(pduEstablishMsg.length > 0){
             MessageDef *message_p;
             message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
@@ -908,18 +965,20 @@ void *nas_nrue_task(void *args_p)
         msg_type = get_msg_type(pdu_buffer, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length);
 
         switch(msg_type){
-	case FGS_IDENTITY_REQUEST:
-	  generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3), uicc);
-	  break;
-	case FGS_AUTHENTICATION_REQUEST:
-	  generateAuthenticationResp(&initialNasMsg, pdu_buffer, uicc);
-	  break;
-	case FGS_SECURITY_MODE_COMMAND:
-	  generateSecurityModeComplete(&initialNasMsg);
-	  break;
-	case FGS_DOWNLINK_NAS_TRANSPORT:
-	  decodeDownlinkNASTransport(&initialNasMsg, pdu_buffer);
-	  break;
+
+          case FGS_IDENTITY_REQUEST:
+	            generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3), uicc);
+              break;
+          case FGS_AUTHENTICATION_REQUEST:
+	            generateAuthenticationResp(Mod_id,&initialNasMsg, pdu_buffer, uicc);
+              break;
+          case FGS_SECURITY_MODE_COMMAND:
+            nas_itti_kgnb_refresh_req(ue_security_key[Mod_id]->kgnb, instance);
+            generateSecurityModeComplete(Mod_id,&initialNasMsg);
+            break;
+          case FGS_DOWNLINK_NAS_TRANSPORT:
+            decodeDownlinkNASTransport(&initialNasMsg, pdu_buffer);
+            break;
 	case FGS_PDU_SESSION_ESTABLISHMENT_ACC:
 	  {
 	    uint8_t offset = 0;
@@ -950,17 +1009,17 @@ void *nas_nrue_task(void *args_p)
 	    }
 	  }
 	  break;
-	  
-	default:
-	  LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
-	  break;
-	}
-      
-	if(initialNasMsg.length > 0){
-	MessageDef *message_p;
-	message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
-	NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
-	NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
+          default:
+              LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
+              break;
+        }
+
+        if(initialNasMsg.length > 0){
+          MessageDef *message_p;
+          message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
+          NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
+          NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
+
           NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
           itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
           LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message\n");

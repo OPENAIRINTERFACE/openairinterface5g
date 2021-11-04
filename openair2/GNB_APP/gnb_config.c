@@ -754,7 +754,7 @@ void RCconfig_nr_macrlc() {
       }else { // other midhaul
         AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
       } 
-      RC.nrmac[j]->ulsch_max_slots_inactivity = *(MacRLC_ParamList.paramarray[j][MACRLC_ULSCH_MAX_SLOTS_INACTIVITY].uptr);
+      RC.nrmac[j]->ulsch_max_frame_inactivity = *(MacRLC_ParamList.paramarray[j][MACRLC_ULSCH_MAX_FRAME_INACTIVITY].uptr);
       RC.nrmac[j]->num_ulprbbl = num_prbbl;
       LOG_I(NR_MAC,"Blacklisted PRBS %d\n",num_prbbl);
       memcpy(RC.nrmac[j]->ulprbbl,prbbl,275*sizeof(prbbl[0]));
@@ -1134,7 +1134,6 @@ int RCconfig_nr_gtpu(void ) {
   char             *address                       = NULL;
   char             *cidr                          = NULL;
   char gtpupath[MAX_OPTNAME_SIZE*2 + 8];
-  uint8_t           gnb_mode                      = 0;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
@@ -1152,44 +1151,26 @@ int RCconfig_nr_gtpu(void ) {
 
   config_get(NETParams,sizeof(NETParams)/sizeof(paramdef_t),gtpupath); 
 
-  if (NETParams[0].strptr != NULL) { // SA
+  if (NETParams[0].strptr != NULL)
     LOG_I(GTPU, "SA mode \n");
-    cidr = gnb_ipv4_address_for_NGU;
-    gnb_mode = 0;
-  } else {// NSA
+  else 
     LOG_I(GTPU, "NSA mode \n");
-    cidr = gnb_ipv4_address_for_S1U;
-    gnb_mode = 1;
-  }
-
-    address = strtok(cidr, "/");
-
-    if (address) {
-      MessageDef *message;
-
-      if (gnb_mode == 1) { // NSA
-        message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_ENB_S1_REQ);
-        AssertFatal(message!=NULL,"");
-        // IPV4_STR_ADDR_TO_INT_NWBO ( address, RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
-        // LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
-        IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
-        LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
-        GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_S1U;
-        strcpy(GTPV1U_ENB_S1_REQ(message).addrStr,address);
-        sprintf(GTPV1U_ENB_S1_REQ(message).portStr,"%d", gnb_port_for_NGU);
-      } else {// TODO SA
-        message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_GNB_NG_REQ);
-        AssertFatal(message!=NULL,"");
-        IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_GNB_NG_REQ(message).gnb_ip_address_for_NGu_up, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
-        LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_GNB_NG_REQ(message).gnb_ip_address_for_NGu_up);
-        GTPV1U_GNB_NG_REQ(message).gnb_port_for_NGu_up = gnb_port_for_NGU;
-        strcpy(GTPV1U_GNB_NG_REQ(message).addrStr,address);
-        sprintf(GTPV1U_GNB_NG_REQ(message).portStr,"%d", gnb_port_for_NGU);
-      }
-     itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+  
+  cidr = gnb_ipv4_address_for_S1U;
+  address = strtok(cidr, "/");
+  
+  if (address) {
+    MessageDef *message;
+    message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_REQ);
+      AssertFatal(message!=NULL,"");
+      IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_REQ(message).localAddr, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
+      LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_REQ(message).localAddr);
+      GTPV1U_REQ(message).localPort = gnb_port_for_NGU;
+      strcpy(GTPV1U_REQ(message).localAddrStr,address);
+      sprintf(GTPV1U_REQ(message).localPortStr,"%d", gnb_port_for_NGU);
+      itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
     } else
-    LOG_E(GTPU,"invalid address for NGU\n");
-
+      LOG_E(GTPU,"invalid address for NGU\n");
 
 return 0;
 }

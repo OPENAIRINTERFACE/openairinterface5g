@@ -309,40 +309,20 @@ nr_rrc_pdcp_config_security(
   uint8_t                            *k_kdf  = NULL;
   static int                          print_keys= 1;
 
-#ifndef PHYSIM
+
   /* Derive the keys from kgnb */
   if (SRB_configList != NULL) {
-    k_kdf = NULL;
     nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
                          ue_context_pP->ue_context.kgnb,
-                         &k_kdf);
-    /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
-    kUPenc = malloc(16);
-    if (kUPenc == NULL) exit(1);
-    memcpy(kUPenc, k_kdf+16, 16);
-    free(k_kdf);
+                         &kUPenc);
   }
 
-  k_kdf = NULL;
   nr_derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
                         ue_context_pP->ue_context.kgnb,
-                        &k_kdf);
-  /* kRRCenc: last 128 bits of key derivation function which returns 256 bits */
-  kRRCenc = malloc(16);
-  if (kRRCenc == NULL) exit(1);
-  memcpy(kRRCenc, k_kdf+16, 16);
-  free(k_kdf);
-
-  k_kdf = NULL;
+                        &kRRCenc);
   nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
                         ue_context_pP->ue_context.kgnb,
-                        &k_kdf);
-  /* kRRCint: last 128 bits of key derivation function which returns 256 bits */
-  kRRCint = malloc(16);
-  if (kRRCint == NULL) exit(1);
-  memcpy(kRRCint, k_kdf+16, 16);
-  free(k_kdf);
-#endif
+                        &kRRCint);
   if (!IS_SOFTMODEM_IQPLAYER) {
     SET_LOG_DUMP(DEBUG_SECURITY) ;
   }

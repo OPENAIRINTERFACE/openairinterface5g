@@ -17,6 +17,7 @@ extern "C" {
 #include <openair2/COMMON/gtpv1_u_messages_types.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include <openair2/LAYER2/PDCP_v10.1.0/pdcp.h>
+#include "openair2/SDAP/nr_sdap/nr_sdap_gnb.h"
 //#include <openair1/PHY/phy_extern.h>
 
 #pragma pack(1)
@@ -570,10 +571,9 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
     teid_t teid=newGtpuCreateTunnel(instance, create_tunnel_req->rnti,
                                     create_tunnel_req->incoming_rb_id[i],
                                     create_tunnel_req->pdusession_id[i],
-                                    create_tunnel_req->outgoing_teid[i],
+				    create_tunnel_req->outgoing_teid[i],
                                     create_tunnel_req->dst_addr[i], dstport,
-
-                                    pdcp_data_req);
+                                    sdap_gnb_data_req);
     create_tunnel_resp->status=0;
     create_tunnel_resp->rnti=create_tunnel_req->rnti;
     create_tunnel_resp->num_tunnels=create_tunnel_req->num_tunnels;
@@ -903,18 +903,10 @@ void *ocp_gtpv1uTask(void *args)  {
           abort();
           break;
 
-        case GTPV1U_ENB_S1_REQ:
+        case GTPV1U_REQ:
           // to be dev: should be removed, to use API
-          strcpy(addr.originHost, GTPV1U_ENB_S1_REQ(message_p).addrStr);
-          strcpy(addr.originService, GTPV1U_ENB_S1_REQ(message_p).portStr);
-          strcpy(addr.destinationService,addr.originService);
-          AssertFatal((legacyInstanceMapping=ocp_gtpv1Init(addr))!=0,"Instance 0 reserved for legacy\n");
-          break;
-
-        case GTPV1U_GNB_NG_REQ:
-          // to be dev: should be removed, to use API
-          strcpy(addr.originHost, GTPV1U_GNB_NG_REQ(message_p).addrStr);
-          strcpy(addr.originService, GTPV1U_GNB_NG_REQ(message_p).portStr);
+          strcpy(addr.originHost, GTPV1U_REQ(message_p).localAddrStr);
+          strcpy(addr.originService, GTPV1U_REQ(message_p).localPortStr);
           strcpy(addr.destinationService,addr.originService);
           AssertFatal((legacyInstanceMapping=ocp_gtpv1Init(addr))!=0,"Instance 0 reserved for legacy\n");
           break;

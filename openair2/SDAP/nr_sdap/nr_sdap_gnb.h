@@ -19,18 +19,30 @@
  *      contact@openairinterface.org
  */
 
-#include "COMMON/platform_types.h"
-#include "common/ran_context.h"
-#include "common/utils/LOG/log.h"
-#include "NR_BCCH-BCH-Message.h"
-#include "NR_ServingCellConfigCommon.h"
-#include "NR_MIB.h"
+#ifndef _NR_SDAP_GNB_
+#define _NR_SDAP_GNB_
 
-void apply_macrlc_config(gNB_RRC_INST *rrc,
-                         rrc_gNB_ue_context_t         *const ue_context_pP,
-                         const protocol_ctxt_t        *const ctxt_pP ) {
-  abort();
-}
+#include "openair2/COMMON/platform_types.h"
+#include "common/utils/LOG/log.h"
+
+#define SDAP_BITMASK_DC         (0x80)
+#define SDAP_BITMASK_R          (0x40)
+#define SDAP_BITMASK_QFI        (0x3F)
+#define SDAP_HDR_UL_DATA_PDU    (1)
+#define SDAP_HDR_UL_CTRL_PDU    (0)
+#define SDAP_HDR_LENGTH         (1)
+
+typedef struct nr_sdap_dl_hdr_s {
+  uint8_t QFI:6;
+  uint8_t RQI:1;
+  uint8_t RDI:1;
+} __attribute__((packed)) nr_sdap_dl_hdr_t;
+
+typedef struct nr_sdap_ul_hdr_s {
+  uint8_t QFI:6;
+  uint8_t R:1;
+  uint8_t DC:1;
+} __attribute__((packed)) nr_sdap_ul_hdr_t;
 
 boolean_t sdap_gnb_data_req(protocol_ctxt_t *ctxt_p,
                             const srb_flag_t srb_flag,
@@ -42,6 +54,8 @@ boolean_t sdap_gnb_data_req(protocol_ctxt_t *ctxt_p,
                             const pdcp_transmission_mode_t pt_mode,
                             const uint32_t *sourceL2Id,
                             const uint32_t *destinationL2Id
-                           ) {
-abort();
-}
+                           );
+
+void sdap_gnb_ul_header_handler(char sdap_gnb_ul_hdr);
+
+#endif
