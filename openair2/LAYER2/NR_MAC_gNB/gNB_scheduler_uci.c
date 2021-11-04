@@ -1081,6 +1081,11 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
 
   if (((uci_01->pduBitmap >> 1) & 0x01)) {
     // iterate over received harq bits
+
+    LOG_I(NR_MAC, "uci_01 %p \n", uci_01);
+    LOG_I(NR_MAC, "uci_01->harq %p \n", uci_01->harq);
+    LOG_I(NR_MAC, "uci_01->harq->num_harq %u \n", uci_01->harq->num_harq);
+
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
@@ -1094,7 +1099,10 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       /* According to nfapi_nr_interface_scf.h, harq_value = 0 is a pass
       (The check below was for harq_value == 1 in the develop branch) */
-      handle_dl_harq(mod_id, UE_id, pid, harq_value == 0 && harq_confidence == 0);
+      if (get_softmodem_params()->nsa)
+        handle_dl_harq(mod_id, UE_id, pid, harq_value == 0 && harq_confidence == 0);
+      else
+        handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
       if (harq_confidence == 1)  UE_info->mac_stats[UE_id].pucch0_DTX++;
     }
   }

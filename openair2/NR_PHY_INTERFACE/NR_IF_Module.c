@@ -63,18 +63,35 @@ extern uint16_t sl_ahead;
 
 void handle_nr_rach(NR_UL_IND_t *UL_info)
 {
-  if (gnb_rach_ind_queue.num_items ==0)
-    return; 
-  LOG_I(NR_MAC, "gnb_rach_ind_queue size = %zu\n", gnb_rach_ind_queue.num_items);
-  nfapi_nr_rach_indication_t *rach_ind = get_queue(&gnb_rach_ind_queue);
+  if(NFAPI_MODE == NFAPI_MODE_PNF) {
+    if (UL_info->rach_ind.number_of_pdus>0) {
+      LOG_D(PHY,"UL_info->UL_info->rach_ind.number_of_pdus:%d SFN/Slot:%d.%d \n", UL_info->rach_ind.number_of_pdus, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
+      oai_nfapi_nr_rach_indication(&UL_info->rach_ind);
+      UL_info->rach_ind.number_of_pdus = 0;
+    }
+    return;
+  }
   NR_UL_IND_t UL_INFO;
-  UL_INFO.rach_ind = *rach_ind;
-  UL_INFO.frame = rach_ind->sfn;
-  UL_INFO.slot = rach_ind->slot;
-  UL_INFO.module_id = UL_info->module_id;
-  UL_INFO.CC_id = UL_info->CC_id;
+  nfapi_nr_rach_indication_t *rach_ind = NULL;
+  if (get_softmodem_params()->nsa)
+  {
+    if (gnb_rach_ind_queue.num_items ==0)
+      return; 
+    LOG_I(NR_MAC, "gnb_rach_ind_queue size = %zu\n", gnb_rach_ind_queue.num_items);
+    rach_ind = get_queue(&gnb_rach_ind_queue);
 
-  int frame_diff = UL_info->frame - rach_ind->sfn;
+    UL_INFO.rach_ind = *rach_ind;
+    UL_INFO.module_id = UL_info->module_id;
+    UL_INFO.CC_id = UL_info->CC_id;
+  }
+  else
+  {
+    UL_INFO.rach_ind = UL_info->rach_ind;
+    UL_INFO.module_id = UL_info->module_id;
+    UL_INFO.CC_id = UL_info->CC_id;
+  }
+
+  int frame_diff = UL_info->frame - UL_INFO.rach_ind.sfn;
   if (frame_diff < 0)
   {
     frame_diff += 1024;
@@ -101,28 +118,53 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
                           UL_INFO.rach_ind.pdu_list[i].preamble_list[0].timing_advance);
     }
   }
-  if (rach_ind && rach_ind->number_of_pdus > 0)
+  if (get_softmodem_params()->nsa)
   {
-    for(int i = 0; i < rach_ind->number_of_pdus; i++)
-      free(rach_ind->pdu_list[i].preamble_list);
-    free(rach_ind->pdu_list);
+    if (rach_ind && rach_ind->number_of_pdus > 0)
+    {
+      for(int i = 0; i < rach_ind->number_of_pdus; i++)
+      {
+        free(rach_ind->pdu_list[i].preamble_list);
+        rach_ind->pdu_list[i].preamble_list = NULL;
+      }
+      free(rach_ind->pdu_list);
+      rach_ind->pdu_list = NULL;
+    }
+    free(rach_ind);
+    rach_ind = NULL;
   }
-  free(rach_ind);
 }
 
 
 void handle_nr_uci(NR_UL_IND_t *UL_info)
 {
-  if (gnb_uci_ind_queue.num_items ==0)
-    return; 
-  LOG_I(NR_MAC, "gnb_uci_ind_queue size = %zu\n", gnb_uci_ind_queue.num_items);
-  nfapi_nr_uci_indication_t *uci_ind = get_queue(&gnb_uci_ind_queue);
+  if(NFAPI_MODE == NFAPI_MODE_PNF) {
+    if (UL_info->uci_ind.num_ucis>0) {
+      LOG_D(PHY,"PNF Sending UL_info->num_ucis:%d PDU_type: %d, SFN/SF:%d.%d \n", UL_info->uci_ind.num_ucis, UL_info->uci_ind.uci_list[0].pdu_type ,UL_info->frame, UL_info->slot);
+      oai_nfapi_nr_uci_indication(&UL_info->uci_ind);
+      UL_info->uci_ind.num_ucis = 0;
+    }
+    return;
+  }
+
   NR_UL_IND_t UL_INFO;
-  UL_INFO.uci_ind = *uci_ind;
+  nfapi_nr_uci_indication_t *uci_ind = NULL;
+  if (get_softmodem_params()->nsa)
+  {
+    if (gnb_uci_ind_queue.num_items ==0)
+      return; 
+    LOG_I(NR_MAC, "gnb_uci_ind_queue size = %zu\n", gnb_uci_ind_queue.num_items);
+    uci_ind = get_queue(&gnb_uci_ind_queue);
+    UL_INFO.uci_ind = *uci_ind;
+  }
+  else
+  {
+    UL_INFO.uci_ind = UL_info->uci_ind;
+  }
 
   const module_id_t mod_id = UL_info->module_id;
-  const frame_t frame = UL_INFO.uci_ind.sfn;
-  const sub_frame_t slot = UL_INFO.uci_ind.slot;
+  const frame_t frame = UL_INFO.uci_ind.sfn;//TODO: Need to check to use UL_info->frame;
+  const sub_frame_t slot = UL_INFO.uci_ind.slot;//TODO: Need to check to use UL_info->slot;
   int num_ucis = UL_INFO.uci_ind.num_ucis;
   nfapi_nr_uci_t *uci_list = UL_INFO.uci_ind.uci_list;
 
@@ -149,23 +191,30 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
     }
   }
 
-  for (int i = 0; i < num_ucis; i++) {
-    switch (uci_list[i].pdu_type) {
-      case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE:
-        free(uci_list[i].pucch_pdu_format_0_1.harq->harq_list);
-        free(uci_list[i].pucch_pdu_format_0_1.harq);
-        break;
+  if (get_softmodem_params()->nsa)
+  {
+    for (int i = 0; i < num_ucis; i++) {
+      switch (uci_list[i].pdu_type) {
+        case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE:
+          free(uci_list[i].pucch_pdu_format_0_1.harq->harq_list);
+          free(uci_list[i].pucch_pdu_format_0_1.harq);
+          break;
 
-      case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE:
-        free(uci_list[i].pucch_pdu_format_2_3_4.harq.harq_payload);
-        free(uci_list[i].pucch_pdu_format_2_3_4.csi_part1.csi_part1_payload);
-        free(uci_list[i].pucch_pdu_format_2_3_4.csi_part2.csi_part2_payload);
-        break;
+        case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE:
+          free(uci_list[i].pucch_pdu_format_2_3_4.harq.harq_payload);
+          free(uci_list[i].pucch_pdu_format_2_3_4.csi_part1.csi_part1_payload);
+          free(uci_list[i].pucch_pdu_format_2_3_4.csi_part2.csi_part2_payload);
+          break;
+      }
     }
+    if (uci_ind && num_ucis > 0)
+      free(uci_list);
+    free(uci_ind);
   }
-  if (uci_ind && num_ucis > 0)
-    free(uci_list);
-  free(uci_ind);
+  else
+  {
+    UL_info->uci_ind.num_ucis = 0;
+  }
 }
 
 static bool crc_sfn_slot_matcher(void *wanted, void *candidate)
@@ -190,39 +239,70 @@ static bool crc_sfn_slot_matcher(void *wanted, void *candidate)
 
 void handle_nr_ulsch(NR_UL_IND_t *UL_info)
 {
-  nfapi_nr_rx_data_indication_t *rx_ind = get_queue(&gnb_rx_ind_queue);
-  if (!rx_ind)
-  {
-    LOG_D(NR_PHY, "No rx data indication (empty gnb_rx_ind_queue)\n");
-    return;
-  }
-  int sfn_slot = NFAPI_SFNSLOT2HEX(rx_ind->sfn, rx_ind->slot); 
-  
-  nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&gnb_crc_ind_queue,
-                                                        MAX_QUEUE_SIZE,
-                                                        crc_sfn_slot_matcher,
-                                                        &sfn_slot);
-  if (!crc_ind)
-  {
-    LOG_D(NR_PHY, "No crc indication with the same SFN SLOT of rx indication %u %u\n", rx_ind->sfn, rx_ind->slot);
-    put_queue(&gnb_rx_ind_queue, rx_ind);
+  if(NFAPI_MODE == NFAPI_MODE_PNF) {
+    if (UL_info->crc_ind.number_crcs>0) {
+      LOG_D(PHY,"UL_info->UL_info->crc_ind.number_crcs:%d CRC_IND:SFN/Slot:%d.%d\n", UL_info->crc_ind.number_crcs, UL_info->crc_ind.sfn, UL_info->crc_ind.slot);
+      oai_nfapi_nr_crc_indication(&UL_info->crc_ind);
+      UL_info->crc_ind.number_crcs = 0;
+    }
+
+    if (UL_info->rx_ind.number_of_pdus>0) {
+      LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/Slot:%d.%d \n", UL_info->rx_ind.number_of_pdus, UL_info->rx_ind.sfn, UL_info->rx_ind.slot);
+      oai_nfapi_nr_rx_data_indication(&UL_info->rx_ind);
+      UL_info->rx_ind.number_of_pdus = 0;
+    }
     return;
   }
 
   NR_UL_IND_t UL_INFO;
-  UL_INFO.rx_ind = *rx_ind;
-  UL_INFO.crc_ind = *crc_ind;
-  UL_INFO.frame = rx_ind->sfn;
-  UL_INFO.slot = rx_ind->slot;
+  nfapi_nr_rx_data_indication_t *rx_ind = NULL;
+  nfapi_nr_crc_indication_t *crc_ind = NULL;
+  if (get_softmodem_params()->nsa)
+  {
+    rx_ind = get_queue(&gnb_rx_ind_queue);
+    if (!rx_ind)
+    {
+      LOG_D(NR_PHY, "No rx data indication (empty gnb_rx_ind_queue)\n");
+      return;
+    }
+
+    int sfn_slot = NFAPI_SFNSLOT2HEX(rx_ind->sfn, rx_ind->slot); 
+    
+    crc_ind = unqueue_matching(&gnb_crc_ind_queue,
+                                                          MAX_QUEUE_SIZE,
+                                                          crc_sfn_slot_matcher,
+                                                          &sfn_slot);
+    if (!crc_ind)
+    {
+      LOG_D(NR_PHY, "No crc indication with the same SFN SLOT of rx indication %u %u\n", rx_ind->sfn, rx_ind->slot);
+      put_queue(&gnb_rx_ind_queue, rx_ind);
+      return;
+    }
+
+    UL_INFO.rx_ind = *rx_ind;
+    UL_INFO.crc_ind = *crc_ind;
+    UL_INFO.module_id = UL_info->module_id;
+    UL_INFO.CC_id = UL_info->CC_id;
+  }
+  else
+  {
+    UL_INFO.rx_ind = UL_info->rx_ind;
+    UL_INFO.crc_ind = UL_info->crc_ind;
+    UL_INFO.module_id = UL_info->module_id;
+    UL_INFO.CC_id = UL_info->CC_id;
+  }
+
+  UL_INFO.frame = UL_INFO.rx_ind.sfn;//TODO: Need to check to use UL_info->frame;
+  UL_INFO.slot = UL_INFO.rx_ind.slot;//TODO: Need to check to use UL_info->slot;
   UL_INFO.module_id = UL_info->module_id;
   UL_INFO.CC_id = UL_info->CC_id;
-  LOG_I(NR_MAC, " UL_info frame slot vs rx_ind frame slot vs crc_ind slot frame slot = %u %u vs %u %u vs %u %u\n",
+  LOG_D(NR_MAC, " UL_info frame slot vs rx_ind frame slot vs crc_ind slot frame slot = %u %u vs %u %u vs %u %u\n",
                   UL_info->frame, UL_info->slot,
-                  rx_ind->sfn, rx_ind->slot,
-                  crc_ind->sfn, crc_ind->slot
+                  UL_INFO.rx_ind.sfn, UL_INFO.rx_ind.slot,
+                  UL_INFO.crc_ind.sfn, UL_INFO.crc_ind.slot
                   );
 
-  if (rx_ind && UL_INFO.rx_ind.number_of_pdus > 0 && crc_ind && UL_INFO.crc_ind.number_crcs > 0) {
+  if (UL_INFO.rx_ind.number_of_pdus > 0 && UL_INFO.crc_ind.number_crcs > 0) {
     for (int i = 0; i < UL_INFO.rx_ind.number_of_pdus; i++) {
       int j;
       for (j = 0; j < UL_INFO.crc_ind.number_crcs; j++) {
@@ -264,58 +344,68 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
         handle_nr_ul_harq(UL_INFO.CC_id, UL_INFO.module_id, UL_INFO.frame, UL_INFO.slot, crc);
         break;
       } //    for (j=0;j<UL_INFO.crc_ind.number_crcs;j++)
-      int last = UL_INFO.crc_ind.number_crcs - 1;
-      if (j < last)
+      if (get_softmodem_params()->nsa)
       {
-        crc_ind->crc_list[j] = crc_ind->crc_list[last];
-        UL_INFO.crc_ind.number_crcs--;
-      }
-      else if (j == last)
-      {
-        UL_INFO.crc_ind.number_crcs--;
-      }
+        int last = UL_INFO.crc_ind.number_crcs - 1;
+        if (j < last)
+        {
+          crc_ind->crc_list[j] = crc_ind->crc_list[last];
+          UL_INFO.crc_ind.number_crcs--;
+        }
+        else if (j == last)
+        {
+          UL_INFO.crc_ind.number_crcs--;
+        }
 
-      last = UL_INFO.rx_ind.number_of_pdus - 1;
-      if (i < last)
-      {
-        rx_ind->pdu_list[i] = rx_ind->pdu_list[last];
-        UL_INFO.rx_ind.number_of_pdus--;
-        i--;
-      }
-      else if (i == last)
-      {
-        UL_INFO.rx_ind.number_of_pdus--;
+        last = UL_INFO.rx_ind.number_of_pdus - 1;
+        if (i < last)
+        {
+          rx_ind->pdu_list[i] = rx_ind->pdu_list[last];
+          UL_INFO.rx_ind.number_of_pdus--;
+          i--;
+        }
+        else if (i == last)
+        {
+          UL_INFO.rx_ind.number_of_pdus--;
+        }
       }
     } //   for (i=0;i<UL_INFO.rx_ind.number_of_pdus;i++)
+    if (get_softmodem_params()->nsa)
+    {
+      if (UL_INFO.crc_ind.number_crcs > 0)
+      {
+        crc_ind->number_crcs = UL_INFO.crc_ind.number_crcs;
+        requeue(&gnb_crc_ind_queue, crc_ind);
+      }
 
-    if (UL_INFO.crc_ind.number_crcs > 0)
-    {
-      crc_ind->number_crcs = UL_INFO.crc_ind.number_crcs;
-      requeue(&gnb_crc_ind_queue, crc_ind);
-    }
+      if (UL_INFO.rx_ind.number_of_pdus > 0)
+      {
+        rx_ind->number_of_pdus = UL_INFO.rx_ind.number_of_pdus;
+        requeue(&gnb_rx_ind_queue, rx_ind);
+      }
 
-    if (UL_INFO.rx_ind.number_of_pdus > 0)
-    {
-      rx_ind->number_of_pdus = UL_INFO.rx_ind.number_of_pdus;
-      requeue(&gnb_rx_ind_queue, rx_ind);
+      if (UL_INFO.crc_ind.number_crcs == 0)
+      {
+        free(crc_ind->crc_list);
+        crc_ind->crc_list = NULL;
+        free(crc_ind);
+        crc_ind = NULL;
+      }
+      if (UL_INFO.rx_ind.number_of_pdus == 0)
+      {
+        free(rx_ind->pdu_list);
+        rx_ind->pdu_list = NULL;
+        free(rx_ind);
+        rx_ind = NULL;
+      }
     }
-
-    if (UL_INFO.crc_ind.number_crcs == 0)
+    else
     {
-      free(crc_ind->crc_list);
-      crc_ind->crc_list = NULL;
-      free(crc_ind);
-      crc_ind = NULL;
+      UL_INFO.crc_ind.number_crcs = 0;
+      UL_INFO.rx_ind.number_of_pdus = 0;
     }
-    if (UL_INFO.rx_ind.number_of_pdus == 0)
-    {
-      free(rx_ind->pdu_list);
-      rx_ind->pdu_list = NULL;
-      free(rx_ind);
-      rx_ind = NULL;
-    }
-  } else if ((rx_ind && UL_INFO.rx_ind.number_of_pdus != 0)
-             || (crc_ind && UL_INFO.crc_ind.number_crcs != 0)) {
+  } else if ((UL_INFO.rx_ind.number_of_pdus != 0)
+             || (UL_INFO.crc_ind.number_crcs != 0)) {
      LOG_E(NR_PHY,
           "hoping not to have mis-match between CRC ind and RX ind - "
           "hopefully the missing message is coming shortly "
@@ -343,6 +433,18 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         UL_info->frame,UL_info->slot,
         module_id,CC_id, gnb_rach_ind_queue.num_items,
         gnb_rx_ind_queue.num_items, gnb_crc_ind_queue.num_items);
+/*
+  LOG_I(MAC, "uci_01->harq->num_harq %u  with uci_pdu %p  harq %p\n",
+    UL_info->uci_ind.uci_list->pucch_pdu_format_0_1.harq->num_harq,
+    &UL_info->uci_ind.uci_list->pucch_pdu_format_0_1,
+    UL_info->uci_ind.uci_list->pucch_pdu_format_0_1.harq);
+*/
+  handle_nr_rach(UL_info);
+  
+  handle_nr_uci(UL_info);
+  // clear UL DCI prior to handling ULSCH
+  mac->UL_dci_req[CC_id].numPdus = 0;
+  handle_nr_ulsch(UL_info);
 
   if (NFAPI_MODE != NFAPI_MODE_PNF) {
 
@@ -355,14 +457,6 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
     }
 
     ifi->CC_mask |= (1<<CC_id);
-
-    handle_nr_rach(UL_info);
-
-    handle_nr_uci(UL_info);
-
-    // clear HI prior to handling ULSCH
-    mac->UL_dci_req[CC_id].numPdus = 0;
-    handle_nr_ulsch(UL_info);
 
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
       /*

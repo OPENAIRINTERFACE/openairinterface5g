@@ -550,7 +550,7 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci->dci_format];
 
-  if ((dci->rnti != mac->crnti) && (dci->rnti != mac->ra.ra_rnti) && (dci->rnti != 0xFFFF)) {
+  if ((dci->rnti != mac->crnti) && (dci->rnti != mac->ra.ra_rnti) && (get_softmodem_params()->nsa)) {
       LOG_D(MAC,"We skip for the received dci indication rnti %4x != mac->crnti %4x  frame slot %4d.%2d  RA state %d\n",
                     dci->rnti, mac->crnti, frame, slot, mac->ra.ra_state);
       return 0;
@@ -2444,7 +2444,7 @@ void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *u
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
 
-  LOG_I(MAC, "In %s [%d.%d] Handling DLSCH PDU...\n", __FUNCTION__, dl_info->frame, dl_info->slot);
+  LOG_D(MAC, "In %s [%d.%d] Handling DLSCH PDU...\n", __FUNCTION__, dl_info->frame, dl_info->slot);
 
   // Processing MAC PDU
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
@@ -3422,7 +3422,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
       case DL_SCH_LCID_DCCH1:
         //  check if LCID is valid at current time.
       default:
-            {
+            if (get_softmodem_params()->nsa) {
                 //  check if LCID is valid at current time.
                 if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
                   return;
@@ -3471,6 +3471,50 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 
 
             break;
+            }
+            else
+            {
+        //  check if LCID is valid at current time.
+        if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+          //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
+          mac_subheader_len = 3;
+          mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)
+                        | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pduP)->L2 & 0xff);
+
+        } else {
+          mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
+          mac_subheader_len = 2;
+        }
+
+        LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_sdu_len);
+
+        #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+          LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+
+          for (i = 0; i < 32; i++)
+            LOG_T(MAC, "%x.", (pduP + mac_subheader_len)[i]);
+
+          LOG_T(MAC, "\n");
+        #endif
+
+        if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DCCH) {
+
+          mac_rlc_data_ind(module_idP,
+                           mac->crnti,
+                           gNB_index,
+                           frameP,
+                           ENB_FLAG_NO,
+                           MBMS_FLAG_NO,
+                           rx_lcid,
+                           (char *) (pduP + mac_subheader_len),
+                           mac_sdu_len,
+                           1,
+                           NULL);
+        } else {
+          LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, gNB_index);
+        }
+
+        break;
             }
       }
       pduP += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
@@ -3651,7 +3695,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 
   if ((mac->crnti == ra->t_crnti) && (get_softmodem_params()->nsa))
   {
-    LOG_I(MAC, "Discarding the received RAR.\n");
+    LOG_D(MAC, "Discarding the received RAR.\n");
     return -1;
   }
   while (1) {

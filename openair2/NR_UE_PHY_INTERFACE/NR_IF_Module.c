@@ -827,7 +827,8 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t
 // Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
 int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
 
-  dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid = g_harq_pid;
+  if (get_softmodem_params()->nsa)
+    dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid = g_harq_pid;
   update_harq_status(dl_info, pdu_id);
 
   if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack)
@@ -844,7 +845,6 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   if (ul_info->ue_sched_mode == ONLY_PUSCH) {
     ret = nr_ue_scheduler(NULL, ul_info);
-    LOG_I(NR_MAC, "In nr_ue_ul_indication: We are to return due to ul_info->ue_sched_mode == ONLY_PUSCH\n");
     return 0;
   }
   if (ul_info->ue_sched_mode == SCHED_ALL) {
@@ -857,10 +857,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
 
   if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
-  {  
-    LOG_I(NR_MAC, "In nr_ue_ul_indication: We are here to call nr_ue_prach_scheduler \n");
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
-  }
 
   if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
     nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
@@ -905,11 +902,14 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
                                 dl_info->slot,
                                 dl_info->dci_ind->dci_list+i);
 
-        fapi_nr_dci_indication_pdu_t *dci_index = dl_info->dci_ind->dci_list+i;
-        dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci_index->dci_format];
-        g_harq_pid = def_dci_pdu_rel15->harq_pid;
-        LOG_D(NR_MAC, "Setting harq_pid = %d and dci_index = %d (based on format)\n", g_harq_pid, dci_index->dci_format);
-        memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
+        if (get_softmodem_params()->nsa)
+        {
+          fapi_nr_dci_indication_pdu_t *dci_index = dl_info->dci_ind->dci_list+i;
+          dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci_index->dci_format];
+          g_harq_pid = def_dci_pdu_rel15->harq_pid;
+          LOG_D(NR_MAC, "Setting harq_pid = %d and dci_index = %d (based on format)\n", g_harq_pid, dci_index->dci_format);
+          memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
+        }
 
         ret_mask |= (ret << FAPI_NR_DCI_IND);
         if (ret >= 0) {

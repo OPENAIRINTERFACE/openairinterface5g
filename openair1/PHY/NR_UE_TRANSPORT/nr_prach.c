@@ -221,11 +221,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t slot){
   k += kbar;
   k *= 2;
 
-  LOG_I(PHY, "PRACH [UE %d] in slot %d, mu %d, fp->samples_per_subframe %d, prach_sequence_length %d, placing PRACH in position %d, msg1 frequency start %d (k1 %d), preamble_offset %d, first_nonzero_root_idx %d\n", Mod_id,
+  LOG_I(PHY, "PRACH [UE %d] in slot %d, placing PRACH in position %d, msg1 frequency start %d (k1 %d), preamble_offset %d, first_nonzero_root_idx %d\n", Mod_id,
         slot,
-        mu,
-        fp->samples_per_subframe,
-        prach_sequence_length,
         k,
         n_ra_prb,
         nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].k1,

@@ -689,7 +689,7 @@ int nr_rrc_mac_config_req_ue(
       }
       config_control_ue(mac);
       if (get_softmodem_params()->nsa) {
-        if (cell_group_config->spCellConfig->reconfigurationWithSync) {
+        if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
           if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
             ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
           }
@@ -707,6 +707,7 @@ int nr_rrc_mac_config_req_ue(
         // Setup the SSB to Rach Occasions mapping according to the config
         build_ssb_to_ro_map(mac);
       }
+
       /*      
       if(mac_cell_group_configP != NULL){
 	if(mac_cell_group_configP->drx_Config != NULL ){

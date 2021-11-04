@@ -1866,7 +1866,6 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   else {
     ul_config = &mac->ul_config_request[0];
   }
-  LOG_I(NR_MAC, "We are here to check calling nr_ue_prach_scheduler\n");
 
   fapi_nr_ul_config_prach_pdu *prach_config_pdu;
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
@@ -1897,8 +1896,6 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
                                                         &prach_occasion_info_p);
 
     if (is_nr_prach_slot && ra->ra_state == RA_UE_IDLE) {
-      LOG_I(NR_MAC, "We are here to see is_nr_prach_slot = %d, ra->ra_state = %d (RA_UE_IDLE: 0)\n",
-                                                    is_nr_prach_slot, ra->ra_state);
       AssertFatal(NULL != prach_occasion_info_p,"PRACH Occasion Info not returned in a valid NR Prach Slot\n");
 
       ra->generate_nr_prach = GENERATE_PREAMBLE;
@@ -1906,8 +1903,6 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       format = prach_occasion_info_p->format;
       format0 = format & 0xff;        // single PRACH format
       format1 = (format >> 8) & 0xff; // dual PRACH format
-      LOG_I(NR_MAC,"We are here with format0 %u, format1 %u, %s %d\n", 
-                                     format0, format1, __FUNCTION__, __LINE__);
       AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
                   "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
 
@@ -1932,7 +1927,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       prach_config_pdu->restricted_set = prach_config->restricted_set_config;
       prach_config_pdu->freq_msg1 = prach_config->num_prach_fd_occasions_list[prach_occasion_info_p->fdm].k1;
 
-      LOG_I(NR_MAC,"Selected RO Frame %u, Slot %u, Symbol %u, Fdm %u\n", frameP, prach_config_pdu->prach_slot, prach_config_pdu->prach_start_symbol, prach_config_pdu->num_ra);
+      LOG_D(NR_MAC,"Selected RO Frame %u, Slot %u, Symbol %u, Fdm %u\n", frameP, prach_config_pdu->prach_slot, prach_config_pdu->prach_start_symbol, prach_config_pdu->num_ra);
 
       // Search which SSB is mapped in the RO (among all the SSBs mapped to this RO)
       for (prach_config_pdu->ssb_nb_in_ro=0; prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb; prach_config_pdu->ssb_nb_in_ro++) {
@@ -1940,8 +1935,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
           break;
       }
       AssertFatal(prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb, "%u not found in the mapped SSBs to the PRACH occasion", selected_gnb_ssb_idx);
-      LOG_I(NR_MAC,"We are here Before set prach_config_pdu->prach_format %x, %s %d\n", 
-                                     prach_config_pdu->prach_format, __FUNCTION__, __LINE__);
+
       if (format1 != 0xff) {
         switch(format0) { // dual PRACH format
           case 0xa1:
@@ -1995,18 +1989,11 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
             AssertFatal(1 == 0, "Invalid PRACH format");
         }
       } // if format1
-      LOG_I(NR_MAC,"We are here After set prach_config_pdu->prach_format %x, %s %d\n", 
-                                     prach_config_pdu->prach_format, __FUNCTION__, __LINE__);
       fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         mac->if_module->scheduled_response(&scheduled_response);
     } // is_nr_prach_slot
-    else
-      LOG_I(NR_MAC, "We are here to see is_nr_prach_slot = %d, ra->ra_state = %d (RA_UE_IDLE: 0)\n",
-                                                    is_nr_prach_slot, ra->ra_state);
   } // if is_nr_UL_slot
-  else
-    LOG_I(NR_MAC, "We are here It is not is_nr_UL_slot\n");
 }
 
 // This function schedules the reception of SIB1 after initial sync and before going to real time state
