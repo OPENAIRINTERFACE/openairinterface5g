@@ -3802,6 +3802,11 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 
   LOG_D(NR_MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
 
+  if (get_softmodem_params()->nsa && mac->crnti == ra->t_crnti)
+  {
+    LOG_D(MAC, "Discarding the received RAR.\n");
+    return -1;
+  }
   while (1) {
     n_subheaders++;
     if (rarh->T == 1) {
