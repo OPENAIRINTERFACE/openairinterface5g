@@ -233,7 +233,11 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         break;
         }
       }
-      memset(ul_config, 0, sizeof(fapi_nr_ul_config_request_t));
+      ul_config->sfn = 0;
+      ul_config->slot = 0;
+      ul_config->number_pdus = 0;
+      for (int i=0; i < FAPI_NR_UL_CONFIG_LIST_NUM; i++) 
+        memset(&(ul_config->ul_config_list[i]), 0, sizeof(fapi_nr_ul_config_request_pdu_t));
       pthread_mutex_unlock(&ul_config->mutex_ul_config);
     }
   }
