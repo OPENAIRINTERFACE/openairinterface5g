@@ -497,6 +497,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       }
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_IN);
+      p_decParams->block_length=length_dec;
+      nrLDPC_initcall(p_decParams, (int8_t*)&pl[0], llrProcBuf);
       no_iteration_ldpc = nrLDPC_decoder(p_decParams,
                                          (int8_t *)&pl[0],
                                          llrProcBuf,
@@ -956,7 +958,8 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
     for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
       pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
     }
-
+    p_decParams->block_length=length_dec;
+    nrLDPC_initcall(p_decParams, (int8_t*)&pl[0], llrProcBuf);
     no_iteration_ldpc = nrLDPC_decoder(p_decParams,
                                        (int8_t *)&pl[0],
                                        llrProcBuf,
@@ -1340,7 +1343,8 @@ void nr_dlsch_decoding_process(void *arg) {
     for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
       pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
     }
-
+    p_decParams->block_length=length_dec;
+    nrLDPC_initcall(p_decParams, (int8_t*)&pl[0], llrProcBuf);
     no_iteration_ldpc = nrLDPC_decoder(p_decParams,
                                        (int8_t *)&pl[0],
                                        llrProcBuf,

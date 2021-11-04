@@ -42,22 +42,32 @@
 
 
 /* function description array, to be used when loading the encoding/decoding shared lib */
-static loader_shlibfunc_t shlib_fdesc[2];
+static loader_shlibfunc_t shlib_fdesc[3];
 
-char *arg[64]={"ldpctest","-O","cmdlineonly::dbgl0"};
+/* arguments used when called from phy simulators exec's which do not use the config module */
+/* arg is used to initialize the config module so that the loader works as expected */
+char *arg[64]={"ldpctest","-O","cmdlineonly::dbgl0",NULL,NULL};
 
-int load_nrLDPClib(void) {
+int load_nrLDPClib(char *version) {
 	 char *ptr = (char*)config_get_if();
+	 char libname[64]="ldpc";
+
      if ( ptr==NULL )  {// phy simulators, config module possibly not loaded
-     	 load_configmodule(3,(char **)arg,CONFIG_ENABLECMDLINEONLY) ;
+     	 load_configmodule(0,(char **)NULL,CONFIG_ENABLECMDLINEONLY) ;
      	 logInit();
      }	 
      shlib_fdesc[0].fname = "nrLDPC_decod";
      shlib_fdesc[1].fname = "nrLDPC_encod";
-     int ret=load_module_shlib("ldpc",shlib_fdesc,sizeof(shlib_fdesc)/sizeof(loader_shlibfunc_t),NULL);
+     shlib_fdesc[2].fname = "nrLDPC_initcall";
+     int ret;
+     if (version)
+       ret=load_module_version_shlib(libname,version,shlib_fdesc,sizeof(shlib_fdesc)/sizeof(loader_shlibfunc_t),NULL);
+     else
+       ret=load_module_shlib(libname,shlib_fdesc,sizeof(shlib_fdesc)/sizeof(loader_shlibfunc_t),NULL);
      AssertFatal( (ret >= 0),"Error loading ldpc decoder");
      nrLDPC_decoder = (nrLDPC_decoderfunc_t)shlib_fdesc[0].fptr;
      nrLDPC_encoder = (nrLDPC_encoderfunc_t)shlib_fdesc[1].fptr;
+     nrLDPC_initcall = (nrLDPC_initcallfunc_t)shlib_fdesc[2].fptr;
 return 0;
 }
 
@@ -65,10 +75,8 @@ int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_encoder_p
 	loader_shlibfunc_t shlib_encoder_fdesc;
 
      shlib_encoder_fdesc.fname = "nrLDPC_encod";
-     char libpath[64];
-     sprintf(libpath,"ldpc%s",libversion);
-     int ret=load_module_shlib(libpath,&shlib_encoder_fdesc,1,NULL);
-     AssertFatal( (ret >= 0),"Error loading ldpc encoder %s\n",libpath);
+     int ret=load_module_version_shlib("ldpc",libversion,&shlib_encoder_fdesc,1,NULL);
+     AssertFatal( (ret >= 0),"Error loading ldpc encoder %s\n",(libversion==NULL)?"":libversion);
      *nrLDPC_encoder_ptr = (nrLDPC_encoderfunc_t)shlib_encoder_fdesc.fptr;
 return 0;
 }

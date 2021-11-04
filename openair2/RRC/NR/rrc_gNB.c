@@ -106,9 +106,7 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     uint8_t                  *const kRRCint,
     uint8_t                  *const kUPenc,
     uint8_t                  *const kUPint
-  #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-  #endif
     ,rb_id_t                 *const defaultDRB,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
@@ -1010,7 +1008,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     sdap_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
     memset(sdap_config, 0, sizeof(NR_SDAP_Config_t));
     sdap_config->pdu_Session = ue_context_pP->ue_context.pduSession[i].param.pdusession_id;
-    sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
+    sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
     sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
     sdap_config->defaultDRB = TRUE;
     sdap_config->mappedQoS_FlowsToAdd = calloc(1, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
@@ -1305,51 +1303,22 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
 
-#ifndef PHYSIM
-  uint8_t *k_kdf = NULL;
   /* Derive the keys from kgnb */
   if (DRB_configList != NULL) {
-    k_kdf = NULL;
     nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
                          ue_context_pP->ue_context.kgnb,
-                         &k_kdf);
-    /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
-    kUPenc = malloc(16);
-    if (kUPenc == NULL) exit(1);
-    memcpy(kUPenc, k_kdf+16, 16);
-    free(k_kdf);
-
-    k_kdf = NULL;
+                         &kUPenc);
     nr_derive_key_up_int(ue_context_pP->ue_context.integrity_algorithm,
                          ue_context_pP->ue_context.kgnb,
-                         &k_kdf);
-    /* kUPint: last 128 bits of key derivation function which returns 256 bits */
-    kUPint = malloc(16);
-    if (kUPint == NULL) exit(1);
-    memcpy(kUPint, k_kdf+16, 16);
-    free(k_kdf);
+                         &kUPint);
   }
 
-  k_kdf = NULL;
   nr_derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
                         ue_context_pP->ue_context.kgnb,
-                        &k_kdf);
-  /* kRRCenc: last 128 bits of key derivation function which returns 256 bits */
-  kRRCenc = malloc(16);
-  if (kRRCenc == NULL) exit(1);
-  memcpy(kRRCenc, k_kdf+16, 16);
-  free(k_kdf);
-
-  k_kdf = NULL;
+                        &kRRCenc);
   nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
                         ue_context_pP->ue_context.kgnb,
-                        &k_kdf);
-  /* kRRCint: last 128 bits of key derivation function which returns 256 bits */
-  kRRCint = malloc(16);
-  if (kRRCint == NULL) exit(1);
-  memcpy(kRRCint, k_kdf+16, 16);
-  free(k_kdf);
-#endif
+                        &kRRCint);
   /* Refresh SRBs/DRBs */
   MSC_LOG_TX_MESSAGE(MSC_RRC_GNB, MSC_PDCP_ENB, NULL, 0, MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security unchanged)",
                    MSC_AS_TIME_ARGS(ctxt_pP),

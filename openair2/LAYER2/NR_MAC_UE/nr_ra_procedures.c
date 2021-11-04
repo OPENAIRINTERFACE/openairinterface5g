@@ -740,7 +740,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       } else {
 
-        size_sdu = nr_write_ce_ulsch_pdu(pdu, mac);
+        size_sdu = nr_write_ce_ulsch_pdu(pdu, mac, 0,  &(mac->crnti), NULL, NULL, NULL);
         pdu += size_sdu;
         ra->Msg3_size = size_sdu;
 
