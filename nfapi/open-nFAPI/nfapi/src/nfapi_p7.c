@@ -5866,7 +5866,12 @@ static uint8_t unpack_nr_uci_pucch_0_1(nfapi_nr_uci_pucch_pdu_format_0_1_t *valu
 		 ))
 		  return 0;
 	if (value->pduBitmap & 0x01) { //SR
-		value->sr = (nfapi_nr_sr_pdu_0_1_t*) malloc(sizeof(nfapi_nr_sr_pdu_0_1_t));
+		value->sr = nfapi_p7_allocate(sizeof(*value->sr), config);
+		if (value->sr == NULL)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate sr pdu\n", __FUNCTION__);
+			return 0;
+		}
 		if(!(pull8(ppReadPackedMsg, &value->sr->sr_indication, end) &&
 	 	 pull8(ppReadPackedMsg, &value->sr->sr_confidence_level, end) 
 		 ))

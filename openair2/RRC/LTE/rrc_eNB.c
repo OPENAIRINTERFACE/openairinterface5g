@@ -3628,9 +3628,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
                            NULL,
                            NULL,
                            NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                            , (LTE_PMCH_InfoList_r9_t *) NULL
-#endif
                            , NULL);
 
   /* Refresh SRBs/DRBs */
@@ -3639,11 +3637,9 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
                             *SRB_configList2, // NULL,
                             *DRB_configList,
                             NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                             , (LTE_PMCH_InfoList_r9_t *) NULL,
                             0,
                             0
-#endif
                            );
   }
 
@@ -6355,9 +6351,7 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
                            NULL,
                            NULL,
                            NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                            , (LTE_PMCH_InfoList_r9_t *) NULL
-#endif
                            , NULL);
 
   /* Refresh SRBs/DRBs */
@@ -6366,11 +6360,9 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
                             *SRB_configList2, // NULL,
                             *DRB_configList,
                             NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                             , (LTE_PMCH_InfoList_r9_t *) NULL,
                             0,
                             0
-#endif
                            );
   }
 

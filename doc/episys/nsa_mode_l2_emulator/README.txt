@@ -1,35 +1,35 @@
 There are fundamental changes to the L2 emulation mechanism; these changes allow the
 user to run multiple UEs in separate Linux processes/machines/VMs/etc. They use a separate
-entity between the UE(s) and eNB; where the UEs use nFAPI to communicate with the eNB. The
+entity between the UE(s) and eNB/gNB. The UEs use nFAPI to communicate with the eNB/gNB. The
 nFAPI interface allows us to run in an emulated L2 mode, meaning that we are bypassing
 the layer 1 (PHY) layer functionality. Becasue we are bypassing the PHY layer, special
-channel modelling capabilty has been added in the LTE UE phy_stub_ue.c file. To understand
+channel modeling capabilty has been added in the LTE UE phy_stub_ue.c file. To understand
 the interfaces between the different components associated with NSA mode, the image
 functional_diagram_proxy_nsa.png has been provided.
 
-This functionality allows the user to plug in their own channel model and emulator the packet dropping procedure
-in real time. The channel modelling has not been provided by EpiSci, but the OAI code
-base already has some BLER curves available for use. The channle modelling functionality
-that is included in the phy_stub_ue.c file only includes the downlink channel modelling.
-Any uplink channel modelling must be conducted in some sort of proxy, which would sit
-between the UEs and eNB. (A description of the downlink channel modelling is shown in the
+This functionality allows the user to plug in their own channel model and emulate the packet dropping procedure
+in real time. The channel modeling has not been provided by EpiSci, but the OAI code
+base already has some BLER curves available for use. The chanel modeling functionality
+that is included in the phy_stub_ue.c file only includes the downlink channel modeling.
+Any uplink channel modeling must be conducted in some sort of proxy, which would sit
+between the UEs and eNB/gNB. (A description of the downlink channel modeling is shown in the
 Channel_Abstraction_UE_Handling_LTE.PNG image).
 
 The updates to the OAI code base removed some latent bugs, added multi-UE scalability,
-and were tested with a standard bypass proxy between the UE(s) and eNB. The bypass proxy is
-publicly available on GitHub. With this package,
+and were tested with a standard bypass proxy between the UE(s) and eNB/gNB. The bypass proxy is
+publicly available on GitHub (https://github.com/EpiSci/oai-lte-multi-ue-proxy). With this package,
 various multi-UE scenarios can be tested without the overhead of PHY-layer features
-of underlying radios.
+of underlying radios. The added features to the OAI code base are listed below.
 
  - Ease of use of gprof and address sanitizer for debugging purposes
  - Updated json files to allow for GDB, real-time debugging capabilities
  - Updated logging features to minimally log only key connection milestones. This improves scalability of multiple UEs.
 The logging mechanism described here is located in the log.c and log.h files. The LOG_MINIMAL
-function allows us to remove all OAI logging and only include LOG_A(...) logs. The LOG_A
+function allows us to remove most logs and include LOG_A(...) logs and above. The LOG_A
 logs were chosen as analysis logs to meet EpiSci's internal testing procedure. The LOG_As
-only include logs that are considered to be critical milestones in a particular procedure. (i.e. a
-log indicating that the RACH procedure has been completed for LTE.) To revert to the original logging
-mechanism, simply set LOG_MINIMAL = 0 in the log.h file.
+only include logs that are considered to be milestones in a given test. For example, a
+log indicating that the CFRA procedure has been completed for NSA mode. To revert to full logging, 
+set LOG_MINIMAL = 0 in the log.h file.
  - Updated logging to include time stamp for timing analysis
  - Updated memory allocation procedures to correct size requirements
  - Added debugging features to handle signal terminations
@@ -52,7 +52,7 @@ mechanism, simply set LOG_MINIMAL = 0 in the log.h file.
 Additionally, NSA mode includes the establishment between an NR UE and the gNB via the LTE UE and eNB
 connection. For NSA mode, the downlink channel abstraction has not been added to the feature set yet.
 NSA mode has been tested and is fully functional with EpiSci's public version of the nFAPI proxy
-located at https://github.com/EpiSci/oai-lte-multi-ue-proxy/blob/master/README.md
+located at https://github.com/EpiSci/oai-lte-multi-ue-proxy
 NSA mode establishment includes the following steps:
 
  - First UE capability enquiry is sent to NR UE
