@@ -262,6 +262,7 @@ pipeline {
           echo "This is a MERGE event"
           addGitLabMRComment comment: message
         }
+        echo "Pipeline is SUCCESSFUL"
       }
     }
     failure {
@@ -271,6 +272,7 @@ pipeline {
           echo "This is a MERGE event"
           addGitLabMRComment comment: message
         }
+        echo "Pipeline FAILED"
       }
     }
   }
