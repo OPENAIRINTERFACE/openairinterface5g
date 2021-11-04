@@ -1087,11 +1087,6 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
 
   if (((uci_01->pduBitmap >> 1) & 0x01)) {
     // iterate over received harq bits
-
-    LOG_I(NR_MAC, "uci_01 %p \n", uci_01);
-    LOG_I(NR_MAC, "uci_01->harq %p \n", uci_01->harq);
-    LOG_I(NR_MAC, "uci_01->harq->num_harq %u \n", uci_01->harq->num_harq);
-
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
