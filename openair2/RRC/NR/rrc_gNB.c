@@ -224,7 +224,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
     rrc->carrier.sizeof_SIB1 = do_SIB1_NR(&rrc->carrier, configuration);
   }
 
-  else if (!NODE_IS_DU(rrc->node_type)) {
+  if (!NODE_IS_DU(rrc->node_type)) {
     rrc->carrier.SIB23 = (uint8_t *) malloc16(100);
     AssertFatal(rrc->carrier.SIB23 != NULL, "cannot allocate memory for SIB");
     rrc->carrier.sizeof_SIB23 = do_SIB23_NR(&rrc->carrier, configuration);
