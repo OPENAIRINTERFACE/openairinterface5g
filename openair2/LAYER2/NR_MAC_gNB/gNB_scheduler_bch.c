@@ -398,9 +398,8 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                          rbSize, nrOfSymbols, N_PRB_DMRS * dmrs_length,0, 0,1) >> 3;
   } while (TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
 
-  AssertFatal(TBS>=gNB_mac->sched_ctrlCommon->num_total_bytes,
-             "Couldn't allocate (TBS = %d) enough resources for %d bytes in SIB1 PDSCH\n",
-             TBS, gNB_mac->sched_ctrlCommon->num_total_bytes);
+  AssertFatal(TBS>=gNB_mac->sched_ctrlCommon->num_total_bytes,"Couldn't allocate enough resources for %d bytes in SIB1 PDSCH\n",
+              gNB_mac->sched_ctrlCommon->num_total_bytes);
 
   gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize = rbSize;
   gNB_mac->sched_ctrlCommon->sched_pdsch.rbStart = 0;
