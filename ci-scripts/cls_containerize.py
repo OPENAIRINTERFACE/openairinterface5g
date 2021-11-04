@@ -486,8 +486,8 @@ class Containerize():
 		imageTag = 'develop'
 		if (self.ranAllowMerge):
 			imageTag = 'ci-temp'
-		mySSH.command('sed -i -e "s/image: oai-enb:develop/image: oai-enb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
-		mySSH.command('sed -i -e "s/image: oai-gnb:develop/image: oai-gnb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
+		mySSH.command('sed -i -e "s/image: oai-enb:latest/image: oai-enb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
+		mySSH.command('sed -i -e "s/image: oai-gnb:latest/image: oai-gnb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
 		localMmeIpAddr = EPC.MmeIPAddress
 		mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
 #		if self.flexranCtrlDeployed:
