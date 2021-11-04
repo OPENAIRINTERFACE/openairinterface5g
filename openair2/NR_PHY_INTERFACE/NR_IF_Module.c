@@ -153,15 +153,13 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
     switch (uci_list[i].pdu_type) {
       case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE:
         if (uci_list[i].pucch_pdu_format_0_1.harq) {
-        free(uci_list[i].pucch_pdu_format_0_1.harq->harq_list);
-        uci_list[i].pucch_pdu_format_0_1.harq->harq_list = NULL;
+          free(uci_list[i].pucch_pdu_format_0_1.harq->harq_list);
+          uci_list[i].pucch_pdu_format_0_1.harq->harq_list = NULL;
+        }
         free(uci_list[i].pucch_pdu_format_0_1.harq);
         uci_list[i].pucch_pdu_format_0_1.harq = NULL;
-        }
-        if (uci_list[i].pucch_pdu_format_0_1.sr) {
-          free(uci_list[i].pucch_pdu_format_0_1.sr);
-          uci_list[i].pucch_pdu_format_0_1.sr = NULL;
-        }
+        free(uci_list[i].pucch_pdu_format_0_1.sr);
+        uci_list[i].pucch_pdu_format_0_1.sr = NULL;
         break;
 
       case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE:

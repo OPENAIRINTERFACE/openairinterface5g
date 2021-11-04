@@ -25,6 +25,34 @@ void reset_queue(queue_t *q)
   }
 }
 
+void *put_queue_replace(queue_t *q, void *item)
+{
+    assert(item != NULL);
+    if (pthread_mutex_lock(&q->mutex) != 0)
+    {
+        LOG_ERROR("put_queue: mutex_lock failed");
+        return false;
+    }
+
+    void *evicted = NULL;
+    if (q->num_items >= MAX_QUEUE_SIZE)
+    {
+        evicted = q->items[q->read_index];
+        assert(evicted != NULL);
+        q->items[q->read_index] = NULL;
+        q->read_index = (q->read_index + 1) % MAX_QUEUE_SIZE;
+        q->num_items--;
+    }
+    assert(q->items[q->write_index] == NULL);
+    q->items[q->write_index] = item;
+    q->write_index = (q->write_index + 1) % MAX_QUEUE_SIZE;
+    q->num_items++;
+
+    pthread_mutex_unlock(&q->mutex);
+    return evicted;
+}
+
+
 bool put_queue(queue_t *q, void *item)
 {
     assert(item != NULL);

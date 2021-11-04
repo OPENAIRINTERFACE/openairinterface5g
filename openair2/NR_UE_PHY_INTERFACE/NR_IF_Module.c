@@ -811,14 +811,9 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                       ul_tti_request->SFN, ul_tti_request->Slot);
                 if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
                 {
-                    LOG_D(NR_PHY, "put_queue failed for nr_ul_tti_req_queue.\n");
-                    reset_queue(&nr_ul_tti_req_queue);
-                    if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
-                    {
-                        LOG_E(NR_PHY, "put_queue failed for ul_tti_request.\n");
-                        free(ul_tti_request);
-                        ul_tti_request = NULL;
-                    }
+                    LOG_E(NR_PHY, "put_queue failed for ul_tti_request.\n");
+                    free(ul_tti_request);
+                    ul_tti_request = NULL;
                 }
             }
             /* TODO: This indicates that dl_tti_req was late or never arrived. If there are
@@ -828,21 +823,11 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                mitigate proxy timing issues. */
             else if (nr_uci_ind_queue.num_items == 0)
             {
-                LOG_D(NR_MAC, "We added UL_TTI_REQ to  wait queue for sfn slot %d %d\n",
+                LOG_D(NR_MAC, "We added UL_TTI_REQ to queue for sfn slot %d %d\n",
                       ul_tti_request->SFN, ul_tti_request->Slot);
-                if (!put_queue(&nr_wait_ul_tti_req_queue, ul_tti_request))
-                {
-                    LOG_D(NR_PHY, "put_queue failed for nr_wait_ul_tti_req_queue.\n");
-                    reset_queue(&nr_wait_ul_tti_req_queue);
-                    if (!put_queue(&nr_wait_ul_tti_req_queue, ul_tti_request))
-                    {
-                        LOG_E(NR_PHY, "put_queue failed for nr_wait_ul_tti_req_queue.\n");
-                        free(ul_tti_request);
-                        ul_tti_request = NULL;
-                    }
-                }
+                nfapi_nr_ul_tti_request_t *evicted_ul_tti_req = put_queue_replace(&nr_wait_ul_tti_req_queue, ul_tti_request);
+                free(evicted_ul_tti_req);
             }
-
             break;
         }
 

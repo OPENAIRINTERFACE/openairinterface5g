@@ -357,7 +357,7 @@ static void check_nr_prach(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_inf
     AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
                 "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
     fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
-    uint8_t nr_prach = nr_ue_get_rach(prach_resources,
+    uint8_t nr_prach = nr_ue_get_rach_nsa(prach_resources,
                                       prach_pdu,
                                       ul_info->module_id,
                                       ul_info->cc_id,
