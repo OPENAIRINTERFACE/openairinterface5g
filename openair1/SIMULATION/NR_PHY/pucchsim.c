@@ -664,11 +664,11 @@ int main(int argc, char **argv)
         }
         if(nr_bit>0){
           if (nr_bit==1 && do_DTX == 0)
-            ack_nack_errors+=(actual_payload^uci_pdu.harq->harq_list[0].harq_value);
+            ack_nack_errors+=(actual_payload^(!uci_pdu.harq->harq_list[0].harq_value));
           else if (do_DTX == 0)
-            ack_nack_errors+=(((actual_payload&1)^uci_pdu.harq->harq_list[0].harq_value)+((actual_payload>>1)^uci_pdu.harq->harq_list[1].harq_value));
-          else if ((uci_pdu.harq->harq_confidence_level == 0 && uci_pdu.harq->harq_list[0].harq_value == 1) ||
-                         (uci_pdu.harq->harq_confidence_level == 0 && nr_bit == 2 && uci_pdu.harq->harq_list[1].harq_value==1))
+            ack_nack_errors+=(((actual_payload&1)^(!uci_pdu.harq->harq_list[0].harq_value))+((actual_payload>>1)^(!uci_pdu.harq->harq_list[1].harq_value)));
+          else if ((uci_pdu.harq->harq_confidence_level == 0 && uci_pdu.harq->harq_list[0].harq_value == 0) ||
+                         (uci_pdu.harq->harq_confidence_level == 0 && nr_bit == 2 && uci_pdu.harq->harq_list[1].harq_value== 0))
                   ack_nack_errors++;
           free(uci_pdu.harq->harq_list);
         }
