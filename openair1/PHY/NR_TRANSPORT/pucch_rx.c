@@ -415,7 +415,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   if (pucch_pdu->bit_len_harq==0) {
     uci_pdu->harq = NULL;
     uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
-    AssertFatal (uci_pdu->sr != NULL, "Memory allocation failed when pucch_pdu->bit_len_harq == 0\n");
     uci_pdu->sr->sr_confidence_level = no_conf ? 1 : 0;
     uci_stats->pucch0_sr_trials++;
     if (xrtmag_dBtimes10>(10*gNB->measurements.n0_power_tot_dB)) {
@@ -427,7 +426,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   }
   else if (pucch_pdu->bit_len_harq==1) {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
-    AssertFatal (uci_pdu->harq != NULL, "Memory allocation failed when pucch_pdu->bit_len_harq == 1\n");
     uci_pdu->harq->num_harq = 1;
     uci_pdu->harq->harq_confidence_level = no_conf ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
@@ -444,7 +442,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   }
   else {
     uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
-    AssertFatal (uci_pdu->harq != NULL, "Memory allocation failed when pucch_pdu->bit_len_harq > 1\n");
     uci_pdu->harq->num_harq = 2;
     uci_pdu->harq->harq_confidence_level = (no_conf) ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);

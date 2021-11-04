@@ -3807,7 +3807,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 
   if ((mac->crnti == ra->t_crnti) && (get_softmodem_params()->nsa))
   {
-    LOG_I(MAC, "Discarding the received RAR.\n");
+    LOG_D(MAC, "Discarding the received RAR.\n");
     return -1;
   }
   while (1) {
