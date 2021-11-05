@@ -410,8 +410,8 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
     }
     else
     {
-      UL_INFO.crc_ind.number_crcs = 0;
-      UL_INFO.rx_ind.number_of_pdus = 0;
+      UL_info->crc_ind.number_crcs = 0;
+      UL_info->rx_ind.number_of_pdus = 0;
     }
   } else if ((UL_INFO.rx_ind.number_of_pdus != 0)
              || (UL_INFO.crc_ind.number_crcs != 0)) {
