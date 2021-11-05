@@ -1005,6 +1005,7 @@ class RANManagement():
 		if (os.path.isfile('./nrL1_stats.log')) and (os.path.isfile('./nrL1_stats.log')):
 			stat_files_present=True
 		else:
+			stat_files_present=False
 			logging.debug("NR Stats files for RT analysis not found")
 		if stat_files_present:
 			nrL1_stats = open('./nrL1_stats.log', 'r')
