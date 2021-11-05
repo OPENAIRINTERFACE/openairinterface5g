@@ -333,7 +333,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
 						    NULL,
 						    (void *)&cellGroupConfig,
 						    msg->du2cu_rrc_container,
-						    sizeof(msg->du2cu_rrc_container));
+						    1024); //sizeof(msg->du2cu_rrc_container));
 
     if (enc_rval.encoded == -1) {
       LOG_E(F1AP,"Could not encoded cellGroupConfig, failed element %s\n",enc_rval.failed_type->name);
