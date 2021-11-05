@@ -527,6 +527,8 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       for(int j = 0; j < ra->preambles.num_preambles; j++) {
         //check if the preamble received correspond to one of the listed or configured preambles
         if (preamble_index == ra->preambles.preamble_list[j]) {
+          if (ra->rnti == 0 && get_softmodem_params()->nsa)
+            continue;
           pr_found=1;
           break;
         }
