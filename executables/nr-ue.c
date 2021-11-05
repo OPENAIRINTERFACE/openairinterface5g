@@ -374,7 +374,6 @@ static void check_nr_prach(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_inf
                                        ul_info->slot_tx);
     if (nr_prach == 1)
     {
-      mac->ra.ra_state = GENERATE_PREAMBLE;
       L1_nsa_prach_procedures(ul_info->frame_tx, ul_info->slot_tx, prach_pdu);
       ul_config->number_pdus = 0;
       ul_info->ue_sched_mode = SCHED_ALL;
@@ -446,16 +445,13 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     module_id_t mod_id = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-    if (mac->mib == NULL)
+    if (get_softmodem_params()->sa && mac->mib == NULL)
     {
-      if (get_softmodem_params()->sa)
-      {
-        LOG_D(NR_MAC, "We haven't gotten MIB. Lets see if we received it\n");
-        nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
-        process_queued_nr_nfapi_msgs(mac, sfn_slot);
-      }
+      LOG_D(NR_MAC, "We haven't gotten MIB. Lets see if we received it\n");
+      nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+      process_queued_nr_nfapi_msgs(mac, sfn_slot);
     }
-    if (mac->scc == NULL && mac->scc_SIB == NULL )
+    if (mac->scc == NULL && mac->scc_SIB == NULL)
     {
       LOG_D(MAC, "[NSA] mac->scc == NULL and [SA] mac->scc_SIB == NULL!\n");
       continue;
