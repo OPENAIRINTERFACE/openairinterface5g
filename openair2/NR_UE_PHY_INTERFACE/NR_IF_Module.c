@@ -876,8 +876,7 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t
 // Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
 int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
 
-  if (get_softmodem_params()->nsa)
-    dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid = g_harq_pid;
+  dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid = g_harq_pid;
   update_harq_status(dl_info, pdu_id);
 
   if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack)
@@ -951,14 +950,10 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
                                 dl_info->slot,
                                 dl_info->dci_ind->dci_list+i);
 
-        if (get_softmodem_params()->nsa)
-        {
-          fapi_nr_dci_indication_pdu_t *dci_index = dl_info->dci_ind->dci_list+i;
-          dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci_index->dci_format];
-          g_harq_pid = def_dci_pdu_rel15->harq_pid;
-          LOG_D(NR_MAC, "Setting harq_pid = %d and dci_index = %d (based on format)\n", g_harq_pid, dci_index->dci_format);
-          memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
-        }
+        fapi_nr_dci_indication_pdu_t *dci_index = dl_info->dci_ind->dci_list+i;
+        dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci_index->dci_format];
+        g_harq_pid = def_dci_pdu_rel15->harq_pid;
+        LOG_D(NR_MAC, "Setting harq_pid = %d and dci_index = %d (based on format)\n", g_harq_pid, dci_index->dci_format);
 
         ret_mask |= (ret << FAPI_NR_DCI_IND);
         if (ret >= 0) {
@@ -967,7 +962,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
           fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->thread_id);
           nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         }
-        
+        memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
       }
       free(dl_info->dci_ind);
       dl_info->dci_ind = NULL;

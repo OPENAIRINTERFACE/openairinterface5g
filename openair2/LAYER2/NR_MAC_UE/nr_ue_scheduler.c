@@ -961,8 +961,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       uint8_t ulsch_input_buffer[MAX_ULSCH_PAYLOAD_BYTES];
       nr_scheduled_response_t scheduled_response;
       fapi_nr_tx_request_t tx_req;
-      if (get_softmodem_params()->nsa)
-        memset(&tx_req, 0, sizeof(tx_req));
+      memset(&tx_req, 0, sizeof(tx_req));
 
       for (int j = 0; j < ul_config->number_pdus; j++) {
 
@@ -2184,17 +2183,10 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   RA_config_t *ra = &mac->ra;
-
-  fapi_nr_ul_config_request_t *ul_config;
-  if (get_softmodem_params()->nsa) {
-    ul_config = get_ul_config_request(mac, slotP);
-    if (!ul_config) {
-      LOG_E(NR_MAC, "mac->ul_config is null! \n");
-      return;
-    }
-  }
-  else {
-    ul_config = &mac->ul_config_request[0];
+  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
+  if (!ul_config) {
+    LOG_E(NR_MAC, "mac->ul_config is null! \n");
+    return;
   }
 
   fapi_nr_ul_config_prach_pdu *prach_config_pdu;

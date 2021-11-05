@@ -614,8 +614,6 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
     def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci->dci_format];
   }
   int8_t ret_proc = nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci);
-  if (!get_softmodem_params()->nsa)
-    memset(def_dci_pdu_rel15, 0, sizeof(dci_pdu_rel15_t));
   return ret_proc;
 }
 
