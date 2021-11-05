@@ -256,6 +256,8 @@ typedef struct {
   int8_t delta_PUCCH;
   /// Number of soft channel bits
   uint32_t G;
+  /// Number of segments processed so far
+  uint32_t processedSegments;
   /// Start PRB of BWP
   uint16_t BWPStart;
   /// Number of PRBs in BWP

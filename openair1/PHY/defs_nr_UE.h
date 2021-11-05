@@ -1068,7 +1068,7 @@ typedef struct {
 #endif
   
   int dl_stats[5];
-
+  int nbDecode;
 } PHY_VARS_NR_UE;
 
 /* this structure is used to pass both UE phy vars and
@@ -1080,6 +1080,28 @@ typedef struct nr_rxtx_thread_data_s {
   NR_UE_SCHED_MODE_t ue_sched_mode;
   notifiedFIFO_t txFifo;
 }  nr_rxtx_thread_data_t;
+
+typedef struct LDPCDecode_ue_s {
+  PHY_VARS_NR_UE *phy_vars_ue;
+  NR_DL_UE_HARQ_t *harq_process;
+  t_nrLDPC_dec_params decoderParms;
+  NR_UE_DLSCH_t *dlsch;
+  short* dlsch_llr;
+  int dlsch_id;
+  int harq_pid;
+  int rv_index;
+  int A;
+  int E;
+  int Kc;
+  int Qm;
+  int Kr_bytes;
+  int nbSegments;
+  int segment_r;
+  int r_offset;
+  int offset;
+  int Tbslbrm;
+  int decodeIterations;
+} ldpcDecode_ue_t;
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
 #endif
