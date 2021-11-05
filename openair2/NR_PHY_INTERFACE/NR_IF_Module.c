@@ -163,8 +163,8 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
   }
 
   const module_id_t mod_id = UL_info->module_id;
-  const frame_t frame = UL_INFO.uci_ind.sfn;//TODO: Need to check to use UL_info->frame;
-  const sub_frame_t slot = UL_INFO.uci_ind.slot;//TODO: Need to check to use UL_info->slot;
+  const frame_t frame = UL_INFO.uci_ind.sfn;
+  const sub_frame_t slot = UL_INFO.uci_ind.slot;
   int num_ucis = UL_INFO.uci_ind.num_ucis;
   nfapi_nr_uci_t *uci_list = UL_INFO.uci_ind.uci_list;
 
@@ -301,8 +301,8 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
     UL_INFO.CC_id = UL_info->CC_id;
   }
 
-  UL_INFO.frame = UL_INFO.rx_ind.sfn;//TODO: Need to check to use UL_info->frame;
-  UL_INFO.slot = UL_INFO.rx_ind.slot;//TODO: Need to check to use UL_info->slot;
+  UL_INFO.frame = UL_INFO.rx_ind.sfn;
+  UL_INFO.slot = UL_INFO.rx_ind.slot;
   UL_INFO.module_id = UL_info->module_id;
   UL_INFO.CC_id = UL_info->CC_id;
   LOG_D(NR_MAC, " UL_info frame slot vs rx_ind frame slot vs crc_ind slot frame slot = %u %u vs %u %u vs %u %u\n",
