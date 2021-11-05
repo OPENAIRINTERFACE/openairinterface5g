@@ -175,6 +175,24 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
     MCC_MNC_TO_PLMNID(cell->mcc, cell->mnc, cell->mnc_digit_length, &servedPLMN_item->pLMN_Identity);
     // // /* - CHOICE NR-MODE-Info */
     F1AP_NR_Mode_Info_t *nR_Mode_Info= &served_cell_information->nR_Mode_Info;
+    //if(0){
+      //F1AP_ProtocolExtensionContainer_154P260_t *p_154P260=calloc(1, sizeof(* p_154P260));
+      F1AP_ProtocolExtensionContainer_154P34_t *p_154P34=calloc(1,sizeof(* p_154P34));
+      servedPLMN_item->iE_Extensions = (struct F1AP_ProtocolExtensionContainer *)p_154P34;
+      asn1cSequenceAdd(p_154P34->list, F1AP_ServedPLMNs_ItemExtIEs_t , served_plmns_itemExtIEs);
+      served_plmns_itemExtIEs->criticality = F1AP_Criticality_ignore;
+      served_plmns_itemExtIEs->id = F1AP_ProtocolIE_ID_id_TAISliceSupportList;
+      served_plmns_itemExtIEs->extensionValue.present = F1AP_ServedPLMNs_ItemExtIEs__extensionValue_PR_SliceSupportList;
+      F1AP_SliceSupportList_t *slice_support_list = &served_plmns_itemExtIEs->extensionValue.choice.SliceSupportList;
+
+      asn1cSequenceAdd(slice_support_list->list, F1AP_SliceSupportItem_t, SliceSupport_item);
+      INT8_TO_OCTET_STRING(1,&SliceSupport_item->sNSSAI.sST);
+      //OCTET_STRING_fromBuf(&SliceSupport_item->sNSSAI.sST, "1", 1);
+      asn1cCalloc(SliceSupport_item->sNSSAI.sD, tmp);
+      INT24_TO_OCTET_STRING(1,tmp);
+      //OCTET_STRING_fromBuf(tmp, "1",1);
+    //}
+    
 
     if (f1ap_req(false, instance)->fdd_flag) { // FDD
       nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_fDD;
