@@ -621,7 +621,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     int slot = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
-    if (mac->scc == NULL && mac->scc_SIB == NULL)
+    if (mac->scc == NULL && get_softmodem_params()->nsa)
     {
       return;
     }
