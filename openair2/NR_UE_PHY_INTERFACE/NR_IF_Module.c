@@ -299,13 +299,13 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                     /* For multiple UEs, we need to be able to filter the rx'd messages by
                        the RNTI. However, we do not have the RNTI value until the CFRA (NSA)
                        or CBRA (SA) procedure is complete. The check below will handle this.
-                       Also, depending on the RNTI value, we can have a SIB (0xffff), RAR (0x10b),
+                       Also, depending on the RA state, we can have a SIB (0xffff), RAR (0x10b),
                        Msg3 (TC_RNTI) or an actual DCI message (CRNTI). When we get Msg3, the
                        MAC instance of the UE still has a CRNTI = 0. Only once the RA procedure
                        succeeds is the CRNTI value updated to the TC_RNTI. */
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
                     if ((dci_pdu_list->RNTI != mac->crnti) &&
-                        (mac->ra.ra_state == RA_SUCCEEDED))
+                       ((dci_pdu_list->RNTI != mac->ra.ra_rnti) || mac->ra.RA_RAPID_found))
                     {
                       LOG_D(NR_MAC, "We are filtering PDCCH DCI pdu because RNTI doesnt match! "
                                     "dci_pdu_list->RNTI (%x) != mac->crnti (%x)\n",
@@ -620,6 +620,11 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     frame_t frame = 0;
     int slot = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+
+    if (mac->scc == NULL && mac->scc_SIB == NULL)
+    {
+      return;
+    }
 
     if (pthread_mutex_lock(&mac->mutex_dl_info)) abort();
 
