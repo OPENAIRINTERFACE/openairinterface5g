@@ -62,7 +62,6 @@ class EPCManagement():
 		self.PcapFileName = ''
 		self.testCase_id = ''
 		self.MmeIPAddress = ''
-		self.AmfIPAddress = ''
 		self.containerPrefix = 'prod'
 		self.mmeConfFile = 'mme.conf'
 		self.yamlPath = ''
