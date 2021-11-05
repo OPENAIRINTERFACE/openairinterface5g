@@ -489,7 +489,7 @@ int main( int argc, char **argv ) {
   if (get_softmodem_params()->sa)
     AssertFatal(get_softmodem_params()->phy_test == 0,"Standalone mode and phy_test are mutually exclusive\n");
 
-  if (get_softmodem_params()->emulate_l2)
+  if (!get_softmodem_params()->nsa && get_softmodem_params()->emulate_l2)
     start_oai_nrue_threads();
 
   if (!get_softmodem_params()->nsa && !get_softmodem_params()->emulate_l2) {
