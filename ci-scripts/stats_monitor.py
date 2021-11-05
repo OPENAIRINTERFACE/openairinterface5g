@@ -17,9 +17,15 @@ class StatMonitor():
     def __init__(self,cfg_file):
         with open(cfg_file,'r') as file:
             self.d = yaml.load(file)
-        for node in self.d:
-            for metric in self.d[node]:
-                self.d[node][metric]=[]
+        for node in self.d:#so far we have enb or gnb as nodes
+            for metric_l1 in self.d[node]: #first level of metric keys
+                if metric_l1!="graph": #graph is a reserved word to configure graph paging, so it is disregarded
+                    if self.d[node][metric_l1] is None:#first level is None -> create array
+                        self.d[node][metric_l1]=[]
+                    else: #first level is not None -> there is a second level -> create array
+                        for metric_l2 in self.d[node][metric_l1]:
+                            self.d[node][metric_l1][metric_l2]=[]                
+
 
 
     def process_gnb (self,node_type,output):
@@ -35,15 +41,12 @@ class StatMonitor():
                 self.d[node_type]['ulsch_err'].append(int(result.group(3)))
                 percentage=float(result.group(2))/float(result.group(1))
                 self.d[node_type]['ulsch_err_perc_round_1'].append(percentage)
-            result=re.match(r'^.*\bL1 Tx processing thread 0\b:\s+([0-9\.]+) us;\s+([0-9]+);\s+([0-9\.]+) us;',tmp)
-            if result is not None:
-                self.d[node_type]['L1 Tx processing thread 0'].append(float(result.group(3)))
-            result=re.match(r'^.*\bL1 Tx processing thread 1\b:\s+([0-9\.]+) us;\s+([0-9]+);\s+([0-9\.]+) us;',tmp)
-            if result is not None:
-                self.d[node_type]['L1 Tx processing thread 1'].append(float(result.group(3)))
-            result=re.match(r'^.*\bDLSCH encoding\b:\s+([0-9\.]+) us;\s+([0-9]+);\s+([0-9\.]+) us;',tmp)
-            if result is not None:
-                self.d[node_type]['DLSCH encoding'].append(float(result.group(3)))
+
+            for k in self.d[node_type]['rt']:
+                result=re.match(rf'^.*\b{k}\b:\s+([0-9\.]+) us;\s+([0-9]+);\s+([0-9\.]+) us;',tmp)
+                if result is not None:
+                    self.d[node_type]['rt'][k].append(float(result.group(3)))
+
 
     def process_enb (self,node_type,output):
         for line in output:
@@ -70,23 +73,37 @@ class StatMonitor():
 
 
     def graph(self,node_type):
-        col = 1
-        figure, axis = plt.subplots(len(self.d[node_type]), col ,figsize=(10, 10))
-        i=0
-        for metric in self.d[node_type]:
-            major_ticks = np.arange(0, len(self.d[node_type][metric])+1, 1)
-            axis[i].set_xticks(major_ticks)
-            axis[i].set_xticklabels([])
-            axis[i].plot(self.d[node_type][metric],marker='o')
-            axis[i].set_xlabel('time')
-            axis[i].set_ylabel(metric)
-            axis[i].set_title(metric)
-            i+=1
+        for page in self.d[node_type]['graph']:#work out a set a graphs per page
+            col = 1
+            figure, axis = plt.subplots(len(self.d[node_type]['graph'][page]), col ,figsize=(10, 10))
+            i=0
+            for m in self.d[node_type]['graph'][page]:#metric may refer to 1 level or 2 levels 
+                metric_path=m.split('.')
+                if len(metric_path)==1:#1 level
+                    metric_l1=metric_path[0]
+                    major_ticks = np.arange(0, len(self.d[node_type][metric_l1])+1, 1)
+                    axis[i].set_xticks(major_ticks)
+                    axis[i].set_xticklabels([])
+                    axis[i].plot(self.d[node_type][metric_l1],marker='o')
+                    axis[i].set_xlabel('time')
+                    axis[i].set_ylabel(metric_l1)
+                    axis[i].set_title(metric_l1)
+                    
+                else:#2 levels
+                    metric_l1=metric_path[0]
+                    metric_l2=metric_path[1]
+                    major_ticks = np.arange(0, len(self.d[node_type][metric_l1][metric_l2])+1, 1)
+                    axis[i].set_xticks(major_ticks)
+                    axis[i].set_xticklabels([])
+                    axis[i].plot(self.d[node_type][metric_l1][metric_l2],marker='o')
+                    axis[i].set_xlabel('time')
+                    axis[i].set_ylabel(metric_l2)
+                    axis[i].set_title(metric_l2)
+                i+=1                
 
-        plt.tight_layout()
-        # Combine all the operations and display
-        plt.savefig(node_type+'_stats_monitor.png')
-        plt.show()
+            plt.tight_layout()
+            #save as png
+            plt.savefig(node_type+'_stats_monitor_'+page+'.png')
 
 
 if __name__ == "__main__":
