@@ -53,7 +53,7 @@ import constants as CONST
 class EPCManagement():
 
 	def __init__(self):
-		
+
 		self.IPAddress = ''
 		self.UserName = ''
 		self.Password = ''
@@ -475,10 +475,15 @@ class EPCManagement():
 			time.sleep(1)
 			mySSH.command('echo ' + self.Password + ' | sudo -S screen -S simulated_5g_hss -X quit', '\$', 5)
 		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
-			self.LogCollectOAICN5G()
+			logging.debug('OAI CN5G Collecting Log files to workspace')
+			mySSH.command('echo ' + self.Password + ' | sudo rm -rf ' + self.SourceCodePath + '/logs', '\$', 5)
+			mySSH.command('mkdir ' + self.SourceCodePath + '/logs','\$', 5)
+			containers_list=['oai-smf','oai-spgwu','oai-amf','oai-nrf']
+			for c in containers_list:
+				mySSH.command('docker logs ' + c + ' > ' + self.SourceCodePath + '/logs/' + c + '.log', '\$', 5)
+
 			logging.debug('Terminating OAI CN5G')
 			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
-			mySSH.command('docker-compose down', '\$', 5)
 			mySSH.command('./core-network.sh stop nrf spgwu', '\$', 60)
 		else:
 			logging.error('This should not happen!')
@@ -693,6 +698,8 @@ class EPCManagement():
 				mySSH.command('docker cp ' + self.containerPrefix + '-oai-hss:/openair-hss/hss_check_run.log .', '\$', 60)
 				mySSH.command('docker cp ' + self.containerPrefix + '-oai-hss:/tmp/hss_check_run.pcap .', '\$', 60)
 				mySSH.command('zip hss.log.zip hss_check_run.*', '\$', 60)
+		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
+			logging.debug('LogCollect is bypassed for that variant')
 		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip hss.log.zip hss*.log', '\$', 60)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm hss*.log', '\$', 5)
@@ -723,6 +730,11 @@ class EPCManagement():
 				mySSH.command('docker cp ' + self.containerPrefix + '-oai-mme:/openair-mme/mme_check_run.log .', '\$', 60)
 				mySSH.command('docker cp ' + self.containerPrefix + '-oai-mme:/tmp/mme_check_run.pcap .', '\$', 60)
 				mySSH.command('zip mme.log.zip mme_check_run.*', '\$', 60)
+		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
+			mySSH.command('cd ' + self.SourceCodePath + '/logs','\$', 5)
+			mySSH.command('cp -f /tmp/oai-cn5g.pcap .','\$', 30)
+			mySSH.command('zip mme.log.zip oai-amf.log oai-nrf.log oai-cn5g.pcap','\$', 30)
+			mySSH.command('mv mme.log.zip ' + self.SourceCodePath + '/scripts','\$', 30)
 		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip mme.log.zip mme*.log', '\$', 60)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm mme*.log', '\$', 5)
@@ -752,6 +764,10 @@ class EPCManagement():
 				mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwc:/tmp/spgwc_check_run.pcap .', '\$', 60)
 				mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwu-tiny:/tmp/spgwu_check_run.pcap .', '\$', 60)
 				mySSH.command('zip spgw.log.zip spgw*_check_run.*', '\$', 60)
+		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
+			mySSH.command('cd ' + self.SourceCodePath + '/logs','\$', 5)
+			mySSH.command('zip spgw.log.zip oai-smf.log oai-spgwu.log','\$', 30)
+			mySSH.command('mv spgw.log.zip ' + self.SourceCodePath + '/scripts','\$', 30)
 		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip spgw.log.zip spgw*.log', '\$', 60)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm spgw*.log', '\$', 5)
@@ -761,17 +777,3 @@ class EPCManagement():
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
-
-	def LogCollectOAICN5G(self):
-		mySSH = SSH.SSHConnection()
-		mySSH.open(self.IPAddress, self.UserName, self.Password)
-		logging.debug('OAI CN5G Collecting Log files to workspace')
-		mySSH.command('echo ' + self.Password + ' | sudo rm -rf ' + self.SourceCodePath + '/logs', '\$', 5)
-		mySSH.command('mkdir ' + self.SourceCodePath + '/logs','\$', 5)	
-		containers_list=['oai-smf','oai-spgwu','oai-amf','oai-nrf']
-		for c in containers_list:
-			mySSH.command('docker logs ' + c + ' > ' + self.SourceCodePath + '/logs/' + c + '.log', '\$', 5)
-		mySSH.command('cd ' + self.SourceCodePath + '/logs', '\$', 5)		
-		mySSH.command('zip oai-cn5g.log.zip *.log', '\$', 60)
-		mySSH.close()
-
