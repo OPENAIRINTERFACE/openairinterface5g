@@ -234,17 +234,18 @@ static void fill_dl_info_with_pdcch(fapi_nr_dci_indication_t *dci, nfapi_nr_dl_d
 
 static void fill_mib_in_rx_ind(nfapi_nr_dl_tti_request_pdu_t *pdu_list, fapi_nr_rx_indication_t *rx_ind, int pdu_idx, int pdu_type)
 {
-    AssertFatal(pdu_list->PDUSize < sizeof(rx_ind->rx_indication_body) / sizeof(rx_ind->rx_indication_body[0]),
-                "PDU size (%d) is greater than rx_indication_body size!\n", pdu_list->PDUSize);
-    nfapi_nr_dl_tti_ssb_pdu_rel15_t *ssb_pdu = &pdu_list->ssb_pdu.ssb_pdu_rel15;
+    AssertFatal(pdu_idx < sizeof(rx_ind->rx_indication_body) / sizeof(rx_ind->rx_indication_body[0]),
+                "pdu_index (%d) is greater than rx_indication_body size!\n", pdu_idx);
+    AssertFatal(pdu_idx == rx_ind->number_pdus,  "Invalid pdu_idx %d!\n", pdu_idx);
 
     LOG_D(NR_MAC, "Recevied an SSB and are filling rx_ind with the MIB!\n");
+
+    nfapi_nr_dl_tti_ssb_pdu_rel15_t *ssb_pdu = &pdu_list->ssb_pdu.ssb_pdu_rel15;
     rx_ind->rx_indication_body[pdu_idx].ssb_pdu.cell_id = ssb_pdu->PhysCellId;
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu = CALLOC(3,
-                                                      sizeof(*rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu));
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[0] = (ssb_pdu->bchPayload) & 0xffff;
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[1] = (ssb_pdu->bchPayload >> 8) & 0xffff;
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[2] = (ssb_pdu->bchPayload >> 16) & 0xffff;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu = MALLOC(3 * sizeof(*rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu));
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[0] = (ssb_pdu->bchPayload) & 0xff;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[1] = (ssb_pdu->bchPayload >> 8) & 0xff;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[2] = (ssb_pdu->bchPayload >> 16) & 0xff;
     rx_ind->rx_indication_body[pdu_idx].ssb_pdu.rsrp_dBm = ssb_pdu->ssbRsrp;
     rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_index = ssb_pdu->SsbBlockIndex;
     rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_length = pdu_list->PDUSize;
@@ -269,15 +270,14 @@ static bool is_my_dci(NR_UE_MAC_INST_t *mac, nfapi_nr_dl_dci_pdu_t *received_pdu
        to the TC_RNTI. */
     if (get_softmodem_params()->nsa)
     {
-        if ((received_pdu->RNTI != mac->crnti) &&
-           ((received_pdu->RNTI != mac->ra.ra_rnti) || mac->ra.RA_RAPID_found))
-        return false;
+        if (received_pdu->RNTI != mac->crnti &&
+            (received_pdu->RNTI != mac->ra.ra_rnti || mac->ra.RA_RAPID_found))
+            return false;
     }
-    else if (get_softmodem_params()->sa)
+    if (get_softmodem_params()->sa)
     {
-        if ((received_pdu->RNTI != mac->crnti) &&
-            (mac->ra.ra_state == RA_SUCCEEDED))
-        return false;
+        if (received_pdu->RNTI != mac->crnti && mac->ra.ra_state == RA_SUCCEEDED)
+            return false;
     }
     return true;
 }
