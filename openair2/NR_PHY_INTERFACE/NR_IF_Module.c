@@ -64,7 +64,7 @@ extern uint16_t sl_ahead;
 void handle_nr_rach(NR_UL_IND_t *UL_info)
 {
   if(NFAPI_MODE == NFAPI_MODE_PNF) {
-    if (UL_info->rach_ind.number_of_pdus>0) {
+    if (UL_info->rach_ind.number_of_pdus > 0) {
       LOG_D(PHY,"UL_info->UL_info->rach_ind.number_of_pdus:%d SFN/Slot:%d.%d \n", UL_info->rach_ind.number_of_pdus, UL_info->rach_ind.sfn,UL_info->rach_ind.slot);
       oai_nfapi_nr_rach_indication(&UL_info->rach_ind);
       UL_info->rach_ind.number_of_pdus = 0;
@@ -75,7 +75,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
   nfapi_nr_rach_indication_t *rach_ind = NULL;
   if (get_softmodem_params()->nsa)
   {
-    if (gnb_rach_ind_queue.num_items ==0)
+    if (gnb_rach_ind_queue.num_items == 0)
       return; 
     LOG_I(NR_MAC, "gnb_rach_ind_queue size = %zu\n", gnb_rach_ind_queue.num_items);
     rach_ind = get_queue(&gnb_rach_ind_queue);
@@ -139,7 +139,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
 void handle_nr_uci(NR_UL_IND_t *UL_info)
 {
   if(NFAPI_MODE == NFAPI_MODE_PNF) {
-    if (UL_info->uci_ind.num_ucis>0) {
+    if (UL_info->uci_ind.num_ucis > 0) {
       LOG_D(PHY,"PNF Sending UL_info->num_ucis:%d PDU_type: %d, SFN/SF:%d.%d \n", UL_info->uci_ind.num_ucis, UL_info->uci_ind.uci_list[0].pdu_type ,UL_info->frame, UL_info->slot);
       oai_nfapi_nr_uci_indication(&UL_info->uci_ind);
       UL_info->uci_ind.num_ucis = 0;
@@ -151,7 +151,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
   nfapi_nr_uci_indication_t *uci_ind = NULL;
   if (get_softmodem_params()->nsa)
   {
-    if (gnb_uci_ind_queue.num_items ==0)
+    if (gnb_uci_ind_queue.num_items == 0)
       return; 
     LOG_I(NR_MAC, "gnb_uci_ind_queue size = %zu\n", gnb_uci_ind_queue.num_items);
     uci_ind = get_queue(&gnb_uci_ind_queue);
@@ -249,13 +249,13 @@ static bool crc_sfn_slot_matcher(void *wanted, void *candidate)
 void handle_nr_ulsch(NR_UL_IND_t *UL_info)
 {
   if(NFAPI_MODE == NFAPI_MODE_PNF) {
-    if (UL_info->crc_ind.number_crcs>0) {
+    if (UL_info->crc_ind.number_crcs > 0) {
       LOG_D(PHY,"UL_info->UL_info->crc_ind.number_crcs:%d CRC_IND:SFN/Slot:%d.%d\n", UL_info->crc_ind.number_crcs, UL_info->crc_ind.sfn, UL_info->crc_ind.slot);
       oai_nfapi_nr_crc_indication(&UL_info->crc_ind);
       UL_info->crc_ind.number_crcs = 0;
     }
 
-    if (UL_info->rx_ind.number_of_pdus>0) {
+    if (UL_info->rx_ind.number_of_pdus > 0) {
       LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/Slot:%d.%d \n", UL_info->rx_ind.number_of_pdus, UL_info->rx_ind.sfn, UL_info->rx_ind.slot);
       oai_nfapi_nr_rx_data_indication(&UL_info->rx_ind);
       UL_info->rx_ind.number_of_pdus = 0;
