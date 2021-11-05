@@ -254,6 +254,34 @@ static void fill_mib_in_rx_ind(nfapi_nr_dl_tti_request_pdu_t *pdu_list, fapi_nr_
 
 }
 
+static bool is_my_dci(NR_UE_MAC_INST_t *mac, nfapi_nr_dl_dci_pdu_t *received_pdu)
+{
+    /* For multiple UEs, we need to be able to filter the rx'd messages by
+       the RNTI. The filtering is different between NSA mode and SA mode.
+       NSA mode has a two step CFRA procedure and SA has a 4 step procedure.
+       We only need to check if the rx'd RNTI doesnt match the CRNTI if the RAR
+       has been processed already, in NSA mode.
+       In SA, depending on the RA state, we can have a SIB (0xffff), RAR (0x10b),
+       Msg3 (TC_RNTI) or an actual DCI message (CRNTI). When we get Msg3, the
+       MAC instance of the UE still has a CRNTI = 0. We should only check if the
+       CRNTI doesnt match the received RNTI in SA mode if Msg3 has been processed
+       already. Only once the RA procedure succeeds is the CRNTI value updated
+       to the TC_RNTI. */
+    if (get_softmodem_params()->nsa)
+    {
+        if ((received_pdu->RNTI != mac->crnti) &&
+           ((received_pdu->RNTI != mac->ra.ra_rnti) || mac->ra.RA_RAPID_found))
+        return false;
+    }
+    else if (get_softmodem_params()->sa)
+    {
+        if ((received_pdu->RNTI != mac->crnti) &&
+            (mac->ra.ra_state == RA_SUCCEEDED))
+        return false;
+    }
+    return true;
+}
+
 static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_dl_tti_request_t *dl_tti_request)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
@@ -296,21 +324,10 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                             "The number of DCIs is greater than dci_list");
                 for (int j = 0; j < num_dcis; j++)
                 {
-                    /* For multiple UEs, we need to be able to filter the rx'd messages by
-                       the RNTI. However, we do not have the RNTI value until the CFRA (NSA)
-                       or CBRA (SA) procedure is complete. The check below will handle this.
-                       Also, depending on the RA state, we can have a SIB (0xffff), RAR (0x10b),
-                       Msg3 (TC_RNTI) or an actual DCI message (CRNTI). When we get Msg3, the
-                       MAC instance of the UE still has a CRNTI = 0. Only once the RA procedure
-                       succeeds is the CRNTI value updated to the TC_RNTI. */
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                    if ((dci_pdu_list->RNTI != mac->crnti) &&
-                       ((dci_pdu_list->RNTI != mac->ra.ra_rnti) || mac->ra.RA_RAPID_found))
+                    if (!is_my_dci(mac, dci_pdu_list))
                     {
-                      LOG_D(NR_MAC, "We are filtering PDCCH DCI pdu because RNTI doesnt match! "
-                                    "dci_pdu_list->RNTI (%x) != mac->crnti (%x)\n",
-                                    dci_pdu_list->RNTI, mac->crnti);
-                      continue;
+                        continue;
                     }
                     fill_dl_info_with_pdcch(dl_info->dci_ind, dci_pdu_list, pdu_idx);
                     if (dci_pdu_list->RNTI == 0xffff)
