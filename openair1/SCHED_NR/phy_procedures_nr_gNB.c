@@ -733,7 +733,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             (ulsch_harq->slot == slot_rx) &&
             (ulsch_harq->handled == 0)){
 
-          LOG_I(PHY, "PUSCH detection started in frame %d slot %d\n",
+          LOG_D(PHY, "PUSCH detection started in frame %d slot %d\n",
                 frame_rx,slot_rx);
           int num_dmrs=0;
           for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT; s++)
