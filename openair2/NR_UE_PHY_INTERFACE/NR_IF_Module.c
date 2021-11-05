@@ -294,7 +294,6 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
     int pdu_idx = 0;
 
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
-    LOG_D(NR_MAC, "This is the total number of PDUS in dl_tti_req = %d\n", num_pdus);
     if (num_pdus <= 0)
     {
         LOG_E(NR_PHY, "%s: dl_tti_request number of PDUS <= 0\n", __FUNCTION__);
