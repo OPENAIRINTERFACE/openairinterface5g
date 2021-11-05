@@ -1991,15 +1991,16 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 				       "no pdsch-ServingCellConfig found for UE %d\n",
 				       UE_id);
     const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
-    const int nrofHARQ = pdsch ? (pdsch->nrofHARQ_ProcessesForPDSCH ?
-				  get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8) : 8;
-    // add all available DL HARQ processes for this UE
-    create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
-    for (int harq = 0; harq < nrofHARQ; harq++)
-      add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
-    create_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
-    create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
-
+    if (pdsch) {
+      const int nrofHARQ = pdsch->nrofHARQ_ProcessesForPDSCH ?
+                           get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
+      // add all available DL HARQ processes for this UE
+      create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
+      for (int harq = 0; harq < nrofHARQ; harq++)
+        add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
+      create_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
+      create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
+    }
     // add all available UL HARQ processes for this UE
     create_nr_list(&sched_ctrl->available_ul_harq, 16);
     for (int harq = 0; harq < 16; harq++)
