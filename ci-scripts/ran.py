@@ -165,16 +165,16 @@ class RANManagement():
 			result = re.search('LAST_BUILD_INFO', mySSH.getBefore())
 			if result is not None:
 				mismatch = False
-				mySSH.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
+				mySSH.command('grep --colour=never SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
 				result = re.search(self.ranCommitID, mySSH.getBefore())
 				if result is None:
 					mismatch = True
-				mySSH.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+				mySSH.command('grep --colour=never MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
 				if (self.ranAllowMerge):
 					result = re.search('YES', mySSH.getBefore())
 					if result is None:
 						mismatch = True
-					mySSH.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+					mySSH.command('grep --colour=never TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
 					if self.ranTargetBranch == '':
 						result = re.search('develop', mySSH.getBefore())
 					else:
@@ -446,7 +446,7 @@ class RANManagement():
 		else:
 			mySSH.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "no";/\' ' + ci_full_config_file, '\$', 2);
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
-		mySSH.command('grep enable_enb_m2 ' + ci_full_config_file, '\$', 2);
+		mySSH.command('grep --colour=never enable_enb_m2 ' + ci_full_config_file, '\$', 2);
 		result = re.search('yes', mySSH.getBefore())
 		if result is not None:
 			self.eNBmbmsEnables[int(self.eNB_instance)] = True

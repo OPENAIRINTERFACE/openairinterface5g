@@ -404,7 +404,7 @@ class EPCManagement():
 		elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('echo ' + self.Password + ' | sudo -S killall --signal SIGINT oai_hss || true', '\$', 5)
 			time.sleep(2)
-			mySSH.command('stdbuf -o0  ps -aux | grep hss | grep -v grep', '\$', 5)
+			mySSH.command('stdbuf -o0  ps -aux | grep --colour=never hss | grep -v grep', '\$', 5)
 			result = re.search('oai_hss -j', mySSH.getBefore())
 			if result is not None:
 				mySSH.command('echo ' + self.Password + ' | sudo -S killall --signal SIGKILL oai_hss || true', '\$', 5)
@@ -412,7 +412,7 @@ class EPCManagement():
 		elif re.match('OAI', self.Type, re.IGNORECASE):
 			mySSH.command('echo ' + self.Password + ' | sudo -S killall --signal SIGINT run_hss oai_hss || true', '\$', 5)
 			time.sleep(2)
-			mySSH.command('stdbuf -o0  ps -aux | grep hss | grep -v grep', '\$', 5)
+			mySSH.command('stdbuf -o0  ps -aux | grep --colour=never hss | grep -v grep', '\$', 5)
 			result = re.search('\/bin\/bash .\/run_', mySSH.getBefore())
 			if result is not None:
 				mySSH.command('echo ' + self.Password + ' | sudo -S killall --signal SIGKILL run_hss oai_hss || true', '\$', 5)
@@ -520,7 +520,7 @@ class EPCManagement():
 			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
 			mySSH.command('./core-network.sh stop nrf spgwu', '\$', 60)
 			time.sleep(2)
-			mySSH.command('tshark -r /tmp/oai-cn5g.pcap | egrep "Tracking area update" ','\$', 30)
+			mySSH.command('tshark -r /tmp/oai-cn5g.pcap | egrep --colour=never "Tracking area update" ','\$', 30)
 			result = re.search('Tracking area update request', mySSH.getBefore())
 			if result is not None:
 				message = 'UE requested ' + mySSH.getBefore().count('Tracking area update request') + 'Tracking area update request(s)'
@@ -719,7 +719,7 @@ class EPCManagement():
 			mySSH.command('docker cp prod-magma-mme:/tmp/mme_check_run.pcap mme_' + self.testCase_id + '.pcap', '\$', 60)
 		else:
 			mySSH.command('docker cp prod-oai-mme:/tmp/mme_check_run.pcap mme_' + self.testCase_id + '.pcap', '\$', 60)
-		mySSH.command('tshark -r mme_' + self.testCase_id + '.pcap | egrep "Tracking area update"', '\$', 60)
+		mySSH.command('tshark -r mme_' + self.testCase_id + '.pcap | egrep --colour=never "Tracking area update"', '\$', 60)
 		result = re.search('Tracking area update request', mySSH.getBefore())
 		if result is not None:
 			message = 'UE requested ' + mySSH.getBefore().count('Tracking area update request') + 'Tracking area update request(s)'

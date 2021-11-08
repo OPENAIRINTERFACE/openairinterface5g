@@ -222,7 +222,7 @@ class Containerize():
 		if (self.ranAllowMerge):
 			imageTag = 'ci-temp'
 			if self.ranTargetBranch == 'develop':
-				mySSH.command('git diff HEAD..origin/develop -- docker/Dockerfile.ran' + self.dockerfileprefix + ' | grep -i INDEX', '\$', 5)
+				mySSH.command('git diff HEAD..origin/develop -- docker/Dockerfile.ran' + self.dockerfileprefix + ' | grep --colour=never -i INDEX', '\$', 5)
 				result = re.search('index', mySSH.getBefore())
 				if result is not None:
 					forceSharedImageBuild = True
@@ -901,17 +901,17 @@ class Containerize():
 		if svrName == 'porcepix':
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to asterix gnb exists
-			mySSH.command('ip route | grep "192.168.68.64/26"', '\$', 10)
+			mySSH.command('ip route | grep --colour=never "192.168.68.64/26"', '\$', 10)
 			result = re.search('192.168.18.194', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 192.168.18.194 dev eno1', '\$', 10)
 			# Check if route to obelix enb exists
-			mySSH.command('ip route | grep "192.168.68.128/26"', '\$', 10)
+			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
 			result = re.search('192.168.18.193', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev eno1', '\$', 10)
 			# Check if route to nepes gnb exists
-			mySSH.command('ip route | grep "192.168.68.192/26"', '\$', 10)
+			mySSH.command('ip route | grep --colour=never "192.168.68.192/26"', '\$', 10)
 			result = re.search('192.168.18.209', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 192.168.18.209 dev eno1', '\$', 10)
@@ -929,17 +929,17 @@ class Containerize():
 		if svrName == 'asterix':
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to porcepix epc exists
-			mySSH.command('ip route | grep "192.168.61.192/26"', '\$', 10)
+			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
 			result = re.search('192.168.18.210', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev em1', '\$', 10)
 			# Check if route to porcepix cn5g exists
-			mySSH.command('ip route | grep "192.168.70.128/26"', '\$', 10)
+			mySSH.command('ip route | grep --colour=never "192.168.70.128/26"', '\$', 10)
 			result = re.search('192.168.18.210', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.70.128/26 via 192.168.18.210 dev em1', '\$', 10)
 			# Check if X2 route to obelix enb exists
-			mySSH.command('ip route | grep "192.168.68.128/26"', '\$', 10)
+			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
 			result = re.search('192.168.18.193', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev em1', '\$', 10)
@@ -957,17 +957,17 @@ class Containerize():
 		if svrName == 'obelix':
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to porcepix epc exists
-			mySSH.command('ip route | grep "192.168.61.192/26"', '\$', 10)
+			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
 			result = re.search('192.168.18.210', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev eno1', '\$', 10)
 			# Check if X2 route to asterix gnb exists
-			mySSH.command('ip route | grep "192.168.68.64/26"', '\$', 10)
+			mySSH.command('ip route | grep --colour=never "192.168.68.64/26"', '\$', 10)
 			result = re.search('192.168.18.194', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 192.168.18.194 dev eno1', '\$', 10)
 			# Check if X2 route to nepes gnb exists
-			mySSH.command('ip route | grep "192.168.68.192/26"', '\$', 10)
+			mySSH.command('ip route | grep --colour=never "192.168.68.192/26"', '\$', 10)
 			result = re.search('192.168.18.209', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 192.168.18.209 dev eno1', '\$', 10)
@@ -985,12 +985,12 @@ class Containerize():
 		if svrName == 'nepes':
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to porcepix epc exists
-			mySSH.command('ip route | grep "192.168.61.192/26"', '\$', 10)
+			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
 			result = re.search('192.168.18.210', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev enp0s31f6', '\$', 10)
 			# Check if X2 route to obelix enb exists
-			mySSH.command('ip route | grep "192.168.68.128/26"', '\$', 10)
+			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
 			result = re.search('192.168.18.193', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev enp0s31f6', '\$', 10)
