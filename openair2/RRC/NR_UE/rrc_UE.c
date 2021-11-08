@@ -1206,8 +1206,8 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
             check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
             if( nr_rrc_get_state(module_id) <= RRC_STATE_IDLE_NR ) {
               NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
-              LOG_D(PHY,"Setting state to NR_RRC_SI_RECEIVED\n");
-              nr_rrc_set_state (module_id, NR_RRC_SI_RECEIVED);
+              LOG_D(PHY,"Setting state to RRC_STATE_IDLE_NR\n");
+              nr_rrc_set_state (module_id, RRC_STATE_IDLE_NR);
             }
             // take ServingCellConfigCommon and configure L1/L2
             NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
@@ -1763,13 +1763,8 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
  //-----------------------------------------------------------------------------
  void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index) {
    uint8_t i=0,rv[6];
-   /* TODO: Melissa, this is not a proper fix. The NAS layer should be
-      getting intialized and then the substate will not crash when AMF_MODE_ENABLED
-      is equal to 1. However, as a side note, when we keep the code below,
-      once the CBRA procedure is finished, the NAS layer is ran and the AMF_MODE_ENABLED
-      is switched to one and the substate assertion in the nr_rrc_set_sub_state()
-      does not happen. So show this to Raymond and maybe its okay? */
-   if(get_softmodem_params()->sa && !get_softmodem_params()->emulate_l2) {
+
+   if(get_softmodem_params()->sa) {
      AMF_MODE_ENABLED = 1;
    }
    if(NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {

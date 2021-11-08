@@ -285,12 +285,12 @@ static bool is_my_dci(NR_UE_MAC_INST_t *mac, nfapi_nr_dl_dci_pdu_t *received_pdu
 static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_dl_tti_request_t *dl_tti_request)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
-    mac->expected_sib = false;
-    memset(mac->index_has_sib, 0, sizeof(*mac->index_has_sib));
-    mac->expected_rar = false;
-    memset(mac->index_has_rar, 0, sizeof(*mac->index_has_rar));
-    mac->expected_dci = false;
-    memset(mac->index_has_dci, 0, sizeof(*mac->index_has_dci));
+    mac->nr_ue_emul_l1.expected_sib = false;
+    memset(mac->nr_ue_emul_l1.index_has_sib, 0, sizeof(*mac->nr_ue_emul_l1.index_has_sib));
+    mac->nr_ue_emul_l1.expected_rar = false;
+    memset(mac->nr_ue_emul_l1.index_has_rar, 0, sizeof(*mac->nr_ue_emul_l1.index_has_rar));
+    mac->nr_ue_emul_l1.expected_dci = false;
+    memset(mac->nr_ue_emul_l1.index_has_dci, 0, sizeof(*mac->nr_ue_emul_l1.index_has_dci));
     int pdu_idx = 0;
 
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
@@ -331,20 +331,20 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                     fill_dl_info_with_pdcch(dl_info->dci_ind, dci_pdu_list, pdu_idx);
                     if (dci_pdu_list->RNTI == 0xffff)
                     {
-                        mac->expected_sib = true;
-                        mac->index_has_sib[j] = true;
+                        mac->nr_ue_emul_l1.expected_sib = true;
+                        mac->nr_ue_emul_l1.index_has_sib[j] = true;
                         LOG_D(NR_MAC, "Setting index_has_sib[%d] = true\n", j);
                     }
-                    else if (dci_pdu_list->RNTI == 0x10b)
+                    else if (dci_pdu_list->RNTI == mac->ra.ra_rnti)
                     {
-                        mac->expected_rar = true;
-                        mac->index_has_rar[j] = true;
+                        mac->nr_ue_emul_l1.expected_rar = true;
+                        mac->nr_ue_emul_l1.index_has_rar[j] = true;
                         LOG_D(NR_MAC, "Setting index_has_rar[%d] = true\n", j);
                     }
                     else
                     {
-                        mac->expected_dci = true;
-                        mac->index_has_dci[j] = true;
+                        mac->nr_ue_emul_l1.expected_dci = true;
+                        mac->nr_ue_emul_l1.index_has_dci[j] = true;
                         LOG_D(NR_MAC, "Setting index_has_dci[%d] = true\n", j);
                     }
                     pdu_idx++;
@@ -425,24 +425,26 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
-        if (mac->index_has_sib[i])
+        if (mac->nr_ue_emul_l1.index_has_sib[i])
         {
+            AssertFatal(!get_softmodem_params()->nsa,
+                        "Should not be processing SIB in NSA mode, something bad happened\n");
             fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_SIB);
             pdu_idx++;
         }
-        else if (mac->index_has_rar[i])
+        else if (mac->nr_ue_emul_l1.index_has_rar[i])
         {
             fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_RAR);
             pdu_idx++;
         }
-        else if (mac->index_has_dci[i])
+        else if (mac->nr_ue_emul_l1.index_has_dci[i])
         {
             fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_DLSCH);
             pdu_idx++;
         }
         else
         {
-            LOG_D(NR_MAC, "mac->index_has_dci[%d] = 0, so this index contained a DCI for a different UE\n", i);
+            LOG_D(NR_MAC, "mac->nr_ue_emul_l1.index_has_dci[%d] = 0, so this index contained a DCI for a different UE\n", i);
         }
 
     }
@@ -656,7 +658,9 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
        incoming tx_data_request is also destined for the current UE. If the
        RAR hasn't been processed yet, we do not want to be filtering the
        tx_data_requests. */
-    if (tx_data_request && (mac->expected_sib || mac->expected_rar || mac->expected_dci))
+    if (tx_data_request && (mac->nr_ue_emul_l1.expected_sib ||
+                            mac->nr_ue_emul_l1.expected_rar ||
+                            mac->nr_ue_emul_l1.expected_dci))
     {
         frame = tx_data_request->SFN;
         slot = tx_data_request->Slot;
@@ -1124,7 +1128,7 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     nr_ue_if_module_inst[module_id]->current_frame = 0;
     nr_ue_if_module_inst[module_id]->current_slot = 0;
     nr_ue_if_module_inst[module_id]->phy_config_request = nr_ue_phy_config_request;
-    if (get_softmodem_params()->emulate_l2)
+    if (get_softmodem_params()->emulate_l1)
       nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response_stub;
     else
       nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response;
