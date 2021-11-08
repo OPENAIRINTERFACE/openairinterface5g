@@ -1174,7 +1174,7 @@ int nr_acknack_scheduling(int mod_id,
 
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+  const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   const int nr_mix_slots = tdd? (tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0) : 0;
   const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n_slots_frame;
   const int first_ul_slot_tdd = tdd? tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period) : 0;
@@ -1311,7 +1311,7 @@ int nr_acknack_scheduling(int mod_id,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
     pucch->frame = frame;
-    pucch->ul_slot = first_ul_slot_tdd;
+    pucch->ul_slot = tdd ? first_ul_slot_tdd : slot + minfbtime;
   }
 
   // Find the right timing_indicator value.
