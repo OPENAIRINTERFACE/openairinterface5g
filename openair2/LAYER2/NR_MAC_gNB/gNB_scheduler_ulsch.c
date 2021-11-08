@@ -144,27 +144,28 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
 
   // get largest time domain allocation (TDA) for UL slot and UL in mixed slot
   int tdaMi = -1;
-  const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
-  AssertFatal(k2 == get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu),
-              "scheduler cannot handle different k2 for UL slot (%d) and UL Mixed slot (%ld)\n",
-              k2,
-              get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu));
-  SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
-  const uint16_t symb_tda_mi = ((1 << len) - 1) << start;
-  // check whether PUCCH and TDA overlap: then, we cannot use it. Also, check
-  // whether TDA is entirely within mixed slot, UL. Note that here we assume
-  // that the PUCCH is scheduled in every slot, and on all RBs (which is
-  // mostly not true, this is a simplification)
-  if ((symb_pucch & symb_tda_mi) == 0 && (symb_ulMixed & symb_tda_mi) == symb_tda_mi) {
-    tdaMi = 1;
-  } else {
-    LOG_E(NR_MAC,
-          "TDA index 1 UL overlaps with PUCCH or is not entirely in mixed slot (symb_pucch %x symb_ulMixed %x symb_tda_mi %x), won't schedule UL mixed slot\n",
-          symb_pucch,
-          symb_ulMixed,
-          symb_tda_mi);
+  if (tdd) {
+    const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
+    AssertFatal(k2 == get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu),
+                "scheduler cannot handle different k2 for UL slot (%d) and UL Mixed slot (%ld)\n",
+                k2,
+                get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu));
+    SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
+    const uint16_t symb_tda_mi = ((1 << len) - 1) << start;
+    // check whether PUCCH and TDA overlap: then, we cannot use it. Also, check
+    // whether TDA is entirely within mixed slot, UL. Note that here we assume
+    // that the PUCCH is scheduled in every slot, and on all RBs (which is
+    // mostly not true, this is a simplification)
+    if ((symb_pucch & symb_tda_mi) == 0 && (symb_ulMixed & symb_tda_mi) == symb_tda_mi) {
+      tdaMi = 1;
+    } else {
+      LOG_E(NR_MAC,
+            "TDA index 1 UL overlaps with PUCCH or is not entirely in mixed slot (symb_pucch %x symb_ulMixed %x symb_tda_mi %x), won't schedule UL mixed slot\n",
+            symb_pucch,
+            symb_ulMixed,
+            symb_tda_mi);
+    }
   }
-
   const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   nrmac->preferred_ul_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_ul_tda[bwp_id]));
   const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;

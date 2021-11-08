@@ -97,7 +97,7 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
 
   /* check that TDA index 1 fits into DL part of mixed slot, if it exists */
   int tdaMi = -1;
-  if (tdaList->list.count > 1) {
+  if (tdd && tdaList->list.count > 1) {
     const NR_PDSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
     AssertFatal(!tdaP_Mi->k0 || *tdaP_Mi->k0 == 0,
                 "TimeDomainAllocation at index 1: non-null k0 (%ld) is not supported by the scheduler\n",
