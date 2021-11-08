@@ -2097,7 +2097,6 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
                                 int bwp_id,
                                 NR_SearchSpace__searchSpaceType_PR ss_type,
                                 int *max_fb_time,
-                                int *min_fb_time,
                                 uint8_t *pdsch_to_harq_feedback) {
 
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
@@ -2136,10 +2135,9 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
   // common search type uses DCI format 1_0
   if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
     for (int i=0; i<8; i++) {
-      pdsch_to_harq_feedback[i] = i+1; // TODO take into account the min feedback time here
+      pdsch_to_harq_feedback[i] = i+1;
       if(pdsch_to_harq_feedback[i]>*max_fb_time)
         *max_fb_time = pdsch_to_harq_feedback[i];
-      *min_fb_time = 6;
     }
   }
   else {
@@ -2162,10 +2160,10 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
 
     if (ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0) {
       for (int i=0; i<8; i++) {
-        pdsch_to_harq_feedback[i] = i+1; // TODO take into account the min feedback time here
+        pdsch_to_harq_feedback[i] = i+1;
         if(pdsch_to_harq_feedback[i]>*max_fb_time)
           *max_fb_time = pdsch_to_harq_feedback[i];
-        *min_fb_time = 6;
+
       }
     }
     else {
@@ -2175,8 +2173,6 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
           pdsch_to_harq_feedback[i] = *ubwpd->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[i];
           if(pdsch_to_harq_feedback[i]>*max_fb_time)
             *max_fb_time = pdsch_to_harq_feedback[i];
-          if(pdsch_to_harq_feedback[i]<*min_fb_time)
-            *min_fb_time = pdsch_to_harq_feedback[i];
         }
       }
       else

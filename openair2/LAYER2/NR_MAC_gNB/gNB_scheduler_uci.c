@@ -1257,8 +1257,7 @@ int nr_acknack_scheduling(int mod_id,
   if (sched_ctrl->active_ubwp) bwp_Id = sched_ctrl->active_ubwp->bwp_Id;
 
   int max_fb_time = 0;
-  int min_fb_time = 6;
-  get_pdsch_to_harq_feedback(mod_id, UE_id, bwp_Id, ss_type, &max_fb_time, &min_fb_time, pdsch_to_harq_feedback);
+  get_pdsch_to_harq_feedback(mod_id, UE_id, bwp_Id, ss_type, &max_fb_time, pdsch_to_harq_feedback);
   int max_absslot = frame*n_slots_frame + slot + max_fb_time;
 
   LOG_D(NR_MAC, "In %s: 1b. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n", __FUNCTION__, frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
@@ -1304,7 +1303,7 @@ int nr_acknack_scheduling(int mod_id,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
     pucch->frame = frame;
-    pucch->ul_slot = tdd ? first_ul_slot_tdd : first_ul_slot_tdd + min_fb_time;
+    pucch->ul_slot = first_ul_slot_tdd;
   }
 
   // Find the right timing_indicator value.
