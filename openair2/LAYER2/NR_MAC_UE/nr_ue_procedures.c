@@ -54,7 +54,6 @@
 /* PHY */
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/softmodem-common.h"
-#include "SCHED_NR_UE/defs.h"
 
 /* utils */
 #include "assertions.h"
@@ -1284,25 +1283,6 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
 }
 
 
-void update_harq_status(nr_downlink_indication_t *dl_info, int pdu_id) {
-
-  NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
-  uint8_t harq_pid = dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid;
-  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[harq_pid];
-
-  if (current_harq->active) {
-    current_harq->ack = dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack;
-    current_harq->ack_received = true;
-    LOG_D(PHY,"Updating harq_status for harq_id %d,ack/nak %d\n",harq_pid,current_harq->ack);
-
-  }
-  else {
-    //shouldn't get here
-    LOG_E(MAC, "Trying to process acknack for an inactive harq process (%d)\n", harq_pid);
-  }
-}
-
-
 void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                            int slot,
                            uint16_t rnti,
@@ -1399,7 +1379,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         mac->cg->physicalCellGroupConfig &&
         (mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL ||
         mac->cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook != 1)) {
-      LOG_E(PHY,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+      LOG_E(MAC,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
       return;
     }
     else if (mac->cg &&
@@ -2076,7 +2056,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   uint32_t V_temp = 0;
   uint32_t V_temp2 = 0;
   int O_ACK = 0;
-  int o_ACK = 0;
+  uint8_t o_ACK = 0;
   int O_bit_number_cw0 = 0;
   int O_bit_number_cw1 = 0;
 
@@ -2104,6 +2084,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
     }
 
     o_ACK = o_ACK | (ack_data[0][m] << O_bit_number_cw0);
+    LOG_D(MAC,"m %d bit number %d o_ACK %d\n",m,O_bit_number_cw0,o_ACK);
   }
 
   if (V_temp2 < V_temp) {
@@ -2122,7 +2103,10 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
     return (0);
   }
 
+  reverse_n_bits(&o_ACK,number_harq_feedback);
   pucch->ack_payload = o_ACK;
+
+  LOG_D(MAC,"frame %d slot %d pucch acknack payload %d\n",frame,slot,o_ACK);
 
   return(number_harq_feedback);
 }
@@ -3615,8 +3599,6 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     return 0;
   }
 
-  int cc_id                = dl_info->cc_id;
-  uint8_t gNB_id           = dl_info->gNB_index;
   NR_UE_MAC_INST_t *mac    = get_mac_inst(mod_id);
   RA_config_t *ra          = &mac->ra;
   uint8_t n_subPDUs        = 0;  // number of RAR payloads
@@ -3628,7 +3610,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
   int ret                  = 0;
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer; // RAR subheader pointer
   NR_MAC_RAR *rar          = (NR_MAC_RAR *) (dlsch_buffer + 1);   // RAR subPDU pointer
-  uint8_t preamble_index   = get_ra_PreambleIndex(mod_id, cc_id, gNB_id); //prach_resources->ra_PreambleIndex;
+  uint8_t preamble_index   = ra->ra_PreambleIndex;
 
   LOG_D(NR_MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
 

@@ -229,9 +229,6 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
                      frame_t frame,
                      int slot);
 
-void update_harq_status(nr_downlink_indication_t *dl_info,
-                        int pdu_id);
-
 uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
                          frame_t frame,
                          int slot,
@@ -270,23 +267,6 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                            fapi_nr_ul_config_pucch_pdu *pucch_pdu,
                            int O_SR, int O_ACK, int O_CSI);
 
-/** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
-    @param Mod_id Module id of UE
-    @returns Po_NOMINAL_PUSCH (PREAMBLE_RECEIVED_TARGET_POWER+DELTA_PREAMBLE
-*/
-int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t module_idP, uint8_t CC_id);
-
-/** \brief Function to compute DELTA_PREAMBLE from 38.321 subclause 7.3
-   (for RA power ramping procedure and Msg3 PUSCH power control policy)
-    @param Mod_id Module id of UE
-    @returns DELTA_PREAMBLE
-*/
-int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format);
-
-/** \brief Function to compute configured maximum output power according to clause 6.2.4 of 3GPP TS 38.101-1 version 16.5.0 Release 16
-    @param Mod_id Module id of UE
-*/
-long nr_get_Pcmax(module_id_t mod_id);
 
 /* Random Access */
 

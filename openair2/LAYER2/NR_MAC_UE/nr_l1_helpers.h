@@ -19,30 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/* \file fapi_nr_ue_l1.c
- * \brief functions for FAPI L1 interface
- * \author R. Knopp, K.H. HSU
- * \date 2018
- * \version 0.1
- * \company Eurecom / NTUST
- * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
- * \note
- * \warning
- */
-
-#ifndef __FAPI_NR_UE_L1_H__
-#define __FAPI_NR_UE_L1_H__
-
-#include "NR_IF_Module.h"
-
-/**\brief NR UE FAPI-like P7 messages, scheduled response from L2 indicating L1
-   \param scheduled_response including transmission config(dl_config, ul_config) and data transmission (tx_req)*/
-int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response);
-
-/**\brief NR UE FAPI-like P5 message, physical configuration from L2 to configure L1
-   \param scheduled_response including transmission config(dl_config, ul_config) and data transmission (tx_req)*/
-int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config);
-
-void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nack);
-
-#endif
+/** \brief Function to compute configured maximum output power according to clause 6.2.4 of 3GPP TS 38.101-1 version 16.5.0 Release 16
+    @param Mod_id Module id of UE
+*/
+long nr_get_Pcmax(module_id_t mod_id);
+/** @}*/

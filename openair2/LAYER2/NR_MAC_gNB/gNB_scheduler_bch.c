@@ -219,6 +219,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
                                                         ssb_start_symbol,
                                                         scs,
                                                         FR1,
+                                                        band,
                                                         i_ssb,
                                                         ssb_frame_periodicity,
                                                         offset_pointa);
@@ -246,6 +247,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
                                                         ssb_start_symbol,
                                                         scs,
                                                         FR1,
+                                                        band,
                                                         i_ssb,
                                                         ssb_frame_periodicity,
                                                         offset_pointa);
@@ -282,6 +284,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
                                                         ssb_start_symbol,
                                                         scs,
                                                         FR2,
+                                                        band,
                                                         i_ssb,
                                                         ssb_frame_periodicity,
                                                         offset_pointa);
