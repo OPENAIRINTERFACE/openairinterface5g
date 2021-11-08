@@ -480,7 +480,9 @@ int main( int argc, char **argv ) {
   NB_INST=1;
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE **));
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
-  RCconfig_nr_ue_L1();
+  if (get_softmodem_params()->emulate_l1) {
+    RCconfig_nr_ue_L1();
+  }
 
 
   if (get_softmodem_params()->do_ra)
