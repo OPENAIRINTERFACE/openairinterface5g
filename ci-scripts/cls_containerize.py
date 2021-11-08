@@ -206,7 +206,7 @@ class Containerize():
 	
 		self.testCase_id = HTML.testCase_id
 	
-		self._createWorkspace(mySSH, lPassword, lSourcePath)
+		self._createWorkspace(mySSH, lPassWord, lSourcePath)
 
  		# if asterix, copy the entitlement and subscription manager configurations
 		if self.host == 'Red Hat':

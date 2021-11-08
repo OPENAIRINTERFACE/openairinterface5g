@@ -2325,7 +2325,7 @@ class OaiCiTest():
 				server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf"', '\$', 5)
 				iperf_cmd = 'echo $USER; nohup bin/iperf -s -u 2>&1 > ' + server_filename
-				cmd = 'docker exec -it prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
+				cmd = 'docker exec -d prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 

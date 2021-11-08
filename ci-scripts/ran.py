@@ -593,8 +593,12 @@ class RANManagement():
 				lPassWord = self.eNBPassword
 			mySSH = SSH.SSHConnection()
 			mySSH.open(lIpAddr, lUserName, lPassWord)
-			mySSH.command('stdbuf -o0 ps -aux | grep --color=never ' + self.air_interface[self.eNB_instance] + ' | grep -v grep', '\$', 5)
-			result = re.search(self.air_interface[self.eNB_instance], mySSH.getBefore())
+			if self.air_interface[self.eNB_instance] == '':
+				pattern = 'softmodem'
+			else:
+				pattern = self.air_interface[self.eNB_instance]
+			mySSH.command('stdbuf -o0 ps -aux | grep --color=never ' + pattern + ' | grep -v grep', '\$', 5)
+			result = re.search(pattern, mySSH.getBefore())
 			if result is None:
 				logging.debug('\u001B[1;37;41m eNB Process Not Found! \u001B[0m')
 				status_queue.put(CONST.ENB_PROCESS_FAILED)

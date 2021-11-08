@@ -293,7 +293,7 @@ pipeline {
                 echo '\u2705 \u001B[32mLog Collection (SPGW or SMF/UPF)\u001B[0m'
                 sh "python3 ci-scripts/main.py --mode=LogCollectSPGW --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type}"
                 if (params.EPC_Type == 'OAICN5G') {
-                  sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/smf-upf.log.zip ./spgw.log.${env.BUILD_ID}.zip || true"
+                  sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/spgw.log.zip ./smf-upf.log.${env.BUILD_ID}.zip || true"
                 } else {
                   sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/spgw.log.zip ./spgw.log.${env.BUILD_ID}.zip || true"
                 }
