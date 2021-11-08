@@ -1180,6 +1180,8 @@ int nr_acknack_scheduling(int mod_id,
   const int first_ul_slot_tdd = tdd? tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period) : 0;
   const int first_ul_slot_period = tdd? tdd->nrofDownlinkSlots : 0;
   const int CC_id = 0;
+  const int minfbtime = RC.nrmac[mod_id]->minRXTXTIMEpdsch;
+
   NR_sched_pucch_t *csi_pucch;
 
   if (tdd) {
@@ -1270,7 +1272,8 @@ int nr_acknack_scheduling(int mod_id,
       int diff = pucch->ul_slot - slot;
       if (diff<0)
         diff += n_slots_frame;
-      if (pdsch_to_harq_feedback[i] == diff)
+      if (pdsch_to_harq_feedback[i] == diff &&
+          pdsch_to_harq_feedback[i] >= minfbtime)
         break;
       ++i;
     }
@@ -1322,7 +1325,8 @@ int nr_acknack_scheduling(int mod_id,
       int diff = pucch->ul_slot - slot;
       if (diff<0)
         diff += n_slots_frame;
-      if (pdsch_to_harq_feedback[i] == diff) {
+      if (pdsch_to_harq_feedback[i] == diff &&
+          pdsch_to_harq_feedback[i] >= minfbtime) {
         ind_found = i;
         break;
       }

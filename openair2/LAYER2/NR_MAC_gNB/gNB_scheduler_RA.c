@@ -968,8 +968,6 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
 
 
   int start_symbol_index,nr_of_symbols;
-  uint8_t nb_dmrs_re_per_rb = 0;
-  uint16_t number_dmrs_symbols = 0;
 
   SLIV2SL(startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
 

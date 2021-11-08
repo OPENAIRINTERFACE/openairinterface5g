@@ -31,6 +31,7 @@
 #include <inttypes.h>
 
 #include "common/utils/LOG/log.h"
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log_extern.h"
 #include "assertions.h"
 #include "gnb_config.h"
@@ -47,7 +48,6 @@
 // #include "SystemInformationBlockType2.h"
 // #include "LAYER2/MAC/extern.h"
 // #include "LAYER2/MAC/proto.h"
-#include "PHY/phy_extern.h"
 #include "PHY/INIT/phy_init.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
@@ -947,8 +947,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
   if (num_gnbs>0) {
 
-
-
     // Output a list of all gNBs. ////////// Identification parameters
     config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
     
@@ -1112,14 +1110,12 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         NRRRC_CONFIGURATION_REQ (msg_p).pusch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
         printf("minTXRXTIMEpdsch %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIMEPDSCH_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).minRXTXTIMEpdsch = *GNBParamList.paramarray[i][GNB_MINRXTXTIMEPDSCH_IDX].iptr;
+        printf("SIB1 TDA %d\n",*GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).sib1_tda = *GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr;
-        printf("minTXRXTIMEpdsch %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIMEPDSCH_IDX].iptr);
-        NRRRC_CONFIGURATION_REQ (msg_p).minRXTXTIMEpdsch = *GNBParamList.paramarray[i][GNB_MINRXTXTIMEPDSCH_IDX].iptr;
         printf("Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).do_CSIRS = *GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr;
         NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;
         NRRRC_CONFIGURATION_REQ (msg_p).scd = scd;
-
 	  
       }//
     }//End for (k=0; k <num_gnbs ; k++)
@@ -1995,6 +1991,7 @@ void configure_gnb_du_mac(int inst) {
                         rrc->configuration.pdsch_AntennaPorts,
                         rrc->configuration.pusch_AntennaPorts,
                         rrc->configuration.sib1_tda,
+                        rrc->configuration.minRXTXTIMEpdsch,
                         rrc->configuration.scc,
                         NULL,
                         0,

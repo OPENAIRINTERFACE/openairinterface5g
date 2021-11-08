@@ -429,6 +429,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            int sib1_tda,
+                           int minRXTXTIMEpdsch,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
 	                   int add_ue,
@@ -479,6 +480,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       }
     }
     RC.nrmac[Mod_idP]->ssb_SubcarrierOffset = ssb_SubcarrierOffset;
+    RC.nrmac[Mod_idP]->minRXTXTIMEpdsch = minRXTXTIMEpdsch;
 
     NR_PHY_Config_t phycfg;
     phycfg.Mod_id = Mod_idP;
