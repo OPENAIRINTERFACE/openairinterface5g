@@ -484,7 +484,6 @@ int main( int argc, char **argv ) {
     RCconfig_nr_ue_L1();
   }
 
-
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
 
