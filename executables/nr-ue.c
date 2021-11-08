@@ -460,13 +460,18 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
   // compute TO compensation that should be applied for this frame
   if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&
        UE->rx_offset > 0 ) {
-    //LOG_I(PHY,"!!!adjusting -1 samples!!!\n");
+    LOG_I(PHY,"!!!adjusting -1 samples!!! rx_offset == %d\n", UE->rx_offset);
+    UE->rx_offset   = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
+    UE->max_pos_fil = 0; // reset IIR filter when sample shift is applied
     return -1 ;
   }
 
   if ( UE->rx_offset > UE->frame_parms.samples_per_frame/2 &&
        UE->rx_offset < UE->frame_parms.samples_per_frame ) {
-    //LOG_I(PHY,"!!!adjusting +1 samples!!!\n");
+    int rx_offset = UE->rx_offset - UE->frame_parms.samples_per_frame;
+    LOG_I(PHY,"!!!adjusting +1 samples!!! rx_offset == %d\n", rx_offset);
+    UE->rx_offset   = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
+    UE->max_pos_fil = 0; // reset IIR filter when sample shift is applied
     return 1;
   }
 
