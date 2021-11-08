@@ -86,6 +86,7 @@ char nr_dci_format_string[8][30] = {
 void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
                                        uint32_t *z,
                                        uint8_t coreset_time_dur,
+                                       uint8_t start_symbol,
                                        uint32_t coreset_nbr_rb,
                                        uint8_t reg_bundle_size_L,
                                        uint8_t coreset_interleaver_size_R,
@@ -182,7 +183,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
   int rb = 0;
   for (int c_id = 0; c_id < number_of_candidates; c_id++ ) {
-    for (int symbol_idx = 0; symbol_idx < coreset_time_dur; symbol_idx++) {
+    for (int symbol_idx = start_symbol; symbol_idx < start_symbol+coreset_time_dur; symbol_idx++) {
       for (int cce_count = CCE[c_id/coreset_time_dur]+c_id%coreset_time_dur; cce_count < CCE[c_id/coreset_time_dur]+c_id%coreset_time_dur+L[c_id]; cce_count += coreset_time_dur) {
         for (int reg_in_cce_idx = 0; reg_in_cce_idx < NR_NB_REG_PER_CCE; reg_in_cce_idx++) {
 
@@ -275,9 +276,10 @@ int32_t pdcch_llr(NR_DL_FRAME_PARMS *frame_parms,
 
 //compute average channel_level on each (TX,RX) antenna pair
 void nr_pdcch_channel_level(int32_t **dl_ch_estimates_ext,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         int32_t *avg,
-                         uint8_t nb_rb) {
+                            NR_DL_FRAME_PARMS *frame_parms,
+                            int32_t *avg,
+                            int symbol,
+                            uint8_t nb_rb) {
   int16_t rb;
   uint8_t aarx;
 #if defined(__x86_64__) || defined(__i386__)
@@ -292,9 +294,9 @@ void nr_pdcch_channel_level(int32_t **dl_ch_estimates_ext,
     //clear average level
 #if defined(__x86_64__) || defined(__i386__)
     avg128P = _mm_setzero_si128();
-    dl_ch128=(__m128i *)&dl_ch_estimates_ext[aarx][0];
+    dl_ch128=(__m128i *)&dl_ch_estimates_ext[aarx][symbol*nb_rb*12];
 #elif defined(__arm__)
-    dl_ch128=(int16x8_t *)&dl_ch_estimates_ext[aarx][0];
+    dl_ch128=(int16x8_t *)&dl_ch_estimates_ext[aarx][symbol*nb_rb*12];
 #endif
 
     for (rb=0; rb<(nb_rb*3)>>2; rb++) {
@@ -320,7 +322,7 @@ void nr_pdcch_channel_level(int32_t **dl_ch_estimates_ext,
                  ((int32_t *)&avg128P)[1] +
                  ((int32_t *)&avg128P)[2] +
                  ((int32_t *)&avg128P)[3])/(nb_rb*9);
-    //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
+    LOG_DDD("Channel level : %d\n",avg[aarx]);
   }
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -376,7 +378,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
 #endif
 
   for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
-    dl_ch0 = &dl_ch_estimates[aarx][0];
+    dl_ch0 = &dl_ch_estimates[aarx][frame_parms->ofdm_symbol_size*symbol];
     LOG_DDD("dl_ch0 = &dl_ch_estimates[aarx = (%d)][0]\n",aarx);
 
     dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITH_DMRS)];
@@ -627,9 +629,9 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
 
       for (int i=0; i<12 ; i++)
         LOG_DDD("rxdataF128[%d]=(%d,%d) X dlch[%d]=(%d,%d) rxdataF_comp128[%d]=(%d,%d)\n",
-               (rb*12)+i, ((short *)rxdataF128)[i<<1],((short *)rxdataF128)[1+(i<<1)],
-               (rb*12)+i, ((short *)dl_ch128)[i<<1],((short *)dl_ch128)[1+(i<<1)],
-               (rb*12)+i, ((short *)rxdataF_comp128)[i<<1],((short *)rxdataF_comp128)[1+(i<<1)]);
+                (rb*12)+i, ((short *)rxdataF128)[i<<1],((short *)rxdataF128)[1+(i<<1)],
+                (rb*12)+i, ((short *)dl_ch128)[i<<1],((short *)dl_ch128)[1+(i<<1)],
+                (rb*12)+i, ((short *)rxdataF_comp128)[i<<1],((short *)rxdataF_comp128)[1+(i<<1)]);
 
       dl_ch128+=3;
       rxdataF128+=3;
@@ -718,6 +720,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     nr_pdcch_channel_level(pdcch_vars->dl_ch_estimates_ext,
                            frame_parms,
                            avgP,
+                           s,
                            n_rb);
     avgs = 0;
 
@@ -772,6 +775,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   nr_pdcch_demapping_deinterleaving((uint32_t *) pdcch_vars->llr,
                                     (uint32_t *) pdcch_vars->e_rx,
                                     rel15->coreset.duration,
+                                    rel15->coreset.StartSymbolIndex,
                                     n_rb,
                                     rel15->coreset.RegBundleSize,
                                     rel15->coreset.InterleaverSize,
@@ -884,7 +888,8 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
       uint64_t dci_estimation[2]= {0};
       const t_nrPolar_params *currentPtrDCI = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, dci_length, L, 1, &ue->polarList);
 
-      LOG_D(PHY, "Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d, length %d, format %s\n", j, rel15->number_of_candidates, CCEind, CCEind*9*6*2, L, dci_length,nr_dci_format_string[rel15->dci_format_options[k]]);
+      LOG_D(PHY, "Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d, length %d, format %s\n",
+            j, rel15->number_of_candidates, CCEind, CCEind*9*6*2, L, dci_length,nr_dci_format_string[rel15->dci_format_options[k]]);
 
       nr_pdcch_unscrambling(&pdcch_vars->e_rx[CCEind*108], rel15->coreset.scrambling_rnti, L*108, rel15->coreset.pdcch_dmrs_scrambling_id, tmp_e);
 
