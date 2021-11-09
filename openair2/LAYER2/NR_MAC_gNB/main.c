@@ -121,7 +121,7 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen)
       }
     }
   }
-  print_meas(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL);
+  print_meas_log(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL, output+stroff);
 }
 
 

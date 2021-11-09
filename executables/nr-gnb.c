@@ -108,6 +108,7 @@ time_stats_t softmodem_stats_rx_sf; // total rx time
 
 //#define TICK_TO_US(ts) (ts.diff)
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
+#define L1STATSSTRLEN 16384
 
 
 void tx_func(void *param) {
@@ -329,46 +330,63 @@ void rx_func(void *param) {
        );
 #endif
 }
-static void *process_stats_thread(void *param) {
+static void dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output) {
+  int stroff = 0;
+  stroff += print_meas_log(gNB->phy_proc_tx_0, "L1 Tx processing thread 0", NULL, NULL, output);
+  stroff += print_meas_log(gNB->phy_proc_tx_1, "L1 Tx processing thread 1", NULL, NULL, output+stroff);
+  stroff += print_meas_log(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL, output+stroff);
+  stroff += print_meas_log(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL, output+stroff);
+  stroff += print_meas_log(&gNB->ul_indication_stats, "UL Indication", NULL, NULL, output+stroff);
+  stroff += print_meas_log(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL, output+stroff);
+  stroff += print_meas_log(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL, output+stroff);
+  if (ru->feprx) stroff += print_meas_log(&ru->ofdm_demod_stats,"feprx",NULL,NULL, output+stroff);
 
-  PHY_VARS_gNB *gNB  = (PHY_VARS_gNB *)param;
+  if (ru->feptx_ofdm) {
+    stroff += print_meas_log(&ru->precoding_stats,"feptx_prec",NULL,NULL, output+stroff);
+    stroff += print_meas_log(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL, output+stroff);
+    stroff += print_meas_log(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL, output+stroff);
+    stroff += print_meas_log(&ru->ofdm_total_stats,"feptx_total",NULL,NULL, output+stroff);
+  }
 
+  if (ru->fh_north_asynch_in) stroff += print_meas_log(&ru->rx_fhaul,"rx_fhaul",NULL,NULL, output+stroff);
+
+  stroff += print_meas_log(&ru->tx_fhaul,"tx_fhaul",NULL,NULL, output+stroff);
+
+  if (ru->fh_north_out) {
+    stroff += print_meas_log(&ru->compression,"compression",NULL,NULL, output+stroff);
+    stroff += print_meas_log(&ru->transport,"transport",NULL,NULL, output+stroff);
+  }
+}
+
+void *nrL1_stats_thread(void *param) {
+  PHY_VARS_gNB     *gNB      = (PHY_VARS_gNB *)param;
+  RU_t *ru = RC.ru[0];
+  char output[L1STATSSTRLEN];
+  memset(output,0,L1STATSSTRLEN);
+  wait_sync("L1_stats_thread");
+  FILE *fd;
+  fd=fopen("nrL1_stats.log","w");
+  AssertFatal(fd!=NULL,"Cannot open nrL1_stats.log\n");
+
+  reset_meas(gNB->phy_proc_tx_0);
+  reset_meas(gNB->phy_proc_tx_1);
   reset_meas(&gNB->dlsch_encoding_stats);
   reset_meas(&gNB->phy_proc_rx);
   reset_meas(&gNB->ul_indication_stats);
   reset_meas(&gNB->rx_pusch_stats);
   reset_meas(&gNB->ulsch_decoding_stats);
 
-  wait_sync("process_stats_thread");
-
-  while(!oai_exit)
-  {
-    sleep(1);
-    print_meas(gNB->phy_proc_tx_0, "L1 Tx processing thread 0", NULL, NULL);
-    print_meas(gNB->phy_proc_tx_1, "L1 Tx processing thread 1", NULL, NULL);
-    print_meas(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL);
-    print_meas(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL);
-    print_meas(&gNB->ul_indication_stats, "UL Indication", NULL, NULL);
-    print_meas(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL);
-    print_meas(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL);
-  }
-  return(NULL);
-}
-
-void *nrL1_stats_thread(void *param) {
-  PHY_VARS_gNB     *gNB      = (PHY_VARS_gNB *)param;
-  wait_sync("L1_stats_thread");
-  FILE *fd;
   while (!oai_exit) {
     sleep(1);
-    fd=fopen("nrL1_stats.log","w");
-    AssertFatal(fd!=NULL,"Cannot open nrL1_stats.log\n");
     dump_nr_I0_stats(fd,gNB);
     dump_pdsch_stats(fd,gNB);
     dump_pusch_stats(fd,gNB);
-    //    nr_dump_uci_stats(fd,eNB,eNB->proc.L1_proc_tx.frame_tx);
-    fclose(fd);
+    dump_L1_meas_stats(gNB, ru, output);
+    fprintf(fd,"%s\n",output);
+    fflush(fd);
+    fseek(fd,0,SEEK_SET);
   }
+  fclose(fd);
   return(NULL);
 }
 
@@ -432,8 +450,6 @@ void init_gNB_Tpool(int inst) {
   msgData->next_slot = sf_ahead*gNB->frame_parms.slots_per_subframe; // first Tx slot
   pushNotifiedFIFO(gNB->resp_RU_tx,msgRUTx); // to unblock the process in the beginning
 
-  // Stats measurement thread
-  if(opp_enabled == 1) threadCreate(&proc->process_stats_thread, process_stats_thread,(void *)gNB, "time_meas", -1, OAI_PRIORITY_RT_LOW);
   threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
 
 }
