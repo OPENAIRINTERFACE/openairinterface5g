@@ -254,7 +254,7 @@ void ldpc8blocks( void *p) {
 #ifdef DEBUG_DLSCH_CODING
 
     for (int i =0; i<16; i++)
-      printf("output ratematching e[%d]= %d r_offset %u\n", i,harq->e[i+r_offset], r_offset);
+      printf("output ratematching e[%d]= %d r_offset %u\n", i,e[i], r_offset);
 
 #endif
     nr_interleaving_ldpc(E,
@@ -266,8 +266,6 @@ void ldpc8blocks( void *p) {
     for (int i =0; i<16; i++)
       printf("output interleaving f[%d]= %d r_offset %u\n", i,impp->output[i+r_offset], r_offset);
 
-    if (r==impp->n_segments-1)
-      write_output("enc_output.m","enc",impp->output,G,1,4);
 
 #endif
     r_offset += E;
@@ -370,11 +368,11 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     //d_tmp[r] = &harq->d[r][0];
     //channel_input[r] = &harq->d[r][0];
 #ifdef DEBUG_DLSCH_CODING
-    LOG_D(PHY,"Encoder: B %d F %d \n",harq->B, impp->F);
+    LOG_D(PHY,"Encoder: B %d F %d \n",harq->B, impp.F);
     LOG_D(PHY,"start ldpc encoder segment %d/%d\n",r,impp.n_segments);
     LOG_D(PHY,"input %d %d %d %d %d \n", harq->c[r][0], harq->c[r][1], harq->c[r][2],harq->c[r][3], harq->c[r][4]);
 
-    for (int cnt =0 ; cnt < 22*(*Zc)/8; cnt ++) {
+    for (int cnt =0 ; cnt < 22*(*impp.Zc)/8; cnt ++) {
       LOG_D(PHY,"%d ", harq->c[r][cnt]);
     }
 
