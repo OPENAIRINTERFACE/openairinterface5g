@@ -1099,8 +1099,9 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       /* According to nfapi_nr_interface_scf.h, harq_value = 0 is a pass
-      (The check below was for harq_value == 1 in the develop branch) */
-      if (get_softmodem_params()->nsa)
+      (The check below was for harq_value == 1 in the develop branch) 
+      TODO: After update in develop branch, the following condition will be updated.*/
+      if (get_softmodem_params()->emulate_l1)
         handle_dl_harq(mod_id, UE_id, pid, harq_value == 0 && harq_confidence == 0);
       else
         handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);

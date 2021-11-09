@@ -73,7 +73,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
   }
   NR_UL_IND_t UL_INFO;
   nfapi_nr_rach_indication_t *rach_ind = NULL;
-  if (get_softmodem_params()->nsa)
+  if (get_softmodem_params()->emulate_l1)
   {
     if (gnb_rach_ind_queue.num_items == 0)
       return; 
@@ -118,7 +118,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
                           UL_INFO.rach_ind.pdu_list[i].preamble_list[0].timing_advance);
     }
   }
-  if (get_softmodem_params()->nsa)
+  if (get_softmodem_params()->emulate_l1)
   {
     if (rach_ind && rach_ind->number_of_pdus > 0)
     {
@@ -149,7 +149,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
 
   NR_UL_IND_t UL_INFO;
   nfapi_nr_uci_indication_t *uci_ind = NULL;
-  if (get_softmodem_params()->nsa)
+  if (get_softmodem_params()->emulate_l1)
   {
     if (gnb_uci_ind_queue.num_items == 0)
       return; 
@@ -191,7 +191,7 @@ void handle_nr_uci(NR_UL_IND_t *UL_info)
     }
   }
 
-  if (get_softmodem_params()->nsa)
+  if (get_softmodem_params()->emulate_l1)
   {
     for (int i = 0; i < num_ucis; i++) {
       switch (uci_list[i].pdu_type) {
@@ -266,7 +266,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
   NR_UL_IND_t UL_INFO;
   nfapi_nr_rx_data_indication_t *rx_ind = NULL;
   nfapi_nr_crc_indication_t *crc_ind = NULL;
-  if (get_softmodem_params()->nsa)
+  if (get_softmodem_params()->emulate_l1)
   {
     rx_ind = get_queue(&gnb_rx_ind_queue);
     if (!rx_ind)
@@ -353,7 +353,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
         handle_nr_ul_harq(UL_INFO.CC_id, UL_INFO.module_id, UL_INFO.frame, UL_INFO.slot, crc);
         break;
       } //    for (j=0;j<UL_INFO.crc_ind.number_crcs;j++)
-      if (get_softmodem_params()->nsa)
+      if (get_softmodem_params()->emulate_l1)
       {
         int last = UL_INFO.crc_ind.number_crcs - 1;
         if (j < last)
@@ -379,7 +379,7 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
         }
       }
     } //   for (i=0;i<UL_INFO.rx_ind.number_of_pdus;i++)
-    if (get_softmodem_params()->nsa)
+    if (get_softmodem_params()->emulate_l1)
     {
       if (UL_INFO.crc_ind.number_crcs > 0)
       {
