@@ -76,7 +76,6 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id){
 
   uint16_t monitoringSymbolsWithinSlot = 0;
-  uint8_t coreset_id = 1;
   int sps = 0;
 
   AssertFatal(mac->scc == NULL || mac->scc_SIB == NULL, "both scc and scc_SIB cannot be non-null\n");
@@ -97,11 +96,23 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   NR_SearchSpace_t *ss;
   NR_ControlResourceSet_t *coreset;
   if(ss_id>=0) {
-    ss = mac->SSpace[dl_bwp_id][ss_id-1];
+    if (rnti_type == NR_RNTI_TC || rnti_type == NR_RNTI_RA) {
+      ss = mac->ra.ss;
+      AssertFatal(mac->ra.ss->searchSpaceId == ss_id,"Search Space id %d does not correspond to the one in ra->ss %ld for RA procedures\n",
+                  ss_id,mac->ra.ss->searchSpaceId);
+    }
+    else
+      ss = mac->SSpace[dl_bwp_id][ss_id-1];
+  }
+  else
+    ss = mac->search_space_zero;
+
+  uint8_t coreset_id = *ss->controlResourceSetId;
+
+  if(coreset_id>0) {
     coreset = mac->coreset[dl_bwp_id][coreset_id - 1];
     rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   } else {
-    ss = mac->search_space_zero;
     coreset = mac->coreset0;
     if(rnti_type == NR_RNTI_SI) {
       rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
@@ -264,7 +275,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 
   // loop over all available SS for bwp_id
   if (bwpd) {
-      for (ss_id = 1; ss_id <= FAPI_NR_MAX_SS_PER_CORESET && mac->SSpace[bwp_id][ss_id-1] != NULL; ss_id++){
+      for (ss_id = 1; ss_id <= FAPI_NR_MAX_SS && mac->SSpace[bwp_id][ss_id-1] != NULL; ss_id++){
 	LOG_D(NR_MAC, "[DCI_CONFIG] ss_id %d\n",ss_id);
 	NR_SearchSpace_t *ss = mac->SSpace[bwp_id][ss_id-1];
         AssertFatal(ss_id == ss->searchSpaceId,"SS IDs don't correspond\n");

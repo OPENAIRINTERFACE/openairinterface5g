@@ -53,10 +53,8 @@
 
 struct net_device *nasdev[NB_INSTANCES_MAX];
 
-#ifdef PDCP_USE_NETLINK
 extern void nas_netlink_release(void);
 extern int nas_netlink_init(void);
-#endif
 
 //int bytes_wrote;
 //int bytes_read;
@@ -82,38 +80,6 @@ int find_inst(struct net_device *dev)
 
 //---------------------------------------------------------------------------
 
-#ifndef PDCP_USE_NETLINK
-//void interrupt(void){
-void *nas_interrupt(void)
-{
-  //---------------------------------------------------------------------------
-  uint8_t cxi;
-
-  //  struct nas_priv *priv=netdev_priv(dev_id);
-  //  unsigned int flags;
-
-  //  priv->lock = SPIN_LOCK_UNLOCKED;
-
-#ifdef DEBUG_INTERRUPT
-  printk("INTERRUPT - begin\n");
-#endif
-  //  spin_lock_irqsave(&priv->lock,flags);
-  cxi=0;
-  //  mesh_GC_receive();
-  //  mesh_DC_receive(naspriv->cx+cxi);
-#ifndef PDCP_USE_NETLINK
-  nas_COMMON_QOS_receive();
-#endif
-  //  spin_unlock_irqrestore(&priv->lock,flags);
-#ifdef DEBUG_INTERRUPT
-  printk("INTERRUPT: end\n");
-#endif
-  //  return 0;
-  return NULL;
-}
-#endif //NETLINK
-
-//---------------------------------------------------------------------------
 // Called by ifconfig when the device is activated by ifconfig
 int nas_open(struct net_device *dev)
 {
@@ -121,15 +87,6 @@ int nas_open(struct net_device *dev)
   printk("OPEN: begin\n");
   //  MOD_INC_USE_COUNT;
   // Address has already been set at init
-#ifndef PDCP_USE_NETLINK
-
-  if (pdcp_2_nas_irq==-EBUSY) {
-    printk("OPEN: irq failure\n");
-    return -EBUSY;
-  }
-
-#endif //PDCP_USE_NETLINK
-
   /*
   netif_start_queue(dev);
   //
@@ -449,16 +406,6 @@ int init_module (void)
 
   printk("Starting NASMESH, number of IMEI paramters %d, IMEI %X%X\n",m_arg,nas_IMEI[0],nas_IMEI[1]);
 
-#ifndef PDCP_USE_NETLINK
-
-  if (pdcp_2_nas_irq == -EBUSY || pdcp_2_nas_irq == -EINVAL) {
-    printk("[NAS][INIT] No interrupt resource available\n");
-    return -EBUSY;
-  } else
-    printk("[NAS][INIT]: Interrupt %d\n", pdcp_2_nas_irq);
-
-#endif //NETLINK
-
   for (inst=0; inst<NB_INSTANCES_MAX; inst++) {
     printk("[NAS][INIT] nasmesh_init_module: begin init instance %d\n",inst);
 
@@ -493,14 +440,10 @@ int init_module (void)
     }
   }
 
-#ifdef PDCP_USE_NETLINK
-
   if ((err=nas_netlink_init()) == -1)
     printk("[NAS][INIT] NETLINK failed\n");
 
   printk("[NAS][INIT] NETLINK INIT\n");
-
-#endif //NETLINK
 
   return err;
 
@@ -516,22 +459,6 @@ void cleanup_module(void)
 
   printk("[NAS][CLEANUP]nasmesh_cleanup_module: begin\n");
 
-#ifndef PDCP_USE_NETLINK
-
-  if (pdcp_2_nas_irq!=-EBUSY) {
-    pdcp_2_nas_irq=0;
-    // Start IRQ linux
-    //    free_irq(priv->irq, NULL);
-    // End IRQ linux
-
-  }
-
-#else // NETLINK
-
-
-
-#endif //NETLINK
-
   for (inst=0; inst<NB_INSTANCES_MAX; inst++) {
 #ifdef DEBUG_DEVICE
     printk("nasmesh_cleanup_module: unregister and free net device instance %d\n",inst);
@@ -541,9 +468,7 @@ void cleanup_module(void)
     free_netdev(nasdev[inst]);
   }
 
-#ifdef PDCP_USE_NETLINK
   nas_netlink_release();
-#endif //PDCP_USE_NETLINK
   printk("nasmesh_cleanup_module: end\n");
 }
 

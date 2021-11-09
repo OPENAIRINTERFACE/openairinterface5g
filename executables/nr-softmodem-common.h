@@ -30,12 +30,8 @@
 #include "PHY/types.h"
 #include <threadPool/thread-pool.h>
 
-#if defined(ENABLE_USE_MME)
 #include "s1ap_eNB.h"
-#ifdef PDCP_USE_NETLINK
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-#endif
-#endif
 
 /* help strings definition for command line options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
 #define CONFIG_HLP_RFCFGF        "Configuration file for front-end (e.g. LMS7002M)\n"

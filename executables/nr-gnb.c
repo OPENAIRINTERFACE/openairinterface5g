@@ -76,10 +76,6 @@
 #include "gnb_paramdef.h"
 
 
-#ifndef OPENAIR2
-  #include "UTIL/OTG/otg_extern.h"
-#endif
-
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include <executables/softmodem-common.h>

@@ -614,7 +614,7 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
   struct NR_PDCCH_Config__searchSpacesToAddModList *searchSpacesToAddModList = pdcch_Config->choice.setup->searchSpacesToAddModList;
   AssertFatal(searchSpacesToAddModList != NULL, "searchSpacesToAddModList is null\n");
   AssertFatal(searchSpacesToAddModList->list.count > 0, "list of UE specifically configured Search Spaces is empty\n");
-  AssertFatal(searchSpacesToAddModList->list.count < FAPI_NR_MAX_SS_PER_CORESET, "too many searchpaces per coreset %d\n", searchSpacesToAddModList->list.count);
+  AssertFatal(searchSpacesToAddModList->list.count < FAPI_NR_MAX_SS, "too many searchpaces per coreset %d\n", searchSpacesToAddModList->list.count);
 
   // check available Search Spaces in the searchSpacesToAddModList and pass to MAC
   // note: the network configures at most 10 Search Spaces per BWP per cell (including UE-specific and common Search Spaces).
