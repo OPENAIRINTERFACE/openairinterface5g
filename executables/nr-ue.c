@@ -177,7 +177,10 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_p
   rach_ind->pdu_list[pdu_index].num_preamble                        = 1;
   const int num_p = rach_ind->pdu_list[pdu_index].num_preamble;
   rach_ind->pdu_list[pdu_index].preamble_list = calloc(num_p, sizeof(nfapi_nr_prach_indication_preamble_t));
-  rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_index     = mac->ra.rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[0]->ra_PreambleIndex;
+  uint8_t preamble_index = get_softmodem_params()->nsa ?
+                           mac->ra.rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[0]->ra_PreambleIndex :
+                           mac->ra.ra_PreambleIndex;
+  rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_index     = preamble_index;
 
   rach_ind->pdu_list[pdu_index].preamble_list[0].timing_advance     = 0;
   rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_pwr       = 0xffffffff;
@@ -266,12 +269,12 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
   nfapi_nr_ul_dci_request_t *ul_dci_request = get_queue(&nr_ul_dci_req_queue);
 
   LOG_D(NR_MAC, "Try to get a ul_tti_req for sfn/slot %d %d from queue with %lu items\n",
-        NFAPI_SFNSLOT2SFN(mac->active_harq_sfn_slot),NFAPI_SFNSLOT2SLOT(mac->active_harq_sfn_slot), nr_ul_tti_req_queue.num_items);
-  nfapi_nr_ul_tti_request_t *ul_tti_request = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->active_harq_sfn_slot);
+        NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot),NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot), nr_ul_tti_req_queue.num_items);
+  nfapi_nr_ul_tti_request_t *ul_tti_request = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.active_harq_sfn_slot);
   if (!ul_tti_request)
   {
       LOG_D(NR_MAC, "Try to get a ul_tti_req from seprate queue because dl_tti_req was late\n");
-      ul_tti_request = unqueue_matching(&nr_wait_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->active_harq_sfn_slot);
+      ul_tti_request = unqueue_matching(&nr_wait_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.active_harq_sfn_slot);
   }
 
   if (rach_ind && rach_ind->number_of_pdus > 0)
@@ -314,13 +317,15 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
     {
       LOG_E(NR_MAC, "[%d %d] No corresponding tx_data_request for given dl_tti_request sfn/slot\n",
             NFAPI_SFNSLOT2SFN(dl_tti_sfn_slot), NFAPI_SFNSLOT2SLOT(dl_tti_sfn_slot));
-      save_nr_measurement_info(dl_tti_request);
+      if (get_softmodem_params()->nsa)
+        save_nr_measurement_info(dl_tti_request);
       free(dl_tti_request);
       dl_tti_request = NULL;
     }
     else if (dl_tti_request->dl_tti_request_body.nPDUs > 0 && tx_data_request->Number_of_PDUs > 0)
     {
-      save_nr_measurement_info(dl_tti_request);
+      if (get_softmodem_params()->nsa)
+        save_nr_measurement_info(dl_tti_request);
       check_and_process_dci(dl_tti_request, tx_data_request, NULL, NULL);
     }
     else
@@ -352,13 +357,21 @@ static void check_nr_prach(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_inf
     AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
                 "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
     fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
-    uint8_t nr_prach = nr_ue_get_rach_nsa(prach_resources,
-                                      prach_pdu,
-                                      ul_info->module_id,
-                                      ul_info->cc_id,
-                                      ul_info->frame_tx,
-                                      ul_info->gNB_index,
-                                      ul_info->slot_tx);
+    uint8_t nr_prach = get_softmodem_params()->nsa ?
+                        nr_ue_get_rach_nsa(prach_resources,
+                                           prach_pdu,
+                                           ul_info->module_id,
+                                           ul_info->cc_id,
+                                           ul_info->frame_tx,
+                                           ul_info->gNB_index,
+                                           ul_info->slot_tx) :
+                        nr_ue_get_rach(prach_resources,
+                                       prach_pdu,
+                                       ul_info->module_id,
+                                       ul_info->cc_id,
+                                       ul_info->frame_tx,
+                                       ul_info->gNB_index,
+                                       ul_info->slot_tx);
     if (nr_prach == 1)
     {
       L1_nsa_prach_procedures(ul_info->frame_tx, ul_info->slot_tx, prach_pdu);
@@ -432,9 +445,15 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     module_id_t mod_id = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-    if (mac->scc == NULL)
+    if (get_softmodem_params()->sa && mac->mib == NULL)
     {
-      LOG_D(MAC, "mac->scc == NULL!\n");
+      LOG_D(NR_MAC, "We haven't gotten MIB. Lets see if we received it\n");
+      nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+      process_queued_nr_nfapi_msgs(mac, sfn_slot);
+    }
+    if (mac->scc == NULL && mac->scc_SIB == NULL)
+    {
+      LOG_D(MAC, "[NSA] mac->scc == NULL and [SA] mac->scc_SIB == NULL!\n");
       continue;
     }
 
@@ -465,14 +484,20 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     mac->dl_info.dci_ind = NULL;
     mac->dl_info.rx_ind = NULL;
 
-    if (is_nr_DL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_rx))
+    if (is_nr_DL_slot(get_softmodem_params()->nsa ?
+                      mac->scc->tdd_UL_DL_ConfigurationCommon :
+                      mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
+                      ul_info.slot_rx))
     {
       nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
     }
 
     if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
 
-    if (is_nr_UL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_tx, mac->frame_type))
+    if (is_nr_UL_slot(get_softmodem_params()->nsa ?
+                      mac->scc->tdd_UL_DL_ConfigurationCommon :
+                      mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
+                      ul_info.slot_tx, mac->frame_type))
     {
       LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", ul_info.slot_tx, __FUNCTION__);
       nr_ue_ul_indication(&ul_info);

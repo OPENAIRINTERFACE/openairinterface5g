@@ -199,8 +199,6 @@ extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * con
     const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
-static void start_oai_nrue_threads(void);
-
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id,
                                                    const uint8_t *buffer,
@@ -1208,8 +1206,8 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
             check_requested_SI_List(module_id, NR_UE_rrc_inst[module_id].requested_SI_List, *sib1);
             if( nr_rrc_get_state(module_id) <= RRC_STATE_IDLE_NR ) {
               NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
-              LOG_D(PHY,"Setting state to NR_RRC_SI_RECEIVED\n");
-              nr_rrc_set_state (module_id, NR_RRC_SI_RECEIVED);
+              LOG_D(PHY,"Setting state to RRC_STATE_IDLE_NR\n");
+              nr_rrc_set_state (module_id, RRC_STATE_IDLE_NR);
             }
             // take ServingCellConfigCommon and configure L1/L2
             NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
@@ -2793,7 +2791,8 @@ void *recv_msgs_from_lte_ue(void *args_p)
     }
     return NULL;
 }
-static void start_oai_nrue_threads()
+
+void start_oai_nrue_threads()
 {
     init_queue(&nr_rach_ind_queue);
     init_queue(&nr_rx_ind_queue);

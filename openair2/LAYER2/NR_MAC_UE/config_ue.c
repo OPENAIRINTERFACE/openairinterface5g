@@ -662,7 +662,8 @@ int nr_rrc_mac_config_req_ue(
       mac->ul_config_request = (fapi_nr_ul_config_request_t *)calloc(num_slots_ul, sizeof(fapi_nr_ul_config_request_t));
       // Setup the SSB to Rach Occasions mapping according to the config
       build_ssb_to_ro_map(mac);//->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
-      mac->if_module->phy_config_request(&mac->phy_config);
+      if (!get_softmodem_params()->emulate_l1)
+        mac->if_module->phy_config_request(&mac->phy_config);
       mac->common_configuration_complete = 1;
     }
     if(scell_group_config != NULL ){

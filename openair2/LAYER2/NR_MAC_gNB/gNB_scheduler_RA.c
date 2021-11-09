@@ -518,17 +518,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
   for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
     NR_RA_t *ra = &cc->ra[i];
-      LOG_D(MAC,
-            "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Checking all rnti : preamble index %d, rnti %x\n",
-            module_idP,
-            CC_id,
-            frameP,
-            slotP,
-            preamble_index,
-            ra->rnti);
-  }
-  for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
-    NR_RA_t *ra = &cc->ra[i];
     pr_found = 0;
     const int UE_id = find_nr_UE_id(module_idP, ra->rnti);
     if (UE_id != -1) {
@@ -537,7 +526,9 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     if (ra->state == RA_IDLE) {
       for(int j = 0; j < ra->preambles.num_preambles; j++) {
         //check if the preamble received correspond to one of the listed or configured preambles
-        if (preamble_index == ra->preambles.preamble_list[j] && ra->rnti != 0) {
+        if (preamble_index == ra->preambles.preamble_list[j]) {
+          if (ra->rnti == 0 && get_softmodem_params()->nsa)
+            continue;
           pr_found=1;
           break;
         }

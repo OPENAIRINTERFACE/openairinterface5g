@@ -89,6 +89,7 @@ extern void init_NR_UE(int, char*);
 extern void init_NR_UE_threads(int);
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
+extern void start_oai_nrue_threads(void);
 void *UE_thread(void *arg);
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue, uint8_t UE_id, uint8_t abstraction_flag);
 void init_nrUE_standalone_thread(int ue_idx);
