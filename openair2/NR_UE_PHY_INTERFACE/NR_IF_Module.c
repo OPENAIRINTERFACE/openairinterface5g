@@ -708,7 +708,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
                           mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
                           ul_info.slot_tx,
                           mac->frame_type))
-        nr_ue_ul_indication(&ul_info);
+            nr_ue_ul_indication(&ul_info);
     }
 }
 
