@@ -599,12 +599,6 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci->dci_format];
 
-  if ((dci->rnti != mac->crnti) && (dci->rnti != mac->ra.ra_rnti) && (get_softmodem_params()->nsa)) {
-      LOG_D(MAC,"We skip for the received dci indication rnti %4x != mac->crnti %4x  frame slot %4d.%2d  RA state %d\n",
-                    dci->rnti, mac->crnti, frame, slot, mac->ra.ra_state);
-      return 0;
-  }
-
   LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
   int8_t ret = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15);
@@ -733,11 +727,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
         LOG_W(MAC, "In %s: ul_config request is NULL. Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n", __FUNCTION__, frame, slot);
         return -1;
       }
-      if (get_softmodem_params()->nsa) {
-        ul_config->number_pdus = 0;
-        AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
-                    "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
-      }
+      ul_config->number_pdus = 0;
+      AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
+                  "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pusch_config_pdu;
 
       fill_ul_config(ul_config, frame_tx, slot_tx, FAPI_NR_UL_CONFIG_TYPE_PUSCH);
@@ -3803,11 +3795,6 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 
   LOG_D(NR_MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
 
-  if ((mac->crnti == ra->t_crnti) && (get_softmodem_params()->nsa))
-  {
-    LOG_D(MAC, "Discarding the received RAR.\n");
-    return -1;
-  }
   while (1) {
     n_subheaders++;
     if (rarh->T == 1) {

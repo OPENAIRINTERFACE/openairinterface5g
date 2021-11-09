@@ -163,7 +163,7 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
                 num_slots_ul,
                 index);
 
-  if(!mac->ul_config_request && get_softmodem_params()->nsa)
+  if(!mac->ul_config_request)
     return NULL;
   return &mac->ul_config_request[index];
 }
@@ -911,8 +911,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       dcireq.slot      = rx_slot;
       dcireq.dl_config_req.number_pdus = 0;
       nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
-      if (get_softmodem_params()->nsa)
-        mac->dl_config_request = dcireq.dl_config_req;
+      mac->dl_config_request = dcireq.dl_config_req;
 
       fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)

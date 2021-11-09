@@ -278,9 +278,9 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
     int sfn_slot = NFAPI_SFNSLOT2HEX(rx_ind->sfn, rx_ind->slot); 
     
     crc_ind = unqueue_matching(&gnb_crc_ind_queue,
-                                                          MAX_QUEUE_SIZE,
-                                                          crc_sfn_slot_matcher,
-                                                          &sfn_slot);
+                               MAX_QUEUE_SIZE,
+                               crc_sfn_slot_matcher,
+                               &sfn_slot);
     if (!crc_ind)
     {
       LOG_D(NR_PHY, "No crc indication with the same SFN SLOT of rx indication %u %u\n", rx_ind->sfn, rx_ind->slot);
