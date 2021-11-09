@@ -612,8 +612,6 @@ int phy_sync_indication(struct nfapi_vnf_p7_config *config, uint8_t sync) {
   return(0);
 }
 
-uint16_t pnf_frame;
-uint16_t pnf_slot;
 
 int phy_slot_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id, uint16_t sfn, uint16_t slot) {
   static uint8_t first_time = 1;
@@ -626,8 +624,6 @@ int phy_slot_indication(struct nfapi_vnf_p7_config *config, uint16_t phy_id, uin
   if (RC.gNB && RC.gNB[0]->configured) {
     // uint16_t sfn = NFAPI_SFNSF2SFN(sfn_sf);
     // uint16_t sf = NFAPI_SFNSF2SF(sfn_sf);
-    pnf_frame = sfn;
-    pnf_slot = slot;
     LOG_D(PHY,"[VNF] slot indication sfn:%d slot:%d\n", sfn, slot);
     wake_gNB_rxtx(RC.gNB[0], sfn, slot); // DONE: find NR equivalent
   } else {
