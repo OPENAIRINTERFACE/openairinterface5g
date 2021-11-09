@@ -51,7 +51,6 @@
 #include <cblas.h>
 #include "linear_preprocessing_rec.h"
 
-#define NOCYGWIN_STATIC
 //#define DEBUG_MMSE
 
 

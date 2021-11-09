@@ -60,22 +60,21 @@ uint16_t get_ssboffset_pointa(NR_ServingCellConfigCommon_t *scc,const long band)
   int ratio;
   switch (*scc->ssbSubcarrierSpacing) {
     case NR_SubcarrierSpacing_kHz15:
-      AssertFatal(band <= 79,
+      AssertFatal(band <= 95,
                   "Band %ld is not possible for SSB with 15 kHz SCS\n",
                   band);
-      if (band < 77)  // below 3GHz
-        ratio = 3;    // NRARFCN step is 5 kHz
-      else
-        ratio = 1;  // NRARFCN step is 15 kHz
+      // no band available above 3GHz using 15kHz
+      ratio = 3;  // NRARFCN step is 5 kHz
       break;
     case NR_SubcarrierSpacing_kHz30:
-      AssertFatal(band <= 79,
-                  "Band %ld is not possible for SSB with 15 kHz SCS\n",
+      AssertFatal(band <= 96,
+                  "Band %ld is not possible for SSB with 30 kHz SCS\n",
                   band);
-      if (band < 77)  // below 3GHz
-        ratio = 6;    // NRARFCN step is 5 kHz
+      if (band == 46 || band == 48 || band == 77 ||
+          band == 78 || band == 79 || band == 96)  // above 3GHz
+        ratio = 2;    // NRARFCN step is 15 kHz
       else
-        ratio = 2;  // NRARFCN step is 15 kHz
+        ratio = 6;  // NRARFCN step is 5 kHz
       break;
     case NR_SubcarrierSpacing_kHz120:
       AssertFatal(band >= 257,

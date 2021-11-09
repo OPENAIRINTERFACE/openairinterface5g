@@ -22,9 +22,7 @@
 #ifndef __MAC_RRC_PRIMITIVES_H__
 #define __MAC_RRC_PRIMITIVES_H__
 
-#ifndef OPENAIR2_IN
-  #include "LAYER2/RLC/rlc.h"
-#endif
+#include "LAYER2/RLC/rlc.h"
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
 #include "openair2/RRC/LTE/rrc_defs.h"
@@ -306,8 +304,6 @@ typedef struct {
 
 
 
-#ifndef OPENAIR2_IN
-
 typedef struct {  //RRC_INTERFACE_FUNCTIONS
   unsigned int Frame_index;
   unsigned short UE_index[NB_MODULES_MAX][NB_SIG_CNX_UE];
@@ -373,10 +369,6 @@ typedef struct {
   void (*mrbch_phy_sync_failure) (uint8_t Mod_id, frame_t frame, uint8_t Free_ch_index);
   void (*dl_phy_sync_success) (uint8_t Mod_id, frame_t frame, uint8_t eNB_index);
 } MAC_RLC_XFACE;
-
-
-#endif
-
 
 
 //#define IDLE 0
