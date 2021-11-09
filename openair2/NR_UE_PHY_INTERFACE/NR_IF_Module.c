@@ -232,11 +232,65 @@ static void fill_dl_info_with_pdcch(fapi_nr_dci_indication_t *dci, nfapi_nr_dl_d
     dci->number_of_dcis = idx + 1;
 }
 
+static void fill_mib_in_rx_ind(nfapi_nr_dl_tti_request_pdu_t *pdu_list, fapi_nr_rx_indication_t *rx_ind, int pdu_idx, int pdu_type)
+{
+    AssertFatal(pdu_idx < sizeof(rx_ind->rx_indication_body) / sizeof(rx_ind->rx_indication_body[0]),
+                "pdu_index (%d) is greater than rx_indication_body size!\n", pdu_idx);
+    AssertFatal(pdu_idx == rx_ind->number_pdus,  "Invalid pdu_idx %d!\n", pdu_idx);
+
+    LOG_D(NR_MAC, "Recevied an SSB and are filling rx_ind with the MIB!\n");
+
+    nfapi_nr_dl_tti_ssb_pdu_rel15_t *ssb_pdu = &pdu_list->ssb_pdu.ssb_pdu_rel15;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.cell_id = ssb_pdu->PhysCellId;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu = MALLOC(3 * sizeof(*rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu));
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[0] = (ssb_pdu->bchPayload) & 0xff;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[1] = (ssb_pdu->bchPayload >> 8) & 0xff;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[2] = (ssb_pdu->bchPayload >> 16) & 0xff;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.rsrp_dBm = ssb_pdu->ssbRsrp;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_index = ssb_pdu->SsbBlockIndex;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_length = pdu_list->PDUSize;
+    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_start_subcarrier = ssb_pdu->SsbSubcarrierOffset;
+    rx_ind->rx_indication_body[pdu_idx].pdu_type = pdu_type;
+    rx_ind->number_pdus = pdu_idx + 1;
+
+}
+
+static bool is_my_dci(NR_UE_MAC_INST_t *mac, nfapi_nr_dl_dci_pdu_t *received_pdu)
+{
+    /* For multiple UEs, we need to be able to filter the rx'd messages by
+       the RNTI. The filtering is different between NSA mode and SA mode.
+       NSA mode has a two step CFRA procedure and SA has a 4 step procedure.
+       We only need to check if the rx'd RNTI doesnt match the CRNTI if the RAR
+       has been processed already, in NSA mode.
+       In SA, depending on the RA state, we can have a SIB (0xffff), RAR (0x10b),
+       Msg3 (TC_RNTI) or an actual DCI message (CRNTI). When we get Msg3, the
+       MAC instance of the UE still has a CRNTI = 0. We should only check if the
+       CRNTI doesnt match the received RNTI in SA mode if Msg3 has been processed
+       already. Only once the RA procedure succeeds is the CRNTI value updated
+       to the TC_RNTI. */
+    if (get_softmodem_params()->nsa)
+    {
+        if (received_pdu->RNTI != mac->crnti &&
+            (received_pdu->RNTI != mac->ra.ra_rnti || mac->ra.RA_RAPID_found))
+            return false;
+    }
+    if (get_softmodem_params()->sa)
+    {
+        if (received_pdu->RNTI != mac->crnti && mac->ra.ra_state == RA_SUCCEEDED)
+            return false;
+    }
+    return true;
+}
+
 static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_dl_tti_request_t *dl_tti_request)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
-    mac->expected_dci = false;
-    memset(mac->index_has_dci, 0, sizeof(*mac->index_has_dci));
+    mac->nr_ue_emul_l1.expected_sib = false;
+    memset(mac->nr_ue_emul_l1.index_has_sib, 0, sizeof(*mac->nr_ue_emul_l1.index_has_sib));
+    mac->nr_ue_emul_l1.expected_rar = false;
+    memset(mac->nr_ue_emul_l1.index_has_rar, 0, sizeof(*mac->nr_ue_emul_l1.index_has_rar));
+    mac->nr_ue_emul_l1.expected_dci = false;
+    memset(mac->nr_ue_emul_l1.index_has_dci, 0, sizeof(*mac->nr_ue_emul_l1.index_has_dci));
     int pdu_idx = 0;
 
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
@@ -270,20 +324,50 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
                 for (int j = 0; j < num_dcis; j++)
                 {
                     nfapi_nr_dl_dci_pdu_t *dci_pdu_list = &pdu_list->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[j];
-                    if ((dci_pdu_list->RNTI != mac->crnti) &&
-                       ((dci_pdu_list->RNTI != mac->ra.ra_rnti) || mac->ra.RA_RAPID_found))
+                    if (!is_my_dci(mac, dci_pdu_list))
                     {
-                      LOG_D(NR_MAC, "We are filtering PDCCH DCI pdu because RNTI doesnt match!\n");
-                      LOG_D(NR_MAC, "dci_pdu_list->RNTI (%x) != mac->crnti (%x)\n", dci_pdu_list->RNTI, mac->crnti);
-                      continue;
+                        continue;
                     }
                     fill_dl_info_with_pdcch(dl_info->dci_ind, dci_pdu_list, pdu_idx);
-                    mac->expected_dci = true;
-                    LOG_D(NR_MAC, "Setting index_has_dci[%d] = true\n", j);
-                    mac->index_has_dci[j] = true;
+                    if (dci_pdu_list->RNTI == 0xffff)
+                    {
+                        mac->nr_ue_emul_l1.expected_sib = true;
+                        mac->nr_ue_emul_l1.index_has_sib[j] = true;
+                        LOG_D(NR_MAC, "Setting index_has_sib[%d] = true\n", j);
+                    }
+                    else if (dci_pdu_list->RNTI == mac->ra.ra_rnti)
+                    {
+                        mac->nr_ue_emul_l1.expected_rar = true;
+                        mac->nr_ue_emul_l1.index_has_rar[j] = true;
+                        LOG_D(NR_MAC, "Setting index_has_rar[%d] = true\n", j);
+                    }
+                    else
+                    {
+                        mac->nr_ue_emul_l1.expected_dci = true;
+                        mac->nr_ue_emul_l1.index_has_dci[j] = true;
+                        LOG_D(NR_MAC, "Setting index_has_dci[%d] = true\n", j);
+                    }
                     pdu_idx++;
                 }
             }
+        }
+        if (pdu_list->PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE)
+        {
+            /* If we get a MIB, we want to handle it right away and then come back.
+               The MIB and SIB come in the same dl_tti_req but the MIB should be
+               processed first and then the DCI and payload of the SIB1 can be
+               processed. The MIB should be handled first and then the rx_ind
+               will be freed after handling. This is why the PDU index will
+               always be zero for the RX_IND becasue we should not have more than
+               one MIB. */
+            dl_info->rx_ind = CALLOC(1, sizeof(*dl_info->rx_ind));
+            fapi_nr_rx_indication_t *rx_ind = dl_info->rx_ind;
+            rx_ind->sfn = dl_tti_request->SFN;
+            rx_ind->slot = dl_tti_request->Slot;
+            fill_mib_in_rx_ind(pdu_list, rx_ind, 0, FAPI_NR_RX_PDU_TYPE_SSB);
+            NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
+            memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
+            nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
         }
     }
     dl_info->slot = dl_tti_request->Slot;
@@ -341,19 +425,26 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_pdu_t *pdu_list = &tx_data_request->pdu_list[i];
-        if(mac->ra.ra_state <= WAIT_RAR)
+        if (mac->nr_ue_emul_l1.index_has_sib[i])
+        {
+            AssertFatal(!get_softmodem_params()->nsa,
+                        "Should not be processing SIB in NSA mode, something bad happened\n");
+            fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_SIB);
+            pdu_idx++;
+        }
+        else if (mac->nr_ue_emul_l1.index_has_rar[i])
         {
             fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_RAR);
             pdu_idx++;
         }
-        else if (mac->index_has_dci[i])
+        else if (mac->nr_ue_emul_l1.index_has_dci[i])
         {
             fill_rx_ind(pdu_list, rx_ind, pdu_idx, FAPI_NR_RX_PDU_TYPE_DLSCH);
             pdu_idx++;
         }
         else
         {
-            LOG_D(NR_MAC, "mac->index_has_dci[%d] = 0, so this index contained a DCI for a different UE\n", i);
+            LOG_D(NR_MAC, "mac->nr_ue_emul_l1.index_has_dci[%d] = 0, so this index contained a DCI for a different UE\n", i);
         }
 
     }
@@ -548,11 +639,6 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     int slot = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
-    if (mac->scc == NULL)
-    {
-      return;
-    }
-
     if (pthread_mutex_lock(&mac->mutex_dl_info)) abort();
 
     if (dl_tti_request)
@@ -567,7 +653,9 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
        incoming tx_data_request is also destined for the current UE. If the
        RAR hasn't been processed yet, we do not want to be filtering the
        tx_data_requests. */
-    if (tx_data_request && (mac->expected_dci || mac->ra.ra_state == WAIT_RAR))
+    if (tx_data_request && (mac->nr_ue_emul_l1.expected_sib ||
+                            mac->nr_ue_emul_l1.expected_rar ||
+                            mac->nr_ue_emul_l1.expected_dci))
     {
         frame = tx_data_request->SFN;
         slot = tx_data_request->Slot;
@@ -613,8 +701,13 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
     ul_info.ue_sched_mode = SCHED_ALL;
-    if (mac->scc && is_nr_UL_slot(mac->scc->tdd_UL_DL_ConfigurationCommon, ul_info.slot_tx, mac->frame_type))
+    if (mac->scc || mac->scc_SIB)
     {
+        if (is_nr_UL_slot(mac->scc ?
+                          mac->scc->tdd_UL_DL_ConfigurationCommon :
+                          mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
+                          ul_info.slot_tx,
+                          mac->frame_type))
         nr_ue_ul_indication(&ul_info);
     }
 }
@@ -1030,7 +1123,7 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     nr_ue_if_module_inst[module_id]->current_frame = 0;
     nr_ue_if_module_inst[module_id]->current_slot = 0;
     nr_ue_if_module_inst[module_id]->phy_config_request = nr_ue_phy_config_request;
-    if (get_softmodem_params()->nsa) //TODO: Get a better flag for using stub
+    if (get_softmodem_params()->emulate_l1)
       nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response_stub;
     else
       nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response;
