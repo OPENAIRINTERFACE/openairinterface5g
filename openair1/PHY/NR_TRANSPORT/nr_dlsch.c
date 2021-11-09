@@ -424,7 +424,7 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
             remaining_re = upper_limit + start_sc - frame_parms->ofdm_symbol_size;
             upper_limit = frame_parms->ofdm_symbol_size - start_sc;
           }
-          if (frame_parms->N_RB_DL&1==0) {
+          if ((frame_parms->N_RB_DL&1)==0) {
             __m128i *txF=(__m128i*)&txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size+start_sc+txdataF_offset)<<1)];
 
             __m128i *txl = (__m128i*)&tx_layers[ap][m<<1];
