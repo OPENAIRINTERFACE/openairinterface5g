@@ -423,13 +423,13 @@ class RANManagement():
 		# do not reset board twice in IF4.5 case
 		result = re.search('^rru|^enb|^du.band', str(config_file))
 		if result is not None:
-			mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 90)
+			mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 180)
 			result = re.search('type: b200', mySSH.getBefore())
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
 				mySSH.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 				# Reloading FGPA bin firmware
-				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 90)
+				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 180)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		mySSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		localMmeIpAddr = EPC.MmeIPAddress

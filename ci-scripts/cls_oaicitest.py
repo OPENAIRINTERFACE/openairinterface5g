@@ -451,13 +451,13 @@ class OaiCiTest():
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		# b2xx_fx3_utils reset procedure
-		SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 90)
+		SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 180)
 		result = re.search('type: b200', SSH.getBefore())
 		if result is not None:
 			logging.debug('Found a B2xx device --> resetting it')
 			SSH.command('echo ' + self.UEPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 			# Reloading FGPA bin firmware
-			SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 90)
+			SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 180)
 		result = re.search('type: n3xx', str(SSH.getBefore()))
 		if result is not None:
 			logging.debug('Found a N3xx device --> resetting it')
@@ -3601,7 +3601,7 @@ class OaiCiTest():
 				UhdVersion = result.group('uhd_version')
 				logging.debug('UHD Version is: ' + UhdVersion)
 				HTML.UhdVersion[idx]=UhdVersion
-		SSH.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 90)
+		SSH.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 180)
 		usrp_boards = re.findall('product: ([0-9A-Za-z]+)\\\\r\\\\n', SSH.getBefore())
 		count = 0
 		for board in usrp_boards:
