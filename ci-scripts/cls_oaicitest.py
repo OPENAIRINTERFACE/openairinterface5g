@@ -192,16 +192,16 @@ class OaiCiTest():
 			result = re.search('LAST_BUILD_INFO', SSH.getBefore())
 			if result is not None:
 				mismatch = False
-				SSH.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
+				SSH.command('grep --colour=never SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
 				result = re.search(self.ranCommitID, SSH.getBefore())
 				if result is None:
 					mismatch = True
-				SSH.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+				SSH.command('grep --colour=never MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
 				if self.ranAllowMerge:
 					result = re.search('YES', SSH.getBefore())
 					if result is None:
 						mismatch = True
-					SSH.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+					SSH.command('grep --colour=never TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
 					if self.ranTargetBranch == '':
 						result = re.search('develop', SSH.getBefore())
 					else:
@@ -660,7 +660,7 @@ class OaiCiTest():
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		count = 0
 		while count < 5:
-			SSH.command('echo ' + self.ADBPassword + ' | sudo -S lsof | grep ttyUSB0', '\$', 10)
+			SSH.command('echo ' + self.ADBPassword + ' | sudo -S lsof | grep --colour=never ttyUSB0', '\$', 10)
 			result = re.search('picocom', SSH.getBefore())
 			if result is None:
 				count = 10
@@ -1328,7 +1328,7 @@ class OaiCiTest():
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
-			SSH.command('lsusb | egrep "Future Technology Devices International, Ltd FT2232C" | sed -e "s#:.*##" -e "s# #_#g"', '\$', 15)
+			SSH.command('lsusb | egrep --colour=never "Future Technology Devices International, Ltd FT2232C" | sed -e "s#:.*##" -e "s# #_#g"', '\$', 15)
 			#self.CatMDevices = re.findall("\\\\r\\\\n([A-Za-z0-9_]+)",SSH.getBefore())
 			self.CatMDevices = re.findall("\\\\r\\\\n([A-Za-z0-9_]+)",SSH.getBefore())
 		else:
@@ -2325,7 +2325,7 @@ class OaiCiTest():
 				server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf"', '\$', 5)
 				iperf_cmd = 'echo $USER; nohup bin/iperf -s -u 2>&1 > ' + server_filename
-				cmd = 'docker exec -it prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
+				cmd = 'docker exec -d prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 
