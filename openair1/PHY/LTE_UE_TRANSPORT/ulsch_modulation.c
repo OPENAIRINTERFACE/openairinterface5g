@@ -42,7 +42,6 @@
 
 //#define DEBUG_ULSCH_MODULATION
 
-#ifndef OFDMA_ULSCH
 void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
 {
 
@@ -371,7 +370,6 @@ void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
   //  printf("\n");
 }
 
-#endif
 void ulsch_modulation(int32_t **txdataF,
                       short amp,
                       uint32_t frame,
@@ -690,57 +688,10 @@ void ulsch_modulation(int32_t **txdataF,
 
   // Transform Precoding
 
-#ifdef OFDMA_ULSCH
-
-  for (i=0; i<ulsch_Msymb; i++) {
-    ulsch->z[i] = ulsch->d[i];
-  }
-
-#else
   dft_lte(ulsch->z,ulsch->d,Msc_PUSCH,ulsch->Nsymb_pusch);
-#endif
 
   DevAssert(txdataF);
 
-#ifdef OFDMA_ULSCH
-  re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
-
-  if (re_offset0>frame_parms->ofdm_symbol_size) {
-    re_offset0 -= frame_parms->ofdm_symbol_size;
-    //    re_offset0++;
-  }
-
-  //  printf("re_offset0 %d\n",re_offset0);
-
-
-  for (j=0,l=0; l<(nsymb-ulsch->srs_active); l++) {
-    re_offset = re_offset0;
-    symbol_offset = (int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
-#ifdef DEBUG_ULSCH_MODULATION
-    printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
-#endif
-    txptr = &txdataF[0][symbol_offset];
-
-    if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
-        ((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
-    }
-    // Skip reference symbols
-    else {
-
-      //      printf("copying %d REs\n",Msc_PUSCH);
-      for (i=0; i<Msc_PUSCH; i++,j++) {
-#ifdef DEBUG_ULSCH_MODULATION
-        printf("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((int16_t*)&ulsch->z[j])[0],((int16_t*)&ulsch->z[j])[1]);
-#endif
-        txptr[re_offset++] = ulsch->z[j];
-
-        if (re_offset==frame_parms->ofdm_symbol_size)
-          re_offset = 0;
-      }
-    }
-  }
-
-# else  // OFDMA_ULSCH = 0
   re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
 
   if (re_offset0>frame_parms->ofdm_symbol_size) {
@@ -776,9 +727,6 @@ void ulsch_modulation(int32_t **txdataF,
       }
     }
   }
-
-#endif
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_MODULATION, VCD_FUNCTION_OUT);
 
 }
 

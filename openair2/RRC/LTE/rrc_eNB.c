@@ -7303,9 +7303,6 @@ rrc_eNB_decode_ccch(
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                 rrcConnectionReestablishmentRequest->ue_Identity.physCellId,
                 ue_context_p->ue_context.reestablishment_cause);
-#ifndef NO_RRM
-          send_msg(&S_rrc, msg_rrc_MR_attach_ind(ctxt_pP->module_id, Mac_id));
-#else
           ue_context_p->ue_context.primaryCC_id = CC_id;
           //LG COMMENT Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
           Idx = DCCH;
@@ -7359,7 +7356,6 @@ rrc_eNB_decode_ccch(
                                    );
           }
 
-#endif //NO_RRM
         }
         break;
 
@@ -7548,9 +7544,6 @@ rrc_eNB_decode_ccch(
           }
         }
 
-#ifndef NO_RRM
-        send_msg(&S_rrc, msg_rrc_MR_attach_ind(ctxt_pP->module_id, Mac_id));
-#else
         ue_context_p->ue_context.primaryCC_id = CC_id;
         //LG COMMENT Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
         Idx = DCCH;
@@ -7603,7 +7596,6 @@ rrc_eNB_decode_ccch(
                                  );
         }
 
-#endif //NO_RRM
         break;
 
       default:

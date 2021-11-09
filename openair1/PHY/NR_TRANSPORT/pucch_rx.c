@@ -208,7 +208,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     nr_sequences=8>>(1-pucch_pdu->sr_flag);
   }
 
-  LOG_D(PHY,"pucch0: nr_symbols %d, start_symbol %d, prb_start %d, second_hop_prb %d,  group_hop_flag %d, sequence_hop_flag %d, O_ACK %d, O_SR %d, mcs %d initial_cyclic_shift %d\n",pucch_pdu->nr_of_symbols,pucch_pdu->start_symbol_index,pucch_pdu->prb_start,pucch_pdu->second_hop_prb,pucch_pdu->group_hop_flag,pucch_pdu->sequence_hop_flag,pucch_pdu->bit_len_harq,pucch_pdu->sr_flag,mcs[0],pucch_pdu->initial_cyclic_shift);
+  LOG_D(PHY,"pucch0: nr_symbols %d, start_symbol %d, prb_start %d, second_hop_prb %d,  group_hop_flag %d, sequence_hop_flag %d, O_ACK %d, O_SR %d, mcs %d initial_cyclic_shift %d\n",
+        pucch_pdu->nr_of_symbols,pucch_pdu->start_symbol_index,pucch_pdu->prb_start,pucch_pdu->second_hop_prb,pucch_pdu->group_hop_flag,pucch_pdu->sequence_hop_flag,pucch_pdu->bit_len_harq,
+        pucch_pdu->sr_flag,mcs[0],pucch_pdu->initial_cyclic_shift);
 
   int cs_ind = get_pucch0_cs_lut_index(gNB,pucch_pdu);
   /*

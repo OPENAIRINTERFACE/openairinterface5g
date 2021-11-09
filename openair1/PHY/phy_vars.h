@@ -57,13 +57,6 @@ const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 
 unsigned char NB_RU=0;
 
-#ifndef OPENAIR2
-//unsigned char NB_eNB_INST=0;
-//uint16_t NB_UE_INST=0;
-//unsigned char NB_RN_INST=0;
-//unsigned char NB_INST=0;
-#endif
-
 int number_of_cards;
 
 

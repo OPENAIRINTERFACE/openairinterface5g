@@ -24,7 +24,6 @@
 # include "common/utils/LOG/log.h"
 # include "executables/softmodem-common.h"
 
-#ifdef OPENAIR2
   #include "sctp_eNB_task.h"
   #include "s1ap_eNB.h"
   #include "openair3/NAS/UE/nas_ue_task.h"
@@ -35,7 +34,6 @@
     #include "lteRALenb.h"
   #endif
   #include "RRC/LTE/rrc_defs.h"
-#endif
 # include "enb_app.h"
 
 int create_tasks_ue(uint32_t ue_nb) {

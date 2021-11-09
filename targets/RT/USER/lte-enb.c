@@ -88,10 +88,6 @@
 #include "enb_config.h"
 #include "targets/RT/USER/lte-softmodem.h"
 
-#ifndef OPENAIR2
-  #include "UTIL/OTG/otg_extern.h"
-#endif
-
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 

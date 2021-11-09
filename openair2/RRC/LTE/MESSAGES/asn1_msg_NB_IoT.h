@@ -28,7 +28,6 @@
 * \email: raymond.knopp@eurecom.fr ,navid.nikaein@eurecom.fr, michele.paffetti@studio.unibo.it
 */
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h> /* for atoi(3) */
@@ -36,9 +35,6 @@
 #include <string.h> /* for strerror(3) */
 #include <sysexits.h> /* for EX_* exit codes */
 #include <errno.h>  /* for errno */
-#else
-#include <linux/module.h>  /* Needed by all modules */
-#endif
 
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */

@@ -517,9 +517,6 @@ void phy_scope_gNB(OAI_phy_scope_t *form,
 }
 static void *scope_thread_gNB(void *arg) {
   scopeData_t *p=(scopeData_t *) arg;
-  //# ifdef ENABLE_XFORMS_WRITE_STATS
-  //  FILE *gNB_stats = fopen("gNB_stats.txt", "w");
-  //#endif
   size_t stksize=0;
   pthread_attr_t atr;
   pthread_attr_init(&atr);

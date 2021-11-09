@@ -66,10 +66,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 //#include "PHY/TOOLS/time_meas.h"
 
-#ifndef OPENAIR2
-  #include "UTIL/OTG/otg_vars.h"
-#endif
-
 #include "intertask_interface.h"
 
 #include "PHY/INIT/phy_init.h"
@@ -712,19 +708,12 @@ int main( int argc, char **argv ) {
   // initialize mscgen log after ITTI
   MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
-
-#ifdef PDCP_USE_NETLINK
-
-  if (!IS_SOFTMODEM_NOS1) {
+  if(PDCP_USE_NETLINK && !IS_SOFTMODEM_NOS1) {
     netlink_init();
     if (get_softmodem_params()->nsa) {
       init_pdcp();
     }
   }
-#if defined(PDCP_USE_NETLINK_QUEUES)
-  pdcp_netlink_init();
-#endif
-#endif
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif

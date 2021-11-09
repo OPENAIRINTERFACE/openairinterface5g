@@ -925,7 +925,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
         if (mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)
           rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_0; // msg3 retransmission
-        config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , -1);
+        config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , mac->ra.ss->searchSpaceId);
         fill_dci_search_candidates(mac->ra.ss, rel15);
         dl_config->number_pdus = 1;
         LOG_D(MAC,"mac->cg %p: Calling fill_scheduled_response rnti %x, type0_pdcch, num_pdus %d\n",mac->cg,rel15->rnti,dl_config->number_pdus);

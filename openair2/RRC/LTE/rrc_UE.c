@@ -422,15 +422,7 @@ char openair_rrc_ue_init( const module_id_t ue_mod_idP, const unsigned char eNB_
   init_SI_UE(&ctxt,eNB_index);
   LOG_D(RRC,PROTOCOL_RRC_CTXT_FMT"  INIT: phy_sync_2_ch_ind\n",
         PROTOCOL_RRC_CTXT_ARGS(&ctxt));
-#ifndef NO_RRM
-  send_msg(&S_rrc,msg_rrc_phy_synch_to_CH_ind(ctxt.module_id,eNB_index,UE_rrc_inst[ctxt.module_id].Mac_id));
-#endif
-#ifndef NO_RRM
-  send_msg(&S_rrc,msg_rrc_phy_synch_to_CH_ind(ctxt.module_id,eNB_index,UE_rrc_inst[ctxt.module_id].Mac_id));
-#endif
-#ifdef NO_RRM //init ch SRB0, SRB1 & BDTCH
   openair_rrc_on_ue(&ctxt);
-#endif
   return 0;
 }
 
@@ -2558,13 +2550,6 @@ rrc_ue_decode_dcch(
     }
   }
 
-#ifndef NO_RRM
-  send_msg(&S_rrc,msg_rrc_end_scan_req(ctxt_pP->module_id,eNB_indexP));
-#endif
-  if (0) //We're not done with underlying members of dl_dcch_msg (Use after free error when enabled)
-  {
-    SEQUENCE_free(&asn_DEF_LTE_DL_DCCH_Message, dl_dcch_msg, ASFM_FREE_EVERYTHING);
-  }
 }
 
 const char siWindowLength[9][5] = {"1ms","2ms","5ms","10ms","15ms","20ms","40ms","80ms","ERR"};
@@ -2842,14 +2827,6 @@ int decode_BCCH_MBMS_DLSCH_Message(
       default:
         break;
     }
-  }*/
-  /*if ((rrc_get_sub_state(ctxt_pP->module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE)
-  #if defined(ENABLE_USE_MME)
-      && (UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL)
-  #endif
-     ) {
-    rrc_ue_generate_RRCConnectionRequest(ctxt_pP, 0);
-    rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_CONNECTING );
   }*/
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
   return 0;

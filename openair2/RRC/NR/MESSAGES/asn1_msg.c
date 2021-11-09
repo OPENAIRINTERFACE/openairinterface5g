@@ -135,18 +135,6 @@
 
 #include "common/ran_context.h"
 
-//#include "PHY/defs.h"
-/*#ifndef USER_MODE
-#define msg printk
-#ifndef errno
-int errno;
-#endif
-#else
-# if !defined (msg)
-#   define msg printf
-# endif
-#endif*/
-
 //#define XER_PRINT
 
 typedef struct xer_sprint_string_s {

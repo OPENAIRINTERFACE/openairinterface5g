@@ -173,13 +173,6 @@ extern pthread_mutex_t slrb_mutex;
 //the thread function
 void *send_UE_status_notification(void *);
 
-
-
-//#include "COMMON/openair_defs.h"
-#ifndef USER_MODE
-  //#include <rtai.h>
-#endif
-
 #include "LTE_SystemInformationBlockType1.h"
 #include "LTE_SystemInformation.h"
 #include "LTE_RRCConnectionReconfiguration.h"
@@ -216,12 +209,6 @@ void *send_UE_status_notification(void *);
 #define NB_CNX_CH MAX_MOBILES_PER_ENB
 #define NB_SIG_CNX_UE 2 //MAX_MANAGED_RG_PER_MOBILE
 #define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE
-
-#ifndef NO_RRM
-  #include "L3_rrc_interface.h"
-  #include "rrc_rrm_msg.h"
-  #include "rrc_rrm_interface.h"
-#endif
 
 
 #include "intertask_interface.h"

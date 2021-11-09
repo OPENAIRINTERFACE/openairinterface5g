@@ -40,9 +40,7 @@
 //#define DEBUG_PBCH 
 //#define DEBUG_PBCH_ENCODING
 
-#ifdef OPENAIR2
   //#include "PHY_INTERFACE/defs.h"
-#endif
 
 #define PBCH_A 24
 
