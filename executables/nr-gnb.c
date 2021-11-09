@@ -447,7 +447,8 @@ void init_gNB_Tpool(int inst) {
   initNotifiedFIFO(gNB->resp_RU_tx);
   notifiedFIFO_elt_t *msgRUTx = newNotifiedFIFO_elt(sizeof(processingData_RU_t),0,gNB->resp_RU_tx,ru_tx_func);
   processingData_RU_t *msgData = (processingData_RU_t*)msgRUTx->msgData;
-  msgData->next_slot = sf_ahead*gNB->frame_parms.slots_per_subframe; // first Tx slot
+  int first_tx_slot = sf_ahead*gNB->frame_parms.slots_per_subframe;
+  msgData->next_slot = get_next_downlink_slot(gNB, &gNB->gNB_config, 0, first_tx_slot-1);
   pushNotifiedFIFO(gNB->resp_RU_tx,msgRUTx); // to unblock the process in the beginning
 
   threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
