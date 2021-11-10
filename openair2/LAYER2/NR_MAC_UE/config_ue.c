@@ -625,10 +625,7 @@ int nr_rrc_mac_config_req_ue(
       config_common_ue_sa(mac,module_id,cc_idP);
 
       int num_slots_ul = nr_slots_per_frame[mac->mib->subCarrierSpacingCommon];
-      if(cfg->cell_config.frame_duplex_type == FDD){
-        free(mac->scc_SIB->tdd_UL_DL_ConfigurationCommon);
-        mac->scc_SIB->tdd_UL_DL_ConfigurationCommon = NULL;
-      } else {
+      if(cfg->cell_config.frame_duplex_type == TDD){
         num_slots_ul = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
         if (mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0) {
           num_slots_ul++;
@@ -653,10 +650,6 @@ int nr_rrc_mac_config_req_ue(
           ra->rach_ConfigDedicated = scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
         }
         mac->scc = scell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-        if(cfg->cell_config.frame_duplex_type == FDD){
-          free(mac->scc->tdd_UL_DL_ConfigurationCommon);
-          mac->scc->tdd_UL_DL_ConfigurationCommon = NULL;
-        }
         mac->physCellId = *mac->scc->physCellId;
         config_common_ue(mac,module_id,cc_idP);
         mac->crnti = scell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
