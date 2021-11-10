@@ -19,19 +19,13 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/phy_extern.h"
 #include "PHY/defs_gNB.h"
 #include "sched_nr.h"
-#include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
-#include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
-#include "SCHED/sched_eNB.h"
-#include "sched_nr.h"
-#include "SCHED/sched_common_extern.h"
 #include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_interface.h"
 #include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 #include "fapi_nr_l1.h"
@@ -40,7 +34,6 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "T.h"
-#include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
 
 #include "assertions.h"
@@ -186,7 +179,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
 
   for (int i=0;i<NUMBER_OF_NR_CSIRS_MAX;i++){
     NR_gNB_CSIRS_t *csirs = &msgTx->csirs_pdu[i];
-    if ((csirs->active == 1)) {
+    if (csirs->active == 1) {
       LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params = csirs->csirs_pdu.csi_rs_pdu_rel15;
       nr_generate_csi_rs(gNB, AMP, csi_params, gNB->gNB_config.cell_config.phy_cell_id.value, slot);
@@ -206,16 +199,13 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
 
+void srs_procedures_nr(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
+  if(is_srs_occasion_nr(gNB->frame_parms, frame_rx, slot_rx)) {
+    LOG_W(NR_PHY, "SRS procedures are not implemented yet!");
+  }
 
-/*
-
-  if ((cfg->subframe_config.duplex_mode.value == TDD) && 
-      ((nr_slot_select(fp,frame,slot)&NR_DOWNLINK_SLOT)==SF_DL)) return;
-
-  //  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,1);
-
-*/
+}
 
 void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   ldpcDecode_t *rdata = (ldpcDecode_t*) NotifiedFifoData(req);
@@ -648,6 +638,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
       }
     }
   else num_symb=NR_NUMBER_OF_SYMBOLS_PER_SLOT;
+
+  srs_procedures_nr(gNB, frame_rx, slot_rx);
   gNB_I0_measurements(gNB,slot_rx,first_symb,num_symb);
 
   int offset = 10*gNB->frame_parms.ofdm_symbol_size + gNB->frame_parms.first_carrier_offset;

@@ -19,17 +19,9 @@
  *      contact@openairinterface.org
  */
 
-/*! \file phy_procedures_lte_eNB.c
-* \brief Implementation of common utilities for eNB/UE procedures from 36.213 LTE specifications
-* \author R. Knopp, F. Kaltenberger
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
-* \note
-* \warning
-*/
+#include "PHY/defs_gNB.h"
 
-#include "sched_nr.h"
-#include "PHY/INIT/phy_init.h"
+bool is_srs_occasion_nr(NR_DL_FRAME_PARMS frame_parms, int frame_rx, int slot_rx) {
+  return false;
+}
 

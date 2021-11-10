@@ -410,7 +410,7 @@ int is_srs_period_nr(SRS_Resource_t *p_SRS_Resource, NR_DL_FRAME_PARMS *frame_pa
 
 /*******************************************************************
 *
-* NAME :         ue_srs_procedure_nr
+* NAME :         ue_srs_procedures_nr
 *
 * PARAMETERS :   pointer to ue context
 *                pointer to rxtx context*
@@ -422,7 +422,7 @@ int is_srs_period_nr(SRS_Resource_t *p_SRS_Resource, NR_DL_FRAME_PARMS *frame_pa
 *                send srs according to current configuration
 *
 *********************************************************************/
-int ue_srs_procedure_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id)
+int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id)
 {
   NR_DL_FRAME_PARMS *frame_parms = &(ue->frame_parms);
   SRS_NR *p_srs_nr = &(ue->frame_parms.srs_nr);
@@ -460,7 +460,7 @@ int ue_srs_procedure_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB
     int16_t txptr = AMP;
     uint16_t nsymb = (ue->frame_parms.Ncp==0) ? 14:12;
     uint16_t symbol_offset = (int)ue->frame_parms.ofdm_symbol_size*((proc->nr_slot_tx*nsymb)+(nsymb-1));
-    if (generate_srs_nr(p_srs_resource_set, frame_parms, &ue->common_vars.txdataF[eNB_id][symbol_offset], txptr, proc) == 0) {
+    if (generate_srs_nr(p_srs_resource_set, frame_parms, &ue->common_vars.txdataF[gNB_id][symbol_offset], txptr, proc) == 0) {
       return 0;
     }
     else

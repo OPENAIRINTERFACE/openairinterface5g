@@ -155,13 +155,14 @@ int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
 int is_srs_period_nr(SRS_Resource_t *p_SRS_Resource,
                      NR_DL_FRAME_PARMS *frame_parms,
                      int frame_tx, int slot_tx);
+
 /** \brief This function processes srs configuration
  *  @param ue context
     @param rxtx context
-    @param current eNB identifier
+    @param current gNB_id identifier
     @returns 0 if srs is transmitted -1 otherwise */
 
-int ue_srs_procedure_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id);
+int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id);
 
 #undef EXTERN
 #undef INIT_VARIABLES_SRS_MODULATION_NR_H
