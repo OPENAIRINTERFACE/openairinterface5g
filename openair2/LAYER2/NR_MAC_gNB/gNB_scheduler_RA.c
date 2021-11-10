@@ -481,9 +481,16 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
-  while (((*msg2_slot>slot_limit)&&(*msg2_frame>frame_limit)) || ((*msg2_frame*nr_slots_per_frame[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
-    if((*msg2_slot%tdd_period_slot) > 0)
+  while ((*msg2_frame>frame_limit) ||
+         ((*msg2_frame==frame_limit) &&
+         (*msg2_slot>slot_limit)) ||
+         ((*msg2_frame*nr_slots_per_frame[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
+
+    if(!tdd || ((*msg2_slot%tdd_period_slot) > 0)) {
+      if (*msg2_slot==0)
+        (*msg2_frame)--;
       (*msg2_slot)--;
+    }
     else
       AssertFatal(1==0,"No available DL slot to schedule msg2 has been found");
   }
