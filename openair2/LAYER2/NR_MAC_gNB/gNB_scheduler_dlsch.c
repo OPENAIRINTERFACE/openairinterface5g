@@ -395,8 +395,14 @@ void nr_store_dlsch_buffer(module_id_t module_id,
       loop_dcch_dtch = DL_SCH_LCID_DTCH;
     else if ((sched_ctrl->lcid_mask&(1<<1)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DTCH)
       loop_dcch_dtch = DL_SCH_LCID_DCCH;
-    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH)
-      loop_dcch_dtch = DL_SCH_LCID_DCCH1;
+    /*else if ((sched_ctrl->lcid_mask&(1<<2)) > 0 && loop_dcch_dtch == DL_SCH_LCID_DCCH)
+      loop_dcch_dtch = DL_SCH_LCID_DCCH1;*/
+    else if ((sched_ctrl->lcid_mask&(1<<2)) > 0){ //&& loop_dcch_dtch == DL_SCH_LCID_DCCH
+      if (loop_dcch_dtch == DL_SCH_LCID_DCCH)
+        loop_dcch_dtch = DL_SCH_LCID_DCCH1;
+      else if(loop_dcch_dtch == DL_SCH_LCID_DCCH1)
+        loop_dcch_dtch = DL_SCH_LCID_DCCH;
+    }
 
     const int lcid = loop_dcch_dtch;
     // const int lcid = DL_SCH_LCID_DTCH;
@@ -788,6 +794,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
     return;
 
   /* PREPROCESSOR */
+  //Following commented section condition should be removed before update with develop.
+  /*if(slot!= 1 && slot!=11){
+    return;
+  }*/
   gNB_mac->pre_processor_dl(module_id, frame, slot);
 
   const int CC_id = 0;
