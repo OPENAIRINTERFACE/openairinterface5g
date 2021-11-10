@@ -143,7 +143,7 @@
 
     <testCase id="030202">
         <class>Undeploy_Object</class>
-        <desc>Undeploy eNB</desc>
+        <desc>Undeploy gNB</desc>
 		<yaml_path>ci-scripts/yaml_files/nsa_b200_gnb</yaml_path>
         <eNB_instance>1</eNB_instance>
         <eNB_serverId>1</eNB_serverId>

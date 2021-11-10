@@ -522,7 +522,7 @@ class EPCManagement():
 			mySSH.command('tshark -r /tmp/oai-cn5g.pcap | egrep --colour=never "Tracking area update" ','\$', 30)
 			result = re.search('Tracking area update request', mySSH.getBefore())
 			if result is not None:
-				message = 'UE requested ' + mySSH.getBefore().count('Tracking area update request') + 'Tracking area update request(s)'
+				message = 'UE requested ' + str(mySSH.getBefore().count('Tracking area update request')) + 'Tracking area update request(s)'
 			else:
 				message = 'No Tracking area update request'
 			logging.debug(message)
@@ -721,7 +721,7 @@ class EPCManagement():
 		mySSH.command('tshark -r mme_' + self.testCase_id + '.pcap | egrep --colour=never "Tracking area update"', '\$', 60)
 		result = re.search('Tracking area update request', mySSH.getBefore())
 		if result is not None:
-			message = 'UE requested ' + mySSH.getBefore().count('Tracking area update request') + 'Tracking area update request(s)'
+			message = 'UE requested ' + str(mySSH.getBefore().count('Tracking area update request')) + 'Tracking area update request(s)'
 		else:
 			message = 'No Tracking area update request'
 		logging.debug(message)
