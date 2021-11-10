@@ -304,6 +304,14 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
 
 }
 
+int8_t nr_mac_rrc_check_RRCSetup(const module_id_t Mod_idP,
+                               const rnti_t      rnti) {
+  struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[Mod_idP], rnti);
+  char payload_size = ue_context_p->ue_context.Srb0.Tx_buffer.payload_size;
+  return payload_size;
+
+}
+
 int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
                            const int             CC_id,
                            const frame_t         frameP,

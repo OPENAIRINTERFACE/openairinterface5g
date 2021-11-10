@@ -170,6 +170,12 @@ nr_rrc_data_req(
   const pdcp_transmission_mode_t modeP
 );
 
+int8_t nr_mac_rrc_check_RRCSetup(
+  const module_id_t Mod_idP,
+  const rnti_t      rnti
+
+);
+
 int
 nr_rrc_mac_remove_ue(module_id_t mod_idP,
                   rnti_t rntiP);
