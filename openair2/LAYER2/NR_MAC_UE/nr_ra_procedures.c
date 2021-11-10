@@ -776,7 +776,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       if (size_sdu > 0 && ra->generate_nr_prach == GENERATE_PREAMBLE) {
 
         LOG_D(NR_MAC, "In %s: [UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", __FUNCTION__, mod_id, frame, nr_slot_tx);
-        AssertFatal(TBS_max > ra->Msg3_size, "In %s: allocated resources are not enough for Msg3!\n", __FUNCTION__);
 
         // Init RA procedure
         init_RA(mod_id, prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
@@ -785,7 +784,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
 
         // Padding: fill remainder with 0
-        if (TBS_max - ra->Msg3_size > 0) {
+        if (TBS_max - ra->Msg3_size > 0 && get_softmodem_params()->sa) {
+          AssertFatal(TBS_max > ra->Msg3_size, "In %s: allocated resources are not enough for Msg3!\n", __FUNCTION__);
           LOG_D(NR_MAC, "In %s: remaining %d bytes, filling with padding\n", __FUNCTION__, TBS_max - ra->Msg3_size);
           ((NR_MAC_SUBHEADER_FIXED *) pdu)->R = 0;
           ((NR_MAC_SUBHEADER_FIXED *) pdu)->LCID = UL_SCH_LCID_PADDING;
@@ -807,27 +807,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         mac->ulsch_pdu.Pdu_size = TBS_max;
         memcpy(mac->ulsch_pdu.payload, payload, TBS_max);
 
-      } else if (size_sdu > 0 && get_softmodem_params()->nsa) {
-
-        LOG_D(NR_MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
-
-        int offset = 0;
-
-        init_RA(mod_id, prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
-        nr_get_RA_window(mac);
-        // Fill in preamble and PRACH resources
-        if (ra->generate_nr_prach == GENERATE_PREAMBLE) {
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
-        }
-
-        // Padding: fill remainder with 0
-        if (post_padding > 0){
-          for (int j = 0; j < (TBS_max - offset); j++)
-            payload[offset + j] = 0;
-        }
-
-      } else {
-        return 0;
       }
     } else if (ra->RA_window_cnt != -1) { // RACH is active
 
