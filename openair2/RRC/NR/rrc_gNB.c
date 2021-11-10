@@ -3393,8 +3393,20 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
       req->srbs_to_be_setup_length>0 ? 1:0,
       req->drbs_to_be_setup_length>0 ? 1:0);
   }
-
+  
   apply_macrlc_config(rrc, ue_context_p, &ctxt);
+  
+  if(req->rrc_container_length > 0){
+    mem_block_t *pdcp_pdu_p = get_free_mem_block(req->rrc_container_length, __func__);
+    memcpy(&pdcp_pdu_p->data[0], req->rrc_container, req->rrc_container_length);
+    du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, req->rrc_container_length, pdcp_pdu_p);
+    LOG_I(F1AP, "Printing RRC Container of UE context setup request: \n");
+    for (int j=0; j<req->rrc_container_length; j++){
+      printf("%02x ", pdcp_pdu_p->data[j]);
+    }
+    printf("\n");
+  }
+
   /* Fill the UE context setup response ITTI message to send to F1AP */
   resp->gNB_CU_ue_id = req->gNB_CU_ue_id;
   resp->rnti = ctxt.rnti;
@@ -4526,5 +4538,6 @@ void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe)
   message_p = itti_alloc_new_message(TASK_RRC_GNB, 0, RRC_SUBFRAME_PROCESS);
   RRC_SUBFRAME_PROCESS(message_p).ctxt  = *ctxt;
   RRC_SUBFRAME_PROCESS(message_p).CC_id = CC_id;
+  LOG_D(NR_RRC, "Time in RRC: %u/ %u \n", frame, subframe);
   itti_send_msg_to_task(TASK_RRC_GNB, ctxt->module_id, message_p);
 }

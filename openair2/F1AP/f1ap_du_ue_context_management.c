@@ -230,17 +230,9 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       f1ap_ue_context_setup_req->rrc_container = malloc(ieRRC->value.choice.RRCContainer.size);
       memcpy(f1ap_ue_context_setup_req->rrc_container,
              ieRRC->value.choice.RRCContainer.buf, ieRRC->value.choice.RRCContainer.size);
+      f1ap_ue_context_setup_req->rrc_container_length = ieRRC->value.choice.RRCContainer.size;
       // AssertFatal(0, "check configuration, send to appropriate handler\n");
       protocol_ctxt_t ctxt;
-      // decode RRC Container and act on the message type
-      //FIXME
-      //rnti_t rnti      = f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id);
-      ctxt.instance = instance;
-      ctxt.instance  = instance;
-      ctxt.enb_flag  = 1;
-      mem_block_t *pdcp_pdu_p = get_free_mem_block(ieRRC->value.choice.RRCContainer.size, __func__);
-      memcpy(&pdcp_pdu_p->data[0], ieRRC->value.choice.RRCContainer.buf, ieRRC->value.choice.RRCContainer.size);
-      du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, ieRRC->value.choice.RRCContainer.size, pdcp_pdu_p);
     } else {
       LOG_E(F1AP, " RRCContainer in UEContextSetupRequestIEs size id 0\n");
     }
