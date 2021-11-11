@@ -708,7 +708,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
       uint8_t mac_ce[16] = {0};
       uint8_t *pdu = get_softmodem_params()->sa ? mac->CCCH_pdu.payload : mac_ce;
       uint8_t *payload = pdu;
-      unsigned short post_padding = 1;
 
       // Concerning the C-RNTI MAC CE, it has to be included if the UL transmission (Msg3) is not being made for the CCCH logical channel.
       // Therefore it has been assumed that this event only occurs only when RA is done and it is not SA mode.
@@ -749,6 +748,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         int TBS_bytes = 848;
         int mac_ce_len = 0;
         int header_length_total=0;
+        unsigned short post_padding = 1;
 
         // fill ulsch_buffer with random data
         for (int i = 0; i < TBS_bytes; i++){
@@ -773,7 +773,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       }
 
-      if (size_sdu > 0 && ra->generate_nr_prach == GENERATE_PREAMBLE) {
+      if (size_sdu > 0 && (ra->generate_nr_prach == GENERATE_PREAMBLE || get_softmodem_params()->nsa)) {
 
         LOG_D(NR_MAC, "In %s: [UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", __FUNCTION__, mod_id, frame, nr_slot_tx);
 
@@ -781,10 +781,11 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         init_RA(mod_id, prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
         nr_get_RA_window(mac);
         // Fill in preamble and PRACH resources
-        nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
+        if (ra->generate_nr_prach == GENERATE_PREAMBLE)
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
 
         // Padding: fill remainder with 0
-        if (TBS_max - ra->Msg3_size > 0 && get_softmodem_params()->sa) {
+        if (TBS_max - ra->Msg3_size > 0) {
           AssertFatal(TBS_max > ra->Msg3_size, "In %s: allocated resources are not enough for Msg3!\n", __FUNCTION__);
           LOG_D(NR_MAC, "In %s: remaining %d bytes, filling with padding\n", __FUNCTION__, TBS_max - ra->Msg3_size);
           ((NR_MAC_SUBHEADER_FIXED *) pdu)->R = 0;
@@ -804,9 +805,13 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         // Msg3 was initialized with TBS_max bytes because the RA_Msg3_size will only be known after
         // receiving Msg2 (which contains the Msg3 resource reserve).
         // Msg3 will be transmitted with RA_Msg3_size bytes, removing unnecessary 0s.
-        mac->ulsch_pdu.Pdu_size = TBS_max;
-        memcpy(mac->ulsch_pdu.payload, payload, TBS_max);
+        if (!get_softmodem_params()->nsa) {
+          mac->ulsch_pdu.Pdu_size = TBS_max;
+          memcpy(mac->ulsch_pdu.payload, payload, TBS_max);
+        }
 
+      } else {
+        return 0;
       }
     } else if (ra->RA_window_cnt != -1) { // RACH is active
 

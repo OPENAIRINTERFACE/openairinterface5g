@@ -364,7 +364,6 @@ static void check_nr_prach(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_inf
     if (nr_prach == 1)
     {
       L1_nsa_prach_procedures(ul_info->frame_tx, ul_info->slot_tx, prach_pdu);
-      mac->ra.generate_nr_prach = GENERATE_PREAMBLE;
       ul_config->number_pdus = 0;
       ul_info->ue_sched_mode = SCHED_ALL;
     }
