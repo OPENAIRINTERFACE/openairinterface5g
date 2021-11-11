@@ -21,10 +21,10 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-NSA-FR1-TM2</htmlTabRef>
+	<htmlTabRef>TEST-NSA-FR1-TM2-Tab1</htmlTabRef>
 	<htmlTabName>NSA 2x2 Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>1</repeatCount>
+	<repeatCount>5</repeatCount>
 	<TestCaseRequestedList>
  030000
  040000
@@ -85,7 +85,7 @@
 	<testCase id="000001">
 		<class>IdleSleep</class>
 		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+		<idle_sleep_time_in_sec>60</idle_sleep_time_in_sec>
 	</testCase>
 
 	<testCase id="000002">

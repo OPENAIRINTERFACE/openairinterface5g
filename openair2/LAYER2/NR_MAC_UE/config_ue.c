@@ -573,7 +573,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   struct NR_PDCCH_Config__searchSpacesToAddModList *searchSpacesToAddModList = pdcch_Config->choice.setup->searchSpacesToAddModList;
   AssertFatal(searchSpacesToAddModList != NULL, "searchSpacesToAddModList is null\n");
   AssertFatal(searchSpacesToAddModList->list.count > 0, "list of UE specifically configured Search Spaces is empty\n");
-  AssertFatal(searchSpacesToAddModList->list.count < FAPI_NR_MAX_SS_PER_CORESET, "too many searchpaces per coreset %d\n", searchSpacesToAddModList->list.count);
+  AssertFatal(searchSpacesToAddModList->list.count < FAPI_NR_MAX_SS, "too many searchpaces per coreset %d\n", searchSpacesToAddModList->list.count);
 
   struct NR_UplinkConfig__uplinkBWP_ToAddModList *uplinkBWP_ToAddModList = scd->uplinkConfig->uplinkBWP_ToAddModList;
   if (ul_bwp_id > 0) {
@@ -597,7 +597,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     AssertFatal(*ss->controlResourceSetId == mac->coreset[dl_bwp_id][coreset_id - 1]->controlResourceSetId, "ss->controlResourceSetId is unknown\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id][0][ss_id] = ss;
+    mac->SSpace[dl_bwp_id][ss_id] = ss;
   }
 
   // Check available CSSs in the commonSearchSpaceList (list of additional common search spaces)
@@ -610,9 +610,21 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id][0][ss_id] = css;
+    mac->SSpace[dl_bwp_id][ss_id] = css;
     ss_id++;
   }
+}
+
+// todo handle mac_LogicalChannelConfig
+int nr_rrc_mac_config_req_ue_logicalChannelBearer(
+    module_id_t                     module_id,
+    int                             cc_idP,
+    uint8_t                         gNB_index,
+    long                            logicalChannelIdentity,
+    boolean_t                       status){
+    NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+    mac->logicalChannelBearer_exist[logicalChannelIdentity] = status;
+    return 0;
 }
 
 int nr_rrc_mac_config_req_ue(
@@ -678,6 +690,17 @@ int nr_rrc_mac_config_req_ue(
       LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
       mac->cg = cell_group_config;
       mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
+
+      mac->scheduling_info.periodicBSR_SF =
+        MAC_UE_BSR_TIMER_NOT_RUNNING;
+      mac->scheduling_info.retxBSR_SF =
+        MAC_UE_BSR_TIMER_NOT_RUNNING;
+      mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
+      LOG_D(MAC, "[UE %d]: periodic BSR %d (SF), retx BSR %d (SF)\n",
+			module_id,
+            mac->scheduling_info.periodicBSR_SF,
+            mac->scheduling_info.retxBSR_SF);
+
       config_control_ue(mac);
       //config_common_ue(mac,module_id,cc_idP);
       /*      

@@ -22,11 +22,62 @@
 #include "phy_init.h"
 #include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 /// Subcarrier spacings in Hz indexed by numerology index
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
 uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 8, 16};
+
+// Table 5.4.3.3-1 38-101
+int nr_ssb_table[48][3] = {
+  {1, 15, nr_ssb_type_A},
+  {2, 15, nr_ssb_type_A},
+  {3, 15, nr_ssb_type_A},
+  {5, 15, nr_ssb_type_A},
+  {5, 30, nr_ssb_type_B},
+  {7, 15, nr_ssb_type_A},
+  {8, 15, nr_ssb_type_A},
+  {12, 15, nr_ssb_type_A},
+  {14, 15, nr_ssb_type_A},
+  {18, 15, nr_ssb_type_A},
+  {20, 15, nr_ssb_type_A},
+  {25, 15, nr_ssb_type_A},
+  {26, 15, nr_ssb_type_A},
+  {28, 15, nr_ssb_type_A},
+  {29, 15, nr_ssb_type_A},
+  {30, 15, nr_ssb_type_A},
+  {34, 15, nr_ssb_type_A},
+  {34, 30, nr_ssb_type_C},
+  {38, 15, nr_ssb_type_A},
+  {38, 30, nr_ssb_type_C},
+  {39, 15, nr_ssb_type_A},
+  {39, 30, nr_ssb_type_C},
+  {40, 30, nr_ssb_type_C},
+  {41, 15, nr_ssb_type_A},
+  {41, 30, nr_ssb_type_C},
+  {46, 30, nr_ssb_type_C},
+  {48, 30, nr_ssb_type_C},
+  {50, 30, nr_ssb_type_C},
+  {51, 15, nr_ssb_type_A},
+  {53, 15, nr_ssb_type_A},
+  {65, 15, nr_ssb_type_A},
+  {66, 15, nr_ssb_type_A},
+  {66, 30, nr_ssb_type_B},
+  {70, 15, nr_ssb_type_A},
+  {71, 15, nr_ssb_type_A},
+  {74, 15, nr_ssb_type_A},
+  {75, 15, nr_ssb_type_A},
+  {76, 15, nr_ssb_type_A},
+  {77, 30, nr_ssb_type_C},
+  {78, 30, nr_ssb_type_C},
+  {79, 30, nr_ssb_type_C},
+  {90, 15, nr_ssb_type_A},
+  {90, 30, nr_ssb_type_C},
+  {91, 15, nr_ssb_type_A},
+  {92, 15, nr_ssb_type_A},
+  {93, 15, nr_ssb_type_A},
+  {94, 15, nr_ssb_type_A},
+  {96, 30, nr_ssb_type_C}
+};
 
 
 void set_Lmax(NR_DL_FRAME_PARMS *fp) {
@@ -86,27 +137,28 @@ int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp,uint8_t i_ssb) {
 
 void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, int N_RB_DL)
 {
+  int idx = 0;
   switch(mu) {
-
     case NR_MU_0: //15kHz scs
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_0];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_0];
       fp->ssb_type = nr_ssb_type_A;
+      while(nr_ssb_table[idx][0]!=fp->nr_band)
+        idx++;
+      AssertFatal(nr_ssb_table[idx][1]==15,"SCS %d not applicable to band %d\n",
+                  fp->subcarrier_spacing,fp->nr_band);
       break;
 
     case NR_MU_1: //30kHz scs
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_1];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_1];
-
-      // selection of SS block pattern according to TS 38101-1 Table 5.4.3.3-1 for SCS 30kHz
-      if (fp->nr_band == 5 || fp->nr_band == 66) 
-        fp->ssb_type = nr_ssb_type_B;
-      else{  
-      	if (fp->nr_band == 41 || fp->nr_band == 38 || ( fp->nr_band > 76 && fp->nr_band < 80) )
-	  fp->ssb_type = nr_ssb_type_C;
-	else
-	  AssertFatal(1==0,"NR Operating Band n%d not available for SS block SCS with mu=%d\n", fp->nr_band, mu);
+       while(nr_ssb_table[idx][0]!=fp->nr_band ||
+             nr_ssb_table[idx][1]!=30) {
+        AssertFatal(nr_ssb_table[idx][0]<=fp->nr_band,"SCS %d not applicable to band %d\n",
+                    fp->subcarrier_spacing,fp->nr_band);
+        idx++;
       }
+      fp->ssb_type = nr_ssb_table[idx][2];
       break;
 
     case NR_MU_2: //60kHz scs

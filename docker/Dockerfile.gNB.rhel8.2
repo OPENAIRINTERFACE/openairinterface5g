@@ -41,6 +41,7 @@ RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/gnb_parameters
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-gnb
+ENV TZ=Europe/Paris
 
 RUN yum repolist --disablerepo=* && \
     yum update -y && \
@@ -51,9 +52,14 @@ RUN yum repolist --disablerepo=* && \
         atlas \
         lksctp-tools \
         nettle \
+        tzdata \
+        python3 \
+        python3-pip \
         net-tools \
         iputils \
         libyaml && \
+    pip3 install six && \
+    pip3 install requests && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
@@ -84,6 +90,8 @@ COPY --from=gnb-build /lib64/libforms.so.2 /lib64
 COPY --from=gnb-build /lib64/libblas.so.3 /lib64
 COPY --from=gnb-build /lib64/liblapack.so.3 /lib64
 COPY --from=gnb-build /lib64/liblapacke.so.3 /lib64
+
+# Now we are copying from builder-image the UHD files.
 COPY --from=gnb-build /lib64/libboost_chrono.so.1.66.0 /lib64
 COPY --from=gnb-build /lib64/libboost_date_time.so.1.66.0 /lib64
 COPY --from=gnb-build /lib64/libboost_filesystem.so.1.66.0 /lib64
@@ -94,7 +102,14 @@ COPY --from=gnb-build /lib64/libboost_system.so.1.66.0 /lib64
 COPY --from=gnb-build /lib64/libboost_unit_test_framework.so.1.66.0 /lib64
 COPY --from=gnb-build /lib64/libboost_atomic.so.1.66.0 /lib64
 COPY --from=gnb-build /lib64/libboost_timer.so.1.66.0 /lib64
-COPY --from=gnb-build /usr/local/lib64/libuhd.so.4.0.0 /usr/local/lib64
+COPY --from=gnb-build /lib64/libboost_regex.so.1.66.0 /lib64
+
+COPY --from=gnb-build /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=gnb-build /usr/local/lib64/libuhd.so.3.15.0 /usr/local/lib64
+COPY --from=gnb-build /usr/local/lib64/uhd/utils/uhd_images_downloader.py /opt/oai-gnb/bin
+
+WORKDIR /usr/local/share/uhd/rfnoc
+COPY --from=gnb-build /usr/local/share/uhd/rfnoc/ .
 
 RUN ldconfig
 

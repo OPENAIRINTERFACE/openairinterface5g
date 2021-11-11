@@ -840,7 +840,8 @@ int nr_get_default_pucch_res(int pucch_ResourceCommon) {
   return(default_pucch_csset[pucch_ResourceCommon]);
 }
 
-void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
+void nr_configure_pdcch(gNB_MAC_INST *gNB_mac,
+                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
                         NR_ServingCellConfigCommon_t *scc,
@@ -848,9 +849,19 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
 
   int sps;
-  if (bwp && *ss->controlResourceSetId!=0) { // This is not for coreset0
-    pdcch_pdu->BWPSize  = NRRIV2BW(bwp->locationAndBandwidth, MAX_BWP_SIZE);
-    pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->locationAndBandwidth, MAX_BWP_SIZE);
+  AssertFatal(*ss->controlResourceSetId == coreset->controlResourceSetId,
+              "coreset id in SS %ld does not correspond to the one in coreset %ld",
+              *ss->controlResourceSetId, coreset->controlResourceSetId);
+
+  if (bwp) { // This is not for SIB1
+    if(coreset->controlResourceSetId == 0){
+      pdcch_pdu->BWPSize  = gNB_mac->cset0_bwp_size;
+      pdcch_pdu->BWPStart = gNB_mac->cset0_bwp_start;
+    }
+    else {
+      pdcch_pdu->BWPSize  = NRRIV2BW(bwp->locationAndBandwidth, MAX_BWP_SIZE);
+      pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->locationAndBandwidth, MAX_BWP_SIZE);
+    }
     pdcch_pdu->SubcarrierSpacing = bwp->subcarrierSpacing;
     pdcch_pdu->CyclicPrefix = (bwp->cyclicPrefix==NULL) ? 0 : *bwp->cyclicPrefix;
 
@@ -1451,28 +1462,28 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       pos = 1;
       // Freq domain assignment 0-16 bit
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
-      LOG_D(PHY, "fsize = %i\n", fsize);
+      LOG_D(NR_MAC, "fsize = %i\n", fsize);
       for (int i = 0; i < fsize; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->frequency_domain_assignment.val >> (fsize - i - 1)) & 1) << (dci_size - pos++);
-      LOG_D(PHY, "dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+      LOG_D(NR_MAC, "dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
       // Time domain assignment 4 bit
       for (int i = 0; i < 4; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment.val >> (3 - i)) & 1) << (dci_size - pos++);
-      LOG_D(PHY, "dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+      LOG_D(NR_MAC, "dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
       // VRB to PRB mapping 1 bit
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val & 1) << (dci_size - pos++);
-      LOG_D(PHY, "dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+      LOG_D(NR_MAC, "dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
       // MCS 5bit  //bit over 32, so dci_pdu ++
       for (int i = 0; i < 5; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->mcs >> (4 - i)) & 1) << (dci_size - pos++);
-      LOG_D(PHY, "dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+      LOG_D(NR_MAC, "dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
       // Redundancy version  2bit
       for (int i = 0; i < 2; i++)
         *dci_pdu |= (((uint64_t)dci_pdu_rel15->rv >> (1 - i)) & 1) << (dci_size - pos++);
-      LOG_D(PHY, "dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+      LOG_D(NR_MAC, "dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
       // System information indicator 1bit
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->system_info_indicator&1)<<(dci_size-pos++);
-      LOG_D(PHY, "dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
+      LOG_D(NR_MAC, "dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
       break;
 
     case NR_RNTI_TC:
@@ -2375,20 +2386,20 @@ void nr_csirs_scheduling(int Mod_idP,
               csirs_pdu_rel15->row = 1;
               csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0])>>4)&0x0f;
               for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
+                vrb_map[rb+csirs_pdu_rel15->bwp_start] |= (1 << csirs_pdu_rel15->symb_l0);
               break;
             case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2:
               csirs_pdu_rel15->row = 2;
               csirs_pdu_rel15->freq_domain = (((resourceMapping.frequencyDomainAllocation.choice.row2.buf[1]>>4)&0x0f) |
                                              ((resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]<<8)&0xff0));
               for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
+                vrb_map[rb+csirs_pdu_rel15->bwp_start] |= (1 << csirs_pdu_rel15->symb_l0);
               break;
             case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row4:
               csirs_pdu_rel15->row = 4;
               csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row4.buf[0])>>5)&0x07;
               for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
+                vrb_map[rb+csirs_pdu_rel15->bwp_start] |= (1 << csirs_pdu_rel15->symb_l0);
               break;
             case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other:
               csirs_pdu_rel15->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.other.buf[0])>>2)&0x3f;
@@ -2399,18 +2410,18 @@ void nr_csirs_scheduling(int Mod_idP,
                 case NR_CSI_RS_ResourceMapping__nrofPorts_p2:
                   csirs_pdu_rel15->row = 3;
                   for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                    vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
+                    vrb_map[rb+csirs_pdu_rel15->bwp_start] |= (1 << csirs_pdu_rel15->symb_l0);
                   break;
                 case NR_CSI_RS_ResourceMapping__nrofPorts_p4:
                   csirs_pdu_rel15->row = 5;
                   for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                    vrb_map[rb] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
+                    vrb_map[rb+csirs_pdu_rel15->bwp_start] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
                   break;
                 case NR_CSI_RS_ResourceMapping__nrofPorts_p8:
                   if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2) {
                     csirs_pdu_rel15->row = 8;
                     for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                      vrb_map[rb] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
+                      vrb_map[rb+csirs_pdu_rel15->bwp_start] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
                   }
                   else{
                     int num_k = 0;
@@ -2419,12 +2430,12 @@ void nr_csirs_scheduling(int Mod_idP,
                     if(num_k==4) {
                       csirs_pdu_rel15->row = 6;
                       for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                        vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
+                        vrb_map[rb+csirs_pdu_rel15->bwp_start] |= (1 << csirs_pdu_rel15->symb_l0);
                     }
                     else {
                       csirs_pdu_rel15->row = 7;
                       for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                        vrb_map[rb] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
+                        vrb_map[rb+csirs_pdu_rel15->bwp_start] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
                     }
                   }
                   break;
@@ -2432,12 +2443,12 @@ void nr_csirs_scheduling(int Mod_idP,
                   if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2) {
                     csirs_pdu_rel15->row = 10;
                     for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                      vrb_map[rb] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
+                      vrb_map[rb+csirs_pdu_rel15->bwp_start] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
                   }
                   else {
                     csirs_pdu_rel15->row = 9;
                     for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                      vrb_map[rb] |= (1 << csirs_pdu_rel15->symb_l0);
+                      vrb_map[rb+csirs_pdu_rel15->bwp_start] |= (1 << csirs_pdu_rel15->symb_l0);
                   }
                   break;
                 case NR_CSI_RS_ResourceMapping__nrofPorts_p16:
@@ -2446,24 +2457,24 @@ void nr_csirs_scheduling(int Mod_idP,
                   else
                     csirs_pdu_rel15->row = 11;
                   for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                    vrb_map[rb] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
+                    vrb_map[rb+csirs_pdu_rel15->bwp_start] |= ((1 << csirs_pdu_rel15->symb_l0) | (2 << csirs_pdu_rel15->symb_l0));
                   break;
                 case NR_CSI_RS_ResourceMapping__nrofPorts_p24:
                   if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2) {
                     csirs_pdu_rel15->row = 14;
                     for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                      vrb_map[rb] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
+                      vrb_map[rb+csirs_pdu_rel15->bwp_start] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
                   }
                   else{
                     if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm8_FD2_TD4) {
                       csirs_pdu_rel15->row = 15;
                       for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                        vrb_map[rb] |= (7 << csirs_pdu_rel15->symb_l0);
+                        vrb_map[rb+csirs_pdu_rel15->bwp_start] |= (7 << csirs_pdu_rel15->symb_l0);
                     }
                     else {
                       csirs_pdu_rel15->row = 13;
                       for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                        vrb_map[rb] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
+                        vrb_map[rb+csirs_pdu_rel15->bwp_start] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
                     }
                   }
                   break;
@@ -2471,18 +2482,18 @@ void nr_csirs_scheduling(int Mod_idP,
                   if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2) {
                     csirs_pdu_rel15->row = 17;
                     for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                      vrb_map[rb] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
+                      vrb_map[rb+csirs_pdu_rel15->bwp_start] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
                   }
                   else{
                     if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm8_FD2_TD4) {
                       csirs_pdu_rel15->row = 18;
                       for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                        vrb_map[rb] |= (7 << csirs_pdu_rel15->symb_l0);
+                        vrb_map[rb+csirs_pdu_rel15->bwp_start] |= (7 << csirs_pdu_rel15->symb_l0);
                     }
                     else {
                       csirs_pdu_rel15->row = 16;
                       for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
-                        vrb_map[rb] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
+                        vrb_map[rb+csirs_pdu_rel15->bwp_start] |= ((3 << csirs_pdu_rel15->symb_l0) | (3 << csirs_pdu_rel15->symb_l1));
                     }
                   }
                   break;

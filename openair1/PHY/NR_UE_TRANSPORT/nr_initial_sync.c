@@ -38,6 +38,7 @@
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include "SCHED_NR_UE/defs.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "common/utils/nr/nr_common.h"
 
 #include "common_lib.h"
 #include <math.h>
@@ -126,15 +127,11 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
       // initialization of structure
       current_ssb = create_ssb_node(l,hf);
 
-#if UE_TIMING_TRACE
       start_meas(&ue->dlsch_channel_estimation_stats);
-#endif
       // computing correlation between received DMRS symbols and transmitted sequence for current i_ssb and n_hf
       for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
           nr_pbch_dmrs_correlation(ue,proc,0,0,i,i-pbch_initial_symbol,current_ssb);
-#if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_channel_estimation_stats);
-#endif
       
       current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im*current_ssb->c_im;
       
@@ -150,15 +147,11 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
   NR_UE_SSB *temp_ptr=best_ssb;
   while (ret!=0 && temp_ptr != NULL) {
 
-#if UE_TIMING_TRACE
     start_meas(&ue->dlsch_channel_estimation_stats);
-#endif
   // computing channel estimation for selected best ssb
     for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
       nr_pbch_channel_estimation(ue,proc,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf);
-#if UE_TIMING_TRACE
     stop_meas(&ue->dlsch_channel_estimation_stats);
-#endif
 
     ret = nr_rx_pbch(ue,
                      proc,
@@ -492,9 +485,9 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
     for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
       uint8_t nb_symb_pdcch = pdcch_vars->pdcch_config[n_ss].coreset.duration;
+      int start_symb = pdcch_vars->pdcch_config[n_ss].coreset.StartSymbolIndex;
       get_coreset_rballoc(pdcch_vars->pdcch_config[n_ss].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
-
-      for (uint16_t l=0; l<nb_symb_pdcch; l++) {
+      for (uint16_t l=start_symb; l<start_symb+nb_symb_pdcch; l++) {
         nr_slot_fep_init_sync(ue,
                               proc,
                               l, // the UE PHY has no notion of the symbols to be monitored in the search space

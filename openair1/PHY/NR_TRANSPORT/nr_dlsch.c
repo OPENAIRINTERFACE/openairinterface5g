@@ -37,7 +37,6 @@
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/nr/nr_common.h"
 
 //#define DEBUG_DLSCH
