@@ -152,11 +152,10 @@ unsigned int crc24a (unsigned char * inptr,
 					 int bitlen)
 {
 
-  int             octetlen, resbit;
-  unsigned int             crc = 0;
-  octetlen = bitlen / 8;        /* Change in octets */
-  resbit = (bitlen % 8);
+  int  octetlen = bitlen / 8;        /* Change in octets */
 #ifndef USE_INTEL_CRC
+  unsigned int      crc = 0;
+  int resbit= (bitlen % 8);
   while (octetlen-- > 0) {
     //   printf("crc24a: in %x => crc %x\n",crc,*inptr);
     crc = (crc << 8) ^ crc24aTable[(*inptr++) ^ (crc >> 24)];
@@ -185,11 +184,10 @@ static DECLARE_ALIGNED(struct crc_pclmulqdq_ctx lte_crc24b_pclmulqdq, 16) = {
 unsigned int crc24b (unsigned char * inptr,
 	   	     int bitlen)
 {
-  int octetlen, resbit;
-  unsigned int crc = 0;
-  octetlen = bitlen / 8;        /* Change in octets */
-  resbit = (bitlen % 8);
+  int octetlen= bitlen / 8;
 #ifndef USE_INTEL_CRC
+  unsigned int crc = 0;
+  int resbit = (bitlen % 8);
   while (octetlen-- > 0) {
     //    printf("crc24b: in %x => crc %x (%x)\n",crc,*inptr,crc24bTable[(*inptr) ^ (crc >> 24)]);
     crc = (crc << 8) ^ crc24bTable[(*inptr++) ^ (crc >> 24)];

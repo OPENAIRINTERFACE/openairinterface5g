@@ -251,14 +251,6 @@ int get_dmrs_port(int nl, uint16_t dmrs_ports) {
   return p;
 }
 
-int get_num_dmrs(uint16_t dmrs_mask ) {
-
-  int num_dmrs=0;
-
-  for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
-  return(num_dmrs);
-}
-
 lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
 {
   lte_frame_type_t current_type;

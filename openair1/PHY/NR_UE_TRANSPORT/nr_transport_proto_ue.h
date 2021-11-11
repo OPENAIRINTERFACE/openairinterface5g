@@ -1302,8 +1302,8 @@ uint8_t get_transmission_mode(module_id_t Mod_id, uint8_t CC_id, rnti_t rnti);
 */
 uint32_t conv_nprb(uint8_t ra_header,uint32_t rb_alloc,int N_RB_DL);
 
-int adjust_G(NR_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe);
-int adjust_G2(NR_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol);
+//int adjust_G(NR_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe);
+//int adjust_G2(NR_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol);
 
 
 #ifndef modOrder
@@ -1329,16 +1329,6 @@ uint8_t I_TBS2I_MCS(uint8_t I_TBS);
 uint8_t SE2I_TBS(float SE,
                  uint8_t N_PRB,
                  uint8_t symbPerRB);
-/** \brief This function generates the sounding reference symbol (SRS) for the uplink according to 36.211 v8.6.0. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
-    @param frame_parms LTE DL Frame Parameters
-    @param soundingrs_ul_config_dedicated Dynamic configuration from RRC during Connection Establishment
-    @param txdataF pointer to the frequency domain TX signal
-    @returns 0 on success*/
-int generate_srs(NR_DL_FRAME_PARMS *frame_parms,
-		 SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-		 int *txdataF,
-		 int16_t amp,
-		 uint32_t subframe);
 
 
 /*!
@@ -1367,12 +1357,6 @@ int32_t generate_drs_pusch(PHY_VARS_NR_UE *phy_vars_ue,
                            uint32_t first_rb,
                            uint32_t nb_rb,
                            uint8_t ant);
-
-/*!
-  \brief This function initializes the Group Hopping, Sequence Hopping and nPRS sequences for PUCCH/PUSCH according to 36.211 v8.6.0. It should be called after configuration of UE (reception of SIB2/3) and initial configuration of eNB (or after reconfiguration of cell-specific parameters).
-  @param frame_parms Pointer to a NR_DL_FRAME_PARMS structure (eNB or UE)*/
-void init_ul_hopping(NR_DL_FRAME_PARMS *frame_parms);
-
 
 /*!
   \brief This function implements the initialization of paging parameters for UE (See Section 7, 36.304).It must be called after setting IMSImod1024 during UE startup and after receiving SIB2
@@ -1437,8 +1421,6 @@ double sinr_eff_cqi_calc(PHY_VARS_NR_UE *phy_vars_ue,
 
 uint8_t sinr2cqi(double sinr,uint8_t trans_mode);
 
-
-int dump_dci(NR_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
 
 int dump_ue_stats(PHY_VARS_NR_UE *phy_vars_ue, UE_nr_rxtx_proc_t *proc, char* buffer, int length, runmode_t mode, int input_level_dBm);
 
@@ -1529,17 +1511,10 @@ int get_nCCE_offset_l1(int *CCE_table,
                        const unsigned short rnti,
                        const unsigned char subframe);
 
-uint16_t get_nCCE(uint8_t num_pdcch_symbols,NR_DL_FRAME_PARMS *frame_parms,uint8_t mi);
 
-uint16_t get_nquad(uint8_t num_pdcch_symbols,NR_DL_FRAME_PARMS *frame_parms,uint8_t mi);
-
-uint8_t get_mi(NR_DL_FRAME_PARMS *frame,uint8_t subframe);
+//uint8_t get_mi(NR_DL_FRAME_PARMS *frame,uint8_t subframe);
 
 uint16_t get_nCCE_mac(uint8_t Mod_id,uint8_t CC_id,int num_pdcch_symbols,int subframe);
-
-uint8_t get_num_pdcch_symbols(uint8_t num_dci,DCI_ALLOC_t *dci_alloc,NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
-
-void pdcch_interleaving(NR_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **wbar,uint8_t n_symbols_pdcch,uint8_t mi);
 
 void nr_pdcch_unscrambling(int16_t *z,
                            uint16_t scrambling_RNTI,
@@ -1555,7 +1530,6 @@ void dlsch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
                         uint8_t q,
                         uint8_t Ns);
 
-void init_ncs_cell(NR_DL_FRAME_PARMS *frame_parms,uint8_t ncs_cell[20][7]);
 
 void generate_pucch1x(int32_t **txdataF,
                       NR_DL_FRAME_PARMS *frame_parms,
@@ -1603,7 +1577,7 @@ void init_ulsch_power_LUT(void);
   @param subframe subframe index to check
   @returns 0 on success
 */
-int is_prach_subframe(NR_DL_FRAME_PARMS *frame_parms,frame_t frame, uint8_t subframe);
+//int is_prach_subframe(NR_DL_FRAME_PARMS *frame_parms,frame_t frame, uint8_t subframe);
 
 /*!
   \brief Generate PRACH waveform
@@ -1669,8 +1643,6 @@ void init_scrambling_lut(void);
   @param frame_parms Pointer to frame parameters
   @returns 1 if subframe is for MBSFN
 */
-int is_pmch_subframe(frame_t frame, int subframe, NR_DL_FRAME_PARMS *frame_parms);
-
 uint8_t is_not_pilot(uint8_t pilots, uint8_t re, uint8_t nushift, uint8_t use2ndpilots);
 
 uint8_t is_not_UEspecRS(int8_t lprime, uint8_t re, uint8_t nushift, uint8_t Ncp, uint8_t beamforming_mode);
@@ -1707,8 +1679,7 @@ uint8_t get_prach_prb_offset(NR_DL_FRAME_PARMS *frame_parms,
 			     uint8_t n_ra_prboffset,
 			     uint8_t tdd_mapindex, uint16_t Nf);
 
-
-uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
+#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 
 uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                   UE_nr_rxtx_proc_t *proc,
