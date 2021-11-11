@@ -65,8 +65,8 @@ nr_bandentry_t nr_bandtable[] = {
   {41,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
   {41,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
   {47,  5855000, 5925000, 5855000, 5925000,  1, 790334,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
+  {48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
+  {48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
   {50,  1432000, 1517000, 1432000, 1517000, 20, 286400, 100},
   {51,  1427000, 1432000, 1427000, 1432000, 20, 285400, 100},
   {53,  2483500, 2495000, 2483500, 2495000, 20, 496700, 100},
@@ -90,14 +90,15 @@ nr_bandentry_t nr_bandtable[] = {
   {84,  1920000, 1980000,     000,     000, 20, 384000, 100},
   {86,  1710000, 1785000,     000,     000, 20, 342000, 100},
   {89,   824000,  849000,     000,     000, 20, 342000, 100},
-  {90,  2496000, 2690000, 2496000, 2690000, 3,  499200,  15},
-  {90,  2496000, 2690000, 2496000, 2690000, 6,  499200,  30},
+  {90,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
+  {90,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
   {90,  2496000, 2690000, 2496000, 2690000, 20, 499200, 100},
   {91,   832000,  862000, 1427000, 1432000, 20, 285400, 100},
   {92,   832000,  862000, 1432000, 1517000, 20, 286400, 100},
   {93,   880000,  915000, 1427000, 1432000, 20, 285400, 100},
   {94,   880000,  915000, 1432000, 1517000, 20, 286400, 100},
   {95,  2010000, 2025000,     000,     000, 20, 402000, 100},
+  {96,  5925000, 7125000, 5925000, 7125000,  1, 795000,  15},
   {257,26500020,29500000,26500020,29500000,  1,2054166,  60},
   {257,26500080,29500000,26500080,29500000,  2,2054167, 120},
   {258,24250080,27500000,24250080,27500000,  1,2016667,  60},
@@ -230,6 +231,30 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
       return(0);
       break;
   }
+}
+
+
+void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
+
+  uint8_t count=0, start=0, start_set=0;
+
+  uint64_t bitmap = (((uint64_t)FreqDomainResource[0])<<37)|
+    (((uint64_t)FreqDomainResource[1])<<29)|
+    (((uint64_t)FreqDomainResource[2])<<21)|
+    (((uint64_t)FreqDomainResource[3])<<13)|
+    (((uint64_t)FreqDomainResource[4])<<5)|
+    (((uint64_t)FreqDomainResource[5])>>3);
+
+  for (int i=0; i<45; i++)
+    if ((bitmap>>(44-i))&1) {
+      count++;
+      if (!start_set) {
+        start = i;
+        start_set = 1;
+      }
+    }
+  *rb_offset = 6*start;
+  *n_rb = 6*count;
 }
 
 
@@ -405,9 +430,17 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index) {
   AssertFatal(nr_bandP <= nr_bandtable[nr_bandtable_size-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[nr_bandtable_size-1].band);
   for (i = 0; i < nr_bandtable_size && nr_bandtable[i].band != nr_bandP; i++);
 
-  // selection of correct Deltaf raster according to SCS
-  if ((nr_bandtable[i].deltaf_raster != 100) && (nr_bandtable[i].deltaf_raster != scs_khz))
+  // In frequency bands with two deltaFRaster,
+  // the higher deltaFRaster applies to channels using only the SCS that is equal to or larger than the higher deltaFRaster
+  // and SSB SCS is equal to the higher deltaFRaster.
+  while(((i+1)<nr_bandtable_size) &&
+        (nr_bandtable[i+1].band == nr_bandtable[i].band) &&
+        (nr_bandtable[i].deltaf_raster != scs_khz)) {
     i++;
+  }
+
+  AssertFatal(nr_bandtable[i].band == nr_bandP, "Found band table %d does not correspond to the input one %d\n",nr_bandtable[i].band,nr_bandP);
+
 
   LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
 

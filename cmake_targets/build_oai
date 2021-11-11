@@ -551,7 +551,7 @@ function main() {
     if [ "$HW" == "OAI_USRP" ] ; then
       echo_info "installing packages for USRP support"
       check_install_usrp_uhd_driver
-      if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
+      if [ ! -v BUILD_UHD_FROM_SOURCE ] && [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
         install_usrp_uhd_driver $UHD_IMAGES_DIR
       fi
     fi 

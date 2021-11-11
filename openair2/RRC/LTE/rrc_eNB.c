@@ -3618,9 +3618,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
                            NULL,
                            NULL,
                            NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                            , (LTE_PMCH_InfoList_r9_t *) NULL
-#endif
                            , NULL);
 
   /* Refresh SRBs/DRBs */
@@ -3629,11 +3627,9 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
                             *SRB_configList2, // NULL,
                             *DRB_configList,
                             NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                             , (LTE_PMCH_InfoList_r9_t *) NULL,
                             0,
                             0
-#endif
                            );
   }
 
@@ -6331,9 +6327,7 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
                            NULL,
                            NULL,
                            NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                            , (LTE_PMCH_InfoList_r9_t *) NULL
-#endif
                            , NULL);
 
   /* Refresh SRBs/DRBs */
@@ -6342,11 +6336,9 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
                             *SRB_configList2, // NULL,
                             *DRB_configList,
                             NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                             , (LTE_PMCH_InfoList_r9_t *) NULL,
                             0,
                             0
-#endif
                            );
   }
 
@@ -7287,9 +7279,6 @@ rrc_eNB_decode_ccch(
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                 rrcConnectionReestablishmentRequest->ue_Identity.physCellId,
                 ue_context_p->ue_context.reestablishment_cause);
-#ifndef NO_RRM
-          send_msg(&S_rrc, msg_rrc_MR_attach_ind(ctxt_pP->module_id, Mac_id));
-#else
           ue_context_p->ue_context.primaryCC_id = CC_id;
           //LG COMMENT Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
           Idx = DCCH;
@@ -7343,7 +7332,6 @@ rrc_eNB_decode_ccch(
                                    );
           }
 
-#endif //NO_RRM
         }
         break;
 
@@ -7532,9 +7520,6 @@ rrc_eNB_decode_ccch(
           }
         }
 
-#ifndef NO_RRM
-        send_msg(&S_rrc, msg_rrc_MR_attach_ind(ctxt_pP->module_id, Mac_id));
-#else
         ue_context_p->ue_context.primaryCC_id = CC_id;
         //LG COMMENT Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
         Idx = DCCH;
@@ -7587,7 +7572,6 @@ rrc_eNB_decode_ccch(
                                  );
         }
 
-#endif //NO_RRM
         break;
 
       default:

@@ -60,6 +60,7 @@ typedef struct {
   uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
 }encoder_implemparams_t;
 #define INIT0_LDPCIMPLEMPARAMS {0,0,0,NULL,NULL,NULL,NULL}
+typedef void(*nrLDPC_initcallfunc_t)(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out);
 typedef int(*nrLDPC_encoderfunc_t)(unsigned char **,unsigned char **,int,int,short, short, encoder_implemparams_t*);
 //============================================================================================================================
 // decoder interface
