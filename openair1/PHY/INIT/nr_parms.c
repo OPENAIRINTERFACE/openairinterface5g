@@ -237,30 +237,6 @@ uint32_t get_samples_slot_timestamp(int slot, NR_DL_FRAME_PARMS* fp, uint8_t sl_
   return samp_count;
 }
 
-// FIXME: It is hardcoded for now
-void set_srs_parameters(NR_DL_FRAME_PARMS *fp) {
-
-  // init resource
-  SRS_Resource_t *p_srs_resource = calloc( 1, sizeof(*p_srs_resource));
-  p_srs_resource->nrof_SrsPorts = port1;
-  p_srs_resource->transmissionComb = 2; // K_TC
-  p_srs_resource->resourceMapping_nrofSymbols = 1;
-  p_srs_resource->resourceMapping_repetitionFactor = 1;
-  p_srs_resource->SRS_Periodicity = srs_sl4;
-  p_srs_resource->SRS_Offset = 3;
-
-  // init resource set with only 1 resource
-  SRS_ResourceSet_t *p_srs_resource_set = calloc( 1, sizeof(*p_srs_resource_set));
-  p_srs_resource_set->resourceType = periodic;
-  p_srs_resource_set->number_srs_Resource++;
-  p_srs_resource_set->p_srs_ResourceList[0] = p_srs_resource;
-
-  SRS_NR *p_srs_nr = &fp->srs_nr;
-  p_srs_nr->active_srs_Resource_Set = 0;
-  p_srs_nr->number_srs_Resource_Set++;
-  p_srs_nr->p_SRS_ResourceSetList[0] = p_srs_resource_set;
-}
-
 int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
                         NR_DL_FRAME_PARMS *fp)
 {
@@ -317,8 +293,6 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 
   for (int p=0; p<num_tx_ant; p++)
     fp->N_ssb += ((fp->L_ssb >> (63-p)) & 0x01);
-
-  set_srs_parameters(fp);
 
   return 0;
 
