@@ -202,7 +202,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
 void srs_procedures_nr(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   if(is_srs_occasion_nr(gNB->frame_parms, frame_rx, slot_rx)) {
-    LOG_W(NR_PHY, "SRS procedures are not implemented yet!");
+    LOG_W(NR_PHY, "SRS procedures are not implemented yet!\n");
   }
 
 }

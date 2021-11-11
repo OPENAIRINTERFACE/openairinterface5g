@@ -47,6 +47,8 @@
 #include "PHY/NR_UE_TRANSPORT/srs_modulation_nr.h"
 #undef DEFINE_VARIABLES_SRS_MODULATION_NR_H
 
+#define SRS_DEBUG
+
 /*******************************************************************
 *
 * NAME :         generate_srs
@@ -429,6 +431,14 @@ int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gN
   SRS_ResourceSet_t *p_srs_resource_set = frame_parms->srs_nr.p_SRS_ResourceSetList[p_srs_nr->active_srs_Resource_Set];
   int generate_srs = 0;
 
+#ifdef SRS_DEBUG
+  LOG_I(NR_PHY,"p_srs_nr = 0x%x\n", p_srs_nr);
+  if(p_srs_nr) LOG_I(NR_PHY,"p_srs_nr->number_srs_Resource_Set = %i\n", p_srs_nr->number_srs_Resource_Set);
+  if(p_srs_nr) LOG_I(NR_PHY,"p_srs_nr->active_srs_Resource_Set = %i\n", p_srs_nr->active_srs_Resource_Set);
+  LOG_I(NR_PHY,"p_srs_resource_set = 0x%x\n", p_srs_resource_set);
+  if(p_srs_resource_set) LOG_I(NR_PHY,"p_srs_resource_set->resourceType = %i\n", p_srs_resource_set->resourceType);
+#endif
+
   /* is there any resource set which has been configurated ? */
   if (p_srs_nr->number_srs_Resource_Set != 0) {
 
@@ -460,6 +470,20 @@ int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gN
     int16_t txptr = AMP;
     uint16_t nsymb = (ue->frame_parms.Ncp==0) ? 14:12;
     uint16_t symbol_offset = (int)ue->frame_parms.ofdm_symbol_size*((proc->nr_slot_tx*nsymb)+(nsymb-1));
+
+#ifdef SRS_DEBUG
+    LOG_I(NR_PHY,"nsymb = %i, symbol_offset = %i\n", nsymb, symbol_offset);
+    LOG_I(NR_PHY,"p_srs_resource_set->srs_ResourceSetId = %i\n", p_srs_resource_set->srs_ResourceSetId);
+    LOG_I(NR_PHY,"p_srs_resource_set->number_srs_Resource = %i", p_srs_resource_set->number_srs_Resource);
+    LOG_I(NR_PHY,"p_srs_resource_set->resourceType = %i\n", p_srs_resource_set->resourceType);
+    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->SRS_Periodicity = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->SRS_Periodicity);
+    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->combOffset = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->combOffset);
+    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->freqDomainPosition = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->freqDomainPosition);
+    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_b_SRS = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_b_SRS);
+    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_b_hop = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_b_hop);
+    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_c_SRS = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_c_SRS);
+#endif
+
     if (generate_srs_nr(p_srs_resource_set, frame_parms, &ue->common_vars.txdataF[gNB_id][symbol_offset], txptr, proc) == 0) {
       return 0;
     }
