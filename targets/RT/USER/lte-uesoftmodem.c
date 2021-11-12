@@ -276,7 +276,6 @@ void exit_function(const char *file, const char *function, const int line, const
 }
 
 extern int16_t dlsch_demod_shift;
-uint16_t ue_idx_standalone = 0xFFFF;
 uint16_t node_number;
 static void get_options(void) {
   int CC_id=0;
