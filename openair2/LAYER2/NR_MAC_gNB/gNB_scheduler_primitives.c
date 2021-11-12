@@ -435,17 +435,19 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
     SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
   }
 
-  const long dci_format = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
-  if (dci_format == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0 ||
-      pdsch_Config == NULL) {
-    if (ps->nrOfSymbols == 2 && ps->mapping_type == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB)
+  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+  int dci_format;
+  if (sched_ctrl->search_space) {
+    dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
+  }
+  else {
+    dci_format = NR_DL_DCI_FORMAT_1_0;
+  }
+  if (dci_format == NR_DL_DCI_FORMAT_1_0) {
+    if (ps->nrOfSymbols == 2)
       ps->numDmrsCdmGrpsNoData = 1;
-    else {
-      if (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1)
-        ps->numDmrsCdmGrpsNoData = 2;
-      else
-        ps->numDmrsCdmGrpsNoData = 3;
-    }
+    else
+      ps->numDmrsCdmGrpsNoData = 2;
     ps->dmrs_ports_id = 0;
     ps->frontloaded_symb = 1;
     ps->nrOfLayers = 1;
