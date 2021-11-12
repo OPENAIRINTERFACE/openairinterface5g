@@ -144,6 +144,27 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   unsigned char *kUPenc = NULL;
   unsigned char *kUPint = NULL;
   int i;
+
+  // In case of phy-test and do-ra mode, read UE capabilities directly from file
+  if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1) {
+    NR_UE_NR_Capability_t* UE_Capability_nr = NULL;
+    char UE_NR_Capability_xer_fname[1024];
+    char UE_NR_Capability_xer[65536];
+    sprintf(UE_NR_Capability_xer_fname,"../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml");
+    FILE *f = fopen(UE_NR_Capability_xer_fname, "r");
+    if(f){
+      size_t size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
+      if (size == 0 || size == sizeof UE_NR_Capability_xer)
+        LOG_E(NR_RRC,"UE Capabilities XER file %s is too large (%ld)\n", UE_NR_Capability_xer_fname,size);
+      else {
+        UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
+        asn_dec_rval_t dec_rval = xer_decode(0, &asn_DEF_NR_UE_NR_Capability, (void *)UE_Capability_nr, UE_NR_Capability_xer, size);
+        assert(dec_rval.code == RC_OK);
+      }
+    }
+    ue_context_p->ue_context.UE_Capability_nr = UE_Capability_nr;
+  }
+
   // NR RRCReconfiguration
   AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
   ue_context_p->ue_context.reconfig = calloc(1,sizeof(NR_RRCReconfiguration_t));
