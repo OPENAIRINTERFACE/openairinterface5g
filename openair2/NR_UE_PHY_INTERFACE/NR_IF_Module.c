@@ -907,7 +907,7 @@ void *nrue_standalone_pnf_task(void *context)
       nr_phy_channel_params_t *ch_info = CALLOC(1, sizeof(*ch_info));
       memcpy(ch_info, buffer, sizeof(*ch_info));
 
-      LOG_I(NR_PHY, "Received_SINR = %f, sfn:slot %d:%d\n",
+      LOG_D(NR_PHY, "Received_SINR = %f, sfn:slot %d:%d\n",
             ch_info->sinr, NFAPI_SFNSLOT2SFN(ch_info->sfn_slot), NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot));
 
       if (!put_queue(&nr_chan_param_queue, ch_info))
