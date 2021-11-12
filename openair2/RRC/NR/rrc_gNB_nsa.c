@@ -52,9 +52,7 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     uint8_t                  *const kRRCint,
     uint8_t                  *const kUPenc,
     uint8_t                  *const kUPint
-  #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-  #endif
     ,rb_id_t                 *const defaultDRB,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
@@ -142,6 +140,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
   protocol_ctxt_t ctxt={0};
   unsigned char *kUPenc = NULL;
+  unsigned char *kUPint = NULL;
   int i;
   // NR RRCReconfiguration
   AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
@@ -214,15 +213,12 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     LOG_I(RRC, "selecting integrity algorithm %d\n", ue_context_p->ue_context.integrity_algorithm);
 
     /* derive UP security key */
-    unsigned char *kUPenc_kdf;
     nr_derive_key_up_enc(ue_context_p->ue_context.ciphering_algorithm,
                          ue_context_p->ue_context.kgnb,
-                         &kUPenc_kdf);
-    /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
-    kUPenc = malloc(16);
-    if (kUPenc == NULL) exit(1);
-    memcpy(kUPenc, kUPenc_kdf+16, 16);
-    free(kUPenc_kdf);
+                         &kUPenc);
+    nr_derive_key_up_int(ue_context_p->ue_context.integrity_algorithm,
+                         ue_context_p->ue_context.kgnb,
+                         &kUPint);
 
     e_NR_CipheringAlgorithm cipher_algo;
     switch (ue_context_p->ue_context.ciphering_algorithm) {
@@ -355,6 +351,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 			   rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
                            rrc->carrier.servingcellconfigcommon,
+                           &rrc->carrier.mib,
                            1, // add_ue flag
                            ue_context_p->ue_id_rnti,
                            ue_context_p->ue_context.secondaryCellGroup);
@@ -364,6 +361,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                            rrc->carrier.pdsch_AntennaPorts,
                            rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
+                           NULL,
                            NULL,
                            1, // add_ue flag
                            ue_context_p->ue_id_rnti,
@@ -387,7 +385,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                               NULL,          /* kRRCenc - unused */
                               NULL,          /* kRRCint - unused */
                               kUPenc,        /* kUPenc  */
-                              NULL,          /* kUPint  - unused */
+                              kUPint,        /* kUPint */
                               NULL,
                               NULL,
                               ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);

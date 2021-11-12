@@ -38,6 +38,7 @@
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include "SCHED_NR_UE/defs.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "common/utils/nr/nr_common.h"
 
 #include "common_lib.h"
 #include <math.h>
@@ -126,15 +127,11 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
       // initialization of structure
       current_ssb = create_ssb_node(l,hf);
 
-#if UE_TIMING_TRACE
       start_meas(&ue->dlsch_channel_estimation_stats);
-#endif
       // computing correlation between received DMRS symbols and transmitted sequence for current i_ssb and n_hf
       for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
           nr_pbch_dmrs_correlation(ue,proc,0,0,i,i-pbch_initial_symbol,current_ssb);
-#if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_channel_estimation_stats);
-#endif
       
       current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im*current_ssb->c_im;
       
@@ -150,15 +147,11 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
   NR_UE_SSB *temp_ptr=best_ssb;
   while (ret!=0 && temp_ptr != NULL) {
 
-#if UE_TIMING_TRACE
     start_meas(&ue->dlsch_channel_estimation_stats);
-#endif
   // computing channel estimation for selected best ssb
     for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
       nr_pbch_channel_estimation(ue,proc,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf);
-#if UE_TIMING_TRACE
     stop_meas(&ue->dlsch_channel_estimation_stats);
-#endif
 
     ret = nr_rx_pbch(ue,
                      proc,

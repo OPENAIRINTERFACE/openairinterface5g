@@ -46,7 +46,8 @@
 #endif
 
 static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDPC_procBuf* p_procBuf, uint32_t numLLR, t_nrLDPC_lut* p_lut, t_nrLDPC_dec_params* p_decParams, t_nrLDPC_time_stats* p_profiler);
-
+void nrLDPC_initcall(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out) {
+}
 int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, t_nrLDPC_procBuf* p_procBuf, t_nrLDPC_time_stats* p_profiler)
 {
     uint32_t numLLR;
@@ -55,7 +56,6 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
     t_nrLDPC_lut* p_lut = &lut;
 
     //printf("p_procBuf->cnProcBuf = %p\n", p_procBuf->cnProcBuf);
-
     // Initialize decoder core(s) with correct LUTs
     numLLR = nrLDPC_init(p_decParams, p_lut);
 
@@ -231,7 +231,7 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, t_nrLDP
 
     // First iteration finished
 
-    while ( (i < (numMaxIter-1)) && (pcRes != 0) )
+    while ( (i < numMaxIter) && (pcRes != 0) )
     {
         // Increase iteration counter
         i++;

@@ -34,7 +34,6 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 //#include "PHY/extern.h"
-//#include "LAYER2/MAC/extern.h"
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
@@ -91,7 +90,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
   uint8_t u[2]={0,0},v[2]={0,0};
 
-  LOG_D(PHY,"pucch0: nr_symbols %d, start_symbol %d, prb_start %d, second_hop_prb %d,  group_hop_flag %d, sequence_hop_flag %d, mcs %d\n",pucch_pdu->nr_of_symbols,pucch_pdu->start_symbol_index,pucch_pdu->prb_start,pucch_pdu->second_hop_prb,pucch_pdu->group_hop_flag,pucch_pdu->sequence_hop_flag,pucch_pdu->mcs);
+  LOG_D(PHY,"pucch0: slot %d nr_symbols %d, start_symbol %d, prb_start %d, second_hop_prb %d,  group_hop_flag %d, sequence_hop_flag %d, mcs %d\n",nr_slot_tx,pucch_pdu->nr_of_symbols,pucch_pdu->start_symbol_index,pucch_pdu->prb_start,pucch_pdu->second_hop_prb,pucch_pdu->group_hop_flag,pucch_pdu->sequence_hop_flag,pucch_pdu->mcs);
 
 
 #ifdef DEBUG_NR_PUCCH_TX

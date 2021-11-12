@@ -113,9 +113,7 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     uint8_t                  *const kRRCint,
     uint8_t                  *const kUPenc,
     uint8_t                  *const kUPint
-  #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-  #endif
     ,rb_id_t                 *const defaultDRB,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
@@ -264,6 +262,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 			   rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
 			   (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+			   &rrc->carrier.mib,
 			   0,
 			   0, // WIP hardcoded rnti
 			   (NR_CellGroupConfig_t *)NULL
@@ -355,6 +354,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
   rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
+  rrc->carrier.minRXTXTIMEpdsch = configuration->minRXTXTIMEpdsch;
   rrc->carrier.sib1_tda = configuration->sib1_tda;
   rrc->carrier.do_CSIRS = configuration->do_CSIRS;
    /// System Information INIT
@@ -415,6 +415,7 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
 			     rrc->carrier.pusch_AntennaPorts,
 			     rrc->carrier.sib1_tda,
 			     NULL,
+                             NULL,
 			     0,
 			     ue_context_pP->ue_context.rnti,
 			     get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : (NR_CellGroupConfig_t *)NULL);
@@ -435,7 +436,7 @@ void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,
                                   ue_context_pP->ue_context.SRB_configList,
                                   NULL,
                                   NULL,
-                                  0xff,
+                                  0,
                                   NULL,
                                   NULL,
                                   NULL,
@@ -457,7 +458,7 @@ rrc_gNB_generate_RRCSetup(
 )
 //-----------------------------------------------------------------------------
 {
-  LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
+  LOG_D(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
   MessageDef                    *message_p;
 
   // T(T_GNB_RRC_SETUP,
@@ -466,17 +467,18 @@ rrc_gNB_generate_RRCSetup(
   //   T_INT(ctxt_pP->subframe),
   //   T_INT(ctxt_pP->rnti));
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
 						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
 						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
 						  masterCellGroup_from_DU,
-						  scc);
+						  scc,&rrc->carrier);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
               ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRC Setup\n");
-  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+
   switch (rrc->node_type) {
     case ngran_gNB_CU:
       // create an ITTI message
@@ -485,7 +487,7 @@ rrc_gNB_generate_RRCSetup(
 				  ue_context_pP->ue_context.SRB_configList,
 				  NULL,
 				  NULL,
-				  0xff,
+				  0,
 				  NULL,
 				  NULL,
 				  NULL,
@@ -589,7 +591,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
 						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
 						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
 						  NULL,
-						  scc);
+						  scc,&rrc_instance_p->carrier);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
@@ -606,6 +608,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          rrc_instance_p->carrier.pusch_AntennaPorts,
                          rrc_instance_p->carrier.sib1_tda,
                          (NR_ServingCellConfigCommon_t *)rrc_instance_p->carrier.servingcellconfigcommon,
+                         &rrc_instance_p->carrier.mib,
                          0,
                          ue_context_pP->ue_context.rnti,
                          (NR_CellGroupConfig_t *)NULL
@@ -966,6 +969,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 )
 //-----------------------------------------------------------------------------
 {
+  gNB_RRC_INST                  *rrc = RC.nrrrc[ctxt_pP->module_id];
   NR_DRB_ToAddMod_t             *DRB_config           = NULL;
   NR_SRB_ToAddMod_t             *SRB2_config          = NULL;
   NR_SDAP_Config_t              *sdap_config          = NULL;
@@ -1030,7 +1034,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     sdap_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
     memset(sdap_config, 0, sizeof(NR_SDAP_Config_t));
     sdap_config->pdu_Session = ue_context_pP->ue_context.pduSession[i].param.pdusession_id;
-    sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
+    sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
     sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
     sdap_config->defaultDRB = TRUE;
     sdap_config->mappedQoS_FlowsToAdd = calloc(1, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
@@ -1063,8 +1067,19 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     DRB_config->pdcp_Config->moreThanOneRLC = NULL;
 
     DRB_config->pdcp_Config->t_Reordering = calloc(1, sizeof(*DRB_config->pdcp_Config->t_Reordering));
-    *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms750;
+    *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
     DRB_config->pdcp_Config->ext1 = NULL;
+
+    if (rrc->security.do_drb_integrity) {
+      DRB_config->pdcp_Config->drb->integrityProtection = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->integrityProtection));
+      *DRB_config->pdcp_Config->drb->integrityProtection = NR_PDCP_Config__drb__integrityProtection_enabled;
+    }
+
+    if (!rrc->security.do_drb_ciphering) {
+      DRB_config->pdcp_Config->ext1 = calloc(1, sizeof(*DRB_config->pdcp_Config->ext1));
+      DRB_config->pdcp_Config->ext1->cipheringDisabled = calloc(1, sizeof(*DRB_config->pdcp_Config->ext1->cipheringDisabled));
+      *DRB_config->pdcp_Config->ext1->cipheringDisabled = NR_PDCP_Config__ext1__cipheringDisabled_true;
+    }
 
     // Reference TS23501 Table 5.7.4-1: Standardized 5QI to QoS characteristics mapping
     for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
@@ -1310,6 +1325,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
   uint8_t                            *kUPenc = NULL;
+  uint8_t                            *kUPint = NULL;
   NR_DRB_ToAddModList_t              *DRB_configList = ue_context_pP->ue_context.DRB_configList2[xid];
   NR_SRB_ToAddModList_t              *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
   NR_DRB_ToReleaseList_t             *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
@@ -1319,21 +1335,22 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
 
-#ifndef PHYSIM
   /* Derive the keys from kgnb */
   if (DRB_configList != NULL) {
-      derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                      ue_context_pP->ue_context.kgnb,
-                      &kUPenc);
+    nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                         ue_context_pP->ue_context.kgnb,
+                         &kUPenc);
+    nr_derive_key_up_int(ue_context_pP->ue_context.integrity_algorithm,
+                         ue_context_pP->ue_context.kgnb,
+                         &kUPint);
   }
 
-  derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                      ue_context_pP->ue_context.kgnb,
-                      &kRRCenc);
-  derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
-                      ue_context_pP->ue_context.kgnb,
-                      &kRRCint);
-#endif
+  nr_derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                        ue_context_pP->ue_context.kgnb,
+                        &kRRCenc);
+  nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
+                        ue_context_pP->ue_context.kgnb,
+                        &kRRCint);
   /* Refresh SRBs/DRBs */
   MSC_LOG_TX_MESSAGE(MSC_RRC_GNB, MSC_PDCP_ENB, NULL, 0, MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security unchanged)",
                    MSC_AS_TIME_ARGS(ctxt_pP),
@@ -1346,11 +1363,12 @@ rrc_gNB_process_RRCReconfigurationComplete(
                               SRB_configList, // NULL,
                               DRB_configList,
                               DRB_Release_configList2,
-                              0, // already configured during the securitymodecommand
+                              (ue_context_pP->ue_context.integrity_algorithm << 4)
+                              | ue_context_pP->ue_context.ciphering_algorithm,
                               kRRCenc,
                               kRRCint,
                               kUPenc,
-                              NULL,
+                              kUPint,
                               NULL,
                               NULL,
                               get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
@@ -1361,6 +1379,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                            rrc->carrier.pdsch_AntennaPorts,
                            rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
+                           NULL,
                            NULL,
                            0,
                            ue_context_pP->ue_context.rnti,
@@ -1793,7 +1812,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
     nr_rrc_pdcp_config_security(
       ctxt_pP,
       ue_context_pP,
-      send_security_mode_command);
+      send_security_mode_command ? 0 : 1);
     LOG_D(NR_RRC, "set security successfully \n");
   }
 
@@ -2569,6 +2588,9 @@ rrc_gNB_decode_dcch(
           xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
         }
 
+        /* configure ciphering */
+        nr_rrc_pdcp_config_security(ctxt_pP, ue_context_p, 1);
+
         rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
         //rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
         break;
@@ -2885,7 +2907,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
                                   f1_setup_req->mib[i],
                                   f1_setup_req->mib_length[i]);
         AssertFatal(dec_rval.code == RC_OK,
-                    "[gNB_DU %"PRIu8"] Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits)\n",
+                    "[gNB_CU %"PRIu8"] Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits)\n",
                     j,
                     dec_rval.consumed );
         NR_BCCH_BCH_Message_t *mib = &rrc->carrier.mib;
@@ -3950,7 +3972,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
                    ctxt_pP->module_id,
                    ue_context_p,
                    NGAP_CAUSE_RADIO_NETWORK,
-                   30);
+                   NGAP_CAUSE_RADIO_NETWORK_RADIO_CONNECTION_WITH_UE_LOST);
         }
 
         // Remove here the MAC and RRC context when RRC is not connected or gNB is not connected to CN5G
@@ -4113,7 +4135,7 @@ void *rrc_gnb_task(void *args_p) {
                                       NR_RRC_DCCH_DATA_IND(msg_p).rnti,
                                       msg_p->ittiMsgHeader.lte_time.frame,
                                       msg_p->ittiMsgHeader.lte_time.slot);
-        LOG_I(NR_RRC,"Decoding DCCH : ue %d, inst %ld, ctxt %p, size %d\n",
+        LOG_D(NR_RRC,"Decoding DCCH : ue %d, inst %ld, ctxt %p, size %d\n",
                 ctxt.rnti,
                 instance,
                 &ctxt,

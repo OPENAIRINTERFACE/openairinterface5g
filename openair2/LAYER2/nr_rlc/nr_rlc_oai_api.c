@@ -270,7 +270,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
                         + buf_stat.retx_size
                         + buf_stat.tx_size;
   } else {
-    if (!(frameP%128)) //to supress this warning message
+    if (!(frameP%128)) //to suppress this warning message
       LOG_W(RLC, "[%s] Radio Bearer (channel ID %d) is NULL for UE with rntiP %x\n", __FUNCTION__, channel_idP, rntiP);
     ret.bytes_in_buffer = 0;
   }
@@ -334,6 +334,8 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
         + buf_stat.retx_size
         + buf_stat.tx_size;
   } else {
+    if (!(frameP%128)) //to suppress this warning message
+      LOG_W(RLC, "[%s] Radio Bearer (channel ID %d) is NULL for UE with rntiP %x\n", __FUNCTION__, channel_idP, rntiP);
     ret = 0;
   }
 
@@ -399,15 +401,22 @@ int rlc_module_init(int enb_flag)
 {
   static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
   static int inited = 0;
+  static int inited_ue = 0;
 
   if (pthread_mutex_lock(&lock)) abort();
 
-  if (inited) {
-    LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+  if (enb_flag == 1 && inited) {
+    LOG_E(RLC, "%s:%d:%s: fatal, inited already 1\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
 
-  inited = 1;
+  if (enb_flag == 0 && inited_ue) {
+    LOG_E(RLC, "%s:%d:%s: fatal, inited_ue already 1\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+
+  if (enb_flag == 1) inited = 1;
+  if (enb_flag == 0) inited_ue = 1;
 
   nr_rlc_ue_manager = new_nr_rlc_ue_manager(enb_flag);
 
@@ -962,15 +971,15 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
   if ((drb2add_listP != NULL) && (rlc_bearer2add_list != NULL)) {
     for (i = 0; i < drb2add_listP->list.count; i++) {
       if (rlc_bearer2add_list != NULL) {
-      for(j = 0; j < rlc_bearer2add_list->list.count; j++){
-        if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
-          if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity){
-            if(drb2add_listP->list.array[i]->drb_Identity == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.drb_Identity){
-              add_drb(rnti, drb2add_listP->list.array[i], rlc_bearer2add_list->list.array[j]);
+        for(j = 0; j < rlc_bearer2add_list->list.count; j++){
+          if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
+            if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity){
+              if(drb2add_listP->list.array[i]->drb_Identity == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.drb_Identity){
+                add_drb(rnti, drb2add_listP->list.array[i], rlc_bearer2add_list->list.array[j]);
+              }
             }
-          }  
+          }
         }
-      }
       }
     }
   }

@@ -220,6 +220,21 @@ pipeline {
         }
       }
     }
+    stage ("Images Push to Registries") {
+      when { expression {"PUSH".equals(env.gitlabActionType)} }
+      steps {
+        script {
+          triggerSlaveJob ('RAN-DockerHub-Push', 'Push-to-Docker-Hub')
+        }
+        post {
+          failure {
+            script {
+              currentBuild.result = 'FAILURE'
+            }
+          }
+        }
+      }
+    }
   }
   post {
     always {
@@ -247,6 +262,7 @@ pipeline {
           echo "This is a MERGE event"
           addGitLabMRComment comment: message
         }
+        echo "Pipeline is SUCCESSFUL"
       }
     }
     failure {
@@ -256,6 +272,7 @@ pipeline {
           echo "This is a MERGE event"
           addGitLabMRComment comment: message
         }
+        echo "Pipeline FAILED"
       }
     }
   }

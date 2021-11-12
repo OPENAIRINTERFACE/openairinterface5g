@@ -33,7 +33,7 @@
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
 #include "common/ran_context.h"
-
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
@@ -318,7 +318,16 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
     scs_scaling = scs_scaling>>2;
   uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   uint16_t sco = absolute_diff%(12*scs_scaling);
-  AssertFatal(sco==0,"absoluteFrequencySSB has a subcarrier offset of %d while it should be alligned with CRBs\n",sco);
+  // values of subcarrier offset larger than the limit only indicates CORESET for Type0-PDCCH CSS set is not present
+  uint8_t ssb_SubcarrierOffset_limit = 0;
+  if(frequency_range == FR1) {
+    ssb_SubcarrierOffset_limit = 24;
+  } else {
+    ssb_SubcarrierOffset_limit = 12;
+  }
+  if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
+    AssertFatal(sco==(scs_scaling * ssb_SubcarrierOffset),"absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
+
   cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scs_scaling) - 10; //absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
   cfg->num_tlv++;
@@ -421,9 +430,10 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int pusch_AntennaPorts,
                            int sib1_tda,
                            NR_ServingCellConfigCommon_t *scc,
-	                         int add_ue,
+                           NR_BCCH_BCH_Message_t *mib,
+	                   int add_ue,
                            uint32_t rnti,
-	                         NR_CellGroupConfig_t *CellGroup) {
+	                   NR_CellGroupConfig_t *CellGroup) {
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
@@ -458,7 +468,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                   ssb_SubcarrierOffset,
                   pdsch_AntennaPorts,
                   pusch_AntennaPorts,
-                  scc);
+		  scc);
     LOG_D(NR_MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   
     // if in nFAPI mode 
@@ -519,7 +529,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       }
     }
   }
-  
+ 
+  if (mib) RC.nrmac[Mod_idP]->common_channels[0].mib = mib; 
+ 
   if (CellGroup) {
 
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
@@ -531,11 +543,13 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
         calculate_preferred_dl_tda(Mod_idP, bwp);
       }
+    } else {
+      calculate_preferred_dl_tda(Mod_idP, NULL);
     }
 
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
     if(ubwpList) {
-      AssertFatal(ubwpList->list.count > 0, "downlinkBWP_ToAddModList no BWPs!\n");
+      AssertFatal(ubwpList->list.count > 0, "uplinkBWP_ToAddModList no BWPs!\n");
       for (int i = 0; i < ubwpList->list.count; ++i) {
         const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
         calculate_preferred_ul_tda(Mod_idP, ubwp);
@@ -592,9 +606,26 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
     } else { // CellGroup has been updated
       const int UE_id = find_nr_UE_id(Mod_idP,rnti);
+      int target_ss;
       UE_info->CellGroup[UE_id] = CellGroup;
       LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
+      // update coreset/searchspace
+      void *bwpd = NULL;
+      target_ss = NR_SearchSpace__searchSpaceType_PR_common;
+      if ((UE_info->UE_sched_ctrl[UE_id].active_bwp)) {
+        target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+        bwpd = (void*)UE_info->UE_sched_ctrl[UE_id].active_bwp->bwp_Dedicated;
+      }
+      else if (CellGroup->spCellConfig &&
+                 CellGroup->spCellConfig->spCellConfigDedicated &&
+                 (CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
+        target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+        bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+      }
+      UE_info->UE_sched_ctrl[UE_id].search_space = get_searchspace(scc, bwpd, target_ss);
+      UE_info->UE_sched_ctrl[UE_id].coreset = get_coreset(Mod_idP, scc, bwpd, UE_info->UE_sched_ctrl[UE_id].search_space, target_ss);
+      UE_info->UE_sched_ctrl[UE_id].maxL = 2;
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);

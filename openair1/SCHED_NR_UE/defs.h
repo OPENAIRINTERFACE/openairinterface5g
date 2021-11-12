@@ -340,8 +340,6 @@ uint16_t nr_get_n1_pucch(PHY_VARS_NR_UE *phy_vars_ue,
 */
 UE_MODE_t get_nrUE_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t gNB_index);
 
-uint8_t get_ra_PreambleIndex(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_id);
-
 /*! \brief This function implements the power control mechanism for PUCCH from 36.213.
     @param phy_vars_ue PHY variables
     @param proc Pointer to proc descriptor

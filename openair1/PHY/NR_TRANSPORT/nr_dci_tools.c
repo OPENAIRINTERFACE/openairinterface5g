@@ -31,6 +31,7 @@
  */
 
 #include "nr_dci.h"
+#include "common/utils/nr/nr_common.h"
 
 //#define DEBUG_FILL_DCI
 
@@ -153,7 +154,7 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
       C = N_reg/(bsize*R);
     }
     
-    LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", m, bsize, R, pdcch_pdu_rel15->dci_pdu[d].CceIndex);
+    if (pdcch_pdu_rel15->dci_pdu[d].RNTI != 0xFFFF) LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", m, bsize, R, pdcch_pdu_rel15->dci_pdu[d].CceIndex);
     for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
       cce = &gNB->cce_list[d][cce_idx];
       cce->cce_idx = pdcch_pdu_rel15->dci_pdu[d].CceIndex + cce_idx;
@@ -202,107 +203,3 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_r
     ret |= ((field>>i)&1)<<(size-i-1);
   return ret;
 }*/
-int16_t find_nr_pdcch(int frame,int slot, PHY_VARS_gNB *gNB,find_type_t type) {
-
-  uint16_t i;
-  int16_t first_free_index=-1;
-
-  AssertFatal(gNB!=NULL,"gNB is null\n");
-  for (i=0; i<NUMBER_OF_NR_PDCCH_MAX; i++) {
-    LOG_D(PHY,"searching for frame.slot %d.%d : pdcch_index %d frame.slot %d.%d, first_free_index %d\n", frame,slot,i,gNB->pdcch_pdu[i].frame,gNB->pdcch_pdu[i].slot,first_free_index);
-    if ((gNB->pdcch_pdu[i].frame == frame) &&
-        (gNB->pdcch_pdu[i].slot==slot))       return i;
-    else if ( gNB->pdcch_pdu[i].frame==-1 && first_free_index==-1) first_free_index=i;
-  }
-  if (type == SEARCH_EXIST) return -1;
-
-  return first_free_index;
-}
-
-
-void nr_fill_dci(PHY_VARS_gNB *gNB,
-                 int frame,
-                 int slot,
-		 nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu) {
-
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu_rel15;
-  NR_gNB_DLSCH_t *dlsch; 
-
-  int pdcch_id = find_nr_pdcch(frame,slot,gNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal(pdcch_id>=0 && pdcch_id<NUMBER_OF_NR_PDCCH_MAX,"Cannot find space for PDCCH, exiting\n");
-  memcpy((void*)&gNB->pdcch_pdu[pdcch_id].pdcch_pdu,(void*)pdcch_pdu,sizeof(*pdcch_pdu));
-  gNB->pdcch_pdu[pdcch_id].frame = frame;
-  gNB->pdcch_pdu[pdcch_id].slot  = slot;
-
-  for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
-
-    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu[i].Payload;
-
-    int dlsch_id = find_nr_dlsch(pdcch_pdu_rel15->dci_pdu[i].RNTI,gNB,SEARCH_EXIST_OR_FREE);
-    if( (dlsch_id<0) || (dlsch_id>=gNB->number_of_nr_dlsch_max) ){
-      LOG_E(PHY,"illegal dlsch_id found!!! rnti %04x dlsch_id %d\n",(unsigned int)pdcch_pdu_rel15->dci_pdu[i].RNTI,dlsch_id);
-      return;
-    }
-    
-    dlsch = gNB->dlsch[dlsch_id][0];
-    int harq_pid = 0;
-
-    dlsch->slot_tx[slot]             = 1;
-    dlsch->harq_ids[frame % 2][slot] = 0;
-    AssertFatal(harq_pid < 8 && harq_pid >= 0,
-		"illegal harq_pid %d\n",harq_pid);
-    
-    dlsch->harq_mask                |= (1<<harq_pid);
-    dlsch->rnti                      = pdcch_pdu_rel15->dci_pdu[i].RNTI;
-    
-    //    nr_fill_cce_list(gNB,0);
-  }
-
-}
-
-
-int16_t find_nr_ul_dci(int frame,int slot, PHY_VARS_gNB *gNB,find_type_t type) {
-
-  uint16_t i;
-  int16_t first_free_index=-1;
-
-  AssertFatal(gNB!=NULL,"gNB is null\n");
-  for (i=0; i<NUMBER_OF_NR_PDCCH_MAX; i++) {
-    LOG_D(PHY,"searching for frame.slot %d.%d : ul_pdcch_index %d frame.slot %d.%d, first_free_index %d\n", frame,slot,i,gNB->ul_pdcch_pdu[i].frame,gNB->ul_pdcch_pdu[i].slot,first_free_index);
-    if ((gNB->ul_pdcch_pdu[i].frame == frame) &&
-        (gNB->ul_pdcch_pdu[i].slot==slot))       return i;
-    else if (gNB->ul_pdcch_pdu[i].frame==-1 && first_free_index==-1) first_free_index=i;
-  }
-  if (type == SEARCH_EXIST) return -1;
-
-  return first_free_index;
-}
-
-
-void nr_fill_ul_dci(PHY_VARS_gNB *gNB,
-		    int frame,
-		    int slot,
-		    nfapi_nr_ul_dci_request_pdus_t *pdcch_pdu) {
-
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-
-  int pdcch_id = find_nr_ul_dci(frame,slot,gNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal(pdcch_id>=0 && pdcch_id<NUMBER_OF_NR_PDCCH_MAX,"Cannot find space for UL PDCCH, exiting\n");
-  memcpy((void*)&gNB->ul_pdcch_pdu[pdcch_id].pdcch_pdu,(void*)pdcch_pdu,sizeof(*pdcch_pdu));
-  gNB->ul_pdcch_pdu[pdcch_id].frame = frame;
-  gNB->ul_pdcch_pdu[pdcch_id].slot  = slot;
-
-  for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
-
-    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->dci_pdu[i].Payload;
-
-    // if there's no DL DCI then generate CCE list
-    //    nr_fill_cce_list(gNB,0);  
-    /*
-    LOG_D(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
-    LOG_D(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
-    */
-
-  }
-
-}

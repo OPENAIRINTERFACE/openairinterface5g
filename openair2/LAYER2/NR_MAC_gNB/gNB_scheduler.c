@@ -46,9 +46,6 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#include "openair1/PHY/defs_gNB.h"
-#include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
-
 #include "intertask_interface.h"
 
 #include "executables/softmodem-common.h"
@@ -61,80 +58,6 @@
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
 uint8_t vnf_first_sched_entry = 1;
-
-void clear_mac_stats(gNB_MAC_INST *gNB) {
-  memset((void*)gNB->UE_info.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
-}
-#define MACSTATSSTRLEN 16384
-void dump_mac_stats(gNB_MAC_INST *gNB)
-{
-  NR_UE_info_t *UE_info = &gNB->UE_info;
-  int num = 1;
-  FILE *fd=fopen("nrMAC_stats.log","w");
-  AssertFatal(fd!=NULL,"Cannot open nrMAC_stats.log, error %s\n",strerror(errno));
-  char output[MACSTATSSTRLEN];
-  memset(output,0,MACSTATSSTRLEN);
-  int stroff=0;
-  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
-    stroff = sprintf(output,"UE ID %d RNTI %04x (%d/%d)\n", UE_id, UE_info->rnti[UE_id], num++, UE_info->num_UEs);
-    LOG_I(NR_MAC, "UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm\n",
-      UE_id,
-      UE_info->rnti[UE_id],
-      num++,
-      UE_info->num_UEs,
-      UE_info->UE_sched_ctrl[UE_id].ph,
-      UE_info->UE_sched_ctrl[UE_id].pcmax);
-    NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
-    const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
-    stroff+=sprintf(output+stroff,"UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
-          UE_id,
-          stats->dlsch_rounds[0], stats->dlsch_rounds[1],
-          stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
-          avg_rsrp, stats->num_rsrp_meas);
-    LOG_I(NR_MAC, "UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, average RSRP %d (%d meas)\n",
-      UE_id,
-      stats->dlsch_rounds[0], stats->dlsch_rounds[1],
-      stats->dlsch_rounds[2], stats->dlsch_rounds[3], stats->dlsch_errors,
-      avg_rsrp, stats->num_rsrp_meas);
-    stats->num_rsrp_meas = 0;
-    stats->cumul_rsrp = 0 ;
-    stroff+=sprintf(output+stroff,"UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
-    stroff+=sprintf(output+stroff,"UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_DTX %d, ulsch_errors %d\n",
-                    UE_id,
-                    stats->ulsch_rounds[0], stats->ulsch_rounds[1],
-                    stats->ulsch_rounds[2], stats->ulsch_rounds[3],
-                    stats->ulsch_DTX,
-                    stats->ulsch_errors);
-    stroff+=sprintf(output+stroff,
-                    "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
-                    UE_id,
-                    stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
-    LOG_I(NR_MAC, "UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
-    LOG_I(NR_MAC, "UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_DTX %d, ulsch_errors %d\n",
-          UE_id,
-          stats->ulsch_rounds[0], stats->ulsch_rounds[1],
-          stats->ulsch_rounds[2], stats->ulsch_rounds[3],
-          stats->ulsch_DTX,
-          stats->ulsch_errors);
-    LOG_I(NR_MAC,
-          "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
-          UE_id,
-          stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
-    for (int lc_id = 0; lc_id < 63; lc_id++) {
-      if (stats->lc_bytes_tx[lc_id] > 0) {
-        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
-	LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
-      }
-      if (stats->lc_bytes_rx[lc_id] > 0) {
-        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
-	LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
-      }
-    }
-  }
-  print_meas(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL);
-  if (stroff>0) fprintf(fd,"%s",output);
-  fclose(fd);
-}
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 int CC_idP,
@@ -354,6 +277,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
 
   const int bwp_id = 1;
+  char stats_output[16384];
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
@@ -384,6 +308,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   memset(RC.nrmac[module_idP]->cce_list[0][0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
+  memset(RC.nrmac[module_idP]->cce_list[0][1],0,MAX_NUM_CCE*sizeof(int)); // coreset1 on initialBWP
   memset(RC.nrmac[module_idP]->cce_list[bwp_id][1],0,MAX_NUM_CCE*sizeof(int)); // coresetid 1
   NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id])
@@ -420,8 +345,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
 
-  if ((slot == 0) && (frame & 127) == 0) dump_mac_stats(RC.nrmac[module_idP]);
-
+  if ((slot == 0) && (frame & 127) == 0) {
+     stats_output[0]='\0';
+     dump_mac_stats(RC.nrmac[module_idP],stats_output,16384);
+     LOG_I(NR_MAC,"Frame.Slot %d.%d\n%s\n",frame,slot,stats_output);
+  }
 
   // This schedules MIB
   schedule_nr_mib(module_idP, frame, slot);

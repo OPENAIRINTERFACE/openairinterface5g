@@ -28,6 +28,9 @@
 
 FROM registry.access.redhat.com/ubi8/ubi:latest AS ran-build
 ARG NEEDED_GIT_PROXY
+ENV TZ=Europe/Paris
+ENV BUILD_UHD_FROM_SOURCE=True
+ENV UHD_VERSION=3.15.0.0
 
 COPY tmp/ca/redhat-uep.pem /etc/rhsm/ca
 COPY tmp/entitlement/*.pem /etc/pki/entitlement

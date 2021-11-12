@@ -12,7 +12,8 @@ Ref :
   feptx_prec : 8.0
   feptx_ofdm : 50.0
   feptx_total : 75.0
-  L1 Tx processing : 300.0
+  L1 Tx processing thread 0 : 300.0
+  L1 Tx processing thread 1 : 300.0
   DLSCH encoding : 230.0
   L1 Rx processing : 175.0
   PUSCH inner-receiver : 100.0
@@ -24,7 +25,8 @@ Threshold :
   feptx_prec : 1.25
   feptx_ofdm : 1.25
   feptx_total : 1.25
-  L1 Tx processing : 1.25
+  L1 Tx processing thread 0 : 1.25
+  L1 Tx processing thread 1 : 1.25
   DLSCH encoding : 1.25
   L1 Rx processing : 1.25
   PUSCH inner-receiver : 1.25

@@ -39,11 +39,10 @@
 #define GTPV1U_ENB_END_MARKER_REQ(mSGpTR)     (mSGpTR)->ittiMsg.Gtpv1uEndMarkerReq
 #define GTPV1U_ENB_END_MARKER_IND(mSGpTR)     (mSGpTR)->ittiMsg.Gtpv1uEndMarkerInd
 
-#define GTPV1U_ENB_S1_REQ(mSGpTR)    (mSGpTR)->ittiMsg.gtpv1uS1Req
+#define GTPV1U_REQ(mSGpTR)    (mSGpTR)->ittiMsg.gtpv1uReq
 
 #define GTPV1U_GNB_DELETE_TUNNEL_REQ(mSGpTR)  (mSGpTR)->ittiMsg.NRGtpv1uDeleteTunnelReq
 #define GTPV1U_GNB_DELETE_TUNNEL_RESP(mSGpTR) (mSGpTR)->ittiMsg.NRGtpv1uDeleteTunnelResp
-#define GTPV1U_GNB_NG_REQ(mSGpTR)             (mSGpTR)->ittiMsg.gtpv1uNGReq
 #define GTPV1U_GNB_TUNNEL_DATA_REQ(mSGpTR)    (mSGpTR)->ittiMsg.NRGtpv1uTunnelDataReq
 
 #define GTPV1U_ALL_TUNNELS_TEID (teid_t)0xFFFFFFFF
@@ -174,18 +173,13 @@ typedef struct gtpv1u_enb_end_marker_ind_s {
 } gtpv1u_enb_end_marker_ind_t;
 
 typedef struct {
-  in_addr_t             enb_ip_address_for_S1u_S12_S4_up;
-  tcp_udp_port_t        enb_port_for_S1u_S12_S4_up;
-  char                  addrStr[256];
-  char                  portStr[256];
-} Gtpv1uS1Req;
+  in_addr_t             localAddr;
+  tcp_udp_port_t        localPort;
+  char                  localAddrStr[256];
+  char                  localPortStr[256];
+} Gtpv1uReq;
 
-typedef struct {
-  in_addr_t             gnb_ip_address_for_NGu_up;
-  tcp_udp_port_t        gnb_port_for_NGu_up;
-  char                  addrStr[256];
-  char                  portStr[256];
-} Gtpv1uNGReq;
+
 typedef struct gtpv1u_gnb_create_tunnel_req_s {
   rnti_t                 rnti;
   int                    num_tunnels;

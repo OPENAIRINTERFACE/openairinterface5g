@@ -37,12 +37,6 @@
 #include "nr_mac.h"
 #include "openair1/PHY/impl_defs_nr.h"
 
-uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
-
-lte_frame_type_t get_frame_type(uint16_t nr_bandP, uint8_t scs_index);
-
-int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index);
-
 uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, uint32_t bw);
@@ -53,7 +47,8 @@ int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slo
 
 int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, slot_t slotP, lte_frame_type_t frame_type);
 
-uint16_t nr_dci_size(const NR_BWP_UplinkCommon_t *initialULBWP,
+uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,
+                     const NR_BWP_UplinkCommon_t *initialULBWP,
                      const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
@@ -63,7 +58,8 @@ uint16_t nr_dci_size(const NR_BWP_UplinkCommon_t *initialULBWP,
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
-                                 NR_SearchSpace_t *ss);
+                                 NR_SearchSpace_t *ss,
+                                 int maxL);
 
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,
                                                uint16_t *slot_period,
@@ -95,8 +91,6 @@ int get_nr_prach_occasion_info_from_index(uint8_t index,
                                  uint16_t *N_RA_sfn,
                                  uint8_t *max_association_period);
 
-uint8_t get_nr_prach_duration(uint8_t prach_format);
-
 uint8_t get_pusch_mcs_table(long *mcs_Table,
                             int is_tp,
                             int dci_format,
@@ -119,7 +113,6 @@ int64_t *get_prach_config_info(frequency_range_t freq_range,
 
 uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
 
-int get_num_dmrs(uint16_t dmrs_mask );
 uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position);
 int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength, uint8_t start_symbolt, uint8_t dmrs_typeA_position);
 
@@ -134,6 +127,7 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
                                            uint16_t ssb_start_symbol,
                                            NR_SubcarrierSpacing_t scs_ssb,
                                            frequency_range_t frequency_range,
+                                           int nr_band,
                                            uint32_t ssb_index,
                                            uint32_t ssb_period,
                                            uint32_t ssb_offset_point_a);
@@ -148,7 +142,7 @@ void get_info_from_tda_tables(int default_abc,
                               int *nrOfSymbols);
 
 void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
-uint8_t fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config, int L);
+void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
 
 uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t nr_prbs,
@@ -192,7 +186,7 @@ uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Posi
 @returns                   transformPrecoding value */
 uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
                                const NR_PUSCH_Config_t *pusch_config,
-                               const NR_BWP_Uplink_t *ubwp,
+                               const NR_BWP_UplinkDedicated_t *ubwp,
                                uint8_t *dci_format,
                                int rnti_type,
                                uint8_t configuredGrant);
