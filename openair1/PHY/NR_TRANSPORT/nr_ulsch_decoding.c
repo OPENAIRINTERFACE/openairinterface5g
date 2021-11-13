@@ -463,7 +463,12 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
-  harq_process->round = nr_rv_round_map[pusch_pdu->pusch_data.rv_index];
+  for (int round = 0; round < 4; round++) {
+    if (nr_rv_round_map[round] == pusch_pdu->pusch_data.rv_index) {
+      harq_process->round = round;
+      break;
+    }
+  }
 
   harq_process->new_rx = false; // flag to indicate if this is a new reception for this harq (initialized to false)
   if (harq_process->round == 0) {
