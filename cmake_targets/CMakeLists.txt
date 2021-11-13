@@ -2120,6 +2120,7 @@ set (MAC_NR_SRC
   ${NR_GNB_MAC_DIR}/gNB_scheduler_phytest.c
   ${NR_GNB_MAC_DIR}/gNB_scheduler_uci.c
   ${NR_GNB_MAC_DIR}/gNB_scheduler_RA.c
+  ${NR_GNB_MAC_DIR}/gNB_scheduler_SRS.c
  )
 
 

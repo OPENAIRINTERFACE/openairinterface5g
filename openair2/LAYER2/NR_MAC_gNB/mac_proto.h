@@ -190,6 +190,8 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP);
 
+void nr_schedule_srs(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+
 void nr_csirs_scheduling(int Mod_idP,
                          frame_t frame,
                          sub_frame_t slot,
