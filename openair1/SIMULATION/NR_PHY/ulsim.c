@@ -91,7 +91,6 @@ double cpuf;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
-uint32_t N_RB_DL = 106;
 
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t DUuniqInstance=0;
@@ -644,16 +643,37 @@ int main(int argc, char **argv)
   double sampling_frequency;
   double bandwidth;
 
-  if (N_RB_UL >= 217) sampling_frequency = 122.88;
-  else if (N_RB_UL >= 106) sampling_frequency = 61.44;
-  else if (N_RB_UL >= 32) sampling_frequency = 32.72;
-  else { printf("Need at least 106 PRBs\b"); exit(-1); }
-  if (N_RB_UL == 273) bandwidth = 100;
-  else if (N_RB_UL == 217) bandwidth = 80;
-  else if (N_RB_UL == 106) bandwidth = 40;
-  else if (N_RB_UL == 32) bandwidth = 50;
-  else { printf("Add N_RB_UL %d\n",N_RB_UL); exit(-1); }
+  if (mu == 0 && N_RB_UL == 25 ) {
+    sampling_frequency = 7.68;
+    bandwidth = 5;
+  }
+  else if (mu == 1 && N_RB_UL == 273) {
+    sampling_frequency = 122.88;
+    bandwidth = 100;
+  }
+  else if (mu == 1 && N_RB_UL == 217) {
+    sampling_frequency = 122.88;
+    bandwidth = 80;
+  }
+  else if (mu == 1 && N_RB_UL == 106) {
+    sampling_frequency = 61.44;
+    bandwidth = 40;
+  }
+  else if (mu == 1 && N_RB_UL == 24) {
+    sampling_frequency = 15.36;
+    bandwidth = 10;
+  }
+  else if (mu == 3 && N_RB_UL == 32) {
+    sampling_frequency = 61.44;
+    bandwidth = 50;
+  }
+  else {
+    printf("Add N_RB_UL %d\n",N_RB_UL);
+    exit(-1);
+  }
+
   LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);  
+
   if (openair0_cfg[0].threequarter_fs == 1) sampling_frequency*=.75;
 
   UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,

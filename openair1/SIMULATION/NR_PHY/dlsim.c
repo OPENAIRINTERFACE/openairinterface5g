@@ -96,7 +96,6 @@ uint16_t sl_ahead=0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
-uint32_t N_RB_DL = 106;
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
@@ -832,10 +831,14 @@ int main(int argc, char **argv)
 
   double fs,bw;
 
-  if (mu == 1 && N_RB_DL == 217) { 
+  if (mu == 0 && N_RB_DL == 25) {
+    fs = 7.68e6;
+    bw = 5e6;
+  }
+  else if (mu == 1 && N_RB_DL == 217) {
     fs = 122.88e6;
     bw = 80e6;
-  }					       
+  }
   else if (mu == 1 && N_RB_DL == 245) {
     fs = 122.88e6;
     bw = 90e6;
@@ -855,6 +858,10 @@ int main(int argc, char **argv)
   else if (mu == 1 && N_RB_DL == 162) { 
     fs = 61.44e6;
     bw = 60e6;
+  }
+  else if (mu == 1 && N_RB_DL == 24) {
+    fs = 15.36e6;
+    bw = 10e6;
   }
   else if (mu == 3 && N_RB_DL == 66) {
     fs = 122.88e6;
