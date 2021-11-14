@@ -69,9 +69,7 @@ typedef struct {
 } pdcp_params_t;
 
 
-#ifndef PDCP_USE_NETLINK
-  #define PDCP_USE_NETLINK          ( get_pdcp_optmask() & PDCP_USE_NETLINK_BIT)
-#endif
+#define PDCP_USE_NETLINK          ( get_pdcp_optmask() & PDCP_USE_NETLINK_BIT)
 #define LINK_ENB_PDCP_TO_IP_DRIVER  ( get_pdcp_optmask() & LINK_ENB_PDCP_TO_IP_DRIVER_BIT)
 #define LINK_ENB_PDCP_TO_GTPV1U     ( get_pdcp_optmask() & LINK_ENB_PDCP_TO_GTPV1U_BIT)
 #define UE_NAS_USE_TUN              ( get_pdcp_optmask() & UE_NAS_USE_TUN_BIT)
@@ -513,7 +511,6 @@ typedef struct {
 #define REORDERING_WINDOW_SN_7BIT 64
 #define REORDERING_WINDOW_SN_12BIT 2048
 
-extern signed int             pdcp_2_nas_irq;
 extern pdcp_stats_t              UE_pdcp_stats[MAX_MOBILES_PER_ENB];
 extern pdcp_stats_t              eNB_pdcp_stats[NUMBER_OF_eNB_MAX];
 

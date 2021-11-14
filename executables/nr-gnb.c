@@ -76,10 +76,6 @@
 #include "gnb_paramdef.h"
 
 
-#ifndef OPENAIR2
-  #include "UTIL/OTG/otg_extern.h"
-#endif
-
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include <executables/softmodem-common.h>
@@ -268,13 +264,13 @@ void rx_func(void *param) {
 
   // Call the scheduler
   start_meas(&gNB->ul_indication_stats);
-  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+//  pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
   gNB->UL_INFO.module_id = gNB->Mod_id;
   gNB->UL_INFO.CC_id     = gNB->CC_id;
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
-  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+//  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
   stop_meas(&gNB->ul_indication_stats);
   
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
@@ -342,7 +338,7 @@ static void *process_stats_thread(void *param) {
   reset_meas(&gNB->ul_indication_stats);
   reset_meas(&gNB->rx_pusch_stats);
   reset_meas(&gNB->ulsch_decoding_stats);
-
+  reset_meas(&gNB->schedule_response_stats);
   wait_sync("process_stats_thread");
 
   while(!oai_exit)
@@ -353,6 +349,7 @@ static void *process_stats_thread(void *param) {
     print_meas(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL);
     print_meas(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL);
     print_meas(&gNB->ul_indication_stats, "UL Indication", NULL, NULL);
+    print_meas(&gNB->schedule_response_stats,"Schedule Response",NULL,NULL);
     print_meas(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL);
     print_meas(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL);
   }
@@ -387,15 +384,15 @@ void init_gNB_Tpool(int inst) {
   LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->pusch_proc_threads,numCPU);
   int threadCnt = min(numCPU, gNB->pusch_proc_threads);
   if (threadCnt < 2) LOG_E(PHY,"Number of threads for gNB should be more than 1. Allocated only %d\n",threadCnt);
-  char ul_pool[80];
-  sprintf(ul_pool,"-1");
+  char pool[80];
+  sprintf(pool,"-1");
   int s_offset = 0;
   for (int icpu=1; icpu<threadCnt; icpu++) {
-    sprintf(ul_pool+2+s_offset,",-1");
+    sprintf(pool+2+s_offset,",-1");
     s_offset += 3;
   }
-  if (getenv("noThreads")) strcpy(ul_pool, "n");
-  initTpool(ul_pool, gNB->threadPool, false);
+  if (getenv("noThreads")) strcpy(pool, "n");
+  initTpool(pool, gNB->threadPool, false);
   // ULSCH decoder result FIFO
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   initNotifiedFIFO(gNB->respDecode);

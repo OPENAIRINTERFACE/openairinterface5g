@@ -206,7 +206,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     nr_sequences=8>>(1-pucch_pdu->sr_flag);
   }
 
-  LOG_D(PHY,"pucch0: nr_symbols %d, start_symbol %d, prb_start %d, second_hop_prb %d,  group_hop_flag %d, sequence_hop_flag %d, O_ACK %d, O_SR %d, mcs %d initial_cyclic_shift %d\n",pucch_pdu->nr_of_symbols,pucch_pdu->start_symbol_index,pucch_pdu->prb_start,pucch_pdu->second_hop_prb,pucch_pdu->group_hop_flag,pucch_pdu->sequence_hop_flag,pucch_pdu->bit_len_harq,pucch_pdu->sr_flag,mcs[0],pucch_pdu->initial_cyclic_shift);
+  LOG_D(PHY,"pucch0: nr_symbols %d, start_symbol %d, prb_start %d, second_hop_prb %d,  group_hop_flag %d, sequence_hop_flag %d, O_ACK %d, O_SR %d, mcs %d initial_cyclic_shift %d\n",
+        pucch_pdu->nr_of_symbols,pucch_pdu->start_symbol_index,pucch_pdu->prb_start,pucch_pdu->second_hop_prb,pucch_pdu->group_hop_flag,pucch_pdu->sequence_hop_flag,pucch_pdu->bit_len_harq,
+        pucch_pdu->sr_flag,mcs[0],pucch_pdu->initial_cyclic_shift);
 
   int cs_ind = get_pucch0_cs_lut_index(gNB,pucch_pdu);
   /*
@@ -324,7 +326,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     LOG_D(PHY,"PUCCH IDFT[%d/%d] = (%d,%d)=>%f\n",
           mcs[i],seq_index,corr_re[0][0],corr_im[0][0],
           10*log10((double)corr_re[0][0]*corr_re[0][0] + (double)corr_im[0][0]*corr_im[0][0]));
-    if (pucch_pdu->nr_of_symbols==2) 
+    if (pucch_pdu->nr_of_symbols==2)
        LOG_D(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%d,%d)=>%f\n",
              mcs[i],seq_index,corr_re[0][1],corr_im[0][1],
              10*log10((double)corr_re[0][1]*corr_re[0][1] + (double)corr_im[0][1]*corr_im[0][1]));
@@ -428,8 +430,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = no_conf ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = index&0x01;
-    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ value %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d, energy %f, sync_pos %d\n",
-          frame,slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10,10*log10((double)sigenergy),gNB->ulsch_stats[0].sync_pos);
+    LOG_D(NR_PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ value %d SR_flag %d with confidence level (0 is good, 1 is bad) %d xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d, energy %f, sync_pos %d\n",
+          frame,slot,uci_pdu->harq->harq_list[0].harq_value,pucch_pdu->sr_flag,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10,10*log10((double)sigenergy),gNB->ulsch_stats[0].sync_pos);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
@@ -445,8 +447,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2);
     uci_pdu->harq->harq_list[1].harq_value = index&0x01;
     uci_pdu->harq->harq_list[0].harq_value = (index>>1)&0x01;
-    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values %d and %d with confidence level (0 is good, 1 is bad) %d, xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d,sync_pos %d\n",
-          frame,slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10,gNB->ulsch_stats[0].sync_pos);
+    LOG_D(NR_PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values %d and %d SR_flag %d with confidence level (0 is good, 1 is bad) %d, xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d,sync_pos %d\n",
+          frame,slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,pucch_pdu->sr_flag,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10,gNB->ulsch_stats[0].sync_pos);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;

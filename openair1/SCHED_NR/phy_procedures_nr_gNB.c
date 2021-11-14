@@ -401,10 +401,8 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 
 void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id, uint8_t harq_pid, uint8_t crc_flag, int dtx_flag) {
 
-  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+  //pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
-  int timing_advance_update, cqi;
-  int sync_pos;
   NR_gNB_ULSCH_t                       *ulsch                 = gNB->ulsch[ULSCH_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
   NR_gNB_SCH_STATS_t *stats=get_ulsch_stats(gNB,ulsch);
@@ -412,19 +410,20 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   nfapi_nr_pusch_pdu_t *pusch_pdu = &harq_process->ulsch_pdu;
 
   //  pdu->data                              = gNB->ulsch[ULSCH_id+1][0]->harq_processes[harq_pid]->b;
-  sync_pos                               = nr_est_timing_advance_pusch(gNB, ULSCH_id); // estimate timing advance for MAC
+  int sync_pos = nr_est_timing_advance_pusch(gNB, ULSCH_id); // estimate timing advance for MAC
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   uint16_t bw_scaling = 16 * gNB->frame_parms.ofdm_symbol_size / 2048;
-  int sync_pos_rounded;
+
   // do some integer rounding to improve TA accuracy
+  int sync_pos_rounded;
   if (sync_pos > 0)
     sync_pos_rounded = sync_pos + (bw_scaling / 2) - 1;
   else
-    sync_pos_rounded = sync_pos - (bw_scaling / 2) - 1;
+    sync_pos_rounded = sync_pos - (bw_scaling / 2) + 1;
   if (stats) stats->sync_pos = sync_pos;
 
-  timing_advance_update = sync_pos_rounded / bw_scaling;
+  int timing_advance_update = sync_pos_rounded / bw_scaling;
 
   // put timing advance command in 0..63 range
   timing_advance_update += 31;
@@ -449,6 +448,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   LOG_D(PHY, "Estimated SNR for PUSCH is = %f dB (ulsch_power %f, noise %f)\n", SNRtimes10/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot)/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot)/10.0);
 
+  int cqi;
   if      (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
   else                        cqi=(640+SNRtimes10)/5;
@@ -526,7 +526,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   gNB->UL_INFO.rx_ind.number_of_pdus++;
 
-  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+//  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 }
 
 // Function to fill UL RB mask to be used for N0 measurements

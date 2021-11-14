@@ -371,6 +371,7 @@ int main(int argc, char **argv)
   uint8_t n_tx=1,n_rx=1;
   uint8_t round;
   uint8_t num_rounds = 4;
+  char gNBthreads[128]="n";
 
   channel_desc_t *gNB2UE;
   //uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
@@ -432,9 +433,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-
-  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:D:e:m:w:T:U:q")) != -1) {
-
+  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:d:e:m:w:T:U:qX:")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -637,7 +636,12 @@ int main(int argc, char **argv)
         dmrs_arg[i] = atoi(argv[optind++]);
       }
       break;
-
+      
+    case 'X':
+      strncpy(gNBthreads, optarg, sizeof(gNBthreads));
+      gNBthreads[sizeof(gNBthreads)-1]=0;
+      break;
+      
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -673,7 +677,8 @@ int main(int argc, char **argv)
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
-      printf("-D number of dlsch threads, 0: no dlsch parallelization\n");
+      printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
+      printf("-X gNB thread pool configuration, n => no threads");
       exit (-1);
       break;
     }
@@ -829,6 +834,14 @@ int main(int argc, char **argv)
     fs = 61.44e6;
     bw = 40e6;
   }
+  else if (mu == 1 && N_RB_DL == 133) { 
+    fs = 61.44e6;
+    bw = 50e6;
+  }
+  else if (mu == 1 && N_RB_DL == 162) { 
+    fs = 61.44e6;
+    bw = 60e6;
+  }
   else if (mu == 3 && N_RB_DL == 66) {
     fs = 122.88e6;
     bw = 100e6;
@@ -968,8 +981,7 @@ int main(int argc, char **argv)
   snrRun = 0;
 
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
-  char tp_param[] = "n";
-  initTpool(tp_param, gNB->threadPool, true);
+  initTpool(gNBthreads, gNB->threadPool, true);
   gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   initNotifiedFIFO(gNB->resp_L1_tx);
   // we create 2 threads for L1 tx processing
@@ -1223,8 +1235,8 @@ int main(int argc, char **argv)
         UE->dlsch[UE_proc.thread_id][0][0]->max_ldpc_iterations+1)
         n_errors++;
 
-      NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars[UE_proc.thread_id];
-      int16_t *UE_llr = pdsch_vars[0]->llr[0];
+      //NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars[UE_proc.thread_id];
+      //int16_t *UE_llr = pdsch_vars[0]->llr[0];
 
       TBS                  = UE_harq_process->TBS;//rel15->TBSize[0];
       uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
@@ -1239,6 +1251,7 @@ int main(int argc, char **argv)
         printf("[DLSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5u \n",available_bits, (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2) );
       }
 
+      /*
       for (i = 0; i < available_bits; i++) {
 
 	if(((gNB_dlsch->harq_process.f[i] == 0) && (UE_llr[i] <= 0)) ||
@@ -1252,6 +1265,7 @@ int main(int argc, char **argv)
 	  }
 
       }
+      */
       for (i = 0; i < TBS; i++) {
 
 	estimated_output_bit[i] = (UE_harq_process->b[i/8] & (1 << (i & 7))) >> (i & 7);
@@ -1295,11 +1309,9 @@ int main(int argc, char **argv)
     printf("\n");
 
     if (print_perf==1) {
-      printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, TBS %d, Kr %d (Zc %d))\n",
+      printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, TBS %d)\n",
 	     1000>>*scc->ssbSubcarrierSpacing, g_rbSize, g_mcsIndex,
-	     msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3,
-	     msgDataTx->dlsch[0][0]->harq_process.K,
-	     msgDataTx->dlsch[0][0]->harq_process.K/((msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3)>3824?22:10));
+	     msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3);
       printDistribution(gNB->phy_proc_tx_0,table_tx,"PHY proc tx");
       printStatIndent2(&gNB->dlsch_encoding_stats,"DLSCH encoding time");
       printStatIndent3(&gNB->dlsch_segmentation_stats,"DLSCH segmentation time");
@@ -1311,6 +1323,9 @@ int main(int argc, char **argv)
       printStatIndent3(&gNB->dlsch_interleaving_stats,  "DLSCH Interleaving time");
       printStatIndent2(&gNB->dlsch_modulation_stats,"DLSCH modulation time");
       printStatIndent2(&gNB->dlsch_scrambling_stats,  "DLSCH scrambling time");
+      printStatIndent2(&gNB->dlsch_layer_mapping_stats, "DLSCH Layer Mapping time");
+      printStatIndent2(&gNB->dlsch_resource_mapping_stats, "DLSCH Resource Mapping time");
+      printStatIndent2(&gNB->dlsch_precoding_stats,"DLSCH Layer Precoding time");
 
 
       printf("\nUE RX function statistics (per %d us slot)\n",1000>>*scc->ssbSubcarrierSpacing);

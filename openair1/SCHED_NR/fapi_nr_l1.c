@@ -148,7 +148,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
 
   gNB = RC.gNB[Mod_id];
-
+  start_meas(&gNB->schedule_response_stats);
   notifiedFIFO_elt_t *res;
   res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
   processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
@@ -248,5 +248,5 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       oai_nfapi_tx_data_req(TX_req);
 
   }
-
+  stop_meas(&gNB->schedule_response_stats);
 }

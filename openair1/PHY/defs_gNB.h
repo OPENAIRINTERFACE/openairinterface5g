@@ -96,20 +96,6 @@ typedef struct {
   uint32_t subframe;
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
-  /// Concatenated sequences
-  uint8_t *e;
-  /// LDPC-code outputs
-  uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
-  /// Interleaver outputs
-  uint8_t *f;
-  /// Number of code segments
-  uint32_t C;
-  /// Number of bits in "small" code segments
-  uint32_t K;
-  /// Number of "Filler" bits
-  uint32_t F;
-  /// Encoder BG
-  uint8_t BG;
   /// LDPC lifting size
   uint32_t Z;
 } NR_DL_gNB_HARQ_t;
@@ -868,6 +854,9 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
   time_stats_t dlsch_scrambling_stats;
+  time_stats_t dlsch_resource_mapping_stats;
+  time_stats_t dlsch_layer_mapping_stats;
+  time_stats_t dlsch_precoding_stats;
   time_stats_t tinput;
   time_stats_t tprep;
   time_stats_t tparity;
@@ -879,6 +868,7 @@ typedef struct PHY_VARS_gNB_s {
 
   time_stats_t rx_pusch_stats;
   time_stats_t ul_indication_stats;
+  time_stats_t schedule_response_stats;
   time_stats_t ulsch_decoding_stats;
   time_stats_t ulsch_rate_unmatching_stats;
   time_stats_t ulsch_ldpc_decoding_stats;

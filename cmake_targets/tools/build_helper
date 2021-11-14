@@ -117,6 +117,9 @@ check_supported_distribution() {
         "rhel8.2")     return 0 ;;
         "rhel8.3")     return 0 ;;
         "rhel8.4")     return 0 ;;
+        "rhel8.5")     return 0 ;;
+        "rhel8.6")     return 0 ;;
+        "rhel8.7")     return 0 ;;
         "centos7")     return 0 ;;
     esac
     return 1

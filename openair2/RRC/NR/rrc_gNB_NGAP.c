@@ -309,7 +309,6 @@ nr_rrc_pdcp_config_security(
   uint8_t                            *k_kdf  = NULL;
   static int                          print_keys= 1;
 
-
   /* Derive the keys from kgnb */
   if (SRB_configList != NULL) {
     nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,

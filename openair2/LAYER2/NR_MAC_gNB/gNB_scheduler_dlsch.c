@@ -382,6 +382,73 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   return offset;
 }
 
+#define BLER_UPDATE_FRAME 10
+#define BLER_FILTER 0.9f
+int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t slot, int UE_id)
+{
+  gNB_MAC_INST *nrmac = RC.nrmac[mod_id];
+  const NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
+  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+
+  NR_DL_bler_stats_t *bler_stats = &nrmac->UE_info.UE_sched_ctrl[UE_id].dl_bler_stats;
+  /* first call: everything is zero. Initialize to sensible default */
+  if (bler_stats->last_frame_slot == 0 && bler_stats->mcs == 0) {
+    bler_stats->last_frame_slot = frame * n + slot;
+    bler_stats->mcs = 9;
+    bler_stats->bler = (nrmac->dl_bler_target_lower + nrmac->dl_bler_target_upper) / 2;
+    bler_stats->rd2_bler = nrmac->dl_rd2_bler_threshold;
+  }
+  const int now = frame * n + slot;
+  int diff = now - bler_stats->last_frame_slot;
+  if (diff < 0) // wrap around
+    diff += 1024 * n;
+
+  const uint8_t old_mcs = bler_stats->mcs;
+  const NR_mac_stats_t *stats = &nrmac->UE_info.mac_stats[UE_id];
+  const int dret3x = stats->dlsch_rounds[3] - bler_stats->dlsch_rounds[3];
+  if (0/*dret3x > 0*/) {
+    /* if there is a third retransmission, decrease MCS for stabilization and
+     * restart averaging window to stabilize transmission */
+    bler_stats->last_frame_slot = now;
+    bler_stats->mcs = max(9, bler_stats->mcs - 1);
+    memcpy(bler_stats->dlsch_rounds, stats->dlsch_rounds, sizeof(stats->dlsch_rounds));
+    LOG_D(MAC, "%4d.%2d: %d retx in 3rd round, setting MCS to %d and restarting window\n", frame, slot, dret3x, bler_stats->mcs);
+    return bler_stats->mcs;
+  }
+  if (diff < BLER_UPDATE_FRAME * n)
+    return old_mcs; // no update
+
+  // last update is longer than x frames ago
+  const int dtx = stats->dlsch_rounds[0] - bler_stats->dlsch_rounds[0];
+  const int dretx = stats->dlsch_rounds[1] - bler_stats->dlsch_rounds[1];
+  const int dretx2 = stats->dlsch_rounds[2] - bler_stats->dlsch_rounds[2];
+  const float bler_window = dtx > 0 ? (float) dretx / dtx : bler_stats->bler;
+  const float rd2_bler_wnd = dtx > 0 ? (float) dretx2 / dtx : bler_stats->rd2_bler;
+  bler_stats->bler = BLER_FILTER * bler_stats->bler + (1 - BLER_FILTER) * bler_window;
+  bler_stats->rd2_bler = BLER_FILTER / 4 * bler_stats->rd2_bler + (1 - BLER_FILTER / 4) * rd2_bler_wnd;
+
+  int new_mcs = old_mcs;
+  /* first ensure that number of 2nd retx is below threshold. If this is the
+   * case, use 1st retx to adjust faster */
+  /*
+  if (bler_stats->rd2_bler > nrmac->dl_rd2_bler_threshold && old_mcs > 6) {
+    new_mcs -= 2;
+  } else if (bler_stats->rd2_bler < nrmac->dl_rd2_bler_threshold) {*/
+    if (bler_stats->bler < nrmac->dl_bler_target_lower && old_mcs < nrmac->dl_max_mcs && dtx > 9)
+      new_mcs += 1;
+    else if (bler_stats->bler > nrmac->dl_bler_target_upper && old_mcs > 6)
+      new_mcs -= 1;
+    // else we are within threshold boundaries
+  /*}*/
+
+  bler_stats->last_frame_slot = now;
+  bler_stats->mcs = new_mcs;
+  memcpy(bler_stats->dlsch_rounds, stats->dlsch_rounds, sizeof(stats->dlsch_rounds));
+  LOG_D(MAC, "%4d.%2d MCS %d -> %d (dtx %d, dretx %d, BLER wnd %.3f avg %.6f, dretx2 %d, RD2 BLER wnd %.3f avg %.6f)\n",
+        frame, slot, old_mcs, new_mcs, dtx, dretx, bler_window, bler_stats->bler, dretx2, rd2_bler_wnd, bler_stats->rd2_bler);
+  return new_mcs;
+}
+
 void nr_store_dlsch_buffer(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot) {
@@ -446,7 +513,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
 
     if (sched_ctrl->num_total_bytes == 0
         && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
-      return;
+      continue;
 
     LOG_D(NR_MAC,
           "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
@@ -630,8 +697,8 @@ void pf_dl(module_id_t module_id,
         continue;
 
       /* Calculate coeff */
-      sched_pdsch->mcs = 9;
       ps->nrOfLayers = 1;
+      sched_pdsch->mcs = get_mcs_from_bler(module_id, /* CC_id = */ 0, frame, slot, UE_id);
       uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs];
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(NR_MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
@@ -1155,6 +1222,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       // const int lcid = DL_SCH_LCID_DTCH;
       const int lcid = sched_ctrl->lcid_to_schedule;
       int dlsch_total_bytes = 0;
+      start_meas(&gNB_mac->rlc_data_req);
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
         while (size > 3) {
@@ -1168,6 +1236,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
           /* limit requested number of bytes to what preprocessor specified, or
            * such that TBS is full */
           const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
+
+
           len = mac_rlc_data_req(module_id,
                                  rnti,
                                  module_id,
@@ -1179,6 +1249,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                  (char *)buf,
                                  0,
                                  0);
+
 
           LOG_D(NR_MAC,
                 "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
@@ -1228,6 +1299,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
         buf += size;
         dlsch_total_bytes += size;
       }
+      stop_meas(&gNB_mac->rlc_data_req);
 
       // Add padding header and zero rest out if there is space left
       if (size > 0) {
