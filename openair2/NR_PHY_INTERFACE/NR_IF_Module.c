@@ -266,13 +266,11 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       dump_dl(sched_info);
 #endif
 
-      if (ifi->NR_Schedule_response) {
-        AssertFatal(ifi->NR_Schedule_response!=NULL,
-                    "nr_schedule_response is null (mod %d, cc %d)\n",
-                    module_id,
-                    CC_id);
-        ifi->NR_Schedule_response(sched_info);
-      }
+      AssertFatal(ifi->NR_Schedule_response!=NULL,
+                  "nr_schedule_response is null (mod %d, cc %d)\n",
+                  module_id,
+                  CC_id);
+      ifi->NR_Schedule_response(sched_info);
 
       LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",
 	    sched_info->frame,

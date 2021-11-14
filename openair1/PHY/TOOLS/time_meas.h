@@ -128,6 +128,7 @@ static inline void start_meas(time_stats_t *ts) {
     } else {
       ts->in = rdtsc_oai();
     }
+    if ((ts->trials&16383)<10) ts->max=0;
   }
 }
 

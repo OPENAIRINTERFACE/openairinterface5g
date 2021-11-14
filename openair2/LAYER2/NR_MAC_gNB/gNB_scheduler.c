@@ -393,7 +393,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_schedule_ulsch(module_idP, frame, slot);
 
   // This schedules the DCI for Downlink and PDSCH
-  nr_schedule_ue_spec(module_idP, frame, slot);
+  start_meas(&gNB->schedule_dlsch);
+  nr_schedule_ue_spec(module_idP, frame, slot); 
+  stop_meas(&gNB->schedule_dlsch);
 
   nr_schedule_pucch(module_idP, frame, slot);
 

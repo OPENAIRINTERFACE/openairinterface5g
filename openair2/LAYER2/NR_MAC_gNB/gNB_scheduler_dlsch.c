@@ -1218,6 +1218,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       // const int lcid = DL_SCH_LCID_DTCH;
       const int lcid = sched_ctrl->lcid_to_schedule;
       int dlsch_total_bytes = 0;
+      start_meas(&gNB_mac->rlc_data_req);
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
         while (size > 3) {
@@ -1231,6 +1232,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
           /* limit requested number of bytes to what preprocessor specified, or
            * such that TBS is full */
           const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
+
+
           len = mac_rlc_data_req(module_id,
                                  rnti,
                                  module_id,
@@ -1242,6 +1245,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                  (char *)buf,
                                  0,
                                  0);
+
 
           LOG_D(NR_MAC,
                 "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
@@ -1291,6 +1295,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
         buf += size;
         dlsch_total_bytes += size;
       }
+      stop_meas(&gNB_mac->rlc_data_req);
 
       // Add padding header and zero rest out if there is space left
       if (size > 0) {
