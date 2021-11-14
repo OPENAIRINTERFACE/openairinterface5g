@@ -105,7 +105,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   int16_t **tx_layers;
   int32_t **txdataF;
-  int Wf[2], Wt[2], l_prime[2], delta;
+  int8_t Wf[2], Wt[2];
+  int l_prime[2], delta;
   uint8_t nb_dmrs_re_per_rb;
   int ap, i;
   int sample_offsetF, N_RE_prime;
@@ -410,7 +411,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         if (is_dmrs == 1) {
           // if transform precoding is enabled
           if (pusch_pdu->transform_precoding == 0) {
-          
+
             ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[2*dmrs_idx]) >> 15;
             ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[(2*dmrs_idx) + 1]) >> 15;
           

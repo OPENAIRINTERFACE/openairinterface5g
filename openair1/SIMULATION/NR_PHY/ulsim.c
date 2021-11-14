@@ -732,16 +732,12 @@ int main(int argc, char **argv)
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   cfg->carrier_config.num_tx_ant.value = n_tx;
   cfg->carrier_config.num_rx_ant.value = n_rx;
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
+//  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
   phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
 
 
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
-
-  //crcTableInit();
-
-  //nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
 
   //configure UE
@@ -752,6 +748,7 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
+  printf("Uplink carrier %llu\n",frame_parms->ul_CarrierFreq);
   //phy_init_nr_top(frame_parms);
   if (init_nr_ue_signal(UE, 1, 0) != 0) {
     printf("Error at UE NR initialisation\n");
