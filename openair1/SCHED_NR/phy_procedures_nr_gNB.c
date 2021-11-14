@@ -455,6 +455,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
 
   if (0/*pusch_pdu->mcs_index == 9*/) {
+      __attribute__((unused))
 #ifdef __AVX2__
       int off = ((pusch_pdu->rb_size&1) == 1)? 4:0;
 #else
