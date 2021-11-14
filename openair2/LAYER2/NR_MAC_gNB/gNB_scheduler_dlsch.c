@@ -513,7 +513,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
 
     if (sched_ctrl->num_total_bytes == 0
         && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
-      return;
+      continue;
 
     LOG_D(NR_MAC,
           "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
