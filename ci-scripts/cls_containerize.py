@@ -923,7 +923,7 @@ class Containerize():
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
 			# Check if iptables forwarding is accepted
-			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
 			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
@@ -951,7 +951,7 @@ class Containerize():
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
 			# Check if iptables forwarding is accepted
-			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
 			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
@@ -979,7 +979,7 @@ class Containerize():
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
 			# Check if iptables forwarding is accepted
-			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
 			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
@@ -1002,7 +1002,7 @@ class Containerize():
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
 			# Check if iptables forwarding is accepted
-			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
 			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
