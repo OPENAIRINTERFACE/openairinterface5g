@@ -420,9 +420,9 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
     return old_mcs; // no update
 
   // last update is longer than x frames ago
-  const int dtx = stats->dlsch_rounds[0] - bler_stats->dlsch_rounds[0];
-  const int dretx = stats->dlsch_rounds[1] - bler_stats->dlsch_rounds[1];
-  const int dretx2 = stats->dlsch_rounds[2] - bler_stats->dlsch_rounds[2];
+  const int dtx = (int)(stats->dlsch_rounds[0] - bler_stats->dlsch_rounds[0]);
+  const int dretx = (int)(stats->dlsch_rounds[1] - bler_stats->dlsch_rounds[1]);
+  const int dretx2 = (int)(stats->dlsch_rounds[2] - bler_stats->dlsch_rounds[2]);
   const float bler_window = dtx > 0 ? (float) dretx / dtx : bler_stats->bler;
   const float rd2_bler_wnd = dtx > 0 ? (float) dretx2 / dtx : bler_stats->rd2_bler;
   bler_stats->bler = BLER_FILTER * bler_stats->bler + (1 - BLER_FILTER) * bler_window;
