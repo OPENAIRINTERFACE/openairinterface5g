@@ -111,6 +111,9 @@ services:
             TAC_LB_SGW_TEST_0: '03'
             TAC_HB_SGW_TEST_0: '00'
             SGW_IPV4_ADDRESS_FOR_S11_TEST_0: 0.0.0.0
+        volumes:
+            - ./mme.conf:/openair-mme/etc/mme.conf
+            - ./entrypoint.sh:/openair-mme/bin/entrypoint.sh
         healthcheck:
             test: /bin/bash -c "pgrep oai_mme"
             interval: 10s

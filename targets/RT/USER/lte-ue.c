@@ -2067,7 +2067,6 @@ void init_UE_threads_stub(int inst)
 }
 
 
-#ifdef OPENAIR2
 void fill_ue_band_info(void)
 {
   LTE_UE_EUTRA_Capability_t *UE_EUTRA_Capability = UE_rrc_inst[0].UECap->UE_EUTRA_Capability;
@@ -2092,7 +2091,6 @@ void fill_ue_band_info(void)
       }
   }
 }
-#endif
 
 int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue,
                      openair0_config_t *openair0_cfg)

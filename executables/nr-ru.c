@@ -70,10 +70,6 @@ static int DEFBFW[] = {0x00007fff};
 #include "GNB_APP/gnb_paramdef.h"
 #include "common/config/config_userapi.h"
 
-#ifndef OPENAIR2
-  #include "UTIL/OTG/otg_extern.h"
-#endif
-
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include <openair1/PHY/TOOLS/phy_scope_interface.h>
@@ -1512,7 +1508,6 @@ void init_RU_proc(RU_t *ru) {
     if (ru->feptx_ofdm) nr_init_feptx_thread(ru);
   }
 
-  if (opp_enabled == 1) threadCreate(&ru->ru_stats_thread,ru_stats_thread,(void *)ru, "emulateRF", -1, OAI_PRIORITY_RT_LOW);
 }
 
 void kill_NR_RU_proc(int inst) {

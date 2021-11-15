@@ -51,16 +51,12 @@
 #ifdef MEX
   #define msg mexPrintf
 #else
-  #ifdef OPENAIR2
     #if ENABLE_RAL
       #include "common/utils/hashtable/hashtable.h"
       #include "COMMON/ral_messages_types.h"
       #include "UTIL/queue.h"
     #endif
     #define msg(aRGS...) LOG_D(PHY, ##aRGS)
-  #else
-    #define msg printf
-  #endif
 #endif
 //use msg in the real-time thread context
 #define msg_nrt printf
@@ -638,7 +634,7 @@ typedef struct {
   uint8_t dciFormat;
   uint8_t agregationLevel;
   int nb_search_space;
-  fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS_PER_CORESET];
+  fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS];
   // frame and slot for sib1 in initial sync
   uint16_t sfn;
   uint16_t slot;
@@ -921,9 +917,10 @@ typedef struct {
   uint8_t               init_sync_frame;
   /// temporary offset during cell search prior to MIB decoding
   int              ssb_offset;
-  uint16_t	   symbol_offset; // offset in terms of symbols for detected ssb in sync
-  int              rx_offset; /// Timing offset
+  uint16_t         symbol_offset;  /// offset in terms of symbols for detected ssb in sync
+  int              rx_offset;      /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
+  int              max_pos_fil;    /// Timing offset IIR filter
   int              time_sync_cell;
 
   /// Timing Advance updates variables
