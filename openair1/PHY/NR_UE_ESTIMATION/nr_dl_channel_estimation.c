@@ -33,7 +33,7 @@
 
 //#define DEBUG_PDSCH
 //#define DEBUG_PDCCH
-
+#define CH_INTERP 0
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              UE_nr_rxtx_proc_t *proc,
@@ -520,6 +520,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 
     printf("dl_ch addr %p\n",dl_ch);
 #endif
+  #if CH_INTERP
     //    if ((ue->frame_parms.N_RB_DL&1)==0) {
     // Treat first 2 pilots specially (left edge)
     ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -648,6 +649,42 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
       rxF += 8;
       k   += 4;
     }
+  #else //ELSE CH_INTERP
+    int ch_sum[2];
+
+    for ( pilot_cnt=0; pilot_cnt<(3*nb_rb_coreset); pilot_cnt += 3 ) {
+      if (k >= ue->frame_parms.ofdm_symbol_size){
+        k-=ue->frame_parms.ofdm_symbol_size;
+        rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+1)];
+      }
+#ifdef DEBUG_PDCCH
+      printf("pilot[%d] = (%d, %d)\trxF[%d] = (%d, %d)\n", pilot_cnt+0, pil[0], pil[1], k+1, rxF[0], rxF[1]);
+#endif
+      ch_sum[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+      ch_sum[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+      pil += 2;
+      rxF += 8;
+#ifdef DEBUG_PDCCH
+      printf("pilot[%d] = (%d, %d)\trxF[%d] = (%d, %d)\n", pilot_cnt+1, pil[0], pil[1], k+5, rxF[0], rxF[1]);
+#endif
+      ch_sum[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+      ch_sum[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+      pil += 2;
+      rxF += 8;
+#ifdef DEBUG_PDCCH
+      printf("pilot[%d] = (%d, %d)\trxF[%d] = (%d, %d)\n", pilot_cnt+2, pil[0], pil[1], k+9, rxF[0], rxF[1]);
+#endif
+      ch_sum[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+      ch_sum[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+      pil += 2;
+      rxF += 8;
+      ch[0] = ch_sum[0]/3;
+      ch[1] = ch_sum[1]/3;
+      multadd_real_vector_complex_scalar(filt16a_1, ch, dl_ch, 16);
+      dl_ch += 24;
+      k += 12;
+    }
+  #endif //END CH_INTERP
 
 
     //}
