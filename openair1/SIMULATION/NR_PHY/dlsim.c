@@ -268,11 +268,6 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-  ps->nrOfLayers = g_nrOfLayers;
-
-  int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats ?
-      NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
-
   nr_set_pdsch_semi_static(scc,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
@@ -289,7 +284,6 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   /* the following might override the table that is mandated by RRC
    * configuration */
   ps->mcsTableIdx = g_mcsTableIdx;
-  ps->nrOfLayers = g_nrOfLayers;
 
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
