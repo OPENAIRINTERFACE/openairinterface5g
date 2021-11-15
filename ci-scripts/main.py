@@ -410,6 +410,17 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.cliOptions = string_field
 
+	elif action == 'Copy_Image_to_Test':
+		string_field = test.findtext('image_name')
+		if (string_field is not None):
+			CONTAINERS.imageToCopy = string_field
+		string_field = test.findtext('registry_svr_id')
+		if (string_field is not None):
+			CONTAINERS.registrySvrId = string_field
+		string_field = test.findtext('test_svr_id')
+		if (string_field is not None):
+			CONTAINERS.testSvrId = string_field
+
 	else: # ie action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
 		
@@ -734,6 +745,22 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	HTML.SethtmlUEConnected(len(CiTestObj.UEDevices) + len(CiTestObj.CatMDevices))
 	HTML.CreateHtmlTabHeader()
 
+	# On CI bench w/ containers, we need to validate if IP routes are set
+	if EPC.IPAddress == '192.168.18.210':
+		CONTAINERS.CheckAndAddRoute('porcepix', EPC.IPAddress, EPC.UserName, EPC.Password)
+	if CONTAINERS.eNBIPAddress == '192.168.18.194':
+		CONTAINERS.CheckAndAddRoute('asterix', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
+	if CONTAINERS.eNB1IPAddress == '192.168.18.194':
+		CONTAINERS.CheckAndAddRoute('asterix', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
+	if CONTAINERS.eNBIPAddress == '192.168.18.193':
+		CONTAINERS.CheckAndAddRoute('obelix', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
+	if CONTAINERS.eNB1IPAddress == '192.168.18.193':
+		CONTAINERS.CheckAndAddRoute('obelix', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
+	if CONTAINERS.eNBIPAddress == '192.168.18.209':
+		CONTAINERS.CheckAndAddRoute('nepes', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
+	if CONTAINERS.eNB1IPAddress == '192.168.18.209':
+		CONTAINERS.CheckAndAddRoute('nepes', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
+
 	CiTestObj.FailReportCnt = 0
 	RAN.prematureExit=True
 	HTML.startTime=int(round(time.time() * 1000))
@@ -853,6 +880,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				elif action == 'Build_Image':
 					CONTAINERS.BuildImage(HTML)
+				elif action == 'Copy_Image_to_Test':
+					CONTAINERS.Copy_Image_to_Test_Server(HTML)
 				elif action == 'Deploy_Object':
 					CONTAINERS.DeployObject(HTML, EPC)
 				elif action == 'Undeploy_Object':
