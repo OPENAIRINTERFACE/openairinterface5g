@@ -94,7 +94,7 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen)
       avg_rsrp,
       stats->num_rsrp_meas);
 
-    stroff+=sprintf(output+stroff,"UE %d: dlsch_rounds %lu/%lu/%lu/%lu, dlsch_errors %lu, pucch0_DTX %d, BLER %.5f MCS %d\n",
+    stroff+=sprintf(output+stroff,"UE %d: dlsch_rounds %d/%d/%d/%d, dlsch_errors %d, pucch0_DTX %d, BLER %.5f MCS %d\n",
           UE_id,
           stats->dlsch_rounds[0], stats->dlsch_rounds[1],
           stats->dlsch_rounds[2], stats->dlsch_rounds[3],
@@ -105,25 +105,25 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen)
 
     stats->num_rsrp_meas = 0;
     stats->cumul_rsrp = 0 ;
-    stroff+=sprintf(output+stroff,"UE %d: dlsch_total_bytes %lu\n", UE_id, stats->dlsch_total_bytes);
-    stroff+=sprintf(output+stroff,"UE %d: ulsch_rounds %lu/%lu/%lu/%lu, ulsch_DTX %d, ulsch_errors %lu\n",
+    stroff+=sprintf(output+stroff,"UE %d: dlsch_total_bytes %d\n", UE_id, stats->dlsch_total_bytes);
+    stroff+=sprintf(output+stroff,"UE %d: ulsch_rounds %d/%d/%d/%d, ulsch_DTX %d, ulsch_errors %d\n",
                     UE_id,
                     stats->ulsch_rounds[0], stats->ulsch_rounds[1],
                     stats->ulsch_rounds[2], stats->ulsch_rounds[3],
                     stats->ulsch_DTX,
                     stats->ulsch_errors);
     stroff+=sprintf(output+stroff,
-                    "UE %d: ulsch_total_bytes_scheduled %lu, ulsch_total_bytes_received %lu\n",
+                    "UE %d: ulsch_total_bytes_scheduled %d, ulsch_total_bytes_received %d\n",
                     UE_id,
                     stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
     for (int lc_id = 0; lc_id < 63; lc_id++) {
       if (stats->lc_bytes_tx[lc_id] > 0) {
-        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %lu bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
-	LOG_D(NR_MAC, "UE %d: LCID %d: %lu bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
+        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
+	LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
       }
       if (stats->lc_bytes_rx[lc_id] > 0) {
-        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %lu bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
-	LOG_D(NR_MAC, "UE %d: LCID %d: %lu bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
+        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
+	LOG_D(NR_MAC, "UE %d: LCID %d: %d bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
       }
     }
   }
