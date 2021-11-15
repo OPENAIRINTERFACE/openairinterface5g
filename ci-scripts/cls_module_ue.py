@@ -63,7 +63,7 @@ class Module_UE:
 	#if not it will be started
 	def CheckCMProcess(self,CNType):
 		HOST=self.HostUsername+'@'+self.HostIPAddress
-		COMMAND="ps aux | grep " + self.Process['Name'] + " | grep -v grep "
+		COMMAND="ps aux | grep --colour=never " + self.Process['Name'] + " | grep -v grep "
 		logging.debug(COMMAND)
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		result = ssh.stdout.readlines()
@@ -81,7 +81,7 @@ class Module_UE:
 			#checking the process
 			time.sleep(5)
 			HOST=self.HostUsername+'@'+self.HostIPAddress
-			COMMAND="ps aux | grep " + self.Process['Name'] + " | grep -v grep "
+			COMMAND="ps aux | grep --colour=never " + self.Process['Name'] + " | grep -v grep "
 			logging.debug(COMMAND)
 			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			result = ssh.stdout.readlines()
@@ -108,7 +108,7 @@ class Module_UE:
 		response= []
 		tentative = 3 
 		while (len(response)==0) and (tentative>0):
-			COMMAND="ip a show dev " + self.UENetwork + " | grep inet | grep " + self.UENetwork
+			COMMAND="ip a show dev " + self.UENetwork + " | grep --colour=never inet | grep " + self.UENetwork
 			logging.debug(COMMAND)
 			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			response = ssh.stdout.readlines()
@@ -136,7 +136,7 @@ class Module_UE:
 		response= []
 		tentative = 3 
 		while (len(response)==0) and (tentative>0):
-			COMMAND="ip a show dev " + self.UENetwork + " | grep mtu"
+			COMMAND="ip a show dev " + self.UENetwork + " | grep --colour=never mtu"
 			logging.debug(COMMAND)
 			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			response = ssh.stdout.readlines()
