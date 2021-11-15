@@ -1310,8 +1310,9 @@ int nr_acknack_scheduling(int mod_id,
     AssertFatal(pucch->sr_flag + pucch->dai_c == 0,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
-    pucch->frame = frame;
-    pucch->ul_slot = tdd ? first_ul_slot_tdd : slot + minfbtime;
+    const int s = tdd ? first_ul_slot_tdd : slot + minfbtime;
+    pucch->frame = (s < n_slots_frame - 1) ? frame : (frame + 1) % 1024;
+    pucch->ul_slot = s % n_slots_frame;
   }
 
   // Find the right timing_indicator value.
