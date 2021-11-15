@@ -618,19 +618,19 @@ typedef struct {
 } NRUEcontext_t;
 
 typedef struct {
-  int lc_bytes_tx[64];
-  int lc_bytes_rx[64];
-  int dlsch_rounds[8];
-  int dlsch_errors;
-  int dlsch_total_bytes;
+  uint64_t lc_bytes_tx[64];
+  uint64_t lc_bytes_rx[64];
+  uint64_t dlsch_rounds[8];
+  uint64_t dlsch_errors;
+  uint64_t dlsch_total_bytes;
   int dlsch_current_bytes;
-  int ulsch_rounds[8];
-  int ulsch_errors;
-  int ulsch_DTX;
-  int ulsch_total_bytes_scheduled;
-  int ulsch_total_bytes_rx;
+  uint64_t ulsch_rounds[8];
+  uint64_t ulsch_errors;
+  uint32_t ulsch_DTX;
+  uint64_t ulsch_total_bytes_scheduled;
+  uint64_t ulsch_total_bytes_rx;
   int ulsch_current_bytes;
-  int pucch0_DTX;
+  uint32_t pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;
 } NR_mac_stats_t;
