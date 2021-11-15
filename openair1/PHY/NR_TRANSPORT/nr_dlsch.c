@@ -181,11 +181,12 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
     start_meas(dlsch_encoding_stats);
-    nr_dlsch_encoding(gNB,
-		      harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
-		      dlsch_rate_matching_stats,
-		      dlsch_interleaving_stats,
-		      dlsch_segmentation_stats);
+    if (nr_dlsch_encoding(gNB,
+                          harq->pdu, frame, slot, dlsch, frame_parms,tinput,tprep,tparity,toutput,
+                          dlsch_rate_matching_stats,
+                          dlsch_interleaving_stats,
+                          dlsch_segmentation_stats) == -1)
+      return;
     stop_meas(dlsch_encoding_stats);
 #ifdef DEBUG_DLSCH
     printf("PDSCH encoding:\nPayload:\n");

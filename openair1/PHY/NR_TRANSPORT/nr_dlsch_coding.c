@@ -427,17 +427,19 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl);
 
     start_meas(dlsch_rate_matching_stats);
-    nr_rate_matching_ldpc(Ilbrm,
-                          Tbslbrm,
-                          harq->BG,
-                          *Zc,
-                          harq->d[r],
-                          harq->e+r_offset,
-                          harq->C,
-                          F,
-                          Kr-F-2*(*Zc),
-                          rel15->rvIndex[0],
-                          E);
+    if (nr_rate_matching_ldpc(Ilbrm,
+                              Tbslbrm,
+                              harq->BG,
+                              *Zc,
+                              harq->d[r],
+                              harq->e+r_offset,
+                              harq->C,
+                              F,
+                              Kr-F-2*(*Zc),
+                              rel15->rvIndex[0],
+                              E) == -1)
+      return -1;
+
     stop_meas(dlsch_rate_matching_stats);
 #ifdef DEBUG_DLSCH_CODING
     for (int i =0; i<16; i++)
