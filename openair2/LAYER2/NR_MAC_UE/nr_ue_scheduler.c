@@ -878,6 +878,62 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
 }
 
+// Periodic SRS scheduling
+void nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slot) {
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+
+  NR_SRS_Config_t *srs_config = NULL;
+  if (mac->cg &&
+      mac->cg->spCellConfig &&
+      mac->cg->spCellConfig->spCellConfigDedicated &&
+      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
+    srs_config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config->choice.setup;
+  } else {
+    return;
+  }
+
+  for(int rs = 0; rs < srs_config->srs_ResourceSetToAddModList->list.count; rs++) {
+
+    // Find periodic resource set
+    NR_SRS_ResourceSet_t *srs_resource_set = srs_config->srs_ResourceSetToAddModList->list.array[rs];
+    if(srs_resource_set->resourceType.present != NR_SRS_ResourceSet__resourceType_PR_periodic) {
+      continue;
+    }
+
+    // Find the corresponding srs resource
+    NR_SRS_Resource_t *srs_resource = NULL;
+    for(int r1 = 0; r1 < srs_resource_set->srs_ResourceIdList->list.count; r1++) {
+      for (int r2 = 0; r2 < srs_config->srs_ResourceToAddModList->list.count; r2++) {
+        if ((*srs_resource_set->srs_ResourceIdList->list.array[r1] == srs_config->srs_ResourceToAddModList->list.array[r2]->srs_ResourceId) &&
+            (srs_config->srs_ResourceToAddModList->list.array[r2]->resourceType.present == NR_SRS_Resource__resourceType_PR_periodic)) {
+          srs_resource = srs_config->srs_ResourceToAddModList->list.array[r2];
+          break;
+        }
+      }
+    }
+
+    if(srs_resource == NULL) {
+      continue;
+    }
+
+    int scs = mac->ULbwp[0] ?
+                mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing :
+                mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.subcarrierSpacing;
+
+    uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
+    uint16_t offset = srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl40;
+
+    int n_slots_frame = nr_slots_per_frame[scs];
+
+    // Check if UE should transmit the SRS
+    if((frame*n_slots_frame+slot-offset)%period == 0) {
+      LOG_W(NR_MAC, "(%d.%d) Periodic SRS scheduling is not implemented yet!\n", frame, slot);
+    }
+  }
+}
+
 // Performs :
 // 1. TODO: Call RRC for link status return to PHY
 // 2. TODO: Perform SR/BSR procedures for scheduling feedback
@@ -1020,11 +1076,14 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
   }
 
   if (dl_info) {
-    return (CONNECTION_OK);
+    return (UE_CONNECTION_OK);
   }
   module_id_t mod_id = ul_info->module_id;
   frame_t txFrameP = ul_info->frame_tx;
   slot_t txSlotP = ul_info->slot_tx;
+
+  // Periodic SRS scheduling
+  nr_ue_periodic_srs_scheduling(mod_id, txFrameP, txSlotP);
 
   // Handle the SR/BSR procedures per subframe
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);

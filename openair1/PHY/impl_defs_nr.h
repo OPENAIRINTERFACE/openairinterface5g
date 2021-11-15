@@ -211,10 +211,10 @@ typedef enum {
   srs_sl2560 = 16
 } SRS_Periodicity_t;
 
-#define NB_SRS_PERIOD         (17)
+#define NB_SRS_PERIOD         (18)
 
 static const uint16_t srs_period[NB_SRS_PERIOD]
-= { 1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 64, 80, 160, 320, 640, 1280, 2560}
+= { 0, 1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 64, 80, 160, 320, 640, 1280, 2560}
 ;
 
 /// SRS_Resource of SRS_Config information element from 38.331 RRC specifications

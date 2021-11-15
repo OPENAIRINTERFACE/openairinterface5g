@@ -1162,6 +1162,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
     srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_periodic;
     srs_res0->resourceType.choice.periodic=calloc(1,sizeof(*srs_res0->resourceType.choice.periodic));
     srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl40;
+    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl40 = 9; // 9 is an uplink slot
   }
 
   srs_res0->sequenceId=40;
