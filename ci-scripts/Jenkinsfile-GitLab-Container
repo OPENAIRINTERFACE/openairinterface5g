@@ -246,17 +246,12 @@ pipeline {
         script {
           triggerSlaveJob ('RAN-DockerHub-Push', 'Push-to-Docker-Hub')
         }
-        post {
-          always {
-            script {
-              echo "Push to Docker-Hub OK"
-            }
-          }
-          failure {
-            script {
-              echo "Push to Docker-Hub KO"
-              currentBuild.result = 'FAILURE'
-            }
+      }
+      post {
+        failure {
+          script {
+            echo "Push to Docker-Hub KO"
+            currentBuild.result = 'FAILURE'
           }
         }
       }

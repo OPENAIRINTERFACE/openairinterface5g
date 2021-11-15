@@ -227,6 +227,8 @@ class Containerize():
 				if result is not None:
 					forceSharedImageBuild = True
 					sharedTag = 'ci-temp'
+		else:
+			forceSharedImageBuild = True
 
 		# Let's remove any previous run artifacts if still there
 		mySSH.command(self.cli + ' image prune --force', '\$', 30)
