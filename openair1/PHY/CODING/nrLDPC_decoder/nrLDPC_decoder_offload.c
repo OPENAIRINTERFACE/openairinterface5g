@@ -65,9 +65,6 @@
 #include <rte_random.h>
 #include <rte_hexdump.h>
 #include <rte_interrupts.h>
-//#include "../../../targets/ARCH/test-bbdev/main.h"
-#include "../../../targets/ARCH/test-bbdev/test_bbdev_vector.h"
-
 
 #define GET_SOCKET(socket_id) (((socket_id) == SOCKET_ID_ANY) ? 0 : (socket_id))
 
@@ -1451,11 +1448,11 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 	    printf("Couldn't init test op params");
 	  }
 	
-	  const struct rte_bbdev_op_cap *capabilities = NULL;
+	  //const struct rte_bbdev_op_cap *capabilities = NULL;
 	  rte_bbdev_info_get(ad->dev_id, &info);
 	  socket_id = GET_SOCKET(info.socket_id);
 	  //enum rte_bbdev_op_type op_type = RTE_BBDEV_OP_LDPC_DEC;                                                                                                
-	  const struct rte_bbdev_op_cap *cap = info.drv.capabilities;
+	  /*const struct rte_bbdev_op_cap *cap = info.drv.capabilities;
 
 	  for (i = 0; i < RTE_BBDEV_OP_TYPE_COUNT; i++) {
 	    if (cap->type == op_type) {
@@ -1463,7 +1460,7 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 	      break;
 	    }
 	    cap++;
-	  }
+	    }*/
 	  ad->nb_queues =  1;
 	  enum op_data_type type;
 
@@ -1576,7 +1573,7 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 	break;
 	default:
 	  printf("Unknown mode: %d\n", mode);
-	  return;
+	  return(-1);
 	}	
 
     return numIter;

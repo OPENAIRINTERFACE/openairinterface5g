@@ -21,7 +21,14 @@
 #define DEFAULT_OPS 64U
 #define DEFAULT_ITER 6U
 
-
+enum op_data_type {
+  DATA_INPUT = 0,
+  DATA_SOFT_OUTPUT,
+  DATA_HARD_OUTPUT,
+  DATA_HARQ_INPUT,
+  DATA_HARQ_OUTPUT,
+  DATA_NUM_TYPES,
+};
 
 #define TEST_ASSERT(cond, msg, ...) do {  \
 		if (!(cond)) {  \
