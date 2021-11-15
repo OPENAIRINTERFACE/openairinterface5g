@@ -1112,13 +1112,21 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   *srs_resset0_id=0;
   ASN_SEQUENCE_ADD(&srs_resset0->srs_ResourceIdList->list,srs_resset0_id);
   srs_Config->srs_ResourceToReleaseList=NULL;
-  srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_aperiodic;
-  srs_resset0->resourceType.choice.aperiodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic));
-  srs_resset0->resourceType.choice.aperiodic->aperiodicSRS_ResourceTrigger=1;
-  srs_resset0->resourceType.choice.aperiodic->csi_RS=NULL;
-  srs_resset0->resourceType.choice.aperiodic->slotOffset= calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic->slotOffset));
-  *srs_resset0->resourceType.choice.aperiodic->slotOffset=2;
-  srs_resset0->resourceType.choice.aperiodic->ext1=NULL;
+
+  if(0) {
+    srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_aperiodic;
+    srs_resset0->resourceType.choice.aperiodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic));
+    srs_resset0->resourceType.choice.aperiodic->aperiodicSRS_ResourceTrigger=1;
+    srs_resset0->resourceType.choice.aperiodic->csi_RS=NULL;
+    srs_resset0->resourceType.choice.aperiodic->slotOffset= calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic->slotOffset));
+    *srs_resset0->resourceType.choice.aperiodic->slotOffset=2;
+    srs_resset0->resourceType.choice.aperiodic->ext1=NULL;
+  } else {
+    srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_periodic;
+    srs_resset0->resourceType.choice.periodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.periodic));
+    srs_resset0->resourceType.choice.periodic->associatedCSI_RS = NULL;
+  }
+
   srs_resset0->usage=NR_SRS_ResourceSet__usage_codebook;
   srs_resset0->alpha = calloc(1,sizeof(*srs_resset0->alpha));
   *srs_resset0->alpha = NR_Alpha_alpha1;
@@ -1146,14 +1154,24 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   srs_res0->freqHopping.b_SRS=0;
   srs_res0->freqHopping.b_hop=0;
   srs_res0->groupOrSequenceHopping=NR_SRS_Resource__groupOrSequenceHopping_neither;
-  srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_aperiodic;
-  srs_res0->resourceType.choice.aperiodic=calloc(1,sizeof(*srs_res0->resourceType.choice.aperiodic));
+
+  if(0) {
+    srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_aperiodic;
+    srs_res0->resourceType.choice.aperiodic=calloc(1,sizeof(*srs_res0->resourceType.choice.aperiodic));
+  } else {
+    srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_periodic;
+    srs_res0->resourceType.choice.periodic=calloc(1,sizeof(*srs_res0->resourceType.choice.periodic));
+    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl40;
+  }
+
   srs_res0->sequenceId=40;
   srs_res0->spatialRelationInfo=calloc(1,sizeof(*srs_res0->spatialRelationInfo));
   srs_res0->spatialRelationInfo->servingCellId=NULL;
   srs_res0->spatialRelationInfo->referenceSignal.present=NR_SRS_SpatialRelationInfo__referenceSignal_PR_csi_RS_Index;
   srs_res0->spatialRelationInfo->referenceSignal.choice.csi_RS_Index=0;
   ASN_SEQUENCE_ADD(&srs_Config->srs_ResourceToAddModList->list,srs_res0);
+
+  xer_fprint(stdout, &asn_DEF_NR_SetupRelease_SRS_Config, (const void*)initialUplinkBWP->srs_Config);
 
   // configure Scheduling request
   // 40 slot period 
