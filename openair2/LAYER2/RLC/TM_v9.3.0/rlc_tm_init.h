@@ -37,7 +37,6 @@
 //-----------------------------------------------------------------------------
 #        include "rlc_tm_entity.h"
 #        include "mem_block.h"
-//#        include "rrm_config_structs.h"
 #        include "rlc_tm_structs.h"
 //#        include "rlc.h"
 #        include "platform_types.h"

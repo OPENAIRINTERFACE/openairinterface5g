@@ -75,10 +75,6 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 
-#ifndef OPENAIR2
-  #include "UTIL/OTG/otg_vars.h"
-#endif
-
 #include "create_tasks.h"
 #include "system.h"
 

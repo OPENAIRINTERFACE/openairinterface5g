@@ -1,3 +1,24 @@
+<h1 align="center">
+    <a href="https://openairinterface.org/"><img src="https://openairinterface.org/wp-content/uploads/2015/06/cropped-oai_final_logo.png" alt="OAI" width="550"></a>
+</h1>
+
+<p align="center">
+    <a href="https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-OAI--Public--V1.1-blue" alt="License"></a>
+    <a href="https://releases.ubuntu.com/18.04/"><img src="https://img.shields.io/badge/OS-Ubuntu18-Green" alt="Supported OS"></a>
+    <a href="https://www.redhat.com/en/enterprise-linux-8"><img src="https://img.shields.io/badge/OS-RHEL8-Green" alt="Supported OS"></a>
+</p>
+
+<p align="center">
+    <a href="https://jenkins-oai.eurecom.fr/job/RAN-Container-Parent/"><img src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins-oai.eurecom.fr%2Fjob%2FRAN-Container-Parent%2F&label=build%20Images"></a>
+</p>
+
+<p align="center">
+  <a href="https://hub.docker.com/r/rdefosseoai/oai-enb"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/rdefosseoai/oai-enb?label=eNB%20docker%20pulls"></a>
+  <a href="https://hub.docker.com/r/rdefosseoai/oai-lte-ue"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/rdefosseoai/oai-lte-ue?label=LTE-UE%20docker%20pulls"></a>
+  <a href="https://hub.docker.com/r/rdefosseoai/oai-gnb"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/rdefosseoai/oai-gnb?label=gNB%20docker%20pulls"></a>
+  <a href="https://hub.docker.com/r/rdefosseoai/oai-nr-ue"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/rdefosseoai/oai-nr-ue?label=NR-UE%20docker%20pulls"></a>
+</p>
+
 # OpenAirInterface License #
 
 OpenAirInterface is under OpenAirInterface Software Alliance license.

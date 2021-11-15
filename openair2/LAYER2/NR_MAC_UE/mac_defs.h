@@ -367,7 +367,7 @@ typedef struct {
   NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP];
   NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP];
   NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP][FAPI_NR_MAX_CORESET_PER_BWP];
-  NR_SearchSpace_t                *SSpace[MAX_NUM_BWP][FAPI_NR_MAX_CORESET_PER_BWP][FAPI_NR_MAX_SS_PER_CORESET];
+  NR_SearchSpace_t                *SSpace[MAX_NUM_BWP][FAPI_NR_MAX_SS];
 
   lte_frame_type_t frame_type;
 
