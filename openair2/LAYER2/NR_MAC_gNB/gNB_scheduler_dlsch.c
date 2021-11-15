@@ -701,7 +701,7 @@ void pf_dl(module_id_t module_id,
         continue;
 
       /* Calculate coeff */
-      set_dl_mcs(sched_pdsch,sched_ctrl,ps->mcsTableIdx);
+      set_dl_mcs(sched_pdsch,sched_ctrl,&mac->dl_max_mcs,ps->mcsTableIdx);
       sched_pdsch->mcs = get_mcs_from_bler(module_id, /* CC_id = */ 0, frame, slot, UE_id);
       layers[UE_id] = set_dl_nrOfLayers(sched_ctrl);
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);

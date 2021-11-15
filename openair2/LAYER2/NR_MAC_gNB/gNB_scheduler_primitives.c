@@ -147,6 +147,7 @@ uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl) {
 
 void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
                 NR_UE_sched_ctrl_t *sched_ctrl,
+                uint8_t *target_mcs,
                 uint8_t mcs_table_idx) {
 
   if (sched_ctrl->set_mcs) {
@@ -180,14 +181,11 @@ void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
         R = nr_get_code_rate_dl(i, mcs_table_idx);
         Qm = nr_get_Qm_dl(i, mcs_table_idx);
         if ((Qm == target_qm) && (target_coderate <= R)) {
-          sched_pdsch->mcs = i;
+          *target_mcs = i;
           break;
         }
       }
     }
-    else // default value
-      sched_pdsch->mcs = 9;
-
     sched_ctrl->set_mcs = FALSE;
   }
 }

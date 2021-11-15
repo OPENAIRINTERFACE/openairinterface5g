@@ -429,6 +429,7 @@ void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps);
 
 void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
                 NR_UE_sched_ctrl_t *sched_ctrl,
+                uint8_t *target_mcs,
                 uint8_t mcs_table_idx);
 
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
