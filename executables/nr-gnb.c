@@ -339,6 +339,7 @@ static void dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output) {
   stroff += print_meas_log(&gNB->ul_indication_stats, "UL Indication", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL, output+stroff);
+  stroff += print_meas_log(&gNB->schedule_response_stats, "Schedule Response",NULL,NULL, output+stroff);
   if (ru->feprx) stroff += print_meas_log(&ru->ofdm_demod_stats,"feprx",NULL,NULL, output+stroff);
 
   if (ru->feptx_ofdm) {
