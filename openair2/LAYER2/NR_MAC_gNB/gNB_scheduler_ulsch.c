@@ -863,13 +863,22 @@ bool nr_UE_is_to_be_scheduled(module_id_t mod_id, int CC_id, int UE_id, frame_t 
   const NR_UE_sched_ctrl_t *sched_ctrl = &nrmac->UE_info.UE_sched_ctrl[UE_id];
   const int last_ul_sched = sched_ctrl->last_ul_frame * n + sched_ctrl->last_ul_slot;
 
+  const NR_TDD_UL_DL_Pattern_t *tdd =
+      scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  int num_slots_per_period;
+  int tdd_period_len[8] = {500,625,1000,1250,2000,2500,5000,10000};
+  if (tdd)
+    num_slots_per_period = n*tdd_period_len[tdd->dl_UL_TransmissionPeriodicity]/10000;
+  else
+    num_slots_per_period = n;
+
   const int diff = (now - last_ul_sched + 1024 * n) % (1024 * n);
   /* UE is to be scheduled if
    * (1) we think the UE has more bytes awaiting than what we scheduled
    * (2) there is a scheduling request
    * (3) or we did not schedule it in more than 10 frames */
   const bool has_data = sched_ctrl->estimated_ul_buffer > sched_ctrl->sched_ul_bytes;
-  const bool high_inactivity = diff >= (nrmac->ulsch_max_frame_inactivity>0 ? (nrmac->ulsch_max_frame_inactivity * n) : (n/2)); 
+  const bool high_inactivity = diff >= (nrmac->ulsch_max_frame_inactivity>0 ? (nrmac->ulsch_max_frame_inactivity * n) : num_slots_per_period);
   LOG_D(NR_MAC,
         "%4d.%2d UL inactivity %d slots has_data %d SR %d\n",
         frame,
