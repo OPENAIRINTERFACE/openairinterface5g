@@ -485,9 +485,9 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
     for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
       uint8_t nb_symb_pdcch = pdcch_vars->pdcch_config[n_ss].coreset.duration;
+      int start_symb = pdcch_vars->pdcch_config[n_ss].coreset.StartSymbolIndex;
       get_coreset_rballoc(pdcch_vars->pdcch_config[n_ss].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
-
-      for (uint16_t l=0; l<nb_symb_pdcch; l++) {
+      for (uint16_t l=start_symb; l<start_symb+nb_symb_pdcch; l++) {
         nr_slot_fep_init_sync(ue,
                               proc,
                               l, // the UE PHY has no notion of the symbols to be monitored in the search space

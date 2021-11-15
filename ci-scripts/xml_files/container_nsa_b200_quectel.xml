@@ -21,26 +21,28 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-NSA-FR1-TM1</htmlTabRef>
-	<htmlTabName>NSA Ping DL UL with QUECTEL</htmlTabName>
+	<htmlTabRef>TEST-NSA-FR1-TM1-B200</htmlTabRef>
+	<htmlTabName>NSA SanityCheck with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 000001
+ 010002
  030000
- 040000
- 000002
+ 030101
+ 000001
+ 030102
+ 000001
  010000
  000001
  050000
  050001
- 000001
  070000
- 000001
  070001
- 000001
  010002
- 080001
- 080000
+ 000001
+ 030202
+ 030201
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -58,25 +60,28 @@
 		<id>idefix</id>
 	</testCase>
 
-
 	<testCase id="030000">
-		<class>Initialize_eNB</class>
-		<desc>Initialize eNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf</Initialize_eNB_args>
-		<eNB_instance>0</eNB_instance>
-		<eNB_serverId>0</eNB_serverId>
-		<air_interface>lte</air_interface>
-		<eNB_Trace>yes</eNB_Trace>
+		<class>Copy_Image_to_Test</class>
+		<desc>Copy gNB image to test server</desc>
+		<image_name>oai-gnb</image_name>
+		<registry_svr_id>0</registry_svr_id>
+		<test_svr_id>1</test_svr_id>
 	</testCase>
 
+	<testCase id="030101">
+		<class>Deploy_Object</class>
+		<desc>Deploy eNB (FDD/Band7/5MHz/B200) in a container</desc>
+		<yaml_path>ci-scripts/yaml_files/nsa_b200_enb</yaml_path>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+	</testCase>
 
-	<testCase id="040000">
-		<class>Initialize_eNB</class>
-		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf -E -q</Initialize_eNB_args>
+	<testCase id="030102">
+		<class>Deploy_Object</class>
+		<desc>Deploy gNB (TDD/Band78/40MHz/B200) in a container</desc>
+		<yaml_path>ci-scripts/yaml_files/nsa_b200_gnb</yaml_path>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
-		<air_interface>nr</air_interface>
 	</testCase>
 
 	<testCase id="000001">
@@ -110,8 +115,8 @@
 
 	<testCase id="070000">
 		<class>Iperf</class>
-		<desc>iperf (DL/60Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 60M -t 60</iperf_args>
+		<desc>iperf (DL/20Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 20M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>idefix</id>
 		<iperf_packetloss_threshold>3</iperf_packetloss_threshold>
@@ -120,30 +125,29 @@
 
 	<testCase id="070001">
 		<class>Iperf</class>
-		<desc>iperf (UL/3Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 3M -t 60</iperf_args>
+		<desc>iperf (UL/2Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 2M -t 60</iperf_args>
 		<direction>UL</direction>
 		<id>idefix</id>
 		<iperf_packetloss_threshold>1</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
+    <testCase id="030201">
+        <class>Undeploy_Object</class>
+        <desc>Undeploy eNB</desc>
+		<yaml_path>ci-scripts/yaml_files/nsa_b200_enb</yaml_path>
+        <eNB_instance>0</eNB_instance>
+        <eNB_serverId>0</eNB_serverId>
+    </testCase>
 
-	<testCase id="080000">
-		<class>Terminate_eNB</class>
-		<desc>Terminate eNB</desc>
-		<eNB_instance>0</eNB_instance>
-		<eNB_serverId>0</eNB_serverId>
-		<air_interface>lte</air_interface>
-	</testCase>
-
-	<testCase id="080001">
-		<class>Terminate_eNB</class>
-		<desc>Terminate gNB</desc>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
-		<air_interface>nr</air_interface>
-	</testCase>
+    <testCase id="030202">
+        <class>Undeploy_Object</class>
+        <desc>Undeploy gNB</desc>
+		<yaml_path>ci-scripts/yaml_files/nsa_b200_gnb</yaml_path>
+        <eNB_instance>1</eNB_instance>
+        <eNB_serverId>1</eNB_serverId>
+    </testCase>
 
 </testCaseList>
 

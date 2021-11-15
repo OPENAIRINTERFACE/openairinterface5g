@@ -134,8 +134,8 @@ pipeline {
                         eNB_CommitID = params.eNB_CommitID
                     }
                     echo "eNB_CommitID          :   ${eNB_CommitID}"
-                    if (params.eNB_AllowMergeRequestProcess!= null) {
-                        eNB_AllowMergeRequestProcess = params.eNB_AllowMergeRequestProcess
+                    if (params.eNB_mergeRequest!= null) {
+                        eNB_AllowMergeRequestProcess = params.eNB_mergeRequest
                         if (eNB_AllowMergeRequestProcess) {
                             if (params.eNB_TargetBranch != null) {
                                 eNB_TargetBranch = params.eNB_TargetBranch

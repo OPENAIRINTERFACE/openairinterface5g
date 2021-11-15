@@ -3753,57 +3753,6 @@ void *rrc_gnb_task(void *args_p) {
       case GTPV1U_GNB_DELETE_TUNNEL_RESP:
         break;
 
-      /*
-      #if defined(ENABLE_USE_MME)
-
-            // Messages from S1AP
-          case S1AP_DOWNLINK_NAS:
-            rrc_eNB_process_S1AP_DOWNLINK_NAS(msg_p, msg_name_p, instance, &rrc_gNB_mui);
-            break;
-
-          case S1AP_INITIAL_CONTEXT_SETUP_REQ:
-            rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p, msg_name_p, instance);
-            break;
-
-          case S1AP_UE_CTXT_MODIFICATION_REQ:
-            rrc_eNB_process_S1AP_UE_CTXT_MODIFICATION_REQ(msg_p, msg_name_p, instance);
-            break;
-
-          case S1AP_PAGING_IND:
-            LOG_D(RRC, "[eNB %d] Received Paging message from S1AP: %s\n", instance, msg_name_p);
-            rrc_eNB_process_PAGING_IND(msg_p, msg_name_p, instance);
-            break;
-
-          case S1AP_E_RAB_SETUP_REQ:
-            rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(msg_p, msg_name_p, instance);
-            LOG_D(RRC, "[eNB %d] Received the message %s\n", instance, msg_name_p);
-            break;
-
-          case S1AP_E_RAB_MODIFY_REQ:
-            rrc_eNB_process_S1AP_E_RAB_MODIFY_REQ(msg_p, msg_name_p, instance);
-            break;
-
-          case S1AP_E_RAB_RELEASE_COMMAND:
-            rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(msg_p, msg_name_p, instance);
-            break;
-
-          case S1AP_UE_CONTEXT_RELEASE_REQ:
-            rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_REQ(msg_p, msg_name_p, instance);
-            break;
-
-          case S1AP_UE_CONTEXT_RELEASE_COMMAND:
-            rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND(msg_p, msg_name_p, instance);
-            break;
-
-          case GTPV1U_ENB_DELETE_TUNNEL_RESP:
-            ///Nothing to do. Apparently everything is done in S1AP processing
-            //LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
-            //instance, msg_name_p);
-            AssertFatal(false, "Removed double mechanism for same feature: now delete_tunnel() function should be called\n");
-            break;
-
-      #endif
-      */
       /* Messages from gNB app */
       case NRRRC_CONFIGURATION_REQ:
         LOG_I(NR_RRC, "[gNB %ld] Received %s : %p\n", instance, msg_name_p,&NRRRC_CONFIGURATION_REQ(msg_p));
