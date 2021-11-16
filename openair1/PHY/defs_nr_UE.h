@@ -1068,7 +1068,7 @@ typedef struct {
 #endif
   
   int dl_stats[5];
-  int nbDecode;
+
 } PHY_VARS_NR_UE;
 
 /* this structure is used to pass both UE phy vars and

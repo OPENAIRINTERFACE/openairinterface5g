@@ -228,18 +228,13 @@ void nr_dlsch_unscrambling(int16_t *llr,
   }
 }
 
-void nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req) {
+bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool last) {
   ldpcDecode_ue_t *rdata = (ldpcDecode_ue_t*) NotifiedFifoData(req);
   NR_DL_UE_HARQ_t *harq_process = rdata->harq_process;
   NR_UE_DLSCH_t *dlsch = (NR_UE_DLSCH_t *) rdata->dlsch;
   int r = rdata->segment_r;
 
   bool decodeSuccess = (rdata->decodeIterations < (1+dlsch->max_ldpc_iterations));
-  harq_process->processedSegments++;
-  LOG_D(PHY, "processing result of segment: %d, processed %d/%d\n",
-	rdata->segment_r, harq_process->processedSegments, rdata->nbSegments);
-  phy_vars_ue->nbDecode--;
-  LOG_D(PHY,"remain to decoded in subframe: %d\n", phy_vars_ue->nbDecode);
 
   if (decodeSuccess) {
     memcpy(harq_process->b+rdata->offset,
@@ -247,21 +242,18 @@ void nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req) {
            rdata->Kr_bytes - (harq_process->F>>3) -((harq_process->C>1)?3:0));
 
   } else {
-    if ( rdata->nbSegments != harq_process->processedSegments ) {
+    if ( !last ) {
       int nb=abortTpool(&(pool_dl), req->key);
       nb+=abortNotifiedFIFO(&nf, req->key);
-      phy_vars_ue->nbDecode-=nb;
       LOG_D(PHY,"downlink segment error %d/%d, aborted %d segments\n",rdata->segment_r,rdata->nbSegments, nb);
       LOG_D(PHY, "DLSCH %d in error\n",rdata->dlsch_id);
-      AssertFatal(harq_process->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
-		  harq_process->processedSegments, nb, rdata->nbSegments);
-      harq_process->processedSegments=rdata->nbSegments;
+      last = true;
     }
   }
 
   //int dumpsig=0;
   // if all segments are done
-  if (rdata->nbSegments == harq_process->processedSegments) {
+  if (last) {
     if (decodeSuccess) {
       //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for nr_slot_rx %d TBS %d mcs %d nb_rb %d harq_process->round %d\n",
       //      phy_vars_ue->Mod_id,nr_slot_rx,harq_process->TBS,harq_process->mcs,harq_process->nb_rb, harq_process->round);
@@ -295,7 +287,12 @@ void nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req) {
       dlsch->last_iteration_cnt = dlsch->max_ldpc_iterations + 1;
       LOG_D(PHY, "DLSCH received nok \n");
     }
+    return true; //stop
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,0);
+  }
+  else
+  {
+	return false; //not last one
   }
 }
 
@@ -529,8 +526,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   //NR_DL_UE_HARQ_t *harq_process = dlsch->harq_processes[0];
   
-  phy_vars_ue->nbDecode = 0;
-  harq_process->processedSegments = 0;
+  int nbDecode = 0;
+  //harq_process->processedSegments = 0;
   
   if (!dlsch_llr) {
     LOG_E(PHY,"dlsch_decoding.c: NULL dlsch_llr pointer\n");
@@ -683,16 +680,21 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     rdata->dlsch_id = 0;
     //nrUE_params_t *nrUE_params=get_nrUE_params();
     pushTpool(&(pool_dl),req);
-    phy_vars_ue->nbDecode++;
-    LOG_D(PHY,"Added a block to decode, in pipe: %d\n",phy_vars_ue->nbDecode);
+    nbDecode++;
+    LOG_D(PHY,"Added a block to decode, in pipe: %d\n",nbDecode);
     r_offset += E;
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
     //////////////////////////////////////////////////////////////////////////////////////////
   }
-  while (phy_vars_ue->nbDecode > 0) {
+  for (r=0; r<nbDecode; r++) {
     notifiedFIFO_elt_t *req=pullTpool(&nf, &(pool_dl));
-    nr_ue_postDecode(phy_vars_ue, req);
+    bool last = false;
+    if (r == nbDecode - 1)
+      last = true;
+    bool stop = nr_ue_postDecode(phy_vars_ue, req, last);
     delNotifiedFIFO_elt(req);
+    if (stop)
+      break;
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_COMBINE_SEG, VCD_FUNCTION_OUT);
