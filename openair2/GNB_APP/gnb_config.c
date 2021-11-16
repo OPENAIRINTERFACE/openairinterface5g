@@ -1126,22 +1126,14 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 int RCconfig_nr_gtpu(void ) {
 
   int               num_gnbs                      = 0;
-
-
-
-  char*             gnb_interface_name_for_NGU    = NULL;
   char*             gnb_ipv4_address_for_NGU      = NULL;
   uint32_t          gnb_port_for_NGU              = 0;
-  char*             gnb_interface_name_for_S1U    = NULL;
   char*             gnb_ipv4_address_for_S1U      = NULL;
   uint32_t          gnb_port_for_S1U              = 0;
-  char             *address                       = NULL;
-  char             *cidr                          = NULL;
   char gtpupath[MAX_OPTNAME_SIZE*2 + 8];
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
-  paramdef_t GTPUParams[] = GNBGTPUPARAMS_DESC;
   LOG_I(GTPU,"Configuring GTPu\n");
 
 /* get number of active eNodeBs */
@@ -1151,31 +1143,32 @@ int RCconfig_nr_gtpu(void ) {
            "Failed to parse config file no active gNodeBs in %s \n", GNB_CONFIG_STRING_ACTIVE_GNBS);
 
   sprintf(gtpupath,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-  config_get(GTPUParams,sizeof(GTPUParams)/sizeof(paramdef_t),gtpupath);
-
   config_get(NETParams,sizeof(NETParams)/sizeof(paramdef_t),gtpupath); 
-
-  if (NETParams[0].strptr != NULL)
+  char *cidr=NULL, *address = NULL;
+  int port;
+  if (NETParams[1].strptr != NULL) {
     LOG_I(GTPU, "SA mode \n");
-  else 
+    address = strtok_r(gnb_ipv4_address_for_NGU, "/", &cidr);
+    port=gnb_port_for_NGU;
+  } else { 
     LOG_I(GTPU, "NSA mode \n");
-  
-  cidr = gnb_ipv4_address_for_S1U;
-  address = strtok(cidr, "/");
-  
+    address = strtok_r(gnb_ipv4_address_for_S1U, "/", &cidr);
+    port=gnb_port_for_S1U;
+  }
+
   if (address) {
     MessageDef *message;
     message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_REQ);
-      AssertFatal(message!=NULL,"");
-      IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_REQ(message).localAddr, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
-      LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_REQ(message).localAddr);
-      GTPV1U_REQ(message).localPort = gnb_port_for_NGU;
-      strcpy(GTPV1U_REQ(message).localAddrStr,address);
-      sprintf(GTPV1U_REQ(message).localPortStr,"%d", gnb_port_for_NGU);
-      itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
-    } else
-      LOG_E(GTPU,"invalid address for NGU\n");
-
+    AssertFatal(message!=NULL,"");
+    IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_REQ(message).localAddr, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
+    LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_REQ(message).localAddr);
+    GTPV1U_REQ(message).localPort = port;
+    strcpy(GTPV1U_REQ(message).localAddrStr,address);
+    sprintf(GTPV1U_REQ(message).localPortStr,"%d", port);
+    itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+  } else
+    LOG_E(GTPU,"invalid address for NGU or S1U\n");
+  
 return 0;
 }
 
@@ -1193,6 +1186,10 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
   (void)  my_int;
 
   memset((char*)active_gnb,0,MAX_GNB* sizeof(char*));
+  char*             gnb_ipv4_address_for_NGU      = NULL;
+  uint32_t          gnb_port_for_NGU              = 0;
+  char*             gnb_ipv4_address_for_S1U      = NULL;
+  uint32_t          gnb_port_for_S1U              = 0;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
@@ -1534,6 +1531,11 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
             paramdef_t X2Params[]  = X2PARAMS_DESC;
             paramlist_def_t X2ParamList = {ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS,NULL,0};
             paramdef_t SCTPParams[]  = GNBSCTPPARAMS_DESC;
+	    char*             gnb_ipv4_address_for_NGU      = NULL;
+	    uint32_t          gnb_port_for_NGU              = 0;
+	    char*             gnb_ipv4_address_for_S1U      = NULL;
+	    uint32_t          gnb_port_for_S1U              = 0;
+
             paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
             /* TODO: fix the size - if set lower we have a crash (MAX_OPTNAME_SIZE was 64 when this code was written) */
             /* this is most probably a problem with the config module */

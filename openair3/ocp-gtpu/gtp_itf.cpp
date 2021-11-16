@@ -150,7 +150,6 @@ static  int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, te
   to.sin_addr.s_addr = peerIp ;
   LOG_D(GTPU,"sending packet size: %d to %s\n",fullSize, inet_ntoa(to.sin_addr) );
   int ret;
-
   if ((ret=sendto(h, (void *)buffer, (size_t)fullSize, 0,(struct sockaddr *)&to, sizeof(to) )) != fullSize ) {
     LOG_E(GTPU, "[SD %d] Failed to send data to " IPV4_ADDR " on port %d, buffer size %u, ret: %d, errno: %d\n",
           h, IPV4_ADDR_FORMAT(peerIp), peerPort, fullSize, ret, errno);
