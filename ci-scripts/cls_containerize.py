@@ -580,6 +580,8 @@ class Containerize():
 		# Currently support only one
 		mySSH.command('docker-compose --file ci-docker-compose.yml config', '\$', 5)
 		result = re.search('container_name: (?P<container_name>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
+		if self.eNB_logFile[self.eNB_instance] == '':
+			self.eNB_logFile[self.eNB_instance] = 'enb_' + HTML.testCase_id + '.log'
 		if result is not None:
 			containerName = result.group('container_name')
 			mySSH.command('docker kill --signal INT ' + containerName, '\$', 30)
