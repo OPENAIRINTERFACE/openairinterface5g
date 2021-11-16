@@ -1197,9 +1197,8 @@ int main(int argc, char **argv)
         }
 
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
-        UE_harq_process->Nl = g_nrOfLayers;
         nr_ue_scheduled_response(&scheduled_response);
-        
+
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,

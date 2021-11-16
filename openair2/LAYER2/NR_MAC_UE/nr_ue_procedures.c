@@ -1135,7 +1135,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_1[dci->antenna_ports.val][0];
       dlsch_config_pdu_1_1->dmrs_ports = (table_7_3_2_3_3_1[dci->antenna_ports.val][1] +
                                           (table_7_3_2_3_3_1[dci->antenna_ports.val][2]<<1) +
-                                          (table_7_3_2_3_3_1[dci->antenna_ports.val][2]<<2) +
+                                          (table_7_3_2_3_3_1[dci->antenna_ports.val][3]<<2) +
                                           (table_7_3_2_3_3_1[dci->antenna_ports.val][4]<<3));
     }
     if ((dmrs_type == NULL) && (max_length != NULL)){
@@ -1144,7 +1144,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][0];
         dlsch_config_pdu_1_1->dmrs_ports = (table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][1] +
                                             (table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][2]<<1) +
-                                            (table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][2]<<2) +
+                                            (table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][3]<<2) +
                                             (table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][4]<<3) +
                                             (table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][5]<<4) +
                                             (table_7_3_2_3_3_2_oneCodeword[dci->antenna_ports.val][6]<<5) +
@@ -1156,7 +1156,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][0];
         dlsch_config_pdu_1_1->dmrs_ports = (table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][1] +
                                             (table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][2]<<1) +
-                                            (table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][2]<<2) +
+                                            (table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][3]<<2) +
                                             (table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][4]<<3) +
                                             (table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][5]<<4) +
                                             (table_7_3_2_3_3_2_twoCodeword[dci->antenna_ports.val][6]<<5) +
@@ -1171,7 +1171,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][0];
         dlsch_config_pdu_1_1->dmrs_ports = (table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][1] +
                                             (table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][2]<<1) +
-                                            (table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][2]<<2) +
+                                            (table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][3]<<2) +
                                             (table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][4]<<3) +
                                             (table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][5]<<4) +
                                             (table_7_3_2_3_3_3_oneCodeword[dci->antenna_ports.val][6]<<5));
@@ -1180,7 +1180,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][0];
         dlsch_config_pdu_1_1->dmrs_ports = (table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][1] +
                                             (table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][2]<<1) +
-                                            (table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][2]<<2) +
+                                            (table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][3]<<2) +
                                             (table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][4]<<3) +
                                             (table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][5]<<4) +
                                             (table_7_3_2_3_3_3_twoCodeword[dci->antenna_ports.val][6]<<5));
@@ -1192,7 +1192,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][0];
         dlsch_config_pdu_1_1->dmrs_ports = (table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][1] +
                                             (table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][2]<<1) +
-                                            (table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][2]<<2) +
+                                            (table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][3]<<2) +
                                             (table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][4]<<3) +
                                             (table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][5]<<4) +
                                             (table_7_3_2_3_3_4_oneCodeword[dci->antenna_ports.val][6]<<5) +
@@ -1208,7 +1208,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][0];
         dlsch_config_pdu_1_1->dmrs_ports = (table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][1] +
                                             (table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][2]<<1) +
-                                            (table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][2]<<2) +
+                                            (table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][3]<<2) +
                                             (table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][4]<<3) +
                                             (table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][5]<<4) +
                                             (table_7_3_2_3_3_4_twoCodeword[dci->antenna_ports.val][6]<<5) +
