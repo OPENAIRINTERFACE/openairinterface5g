@@ -136,6 +136,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   NR_UE_COMMON *const common_vars        = &ue->common_vars;
   NR_UE_PBCH  **const pbch_vars          = ue->pbch_vars;
   NR_UE_PRACH **const prach_vars         = ue->prach_vars;
+  NR_UE_SRS **const srs_vars             = ue->srs_vars;
+
   int i,j,k,l,slot,symb,q;
   int gNB_id;
   int th_id;
@@ -318,6 +320,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
     prach_vars[gNB_id] = (NR_UE_PRACH *)malloc16_clear(sizeof(NR_UE_PRACH));
     pbch_vars[gNB_id] = (NR_UE_PBCH *)malloc16_clear(sizeof(NR_UE_PBCH));
+    srs_vars[gNB_id] = (NR_UE_SRS *)malloc16_clear(sizeof(NR_UE_SRS));
 
     if (abstraction_flag == 0) {
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {

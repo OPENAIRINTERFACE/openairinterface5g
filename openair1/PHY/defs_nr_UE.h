@@ -706,6 +706,10 @@ typedef struct {
   fapi_nr_ul_config_prach_pdu prach_pdu;
 } NR_UE_PRACH;
 
+typedef struct {
+  fapi_nr_ul_config_srs_pdu srs_config_pdu;
+} NR_UE_SRS;
+
 // structure used for multiple SSB detection
 typedef struct NR_UE_SSB {
   uint8_t i_ssb;   // i_ssb between 0 and 7 (it corresponds to ssb_index only for Lmax=4,8)
@@ -815,6 +819,7 @@ typedef struct {
   NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_SRS       *srs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PUSCH     *pusch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PUCCH     *pucch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_CODEWORDS]; // two RxTx Threads

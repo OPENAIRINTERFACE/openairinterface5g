@@ -166,6 +166,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu;
         /* PUCCH */
         fapi_nr_ul_config_pucch_pdu *pucch_config_pdu;
+        /* SRS */
+        fapi_nr_ul_config_srs_pdu *srs_config_pdu;
 
         switch (pdu_type){
 
@@ -222,6 +224,12 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           // prach config pdu
           prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
           memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu), (void*)prach_config_pdu, sizeof(fapi_nr_ul_config_prach_pdu));
+        break;
+
+        case (FAPI_NR_UL_CONFIG_TYPE_SRS):
+          // srs config pdu
+          srs_config_pdu = &ul_config->ul_config_list[i].srs_config_pdu;
+          memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->srs_vars[gNB_id]->srs_config_pdu), (void*)srs_config_pdu, sizeof(fapi_nr_ul_config_srs_pdu));
         break;
 
         default:
