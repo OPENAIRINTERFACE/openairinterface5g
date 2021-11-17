@@ -42,6 +42,8 @@
 extern unsigned char NB_eNB_INST;
 extern uint16_t NB_UE_INST;
 
+uint16_t ue_idx_standalone = 0xFFFF;
+
 char *make_port_str_from_ueid(const char *base_port_str, int ueid);
 
 static int nas_ue_process_events(nas_user_container_t *users, struct epoll_event *events, int nb_events)

@@ -415,16 +415,6 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
                        uint8_t gNB_id,
                        int nr_slot_tx);
 
-uint8_t nr_ue_get_rach_nsa(NR_PRACH_RESOURCES_t *prach_resources,
-                       fapi_nr_ul_config_prach_pdu *prach_pdu,
-                       module_id_t mod_id,
-                       int CC_id,
-                       frame_t frame,
-                       uint8_t gNB_id,
-                       int nr_slot_tx);
-
-
-
 /* \brief Function implementing the routine for the selection of Random Access resources (5.1.2 TS 38.321).
 @param module_idP Index of UE instance
 @param CC_id Component Carrier Index
