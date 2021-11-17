@@ -37,6 +37,7 @@
   - IdleSleep
   - Perform_X2_Handover
   - Build_Image
+  - Copy_Image_to_Test
   - Deploy_Object
   - Undeploy_Object
   - Cppcheck_Analysis

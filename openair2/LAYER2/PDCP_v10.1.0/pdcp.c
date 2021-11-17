@@ -2383,7 +2383,7 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask, int id) {
   }else{
          if(pdcp_optmask & ENB_NAS_USE_TUN_W_MBMS_BIT){
              LOG_W(PDCP, "ENB pdcp will use tun interface for MBMS\n");
-             netlink_init_mbms_tun("enm", 1);
+             netlink_init_mbms_tun("enm", 0);
              nas_config_mbms_s1(1, 2, 1, "enm");
          }else
              LOG_E(PDCP, "ENB pdcp will not use tun interface\n");

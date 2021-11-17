@@ -181,7 +181,6 @@ eth_params_t *eth_params;
 double cpuf;
 
 int oaisim_flag=0;
-uint16_t ue_idx_standalone = 0xFFFF;
 uint8_t proto_agent_flag = 0;
 
 
