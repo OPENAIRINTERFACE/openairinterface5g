@@ -702,7 +702,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   uint8_t diff_rsrp_idx = 0;
   uint8_t i, j;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
 
   if (n_dl_bwp < 4)
     pdsch_bwp_id = bwp_id;
@@ -728,9 +727,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
 
       //if strongest measured RSRP is configured
       strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
-      // including ssb rsrp in mac stats
-      stats->cumul_rsrp += strongest_ssb_rsrp;
-      stats->num_rsrp_meas++;
       ssb_rsrp[idx * nb_of_csi_ssb_report] = strongest_ssb_rsrp;
       LOG_D(NR_MAC,"ssb_rsrp = %d\n",strongest_ssb_rsrp);
 
@@ -930,9 +926,14 @@ void evaluate_rsrp_report(NR_UE_info_t *UE_info,
     *cumul_bits += 4;
   }
   UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report++;
+  int strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
+  NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
+  // including ssb rsrp in mac stats
+  stats->cumul_rsrp += strongest_ssb_rsrp;
+  stats->num_rsrp_meas++;
   LOG_D(MAC,"rsrp_id = %d rsrp = %d\n",
         sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP,
-        get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP));
+        strongest_ssb_rsrp);
 }
 
 
