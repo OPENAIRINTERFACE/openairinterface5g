@@ -578,6 +578,10 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
               pdu_list->pdu_type, ul_tti_req->pdus_list[i].pucch_pdu.rnti, pdu_list->pucch_pdu.sr_flag, pdu_list->pucch_pdu.bit_len_harq);
         if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE && pdu_list->pucch_pdu.rnti == mac->crnti)
         {
+            if (nr_uci_ind_queue.num_items <= 0)
+            {
+                return;
+            }
             nfapi_nr_uci_indication_t *uci_ind = multiplex_uci_ind(mac);
             if (uci_ind && uci_ind->num_ucis > 0)
             {
