@@ -2891,6 +2891,7 @@ add_executable(ocp-enb
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
+  ${PHY_INTERFACE_DIR}/queue.c
   ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
@@ -3074,6 +3075,7 @@ add_executable(ocp-gnb
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
+  ${PHY_INTERFACE_DIR}/queue.c
   ${XFORMS_SOURCE_NR}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
