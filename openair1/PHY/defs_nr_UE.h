@@ -707,6 +707,7 @@ typedef struct {
 } NR_UE_PRACH;
 
 typedef struct {
+  bool active;
   fapi_nr_ul_config_srs_pdu srs_config_pdu;
 } NR_UE_SRS;
 

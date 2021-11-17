@@ -282,7 +282,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
     }
   }
 
-  if (ue->UE_mode[gNB_id] == PUSCH && is_srs_occasion_nr(ue->frame_parms, frame_tx, slot_tx)) {
+  if (ue->UE_mode[gNB_id] == PUSCH) {
     ue_srs_procedures_nr(ue, proc, gNB_id);
   }
 

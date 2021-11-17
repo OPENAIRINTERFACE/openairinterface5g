@@ -38,7 +38,6 @@
 #undef DEFINE_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
 
 #include "PHY/defs_nr_UE.h"
-//#include "extern.h"
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
@@ -47,13 +46,13 @@
 #include "PHY/NR_UE_TRANSPORT/srs_modulation_nr.h"
 #undef DEFINE_VARIABLES_SRS_MODULATION_NR_H
 
-#define SRS_DEBUG
+//#define SRS_DEBUG
 
 /*******************************************************************
 *
 * NAME :         generate_srs
 *
-* PARAMETERS :   pointer to resource set
+* PARAMETERS :   pointer to srs config pdu
 *                pointer to transmit buffer
 *                amplitude scaling for this physical signal
 *                slot number of transmission
@@ -75,84 +74,88 @@
 *                - no antenna switching*
 *
 *********************************************************************/
-int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
+int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
                         NR_DL_FRAME_PARMS *frame_parms,
                         int32_t *txptr,
                         int16_t amp,
                         UE_nr_rxtx_proc_t *proc)
 {
   uint8_t n_SRS_cs_max;
-  uint8_t u, v_nu;
+  uint8_t u;
+  uint8_t v_nu;
   uint32_t f_gh = 0;
-  SRS_Resource_t *p_SRS_Resource;
-  int frame_number = proc->frame_tx;
-  int slot_number = proc->nr_slot_tx;
-  uint16_t n_SRS, n_SRS_cs_i;
+  uint16_t n_SRS;
+  uint16_t n_SRS_cs_i;
   double alpha_i;
   uint8_t K_TC_p;
-  uint16_t n_b[B_SRS_NUMBER], F_b, subcarrier;
-  uint8_t N_b, k_0_overbar_p;
+  uint16_t n_b[B_SRS_NUMBER];
+  uint16_t F_b;
+  uint16_t subcarrier;
+  uint8_t N_b;
+  uint8_t k_0_overbar_p;
 
-  if (p_srs_resource_set->p_srs_ResourceList[0] == NULL) {
-    LOG_E(PHY,"generate_srs: No resource associated with the SRS resource set!\n");
-    return (-1);
-  }
-  else {
-    if (p_srs_resource_set->number_srs_Resource <= MAX_NR_OF_SRS_RESOURCES_PER_SET) {
-      p_SRS_Resource = p_srs_resource_set->p_srs_ResourceList[0];
-    }
-    else {
-      LOG_E(PHY,"generate_srs: resource number of this resource set %d exceeds maximum supported value %d!\n", p_srs_resource_set->number_srs_Resource, MAX_NR_OF_SRS_RESOURCES_PER_SET);
-      return (-1);
-    }
-  }
+  int frame_number = proc->frame_tx;
+  int slot_number = proc->nr_slot_tx;
 
-  if (p_srs_resource_set->resourceType != periodic) {
-    LOG_E(PHY,"generate_srs: only SRS periodic is supported up to now!\n");
-    return (-1);
-  }
-  /* get parameters from SRS resource configuration */
-  uint8_t B_SRS  = p_SRS_Resource->freqHopping_b_SRS;
-  uint8_t C_SRS  = p_SRS_Resource->freqHopping_c_SRS;
-  uint8_t b_hop = p_SRS_Resource->freqHopping_b_hop;
-  uint8_t K_TC = p_SRS_Resource->transmissionComb;
-  uint8_t K_TC_overbar = p_SRS_Resource->combOffset;    /* FFS_TODO_NR is this parameter for K_TC_overbar ?? */
-  uint8_t n_SRS_cs = p_SRS_Resource->cyclicShift;
-  uint8_t n_ID_SRS = p_SRS_Resource->sequenceId;
-  uint8_t n_shift = p_SRS_Resource->freqDomainPosition; /* it adjusts the SRS allocation to align with the common resource block grid in multiples of four */
-  uint8_t n_RRC = p_SRS_Resource->freqDomainShift;
-  uint8_t groupOrSequenceHopping = p_SRS_Resource->groupOrSequenceHopping;
+  // get parameters from srs_config_pdu
+  uint8_t B_SRS  = srs_config_pdu->bandwidth_index;
+  uint8_t C_SRS  = srs_config_pdu->config_index;
+  uint8_t b_hop = srs_config_pdu->frequency_hopping;
+  uint8_t K_TC = 2<<srs_config_pdu->comb_size;
+  uint8_t K_TC_overbar = srs_config_pdu->comb_offset;    // FFS_TODO_NR is this parameter for K_TC_overbar ??
+  uint8_t n_SRS_cs = srs_config_pdu->cyclic_shift;
+  uint8_t n_ID_SRS = srs_config_pdu->sequence_id;
+  uint8_t n_shift = srs_config_pdu->frequency_position;  // it adjusts the SRS allocation to align with the common resource block grid in multiples of four
+  uint8_t n_RRC = srs_config_pdu->frequency_shift;
+  uint8_t groupOrSequenceHopping = srs_config_pdu->group_or_sequence_hopping;
+  uint8_t l_offset = srs_config_pdu->time_start_position;
+  uint16_t T_SRS = srs_config_pdu->t_srs;
+  uint16_t T_offset = srs_config_pdu->t_offset;                                                 // FFS_TODO_NR to check interface with RRC
+  uint8_t R = srs_config_pdu->num_repetitions==0 ? 1 : 2<<(srs_config_pdu->num_repetitions-1);
+  uint8_t N_ap = srs_config_pdu->num_ant_ports==0 ? 1 : 2<<(srs_config_pdu->num_ant_ports-1);   // antenna port for transmission
+  uint8_t N_symb_SRS = srs_config_pdu->num_symbols==0 ? 1 : 2<<(srs_config_pdu->num_symbols-1); // consecutive OFDM symbols
+  uint8_t l0 = N_SYMB_SLOT - 1 - l_offset;                                                      // starting position in the time domain
+  uint8_t k_0_p;                                                                                // frequency domain starting position
 
-  uint8_t l_offset = p_SRS_Resource->resourceMapping_startPosition;
-
-  uint16_t T_SRS = srs_period[p_SRS_Resource->SRS_Periodicity];
-  uint16_t T_offset = p_SRS_Resource->SRS_Offset;;                   /* FFS_TODO_NR to check interface with RRC */
-  uint8_t R = p_SRS_Resource->resourceMapping_repetitionFactor;
-
-  /* TS 38.211 6.4.1.4.1 SRS resource */
-  uint8_t N_ap = (uint8_t)p_SRS_Resource->nrof_SrsPorts;            /* antenna port for transmission */
-  uint8_t N_symb_SRS = p_SRS_Resource->resourceMapping_nrofSymbols; /* consecutive OFDM symbols */
-  uint8_t l0 = N_SYMB_SLOT - 1 - l_offset;                          /* starting position in the time domain */
-  uint8_t k_0_p;                                                    /* frequency domain starting position */
+#ifdef SRS_DEBUG
+  LOG_I(NR_PHY,"Frame = %i, slot = %i\n", frame_number, slot_number);
+  LOG_I(NR_PHY,"B_SRS = %i\n", B_SRS);
+  LOG_I(NR_PHY,"C_SRS = %i\n", C_SRS);
+  LOG_I(NR_PHY,"b_hop = %i\n", b_hop);
+  LOG_I(NR_PHY,"K_TC = %i\n", K_TC);
+  LOG_I(NR_PHY,"K_TC_overbar = %i\n", K_TC_overbar);
+  LOG_I(NR_PHY,"n_SRS_cs = %i\n", n_SRS_cs);
+  LOG_I(NR_PHY,"n_ID_SRS = %i\n", n_ID_SRS);
+  LOG_I(NR_PHY,"n_shift = %i\n", n_shift);
+  LOG_I(NR_PHY,"n_RRC = %i\n", n_RRC);
+  LOG_I(NR_PHY,"groupOrSequenceHopping = %i\n", groupOrSequenceHopping);
+  LOG_I(NR_PHY,"l_offset = %i\n", l_offset);
+  LOG_I(NR_PHY,"T_SRS = %i\n", T_SRS);
+  LOG_I(NR_PHY,"T_offset = %i\n", T_offset);
+  LOG_I(NR_PHY,"R = %i\n", R);
+  LOG_I(NR_PHY,"N_ap = %i\n", N_ap);
+  LOG_I(NR_PHY,"N_symb_SRS = %i\n", N_symb_SRS);
+  LOG_I(NR_PHY,"l0 = %i\n", l0);
+#endif
 
   if (N_ap != port1) {
-    LOG_E(PHY, "generate_srs: this number of antenna ports %d is not yet supported!\n", N_ap);
+    LOG_E(NR_PHY, "generate_srs: this number of antenna ports %d is not yet supported!\n", N_ap);
     return (-1);
   }
   if (N_symb_SRS != 1) {
-    LOG_E(PHY, "generate_srs: this number of srs symbol  %d is not yet supported!\n", N_symb_SRS);
+    LOG_E(NR_PHY, "generate_srs: this number of srs symbol  %d is not yet supported!\n", N_symb_SRS);
   	return (-1);
   }
   if (groupOrSequenceHopping != neitherHopping) {
-    LOG_E(PHY, "generate_srs: sequence hopping is not yet supported!\n");
+    LOG_E(NR_PHY, "generate_srs: sequence hopping is not yet supported!\n");
     return (-1);
   }
   if (R == 0) {
-    LOG_E(PHY, "generate_srs: this parameter repetition factor %d is not consistent !\n", R);
+    LOG_E(NR_PHY, "generate_srs: this parameter repetition factor %d is not consistent !\n", R);
     return (-1);
   }
   else if (R > N_symb_SRS) {
-    LOG_E(PHY, "generate_srs: R %d can not be greater than N_symb_SRS %d !\n", R, N_symb_SRS);
+    LOG_E(NR_PHY, "generate_srs: R %d can not be greater than N_symb_SRS %d !\n", R, N_symb_SRS);
     return (-1);
   }
   /* see 38211 6.4.1.4.2 Sequence generation */
@@ -165,15 +168,15 @@ int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
     // delta = 1;     /* delta = log2(K_TC) */
   }
   else {
-	LOG_E(PHY, "generate_srs: SRS unknown value for K_TC %d !\n", K_TC);
+	LOG_E(NR_PHY, "generate_srs: SRS unknown value for K_TC %d !\n", K_TC);
     return (-1);
   }
   if (n_SRS_cs >= n_SRS_cs_max) {
-    LOG_E(PHY, "generate_srs: inconsistent parameter n_SRS_cs %d >=  n_SRS_cs_max %d !\n", n_SRS_cs, n_SRS_cs_max);
+    LOG_E(NR_PHY, "generate_srs: inconsistent parameter n_SRS_cs %d >=  n_SRS_cs_max %d !\n", n_SRS_cs, n_SRS_cs_max);
     return (-1);
   }
   if (T_SRS == 0) {
-    LOG_E(PHY, "generate_srs: inconsistent parameter T_SRS %d can not be equal to zero !\n", T_SRS);
+    LOG_E(NR_PHY, "generate_srs: inconsistent parameter T_SRS %d can not be equal to zero !\n", T_SRS);
     return (-1);
   }
   else
@@ -182,7 +185,7 @@ int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
     while (srs_periodicity[index] != T_SRS) {
       index++;
       if (index == SRS_PERIODICITY) {
-        LOG_E(PHY, "generate_srs: inconsistent parameter T_SRS %d not specified !\n", T_SRS);
+        LOG_E(NR_PHY, "generate_srs: inconsistent parameter T_SRS %d not specified !\n", T_SRS);
         return (-1);
       }
     }
@@ -204,10 +207,9 @@ int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
     /* A UE may be configured to transmit an SRS resource on  adjacent symbols within the last six symbols of a slot, */
     /* where all antenna ports of the SRS resource are mapped to each symbol of the resource */
 
-
     uint8_t l = p_index;
     if (l >= N_symb_SRS) {
-      LOG_E(PHY, "generate_srs: number of antenna ports %d and number of srs symbols %d are different !\n", N_ap, N_symb_SRS);
+      LOG_E(NR_PHY, "generate_srs: number of antenna ports %d and number of srs symbols %d are different !\n", N_ap, N_symb_SRS);
     }
 
     switch(groupOrSequenceHopping) {
@@ -249,7 +251,7 @@ int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
       }
       default:
       {
-        LOG_E(PHY, "generate_srs: unknown hopping setting %d !\n", groupOrSequenceHopping);
+        LOG_E(NR_PHY, "generate_srs: unknown hopping setting %d !\n", groupOrSequenceHopping);
         return (-1);
       }
     }
@@ -276,7 +278,7 @@ int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
           N_b = 1;
         }
         /* periodicity and offset */
-        if (p_srs_resource_set->resourceType == aperiodic) {
+        if (srs_config_pdu->resource_type == aperiodic) {
           n_SRS = l/R;
         }
         else {
@@ -329,7 +331,7 @@ int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
     }
 
     if (ul_allocated_re[M_sc_b_SRS_index] != M_sc_b_SRS) {
-      LOG_E(PHY, "generate_srs: srs uplink allocation %d can not be found! \n", M_sc_b_SRS);
+      LOG_E(NR_PHY, "generate_srs: srs uplink allocation %d can not be found! \n", M_sc_b_SRS);
       return (-1);
     }
 
@@ -426,74 +428,51 @@ int is_srs_period_nr(SRS_Resource_t *p_SRS_Resource, NR_DL_FRAME_PARMS *frame_pa
 *********************************************************************/
 int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id)
 {
+
+  if(!ue->srs_vars[0]->active) {
+    return -1;
+  }
+  ue->srs_vars[0]->active = false;
+
+  fapi_nr_ul_config_srs_pdu *srs_config_pdu = &ue->srs_vars[0]->srs_config_pdu;
+
+#ifdef SRS_DEBUG
+  LOG_I(NR_PHY,"Frame = %i, slot = %i\n", proc->frame_tx, proc->nr_slot_tx);
+  LOG_I(NR_PHY,"srs_config_pdu->rnti = 0x%04x\n", srs_config_pdu->rnti);
+  LOG_I(NR_PHY,"srs_config_pdu->handle = %u\n", srs_config_pdu->handle);
+  LOG_I(NR_PHY,"srs_config_pdu->bwp_size = %u\n", srs_config_pdu->bwp_size);
+  LOG_I(NR_PHY,"srs_config_pdu->bwp_start = %u\n", srs_config_pdu->bwp_start);
+  LOG_I(NR_PHY,"srs_config_pdu->subcarrier_spacing = %u\n", srs_config_pdu->subcarrier_spacing);
+  LOG_I(NR_PHY,"srs_config_pdu->cyclic_prefix = %u (0: Normal; 1: Extended)\n", srs_config_pdu->cyclic_prefix);
+  LOG_I(NR_PHY,"srs_config_pdu->num_ant_ports = %u (0 = 1 port, 1 = 2 ports, 2 = 4 ports)\n", srs_config_pdu->num_ant_ports);
+  LOG_I(NR_PHY,"srs_config_pdu->num_symbols = %u (0 = 1 symbol, 1 = 2 symbols, 2 = 4 symbols)\n", srs_config_pdu->num_symbols);
+  LOG_I(NR_PHY,"srs_config_pdu->num_repetitions = %u (0 = 1, 1 = 2, 2 = 4)\n", srs_config_pdu->num_repetitions);
+  LOG_I(NR_PHY,"srs_config_pdu->time_start_position = %u\n", srs_config_pdu->time_start_position);
+  LOG_I(NR_PHY,"srs_config_pdu->config_index = %u\n", srs_config_pdu->config_index);
+  LOG_I(NR_PHY,"srs_config_pdu->sequence_id = %u\n", srs_config_pdu->sequence_id);
+  LOG_I(NR_PHY,"srs_config_pdu->bandwidth_index = %u\n", srs_config_pdu->bandwidth_index);
+  LOG_I(NR_PHY,"srs_config_pdu->comb_size = %u (0 = comb size 2, 1 = comb size 4, 2 = comb size 8)\n", srs_config_pdu->comb_size);
+  LOG_I(NR_PHY,"srs_config_pdu->comb_offset = %u\n", srs_config_pdu->comb_offset);
+  LOG_I(NR_PHY,"srs_config_pdu->cyclic_shift = %u\n", srs_config_pdu->cyclic_shift);
+  LOG_I(NR_PHY,"srs_config_pdu->frequency_position = %u\n", srs_config_pdu->frequency_position);
+  LOG_I(NR_PHY,"srs_config_pdu->frequency_shift = %u\n", srs_config_pdu->frequency_shift);
+  LOG_I(NR_PHY,"srs_config_pdu->frequency_hopping = %u\n", srs_config_pdu->frequency_hopping);
+  LOG_I(NR_PHY,"srs_config_pdu->group_or_sequence_hopping = %u (0 = No hopping, 1 = Group hopping groupOrSequenceHopping, 2 = Sequence hopping)\n", srs_config_pdu->group_or_sequence_hopping);
+  LOG_I(NR_PHY,"srs_config_pdu->resource_type = %u (0: aperiodic, 1: semi-persistent, 2: periodic)\n", srs_config_pdu->resource_type);
+  LOG_I(NR_PHY,"srs_config_pdu->t_srs = %u\n", srs_config_pdu->t_srs);
+  LOG_I(NR_PHY,"srs_config_pdu->t_offset = %u\n", srs_config_pdu->t_offset);
+#endif
+
   NR_DL_FRAME_PARMS *frame_parms = &(ue->frame_parms);
-  SRS_NR *p_srs_nr = &(ue->frame_parms.srs_nr);
-  SRS_ResourceSet_t *p_srs_resource_set = frame_parms->srs_nr.p_SRS_ResourceSetList[p_srs_nr->active_srs_Resource_Set];
-  int generate_srs = 0;
 
-#ifdef SRS_DEBUG
-  LOG_I(NR_PHY,"p_srs_nr = 0x%x\n", p_srs_nr);
-  if(p_srs_nr) LOG_I(NR_PHY,"p_srs_nr->number_srs_Resource_Set = %i\n", p_srs_nr->number_srs_Resource_Set);
-  if(p_srs_nr) LOG_I(NR_PHY,"p_srs_nr->active_srs_Resource_Set = %i\n", p_srs_nr->active_srs_Resource_Set);
-  LOG_I(NR_PHY,"p_srs_resource_set = 0x%x\n", p_srs_resource_set);
-  if(p_srs_resource_set) LOG_I(NR_PHY,"p_srs_resource_set->resourceType = %i\n", p_srs_resource_set->resourceType);
-#endif
+  int16_t txptr = AMP;
+  uint16_t nsymb = (ue->frame_parms.Ncp==0) ? 14:12;
+  uint16_t symbol_offset = (int)ue->frame_parms.ofdm_symbol_size*((proc->nr_slot_tx*nsymb)+(nsymb-1));
 
-  /* is there any resource set which has been configurated ? */
-  if (p_srs_nr->number_srs_Resource_Set != 0) {
-
-    /* what is the current active resource set ? */
-    if (p_srs_nr->active_srs_Resource_Set > MAX_NR_OF_SRS_RESOURCE_SET) {
-      LOG_W(PHY,"phy_procedures_UE_TX: srs active %d greater than maximum %d!\n", p_srs_nr->active_srs_Resource_Set, MAX_NR_OF_SRS_RESOURCE_SET);
-    }
-    else {
-      /* SRS resource set configurated ? */
-      if (p_srs_resource_set != NULL) {
-
-        SRS_Resource_t *p_srs_resource = frame_parms->srs_nr.p_SRS_ResourceSetList[p_srs_nr->active_srs_Resource_Set]->p_srs_ResourceList[0];
-
-        /* SRS resource configurated ? */
-        if (p_srs_resource != NULL) {
-          if (p_srs_resource_set->resourceType == periodic) {
-            if (is_srs_period_nr(p_srs_resource, frame_parms, proc->frame_tx, proc->nr_slot_tx) == 0) {
-              generate_srs = 1;
-            }
-          }
-        }
-        else {
-          LOG_W(PHY,"phy_procedures_UE_TX: no configurated srs resource!\n");
-        }
-      }
-    }
-  }
-  if (generate_srs == 1) {
-    int16_t txptr = AMP;
-    uint16_t nsymb = (ue->frame_parms.Ncp==0) ? 14:12;
-    uint16_t symbol_offset = (int)ue->frame_parms.ofdm_symbol_size*((proc->nr_slot_tx*nsymb)+(nsymb-1));
-
-#ifdef SRS_DEBUG
-    LOG_I(NR_PHY,"nsymb = %i, symbol_offset = %i\n", nsymb, symbol_offset);
-    LOG_I(NR_PHY,"p_srs_resource_set->srs_ResourceSetId = %i\n", p_srs_resource_set->srs_ResourceSetId);
-    LOG_I(NR_PHY,"p_srs_resource_set->number_srs_Resource = %i", p_srs_resource_set->number_srs_Resource);
-    LOG_I(NR_PHY,"p_srs_resource_set->resourceType = %i\n", p_srs_resource_set->resourceType);
-    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->SRS_Periodicity = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->SRS_Periodicity);
-    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->combOffset = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->combOffset);
-    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->freqDomainPosition = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->freqDomainPosition);
-    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_b_SRS = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_b_SRS);
-    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_b_hop = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_b_hop);
-    LOG_I(NR_PHY,"p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_c_SRS = %i\n", p_srs_resource_set->p_srs_ResourceList[0]->freqHopping_c_SRS);
-#endif
-
-    if (generate_srs_nr(p_srs_resource_set, frame_parms, &ue->common_vars.txdataF[gNB_id][symbol_offset], txptr, proc) == 0) {
-      return 0;
-    }
-    else
-    {
-      return (-1);
-    }
-  }
-  else {
-    return (-1);
+  if (generate_srs_nr(srs_config_pdu, frame_parms, &ue->common_vars.txdataF[gNB_id][symbol_offset], txptr, proc) == 0) {
+    return 0;
+  } else {
+    return -1;
   }
 }
 

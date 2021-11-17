@@ -945,7 +945,6 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
       srs_config_pdu->cyclic_prefix = 0;
       srs_config_pdu->num_ant_ports = srs_resource->nrofSRS_Ports;
       srs_config_pdu->num_symbols = srs_resource->resourceMapping.nrofSymbols;
-
       srs_config_pdu->num_repetitions = srs_resource->resourceMapping.repetitionFactor;
       srs_config_pdu->time_start_position = srs_resource->resourceMapping.startPosition;
       srs_config_pdu->config_index = srs_resource->freqHopping.c_SRS;

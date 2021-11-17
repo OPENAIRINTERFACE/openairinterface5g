@@ -140,7 +140,7 @@ EXTERN const uint16_t srs_periodicity[SRS_PERIODICITY]
     @param proc pointer to the transmit parameters
     @returns 0 on success -1 on error with message */
 
-int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
+int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
                         NR_DL_FRAME_PARMS *frame_parms,
                         int32_t *txptr,
                         int16_t amp,

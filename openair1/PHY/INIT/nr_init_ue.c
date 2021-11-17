@@ -322,6 +322,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     pbch_vars[gNB_id] = (NR_UE_PBCH *)malloc16_clear(sizeof(NR_UE_PBCH));
     srs_vars[gNB_id] = (NR_UE_SRS *)malloc16_clear(sizeof(NR_UE_SRS));
 
+    srs_vars[gNB_id]->active = false;
+
     if (abstraction_flag == 0) {
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
         phy_init_nr_ue__PDSCH( ue->pdsch_vars[th_id][gNB_id], fp );
