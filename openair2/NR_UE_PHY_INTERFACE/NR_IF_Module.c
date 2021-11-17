@@ -497,6 +497,68 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     dl_info->slot = ul_dci_req->Slot;
 }
 
+static void copy_uci_inds_to_single_uci_ind(NR_UE_MAC_INST_t *mac,
+                                            nfapi_nr_uci_indication_t *uci_from_queue,
+                                            nfapi_nr_uci_indication_t *new_uci,
+                                            int index)
+{
+    /* In openair1/SCHED_NR_UE/fapi_nr_ue_l1.c nr_ue_schedule_response_stub(), the
+       number of UCIs is hard coded to 1. This is why we always use index 0 of the
+       queued UCI indication to fill the new multiplexed UCI indication */
+
+    nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &new_uci->uci_list[index].pucch_pdu_format_0_1;
+    memset(pdu_0_1, 0, sizeof(*pdu_0_1));
+    new_uci->uci_list[index].pdu_type = uci_from_queue->uci_list[0].pdu_type;
+    new_uci->uci_list[index].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
+
+    nfapi_nr_uci_pucch_pdu_format_0_1_t *queued_pdu_0_1 = &uci_from_queue->uci_list[0].pucch_pdu_format_0_1;
+    pdu_0_1->handle = queued_pdu_0_1->handle;
+    pdu_0_1->rnti = queued_pdu_0_1->rnti;
+    pdu_0_1->pucch_format = queued_pdu_0_1->pucch_format;
+    pdu_0_1->ul_cqi = queued_pdu_0_1->ul_cqi;
+    pdu_0_1->timing_advance = queued_pdu_0_1->timing_advance;
+    pdu_0_1->rssi = queued_pdu_0_1->rssi;
+    return;
+}
+
+nfapi_nr_uci_indication_t *multiplex_uci_ind(NR_UE_MAC_INST_t *mac)
+{
+    int num_active_harqs = 0;
+    for (int i = 0; i < NR_MAX_HARQ_PROCESSES; i++)
+    {
+        int harq_slot = mac->dl_harq_info[i].dl_slot + mac->dl_harq_info[i].feedback_to_ul;
+        frame_t harq_sfn = mac->dl_harq_info[i].dl_frame;
+        int harq_sfn_slot = NFAPI_SFNSLOT2HEX(harq_sfn, harq_slot);
+        if (harq_sfn_slot == mac->nr_ue_emul_l1.active_harq_sfn_slot)
+        {
+            LOG_D(NR_MAC, "The sfn_slot stored in the current harq UE mac "
+                          "instance matches the active_harq_sfn_slot we have."
+                          " mac->harq_info[%d].sfn_slot = %d %d and active = %d %d\n",
+                          i, harq_sfn, harq_slot,
+                          NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot),
+                          NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot));
+            num_active_harqs++;
+        }
+    }
+    nfapi_nr_uci_indication_t *uci_ind = MALLOC(sizeof(*uci_ind));
+    uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
+    uci_ind->sfn = NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot);
+    uci_ind->slot = NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot);
+    uci_ind->num_ucis = num_active_harqs;
+    uci_ind->uci_list = MALLOC(uci_ind->num_ucis * sizeof(*uci_ind->uci_list));
+    if (num_active_harqs != nr_uci_ind_queue.num_items)
+    {
+        LOG_E(NR_MAC, "The number of active harqs %d should match the number of UCIs in the queue %lu\n",
+              num_active_harqs, nr_uci_ind_queue.num_items);
+    }
+    for (int j = 0; j < num_active_harqs; j++)
+    {
+        nfapi_nr_uci_indication_t *queued_uci_ind = get_queue(&nr_uci_ind_queue);
+        copy_uci_inds_to_single_uci_ind(mac, queued_uci_ind, uci_ind, j);
+    }
+    return uci_ind;
+}
+
 static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_ul_tti_request_t *ul_tti_req)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
@@ -516,8 +578,7 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
               pdu_list->pdu_type, ul_tti_req->pdus_list[i].pucch_pdu.rnti, pdu_list->pucch_pdu.sr_flag, pdu_list->pucch_pdu.bit_len_harq);
         if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE && pdu_list->pucch_pdu.rnti == mac->crnti)
         {
-            LOG_I(NR_MAC, "This is the number of UCIs in the queue %ld\n", nr_uci_ind_queue.num_items);
-            nfapi_nr_uci_indication_t *uci_ind = get_queue(&nr_uci_ind_queue);
+            nfapi_nr_uci_indication_t *uci_ind = multiplex_uci_ind(mac);
             if (uci_ind && uci_ind->num_ucis > 0)
             {
                 LOG_D(NR_MAC, "This is the SFN/SF [%d, %d] and RNTI %x of the UCI ind. ul_tti_req.pdu[%d]->rnti = %x \n",
