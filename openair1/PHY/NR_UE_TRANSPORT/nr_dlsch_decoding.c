@@ -59,7 +59,6 @@ int nbDlProcessing =0;
 
 
 static  tpool_t pool_dl;
-static notifiedFIFO_t nf;
 //extern double cpuf;
 
 void init_dlsch_tpool(uint8_t num_dlsch_threads) {
@@ -228,7 +227,7 @@ void nr_dlsch_unscrambling(int16_t *llr,
   }
 }
 
-bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool last) {
+bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool last, notifiedFIFO_t *nf_p) {
   ldpcDecode_ue_t *rdata = (ldpcDecode_ue_t*) NotifiedFifoData(req);
   NR_DL_UE_HARQ_t *harq_process = rdata->harq_process;
   NR_UE_DLSCH_t *dlsch = (NR_UE_DLSCH_t *) rdata->dlsch;
@@ -244,14 +243,13 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
   } else {
     if ( !last ) {
       int nb=abortTpool(&(pool_dl), req->key);
-      nb+=abortNotifiedFIFO(&nf, req->key);
+      nb+=abortNotifiedFIFO(nf_p, req->key);
       LOG_D(PHY,"downlink segment error %d/%d, aborted %d segments\n",rdata->segment_r,rdata->nbSegments, nb);
       LOG_D(PHY, "DLSCH %d in error\n",rdata->dlsch_id);
       last = true;
     }
   }
 
-  //int dumpsig=0;
   // if all segments are done
   if (last) {
     if (decodeSuccess) {
@@ -288,7 +286,6 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
       LOG_D(PHY, "DLSCH received nok \n");
     }
     return true; //stop
-    //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,0);
   }
   else
   {
@@ -420,7 +417,6 @@ void nr_processDLSegment(void* arg) {
       length_dec = (harq_process->B+24*harq_process->C)/harq_process->C;
     }
 
-    //if (err_flag == 0) {
     {
 #if UE_TIMING_TRACE
       start_meas(dlsch_turbo_decoding_stats);
@@ -527,7 +523,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   //NR_DL_UE_HARQ_t *harq_process = dlsch->harq_processes[0];
   
   int nbDecode = 0;
-  //harq_process->processedSegments = 0;
   
   if (!dlsch_llr) {
     LOG_E(PHY,"dlsch_decoding.c: NULL dlsch_llr pointer\n");
@@ -652,7 +647,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   Kr_bytes = Kr>>3;
   offset = 0;
   void (*nr_processDLSegment_ptr)(void*) = &nr_processDLSegment;
-
+  notifiedFIFO_t nf;
+  initNotifiedFIFO(&nf);
   for (r=0; r<harq_process->C; r++) {
     //printf("start rx segment %d\n",r);
     E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
@@ -678,7 +674,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     rdata->offset = offset;
     rdata->dlsch = dlsch;
     rdata->dlsch_id = 0;
-    //nrUE_params_t *nrUE_params=get_nrUE_params();
     pushTpool(&(pool_dl),req);
     nbDecode++;
     LOG_D(PHY,"Added a block to decode, in pipe: %d\n",nbDecode);
@@ -691,7 +686,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     bool last = false;
     if (r == nbDecode - 1)
       last = true;
-    bool stop = nr_ue_postDecode(phy_vars_ue, req, last);
+    bool stop = nr_ue_postDecode(phy_vars_ue, req, last, &nf);
     delNotifiedFIFO_elt(req);
     if (stop)
       break;
