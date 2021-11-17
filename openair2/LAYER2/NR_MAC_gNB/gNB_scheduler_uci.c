@@ -872,12 +872,12 @@ uint8_t pickandreverse_bits(uint8_t *payload, uint16_t bitlen, uint8_t start_bit
 
 
 void evaluate_rsrp_report(NR_UE_info_t *UE_info,
-                             NR_UE_sched_ctrl_t *sched_ctrl,
-                             int UE_id,
-                             uint8_t csi_report_id,
-                             uint8_t *payload,
-                             int *cumul_bits,
-                             NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type){
+                          NR_UE_sched_ctrl_t *sched_ctrl,
+                          int UE_id,
+                          uint8_t csi_report_id,
+                          uint8_t *payload,
+                          int *cumul_bits,
+                          NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type){
 
   uint8_t cri_ssbri_bitlen = UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen.cri_ssbri_bitlen;
   uint16_t curr_payload;
@@ -907,14 +907,17 @@ void evaluate_rsrp_report(NR_UE_info_t *UE_info,
     curr_payload = pickandreverse_bits(payload, cri_ssbri_bitlen, *cumul_bits);
 
     if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type)
-      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] =
+      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx] =
         *(UE_info->csi_report_template[UE_id][csi_report_id].SSB_Index_list[cri_ssbri_bitlen>0?((curr_payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
     else
-      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] =
+      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx] =
         *(UE_info->csi_report_template[UE_id][csi_report_id].CSI_Index_list[cri_ssbri_bitlen>0?((curr_payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
 
     *cumul_bits += cri_ssbri_bitlen;
-    LOG_D(MAC,"SSB_index = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
+    if(UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type == NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP)
+      LOG_D(MAC,"CSI-RS Resource Indicator = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx]);
+    else
+      LOG_D(MAC,"SSB Resource Indicator = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx]);
   }
 
   curr_payload = pickandreverse_bits(payload, 7, *cumul_bits);
@@ -1156,7 +1159,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   }
   if ((uci_234->pduBitmap >> 2) & 0x01) {
     //API to parse the csi report and store it into sched_ctrl
-    extract_pucch_csi_report (csi_MeasConfig, uci_234, frame, slot, UE_id, mod_id);
+    extract_pucch_csi_report(csi_MeasConfig, uci_234, frame, slot, UE_id, mod_id);
     //TCI handling function
     tci_handling(mod_id, UE_id,frame, slot);
   }
