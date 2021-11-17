@@ -722,7 +722,7 @@ class Containerize():
 		cmd = 'mkdir -p ../cmake_targets/log'
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
-		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ../cmake_targets/log/ping_' + HTML.testCase_id + '.log'
+		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ../cmake_targets/log/ping_' + HTML.testCase_id + '.log || true'
 		logging.debug(cmd)
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
@@ -788,18 +788,18 @@ class Containerize():
 		logStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
 		# Start the server process
-		cmd = 'docker exec -d ' + self.svrContName + ' /bin/bash -c "nohup iperf ' + self.svrOptions + ' > /tmp/iperf_server.log 2>&1"'
+		cmd = 'docker exec -d ' + self.svrContName + ' /bin/bash -c "nohup iperf ' + self.svrOptions + ' > /tmp/iperf_server.log 2>&1" || true'
 		logging.debug(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		time.sleep(5)
 
 		# Start the client process
-		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee ../cmake_targets/log/iperf_client_' + HTML.testCase_id + '.log'
+		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee ../cmake_targets/log/iperf_client_' + HTML.testCase_id + '.log || true'
 		logging.debug(cmd)
 		clientStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
 		# Stop the server process
-		cmd = 'docker exec ' + self.svrContName + ' /bin/bash -c "pkill iperf"'
+		cmd = 'docker exec ' + self.svrContName + ' /bin/bash -c "pkill iperf" || true'
 		logging.debug(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		time.sleep(5)
@@ -816,6 +816,7 @@ class Containerize():
 			else:
 				message = 'Server Report and Connection refused Not Found!'
 			self.IperfExit(HTML, False, message)
+			logging.error('\u001B[1;37;41m Iperf Test FAIL\u001B[0m')
 			return
 
 		# Computing the requested bandwidth in float
@@ -888,6 +889,8 @@ class Containerize():
 			self.IperfExit(HTML, iperfStatus, 'problem?')
 		if iperfStatus:
 			logging.info('\u001B[1m Iperf Test PASS\u001B[0m')
+		else:
+			logging.error('\u001B[1;37;41m Iperf Test FAIL\u001B[0m')
 
 	def IperfExit(self, HTML, status, message):
 		html_queue = SimpleQueue()
