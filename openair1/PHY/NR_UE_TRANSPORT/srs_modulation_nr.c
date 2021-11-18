@@ -367,6 +367,13 @@ int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
 
       txptr[subcarrier] = (real_amp & 0xFFFF) + ((imag_amp<<16)&0xFFFF0000);
 
+#ifdef SRS_DEBUG
+      if( (subcarrier-frame_parms->first_carrier_offset)%12 == 0 ) {
+        LOG_I(NR_PHY,"---------- %i ----------\n", (subcarrier-frame_parms->first_carrier_offset)/12);
+      }
+      LOG_I(NR_PHY,"(%i)\t%i\t%i\n", subcarrier-frame_parms->first_carrier_offset, real_amp&0xFFFF, imag_amp&0xFFFF);
+#endif
+
       subcarrier += (K_TC); /* subcarrier increment */
 
       if (subcarrier >= frame_parms->ofdm_symbol_size)
