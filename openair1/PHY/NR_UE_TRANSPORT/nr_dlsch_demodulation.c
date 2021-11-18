@@ -43,12 +43,6 @@
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "common/utils/nr/nr_common.h"
 
-#ifndef USER_MODE
-#define NOCYGWIN_STATIC static
-#else
-#define NOCYGWIN_STATIC
-#endif
-
 /* dynamic shift for LLR computation for TM3/4
  * set as command line argument, see lte-softmodem.c
  * default value: 0

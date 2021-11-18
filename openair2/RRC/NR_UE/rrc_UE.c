@@ -187,9 +187,7 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     uint8_t                  *const kRRCint,
     uint8_t                  *const kUPenc,
     uint8_t                  *const kUPint
-  #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-  #endif
     ,rb_id_t                 *const defaultDRB,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
@@ -1661,45 +1659,40 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    uint8_t *kRRCenc = NULL;
    uint8_t *kUPenc = NULL;
    uint8_t *kRRCint = NULL;
-   pdcp_t *pdcp_p = NULL;
-   hash_key_t key = HASHTABLE_NOT_A_KEY_VALUE;
-   hashtable_rc_t h_rc;
-   key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
-   h_rc = hashtable_get(pdcp_coll_p, key, (void **) &pdcp_p);
+  nr_derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
+                       NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
+                       &kUPenc);
+  nr_derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
+                        NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
+                       &kRRCenc);
+  nr_derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
+                        NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
+                       &kRRCint);
+   LOG_I(NR_RRC, "driving kRRCenc, kRRCint and kUPenc from KgNB="
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x"
+   "%02x%02x%02x%02x\n",
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[0],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[1],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[2],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[3],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[4],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[5],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[6],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[7],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[8],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[9],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[10], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[11],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[12], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[13], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[14], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[15],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[16], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[17], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[18], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[19],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[20], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[21], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[22], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[23],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[24], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[25], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[26], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[27],
+   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[28], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[29], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[30], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[31]);
 
-   if (h_rc == HASH_TABLE_OK) {
-     LOG_D(NR_RRC, "PDCP_COLL_KEY_VALUE() returns valid key = %ld\n", key);
-     LOG_D(NR_RRC, "driving kRRCenc, kRRCint and kUPenc from KgNB="
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x"
-	   "%02x%02x%02x%02x\n",
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[0],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[1],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[2],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[3],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[4],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[5],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[6],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[7],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[8],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[9],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[10], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[11],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[12], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[13], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[14], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[15],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[16], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[17], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[18], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[19],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[20], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[21], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[22], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[23],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[24], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[25], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[26], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[27],
-	   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[28], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[29], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[30], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[31]);
-     derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCenc);
-     derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
-     derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPenc);
-
-     if (securityMode != 0xff) {
-       pdcp_config_set_security(ctxt_pP, pdcp_p, 0, 0,
-                                NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm
-                                | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-                                kRRCenc, kRRCint, kUPenc);
-     } else {
-       LOG_I(NR_RRC, "skipped pdcp_config_set_security() as securityMode == 0x%02x", securityMode);
-     }
+   if (securityMode != 0xff) {
+     pdcp_config_set_security(ctxt_pP, NULL, DCCH, DCCH+2,
+                              NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm
+                              | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                              kRRCenc, kRRCint, kUPenc);
    } else {
-     LOG_I(NR_RRC, "Could not get PDCP instance where key=0x%ld\n", key);
+     LOG_I(NR_RRC, "skipped pdcp_config_set_security() as securityMode == 0x%02x", securityMode);
    }
 
    if (securityModeCommand->criticalExtensions.present == NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand) {
@@ -2044,21 +2037,12 @@ nr_rrc_ue_establish_srb2(
        }
      }
 
-     uint8_t *k_kdf = NULL;
      uint8_t *kRRCenc = NULL;
      uint8_t *kRRCint = NULL;
      nr_derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
-     kRRCenc = malloc(16);
-     if (kRRCenc == NULL) exit(1);
-     memcpy(kRRCenc, k_kdf + 16, 16);
-     free(k_kdf);
+                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCenc);
      nr_derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
-     kRRCint = malloc(16);
-     if (kRRCint == NULL) exit(1);
-     memcpy(kRRCint, k_kdf + 16, 16);
-     free(k_kdf);
+                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
 
      // Refresh SRBs
       nr_rrc_pdcp_config_asn1_req(ctxt_pP,
@@ -2100,6 +2084,7 @@ nr_rrc_ue_establish_srb2(
 
 	   LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 gNB %d) --->][MAC_UE][MOD %02d][]\n",
 	       ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
+	   nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,gNB_index,1,true); //todo handle mac_LogicalChannelConfig
 	   // rrc_mac_config_req_ue
 	 }
        } else {
@@ -2115,6 +2100,7 @@ nr_rrc_ue_establish_srb2(
 
 	   LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ  (SRB2 gNB %d) --->][MAC_UE][MOD %02d][]\n",
 	       ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
+	   nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,gNB_index,2,true); //todo handle mac_LogicalChannelConfig
 	   // rrc_mac_config_req_ue
 	 }
        } // srb2
@@ -2135,28 +2121,33 @@ nr_rrc_ue_establish_srb2(
 	 memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][DRB_id-1],
 		 radioBearerConfig->drb_ToAddModList->list.array[cnt], sizeof(NR_DRB_ToAddMod_t));
        } else {
-	 LOG_D(NR_RRC, "Adding DRB %ld %p\n", DRB_id-1, radioBearerConfig->drb_ToAddModList->list.array[cnt]);
+	 //LOG_D(NR_RRC, "Adding DRB %ld %p\n", DRB_id-1, radioBearerConfig->drb_ToAddModList->list.array[cnt]);
 	 NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][DRB_id-1] = radioBearerConfig->drb_ToAddModList->list.array[cnt];
+	 int j;
+	 struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list = NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList;
+	 if (rlc_bearer2add_list != NULL) {
+	   for(j = 0; j < rlc_bearer2add_list->list.count; j++){
+	     if(rlc_bearer2add_list->list.array[j]->servedRadioBearer != NULL){
+	       if(rlc_bearer2add_list->list.array[j]->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity){
+	         if(DRB_id == rlc_bearer2add_list->list.array[j]->servedRadioBearer->choice.drb_Identity){
+	           LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (DRB lcid %ld gNB %d) --->][MAC_UE][MOD %02d][]\n",
+	               ctxt_pP->frame, ctxt_pP->module_id, rlc_bearer2add_list->list.array[j]->logicalChannelIdentity, 0, ctxt_pP->module_id);
+	           nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,0,rlc_bearer2add_list->list.array[j]->logicalChannelIdentity,true); //todo handle mac_LogicalChannelConfig
+	         }
+	       }
+	     }
+	   }
+	 }
        }
      }
 
-     uint8_t *k_kdf = NULL;
      uint8_t *kUPenc = NULL;
      uint8_t *kUPint = NULL;
 
      nr_derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
-     kUPenc = malloc(16);
-     if (kUPenc == NULL) exit(1);
-     memcpy(kUPenc, k_kdf + 16, 16);
-     free(k_kdf);
-
+                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPenc);
      nr_derive_key_up_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &k_kdf);
-     kUPint = malloc(16);
-     if (kUPint == NULL) exit(1);
-     memcpy(kUPint, k_kdf + 16, 16);
-     free(k_kdf);
+                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPint);
 
      MSC_LOG_TX_MESSAGE(
 	 MSC_RRC_UE,
@@ -2196,6 +2187,15 @@ nr_rrc_ue_establish_srb2(
      for (i = 0; i < radioBearerConfig->drb_ToReleaseList->list.count; i++) {
        DRB_id = *radioBearerConfig->drb_ToReleaseList->list.array[i];
        free(NR_UE_rrc_inst[ctxt_pP->module_id].DRB_config[gNB_index][DRB_id-1]);
+     }
+   }
+
+   if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToReleaseList != NULL) {
+     for (i = 0; i < NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToReleaseList->list.count; i++) {
+       NR_LogicalChannelIdentity_t lcid = *NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToReleaseList->list.array[i];
+       LOG_I(NR_RRC, "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_CONFIG_REQ (RB lcid %ld gNB %d release) --->][MAC_UE][MOD %02d][]\n",
+           ctxt_pP->frame, ctxt_pP->module_id, lcid, 0, ctxt_pP->module_id);
+       nr_rrc_mac_config_req_ue_logicalChannelBearer(ctxt_pP->module_id,0,0,lcid,false); //todo handle mac_LogicalChannelConfig
      }
    }
 
@@ -2509,6 +2509,28 @@ nr_rrc_ue_establish_srb2(
           NR_RRC_DCCH_DATA_IND (msg_p).dcch_index,
           NR_RRC_DCCH_DATA_IND (msg_p).sdu_p,
           NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
+        break;
+
+      case NAS_KENB_REFRESH_REQ:
+        memcpy((void *)NR_UE_rrc_inst[ue_mod_id].kgnb, (void *)NAS_KENB_REFRESH_REQ(msg_p).kenb, sizeof(NR_UE_rrc_inst[ue_mod_id].kgnb));
+        LOG_D(RRC, "[UE %d] Received %s: refreshed RRC::KgNB = "
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x"
+              "%02x%02x%02x%02x\n",
+              ue_mod_id, ITTI_MSG_NAME (msg_p),
+              NR_UE_rrc_inst[ue_mod_id].kgnb[0],  NR_UE_rrc_inst[ue_mod_id].kgnb[1],  NR_UE_rrc_inst[ue_mod_id].kgnb[2],  NR_UE_rrc_inst[ue_mod_id].kgnb[3],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[4],  NR_UE_rrc_inst[ue_mod_id].kgnb[5],  NR_UE_rrc_inst[ue_mod_id].kgnb[6],  NR_UE_rrc_inst[ue_mod_id].kgnb[7],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[8],  NR_UE_rrc_inst[ue_mod_id].kgnb[9],  NR_UE_rrc_inst[ue_mod_id].kgnb[10], NR_UE_rrc_inst[ue_mod_id].kgnb[11],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[12], NR_UE_rrc_inst[ue_mod_id].kgnb[13], NR_UE_rrc_inst[ue_mod_id].kgnb[14], NR_UE_rrc_inst[ue_mod_id].kgnb[15],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[16], NR_UE_rrc_inst[ue_mod_id].kgnb[17], NR_UE_rrc_inst[ue_mod_id].kgnb[18], NR_UE_rrc_inst[ue_mod_id].kgnb[19],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[20], NR_UE_rrc_inst[ue_mod_id].kgnb[21], NR_UE_rrc_inst[ue_mod_id].kgnb[22], NR_UE_rrc_inst[ue_mod_id].kgnb[23],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[24], NR_UE_rrc_inst[ue_mod_id].kgnb[25], NR_UE_rrc_inst[ue_mod_id].kgnb[26], NR_UE_rrc_inst[ue_mod_id].kgnb[27],
+              NR_UE_rrc_inst[ue_mod_id].kgnb[28], NR_UE_rrc_inst[ue_mod_id].kgnb[29], NR_UE_rrc_inst[ue_mod_id].kgnb[30], NR_UE_rrc_inst[ue_mod_id].kgnb[31]);
         break;
 
       case NAS_UPLINK_DATA_REQ: {
