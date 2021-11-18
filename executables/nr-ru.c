@@ -726,10 +726,17 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 
         AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
 
-        if(slot%(fp->slots_per_subframe/2))
-          siglen = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
-        else
-          siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+        if (fp->slots_per_subframe == 1) {
+          if (txsymb <= 7)
+            siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+          else
+            siglen = 2 * (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 2) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+        } else {
+          if (slot%(fp->slots_per_subframe/2))
+            siglen = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+          else
+            siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+        }
 
         //+ ru->end_of_burst_delay;
         flags = 3; // end of burst

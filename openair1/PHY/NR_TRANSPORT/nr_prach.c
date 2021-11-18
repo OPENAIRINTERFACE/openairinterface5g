@@ -175,11 +175,19 @@ void rx_nr_prach_ru(RU_t *ru,
   int msg1_frequencystart   = ru->config.prach_config.num_prach_fd_occasions_list[numRA].k1.value;
 
   int sample_offset_slot;
-  if (!(slot%(fp->slots_per_subframe/2)))
-    sample_offset_slot = (prachStartSymbol==0?0:fp->ofdm_symbol_size*prachStartSymbol+fp->nb_prefix_samples0+fp->nb_prefix_samples*(prachStartSymbol-1));
-  else
-    sample_offset_slot = (prachStartSymbol==0?0:prachStartSymbol*(fp->ofdm_symbol_size+fp->nb_prefix_samples));
-  //to be checked for mu=0;
+  if (prachStartSymbol == 0) {
+    sample_offset_slot = 0;
+  } else if (fp->slots_per_subframe == 1) {
+    if (prachStartSymbol <= 7)
+      sample_offset_slot = (fp->ofdm_symbol_size + fp->nb_prefix_samples) * (prachStartSymbol - 1) + (fp->ofdm_symbol_size + fp->nb_prefix_samples0);
+    else
+      sample_offset_slot = (fp->ofdm_symbol_size + fp->nb_prefix_samples) * (prachStartSymbol - 2) + (fp->ofdm_symbol_size + fp->nb_prefix_samples0) * 2;
+  } else {
+    if (!(slot%(fp->slots_per_subframe/2)))
+      sample_offset_slot = (fp->ofdm_symbol_size + fp->nb_prefix_samples) * (prachStartSymbol - 1) + (fp->ofdm_symbol_size + fp->nb_prefix_samples0);
+    else
+      sample_offset_slot = (fp->ofdm_symbol_size + fp->nb_prefix_samples) * prachStartSymbol;
+  }
 
   LOG_D(PHY,"frame %d, slot %d: doing rx_nr_prach_ru for format %d, numRA %d, prachStartSymbol %d, prachOccasion %d\n",frame,slot,prachFormat,numRA,prachStartSymbol,prachOccasion);
 
