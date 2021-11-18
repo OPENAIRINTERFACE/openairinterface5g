@@ -508,6 +508,9 @@ static void copy_uci_inds_to_single_uci_ind(NR_UE_MAC_INST_t *mac,
 
     nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &new_uci->uci_list[index].pucch_pdu_format_0_1;
     memset(pdu_0_1, 0, sizeof(*pdu_0_1));
+    AssertFatal(index <= new_uci->num_ucis,
+                "Attempting to index past end of uci_list array. Index = %d\n",
+                index);
     new_uci->uci_list[index].pdu_type = uci_from_queue->uci_list[0].pdu_type;
     new_uci->uci_list[index].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
 
