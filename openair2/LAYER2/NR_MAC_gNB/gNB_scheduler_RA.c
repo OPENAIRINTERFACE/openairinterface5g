@@ -1467,7 +1467,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     int n_rb=0;
     for (int i=0;i<6;i++)
       for (int j=0;j<8;j++) {
-	      n_rb+=((coreset->frequencyDomainResources.buf[i]>>j)&1);
+        n_rb+=((coreset->frequencyDomainResources.buf[i]>>j)&1);
       }
     n_rb*=6;
     const uint16_t N_cce = n_rb * coreset->duration / NR_NB_REG_PER_CCE;
@@ -1763,7 +1763,8 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
   const int current_harq_pid = ra->harq_pid;
 
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
-  NR_UE_harq_t *harq = &UE_info->UE_sched_ctrl[UE_id].harq_processes[current_harq_pid];
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
   NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
 
   LOG_D(NR_MAC, "ue %d, rnti %d, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
@@ -1775,6 +1776,8 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
         nr_clear_ra_proc(module_id, CC_id, frame, ra);
         UE_info->active[UE_id] = true;
         UE_info->Msg4_ACKed[UE_id] = true;
+        if(sched_ctrl->retrans_dl_harq.head>=0)
+          remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
       }
       else {
         LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);
