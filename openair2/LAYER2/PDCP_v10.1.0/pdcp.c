@@ -1298,7 +1298,7 @@ pdcp_run (
   } else {
     start_meas(&UE_pdcp_stats[ctxt_pP->module_id].pdcp_ip);
   }
-  if(!get_softmodem_params()->emulate_l1) {
+  if (!get_softmodem_params()->emulate_l1) {
     pdcp_fifo_flush_sdus(ctxt_pP);
   }
 
