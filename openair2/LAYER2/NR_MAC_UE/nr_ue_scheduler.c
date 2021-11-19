@@ -60,6 +60,12 @@ static prach_association_pattern_t prach_assoc_pattern;
 static ssb_list_info_t ssb_list;
 
 void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type){
+  // clear ul_config for new frame/slot
+  if ((ul_config->slot != slot_tx || ul_config->sfn != frame_tx) && ul_config->number_pdus != 0) {
+    LOG_D(MAC, "%d.%d %d.%d f clear ul %p t %d pdu %d\n", frame_tx, slot_tx, ul_config->sfn, ul_config->slot, ul_config, pdu_type, ul_config->number_pdus);
+    ul_config->number_pdus = 0;
+    memset(ul_config->ul_config_list, 0, sizeof(ul_config->ul_config_list)); 
+  }
   ul_config->ul_config_list[ul_config->number_pdus].pdu_type = pdu_type;
   ul_config->slot = slot_tx;
   ul_config->sfn = frame_tx;
