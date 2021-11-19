@@ -954,6 +954,7 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   UE->frame_parms.nb_antennas_rx = n_rx;
+  UE->max_ldpc_iterations = max_ldpc_iterations;
 
   if (run_initial_sync==1)  UE->is_synchronized = 0;
   else                      {UE->is_synchronized = 1; UE->UE_mode[0]=PUSCH;}
@@ -989,8 +990,6 @@ int main(int argc, char **argv)
   UE->if_inst->dl_indication = nr_ue_dl_indication;
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
   UE->prb_interpolation = prb_inter;
-  UE->max_ldpc_iterations = max_ldpc_iterations;
-
 
   UE_mac->if_module = nr_ue_if_module_init(0);
 
