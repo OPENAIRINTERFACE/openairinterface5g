@@ -2298,6 +2298,7 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
           default:
             AssertFatal(1==0,"Invalid freqency domain allocation in CSI-RS resource\n");
         }
+        dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_CSI_RS;
         dl_config->number_pdus = dl_config->number_pdus + 1;
       }
     }
