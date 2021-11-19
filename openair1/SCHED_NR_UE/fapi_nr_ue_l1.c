@@ -204,7 +204,6 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
           }
         }
       }
-      dl_config->number_pdus = 0;
     }
 
   }
