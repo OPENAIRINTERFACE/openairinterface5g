@@ -511,7 +511,7 @@ static void copy_uci_inds_to_single_uci_ind(NR_UE_MAC_INST_t *mac,
     }
     nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &new_uci->uci_list[index].pucch_pdu_format_0_1;
     memset(pdu_0_1, 0, sizeof(*pdu_0_1));
-    AssertFatal(index <= new_uci->num_ucis,
+    AssertFatal(index <= new_uci->num_ucis || uci_from_queue->num_ucis == 1,
                 "Attempting to index past end of uci_list array. Index = %d\n",
                 index);
     new_uci->uci_list[index].pdu_type = uci_from_queue->uci_list[0].pdu_type;
@@ -527,34 +527,19 @@ static void copy_uci_inds_to_single_uci_ind(NR_UE_MAC_INST_t *mac,
     return;
 }
 
-nfapi_nr_uci_indication_t *multiplex_uci_ind(NR_UE_MAC_INST_t *mac)
+static nfapi_nr_uci_indication_t *multiplex_uci_ind(NR_UE_MAC_INST_t *mac, int num_active_harqs)
 {
-    int num_active_harqs = 0;
-    for (int i = 0; i < NR_MAX_HARQ_PROCESSES; i++)
-    {
-        int harq_slot = mac->dl_harq_info[i].dl_slot + mac->dl_harq_info[i].feedback_to_ul;
-        frame_t harq_sfn = mac->dl_harq_info[i].dl_frame;
-        int harq_sfn_slot = NFAPI_SFNSLOT2HEX(harq_sfn, harq_slot);
-        if (harq_sfn_slot == mac->nr_ue_emul_l1.active_harq_sfn_slot)
-        {
-            LOG_D(NR_MAC, "The sfn_slot stored in the current harq UE mac "
-                          "instance matches the active_harq_sfn_slot we have."
-                          " mac->harq_info[%d].sfn_slot = %d %d and active = %d %d\n",
-                          i, harq_sfn, harq_slot,
-                          NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot),
-                          NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot));
-            num_active_harqs++;
-        }
-    }
     nfapi_nr_uci_indication_t *uci_ind = MALLOC(sizeof(*uci_ind));
     uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
     uci_ind->sfn = NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot);
     uci_ind->slot = NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot);
     uci_ind->num_ucis = num_active_harqs;
     uci_ind->uci_list = MALLOC(uci_ind->num_ucis * sizeof(*uci_ind->uci_list));
-    AssertFatal(num_active_harqs == nr_uci_ind_queue.num_items,
-                "The number of active harqs %d should match the number of UCIs in the queue %lu\n",
-                num_active_harqs, nr_uci_ind_queue.num_items);
+    if (num_active_harqs != nr_uci_ind_queue.num_items)
+    {
+        LOG_I(NR_MAC, "The number of active harqs %d doesn't match the number of UCIs in the queue %lu\n",
+                       num_active_harqs, nr_uci_ind_queue.num_items);
+    }
 
     for (int j = 0; j < num_active_harqs; j++)
     {
@@ -587,7 +572,11 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
             {
                 return;
             }
-            nfapi_nr_uci_indication_t *uci_ind = multiplex_uci_ind(mac);
+
+            int num_active_harqs = pdu_list->pucch_pdu.bit_len_harq;
+            LOG_I(NR_MAC, "The number of active harqs %d from ul_tti_req\n", num_active_harqs);
+            nfapi_nr_uci_indication_t *uci_ind = multiplex_uci_ind(mac, num_active_harqs);
+
             if (uci_ind && uci_ind->num_ucis > 0)
             {
                 LOG_D(NR_MAC, "This is the SFN/SF [%d, %d] and RNTI %x of the UCI ind. ul_tti_req.pdu[%d]->rnti = %x \n",
@@ -642,14 +631,27 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
                         pdu_0_1->harq = NULL;
                     }
                 }
-                free(uci_ind->uci_list);
-                uci_ind->uci_list = NULL;
-                free(uci_ind);
-                uci_ind = NULL;
             }
-
+            LOG_D(NR_MAC, "The num_active_harqs %d and uci_ind->num_ucis %d\n",
+                              num_active_harqs, uci_ind->num_ucis);
+            if (num_active_harqs > uci_ind->num_ucis)
+            {
+                LOG_E(NR_MAC, "The num_active_harqs %d > uci_ind->num_ucis %d"
+                              "Which means that the incoming dl_tti_req to build the UCI is late. "
+                              "So we will requeue the ul_tti_req to capture the upcoming UCI\n",
+                              num_active_harqs, uci_ind->num_ucis);
+                if (!put_queue(&nr_ul_tti_req_queue, ul_tti_req))
+                {
+                    LOG_E(NR_PHY, "put_queue failed for ul_tti_req.\n");
+                    free(ul_tti_req);
+                    ul_tti_req = NULL;
+                }
+            }
+            free(uci_ind->uci_list);
+            uci_ind->uci_list = NULL;
+            free(uci_ind);
+            uci_ind = NULL;
         }
-
     }
 }
 
