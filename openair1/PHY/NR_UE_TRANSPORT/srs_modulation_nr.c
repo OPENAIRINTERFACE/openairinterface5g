@@ -197,6 +197,8 @@ int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
   /* for each antenna ports for transmission */
   for (int p_index = 0; p_index < N_ap; p_index++) {
 
+    uint8_t ofdm_symbol = 0;
+
   /* see TS 38.211 6.4.1.4.2 Sequence generation */
 
     n_SRS_cs_i = (n_SRS_cs +  (n_SRS_cs_max * (SRS_antenna_port[p_index] - 1000)/N_ap))%n_SRS_cs_max;
@@ -365,22 +367,29 @@ int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
                                                                                             rv_ul_ref_sig[u][v_nu][M_sc_b_SRS_index][2*k+1]);
 #endif
 
-      txptr[subcarrier] = (real_amp & 0xFFFF) + ((imag_amp<<16)&0xFFFF0000);
+      txptr[subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size] = (real_amp & 0xFFFF) + ((imag_amp<<16)&0xFFFF0000);
 
 #ifdef SRS_DEBUG
-      if( (subcarrier-frame_parms->first_carrier_offset)%12 == 0 ) {
-        LOG_I(NR_PHY,"---------- %i ----------\n", (subcarrier-frame_parms->first_carrier_offset)/12);
+      if( (subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-frame_parms->first_carrier_offset)%12 == 0 ) {
+        LOG_I(NR_PHY,"------------ %i ------------\n",
+              (subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-frame_parms->first_carrier_offset)/12);
       }
-      LOG_I(NR_PHY,"(%i)\t%i\t%i\n", subcarrier-frame_parms->first_carrier_offset, real_amp&0xFFFF, imag_amp&0xFFFF);
+      LOG_I(NR_PHY,"(%i)  \t%i\t%i\n",
+            subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-frame_parms->first_carrier_offset,
+            real_amp&0xFFFF,
+            imag_amp&0xFFFF);
 #endif
 
       subcarrier += (K_TC); /* subcarrier increment */
 
-      if (subcarrier >= frame_parms->ofdm_symbol_size)
+      if (subcarrier >= frame_parms->ofdm_symbol_size) {
         subcarrier=subcarrier-frame_parms->ofdm_symbol_size;
+        ofdm_symbol++;
+      }
+
     }
     /* process next symbol */
-    txptr = txptr + frame_parms->ofdm_symbol_size;
+    //txptr = txptr + frame_parms->ofdm_symbol_size;
   }
 
   return (0);
