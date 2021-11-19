@@ -110,12 +110,12 @@ int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
   uint8_t groupOrSequenceHopping = srs_config_pdu->group_or_sequence_hopping;
   uint8_t l_offset = srs_config_pdu->time_start_position;
   uint16_t T_SRS = srs_config_pdu->t_srs;
-  uint16_t T_offset = srs_config_pdu->t_offset;                                                 // FFS_TODO_NR to check interface with RRC
-  uint8_t R = srs_config_pdu->num_repetitions==0 ? 1 : 2<<(srs_config_pdu->num_repetitions-1);
-  uint8_t N_ap = srs_config_pdu->num_ant_ports==0 ? 1 : 2<<(srs_config_pdu->num_ant_ports-1);   // antenna port for transmission
-  uint8_t N_symb_SRS = srs_config_pdu->num_symbols==0 ? 1 : 2<<(srs_config_pdu->num_symbols-1); // consecutive OFDM symbols
-  uint8_t l0 = N_SYMB_SLOT - 1 - l_offset;                                                      // starting position in the time domain
-  uint8_t k_0_p;                                                                                // frequency domain starting position
+  uint16_t T_offset = srs_config_pdu->t_offset;         // FFS_TODO_NR to check interface with RRC
+  uint8_t R = 1<<srs_config_pdu->num_repetitions;
+  uint8_t N_ap = 1<<srs_config_pdu->num_ant_ports;      // antenna port for transmission
+  uint8_t N_symb_SRS = 1<<srs_config_pdu->num_symbols;  // consecutive OFDM symbols
+  uint8_t l0 = N_SYMB_SLOT - 1 - l_offset;              // starting position in the time domain
+  uint8_t k_0_p;                                        // frequency domain starting position
 
 #ifdef SRS_DEBUG
   LOG_I(NR_PHY,"Frame = %i, slot = %i\n", frame_number, slot_number);
