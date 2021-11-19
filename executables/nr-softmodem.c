@@ -326,6 +326,10 @@ int create_gNB_tasks(uint32_t gnb_nb) {
 
   if (AMF_MODE_ENABLED) {
 
+   char*             gnb_ipv4_address_for_NGU      = NULL;
+   uint32_t          gnb_port_for_NGU              = 0;
+   char*             gnb_ipv4_address_for_S1U      = NULL;
+   uint32_t          gnb_port_for_S1U              = 0;
     paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
     char aprefix[MAX_OPTNAME_SIZE*2 + 8];
     sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);

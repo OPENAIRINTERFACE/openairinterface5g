@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+    gnb_mono_tdd:
+        image: oai-gnb:latest
+        privileged: true
+        container_name: nsa-b200-gnb
+        environment:
+            USE_NSA_TDD_MONO: 'yes'
+            USE_B2XX: 'yes'
+            GNB_NAME: gNB-in-docker
+            MCC: '222'
+            MNC: '01'
+            MNC_LENGTH: 2
+            TAC: 1
+            ENABLE_X2: 'yes'
+            ENB_X2_IP_ADDRESS: 192.168.68.130
+            MME_S1C_IP_ADDRESS: 192.168.18.210
+            GNB_S1C_IF_NAME: eth0
+            GNB_S1C_IP_ADDRESS: 192.168.68.194
+            GNB_S1U_IF_NAME: eth0
+            GNB_S1U_IP_ADDRESS: 192.168.68.194
+            GNB_X2_IP_ADDRESS: 192.168.68.194
+            RRC_INACTIVITY_THRESHOLD: 0
+            FLEXRAN_ENABLED: 'no'
+            FLEXRAN_INTERFACE_NAME: eth0
+            FLEXRAN_IPV4_ADDRESS: 192.168.18.210
+            THREAD_PARALLEL_CONFIG: PARALLEL_RU_L1_TRX_SPLIT
+            USE_ADDITIONAL_OPTIONS: '-E -q'
+        volumes:
+            - /dev:/dev
+        networks:
+            public_net:
+                ipv4_address: 192.168.68.194
+        #entrypoint: /bin/bash -c "sleep infinity"
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    public_net:
+        name: nsa-b200-gnb-net
+        ipam:
+            config:
+                - subnet: 192.168.68.192/26
+        driver_opts:
+            com.docker.network.bridge.name: "nsa-gnb-net"

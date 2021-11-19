@@ -41,7 +41,7 @@
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
-#include "LAYER2/NR_MAC_UE/nr_l1_helpers.h"
+//#include "LAYER2/NR_MAC_UE/nr_l1_helpers.h"
 
 #include <executables/softmodem-common.h>
 
