@@ -2783,12 +2783,12 @@ rrc_gNB_decode_dcch(
               ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList;
 
           req->cu_to_du_rrc_information = calloc(1,sizeof(cu_to_du_rrc_information_t));
-          req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList = calloc(1,1024);
+          req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList = calloc(1,4096);
           asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList,
               NULL,
               (void *)ue_CapabilityRAT_ContainerList,
               req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
-              1024);
+              4096);
           AssertFatal (enc_rval.encoded > 0, "ASN1 ue_CapabilityRAT_ContainerList encoding failed (%s, %jd)!\n",
                              enc_rval.failed_type->name, enc_rval.encoded);
           req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length = (enc_rval.encoded+7)>>3;
@@ -3287,7 +3287,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
         SEQUENCE_free( &asn_DEF_NR_UE_CapabilityRAT_ContainerList, ue_CapabilityRAT_ContainerList, 1 );
         return;
       }
-      /*To fill ue_context.UE_Capability_MRDC, ue_context.UE_Capability_nr ...*/
+      //To fill ue_context.UE_Capability_MRDC, ue_context.UE_Capability_nr ...
       int NR_index = -1;
       for(int i = 0;i < ue_CapabilityRAT_ContainerList->list.count; i++){
         if(ue_CapabilityRAT_ContainerList->list.array[i]->rat_Type ==
@@ -3470,7 +3470,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
   resp->du_to_cu_rrc_information = calloc(1,1024*sizeof(uint8_t));
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                 NULL,
-                                (void *)cellGroupConfig,
+                                ue_context_p->ue_context.masterCellGroup, //(void *)cellGroupConfig,
                                 resp->du_to_cu_rrc_information,
                                 1024);
   if (enc_rval.encoded == -1) {
@@ -3596,15 +3596,15 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
     LOG_W(NR_RRC, "No SRB added upon reception of F1 UE Context modification request at the DU\n");
   }
 
-  if(cellGroupConfig != NULL) {
+  //if(cellGroupConfig != NULL) {
     resp->du_to_cu_rrc_information = calloc(1,1024*sizeof(uint8_t));
     asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                 NULL,
-                                (void *)cellGroupConfig,
+                                ue_context_p->ue_context.masterCellGroup, //(void *)cellGroupConfig,
                                 resp->du_to_cu_rrc_information,
                                 1024);
     resp->du_to_cu_rrc_information_length = (enc_rval.encoded+7)>>3;
-  }
+  //}
   itti_send_msg_to_task (TASK_DU_F1, ctxt.module_id, message_p);
 }
 
