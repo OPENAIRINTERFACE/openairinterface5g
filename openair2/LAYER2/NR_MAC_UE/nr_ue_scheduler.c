@@ -899,6 +899,9 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     nr_dcireq_t dcireq;
 
     if(mac->cg != NULL){ // we have a cg
+
+      nr_schedule_csirs_reception(mac, rx_frame, rx_slot);
+
       dcireq.module_id = mod_id;
       dcireq.gNB_index = gNB_index;
       dcireq.cc_id     = cc_id;
@@ -2095,7 +2098,8 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
   }
 
   // CSI
-  if (mac->ra.ra_state == RA_SUCCEEDED)
+  if (mac->ra.ra_state == RA_SUCCEEDED ||
+      get_softmodem_params()->phy_test == 1)
     O_CSI = nr_get_csi_measurements(mac, frameP, slotP, pucch);
 
   // ACKNACK
@@ -2141,7 +2145,7 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
 
   if (N_UCI > 0) {
 
-    pucch->resource_set_id = find_pucch_resource_set(mac, N_UCI);
+    pucch->resource_set_id = find_pucch_resource_set(mac, O_ACK + O_CSI);
     select_pucch_resource(mac, pucch);
     fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
     fapi_nr_ul_config_pucch_pdu *pucch_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu;
@@ -2160,6 +2164,146 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
   }
 
 }
+
+
+void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
+
+  if (mac->ra.ra_state == RA_SUCCEEDED ||
+      get_softmodem_params()->phy_test == 1) {
+
+    NR_CellGroupConfig_t *CellGroup = mac->cg;
+
+    if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
+        !CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
+      return;
+
+    NR_CSI_MeasConfig_t *csi_measconfig = CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+
+    if (csi_measconfig->nzp_CSI_RS_ResourceToAddModList == NULL)
+      return;
+
+    fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+    NR_NZP_CSI_RS_Resource_t *nzpcsi;
+    int period, offset;
+    NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+    int mu = mac->DLbwp[dl_bwp_id-1] ?
+      mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.subcarrierSpacing :
+      mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.subcarrierSpacing;
+
+    for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
+      nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
+      csi_period_offset(NULL,nzpcsi,&period,&offset);
+      if((frame*nr_slots_per_frame[mu]+slot-offset)%period == 0) {
+        LOG_I(MAC,"Scheduling reception of CSI-RS in frame %d slot %d\n",frame,slot);
+        fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csirs_config_pdu.csirs_config_rel15;
+
+        NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
+
+        if(mac->DLbwp[dl_bwp_id-1]){
+          csirs_config_pdu->bwp_size = NRRIV2BW(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+          csirs_config_pdu->bwp_start = NRRIV2PRBOFFSET(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        }
+        else{
+          csirs_config_pdu->bwp_size = NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+          csirs_config_pdu->bwp_start = NRRIV2PRBOFFSET(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        }
+        csirs_config_pdu->subcarrier_spacing = mu;
+        csirs_config_pdu->start_rb = resourceMapping.freqBand.startingRB;
+        csirs_config_pdu->nr_of_rbs = resourceMapping.freqBand.nrofRBs;
+        csirs_config_pdu->csi_type = 1; // NZP-CSI-RS
+        csirs_config_pdu->symb_l0 = resourceMapping.firstOFDMSymbolInTimeDomain;
+        if (resourceMapping.firstOFDMSymbolInTimeDomain2)
+          csirs_config_pdu->symb_l1 = *resourceMapping.firstOFDMSymbolInTimeDomain2;
+        csirs_config_pdu->cdm_type = resourceMapping.cdm_Type;
+        csirs_config_pdu->freq_density = resourceMapping.density.present;
+        if ((resourceMapping.density.present == NR_CSI_RS_ResourceMapping__density_PR_dot5)
+            && (resourceMapping.density.choice.dot5 == NR_CSI_RS_ResourceMapping__density__dot5_evenPRBs))
+          csirs_config_pdu->freq_density--;
+        csirs_config_pdu->scramb_id = nzpcsi->scramblingID;
+        switch(resourceMapping.frequencyDomainAllocation.present){
+          case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row1:
+            csirs_config_pdu->row = 1;
+            csirs_config_pdu->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row1.buf[0])>>4)&0x0f;
+            break;
+          case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2:
+            csirs_config_pdu->row = 2;
+            csirs_config_pdu->freq_domain = (((resourceMapping.frequencyDomainAllocation.choice.row2.buf[1]>>4)&0x0f) |
+                                            ((resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]<<8)&0xff0));
+            break;
+          case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row4:
+            csirs_config_pdu->row = 4;
+            csirs_config_pdu->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.row4.buf[0])>>5)&0x07;
+            break;
+          case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other:
+            csirs_config_pdu->freq_domain = ((resourceMapping.frequencyDomainAllocation.choice.other.buf[0])>>2)&0x3f;
+            // determining the row of table 7.4.1.5.3-1 in 38.211
+            switch(resourceMapping.nrofPorts){
+              case NR_CSI_RS_ResourceMapping__nrofPorts_p1:
+                break;
+              case NR_CSI_RS_ResourceMapping__nrofPorts_p2:
+                csirs_config_pdu->row = 3;
+                break;
+              case NR_CSI_RS_ResourceMapping__nrofPorts_p4:
+                csirs_config_pdu->row = 5;
+                break;
+              case NR_CSI_RS_ResourceMapping__nrofPorts_p8:
+                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                  csirs_config_pdu->row = 8;
+                else{
+                  int num_k = 0;
+                  for (int k=0; k<6; k++)
+                    num_k+=(((csirs_config_pdu->freq_domain)>>k)&0x01);
+                  if(num_k==4)
+                    csirs_config_pdu->row = 6;
+                  else
+                    csirs_config_pdu->row = 7;
+                }
+                break;
+              case NR_CSI_RS_ResourceMapping__nrofPorts_p12:
+                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                  csirs_config_pdu->row = 10;
+                else
+                  csirs_config_pdu->row = 9;
+                break;
+              case NR_CSI_RS_ResourceMapping__nrofPorts_p16:
+                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                  csirs_config_pdu->row = 12;
+                else
+                  csirs_config_pdu->row = 11;
+                break;
+              case NR_CSI_RS_ResourceMapping__nrofPorts_p24:
+                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                  csirs_config_pdu->row = 14;
+                else{
+                  if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm8_FD2_TD4)
+                    csirs_config_pdu->row = 15;
+                  else
+                    csirs_config_pdu->row = 13;
+                }
+                break;
+              case NR_CSI_RS_ResourceMapping__nrofPorts_p32:
+                if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm4_FD2_TD2)
+                  csirs_config_pdu->row = 17;
+                else{
+                  if (resourceMapping.cdm_Type == NR_CSI_RS_ResourceMapping__cdm_Type_cdm8_FD2_TD4)
+                    csirs_config_pdu->row = 18;
+                  else
+                    csirs_config_pdu->row = 16;
+                }
+                break;
+            default:
+              AssertFatal(1==0,"Invalid number of ports in CSI-RS resource\n");
+            }
+            break;
+          default:
+            AssertFatal(1==0,"Invalid freqency domain allocation in CSI-RS resource\n");
+        }
+        dl_config->number_pdus = dl_config->number_pdus + 1;
+      }
+    }
+  }
+}
+
 
 // This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211, tables 6.3.3.2.x
 // PRACH formats 9, 10, 11 are corresponding to dual PRACH format configurations A1/B1, A2/B2, A3/B3.

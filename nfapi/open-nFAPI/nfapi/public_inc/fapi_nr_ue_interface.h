@@ -433,11 +433,36 @@ typedef struct {
   fapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config_rel15;
 } fapi_nr_dl_config_dlsch_pdu;
 
+
+typedef struct {
+  uint16_t bwp_size;//
+  uint16_t bwp_start;//
+  uint8_t  subcarrier_spacing;//
+  uint8_t  cyclic_prefix;//
+  uint16_t start_rb;
+  uint16_t nr_of_rbs;
+  uint8_t  csi_type;//Value: 0:TRS 1:CSI-RS NZP 2:CSI-RS ZP
+  uint8_t  row;//Row entry into the CSI Resource location table. [TS38.211, sec 7.4.1.5.3 and table 7.4.1.5.3-1] Value: 1-18
+  uint16_t freq_domain;//Value: Up to the 12 LSBs, actual size is determined by the Row parameter
+  uint8_t  symb_l0;//The time domain location l0 and firstOFDMSymbolInTimeDomain Value: 0->13
+  uint8_t  symb_l1;//
+  uint8_t  cdm_type;
+  uint8_t  freq_density;//The density field, p and comb offset (for dot5).0: dot5 (even RB), 1: dot5 (odd RB), 2: one, 3: three
+  uint16_t scramb_id;//ScramblingID of the CSI-RS [TS38.214, sec 5.2.2.3.1] Value: 0->1023
+} fapi_nr_dl_config_csirs_pdu_rel15_t;
+
+
+typedef struct {
+  fapi_nr_dl_config_csirs_pdu_rel15_t csirs_config_rel15;
+} fapi_nr_dl_config_csirs_pdu;
+
+
 typedef struct {
   uint8_t pdu_type;
   union {
     fapi_nr_dl_config_dci_pdu dci_config_pdu;
     fapi_nr_dl_config_dlsch_pdu dlsch_config_pdu;
+    fapi_nr_dl_config_csirs_pdu csirs_config_pdu;
   };
 } fapi_nr_dl_config_request_pdu_t;
 
