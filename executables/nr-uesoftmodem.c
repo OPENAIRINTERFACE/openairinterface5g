@@ -458,7 +458,7 @@ int main( int argc, char **argv ) {
 
   init_NR_UE(1,rrc_config_path);
 
-  int mode_offset = get_softmodem_params()->nsa ? NUMBER_OF_UE_MAX : 0;
+  int mode_offset = get_softmodem_params()->nsa ? NUMBER_OF_UE_MAX : 1;
   uint16_t node_number = get_softmodem_params()->node_number;
   ue_id_g = (node_number == 0) ? 0 : node_number - 2;
   AssertFatal(ue_id_g >= 0, "UE id is expected to be nonnegative.\n");

@@ -492,6 +492,12 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       nr_ue_ul_indication(&ul_info);
       check_nr_prach(mac, &ul_info, &prach_resources);
     }
+    if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa) {
+      NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+      protocol_ctxt_t ctxt;
+      PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, mac->crnti, frame, slot, 0);
+      pdcp_run(&ctxt);
+    }
     process_queued_nr_nfapi_msgs(mac, sfn_slot);
     free(slot_ind);
     slot_ind = NULL;
