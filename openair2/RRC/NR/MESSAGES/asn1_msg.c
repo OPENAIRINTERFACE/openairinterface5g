@@ -39,6 +39,7 @@
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
+#include <nr/nr_common.h>
 
 #include "asn1_msg.h"
 #include "../nr_rrc_proto.h"
@@ -985,6 +986,31 @@ uint8_t do_RRCReject(uint8_t Mod_id,
     return((enc_rval.encoded+7)/8);
 }
 
+// TODO: Implement to b_SRS = 1 and b_SRS = 2
+long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS) {
+
+  if(b_SRS>0) {
+    LOG_E(NR_RRC,"rrc_get_max_nr_csrs(): Not implemented yet for b_SRS>0\n");
+    return 0; // This c_srs is always valid
+  }
+
+  const uint16_t m_SRS[64] = { 4, 8, 12, 16, 16, 20, 24, 24, 28, 32, 36, 40, 48, 48, 52, 56, 60, 64, 72, 72, 76, 80, 88,
+                               96, 96, 104, 112, 120, 120, 120, 128, 128, 128, 132, 136, 144, 144, 144, 144, 152, 160,
+                               160, 160, 168, 176, 184, 192, 192, 192, 192, 208, 216, 224, 240, 240, 240, 240, 256, 256,
+                               256, 264, 272, 272, 272 };
+
+  long c_srs = 0;
+  uint16_t m = 4;
+  for(int c = 1; c<64; c++) {
+    if(m_SRS[c]>m && m_SRS[c]<max_rbs) {
+      c_srs = c;
+      m = m_SRS[c];
+    }
+  }
+
+  return c_srs;
+}
+
 void fill_initial_SpCellConfig(rnti_t rnti,
                                NR_SpCellConfig_t *SpCellConfig,
                                NR_ServingCellConfigCommon_t *scc,
@@ -1150,9 +1176,11 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   srs_res0->resourceMapping.repetitionFactor=NR_SRS_Resource__resourceMapping__repetitionFactor_n1;
   srs_res0->freqDomainPosition=0;
   srs_res0->freqDomainShift=0;
-  srs_res0->freqHopping.c_SRS = 0;
   srs_res0->freqHopping.b_SRS=0;
   srs_res0->freqHopping.b_hop=0;
+  srs_res0->freqHopping.c_SRS = rrc_get_max_nr_csrs(
+      NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, 275),
+      srs_res0->freqHopping.b_SRS);
   srs_res0->groupOrSequenceHopping=NR_SRS_Resource__groupOrSequenceHopping_neither;
 
   if(0) {
