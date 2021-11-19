@@ -187,6 +187,93 @@ else (CUDA_FOUND)
    message ("No CUDA tool installed")
 endif ()
 
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(dpdk DEFAULT_MSG)
+
+###########################################
+# macros to define options as there is numerous options in oai
+################################################
+macro(add_option name val helpstr)
+  if(DEFINED ${name})
+    set(value ${${name}})
+  else(DEFINED ${name})
+    set(value ${val})
+  endif()
+  set(${name} ${value} CACHE STRING "${helpstr}")
+  add_definitions("-D${name}=${value}")
+endmacro(add_option)
+
+macro(add_boolean_option name val helpstr)
+  if(DEFINED ${name})
+    set(value ${${name}})
+  else(DEFINED ${name})
+    set(value ${val})
+  endif()
+  set(${name} ${value} CACHE STRING "${helpstr}")
+  set_property(CACHE ${name} PROPERTY TYPE BOOL)
+  if (${value})
+    add_definitions("-D${name}")
+  endif (${value})
+endmacro(add_boolean_option)
+
+macro(add_integer_option name val helpstr)
+  if(DEFINED ${name})
+    set(value ${${name}})
+  else(DEFINED ${name})
+    set(value ${val})
+  endif()
+  set(${name} ${value} CACHE STRING "${helpstr}")
+  add_definitions("-D${name}=${value}")
+endmacro(add_integer_option)
+
+macro(add_list1_option name val helpstr)
+  if(DEFINED ${name})
+    set(value ${${name}})
+  else(DEFINED ${name})
+    set(value ${val})
+  endif()
+  set(${name} ${value} CACHE STRING "${helpstr}")
+  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
+  if(NOT "${value}" STREQUAL "False")
+    add_definitions("-D${name}=${value}")
+  endif()
+endmacro(add_list1_option)
+
+macro(add_list2_option name val helpstr)
+  if(DEFINED ${name})
+    set(value ${${name}})
+  else(DEFINED ${name})
+    set(value ${val})
+  endif()
+  set(${name} ${value} CACHE STRING "${helpstr}")
+  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
+  if(NOT "${value}" STREQUAL "False")
+    add_definitions("-D${value}=1")
+  endif()
+endmacro(add_list2_option)
+
+macro(add_list_string_option name val helpstr)
+  if(DEFINED ${name})
+    set(value ${${name}})
+  else(DEFINED ${name})
+    set(value ${val})
+  endif()
+  set(${name} ${value} CACHE STRING "${helpstr}")
+  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
+  if(NOT "${value}" STREQUAL "False")
+    add_definitions("-D${name}=\"${value}\"")
+  endif()
+endmacro(add_list_string_option)
+
+# this function should produce the same value as the macro MAKE_VERSION defined in the C code (file types.h)
+function(make_version VERSION_VALUE)
+  math(EXPR RESULT "0")
+  foreach (ARG ${ARGN})
+    math(EXPR RESULT "${RESULT} * 16 + ${ARG}")
+  endforeach()
+  set(${VERSION_VALUE} "${RESULT}" PARENT_SCOPE)
+endfunction()
+>>>>>>> 3c20b0c660 (adding dependency condition for ldpc offload)
 ####################################################
 # compilation flags
 #############################################
@@ -824,11 +911,9 @@ include_directories ("/usr/local/include")
 
 set(HWLIB_LDPC_OFFLOAD_SOURCE
    ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c
-#   ${OPENAIR_TARGETS}/ARCH/test-bbdev/test_bbdev.c
-#   ${OPENAIR_TARGETS}/ARCH/test-bbdev/main.c
-#   ${OPENAIR_TARGETS}/ARCH/test-bbdev/test_bbdev_perf.c
-#   ${OPENAIR_TARGETS}/ARCH/test-bbdev/test_bbdev_vector.c
   )
+
+if (DPDK_FOUND)
 add_library(ldpc_offload MODULE ${HWLIB_LDPC_OFFLOAD_SOURCE} )
 
 set_target_properties(ldpc_offload PROPERTIES COMPILE_FLAGS "-include rte_config.h  -march=native -I/usr/local/include -DALLOW_EXPERIMENTAL_API")
@@ -836,6 +921,7 @@ set_target_properties(ldpc_offload PROPERTIES COMPILE_FLAGS "-include rte_config
 SET(T1_DPDK_LIBS "-Wl,-rpath /usr/local/lib64 -L/usr/local/lib64 -lrte_node -lrte_graph -lrte_bpf -lrte_flow_classify -lrte_pipeline -lrte_table -lrte_port -lrte_fib -lrte_ipsec -lrte_vhost -lrte_stack -lrte_security -lrte_sched -lrte_reorder -lrte_rib -lrte_rawdev -lrte_pdump -lrte_power -lrte_member -lrte_lpm -lrte_latencystats -lrte_kni -lrte_jobstats -lrte_ip_frag -lrte_gso -lrte_gro -lrte_eventdev -lrte_efd -lrte_distributor -lrte_cryptodev -lrte_compressdev -lrte_cfgfile -lrte_bitratestats -lrte_bbdev -lrte_acl -lrte_timer -lrte_hash -lrte_metrics -lrte_cmdline -lrte_pci -lrte_ethdev -lrte_meter -lrte_net -lrte_mbuf -lrte_mempool -lrte_rcu -lrte_ring -lrte_eal -lrte_telemetry -lrte_kvargs -Wl,--whole-archive -L/usr/local/lib64 -lrte_common_cpt -lrte_common_dpaax -lrte_common_iavf -lrte_common_octeontx -lrte_common_octeontx2 -lrte_bus_dpaa -lrte_bus_fslmc -lrte_bus_ifpga -lrte_bus_pci -lrte_bus_vdev -lrte_bus_vmbus -lrte_mempool_bucket -lrte_mempool_dpaa -lrte_mempool_dpaa2 -lrte_mempool_octeontx -lrte_mempool_octeontx2 -lrte_mempool_ring -lrte_mempool_stack -lrte_pmd_af_packet -lrte_pmd_ark -lrte_pmd_hns3 -lrte_pmd_iavf -lrte_pmd_ice -lrte_pmd_igc -lrte_pmd_ixgbe -lrte_pmd_kni -lrte_pmd_liquidio -lrte_pmd_memif -lrte_pmd_netvsc -lrte_pmd_nfp -lrte_pmd_null -lrte_pmd_octeontx -lrte_pmd_octeontx2 -lrte_pmd_pcap -lrte_pmd_pfe -lrte_pmd_qede -lrte_pmd_ring -lrte_pmd_sfc -lrte_pmd_softnic -lrte_pmd_tap -lrte_pmd_thunderx -lrte_pmd_vdev_netvsc -lrte_pmd_vhost -lrte_pmd_virtio -lrte_pmd_vmxnet3 -lrte_rawdev_dpaa2_cmdif -lrte_rawdev_dpaa2_qdma -lrte_rawdev_ioat -lrte_rawdev_ntb -lrte_rawdev_octeontx2_dma -lrte_rawdev_octeontx2_ep -lrte_rawdev_skeleton -lrte_pmd_caam_jr -lrte_pmd_ccp -lrte_pmd_dpaa_sec -lrte_pmd_dpaa2_sec -lrte_pmd_nitrox -lrte_pmd_null_crypto -lrte_pmd_octeontx_crypto -lrte_pmd_octeontx2_crypto -lrte_pmd_openssl -lrte_pmd_crypto_scheduler -lrte_pmd_virtio_crypto -lrte_pmd_octeontx_compress -lrte_pmd_qat -lrte_pmd_zlib -lrte_pmd_ifc -lrte_pmd_dpaa_event -lrte_pmd_dpaa2_event -lrte_pmd_octeontx2_event -lrte_pmd_opdl_event -lrte_pmd_skeleton_event -lrte_pmd_sw_event -lrte_pmd_dsw_event -lrte_pmd_octeontx_event -lrte_pmd_bbdev_null -lrte_pmd_bbdev_fpga_5gnr_fec -lrte_pmd_hpac_sdfec_pmd -Wl,--no-whole-archive -lrte_node -lrte_graph -lrte_bpf -lrte_flow_classify -lrte_pipeline -lrte_table -lrte_port -lrte_fib -lrte_ipsec -lrte_vhost -lrte_stack -lrte_security -lrte_sched -lrte_reorder -lrte_rib -lrte_rawdev -lrte_pdump -lrte_power -lrte_member -lrte_lpm -lrte_latencystats -lrte_kni -lrte_jobstats -lrte_ip_frag -lrte_gso -lrte_gro -lrte_eventdev -lrte_efd -lrte_distributor -lrte_cryptodev -lrte_compressdev -lrte_cfgfile -lrte_bitratestats -lrte_bbdev -lrte_acl -lrte_timer -lrte_hash -lrte_metrics -lrte_cmdline -lrte_pci -lrte_ethdev -lrte_meter -lrte_net -lrte_mbuf -lrte_mempool -lrte_rcu -lrte_ring -lrte_eal -lrte_telemetry -lrte_kvargs -Wl,-Bdynamic -pthread -lm -ldl -lnuma -lpcap")
 TARGET_LINK_LIBRARIES(ldpc_offload ${T1_DPDK_LIBS})
 TARGET_LINK_LIBRARIES(ldpc_offload pthread dl rt m numa)
+endif (DPDK_FOUND)
 
 ##########################################################
 
@@ -2773,7 +2859,11 @@ target_link_libraries (nr-softmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRA
 target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-softmodem ${T_LIB})
 
-add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc ldpc_offload)
+add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
+
+if (DPDK_FOUND)
+add_dependencies( nr-softmodem ldpc_offload)
+endif (DPDK_FOUND)
 
 # nr-uesoftmodem is  UE implementation
 #######################################
@@ -2981,7 +3071,11 @@ add_executable(nr_ulsim
   ${SHLIB_LOADER_SOURCES}
   )
 
-add_dependencies( nr_ulsim ldpc_orig ldpc_optim ldpc_optim8seg ldpc ldpc_offload)
+add_dependencies( nr_ulsim ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
+
+if (DPDK_FOUND)
+add_dependencies( nr_ulsim ldpc_offload)
+endif (DPDK_FOUND)
 
 target_link_libraries(nr_ulsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
