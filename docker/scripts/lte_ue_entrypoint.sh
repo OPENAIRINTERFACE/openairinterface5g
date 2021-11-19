@@ -5,7 +5,7 @@ set -euo pipefail
 PREFIX=/opt/oai-lte-ue
 
 # Based another env var, pick one template to use
-if [[ -v USE_NFAPI ]]; then ln -s $PREFIX/etc/ue.nfapi.conf $PREFIX/etc/ue.conf; fi
+if [[ -v USE_NFAPI ]]; then cp $PREFIX/etc/ue.nfapi.conf $PREFIX/etc/ue.conf; fi
 
 # Only this template will be manipulated and the USIM one!
 CONFIG_FILES=`ls $PREFIX/etc/ue.conf $PREFIX/etc/ue_usim.conf || true`

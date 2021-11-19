@@ -800,10 +800,21 @@ class RANManagement():
 		x2ap_pdu = 0
 		#NSA specific log markers
 		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
+		nodeB_prefix_found = False
 	
 		line_cnt=0 #log file line counter
 		for line in enb_log_file.readlines():
 			line_cnt+=1
+			# Detection of eNB/gNB from a container log
+			result = re.search('Starting eNB soft modem', str(line))
+			if result is not None:
+				nodeB_prefix_found = True
+				nodeB_prefix = 'e'
+			result = re.search('Starting gNB soft modem', str(line))
+			if result is not None:
+				nodeB_prefix_found = True
+				nodeB_prefix = 'g'
+			result = re.search('Run time:' ,str(line))
 			# Runtime statistics
 			result = re.search('Run time:' ,str(line))
 			if result is not None:
@@ -1037,10 +1048,11 @@ class RANManagement():
 		logging.debug('   File analysis (stdout, stats) completed')
 
 		#post processing depending on the node type
-		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
-			nodeB_prefix = 'e'
-		else:
-			nodeB_prefix = 'g'
+		if not nodeB_prefix_found:
+			if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
+				nodeB_prefix = 'e'
+			else:
+				nodeB_prefix = 'g'
 
 		if nodeB_prefix == 'g':
 			if ulschReceiveOK > 0:
