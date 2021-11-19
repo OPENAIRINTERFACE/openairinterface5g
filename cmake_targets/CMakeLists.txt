@@ -913,7 +913,7 @@ set(HWLIB_LDPC_OFFLOAD_SOURCE
    ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c
   )
 
-if (DPDK_FOUND)
+if (DPDK_FOUND AND EXISTS  "/usr/local/lib64/librte_pmd_hpac_sdfec_pmd.so")
 add_library(ldpc_offload MODULE ${HWLIB_LDPC_OFFLOAD_SOURCE} )
 
 set_target_properties(ldpc_offload PROPERTIES COMPILE_FLAGS "-include rte_config.h  -march=native -I/usr/local/include -DALLOW_EXPERIMENTAL_API")
