@@ -505,7 +505,10 @@ static void copy_uci_inds_to_single_uci_ind(NR_UE_MAC_INST_t *mac,
     /* In openair1/SCHED_NR_UE/fapi_nr_ue_l1.c nr_ue_schedule_response_stub(), the
        number of UCIs is hard coded to 1. This is why we always use index 0 of the
        queued UCI indication to fill the new multiplexed UCI indication */
-
+    if (!uci_from_queue) {
+        LOG_E(NR_MAC, "There was not a UCI in the queue!\n");
+        return;
+    }
     nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &new_uci->uci_list[index].pucch_pdu_format_0_1;
     memset(pdu_0_1, 0, sizeof(*pdu_0_1));
     AssertFatal(index <= new_uci->num_ucis,
@@ -549,11 +552,10 @@ nfapi_nr_uci_indication_t *multiplex_uci_ind(NR_UE_MAC_INST_t *mac)
     uci_ind->slot = NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot);
     uci_ind->num_ucis = num_active_harqs;
     uci_ind->uci_list = MALLOC(uci_ind->num_ucis * sizeof(*uci_ind->uci_list));
-    if (num_active_harqs != nr_uci_ind_queue.num_items)
-    {
-        LOG_E(NR_MAC, "The number of active harqs %d should match the number of UCIs in the queue %lu\n",
-              num_active_harqs, nr_uci_ind_queue.num_items);
-    }
+    AssertFatal(num_active_harqs == nr_uci_ind_queue.num_items,
+                "The number of active harqs %d should match the number of UCIs in the queue %lu\n",
+                num_active_harqs, nr_uci_ind_queue.num_items);
+
     for (int j = 0; j < num_active_harqs; j++)
     {
         nfapi_nr_uci_indication_t *queued_uci_ind = get_queue(&nr_uci_ind_queue);
