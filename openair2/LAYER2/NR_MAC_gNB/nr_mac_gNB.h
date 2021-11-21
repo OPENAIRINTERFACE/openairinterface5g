@@ -738,6 +738,8 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t schedule_dlsch;  // include rlc_data_req + MAC header + preprocessor
   /// processing time of rlc_data_req
   time_stats_t rlc_data_req;
+  /// processing time of rlc_status_ind
+  time_stats_t rlc_status_ind;
   /// processing time of eNB MCH scheduler
   time_stats_t schedule_mch;
   /// processing time of eNB ULSCH reception

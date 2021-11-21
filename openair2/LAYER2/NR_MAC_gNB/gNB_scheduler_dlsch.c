@@ -485,7 +485,8 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                         DL_SCH_LCID_DCCH,
                                                         0,
                                                         0);
-    if ((sched_ctrl->lcid_mask&(1<<4)) > 0)  
+    if ((sched_ctrl->lcid_mask&(1<<4)) > 0) {  
+       start_meas(&RC.nrmac[module_id]->rlc_status_ind);
        sched_ctrl->rlc_status[DL_SCH_LCID_DTCH] = mac_rlc_status_ind(module_id,
                                                                     rnti,
                                                                     module_id,
@@ -496,16 +497,17 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                                     DL_SCH_LCID_DTCH,
                                                                     0,
                                                                     0);
-
-     if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0){
-       lcid = DL_SCH_LCID_DCCH;       
-     } 
-     else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0)
-     {
-       lcid = DL_SCH_LCID_DCCH1;       
-     }else{
-       lcid = DL_SCH_LCID_DTCH;       
-     }
+       stop_meas(&RC.nrmac[module_id]->rlc_status_ind);
+    }
+    if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0){
+      lcid = DL_SCH_LCID_DCCH;       
+    } 
+    else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0)
+    {
+      lcid = DL_SCH_LCID_DCCH1;       
+    }else{
+      lcid = DL_SCH_LCID_DTCH;       
+    }
                                                       
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
     //later multiplex here. Just select DCCH/SRB before DTCH/DRB
