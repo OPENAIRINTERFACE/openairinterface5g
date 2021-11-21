@@ -405,41 +405,42 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
 
   const uint8_t old_mcs = bler_stats->mcs;
   const NR_mac_stats_t *stats = &nrmac->UE_info.mac_stats[UE_id];
-  const int dret3x = stats->dlsch_rounds[3] - bler_stats->dlsch_rounds[3];
-  if (0/*dret3x > 0*/) {
-    /* if there is a third retransmission, decrease MCS for stabilization and
-     * restart averaging window to stabilize transmission */
+  // TODO put back this condition when relevant
+  /*const int dret3x = stats->dlsch_rounds[3] - bler_stats->dlsch_rounds[3];
+  if (dret3x > 0) {
+     if there is a third retransmission, decrease MCS for stabilization and
+     restart averaging window to stabilize transmission
     bler_stats->last_frame_slot = now;
     bler_stats->mcs = max(9, bler_stats->mcs - 1);
     memcpy(bler_stats->dlsch_rounds, stats->dlsch_rounds, sizeof(stats->dlsch_rounds));
     LOG_D(MAC, "%4d.%2d: %d retx in 3rd round, setting MCS to %d and restarting window\n", frame, slot, dret3x, bler_stats->mcs);
     return bler_stats->mcs;
-  }
+  }*/
   if (diff < BLER_UPDATE_FRAME * n)
     return old_mcs; // no update
 
   // last update is longer than x frames ago
-  const int dtx = stats->dlsch_rounds[0] - bler_stats->dlsch_rounds[0];
-  const int dretx = stats->dlsch_rounds[1] - bler_stats->dlsch_rounds[1];
-  const int dretx2 = stats->dlsch_rounds[2] - bler_stats->dlsch_rounds[2];
+  const int dtx = (int)(stats->dlsch_rounds[0] - bler_stats->dlsch_rounds[0]);
+  const int dretx = (int)(stats->dlsch_rounds[1] - bler_stats->dlsch_rounds[1]);
+  const int dretx2 = (int)(stats->dlsch_rounds[2] - bler_stats->dlsch_rounds[2]);
   const float bler_window = dtx > 0 ? (float) dretx / dtx : bler_stats->bler;
   const float rd2_bler_wnd = dtx > 0 ? (float) dretx2 / dtx : bler_stats->rd2_bler;
   bler_stats->bler = BLER_FILTER * bler_stats->bler + (1 - BLER_FILTER) * bler_window;
   bler_stats->rd2_bler = BLER_FILTER / 4 * bler_stats->rd2_bler + (1 - BLER_FILTER / 4) * rd2_bler_wnd;
 
   int new_mcs = old_mcs;
+  // TODO put back this condition when relevant
   /* first ensure that number of 2nd retx is below threshold. If this is the
-   * case, use 1st retx to adjust faster */
-  /*
+   * case, use 1st retx to adjust faster
   if (bler_stats->rd2_bler > nrmac->dl_rd2_bler_threshold && old_mcs > 6) {
     new_mcs -= 2;
   } else if (bler_stats->rd2_bler < nrmac->dl_rd2_bler_threshold) {*/
-    if (bler_stats->bler < nrmac->dl_bler_target_lower && old_mcs < nrmac->dl_max_mcs && dtx > 9)
-      new_mcs += 1;
-    else if (bler_stats->bler > nrmac->dl_bler_target_upper && old_mcs > 6)
-      new_mcs -= 1;
-    // else we are within threshold boundaries
-  /*}*/
+  if (bler_stats->bler < nrmac->dl_bler_target_lower && old_mcs < nrmac->dl_max_mcs && dtx > 9)
+    new_mcs += 1;
+  else if (bler_stats->bler > nrmac->dl_bler_target_upper && old_mcs > 6)
+    new_mcs -= 1;
+  // else we are within threshold boundaries
+
 
   bler_stats->last_frame_slot = now;
   bler_stats->mcs = new_mcs;
@@ -1199,6 +1200,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
                   "UE %d mismatch between scheduled TBS and buffered TB for HARQ PID %d\n",
                   UE_id,
                   current_harq_pid);
+
+      T(T_GNB_MAC_RETRANSMISSION_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
+        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_INT(harq->round), T_BUFFER(harq->tb, TBS));
     } else { /* initial transmission */
 
       LOG_D(NR_MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);
@@ -1235,7 +1239,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
            * such that TBS is full */
           const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
 
-
           len = mac_rlc_data_req(module_id,
                                  rnti,
                                  module_id,
@@ -1247,7 +1250,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                  (char *)buf,
                                  0,
                                  0);
-
 
           LOG_D(NR_MAC,
                 "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
