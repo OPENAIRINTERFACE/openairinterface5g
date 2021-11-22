@@ -37,7 +37,8 @@ RUN /bin/sh oaienv && \
     mkdir -p log && \
     ./build_oai --RU --ninja -w USRP --verbose-ci
 
-RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
+RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml && \
+    cp /oai-ran/docker/scripts/lte_ru_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM ubuntu:bionic as oai-lte-ru
@@ -64,28 +65,35 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/oai-lte-ru/bin
-COPY --from=ru-build /oai-ran/targets/bin/oairu.Rel15 .
-COPY --from=ru-build /oai-ran/docker/scripts/lte_ru_entrypoint.sh entrypoint.sh
+COPY --from=ru-build \
+    /oai-ran/targets/bin/oairu.Rel15 \
+    /oai-ran/docker/scripts/entrypoint.sh \
+    ./
 
 WORKDIR /usr/local/lib/
-COPY --from=ru-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
-COPY --from=ru-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
-COPY --from=ru-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
-COPY --from=ru-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
-COPY --from=ru-build /oai-ran/targets/bin/libparams_libconfig.so .
-COPY --from=ru-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
+COPY --from=ru-build \
+    /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 \
+    /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 \
+    /oai-ran/targets/bin/librfsimulator.so.Rel15 \
+    /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 \
+    /oai-ran/targets/bin/libparams_libconfig.so \
+    /oai-ran/cmake_targets/ran_build/build/libdfts.so \
+    ./
 
 # Now we are copying from builder-image the UHD files.
 COPY --from=ru-build /usr/local/bin/uhd_find_devices /usr/local/bin
 COPY --from=ru-build /usr/local/lib/libuhd.so.3.15.0 /usr/local/lib
 COPY --from=ru-build /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-lte-ru/bin
+
 WORKDIR /usr/lib/x86_64-linux-gnu
-COPY --from=ru-build /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 .
-COPY --from=ru-build /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.65.1 .
-COPY --from=ru-build /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 .
-COPY --from=ru-build /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.65.1 .
-COPY --from=ru-build /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.65.1 .
-COPY --from=ru-build /usr/lib/x86_64-linux-gnu/libboost_system.so.1.65.1 .
+COPY --from=ru-build \
+    /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 \
+    /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.65.1 \
+    /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 \
+    /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.65.1 \
+    /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.65.1 \
+    /usr/lib/x86_64-linux-gnu/libboost_system.so.1.65.1 \
+    ./
 
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so" && \
     /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so" && \
