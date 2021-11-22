@@ -26,7 +26,6 @@
  */
 
 #include <softmodem-common.h>
-#include "LAYER2/MAC/mac.h"
 #include "NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "NR_MAC_gNB/mac_proto.h"
@@ -34,6 +33,67 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 
 extern RAN_CONTEXT_t RC;
+
+void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id, int UE_id, NR_SRS_Resource_t *srs_resource) {
+
+  gNB_MAC_INST *nrmac = RC.nrmac[module_id];
+  NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
+  NR_UE_info_t *UE_info = &nrmac->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+  NR_BWP_t ubwp = sched_ctrl->active_ubwp ?
+                  sched_ctrl->active_ubwp->bwp_Common->genericParameters :
+                  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+
+  srs_pdu->rnti = UE_info->rnti[UE_id];
+  srs_pdu->handle = 0;
+  srs_pdu->bwp_size = NRRIV2BW(ubwp.locationAndBandwidth, MAX_BWP_SIZE);;
+  srs_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp.locationAndBandwidth, MAX_BWP_SIZE);;
+  srs_pdu->subcarrier_spacing = ubwp.subcarrierSpacing;
+  srs_pdu->cyclic_prefix = 0;
+  srs_pdu->num_ant_ports = srs_resource->nrofSRS_Ports;
+  srs_pdu->num_symbols = srs_resource->resourceMapping.nrofSymbols;
+  srs_pdu->num_repetitions = srs_resource->resourceMapping.repetitionFactor;
+  srs_pdu->time_start_position = srs_resource->resourceMapping.startPosition;
+  srs_pdu->config_index = srs_resource->freqHopping.c_SRS;
+  srs_pdu->sequence_id = srs_resource->sequenceId;
+  srs_pdu->bandwidth_index = srs_resource->freqHopping.b_SRS;
+  srs_pdu->comb_size = srs_resource->transmissionComb.present - 1;
+
+  switch(srs_resource->transmissionComb.present) {
+    case NR_SRS_Resource__transmissionComb_PR_n2:
+      srs_pdu->comb_offset = srs_resource->transmissionComb.choice.n2->combOffset_n2;
+      srs_pdu->cyclic_shift = srs_resource->transmissionComb.choice.n2->cyclicShift_n2;
+      break;
+    case NR_SRS_Resource__transmissionComb_PR_n4:
+      srs_pdu->comb_offset = srs_resource->transmissionComb.choice.n4->combOffset_n4;
+      srs_pdu->cyclic_shift = srs_resource->transmissionComb.choice.n4->cyclicShift_n4;
+      break;
+    default:
+      LOG_W(NR_MAC, "Invalid or not implemented comb_size!\n");
+  }
+
+  srs_pdu->frequency_position = srs_resource->freqDomainPosition;
+  srs_pdu->frequency_shift = srs_resource->freqDomainShift;
+  srs_pdu->frequency_hopping = srs_resource->freqHopping.b_hop;
+  srs_pdu->group_or_sequence_hopping = srs_resource->groupOrSequenceHopping;
+  srs_pdu->resource_type = srs_resource->resourceType.present - 1;
+  srs_pdu->t_srs = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
+  srs_pdu->t_offset = srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl40;
+}
+
+void nr_fill_nfapi_srs(int module_id, int CC_id, int UE_id, sub_frame_t slot, NR_SRS_Resource_t *srs_resource) {
+
+  nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][slot];
+
+  future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE;
+  future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_srs_pdu_t);
+  nfapi_nr_srs_pdu_t *srs_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].srs_pdu;
+  memset(srs_pdu, 0, sizeof(nfapi_nr_srs_pdu_t));
+  future_ul_tti_req->n_pdus += 1;
+
+  nr_configure_srs(srs_pdu, module_id, CC_id, UE_id, srs_resource);
+}
 
 /*******************************************************************
 *
@@ -112,7 +172,8 @@ void nr_schedule_srs(int module_id, frame_t frame, sub_frame_t slot) {
 
       // Check if UE transmitted the SRS here
       if ((frame * n_slots_frame + slot - offset) % period == 0) {
-        LOG_W(NR_MAC,"(%d.%d) SRS is received here, but the procedures are not implemented yet!\n", frame, slot);
+        LOG_D(NR_MAC,"(%d.%d) Scheduling SRS reception\n", frame, slot);
+        nr_fill_nfapi_srs(module_id, CC_id, UE_id, slot, srs_resource);
       }
     }
   }
