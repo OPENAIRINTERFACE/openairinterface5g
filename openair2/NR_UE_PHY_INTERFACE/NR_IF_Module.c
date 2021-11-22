@@ -322,9 +322,9 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
             uint16_t num_dcis = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
             if (num_dcis > 0)
             {
-                if (!dl_info->dci_ind && !pdu_idx)
+                if (!dl_info->dci_ind && pdu_idx == 0)
                 {
-                  dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
+                  dl_info->dci_ind = CALLOC(num_dcis, sizeof(fapi_nr_dci_indication_t));
                 }
                 dl_info->dci_ind->SFN = dl_tti_request->SFN;
                 dl_info->dci_ind->slot = dl_tti_request->Slot;
