@@ -499,7 +499,8 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
 
 static nfapi_nr_uci_indication_t *multiplex_uci_ind(NR_UE_MAC_INST_t *mac, int num_active_harqs)
 {
-    if (num_active_harqs <= 0)
+    AssertFatal(num_active_harqs >= 0, "Invalid value for num_active_harqs %d\n", num_active_harqs);
+    if (num_active_harqs == 0)
     {
         return NULL;
     }
@@ -515,22 +516,20 @@ static nfapi_nr_uci_indication_t *multiplex_uci_ind(NR_UE_MAC_INST_t *mac, int n
     uci_ind->sfn = NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot);
     uci_ind->slot = NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot);
     uci_ind->num_ucis = num_active_harqs;
-    uci_ind->uci_list = MALLOC(uci_ind->num_ucis * sizeof(*uci_ind->uci_list));
+    uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
     for (int i = 0; i < num_active_harqs; i++)
     {
         nfapi_nr_uci_indication_t *queued_uci_ind = get_queue(&nr_uci_ind_queue);
+        AssertFatal(queued_uci_ind, "There was not a UCI in the queue!\n");
+        nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[i].pucch_pdu_format_0_1;
+
         /* In openair1/SCHED_NR_UE/fapi_nr_ue_l1.c nr_ue_schedule_response_stub(), the
         number of UCIs is hard coded to 1. This is why we always use index 0 of the
         queued UCI indication to fill the new multiplexed UCI indication */
-        AssertFatal(queued_uci_ind, "There was not a UCI in the queue!\n");
-
-        nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[i].pucch_pdu_format_0_1;
-        memset(pdu_0_1, 0, sizeof(*pdu_0_1));
-        AssertFatal(i < uci_ind->num_ucis,
-                    "Attempting to index past end of uci_list array. Index = %d\n",
-                    i);
+        AssertFatal(queued_uci_ind->num_ucis == 1, "The number of UCIs from de-queueud UCI is not 1, its %d\n",
+                    queued_uci_ind->num_ucis);
         uci_ind->uci_list[i].pdu_type = queued_uci_ind->uci_list[0].pdu_type;
-        uci_ind->uci_list[i].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
+        uci_ind->uci_list[i].pdu_size = queued_uci_ind->uci_list[0].pdu_size;
 
         nfapi_nr_uci_pucch_pdu_format_0_1_t *queued_pdu_0_1 = &queued_uci_ind->uci_list[0].pucch_pdu_format_0_1;
         pdu_0_1->handle = queued_pdu_0_1->handle;
@@ -539,6 +538,10 @@ static nfapi_nr_uci_indication_t *multiplex_uci_ind(NR_UE_MAC_INST_t *mac, int n
         pdu_0_1->ul_cqi = queued_pdu_0_1->ul_cqi;
         pdu_0_1->timing_advance = queued_pdu_0_1->timing_advance;
         pdu_0_1->rssi = queued_pdu_0_1->rssi;
+        free(queued_uci_ind->uci_list);
+        queued_uci_ind->uci_list = NULL;
+        free(queued_uci_ind);
+        queued_uci_ind = NULL;
     }
     return uci_ind;
 }
@@ -563,11 +566,8 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
               pdu_list->pdu_type, ul_tti_req->pdus_list[i].pucch_pdu.rnti, pdu_list->pucch_pdu.sr_flag, pdu_list->pucch_pdu.bit_len_harq);
         if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE && pdu_list->pucch_pdu.rnti == mac->crnti)
         {
-            if (nr_uci_ind_queue.num_items <= 0)
-            {
-                return;
-            }
-
+            AssertFatal(nr_uci_ind_queue.num_items >= 0, "Invalid num_items in UCI_ind queue %lu\n",
+                        nr_uci_ind_queue.num_items);
             int num_active_harqs = pdu_list->pucch_pdu.bit_len_harq;
             LOG_I(NR_MAC, "The number of active harqs %d from ul_tti_req\n", num_active_harqs);
             nfapi_nr_uci_indication_t *uci_ind = multiplex_uci_ind(mac, num_active_harqs);
@@ -636,7 +636,7 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     }
     if (!sent_uci)
     {
-        LOG_E(NR_MAC, "The UL_TTI_REQ did not sent a UCI to the gNB. \n");
+        LOG_E(NR_MAC, "UCI ind not sent\n");
         if (!put_queue(&nr_ul_tti_req_queue, ul_tti_req))
         {
             LOG_E(NR_PHY, "put_queue failed for ul_tti_req.\n");
