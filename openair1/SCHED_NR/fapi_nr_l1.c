@@ -231,6 +231,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
           break;
         case NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE:
           LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
+          nr_fill_srs(gNB,UL_tti_req->SFN, UL_tti_req->Slot, &UL_tti_req->pdus_list[i].srs_pdu);
           break;
       }
     }

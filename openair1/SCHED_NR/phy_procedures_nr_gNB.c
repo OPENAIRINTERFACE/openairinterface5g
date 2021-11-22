@@ -797,6 +797,19 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
       }
     }
   }
+
+  for (int i=0;i<NUMBER_OF_NR_SRS_MAX;i++) {
+    NR_gNB_SRS_t *srs = gNB->srs[i];
+    if (srs) {
+      if ((srs->active == 1) && (srs->frame == frame_rx) && (srs->slot == slot_rx)) {
+        LOG_D(NR_PHY, "(%d.%d) gNB is waiting for SRS, id = %i\n", frame_rx, slot_rx, i);
+        nfapi_nr_srs_pdu_t *srs_pdu = &srs->srs_pdu;
+        nr_get_srs_signal(gNB,frame_rx,slot_rx,srs_pdu);
+        srs->active = 0;
+      }
+    }
+  }
+
   stop_meas(&gNB->phy_proc_rx);
   // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
   if ((frame_rx&127) == 0 && slot_rx==19) {

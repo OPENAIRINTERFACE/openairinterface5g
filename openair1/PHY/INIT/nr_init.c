@@ -546,6 +546,12 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
     AssertFatal(gNB->pucch[i]!=NULL,"Can't initialize pucch %d \n", i);
   }
 
+  for (int i=0; i<NUMBER_OF_NR_SRS_MAX; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for SRS %d/%d\n",i,NUMBER_OF_NR_SRS_MAX);
+    gNB->srs[i] = new_gNB_srs();
+    AssertFatal(gNB->srs[i]!=NULL,"Can't initialize srs %d \n", i);
+  }
+
   for (int i=0; i<gNB->number_of_nr_ulsch_max; i++) {
 
     LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH  %d/%d\n",i,gNB->number_of_nr_ulsch_max);
