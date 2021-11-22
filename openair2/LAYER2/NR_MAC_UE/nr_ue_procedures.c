@@ -599,15 +599,6 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci->dci_format];
 
-  if (get_softmodem_params()->sa) {
-    if (((dci->rnti != 0xFFFF) && (mac->ra.ra_state <= GENERATE_PREAMBLE)) ||
-        ((dci->rnti != 0x10b) && (mac->ra.ra_state == WAIT_RAR)) ||
-        ((dci->rnti != mac->ra.t_crnti ) && (mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)) ||
-        ((dci->rnti != mac->crnti ) && (mac->ra.ra_state == RA_SUCCEEDED))) {
-      return -1;
-    }
-  }
-
   LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
 	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
   int8_t ret = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15);
