@@ -65,6 +65,11 @@ typedef struct {
   int nr_dl_frame;
   int nr_dl_slot;
   int nr_dl_data;
+  /* NR dl retx */
+  int nr_dl_retx_rnti;
+  int nr_dl_retx_frame;
+  int nr_dl_retx_slot;
+  int nr_dl_retx_data;
   /* NR mib */
   int nr_mib_frame;
   int nr_mib_slot;
@@ -338,6 +343,16 @@ void nr_dl(void *_d, event e)
            e.e[d->nr_dl_data].b, e.e[d->nr_dl_data].bsize, NO_PREAMBLE);
 }
 
+void nr_dl_retx(void *_d, event e)
+{
+  ev_data *d = _d;
+
+  trace_nr(d, NR_DIRECTION_DOWNLINK, NR_C_RNTI, e.e[d->nr_dl_retx_rnti].i,
+           e.e[d->nr_dl_retx_frame].i, e.e[d->nr_dl_retx_slot].i,
+           e.e[d->nr_dl_retx_data].b, e.e[d->nr_dl_retx_data].bsize,
+           NO_PREAMBLE);
+}
+
 void nr_mib(void *_d, event e)
 {
   ev_data *d = _d;
@@ -367,7 +382,8 @@ void nr_rar(void *_d, event e)
 
 void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
                 int preamble_id, int rar_id, int sr_id,
-                int nr_ul_id, int nr_dl_id, int nr_mib_id, int nr_rar_id)
+                int nr_ul_id, int nr_dl_id, int nr_dl_retx_id, int nr_mib_id,
+                int nr_rar_id)
 {
   database_event_format f;
   int i;
@@ -401,6 +417,10 @@ void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
   d->nr_dl_frame       = -1;
   d->nr_dl_slot        = -1;
   d->nr_dl_data        = -1;
+  d->nr_dl_retx_rnti   = -1;
+  d->nr_dl_retx_frame  = -1;
+  d->nr_dl_retx_slot   = -1;
+  d->nr_dl_retx_data   = -1;
   d->nr_mib_frame      = -1;
   d->nr_mib_slot       = -1;
   d->nr_mib_data       = -1;
@@ -518,6 +538,20 @@ void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
       d->nr_dl_data == -1)
     goto error;
 
+  /* NR dl retx: rnti, frame, slot, data */
+  f = get_format(database, nr_dl_retx_id);
+
+  for (i = 0; i < f.count; i++) {
+    G("rnti",  "int",    d->nr_dl_retx_rnti);
+    G("frame", "int",    d->nr_dl_retx_frame);
+    G("slot",  "int",    d->nr_dl_retx_slot);
+    G("data",  "buffer", d->nr_dl_retx_data);
+  }
+
+  if (d->nr_dl_retx_rnti == -1 || d->nr_dl_retx_frame == -1 ||
+      d->nr_dl_retx_slot == -1 || d->nr_dl_retx_data == -1)
+    goto error;
+
   /* NR MIB: frame, slot, data */
   f = get_format(database, nr_mib_id);
 
@@ -612,7 +646,7 @@ int main(int n, char **v)
   int in;
   int i;
   int ul_id, dl_id, mib_id, preamble_id, rar_id;
-  int nr_ul_id, nr_dl_id, nr_mib_id, nr_rar_id;
+  int nr_ul_id, nr_dl_id, nr_dl_retx_id, nr_mib_id, nr_rar_id;
   int sr_id;
   ev_data d;
   char *ip = DEFAULT_IP;
@@ -692,6 +726,7 @@ int main(int n, char **v)
 
     on_off(database, "GNB_MAC_UL_PDU_WITH_DATA", is_on, 1);
     on_off(database, "GNB_MAC_DL_PDU_WITH_DATA", is_on, 1);
+    on_off(database, "GNB_MAC_RETRANSMISSION_DL_PDU_WITH_DATA", is_on, 1);
     on_off(database, "GNB_PHY_MIB", is_on, 1);
     on_off(database, "GNB_MAC_DL_RAR_PDU_WITH_DATA", is_on, 1);
 
@@ -715,11 +750,12 @@ int main(int n, char **v)
 
   nr_ul_id = event_id_from_name(database, "GNB_MAC_UL_PDU_WITH_DATA");
   nr_dl_id = event_id_from_name(database, "GNB_MAC_DL_PDU_WITH_DATA");
+  nr_dl_retx_id = event_id_from_name(database, "GNB_MAC_RETRANSMISSION_DL_PDU_WITH_DATA");
   nr_mib_id = event_id_from_name(database, "GNB_PHY_MIB");
   nr_rar_id = event_id_from_name(database, "GNB_MAC_DL_RAR_PDU_WITH_DATA");
 
   setup_data(&d, database, ul_id, dl_id, mib_id, preamble_id, rar_id, sr_id,
-             nr_ul_id, nr_dl_id, nr_mib_id, nr_rar_id);
+             nr_ul_id, nr_dl_id, nr_dl_retx_id, nr_mib_id, nr_rar_id);
 
   register_handler_function(h, ul_id, ul, &d);
   register_handler_function(h, dl_id, dl, &d);
@@ -730,6 +766,7 @@ int main(int n, char **v)
 
   register_handler_function(h, nr_ul_id, nr_ul, &d);
   register_handler_function(h, nr_dl_id, nr_dl, &d);
+  register_handler_function(h, nr_dl_retx_id, nr_dl_retx, &d);
   register_handler_function(h, nr_mib_id, nr_mib, &d);
   register_handler_function(h, nr_rar_id, nr_rar, &d);
 
@@ -753,10 +790,11 @@ int main(int n, char **v)
 
     if (e.type == -1) break;
 
-    if (!(e.type == ul_id       || e.type == dl_id    || e.type == mib_id ||
-          e.type == preamble_id || e.type == rar_id   || e.type == sr_id  ||
-          e.type == nr_ul_id    || e.type == nr_dl_id ||
-          e.type == nr_mib_id   || e.type == nr_rar_id)) continue;
+    if (!(e.type == ul_id         || e.type == dl_id     || e.type == mib_id ||
+          e.type == preamble_id   || e.type == rar_id    || e.type == sr_id  ||
+          e.type == nr_ul_id      || e.type == nr_dl_id  ||
+          e.type == nr_dl_retx_id || e.type == nr_mib_id ||
+          e.type == nr_rar_id)) continue;
 
     handle_event(h, e);
   }
