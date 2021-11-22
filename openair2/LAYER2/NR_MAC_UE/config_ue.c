@@ -660,6 +660,8 @@ int nr_rrc_mac_config_req_ue(
       if (mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0) num_slots_ul++;
       LOG_I(MAC, "Initializing ul_config_request. num_slots_ul = %d\n", num_slots_ul);
       mac->ul_config_request = (fapi_nr_ul_config_request_t *)calloc(num_slots_ul, sizeof(fapi_nr_ul_config_request_t));
+      for (int i=0; i<num_slots_ul; i++)
+        pthread_mutex_init(&(mac->ul_config_request[i].mutex_ul_config), NULL);
       // Setup the SSB to Rach Occasions mapping according to the config
       build_ssb_to_ro_map(mac);//->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
       mac->if_module->phy_config_request(&mac->phy_config);
