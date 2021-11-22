@@ -2495,6 +2495,59 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
     return 4;
 }
 
+/*******************************************************************
+*
+* NAME :         get_nr_srs_offset
+*
+* PARAMETERS :   periodicityAndOffset for SRS
+*
+* RETURN :       the offset parameter for SRS
+*
+*********************************************************************/
+
+uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset) {
+
+  switch(periodicityAndOffset.present) {
+    case NR_SRS_PeriodicityAndOffset_PR_sl1:
+      return periodicityAndOffset.choice.sl1;
+    case NR_SRS_PeriodicityAndOffset_PR_sl2:
+      return periodicityAndOffset.choice.sl2;
+    case NR_SRS_PeriodicityAndOffset_PR_sl4:
+      return periodicityAndOffset.choice.sl4;
+    case NR_SRS_PeriodicityAndOffset_PR_sl5:
+      return periodicityAndOffset.choice.sl5;
+    case NR_SRS_PeriodicityAndOffset_PR_sl8:
+      return periodicityAndOffset.choice.sl8;
+    case NR_SRS_PeriodicityAndOffset_PR_sl10:
+      return periodicityAndOffset.choice.sl10;
+    case NR_SRS_PeriodicityAndOffset_PR_sl16:
+      return periodicityAndOffset.choice.sl16;
+    case NR_SRS_PeriodicityAndOffset_PR_sl20:
+      return periodicityAndOffset.choice.sl20;
+    case NR_SRS_PeriodicityAndOffset_PR_sl32:
+      return periodicityAndOffset.choice.sl32;
+    case NR_SRS_PeriodicityAndOffset_PR_sl40:
+      return periodicityAndOffset.choice.sl40;
+    case NR_SRS_PeriodicityAndOffset_PR_sl64:
+      return periodicityAndOffset.choice.sl64;
+    case NR_SRS_PeriodicityAndOffset_PR_sl80:
+      return periodicityAndOffset.choice.sl80;
+    case NR_SRS_PeriodicityAndOffset_PR_sl160:
+      return periodicityAndOffset.choice.sl160;
+    case NR_SRS_PeriodicityAndOffset_PR_sl320:
+      return periodicityAndOffset.choice.sl320;
+    case NR_SRS_PeriodicityAndOffset_PR_sl640:
+      return periodicityAndOffset.choice.sl640;
+    case NR_SRS_PeriodicityAndOffset_PR_sl1280:
+      return periodicityAndOffset.choice.sl1280;
+    case NR_SRS_PeriodicityAndOffset_PR_sl2560:
+      return periodicityAndOffset.choice.sl2560;
+    case NR_SRS_PeriodicityAndOffset_PR_NOTHING:
+      LOG_W(NR_MAC,"NR_SRS_PeriodicityAndOffset_PR_NOTHING\n");
+      return 0;
+  }
+}
+
 // Set the transform precoding status according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16:
 // - "UE procedure for applying transform precoding on PUSCH"
 uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,

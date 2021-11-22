@@ -927,7 +927,7 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
                       mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters;
 
     uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
-    uint16_t offset = srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl40;
+    uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
 
     int n_slots_frame = nr_slots_per_frame[ubwp.subcarrierSpacing];
 

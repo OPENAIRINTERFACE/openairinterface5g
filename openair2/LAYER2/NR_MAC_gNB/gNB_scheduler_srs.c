@@ -79,7 +79,7 @@ void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id, int
   srs_pdu->group_or_sequence_hopping = srs_resource->groupOrSequenceHopping;
   srs_pdu->resource_type = srs_resource->resourceType.present - 1;
   srs_pdu->t_srs = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
-  srs_pdu->t_offset = srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl40;
+  srs_pdu->t_offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
 }
 
 void nr_fill_nfapi_srs(int module_id, int CC_id, int UE_id, sub_frame_t slot, NR_SRS_Resource_t *srs_resource) {
@@ -166,7 +166,7 @@ void nr_schedule_srs(int module_id, frame_t frame, sub_frame_t slot) {
                         scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
 
       uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
-      uint16_t offset = srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl40;
+      uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
 
       int n_slots_frame = nr_slots_per_frame[ubwp.subcarrierSpacing];
 
