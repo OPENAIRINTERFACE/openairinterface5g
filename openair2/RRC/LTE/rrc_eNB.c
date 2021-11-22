@@ -7975,7 +7975,7 @@ rrc_eNB_decode_dcch(
           /*FK: left the condition as is for the case MME is used (S1 mode) but setting  dedicated_DRB = 1 otherwise (noS1 mode) so that no second RRCReconfiguration message activationg more DRB is sent as this causes problems with the nasmesh driver.*/
           int flexran_agent_handover = 0;
 
-          if (EPC_MODE_ENABLED || get_softmodem_params()->nsa) {
+          if (EPC_MODE_ENABLED || get_softmodem_params()->emulate_l1) {
             if (ue_context_p->ue_context.StatusRrc == RRC_RECONFIGURED) {
               dedicated_DRB = 1;
               LOG_I(RRC,

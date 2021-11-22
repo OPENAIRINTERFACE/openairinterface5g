@@ -80,7 +80,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               rx_ind->sfn = scheduled_response->ul_config->sfn;
               rx_ind->slot = scheduled_response->ul_config->slot;
               rx_ind->number_of_pdus = scheduled_response->tx_request->number_of_pdus;
-              rx_ind->pdu_list = CALLOC(1, sizeof(*rx_ind->pdu_list));
+              rx_ind->pdu_list = CALLOC(rx_ind->number_of_pdus, sizeof(*rx_ind->pdu_list));
               for (int j = 0; j < rx_ind->number_of_pdus; j++)
               {
                 fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
@@ -102,7 +102,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               crc_ind->number_crcs = scheduled_response->ul_config->number_pdus;
               crc_ind->sfn = scheduled_response->ul_config->sfn;
               crc_ind->slot = scheduled_response->ul_config->slot;
-              crc_ind->crc_list = CALLOC(1, sizeof(*crc_ind->crc_list));
+              crc_ind->crc_list = CALLOC(crc_ind->number_crcs, sizeof(*crc_ind->crc_list));
               for (int j = 0; j < crc_ind->number_crcs; j++)
               {
                 crc_ind->crc_list[j].handle = pusch_config_pdu->handle;

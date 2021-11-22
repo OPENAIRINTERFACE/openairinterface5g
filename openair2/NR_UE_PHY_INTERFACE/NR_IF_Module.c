@@ -497,6 +497,55 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     dl_info->slot = ul_dci_req->Slot;
 }
 
+static nfapi_nr_uci_indication_t *multiplex_uci_ind(NR_UE_MAC_INST_t *mac, int num_active_harqs)
+{
+    AssertFatal(num_active_harqs >= 0, "Invalid value for num_active_harqs %d\n", num_active_harqs);
+    if (num_active_harqs == 0)
+    {
+        return NULL;
+    }
+    if (num_active_harqs != nr_uci_ind_queue.num_items)
+    {
+        LOG_I(NR_MAC, "The number of active harqs %d doesn't match the number of UCIs in the queue %lu\n",
+                       num_active_harqs, nr_uci_ind_queue.num_items);
+        return NULL;
+    }
+
+    nfapi_nr_uci_indication_t *uci_ind = MALLOC(sizeof(*uci_ind));
+    uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
+    uci_ind->sfn = NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot);
+    uci_ind->slot = NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot);
+    uci_ind->num_ucis = num_active_harqs;
+    uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
+    for (int i = 0; i < num_active_harqs; i++)
+    {
+        nfapi_nr_uci_indication_t *queued_uci_ind = get_queue(&nr_uci_ind_queue);
+        AssertFatal(queued_uci_ind, "There was not a UCI in the queue!\n");
+        nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[i].pucch_pdu_format_0_1;
+
+        /* In openair1/SCHED_NR_UE/fapi_nr_ue_l1.c nr_ue_schedule_response_stub(), the
+        number of UCIs is hard coded to 1. This is why we always use index 0 of the
+        queued UCI indication to fill the new multiplexed UCI indication */
+        AssertFatal(queued_uci_ind->num_ucis == 1, "The number of UCIs from de-queueud UCI is not 1, its %d\n",
+                    queued_uci_ind->num_ucis);
+        uci_ind->uci_list[i].pdu_type = queued_uci_ind->uci_list[0].pdu_type;
+        uci_ind->uci_list[i].pdu_size = queued_uci_ind->uci_list[0].pdu_size;
+
+        nfapi_nr_uci_pucch_pdu_format_0_1_t *queued_pdu_0_1 = &queued_uci_ind->uci_list[0].pucch_pdu_format_0_1;
+        pdu_0_1->handle = queued_pdu_0_1->handle;
+        pdu_0_1->rnti = queued_pdu_0_1->rnti;
+        pdu_0_1->pucch_format = queued_pdu_0_1->pucch_format;
+        pdu_0_1->ul_cqi = queued_pdu_0_1->ul_cqi;
+        pdu_0_1->timing_advance = queued_pdu_0_1->timing_advance;
+        pdu_0_1->rssi = queued_pdu_0_1->rssi;
+        free(queued_uci_ind->uci_list);
+        queued_uci_ind->uci_list = NULL;
+        free(queued_uci_ind);
+        queued_uci_ind = NULL;
+    }
+    return uci_ind;
+}
+
 static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_ul_tti_request_t *ul_tti_req)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
@@ -509,6 +558,7 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     AssertFatal(num_pdus <= sizeof(ul_tti_req->pdus_list) / sizeof(ul_tti_req->pdus_list[0]),
                 "Too many pdus %d in ul_tti_req\n", num_pdus);
 
+    bool sent_uci = false;
     for (int i = 0; i < num_pdus; i++)
     {
         nfapi_nr_ul_tti_request_number_of_pdus_t *pdu_list = &ul_tti_req->pdus_list[i];
@@ -516,8 +566,12 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
               pdu_list->pdu_type, ul_tti_req->pdus_list[i].pucch_pdu.rnti, pdu_list->pucch_pdu.sr_flag, pdu_list->pucch_pdu.bit_len_harq);
         if (pdu_list->pdu_type == NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE && pdu_list->pucch_pdu.rnti == mac->crnti)
         {
-            LOG_I(NR_MAC, "This is the number of UCIs in the queue %ld\n", nr_uci_ind_queue.num_items);
-            nfapi_nr_uci_indication_t *uci_ind = get_queue(&nr_uci_ind_queue);
+            AssertFatal(nr_uci_ind_queue.num_items >= 0, "Invalid num_items in UCI_ind queue %lu\n",
+                        nr_uci_ind_queue.num_items);
+            int num_active_harqs = pdu_list->pucch_pdu.bit_len_harq;
+            LOG_I(NR_MAC, "The number of active harqs %d from ul_tti_req\n", num_active_harqs);
+            nfapi_nr_uci_indication_t *uci_ind = multiplex_uci_ind(mac, num_active_harqs);
+
             if (uci_ind && uci_ind->num_ucis > 0)
             {
                 LOG_D(NR_MAC, "This is the SFN/SF [%d, %d] and RNTI %x of the UCI ind. ul_tti_req.pdu[%d]->rnti = %x \n",
@@ -555,6 +609,7 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
                     .uci_ind = *uci_ind,
                 };
                 send_nsa_standalone_msg(&UL_INFO, uci_ind->header.message_id);
+                sent_uci = true;
 
                 for (int k = 0; k < uci_ind->num_ucis; k++)
                 {
@@ -577,9 +632,17 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
                 free(uci_ind);
                 uci_ind = NULL;
             }
-
         }
-
+    }
+    if (!sent_uci)
+    {
+        LOG_E(NR_MAC, "UCI ind not sent\n");
+        if (!put_queue(&nr_ul_tti_req_queue, ul_tti_req))
+        {
+            LOG_E(NR_PHY, "put_queue failed for ul_tti_req.\n");
+            free(ul_tti_req);
+            ul_tti_req = NULL;
+        }
     }
 }
 
@@ -907,7 +970,7 @@ void *nrue_standalone_pnf_task(void *context)
       nr_phy_channel_params_t *ch_info = CALLOC(1, sizeof(*ch_info));
       memcpy(ch_info, buffer, sizeof(*ch_info));
 
-      LOG_I(NR_PHY, "Received_SINR = %f, sfn:slot %d:%d\n",
+      LOG_D(NR_PHY, "Received_SINR = %f, sfn:slot %d:%d\n",
             ch_info->sinr, NFAPI_SFNSLOT2SFN(ch_info->sfn_slot), NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot));
 
       if (!put_queue(&nr_chan_param_queue, ch_info))
@@ -1044,6 +1107,12 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
                                 dl_info->dci_ind->dci_list+i);
 
         fapi_nr_dci_indication_pdu_t *dci_index = dl_info->dci_ind->dci_list+i;
+
+        /* The check below filters out UL_DCIs (format 7) which are being processed as DL_DCIs. */
+        if (dci_index->dci_format == 7 && mac->ra.ra_state == RA_SUCCEEDED) {
+          LOG_D(NR_MAC, "We are filtering a UL_DCI to prevent it from being treated like a DL_DCI\n");
+          break;
+        }
         dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci_index->dci_format];
         g_harq_pid = def_dci_pdu_rel15->harq_pid;
         LOG_D(NR_MAC, "Setting harq_pid = %d and dci_index = %d (based on format)\n", g_harq_pid, dci_index->dci_format);
