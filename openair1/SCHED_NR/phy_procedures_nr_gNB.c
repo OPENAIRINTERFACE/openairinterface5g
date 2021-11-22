@@ -199,14 +199,6 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
 
-void srs_procedures_nr(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
-
-  if(is_srs_occasion_nr(gNB->frame_parms, frame_rx, slot_rx)) {
-    LOG_W(NR_PHY, "SRS procedures are not implemented yet!\n");
-  }
-
-}
-
 void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   ldpcDecode_t *rdata = (ldpcDecode_t*) NotifiedFifoData(req);
   NR_UL_gNB_HARQ_t *ulsch_harq = rdata->ulsch_harq;
@@ -638,8 +630,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
       }
     }
   else num_symb=NR_NUMBER_OF_SYMBOLS_PER_SLOT;
-
-  srs_procedures_nr(gNB, frame_rx, slot_rx);
   gNB_I0_measurements(gNB,slot_rx,first_symb,num_symb);
 
   int offset = 10*gNB->frame_parms.ofdm_symbol_size + gNB->frame_parms.first_carrier_offset;

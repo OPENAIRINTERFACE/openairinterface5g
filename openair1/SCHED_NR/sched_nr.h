@@ -54,6 +54,5 @@ void nr_fep_full(RU_t *ru, int slot);
 void nr_fep_full_2thread(RU_t *ru, int slot);
 void feptx_prec(RU_t *ru,int frame_tx,int tti_tx);
 int nr_phy_init_RU(RU_t *ru);
-bool is_srs_occasion_nr(NR_DL_FRAME_PARMS frame_parms, int frame_rx, int slot_rx);
 
 #endif

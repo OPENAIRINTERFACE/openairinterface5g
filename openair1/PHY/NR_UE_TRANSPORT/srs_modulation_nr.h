@@ -141,10 +141,10 @@ EXTERN const uint16_t srs_periodicity[SRS_PERIODICITY]
     @returns 0 on success -1 on error with message */
 
 int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int32_t *txptr,
-                        int16_t amp,
-                        UE_nr_rxtx_proc_t *proc);
+                    NR_DL_FRAME_PARMS *frame_parms,
+                    int32_t *txptr,
+                    int16_t amp,
+                    UE_nr_rxtx_proc_t *proc);
 
 /** \brief This function checks for periodic srs if srs should be transmitted in this slot
  *  @param p_SRS_Resource pointer to active resource

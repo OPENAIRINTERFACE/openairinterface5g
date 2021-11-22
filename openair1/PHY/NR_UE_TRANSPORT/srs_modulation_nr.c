@@ -397,39 +397,6 @@ int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
 
 /*******************************************************************
 *
-* NAME :         is_srs_period_nr
-*
-* PARAMETERS :   pointer to resource set
-*                pointer to transmit buffer
-*                amplitude scaling for this physical signal
-*                slot number of transmission
-* RETURN :        0  if it is a valid slot for transmitting srs
-*                -1 if srs should not be transmitted
-*
-* DESCRIPTION :  for periodic,
-*
-*********************************************************************/
-int is_srs_period_nr(SRS_Resource_t *p_SRS_Resource, NR_DL_FRAME_PARMS *frame_parms, int frame_tx, int slot_tx)
-{
-  uint16_t T_SRS = srs_period[p_SRS_Resource->SRS_Periodicity];
-  uint16_t T_offset = p_SRS_Resource->SRS_Offset; /* FFS_TODO_NR to check interface */
-
-  if (T_offset > T_SRS) {
-    LOG_E(PHY,"is_srs_occasion_nr: T_offset %d is greater than T_SRS %d!\n", T_offset, T_SRS);
-    return (-1);
-  }
-
-  int16_t N_slot_frame = frame_parms->slots_per_frame;
-  if ((N_slot_frame*frame_tx + slot_tx - T_offset)%T_SRS == 0) {
-    return (0);
-  }
-  else {
-    return (-1);
-  }
-}
-
-/*******************************************************************
-*
 * NAME :         ue_srs_procedures_nr
 *
 * PARAMETERS :   pointer to ue context

@@ -2545,6 +2545,8 @@ uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset) {
     case NR_SRS_PeriodicityAndOffset_PR_NOTHING:
       LOG_W(NR_MAC,"NR_SRS_PeriodicityAndOffset_PR_NOTHING\n");
       return 0;
+    default:
+      return 0;
   }
 }
 

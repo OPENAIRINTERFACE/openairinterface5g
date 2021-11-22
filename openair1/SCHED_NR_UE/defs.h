@@ -358,23 +358,11 @@ int16_t nr_pucch_power_cntl(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t s
  */
 void nr_pusch_power_cntl(PHY_VARS_NR_UE *phy_vars_ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t j, uint8_t abstraction_flag);
 
-/*! \brief This function implements the power control mechanism for SRS from 36.213.
-    @param phy_vars_ue PHY variables
-    @param proc Pointer to proc descriptor
-    @param eNB_id Index of eNB
-    @param j index of type of PUSCH (SPS, Normal, Msg3)
-    @returns Transmit power
- */
-void nr_srs_power_cntl(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t *pnb_rb_srs, uint8_t abstraction_flag);
-
 void nr_get_cqipmiri_params(PHY_VARS_NR_UE *ue,uint8_t eNB_id);
 
 void nr_dump_dlsch(PHY_VARS_NR_UE *phy_vars_ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid);
 void nr_dump_dlsch_SI(PHY_VARS_NR_UE *phy_vars_ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe);
 void nr_dump_dlsch_ra(PHY_VARS_NR_UE *phy_vars_ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe);
-
-bool is_srs_occasion_nr(NR_DL_FRAME_PARMS frame_parms, int frame_rx, int slot_rx);
-void compute_srs_pos_nr(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
 
 void set_tx_harq_id(NR_UE_ULSCH_t *ulsch, int harq_pid, int slot_tx);
 int get_tx_harq_id(NR_UE_ULSCH_t *ulsch, int slot_tx);
