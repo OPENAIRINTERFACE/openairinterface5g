@@ -84,10 +84,11 @@ loader_data_t loader_data;
 
 /*-------------------------------------------------------------------------------------------------------------*/
 #else  /* LOAD_MODULE_SHLIB_MAIN */
-extern int load_module_shlib(char *modname, loader_shlibfunc_t *farray, int numf, void *initfunc_arg);
+
+extern int load_module_version_shlib(char *modname, char *version, loader_shlibfunc_t *farray, int numf, void *initfunc_arg);
 extern void * get_shlibmodule_fptr(char *modname, char *fname);
 extern loader_data_t loader_data;
 #endif /* LOAD_MODULE_SHLIB_MAIN */
-
+#define load_module_shlib(M, F, N, I) load_module_version_shlib(M, NULL, F, N, I)
 #endif
 
