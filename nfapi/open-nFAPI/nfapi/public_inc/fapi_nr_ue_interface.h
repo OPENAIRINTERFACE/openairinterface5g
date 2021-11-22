@@ -453,8 +453,24 @@ typedef struct {
 
 
 typedef struct {
+  uint16_t bwp_size;
+  uint16_t bwp_start;
+  uint8_t  subcarrier_spacing;
+  uint16_t start_rb;
+  uint16_t nr_of_rbs;
+  uint8_t k_csiim[4];
+  uint8_t l_csiim[4];
+} fapi_nr_dl_config_csiim_pdu_rel15_t;
+
+
+typedef struct {
   fapi_nr_dl_config_csirs_pdu_rel15_t csirs_config_rel15;
 } fapi_nr_dl_config_csirs_pdu;
+
+
+typedef struct {
+  fapi_nr_dl_config_csiim_pdu_rel15_t csiim_config_rel15;
+} fapi_nr_dl_config_csiim_pdu;
 
 
 typedef struct {
@@ -463,6 +479,7 @@ typedef struct {
     fapi_nr_dl_config_dci_pdu dci_config_pdu;
     fapi_nr_dl_config_dlsch_pdu dlsch_config_pdu;
     fapi_nr_dl_config_csirs_pdu csirs_config_pdu;
+    fapi_nr_dl_config_csiim_pdu csiim_config_pdu;
   };
 } fapi_nr_dl_config_request_pdu_t;
 

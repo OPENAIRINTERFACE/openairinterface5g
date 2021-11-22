@@ -354,6 +354,7 @@ and fills the PRACH PDU per each FD occasion.
 void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, int thread_id);
 void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, int thread_id);
 void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot);
+void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot);
 
 /* \brief This function schedules the Msg3 transmission
 @param

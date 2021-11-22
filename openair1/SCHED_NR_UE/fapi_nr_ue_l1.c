@@ -132,8 +132,11 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             pdcch_vars->slot = slot;
             LOG_D(PHY,"Number of DCI SearchSpaces %d\n",pdcch_vars->nb_search_space);
             break;
+          case FAPI_NR_DL_CONFIG_TYPE_CSI_IM:
+            LOG_I(PHY,"Received CSI-IM PDU at FAPI\n");
+            break;
           case FAPI_NR_DL_CONFIG_TYPE_CSI_RS:
-            LOG_D(PHY,"Received CSI-RS PDU at FAPI\n");
+            LOG_I(PHY,"Received CSI-RS PDU at FAPI\n");
             break;
           case FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH:
             dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;

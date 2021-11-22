@@ -901,6 +901,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     if(mac->cg != NULL){ // we have a cg
 
       nr_schedule_csirs_reception(mac, rx_frame, rx_slot);
+      nr_schedule_csi_for_im(mac, rx_frame, rx_slot);
 
       dcireq.module_id = mod_id;
       dcireq.gNB_index = gNB_index;
@@ -2166,6 +2167,70 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
 }
 
 
+void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot) {
+
+  if (mac->ra.ra_state == RA_SUCCEEDED ||
+      get_softmodem_params()->phy_test == 1) {
+
+    NR_CellGroupConfig_t *CellGroup = mac->cg;
+
+    if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
+        !CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
+      return;
+
+    NR_CSI_MeasConfig_t *csi_measconfig = CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+
+    if (csi_measconfig->csi_IM_ResourceToAddModList == NULL)
+      return;
+
+    fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+    NR_CSI_IM_Resource_t *imcsi;
+    int period, offset;
+    NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+    int mu = mac->DLbwp[dl_bwp_id-1] ?
+      mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.subcarrierSpacing :
+      mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.subcarrierSpacing;
+
+    for (int id = 0; id < csi_measconfig->csi_IM_ResourceToAddModList->list.count; id++){
+      imcsi = csi_measconfig->csi_IM_ResourceToAddModList->list.array[id];
+      csi_period_offset(NULL,imcsi->periodicityAndOffset,&period,&offset);
+      if((frame*nr_slots_per_frame[mu]+slot-offset)%period == 0) {
+        fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csiim_config_pdu.csiim_config_rel15;
+        if(mac->DLbwp[dl_bwp_id-1]){
+          csiim_config_pdu->bwp_size = NRRIV2BW(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+          csiim_config_pdu->bwp_start = NRRIV2PRBOFFSET(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        }
+        else{
+          csiim_config_pdu->bwp_size = NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+          csiim_config_pdu->bwp_start = NRRIV2PRBOFFSET(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        }
+        csiim_config_pdu->subcarrier_spacing = mu;
+        csiim_config_pdu->start_rb = imcsi->freqBand->startingRB;
+        csiim_config_pdu->nr_of_rbs = imcsi->freqBand->nrofRBs;
+        // As specified in 5.2.2.4 of 38.214
+        switch (imcsi->csi_IM_ResourceElementPattern->present) {
+          case NR_CSI_IM_Resource__csi_IM_ResourceElementPattern_PR_pattern0:
+            for (int i = 0; i<4; i++) {
+              csiim_config_pdu->k_csiim[i] = (imcsi->csi_IM_ResourceElementPattern->choice.pattern0->subcarrierLocation_p0<<1) + (i>>1);
+              csiim_config_pdu->l_csiim[i] = imcsi->csi_IM_ResourceElementPattern->choice.pattern0->symbolLocation_p0 + (i%2);
+            }
+            break;
+          case NR_CSI_IM_Resource__csi_IM_ResourceElementPattern_PR_pattern1:
+            for (int i = 0; i<4; i++) {
+              csiim_config_pdu->k_csiim[i] = (imcsi->csi_IM_ResourceElementPattern->choice.pattern1->subcarrierLocation_p1<<2) + i;
+              csiim_config_pdu->l_csiim[i] = imcsi->csi_IM_ResourceElementPattern->choice.pattern1->symbolLocation_p1;
+            }
+            break;
+          default:
+            AssertFatal(1==0, "Invalid CSI-IM pattern\n");
+        }
+        dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_CSI_IM;
+        dl_config->number_pdus = dl_config->number_pdus + 1;
+      }
+    }
+  }
+}
+
 void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
 
   if (mac->ra.ra_state == RA_SUCCEEDED ||
@@ -2192,9 +2257,9 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
 
     for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
       nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
-      csi_period_offset(NULL,nzpcsi,&period,&offset);
+      csi_period_offset(NULL,nzpcsi->periodicityAndOffset,&period,&offset);
       if((frame*nr_slots_per_frame[mu]+slot-offset)%period == 0) {
-        LOG_I(MAC,"Scheduling reception of CSI-RS in frame %d slot %d\n",frame,slot);
+        LOG_D(MAC,"Scheduling reception of CSI-RS in frame %d slot %d\n",frame,slot);
         fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csirs_config_pdu.csirs_config_rel15;
 
         NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;

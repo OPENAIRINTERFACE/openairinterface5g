@@ -158,7 +158,7 @@ int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 void find_period_offest_SR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset);
 
 void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
-                       NR_NZP_CSI_RS_Resource_t *nzpcsi,
+                       struct NR_CSI_ResourcePeriodicityAndOffset *periodicityAndOffset,
                        int *period, int *offset);
 
 void reverse_n_bits(uint8_t *value, uint16_t bitlen);
