@@ -558,7 +558,7 @@ void handle_nr_ul_harq(const int CC_idP,
           ra->rnti == crc_pdu->rnti)
         return;
     }
-    LOG_E(NR_MAC, "%s(): unknown RNTI %04x in PUSCH\n", __func__, crc_pdu->rnti);
+    LOG_E(NR_MAC, "%s(): unknown RNTI 0x%04x in PUSCH\n", __func__, crc_pdu->rnti);
     return;
   }
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
@@ -566,7 +566,7 @@ void handle_nr_ul_harq(const int CC_idP,
   int8_t harq_pid = sched_ctrl->feedback_ul_harq.head;
   while (crc_pdu->harq_id != harq_pid || harq_pid < 0) {
     LOG_W(NR_MAC,
-          "Unexpected ULSCH HARQ PID %d (have %d) for RNTI %04x (ignore this warning for RA)\n",
+          "Unexpected ULSCH HARQ PID %d (have %d) for RNTI 0x%04x (ignore this warning for RA)\n",
           crc_pdu->harq_id,
           harq_pid,
           crc_pdu->rnti);
@@ -821,7 +821,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
             ra->state = Msg4;
             ra->Msg4_frame = (frameP + 2) % 1024;
             ra->Msg4_slot = 1;
-            LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
+            LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
           }
           else {
              nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);

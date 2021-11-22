@@ -1925,7 +1925,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 {
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_idP]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
-  LOG_I(NR_MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
+  LOG_I(NR_MAC, "[gNB %d] Adding UE with rnti 0x%04x (num_UEs %d)\n",
         mod_idP,
         rntiP,
         UE_info->num_UEs);
