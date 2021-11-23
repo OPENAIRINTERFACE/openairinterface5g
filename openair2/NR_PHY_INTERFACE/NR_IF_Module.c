@@ -38,7 +38,7 @@
 #include "executables/softmodem-common.h"
 #include "nfapi/oai_integration/vendor_ext.h" 
 #include "nfapi/oai_integration/gnb_ind_vars.h"
-#include "openair2/PHY_INTERFACE/queue.h"
+#include "openair2/PHY_INTERFACE/queue_t.h"
 
 #define MAX_IF_MODULES 100
 //#define UL_HARQ_PRINT

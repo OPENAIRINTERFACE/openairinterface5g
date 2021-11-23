@@ -43,7 +43,7 @@
 #include <targets/RT/USER/lte-softmodem.h>
 
 #include "common/ran_context.h"
-#include "openair2/PHY_INTERFACE/queue.h"
+#include "openair2/PHY_INTERFACE/queue_t.h"
 #include "gnb_ind_vars.h"
 
 #define TEST

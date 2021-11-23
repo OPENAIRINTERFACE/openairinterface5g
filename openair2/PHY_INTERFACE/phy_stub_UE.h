@@ -19,7 +19,7 @@
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
 //#include "openair1/PHY/defs.h"
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
-#include "queue.h"
+#include "queue_t.h"
 
 #define NUM_MCS 28
 #define NUM_SINR 100

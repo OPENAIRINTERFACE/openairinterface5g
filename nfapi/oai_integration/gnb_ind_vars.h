@@ -1,6 +1,6 @@
 #pragma once
 
-#include "openair2/PHY_INTERFACE/queue.h"
+#include "openair2/PHY_INTERFACE/queue_t.h"
 
 extern queue_t gnb_rach_ind_queue;
 extern queue_t gnb_rx_ind_queue;
