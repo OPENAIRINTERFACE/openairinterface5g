@@ -1,0 +1,136 @@
+body {
+    font-family: 'lato', sans-serif;
+  }
+
+
+.Main {
+    text-align:left;
+    font-size: 30px;
+    font-weight: bold;   
+}
+
+.DashLink {
+    text-align:left;
+    font-size: 16px;    
+}
+
+.DashLink:hover {
+    font-weight: bold;      
+}
+
+.Date {
+    text-align:left;
+    font-size: 16px;
+    font-weight: bold;      
+}
+
+
+a { text-decoration: none; }
+a:visited { text-decoration: none; color:blue}
+a:hover { text-decoration: none; font-weight: bold; color:blue}
+
+
+.MR_Table {
+    border-collapse: collapse;
+}
+
+.MR_Table tr {
+    font-size: 12px;
+    text-align:center;
+}
+
+
+.MR_Table tr:hover {      
+    background-color:lightgray;
+}
+
+.MR_Table td {
+    border: 1px solid black;
+    padding : 5px;
+}
+.MR_Table td:hover {
+font-weight : bold; 
+}
+
+.MR_Table th {
+    font-size: 14px;
+    text-align:center;
+    padding : 5px;
+}
+
+
+.title_cell {
+    text-align:left;   
+}
+
+
+.MR {
+    table-layout: fixed;
+    width: 50px;
+    background-color: rgb(143, 154, 216);
+}
+
+.CREATED_AT {
+    table-layout: fixed;
+    width: 100px;
+    background-color: rgb(143, 154, 216);
+}
+
+.AUTHOR {
+    table-layout: fixed;
+    width: 150px;
+    background-color: rgb(143, 154, 216);
+}
+
+.TITLE {
+    table-layout: fixed;
+    width: 500px;
+    background-color: rgb(143, 154, 216);
+}
+
+.ASSIGNEE {
+    table-layout: fixed;
+    width: 150px;
+    background-color: rgb(143, 154, 216);
+}
+
+.REVIEWER {
+    table-layout: fixed;
+    width: 150px;
+    background-color: rgb(143, 154, 216);
+}
+
+.CAN_START {
+    background-color: orange;
+    table-layout: fixed;
+    width: 150px;
+}
+.IN_PROGRESS {
+    background-color: yellow;
+    table-layout: fixed;
+    width: 150px;
+}
+.COMPLETED {
+    background-color: rgb(144, 221, 231);
+    table-layout: fixed;
+    width: 150px;
+}
+
+.REVIEW_FORM {
+    table-layout: fixed;
+    width: 100px;
+    background-color: rgb(143, 154, 216);
+}
+
+.OK_MERGE {
+    background-color: rgb(58, 236, 58);
+    table-layout: fixed;
+    width: 150px;
+}
+
+.MERGE_CONFLICTS {
+    table-layout: fixed;
+    width: 100px;
+    background-color: rgb(143, 154, 216);
+}
+
