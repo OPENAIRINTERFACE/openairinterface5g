@@ -30,7 +30,7 @@ services:
             FLEXRAN_ENABLED: 'no'
             FLEXRAN_INTERFACE_NAME: eth0
             FLEXRAN_IPV4_ADDRESS: 192.168.18.210
-            THREAD_PARALLEL_CONFIG: PARALLEL_RU_L1_TRX_SPLIT
+            THREAD_PARALLEL_CONFIG: PARALLEL_SINGLE_THREAD
         volumes:
             - /dev:/dev
         networks:
