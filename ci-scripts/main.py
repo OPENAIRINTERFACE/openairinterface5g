@@ -544,7 +544,7 @@ elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE)
+	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
@@ -809,39 +809,39 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE, CiTestObj.ue_trace)
+					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE, CiTestObj.ue_trace, CONTAINERS)
 				elif action == 'Terminate_UE':
 					CiTestObj.TerminateUE(HTML,COTS_UE, InfraUE, CiTestObj.ue_trace)
 				elif action == 'Attach_UE':
-					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'Detach_UE':
-					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'DataDisable_UE':
 					CiTestObj.DataDisableUE(HTML)
 				elif action == 'DataEnable_UE':
 					CiTestObj.DataEnableUE(HTML)
 				elif action == 'CheckStatusUE':
-					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'Build_OAI_UE':
 					CiTestObj.BuildOAIUE(HTML)
 				elif action == 'Initialize_OAI_UE':
-					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE)
+					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 				elif action == 'Initialize_CatM_module':
 					CiTestObj.InitializeCatM(HTML)
 				elif action == 'Terminate_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Attach_CatM_module':
-					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC,InfraUE)
+					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 				elif action == 'Detach_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Ping_CatM_module':
-					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC,InfraUE)
+					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC,InfraUE,CONTAINERS)
 				elif action == 'Ping':
-					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, InfraUE)
+					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, InfraUE, CONTAINERS)
 				elif action == 'Iperf':
-					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE, InfraUE)
+					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE, InfraUE, CONTAINERS)
 				elif action == 'Reboot_UE':
 					CiTestObj.RebootUE(HTML,RAN,EPC)
 				elif action == 'Initialize_HSS':

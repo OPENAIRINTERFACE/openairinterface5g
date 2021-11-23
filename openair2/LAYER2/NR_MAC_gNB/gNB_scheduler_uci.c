@@ -582,7 +582,7 @@ static void handle_dl_harq(module_id_t mod_id,
     harq->ndi ^= 1;
     NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
     stats->dlsch_errors++;
-    LOG_D(NR_MAC, "retransmission error for UE %d (total %d)\n", UE_id, stats->dlsch_errors);
+    LOG_D(NR_MAC, "retransmission error for UE %d (total %"PRIu64")\n", UE_id, stats->dlsch_errors);
   } else {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].retrans_dl_harq, harq_pid);
     harq->round++;
@@ -1334,7 +1334,7 @@ int nr_acknack_scheduling(int mod_id,
       pucch->ul_slot = (s + 1) % n_slots_frame;
   }
   if (ind_found==-1) {
-    LOG_W(NR_MAC,
+    LOG_D(NR_MAC,
           "%4d.%2d could not find pdsch_to_harq_feedback for UE %d: earliest "
           "ack slot %d\n",
           frame,
