@@ -4548,7 +4548,7 @@ static uint8_t unpack_ul_tti_request_srs_pdu(void *tlv, uint8_t **ppReadPackedMs
           pull8(ppReadPackedMsg, &srs_pdu->comb_offset, end) &&
           pull8(ppReadPackedMsg, &srs_pdu->cyclic_shift, end) &&
           pull8(ppReadPackedMsg, &srs_pdu->frequency_position, end) &&
-          pull8(ppReadPackedMsg, &srs_pdu->frequency_shift, end) &&
+          pull16(ppReadPackedMsg, &srs_pdu->frequency_shift, end) &&
           pull8(ppReadPackedMsg, &srs_pdu->frequency_hopping, end) &&
           pull8(ppReadPackedMsg, &srs_pdu->group_or_sequence_hopping, end) &&
           pull8(ppReadPackedMsg, &srs_pdu->resource_type, end) &&
