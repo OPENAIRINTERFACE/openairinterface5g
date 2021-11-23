@@ -1310,7 +1310,7 @@ typedef struct
   uint8_t  comb_offset;//Transmission comb offset 𝑘 ̄ TC [TS38.211, Sec 6.4.1.4.3] Value: 0 → 1 (combSize = 0) Value: 0 → 3 (combSize = 1)
   uint8_t  cyclic_shift;
   uint8_t  frequency_position;
-  uint8_t  frequency_shift;
+  uint16_t frequency_shift;
   uint8_t  frequency_hopping;
   uint8_t  group_or_sequence_hopping;//Group or sequence hopping configuration (RRC parameter groupOrSequenceHopping in SRS-Resource
   uint8_t  resource_type;//Type of SRS resource allocation
