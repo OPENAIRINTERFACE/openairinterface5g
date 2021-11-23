@@ -318,10 +318,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
             uint16_t num_dcis = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
             if (num_dcis > 0)
             {
-                if (!dl_info->dci_ind)
-                {
-                  dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
-                }
+                dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
                 dl_info->dci_ind->SFN = dl_tti_request->SFN;
                 dl_info->dci_ind->slot = dl_tti_request->Slot;
                 AssertFatal(num_dcis <= sizeof(dl_info->dci_ind->dci_list) / sizeof(dl_info->dci_ind->dci_list[0]),
@@ -415,10 +412,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     int num_pdus = tx_data_request->Number_of_PDUs;
     AssertFatal(num_pdus >= 0, "Invalid tx_data_request number of PDUS\n");
 
-    if (!dl_info->rx_ind)
-    {
-      dl_info->rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
-    }
+    dl_info->rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
     AssertFatal(dl_info->rx_ind != NULL, "%s: Out of memory in calloc", __FUNCTION__);
     fapi_nr_rx_indication_t *rx_ind = dl_info->rx_ind;
     rx_ind->sfn = tx_data_request->SFN;
@@ -475,10 +469,7 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
         uint16_t num_dci = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
         if (num_dci > 0)
         {
-            if (!dl_info->dci_ind)
-            {
-              dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
-            }
+            dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
             AssertFatal(dl_info->dci_ind != NULL, "%s: Out of memory in calloc", __FUNCTION__);
             dl_info->dci_ind->SFN = ul_dci_req->SFN;
             dl_info->dci_ind->slot = ul_dci_req->Slot;
