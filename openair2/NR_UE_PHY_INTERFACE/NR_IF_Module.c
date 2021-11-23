@@ -300,11 +300,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
     int pdu_idx = 0;
 
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
-    if (num_pdus <= 0)
-    {
-        LOG_E(NR_PHY, "%s: dl_tti_request number of PDUS <= 0\n", __FUNCTION__);
-        abort();
-    }
+    AssertFatal(num_pdus >= 0, "Invalid dl_tti_request number of PDUS\n");
 
     for (int i = 0; i < num_pdus; i++)
     {
@@ -322,13 +318,13 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
             uint16_t num_dcis = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
             if (num_dcis > 0)
             {
-                if (!dl_info->dci_ind && pdu_idx == 0)
+                if (!dl_info->dci_ind)
                 {
                   dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
                 }
                 dl_info->dci_ind->SFN = dl_tti_request->SFN;
                 dl_info->dci_ind->slot = dl_tti_request->Slot;
-                AssertFatal(num_dcis < sizeof(dl_info->dci_ind->dci_list) / sizeof(dl_info->dci_ind->dci_list[0]),
+                AssertFatal(num_dcis <= sizeof(dl_info->dci_ind->dci_list) / sizeof(dl_info->dci_ind->dci_list[0]),
                             "The number of DCIs is greater than dci_list");
                 for (int j = 0; j < num_dcis; j++)
                 {
@@ -417,13 +413,12 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
     int num_pdus = tx_data_request->Number_of_PDUs;
-    if (num_pdus <= 0)
-    {
-        LOG_E(NR_PHY, "%s: tx_data_request number of PDUS <= 0\n", __FUNCTION__);
-        abort();
-    }
+    AssertFatal(num_pdus >= 0, "Invalid tx_data_request number of PDUS\n");
 
-    dl_info->rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
+    if (!dl_info->rx_ind)
+    {
+      dl_info->rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
+    }
     AssertFatal(dl_info->rx_ind != NULL, "%s: Out of memory in calloc", __FUNCTION__);
     fapi_nr_rx_indication_t *rx_ind = dl_info->rx_ind;
     rx_ind->sfn = tx_data_request->SFN;
@@ -468,11 +463,7 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     int pdu_idx = 0;
 
     int num_pdus = ul_dci_req->numPdus;
-    if (num_pdus <= 0)
-    {
-        LOG_E(NR_PHY, "%s: ul_dci_request number of PDUS <= 0\n", __FUNCTION__);
-        abort();
-    }
+    AssertFatal(num_pdus >= 0, "Invalid ul_dci_request number of PDUS\n");
 
     for (int i = 0; i < num_pdus; i++)
     {
@@ -484,7 +475,10 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
         uint16_t num_dci = pdu_list->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
         if (num_dci > 0)
         {
-            dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
+            if (!dl_info->dci_ind)
+            {
+              dl_info->dci_ind = CALLOC(1, sizeof(fapi_nr_dci_indication_t));
+            }
             AssertFatal(dl_info->dci_ind != NULL, "%s: Out of memory in calloc", __FUNCTION__);
             dl_info->dci_ind->SFN = ul_dci_req->SFN;
             dl_info->dci_ind->slot = ul_dci_req->Slot;
@@ -559,11 +553,7 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
     int num_pdus = ul_tti_req->n_pdus;
-    if (num_pdus <= 0)
-    {
-        LOG_E(NR_PHY, "%s: ul_tti_request number of PDUS <= 0\n", __FUNCTION__);
-        abort();
-    }
+    AssertFatal(num_pdus >= 0, "Invalid ul_tti_request number of PDUS\n");
     AssertFatal(num_pdus <= sizeof(ul_tti_req->pdus_list) / sizeof(ul_tti_req->pdus_list[0]),
                 "Too many pdus %d in ul_tti_req\n", num_pdus);
 
