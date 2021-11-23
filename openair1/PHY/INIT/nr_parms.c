@@ -250,7 +250,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
   int Ncp = NFAPI_CP_NORMAL;
   int mu = cfg->ssb_config.scs_common.value;
 
-#if DISABLE_LOG_X
+#if PHYSIM
   printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
 #else
   LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
@@ -343,7 +343,7 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 
   AssertFatal(fp->ul_CarrierFreq == (fp->dl_CarrierFreq + uplink_frequency_offset), "Disagreement in uplink frequency for band %d: ul_CarrierFreq = %lu Hz vs expected %lu Hz\n", fp->nr_band, fp->ul_CarrierFreq, fp->dl_CarrierFreq + uplink_frequency_offset);
 
-#if DISABLE_LOG_X
+#if PHYSIM
   printf("Initializing UE frame parms for mu %d, N_RB %d, Ncp %d\n",fp->numerology_index, fp->N_RB_DL, Ncp);
 #else
   LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",fp->numerology_index, fp->N_RB_DL, Ncp);
