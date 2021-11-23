@@ -50,7 +50,7 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
 {
 
   short nrows=0,ncols=0;
-  int i,i1,rate=3;
+  int i,rate=3;
   int no_punctured_columns,removed_bit;
 
   int simd_size;
