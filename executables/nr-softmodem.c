@@ -633,7 +633,7 @@ void init_pdcp(void) {
       LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
       pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
     }
-  } else if (get_softmodem_params()->nsa) {
+  } else {
     pdcp_layer_init();
     uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
                              (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
@@ -646,9 +646,6 @@ void init_pdcp(void) {
     nr_pdcp_module_init(pdcp_initmask, 0);
     pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
     pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
-  } else {
-    LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
-    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
   }
 }
 

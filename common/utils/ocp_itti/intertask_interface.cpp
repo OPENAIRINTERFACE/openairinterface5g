@@ -82,7 +82,7 @@ extern "C" {
 
   void *itti_malloc(task_id_t origin_task_id, task_id_t destination_task_id, ssize_t size) {
     void *ptr = NULL;
-    AssertFatal ((ptr=calloc (1, size)) != NULL, "Memory allocation of %zu bytes failed (%d -> %d)!\n",
+    AssertFatal ((ptr=calloc (size, 1)) != NULL, "Memory allocation of %zu bytes failed (%d -> %d)!\n",
                  size, origin_task_id, destination_task_id);
     return ptr;
   }

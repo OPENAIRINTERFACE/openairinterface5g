@@ -1,6 +1,0 @@
-#!/bin/bash
-# Helper script for Vscode. See .vscode/launch.json "miDebuggerPath"
-cd "$(dirname "$0")/.." || exit
-source oaienv
-cd cmake_targets || exit
-exec sudo -nE gdb "$@"

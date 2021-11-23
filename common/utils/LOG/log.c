@@ -562,19 +562,14 @@ static int log_header(char *log_buffer,
 					  const char *format)
 {
   char threadname[PR_SET_NAME];
-    struct timespec ts;
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
-        abort();
-    return snprintf(log_buffer, buffsize, "%lu.%06lu %s%s[%s]%c %s %s%s",
-                    ts.tv_sec,
-                    ts.tv_nsec / 1000,
-                    log_level_highlight_end[level],
-                    ( (g_log->flag & FLAG_NOCOLOR)?"":log_level_highlight_start[level]),
-                    g_log->log_component[comp].name,
-                    ( (g_log->flag & FLAG_LEVEL)?g_log->level2string[level]:' '),
-                    ( (g_log->flag & FLAG_THREAD)?log_getthreadname(threadname,PR_SET_NAME+1):""),
-                    format,
-                    log_level_highlight_end[level]);
+  return  snprintf(log_buffer, buffsize, "%s%s[%s]%c %s %s%s",
+                   log_level_highlight_end[level],
+                   ( (g_log->flag & FLAG_NOCOLOR)?"":log_level_highlight_start[level]),
+                   g_log->log_component[comp].name,
+                   ( (g_log->flag & FLAG_LEVEL)?g_log->level2string[level]:' '),
+                   ( (g_log->flag & FLAG_THREAD)?log_getthreadname(threadname,PR_SET_NAME+1):""),
+                   format,
+                   log_level_highlight_end[level]);
 }
 
 void logRecord_mt(const char *file,
