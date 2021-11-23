@@ -1288,7 +1288,7 @@ pdcp_run (
 
   // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer
   //  if (LINK_ENB_PDCP_TO_GTPV1U && ctxt_pP->enb_flag == ENB_FLAG_NO) {
-  if (!get_softmodem_params()->nsa && (!EPC_MODE_ENABLED || ctxt_pP->enb_flag == ENB_FLAG_NO)) {
+  if (!get_softmodem_params()->emulate_l1 && (!EPC_MODE_ENABLED || ctxt_pP->enb_flag == ENB_FLAG_NO)) {
     pdcp_fifo_read_input_sdus(ctxt_pP);
   }
 
@@ -1298,7 +1298,7 @@ pdcp_run (
   } else {
     start_meas(&UE_pdcp_stats[ctxt_pP->module_id].pdcp_ip);
   }
-  if(!get_softmodem_params()->nsa) {
+  if (!get_softmodem_params()->emulate_l1) {
     pdcp_fifo_flush_sdus(ctxt_pP);
   }
 
