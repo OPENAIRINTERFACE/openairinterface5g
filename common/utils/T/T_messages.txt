@@ -155,10 +155,6 @@ ID = GNB_MAC_DL_RAR_PDU_WITH_DATA
     DESC = NR MAC downlink PDU for RAR
     GROUP = ALL:MAC:GNB:WIRESHARK
     FORMAT = int,gNB_ID : int,CC_id : int,rnti : int,frame : int,slot : int,harq_pid : buffer,data
-ID = GNB_MAC_RETRANSMISSION_DL_PDU_WITH_DATA
-    DESC = NR MAC downlink retransmitted PDU for an UE
-    GROUP = ALL:MAC:GNB:WIRESHARK
-    FORMAT = int,gNB_ID : int,CC_id : int,rnti : int,frame : int,slot : int,harq_pid : int,round : buffer,data
 
 #RLC logs
 ID = ENB_RLC_DL

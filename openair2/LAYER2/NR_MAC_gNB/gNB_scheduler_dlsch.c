@@ -1200,9 +1200,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
                   "UE %d mismatch between scheduled TBS and buffered TB for HARQ PID %d\n",
                   UE_id,
                   current_harq_pid);
-
-      T(T_GNB_MAC_RETRANSMISSION_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
-        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_INT(harq->round), T_BUFFER(harq->tb, TBS));
     } else { /* initial transmission */
 
       LOG_D(NR_MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);
