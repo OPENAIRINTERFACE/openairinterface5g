@@ -2131,7 +2131,7 @@ set (MAC_NR_SRC
 
 set (MAC_SRC_UE
   ${PHY_INTERFACE_DIR}/phy_stub_UE.c
-  ${PHY_INTERFACE_DIR}/queue.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${MAC_DIR}/main_ue.c
   ${MAC_DIR}/ue_procedures.c
   ${MAC_DIR}/ra_procedures.c
@@ -2845,7 +2845,7 @@ add_executable(lte-softmodem
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${PHY_INTERFACE_DIR}/queue.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${GTPU_need_ITTI}
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
@@ -2891,7 +2891,7 @@ add_executable(ocp-enb
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
-  ${PHY_INTERFACE_DIR}/queue.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
@@ -3033,7 +3033,7 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${PHY_INTERFACE_DIR}/queue.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${GTPU_need_ITTI}
   ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
@@ -3075,7 +3075,7 @@ add_executable(ocp-gnb
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${PHY_INTERFACE_DIR}/queue.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${XFORMS_SOURCE_NR}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
@@ -3282,7 +3282,7 @@ add_executable(nr_dlsim
   ${NR_UE_RRC_DIR}/rrc_nsa.c
   ${NFAPI_USER_DIR}/nfapi.c
   ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
-  ${PHY_INTERFACE_DIR}/queue.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -3304,7 +3304,7 @@ add_executable(nr_prachsim
   ${NR_UE_RRC_DIR}/rrc_nsa.c
   ${NFAPI_USER_DIR}/nfapi.c
   ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
-  ${PHY_INTERFACE_DIR}/queue.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES})
@@ -3318,7 +3318,7 @@ add_executable(nr_ulschsim
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${PHY_INTERFACE_DIR}/queue.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -3339,7 +3339,7 @@ add_executable(nr_ulsim
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${NR_UE_RRC_DIR}/rrc_nsa.c
   ${NFAPI_USER_DIR}/nfapi.c
-  ${PHY_INTERFACE_DIR}/queue.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
