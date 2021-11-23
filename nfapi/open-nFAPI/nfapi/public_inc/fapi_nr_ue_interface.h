@@ -358,7 +358,6 @@ typedef struct {
   uint16_t t_srs;                     // SRS-Periodicity in slots [3GPP TS 38.211, Sec 6.4.1.4.4], Value: 1,2,3,4,5,8,10,16,20,32,40,64,80,160,320,640,1280,2560
   uint16_t t_offset;                  // Slot offset value [3GPP TS 38.211, Sec 6.4.1.4.3], Value:0->2559
   nfapi_nr_ue_ul_beamforming_t beamforming;
-  fapi_nr_ul_srs_parms_v4 srs_parms_v4;
 } fapi_nr_ul_config_srs_pdu;
 
 typedef struct {

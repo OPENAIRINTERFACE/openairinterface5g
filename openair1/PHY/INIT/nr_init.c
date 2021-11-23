@@ -195,6 +195,12 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   nr_init_csi_rs(gNB, cfg->cell_config.phy_cell_id.value);
 
+  gNB->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
+  gNB->nr_srs_info->srs_generated_signal = (int32_t*)malloc16_clear(NR_NB_SC_PER_RB*NR_MAX_NB_RB*sizeof(int32_t));
+  gNB->nr_srs_info->srs_received_signal = (int32_t*)malloc16_clear(NR_NB_SC_PER_RB*NR_MAX_NB_RB*sizeof(int32_t));
+
+  generate_ul_reference_signal_sequences(SHRT_MAX);
+
   /* Generate low PAPR type 1 sequences for PUSCH DMRS, these are used if transform precoding is enabled.  */
   generate_lowpapr_typ1_refsig_sequences(SHRT_MAX);
 

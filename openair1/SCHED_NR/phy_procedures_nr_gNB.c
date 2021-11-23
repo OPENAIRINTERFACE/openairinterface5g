@@ -33,6 +33,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "PHY/NR_UE_TRANSPORT/srs_modulation_nr.h"
 #include "T.h"
 #include "executables/softmodem-common.h"
 
@@ -792,9 +793,17 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     NR_gNB_SRS_t *srs = gNB->srs[i];
     if (srs) {
       if ((srs->active == 1) && (srs->frame == frame_rx) && (srs->slot == slot_rx)) {
+
         LOG_D(NR_PHY, "(%d.%d) gNB is waiting for SRS, id = %i\n", frame_rx, slot_rx, i);
+
         nfapi_nr_srs_pdu_t *srs_pdu = &srs->srs_pdu;
-        nr_get_srs_signal(gNB,frame_rx,slot_rx,srs_pdu);
+
+        // At least currently, the configuration is constant, so it is enough to generate the sequence just once.
+        if(gNB->nr_srs_info->n_symbs==0) {
+          generate_srs_nr(srs_pdu, &gNB->frame_parms, gNB->nr_srs_info->srs_generated_signal, gNB->nr_srs_info, AMP, frame_rx, slot_rx);
+        }
+
+        nr_get_srs_signal(gNB,frame_rx,slot_rx,srs_pdu, gNB->nr_srs_info, gNB->nr_srs_info->srs_received_signal);
         srs->active = 0;
       }
     }

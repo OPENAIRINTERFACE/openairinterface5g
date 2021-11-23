@@ -973,6 +973,8 @@ typedef struct {
   /// PUSCH contention-based access vars
   PUSCH_CA_CONFIG_DEDICATED  pusch_ca_config_dedicated[NUMBER_OF_eNB_MAX]; // lola
 
+  /// SRS variables
+  nr_srs_info_t *nr_srs_info;
 
   //#if defined(UPGRADE_RAT_NR)
 #if 1

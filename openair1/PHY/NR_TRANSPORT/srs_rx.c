@@ -25,7 +25,7 @@
  * \version 1.0
  */
 
-#include<stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -39,6 +39,8 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 
 #include "T.h"
+
+//#define SRS_DEBUG
 
 NR_gNB_SRS_t *new_gNB_srs(void){
   NR_gNB_SRS_t *srs;
@@ -86,6 +88,42 @@ void nr_fill_srs(PHY_VARS_gNB *gNB,
   memcpy((void*)&srs->srs_pdu, (void*)srs_pdu, sizeof(nfapi_nr_srs_pdu_t));
 }
 
-void nr_get_srs_signal(PHY_VARS_gNB *gNB, int frame, int slot, nfapi_nr_srs_pdu_t *srs_pdu) {
-  LOG_W(NR_PHY, "(%d.%d) nr_get_srs_signal is not implemented yet!\n", frame,slot);
+int nr_get_srs_signal(PHY_VARS_gNB *gNB,
+                       int frame,
+                       int slot,
+                       nfapi_nr_srs_pdu_t *srs_pdu,
+                       nr_srs_info_t *nr_srs_info,
+                       int32_t *srs_received_signal) {
+
+  if(nr_srs_info->n_symbs==0) {
+    LOG_E(NR_PHY, "nr_srs_info was not generated yet!\n");
+    return -1;
+  }
+
+  int32_t **rxdataF = gNB->common_vars.rxdataF;
+  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+
+  uint16_t n_symbols = (slot&3)*frame_parms->symbols_per_slot;                    // number of symbols until this slot
+  uint8_t l0 = frame_parms->symbols_per_slot - 1 - srs_pdu->time_start_position;  // starting symbol in this slot
+  uint64_t symbol_offset = (n_symbols+l0)*frame_parms->ofdm_symbol_size;
+
+  int32_t *rx_signal;
+  for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
+    rx_signal = &rxdataF[ant][symbol_offset + frame_parms->first_carrier_offset];
+
+    for(int sc_idx = 0; sc_idx < nr_srs_info->n_symbs; sc_idx++) {
+      srs_received_signal[nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset] = rx_signal[nr_srs_info->subcarrier_idx[sc_idx]];
+
+#ifdef SRS_DEBUG
+    if(nr_srs_info->subcarrier_idx[sc_idx]%12 == 0) {
+      LOG_I(NR_PHY,"::::::::::::: %i :::::::::::::\n", nr_srs_info->subcarrier_idx[sc_idx]/12);
+    }
+    LOG_I(NR_PHY,"(%i)  \t%i\t%i\n",
+          nr_srs_info->subcarrier_idx[sc_idx],
+          srs_received_signal[nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset]&0xFFFF,
+          (srs_received_signal[nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset]>>16)&0xFFFF);
+#endif
+    }
+  }
+  return 0;
 }

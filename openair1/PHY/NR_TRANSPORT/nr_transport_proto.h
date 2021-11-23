@@ -317,7 +317,12 @@ void nr_fill_srs(PHY_VARS_gNB *gNB,
                  int slot,
                  nfapi_nr_srs_pdu_t *srs_pdu);
 
-void nr_get_srs_signal(PHY_VARS_gNB *gNB, int frame, int slot, nfapi_nr_srs_pdu_t *srs_pdu);
+int nr_get_srs_signal(PHY_VARS_gNB *gNB,
+                      int frame,
+                      int slot,
+                      nfapi_nr_srs_pdu_t *srs_pdu,
+                      nr_srs_info_t *nr_srs_info,
+                      int32_t *srs_received_signal);
 
 void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);

@@ -323,6 +323,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     srs_vars[gNB_id] = (NR_UE_SRS *)malloc16_clear(sizeof(NR_UE_SRS));
 
     srs_vars[gNB_id]->active = false;
+    ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
+    ue->nr_srs_info->srs_generated_signal = (int32_t*)malloc16_clear(NR_NB_SC_PER_RB*NR_MAX_NB_RB*sizeof(int32_t));
+    ue->nr_srs_info->srs_received_signal = (int32_t*)malloc16_clear(NR_NB_SC_PER_RB*NR_MAX_NB_RB*sizeof(int32_t));
 
     if (abstraction_flag == 0) {
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {

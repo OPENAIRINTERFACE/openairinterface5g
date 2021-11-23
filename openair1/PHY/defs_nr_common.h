@@ -240,6 +240,13 @@ typedef struct {
   uint8_t init_msg1;
 } NR_PRACH_RESOURCES_t;
 
+typedef struct {
+  uint16_t n_symbs;
+  uint16_t subcarrier_idx[6*NR_MAX_NB_RB];
+  int32_t *srs_generated_signal;
+  int32_t *srs_received_signal;
+} nr_srs_info_t;
+
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 
 typedef uint32_t (*get_samples_per_slot_t)(int slot, NR_DL_FRAME_PARMS* fp);

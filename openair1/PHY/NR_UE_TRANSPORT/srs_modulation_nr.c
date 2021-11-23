@@ -74,11 +74,13 @@
 *                - no antenna switching*
 *
 *********************************************************************/
-int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int32_t *txptr,
-                        int16_t amp,
-                        UE_nr_rxtx_proc_t *proc)
+int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
+                    NR_DL_FRAME_PARMS *frame_parms,
+                    int32_t *txptr,
+                    nr_srs_info_t *nr_srs_info,
+                    int16_t amp,
+                    int frame_number,
+                    int slot_number)
 {
   uint8_t n_SRS_cs_max;
   uint8_t u;
@@ -93,9 +95,6 @@ int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
   uint16_t subcarrier;
   uint8_t N_b;
   uint8_t k_0_overbar_p;
-
-  int frame_number = proc->frame_tx;
-  int slot_number = proc->nr_slot_tx;
 
   // get parameters from srs_config_pdu
   uint8_t B_SRS  = srs_config_pdu->bandwidth_index;
@@ -116,6 +115,10 @@ int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
   uint8_t N_symb_SRS = 1<<srs_config_pdu->num_symbols;  // consecutive OFDM symbols
   uint8_t l0 = N_SYMB_SLOT - 1 - l_offset;              // starting position in the time domain
   uint8_t k_0_p;                                        // frequency domain starting position
+
+  if(nr_srs_info) {
+    nr_srs_info->n_symbs = 0;
+  }
 
 #ifdef SRS_DEBUG
   LOG_I(NR_PHY,"Frame = %i, slot = %i\n", frame_number, slot_number);
@@ -369,6 +372,11 @@ int generate_srs_nr(fapi_nr_ul_config_srs_pdu *srs_config_pdu,
 
       txptr[subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size] = (real_amp & 0xFFFF) + ((imag_amp<<16)&0xFFFF0000);
 
+      if(nr_srs_info) {
+        nr_srs_info->subcarrier_idx[nr_srs_info->n_symbs] = subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-frame_parms->first_carrier_offset;
+        nr_srs_info->n_symbs++;
+      }
+
 #ifdef SRS_DEBUG
       if( (subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-frame_parms->first_carrier_offset)%12 == 0 ) {
         LOG_I(NR_PHY,"------------ %i ------------\n",
@@ -417,7 +425,7 @@ int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gN
   }
   ue->srs_vars[0]->active = false;
 
-  fapi_nr_ul_config_srs_pdu *srs_config_pdu = &ue->srs_vars[0]->srs_config_pdu;
+  nfapi_nr_srs_pdu_t *srs_config_pdu = (nfapi_nr_srs_pdu_t*)&ue->srs_vars[0]->srs_config_pdu;
 
 #ifdef SRS_DEBUG
   LOG_I(NR_PHY,"Frame = %i, slot = %i\n", proc->frame_tx, proc->nr_slot_tx);
@@ -452,7 +460,8 @@ int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gN
   uint16_t nsymb = (ue->frame_parms.Ncp==0) ? 14:12;
   uint16_t symbol_offset = (int)ue->frame_parms.ofdm_symbol_size*((proc->nr_slot_tx*nsymb)+(nsymb-1));
 
-  if (generate_srs_nr(srs_config_pdu, frame_parms, &ue->common_vars.txdataF[gNB_id][symbol_offset], txptr, proc) == 0) {
+  if (generate_srs_nr(srs_config_pdu, frame_parms, &ue->common_vars.txdataF[gNB_id][symbol_offset], ue->nr_srs_info,
+                      txptr, proc->frame_tx, proc->nr_slot_tx) == 0) {
     return 0;
   } else {
     return -1;
