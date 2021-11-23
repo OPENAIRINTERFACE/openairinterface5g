@@ -1992,17 +1992,12 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 				       "no pdsch-ServingCellConfig found for UE %d\n",
 				       UE_id);
     const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
-    if (pdsch) {
-      const int nrofHARQ = pdsch->nrofHARQ_ProcessesForPDSCH ?
-                           get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
-      // add all available DL HARQ processes for this UE
-      create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
-      for (int harq = 0; harq < nrofHARQ; harq++)
-        add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
-      create_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
-      create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
-    }
+    // add DL HARQ processes for this UE only in NSA
+    // (SA still doesn't have information on nrofHARQ_ProcessesForPDSCH at this stage)
+    if (!get_softmodem_params()->sa)
+      create_dl_harq_list(sched_ctrl,pdsch);
     // add all available UL HARQ processes for this UE
+    // nb of ul harq processes not configurable
     create_nr_list(&sched_ctrl->available_ul_harq, 16);
     for (int harq = 0; harq < 16; harq++)
       add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
@@ -2020,6 +2015,19 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
   LOG_E(NR_MAC, "error in add_new_ue(), could not find space in UE_info, Dumping UE list\n");
   dump_nr_list(&UE_info->list);
   return -1;
+}
+
+
+void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl,
+                         const NR_PDSCH_ServingCellConfig_t *pdsch) {
+  const int nrofHARQ = pdsch && pdsch->nrofHARQ_ProcessesForPDSCH ?
+                       get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
+  // add all available DL HARQ processes for this UE
+  create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
+  for (int harq = 0; harq < nrofHARQ; harq++)
+    add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
+  create_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
+  create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
 }
 
 /* hack data to remove UE in the phy */
