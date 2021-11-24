@@ -1481,7 +1481,6 @@ void *UE_thread_slot1_dl_processing(void *arg) {
     if (cpumeas(CPUMEAS_GETSTATE))
       LOG_D(PHY, "[AbsSFN %d.%d] Slot1: LLR Computation %5.2f \n",frame_rx,nr_slot_rx,ue->pdsch_procedures_per_slot_stat[proc->thread_id][1].p_time/(cpuf*1000.0));
 
-
     if (pthread_mutex_lock(&proc->mutex_slot1_dl_processing) != 0) {
       LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
       exit_fun("noting to add");
@@ -1849,11 +1848,11 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   dlsch_parallel);
 
   stop_meas(&ue->dlsch_procedures_stat[proc->thread_id]);
+
   if (cpumeas(CPUMEAS_GETSTATE)) {
     LOG_D(PHY, "[SFN %d] Slot1:       Pdsch Proc %5.2f\n",nr_slot_rx,ue->pdsch_procedures_stat[proc->thread_id].p_time/(cpuf*1000.0));
     LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_slot_rx,ue->dlsch_procedures_stat[proc->thread_id].p_time/(cpuf*1000.0));
   }
-
 
   // deactivate dlsch once dlsch proc is done
   ue->dlsch[proc->thread_id][gNB_id][0]->active = 0;
@@ -1941,6 +1940,7 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDUR
 stop_meas(&ue->phy_proc_rx[proc->thread_id]);
 if (cpumeas(CPUMEAS_GETSTATE))
   LOG_D(PHY, "------FULL RX PROC [SFN %d]: %5.2f ------\n",nr_slot_rx,ue->phy_proc_rx[proc->thread_id].p_time/(cpuf*1000.0));
+
 
 //#endif //pdsch
 
