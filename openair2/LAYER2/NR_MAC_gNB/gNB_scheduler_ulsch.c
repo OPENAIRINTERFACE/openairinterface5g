@@ -303,7 +303,8 @@ int nr_process_mac_pdu(module_id_t module_idP,
             NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[CC_id].ra[i];
             if (ra->state >= WAIT_Msg3 && ra->rnti == UE_info->rnti[UE_id]) {
               ra->crnti = ((pduP[1]&0xFF)<<8)|(pduP[2]&0xFF);
-              LOG_D(NR_MAC, "Received UL_SCH_LCID_C_RNTI with CRNTI: 0x%04x\n", ra->crnti);
+              ra->msg3_dcch_dtch = true;
+              LOG_I(NR_MAC, "Received UL_SCH_LCID_C_RNTI with C-RNTI 0x%04x\n", ra->crnti);
               break;
             }
           }
@@ -777,13 +778,13 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
 
         LOG_D(NR_MAC,
-              "reset RA state information for RA-RNTI %04x/index %d\n",
+              "reset RA state information for RA-RNTI 0x%04x/index %d\n",
               ra->rnti,
               i);
 
         LOG_I(NR_MAC,
-              "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
-              "adding UE MAC Context UE_id %d/RNTI %04x\n",
+              "[gNB %d][RAPROC] PUSCH with TC_RNTI 0x%04x received correctly, "
+              "adding UE MAC Context UE_id %d/RNTI 0x%04x\n",
               gnb_mod_idP,
               current_rnti,
               UE_id,
@@ -821,7 +822,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
             ra->state = Msg4;
             ra->Msg4_frame = (frameP + 2) % 1024;
             ra->Msg4_slot = 1;
-            LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
+            LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d, frame %d, slot %d)\n",
+                  (ra->msg3_dcch_dtch?ra->crnti:ra->rnti), ra->state, ra->Msg4_frame, ra->Msg4_slot);
           }
           else {
              nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);

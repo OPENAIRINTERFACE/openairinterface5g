@@ -2053,7 +2053,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     destroy_nr_list(&sched_ctrl->available_ul_harq);
     destroy_nr_list(&sched_ctrl->feedback_ul_harq);
     destroy_nr_list(&sched_ctrl->retrans_ul_harq);
-    LOG_I(NR_MAC, "[gNB %d] Remove NR UE_id %d : rnti %x\n",
+    LOG_I(NR_MAC, "[gNB %d] Remove NR UE_id %d: rnti 0x%04x\n",
           mod_id,
           UE_id,
           rnti);
