@@ -1985,7 +1985,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 			      "uplinkBWP_ToAddModList has %d BWP!\n",
 			      ubwpList->list.count);
     const int ul_bwp_id = servingCellConfig ? *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id : 0;
-    sched_ctrl->active_ubwp = (ubwpList&&(ul_bwp_id>0)) ? ubwpList->list.array[ul_bwp_id - 1] : NULL;
+    sched_ctrl->active_ubwp = ubwpList && ul_bwp_id > 0 ? ubwpList->list.array[ul_bwp_id - 1] : NULL;
 
     /* get Number of HARQ processes for this UE */
     if (servingCellConfig) AssertFatal(servingCellConfig->pdsch_ServingCellConfig->present == NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup,
