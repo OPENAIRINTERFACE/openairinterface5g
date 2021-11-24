@@ -1021,16 +1021,13 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
     LOG_D(PHY, "In %s DL PDU length in bits: %d, in bytes: %d \n", __FUNCTION__, dlsch0->harq_processes[harq_pid]->TBS, dlsch0->harq_processes[harq_pid]->TBS / 8);
 
-
-
-
-      stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
-      if (cpumeas(CPUMEAS_GETSTATE))  {
-        LOG_D(PHY, " --> Unscrambling for CW0 %5.3f\n",
-              (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-        LOG_D(PHY, "AbsSubframe %d.%d --> LDPC Decoding for CW0 %5.3f\n",
-              frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
-      }
+    stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
+    if (cpumeas(CPUMEAS_GETSTATE))  {
+      LOG_D(PHY, " --> Unscrambling for CW0 %5.3f\n",
+            (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
+      LOG_D(PHY, "AbsSubframe %d.%d --> LDPC Decoding for CW0 %5.3f\n",
+            frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
+    }
 
     if(is_cw1_active) {
       // start ldpc decode for CW 1
