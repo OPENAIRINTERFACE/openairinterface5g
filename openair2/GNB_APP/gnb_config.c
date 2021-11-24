@@ -94,7 +94,6 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
 
   NR_FreqBandIndicatorNR_t                        *dl_frequencyBandList,*ul_frequencyBandList;
   struct NR_SCS_SpecificCarrier                   *dl_scs_SpecificCarrierList,*ul_scs_SpecificCarrierList;
-  struct NR_PDSCH_TimeDomainResourceAllocation    *bwp_dl_timedomainresourceallocation;
   struct NR_PUSCH_TimeDomainResourceAllocation    *pusch_configcommontimedomainresourceallocation;
   //  struct NR_RateMatchPattern                      *ratematchpattern;
   //  NR_RateMatchPatternId_t                         *ratematchpatternid;
@@ -143,14 +142,6 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->present        = NR_SetupRelease_PDSCH_ConfigCommon_PR_setup;
   scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup   = CALLOC(1,sizeof(struct NR_PDSCH_ConfigCommon));
   scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList = CALLOC(1,sizeof(struct NR_PDSCH_TimeDomainResourceAllocationList));
-  //
-  for (int i=0;i<NR_maxNrofDL_Allocations;i++) {
-    bwp_dl_timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
-    bwp_dl_timedomainresourceallocation->k0  = CALLOC(1,sizeof(long));
-    *bwp_dl_timedomainresourceallocation->k0=0;
-    ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
-		     bwp_dl_timedomainresourceallocation);
-  }
 
   ul_frequencyBandList              = CALLOC(1,sizeof(NR_FreqBandIndicatorNR_t));
   scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList          = CALLOC(1,sizeof(struct NR_MultiFrequencyBandListNR));
@@ -273,17 +264,8 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
   if (*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder!=0)
     scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder = NULL;
 
-  // fix DL and UL Allocation lists
-  
-  for (int i=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count-1;i>=0;i--) {
-    printf("Checking element %d : %ld\n",i,*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0);
-    if (*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0>32) {
-      printf("removing pdsch_TimeDomainAllocationList element %d\n",i);
-      free(scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0);
-      asn_sequence_del(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,i,1); 
-      printf("List size now %d\n",scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count);
-    }
-  }
+  // prepare DL and UL Allocation lists
+  nr_rrc_config_dl_tda(scc);
 
   for (int i=scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count-1;i>=0;i--) {
     if (*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[i]->k2>32) {

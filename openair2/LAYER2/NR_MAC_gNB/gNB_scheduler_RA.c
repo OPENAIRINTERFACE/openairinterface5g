@@ -1105,7 +1105,12 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
-    uint8_t time_domain_assignment = 1;
+    //TODO time domain assignment for msg2 needs to be improved
+    uint8_t time_domain_assignment;
+    if(cc->frame_type == TDD)
+      time_domain_assignment = 1;
+    else
+      time_domain_assignment = 0;
     uint8_t mcsIndex = 0;
     int rbStart = 0;
     int rbSize = 8;
@@ -1245,6 +1250,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
         bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type)
       dmrsConfigType = 1;
 
+    NR_PDSCH_Config_t *pdsch_config = bwp && bwp->bwp_Dedicated && bwp->bwp_Dedicated->pdsch_Config ? bwp->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
+
     pdsch_pdu_rel15->pduBitmap = 0;
     pdsch_pdu_rel15->rnti = ra->RA_rnti;
     pdsch_pdu_rel15->pduIndex = pduindex;
@@ -1273,7 +1280,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->VRBtoPRBMapping = 0;
     pdsch_pdu_rel15->StartSymbolIndex = startSymbolIndex;
     pdsch_pdu_rel15->NrOfSymbols = nrOfSymbols;
-    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(NULL,
+    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
                                                     nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                                     nrOfSymbols,
                                                     startSymbolIndex,

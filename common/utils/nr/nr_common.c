@@ -472,6 +472,10 @@ int get_subband_size(int NPRB,int size) {
  
 }
 
+int get_SLIV(uint8_t S, uint8_t L) {
+  return ( (uint16_t)(((L-1)<=7)? (14*(L-1)+S) : (14*(15-L)+(13-S))) );
+}
+
 void SLIV2SL(int SLIV,int *S,int *L) {
 
   int SLIVdiv14 = SLIV/14;

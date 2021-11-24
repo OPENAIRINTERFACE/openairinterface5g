@@ -50,7 +50,7 @@ typedef struct nr_bandentry_s {
 
 extern const size_t nr_bandtable_size;
 extern nr_bandentry_t nr_bandtable[];
-
+int get_SLIV(uint8_t S, uint8_t L);
 void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset);
 int get_num_dmrs(uint16_t dmrs_mask);
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);

@@ -483,10 +483,10 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_PDSCH_TimeDomainResourceAllocation_t *pdschi;
  for (int i=0;i<servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;i++) {
    pdschi= calloc(1,sizeof(*pdschi));
-   AssertFatal(servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0!=NULL,"element %d is null\n",i);
- 
-   pdschi->k0 = calloc(1,sizeof(*pdschi->k0));
-   *pdschi->k0 = *servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
+   if(servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0){
+     pdschi->k0 = calloc(1,sizeof(*pdschi->k0));
+     *pdschi->k0 = *servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
+   }
    pdschi->mappingType = servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType;
    pdschi->startSymbolAndLength = servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
    ASN_SEQUENCE_ADD(&bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,pdschi);

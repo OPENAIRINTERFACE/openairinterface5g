@@ -29,5 +29,30 @@
  */
 
 #include "nr_rrc_config.h"
+#include "common/utils/nr/nr_common.h"
 
+void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc){
 
+  lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+
+  // setting default TDA for DL with
+  struct NR_PDSCH_TimeDomainResourceAllocation *timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
+  timedomainresourceallocation->mappingType = NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+  timedomainresourceallocation->startSymbolAndLength = get_SLIV(1,13); // basic slot configuration starting in symbol 1 til the end of the slot
+  ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
+                   timedomainresourceallocation);
+
+  if(frame_type==TDD) {
+    // TDD
+    if(scc->tdd_UL_DL_ConfigurationCommon) {
+      int dl_symb = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols;
+      if(dl_symb > 1) {
+        timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
+        timedomainresourceallocation->mappingType = NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+        timedomainresourceallocation->startSymbolAndLength = get_SLIV(1,dl_symb-1); // mixed slot configuration starting in symbol 1 til the end of the dl allocation
+        ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
+                         timedomainresourceallocation);
+      }
+    }
+  }
+}
