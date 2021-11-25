@@ -388,7 +388,7 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
   uint32_t Ncb,ind,k=0,Nref,N;
 
   if (C==0) {
-    printf("nr_rate_matching: invalid parameters (C %d\n",C);
+    LOG_E(PHY,"nr_rate_matching: invalid parameters (C %d\n",C);
     return -1;
   }
 
@@ -407,16 +407,15 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
 #ifdef RM_DEBUG
   printf("nr_rate_matching_ldpc: E %d, F %d, Foffset %d, k0 %d, Ncb %d, rvidx %d\n", E, F, Foffset,ind, Ncb, rvidx);
 #endif
-  AssertFatal(Foffset <= E,
-              "Foffset %d > E %d "
-              "(Ilbrm %d, Tbslbrm %d, Z %d, BG %d, C %d)\n",
-              Foffset, E,
-              Ilbrm, Tbslbrm, Z, BG, C);
-  AssertFatal(Foffset <= Ncb,
-              "Foffset %d > Ncb %d "
-              "(Ilbrm %d, Tbslbrm %d, Z %d, BG %d, C %d)\n",
-              Foffset, Ncb,
-              Ilbrm, Tbslbrm, Z, BG, C);
+
+  if (Foffset > E) {
+    LOG_E(PHY,"nr_rate_matching: invalid parameters (Foffset %d > E %d)\n",Foffset,E);
+    return -1;
+  }
+  if (Foffset > Ncb) {
+    LOG_E(PHY,"nr_rate_matching: invalid parameters (Foffset %d > Ncb %d)\n",Foffset,Ncb);
+    return -1;
+  }
 
   if (ind >= Foffset && ind < (F+Foffset)) ind = F+Foffset;
 
@@ -478,7 +477,7 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
 #endif
 
   if (C==0) {
-    printf("nr_rate_matching: invalid parameters (C %d\n",C);
+    LOG_E(PHY,"nr_rate_matching: invalid parameters (C %d\n",C);
     return -1;
   }
 
@@ -493,8 +492,14 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
   }
 
   ind = (index_k0[BG-1][rvidx]*Ncb/N)*Z;
-  AssertFatal(Foffset <= E,"Foffset %d > E %d\n",Foffset,E);
-  AssertFatal(Foffset <= Ncb,"Foffset %d > Ncb %d\n",Foffset,Ncb);
+  if (Foffset > E) {
+    LOG_E(PHY,"nr_rate_matching: invalid parameters (Foffset %d > E %d)\n",Foffset,E);
+    return -1;
+  }
+  if (Foffset > Ncb) {
+    LOG_E(PHY,"nr_rate_matching: invalid parameters (Foffset %d > Ncb %d)\n",Foffset,Ncb);
+    return -1;
+  }
 
 #ifdef RM_DEBUG
   printf("nr_rate_matching_ldpc_rx: Clear %d, E %d, k0 %d, Ncb %d, rvidx %d\n", clear, E, ind, Ncb, rvidx);
