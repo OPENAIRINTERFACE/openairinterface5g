@@ -2238,7 +2238,8 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
   }
 
   // CSI
-  if (mac->ra.ra_state == RA_SUCCEEDED)
+  if (mac->ra.ra_state == RA_SUCCEEDED ||
+      get_softmodem_params()->phy_test == 1)
     O_CSI = nr_get_csi_measurements(mac, frameP, slotP, pucch);
 
   // ACKNACK
