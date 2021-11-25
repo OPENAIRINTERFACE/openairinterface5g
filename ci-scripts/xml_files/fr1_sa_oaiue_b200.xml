@@ -42,7 +42,7 @@
 		<class>Initialize_OAI_UE</class>
 		<desc>Initialize OAI UE</desc>
 		<air_interface>nr</air_interface>
-		<Initialize_OAI_UE_args>--dlsch-parallel 8 --sa -O ue.conf --usrp-args "serial=30C51D1" --numerology 1 -r 106 --band 78 -C 3319680000 --nokrnmod 1 --ue-txgain 0 -E</Initialize_OAI_UE_args>
+		<Initialize_OAI_UE_args>--dlsch-parallel 8 --sa -O ci-scripts/conf_files/ue.sa.conf --usrp-args "serial=30C51D1" --numerology 1 -r 106 --band 78 -C 3319680000 --nokrnmod 1 --ue-txgain 0 -E</Initialize_OAI_UE_args>
 	</testCase>
 
 	<testCase id="010002">
