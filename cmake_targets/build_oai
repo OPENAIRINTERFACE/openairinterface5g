@@ -118,7 +118,7 @@ Options
 -a | --agent
    Enables agent for software-defined control of the eNB
 -w | --hardware
-   EXMIMO, USRP, BLADERF, LMSSDR, IRIS, ADRV9371_ZC706, SIMU, None (Default)
+   EXMIMO, USRP, BLADERF, LMSSDR, IRIS, ADRV9371_ZC706, SIMU, AW2SORI, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
 -P | --phy_simulators
    Makes the unitary tests Layer 1 simulators
@@ -293,7 +293,7 @@ function main() {
                 "EXMIMO")
                     HW="EXMIMO"
                     ;;
-                "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "ADRV9371_ZC706" | "SIMU")
+                "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "ADRV9371_ZC706" | "SIMU" | "AW2SORI")
                     HW="OAI_"$2
                     ;;
                 "None")
@@ -931,6 +931,14 @@ function main() {
                   echo_error "== FAILED == Unexpected Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
               fi
               echo_info "liboai_device.so is linked to ADRV9371_ZC706 device library for Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
+          elif [ "$HW" == "OAI_AW2SORI" ] ; then
+	      compilations \
+		  $build_dir aw2sori_transpro \
+                  libaw2sori_transpro.so $dbin/libaw2sori_transpro.so.$REL 
+
+              ln -sf libaw2sori_transpro.so libthirdparty_transpro.so
+              ln -sf $dbin/libaw2sori_transpro.so.$REL $dbin/libaw2sori_transpro.so
+              echo_info "build libthirdparty_transpro.so for AW2SORI fronthaul"
           else
               echo_info "liboai_device.so is not linked to any device library"
           fi

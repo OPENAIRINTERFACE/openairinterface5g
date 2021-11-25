@@ -24,6 +24,7 @@
         <htmlTabRef>rfsim-5gnr</htmlTabRef>
         <htmlTabName>Testing 5G NR RF sim - Monolithic gNB</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
+        <repeatCount>4</repeatCount>
         <TestCaseRequestedList>
  100001
  000000

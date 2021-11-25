@@ -21,7 +21,7 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-SA-FR1-TM1</htmlTabRef>
+	<htmlTabRef>TEST-SA-FR1-Tab1</htmlTabRef>
 	<htmlTabName>SA Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>

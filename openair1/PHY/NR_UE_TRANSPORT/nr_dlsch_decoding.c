@@ -260,8 +260,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   t_nrLDPC_procBuf **p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf;
   // HARQ stats
   phy_vars_ue->dl_stats[harq_process->round]++;
-  int16_t z [68*384];
-  int8_t l [68*384];
+  int16_t z [68*384+16];
+  int8_t l [68*384+16];
   //__m128i l;
   //int16_t inv_d [68*384];
   uint8_t kc;

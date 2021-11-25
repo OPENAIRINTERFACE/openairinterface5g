@@ -582,7 +582,7 @@ static void handle_dl_harq(module_id_t mod_id,
     harq->ndi ^= 1;
     NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
     stats->dlsch_errors++;
-    LOG_D(NR_MAC, "retransmission error for UE %d (total %d)\n", UE_id, stats->dlsch_errors);
+    LOG_D(NR_MAC, "retransmission error for UE %d (total %"PRIu64")\n", UE_id, stats->dlsch_errors);
   } else {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].retrans_dl_harq, harq_pid);
     harq->round++;
@@ -702,7 +702,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   uint8_t diff_rsrp_idx = 0;
   uint8_t i, j;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
 
   if (n_dl_bwp < 4)
     pdsch_bwp_id = bwp_id;
@@ -728,9 +727,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
 
       //if strongest measured RSRP is configured
       strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
-      // including ssb rsrp in mac stats
-      stats->cumul_rsrp += strongest_ssb_rsrp;
-      stats->num_rsrp_meas++;
       ssb_rsrp[idx * nb_of_csi_ssb_report] = strongest_ssb_rsrp;
       LOG_D(NR_MAC,"ssb_rsrp = %d\n",strongest_ssb_rsrp);
 
@@ -872,12 +868,12 @@ uint8_t pickandreverse_bits(uint8_t *payload, uint16_t bitlen, uint8_t start_bit
 
 
 void evaluate_rsrp_report(NR_UE_info_t *UE_info,
-                             NR_UE_sched_ctrl_t *sched_ctrl,
-                             int UE_id,
-                             uint8_t csi_report_id,
-                             uint8_t *payload,
-                             int *cumul_bits,
-                             NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type){
+                          NR_UE_sched_ctrl_t *sched_ctrl,
+                          int UE_id,
+                          uint8_t csi_report_id,
+                          uint8_t *payload,
+                          int *cumul_bits,
+                          NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type){
 
   uint8_t cri_ssbri_bitlen = UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen.cri_ssbri_bitlen;
   uint16_t curr_payload;
@@ -907,14 +903,17 @@ void evaluate_rsrp_report(NR_UE_info_t *UE_info,
     curr_payload = pickandreverse_bits(payload, cri_ssbri_bitlen, *cumul_bits);
 
     if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type)
-      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] =
+      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx] =
         *(UE_info->csi_report_template[UE_id][csi_report_id].SSB_Index_list[cri_ssbri_bitlen>0?((curr_payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
     else
-      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] =
+      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx] =
         *(UE_info->csi_report_template[UE_id][csi_report_id].CSI_Index_list[cri_ssbri_bitlen>0?((curr_payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
 
     *cumul_bits += cri_ssbri_bitlen;
-    LOG_D(MAC,"SSB_index = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
+    if(UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type == NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP)
+      LOG_D(MAC,"CSI-RS Resource Indicator = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx]);
+    else
+      LOG_D(MAC,"SSB Resource Indicator = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx]);
   }
 
   curr_payload = pickandreverse_bits(payload, 7, *cumul_bits);
@@ -927,9 +926,14 @@ void evaluate_rsrp_report(NR_UE_info_t *UE_info,
     *cumul_bits += 4;
   }
   UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report++;
+  int strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
+  NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
+  // including ssb rsrp in mac stats
+  stats->cumul_rsrp += strongest_ssb_rsrp;
+  stats->num_rsrp_meas++;
   LOG_D(MAC,"rsrp_id = %d rsrp = %d\n",
         sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP,
-        get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP));
+        strongest_ssb_rsrp);
 }
 
 
@@ -1156,7 +1160,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   }
   if ((uci_234->pduBitmap >> 2) & 0x01) {
     //API to parse the csi report and store it into sched_ctrl
-    extract_pucch_csi_report (csi_MeasConfig, uci_234, frame, slot, UE_id, mod_id);
+    extract_pucch_csi_report(csi_MeasConfig, uci_234, frame, slot, UE_id, mod_id);
     //TCI handling function
     tci_handling(mod_id, UE_id,frame, slot);
   }
@@ -1334,7 +1338,7 @@ int nr_acknack_scheduling(int mod_id,
       pucch->ul_slot = (s + 1) % n_slots_frame;
   }
   if (ind_found==-1) {
-    LOG_W(NR_MAC,
+    LOG_D(NR_MAC,
           "%4d.%2d could not find pdsch_to_harq_feedback for UE %d: earliest "
           "ack slot %d\n",
           frame,

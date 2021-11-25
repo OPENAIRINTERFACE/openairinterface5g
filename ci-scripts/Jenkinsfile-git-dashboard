@@ -33,9 +33,12 @@ pipeline {
     stages {
         stage ("gDashboard") {
             steps {
-                script {     
-                    //retrieve MR data from gitlab and export to gSheet            
-                    sh returnStdout: true, script: 'python3 ci-scripts/ran_dashboard.py'
+                script { 
+                    dir ("ci-scripts/ran_dashboard") {    
+                              //retrieve MR data from gitlab / mySQL db, build HTML pages and load them to AWS S3 bucket (configured as static web page hosting)            
+                              //deprecated method : sh returnStdout: true, script: 'python3 ran_dashboard.py'
+                              sh returnStdout: true, script: 'python3 Hdashboard.py'
+                             }
                 }                                  
             }   
         }

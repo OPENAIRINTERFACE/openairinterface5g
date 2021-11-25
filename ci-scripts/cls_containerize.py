@@ -228,6 +228,8 @@ class Containerize():
 				if result is not None:
 					forceSharedImageBuild = True
 					sharedTag = 'ci-temp'
+		else:
+			forceSharedImageBuild = True
 
 		# Let's remove any previous run artifacts if still there
 		mySSH.command(self.cli + ' image prune --force', '\$', 30)
@@ -579,6 +581,8 @@ class Containerize():
 		# Currently support only one
 		mySSH.command('docker-compose --file ci-docker-compose.yml config', '\$', 5)
 		result = re.search('container_name: (?P<container_name>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
+		if self.eNB_logFile[self.eNB_instance] == '':
+			self.eNB_logFile[self.eNB_instance] = 'enb_' + HTML.testCase_id + '.log'
 		if result is not None:
 			containerName = result.group('container_name')
 			mySSH.command('docker kill --signal INT ' + containerName, '\$', 30)
@@ -753,7 +757,8 @@ class Containerize():
 		cmd = 'mkdir -p ' + logPath
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
-		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ' + logPath + '/ping_' + HTML.testCase_id + '.log'
+		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ../cmake_targets/log/ping_' + HTML.testCase_id + '.log || true'
+
 		logging.debug(cmd)
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
@@ -828,18 +833,19 @@ class Containerize():
 		logStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
 		# Start the server process
-		cmd = 'docker exec -d ' + self.svrContName + ' /bin/bash -c "nohup iperf ' + self.svrOptions + ' > /tmp/iperf_server.log 2>&1"'
+		cmd = 'docker exec -d ' + self.svrContName + ' /bin/bash -c "nohup iperf ' + self.svrOptions + ' > /tmp/iperf_server.log 2>&1" || true'
 		logging.debug(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		time.sleep(5)
 
 		# Start the client process
-		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee ' + logPath + '/iperf_client_' + HTML.testCase_id + '.log'
+
+		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee ../cmake_targets/log/iperf_client_' + HTML.testCase_id + '.log || true'
 		logging.debug(cmd)
 		clientStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
 		# Stop the server process
-		cmd = 'docker exec ' + self.svrContName + ' /bin/bash -c "pkill iperf"'
+		cmd = 'docker exec ' + self.svrContName + ' /bin/bash -c "pkill iperf" || true'
 		logging.debug(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		time.sleep(5)
@@ -856,6 +862,7 @@ class Containerize():
 			else:
 				message = 'Server Report and Connection refused Not Found!'
 			self.IperfExit(HTML, False, message)
+			logging.error('\u001B[1;37;41m Iperf Test FAIL\u001B[0m')
 			return
 
 		# Computing the requested bandwidth in float
@@ -928,6 +935,8 @@ class Containerize():
 			self.IperfExit(HTML, iperfStatus, 'problem?')
 		if iperfStatus:
 			logging.info('\u001B[1m Iperf Test PASS\u001B[0m')
+		else:
+			logging.error('\u001B[1;37;41m Iperf Test FAIL\u001B[0m')
 
 	def IperfExit(self, HTML, status, message):
 		html_queue = SimpleQueue()
@@ -966,7 +975,7 @@ class Containerize():
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
 			# Check if iptables forwarding is accepted
-			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
 			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
@@ -994,7 +1003,7 @@ class Containerize():
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
 			# Check if iptables forwarding is accepted
-			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
 			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
@@ -1022,7 +1031,7 @@ class Containerize():
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
 			# Check if iptables forwarding is accepted
-			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
 			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
@@ -1045,7 +1054,7 @@ class Containerize():
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
 			# Check if iptables forwarding is accepted
-			mySSH.command('echo ' + password + ' | sudo -S iptables -L', '\$', 10)
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
 			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)

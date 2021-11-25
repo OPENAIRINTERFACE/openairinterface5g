@@ -7,6 +7,7 @@ ENABLE_X2=${ENABLE_X2:-yes}
 THREAD_PARALLEL_CONFIG=${THREAD_PARALLEL_CONFIG:-PARALLEL_SINGLE_THREAD}
 
 # Based another env var, pick one template to use
+
 if [[ -v USE_NSA_TDD_MONO ]]; then ln -s $PREFIX/etc/gnb.nsa.tdd.conf $PREFIX/etc/gnb.conf; fi
 if [[ -v USE_SA_TDD_MONO ]]; then ln -s $PREFIX/etc/gnb.sa.tdd.conf $PREFIX/etc/gnb.conf; fi
 if [[ -v USE_SA_CU ]]; then ln -s $PREFIX/etc/gnb.sa.cu.conf $PREFIX/etc/gnb.conf; fi
