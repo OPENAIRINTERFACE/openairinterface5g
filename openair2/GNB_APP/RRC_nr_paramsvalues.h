@@ -92,54 +92,6 @@
 #define GNB_CONFIG_STRING_HOPPINGID                             "hoppingId"
 #define GNB_CONFIG_STRING_P0NOMINAL                             "p0_nominal"
 #define GNB_CONFIG_STRING_PUCCHRES                              "pucch_ResourceCommon"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_0                      "initialULBWPk2_0"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_0             "initialULBWPmappingType_0"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_0    "initialULBWPstartSymbolAndLength_0"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_1                      "initialULBWPk2_1"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_1             "initialULBWPmappingType_1"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_1    "initialULBWPstartSymbolAndLength_1"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_2                      "initialULBWPk2_2"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_2             "initialULBWPmappingType_2"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_2    "initialULBWPstartSymbolAndLength_2"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_3                      "initialULBWPk2_3"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_3             "initialULBWPmappingType_3"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_3    "initialULBWPstartSymbolAndLength_3"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_4                      "initialULBWPk2_4"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_4             "initialULBWPmappingType_4"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_4    "initialULBWPstartSymbolAndLength_4"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_5                      "initialULBWPk2_5"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_5             "initialULBWPmappingType_5"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_5    "initialULBWPstartSymbolAndLength_5"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_6                      "initialULBWPk2_6"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_6             "initialULBWPmappingType_6"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_6    "initialULBWPstartSymbolAndLength_6"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_7                      "initialULBWPk2_7"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_7             "initialULBWPmappingType_7"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_7    "initialULBWPstartSymbolAndLength_7"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_8                      "initialULBWPk2_8"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_8             "initialULBWPmappingType_8"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_8    "initialULBWPstartSymbolAndLength_8"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_9                      "initialULBWPk2_9"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_9             "initialULBWPmappingType_9"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_9    "initialULBWPstartSymbolAndLength_9"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_10                     "initialULBWPk2_10"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_10            "initialULBWPmappingType_10"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_10   "initialULBWPstartSymbolAndLength_10"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_11                     "initialULBWPk2_11"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_11            "initialULBWPmappingType_11"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_11   "initialULBWPstartSymbolAndLength_11"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_12                     "initialULBWPk2_12"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_12            "initialULBWPmappingType_12"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_12   "initialULBWPstartSymbolAndLength_12"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_13                     "initialULBWPk2_13"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_13            "initialULBWPmappingType_13"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_13   "initialULBWPstartSymbolAndLength_13"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_14                     "initialULBWPk2_14"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_14            "initialULBWPmappingType_14"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_14   "initialULBWPstartSymbolAndLength_14"
-#define GNB_CONFIG_STRING_INITIALULBWPK2_15                     "initialULBWPk2_15"
-#define GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_15            "initialULBWPmappingType_15"
-#define GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_15   "initialULBWPstartSymbolAndLength_15"
 
 
 #define GNB_CONFIG_STRING_SSBPOSITIONSINBURSTPR                          "ssb_PositionsInBurst_PR"
@@ -247,54 +199,6 @@
 {GNB_CONFIG_STRING_PRACHROOTSEQUENCEINDEX,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139,defint64val:0,TYPE_INT64,0/*84*/},\
 {GNB_CONFIG_STRING_RESTRICTEDSETCONFIG,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig,defintval:NR_RACH_ConfigCommon__restrictedSetConfig_unrestrictedSet,TYPE_INT64,0/*85*/}, \
 {GNB_CONFIG_STRING_MSG3TRANSFPREC,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder,defintval:1,TYPE_INT64,0/*86*/}, \
-{GNB_CONFIG_STRING_INITIALULBWPK2_0,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->k2,defint64val:-1,TYPE_INT64,0/*87*/},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_0,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->mappingType,defint64val:NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,/*88*/},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_0,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[0]->startSymbolAndLength,defint64val:55,TYPE_INT64,0/*89*/},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_1,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[1]->k2,defint64val:-1,TYPE_INT64,0/*90*/}, \
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_1,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[1]->mappingType,defint64val:NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_1,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[1]->startSymbolAndLength,defint64val:53,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_2,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[2]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_2,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[2]->mappingType,defint64val:NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_2,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[2]->startSymbolAndLength,defint64val:55,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_3,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[3]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_3,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[3]->mappingType,defint64val:NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_3,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[3]->startSymbolAndLength,defint64val:53,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_4,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[4]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_4,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[4]->mappingType,defint64val:NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0 /*100*/}, \
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_4,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[4]->startSymbolAndLength,defint64val:55,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_5,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[5]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_5,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[5]->mappingType,defint64val:NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_5,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[5]->startSymbolAndLength,defint64val:53,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_6,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[6]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_6,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[6]->mappingType,defint64val:NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_6,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[6]->startSymbolAndLength,defint64val:55,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_7,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[7]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_7,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[7]->mappingType,defint64val:NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_7,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[7]->startSymbolAndLength,defint64val:53,TYPE_INT64,0/*110*/}, \
-{GNB_CONFIG_STRING_INITIALULBWPK2_8,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[8]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_8,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[8]->mappingType,defint64val:NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_8,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[8]->startSymbolAndLength,defint64val:55,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_9,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[9]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_9,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[9]->mappingType,defint64val:NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_9,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[9]->startSymbolAndLength,defint64val:53,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_10,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[10]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_10,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[10]->mappingType,defint64val:NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_10,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[10]->startSymbolAndLength,defint64val:55,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_11,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[11]->k2,defint64val:-1,TYPE_INT64,0/*120*/},	\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_11,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[11]->mappingType,defint64val:NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_11,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[11]->startSymbolAndLength,defint64val:53,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_12,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[12]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_12,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[12]->mappingType,defint64val:NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_12,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[12]->startSymbolAndLength,defint64val:55,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_13,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[13]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_13,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[13]->mappingType,defint64val:NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_13,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[13]->startSymbolAndLength,defint64val:53,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_14,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[14]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_14,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[14]->mappingType,defint64val:NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0 /*130*/}, \
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_14,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[14]->startSymbolAndLength,defint64val:55,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPK2_15,NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[15]->k2,defint64val:-1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPMAPPINGTYPE_15,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[15]->mappingType,defint64val:NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_INITIALULBWPSTARTSYMBOLANDLENGTH_15,NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[15]->startSymbolAndLength,defint64val:53,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_MSG3DELTAPREABMLE, NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble,defint64val:1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_P0NOMINALWITHGRANT, NULL,0,i64ptr:scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->p0_NominalWithGrant,defint64val:1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_PUCCHGROUPHOPPING, NULL,0,i64ptr:&scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_GroupHopping,defint64val:NR_PUCCH_ConfigCommon__pucch_GroupHopping_neither,TYPE_INT64,0},\
