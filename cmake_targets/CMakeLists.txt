@@ -139,7 +139,7 @@ else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
   if(EXISTS  "/proc/cpuinfo")
     file(STRINGS "/proc/cpuinfo" CPUINFO REGEX flags LIMIT_COUNT 1)
     if (CPUINFO MATCHES "avx512bw")
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx512bw")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx512bw -march=skylake-avx512 -mtune=skylake-avx512 " )
       set(COMPILATION_AVX2 "True")
     else()
       if (CPUINFO MATCHES "avx2")
@@ -172,7 +172,7 @@ Message("C_FLAGS_PROCESSOR is ${C_FLAGS_PROCESSOR}")
 
 #
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC")
+  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -std=gnu99 -Wall -fopenmp  -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC")
 # add autotools definitions that were maybe used!
 set(MKVER "'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
 set(CMAKE_C_FLAGS
@@ -1310,27 +1310,19 @@ set(PHY_TURBOIF
 set(PHY_LDPC_ORIG_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder.c
-# ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX2.c
-# ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX512.c
 )
 
 set(PHY_LDPC_OPTIM_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim.c
-# ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX2.c 
-#${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX512.c 
 )
 set(PHY_LDPC_OPTIM8SEG_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8seg.c
-# ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX2.c 
-#${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX512.c 
 )
 set(PHY_LDPC_OPTIM8SEGMULTI_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
-#  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX2.c 
-# ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/ldpc_gen_files/nrLDPC_cnProc_BG1_Z384_13_AVX512.
 )
 set(PHY_NR_CODINGIF
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_load.c;
