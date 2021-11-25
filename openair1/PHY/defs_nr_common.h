@@ -244,7 +244,7 @@ typedef struct {
   uint16_t n_symbs;
   uint16_t subcarrier_idx[6*NR_MAX_NB_RB];
   int32_t *srs_generated_signal;
-  int32_t *srs_received_signal;
+  int32_t **srs_received_signal;
 } nr_srs_info_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;

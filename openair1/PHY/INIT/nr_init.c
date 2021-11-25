@@ -196,8 +196,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   nr_init_csi_rs(gNB, cfg->cell_config.phy_cell_id.value);
 
   gNB->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
-  gNB->nr_srs_info->srs_generated_signal = (int32_t*)malloc16_clear(NR_NB_SC_PER_RB*NR_MAX_NB_RB*sizeof(int32_t));
-  gNB->nr_srs_info->srs_received_signal = (int32_t*)malloc16_clear(NR_NB_SC_PER_RB*NR_MAX_NB_RB*sizeof(int32_t));
+  gNB->nr_srs_info->srs_generated_signal = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
 
   generate_ul_reference_signal_sequences(SHRT_MAX);
 
@@ -213,6 +212,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   common_vars->txdataF = (int32_t **)malloc16(Ptx*sizeof(int32_t*));
   common_vars->rxdataF = (int32_t **)malloc16(Prx*sizeof(int32_t*));
   common_vars->beam_id = (uint8_t **)malloc16(Ptx*sizeof(uint8_t*));
+  gNB->nr_srs_info->srs_received_signal = (int32_t **)malloc16(Prx*sizeof(int32_t*));
 
   for (i=0;i<Ptx;i++){
       common_vars->txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t)); // [hna] samples_per_frame without CP
@@ -225,6 +225,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   for (i=0;i<Prx;i++){
     common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
     common_vars->rxdata[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
+    gNB->nr_srs_info->srs_received_signal[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
   }
   common_vars->debugBuff = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t)*100);	
   common_vars->debugBuff_sample_offset = 0; 

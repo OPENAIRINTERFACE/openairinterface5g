@@ -89,14 +89,14 @@ void nr_fill_srs(PHY_VARS_gNB *gNB,
 }
 
 int nr_get_srs_signal(PHY_VARS_gNB *gNB,
-                       int frame,
-                       int slot,
-                       nfapi_nr_srs_pdu_t *srs_pdu,
-                       nr_srs_info_t *nr_srs_info,
-                       int32_t *srs_received_signal) {
+                      int frame,
+                      int slot,
+                      nfapi_nr_srs_pdu_t *srs_pdu,
+                      nr_srs_info_t *nr_srs_info,
+                      int32_t **srs_received_signal) {
 
   if(nr_srs_info->n_symbs==0) {
-    LOG_E(NR_PHY, "nr_srs_info was not generated yet!\n");
+    LOG_E(NR_PHY, "(%d.%d) nr_srs_info was not generated yet!\n", frame, slot);
     return -1;
   }
 
@@ -109,19 +109,24 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
 
   int32_t *rx_signal;
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
+
+    memset(srs_received_signal[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
     rx_signal = &rxdataF[ant][symbol_offset + frame_parms->first_carrier_offset];
 
     for(int sc_idx = 0; sc_idx < nr_srs_info->n_symbs; sc_idx++) {
-      srs_received_signal[nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset] = rx_signal[nr_srs_info->subcarrier_idx[sc_idx]];
+      srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset] = rx_signal[nr_srs_info->subcarrier_idx[sc_idx]];
 
 #ifdef SRS_DEBUG
-    if(nr_srs_info->subcarrier_idx[sc_idx]%12 == 0) {
-      LOG_I(NR_PHY,"::::::::::::: %i :::::::::::::\n", nr_srs_info->subcarrier_idx[sc_idx]/12);
-    }
-    LOG_I(NR_PHY,"(%i)  \t%i\t%i\n",
-          nr_srs_info->subcarrier_idx[sc_idx],
-          srs_received_signal[nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset]&0xFFFF,
-          (srs_received_signal[nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset]>>16)&0xFFFF);
+      if(sc_idx == 0) {
+        LOG_I(NR_PHY,"________ Rx antenna %i ________\n", ant);
+      }
+      if(nr_srs_info->subcarrier_idx[sc_idx]%12 == 0) {
+        LOG_I(NR_PHY,"::::::::::::: %i :::::::::::::\n", nr_srs_info->subcarrier_idx[sc_idx]/12);
+      }
+      LOG_I(NR_PHY,"(%i)  \t%i\t%i\n",
+            nr_srs_info->subcarrier_idx[sc_idx],
+            srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset]&0xFFFF,
+            (srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset]>>16)&0xFFFF);
 #endif
     }
   }
