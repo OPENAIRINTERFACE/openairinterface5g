@@ -5,8 +5,8 @@ set -euo pipefail
 PREFIX=/opt/oai-lte-ru
 
 # Based another env var, pick one template to use
-if [[ -v USE_FDD_RRU ]]; then ln -s $PREFIX/etc/rru.fdd.conf $PREFIX/etc/rru.conf; fi
-if [[ -v USE_TDD_RRU ]]; then ln -s $PREFIX/etc/rru.tdd.conf $PREFIX/etc/rru.conf; fi
+if [[ -v USE_FDD_RRU ]]; then cp $PREFIX/etc/rru.fdd.conf $PREFIX/etc/rru.conf; fi
+if [[ -v USE_TDD_RRU ]]; then cp $PREFIX/etc/rru.tdd.conf $PREFIX/etc/rru.conf; fi
 
 # Only this template will be manipulated
 CONFIG_FILES=`ls $PREFIX/etc/rru.conf || true`

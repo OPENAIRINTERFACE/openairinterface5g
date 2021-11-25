@@ -111,9 +111,9 @@ void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
 }
 
 
-uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
-			  int frame,
-			  int slot) {
+void nr_generate_pdsch(processingData_L1tx_t *msgTx,
+                       int frame,
+                       int slot) {
 
   PHY_VARS_gNB *gNB = msgTx->gNB;
   NR_gNB_DLSCH_t *dlsch;
@@ -592,9 +592,6 @@ uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
       LOG_D(PHY,"beam index for PDSCH allocation already taken\n");
     }
   }// dlsch loop
-
-  
-  return 0;
 }
 
 void dump_pdsch_stats(FILE *fd,PHY_VARS_gNB *gNB) {

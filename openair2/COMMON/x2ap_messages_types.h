@@ -38,6 +38,8 @@ typedef enum {
 #define X2AP_REGISTER_ENB_REQ(mSGpTR)                           (mSGpTR)->ittiMsg.x2ap_register_enb_req
 #define X2AP_SETUP_REQ(mSGpTR)                                  (mSGpTR)->ittiMsg.x2ap_setup_req
 #define X2AP_SETUP_RESP(mSGpTR)                                 (mSGpTR)->ittiMsg.x2ap_setup_resp
+#define X2AP_RESET_REQ(mSGpTR)                                  (mSGpTR)->ittiMsg.x2ap_reset_req
+#define X2AP_RESET_RESP(mSGpTR)                                 (mSGpTR)->ittiMsg.x2ap_reset_resp
 #define X2AP_HANDOVER_REQ(mSGpTR)                               (mSGpTR)->ittiMsg.x2ap_handover_req
 #define X2AP_HANDOVER_REQ_ACK(mSGpTR)                           (mSGpTR)->ittiMsg.x2ap_handover_req_ack
 #define X2AP_REGISTER_ENB_CNF(mSGpTR)                           (mSGpTR)->ittiMsg.x2ap_register_enb_cnf
@@ -67,6 +69,14 @@ typedef struct x2ap_setup_resp_s {
   uint32_t Nid_cell[MAX_NUM_CCs];
   int num_cc;
 } x2ap_setup_resp_t;
+
+typedef struct x2ap_reset_req_s {
+  uint32_t cause;
+} x2ap_reset_req_t;
+
+typedef struct x2ap_reset_resp_s {
+  int dummy;
+} x2ap_reset_resp_t;
 
 /* X2AP UE CONTEXT RELEASE */
 typedef struct x2ap_ue_context_release_s {
