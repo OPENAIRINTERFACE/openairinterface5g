@@ -1405,8 +1405,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg4\n");
 
-    // If UE is known by the network, to use C-RNTI instead of TC-RNTI
     rnti_t tc_rnti = ra->rnti;
+    // If UE is known by the network, C-RNTI to be used instead of TC-RNTI
     if(ra->msg3_dcch_dtch) {
       ra->rnti = ra->crnti;
     }
@@ -1759,6 +1759,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     LOG_D(NR_MAC,"numDlDci: %i\n", pdcch_pdu_rel15->numDlDci);
 
     if(ra->msg3_dcch_dtch) {
+      // If the UE used MSG3 to transfer a DCCH or DTCH message, then contention resolution is successful upon transmission of PDCCH
       LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CBRA procedure succeeded!\n", UE_id, ra->rnti);
       nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
       UE_info->active[UE_id] = true;

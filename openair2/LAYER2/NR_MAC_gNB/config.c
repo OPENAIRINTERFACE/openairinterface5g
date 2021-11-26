@@ -520,13 +520,13 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[0];
       RC.nrmac[Mod_idP]->sib1_tda = sib1_tda;
       for (int n=0;n<NR_NB_RA_PROC_MAX;n++ ) {
-	       cc->ra[n].cfra = false;
-         cc->ra[n].msg3_dcch_dtch = false;
-	       cc->ra[n].rnti = 0;
-	       cc->ra[n].preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
-	       cc->ra[n].preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
-	       for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
-	          cc->ra[n].preambles.preamble_list[i] = i;
+        cc->ra[n].cfra = false;
+        cc->ra[n].msg3_dcch_dtch = false;
+        cc->ra[n].rnti = 0;
+        cc->ra[n].preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
+        cc->ra[n].preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
+        for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
+          cc->ra[n].preambles.preamble_list[i] = i;
       }
     }
   }
