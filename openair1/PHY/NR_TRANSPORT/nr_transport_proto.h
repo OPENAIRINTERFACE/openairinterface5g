@@ -312,6 +312,11 @@ int nr_find_pucch(uint16_t rnti,
 
 NR_gNB_SRS_t *new_gNB_srs(void);
 
+int nr_find_srs(uint16_t rnti,
+                int frame,
+                int slot,
+                PHY_VARS_gNB *gNB);
+
 void nr_fill_srs(PHY_VARS_gNB *gNB,
                  int frame,
                  int slot,

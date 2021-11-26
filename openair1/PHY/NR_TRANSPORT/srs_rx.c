@@ -59,7 +59,7 @@ int nr_find_srs(uint16_t rnti,
 
   for (int i=0; i<NUMBER_OF_NR_SRS_MAX; i++) {
     AssertFatal(gNB->srs[i]!=NULL,"gNB->srs[%d] is null\n",i);
-    if ((gNB->srs[i]->active >0) &&
+    if ((gNB->srs[i]->active>0) &&
         (gNB->srs[i]->srs_pdu.rnti==rnti) &&
         (gNB->srs[i]->frame==frame) &&
         (gNB->srs[i]->slot==slot)) return(i);

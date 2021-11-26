@@ -795,7 +795,7 @@ typedef struct PHY_VARS_gNB_s {
   t_nrPolar_params    *uci_polarParams;
 
   /// SRS variables
-  nr_srs_info_t *nr_srs_info;
+  nr_srs_info_t *nr_srs_info[NUMBER_OF_NR_SRS_MAX];
 
   uint8_t pbch_configured;
   char gNB_generate_rar;
