@@ -86,7 +86,7 @@
 	<testCase id="050001">
 		<class>Ping</class>
 		<desc>Ping from CN to UE: 100pings in 20sec</desc>
-		<ping_args>-c 100 -i 0,2</ping_args>
+		<ping_args>-c 100 -i 0.2</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
