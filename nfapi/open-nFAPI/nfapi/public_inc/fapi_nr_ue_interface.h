@@ -16,6 +16,7 @@
 
 #ifndef _FAPI_NR_UE_INTERFACE_H_
 #define _FAPI_NR_UE_INTERFACE_H_
+#include <pthread.h>
 
 #include "stddef.h"
 #include "platform_types.h"
@@ -349,6 +350,7 @@ typedef struct {
   uint16_t slot;
   uint8_t number_pdus;
   fapi_nr_ul_config_request_pdu_t ul_config_list[FAPI_NR_UL_CONFIG_LIST_NUM];
+  pthread_mutex_t mutex_ul_config;
 } fapi_nr_ul_config_request_t;
 
 
