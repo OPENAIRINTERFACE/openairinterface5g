@@ -35,7 +35,6 @@
 #include "coding_defs.h"
 #include "assertions.h"
 #ifdef USE_INTEL_CRC
-#include "crc_intel.h"
 #include "crc.h"
 #endif
 /*ref 36-212 v8.6.0 , pp 8-9 */
