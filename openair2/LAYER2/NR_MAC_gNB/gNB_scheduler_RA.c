@@ -1445,7 +1445,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     ra->harq_pid = current_harq_pid;
 
     // Remove UE associated to TC-RNTI
-    if(harq->round==0 && ra->rnti!=tc_rnti) {
+    if(harq->round==0 && ra->msg3_dcch_dtch) {
       mac_remove_nr_ue(module_idP, tc_rnti);
     }
 
