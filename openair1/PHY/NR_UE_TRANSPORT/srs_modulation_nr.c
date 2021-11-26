@@ -116,6 +116,8 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
   uint8_t l0 = N_SYMB_SLOT - 1 - l_offset;              // starting position in the time domain
   uint8_t k_0_p;                                        // frequency domain starting position
 
+  uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_config_pdu->bwp_start*N_SC_RB;
+
   if(nr_srs_info) {
     nr_srs_info->n_symbs = 0;
   }
@@ -324,7 +326,7 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
       k_0_p += K_TC * M_sc_b_SRS * n_b[b];
     }
 
-    subcarrier = (frame_parms->first_carrier_offset) + k_0_p;
+    subcarrier = subcarrier_offset + k_0_p;
     if (subcarrier>frame_parms->ofdm_symbol_size) {
       subcarrier -= frame_parms->ofdm_symbol_size;
     }
@@ -373,17 +375,17 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
       txptr[subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size] = (real_amp & 0xFFFF) + ((imag_amp<<16)&0xFFFF0000);
 
       if(nr_srs_info) {
-        nr_srs_info->subcarrier_idx[nr_srs_info->n_symbs] = subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-frame_parms->first_carrier_offset;
+        nr_srs_info->subcarrier_idx[nr_srs_info->n_symbs] = subcarrier + ofdm_symbol*frame_parms->ofdm_symbol_size - subcarrier_offset;
         nr_srs_info->n_symbs++;
       }
 
 #ifdef SRS_DEBUG
-      if( (subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-frame_parms->first_carrier_offset)%12 == 0 ) {
-        LOG_I(NR_PHY,"------------ %i ------------\n",
-              (subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-frame_parms->first_carrier_offset)/12);
+      if( (subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-subcarrier_offset)%12 == 0 ) {
+        LOG_I(NR_PHY,"------------ %lu ------------\n",
+              (subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-subcarrier_offset)/12);
       }
-      LOG_I(NR_PHY,"(%i)  \t%i\t%i\n",
-            subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-frame_parms->first_carrier_offset,
+      LOG_I(NR_PHY,"(%lu)  \t%i\t%i\n",
+            subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-subcarrier_offset,
             real_amp&0xFFFF,
             imag_amp&0xFFFF);
 #endif

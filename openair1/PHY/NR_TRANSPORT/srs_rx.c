@@ -107,14 +107,16 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
   uint8_t l0 = frame_parms->symbols_per_slot - 1 - srs_pdu->time_start_position;  // starting symbol in this slot
   uint64_t symbol_offset = (n_symbols+l0)*frame_parms->ofdm_symbol_size;
 
+  uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
+
   int32_t *rx_signal;
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
 
     memset(srs_received_signal[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
-    rx_signal = &rxdataF[ant][symbol_offset + frame_parms->first_carrier_offset];
+    rx_signal = &rxdataF[ant][symbol_offset + subcarrier_offset];
 
     for(int sc_idx = 0; sc_idx < nr_srs_info->n_symbs; sc_idx++) {
-      srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset] = rx_signal[nr_srs_info->subcarrier_idx[sc_idx]];
+      srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + subcarrier_offset] = rx_signal[nr_srs_info->subcarrier_idx[sc_idx]];
 
 #ifdef SRS_DEBUG
       if(sc_idx == 0) {
@@ -125,8 +127,8 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
       }
       LOG_I(NR_PHY,"(%i)  \t%i\t%i\n",
             nr_srs_info->subcarrier_idx[sc_idx],
-            srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset]&0xFFFF,
-            (srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + frame_parms->first_carrier_offset]>>16)&0xFFFF);
+            srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + subcarrier_offset]&0xFFFF,
+            (srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + subcarrier_offset]>>16)&0xFFFF);
 #endif
     }
   }
