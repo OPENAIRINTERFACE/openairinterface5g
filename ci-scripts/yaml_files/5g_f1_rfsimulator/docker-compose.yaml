@@ -225,7 +225,7 @@ services:
             timeout: 5s
             retries: 5
     oai-cu:
-        image: oai-gnb:f1-test
+        image: oai-gnb:develop
         privileged: true
         container_name: rfsim5g-oai-cu
         environment: 
@@ -261,7 +261,7 @@ services:
             timeout: 5s
             retries: 5
     oai-du:
-        image: oai-gnb:f1-test
+        image: oai-gnb:develop
         privileged: true
         container_name: rfsim5g-oai-du
         environment: 
