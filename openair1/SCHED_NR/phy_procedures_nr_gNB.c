@@ -126,12 +126,36 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
 
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                            int frame,int slot,
-                           int do_meas) {
+                           int do_meas,
+                           nfapi_nr_dl_tti_ssb_pdu ssb_pdu) {
   int aa;
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int offset = gNB->CC_id;
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
+  
+  // defining inputs and initials for nr_generate_prs()
+  int **txdataF = gNB->common_vars.txdataF;
+  uint8_t ssb_index, n_hf;
+  ssb_index = ssb_pdu.ssb_pdu_rel15.SsbBlockIndex;
+  LOG_D(PHY,"common_signal_procedures: frame %d, slot %d ssb index %d\n",frame,slot,ssb_index);
+  
+  uint16_t ssb_start_symbol;
+  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp,ssb_index); // computing the starting symbol for current ssb
+  ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
+  
+  
+  
+  uint16_t slots_per_hf = (fp->slots_per_frame)>>1;
+  
+  if (slot<slots_per_hf)
+    n_hf=0;
+  else
+    n_hf=1;
+    
+
+  
+
 
   if ((cfg->cell_config.frame_duplex_type.value == TDD) &&
       (nr_slot_select(cfg,frame,slot) == NR_UPLINK_SLOT)) return;
@@ -208,6 +232,12 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   //TODO: nr_generate_prs
   // check if we have prs to transmit in this frame and slot
+  
+  if (cfg->carrier_config.num_tx_ant.value <= 4)
+    nr_generate_prs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+  else
+    nr_generate_prs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+
 
   if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
 

@@ -171,7 +171,7 @@ void nr_init_prs(PHY_VARS_gNB* gNB)
   for (slotNum = 0; slotNum < fp->slots_per_frame; slotNum++) {
     for (symNum = 0; symNum < fp->symbols_per_slot ; symNum++) {
       reset = 1;
-      // initial x2 for prs as 38.211
+      // initial x2 for prs as ts138.211
       uint32_t c_init1, c_init2, c_init3;
       uint32_t pow22=1<<22;
       uint32_t pow10=1<<10;
