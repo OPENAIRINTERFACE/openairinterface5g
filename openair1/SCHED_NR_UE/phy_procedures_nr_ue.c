@@ -782,6 +782,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
                                       aatx /*p*/,
                                       m,
                                       BWPStart,
+                                      dlsch0_harq->dmrsConfigType,
                                       ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
                                       pdsch_nb_rb);
           LOG_D(PHY,"PDSCH Channel estimation gNB id %d, PDSCH antenna port %d, slot %d, symbol %d\n",0,aatx,nr_slot_rx,m);
