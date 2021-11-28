@@ -2,6 +2,7 @@
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/sse_intrin.h"
 
 #define DEBUG_PRS
@@ -16,7 +17,7 @@ int nr_generate_prs(uint32_t *nr_gold_prs,
                           NR_DL_FRAME_PARMS *frame_parms) {
   //int k,l;
   //int16_t a;
-  int16_t mod_prs[NR_MAX_PRS_INIT_LENGTH_DWORD<<1];
+  int16_t mod_prs[NR_MAX_PRS_LENGTH<<1];
   uint8_t idx=0;
   uint8_t nushift = config->cell_config.phy_cell_id.value &3;
   LOG_D(PHY, "PRS mapping started at symbol %d shift %d\n", ssb_start_symbol+1, nushift);

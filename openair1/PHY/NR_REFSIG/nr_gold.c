@@ -45,6 +45,7 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB)
 
       for (uint8_t n=0; n<NR_PBCH_DMRS_LENGTH_DWORD; n++) {
         gNB->nr_gold_pbch_dmrs[n_hf][l][n] = lte_gold_generic(&x1, &x2, reset);
+        //printf("%d \n",gNB->nr_gold_pbch_dmrs[n_hf][l][n]); 
         reset = 0;
       }
 
@@ -182,11 +183,9 @@ void nr_init_prs(PHY_VARS_gNB* gNB)
       
 
       for (uint8_t n=0; n<NR_MAX_PRS_INIT_LENGTH_DWORD; n++) {
-        gNB->nr_gold_prs[slotNum][symNum][n] = lte_gold_generic(&x1, &x2, reset);
-	//printf("%d \n",gNB->nr_gold_prs[slotNum][symNum][n]);
-	//printf("printing x1= %d \n",x1);	
-	//printf("printing x2= %d \n",x2);        
-	reset = 0;
+        gNB->nr_gold_prs[slotNum][symNum][n] = lte_gold_generic(&x1, &x2, reset);      
+        reset = 0;
+        //printf("%d \n",gNB->nr_gold_prs[slotNum][symNum][n]); 
 	
       }
     }

@@ -93,11 +93,22 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
   nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
   nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+  
+  //nr_generate_prs(gNB->nr_gold_prs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+  
 
   if (cfg->carrier_config.num_tx_ant.value <= 4)
     nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+
   else
     nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+    
+    
+  if (cfg->carrier_config.num_tx_ant.value <= 4)
+    nr_generate_prs(gNB->nr_gold_prs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+  else 
+    nr_generate_prs(gNB->nr_gold_prs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+
 
   if (T_ACTIVE(T_GNB_PHY_MIB)) {
     unsigned char bch[3];
@@ -153,9 +164,6 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   else
     n_hf=1;
     
-
-  
-
 
   if ((cfg->cell_config.frame_duplex_type.value == TDD) &&
       (nr_slot_select(cfg,frame,slot) == NR_UPLINK_SLOT)) return;
@@ -232,12 +240,11 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   //TODO: nr_generate_prs
   // check if we have prs to transmit in this frame and slot
-  
+    
   if (cfg->carrier_config.num_tx_ant.value <= 4)
-    nr_generate_prs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-  else
-    nr_generate_prs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-
+    nr_generate_prs(gNB->nr_gold_prs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+  else 
+    nr_generate_prs(gNB->nr_gold_prs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
 
   if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
 
