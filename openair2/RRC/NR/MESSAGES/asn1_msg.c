@@ -1014,9 +1014,16 @@ long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS) {
 }
 
 void fill_initial_SpCellConfig(rnti_t rnti,
+                               int uid,
                                NR_SpCellConfig_t *SpCellConfig,
                                NR_ServingCellConfigCommon_t *scc,
                                rrc_gNB_carrier_data_t *carrier) {
+
+  // This assert will never happen in the current implementation because NUMBER_OF_UE_MAX = 4.
+  // However, if in the future NUMBER_OF_UE_MAX is increased, it will be necessary to improve the allocation of SRS resources,
+  // where the startPosition = 1, 2 or 3 and sl40 = 7, 17, 27 or 37 only give us 12 different allocations.
+  AssertFatal(uid>=0 && uid<12, "gNB cannot allocate the SRS resources\n");
+
   int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
   SpCellConfig->servCellIndex = NULL;
   SpCellConfig->reconfigurationWithSync = NULL;
@@ -1095,7 +1102,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   pusch_Config->pusch_PowerControl->pathlossReferenceRSToAddModList = calloc(1,sizeof(*pusch_Config->pusch_PowerControl->pathlossReferenceRSToAddModList));
   NR_PUSCH_PathlossReferenceRS_t *plrefRS = calloc(1,sizeof(*plrefRS));
   plrefRS->pusch_PathlossReferenceRS_Id=0;
-  plrefRS->referenceSignal.present = NR_PathlossReferenceRS_Config_PR_ssb_Index;
+  plrefRS->referenceSignal.present = NR_PUSCH_PathlossReferenceRS__referenceSignal_PR_ssb_Index;
   plrefRS->referenceSignal.choice.ssb_Index = 0;
   ASN_SEQUENCE_ADD(&pusch_Config->pusch_PowerControl->pathlossReferenceRSToAddModList->list,plrefRS);
   pusch_Config->pusch_PowerControl->pathlossReferenceRSToReleaseList = NULL;
@@ -1175,7 +1182,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   srs_res0->transmissionComb.choice.n2=calloc(1,sizeof(*srs_res0->transmissionComb.choice.n2));
   srs_res0->transmissionComb.choice.n2->combOffset_n2=0;
   srs_res0->transmissionComb.choice.n2->cyclicShift_n2=0;
-  srs_res0->resourceMapping.startPosition=2;
+  srs_res0->resourceMapping.startPosition = 1 + uid%3;
   srs_res0->resourceMapping.nrofSymbols=NR_SRS_Resource__resourceMapping__nrofSymbols_n1;
   srs_res0->resourceMapping.repetitionFactor=NR_SRS_Resource__resourceMapping__repetitionFactor_n1;
   srs_res0->freqDomainPosition=0;
@@ -1194,7 +1201,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
     srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_periodic;
     srs_res0->resourceType.choice.periodic=calloc(1,sizeof(*srs_res0->resourceType.choice.periodic));
     srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl40;
-    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl40 = 9; // 9 is an uplink slot
+    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl40 = 7 + (uid/3)*10; // 7/17/27/37 are mixed slots
   }
 
   srs_res0->sequenceId=40;
@@ -1455,6 +1462,7 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
 }
 
 void fill_initial_cellGroupConfig(rnti_t rnti,
+                                  int uid,
                                   NR_CellGroupConfig_t *cellGroupConfig,
                                   NR_ServingCellConfigCommon_t *scc,
                                   rrc_gNB_carrier_data_t *carrier) {
@@ -1548,7 +1556,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
   
   cellGroupConfig->spCellConfig                                             = calloc(1,sizeof(*cellGroupConfig->spCellConfig));
   
-  fill_initial_SpCellConfig(rnti,cellGroupConfig->spCellConfig,scc,carrier);
+  fill_initial_SpCellConfig(rnti,uid,cellGroupConfig->spCellConfig,scc,carrier);
   
   cellGroupConfig->sCellToAddModList                                        = NULL;
   cellGroupConfig->sCellToReleaseList                                       = NULL;
@@ -1627,7 +1635,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
     }
     else {
       cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-      fill_initial_cellGroupConfig(ue_context_pP->ue_context.rnti,cellGroupConfig,scc,carrier);
+      fill_initial_cellGroupConfig(ue_context_pP->ue_context.rnti,ue_context_pP->local_uid,cellGroupConfig,scc,carrier);
 
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
 				       NULL,
