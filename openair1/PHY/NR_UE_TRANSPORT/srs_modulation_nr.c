@@ -101,20 +101,20 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
   uint8_t C_SRS  = srs_config_pdu->config_index;
   uint8_t b_hop = srs_config_pdu->frequency_hopping;
   uint8_t K_TC = 2<<srs_config_pdu->comb_size;
-  uint8_t K_TC_overbar = srs_config_pdu->comb_offset;    // FFS_TODO_NR is this parameter for K_TC_overbar ??
+  uint8_t K_TC_overbar = srs_config_pdu->comb_offset;         // FFS_TODO_NR is this parameter for K_TC_overbar ??
   uint8_t n_SRS_cs = srs_config_pdu->cyclic_shift;
   uint8_t n_ID_SRS = srs_config_pdu->sequence_id;
-  uint8_t n_shift = srs_config_pdu->frequency_position;  // it adjusts the SRS allocation to align with the common resource block grid in multiples of four
+  uint8_t n_shift = srs_config_pdu->frequency_position;       // it adjusts the SRS allocation to align with the common resource block grid in multiples of four
   uint8_t n_RRC = srs_config_pdu->frequency_shift;
   uint8_t groupOrSequenceHopping = srs_config_pdu->group_or_sequence_hopping;
   uint8_t l_offset = srs_config_pdu->time_start_position;
   uint16_t T_SRS = srs_config_pdu->t_srs;
-  uint16_t T_offset = srs_config_pdu->t_offset;         // FFS_TODO_NR to check interface with RRC
+  uint16_t T_offset = srs_config_pdu->t_offset;               // FFS_TODO_NR to check interface with RRC
   uint8_t R = 1<<srs_config_pdu->num_repetitions;
-  uint8_t N_ap = 1<<srs_config_pdu->num_ant_ports;      // antenna port for transmission
-  uint8_t N_symb_SRS = 1<<srs_config_pdu->num_symbols;  // consecutive OFDM symbols
-  uint8_t l0 = N_SYMB_SLOT - 1 - l_offset;              // starting position in the time domain
-  uint8_t k_0_p;                                        // frequency domain starting position
+  uint8_t N_ap = 1<<srs_config_pdu->num_ant_ports;            // antenna port for transmission
+  uint8_t N_symb_SRS = 1<<srs_config_pdu->num_symbols;        // consecutive OFDM symbols
+  uint8_t l0 = frame_parms->symbols_per_slot - 1 - l_offset;  // starting position in the time domain
+  uint8_t k_0_p;                                              // frequency domain starting position
 
   uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_config_pdu->bwp_start*N_SC_RB;
 
@@ -457,13 +457,10 @@ int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gN
 #endif
 
   NR_DL_FRAME_PARMS *frame_parms = &(ue->frame_parms);
-
-  int16_t txptr = AMP;
-  uint16_t nsymb = (ue->frame_parms.Ncp==0) ? 14:12;
-  uint16_t symbol_offset = (int)ue->frame_parms.ofdm_symbol_size*((proc->nr_slot_tx*nsymb)+(nsymb-1));
+  uint16_t symbol_offset = (frame_parms->symbols_per_slot - 1 - srs_config_pdu->time_start_position)*frame_parms->ofdm_symbol_size;
 
   if (generate_srs_nr(srs_config_pdu, frame_parms, &ue->common_vars.txdataF[gNB_id][symbol_offset], ue->nr_srs_info,
-                      txptr, proc->frame_tx, proc->nr_slot_tx) == 0) {
+                      AMP, proc->frame_tx, proc->nr_slot_tx) == 0) {
     return 0;
   } else {
     return -1;
