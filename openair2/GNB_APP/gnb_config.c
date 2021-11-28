@@ -94,7 +94,6 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
 
   NR_FreqBandIndicatorNR_t                        *dl_frequencyBandList,*ul_frequencyBandList;
   struct NR_SCS_SpecificCarrier                   *dl_scs_SpecificCarrierList,*ul_scs_SpecificCarrierList;
-  struct NR_PUSCH_TimeDomainResourceAllocation    *pusch_configcommontimedomainresourceallocation;
   //  struct NR_RateMatchPattern                      *ratematchpattern;
   //  NR_RateMatchPatternId_t                         *ratematchpatternid;
   //  NR_TCI_StateId_t                                *TCI_StateId;

@@ -1015,11 +1015,14 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->pusch_data.harq_process_id = 0;
   pusch_pdu->pusch_data.new_data_indicator = 1;
   pusch_pdu->pusch_data.num_cb = 0;
+  int num_dmrs_symb = 0;
+  for(int i = start_symbol_index; i < start_symbol_index+nr_of_symbols; i++)
+    num_dmrs_symb += (pusch_pdu->ul_dmrs_symb_pos >> i) & 1;
   pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
                                                  pusch_pdu->target_code_rate,
                                                  pusch_pdu->rb_size,
                                                  pusch_pdu->nr_of_symbols,
-                                                 12, // nb dmrs set for no data in dmrs symbol
+                                                 num_dmrs_symb*12, // nb dmrs set for no data in dmrs symbol
                                                  0, //nb_rb_oh
                                                  0, // to verify tb scaling
                                                  pusch_pdu->nrOfLayers)>>3;
