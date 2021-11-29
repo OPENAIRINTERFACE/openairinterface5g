@@ -459,45 +459,36 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
             }
           }
           else {
-            //get the precoding matrix weights:
-            char *W_prec;
-            switch (frame_parms->nb_antennas_tx) {
-              case 1://1 antenna port
-                W_prec = nr_W_1l_2p[pmi][ap];
-                break;
-              case 2://2 antenna ports
-                if (rel15->nrOfLayers == 1)//1 layer
-                  W_prec = nr_W_1l_2p[pmi][ap];
-                else//2 layers
-                  W_prec = nr_W_2l_2p[pmi][ap];
-                break;
-              case 4://4 antenna ports
-                if (rel15->nrOfLayers == 1)//1 layer
-                  W_prec = nr_W_1l_4p[pmi][ap];
-                else if (rel15->nrOfLayers == 2)//2 layers
-                  W_prec = nr_W_2l_4p[pmi][ap];
-                else if (rel15->nrOfLayers == 3)//3 layers
-                  W_prec = nr_W_3l_4p[pmi][ap];
-                else//4 layers
-                  W_prec = nr_W_4l_4p[pmi][ap];
-                break;
-              default:
-                LOG_D(PHY,"Precoding 1,2, or 4 antenna ports are currently supported\n");
-                W_prec = nr_W_1l_2p[pmi][ap];
-                break;
-            }
-            for (int i=0; i<NR_NB_SC_PER_RB; i++) {
-              int32_t re_offset = l*frame_parms->ofdm_symbol_size + k;
-              int32_t precodatatx_F = nr_layer_precoder(txdataF_precoding, W_prec, rel15->nrOfLayers, re_offset+txdataF_offset);
-              ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[0];
-              ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[1];
-#ifdef DEBUG_DLSCH_MAPPING
-              printf("antenna %d\t l %d \t k %d \t txdataF: %d %d\n",
-                     ap, l, k, ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)],
-                     ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)]);
-#endif
-              if (++k >= frame_parms->ofdm_symbol_size) {
+            if(frame_parms->nb_antennas_tx==1){//no precoding matrix defined
+              memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
+                     (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + txdataF_offset+ k)],
+                     NR_NB_SC_PER_RB*sizeof(int32_t));
+              k += NR_NB_SC_PER_RB;
+              if (k >= frame_parms->ofdm_symbol_size) {
                 k -= frame_parms->ofdm_symbol_size;
+              }
+            }
+            else {
+              //get the precoding matrix weights:
+              int32_t **mat = gNB->nr_mimo_precoding_matrix[rel15->nrOfLayers-1];
+              //i_row =0,...,dl_antenna_port
+              //j_col =0,...,nrOfLayers
+              //mat[pmi][i_rows*2+j_col]
+              int *W_prec;
+              W_prec = (int32_t *)&mat[pmi][ap*rel15->nrOfLayers];
+              for (int i=0; i<NR_NB_SC_PER_RB; i++) {
+                int32_t re_offset = l*frame_parms->ofdm_symbol_size + k;
+                int32_t precodatatx_F = nr_layer_precoder_cm(txdataF_precoding, W_prec, rel15->nrOfLayers, re_offset+txdataF_offset);
+                ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[0];
+                ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[1];
+  #ifdef DEBUG_DLSCH_MAPPING
+                printf("antenna %d\t l %d \t k %d \t txdataF: %d %d\n",
+                       ap, l, k, ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)],
+                       ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)]);
+  #endif
+                if (++k >= frame_parms->ofdm_symbol_size) {
+                  k -= frame_parms->ofdm_symbol_size;
+                }
               }
             }
           }
