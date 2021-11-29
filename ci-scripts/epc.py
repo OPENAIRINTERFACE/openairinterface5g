@@ -108,6 +108,14 @@ class EPCManagement():
 			logging.debug('Using the ltebox simulated HSS')
 			mySSH.command('if [ -d ' + self.SourceCodePath + '/scripts ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/scripts ; fi', '\$', 5)
 			mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts', '\$', 5)
+			result = re.search('hss_sim s6as diam_hss', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('echo ' + self.Password + ' | sudo -S killall hss_sim', '\$', 5)
+			mySSH.command('ps aux | grep --colour=never xGw | grep -v grep', '\$', 5, silent=True)
+			result = re.search('root.*xGw', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('cd /opt/ltebox/tools', '\$', 5)
+				mySSH.command('echo ' + self.Password + ' | sudo -S ./stop_ltebox', '\$', 5)
 			mySSH.command('cd /opt/hss_sim0609', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm -f hss.log', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S echo "Starting sudo session" && sudo su -c "screen -dm -S simulated_hss ./starthss"', '\$', 5)
@@ -420,6 +428,11 @@ class EPCManagement():
 			mySSH.command('cd scripts', '\$', 5)
 			time.sleep(1)
 			mySSH.command('echo ' + self.Password + ' | sudo -S screen -S simulated_hss -X quit', '\$', 5)
+			time.sleep(5)
+			mySSH.command('ps aux | grep --colour=never hss_sim | grep -v grep', '\$', 5, silent=True)
+			result = re.search('hss_sim s6as diam_hss', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('echo ' + self.Password + ' | sudo -S killall hss_sim', '\$', 5)
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
@@ -446,6 +459,7 @@ class EPCManagement():
 		elif re.match('ltebox', self.Type, re.IGNORECASE):
 			mySSH.command('cd /opt/ltebox/tools', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S ./stop_mme', '\$', 5)
+			time.sleep(5)
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()

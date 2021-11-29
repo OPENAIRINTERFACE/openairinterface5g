@@ -57,6 +57,17 @@ int x2ap_eNB_handle_x2_setup_response (instance_t instance,
                                        uint32_t stream,
                                        X2AP_X2AP_PDU_t *pdu);
 static
+int x2ap_eNB_handle_x2_reset_request (instance_t instance,
+                                      uint32_t assoc_id,
+                                      uint32_t stream,
+                                      X2AP_X2AP_PDU_t *pdu);
+static
+int x2ap_eNB_handle_x2_reset_response (instance_t instance,
+                                       uint32_t assoc_id,
+                                       uint32_t stream,
+                                       X2AP_X2AP_PDU_t *pdu);
+
+static
 int x2ap_eNB_handle_x2_setup_failure (instance_t instance,
                                       uint32_t assoc_id,
                                       uint32_t stream,
@@ -166,7 +177,7 @@ x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* snStatusTransfer */
   { x2ap_eNB_handle_ue_context_release, 0, 0 }, /* uEContextRelease */
   { x2ap_eNB_handle_x2_setup_request, x2ap_eNB_handle_x2_setup_response, x2ap_eNB_handle_x2_setup_failure }, /* x2Setup */
-  { 0, 0, 0 }, /* reset */
+  { x2ap_eNB_handle_x2_reset_request, x2ap_eNB_handle_x2_reset_response, 0 }, /* reset */
   { 0, 0, 0 }, /* eNBConfigurationUpdate */
   { 0, 0, 0 }, /* resourceStatusReportingInitiation */
   { 0, 0, 0 }, /* resourceStatusReporting */
@@ -492,6 +503,163 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
       X2AP_SETUP_REQ(msg).Nid_cell[i] = x2ap_eNB_data->Nid_cell[i];
     }
   }
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
+
+  return x2ap_eNB_generate_x2_setup_response(instance_p, x2ap_eNB_data);
+}
+
+const char *X2AP_cause_str1[4]={"radioNetwork","transport","protocol","misc"};
+const char *X2AP_case_str_radio[50]={" X2AP_CauseRadioNetwork_handover_desirable_for_radio_reasons",
+        "X2AP_CauseRadioNetwork_time_critical_handover",
+        "X2AP_CauseRadioNetwork_resource_optimisation_handover",
+        "X2AP_CauseRadioNetwork_reduce_load_in_serving_cell",
+        "X2AP_CauseRadioNetwork_partial_handover",
+        "X2AP_CauseRadioNetwork_unknown_new_eNB_UE_X2AP_ID",
+        "X2AP_CauseRadioNetwork_unknown_old_eNB_UE_X2AP_ID",
+        "X2AP_CauseRadioNetwork_unknown_pair_of_UE_X2AP_ID",
+        "X2AP_CauseRadioNetwork_ho_target_not_allowed",
+        "X2AP_CauseRadioNetwork_tx2relocoverall_expiry",
+        "X2AP_CauseRadioNetwork_trelocprep_expiry",
+        "X2AP_CauseRadioNetwork_cell_not_available",
+        "X2AP_CauseRadioNetwork_no_radio_resources_available_in_target_cell",
+        "X2AP_CauseRadioNetwork_invalid_MME_GroupID",
+        "X2AP_CauseRadioNetwork_unknown_MME_Code",
+        "X2AP_CauseRadioNetwork_encryption_and_or_integrity_protection_algorithms_not_supported",
+        "X2AP_CauseRadioNetwork_reportCharacteristicsEmpty",
+        "X2AP_CauseRadioNetwork_noReportPeriodicity",
+        "X2AP_CauseRadioNetwork_existingMeasurementID",
+        "X2AP_CauseRadioNetwork_unknown_eNB_Measurement_ID",
+        "X2AP_CauseRadioNetwork_measurement_temporarily_not_available",
+        "X2AP_CauseRadioNetwork_unspecified",
+        "X2AP_CauseRadioNetwork_load_balancing",
+        "X2AP_CauseRadioNetwork_handover_optimisation",
+        "X2AP_CauseRadioNetwork_value_out_of_allowed_range",
+        "X2AP_CauseRadioNetwork_multiple_E_RAB_ID_instances",
+        "X2AP_CauseRadioNetwork_switch_off_ongoing",
+        "X2AP_CauseRadioNetwork_not_supported_QCI_value",
+        "X2AP_CauseRadioNetwork_measurement_not_supported_for_the_object",
+        "X2AP_CauseRadioNetwork_tDCoverall_expiry",
+        "X2AP_CauseRadioNetwork_tDCprep_expiry",
+        "X2AP_CauseRadioNetwork_action_desirable_for_radio_reasons",
+        "X2AP_CauseRadioNetwork_reduce_load",
+        "X2AP_CauseRadioNetwork_resource_optimisation",
+        "X2AP_CauseRadioNetwork_time_critical_action",
+        "X2AP_CauseRadioNetwork_target_not_allowed",
+        "X2AP_CauseRadioNetwork_no_radio_resources_available",
+        "X2AP_CauseRadioNetwork_invalid_QoS_combination",
+        "X2AP_CauseRadioNetwork_encryption_algorithms_not_supported",
+        "X2AP_CauseRadioNetwork_procedure_cancelled",
+        "X2AP_CauseRadioNetwork_rRM_purpose",
+        "X2AP_CauseRadioNetwork_improve_user_bit_rate",
+        "X2AP_CauseRadioNetwork_user_inactivity",
+        "X2AP_CauseRadioNetwork_radio_connection_with_UE_lost",
+        "X2AP_CauseRadioNetwork_bearer_option_not_supported",
+        "X2AP_CauseRadioNetwork_mCG_Mobility",
+        "X2AP_CauseRadioNetwork_sCG_Mobility",
+        "X2AP_CauseRadioNetwork_count_reaches_max_value",
+        "X2AP_CauseRadioNetwork_unknown_old_en_gNB_UE_X2AP_ID",
+        "X2AP_CauseRadioNetwork_pDCP_Overload"};
+
+const char *X2AP_cause_str_radio[2]={"X2AP_CauseTransport_transport_resource_unavailable",
+        "X2AP_CauseTransport_unspecified"};
+const char *X2AP_cause_str_protocol[7]={" X2AP_CauseProtocol_transfer_syntax_error",
+        "X2AP_CauseProtocol_abstract_syntax_error_reject",
+        "X2AP_CauseProtocol_abstract_syntax_error_ignore_and_notify",
+        "X2AP_CauseProtocol_message_not_compatible_with_receiver_state",
+        "X2AP_CauseProtocol_semantic_error",
+        "X2AP_CauseProtocol_unspecified",
+        "X2AP_CauseProtocol_abstract_syntax_error_falsely_constructed_message"};
+const char *X2AP_cause_str_misc[5]={"X2AP_CauseMisc_control_processing_overload",
+        "X2AP_CauseMisc_hardware_failure",
+        "X2AP_CauseMisc_om_intervention",
+        "X2AP_CauseMisc_not_enough_user_plane_processing_resources",
+        "X2AP_CauseMisc_unspecified"};
+
+
+int
+x2ap_eNB_handle_x2_reset_response(instance_t instance,
+                                  uint32_t assoc_id,
+                                  uint32_t stream,
+                                  X2AP_X2AP_PDU_t *pdu)
+{
+
+   return (0);
+}
+
+
+int
+x2ap_eNB_handle_x2_reset_request(instance_t instance,
+                                 uint32_t assoc_id,
+                                 uint32_t stream,
+                                 X2AP_X2AP_PDU_t *pdu)
+{
+
+  X2AP_ResetRequest_t              *ResetRequest;
+  X2AP_ResetRequest_IEs_t          *ie;
+
+  x2ap_eNB_instance_t                *instance_p;
+  x2ap_eNB_data_t                    *x2ap_eNB_data;
+  MessageDef                         *msg;
+  uint32_t                           eNB_id = 0;
+
+  DevAssert (pdu != NULL);
+  ResetRequest = &pdu->choice.initiatingMessage.value.choice.ResetRequest;
+
+  X2AP_DEBUG("Received a new X2 reset request\n");
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_ResetRequest_IEs_t, ie, ResetRequest,
+                             X2AP_ProtocolIE_ID_id_Cause, true);
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  } else {
+    AssertFatal(ie->value.present <= X2AP_Cause_PR_misc && ie->value.present > 0,"Cause value %d, is impossible\n",ie->value.present);
+    LOG_I(X2AP,"Received X2AP Reset Request with Cause Type %s\n",X2AP_cause_str1[ie->value.present-1]);
+  }
+
+  X2AP_DEBUG("Adding eNB to the list of associated eNBs\n");
+
+  if ((x2ap_eNB_data = x2ap_is_eNB_id_in_list (eNB_id)) == NULL) {
+      /*
+       * eNB has not been found in list of associated eNB,
+       * * * * Add it to the tail of list and initialize data
+       */
+    if ((x2ap_eNB_data = x2ap_is_eNB_assoc_id_in_list (assoc_id)) == NULL) {
+      /*
+       * ??
+       */
+      return -1;
+    } else {
+      x2ap_eNB_data->state = X2AP_ENB_STATE_RESETTING;
+      x2ap_eNB_data->eNB_id = eNB_id;
+    }
+  } else {
+    x2ap_eNB_data->state = X2AP_ENB_STATE_RESETTING;
+    /*
+     * eNB has been found in list, consider the x2 setup request as a reset connection,
+     * * * * reseting any previous UE state if sctp association is != than the previous one
+     */
+    if (x2ap_eNB_data->assoc_id != assoc_id) {
+      /*
+       * ??: Send an overload cause...
+       */
+      X2AP_ERROR("Reset Request: eNB id %d is already associated to an active sctp association" "Previous known: %d, new one: %d\n", eNB_id, x2ap_eNB_data->assoc_id, assoc_id);
+
+      return -1;
+    }
+    /*
+     * TODO: call the reset procedure
+     */
+  }
+
+  msg = itti_alloc_new_message(TASK_X2AP, 0, X2AP_RESET_REQ);
+
+  X2AP_RESET_REQ(msg).cause = ie->value.present;
+
 
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);

@@ -37,6 +37,7 @@ import html
 import os
 import re
 import time
+import subprocess
 import sys
 import constants as CONST
 import helpreadme as HELP
@@ -115,7 +116,7 @@ class PhySim:
 		else:
 			imageTag = "develop"
 		# Check if image is exist on the Red Hat server, before pushing it to OC cluster
-		mySSH.command("sudo podman image inspect --format='Size = {{.Size}} bytes' oai-physim:" + imageTag, '\$', 60)
+		mySSH.command('sudo podman image inspect --format="Size = {{.Size}} bytes" oai-physim:' + imageTag, '\$', 60)
 		if mySSH.getBefore().count('no such image') != 0:
 			logging.error('\u001B[1m No such image oai-physim\u001B[0m')
 			mySSH.close()
@@ -264,6 +265,23 @@ class PhySim:
 		for podName in podNames:
 			mySSH.command(f'oc logs {podName} >> cmake_targets/log/physim_test.txt 2>&1', '\$', 15, resync=True)
 		time.sleep(30)
+		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/log/physim_test.txt', '.')
+		try:
+			listLogFiles =  subprocess.check_output('egrep --colour=never "Execution Log file|Linux oai-" physim_test.txt', shell=True, universal_newlines=True)
+			for line in listLogFiles.split('\n'):
+				res1 = re.search('Linux (?P<pod>oai-[a-zA-Z0-9\-]+) ', str(line))
+				res2 = re.search('Execution Log file = (?P<name>[a-zA-Z0-9\-\/\.\_]+)', str(line))
+				if res1 is not None:
+					podName = res1.group('pod')
+				if res2 is not None:
+					logFileInPod = res2.group('name')
+					folderName = re.sub('/opt/oai-physim/cmake_targets/autotests/log/', '', logFileInPod)
+					folderName = re.sub('/test.*', '', folderName)
+					fileName = re.sub('/opt/oai-physim/cmake_targets/autotests/log/' + folderName + '/', '', logFileInPod)
+					mySSH.command('mkdir -p cmake_targets/log/' + folderName, '\$', 5, silent=True)
+					mySSH.command('oc cp ' + podName + ':' + logFileInPod + ' cmake_targets/log/' + folderName + '/' + fileName, '\$', 20, silent=True)
+		except Exception as e:
+			pass
 
 		# UnDeploy the physical simulator pods
 		mySSH.command('helm uninstall physim | tee -a cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
@@ -305,6 +323,7 @@ class PhySim:
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p physim_test_log_' + self.testCase_id, '\$', 5)
 		mySSH.command('cp log/physim_* ' + 'physim_test_log_' + self.testCase_id, '\$', 5)
+		mySSH.command('tar cvf physim_test_log_' + self.testCase_id + '/physim_log.tar log/015*', '\$', 180)
 		if not os.path.exists(f'./physim_test_logs_{self.testCase_id}'):
 			os.mkdir(f'./physim_test_logs_{self.testCase_id}')
 		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/physim_test_log_' + self.testCase_id + '/*', './physim_test_logs_' + self.testCase_id)
