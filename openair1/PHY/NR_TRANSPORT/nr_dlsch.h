@@ -67,9 +67,9 @@ void nr_fill_dlsch(processingData_L1tx_t *msgTx,
                    nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                    unsigned char *sdu); 
 
-uint8_t nr_generate_pdsch(processingData_L1tx_t *msgTx,
-			  int frame,
-			  int slot);
+void nr_generate_pdsch(processingData_L1tx_t *msgTx,
+                       int frame,
+                       int slot);
 void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB);
 
 void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
