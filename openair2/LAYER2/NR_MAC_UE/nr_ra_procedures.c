@@ -966,7 +966,7 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
 
   } else {
 
-    LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CB-RA: Contention Resolution is successful.\n", mod_id, frame, slot);
+    LOG_A(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CB-RA: Contention Resolution is successful.\n", mod_id, frame, slot);
 
     ra->RA_contention_resolution_timer_active = 0;
     mac->crnti = ra->t_crnti;
