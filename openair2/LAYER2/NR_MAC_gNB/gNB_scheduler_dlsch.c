@@ -851,7 +851,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
         frame,
         slot,
         &UE_info->list,
-        2,
+        MAX_MOBILES_PER_GNB,
         n_rb_sched,
         rballoc_mask);
 }

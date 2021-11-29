@@ -1022,7 +1022,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
               nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->gNB_index);
             }
             if (ra->ra_state == WAIT_RAR && !ra->cfra){
-              LOG_I(NR_MAC,"[RAPROC][%d.%d] RA-Msg3 transmitted\n", frame_tx, slot_tx);
+              LOG_A(NR_MAC, "[RAPROC][%d.%d] RA-Msg3 transmitted\n", frame_tx, slot_tx);
               nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->gNB_index);
             }
           }
