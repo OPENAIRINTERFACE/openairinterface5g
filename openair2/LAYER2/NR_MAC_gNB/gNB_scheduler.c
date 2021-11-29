@@ -383,6 +383,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (slot == 0)
     nr_csi_meas_reporting(module_idP, frame, slot);
 
+  // Schedule SRS: check in slot 0 for the whole frame
+  if (slot == 0)
+    nr_schedule_srs(module_idP, frame);
+
   // This schedule RA procedure if not in phy_test mode
   // Otherwise already consider 5G already connected
   if (get_softmodem_params()->phy_test == 0) {
@@ -396,8 +400,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_schedule_ue_spec(module_idP, frame, slot);
 
   nr_schedule_pucch(module_idP, frame, slot);
-
-  nr_schedule_srs(module_idP, frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   

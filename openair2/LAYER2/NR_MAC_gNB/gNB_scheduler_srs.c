@@ -101,13 +101,12 @@ void nr_fill_nfapi_srs(int module_id, int CC_id, int UE_id, sub_frame_t slot, NR
 *
 * PARAMETERS :   module id
 *                frame number for possible SRS reception
-*                slot number for possible SRS reception
 *
 * DESCRIPTION :  It informs the PHY layer that has an SRS to receive.
 *                Only for periodic scheduling yet.
 *
 *********************************************************************/
-void nr_schedule_srs(int module_id, frame_t frame, sub_frame_t slot) {
+void nr_schedule_srs(int module_id, frame_t frame) {
 
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_UE_info_t *UE_info = &nrmac->UE_info;
@@ -119,6 +118,10 @@ void nr_schedule_srs(int module_id, frame_t frame, sub_frame_t slot) {
     NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+    sched_ctrl->sched_srs.frame = -1;
+    sched_ctrl->sched_srs.slot = -1;
+    sched_ctrl->sched_srs.srs_scheduled = false;
 
     if(!UE_info->active[UE_id]) {
       continue;
@@ -170,10 +173,13 @@ void nr_schedule_srs(int module_id, frame_t frame, sub_frame_t slot) {
 
       int n_slots_frame = nr_slots_per_frame[ubwp.subcarrierSpacing];
 
-      // Check if UE transmitted the SRS here
-      if ((frame * n_slots_frame + slot - offset) % period == 0) {
-        LOG_D(NR_MAC,"(%d.%d) Scheduling SRS reception\n", frame, slot);
-        nr_fill_nfapi_srs(module_id, CC_id, UE_id, slot, srs_resource);
+      // Check if UE will transmit the SRS in this frame
+      if ( ((frame - offset/n_slots_frame)*n_slots_frame)%period == 0) {
+        LOG_D(NR_MAC,"(%d.%d) Scheduling SRS reception\n", frame, offset%n_slots_frame);
+        nr_fill_nfapi_srs(module_id, CC_id, UE_id, offset%n_slots_frame, srs_resource);
+        sched_ctrl->sched_srs.frame = frame;
+        sched_ctrl->sched_srs.slot = offset%n_slots_frame;
+        sched_ctrl->sched_srs.srs_scheduled = true;
       }
     }
   }
