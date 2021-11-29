@@ -1388,10 +1388,6 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
   nfapi_nr_ul_dci_request_t *ul_dci_req = &RC.nrmac[module_id]->UL_dci_req[CC_id];
   ul_dci_req->SFN = frame;
   ul_dci_req->Slot = slot;
-  /* a PDCCH PDU groups DCIs per BWP and CORESET. Save a pointer to each
-   * allocated PDCCH so we can easily allocate UE's DCIs independent of any
-   * CORESET order */
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_bwp_coreset[MAX_NUM_BWP][MAX_NUM_CORESET] = {{0}};
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
@@ -1628,7 +1624,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     NR_SearchSpace_t *ss = (sched_ctrl->active_bwp || ubwpd) ? sched_ctrl->search_space: RC.nrmac[module_id]->sched_ctrlCommon->search_space;
     NR_ControlResourceSet_t *coreset = (sched_ctrl->active_bwp || ubwpd) ? sched_ctrl->coreset: RC.nrmac[module_id]->sched_ctrlCommon->coreset;
     const int coresetid = coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = pdcch_pdu_bwp_coreset[bwpid][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = nr_mac->pdcch_pdu_idx[CC_id][coresetid];
     if (!pdcch_pdu) {
       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu = &ul_dci_req->ul_dci_pdu_list[ul_dci_req->numPdus];
       memset(ul_dci_request_pdu, 0, sizeof(nfapi_nr_ul_dci_request_pdus_t));
@@ -1637,7 +1633,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       pdcch_pdu = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
       nr_configure_pdcch(nr_mac, pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
-      pdcch_pdu_bwp_coreset[bwpid][coresetid] = pdcch_pdu;
+      nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu;
     }
 
     LOG_D(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d at CCE %d, rnti %x\n", frame,slot,sched_ctrl->cce_index,rnti);

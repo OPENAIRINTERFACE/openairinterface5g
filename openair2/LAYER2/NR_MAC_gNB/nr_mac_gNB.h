@@ -73,7 +73,7 @@
 
 /* Defs */
 #define MAX_NUM_BWP 2
-#define MAX_NUM_CORESET 2
+#define MAX_NUM_CORESET 12
 #define MAX_NUM_CCE 90
 #define MAX_HARQ_ROUNDS 4
 /*!\brief Maximum number of random access process */
@@ -703,7 +703,7 @@ typedef struct gNB_MAC_INST_s {
   /// a PDCCH PDU groups DCIs per BWP and CORESET. The following structure
   /// keeps pointers to PDCCH PDUs within DL_req so that we can easily track
   /// PDCCH PDUs per CC/BWP/CORESET
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_idx[NFAPI_CC_MAX][MAX_NUM_BWP][MAX_NUM_CORESET];
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_idx[NFAPI_CC_MAX][MAX_NUM_CORESET];
   /// NFAPI UL TTI Request Structure, simple pointer into structure
   /// UL_tti_req_ahead for current frame/slot
   nfapi_nr_ul_tti_request_t        *UL_tti_req[NFAPI_CC_MAX];
@@ -743,7 +743,7 @@ typedef struct gNB_MAC_INST_s {
   /// processing time of eNB PCH scheduler
   time_stats_t schedule_pch;
   /// CCE lists
-  int cce_list[MAX_NUM_BWP][MAX_NUM_CORESET][MAX_NUM_CCE];
+  int cce_list[MAX_NUM_CORESET][MAX_NUM_CCE];
   /// list of allocated beams per period
   int16_t *tdd_beam_association;
 

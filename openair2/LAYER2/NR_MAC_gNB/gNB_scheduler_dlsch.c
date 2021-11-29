@@ -627,7 +627,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
           slot);
     int cid = sched_ctrl->coreset->controlResourceSetId;
     UE_info->num_pdcch_cand[UE_id][cid]--;
-    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp?sched_ctrl->active_bwp->bwp_Id:0][cid];
+    int *cce_list = RC.nrmac[module_id]->cce_list[cid];
     for (int i = 0; i < sched_ctrl->aggregation_level; i++)
       cce_list[sched_ctrl->cce_index + i] = 0;
     return false;
@@ -732,7 +732,6 @@ void pf_dl(module_id_t module_id,
     NR_BWP_DownlinkDedicated_t *bwpd= cg ? cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP:NULL;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    int bwp_Id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
     const uint16_t rnti = UE_info->rnti[UE_id];
     NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
       &sched_ctrl->active_bwp->bwp_Common->genericParameters:
@@ -764,7 +763,7 @@ void pf_dl(module_id_t module_id,
             slot);
       int cid = sched_ctrl->coreset->controlResourceSetId;
       UE_info->num_pdcch_cand[UE_id][cid]--;
-      int *cce_list = mac->cce_list[bwp_Id][cid];
+      int *cce_list = mac->cce_list[cid];
       for (int i = 0; i < sched_ctrl->aggregation_level; i++)
         cce_list[sched_ctrl->cce_index + i] = 0;
       return;
@@ -995,7 +994,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     const int bwpid = bwp ? bwp->bwp_Id : 0;
     const int coresetid = (bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][coresetid];
     if (!pdcch_pdu) {
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -1007,7 +1006,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space:gNB_mac->sched_ctrlCommon->search_space;
       NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
       nr_configure_pdcch(gNB_mac, pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
-      gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu;
+      gNB_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu;
     }
 
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];

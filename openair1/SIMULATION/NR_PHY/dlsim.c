@@ -1038,8 +1038,8 @@ int main(int argc, char **argv)
         
       while ((round<num_rounds) && (UE_harq_process->ack==0)) {
 
-        memset(RC.nrmac[0]->cce_list[1][0],0,MAX_NUM_CCE*sizeof(int));
-        memset(RC.nrmac[0]->cce_list[1][1],0,MAX_NUM_CCE*sizeof(int));
+        memset(RC.nrmac[0]->cce_list[0],0,MAX_NUM_CCE*sizeof(int));
+        memset(RC.nrmac[0]->cce_list[1],0,MAX_NUM_CCE*sizeof(int));
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
 
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].ndi = !(trial&1);

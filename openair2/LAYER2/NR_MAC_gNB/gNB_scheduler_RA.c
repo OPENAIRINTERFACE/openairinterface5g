@@ -780,7 +780,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     nfapi_nr_ul_dci_request_t *ul_dci_req = &nr_mac->UL_dci_req[CC_id];
 
     const int coresetid = coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][ra->bwp_id][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][coresetid];
     if (!pdcch_pdu_rel15) {
       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu = &ul_dci_req->ul_dci_pdu_list[ul_dci_req->numPdus];
       memset(ul_dci_request_pdu, 0, sizeof(nfapi_nr_ul_dci_request_pdus_t));
@@ -789,7 +789,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
       pdcch_pdu_rel15 = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
       nr_configure_pdcch(nr_mac, pdcch_pdu_rel15, ss, coreset, scc, genericParameters, NULL);
-      nr_mac->pdcch_pdu_idx[CC_id][ra->bwp_id][coresetid] = pdcch_pdu_rel15;
+      nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
     }
 
     uint8_t aggregation_level;
@@ -1196,7 +1196,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // important if we have multiple RAs, and the DLSCH has to reuse them, so we need to mark them
     const int bwpid = bwp ? bwp->bwp_Id : 0;
     const int coresetid = coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][coresetid];
     if (!pdcch_pdu_rel15) {
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -1205,7 +1205,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
       nr_configure_pdcch(nr_mac, pdcch_pdu_rel15, ss, coreset, scc, genericParameters, NULL);
-      nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu_rel15;
+      nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
     }
 
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
@@ -1572,7 +1572,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // important if we have multiple RAs, and the DLSCH has to reuse them, so we need to mark them
     const int bwpid = bwp ? bwp->bwp_Id : 0;
     const int coresetid = coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][coresetid];
     if (!pdcch_pdu_rel15) {
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -1581,7 +1581,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
       nr_configure_pdcch(nr_mac, pdcch_pdu_rel15, ss, coreset, scc, genericParameters, NULL);
-      nr_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu_rel15;
+      nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
     }
 
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];

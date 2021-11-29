@@ -358,7 +358,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
           frame,
           slot);
     UE_info->num_pdcch_cand[UE_id][cid]--;
-    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
+    int *cce_list = RC.nrmac[module_id]->cce_list[cid];
     for (int i = 0; i < sched_ctrl->aggregation_level; i++)
       cce_list[sched_ctrl->cce_index + i] = 0;
     return;

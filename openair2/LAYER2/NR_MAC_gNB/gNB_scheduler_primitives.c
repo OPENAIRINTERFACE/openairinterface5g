@@ -218,12 +218,7 @@ int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
 
   int coreset_id = coreset->controlResourceSetId;
 
-  int *cce_list;
-  if(bwp == NULL) {
-    cce_list = nr_mac->cce_list[0][coreset_id];
-  } else {
-    cce_list = nr_mac->cce_list[bwp->bwp_Id][coreset_id];
-  }
+  int *cce_list = nr_mac->cce_list[coreset_id];
 
   int n_rb=0;
   for (int i=0;i<6;i++)
@@ -2410,7 +2405,7 @@ bool find_free_CCE(module_id_t module_id,
   const int cid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid][slot];
   const int m = RC.nrmac[module_id]->UE_info.num_pdcch_cand[UE_id][cid];
-  if (UE_id >= 0) LOG_D(NR_MAC,"calling allocate_nr_CCEs with L %d, nr_of_candidates %d, Y %x\n",sched_ctrl->aggregation_level,nr_of_candidates,Y);
+  if (UE_id >= 0) LOG_D(NR_MAC,"slot %d calling allocate_nr_CCEs with L %d, nr_of_candidates %d, Y %x\n",slot, sched_ctrl->aggregation_level,nr_of_candidates,Y);
   sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
                                            sched_ctrl->active_bwp,
                                            sched_ctrl->coreset,
