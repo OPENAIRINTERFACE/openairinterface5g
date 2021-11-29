@@ -1300,13 +1300,13 @@ void fill_rf_config(RU_t *ru,
       if (fp->threequarter_fs) {
         cfg->sample_rate=23.04e6;
         cfg->samples_per_frame = 230400;
-        cfg->tx_bw = 10e6;
-        cfg->rx_bw = 10e6;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
       } else {
         cfg->sample_rate=30.72e6;
         cfg->samples_per_frame = 307200;
-        cfg->tx_bw = 10e6;
-        cfg->rx_bw = 10e6;
+        cfg->tx_bw = 20e6;
+        cfg->rx_bw = 20e6;
       }
     } else if(ru->numerology == 1) {
       cfg->sample_rate=61.44e6;
@@ -1328,13 +1328,13 @@ void fill_rf_config(RU_t *ru,
   } else if(fp->N_RB_DL == 50) {
     cfg->sample_rate=15.36e6;
     cfg->samples_per_frame = 153600;
-    cfg->tx_bw = 5e6;
-    cfg->rx_bw = 5e6;
+    cfg->tx_bw = 10e6;
+    cfg->rx_bw = 10e6;
   } else if (fp->N_RB_DL == 25) {
     cfg->sample_rate=7.68e6;
     cfg->samples_per_frame = 76800;
-    cfg->tx_bw = 2.5e6;
-    cfg->rx_bw = 2.5e6;
+    cfg->tx_bw = 5e6;
+    cfg->rx_bw = 5e6;
   } else if (fp->N_RB_DL == 6) {
     cfg->sample_rate=1.92e6;
     cfg->samples_per_frame = 19200;
