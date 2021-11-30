@@ -1048,9 +1048,9 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     printf("AbsSubframe %d.%d --> LDPC Decoding for CW0 %5.3f\n",
            frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
 #else
-    LOG_I(PHY, " --> Unscrambling for CW0 %5.3f\n",
+    LOG_D(PHY, " --> Unscrambling for CW0 %5.3f\n",
           (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-    LOG_I(PHY, "AbsSubframe %d.%d --> LDPC Decoding for CW0 %5.3f\n",
+    LOG_D(PHY, "AbsSubframe %d.%d --> LDPC Decoding for CW0 %5.3f\n",
           frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
 #endif
 
