@@ -375,19 +375,21 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  if (servingcellconfigdedicated) {
    bwp=servingcellconfigdedicated->downlinkBWP_ToAddModList->list.array[bwp_loop];
  } else {
-   secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList));
-
-   bwp=calloc(1,sizeof(*bwp));
-    // copy common BWP size from initial BWP except for bandwdith
-   bwp->bwp_Id = bwp_loop +1;
+   if(secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList == NULL){
+     secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList));
+   }
+   bwp = calloc(1,sizeof(*bwp));
+   bwp->bwp_Common = calloc(1,sizeof(*bwp->bwp_Common));
+   bwp->bwp_Id = bwp_loop + 1;
  }
- if(bwp->bwp_Common->genericParameters.subcarrierSpacing == 0 || bwp->bwp_Common->genericParameters.locationAndBandwidth == 0)
- {
-    memcpy((void*)&bwp->bwp_Common->genericParameters,
-    &servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters,
-    sizeof(bwp->bwp_Common->genericParameters));
-    bwp->bwp_Common->genericParameters.subcarrierSpacing = 1;  
-    bwp->bwp_Common->genericParameters.locationAndBandwidth=PRBalloc_to_locationandbandwidth(servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,0);
+
+ if ( bwp->bwp_Common->genericParameters.subcarrierSpacing == 0 && bwp->bwp_Common->genericParameters.locationAndBandwidth == 0 ) {
+   // copy common BWP size from initial BWP except for bandwdith
+   memcpy((void*)&bwp->bwp_Common->genericParameters,
+          &servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters,
+          sizeof(bwp->bwp_Common->genericParameters));
+   bwp->bwp_Common->genericParameters.subcarrierSpacing = 1;
+   bwp->bwp_Common->genericParameters.locationAndBandwidth=PRBalloc_to_locationandbandwidth(servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,0);
  }
 
  bwp->bwp_Common->pdcch_ConfigCommon=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon));
@@ -858,16 +860,22 @@ if (!servingcellconfigdedicated) {
  if (servingcellconfigdedicated) {
    ubwp = servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_loop];
  } else {
-   secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList));
+   if (secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList == NULL) {
+     secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList));
+   }
    ubwp = calloc(1,sizeof(*ubwp));
+   ubwp->bwp_Common = calloc(1,sizeof(*ubwp->bwp_Common));
+   ubwp->bwp_Id = bwp_loop + 1;
  }
- ubwp->bwp_Id=bwp_loop+1;
- ubwp->bwp_Common = calloc(1,sizeof(*ubwp->bwp_Common));
- // copy bwp_Common from Initial UL BWP except for bandwidth
- memcpy((void*)&ubwp->bwp_Common->genericParameters,
-	(void*)&servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->genericParameters,
-	sizeof(servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->genericParameters));
- ubwp->bwp_Common->genericParameters.locationAndBandwidth=PRBalloc_to_locationandbandwidth(servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,0);
+
+ if ( ubwp->bwp_Common->genericParameters.subcarrierSpacing == 0 && ubwp->bwp_Common->genericParameters.locationAndBandwidth == 0 ) {
+   // copy bwp_Common from Initial UL BWP except for bandwidth
+   memcpy((void*)&ubwp->bwp_Common->genericParameters,
+          (void*)&servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->genericParameters,
+          sizeof(servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->genericParameters));
+   ubwp->bwp_Common->genericParameters.subcarrierSpacing = 1;
+   ubwp->bwp_Common->genericParameters.locationAndBandwidth=PRBalloc_to_locationandbandwidth(servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,0);
+ }
 
  ubwp->bwp_Common->rach_ConfigCommon  = servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon;
  ubwp->bwp_Common->pusch_ConfigCommon = servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon;
