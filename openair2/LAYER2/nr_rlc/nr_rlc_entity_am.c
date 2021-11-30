@@ -1751,6 +1751,9 @@ static void check_t_reassembly(nr_rlc_entity_am_t *entity)
     sn = (sn + 1) % entity->sn_modulus;
   entity->rx_highest_status = sn;
 
+  /* trigger status report */
+  entity->status_triggered = 1;
+
   if (sn_compare_rx(entity, entity->rx_next_highest,
                     (entity->rx_highest_status+1) % entity->sn_modulus) > 0 ||
       (entity->rx_next_highest ==
