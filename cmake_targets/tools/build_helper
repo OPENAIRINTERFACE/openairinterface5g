@@ -731,7 +731,6 @@ check_install_oai_software() {
         ninja-build \
 	doxygen \
 	doxygen-gui \
-	texlive-latex-base \
 	ethtool \
 	flex  \
 	gdb  \
