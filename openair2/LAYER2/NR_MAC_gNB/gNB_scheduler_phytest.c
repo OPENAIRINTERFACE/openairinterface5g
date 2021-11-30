@@ -334,7 +334,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = UE_info->Y[UE_id][cid][slot];
+  const uint16_t Y = UE_info->Y[UE_id][cid%3][slot];
   const int m = UE_info->num_pdcch_cand[UE_id][cid];
   sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
                                   sched_ctrl->active_bwp,
@@ -501,7 +501,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = UE_info->Y[UE_id][cid][slot];
+  const uint16_t Y = UE_info->Y[UE_id][cid%3][slot];
   const int m = UE_info->num_pdcch_cand[UE_id][cid];
   sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
                                            sched_ctrl->active_bwp,
