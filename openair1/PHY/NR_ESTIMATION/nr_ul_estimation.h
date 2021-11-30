@@ -62,4 +62,14 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                               uint8_t nr_tti_rx,
                               unsigned char symbol,
                               uint32_t nb_re_pusch);
+
+int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
+                              int frame,
+                              int slot,
+                              nfapi_nr_srs_pdu_t *srs_pdu,
+                              nr_srs_info_t *nr_srs_info,
+                              int32_t *srs_generated_signal,
+                              int32_t **srs_received_signal,
+                              int32_t **srs_estimated_channel,
+                              double *noise_power);
 #endif

@@ -120,6 +120,7 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
 
   if(nr_srs_info) {
     nr_srs_info->n_symbs = 0;
+    nr_srs_info->srs_generated_signal_bits = log2_approx(amp);
   }
 
 #ifdef SRS_DEBUG

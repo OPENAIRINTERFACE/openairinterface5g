@@ -804,6 +804,14 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         }
 
         nr_get_srs_signal(gNB,frame_rx,slot_rx,srs_pdu, gNB->nr_srs_info[i], gNB->nr_srs_info[i]->srs_received_signal);
+
+        nr_srs_channel_estimation(gNB,frame_rx,slot_rx,srs_pdu,
+                                  gNB->nr_srs_info[i],
+                                  gNB->nr_srs_info[i]->srs_generated_signal,
+                                  gNB->nr_srs_info[i]->srs_received_signal,
+                                  gNB->nr_srs_info[i]->srs_estimated_channel,
+                                  gNB->nr_srs_info[i]->noise_power);
+
         srs->active = 0;
       }
     }

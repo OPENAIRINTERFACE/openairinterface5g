@@ -198,9 +198,14 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
     gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
     gNB->nr_srs_info[id]->srs_generated_signal = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
+    gNB->nr_srs_info[id]->noise_power = (double*)malloc16_clear(sizeof(double));
     gNB->nr_srs_info[id]->srs_received_signal = (int32_t **)malloc16(Prx*sizeof(int32_t*));
+    gNB->nr_srs_info[id]->srs_ls_estimated_channel = (int32_t **)malloc16(Prx*sizeof(int32_t*));
+    gNB->nr_srs_info[id]->srs_estimated_channel = (int32_t **)malloc16(Prx*sizeof(int32_t*));
     for (i=0;i<Prx;i++){
       gNB->nr_srs_info[id]->srs_received_signal[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
+      gNB->nr_srs_info[id]->srs_ls_estimated_channel[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
+      gNB->nr_srs_info[id]->srs_estimated_channel[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
     }
   }
 
