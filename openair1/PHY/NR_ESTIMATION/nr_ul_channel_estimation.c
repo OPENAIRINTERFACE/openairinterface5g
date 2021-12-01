@@ -1136,13 +1136,24 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
 
       srs_ls_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx] + subcarrier_offset] = ls_estimated[0] + (((int32_t)ls_estimated[1]<<16)&0xFFFF0000);
 
-      if(sc_idx == 0) {
-        multadd_real_vector_complex_scalar(filt8_l0, ls_estimated, srs_estimated_channel16, 8);
-      } else if(sc_idx%2 == 1) {
-        multadd_real_vector_complex_scalar(filt8_m0, ls_estimated, srs_estimated_channel16, 8);
-      } else if(sc_idx%2 == 0) {
-        multadd_real_vector_complex_scalar(filt8_mm0, ls_estimated, srs_estimated_channel16, 8);
-        srs_estimated_channel16+=8;
+      // Channel interpolation
+      if(srs_pdu->comb_size == 0) {
+        if(sc_idx == 0) {
+          multadd_real_vector_complex_scalar(filt8_l0, ls_estimated, srs_estimated_channel16, 8);
+        } else if(sc_idx%2 == 1) {
+          multadd_real_vector_complex_scalar(filt8_m0, ls_estimated, srs_estimated_channel16, 8);
+        } else if(sc_idx%2 == 0) {
+          multadd_real_vector_complex_scalar(filt8_mm0, ls_estimated, srs_estimated_channel16, 8);
+          srs_estimated_channel16+=8;
+        }
+      } else {
+        if(sc_idx>0) {
+          multadd_real_vector_complex_scalar(filt8_dcr0_h, ls_estimated, srs_estimated_channel16, 8);
+          srs_estimated_channel16+=8;
+          srs_estimated_channel16[0] = 0;
+          srs_estimated_channel16[1] = 0;
+        }
+        multadd_real_vector_complex_scalar(filt8_dcl0_h, ls_estimated, srs_estimated_channel16, 8);
       }
 
 #ifdef SRS_DEBUG
