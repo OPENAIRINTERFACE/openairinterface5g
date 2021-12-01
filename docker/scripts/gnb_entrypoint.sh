@@ -7,8 +7,8 @@ ENABLE_X2=${ENABLE_X2:-yes}
 THREAD_PARALLEL_CONFIG=${THREAD_PARALLEL_CONFIG:-PARALLEL_SINGLE_THREAD}
 
 # Based another env var, pick one template to use
-if [[ -v USE_NSA_TDD_MONO ]]; then ln -s $PREFIX/etc/gnb.nsa.tdd.conf $PREFIX/etc/gnb.conf; fi
-if [[ -v USE_SA_TDD_MONO ]]; then ln -s $PREFIX/etc/gnb.sa.tdd.conf $PREFIX/etc/gnb.conf; fi
+if [[ -v USE_NSA_TDD_MONO ]]; then cp $PREFIX/etc/gnb.nsa.tdd.conf $PREFIX/etc/gnb.conf; fi
+if [[ -v USE_SA_TDD_MONO ]]; then cp $PREFIX/etc/gnb.sa.tdd.conf $PREFIX/etc/gnb.conf; fi
 
 # Only this template will be manipulated
 CONFIG_FILES=`ls $PREFIX/etc/gnb.conf || true`
@@ -37,11 +37,11 @@ done
 
 # Load the USRP binaries
 if [[ -v USE_B2XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t b2xx
+    $PREFIX/bin/uhd_images_downloader.py -t b2xx
 elif [[ -v USE_X3XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t x3xx
+    $PREFIX/bin/uhd_images_downloader.py -t x3xx
 elif [[ -v USE_N3XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t n3xx
+    $PREFIX/bin/uhd_images_downloader.py -t n3xx
 fi
 
 echo "=================================="

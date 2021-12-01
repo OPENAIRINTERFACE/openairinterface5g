@@ -40,6 +40,9 @@
 
 #include "NR_SubcarrierSpacing.h"
 
+#define NR_SHORT_BSR_TABLE_SIZE 32
+#define NR_LONG_BSR_TABLE_SIZE 256
+
 #define TABLE_38213_13_1_NUM_INDEXES 15
 #define TABLE_38213_13_2_NUM_INDEXES 14
 #define TABLE_38213_13_3_NUM_INDEXES 9
@@ -64,6 +67,11 @@ typedef enum frequency_range_e {
   FR1 = 0,
   FR2
 } frequency_range_t;
+
+#define NR_BSR_TRIGGER_NONE      (0) /* No BSR Trigger */
+#define NR_BSR_TRIGGER_REGULAR   (1) /* For Regular and ReTxBSR Expiry Triggers */
+#define NR_BSR_TRIGGER_PERIODIC  (2) /* For BSR Periodic Timer Expiry Trigger */
+#define NR_BSR_TRIGGER_PADDING   (4) /* For Padding BSR Trigger */
 
 //  For both DL/UL-SCH
 //  Except:

@@ -1,19 +1,22 @@
+"""
+To create graphs and pickle from runtime statistics in L1,MAC,RRC,PDCP files
+"""
+
 import subprocess
 import time
 import shlex
 import re
 import sys
-import matplotlib.pyplot as plt
 import pickle
+import matplotlib.pyplot as plt
 import numpy as np
-import os
 import yaml
 
 
-class Stat_Monitor():
+class StatMonitor():
     def __init__(self,):
-        with open('stats_monitor_conf.yaml','r') as f:
-            self.d = yaml.load(f)
+        with open('stats_monitor_conf.yaml','r') as file:
+            self.d = yaml.load(file)
         for node in self.d:
             for metric in self.d[node]:
                 self.d[node][metric]=[]
@@ -45,9 +48,6 @@ class Stat_Monitor():
                 self.d[node_type]['mcs'].append(int(result.group(4)))
 
 
-
-
-
     def collect(self,node_type):
         if node_type=='enb':
             cmd='cat L1_stats.log MAC_stats.log PDCP_stats.log RRC_stats.log'
@@ -58,12 +58,12 @@ class Stat_Monitor():
         if node_type=='enb':
             self.process_enb(node_type,output)
         else: #'gnb'
-            self.process_gnb(node_type,output)          
+            self.process_gnb(node_type,output)
+
 
     def graph(self,node_type):
-
         col = 1
-        figure, axis = plt.subplots(len(self.d[node_type]), col ,figsize=(10, 10)) 
+        figure, axis = plt.subplots(len(self.d[node_type]), col ,figsize=(10, 10))
         i=0
         for metric in self.d[node_type]:
             major_ticks = np.arange(0, len(self.d[node_type][metric])+1, 1)
@@ -74,7 +74,7 @@ class Stat_Monitor():
             axis[i].set_ylabel(metric)
             axis[i].set_title(metric)
             i+=1
-  
+
         plt.tight_layout()
         # Combine all the operations and display
         plt.savefig(node_type+'_stats_monitor.png')
@@ -83,21 +83,19 @@ class Stat_Monitor():
 
 if __name__ == "__main__":
 
-    node_type = sys.argv[1]#enb or gnb
-    mon=Stat_Monitor()
+    node = sys.argv[1]#enb or gnb
+    mon=StatMonitor()
 
     #collecting stats when modem process is stopped
-    cmd='ps aux | grep mode | grep -v grep'
-    process=subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    CMD='ps aux | grep mode | grep -v grep'
+    process=subprocess.Popen(CMD, shell=True, stdout=subprocess.PIPE)
     output = process.stdout.readlines()
     while len(output)!=0 :
-        mon.collect(node_type)
-        process=subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        mon.collect(node)
+        process=subprocess.Popen(CMD, shell=True, stdout=subprocess.PIPE)
         output = process.stdout.readlines()
         time.sleep(1)
     print('Process stopped')
-    with open(node_type+'_stats_monitor.pickle', 'wb') as handle:
+    with open(node+'_stats_monitor.pickle', 'wb') as handle:
         pickle.dump(mon.d, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    mon.graph(node_type)
-
-
+    mon.graph(node)

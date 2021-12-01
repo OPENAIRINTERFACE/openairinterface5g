@@ -1,0 +1,12 @@
+version: '2'
+services:
+  mysql:
+    container_name: oaicicd_mysql
+    restart: always
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: 'ucZBc2XRYdvEm59F' 
+    ports: 
+      - "3307:3306"
+    volumes:
+      - /home/oaicicd/mysql/data:/var/lib/mysql

@@ -30,6 +30,7 @@
  * \warning
  */
 #include "fapi_nr_l1.h"
+#include "common/ran_context.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
@@ -146,7 +147,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
 
-  gNB         = RC.gNB[Mod_id];
+  gNB = RC.gNB[Mod_id];
 
   notifiedFIFO_elt_t *res;
   res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
@@ -184,7 +185,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
         case NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE:
           AssertFatal(pdcch_received == 0, "pdcch_received is not 0, we can only handle one PDCCH PDU per slot\n");
           msgTx->pdcch_pdu = dl_tti_pdu->pdcch_pdu;
-   
+
           pdcch_received = 1;
           break;
 

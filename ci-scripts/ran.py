@@ -165,16 +165,16 @@ class RANManagement():
 			result = re.search('LAST_BUILD_INFO', mySSH.getBefore())
 			if result is not None:
 				mismatch = False
-				mySSH.command('grep SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
+				mySSH.command('grep --colour=never SRC_COMMIT LAST_BUILD_INFO.txt', '\$', 2)
 				result = re.search(self.ranCommitID, mySSH.getBefore())
 				if result is None:
 					mismatch = True
-				mySSH.command('grep MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+				mySSH.command('grep --colour=never MERGED_W_TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
 				if (self.ranAllowMerge):
 					result = re.search('YES', mySSH.getBefore())
 					if result is None:
 						mismatch = True
-					mySSH.command('grep TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
+					mySSH.command('grep --colour=never TGT_BRANCH LAST_BUILD_INFO.txt', '\$', 2)
 					if self.ranTargetBranch == '':
 						result = re.search('develop', mySSH.getBefore())
 					else:
@@ -374,7 +374,7 @@ class RANManagement():
 				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
 				pcapfile = pcapfile_prefix + self.testCase_id + '_log.pcap'
 				mySSH.command('echo ' + lPassWord + ' | sudo -S rm -f /tmp/' + pcapfile , '\$', 5)
-				mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -w /tmp/' + pcapfile + ' 2>&1 &','\$', 5)
+				mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -w /tmp/' + pcapfile + ' > /dev/null 2>&1 &','\$', 5)
 			mySSH.close()
 			
 
@@ -423,13 +423,13 @@ class RANManagement():
 		# do not reset board twice in IF4.5 case
 		result = re.search('^rru|^enb|^du.band', str(config_file))
 		if result is not None:
-			mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 90)
+			mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 180)
 			result = re.search('type: b200', mySSH.getBefore())
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
 				mySSH.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
 				# Reloading FGPA bin firmware
-				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 90)
+				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 180)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		mySSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		localMmeIpAddr = EPC.MmeIPAddress
@@ -446,7 +446,7 @@ class RANManagement():
 		else:
 			mySSH.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "no";/\' ' + ci_full_config_file, '\$', 2);
 		self.eNBmbmsEnables[int(self.eNB_instance)] = False
-		mySSH.command('grep enable_enb_m2 ' + ci_full_config_file, '\$', 2);
+		mySSH.command('grep --colour=never enable_enb_m2 ' + ci_full_config_file, '\$', 2);
 		result = re.search('yes', mySSH.getBefore())
 		if result is not None:
 			self.eNBmbmsEnables[int(self.eNB_instance)] = True
@@ -593,8 +593,12 @@ class RANManagement():
 				lPassWord = self.eNBPassword
 			mySSH = SSH.SSHConnection()
 			mySSH.open(lIpAddr, lUserName, lPassWord)
-			mySSH.command('stdbuf -o0 ps -aux | grep --color=never ' + self.air_interface[self.eNB_instance] + ' | grep -v grep', '\$', 5)
-			result = re.search(self.air_interface[self.eNB_instance], mySSH.getBefore())
+			if self.air_interface[self.eNB_instance] == '':
+				pattern = 'softmodem'
+			else:
+				pattern = self.air_interface[self.eNB_instance]
+			mySSH.command('stdbuf -o0 ps -aux | grep --color=never ' + pattern + ' | grep -v grep', '\$', 5)
+			result = re.search(pattern, mySSH.getBefore())
 			if result is None:
 				logging.debug('\u001B[1;37;41m eNB Process Not Found! \u001B[0m')
 				status_queue.put(CONST.ENB_PROCESS_FAILED)
@@ -705,7 +709,7 @@ class RANManagement():
 					#debug / tentative
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './nrL1_stats.log', self.eNBSourceCodePath + '/cmake_targets/')
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './nrMAC_stats.log', self.eNBSourceCodePath + '/cmake_targets/')
-					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.pickle.pickle', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.pickle', self.eNBSourceCodePath + '/cmake_targets/')
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.png', self.eNBSourceCodePath + '/cmake_targets/')
 					#
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
@@ -734,8 +738,8 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor.png', '\$', 60)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *.pickle *.png', '\$', 5)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png log/*/*.log log/*/*.pcap', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png log/*/*.log log/*/*.pcap', '\$', 15)
 		mySSH.close()
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML):
@@ -792,26 +796,25 @@ class RANManagement():
 		pb_receiving_samples_cnt = 0
 		#count "removing UE" msg
 		removing_ue = 0
+		#count"X2AP-PDU"
+		x2ap_pdu = 0
 		#NSA specific log markers
 		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
+		nodeB_prefix_found = False
 	
-		#the datalog config file has to be loaded
-		datalog_rt_stats_file='datalog_rt_stats.yaml'
-		if (os.path.isfile(datalog_rt_stats_file)):
-			yaml_file=datalog_rt_stats_file
-		elif (os.path.isfile('ci-scripts/'+datalog_rt_stats_file)):
-			yaml_file='ci-scripts/'+datalog_rt_stats_file
-		else:
-			logging.error("Datalog RT stats yaml file cannot be found")
-			sys.exit("Datalog RT stats yaml file cannot be found")
-
-		with open(yaml_file,'r') as f:
-			datalog_rt_stats = yaml.load(f,Loader=yaml.FullLoader)
-		rt_keys = datalog_rt_stats['Ref'] #we use the keys from the Ref field  
-
 		line_cnt=0 #log file line counter
 		for line in enb_log_file.readlines():
 			line_cnt+=1
+			# Detection of eNB/gNB from a container log
+			result = re.search('Starting eNB soft modem', str(line))
+			if result is not None:
+				nodeB_prefix_found = True
+				nodeB_prefix = 'e'
+			result = re.search('Starting gNB soft modem', str(line))
+			if result is not None:
+				nodeB_prefix_found = True
+				nodeB_prefix = 'g'
+			result = re.search('Run time:' ,str(line))
 			# Runtime statistics
 			result = re.search('Run time:' ,str(line))
 			if result is not None:
@@ -975,15 +978,7 @@ class RANManagement():
 				if result is not None:
 					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
 					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
-			#real time statistics for gNB
-			for k in rt_keys:
-				result = re.search(k, line)     
-				if result is not None:
-					#remove 1- all useless char before relevant info  2- trailing char
-					line=line.replace('[0m','')
-					tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex
-					if tmp!=None: #with ULULULUULULULLLL at the head of the line, we skip it
-						real_time_stats[k]=tmp.group(1)
+
 
 			#count "problem receiving samples" msg
 			result = re.search('\[PHY\]\s+problem receiving samples', str(line))
@@ -993,7 +988,10 @@ class RANManagement():
 			result = re.search('\[MAC\]\s+Removing UE', str(line))
 			if result is not None:
 				removing_ue += 1
-
+			#count "X2AP-PDU"
+			result = re.search('X2AP-PDU', str(line))
+			if result is not None:
+				x2ap_pdu += 1
 			#nsa markers logging
 			for k in nsa_markers:
 				result = re.search(k, line)
@@ -1001,11 +999,60 @@ class RANManagement():
 					nsa_markers[k].append(line_cnt)					
 
 		enb_log_file.close()
-		logging.debug('   File analysis completed')
-		if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
-			nodeB_prefix = 'e'
+
+
+		#the following part takes the *_stats.log files as source (not the stdout log file)
+
+		#the datalog config file has to be loaded
+		datalog_rt_stats_file='datalog_rt_stats.yaml'
+		if (os.path.isfile(datalog_rt_stats_file)):
+			yaml_file=datalog_rt_stats_file
+		elif (os.path.isfile('ci-scripts/'+datalog_rt_stats_file)):
+			yaml_file='ci-scripts/'+datalog_rt_stats_file
 		else:
-			nodeB_prefix = 'g'
+			logging.error("Datalog RT stats yaml file cannot be found")
+			sys.exit("Datalog RT stats yaml file cannot be found")
+
+		with open(yaml_file,'r') as f:
+			datalog_rt_stats = yaml.load(f,Loader=yaml.FullLoader)
+		rt_keys = datalog_rt_stats['Ref'] #we use the keys from the Ref field  
+
+		if (os.path.isfile('./nrL1_stats.log')) and (os.path.isfile('./nrL1_stats.log')):
+			stat_files_present=True
+		else:
+			stat_files_present=False
+			logging.debug("NR Stats files for RT analysis not found")
+		if stat_files_present:
+			nrL1_stats = open('./nrL1_stats.log', 'r')
+			nrMAC_stats = open('./nrMAC_stats.log', 'r')
+			for line in nrL1_stats.readlines():
+				for k in rt_keys:
+					result = re.search(k, line)     
+					if result is not None:
+						#remove 1- all useless char before relevant info  2- trailing char
+						tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex
+						if tmp!=None: 
+							real_time_stats[k]=tmp.group(1)
+			for line in nrMAC_stats.readlines():
+				for k in rt_keys:
+					result = re.search(k, line)     
+					if result is not None:
+						#remove 1- all useless char before relevant info  2- trailing char
+						tmp=re.match(rf'^.*?(\b{k}\b.*)',line.rstrip()) #from python 3.6 we can use literal string interpolation for the variable k, using rf' in the regex
+						if tmp!=None: 
+							real_time_stats[k]=tmp.group(1)
+			nrL1_stats.close()
+			nrMAC_stats.close()
+
+		#stdout log file and stat log files analysis completed
+		logging.debug('   File analysis (stdout, stats) completed')
+
+		#post processing depending on the node type
+		if not nodeB_prefix_found:
+			if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
+				nodeB_prefix = 'e'
+			else:
+				nodeB_prefix = 'g'
 
 		if nodeB_prefix == 'g':
 			if ulschReceiveOK > 0:
@@ -1084,6 +1131,11 @@ class RANManagement():
 		else:
 			#Removing UE log
 			statMsg = '[MAC] Removing UE msg count =  '+str(removing_ue)
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			#X2AP-PDU log
+			statMsg = 'X2AP-PDU msg count =  '+str(x2ap_pdu)
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg

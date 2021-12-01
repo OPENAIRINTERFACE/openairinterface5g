@@ -40,6 +40,7 @@
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "executables/softmodem-common.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp.h"
+#include <pthread.h>
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 
@@ -52,8 +53,9 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
     //init mac here
     nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(sizeof(NR_UE_MAC_INST_t),NB_NR_UE_MAC_INST);
 
-    for (int j=0;j<NB_NR_UE_MAC_INST;j++)
-	for (int i=0;i<NR_MAX_HARQ_PROCESSES;i++) nr_ue_mac_inst[j].first_ul_tx[i]=1;
+    for (int j=0;j<NB_NR_UE_MAC_INST;j++) {
+	nr_ue_init_mac(j);
+    }
 
 
     if (rrc_inst && rrc_inst->scell_group_config) {
@@ -73,6 +75,8 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
           num_slots_ul++;
         LOG_D(MAC, "Initializing ul_config_request. num_slots_ul = %d\n", num_slots_ul);
         nr_ue_mac_inst->ul_config_request = (fapi_nr_ul_config_request_t *)calloc(num_slots_ul, sizeof(fapi_nr_ul_config_request_t));
+        for (int i=0; i<num_slots_ul; i++)
+          pthread_mutex_init(&(nr_ue_mac_inst->ul_config_request[i].mutex_ul_config), NULL);
       }
     }
     else {

@@ -1,0 +1,156 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>TEST-SA-FR1-Tab2</htmlTabRef>
+	<htmlTabName>SA Staged DL with QUECTEL</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>1</repeatCount>
+	<TestCaseRequestedList>
+ 040000
+ 000002
+ 010000
+ 000001
+ 050000
+ 000001
+ 070000
+ 000001
+ 070001
+ 000001
+ 070002
+ 000001
+ 070003
+ 000001
+ 070004
+ 000001
+ 010002
+ 080000
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="010000">
+		<class>Initialize_UE</class>
+		<desc>Initialize Quectel</desc>
+		<id>nrmodule2_quectel</id>
+		<UE_Trace>yes</UE_Trace>
+	</testCase>
+
+
+	<testCase id="010002">
+		<class>Terminate_UE</class>
+		<desc>Terminate Quectel</desc>
+		<id>nrmodule2_quectel</id>
+	</testCase>
+
+
+	<testCase id="040000">
+		<class>Initialize_eNB</class>
+		<desc>Initialize gNB</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.2x2.usrpn310.conf --sa -q --usrp-tx-thread-config 1 --thread-pool 0,2,4,6</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+		<air_interface>nr</air_interface>
+		<eNB_Trace>yes</eNB_Trace>
+		<eNB_Stats>yes</eNB_Stats>
+		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
+	</testCase>
+
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="000002">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>20</idle_sleep_time_in_sec>
+	</testCase>
+
+
+	<testCase id="050000">
+		<class>Ping</class>
+		<desc>Ping: 20pings in 20sec</desc>
+		<id>nrmodule2_quectel</id>
+		<ping_args>-c 20</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+
+	<testCase id="070000">
+		<class>Iperf</class>
+		<desc>iperf (DL/10Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 10M -t 30</iperf_args>
+		<direction>DL</direction>
+		<id>nrmodule2_quectel</id>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+	<testCase id="070001">
+		<class>Iperf</class>
+		<desc>iperf (DL/20Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 20M -t 30</iperf_args>
+		<direction>DL</direction>
+		<id>nrmodule2_quectel</id>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+	<testCase id="070002">
+		<class>Iperf</class>
+		<desc>iperf (DL/40Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 40M -t 30</iperf_args>
+		<direction>DL</direction>
+		<id>nrmodule2_quectel</id>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+	<testCase id="070003">
+		<class>Iperf</class>
+		<desc>iperf (DL/60Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 60M -t 30</iperf_args>
+		<direction>DL</direction>
+		<id>nrmodule2_quectel</id>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+	<testCase id="070004">
+		<class>Iperf</class>
+		<desc>iperf (DL/90Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 90M -t 30</iperf_args>
+		<direction>DL</direction>
+		<id>nrmodule2_quectel</id>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+
+
+	<testCase id="080000">
+		<class>Terminate_eNB</class>
+		<desc>Terminate gNB</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+		<air_interface>nr</air_interface>
+	</testCase>
+
+</testCaseList>
+

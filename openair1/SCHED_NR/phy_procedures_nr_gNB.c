@@ -65,7 +65,7 @@ void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME
 
   fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + sco);
   LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,sco);
-}   
+}
 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_dl_tti_ssb_pdu ssb_pdu) {
 
@@ -250,7 +250,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   }
 
   //int dumpsig=0;
-  // if all segments are done 
+  // if all segments are done
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
       LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for SFN/SF %d.%d (pid %d, ndi %d, status %d, round %d, TBS %d, Max interation (all seg) %d)\n",
@@ -263,14 +263,16 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0,0);
       //dumpsig=1;
     } else {
-      LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, prb_start %d, prb_size %d, TBS %d) r %d\n",
+      LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, ndi %d, status %d, round %d, RV %d, prb_start %d, prb_size %d, TBS %d) r %d\n",
             gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
-            rdata->harq_pid,ulsch_harq->status, 
-	    ulsch_harq->round,
-	    ulsch_harq->ulsch_pdu.rb_start,
-	    ulsch_harq->ulsch_pdu.rb_size,
-	    ulsch_harq->TBS,
-	    r);
+            rdata->harq_pid, pusch_pdu->pusch_data.new_data_indicator, ulsch_harq->status,
+	          ulsch_harq->round,
+            ulsch_harq->ulsch_pdu.pusch_data.rv_index,
+	          ulsch_harq->ulsch_pdu.rb_start,
+	          ulsch_harq->ulsch_pdu.rb_size,
+	          ulsch_harq->TBS,
+	          r);
+      ulsch_harq->round++;
       if (ulsch_harq->round >= ulsch->Mlimit) {
         ulsch_harq->status = SCH_IDLE;
         ulsch_harq->round  = 0;
@@ -282,7 +284,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 1,0);
     }
-/*    
+/*
     if (ulsch_harq->ulsch_pdu.mcs_index == 9 && dumpsig==1) {
 #ifdef __AVX2__
       int off = ((ulsch_harq->ulsch_pdu.rb_size&1) == 1)? 4:0;
@@ -401,8 +403,6 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
-  int timing_advance_update, cqi;
-  int sync_pos;
   NR_gNB_ULSCH_t                       *ulsch                 = gNB->ulsch[ULSCH_id][0];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
   NR_gNB_SCH_STATS_t *stats=get_ulsch_stats(gNB,ulsch);
@@ -410,19 +410,20 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   nfapi_nr_pusch_pdu_t *pusch_pdu = &harq_process->ulsch_pdu;
 
   //  pdu->data                              = gNB->ulsch[ULSCH_id+1][0]->harq_processes[harq_pid]->b;
-  sync_pos                               = nr_est_timing_advance_pusch(gNB, ULSCH_id); // estimate timing advance for MAC
+  int sync_pos = nr_est_timing_advance_pusch(gNB, ULSCH_id); // estimate timing advance for MAC
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   uint16_t bw_scaling = 16 * gNB->frame_parms.ofdm_symbol_size / 2048;
-  int sync_pos_rounded;
+
   // do some integer rounding to improve TA accuracy
+  int sync_pos_rounded;
   if (sync_pos > 0)
     sync_pos_rounded = sync_pos + (bw_scaling / 2) - 1;
   else
-    sync_pos_rounded = sync_pos - (bw_scaling / 2) - 1;
+    sync_pos_rounded = sync_pos - (bw_scaling / 2) + 1;
   if (stats) stats->sync_pos = sync_pos;
 
-  timing_advance_update = sync_pos_rounded / bw_scaling;
+  int timing_advance_update = sync_pos_rounded / bw_scaling;
 
   // put timing advance command in 0..63 range
   timing_advance_update += 31;
@@ -447,6 +448,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   LOG_D(PHY, "Estimated SNR for PUSCH is = %f dB (ulsch_power %f, noise %f)\n", SNRtimes10/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot)/10.0,dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot)/10.0);
 
+  int cqi;
   if      (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
   else                        cqi=(640+SNRtimes10)/5;
@@ -484,8 +486,8 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
       }
       exit(-1);
 
-    } 
- 
+    }
+
   // crc indication
   uint16_t num_crc = gNB->UL_INFO.crc_ind.number_crcs;
   gNB->UL_INFO.crc_ind.crc_list = &gNB->crc_pdu_list[0];
@@ -532,9 +534,9 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   int rb = 0;
   int rb2 = 0;
-  int prbpos;
+  int prbpos = 0;
 
-  for (int symbol=0;symbol<14;symbol++)
+  for (int symbol=0;symbol<14;symbol++) {
     for (int m=0;m<9;m++) {
       gNB->rb_mask_ul[symbol][m] = 0;
       for (int i=0;i<32;i++) {
@@ -543,6 +545,8 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         gNB->rb_mask_ul[symbol][m] |= (gNB->ulprbbl[prbpos]>0 ? 1 : 0)<<i;
       }
     }
+  }
+
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
@@ -678,7 +682,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
           nr_decode_pucch0(gNB,
-	                   frame_rx,
+                           frame_rx,
                            slot_rx,
                            uci_pdu_format0,
                            pucch_pdu);

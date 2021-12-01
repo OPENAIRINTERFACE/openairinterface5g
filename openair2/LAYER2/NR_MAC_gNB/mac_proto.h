@@ -31,8 +31,6 @@
 #ifndef __LAYER2_NR_MAC_PROTO_H__
 #define __LAYER2_NR_MAC_PROTO_H__
 
-#include "PHY/defs_gNB.h"
-
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_TAG-Id.h"
 
@@ -250,7 +248,8 @@ void find_search_space(int ss_type,
                        NR_BWP_Downlink_t *bwp,
                        NR_SearchSpace_t *ss);
 
-void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
+void nr_configure_pdcch(gNB_MAC_INST *gNB_mac,
+                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
                         NR_ServingCellConfigCommon_t *scc,
@@ -430,6 +429,7 @@ void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps);
 
 void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
                 NR_UE_sched_ctrl_t *sched_ctrl,
+                uint8_t *target_mcs,
                 uint8_t mcs_table_idx);
 
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
@@ -451,5 +451,5 @@ bool nr_find_nb_rb(uint16_t Qm,
 
 void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
 
-void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen);
+void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp);
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

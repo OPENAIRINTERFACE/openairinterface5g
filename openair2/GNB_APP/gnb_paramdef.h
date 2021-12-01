@@ -121,6 +121,8 @@ typedef enum {
 #define GNB_CONFIG_STRING_NRCELLID                      "nr_cellid"
 #define GNB_CONFIG_STRING_MINRXTXTIMEPDSCH              "min_rxtxtime_pdsch"
 #define GNB_CONFIG_STRING_ULPRBBLACKLIST                "ul_prbblacklist"
+
+
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                   type           numelt     */
@@ -148,7 +150,7 @@ typedef enum {
 {GNB_CONFIG_STRING_NRCELLID,                     NULL,   0,            u64ptr:NULL, defint64val:1,               TYPE_UINT64,    0},  \
 {GNB_CONFIG_STRING_MINRXTXTIMEPDSCH,             NULL,   0,            iptr:NULL,   defintval:2,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_ULPRBBLACKLIST,               NULL,   0,            strptr:NULL, defstrval:"",                 TYPE_STRING,   0}   \
-}															     	
+}
 
 #define GNB_GNB_ID_IDX                  0
 #define GNB_CELL_TYPE_IDX               1
