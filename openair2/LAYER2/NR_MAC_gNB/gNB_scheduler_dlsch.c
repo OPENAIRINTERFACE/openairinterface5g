@@ -1317,8 +1317,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
         for (int i = 0; i < sched_ctrl->dl_lc_num; ++i) {
 
           const int lcid = sched_ctrl->dl_lc_ids[i];
-          int dlsch_total_bytes = 0;
+          if (sched_ctrl->rlc_status[lcid].bytes_in_buffer == 0)
+            continue; // no data for this LC
 
+          int dlsch_total_bytes = 0;
           while (size > 3) {
             // we do not know how much data we will get from RLC, i.e., whether it
             // will be longer than 256B or not. Therefore, reserve space for long header, then
