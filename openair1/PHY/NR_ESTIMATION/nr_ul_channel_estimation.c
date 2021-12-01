@@ -1157,7 +1157,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
             nr_srs_info->subcarrier_idx[sc_idx],
             generated_real, generated_imag,
             received_real, received_imag,
-            ls_estimated_real, ls_estimated_imag);
+            ls_estimated[0], ls_estimated[1]);
 #endif
     }
   }
