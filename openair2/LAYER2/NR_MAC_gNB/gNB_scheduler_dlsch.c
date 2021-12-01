@@ -828,6 +828,10 @@ void pf_dl(module_id_t module_id,
                        CCEIndex,
                        sched_ctrl->aggregation_level);
 
+    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
+    max_num_ue--;
+    if (max_num_ue < 0) return;
+
     /* MCS has been set above */
 
     const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
