@@ -26,7 +26,7 @@ services:
             FLEXRAN_INTERFACE_NAME: eth0
             FLEXRAN_IPV4_ADDRESS: 192.168.18.210
             THREAD_PARALLEL_CONFIG: PARALLEL_RU_L1_TRX_SPLIT
-            USE_ADDITIONAL_OPTIONS: '-E -q --RUs.[0].sdr_addrs "serial=30C51D4"'
+            USE_ADDITIONAL_OPTIONS: -E -q --RUs.[0].sdr_addrs serial=30C51D4
         volumes:
             - /dev:/dev
         networks:
