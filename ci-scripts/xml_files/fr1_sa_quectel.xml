@@ -21,7 +21,7 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-SA-FR1-TM1</htmlTabRef>
+	<htmlTabRef>TEST-SA-FR1-Tab1</htmlTabRef>
 	<htmlTabName>SA Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
@@ -98,8 +98,8 @@
 
 	<testCase id="070000">
 		<class>Iperf</class>
-		<desc>iperf (DL/20Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 20M -t 60</iperf_args>
+		<desc>iperf (DL/60Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 60M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>

@@ -35,6 +35,7 @@
 #include "nr_dlsch.h"
 #include "nr_sch_dmrs.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "common/utils/nr/nr_common.h"
 
 //#define DEBUG_PDCCH_DMRS
 //#define DEBUG_DCI

@@ -410,6 +410,17 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.cliOptions = string_field
 
+	elif action == 'Copy_Image_to_Test':
+		string_field = test.findtext('image_name')
+		if (string_field is not None):
+			CONTAINERS.imageToCopy = string_field
+		string_field = test.findtext('registry_svr_id')
+		if (string_field is not None):
+			CONTAINERS.registrySvrId = string_field
+		string_field = test.findtext('test_svr_id')
+		if (string_field is not None):
+			CONTAINERS.testSvrId = string_field
+
 	else: # ie action == 'Run_PhySim':
 		ldpc.runargs = test.findtext('physim_run_args')
 		
@@ -533,7 +544,7 @@ elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE)
+	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
@@ -734,6 +745,22 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	HTML.SethtmlUEConnected(len(CiTestObj.UEDevices) + len(CiTestObj.CatMDevices))
 	HTML.CreateHtmlTabHeader()
 
+	# On CI bench w/ containers, we need to validate if IP routes are set
+	if EPC.IPAddress == '192.168.18.210':
+		CONTAINERS.CheckAndAddRoute('porcepix', EPC.IPAddress, EPC.UserName, EPC.Password)
+	if CONTAINERS.eNBIPAddress == '192.168.18.194':
+		CONTAINERS.CheckAndAddRoute('asterix', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
+	if CONTAINERS.eNB1IPAddress == '192.168.18.194':
+		CONTAINERS.CheckAndAddRoute('asterix', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
+	if CONTAINERS.eNBIPAddress == '192.168.18.193':
+		CONTAINERS.CheckAndAddRoute('obelix', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
+	if CONTAINERS.eNB1IPAddress == '192.168.18.193':
+		CONTAINERS.CheckAndAddRoute('obelix', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
+	if CONTAINERS.eNBIPAddress == '192.168.18.209':
+		CONTAINERS.CheckAndAddRoute('nepes', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
+	if CONTAINERS.eNB1IPAddress == '192.168.18.209':
+		CONTAINERS.CheckAndAddRoute('nepes', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
+
 	CiTestObj.FailReportCnt = 0
 	RAN.prematureExit=True
 	HTML.startTime=int(round(time.time() * 1000))
@@ -782,39 +809,39 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE, CiTestObj.ue_trace)
+					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE, CiTestObj.ue_trace, CONTAINERS)
 				elif action == 'Terminate_UE':
 					CiTestObj.TerminateUE(HTML,COTS_UE, InfraUE, CiTestObj.ue_trace)
 				elif action == 'Attach_UE':
-					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'Detach_UE':
-					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'DataDisable_UE':
 					CiTestObj.DataDisableUE(HTML)
 				elif action == 'DataEnable_UE':
 					CiTestObj.DataEnableUE(HTML)
 				elif action == 'CheckStatusUE':
-					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'Build_OAI_UE':
 					CiTestObj.BuildOAIUE(HTML)
 				elif action == 'Initialize_OAI_UE':
-					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE)
+					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 				elif action == 'Initialize_CatM_module':
 					CiTestObj.InitializeCatM(HTML)
 				elif action == 'Terminate_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Attach_CatM_module':
-					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC,InfraUE)
+					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 				elif action == 'Detach_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Ping_CatM_module':
-					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC,InfraUE)
+					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC,InfraUE,CONTAINERS)
 				elif action == 'Ping':
-					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, InfraUE)
+					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, InfraUE, CONTAINERS)
 				elif action == 'Iperf':
-					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE, InfraUE)
+					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE, InfraUE, CONTAINERS)
 				elif action == 'Reboot_UE':
 					CiTestObj.RebootUE(HTML,RAN,EPC)
 				elif action == 'Initialize_HSS':
@@ -853,6 +880,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				elif action == 'Build_Image':
 					CONTAINERS.BuildImage(HTML)
+				elif action == 'Copy_Image_to_Test':
+					CONTAINERS.Copy_Image_to_Test_Server(HTML)
 				elif action == 'Deploy_Object':
 					CONTAINERS.DeployObject(HTML, EPC)
 				elif action == 'Undeploy_Object':

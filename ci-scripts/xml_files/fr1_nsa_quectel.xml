@@ -73,7 +73,7 @@
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf -E -q</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf -E -q --RUs.[0].sdr_addrs "serial=30C51D4"</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>
@@ -110,8 +110,8 @@
 
 	<testCase id="070000">
 		<class>Iperf</class>
-		<desc>iperf (DL/20Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 20M -t 60</iperf_args>
+		<desc>iperf (DL/60Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 60M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>idefix</id>
 		<iperf_packetloss_threshold>3</iperf_packetloss_threshold>

@@ -60,6 +60,13 @@ elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
     LINK_DIRECTORIES("/usr/local/lib")
     set(option_HW_lib "-lSoapySDR -rdynamic -ldl")
 
+elseif (${RF_BOARD} STREQUAL "OAI_AW2SORI")
+    include_directories("${OPENAIR_TARGETS}/ARCH/AW2SORI")
+    set(HW_SOURCE ${HW_SOURCE}
+	    ${OPENAIR_TARGETS}/ARCH/AW2SORI/ARCH/AW2SORI/oaiori.c)
+    LINK_DIRECTORIES("/usr/local/lib")
+    set(openair_HW_lib "-shared -fPIC -msse4 -g -ggdb -lori")
+
 endif (${RF_BOARD} STREQUAL "OAI_USRP")
 
 message("RU=${RU}")
@@ -309,6 +316,7 @@ endif()
 
 #
 # add autotools definitions that were maybe used!
+
 add_definitions("-DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP")
 
 set(commonOpts "-pipe -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic")
@@ -318,11 +326,7 @@ set(CMAKE_C_FLAGS
 set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}  ${commonOpts} -std=c++11")
 
-# cuda compiler bug (limitation) on complex macro definition
-if (CUDA_FOUND)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCUDA_FLAG")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCUDA_FLAG")
-endif()
+
 
 if (SANITIZE_ADDRESS)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-common")
@@ -332,11 +336,11 @@ endif ()
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 #########################
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -ggdb3 -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -ggdb2 -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
 #########################
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
-set(debugOpt "-ggdb3 -DMALLOC_CHECK_=3 -fno-delete-null-pointer-checks")
+set(debugOpt "-ggdb2 -DMALLOC_CHECK_=3 -fno-delete-null-pointer-checks")
 set(CMAKE_C_FLAGS_DEBUG "${debugOpt} -O0")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${debugOpt} -O2")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
@@ -897,6 +901,7 @@ add_library(oai_lmssdrdevif MODULE ${HWLIB_LMSSDR_SOURCE} )
 target_include_directories(oai_lmssdrdevif PRIVATE /usr/local/include/lime)
 target_link_libraries(oai_lmssdrdevif LimeSuite )
 
+
 include_directories("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/")
 set(TPLIB_ETHERNET_SOURCE
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
@@ -904,6 +909,15 @@ set(TPLIB_ETHERNET_SOURCE
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/eth_raw.c
   )
 add_library(oai_eth_transpro MODULE ${TPLIB_ETHERNET_SOURCE} )
+
+include_directories("${OPENAIR_TARGETS}/ARCH/AW2SORI/")
+link_directories("/usr/local/lib")
+set(HWLIB_AW2SORI_SOURCE
+  ${OPENAIR_TARGETS}/ARCH/AW2SORI/oaiori.c
+  )
+add_library(aw2sori_transpro MODULE ${HWLIB_AW2SORI_SOURCE})
+target_compile_options(aw2sori_transpro PRIVATE -shared -fPIC -msse4 -g -ggdb -DLITE_COMPILATION)
+target_link_libraries(aw2sori_transpro libori.so)
 
 include_directories("${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/")
 set(option_HWIRISLIB_lib "-l SoapySDR")
@@ -985,8 +999,6 @@ Message("CPU_Affinity flag is ${CPU_AFFINITY}")
 #    ???!!! TO BE DOCUMENTED OPTIONS !!!???
 ##############################################################
 
-add_boolean_option(NO_RRM                  True  "DO WE HAVE A RADIO RESSOURCE MANAGER: NO")
-
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DEADLINE_SCHEDULER False "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
 add_boolean_option(CPU_AFFINITY False "Enable CPU Affinity of threads (only valid without deadline scheduler). It is enabled only with >2 CPUs")
@@ -1047,7 +1059,6 @@ add_boolean_option(JUMBO_FRAME             True  "ENABLE LARGE SDU in ACCESS STR
 ##########################
 # RLC LAYER OPTIONS
 ##########################
-add_boolean_option(OPENAIR2                True  "Access Stratum layer 2 built in executable")
 add_boolean_option(TRACE_RLC_PAYLOAD       False "Fatal assert in this case")
 add_boolean_option(RLC_STOP_ON_LOST_PDU    False "Fatal assert in this case")
 
@@ -1075,8 +1086,6 @@ add_boolean_option(TRACE_RLC_UM_TX_STATUS  False "TRACE for RLC UM, TO BE CHANGE
 ##########################
 # PDCP LAYER OPTIONS
 ##########################
-#add_boolean_option(PDCP_USE_NETLINK            False "For eNB, PDCP communicate with a NETLINK socket if connected to network driver, else could use a RT-FIFO")
-#add_boolean_option(PDCP_USE_NETLINK_QUEUES     False "When PDCP_USE_NETLINK is true, incoming IP packets are stored in queues")
 #add_boolean_option(LINK_ENB_PDCP_TO_IP_DRIVER  False "For eNB, PDCP communicate with a IP driver")
 #add_boolean_option(LINK_ENB_PDCP_TO_GTPV1U     True  "For eNB, PDCP communicate with GTP-U protocol (eNB<->S-GW)")
 
@@ -1590,6 +1599,16 @@ set(PHY_LDPC_OPTIM8SEGMULTI_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
 )
+set(PHY_LDPC_CUDA_SRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
+)
+
+set(PHY_LDPC_CL_SRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_CL.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
+)
+
 set(PHY_NR_CODINGIF
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_load.c;
 )
@@ -1597,7 +1616,17 @@ set(PHY_NR_CODINGIF
 add_library(ldpc_orig MODULE ${PHY_LDPC_ORIG_SRC} )
 add_library(ldpc_optim MODULE ${PHY_LDPC_OPTIM_SRC} )
 add_library(ldpc_optim8seg MODULE ${PHY_LDPC_OPTIM8SEG_SRC} )
+add_library(ldpc_cl MODULE ${PHY_LDPC_CL_SRC} )
+target_link_libraries(ldpc_cl OpenCL)
+
+if (CUDA_FOUND)
+  cuda_add_library(ldpc_cuda MODULE ${PHY_LDPC_CUDA_SRC} )
+  set_target_properties(ldpc_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+#  CUDA_ADD_CUFFT_TO_TARGET(ldpc_cuda)
+endif (CUDA_FOUND)
+
 add_library(ldpc MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
+
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
 
@@ -1744,7 +1773,6 @@ set(PHY_SRC_UE
 
   set(PHY_NR_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_prach_common.c
-  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dci_tools_common.c
   )
 
   set(PHY_NR_SRC
@@ -1983,6 +2011,10 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
   )
 
+set(NR_SDAP_SRC
+  ${OPENAIR2_DIR}/SDAP/nr_sdap/nr_sdap_gnb.c
+  )
+  
 set(L2_SRC
   ${PDCP_DIR}/pdcp.c
   ${PDCP_DIR}/pdcp_fifo.c
@@ -2026,6 +2058,7 @@ set(L2_LTE_SRC
 set(L2_NR_SRC
   ${NR_RLC_SRC}
   ${NR_PDCP_SRC}
+  ${NR_SDAP_SRC}
   ${NR_RRC_DIR}/rrc_gNB.c
   ${NR_RRC_DIR}/nr_rrc_common.c
   ${NR_RRC_DIR}/L2_nr_interface.c
@@ -2061,6 +2094,7 @@ set(L2_RRC_SRC_UE
 set(NR_L2_SRC_UE
   ${NR_RLC_SRC}
   ${NR_PDCP_SRC}
+  ${NR_SDAP_SRC}
   ${NR_UE_RRC_DIR}/L2_interface_ue.c
   ${NR_UE_RRC_DIR}/main_ue.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
@@ -3113,7 +3147,11 @@ target_link_libraries (nr-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-uesoftmodem ${T_LIB})
 
 add_dependencies( nr-uesoftmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
-
+if (CUDA_FOUND)
+   add_dependencies( nr-uesoftmodem ldpc_cuda)
+   add_dependencies( nr-softmodem ldpc_cuda)
+   add_dependencies( ocp-gnb ldpc_cuda)
+endif (CUDA_FOUND)
 ###################################"
 # Addexecutables for tests
 ####################################
@@ -3173,46 +3211,18 @@ target_link_libraries(smallblocktest
   m pthread ${ATLAS_LIBRARIES} dl
   )
 
-if (CUDA_FOUND)
-###################################################
-# For CUDA library
-###################################################
 
-    CUDA_ADD_LIBRARY(LDPC_CU
-      ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
-      )
-    CUDA_ADD_CUFFT_TO_TARGET(LDPC_CU)
-    cuda_add_executable(ldpctest
-      ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
-      ${T_SOURCE}
-      ${SHLIB_LOADER_SOURCES}
-      )
-    target_link_libraries(ldpctest -ldl
-      -Wl,--start-group
-      LDPC_CU UTIL SIMU PHY_NR CONFIG_LIB
-      -Wl,--end-group
-      m pthread ${ATLAS_LIBRARIES} dl
-      )
+add_executable(ldpctest
+   ${PHY_NR_CODINGIF}
+   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
+   ${T_SOURCE}
+   ${SHLIB_LOADER_SOURCES}
+   )
 
-else (CUDA_FOUND)
-    add_executable(ldpctest
-       ${PHY_NR_CODINGIF}
-       ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
-       ${T_SOURCE}
-       ${SHLIB_LOADER_SOURCES}
-       )
-
-endif ()
-
-
-# add_executable(ldpctest
-  # ${PHY_NR_CODINGIF}
-  # ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
-  # ${T_SOURCE}
-  # ${SHLIB_LOADER_SOURCES}
-  # )
 add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
-
+if (CUDA_FOUND)
+   add_dependencies( ldpctest ldpc_cuda)
+endif (CUDA_FOUND)
 target_link_libraries(ldpctest
   -Wl,--start-group UTIL SIMU_COMMON  SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl
