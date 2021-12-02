@@ -57,7 +57,7 @@ void *nrmac_stats_thread(void *arg) {
   AssertFatal(fd!=NULL,"Cannot open nrMAC_stats.log, error %s\n",strerror(errno));
 
   while (oai_exit == 0) {
-     dump_mac_stats(gNB,output,MACSTATSSTRLEN);
+     dump_mac_stats(gNB,output,MACSTATSSTRLEN,false);
      fprintf(fd,"%s\n",output);
      fflush(fd);
      usleep(200000);
@@ -71,7 +71,7 @@ void clear_mac_stats(gNB_MAC_INST *gNB) {
   memset((void*)gNB->UE_info.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
 }
 
-void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen)
+void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp)
 {
   NR_UE_info_t *UE_info = &gNB->UE_info;
   int num = 1;
@@ -102,9 +102,10 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen)
                     stats->pucch0_DTX,
                     sched_ctrl->dl_bler_stats.bler,
                     sched_ctrl->dl_bler_stats.mcs);
-
-    stats->num_rsrp_meas = 0;
-    stats->cumul_rsrp = 0 ;
+    if (reset_rsrp) {
+      stats->num_rsrp_meas = 0;
+      stats->cumul_rsrp = 0;
+    }
     stroff+=sprintf(output+stroff,"UE %d: dlsch_total_bytes %"PRIu64"\n", UE_id, stats->dlsch_total_bytes);
     stroff+=sprintf(output+stroff,"UE %d: ulsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", ulsch_DTX %d, ulsch_errors %"PRIu64"\n",
                     UE_id,

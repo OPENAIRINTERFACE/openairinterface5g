@@ -60,6 +60,13 @@ elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
     LINK_DIRECTORIES("/usr/local/lib")
     set(option_HW_lib "-lSoapySDR -rdynamic -ldl")
 
+elseif (${RF_BOARD} STREQUAL "OAI_AW2SORI")
+    include_directories("${OPENAIR_TARGETS}/ARCH/AW2SORI")
+    set(HW_SOURCE ${HW_SOURCE}
+	    ${OPENAIR_TARGETS}/ARCH/AW2SORI/ARCH/AW2SORI/oaiori.c)
+    LINK_DIRECTORIES("/usr/local/lib")
+    set(openair_HW_lib "-shared -fPIC -msse4 -g -ggdb -lori")
+
 endif (${RF_BOARD} STREQUAL "OAI_USRP")
 
 message("RU=${RU}")
@@ -894,6 +901,7 @@ add_library(oai_lmssdrdevif MODULE ${HWLIB_LMSSDR_SOURCE} )
 target_include_directories(oai_lmssdrdevif PRIVATE /usr/local/include/lime)
 target_link_libraries(oai_lmssdrdevif LimeSuite )
 
+
 include_directories("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/")
 set(TPLIB_ETHERNET_SOURCE
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
@@ -901,6 +909,15 @@ set(TPLIB_ETHERNET_SOURCE
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/eth_raw.c
   )
 add_library(oai_eth_transpro MODULE ${TPLIB_ETHERNET_SOURCE} )
+
+include_directories("${OPENAIR_TARGETS}/ARCH/AW2SORI/")
+link_directories("/usr/local/lib")
+set(HWLIB_AW2SORI_SOURCE
+  ${OPENAIR_TARGETS}/ARCH/AW2SORI/oaiori.c
+  )
+add_library(aw2sori_transpro MODULE ${HWLIB_AW2SORI_SOURCE})
+target_compile_options(aw2sori_transpro PRIVATE -shared -fPIC -msse4 -g -ggdb -DLITE_COMPILATION)
+target_link_libraries(aw2sori_transpro libori.so)
 
 include_directories("${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/")
 set(option_HWIRISLIB_lib "-l SoapySDR")

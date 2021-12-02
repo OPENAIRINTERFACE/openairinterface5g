@@ -110,6 +110,7 @@ int main(int argc, char **argv)
 	int ret;
 	//int run_initial_sync=0;
 	int loglvl = OAILOG_WARNING;
+	uint8_t dlsch_threads = 0;
 	float target_error_rate = 0.01;
         uint64_t SSB_positions=0x01;
 	uint16_t nb_symb_sch = 12;
@@ -141,9 +142,9 @@ int main(int argc, char **argv)
 
 			break;*/
 
-		/*case 'd':
-			frame_type = 1;
-			break;*/
+		case 'd':
+			dlsch_threads = atoi(optarg);
+			break;
 
 		case 'g':
 			switch ((char) *optarg) {
@@ -323,6 +324,7 @@ int main(int argc, char **argv)
 			//printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
 			//printf("-f Output filename (.txt format) for Pe/SNR results\n");
 			printf("-F Input filename (.txt format) for RX conformance testing\n");
+			printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
 			exit(-1);
 			break;
 		}
@@ -334,6 +336,7 @@ int main(int argc, char **argv)
 
 	if (snr1set == 0)
 		snr1 = snr0 + 10;
+	init_dlsch_tpool(dlsch_threads);
 
 	if (ouput_vcd)
         vcd_signal_dumper_init("/tmp/openair_dump_nr_dlschsim.vcd");

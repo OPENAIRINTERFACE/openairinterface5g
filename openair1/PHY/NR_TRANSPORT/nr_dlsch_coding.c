@@ -403,6 +403,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     notifiedFIFO_elt_t *req=pullTpool(&nf, gNB->threadPool);
     delNotifiedFIFO_elt(req);
     nbJobs--;
+
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
   return 0;
