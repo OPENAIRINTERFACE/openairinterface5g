@@ -610,12 +610,25 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       UE_info->CellGroup[UE_id] = CellGroup;
       LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
+      const NR_ServingCellConfig_t *servingCellConfig = CellGroup ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
+      NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+      const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
+      if (sched_ctrl->available_dl_harq.len == 0) {
+        // add all available DL HARQ processes for this UE in SA
+        create_dl_harq_list(sched_ctrl, pdsch);
+      }
+      else {
+        const int nrofHARQ = pdsch && pdsch->nrofHARQ_ProcessesForPDSCH ?
+                             get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
+        AssertFatal(sched_ctrl->available_dl_harq.len==nrofHARQ,
+                    "Reconfiguration of available harq processes not yet supported\n");
+      }
       // update coreset/searchspace
       void *bwpd = NULL;
       target_ss = NR_SearchSpace__searchSpaceType_PR_common;
-      if ((UE_info->UE_sched_ctrl[UE_id].active_bwp)) {
+      if ((sched_ctrl->active_bwp)) {
         target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-        bwpd = (void*)UE_info->UE_sched_ctrl[UE_id].active_bwp->bwp_Dedicated;
+        bwpd = (void*)sched_ctrl->active_bwp->bwp_Dedicated;
       }
       else if (CellGroup->spCellConfig &&
                  CellGroup->spCellConfig->spCellConfigDedicated &&
@@ -623,9 +636,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
         bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
       }
-      UE_info->UE_sched_ctrl[UE_id].search_space = get_searchspace(scc, bwpd, target_ss);
-      UE_info->UE_sched_ctrl[UE_id].coreset = get_coreset(Mod_idP, scc, bwpd, UE_info->UE_sched_ctrl[UE_id].search_space, target_ss);
-      UE_info->UE_sched_ctrl[UE_id].maxL = 2;
+      sched_ctrl->search_space = get_searchspace(scc, bwpd, target_ss);
+      sched_ctrl->coreset = get_coreset(Mod_idP, scc, bwpd, sched_ctrl->search_space, target_ss);
+      sched_ctrl->maxL = 2;
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);

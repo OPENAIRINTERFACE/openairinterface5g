@@ -688,7 +688,7 @@ int main(int argc, char **argv)
 
   if (snr1set==0)
     snr1 = snr0+10;
-
+  init_dlsch_tpool(dlsch_threads);
 
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
@@ -984,11 +984,7 @@ int main(int argc, char **argv)
   reset_meas(&msgDataTx->phy_proc_tx);
   gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
   pushTpool(gNB->threadPool,msgL1Tx);
-  if (dlsch_threads ) { 
-    init_dlsch_tpool(dlsch_threads);
-    pthread_t dlsch0_threads;
-    threadCreate(&dlsch0_threads, dlsch_thread, (void *)UE, "DLthread", -1, OAI_PRIORITY_RT_MAX-1);
-  }
+
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
     varArray_t *table_tx=initVarArray(1000,sizeof(double));

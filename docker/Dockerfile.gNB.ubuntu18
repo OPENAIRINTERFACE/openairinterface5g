@@ -100,6 +100,7 @@ COPY --from=gnb-build /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 .
 COPY --from=gnb-build /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.65.1 .
 COPY --from=gnb-build /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.65.1 .
 COPY --from=gnb-build /usr/lib/x86_64-linux-gnu/libboost_system.so.1.65.1 .
+COPY --from=gnb-build /usr/lib/x86_64-linux-gnu/libboost_program_options.so.1.65.1 .
 
 RUN ldconfig
 
