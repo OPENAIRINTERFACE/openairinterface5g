@@ -73,7 +73,7 @@
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf -E -q</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf -E -q --RUs.[0].sdr_addrs "serial=30C51D4"</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>
