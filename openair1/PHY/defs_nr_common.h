@@ -248,7 +248,7 @@ typedef struct {
   int32_t **srs_received_signal;
   int32_t **srs_ls_estimated_channel;
   int32_t **srs_estimated_channel;
-  double *noise_power;
+  uint32_t *noise_power;
 } nr_srs_info_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;

@@ -71,5 +71,5 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
                               int32_t *srs_generated_signal,
                               int32_t **srs_received_signal,
                               int32_t **srs_estimated_channel,
-                              double *noise_power);
+                              uint32_t *noise_power);
 #endif

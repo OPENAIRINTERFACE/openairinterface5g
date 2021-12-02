@@ -1093,6 +1093,16 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
   }//Antenna loop
 }
 
+uint32_t calc_power(uint16_t *x, uint32_t size) {
+  uint64_t sum_x = 0;
+  uint64_t sum_x2 = 0;
+  for(int k = 0; k<size; k++) {
+    sum_x = sum_x + x[k];
+    sum_x2 = sum_x2 + x[k]*x[k];
+  }
+  return sum_x2/size - (sum_x/size)*(sum_x/size);
+}
+
 int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
                               int frame,
                               int slot,
@@ -1101,7 +1111,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
                               int32_t *srs_generated_signal,
                               int32_t **srs_received_signal,
                               int32_t **srs_estimated_channel,
-                              double *noise_power) {
+                              uint32_t *noise_power) {
 
   if(nr_srs_info->n_symbs==0) {
     LOG_E(NR_PHY, "(%d.%d) nr_srs_info was not generated yet!\n", frame, slot);
@@ -1112,6 +1122,10 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
   int32_t **srs_ls_estimated_channel = nr_srs_info->srs_ls_estimated_channel;
   uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
 
+  uint16_t noise_real[frame_parms->nb_antennas_rx*nr_srs_info->n_symbs];
+  uint16_t noise_imag[frame_parms->nb_antennas_rx*nr_srs_info->n_symbs];
+
+  int16_t prev_ls_estimated[2];
   int16_t ls_estimated[2];
 
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
@@ -1133,8 +1147,14 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
       // So we only need a nr_srs_info->srs_generated_signal_bits shift to ensure that the result fits into 16 bits.
       ls_estimated[0] = (int16_t)(((int32_t)generated_real*received_real + (int32_t)generated_imag*received_imag)>>nr_srs_info->srs_generated_signal_bits);
       ls_estimated[1] = (int16_t)(((int32_t)generated_real*received_imag - (int32_t)generated_imag*received_real)>>nr_srs_info->srs_generated_signal_bits);
-
       srs_ls_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx] + subcarrier_offset] = ls_estimated[0] + (((int32_t)ls_estimated[1]<<16)&0xFFFF0000);
+
+      if(sc_idx>0) {
+        ls_estimated[0] = (ls_estimated[0] + prev_ls_estimated[0])>>1;
+        ls_estimated[1] = (ls_estimated[1] + prev_ls_estimated[1])>>1;
+      }
+      prev_ls_estimated[0] = (int16_t)(((int32_t)generated_real*received_real + (int32_t)generated_imag*received_imag)>>nr_srs_info->srs_generated_signal_bits);
+      prev_ls_estimated[1] = (int16_t)(((int32_t)generated_real*received_imag - (int32_t)generated_imag*received_real)>>nr_srs_info->srs_generated_signal_bits);
 
       // Channel interpolation
       if(srs_pdu->comb_size == 0) {
@@ -1156,6 +1176,9 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
         multadd_real_vector_complex_scalar(filt8_dcl0_h, ls_estimated, srs_estimated_channel16, 8);
       }
 
+      noise_real[ant*nr_srs_info->n_symbs+sc_idx] = abs(prev_ls_estimated[0] - (int16_t)(srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx] + subcarrier_offset]&0xFFFF));
+      noise_imag[ant*nr_srs_info->n_symbs+sc_idx] = abs(prev_ls_estimated[1] - (int16_t)((srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx] + subcarrier_offset]>>16)&0xFFFF));
+
 #ifdef SRS_DEBUG
       if(sc_idx == 0) {
         LOG_I(NR_PHY,"______________________________ Rx antenna %i _______________________________\n", ant);
@@ -1168,29 +1191,36 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
             nr_srs_info->subcarrier_idx[sc_idx],
             generated_real, generated_imag,
             received_real, received_imag,
-            ls_estimated[0], ls_estimated[1]);
+            prev_ls_estimated[0], prev_ls_estimated[1]);
 #endif
     }
   }
 
+  *noise_power = calc_power(noise_real,frame_parms->nb_antennas_rx*nr_srs_info->n_symbs)
+                  + calc_power(noise_imag,frame_parms->nb_antennas_rx*nr_srs_info->n_symbs);
+
 #ifdef SRS_DEBUG
+  uint8_t shift = srs_pdu->comb_size == 0 ? 1 : 2;
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
     for(int sc = 0; sc <= nr_srs_info->subcarrier_idx[nr_srs_info->n_symbs-1]; sc++) {
       if(sc == 0) {
-        LOG_I(NR_PHY,"__________________ Rx antenna %i ___________________\n", ant);
+        LOG_I(NR_PHY,"______________________________ Rx antenna %i _______________________________\n", ant);
       }
       if(sc%12 == 0) {
-        LOG_I(NR_PHY,":::::::::::::::::::::::: %i ::::::::::::::::::::::::\n", sc/12);
-        LOG_I(NR_PHY,"\t  __lsRe__________lsIm__|____intRe_______intIm_\n");
+        LOG_I(NR_PHY,":::::::::::::::::::::::::::::::::::: %i ::::::::::::::::::::::::::::::::::::\n", sc/12);
+        LOG_I(NR_PHY,"\t  __lsRe__________lsIm__|____intRe_______intIm__|____noiRe_______noiIm_\n");
       }
-      LOG_I(NR_PHY,"(%4i) %6i\t%6i  |  %6i\t%6i\n",
+      LOG_I(NR_PHY,"(%4i) %6i\t%6i  |  %6i\t%6i  |  %6i\t%6i\n",
             sc,
             (int16_t)(srs_ls_estimated_channel[ant][sc+subcarrier_offset]&0xFFFF),
             (int16_t)((srs_ls_estimated_channel[ant][sc+subcarrier_offset]>>16)&0xFFFF),
             (int16_t)(srs_estimated_channel[ant][sc+subcarrier_offset]&0xFFFF),
-            (int16_t)((srs_estimated_channel[ant][sc+subcarrier_offset]>>16)&0xFFFF));
+            (int16_t)((srs_estimated_channel[ant][sc+subcarrier_offset]>>16)&0xFFFF),
+            noise_real[ant*nr_srs_info->n_symbs+(sc>>shift)],
+            noise_imag[ant*nr_srs_info->n_symbs+(sc>>shift)]);
     }
   }
+  LOG_I(NR_PHY,"noise_power = %u\n", *noise_power);
 #endif
 
   return 0;
