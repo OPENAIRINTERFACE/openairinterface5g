@@ -153,22 +153,22 @@ unsigned int crc24a (unsigned char * inptr,
 {
   int octetlen = bitlen / 8;  /* Change in octets */
 
-#ifndef USE_INTEL_CRC
-  unsigned int crc = 0;
-  int resbit = (bitlen % 8);
-
-  while (octetlen-- > 0) {
-    //   printf("crc24a: in %x => crc %x\n",crc,*inptr);
-    crc = (crc << 8) ^ crc24aTable[(*inptr++) ^ (crc >> 24)];
-  }
-
-  if (resbit > 0)
-    crc = (crc << resbit) ^ crc24aTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
-  return crc;
-#else
-  return crc32_calc_pclmulqdq(inptr, octetlen, 0,
+  if ( bitlen % 8 || !__builtin_cpu_supports ("pclmul") ) {
+    unsigned int crc = 0;
+    int resbit = (bitlen % 8);
+    
+    while (octetlen-- > 0) {
+      //   printf("crc24a: in %x => crc %x\n",crc,*inptr);
+      crc = (crc << 8) ^ crc24aTable[(*inptr++) ^ (crc >> 24)];
+    }
+    
+    if (resbit > 0)
+      crc = (crc << resbit) ^ crc24aTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
+    return crc;
+  } else {
+    return crc32_calc_pclmulqdq(inptr, octetlen, 0,
                               &lte_crc24a_pclmulqdq);
-#endif
+  }
 
 }
 
@@ -186,8 +186,8 @@ unsigned int crc24b (unsigned char * inptr,
 	   	     int bitlen)
 {
   int octetlen = bitlen / 8;  /* Change in octets */
-
-#ifndef USE_INTEL_CRC
+  
+  if ( bitlen % 8 || !__builtin_cpu_supports ("pclmul") ) {
   unsigned int crc = 0;
   int resbit = (bitlen % 8);
 
@@ -200,10 +200,10 @@ unsigned int crc24b (unsigned char * inptr,
     crc = (crc << resbit) ^ crc24bTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
 
   return crc;
-#else
+  } else {
   return crc32_calc_pclmulqdq(inptr, octetlen, 0,
                               &lte_crc24b_pclmulqdq);
-#endif
+  }
 }
 
 unsigned int crc24c (unsigned char * inptr,
