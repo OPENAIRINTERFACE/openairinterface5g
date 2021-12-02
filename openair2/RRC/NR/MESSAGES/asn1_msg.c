@@ -1211,8 +1211,6 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   srs_res0->spatialRelationInfo->referenceSignal.choice.csi_RS_Index=0;
   ASN_SEQUENCE_ADD(&srs_Config->srs_ResourceToAddModList->list,srs_res0);
 
-  xer_fprint(stdout, &asn_DEF_NR_SetupRelease_SRS_Config, (const void*)initialUplinkBWP->srs_Config);
-
   // configure Scheduling request
   // 40 slot period 
   pucch_Config->schedulingRequestResourceToAddModList = calloc(1,sizeof(*pucch_Config->schedulingRequestResourceToAddModList));
