@@ -10,10 +10,10 @@
 
 extern short nr_qpsk_mod_table[8];
 
-int nr_generate_prs(uint32_t *nr_gold_prs,
+int nr_generate_prs(uint32_t **nr_gold_prs,
                           int32_t *txdataF,
                           int16_t amp,
-                          uint8_t ssb_start_symbol,
+                          prs_data_t *prs_data,
                           nfapi_nr_config_request_scf_t *config,
                           NR_DL_FRAME_PARMS *frame_parms) {
   
@@ -33,41 +33,42 @@ int nr_generate_prs(uint32_t *nr_gold_prs,
   uint8_t REOffset = 0;
   uint8_t symbolStart = 5;
   uint8_t NumPRSSymbols = 6;
+  uint16_t NumPRBs = 106;
   
   // QPSK modulation
-  for (int m=0; m<NR_MAX_PRS_LENGTH; m++) {
-    idx = (((nr_gold_prs[(m<<1)>>5])>>((m<<1)&0x1f))&3);
-    mod_prs[m<<1] = nr_qpsk_mod_table[idx<<1];
-    mod_prs[(m<<1)+1] = nr_qpsk_mod_table[(idx<<1) + 1];
-    
-#ifdef DEBUG_PRS
-    printf("m %d idx %d gold seq %d b0-b1 %d-%d mod_prs %d %d\n", m, idx, nr_gold_prs[(m<<1)>>5], (((nr_gold_prs[(m<<1)>>5])>>((m<<1)&0x1f))&1),
-           (((nr_gold_prs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1), mod_prs[(m<<1)], mod_prs[(m<<1)+1]);
-#endif
-  }
   
    // PRS resource mapping with combsize=k which means PRS symbols exist in every k-th subcarrier in frequency domain
    // According to ts138.211 sec.7.4.1.7.2
 
   for (int l = symbolStart; l < symbolStart + NumPRSSymbols; l++) {
 
-  int symInd = l-5;
-        if (combSize==2) {
-            k_prime = k_prime_table[0][symInd];
-        }
-        else if (combSize==4){
-            k_prime = k_prime_table[1][symInd];
-        }
-        else if (combSize==6){
-            k_prime = k_prime_table[2][symInd];
-        }
-        else if (combSize==12){
-            k_prime = k_prime_table[3][symInd];
-        }
-
-  for (int m = 0; m < NR_MAX_PRS_LENGTH; m++) {
+    int symInd = l-5;
+    if (combSize==2) {
+      k_prime = k_prime_table[0][symInd];
+    }
+    else if (combSize==4){
+      k_prime = k_prime_table[1][symInd];
+    }
+    else if (combSize==6){
+      k_prime = k_prime_table[2][symInd];
+    }
+    else if (combSize==12){
+      k_prime = k_prime_table[3][symInd];
+    }
+    
+    k = (REOffset+k_prime)%combSize + frame_parms->ssb_start_subcarrier;
+    for (int m = 0; m < 12/combSize*NumPRBs; m++) {
+      
 #ifdef DEBUG_PRS_MAP
-    printf("m %d at k %d of l %d\n", m, k, l);
+      printf("m %d at k %d of l %d\n", m, k, l);
+#endif
+
+      idx = nr_gold_prs[l][m];
+      mod_prs[m<<1] = nr_qpsk_mod_table[idx<<1];
+      mod_prs[(m<<1)+1] = nr_qpsk_mod_table[(idx<<1) + 1];
+    
+#ifdef DEBUG_PRS
+    printf("m %d idx %d gold seq %d mod_prs %d %d\n", m, idx, nr_gold_prs[l][m], mod_prs[(idx<<1)], mod_prs[(idx<<1)+1]);
 #endif
 
 
@@ -79,11 +80,11 @@ int nr_generate_prs(uint32_t *nr_gold_prs,
            ((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
            ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
-    
-    k=m*combSize+(REOffset+k_prime)%combSize;
 
-    //if (k >= frame_parms->ofdm_symbol_size)
-      //k-=frame_parms->ofdm_symbol_size;
+    k = k +  combSize;
+    
+    if (k >= frame_parms->ofdm_symbol_size)
+      k-=frame_parms->ofdm_symbol_size;
       
       }
   }

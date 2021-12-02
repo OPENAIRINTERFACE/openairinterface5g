@@ -103,11 +103,12 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   else
     nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
     
-    
-  if (cfg->carrier_config.num_tx_ant.value <= 4)
-    nr_generate_prs(gNB->nr_gold_prs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-  else 
-    nr_generate_prs(gNB->nr_gold_prs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+  prs_data_t prs_data;
+  prs_data.PRSResourceSetPeriod[0]=0;
+  prs_data.PRSResourceSetPeriod[1]=0;
+  // tbc
+
+  nr_generate_prs(gNB->nr_gold_prs[slot],&txdataF[0][txdataF_offset], AMP, &prs_data, cfg, fp);
 
 
   if (T_ACTIVE(T_GNB_PHY_MIB)) {
@@ -147,7 +148,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   
   // defining inputs and initials for nr_generate_prs()
   int **txdataF = gNB->common_vars.txdataF;
-  uint8_t ssb_index, n_hf;
+  uint8_t ssb_index,n_hf;
   ssb_index = ssb_pdu.ssb_pdu_rel15.SsbBlockIndex;
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d ssb index %d\n",frame,slot,ssb_index);
   
@@ -240,11 +241,12 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   //TODO: nr_generate_prs
   // check if we have prs to transmit in this frame and slot
-    
-  if (cfg->carrier_config.num_tx_ant.value <= 4)
-    nr_generate_prs(gNB->nr_gold_prs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-  else 
-    nr_generate_prs(gNB->nr_gold_prs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
+  prs_data_t prs_data;
+  prs_data.PRSResourceSetPeriod[0]=0;
+  prs_data.PRSResourceSetPeriod[1]=0;
+  // tbc
+  
+  nr_generate_prs(gNB->nr_gold_prs[slot],&txdataF[0][txdataF_offset], AMP, &prs_data, cfg, fp);
 
   if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
 
