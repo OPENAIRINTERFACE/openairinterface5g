@@ -384,7 +384,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   int rbSize = 0;
   uint32_t TBS = 0;
   do {
-    if(rbSize < bwpSize && !vrb_map[rbStart + rbSize])
+    if(rbSize < bwpSize && !(vrb_map[rbStart + rbSize]&(((1<<nrOfSymbols)-1)<<startSymbolIndex)))
       rbSize++;
     else{
       if (gNB_mac->sched_ctrlCommon->sched_pdsch.mcs<10)
@@ -411,10 +411,9 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   LOG_D(MAC,"dmrs_length %d\n",dmrs_length);
   LOG_D(MAC,"N_PRB_DMRS = %d\n",N_PRB_DMRS);
   LOG_D(MAC,"mappingtype = %d\n", mappingtype);
-
   // Mark the corresponding RBs as used
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize; rb++) {
-    vrb_map[rb + rbStart] = 1;
+    vrb_map[rb + rbStart] = ((1<<nrOfSymbols)-1)<<startSymbolIndex;
   }
   return TBS;
 }

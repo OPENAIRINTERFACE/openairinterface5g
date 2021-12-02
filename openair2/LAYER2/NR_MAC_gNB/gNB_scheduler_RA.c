@@ -1144,13 +1144,19 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       BWPSize = type0_PDCCH_CSS_config->num_rbs;
     }
 
+    // Calculate number of symbols
+    int startSymbolIndex, nrOfSymbols;
+    const int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
+    SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
+    AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
+
     coreset = get_coreset(module_idP, scc, bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg2\n");
 
     uint16_t *vrb_map = cc[CC_id].vrb_map;
     for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
-      if (vrb_map[BWPStart + rbStart + i]) {
+      if (vrb_map[BWPStart + rbStart + i]&(((1<<nrOfSymbols)-1)<<startSymbolIndex)) {
         rbStart += i;
         i = 0;
       }
@@ -1181,12 +1187,6 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
       return;
     }
-
-    // Calculate number of symbols
-    int startSymbolIndex, nrOfSymbols;
-    const int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
-    SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
-    AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
     LOG_D(NR_MAC,"Msg2 startSymbolIndex.nrOfSymbols %d.%d\n",startSymbolIndex,nrOfSymbols);
 
@@ -1362,9 +1362,9 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     nr_mac->TX_req[CC_id].Number_of_PDUs++;
     nr_mac->TX_req[CC_id].Slot = slotP;
 
-    // Mark the corresponding RBs as used
+    // Mark the corresponding symbols RBs as used
     for (int rb = 0; rb < rbSize; rb++) {
-      vrb_map[BWPStart + rb + rbStart] = 1;
+      vrb_map[BWPStart + rb + rbStart] = ((1<<nrOfSymbols)-1)<<startSymbolIndex;
     }
 
     ra->state = WAIT_Msg3;
@@ -1547,7 +1547,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     int i = 0;
     while ((i < rbSize) && (rbStart + rbSize <= BWPSize)) {
-      if (vrb_map[BWPStart + rbStart + i]) {
+      if (vrb_map[BWPStart + rbStart + i]&(((1<<nrOfSymbols)-1)<<startSymbolIndex)) {
         rbStart += i+1;
         i = 0;
       } else {
@@ -1721,9 +1721,9 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     nr_mac->TX_req[CC_id].Number_of_PDUs++;
     nr_mac->TX_req[CC_id].Slot = slotP;
 
-    // Mark the corresponding RBs as used
+    // Mark the corresponding symbols and RBs as used
     for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++) {
-      vrb_map[BWPStart + rb + pdsch_pdu_rel15->rbStart] = 1;
+      vrb_map[BWPStart + rb + pdsch_pdu_rel15->rbStart] = ((1<<nrOfSymbols)-1)<<startSymbolIndex;
     }
 
     LOG_D(NR_MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);

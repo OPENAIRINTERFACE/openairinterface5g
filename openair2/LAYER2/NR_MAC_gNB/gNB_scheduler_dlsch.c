@@ -531,7 +531,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
 bool allocate_dl_retransmission(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
-                                uint8_t *rballoc_mask,
+                                uint16_t *rballoc_mask,
                                 int *n_rb_sched,
                                 int UE_id,
                                 int current_harq_pid) {
@@ -561,13 +561,16 @@ bool allocate_dl_retransmission(module_id_t module_id,
     while (rbSize < retInfo->rbSize) {
       rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
       rbSize = 0;
-      while (rbStart < bwpSize && !rballoc_mask[rbStart])
+      while (rbStart < bwpSize &&
+             !(rballoc_mask[rbStart]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
         rbStart++;
       if (rbStart >= bwpSize) {
         LOG_D(NR_MAC, "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n", UE_id, UE_info->rnti[UE_id]);
         return false;
       }
-      while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize] && rbSize < retInfo->rbSize)
+      while (rbStart + rbSize < bwpSize &&
+             (rballoc_mask[rbStart + rbSize]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)) &&
+             rbSize < retInfo->rbSize)
         rbSize++;
     }
     /* check whether we need to switch the TDA allocation since the last
@@ -577,13 +580,15 @@ bool allocate_dl_retransmission(module_id_t module_id,
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
-    while (rbStart < bwpSize && !rballoc_mask[rbStart])
-      rbStart++;
-    while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
-      rbSize++;
     NR_pdsch_semi_static_t temp_ps;
     temp_ps.nrOfLayers = 1;
     nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, f, &temp_ps);
+    while (rbStart < bwpSize &&
+           !(rballoc_mask[rbStart]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
+      rbStart++;
+    while (rbStart + rbSize < bwpSize &&
+           (rballoc_mask[rbStart + rbSize]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
+      rbSize++;
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -642,7 +647,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   /* retransmissions: directly allocate */
   *n_rb_sched -= sched_ctrl->sched_pdsch.rbSize;
   for (int rb = 0; rb < sched_ctrl->sched_pdsch.rbSize; rb++)
-    rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] = 0;
+    rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] -= (((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex);
   return true;
 }
 
@@ -655,7 +660,7 @@ void pf_dl(module_id_t module_id,
            NR_list_t *UE_list,
            int max_num_ue,
            int n_rb_sched,
-           uint8_t *rballoc_mask) {
+           uint16_t *rballoc_mask) {
 
   gNB_MAC_INST *mac = RC.nrmac[module_id];
   NR_UE_info_t *UE_info = &mac->UE_info;
@@ -769,13 +774,6 @@ void pf_dl(module_id_t module_id,
       return;
     }
 
-    // Freq-demain allocation
-    while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
-
-    uint16_t max_rbSize = 1;
-    while (rbStart + max_rbSize < bwpSize && rballoc_mask[rbStart + max_rbSize])
-      max_rbSize++;
-
     /* MCS has been set above */
 
     const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
@@ -785,6 +783,17 @@ void pf_dl(module_id_t module_id,
     const long f = (sched_ctrl->active_bwp || bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
     if (ps->time_domain_allocation != tda)
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, f, ps);
+
+    // Freq-demain allocation
+    while (rbStart < bwpSize &&
+           !(rballoc_mask[rbStart]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
+      rbStart++;
+
+    uint16_t max_rbSize = 1;
+    while (rbStart + max_rbSize < bwpSize &&
+           (rballoc_mask[rbStart + max_rbSize]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
+      max_rbSize++;
+
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->pucch_allocation = alloc;
@@ -806,7 +815,7 @@ void pf_dl(module_id_t module_id,
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;
     for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
-      rballoc_mask[rb + sched_pdsch->rbStart] = 0;
+      rballoc_mask[rb + sched_pdsch->rbStart] -= (((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex);
   }
 }
 
@@ -819,9 +828,18 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   const int CC_id = 0;
 
-  /* Get bwpSize from the first UE */
+  /* Get bwpSize and TDAfrom the first UE */
+  /* This is temporary and it assumes all UEs have the same BWP and TDA*/
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
+  int startSymbolIndex, nrOfSymbols;
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = sched_ctrl->active_bwp ?
+      sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :
+      scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp ?
 				    sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
@@ -833,13 +851,16 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 				            MAX_BWP_SIZE);
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
-  uint8_t rballoc_mask[bwpSize];
+  uint16_t rballoc_mask[bwpSize];
   int n_rb_sched = 0;
   for (int i = 0; i < bwpSize; i++) {
     // calculate mask: init with "NOT" vrb_map:
     // if any RB in vrb_map is blocked (1), the current RBG will be 0
-    rballoc_mask[i] = !vrb_map[i+BWPStart];
-    n_rb_sched += rballoc_mask[i];
+    rballoc_mask[i] = (~vrb_map[i+BWPStart])&0x3fff; //bitwise not and 14 symbols
+    // if all the pdsch symbols are free
+    if((rballoc_mask[i]&(((1<<nrOfSymbols)-1)<<startSymbolIndex)) ==
+       ((1<<nrOfSymbols)-1)<<startSymbolIndex)
+      n_rb_sched++;
   }
 
   /* Retrieve amount of data to send for this UE */

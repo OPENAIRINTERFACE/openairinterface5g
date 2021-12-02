@@ -278,6 +278,14 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
+  const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+  ps->nrOfLayers = target_dl_Nl;
+  if (ps->time_domain_allocation != tda)
+    nr_set_pdsch_semi_static(
+        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, f, ps);
+
   /* find largest unallocated chunk */
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   const int BWPStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -289,11 +297,14 @@ void nr_preprocessor_phytest(module_id_t module_id,
   /* loop ensures that we allocate exactly target_dl_bw, or return */
   while (true) {
     /* advance to first free RB */
-    while (rbStart < bwpSize && vrb_map[rbStart + BWPStart])
+    while (rbStart < bwpSize &&
+           (vrb_map[rbStart + BWPStart]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
       rbStart++;
     rbSize = 1;
     /* iterate until we are at target_dl_bw or no available RBs */
-    while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize + BWPStart] && rbSize < target_dl_bw)
+    while (rbStart + rbSize < bwpSize &&
+           !(vrb_map[rbStart + rbSize + BWPStart]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)) &&
+           rbSize < target_dl_bw)
       rbSize++;
     /* found target_dl_bw? */
     if (rbSize == target_dl_bw)
@@ -369,16 +380,9 @@ void nr_preprocessor_phytest(module_id_t module_id,
   //            rnti, frame, slot);
 
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
-  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   sched_pdsch->pucch_allocation = alloc;
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
-  const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
-  ps->nrOfLayers = target_dl_Nl;
-  if (ps->time_domain_allocation != tda)
-    nr_set_pdsch_semi_static(
-        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, f, ps);
 
   sched_pdsch->mcs = target_dl_mcs;
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -398,7 +402,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
 
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
-    vrb_map[rb + sched_pdsch->rbStart + BWPStart] = 1;
+    vrb_map[rb + sched_pdsch->rbStart + BWPStart] = ((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex;
 
   if ((frame&127) == 0) LOG_D(MAC,"phytest: %d.%d DL mcs %d, DL rbStart %d, DL rbSize %d\n", frame, slot, sched_pdsch->mcs, rbStart,rbSize);
 }
