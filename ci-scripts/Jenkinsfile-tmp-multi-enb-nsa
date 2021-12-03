@@ -117,6 +117,15 @@ pipeline {
           if (params.eNB2_Credentials == null) {
             allParametersPresent = false
           }
+          if (params.UE_IPAddress == null) {
+              allParametersPresent = false
+          }
+          if (params.UE_SourceCodePath == null) {
+              allParametersPresent = false
+          }
+          if (params.UE_Credentials == null) {
+              allParametersPresent = false
+          }          
           // the following 4 parameters should be pushed by the master trigger
           // if not present, take the job GIT variables (used for developing)
           if (params.eNB_Repository == null) {
@@ -213,21 +222,22 @@ pipeline {
               [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB1_Credentials}", usernameVariable: 'eNB1_Username', passwordVariable: 'eNB1_Password'],
               [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB2_Credentials}", usernameVariable: 'eNB2_Username', passwordVariable: 'eNB2_Password'],
               [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
-              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
+              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password'],
+              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.UE_Credentials}", usernameVariable: 'UE_Username', passwordVariable: 'UE_Password']
             ]) {
               sh "python3 main.py --mode=InitiateHtml --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} ${mainPythonAllXmlFiles}"
               String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
               for (xmlFile in myXmlTestSuite) {
                 if (fileExists(xmlFile)) {
                   try {
-                    sh "python3 main.py --mode=TesteNB --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --eNB1IPAddress=${params.eNB1_IPAddress} --eNB1UserName=${eNB1_Username} --eNB1Password=${eNB1_Password} --eNB1SourceCodePath=${params.eNB1_SourceCodePath} --eNB2IPAddress=${params.eNB2_IPAddress} --eNB2UserName=${eNB2_Username} --eNB2Password=${eNB2_Password} --eNB2SourceCodePath=${params.eNB2_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
+                    sh "python3 main.py --mode=TesteNB --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --eNB1IPAddress=${params.eNB1_IPAddress} --eNB1UserName=${eNB1_Username} --eNB1Password=${eNB1_Password} --eNB1SourceCodePath=${params.eNB1_SourceCodePath} --eNB2IPAddress=${params.eNB2_IPAddress} --eNB2UserName=${eNB2_Username} --eNB2Password=${eNB2_Password} --eNB2SourceCodePath=${params.eNB2_SourceCodePath} --UEIPAddress=${params.UE_IPAddress} --UEUserName=${UE_Username} --UEPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
                   } catch (Exception e) {
                     currentBuild.result = 'FAILURE'
                     buildStageStatus = false
                   }
                 }
               }
-              sh "python3 main.py --mode=FinalizeHtml --finalStatus=${buildStageStatus} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password}"
+              sh "python3 main.py --mode=FinalizeHtml --finalStatus=${buildStageStatus} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --UEIPAddress=${params.UE_IPAddress} --UEUserName=${UE_Username} --UEPassword=${UE_Password}"
             }
           }
         }
@@ -253,6 +263,24 @@ pipeline {
             }
           }
         }
+        stage('Log Collection (OAI UE - Build)') {
+            steps {
+                echo '\u2705 \u001B[32mLog Collection (OAI UE - Build)\u001B[0m'
+                withCredentials([
+                    [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.UE_Credentials}", usernameVariable: 'UE_Username', passwordVariable: 'UE_Password']
+                ]) {
+                    sh "python3 ci-scripts/main.py --mode=LogCollectBuild --UEIPAddress=${params.UE_IPAddress} --UEUserName=${UE_Username} --UEPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath}"
+
+                    echo '\u2705 \u001B[32mLog Transfer (UE - Build)\u001B[0m'
+                    sh "sshpass -p \'${UE_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${UE_Username}@${params.UE_IPAddress}:${UE_SourceCodePath}/cmake_targets/build.log.zip ./build.log.${env.BUILD_ID}.zip || true"
+                  }
+                  script {
+                      if(fileExists("build.log.${env.BUILD_ID}.zip")) {
+                          archiveArtifacts "build.log.${env.BUILD_ID}.zip"
+                      }
+                  }
+            }
+        }
         stage('Log Collection (eNB - Run)') {
           steps {
             withCredentials([
@@ -270,6 +298,24 @@ pipeline {
               }
             }
           }
+        }
+        stage('Log Collection (OAI UE - Run)') {
+            steps {
+                withCredentials([
+                    [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.UE_Credentials}", usernameVariable: 'UE_Username', passwordVariable: 'UE_Password']
+                ]) {
+                    echo '\u2705 \u001B[32mLog Collection (OAI UE - Run)\u001B[0m'
+                    sh "python3 ci-scripts/main.py --mode=LogCollectOAIUE --UEIPAddress=${params.UE_IPAddress} --UEUserName=${UE_Username} --UEPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath}"
+
+                    echo '\u2705 \u001B[32mLog Transfer (OAI UE - Run)\u001B[0m'
+                    sh "sshpass -p \'${UE_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${UE_Username}@${params.UE_IPAddress}:${UE_SourceCodePath}/cmake_targets/ue.log.zip ./ue.log.${env.BUILD_ID}.zip || true"
+                  }
+                  script {
+                      if(fileExists("ue.log.${env.BUILD_ID}.zip")) {
+                            archiveArtifacts "ue.log.${env.BUILD_ID}.zip"
+                      }
+                  }
+            }
         }
         stage('Log Collection (CN)') {
           // Bypassing this stage if EPC server is not defined
