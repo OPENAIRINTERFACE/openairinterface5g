@@ -1936,10 +1936,8 @@ phy_procedures_emos_UE_RX(ue,slot,gNB_id);
 VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
 
 stop_meas(&ue->phy_proc_rx[proc->thread_id]);
-
 if (cpumeas(CPUMEAS_GETSTATE))
   LOG_D(PHY, "------FULL RX PROC [SFN %d]: %5.2f ------\n",nr_slot_rx,ue->phy_proc_rx[proc->thread_id].p_time/(cpuf*1000.0));
-
 
 //#endif //pdsch
 
