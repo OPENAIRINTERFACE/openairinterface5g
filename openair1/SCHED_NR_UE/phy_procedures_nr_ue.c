@@ -1078,19 +1078,15 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
         LOG_T(PHY,"CWW sequential dlsch decoding, ret1 = %d\n", ret1);
       }
-
       stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
       if (cpumeas(CPUMEAS_GETSTATE)) {
-          LOG_D(PHY, " --> Unscrambling for CW1 %5.3f\n",
-                (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-          LOG_D(PHY, "AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
-                frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
+        LOG_D(PHY, " --> Unscrambling for CW1 %5.3f\n",
+              (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
+        LOG_D(PHY, "AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
+              frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
       }
-      LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dlsch1->harq_processes[harq_pid]->TBS);
+    LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dlsch1->harq_processes[harq_pid]->TBS);
     }
-
-    LOG_D(PHY," ------ end ldpc decoder for AbsSubframe %d.%d ------ decoded in %d \n", frame_rx, nr_slot_rx, ret);
-
     //  send to mac
     if (ue->if_inst && ue->if_inst->dl_indication) {
       ue->if_inst->dl_indication(&dl_indication, ul_time_alignment);
@@ -1391,7 +1387,6 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 
 
     stop_meas(&ue->ue_front_end_per_slot_stat[proc->thread_id][1]);
-
     if (cpumeas(CPUMEAS_GETSTATE))
       LOG_D(PHY, "[AbsSFN %d.%d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",frame_rx,nr_slot_rx,ue->ue_front_end_per_slot_stat[proc->thread_id][1].p_time/(cpuf*1000.0));
 
