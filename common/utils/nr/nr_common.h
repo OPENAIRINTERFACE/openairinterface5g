@@ -71,6 +71,7 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
 int get_subband_size(int NPRB,int size);
 void SLIV2SL(int SLIV,int *S,int *L);
 int get_dmrs_port(int nl, uint16_t dmrs_ports);
+long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS);
 
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
