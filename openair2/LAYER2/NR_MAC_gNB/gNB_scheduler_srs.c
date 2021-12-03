@@ -123,7 +123,7 @@ void nr_schedule_srs(int module_id, frame_t frame) {
     sched_ctrl->sched_srs.slot = -1;
     sched_ctrl->sched_srs.srs_scheduled = false;
 
-    if(!UE_info->active[UE_id]) {
+    if(!UE_info->Msg4_ACKed[UE_id]) {
       continue;
     }
 
