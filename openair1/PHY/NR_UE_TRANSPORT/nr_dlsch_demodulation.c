@@ -460,6 +460,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
     if (cpumeas(CPUMEAS_GETSTATE))
       LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,nr_slot_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+
     start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
 // Now channel compensation
   if (dlsch0_harq->mimo_mode<NR_DUALSTREAM) {
