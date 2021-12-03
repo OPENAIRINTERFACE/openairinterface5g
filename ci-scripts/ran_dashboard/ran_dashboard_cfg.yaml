@@ -22,4 +22,4 @@ SA-OAIUE :
   job : 'RAN-SA-OAIUE-CN5G'
   link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-Module-CN5G'
   bench : 'Asterix-N310-OAICN5G-OAIUE-B200'
-  test : 'TDD, 40MHz, Ping, ...'
+  test : 'TDD, 40MHz, Ping, (to be implemented : iperf)'
