@@ -1025,7 +1025,6 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
 
       stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
-
     if (cpumeas(CPUMEAS_GETSTATE))  {
       LOG_D(PHY, " --> Unscrambling for CW0 %5.3f\n",
             (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
@@ -1083,12 +1082,12 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         LOG_T(PHY,"CWW sequential dlsch decoding, ret1 = %d\n", ret1);
       }
 
-    stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
+      stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
       if (cpumeas(CPUMEAS_GETSTATE)) {
-        LOG_D(PHY, " --> Unscrambling for CW1 %5.3f\n",
-              (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-        LOG_D(PHY, "AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
-              frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
+          LOG_D(PHY, " --> Unscrambling for CW1 %5.3f\n",
+                (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
+          LOG_D(PHY, "AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
+                frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
       }
       LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dlsch1->harq_processes[harq_pid]->TBS);
     }
@@ -1859,7 +1858,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     LOG_D(PHY, "[SFN %d] Slot1:       Pdsch Proc %5.2f\n",nr_slot_rx,ue->pdsch_procedures_stat[proc->thread_id].p_time/(cpuf*1000.0));
     LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_slot_rx,ue->dlsch_procedures_stat[proc->thread_id].p_time/(cpuf*1000.0));
   }
-
   // deactivate dlsch once dlsch proc is done
   ue->dlsch[proc->thread_id][gNB_id][0]->active = 0;
 
@@ -1933,6 +1931,8 @@ if (nr_slot_rx==9) {
  }
 
 stop_meas(&ue->generic_stat);
+if (cpumeas(CPUMEAS_GETSTATE))
+  LOG_D(PHY,"after tubo until end of Rx %5.2f \n",ue->generic_stat.p_time/(cpuf*1000.0));
 
 #ifdef EMOS
 phy_procedures_emos_UE_RX(ue,slot,gNB_id);
@@ -1944,6 +1944,7 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDUR
 stop_meas(&ue->phy_proc_rx[proc->thread_id]);
 if (cpumeas(CPUMEAS_GETSTATE))
   LOG_D(PHY, "------FULL RX PROC [SFN %d]: %5.2f ------\n",nr_slot_rx,ue->phy_proc_rx[proc->thread_id].p_time/(cpuf*1000.0));
+
 //#endif //pdsch
 
 LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_slot_rx);

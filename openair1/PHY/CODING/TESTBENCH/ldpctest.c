@@ -514,7 +514,7 @@ int main(int argc, char *argv[])
   unsigned char qbits=8;
   unsigned int decoded_errors[10000]; // initiate the size of matrix equivalent to size of SNR
   int c,i=0, i1 = 0;
-
+  int loglvl=OAILOG_WARNING;
   int n_trials = 1;
   double SNR_step = 0.1;
 
@@ -525,8 +525,11 @@ int main(int argc, char *argv[])
   n_iter_stats_t dec_iter[3];
 
   short BG=0,Zc,Kb=0;
-
-  while ((c = getopt (argc, argv, "q:r:s:S:l:G:n:d:i:t:u:hv:")) != -1)
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
+    exit_fun(" Error, configuration module init failed\n");
+  } // must be done before specific options parsing to prevent errasing them
+  
+  while ((c = getopt (argc, argv, "q:r:s:S:l:L:G:n:d:i:t:u:hv:")) != -1)
     switch (c)
     {
       case 'q':
@@ -543,6 +546,10 @@ int main(int argc, char *argv[])
 
       case 'l':
         block_length = atoi(optarg);
+        break;
+
+      case 'L':
+        loglvl = atoi(optarg);
         break;
 		
       case 'G':
@@ -581,10 +588,11 @@ int main(int argc, char *argv[])
               printf("BG1 (blocklength > 3840): 1/3, 2/3, 22/25 (8/9) \n");
               printf("BG2 (blocklength <= 3840): 1/5, 1/3, 2/3 \n\n");
               printf("-h This message\n");
+              printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n");              
               printf("-q Quantization bits, Default: 8\n");
               printf("-r Nominator rate, (1, 2, 22), Default: 1\n");
               printf("-d Denominator rate, (3, 5, 25), Default: 1\n");
-              printf("-l Block length (l > 3840 -> BG1, rest BG2 ), Default: 8448\n");
+              printf("-l Block length (l > 3840 -> BG1, rest BG2 ), Default: 8448\n");              
 			  printf("-G give 1 to run cuda for LDPC, Default: 0\n");
               printf("-n Number of simulation trials, Default: 1\n");
               //printf("-M MCS2 for TB 2\n");
@@ -603,6 +611,8 @@ int main(int argc, char *argv[])
   printf("n_trials %d: \n", n_trials);
   printf("SNR0 %f: \n", SNR0);
 
+  logInit();
+  set_glog(loglvl);
 
   if (ldpc_version != NULL)
     load_nrLDPClib(ldpc_version);
