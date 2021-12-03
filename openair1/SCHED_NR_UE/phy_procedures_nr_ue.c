@@ -1387,7 +1387,6 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 
 
     stop_meas(&ue->ue_front_end_per_slot_stat[proc->thread_id][1]);
-
     if (cpumeas(CPUMEAS_GETSTATE))
       LOG_D(PHY, "[AbsSFN %d.%d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",frame_rx,nr_slot_rx,ue->ue_front_end_per_slot_stat[proc->thread_id][1].p_time/(cpuf*1000.0));
 
