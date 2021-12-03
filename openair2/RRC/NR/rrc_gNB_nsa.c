@@ -126,17 +126,6 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerL
 
   ue_context_p->ue_context.spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
   ue_context_p->ue_context.spCellConfig->spCellConfigDedicated = rrc->carrier.servingcellconfig;
-
-  // TODO: to be removed! For now, QUECTEL rejects the RRCReconfiguration with more than 1 BWP Dedicated, need to understand why...
-  ue_context_p->ue_context.spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[1] = NULL;
-  ue_context_p->ue_context.spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[2] = NULL;
-  ue_context_p->ue_context.spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[3] = NULL;
-  ue_context_p->ue_context.spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count = 1;
-  ue_context_p->ue_context.spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[1] = NULL;
-  ue_context_p->ue_context.spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[2] = NULL;
-  ue_context_p->ue_context.spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[3] = NULL;
-  ue_context_p->ue_context.spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count = 1;
-
   LOG_I(NR_RRC,"Adding new NSA user (%p)\n",ue_context_p);
   rrc_add_nsa_user(rrc,ue_context_p, m);
 }

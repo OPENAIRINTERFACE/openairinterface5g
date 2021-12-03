@@ -369,7 +369,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToReleaseList= NULL;
  
  NR_BWP_Downlink_t *bwp = NULL;
- for (int bwp_loop = 0; bwp_loop < 1 ; bwp_loop++ )
+ for (int bwp_loop = 0; bwp_loop < 4 ; bwp_loop++ )
  {
  
  if (servingcellconfigdedicated) {
