@@ -963,12 +963,37 @@ bool allocate_ul_retransmission(module_id_t module_id,
     sched_ctrl->pusch_semi_static = temp_ps;
   }
 
-  /* Find free CCE */
-  bool freeCCE = find_free_CCE(module_id, slot, UE_id);
-  if (!freeCCE) {
+  /* Find a free CCE */
+  const int cid = sched_ctrl->coreset->controlResourceSetId;
+  const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid%3][slot];
+  uint8_t nr_of_candidates;
+  for (int i=0; i<5; i++) {
+    // for now taking the lowest value among the available aggregation levels
+    find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                                &nr_of_candidates,
+                                sched_ctrl->search_space,
+                                1<<i);
+    if(nr_of_candidates>0) break;
+  }
+  int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
+                                      CC_id,
+                                      sched_ctrl->aggregation_level,
+                                      nr_of_candidates,
+                                      sched_ctrl->sched_pdcch,
+                                      sched_ctrl->coreset,
+                                      Y);
+
+  if (CCEIndex<0) {
     LOG_D(NR_MAC, "%4d.%2d no free CCE for retransmission UL DCI UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
     return false;
   }
+
+  sched_ctrl->cce_index = CCEIndex;
+  fill_pdcch_vrb_map(RC.nrmac[module_id],
+                     CC_id,
+                     sched_ctrl->sched_pdcch,
+                     CCEIndex,
+                     sched_ctrl->aggregation_level);
 
   /* frame/slot in sched_pusch has been set previously. In the following, we
    * overwrite the information in the retransmission information before storing
@@ -1084,8 +1109,27 @@ void pf_ul(module_id_t module_id,
      * based on data to transmit) */
     if (B == 0 && do_sched) {
       /* if no data, pre-allocate 5RB */
-      bool freeCCE = find_free_CCE(module_id, slot, UE_id);
-      if (!freeCCE) {
+      /* Find a free CCE */
+      const int cid = sched_ctrl->coreset->controlResourceSetId;
+      const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid%3][slot];
+      uint8_t nr_of_candidates;
+      for (int i=0; i<5; i++) {
+        // for now taking the lowest value among the available aggregation levels
+        find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                                    &nr_of_candidates,
+                                    sched_ctrl->search_space,
+                                    1<<i);
+        if(nr_of_candidates>0) break;
+      }
+      int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
+                                          CC_id,
+                                          sched_ctrl->aggregation_level,
+                                          nr_of_candidates,
+                                          sched_ctrl->sched_pdcch,
+                                          sched_ctrl->coreset,
+                                          Y);
+
+      if (CCEIndex<0) {
         LOG_D(NR_MAC, "%4d.%2d no free CCE for UL DCI UE %04x (BSR 0)\n", frame, slot, UE_info->rnti[UE_id]);
         continue;
       }
@@ -1101,6 +1145,13 @@ void pf_ul(module_id_t module_id,
               UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
         return;
       }
+
+      sched_ctrl->cce_index = CCEIndex;
+      fill_pdcch_vrb_map(RC.nrmac[module_id],
+                         CC_id,
+                         sched_ctrl->sched_pdcch,
+                         CCEIndex,
+                         sched_ctrl->aggregation_level);
 
       /* Save PUSCH field */
       /* we want to avoid a lengthy deduction of DMRS and other parameters in
@@ -1167,8 +1218,27 @@ void pf_ul(module_id_t module_id,
     *max = UE_sched.next[*max];
     *p = -1;
 
-    bool freeCCE = find_free_CCE(module_id, slot, UE_id);
-    if (!freeCCE) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+    const int cid = sched_ctrl->coreset->controlResourceSetId;
+    const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid%3][slot];
+    uint8_t nr_of_candidates;
+    for (int i=0; i<5; i++) {
+      // for now taking the lowest value among the available aggregation levels
+      find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                                  &nr_of_candidates,
+                                  sched_ctrl->search_space,
+                                  1<<i);
+      if(nr_of_candidates>0) break;
+    }
+    int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
+                                        CC_id,
+                                        sched_ctrl->aggregation_level,
+                                        nr_of_candidates,
+                                        sched_ctrl->sched_pdcch,
+                                        sched_ctrl->coreset,
+                                        Y);
+    if (CCEIndex<0) {
       LOG_D(NR_MAC, "%4d.%2d no free CCE for UL DCI UE %04x\n", frame, slot, UE_info->rnti[UE_id]);
       continue;
     }
@@ -1179,7 +1249,6 @@ void pf_ul(module_id_t module_id,
     if (max_num_ue < 0)
       return;
 
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
     NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
     NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
@@ -1232,6 +1301,14 @@ void pf_ul(module_id_t module_id,
           rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
 
     /* Mark the corresponding RBs as used */
+
+    sched_ctrl->cce_index = CCEIndex;
+    fill_pdcch_vrb_map(RC.nrmac[module_id],
+                       CC_id,
+                       sched_ctrl->sched_pdcch,
+                       CCEIndex,
+                       sched_ctrl->aggregation_level);
+
     n_rb_sched -= sched_pusch->rbSize;
     for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
       rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
@@ -1632,7 +1709,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       pdcch_pdu = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
-      nr_configure_pdcch(nr_mac, pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
+      nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, sched_ctrl->sched_pdcch);
       nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu;
     }
 

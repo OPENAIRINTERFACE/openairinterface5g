@@ -581,12 +581,15 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
       NR_SearchSpaceId_t	ra_SearchSpace = 0;
       struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = NULL;
+      NR_BWP_t *genericParameters = NULL;
       if(bwp) {
         commonSearchSpaceList = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
         ra_SearchSpace = *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+        genericParameters = &bwp->bwp_Common->genericParameters;
       } else {
         commonSearchSpaceList = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
         ra_SearchSpace = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+        genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       }
       AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
 
@@ -598,6 +601,14 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       }
 
       AssertFatal(ra->ra_ss!=NULL,"SearchSpace cannot be null for RA\n");
+
+      ra->coreset = get_coreset(module_idP, scc, bwp, ra->ra_ss, NR_SearchSpace__searchSpaceType_PR_common);
+      ra->sched_pdcch = set_pdcch_structure(nr_mac,
+                                            ra->ra_ss,
+                                            ra->coreset,
+                                            scc,
+                                            genericParameters,
+                                            NULL);
 
       // retrieving ra pdcch monitoring period and offset
       find_monitoring_periodicity_offset_common(ra->ra_ss, &monitoring_slot_period, &monitoring_offset);
@@ -774,7 +785,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     // generation of DCI 0_0 to schedule msg3 retransmission
     NR_SearchSpace_t *ss = ra->ra_ss;
-    NR_ControlResourceSet_t *coreset = get_coreset(module_idP, scc, NULL, ss, NR_SearchSpace__searchSpaceType_PR_common);
+    NR_ControlResourceSet_t *coreset = ra->coreset;
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg3 retransmission\n");
 
     nfapi_nr_ul_dci_request_t *ul_dci_req = &nr_mac->UL_dci_req[CC_id];
@@ -788,7 +799,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
       ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       pdcch_pdu_rel15 = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
-      nr_configure_pdcch(nr_mac, pdcch_pdu_rel15, ss, coreset, scc, genericParameters, NULL);
+      nr_configure_pdcch(pdcch_pdu_rel15, coreset, genericParameters, ra->sched_pdcch);
       nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
     }
 
@@ -800,7 +811,13 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
       if(nr_of_candidates>0) break;
     }
     AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
-    int CCEIndex = allocate_nr_CCEs(nr_mac, NULL, coreset, aggregation_level, 0, 0, nr_of_candidates);
+    int CCEIndex = find_pdcch_candidate(nr_mac,
+                                        CC_id,
+                                        aggregation_level,
+                                        nr_of_candidates,
+                                        ra->sched_pdcch,
+                                        coreset,
+                                        0);
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
       return;
@@ -841,6 +858,13 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                        ra->bwp_id);
 
     // Mark the corresponding RBs as used
+
+    fill_pdcch_vrb_map(nr_mac,
+                       CC_id,
+                       ra->sched_pdcch,
+                       CCEIndex,
+                       aggregation_level);
+
     for (int rb = 0; rb < ra->msg3_nb_rb; rb++) {
       vrb_map_UL[rbStart + BWPStart + rb] = 1;
     }
@@ -1150,7 +1174,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
     AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
-    coreset = get_coreset(module_idP, scc, bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
+    coreset = ra->coreset;
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg2\n");
 
@@ -1182,7 +1206,15 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       if(nr_of_candidates>0) break;
     }
     AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
-    int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
+
+    int CCEIndex = find_pdcch_candidate(nr_mac,
+                                        CC_id,
+                                        aggregation_level,
+                                        nr_of_candidates,
+                                        ra->sched_pdcch,
+                                        coreset,
+                                        0);
+
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
       return;
@@ -1204,7 +1236,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2 + sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      nr_configure_pdcch(nr_mac, pdcch_pdu_rel15, ss, coreset, scc, genericParameters, NULL);
+      nr_configure_pdcch(pdcch_pdu_rel15, coreset, genericParameters, ra->sched_pdcch);
       nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
     }
 
@@ -1363,6 +1395,11 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     nr_mac->TX_req[CC_id].Slot = slotP;
 
     // Mark the corresponding symbols RBs as used
+    fill_pdcch_vrb_map(nr_mac,
+                       CC_id,
+                       ra->sched_pdcch,
+                       CCEIndex,
+                       aggregation_level);
     for (int rb = 0; rb < rbSize; rb++) {
       vrb_map[BWPStart + rb + rbStart] = ((1<<nrOfSymbols)-1)<<startSymbolIndex;
     }
@@ -1401,7 +1438,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     }
 
-    coreset = get_coreset(module_idP, scc, bwp, ss, NR_SearchSpace__searchSpaceType_PR_common);
+    coreset = ra->coreset;
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg4\n");
 
@@ -1447,7 +1484,15 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       if(nr_of_candidates>0) break;
     }
     AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
-    int CCEIndex = allocate_nr_CCEs(nr_mac, bwp, coreset, aggregation_level,0,0,nr_of_candidates);
+
+    int CCEIndex = find_pdcch_candidate(nr_mac,
+                                        CC_id,
+                                        aggregation_level,
+                                        nr_of_candidates,
+                                        ra->sched_pdcch,
+                                        coreset,
+                                        0);
+
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
       return;
@@ -1580,7 +1625,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2 + sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      nr_configure_pdcch(nr_mac, pdcch_pdu_rel15, ss, coreset, scc, genericParameters, NULL);
+      nr_configure_pdcch(pdcch_pdu_rel15, coreset, genericParameters, ra->sched_pdcch);
       nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
     }
 
@@ -1722,6 +1767,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     nr_mac->TX_req[CC_id].Slot = slotP;
 
     // Mark the corresponding symbols and RBs as used
+    fill_pdcch_vrb_map(nr_mac,
+                       CC_id,
+                       ra->sched_pdcch,
+                       CCEIndex,
+                       aggregation_level);
     for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++) {
       vrb_map[BWPStart + rb + pdsch_pdu_rel15->rbStart] = ((1<<nrOfSymbols)-1)<<startSymbolIndex;
     }

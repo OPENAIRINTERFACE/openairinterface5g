@@ -103,6 +103,20 @@ typedef struct NR_preamble_ue {
   uint8_t *preamble_list;
 } NR_preamble_ue_t;
 
+typedef struct NR_sched_pdcch {
+  uint16_t BWPSize;
+  uint16_t BWPStart;
+  uint8_t CyclicPrefix;
+  uint8_t SubcarrierSpacing;
+  uint8_t StartSymbolIndex;
+  uint8_t CceRegMappingType;
+  uint8_t RegBundleSize;
+  uint8_t InterleaverSize;
+  uint16_t ShiftIndex;
+  uint8_t DurationSymbols;
+  int n_rb;
+} NR_sched_pdcch_t;
+
 /*! \brief gNB template for the Random access information */
 typedef struct {
   /// Flag to indicate this process is active
@@ -163,6 +177,9 @@ typedef struct {
   int mac_pdu_length;
   /// RA search space
   NR_SearchSpace_t *ra_ss;
+  /// RA Coreset
+  NR_ControlResourceSet_t *coreset;
+  NR_sched_pdcch_t *sched_pdcch;
   // Beam index
   uint8_t beam_id;
   /// CellGroup for UE that is to come (NSA is non-null, null for SA)
@@ -297,7 +314,6 @@ typedef struct UE_info {
   aperiodicCSI_triggerStateSelection_t aperi_CSI_trigger;
   pdschTciStatesActDeact_t pdsch_TCI_States_ActDeact;
 } NR_UE_mac_ce_ctrl_t;
-
 
 typedef struct NR_sched_pucch {
   int frame;
@@ -533,6 +549,7 @@ typedef struct {
   /// CCE index and aggregation, should be coherent with cce_list
   NR_SearchSpace_t *search_space;
   NR_ControlResourceSet_t *coreset;
+  NR_sched_pdcch_t *sched_pdcch;
 
   /// CCE index and Aggr. Level are shared for PUSCH/PDSCH allocation decisions
   /// corresponding to the sched_pusch/sched_pdsch structures below
@@ -652,10 +669,10 @@ typedef struct {
   /// CCE indexing
   int Y[MAX_MOBILES_PER_GNB][3][160];
   int m[MAX_MOBILES_PER_GNB];
-  int num_pdcch_cand[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET];
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
   bool Msg4_ACKed[MAX_MOBILES_PER_GNB];
+
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
@@ -714,7 +731,7 @@ typedef struct gNB_MAC_INST_s {
   nfapi_nr_ul_dci_request_t         UL_dci_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure
   nfapi_nr_tx_data_request_t        TX_req[NFAPI_CC_MAX];
-
+  int pdcch_cand[MAX_NUM_CORESET];
   NR_UE_info_t UE_info;
 
   /// UL handle
@@ -742,8 +759,6 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t rx_ulsch_sdu;  // include rlc_data_ind
   /// processing time of eNB PCH scheduler
   time_stats_t schedule_pch;
-  /// CCE lists
-  int cce_list[MAX_NUM_CORESET][MAX_NUM_CCE];
   /// list of allocated beams per period
   int16_t *tdd_beam_association;
 

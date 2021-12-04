@@ -306,12 +306,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-  memset(RC.nrmac[module_idP]->cce_list[0],0,MAX_NUM_CCE*sizeof(int)); // coreset0
-  memset(RC.nrmac[module_idP]->cce_list[1],0,MAX_NUM_CCE*sizeof(int)); // coreset1
-  NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
-  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id])
-    for (int i=0; i<MAX_NUM_CORESET; i++)
-      UE_info->num_pdcch_cand[UE_id][i] = 0;
+  for (int i=0; i<MAX_NUM_CORESET; i++)
+    RC.nrmac[module_idP]->pdcch_cand[i] = 0;
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
 

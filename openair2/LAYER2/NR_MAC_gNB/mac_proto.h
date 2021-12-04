@@ -248,13 +248,31 @@ void find_search_space(int ss_type,
                        NR_BWP_Downlink_t *bwp,
                        NR_SearchSpace_t *ss);
 
-void nr_configure_pdcch(gNB_MAC_INST *gNB_mac,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
-                        NR_SearchSpace_t *ss,
+void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_ControlResourceSet_t *coreset,
-                        NR_ServingCellConfigCommon_t *scc,
                         NR_BWP_t *bwp,
-                        NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
+                        NR_sched_pdcch_t *pdcch);
+
+NR_sched_pdcch_t *set_pdcch_structure(gNB_MAC_INST *gNB_mac,
+                                      NR_SearchSpace_t *ss,
+                                      NR_ControlResourceSet_t *coreset,
+                                      NR_ServingCellConfigCommon_t *scc,
+                                      NR_BWP_t *bwp,
+                                      NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
+
+uint8_t find_pdcch_candidate(gNB_MAC_INST *mac,
+                             int cc_id,
+                             int aggregation,
+                             int nr_of_candidates,
+                             NR_sched_pdcch_t *pdcch,
+                             NR_ControlResourceSet_t *coreset,
+                             uint16_t Y);
+
+void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
+                        int CC_id,
+                        NR_sched_pdcch_t *pdcch,
+                        int first_cce,
+                        int aggregation);
 
 void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         const NR_CellGroupConfig_t *CellGroup,

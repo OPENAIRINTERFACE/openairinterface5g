@@ -612,8 +612,27 @@ bool allocate_dl_retransmission(module_id_t module_id,
   }
 
   /* Find a free CCE */
-  bool freeCCE = find_free_CCE(module_id, slot, UE_id);
-  if (!freeCCE) {
+  const int cid = sched_ctrl->coreset->controlResourceSetId;
+  const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid%3][slot];
+  uint8_t nr_of_candidates;
+  for (int i=0; i<5; i++) {
+    // for now taking the lowest value among the available aggregation levels
+    find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                                &nr_of_candidates,
+                                sched_ctrl->search_space,
+                                1<<i);
+    if(nr_of_candidates>0) break;
+  }
+
+  int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
+                                      /* CC_id = */ 0,
+                                      sched_ctrl->aggregation_level,
+                                      nr_of_candidates,
+                                      sched_ctrl->sched_pdcch,
+                                      sched_ctrl->coreset,
+                                      Y);
+
+  if (CCEIndex<0) {
     LOG_D(MAC, "%4d.%2d could not find CCE for DL DCI retransmission UE %d/RNTI %04x\n",
           frame, slot, UE_id, UE_info->rnti[UE_id]);
     return false;
@@ -630,13 +649,17 @@ bool allocate_dl_retransmission(module_id_t module_id,
           UE_info->rnti[UE_id],
           frame,
           slot);
-    int cid = sched_ctrl->coreset->controlResourceSetId;
-    UE_info->num_pdcch_cand[UE_id][cid]--;
-    int *cce_list = RC.nrmac[module_id]->cce_list[cid];
-    for (int i = 0; i < sched_ctrl->aggregation_level; i++)
-      cce_list[sched_ctrl->cce_index + i] = 0;
+    RC.nrmac[module_id]->pdcch_cand[cid]--;
     return false;
   }
+
+  sched_ctrl->cce_index = CCEIndex;
+
+  fill_pdcch_vrb_map(RC.nrmac[module_id],
+                     /* CC_id = */ 0,
+                     sched_ctrl->sched_pdcch,
+                     CCEIndex,
+                     sched_ctrl->aggregation_level);
 
   /* just reuse from previous scheduling opportunity, set new start RB */
   sched_ctrl->sched_pdsch = *retInfo;
@@ -746,8 +769,27 @@ void pf_dl(module_id_t module_id,
     int rbStart = 0; // start wrt BWPstart
 
     /* Find a free CCE */
-    bool freeCCE = find_free_CCE(module_id, slot, UE_id);
-    if (!freeCCE) {
+    const int cid = sched_ctrl->coreset->controlResourceSetId;
+    const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid%3][slot];
+    uint8_t nr_of_candidates;
+    for (int i=0; i<5; i++) {
+      // for now taking the lowest value among the available aggregation levels
+      find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                                  &nr_of_candidates,
+                                  sched_ctrl->search_space,
+                                  1<<i);
+      if(nr_of_candidates>0) break;
+    }
+
+    int CCEIndex = find_pdcch_candidate(mac,
+                                        /* CC_id = */ 0,
+                                        sched_ctrl->aggregation_level,
+                                        nr_of_candidates,
+                                        sched_ctrl->sched_pdcch,
+                                        sched_ctrl->coreset,
+                                        Y);
+
+    if (CCEIndex<0) {
       LOG_D(NR_MAC, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
       continue;
     }
@@ -766,13 +808,17 @@ void pf_dl(module_id_t module_id,
             rnti,
             frame,
             slot);
-      int cid = sched_ctrl->coreset->controlResourceSetId;
-      UE_info->num_pdcch_cand[UE_id][cid]--;
-      int *cce_list = mac->cce_list[cid];
-      for (int i = 0; i < sched_ctrl->aggregation_level; i++)
-        cce_list[sched_ctrl->cce_index + i] = 0;
+      mac->pdcch_cand[cid]--;
       return;
     }
+
+    sched_ctrl->cce_index = CCEIndex;
+
+    fill_pdcch_vrb_map(mac,
+                       /* CC_id = */ 0,
+                       sched_ctrl->sched_pdcch,
+                       CCEIndex,
+                       sched_ctrl->aggregation_level);
 
     /* MCS has been set above */
 
@@ -1024,9 +1070,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
       dl_req->nPDUs += 1;
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
       LOG_D(NR_MAC,"Trying to configure DL pdcch for UE %d, bwp %d, cs %d\n",UE_id,bwpid,coresetid);
-      NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space:gNB_mac->sched_ctrlCommon->search_space;
       NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
-      nr_configure_pdcch(gNB_mac, pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
+      nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, sched_ctrl->sched_pdcch);
       gNB_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu;
     }
 

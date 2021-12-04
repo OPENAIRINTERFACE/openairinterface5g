@@ -159,6 +159,7 @@ NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
                                      NR_SearchSpace_t *ss,
                                      NR_SearchSpace__searchSpaceType_PR ss_type) {
   NR_ControlResourceSetId_t coreset_id = *ss->controlResourceSetId;
+
   if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) { // common search space
     NR_ControlResourceSet_t *coreset;
     if(coreset_id == 0) {
@@ -208,47 +209,182 @@ NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
   AssertFatal(0, "Couldn't find an adequate searchspace bwp_Dedicated %p\n",bwp_Dedicated);
 }
 
-int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
-                     NR_BWP_Downlink_t *bwp,
-                     NR_ControlResourceSet_t *coreset,
-                     int aggregation,
-                     uint16_t Y,
-                     int m,
-                     int nr_of_candidates) {
+NR_sched_pdcch_t *set_pdcch_structure(gNB_MAC_INST *gNB_mac,
+                                      NR_SearchSpace_t *ss,
+                                      NR_ControlResourceSet_t *coreset,
+                                      NR_ServingCellConfigCommon_t *scc,
+                                      NR_BWP_t *bwp,
+                                      NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
 
-  int coreset_id = coreset->controlResourceSetId;
+  NR_sched_pdcch_t *pdcch = calloc(1,sizeof(NR_sched_pdcch_t));
 
-  int *cce_list = nr_mac->cce_list[coreset_id];
+  int sps;
+  AssertFatal(*ss->controlResourceSetId == coreset->controlResourceSetId,
+              "coreset id in SS %ld does not correspond to the one in coreset %ld",
+              *ss->controlResourceSetId, coreset->controlResourceSetId);
 
-  int n_rb=0;
-  for (int i=0;i<6;i++)
-    for (int j=0;j<8;j++) {
-      n_rb+=((coreset->frequencyDomainResources.buf[i]>>j)&1);
+  if (bwp) { // This is not for SIB1
+    if(coreset->controlResourceSetId == 0){
+      pdcch->BWPSize  = gNB_mac->cset0_bwp_size;
+      pdcch->BWPStart = gNB_mac->cset0_bwp_start;
     }
-  n_rb*=6;
+    else {
+      pdcch->BWPSize  = NRRIV2BW(bwp->locationAndBandwidth, MAX_BWP_SIZE);
+      pdcch->BWPStart = NRRIV2PRBOFFSET(bwp->locationAndBandwidth, MAX_BWP_SIZE);
+    }
+    pdcch->SubcarrierSpacing = bwp->subcarrierSpacing;
+    pdcch->CyclicPrefix = (bwp->cyclicPrefix==NULL) ? 0 : *bwp->cyclicPrefix;
 
-  uint16_t N_reg = n_rb * coreset->duration;
-  uint16_t n_CI = 0;
+    //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
+    sps = bwp->cyclicPrefix == NULL ? 14 : 12;
+  }
+  else {
+    AssertFatal(type0_PDCCH_CSS_config!=NULL,"type0_PDCCH_CSS_config is null,bwp %p\n",bwp);
+    pdcch->BWPSize = type0_PDCCH_CSS_config->num_rbs;
+    pdcch->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
+    pdcch->SubcarrierSpacing = type0_PDCCH_CSS_config->scs_pdcch;
+    pdcch->CyclicPrefix = 0;
+    sps = 14;
+  }
 
-  const uint16_t N_cce = N_reg / NR_NB_REG_PER_CCE;
-  const uint16_t M_s_max = nr_of_candidates;
+  AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
+  AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
 
-  LOG_D(PHY,"allocate_NR_CCes : bwp_id %d, coreset_id %d : N_cce %d, m %d, nr_of_candidates %d, Y %d\n",
-        (int)(bwp ? bwp->bwp_Id : 0),coreset_id,N_cce,m,nr_of_candidates, Y);
-  //PDCCH candidate index m in CORESET exceeds the maximum number of PDCCH candidates
-  if(m >= nr_of_candidates)
-    return -1;
+  // for SPS=14 8 MSBs in positions 13 downto 6
+  uint16_t monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) |
+                                         (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
 
-  int first_cce = aggregation * (( Y + CEILIDIV((m*N_cce),(aggregation*M_s_max)) + n_CI ) % CEILIDIV(N_cce,aggregation));
+  for (int i=0; i<sps; i++) {
+    if ((monitoringSymbolsWithinSlot>>(sps-1-i))&1) {
+      pdcch->StartSymbolIndex=i;
+      break;
+    }
+  }
 
-  for (int i=0;i<aggregation;i++)
-    if (cce_list[first_cce+i] != 0) return(-1);
-  
-  for (int i=0;i<aggregation;i++) cce_list[first_cce+i] = 1;
+  pdcch->DurationSymbols = coreset->duration;
 
-  return(first_cce);
+  //cce-REG-MappingType
+  pdcch->CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
+    NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED : NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
 
+  if (pdcch->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
+    pdcch->RegBundleSize = (coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize ==
+                                NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize);
+    pdcch->InterleaverSize = (coreset->cce_REG_MappingType.choice.interleaved->interleaverSize ==
+                                  NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->interleaverSize);
+    AssertFatal(scc->physCellId != NULL,"scc->physCellId is null\n");
+    pdcch->ShiftIndex = coreset->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
+  }
+  else {
+    pdcch->RegBundleSize = 6;
+    pdcch->InterleaverSize = 0;
+    pdcch->ShiftIndex = 0;
+  }
+
+  int N_rb = 0; // nb of rbs of coreset per symbol
+  for (int i=0;i<6;i++) {
+    for (int t=0;t<8;t++) {
+      N_rb+=((coreset->frequencyDomainResources.buf[i]>>t)&1);
+    }
+  }
+  pdcch->n_rb = N_rb*=6; // each bit of frequencyDomainResources represents 6 PRBs
+
+  return pdcch;
 }
+
+
+uint8_t find_pdcch_candidate(gNB_MAC_INST *mac,
+                             int cc_id,
+                             int aggregation,
+                             int nr_of_candidates,
+                             NR_sched_pdcch_t *pdcch,
+                             NR_ControlResourceSet_t *coreset,
+                             uint16_t Y){
+
+  uint16_t *vrb_map = mac->common_channels[cc_id].vrb_map;
+  const int next_cand = mac->pdcch_cand[coreset->controlResourceSetId];
+  const int N_ci = 0;
+
+  if(next_cand>=nr_of_candidates) {
+    LOG_D(NR_MAC,"No more available candidates for this coreset\n");
+    return -1;
+  }
+
+  int N_rb = pdcch->n_rb;  // nb of rbs of coreset per symbol
+  int N_symb = coreset->duration; // nb of coreset symbols
+  int N_regs = N_rb*N_symb; // nb of REGs per coreset
+  int N_cces = N_regs / NR_NB_REG_PER_CCE; // nb of cces in coreset
+
+  int L = pdcch->RegBundleSize;
+  int R = pdcch->InterleaverSize;
+  int n_shift = pdcch->ShiftIndex;
+  int C = R>0 ? N_regs/(L*R) : 0;
+  int B_rb = L/N_symb; // nb of RBs occupied by each REG bundle
+
+  int first_cce;
+  bool taken = false; // flag if the resource for a given candidate are taken
+  // loop over all the available candidates
+  for(int m=next_cand; m<nr_of_candidates; m++) { // loop over candidates
+    first_cce = aggregation * (( Y + CEILIDIV((m*N_cces),(aggregation*nr_of_candidates)) + N_ci ) % CEILIDIV(N_cces,aggregation));
+    for (int j=first_cce; (j<first_cce+aggregation) && !taken; j++) { // loop over CCEs
+      for (int k=6*j/L; (k<(6*j/L+6/L)) && !taken; k++) { // loop over REG bundles
+        int f;  // interleaving function
+        if(R==0)
+          f = k;
+        else {
+          int c = k/R;
+          int r = k%R;
+          f = (r*C + c + n_shift)%(N_regs/L);
+        }
+        for(int rb=0; rb<B_rb; rb++) { // loop over the RBs of the bundle
+          if(vrb_map[pdcch->BWPStart + f*B_rb + rb]&(((1<<N_symb)-1)<<pdcch->StartSymbolIndex)) {
+            taken = true;
+            break;
+          }
+        }
+      }
+    }
+    if(!taken){
+      mac->pdcch_cand[coreset->controlResourceSetId] = m++; // using candidate m, next available is m+1
+      return first_cce;
+    }
+  }
+  return -1;
+}
+
+void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
+                        int CC_id,
+                        NR_sched_pdcch_t *pdcch,
+                        int first_cce,
+                        int aggregation){
+
+  uint16_t *vrb_map = mac->common_channels[CC_id].vrb_map;
+
+  int N_rb = pdcch->n_rb; // nb of rbs of coreset per symbol
+  int L = pdcch->RegBundleSize;
+  int R = pdcch->InterleaverSize;
+  int n_shift = pdcch->ShiftIndex;
+  int N_symb = pdcch->DurationSymbols;
+  int N_regs = N_rb*N_symb; // nb of REGs per coreset
+  int B_rb = L/N_symb; // nb of RBs occupied by each REG bundle
+  int C = R>0 ? N_regs/(L*R) : 0;
+
+  for (int j=first_cce; j<first_cce+aggregation; j++) { // loop over CCEs
+    for (int k=6*j/L; k<(6*j/L+6/L); k++) { // loop over REG bundles
+      int f;  // interleaving function
+      if(R==0)
+        f = k;
+      else {
+        int c = k/R;
+        int r = k%R;
+        f = (r*C + c + n_shift)%(N_regs/L);
+      }
+      for(int rb=0; rb<B_rb; rb++) // loop over the RBs of the bundle
+        vrb_map[pdcch->BWPStart + f*B_rb + rb] = ((1<<N_symb)-1)<<pdcch->StartSymbolIndex;
+    }
+  }
+}
+
 
 bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t R,
@@ -346,7 +482,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
-			                        const NR_BWP_UplinkDedicated_t *ubwpd,
+                              const NR_BWP_UplinkDedicated_t *ubwpd,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
@@ -718,81 +854,32 @@ int nr_get_default_pucch_res(int pucch_ResourceCommon) {
   return(default_pucch_csset[pucch_ResourceCommon]);
 }
 
-void nr_configure_pdcch(gNB_MAC_INST *gNB_mac,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
-                        NR_SearchSpace_t *ss,
+
+
+void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_ControlResourceSet_t *coreset,
-                        NR_ServingCellConfigCommon_t *scc,
                         NR_BWP_t *bwp,
-                        NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
+                        NR_sched_pdcch_t *pdcch) {
 
-  int sps;
-  AssertFatal(*ss->controlResourceSetId == coreset->controlResourceSetId,
-              "coreset id in SS %ld does not correspond to the one in coreset %ld",
-              *ss->controlResourceSetId, coreset->controlResourceSetId);
 
-  if (bwp) { // This is not for SIB1
-    if(coreset->controlResourceSetId == 0){
-      pdcch_pdu->BWPSize  = gNB_mac->cset0_bwp_size;
-      pdcch_pdu->BWPStart = gNB_mac->cset0_bwp_start;
-    }
-    else {
-      pdcch_pdu->BWPSize  = NRRIV2BW(bwp->locationAndBandwidth, MAX_BWP_SIZE);
-      pdcch_pdu->BWPStart = NRRIV2PRBOFFSET(bwp->locationAndBandwidth, MAX_BWP_SIZE);
-    }
-    pdcch_pdu->SubcarrierSpacing = bwp->subcarrierSpacing;
-    pdcch_pdu->CyclicPrefix = (bwp->cyclicPrefix==NULL) ? 0 : *bwp->cyclicPrefix;
-
-    //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
-    sps = bwp->cyclicPrefix == NULL ? 14 : 12;
-  }
-  else {
-    AssertFatal(type0_PDCCH_CSS_config!=NULL,"type0_PDCCH_CSS_config is null,bwp %p\n",bwp);
-    pdcch_pdu->BWPSize = type0_PDCCH_CSS_config->num_rbs;
-    pdcch_pdu->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
-    pdcch_pdu->SubcarrierSpacing = type0_PDCCH_CSS_config->scs_pdcch;
-    pdcch_pdu->CyclicPrefix = 0;
-    sps = 14;
-  }
-
-  AssertFatal(ss->monitoringSymbolsWithinSlot!=NULL,"ss->monitoringSymbolsWithinSlot is null\n");
-  AssertFatal(ss->monitoringSymbolsWithinSlot->buf!=NULL,"ss->monitoringSymbolsWithinSlot->buf is null\n");
-    
-  // for SPS=14 8 MSBs in positions 13 downto 6
-  uint16_t monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) |
-                                         (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-
-  for (int i=0; i<sps; i++) {
-    if ((monitoringSymbolsWithinSlot>>(sps-1-i))&1) {
-      pdcch_pdu->StartSymbolIndex=i;
-      break;
-    }
-  }
+  pdcch_pdu->BWPSize = pdcch->BWPSize;
+  pdcch_pdu->BWPStart = pdcch->BWPStart;
+  pdcch_pdu->SubcarrierSpacing = pdcch->SubcarrierSpacing;
+  pdcch_pdu->CyclicPrefix = pdcch->CyclicPrefix;
+  pdcch_pdu->StartSymbolIndex = pdcch->StartSymbolIndex;
 
   pdcch_pdu->DurationSymbols  = coreset->duration;
 
   for (int i=0;i<6;i++)
     pdcch_pdu->FreqDomainResource[i] = coreset->frequencyDomainResources.buf[i];
 
-  LOG_D(MAC,"Coreset : BWPstart %d, BWPsize %d, SCS %d, freq %x, , duration %d,  \n",pdcch_pdu->BWPStart,pdcch_pdu->BWPSize,(int)pdcch_pdu->SubcarrierSpacing,(int)coreset->frequencyDomainResources.buf[0],(int)coreset->duration);
+  LOG_D(MAC,"Coreset : BWPstart %d, BWPsize %d, SCS %d, freq %x, , duration %d,  \n",
+        pdcch_pdu->BWPStart,pdcch_pdu->BWPSize,(int)pdcch_pdu->SubcarrierSpacing,(int)coreset->frequencyDomainResources.buf[0],(int)coreset->duration);
 
-  //cce-REG-MappingType
-  pdcch_pdu->CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
-    NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED : NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
-
-  if (pdcch_pdu->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
-    pdcch_pdu->RegBundleSize = (coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize ==
-                                NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize);
-    pdcch_pdu->InterleaverSize = (coreset->cce_REG_MappingType.choice.interleaved->interleaverSize ==
-                                  NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->interleaverSize);
-    AssertFatal(scc->physCellId != NULL,"scc->physCellId is null\n");
-    pdcch_pdu->ShiftIndex = coreset->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
-  }
-  else {
-    pdcch_pdu->RegBundleSize = 0;
-    pdcch_pdu->InterleaverSize = 0;
-    pdcch_pdu->ShiftIndex = 0;
-  }
+  pdcch_pdu->CceRegMappingType = pdcch->CceRegMappingType;
+  pdcch_pdu->RegBundleSize = pdcch->RegBundleSize;
+  pdcch_pdu->InterleaverSize = pdcch->InterleaverSize;
+  pdcch_pdu->ShiftIndex = pdcch->ShiftIndex;
 
   if(coreset->controlResourceSetId == 0) {
     if(bwp == NULL)
@@ -1968,6 +2055,9 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 			     bwpList->list.count);
     const int bwp_id = 1;
     sched_ctrl->active_bwp = bwpList ? bwpList->list.array[bwp_id - 1] : NULL;
+    NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
+      &sched_ctrl->active_bwp->bwp_Common->genericParameters:
+      &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
     const int target_ss = sched_ctrl->active_bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
     sched_ctrl->search_space = get_searchspace(scc,
                                                sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL,
@@ -1975,6 +2065,12 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     sched_ctrl->coreset = get_coreset(mod_idP, scc,
                                       sched_ctrl->active_bwp ? (void*)sched_ctrl->active_bwp->bwp_Dedicated : NULL,
                                       sched_ctrl->search_space, target_ss);
+    sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[mod_idP],
+                                                  sched_ctrl->search_space,
+                                                  sched_ctrl->coreset,
+                                                  scc,
+                                                  genericParameters,
+                                                  NULL);
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
     if (ubwpList) AssertFatal(ubwpList->list.count == 1,
 			      "uplinkBWP_ToAddModList has %d BWP!\n",
@@ -2386,38 +2482,6 @@ void nr_csirs_scheduling(int Mod_idP,
       }
     }
   }
-}
-
-bool find_free_CCE(module_id_t module_id,
-                   sub_frame_t slot,
-                   int UE_id){
-  NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id];
-  uint8_t nr_of_candidates;
-  for (int i=0; i<5; i++) {
-    // for now taking the lowest value among the available aggregation levels
-    find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                                &nr_of_candidates,
-                                sched_ctrl->search_space,
-                                1<<i);
-    if(nr_of_candidates>0) break;
-  }
-  AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
-  const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid%3][slot];
-  const int m = RC.nrmac[module_id]->UE_info.num_pdcch_cand[UE_id][cid];
-  if (UE_id >= 0) LOG_D(NR_MAC,"slot %d calling allocate_nr_CCEs with L %d, nr_of_candidates %d, Y %x\n",slot, sched_ctrl->aggregation_level,nr_of_candidates,Y);
-  sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
-                                           sched_ctrl->active_bwp,
-                                           sched_ctrl->coreset,
-                                           sched_ctrl->aggregation_level,
-                                           Y,
-                                           m,
-                                           nr_of_candidates);
-  if (sched_ctrl->cce_index < 0)
-    return false;
-
-  RC.nrmac[module_id]->UE_info.num_pdcch_cand[UE_id][cid]++;
-  return true;
 }
 
 

@@ -535,7 +535,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   if (CellGroup) {
 
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
-
     const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
     if(bwpList) {
       AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
@@ -605,6 +604,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       }
       LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
     } else { // CellGroup has been updated
+      NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon;
       const int UE_id = find_nr_UE_id(Mod_idP,rnti);
       int target_ss;
       UE_info->CellGroup[UE_id] = CellGroup;
@@ -612,19 +612,28 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
       // update coreset/searchspace
       void *bwpd = NULL;
+      NR_BWP_t *genericParameters = NULL;
       target_ss = NR_SearchSpace__searchSpaceType_PR_common;
       if ((UE_info->UE_sched_ctrl[UE_id].active_bwp)) {
         target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
         bwpd = (void*)UE_info->UE_sched_ctrl[UE_id].active_bwp->bwp_Dedicated;
+        genericParameters = &UE_info->UE_sched_ctrl[UE_id].active_bwp->bwp_Common->genericParameters;
       }
       else if (CellGroup->spCellConfig &&
                  CellGroup->spCellConfig->spCellConfigDedicated &&
                  (CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
         target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
         bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+        genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       }
       UE_info->UE_sched_ctrl[UE_id].search_space = get_searchspace(scc, bwpd, target_ss);
       UE_info->UE_sched_ctrl[UE_id].coreset = get_coreset(Mod_idP, scc, bwpd, UE_info->UE_sched_ctrl[UE_id].search_space, target_ss);
+      UE_info->UE_sched_ctrl[UE_id].sched_pdcch = set_pdcch_structure(RC.nrmac[Mod_idP],
+                                                                      UE_info->UE_sched_ctrl[UE_id].search_space,
+                                                                      UE_info->UE_sched_ctrl[UE_id].coreset,
+                                                                      scc,
+                                                                      genericParameters,
+                                                                      NULL);
       UE_info->UE_sched_ctrl[UE_id].maxL = 2;
     }
   }
