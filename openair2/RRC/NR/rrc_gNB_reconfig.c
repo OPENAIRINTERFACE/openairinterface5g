@@ -1304,17 +1304,17 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon, NR_CSI_
        resourceMapping.frequencyDomainAllocation.choice.row2.buf = calloc(2, sizeof(uint8_t));
        resourceMapping.frequencyDomainAllocation.choice.row2.size = 2;
        resourceMapping.frequencyDomainAllocation.choice.row2.bits_unused = 4;
-       resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]=0;
-       resourceMapping.frequencyDomainAllocation.choice.row2.buf[1]=16;
+       resourceMapping.frequencyDomainAllocation.choice.row2.buf[0] = 0;
+       resourceMapping.frequencyDomainAllocation.choice.row2.buf[1] = 16;
        resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p1;
        resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_noCDM;
        break;
      case 2:
        resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other;
-       resourceMapping.frequencyDomainAllocation.choice.row2.buf = calloc(2, sizeof(uint8_t));
-       resourceMapping.frequencyDomainAllocation.choice.row2.size = 1;
-       resourceMapping.frequencyDomainAllocation.choice.row2.bits_unused = 2;
-       resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]=4;
+       resourceMapping.frequencyDomainAllocation.choice.other.buf = calloc(2, sizeof(uint8_t));
+       resourceMapping.frequencyDomainAllocation.choice.other.size = 1;
+       resourceMapping.frequencyDomainAllocation.choice.other.bits_unused = 2;
+       resourceMapping.frequencyDomainAllocation.choice.other.buf[0] = 4;
        resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p2;
        resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_fd_CDM2;
        break;

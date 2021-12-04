@@ -2273,7 +2273,7 @@ void nr_csirs_scheduling(int Mod_idP,
             case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2:
               csirs_pdu_rel15->row = 2;
               csirs_pdu_rel15->freq_domain = (((resourceMapping.frequencyDomainAllocation.choice.row2.buf[1]>>4)&0x0f) |
-                                             ((resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]<<8)&0xff0));
+                                             ((resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]<<4)&0xff0));
               for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
                 vrb_map[rb+csirs_pdu_rel15->bwp_start] |= (1 << csirs_pdu_rel15->symb_l0);
               break;
@@ -2288,6 +2288,7 @@ void nr_csirs_scheduling(int Mod_idP,
               // determining the row of table 7.4.1.5.3-1 in 38.211
               switch(resourceMapping.nrofPorts){
                 case NR_CSI_RS_ResourceMapping__nrofPorts_p1:
+                  AssertFatal(1==0,"Resource with 1 CSI port shouldn't be within other rows\n");
                   break;
                 case NR_CSI_RS_ResourceMapping__nrofPorts_p2:
                   csirs_pdu_rel15->row = 3;

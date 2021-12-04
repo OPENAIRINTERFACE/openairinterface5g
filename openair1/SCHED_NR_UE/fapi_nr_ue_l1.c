@@ -50,7 +50,7 @@ void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
                      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
                      int rnti) {
 
-  uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
+  const uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
   dlsch0->current_harq_pid = current_harq_pid;
   dlsch0->active = 1;
   dlsch0->rnti = rnti;
@@ -126,7 +126,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         switch(dl_config->dl_config_list[i].pdu_type) {
           case FAPI_NR_DL_CONFIG_TYPE_DCI:
             pdcch_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
-            memcpy((void*)&pdcch_vars->pdcch_config[pdcch_vars->nb_search_space],(void*)pdcch_config,sizeof(*pdcch_config));
+            memcpy(&pdcch_vars->pdcch_config[pdcch_vars->nb_search_space],pdcch_config,sizeof(*pdcch_config));
             pdcch_vars->nb_search_space = pdcch_vars->nb_search_space + 1;
             pdcch_vars->sfn = scheduled_response->frame;
             pdcch_vars->slot = slot;

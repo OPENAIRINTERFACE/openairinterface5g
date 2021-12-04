@@ -2212,14 +2212,11 @@ void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot) {
       csi_period_offset(NULL,imcsi->periodicityAndOffset,&period,&offset);
       if((frame*nr_slots_per_frame[mu]+slot-offset)%period == 0) {
         fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csiim_config_pdu.csiim_config_rel15;
-        if(mac->DLbwp[dl_bwp_id-1]){
-          csiim_config_pdu->bwp_size = NRRIV2BW(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-          csiim_config_pdu->bwp_start = NRRIV2PRBOFFSET(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        }
-        else{
-          csiim_config_pdu->bwp_size = NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-          csiim_config_pdu->bwp_start = NRRIV2PRBOFFSET(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        }
+        const NR_BWP_Downlink_t *dlbwp = mac->DLbwp[dl_bwp_id-1];
+        const int locationAndBandwidth = dlbwp != NULL ? dlbwp->bwp_Common->genericParameters.locationAndBandwidth:
+                                         mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth;
+        csiim_config_pdu->bwp_size = NRRIV2BW(locationAndBandwidth, MAX_BWP_SIZE);
+        csiim_config_pdu->bwp_start = NRRIV2PRBOFFSET(locationAndBandwidth, MAX_BWP_SIZE);
         csiim_config_pdu->subcarrier_spacing = mu;
         csiim_config_pdu->start_rb = imcsi->freqBand->startingRB;
         csiim_config_pdu->nr_of_rbs = imcsi->freqBand->nrofRBs;
@@ -2280,14 +2277,11 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
 
         NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
 
-        if(mac->DLbwp[dl_bwp_id-1]){
-          csirs_config_pdu->bwp_size = NRRIV2BW(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-          csirs_config_pdu->bwp_start = NRRIV2PRBOFFSET(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        }
-        else{
-          csirs_config_pdu->bwp_size = NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-          csirs_config_pdu->bwp_start = NRRIV2PRBOFFSET(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        }
+        const NR_BWP_Downlink_t *dlbwp = mac->DLbwp[dl_bwp_id-1];
+        const int locationAndBandwidth = dlbwp != NULL ? dlbwp->bwp_Common->genericParameters.locationAndBandwidth:
+                                         mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth;
+        csirs_config_pdu->bwp_size = NRRIV2BW(locationAndBandwidth, MAX_BWP_SIZE);
+        csirs_config_pdu->bwp_start = NRRIV2PRBOFFSET(locationAndBandwidth, MAX_BWP_SIZE);
         csirs_config_pdu->subcarrier_spacing = mu;
         csirs_config_pdu->start_rb = resourceMapping.freqBand.startingRB;
         csirs_config_pdu->nr_of_rbs = resourceMapping.freqBand.nrofRBs;
@@ -2309,7 +2303,7 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
           case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2:
             csirs_config_pdu->row = 2;
             csirs_config_pdu->freq_domain = (((resourceMapping.frequencyDomainAllocation.choice.row2.buf[1]>>4)&0x0f) |
-                                            ((resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]<<8)&0xff0));
+                                            ((resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]<<4)&0xff0));
             break;
           case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row4:
             csirs_config_pdu->row = 4;
@@ -2320,6 +2314,7 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
             // determining the row of table 7.4.1.5.3-1 in 38.211
             switch(resourceMapping.nrofPorts){
               case NR_CSI_RS_ResourceMapping__nrofPorts_p1:
+                AssertFatal(1==0,"Resource with 1 CSI port shouldn't be within other rows\n");
                 break;
               case NR_CSI_RS_ResourceMapping__nrofPorts_p2:
                 csirs_config_pdu->row = 3;
