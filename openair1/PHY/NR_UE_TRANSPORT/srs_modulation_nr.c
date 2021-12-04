@@ -203,8 +203,6 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
   /* for each antenna ports for transmission */
   for (int p_index = 0; p_index < N_ap; p_index++) {
 
-    uint8_t ofdm_symbol = 0;
-
   /* see TS 38.211 6.4.1.4.2 Sequence generation */
 
     n_SRS_cs_i = (n_SRS_cs +  (n_SRS_cs_max * (SRS_antenna_port[p_index] - 1000)/N_ap))%n_SRS_cs_max;
@@ -373,29 +371,28 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
                                                                                             rv_ul_ref_sig[u][v_nu][M_sc_b_SRS_index][2*k+1]);
 #endif
 
-      txptr[subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size] = (real_amp & 0xFFFF) + ((imag_amp<<16)&0xFFFF0000);
+      txptr[subcarrier] = (real_amp & 0xFFFF) + ((imag_amp<<16)&0xFFFF0000);
 
       if(nr_srs_info) {
-        nr_srs_info->subcarrier_idx[nr_srs_info->n_symbs] = subcarrier + ofdm_symbol*frame_parms->ofdm_symbol_size - subcarrier_offset;
+        nr_srs_info->subcarrier_idx[nr_srs_info->n_symbs] = subcarrier;
         nr_srs_info->n_symbs++;
       }
 
 #ifdef SRS_DEBUG
-      if( (subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-subcarrier_offset)%12 == 0 ) {
-        LOG_I(NR_PHY,"------------ %lu ------------\n",
-              (subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-subcarrier_offset)/12);
+      int subcarrier_log = subcarrier-subcarrier_offset;
+      if(subcarrier_log < 0) {
+        subcarrier_log = subcarrier_log + frame_parms->ofdm_symbol_size;
       }
-      LOG_I(NR_PHY,"(%lu)  \t%i\t%i\n",
-            subcarrier+ofdm_symbol*frame_parms->ofdm_symbol_size-subcarrier_offset,
-            real_amp&0xFFFF,
-            imag_amp&0xFFFF);
+      if( subcarrier_log%12 == 0 ) {
+        LOG_I(NR_PHY,"------------ %d ------------\n", subcarrier_log/12);
+      }
+      LOG_I(NR_PHY,"(%d)  \t%i\t%i\n", subcarrier_log, (int16_t)(real_amp&0xFFFF), (int16_t)(imag_amp&0xFFFF));
 #endif
 
       subcarrier += (K_TC); /* subcarrier increment */
 
       if (subcarrier >= frame_parms->ofdm_symbol_size) {
         subcarrier=subcarrier-frame_parms->ofdm_symbol_size;
-        ofdm_symbol++;
       }
 
     }

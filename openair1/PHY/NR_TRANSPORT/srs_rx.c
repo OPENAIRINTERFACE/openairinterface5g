@@ -107,28 +107,31 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
   uint8_t l0 = frame_parms->symbols_per_slot - 1 - srs_pdu->time_start_position;  // starting symbol in this slot
   uint64_t symbol_offset = (n_symbols+l0)*frame_parms->ofdm_symbol_size;
 
-  uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
-
   int32_t *rx_signal;
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
 
     memset(srs_received_signal[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
-    rx_signal = &rxdataF[ant][symbol_offset + subcarrier_offset];
+    rx_signal = &rxdataF[ant][symbol_offset];
 
     for(int sc_idx = 0; sc_idx < nr_srs_info->n_symbs; sc_idx++) {
-      srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + subcarrier_offset] = rx_signal[nr_srs_info->subcarrier_idx[sc_idx]];
+      srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx]] = rx_signal[nr_srs_info->subcarrier_idx[sc_idx]];
 
 #ifdef SRS_DEBUG
+      uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
+      int subcarrier_log = nr_srs_info->subcarrier_idx[sc_idx]-subcarrier_offset;
+      if(subcarrier_log < 0) {
+        subcarrier_log = subcarrier_log + frame_parms->ofdm_symbol_size;
+      }
       if(sc_idx == 0) {
         LOG_I(NR_PHY,"________ Rx antenna %i ________\n", ant);
       }
-      if(nr_srs_info->subcarrier_idx[sc_idx]%12 == 0) {
-        LOG_I(NR_PHY,"::::::::::::: %i :::::::::::::\n", nr_srs_info->subcarrier_idx[sc_idx]/12);
+      if(subcarrier_log%12 == 0) {
+        LOG_I(NR_PHY,"::::::::::::: %i :::::::::::::\n", subcarrier_log/12);
       }
       LOG_I(NR_PHY,"(%i)  \t%i\t%i\n",
-            nr_srs_info->subcarrier_idx[sc_idx],
-            srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + subcarrier_offset]&0xFFFF,
-            (srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx] + subcarrier_offset]>>16)&0xFFFF);
+            subcarrier_log,
+            (int16_t)(srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx]]&0xFFFF),
+            (int16_t)((srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx]]>>16)&0xFFFF));
 #endif
     }
   }
