@@ -1108,39 +1108,9 @@ notifiedFIFO_elt_t *l1tx_message_extract(PHY_VARS_gNB *gNB, int frame, int slot)
   notifiedFIFO_elt_t *res;
   notifiedFIFO_elt_t *freeRes = NULL;
 
-  // check first message
-  res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
-  processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
-  if (msgTx->slot == slot) {
-    return res;
-  }
-  if (msgTx->slot == -1) {
-    freeRes = res;
-  }
-
-  // check second message
-  pushNotifiedFIFO(gNB->resp_L1_tx,res);
-  res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
-  msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
-  if (msgTx->slot == slot) {
-    return res;
-  }
-  if (msgTx->slot == -1) {
-    freeRes = res;
-  }
-
-  if (freeRes) {
-    msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
-    msgTx->num_pdsch_slot=0;
-    msgTx->pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
-    msgTx->ul_pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
-    msgTx->slot = slot;
-    msgTx->frame = frame;
-    return freeRes;
-  }
-  pushNotifiedFIFO(gNB->resp_L1_tx,res);
-  AssertFatal(1==0, "It means both L1 Tx messages are still waiting to be processed. This happens when L1 Tx processing is too slow. Message slot %d, scheduled slot %d\n",
-    msgTx->slot, slot);
+  //TODO: This needs to be reworked for nfapi to work
+  res = pullTpool(gNB->L1_tx_free, gNB->threadPool);
+  return res;
 }
 
 int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_ul_dci_request_t *req) {
@@ -1166,7 +1136,7 @@ int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     }
   }
 
-  pushNotifiedFIFO(gNB->resp_L1_tx,res);
+  pushNotifiedFIFO(gNB->L1_tx_filled,res);
 
   return 0;
 }
@@ -1274,7 +1244,7 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     else {
       NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() UNKNOWN:%d\n", __FUNCTION__, dl_tti_pdu_list[i].PDUType);
     }
-    pushNotifiedFIFO(gNB->resp_L1_tx,res);
+    pushNotifiedFIFO(gNB->L1_tx_filled,res);
   }
 
   if(req->vendor_extension)

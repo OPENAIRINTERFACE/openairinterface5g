@@ -608,6 +608,8 @@ typedef struct gNB_L1_proc_t_s {
   pthread_t L1_stats_thread;
   /// pthread structure for printing time meas
   pthread_t process_stats_thread;
+  /// pthread structure for reordering L1 tx thread messages
+  pthread_t pthread_tx_reorder;
   /// flag to indicate first RX acquisition
   int first_rx;
   /// flag to indicate first TX transmission
@@ -897,11 +899,14 @@ typedef struct PHY_VARS_gNB_s {
   */
   notifiedFIFO_t *respDecode;
   notifiedFIFO_t *resp_L1;
-  notifiedFIFO_t *resp_L1_tx;
+  notifiedFIFO_t *L1_tx_free;
+  notifiedFIFO_t *L1_tx_filled;
+  notifiedFIFO_t *L1_tx_out;
   notifiedFIFO_t *resp_RU_tx;
   tpool_t *threadPool;
   int nbDecode;
   uint8_t pusch_proc_threads;
+  int next_tx_slot;
   int number_of_nr_dlsch_max;
   int number_of_nr_ulsch_max;
   void * scopeData;
