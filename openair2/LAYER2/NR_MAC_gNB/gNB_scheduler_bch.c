@@ -314,7 +314,7 @@ void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart,  uint16_t symStart
   uint16_t *vrb_map = cc[CC_id].vrb_map;
 
   for (int rb = 0; rb < 20; rb++)
-    vrb_map[rbStart + rb] = 15<<symStart;
+    vrb_map[rbStart + rb] = startandlength_to_bitmat(symStart, 4);
 
 }
 
@@ -392,7 +392,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   int rbSize = 0;
   uint32_t TBS = 0;
   do {
-    if(rbSize < bwpSize && !(vrb_map[rbStart + rbSize]&(((1<<nrOfSymbols)-1)<<startSymbolIndex)))
+    if(rbSize < bwpSize && !(vrb_map[rbStart + rbSize]&startandlength_to_bitmat(startSymbolIndex, nrOfSymbols)))
       rbSize++;
     else{
       if (gNB_mac->sched_ctrlCommon->sched_pdsch.mcs<10)
@@ -426,7 +426,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                      gNB_mac->sched_ctrlCommon->cce_index,
                      gNB_mac->sched_ctrlCommon->aggregation_level);
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize; rb++) {
-    vrb_map[rb + rbStart] = ((1<<nrOfSymbols)-1)<<startSymbolIndex;
+    vrb_map[rb + rbStart] = startandlength_to_bitmat(startSymbolIndex, nrOfSymbols);
   }
   return TBS;
 }

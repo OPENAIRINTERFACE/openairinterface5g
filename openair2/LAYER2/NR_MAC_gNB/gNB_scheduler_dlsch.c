@@ -562,14 +562,14 @@ bool allocate_dl_retransmission(module_id_t module_id,
       rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
       rbSize = 0;
       while (rbStart < bwpSize &&
-             !(rballoc_mask[rbStart]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
+             !(rballoc_mask[rbStart]&startandlength_to_bitmat(ps->startSymbolIndex, ps->nrOfSymbols)))
         rbStart++;
       if (rbStart >= bwpSize) {
         LOG_D(NR_MAC, "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n", UE_id, UE_info->rnti[UE_id]);
         return false;
       }
       while (rbStart + rbSize < bwpSize &&
-             (rballoc_mask[rbStart + rbSize]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)) &&
+             (rballoc_mask[rbStart + rbSize]&startandlength_to_bitmat(ps->startSymbolIndex, ps->nrOfSymbols)) &&
              rbSize < retInfo->rbSize)
         rbSize++;
     }
@@ -584,10 +584,10 @@ bool allocate_dl_retransmission(module_id_t module_id,
     temp_ps.nrOfLayers = 1;
     nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, f, &temp_ps);
     while (rbStart < bwpSize &&
-           !(rballoc_mask[rbStart]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
+           !(rballoc_mask[rbStart]&startandlength_to_bitmat(ps->startSymbolIndex, ps->nrOfSymbols)))
       rbStart++;
     while (rbStart + rbSize < bwpSize &&
-           (rballoc_mask[rbStart + rbSize]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
+           (rballoc_mask[rbStart + rbSize]&startandlength_to_bitmat(ps->startSymbolIndex, ps->nrOfSymbols)))
       rbSize++;
     uint32_t new_tbs;
     uint16_t new_rbSize;
@@ -670,7 +670,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   /* retransmissions: directly allocate */
   *n_rb_sched -= sched_ctrl->sched_pdsch.rbSize;
   for (int rb = 0; rb < sched_ctrl->sched_pdsch.rbSize; rb++)
-    rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] -= (((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex);
+    rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] -= startandlength_to_bitmat(ps->startSymbolIndex, ps->nrOfSymbols);
   return true;
 }
 
@@ -832,12 +832,12 @@ void pf_dl(module_id_t module_id,
 
     // Freq-demain allocation
     while (rbStart < bwpSize &&
-           !(rballoc_mask[rbStart]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
+           !(rballoc_mask[rbStart]&startandlength_to_bitmat(ps->startSymbolIndex, ps->nrOfSymbols)))
       rbStart++;
 
     uint16_t max_rbSize = 1;
     while (rbStart + max_rbSize < bwpSize &&
-           (rballoc_mask[rbStart + max_rbSize]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
+           (rballoc_mask[rbStart + max_rbSize]&startandlength_to_bitmat(ps->startSymbolIndex, ps->nrOfSymbols)))
       max_rbSize++;
 
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -861,7 +861,7 @@ void pf_dl(module_id_t module_id,
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;
     for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
-      rballoc_mask[rb + sched_pdsch->rbStart] -= (((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex);
+      rballoc_mask[rb + sched_pdsch->rbStart] -= startandlength_to_bitmat(ps->startSymbolIndex, ps->nrOfSymbols);
   }
 }
 
@@ -904,8 +904,8 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
     // if any RB in vrb_map is blocked (1), the current RBG will be 0
     rballoc_mask[i] = (~vrb_map[i+BWPStart])&0x3fff; //bitwise not and 14 symbols
     // if all the pdsch symbols are free
-    if((rballoc_mask[i]&(((1<<nrOfSymbols)-1)<<startSymbolIndex)) ==
-       ((1<<nrOfSymbols)-1)<<startSymbolIndex)
+    if((rballoc_mask[i]&startandlength_to_bitmat(startSymbolIndex, nrOfSymbols)) ==
+       startandlength_to_bitmat(startSymbolIndex, nrOfSymbols))
       n_rb_sched++;
   }
 

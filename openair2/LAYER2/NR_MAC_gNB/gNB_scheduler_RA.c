@@ -1180,7 +1180,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     uint16_t *vrb_map = cc[CC_id].vrb_map;
     for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
-      if (vrb_map[BWPStart + rbStart + i]&(((1<<nrOfSymbols)-1)<<startSymbolIndex)) {
+      if (vrb_map[BWPStart + rbStart + i]&startandlength_to_bitmat(startSymbolIndex, nrOfSymbols)) {
         rbStart += i;
         i = 0;
       }
@@ -1401,7 +1401,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        CCEIndex,
                        aggregation_level);
     for (int rb = 0; rb < rbSize; rb++) {
-      vrb_map[BWPStart + rb + rbStart] = ((1<<nrOfSymbols)-1)<<startSymbolIndex;
+      vrb_map[BWPStart + rb + rbStart] |= startandlength_to_bitmat(startSymbolIndex, nrOfSymbols);
     }
 
     ra->state = WAIT_Msg3;
@@ -1592,7 +1592,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     int i = 0;
     while ((i < rbSize) && (rbStart + rbSize <= BWPSize)) {
-      if (vrb_map[BWPStart + rbStart + i]&(((1<<nrOfSymbols)-1)<<startSymbolIndex)) {
+      if (vrb_map[BWPStart + rbStart + i]&startandlength_to_bitmat(startSymbolIndex, nrOfSymbols)) {
         rbStart += i+1;
         i = 0;
       } else {
@@ -1773,7 +1773,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        CCEIndex,
                        aggregation_level);
     for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++) {
-      vrb_map[BWPStart + rb + pdsch_pdu_rel15->rbStart] = ((1<<nrOfSymbols)-1)<<startSymbolIndex;
+      vrb_map[BWPStart + rb + pdsch_pdu_rel15->rbStart] |= startandlength_to_bitmat(startSymbolIndex, nrOfSymbols);
     }
 
     LOG_D(NR_MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);
