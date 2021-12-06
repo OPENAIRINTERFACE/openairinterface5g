@@ -79,6 +79,23 @@ pipeline {
                             string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
                             booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
                         ]
+                        //calling OAIUE B200
+                        build job: "RAN-SA-OAIUE-B200-CN5G", wait : true, propagate : false, parameters: [
+                            string(name: 'eNB_MR', value: String.valueOf(MR)),
+                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
+                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
+                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
+                            booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
+                        ]
+                        //calling OAIUE N310
+                        build job: "RAN-SA-OAIUE-N310-CN5G", wait : true, propagate : false, parameters: [
+                            string(name: 'eNB_MR', value: String.valueOf(MR)),
+                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
+                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
+                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
+                            booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
+                        ]
+
 
                     }
                 }                                  
