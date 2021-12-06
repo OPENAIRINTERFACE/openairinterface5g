@@ -1232,14 +1232,17 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     uint8_t feedback_ti =
       ubwpd->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
 
-   // set the harq status at MAC for feedback
-   set_harq_status(mac,dci->pucch_resource_indicator,
-                   dci->harq_pid,
-                   dlsch_config_pdu_1_1->accumulated_delta_PUCCH,
-                   feedback_ti,
-                   dci->dai[0].val,
-                   dci_ind->n_CCE,dci_ind->N_CCE,0,
-                   frame,slot);
+    AssertFatal(feedback_ti>=DURATION_RX_TO_TX,"PDSCH to HARQ feedback time (%d) cannot be less than DURATION_RX_TO_TX (%d)\n",
+                feedback_ti,DURATION_RX_TO_TX);
+
+    // set the harq status at MAC for feedback
+    set_harq_status(mac,dci->pucch_resource_indicator,
+                    dci->harq_pid,
+                    dlsch_config_pdu_1_1->accumulated_delta_PUCCH,
+                    feedback_ti,
+                    dci->dai[0].val,
+                    dci_ind->n_CCE,dci_ind->N_CCE,
+                    0, frame,slot);
 
     dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
     LOG_D(MAC,"(nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
@@ -1328,25 +1331,6 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   current_harq->dl_slot = slot;
 
   LOG_D(PHY,"Setting harq_status for harq_id %d, dl %d.%d\n",harq_id,frame,slot);
-}
-
-
-void update_harq_status(nr_downlink_indication_t *dl_info, int pdu_id) {
-
-  NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
-  uint8_t harq_pid = dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid;
-  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[harq_pid];
-
-  if (current_harq->active) {
-    current_harq->ack = dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack;
-    current_harq->ack_received = true;
-    LOG_D(PHY,"Updating harq_status for harq_id %d,ack/nak %d\n",harq_pid,current_harq->ack);
-
-  }
-  else {
-    //shouldn't get here
-    LOG_E(MAC, "Trying to process acknack for an inactive harq process (%d)\n", harq_pid);
-  }
 }
 
 
@@ -2123,7 +2107,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   uint32_t V_temp = 0;
   uint32_t V_temp2 = 0;
   int O_ACK = 0;
-  int o_ACK = 0;
+  uint8_t o_ACK = 0;
   int O_bit_number_cw0 = 0;
   int O_bit_number_cw1 = 0;
 
@@ -2151,6 +2135,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
     }
 
     o_ACK = o_ACK | (ack_data[0][m] << O_bit_number_cw0);
+    LOG_D(MAC,"m %d bit number %d o_ACK %d\n",m,O_bit_number_cw0,o_ACK);
   }
 
   if (V_temp2 < V_temp) {
@@ -2169,7 +2154,10 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
     return (0);
   }
 
+  reverse_n_bits(&o_ACK,number_harq_feedback);
   pucch->ack_payload = o_ACK;
+
+  LOG_D(MAC,"frame %d slot %d pucch acknack payload %d\n",frame,slot,o_ACK);
 
   return(number_harq_feedback);
 }
