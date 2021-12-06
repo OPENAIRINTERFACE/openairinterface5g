@@ -1412,6 +1412,12 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     int UE_id = find_nr_UE_id(module_idP, ra->rnti);
+    if (UE_id < 0) {
+      mac_remove_nr_ue(module_idP, tc_rnti);
+      nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
+      return;
+    }
+
     NR_UE_info_t *UE_info = &nr_mac->UE_info;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
