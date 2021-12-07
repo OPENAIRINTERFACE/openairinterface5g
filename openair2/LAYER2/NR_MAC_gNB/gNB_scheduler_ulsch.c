@@ -822,6 +822,20 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
             ra->state = Msg4;
             ra->Msg4_frame = (frameP + 2) % 1024;
             ra->Msg4_slot = 1;
+            
+            if (ra->msg3_dcch_dtch) {
+              // Check if the C-RNTI still exists in the network
+              int UE_id_C = find_nr_UE_id(gnb_mod_idP, ra->crnti);
+              if (UE_id_C < 0) {
+                mac_remove_nr_ue(gnb_mod_idP, ra->rnti);
+                nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+                return;
+              } else {
+                UE_info->UE_sched_ctrl[UE_id_C].pusch_consecutive_dtx_cnt = 0;
+                UE_info->UE_sched_ctrl[UE_id_C].ul_failure = 0;
+                nr_mac_gNB_rrc_ul_failure_reset(gnb_mod_idP, frameP, slotP, ra->crnti);
+              }
+            }
             LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d, frame %d, slot %d)\n",
                   (ra->msg3_dcch_dtch?ra->crnti:ra->rnti), ra->state, ra->Msg4_frame, ra->Msg4_slot);
           }
