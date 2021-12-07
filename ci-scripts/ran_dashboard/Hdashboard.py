@@ -507,7 +507,7 @@ class Dashboard:
         s3.meta.client.copy(copy_source, 'oaitestdashboard', path+'/'+ 'test_styles.css')
 
 
-    def PostGitNote(self,singlemr)
+    def PostGitNote(self,singlemr):
         gl = gitlab.Gitlab.from_config('OAI')
         project_id = 223
         project = gl.projects.get(project_id)
