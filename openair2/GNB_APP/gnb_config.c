@@ -675,13 +675,13 @@ void RCconfig_nr_macrlc() {
   config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
   char *ulprbbl = *GNBParamList.paramarray[0][GNB_ULPRBBLACKLIST_IDX].strptr; 
   char *pt = strtok(ulprbbl,",");
-  int prbbl[275];
+  uint16_t prbbl[275];
   int num_prbbl=0;
   int prb;
-  memset(prbbl,0,275*sizeof(int));
+  memset(prbbl,0,275*sizeof(uint16_t));
   while (pt) {
     prb=atoi(pt); 
-    prbbl[prb] = 1;
+    prbbl[prb] = 0x3FFF; // all symbols taken
     pt = strtok(NULL,",");
     num_prbbl++;
   }
