@@ -1552,7 +1552,7 @@ class OaiCiTest():
 				SSH.command('cd scripts', '\$', 5)
 				# In case of a docker-based deployment, we need to ping from the trf-gen container
 				launchFromTrfContainer = False
-				if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+				if (re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE)) or (re.match('OAICN5G', EPC.Type, re.IGNORECASE)):
 					launchFromTrfContainer = True
 				if launchFromTrfContainer:
 					ping_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "ping ' + self.ping_args + ' ' + UE_IPAddress + '" 2>&1 | tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)				
@@ -3348,7 +3348,7 @@ class OaiCiTest():
 			self.desc = 'Automatic Termination of OAI-UE'
 			HTML.desc = self.desc
 			self.ShowTestID()
-			self.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE)
+			self.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 		if (RAN.Initialize_eNB_args != ''):
 			self.testCase_id = 'AUTO-KILL-RAN'
 			HTML.testCase_id = self.testCase_id

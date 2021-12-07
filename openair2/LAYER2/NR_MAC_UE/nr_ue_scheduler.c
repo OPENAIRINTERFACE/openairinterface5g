@@ -2156,7 +2156,7 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
     return;
 
   if (N_UCI > 0) {
-
+    LOG_D(NR_MAC,"%d.%d configure pucch, O_SR %d, O_ACK %d, O_CSI %d\n",frameP,slotP,O_SR,O_ACK,O_CSI);
     pucch->resource_set_id = find_pucch_resource_set(mac, O_ACK + O_CSI);
     select_pucch_resource(mac, pucch);
     fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
@@ -2179,7 +2179,6 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
       mac->if_module->scheduled_response(&scheduled_response);
   }
-
 }
 
 

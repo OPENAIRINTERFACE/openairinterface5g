@@ -48,6 +48,7 @@ const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 
 void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
                      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                     module_id_t module_id,
                      int rnti) {
 
   const uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
@@ -80,9 +81,10 @@ void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
     dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
     downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch_config_pdu->rv, dlsch0->rnti_type);
     if (dlsch0_harq->status != ACTIVE) {
-      // dlsch0_harq->status not ACTIVE may be due to false retransmission.
-      // Reset the following flag to skip PDSCH procedures in that case.
+      // dlsch0_harq->status not ACTIVE due to false retransmission
+      // Reset the following flag to skip PDSCH procedures in that case and retrasmit harq status
       dlsch0->active = 0;
+      update_harq_status(module_id,dlsch0->current_harq_pid,dlsch0_harq->ack);
     }
     /* PTRS */
     dlsch0_harq->PTRSFreqDensity = dlsch_config_pdu->PTRSFreqDensity;
@@ -143,7 +145,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_ra[0];
             dlsch0->rnti_type = _RA_RNTI_;
             dlsch0->harq_processes[dlsch_config_pdu->harq_process_nbr]->status = ACTIVE;
-            configure_dlsch(dlsch0, dlsch_config_pdu,
+            configure_dlsch(dlsch0, dlsch_config_pdu, module_id,
                             dl_config->dl_config_list[i].dlsch_config_pdu.rnti);
             break;
           case FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH:
@@ -151,13 +153,13 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_SI[0];
             dlsch0->rnti_type = _SI_RNTI_;
             dlsch0->harq_processes[dlsch_config_pdu->harq_process_nbr]->status = ACTIVE;
-            configure_dlsch(dlsch0, dlsch_config_pdu,
+            configure_dlsch(dlsch0, dlsch_config_pdu, module_id,
                             dl_config->dl_config_list[i].dlsch_config_pdu.rnti);
             break;
           case FAPI_NR_DL_CONFIG_TYPE_DLSCH:
             dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
             dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
-            configure_dlsch(dlsch0, dlsch_config_pdu,
+            configure_dlsch(dlsch0, dlsch_config_pdu, module_id,
                             dl_config->dl_config_list[i].dlsch_config_pdu.rnti);
             break;
         }
