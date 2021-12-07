@@ -123,7 +123,7 @@ long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
   }
 
   AssertFatal(k2 >= DURATION_RX_TO_TX,
-              "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d)\n",
+              "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d). K2 set according to min_rxtxtime in config file.\n",
               k2,DURATION_RX_TO_TX);
 
   LOG_D(NR_MAC, "get_k2(): k2 is %ld\n", k2);
