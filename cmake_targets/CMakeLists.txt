@@ -844,6 +844,45 @@ if (${RU} STREQUAL 0)
   
 endif (${RU} STREQUAL 0)
 
+# LPP
+##############
+set(LPP_DIR ${OPENAIR3_DIR}/LPP)
+set(LPP_ASN_DIR ${LPP_DIR}/MESSAGES)
+set(LPP_ASN_FILES
+  ${LPP_ASN_DIR}/37355-g60.asn
+  )
+
+if (${RU} STREQUAL 0)
+  set(LPP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/LPP)
+  message("calling ASN1C_PREFIX=LPP_ asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${LPP_ASN_GENERATED_C_DIR} ${LPP_ASN_FILES}")
+  execute_process(
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "LPP_" "-findirect-choice -fno-include-deps" ${LPP_ASN_GENERATED_C_DIR} ${LPP_ASN_FILES}
+    RESULT_VARIABLE ret
+    )
+  
+  if (NOT ${ret} STREQUAL 0)
+    message(FATAL_ERROR "asn1c: error")
+  endif (NOT ${ret} STREQUAL 0)
+  
+  add_custom_target (
+    lpp_flag ALL
+    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "LPP_" "-findirect-choice -fno-include-deps" ${LPP_ASN_GENERATED_C_DIR} ${LPP_ASN_FILES}
+    DEPENDS ${LPP_ASN_FILES}
+    )
+  file(GLOB LPP_ASN_GENERATED_C_FILES ${LPP_ASN_GENERATED_C_DIR}/*.c)
+  add_library(LPP_LIB
+    ${LPP_ASN_GENERATED_C_FILES}
+    )
+  add_dependencies (LPP_LIB  lpp_flag)
+  
+  include_directories ("${LPP_ASN_GENERATED_C_DIR}")
+  include_directories ("${LPP_DIR}")
+  
+  #file(GLOB LPP_C_FILES ${LPP_DIR}/*.c)
+  #add_library(LPP ${LPP_C_FILES} )
+  
+endif (${RU} STREQUAL 0)
+
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "4" "Number of antennas in reception" "1" "2" "4")
