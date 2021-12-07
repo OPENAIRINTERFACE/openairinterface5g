@@ -205,10 +205,7 @@ UE on machine 2:
 
 
 
-
-
-
-
+[Selecting an alternative ldpc implementation at run time](../openair1/PHY/CODING/DOC/LDPCImplementation.md)
 
 [oai wiki home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
 

@@ -768,7 +768,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
     uint16_t s1             = dlsch0_harq->nb_symbols;
     bool is_SI              = dlsch0->rnti_type == _SI_RNTI_;
 
-    LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x\n",ue->Mod_id,pdsch,nr_slot_rx,harq_pid,dlsch0_harq->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0_harq->dlDmrsSymbPos);
+    LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x\n",
+          ue->Mod_id,pdsch,nr_slot_rx,harq_pid,dlsch0_harq->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0_harq->dlDmrsSymbPos);
 
     for (m = s0; m < (s0 +s1); m++) {
       if (dlsch0_harq->dlDmrsSymbPos & (1 << m)) {
@@ -980,37 +981,23 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
    start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 
+    ret = nr_dlsch_decoding(ue,
+                            proc,
+                            gNB_id,
+                            pdsch_vars->llr[0],
+                            &ue->frame_parms,
+                            dlsch0,
+                            dlsch0->harq_processes[harq_pid],
+                            frame_rx,
+                            nb_symb_sch,
+                            nr_slot_rx,
+                            harq_pid,
+                            pdsch==PDSCH?1:0,
+                            dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
     if( dlsch_parallel) {
-      ret = nr_dlsch_decoding_mthread(ue,
-                                      proc,
-                                      gNB_id,
-                                      pdsch_vars->llr[0],
-                                      &ue->frame_parms,
-                                      dlsch0,
-                                      dlsch0->harq_processes[harq_pid],
-                                      frame_rx,
-                                      nb_symb_sch,
-                                      nr_slot_rx,
-                                      harq_pid,
-                                      pdsch==PDSCH?1:0,
-                                      dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
-
       LOG_T(PHY,"dlsch decoding is parallelized, ret = %d\n", ret);
     }
     else {
-      ret = nr_dlsch_decoding(ue,
-                              proc,
-                              gNB_id,
-                              pdsch_vars->llr[0],
-                              &ue->frame_parms,
-                              dlsch0,
-                              dlsch0->harq_processes[harq_pid],
-                              frame_rx,
-                              nb_symb_sch,
-                              nr_slot_rx,
-                              harq_pid,
-                              pdsch==PDSCH?1:0,
-                              dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
       LOG_T(PHY,"Sequential dlsch decoding , ret = %d\n", ret);
     }
 
@@ -1082,36 +1069,24 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 
 
+      ret1 = nr_dlsch_decoding(ue,
+                               proc,
+                               gNB_id,
+                               pdsch_vars->llr[1],
+                               &ue->frame_parms,
+                               dlsch1,
+                               dlsch1->harq_processes[harq_pid],
+                               frame_rx,
+                               nb_symb_sch,
+                               nr_slot_rx,
+                               harq_pid,
+                               pdsch==PDSCH?1:0,//proc->decoder_switch,
+                               dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
       if(dlsch_parallel) {
-        ret1 = nr_dlsch_decoding_mthread(ue,
-                                         proc,
-                                         gNB_id,
-                                         pdsch_vars->llr[1],
-                                         &ue->frame_parms,
-                                         dlsch1,
-                                         dlsch1->harq_processes[harq_pid],
-                                         frame_rx,
-                                         nb_symb_sch,
-				         nr_slot_rx,
-                                         harq_pid,
-                                         pdsch==PDSCH?1:0,
-                                         dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
         LOG_T(PHY,"CW dlsch decoding is parallelized, ret1 = %d\n", ret1);
       }
       else {
-        ret1 = nr_dlsch_decoding(ue,
-                                 proc,
-                                 gNB_id,
-                                 pdsch_vars->llr[1],
-                                 &ue->frame_parms,
-                                 dlsch1,
-                                 dlsch1->harq_processes[harq_pid],
-                                 frame_rx,
-                                 nb_symb_sch,
-                                 nr_slot_rx,
-                                 harq_pid,
-                                 pdsch==PDSCH?1:0,//proc->decoder_switch,
-                                 dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+
         LOG_T(PHY,"CWW sequential dlsch decoding, ret1 = %d\n", ret1);
       }
 
@@ -1733,8 +1708,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     for (uint16_t l=0; l<nb_symb_pdcch; l++) {
 
       // note: this only works if RBs for PDCCH are contigous!
-      LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d\n",
-            fp->first_carrier_offset, pdcch_vars->pdcch_config[n_ss].BWPStart, coreset_start_rb);
+      LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d, coreset_nb_rb %d\n",
+            fp->first_carrier_offset, pdcch_vars->pdcch_config[n_ss].BWPStart, coreset_start_rb, coreset_nb_rb);
 
       if (coreset_nb_rb > 0)
         nr_pdcch_channel_estimation(ue,

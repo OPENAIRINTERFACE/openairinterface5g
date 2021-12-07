@@ -1,0 +1,31 @@
+LTE-2x2 : #short name used in the dashboard
+  job : 'RAN-LTE-2x2-Module-OAIEPC' #job name from Jenkins, used in the database
+  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-LTE-2x2-Module-OAIEPC'
+  bench : 'Obelix-N310-OAIEPC-Quectel(nrmodule2)'
+  test : 'TDD, 40MHz, MCS9, 26Mb DL, 7Mb UL'
+NSA-B200 :
+  job : 'RAN-NSA-B200-Module-LTEBOX'
+  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-NSA-B200-Module-LTEBOX'
+  bench : 'Nepes-B200-Obelix-B200-LTEBOX-Quectel(idefix)'
+  test : '20MHz, 60Mb DL, 3Mb UL'
+NSA-2x2 :
+  job : 'RAN-NSA-2x2-Module-OAIEPC'
+  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-NSA-2x2-Module-OAIEPC'
+  bench : 'Asterix-N310-Obelix-N310-OAIEPC-Quectel(nrmodule2)'
+  test : 'TDD, 40MHz, 60Mb DL, 3Mb UL'
+SA-N310 :
+  job : 'RAN-SA-Module-CN5G'
+  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-Module-CN5G'
+  bench : 'Asterix-N310-OAICN5G-Quectel(nrmodule2)'
+  test : 'TDD, 40MHz, 60Mb DL, 3Mb UL'
+SA-OAIUE-B200 :
+  job : 'RAN-SA-OAIUE-B200-CN5G'
+  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-OAIUE-B200-CN5G/'
+  bench : 'Asterix-N310-OAICN5G-OAIUE-B200'
+  test : 'TDD, 40MHz, Ping, (to be implemented : iperf)'
+SA-OAIUE-N310 :
+  job : 'RAN-SA-OAIUE-N310-CN5G'
+  link : 'https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-OAIUE-N310-CN5G/'
+  bench : 'Asterix-N310-OAICN5G-OAIUE-N310'
+  test : 'TDD, 40MHz, Ping, (to be implemented : iperf)'
+

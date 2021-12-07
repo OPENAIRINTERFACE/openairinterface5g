@@ -2,10 +2,50 @@ enb :
   PHR:
   bler:
   mcsoff:
-  mcs:  
+  mcs:
+  graph:
+    page1:
+      PHR:
+      bler:
+      mcsoff:
+      mcs:      
 
 gnb :
   dlsch_err:
   dlsch_err_perc_round_1:
   ulsch_err:
   ulsch_err_perc_round_1:
+  rt :
+    feprx:
+    feptx_prec:
+    feptx_ofdm:
+    feptx_total:
+    L1 Tx processing thread 0:
+    L1 Tx processing thread 1:
+    DLSCH encoding:
+    L1 Rx processing:
+    PUSCH inner-receiver:
+    PUSCH decoding:
+    DL & UL scheduling timing stats:
+    UL Indication:
+  graph : 
+    page1:
+      dlsch_err:
+      dlsch_err_perc_round_1:
+      ulsch_err:
+      ulsch_err_perc_round_1:
+    page2:    
+      rt.feprx:
+      rt.feptx_prec:
+      rt.feptx_ofdm:
+      rt.feptx_total:
+    page3:
+      rt.L1 Tx processing thread 0:
+      rt.L1 Tx processing thread 1:
+      rt.DLSCH encoding:
+      rt.L1 Rx processing:
+    page4:
+      rt.PUSCH inner-receiver:
+      rt.PUSCH decoding:
+      rt.DL & UL scheduling timing stats:
+      rt.UL Indication:

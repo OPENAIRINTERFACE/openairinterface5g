@@ -19,6 +19,7 @@
  *      contact@openairinterface.org
  */
 
+#include <openair1/PHY/impl_defs_top.h>
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/INIT/phy_init.h"
@@ -87,11 +88,7 @@
  *
  */
 
-#ifndef NO_RAT_NR
-  #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
-#else
-  #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
-#endif
+
 #define RX_JOB_ID 0x1010
 #define TX_JOB_ID 100
 
@@ -463,13 +460,18 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
   // compute TO compensation that should be applied for this frame
   if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&
        UE->rx_offset > 0 ) {
-    //LOG_I(PHY,"!!!adjusting -1 samples!!!\n");
+    LOG_I(PHY,"!!!adjusting -1 samples!!! rx_offset == %d\n", UE->rx_offset);
+    UE->rx_offset   = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
+    UE->max_pos_fil = 0; // reset IIR filter when sample shift is applied
     return -1 ;
   }
 
   if ( UE->rx_offset > UE->frame_parms.samples_per_frame/2 &&
        UE->rx_offset < UE->frame_parms.samples_per_frame ) {
-    //LOG_I(PHY,"!!!adjusting +1 samples!!!\n");
+    int rx_offset = UE->rx_offset - UE->frame_parms.samples_per_frame;
+    LOG_I(PHY,"!!!adjusting +1 samples!!! rx_offset == %d\n", rx_offset);
+    UE->rx_offset   = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
+    UE->max_pos_fil = 0; // reset IIR filter when sample shift is applied
     return 1;
   }
 
@@ -776,12 +778,6 @@ void init_NR_UE_threads(int nb_inst) {
 
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     threadCreate(&threads[inst], UE_thread, (void *)UE, "UEthread", -1, OAI_PRIORITY_RT_MAX);
-
-     if(get_nrUE_params()->nr_dlsch_parallel)
-     {
-       pthread_t dlsch0_threads;
-       threadCreate(&dlsch0_threads, dlsch_thread, (void *)UE, "DLthread", -1, OAI_PRIORITY_RT_MAX-1);
-     }
   }
 }
 

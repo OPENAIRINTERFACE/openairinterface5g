@@ -29,8 +29,9 @@
 FROM ubuntu:bionic AS ran-build
 ARG NEEDED_GIT_PROXY
 ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Europe
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+ENV TZ=Europe/Paris
+ENV BUILD_UHD_FROM_SOURCE=True
+ENV UHD_VERSION=3.15.0.0
 
 #install developers pkg/repo
 RUN apt-get update && \
