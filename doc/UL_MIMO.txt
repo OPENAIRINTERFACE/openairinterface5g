@@ -1,0 +1,31 @@
+# how to build phy sim
+cd cmake_targets/
+sudo ./build_oai --phy_simulators -c
+
+cd phy_simulators/build/
+# ULSCH sim  
+# bit level validation                   
+# PUSCH encoding and decoding for 4 layers   2 CMD without data
+sudo ./nr_ulschsim -R 106 -m9 -s13 -n100 -y4 -z4 -W4
+
+# UL sim
+# Uplink chain validation  
+# PUSCH on UE side and gNB side,whole chain for PUSCH
+# No channel model on data domain signal
+# No cross-path connection
+# PMI = 0  is only unitary prcoding matrix
+sudo ./nr_ulsim -n100 -m9 -r106 -s13 -W4 -y4 -z4   
+
+# How to build rfsim
+sudo ./build_oai -c --gNB --nrUE -w SIMU
+
+# How to run with rfsim
+# 4x4 RANK 4
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.4layer.conf --rfsim --phy-test --l 2  --L 4
+sudo ./nr-uesoftmodem  --rfsim --phy-test --ue-nb-ant-rx 4 --ue-nb-ant-tx 4
+# 4x4 RANK 2
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.4layer.conf --rfsim --phy-test --l 2  --L 2
+sudo ./nr-uesoftmodem  --rfsim --phy-test --ue-nb-ant-rx 4 --ue-nb-ant-tx 4
+
+
+
