@@ -905,7 +905,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
   NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
   int rbStart = 0; // wrt BWP start
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-
+  const uint8_t nrOfLayers = 1;
   const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp || ubwpd) ? 1 : 2;
   const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
@@ -926,8 +926,9 @@ bool allocate_ul_retransmission(module_id_t module_id,
 
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
+        || ps->nrOfLayers != nrOfLayers
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, nrOfLayers,ps);
     LOG_D(NR_MAC, "%s(): retransmission keeping TDA %d and TBS %d\n", __func__, tda, retInfo->tb_size);
   } else {
     /* the retransmission will use a different time domain allocation, check
@@ -939,7 +940,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
       rbSize++;
     NR_pusch_semi_static_t temp_ps;
     int dci_format = get_dci_format(sched_ctrl);
-    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp,ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
+    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp,ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, nrOfLayers, &temp_ps);
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -1094,7 +1095,7 @@ void pf_ul(module_id_t module_id,
       if (max_num_ue < 0)
         return;
 
-      LOG_D(NR_MAC,"Looking for min_rb %d RBs, starting at %d\n", min_rb, rbStart);
+      LOG_D(NR_MAC,"Looking for min_rb %d RBs, starting at %d num_dmrs_cdm_grps_no_data %d\n", min_rb, rbStart, ps->num_dmrs_cdm_grps_no_data);
       while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
       if (rbStart + min_rb >= bwpSize) {
         LOG_W(NR_MAC, "cannot allocate continuous UL data for UE %d/RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
@@ -1106,13 +1107,15 @@ void pf_ul(module_id_t module_id,
       /* we want to avoid a lengthy deduction of DMRS and other parameters in
        * every TTI if we can save it, so check whether dci_format, TDA, or
        * num_dmrs_cdm_grps_no_data has changed and only then recompute */
+      const uint8_t nrOfLayers = 1;
       const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
       int dci_format = get_dci_format(sched_ctrl);
       const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
+          || ps->nrOfLayers != nrOfLayers
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-        nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+        nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data,nrOfLayers, ps);
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
       sched_pusch->mcs = 9;
       update_ul_ue_R_Qm(sched_pusch, ps);
@@ -1125,7 +1128,7 @@ void pf_ul(module_id_t module_id,
                                             ps->N_PRB_DMRS * ps->num_dmrs_symb,
                                             0, // nb_rb_oh
                                             0,
-                                            1 /* NrOfLayers */)
+                                            ps->nrOfLayers)
                              >> 3;
 
       /* Mark the corresponding RBs as used */
@@ -1205,13 +1208,15 @@ void pf_ul(module_id_t module_id,
     /* we want to avoid a lengthy deduction of DMRS and other parameters in
      * every TTI if we can save it, so check whether dci_format, TDA, or
      * num_dmrs_cdm_grps_no_data has changed and only then recompute */
+    const uint8_t nrOfLayers = 1;
     const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
     int dci_format = get_dci_format(sched_ctrl);
     const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
+        || ps->nrOfLayers != nrOfLayers
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, nrOfLayers,ps);
     update_ul_ue_R_Qm(sched_pusch, ps);
 
     /* Calculate the current scheduling bytes and the necessary RBs */
@@ -1473,7 +1478,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->last_ul_slot = sched_pusch->slot;
 
     LOG_D(NR_MAC,
-          "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d DCI L %d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
+          "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d DCI L %d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d nrOfLayers %2d num_dmrs_cdm_grps_no_data %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
           frame,
           slot,
           rnti,
@@ -1486,6 +1491,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
           ps->nrOfSymbols,
           ps->ul_dmrs_symb_pos,
           sched_pusch->mcs,
+          ps->nrOfLayers,
+          ps->num_dmrs_cdm_grps_no_data,
           sched_pusch->tb_size,
           harq_id,
           cur_harq->round,
@@ -1532,17 +1539,18 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->qam_mod_order = sched_pusch->Qm;
     pusch_pdu->mcs_index = sched_pusch->mcs;
     pusch_pdu->mcs_table = ps->mcs_table;
-    pusch_pdu->transform_precoding = ps->transform_precoding;
+    pusch_pdu->transformPrecoder = ps->transformPrecoder;
     if (ps->pusch_Config && ps->pusch_Config->dataScramblingIdentityPUSCH)
       pusch_pdu->data_scrambling_id = *ps->pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
-    pusch_pdu->nrOfLayers = 1;
+    pusch_pdu->nrOfLayers = ps->nrOfLayers;
+    pusch_pdu->num_dmrs_cdm_grps_no_data = ps->num_dmrs_cdm_grps_no_data;
 
     /* FAPI: DMRS */
     pusch_pdu->ul_dmrs_symb_pos = ps->ul_dmrs_symb_pos;
     pusch_pdu->dmrs_config_type = ps->dmrs_config_type;
-    if (pusch_pdu->transform_precoding) { // transform precoding disabled
+    if (pusch_pdu->transformPrecoder) { // transform precoding disabled
       long *scramblingid=NULL;
       if (ps->NR_DMRS_UplinkConfig && pusch_pdu->scid == 0)
         scramblingid = ps->NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID0;
@@ -1562,7 +1570,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     }
     pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
     pusch_pdu->num_dmrs_cdm_grps_no_data = ps->num_dmrs_cdm_grps_no_data;
-    pusch_pdu->dmrs_ports = 1;
+    pusch_pdu->dmrs_ports = ((1<<ps->nrOfLayers) - 1);
 
     /* FAPI: Pusch Allocation in frequency domain */
     pusch_pdu->resource_alloc = 1; //type 1
@@ -1588,7 +1596,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     LOG_D(NR_MAC,"PUSCH PDU : data_scrambling_identity %x, dmrs_scrambling_id %x\n",pusch_pdu->data_scrambling_id,pusch_pdu->ul_dmrs_scrambling_id);
     /* TRANSFORM PRECODING --------------------------------------------------------*/
 
-    if (pusch_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled){
+    if (pusch_pdu->transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled){
 
       // U as specified in section 6.4.1.1.1.2 in 38.211, if sequence hopping and group hopping are disabled
       pusch_pdu->dfts_ofdm.low_papr_group_number = pusch_pdu->pusch_identity % 30;

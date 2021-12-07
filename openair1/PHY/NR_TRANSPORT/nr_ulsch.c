@@ -137,6 +137,38 @@ void nr_ulsch_unscrambling_optim(int16_t* llr,
 #endif
 }
 
+void nr_ulsch_layer_demapping(int16_t *llr_cw,
+				     uint8_t Nl,
+				     uint8_t mod_order,
+				     uint32_t length,
+				     int16_t **llr_layers) 
+{
+
+  switch (Nl) {
+
+    case 1:
+      memcpy((void*)llr_cw, (void*)llr_layers[0], (length)*sizeof(int16_t));
+    break;
+
+    case 2:
+    case 3:
+    case 4:
+      for (int i=0; i<(length/Nl/mod_order); i++)
+      {
+        for (int l=0; l<Nl; l++) 
+        {
+        	for (int m=0; m<mod_order; m++){
+        		llr_cw[i*Nl*mod_order+l*mod_order+m] = llr_layers[l][i*mod_order+m];
+        	}
+        }
+  	  }
+    break;
+
+  default:
+  AssertFatal(0, "Not supported number of layers %d\n", Nl);
+  }
+}
+
 void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
   for (int i=0;i<gNB->number_of_nr_ulsch_max;i++) {

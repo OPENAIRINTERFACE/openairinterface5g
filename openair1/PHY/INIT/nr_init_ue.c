@@ -124,7 +124,8 @@ void phy_init_nr_ue_PUSCH(NR_UE_PUSCH *const pusch,
   AssertFatal( pusch, "pusch==0" );
 
   for (int i=0; i<NR_MAX_NB_LAYERS; i++) {
-    pusch->txdataF_layers[i] = (int32_t *)malloc16_clear(NR_MAX_PUSCH_ENCODED_LENGTH*sizeof(int32_t));
+    pusch->txdataF_layers[i] = (int32_t *)malloc16_clear((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t *));
+    pusch->txdataF_precoding[i] = (int32_t *)malloc16_clear((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t *));
   }
 }
 
@@ -143,7 +144,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   uint16_t N_n_scid[2] = {0,1}; // [HOTFIX] This is a temporary implementation of scramblingID0 and scramblingID1 which are given by DMRS-UplinkConfig
   int n_scid;
   abstraction_flag = 0;
-  LOG_I(PHY, "Initializing UE vars (abstraction %u) for gNB TXant %u, UE RXant %u\n", abstraction_flag, fp->nb_antennas_tx, fp->nb_antennas_rx);
+  LOG_I(PHY, "Initializing UE vars (abstraction %u) for UE TXant %u, UE RXant %u\n", abstraction_flag, fp->nb_antennas_tx, fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_gNB_INST);
   phy_init_nr_top(ue);
   // many memory allocation sizes are hard coded

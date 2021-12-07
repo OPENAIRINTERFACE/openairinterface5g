@@ -253,13 +253,13 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   // if all segments are done
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
-      LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for SFN/SF %d.%d (pid %d, ndi %d, status %d, round %d, TBS %d, Max interation (all seg) %d)\n",
+      LOG_I(PHY,"[gNB %d] ULSCH: Setting ACK for SFN/SF %d.%d (pid %d, ndi %d, status %d, round %d, TBS %d, Max interation (all seg) %d)\n",
             gNB->Mod_id,ulsch_harq->frame,ulsch_harq->slot,rdata->harq_pid,pusch_pdu->pusch_data.new_data_indicator,ulsch_harq->status,ulsch_harq->round,ulsch_harq->TBS,rdata->decodeIterations);
       ulsch_harq->status = SCH_IDLE;
       ulsch_harq->round  = 0;
       ulsch->harq_mask &= ~(1 << rdata->harq_pid);
 
-      LOG_D(PHY, "ULSCH received ok \n");
+      LOG_I(PHY, "ULSCH received ok \n");
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0,0);
       //dumpsig=1;
     } else {
@@ -281,7 +281,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
       }
       ulsch_harq->handled  = 1;
 
-      LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
+      LOG_I(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
       nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 1,0);
     }
 /*
@@ -365,6 +365,14 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 	number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
 	pusch_pdu->qam_mod_order,
 	pusch_pdu->nrOfLayers);
+
+
+  nr_ulsch_layer_demapping(gNB->pusch_vars[ULSCH_id]->llr,
+				     pusch_pdu->nrOfLayers,
+				     pusch_pdu->qam_mod_order,
+				     G,
+				     gNB->pusch_vars[ULSCH_id]->llr_layers);
+             
   //----------------------------------------------------------
   //------------------- ULSCH unscrambling -------------------
   //----------------------------------------------------------
@@ -731,7 +739,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             (ulsch_harq->slot == slot_rx) &&
             (ulsch_harq->handled == 0)){
 
-          LOG_D(PHY, "PUSCH detection started in frame %d slot %d\n",
+          LOG_I(PHY, "PUSCH detection started in frame %d slot %d\n",
                 frame_rx,slot_rx);
           int num_dmrs=0;
           for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT; s++)
@@ -767,7 +775,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 	        start_meas(&gNB->rx_pusch_stats);
           no_sig = nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, harq_pid);
           if (no_sig) {
-            LOG_D(PHY, "PUSCH not detected in frame %d, slot %d\n", frame_rx, slot_rx);
+            LOG_I(PHY, "PUSCH not detected in frame %d, slot %d\n", frame_rx, slot_rx);
             nr_fill_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid, 1,1);
             return 1;
           }
@@ -783,7 +791,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
               dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot) + gNB->pusch_thres) {
              NR_gNB_SCH_STATS_t *stats=get_ulsch_stats(gNB,ulsch);
 
-             LOG_D(PHY, "PUSCH not detected in %d.%d (%d,%d,%d)\n",frame_rx,slot_rx,
+             LOG_I(PHY, "PUSCH not detected in %d.%d (%d,%d,%d)\n",frame_rx,slot_rx,
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot),
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot),gNB->pusch_thres);
              gNB->pusch_vars[ULSCH_id]->ulsch_power_tot = gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot;

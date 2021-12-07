@@ -977,9 +977,9 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
   pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
   if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
-    pusch_pdu->transform_precoding = 1;
+    pusch_pdu->transformPrecoder = 1;
   else
-    pusch_pdu->transform_precoding = 0;
+    pusch_pdu->transformPrecoder = 0;
   pusch_pdu->data_scrambling_id = *scc->physCellId;
   pusch_pdu->nrOfLayers = 1;
   pusch_pdu->ul_dmrs_symb_pos = get_l_prime(nr_of_symbols,mappingtype,pusch_dmrs_pos2,pusch_len1,start_symbol_index, scc->dmrs_TypeA_Position);

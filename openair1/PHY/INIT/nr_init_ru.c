@@ -41,7 +41,7 @@ int nr_phy_init_RU(RU_t *ru) {
   int p;
   int re;
 
-  LOG_I(PHY,"Initializing RU signal buffers (if_south %s) nb_tx %d\n",ru_if_types[ru->if_south],ru->nb_tx);
+  LOG_I(PHY,"Initializing RU signal buffers (if_south %s) nb_tx %d, nb_rx %d\n",ru_if_types[ru->if_south],ru->nb_tx, ru->nb_rx);
 
   nfapi_nr_config_request_scf_t *cfg;
   ru->nb_log_antennas=0;

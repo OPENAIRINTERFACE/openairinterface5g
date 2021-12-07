@@ -1867,6 +1867,7 @@ int16_t do_RRCReconfiguration(
     //                                  1,
     //                                  1,
     //                                  carrier->pdsch_AntennaPorts,
+    //                                  carrier->pusch_AntennaPorts,
     //                                  carrier->initial_csi_index[ue_context_p->local_uid + 1],
     //                                  ue_context_pP->local_uid);
 

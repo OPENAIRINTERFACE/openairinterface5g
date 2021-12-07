@@ -405,6 +405,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
 
 uint32_t target_ul_mcs = 9;
 uint32_t target_ul_bw = 50;
+uint32_t target_ul_Nl = 1;
 uint64_t ulsch_slot_bitmap = (1 << 8);
 bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_t slot)
 {
@@ -446,15 +447,21 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
   const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
-  const uint8_t num_dmrs_cdm_grps_no_data = 1;
+  uint8_t num_dmrs_cdm_grps_no_data = 1;
+  if ((target_ul_Nl==4)||(target_ul_Nl==3))
+  {
+    num_dmrs_cdm_grps_no_data = 2;
+  }
+  
   /* we want to avoid a lengthy deduction of DMRS and other parameters in
    * every TTI if we can save it, so check whether dci_format, TDA, or
    * num_dmrs_cdm_grps_no_data has changed and only then recompute */
   NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
   if (ps->time_domain_allocation != tda
       || ps->dci_format != dci_format
+      || ps->nrOfLayers != target_ul_Nl
       || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, NULL,dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, NULL,dci_format, tda, num_dmrs_cdm_grps_no_data,target_ul_Nl,ps);
 
   uint16_t rbStart = 0;
   uint16_t rbSize;
@@ -525,6 +532,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   sched_pusch->ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
 
   /* Calculate TBS from MCS */
+  ps->nrOfLayers = target_ul_Nl;
   sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
   sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
   if (ps->pusch_Config->tp_pi2BPSK
@@ -539,7 +547,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
                                         ps->N_PRB_DMRS * ps->num_dmrs_symb,
                                         0, // nb_rb_oh
                                         0,
-                                        1 /* NrOfLayers */)
+                                        ps->nrOfLayers /* NrOfLayers */)
                          >> 3;
 
   /* mark the corresponding RBs as used */

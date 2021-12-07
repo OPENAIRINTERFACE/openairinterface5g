@@ -2708,6 +2708,9 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       LOG_D(NR_MAC,"dci_pdu->srs_resource_indicator.nbits %d\n",dci_pdu->srs_resource_indicator.nbits);
       // Precoding info and number of layers
       long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwpd, (uint8_t*)&format, rnti_type, 0);
+       
+	  pusch_antenna_ports = *pusch_Config->maxRank;
+	   
       dci_pdu->precoding_information.nbits=0;
       if (pusch_Config && 
           pusch_Config->txConfig != NULL){

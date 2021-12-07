@@ -355,6 +355,7 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
+                              uint8_t nrOfLayers,
                               NR_pusch_semi_static_t *ps)
 {
   ps->dci_format = dci_format;
@@ -371,11 +372,11 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 
   ps->pusch_Config = ubwp?ubwp->bwp_Dedicated->pusch_Config->choice.setup:(ubwpd ? ubwpd->pusch_Config->choice.setup : NULL);
   if (ps->pusch_Config == NULL || !ps->pusch_Config->transformPrecoder)
-    ps->transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
+    ps->transformPrecoder = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
   else
-    ps->transform_precoding = *ps->pusch_Config->transformPrecoder;
+    ps->transformPrecoder = *ps->pusch_Config->transformPrecoder;
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  if (ps->transform_precoding)
+  if (ps->transformPrecoder)
     ps->mcs_table = get_pusch_mcs_table(ps->pusch_Config ? ps->pusch_Config->mcs_Table : NULL,
                                     0,
                                     ps->dci_format,
@@ -392,6 +393,7 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
     num_dmrs_cdm_grps_no_data = 2; // in case of transform precoding - no Data sent in DMRS symbol
   }
 
+  ps->nrOfLayers = nrOfLayers;
   ps->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
 
   /* DMRS calculations */
@@ -689,8 +691,21 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
                     "Non Codebook configuration non supported\n");
         dci_pdu_rel15->srs_resource_indicator.val = 0; // taking resource 0 for SRS
       }
+      AssertFatal((pusch_pdu->Tpmi==0), "unsupport Tpmi\n");
+      dci_pdu_rel15->precoding_information.val= 0;
+      if (pusch_pdu->nrOfLayers == 2)
+      {
+        dci_pdu_rel15->precoding_information.val = 4;
+      }
+      else if (pusch_pdu->nrOfLayers == 4)
+      {
+        dci_pdu_rel15->precoding_information.val = 11;
+      }
+
+      // antenna_ports.val = 0 for transform precoder is disabled, dmrs-Type=1, maxLength=1, Rank=1/2/3/4 
       // Antenna Ports
-      dci_pdu_rel15->antenna_ports.val = 0; // TODO for now it is hardcoded, it should depends on cdm group no data and rank
+      dci_pdu_rel15->antenna_ports.val = 0; 
+      
       // DMRS sequence initialization
       dci_pdu_rel15->dmrs_sequence_initialization.val = pusch_pdu->scid;
       break;
@@ -699,11 +714,14 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
   }
 
   LOG_D(NR_MAC,
-        "%s() ULDCI type 0 payload: freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
+        "%s() ULDCI type 0 payload: dci_format %d, freq_alloc %d, time_alloc %d, freq_hop_flag %d, precoding_information.val %d antenna_ports.val %d mcs %d tpc %d ndi %d rv %d\n",
         __func__,
+        dci_format,
         dci_pdu_rel15->frequency_domain_assignment.val,
         dci_pdu_rel15->time_domain_assignment.val,
         dci_pdu_rel15->frequency_hopping_flag.val,
+        dci_pdu_rel15->precoding_information.val,
+        dci_pdu_rel15->antenna_ports.val,
         dci_pdu_rel15->mcs,
         dci_pdu_rel15->tpc,
         dci_pdu_rel15->ndi,

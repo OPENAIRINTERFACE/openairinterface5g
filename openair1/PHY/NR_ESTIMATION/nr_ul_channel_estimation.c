@@ -110,7 +110,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
          fr = filt8_r1;
          fmm = filt8_mm1;
          fml = filt8_ml1;
-         fmr = filt8_m1;
+         fmr = filt8_mm1;
          fdcl = filt8_dcl1;
          fdcr = filt8_dcr1;
          fdclh = filt8_dcl1_h;
@@ -129,9 +129,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   //------------------generate DMRS------------------//
 
-  // transform precoding = 1 means disabled
-  if (pusch_pdu->transform_precoding == 1) {
-    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], 1000, 0, nb_rb_pusch,
+  if (pusch_pdu->transformPrecoder == transformPrecoder_disabled) {
+    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], (1000+p), 0, nb_rb_pusch,
                      (pusch_pdu->bwp_start + pusch_pdu->rb_start)*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
   }
   else {  // if transform precoding or SC-FDMA is enabled in Uplink
@@ -291,7 +290,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         printf("pilot %u : rxF - > (%d,%d) (%d) ch -> (%d,%d) (%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],dBc(rxF[0],rxF[1]),ch[0],ch[1],dBc(ch[0],ch[1]),pil[0],pil[1]);
 	printf("data %u : rxF - > (%d,%d) (%d)\n",pilot_cnt,rxF[2],rxF[3],dBc(rxF[2],rxF[3]));
   #endif
-        multadd_real_vector_complex_scalar(fml,
+        multadd_real_vector_complex_scalar(fm,
                                            ch,
                                            ul_ch,
                                            8);

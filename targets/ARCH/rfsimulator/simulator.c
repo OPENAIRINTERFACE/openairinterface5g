@@ -429,7 +429,7 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   if (!alreadyLocked)
     pthread_mutex_lock(&Sockmutex);
 
-  LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
+  LOG_D(HW,"sending %d samples at time: %ld, nbAnt %d\n", nsamps, timestamp, nbAnt);
 
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
@@ -623,7 +623,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
   }
 
   rfsimulator_state_t *t = device->priv;
-  LOG_D(HW, "Enter rfsimulator_read, expect %d samples, will release at TS: %ld\n", nsamps, t->nextTimestamp+nsamps);
+  LOG_D(HW, "Enter rfsimulator_read, expect %d samples, will release at TS: %ld, nbAnt %d\n", nsamps, t->nextTimestamp+nsamps, nbAnt);
   // deliver data from received data
   // check if a UE is connected
   int first_sock;
@@ -728,6 +728,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
 
       for (int a=0; a<nbAnt; a++) {//loop over number of Rx antennas
         if ( ptr->channel_model != NULL ) // apply a channel model
+        {
           rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
                       a,
                       ptr->channel_model,
@@ -735,11 +736,21 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
                       t->nextTimestamp,
                       CirSize
                     );
-        else { // no channel modeling
+        }
+        else 
+        { // no channel modeling
+          
+          #if 0
           double H_awgn_mimo[4][4] ={{1.0, 0.5, 0.25, 0.125},//rx 0
                                      {0.5, 1.0, 0.5, 0.25},  //rx 1
                                      {0.25, 0.5, 1.0, 0.5},  //rx 2
                                      {0.125, 0.25, 0.5, 1.0}};//rx 3
+          #else
+          double H_awgn_mimo[4][4] ={{1.0, 0.0, 0.0, 0.0},//rx 0
+                                     {0.0, 1.0, 0.0, 0.0},//rx 1
+                                     {0.0, 0.0, 1.0, 0.0},//rx 2
+                                     {0.0, 0.0, 0.0, 1.0}};//rx 3
+          #endif
 
           sample_t *out=(sample_t *)samplesVoid[a];
           int nbAnt_tx = ptr->th.nbAnt;//number of Tx antennas

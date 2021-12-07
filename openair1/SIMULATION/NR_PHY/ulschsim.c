@@ -137,6 +137,7 @@ int main(int argc, char **argv)
   uint16_t nb_symb_sch = 12;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
+  uint8_t Nl = 1;
 
   double DS_TDL = .03;
 
@@ -150,7 +151,7 @@ int main(int argc, char **argv)
   randominit(0);
 
   //while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:")) != -1) {
-  while ((c = getopt(argc, argv, "hg:n:s:S:py:z:M:N:R:F:m:l:r:")) != -1) {
+  while ((c = getopt(argc, argv, "hg:n:s:S:py:z:M:N:R:F:m:l:r:W:")) != -1) {
     switch (c) {
       /*case 'f':
          write_output_file = 1;
@@ -251,7 +252,7 @@ int main(int argc, char **argv)
       case 'y':
         n_tx = atoi(optarg);
 
-        if ((n_tx == 0) || (n_tx > 2)) {
+        if ((n_tx == 0) || (n_tx > 4)) {
           printf("Unsupported number of TX antennas %d. Exiting.\n", n_tx);
           exit(-1);
         }
@@ -261,7 +262,7 @@ int main(int argc, char **argv)
       case 'z':
         n_rx = atoi(optarg);
 
-        if ((n_rx == 0) || (n_rx > 2)) {
+        if ((n_rx == 0) || (n_rx > 4)) {
           printf("Unsupported number of RX antennas %d. Exiting.\n", n_rx);
           exit(-1);
         }
@@ -299,6 +300,10 @@ int main(int argc, char **argv)
           printf("Illegal PBCH phase (0-3) got %d\n", pbch_phase);
         break;*/
 
+      case 'W':
+        Nl = atoi(optarg);
+      break;
+
       case 'm':
         Imcs = atoi(optarg);
 #ifdef DEBUG_NR_ULSCHSIM
@@ -335,13 +340,14 @@ int main(int argc, char **argv)
           printf("-z Number of RX antennas used in UE\n");
           //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
           //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+          printf("-W number of layer\n");
           printf("-M Multiple SSB positions in burst\n");
           printf("-N Nid_cell\n");
           printf("-R N_RB_UL\n");
           printf("-F Input filename (.txt format) for RX conformance testing\n");
-          printf("-m\n");
-          printf("-l\n");
-          printf("-r\n");
+          printf("-m MCS\n");
+          printf("-l number of symbol\n");
+          printf("-r number of RB\n");
           //printf("-O oversampling factor (1,2,4,8,16)\n");
           //printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
           //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
@@ -359,8 +365,8 @@ int main(int argc, char **argv)
     snr1 = snr0 + 10;
 
   gNB2UE = new_channel_desc_scm(n_tx,
-		                n_rx,
-				channel_model,
+                                n_rx,
+                                channel_model,
                                 61.44e6, //N_RB2sampling_rate(N_RB_DL),
                                 40e6, //N_RB2channel_bandwidth(N_RB_DL),
                                 DS_TDL,
@@ -426,8 +432,7 @@ int main(int argc, char **argv)
   uint8_t length_dmrs = 1;
   uint8_t N_PRB_oh;
   uint16_t N_RE_prime,code_rate;
-  unsigned char mod_order;
-  uint8_t Nl = 1;
+  unsigned char mod_order;  
   uint8_t rvidx = 0;
   uint8_t UE_id = 0;
 
@@ -437,9 +442,14 @@ int main(int argc, char **argv)
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
 
+  if ((Nl==4)||(Nl==3))
+  {
+    nb_re_dmrs = nb_re_dmrs*2;
+  }
+
   mod_order = nr_get_Qm_ul(Imcs, 0);
   code_rate = nr_get_code_rate_ul(Imcs, 0);
-  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
+  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, Nl);
   TBS = nr_compute_tbs(mod_order,code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, Nl);
 
   printf("\nAvailable bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);

@@ -318,13 +318,14 @@ typedef struct NR_sched_pucch {
 typedef struct NR_pusch_semi_static_t {
   int dci_format;
   int time_domain_allocation;
+  uint8_t nrOfLayers;
   uint8_t num_dmrs_cdm_grps_no_data;
 
   int startSymbolIndex;
   int nrOfSymbols;
 
   NR_PUSCH_Config_t *pusch_Config;
-  uint8_t transform_precoding;
+  uint8_t transformPrecoder;
   uint8_t mcs_table;
 
   long mapping_type;

@@ -479,7 +479,7 @@ typedef struct {
   /// \brief Cross-correlation of two UE signals.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: symbol [0..]
-  int32_t **rho;
+  int32_t ***rho;
   /// \f$\log_2(\max|H_i|^2)\f$
   int16_t log2_maxh;
   /// \brief Magnitude of Uplink Channel first layer (16QAM level/First 64QAM level).
@@ -509,6 +509,10 @@ typedef struct {
   /// \brief llr values.
   /// - first index: ? [0..1179743] (hard coded)
   int16_t *llr;
+  /// \brief llr values per layer.
+  /// - first index: ? [0..3] (hard coded)
+  /// - first index: ? [0..1179743] (hard coded)
+  int16_t **llr_layers;
   /// DMRS symbol index, to be updated every DMRS symbol within a slot.
   uint8_t dmrs_symbol;
   // PTRS symbol index, to be updated every PTRS symbol within a slot.

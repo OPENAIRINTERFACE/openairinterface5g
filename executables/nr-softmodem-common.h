@@ -67,6 +67,7 @@
 #define CONFIG_HLP_ITTIL         "Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n"
 #define CONFIG_HLP_DLMCS_PHYTEST "Set the downlink MCS for PHYTEST mode\n"
 #define CONFIG_HLP_DLNL_PHYTEST "Set the downlink nrOfLayers for PHYTEST mode\n"
+#define CONFIG_HLP_ULNL_PHYTEST "Set the uplink nrOfLayers for PHYTEST mode\n"
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
 #define CONFIG_HLP_MSLOTS        "Skip the missed slots/subframes \n"
 #define CONFIG_HLP_ULMCS_PHYTEST "Set the uplink MCS for PHYTEST mode\n"

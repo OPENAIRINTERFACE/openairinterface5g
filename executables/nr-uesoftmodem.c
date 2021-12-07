@@ -465,8 +465,11 @@ int main( int argc, char **argv ) {
     memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
 
     set_options(CC_id, UE[CC_id]);
-    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-
+    NR_DL_FRAME_PARMS *fp = &UE[CC_id]->frame_parms;
+    NR_UE_MAC_INST_t *mac = get_mac_inst(0);  
+    
+	mac->phy_config.config_req.carrier_config.num_tx_ant = fp->nb_antennas_tx;
+	
     if (get_softmodem_params()->sa) {
       uint16_t nr_band = get_band(downlink_frequency[CC_id][0],uplink_frequency_offset[CC_id][0]);
       mac->nr_band = nr_band;
