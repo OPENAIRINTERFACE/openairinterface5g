@@ -383,6 +383,9 @@ pipeline {
           }
         }
         stage ("Result Update"){
+          when {
+            expression { params.DataBaseHost != "none" }
+          }
           agent {label DataBaseHost}
           steps {
             script {
