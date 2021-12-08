@@ -514,9 +514,9 @@ class Dashboard:
         editable_mr = project.mergerequests.get(int(mr))
         mr_notes = editable_mr.notes.list()
         mr_note = editable_mr.notes.create({
-            'body': 'Completed Test : '+jobname+' , status : <b>'+status+'</b>\n'+\
-            buildurl+'\n'+\
-            '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+mr+'/index.html">Consolidated Test Results (End to End LTE/NSA/SA/2x2/OAIUE)</a>'
+            'body': 'Completed Test : '+jobname+' , status : <b>'+status+'</b><br>'+\
+            'Link to this test : '+buildurl+'<br>'+\
+            '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+mr+'/index.html">Consolidated Test Results (All End-to-End LTE/NSA/SA/2x2/OAIUE)</a>'
         })
         editable_mr.save()
 
