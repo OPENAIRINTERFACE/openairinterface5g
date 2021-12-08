@@ -25,11 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM ran-build:develop AS phy-sim-build
-
-RUN rm -Rf /oai-ran
-WORKDIR /oai-ran
-COPY . .
+FROM ran-base:latest AS phy-sim-build
 
 #run build_oai to build the target image
 RUN /bin/sh oaienv && \ 

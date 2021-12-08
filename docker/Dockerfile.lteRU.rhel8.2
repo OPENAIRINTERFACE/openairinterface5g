@@ -25,17 +25,9 @@
 #
 #---------------------------------------------------------------------
 
+FROM ran-base:latest AS ru-base
+
 FROM ran-build:latest AS ru-build
-
-RUN rm -Rf /oai-ran
-WORKDIR /oai-ran
-COPY . .
-
-#run build_oai to build the target image
-RUN /bin/sh oaienv && \
-    cd cmake_targets && \
-    mkdir -p log && \
-    ./build_oai --RU --ninja -w USRP --verbose-ci
 
 RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml && \
     cp /oai-ran/docker/scripts/lte_ru_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
@@ -75,7 +67,7 @@ COPY --from=ru-build \
     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
     ./
 
-COPY --from=ru-build \
+COPY --from=ru-base \
     /lib64/libconfig.so.9 \
     /lib64/libblas.so.3 \
     /lib64/liblapack.so.3 \
@@ -94,12 +86,12 @@ COPY --from=ru-build \
     /lib64/
 
 # Copying from the ran-build image the USRP needed packages
-COPY --from=ru-build /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=ru-build /usr/local/lib64/libuhd.so.3.15.0 /usr/local/lib64
-COPY --from=ru-build /usr/local/lib64/uhd/utils/uhd_images_downloader.py /opt/oai-lte-ru/bin
+COPY --from=ru-base /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=ru-base /usr/local/lib64/libuhd.so.3.15.0 /usr/local/lib64
+COPY --from=ru-base /usr/local/lib64/uhd/utils/uhd_images_downloader.py /opt/oai-lte-ru/bin
 
 WORKDIR /usr/local/share/uhd/rfnoc
-COPY --from=ru-build /usr/local/share/uhd/rfnoc/ .
+COPY --from=ru-base /usr/local/share/uhd/rfnoc/ .
 
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so" && \
     /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so" && \

@@ -21,54 +21,18 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL7 in the OpenShift context (v4.4)
+#   Valid for Ubuntu 18.04
 #
 #---------------------------------------------------------------------
 
+FROM ran-base:latest as ran-build
 
-FROM registry.access.redhat.com/ubi7/ubi:latest AS ran-base
-
-# Entitlements and RHSM configurations are Open-Shift Secret and ConfigMaps
-# It is pre-requisite
-RUN rm -Rf /etc/rhsm/ca /etc/pki/entitlement
-# Copy the entitlements
-COPY ./etc-pki-entitlement /etc/pki/entitlement
-# Copy the subscription manager configurations
-COPY ./rhsm-conf /etc/rhsm
-COPY ./rhsm-ca /etc/rhsm/ca
-
-
-#install developers pkg/repo
-RUN rm /etc/rhsm-host && \
-    # Initialize /etc/yum.repos.d/redhat.repo
-    # See https://access.redhat.com/solutions/1443553
-    yum repolist --disablerepo=* && \
-    yum-config-manager --enable rhel-7-server-optional-rpms rhel-server-rhscl-7-rpms && \
-    yum update -y && \
-    yum install -y  \
-       #gcc needed for build_oai
-       gcc gcc-c++ \ 
-       diffutils \
-       file \
-       psmisc \
-       git \
-       #unzip is needed for protobuf
-       unzip && \
-    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf
-
-# In some network environments, GIT proxy is required
-RUN /bin/bash -c "if [[ -v NEEDED_GIT_PROXY ]]; then git config --global http.proxy $NEEDED_GIT_PROXY; fi"
-
-#create the WORKDIR
+RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
 COPY . .
 
-#run build_oai -I to get the builder image
+#run build_oai to build the target image
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai -I 
-
-#as the image is public, we need to remove the subscription manager configurations
-#RUN rm -Rf /etc/rhsm /etc/pki/entitlement
-
+    ./build_oai --eNB --gNB --RU --UE --nrUE --ninja -w USRP --verbose-ci
