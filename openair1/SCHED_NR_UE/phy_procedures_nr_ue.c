@@ -981,37 +981,23 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
    start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 
+    ret = nr_dlsch_decoding(ue,
+                            proc,
+                            gNB_id,
+                            pdsch_vars->llr[0],
+                            &ue->frame_parms,
+                            dlsch0,
+                            dlsch0->harq_processes[harq_pid],
+                            frame_rx,
+                            nb_symb_sch,
+                            nr_slot_rx,
+                            harq_pid,
+                            pdsch==PDSCH?1:0,
+                            dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
     if( dlsch_parallel) {
-      ret = nr_dlsch_decoding_mthread(ue,
-                                      proc,
-                                      gNB_id,
-                                      pdsch_vars->llr[0],
-                                      &ue->frame_parms,
-                                      dlsch0,
-                                      dlsch0->harq_processes[harq_pid],
-                                      frame_rx,
-                                      nb_symb_sch,
-                                      nr_slot_rx,
-                                      harq_pid,
-                                      pdsch==PDSCH?1:0,
-                                      dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
-
       LOG_T(PHY,"dlsch decoding is parallelized, ret = %d\n", ret);
     }
     else {
-      ret = nr_dlsch_decoding(ue,
-                              proc,
-                              gNB_id,
-                              pdsch_vars->llr[0],
-                              &ue->frame_parms,
-                              dlsch0,
-                              dlsch0->harq_processes[harq_pid],
-                              frame_rx,
-                              nb_symb_sch,
-                              nr_slot_rx,
-                              harq_pid,
-                              pdsch==PDSCH?1:0,
-                              dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
       LOG_T(PHY,"Sequential dlsch decoding , ret = %d\n", ret);
     }
 
@@ -1083,36 +1069,24 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 
 
+      ret1 = nr_dlsch_decoding(ue,
+                               proc,
+                               gNB_id,
+                               pdsch_vars->llr[1],
+                               &ue->frame_parms,
+                               dlsch1,
+                               dlsch1->harq_processes[harq_pid],
+                               frame_rx,
+                               nb_symb_sch,
+                               nr_slot_rx,
+                               harq_pid,
+                               pdsch==PDSCH?1:0,//proc->decoder_switch,
+                               dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
       if(dlsch_parallel) {
-        ret1 = nr_dlsch_decoding_mthread(ue,
-                                         proc,
-                                         gNB_id,
-                                         pdsch_vars->llr[1],
-                                         &ue->frame_parms,
-                                         dlsch1,
-                                         dlsch1->harq_processes[harq_pid],
-                                         frame_rx,
-                                         nb_symb_sch,
-				         nr_slot_rx,
-                                         harq_pid,
-                                         pdsch==PDSCH?1:0,
-                                         dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
         LOG_T(PHY,"CW dlsch decoding is parallelized, ret1 = %d\n", ret1);
       }
       else {
-        ret1 = nr_dlsch_decoding(ue,
-                                 proc,
-                                 gNB_id,
-                                 pdsch_vars->llr[1],
-                                 &ue->frame_parms,
-                                 dlsch1,
-                                 dlsch1->harq_processes[harq_pid],
-                                 frame_rx,
-                                 nb_symb_sch,
-                                 nr_slot_rx,
-                                 harq_pid,
-                                 pdsch==PDSCH?1:0,//proc->decoder_switch,
-                                 dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+
         LOG_T(PHY,"CWW sequential dlsch decoding, ret1 = %d\n", ret1);
       }
 
@@ -1886,11 +1860,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
-    
   // do procedures for C-RNTI
   if (ue->dlsch[proc->thread_id][gNB_id][0]->active == 1) {
 
-    LOG_D(PHY, "DLSCH data reception at nr_slot_rx: %d \n \n", nr_slot_rx);
+    LOG_D(PHY, "DLSCH data reception at nr_slot_rx: %d\n", nr_slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
 
     start_meas(&ue->dlsch_procedures_stat[proc->thread_id]);
