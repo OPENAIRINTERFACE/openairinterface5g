@@ -511,7 +511,7 @@ class Dashboard:
         gl = gitlab.Gitlab.from_config('OAI')
         project_id = 223
         project = gl.projects.get(project_id)
-        editable_mr = project.mergerequests.get(int(singlemr))
+        editable_mr = project.mergerequests.get(int(mr))
         mr_notes = editable_mr.notes.list()
         mr_note = editable_mr.notes.create({
             'body': 'Completed Test : '+jobname+' , status : <b>'+status+'</b>\n'+\
