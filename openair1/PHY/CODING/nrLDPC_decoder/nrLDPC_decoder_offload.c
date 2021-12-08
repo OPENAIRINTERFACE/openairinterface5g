@@ -36,7 +36,7 @@
 #include "nrLDPC_mPass.h"
 #include "nrLDPC_cnProc.h"
 #include "nrLDPC_bnProc.h"
-
+#include <common/utils/LOG/log.h>
 #define NR_LDPC_ENABLE_PARITY_CHECK
 
 #ifdef NR_LDPC_DEBUG_MODE
@@ -976,7 +976,7 @@ create_reference_ldpc_dec_op(struct rte_bbdev_dec_op *op, t_nrLDPCoffload_params
 
 
 
-/*static uint32_t
+static uint32_t
 calc_ldpc_dec_TB_size(struct rte_bbdev_dec_op *op)
 {
 	uint8_t i;
@@ -997,7 +997,7 @@ calc_ldpc_dec_TB_size(struct rte_bbdev_dec_op *op)
 	}
 	return tb_size;
 }
-*/
+
 
 static int
 init_test_op_params(struct test_op_params *op_params,
@@ -1035,7 +1035,7 @@ pmd_lcore_ldpc_dec(void *arg)
 {
 	struct thread_params *tp = arg;
 	uint16_t enq, deq;
-	//uint64_t total_time = 0, start_time;
+	uint64_t total_time = 0, start_time;
 	const uint16_t queue_id = tp->queue_id;
 	const uint16_t burst_sz = tp->op_params->burst_sz;
 	const uint16_t num_ops = tp->op_params->num_to_process;
@@ -1054,11 +1054,12 @@ pmd_lcore_ldpc_dec(void *arg)
        
         //bool extDdr = check_bit(ldpc_cap_flags,
 	//		RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE);
+	start_time = rte_rdtsc_precise();
 	bool loopback = check_bit(ref_op->ldpc_dec.op_flags,
 			RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_LOOPBACK);
 	bool hc_out = check_bit(ref_op->ldpc_dec.op_flags,
 			RTE_BBDEV_LDPC_HQ_COMBINE_OUT_ENABLE);
-
+	
 	TEST_ASSERT_SUCCESS((burst_sz > MAX_BURST),
 			"BURST_SIZE should be <= %u", MAX_BURST);
 
@@ -1101,7 +1102,7 @@ pmd_lcore_ldpc_dec(void *arg)
 				mbuf_reset(
 				ops_enq[j]->ldpc_dec.harq_combined_output.data);
 		}
-		//start_time = rte_rdtsc_precise();
+		//	start_time = rte_rdtsc_precise();
 
 		for (enq = 0, deq = 0; enq < num_ops;) {
 			num_to_enq = burst_sz;
@@ -1132,9 +1133,9 @@ pmd_lcore_ldpc_dec(void *arg)
 			  }*/
 		}
 
-//		total_time += rte_rdtsc_precise() - start_time;
+		//total_time += rte_rdtsc_precise() - start_time;
 	}
-
+	//total_time = rte_rdtsc_precise() - start_time;
 	if (deq==enq) {
 	tp->iter_count = 0;
 	/* get the max of iter_count for all dequeued ops */
@@ -1153,14 +1154,20 @@ pmd_lcore_ldpc_dec(void *arg)
 
 	rte_bbdev_dec_op_free_bulk(ops_enq, num_ops);
 
-	/*double tb_len_bits = calc_ldpc_dec_TB_size(ref_op);
+	/*total_time = rte_rdtsc_precise() - start_time;
 
-	tp->ops_per_sec = ((double)num_ops * TEST_REPETITIONS) /
-			((double)total_time / (double)rte_get_tsc_hz());
+	if (total_time > 10*3000)
+	  LOG_E(PHY," pmd lcore: %u\n",(uint) (total_time/3000));
+	*/
+	double tb_len_bits = calc_ldpc_dec_TB_size(ref_op);
+
+	tp->ops_per_sec = ((double)total_time / (double)rte_get_tsc_hz());
+	//tp->ops_per_sec = ((double)num_ops * TEST_REPETITIONS) /
+	//		((double)total_time / (double)rte_get_tsc_hz());
 	tp->mbps = (((double)(num_ops * TEST_REPETITIONS * tb_len_bits)) /
 			1000000.0) / ((double)total_time /
 			(double)rte_get_tsc_hz());
-	*/	
+		
 	return ret;
 }
 
@@ -1197,19 +1204,21 @@ print_dec_throughput(struct thread_params *t_params, unsigned int used_cores)
  */
 int
 start_pmd_dec(struct active_device *ad,
-	      struct test_op_params *op_params, 
+	      struct test_op_params *op_params,
+	      struct thread_params *t_params,
               t_nrLDPCoffload_params *p_offloadParams,
 	      uint8_t r,
 	      int8_t* p_out)
 {
 	int ret;
 	unsigned int lcore_id, used_cores = 0;
-	struct thread_params *t_params, *tp;
+	struct thread_params *tp;
 	//struct rte_bbdev_info info;
 	uint16_t num_lcores;
-
+	uint64_t start_time, start_time1 ; //= rte_rdtsc_precise();
+	uint64_t total_time=0, total_time1=0;
 	//rte_bbdev_info_get(ad->dev_id, &info);
-
+	start_time = rte_rdtsc_precise();
 	/*printf("+ ------------------------------------------------------- +\n");
 	printf("== start pmd dec\ndev: %s, nb_queues: %u, burst size: %u, num ops: %u, num_lcores: %u,  itr mode: %s, GHz: %lg\n",
 			info.dev_name, ad->nb_queues, op_params->burst_sz,
@@ -1223,12 +1232,13 @@ start_pmd_dec(struct active_device *ad,
 			: op_params->num_lcores;
 
 	/* Allocate memory for thread parameters structure */
-	t_params = rte_zmalloc(NULL, num_lcores * sizeof(struct thread_params),
+	/*t_params = rte_zmalloc(NULL, num_lcores * sizeof(struct thread_params),
 			RTE_CACHE_LINE_SIZE);
 	TEST_ASSERT_NOT_NULL(t_params, "Failed to alloc %zuB for t_params",
 			RTE_ALIGN(sizeof(struct thread_params) * num_lcores,
 				RTE_CACHE_LINE_SIZE));
-
+	*/
+	total_time = rte_rdtsc_precise() - start_time;
 	rte_atomic16_set(&op_params->sync, SYNC_WAIT);
 
 	/* Master core is set at first entry */
@@ -1256,13 +1266,20 @@ start_pmd_dec(struct active_device *ad,
 		rte_eal_remote_launch(pmd_lcore_ldpc_dec,
 				&t_params[used_cores++], lcore_id);
 	}
-
+	
 	rte_atomic16_set(&op_params->sync, SYNC_START);
+	
+	//total_time = rte_rdtsc_precise() - start_time;
+
+	//if (total_time > 100*3000)
+	//LOG_E(PHY," start pmd 1st: %u\n",(uint) (total_time/3000));
+
 	ret = pmd_lcore_ldpc_dec(&t_params[0]);
+	//start_time1 = rte_rdtsc_precise();
 
 	/* Master core is always used */
-	for (used_cores = 1; used_cores < num_lcores; used_cores++)
-		ret |= rte_eal_wait_lcore(t_params[used_cores].lcore_id);
+	//for (used_cores = 1; used_cores < num_lcores; used_cores++)
+	//	ret |= rte_eal_wait_lcore(t_params[used_cores].lcore_id);
 
 	/* Return if test failed */
 	if (ret) {
@@ -1272,11 +1289,15 @@ start_pmd_dec(struct active_device *ad,
 
 	/* Print throughput if interrupts are disabled and test passed */
 	if (!intr_enabled) {
-	  //print_dec_throughput(t_params, num_lcores);
-		rte_free(t_params);
+	  // print_dec_throughput(t_params, num_lcores);
+	  //rte_free(t_params);
+	  //	total_time1 = rte_rdtsc_precise() - start_time1;
+
+	  //	if (total_time1 > 10*3000)
+	  //	  LOG_E(PHY," start pmd 2nd: %u\n",(uint) (total_time1/3000));
+		//	rte_free(t_params);
 		return ret;
 	}
-
 	/* In interrupt TC we need to wait for the interrupt callback to deqeue
 	 * all pending operations. Skip waiting for queues which reported an
 	 * error using processing_status variable.
@@ -1313,6 +1334,7 @@ start_pmd_dec(struct active_device *ad,
 	}
 
 	rte_free(t_params);
+
 	return ret;
 }
 
@@ -1371,20 +1393,35 @@ struct test_op_params *op_params = &op_params_e;
 
 struct rte_mbuf *m_head[DATA_NUM_TYPES];
 
+struct thread_params *t_params;
+
 
 int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_t rv, uint16_t F, 
 			uint32_t E, uint8_t Qm, int8_t* p_llr, int8_t* p_out, uint8_t mode) 
 {
     	t_nrLDPCoffload_params offloadParams;
     	t_nrLDPCoffload_params* p_offloadParams    = &offloadParams;
-    	
+    	uint64_t start=rte_rdtsc_precise();
+	uint64_t start_time=rte_rdtsc_precise();
+	uint64_t start_time1; //=rte_rdtsc_precise();
+	uint64_t total_time=0, total_time1=0;
 	uint32_t numIter = 0;
 	int ret;
-
+	/*
 	int argc_re=2;
 	char *argv_re[2];
 	argv_re[0] = "/home/wang/dpdk2005/dpdk-20.05/build/app/testbbdev";
-	argv_re[1] = "--"; 
+	argv_re[1] = "--";
+	*/
+       int argc_re=7;
+       char *argv_re[7];
+       argv_re[0] = "/home/wang/dpdk2005/dpdk-20.05/build/app/testbbdev";
+       argv_re[1] = "-l";
+       argv_re[2] = "35";
+       argv_re[3] = "-w";
+       argv_re[4] = "b0:00.0";
+       argv_re[5] = "--file-prefix=b6";
+       argv_re[6] = "--";
 
 	test_params.num_ops=1; 
 	test_params.burst_sz=1;
@@ -1507,11 +1544,19 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 			     mbuf_pools[type]->size);
 	
 	    }
+
+	    /* Allocate memory for thread parameters structure */
+	    t_params = rte_zmalloc(NULL,  sizeof(struct thread_params),
+				   RTE_CACHE_LINE_SIZE);
+	    TEST_ASSERT_NOT_NULL(t_params, "Failed to alloc %zuB for t_params",
+				 RTE_ALIGN(sizeof(struct thread_params),
+					   RTE_CACHE_LINE_SIZE));
 	  }
 
 	break;
 	case 1:
 	  //printf("offload param E %d BG %d F %d Z %d Qm %d\n", E,p_decParams->BG, F,p_decParams->Z, Qm);
+	  //start_time = rte_rdtsc_precise();
 	  p_offloadParams->E = E;
           p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
           p_offloadParams->BG = p_decParams->BG;
@@ -1547,7 +1592,7 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
             &op_params->q_bufs[socket_id][queue_id].harq_inputs,
             &op_params->q_bufs[socket_id][queue_id].harq_outputs,
           };
-
+	  //start_time1 = rte_rdtsc_precise();
 	  for (type = DATA_INPUT; type < 3; type+=2) {
 
 	    ret = init_op_data_objs(*queue_ops[type], p_llr, p_offloadParams->E,
@@ -1556,18 +1601,26 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 				"Couldn't init rte_bbdev_op_data structs");
 
 	  }
-	  
-	  ret = start_pmd_dec(ad, op_params, p_offloadParams, C, p_out);
+	  /*total_time = rte_rdtsc_precise() - start_time;
+
+	  if (total_time > 100*3000)
+            LOG_E(PHY," ldpc decoder mode 1 first: %u\n",(uint) (total_time/3000));
+
+	    start_time1 = rte_rdtsc_precise();*/
+	    ret = start_pmd_dec(ad, op_params, t_params, p_offloadParams, C, p_out);
 	  if (ret<0) {
 	    printf("Couldn't start pmd dec");
 	    return(-1);
 	  }
-	
+	  /*total_time1 = rte_rdtsc_precise() - start_time;
+	  if (total_time1 > 100*3000)
+	  LOG_E(PHY," ldpc decoder mode 1 second: %u\n",(uint) (total_time1/3000));*/
 	break;
 	case 2:
 
 	  free_buffers(ad, op_params);
 	  rte_free(op_params);
+	  rte_free(t_params);
 	  ut_teardown();
 	  testsuite_teardown();
 	break;
@@ -1575,7 +1628,11 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 	  printf("Unknown mode: %d\n", mode);
 	  return(-1);
 	}	
-
+	/*uint64_t end=rte_rdtsc_precise();
+	
+        if (end - start > 200*3000)
+	  LOG_E(PHY," ldpc decode: %u\n",(uint) ((end - start)/3000));
+	*/
     return numIter;
 }
 
