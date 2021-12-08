@@ -387,7 +387,7 @@ pipeline {
           steps {
             script {
               dir ('ci-scripts/ran_dashboard') {
-                sh "python3 Hdashboard.py testevent ${params.eNB_MR}"   
+                sh "python3 Hdashboard.py testevent ${params.eNB_MR} ${JOB_NAME} ${env.BUILD_URL} ${StatusForDb} "   
               }
             }
           }

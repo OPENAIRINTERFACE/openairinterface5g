@@ -507,28 +507,37 @@ class Dashboard:
         s3.meta.client.copy(copy_source, 'oaitestdashboard', path+'/'+ 'test_styles.css')
 
 
-    def PostGitNote(self,singlemr):
+    def PostGitNote(self,mr,jobname,buildurl,status):
         gl = gitlab.Gitlab.from_config('OAI')
         project_id = 223
         project = gl.projects.get(project_id)
         editable_mr = project.mergerequests.get(int(singlemr))
         mr_notes = editable_mr.notes.list()
-        mr_note = editable_mr.notes.create({'body': '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+singlemr+'/index.html">Test Results for your MR are updated (End to End LTE/NSA/SA/2x2/OAIUE)</a>'})
+        mr_note = editable_mr.notes.create({
+            'body': 'Completed Test : '+jobname+' , status : <b>'+status+'</b>\n'+\
+            buildurl+'\n'+\
+            '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+mr+'/index.html">Consolidated Test Results (End to End LTE/NSA/SA/2x2/OAIUE)</a>'
+        })
         editable_mr.save()
 
 
 def main():
 
+    #call from Jenkinsfile : sh "python3 Hdashboard.py testevent ${params.eNB_MR} ${JOB_NAME} ${env.BUILD_URL} ${StatusForDb} "  
+
     #individual MR test results + test dashboard, event based (end of jenkins pipeline)
     if len(sys.argv)>1:
         if sys.argv[1]=="testevent" :
             mr=sys.argv[2]
+            jobname=sys.argv[3]
+            buildurl=sys.argv[4]
+            status=sys.argv[5]
             htmlDash=Dashboard()
             htmlDash.Build('singleMR',mr,'/tmp/MR'+mr+'_index.html') 
             htmlDash.CopyToS3('/tmp/MR'+mr+'_index.html','oaitestdashboard','MR'+mr+'/index.html')
             htmlDash.Build('Tests','0000','/tmp/Tests_index.html') 
             htmlDash.CopyToS3('/tmp/Tests_index.html','oaitestdashboard','index.html')
-            htmlDash.PostGitNote(mr)
+            htmlDash.PostGitNote(mr,jobname,buildurl,status)
     #test and MR status dash boards, cron based
     else:
         htmlDash=Dashboard()
