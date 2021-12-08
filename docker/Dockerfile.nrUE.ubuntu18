@@ -25,18 +25,11 @@
 #
 #---------------------------------------------------------------------
 
+FROM ran-base:latest AS nr-ue-base
+
 FROM ran-build:latest AS nr-ue-build
 
-RUN rm -Rf /oai-ran
-WORKDIR /oai-ran
-COPY . .
-
-#run build_oai to build the target image
-RUN /bin/sh oaienv && \ 
-    cd cmake_targets && \
-    mkdir -p log && \
-    ./build_oai --nrUE --ninja -w USRP --verbose-ci && \
-    cp /oai-ran/docker/scripts/nr_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
+RUN cp /oai-ran/docker/scripts/nr_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM ubuntu:bionic as oai-nr-ue
@@ -89,16 +82,18 @@ COPY --from=nr-ue-build \
     /oai-ran/cmake_targets/ran_build/build/libldpc_optim.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc_optim8seg.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so \
-    /usr/local/lib/libprotobuf-c.so.1 \
     ./
 
 # Now we are copying from builder-image the UHD files.
-COPY --from=nr-ue-build /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=nr-ue-build /usr/local/lib/libuhd.so.3.15.0 /usr/local/lib
-COPY --from=nr-ue-build /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-nr-ue/bin
+COPY --from=nr-ue-base /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=nr-ue-base \
+     /usr/local/lib/libuhd.so.3.15.0 \
+     /usr/local/lib/libprotobuf-c.so.1 \
+     /usr/local/lib/
+COPY --from=nr-ue-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-nr-ue/bin
 
 WORKDIR /usr/lib/x86_64-linux-gnu
-COPY --from=nr-ue-build \
+COPY --from=nr-ue-base \
     /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 \
     /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.65.1 \
     /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 \

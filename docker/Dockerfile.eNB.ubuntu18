@@ -25,17 +25,9 @@
 #
 #---------------------------------------------------------------------
 
+FROM ran-base:latest as enb-base
+
 FROM ran-build:latest AS enb-build
-
-RUN rm -Rf /oai-ran
-WORKDIR /oai-ran
-COPY . .
-
-#run build_oai to build the target image
-RUN /bin/sh oaienv && \ 
-    cd cmake_targets && \
-    mkdir -p log && \
-    ./build_oai --eNB --ninja -w USRP --verbose-ci
 
 RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml && \
     cp /oai-ran/docker/scripts/enb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
@@ -85,15 +77,17 @@ COPY --from=enb-build \
      /oai-ran/targets/bin/libparams_libconfig.so \
      /oai-ran/cmake_targets/ran_build/build/libdfts.so \
      /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so \
-     /usr/local/lib/libprotobuf-c.so.1 \
      ./
 
 # Now we are copying from builder-image the UHD files.
-COPY --from=enb-build /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=enb-build /usr/local/lib/libuhd.so.3.15.0 /usr/local/lib
-COPY --from=enb-build /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-enb/bin
+COPY --from=enb-base /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=enb-base \
+     /usr/local/lib/libuhd.so.3.15.0 \
+     /usr/local/lib/libprotobuf-c.so.1 \
+     /usr/local/lib/
+COPY --from=enb-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-enb/bin
 WORKDIR /usr/lib/x86_64-linux-gnu
-COPY --from=enb-build \
+COPY --from=enb-base \
      /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 \
      /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.65.1 \
      /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 \

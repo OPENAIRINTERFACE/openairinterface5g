@@ -25,38 +25,14 @@
 #
 #---------------------------------------------------------------------
 
+FROM ran-base:latest as ran-build
 
-FROM ubuntu:bionic AS ran-build
-ARG NEEDED_GIT_PROXY
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Europe/Paris
-ENV BUILD_UHD_FROM_SOURCE=True
-ENV UHD_VERSION=3.15.0.0
-
-#install developers pkg/repo
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
-    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
-       #gcc needed for build_oai
-       build-essential \
-       psmisc \
-       git \
-       xxd \
-       #unzip is needed for protobuf
-       unzip \
-       # python3-pip for conf template generation
-       python3-pip && \
-    pip3 install --ignore-installed pyyaml
-
-# In some network environments, GIT proxy is required
-RUN /bin/bash -c "if [[ -v NEEDED_GIT_PROXY ]]; then git config --global http.proxy $NEEDED_GIT_PROXY; fi"
-
-#create the WORKDIR
+RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
 COPY . .
 
-#run build_oai -I to get the builder image
-RUN /bin/sh oaienv && \ 
+# build all targets so final targets can be created afterwards
+RUN /bin/sh oaienv && \
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai -I -w USRP
+    ./build_oai --eNB --gNB --RU --UE --nrUE --ninja -w USRP --verbose-ci

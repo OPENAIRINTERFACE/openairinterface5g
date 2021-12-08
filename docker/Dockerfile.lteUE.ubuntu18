@@ -25,17 +25,9 @@
 #
 #---------------------------------------------------------------------
 
+FROM ran-base:latest AS lte-ue-base
+
 FROM ran-build:latest AS lte-ue-build 
-
-RUN rm -Rf /oai-ran
-WORKDIR /oai-ran
-COPY . .
-
-#run build_oai to build the target image
-RUN /bin/sh oaienv && \ 
-    cd cmake_targets && \
-    mkdir -p log && \
-    ./build_oai --UE --ninja -w USRP --verbose-ci
 
 RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/lte_ue_parameters.yaml && \
     python3 ./docker/scripts/generateTemplate.py ./docker/scripts/lte_ue_sim_parameters.yaml && \
@@ -89,16 +81,18 @@ COPY --from=lte-ue-build \
     /oai-ran/targets/bin/libparams_libconfig.so \
     /oai-ran/cmake_targets/ran_build/build/libSIMU.so \
     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
-    /usr/local/lib/libprotobuf-c.so.1 \
     ./
 
 # Now we are copying from builder-image the UHD files.
-COPY --from=lte-ue-build /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=lte-ue-build /usr/local/lib/libuhd.so.3.15.0 /usr/local/lib
-COPY --from=lte-ue-build /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-lte-ue/bin
+COPY --from=lte-ue-base /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=lte-ue-base \
+     /usr/local/lib/libuhd.so.3.15.0 \
+     /usr/local/lib/libprotobuf-c.so.1 \
+     /usr/local/lib/
+COPY --from=lte-ue-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-lte-ue/bin
 
 WORKDIR /usr/lib/x86_64-linux-gnu
-COPY --from=lte-ue-build \
+COPY --from=lte-ue-base \
     /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 \
     /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.65.1 \
     /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 \
