@@ -157,6 +157,8 @@ typedef struct {
   uint8_t msg3_round;
   /// Flag to indicate if Msg3 carries a DCCH or DTCH message
   bool msg3_dcch_dtch;
+  int msg3_startsymb;
+  int msg3_nrsymb;
   /// TBS used for Msg4
   int msg4_TBsize;
   /// MCS used for Msg4
