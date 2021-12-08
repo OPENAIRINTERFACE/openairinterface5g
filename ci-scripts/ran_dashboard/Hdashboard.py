@@ -513,7 +513,7 @@ class Dashboard:
         project = gl.projects.get(project_id)
         editable_mr = project.mergerequests.get(int(singlemr))
         mr_notes = editable_mr.notes.list()
-        mr_note = editable_mr.notes.create({'body': '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/'+singlemr+'/index.html">Test Results for you MR are updated (End to End LTE/NSA/SA/2x2/OAIUE)</a>'})
+        mr_note = editable_mr.notes.create({'body': '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/'+singlemr+'/index.html">Test Results for your MR are updated (End to End LTE/NSA/SA/2x2/OAIUE)</a>'})
         editable_mr.save()
 
 
