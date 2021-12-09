@@ -30,7 +30,11 @@
    Modified in June, 2001, to include  the length non multiple of 8
 */
 
+#ifndef __SSE4_1__
+#define USE_INTEL_CRC 0
+#else
 #define USE_INTEL_CRC __SSE4_1__
+#endif
 
 #include "coding_defs.h"
 #include "assertions.h"
