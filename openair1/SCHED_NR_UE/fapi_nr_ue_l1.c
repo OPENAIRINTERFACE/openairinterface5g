@@ -189,7 +189,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             if (scheduled_response->tx_request) {
               for (int j=0; j<scheduled_response->tx_request->number_of_pdus; j++) {
                 fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
-                if (tx_req_body->pdu_index == i) {
+                if ((tx_req_body->pdu_index == i) && (tx_req_body->pdu_length > 0)) {
                   LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
                   memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
                   harq_process_ul_ue->status = ACTIVE;
