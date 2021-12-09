@@ -885,7 +885,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
     for (int i=0; i<pusch_TimeDomainAllocationList->list.count; i++) {
       k2 = *pusch_TimeDomainAllocationList->list.array[i]->k2;
       // we want to transmit in the uplink symbols of mixed slot
-      if (k2 + DELTA[mu] == nb_slots_per_period) {
+      if ((k2 + DELTA[mu])%nb_slots_per_period == 0) {
         temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
         ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
         if (is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[ra->Msg3_slot / 64], ra->Msg3_slot)) {
