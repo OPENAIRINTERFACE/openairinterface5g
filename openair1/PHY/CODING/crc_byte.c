@@ -34,7 +34,7 @@
 
 #include "coding_defs.h"
 #include "assertions.h"
-#ifdef USE_INTEL_CRC 
+#if USE_INTEL_CRC 
 #include "crc.h"
 #endif
 /*ref 36-212 v8.6.0 , pp 8-9 */
@@ -97,7 +97,7 @@ static unsigned short      crc11Table[256];
 static unsigned char       crc8Table[256];
 static unsigned char       crc6Table[256];
 
-#ifdef USE_INTEL_CRC
+#if USE_INTEL_CRC
 static DECLARE_ALIGNED(struct crc_pclmulqdq_ctx lte_crc24a_pclmulqdq, 16) = {
         0x64e4d700,     /**< k1 */
         0x2c8c9d00,     /**< k2 */
@@ -133,7 +133,7 @@ void crcTableInit (void)
     crc8Table[c] = (unsigned char) (crcbit (&c, 1, poly8) >> 24);
     crc6Table[c] = (unsigned char) (crcbit (&c, 1, poly6) >> 24);
   } while (++c);
-#ifdef USE_INTEL_CRC
+#if USE_INTEL_CRC
     crc_xmm_be_le_swap128 = _mm_setr_epi32(0x0c0d0e0f, 0x08090a0b,
 					   0x04050607, 0x00010203);
 
@@ -174,7 +174,7 @@ unsigned int crc24a (unsigned char * inptr,
 
 }
 
-#ifdef USE_INTEL_CRC
+#if USE_INTEL_CRC
 static DECLARE_ALIGNED(struct crc_pclmulqdq_ctx lte_crc24b_pclmulqdq, 16) = {
         0x80140500,     /**< k1 */
         0x42000100,     /**< k2 */
