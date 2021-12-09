@@ -505,10 +505,9 @@ void init_eNB_afterRU(void) {
   for (inst=0; inst<RC.nb_nr_inst; inst++) {
     LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, RC.gNB[inst]);
     gNB = RC.gNB[inst];
-    mac = RC.nrmac[gNB->UL_INFO.module_id];
 
     phy_init_nr_gNB(gNB,0,0);
-    init_codebook_gNB(gNB,mac);
+    init_codebook_gNB(gNB);
 
     // map antennas and PRACH signals to gNB RX
     if (0) AssertFatal(gNB->num_RU>0,"Number of RU attached to gNB %d is zero\n",gNB->Mod_id);

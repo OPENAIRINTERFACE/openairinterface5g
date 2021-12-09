@@ -269,6 +269,15 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 
   fp->nb_antennas_rx = cfg->carrier_config.num_rx_ant.value;      // It denotes the number of rx antennas at gNB
   fp->nb_antennas_tx = cfg->carrier_config.num_tx_ant.value;      // It corresponds to pdsch_AntennaPorts (logical antenna ports)
+  //RRC Parameters: depends on the physical structure of the gNB Uniform planner array
+  if (fp->nb_antennas_tx == 4)
+    fp->antennas_tx_n1_n2 = 1;//NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_two_one_TypeI_SinglePanel_Restriction;
+  else if (fp->nb_antennas_tx == 8)
+    fp->antennas_tx_n1_n2 = 3;//NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_four_one_TypeI_SinglePanel_Restriction;
+  else if (fp->nb_antennas_tx == 12)
+    fp->antennas_tx_n1_n2 = 5;//NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_six_one_TypeI_SinglePanel_Restriction;
+  else//We currently support codebook 1 for nrOfAntennaPorts < 16
+    fp->antennas_tx_n1_n2 = 0;//NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_NOTHING;
 
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
