@@ -1260,7 +1260,6 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   // frequency domain resources depends on BWP size
   // options are 24, 48 or 96
   coreset->frequencyDomainResources.buf = calloc(1,6);
-  int curr_bwp = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
   if (0) {
      if (curr_bwp < 48)
        coreset->frequencyDomainResources.buf[0] = 0xf0;

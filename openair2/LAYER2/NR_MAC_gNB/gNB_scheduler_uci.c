@@ -941,7 +941,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   int better_rsrp_reported = -140-(-0); /*minimum_measured_RSRP_value - minimum_differntail_RSRP_value*///considering the minimum RSRP value as better RSRP initially
   uint8_t diff_rsrp_idx = 0;
   uint8_t i, j;
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   if (n_dl_bwp < 4)
     pdsch_bwp_id = bwp_id;
