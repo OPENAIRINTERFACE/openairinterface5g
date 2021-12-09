@@ -298,6 +298,17 @@ int nr_process_mac_pdu(module_id_t module_idP,
                break;
 
         case UL_SCH_LCID_C_RNTI:
+
+          for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+            NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[CC_id].ra[i];
+            if (ra->state >= WAIT_Msg3 && ra->rnti == UE_info->rnti[UE_id]) {
+              ra->crnti = ((pduP[1]&0xFF)<<8)|(pduP[2]&0xFF);
+              ra->msg3_dcch_dtch = true;
+              LOG_I(NR_MAC, "Received UL_SCH_LCID_C_RNTI with C-RNTI 0x%04x\n", ra->crnti);
+              break;
+            }
+          }
+
         	//38.321 section 6.1.3.2
         	//fixed length
         	mac_ce_len = 2;
@@ -365,10 +376,25 @@ int nr_process_mac_pdu(module_id_t module_idP,
             mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
             mac_subheader_len = 2;
           }
-          if (UE_info->CellGroup[UE_id]) {
-            LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: %d \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, UE_info->rnti[UE_id]);
+
+          rnti_t crnti = UE_info->rnti[UE_id];
+          int UE_idx = UE_id;
+          for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+            NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[CC_id].ra[i];
+            if (ra->state >= WAIT_Msg3 && ra->rnti == UE_info->rnti[UE_id]) {
+              uint8_t *next_subpduP = pduP + mac_subheader_len + mac_sdu_len;
+              if ((pduP[mac_subheader_len+mac_sdu_len] & 0x3F) == UL_SCH_LCID_C_RNTI) {
+                crnti = ((next_subpduP[1]&0xFF)<<8)|(next_subpduP[2]&0xFF);
+                UE_idx = find_nr_UE_id(module_idP, crnti);
+                break;
+              }
+            }
+          }
+
+          if (UE_info->CellGroup[UE_idx]) {
+            LOG_D(NR_MAC, "[UE %d] Frame %d : ULSCH -> UL-DCCH %d (gNB %d, %d bytes), rnti: 0x%04x \n", module_idP, frameP, rx_lcid, module_idP, mac_sdu_len, crnti);
             mac_rlc_data_ind(module_idP,
-                             UE_info->rnti[UE_id],
+                             crnti,
                              module_idP,
                              frameP,
                              ENB_FLAG_YES,
@@ -533,7 +559,7 @@ void handle_nr_ul_harq(const int CC_idP,
           ra->rnti == crc_pdu->rnti)
         return;
     }
-    LOG_E(NR_MAC, "%s(): unknown RNTI %04x in PUSCH\n", __func__, crc_pdu->rnti);
+    LOG_E(NR_MAC, "%s(): unknown RNTI 0x%04x in PUSCH\n", __func__, crc_pdu->rnti);
     return;
   }
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
@@ -541,7 +567,7 @@ void handle_nr_ul_harq(const int CC_idP,
   int8_t harq_pid = sched_ctrl->feedback_ul_harq.head;
   while (crc_pdu->harq_id != harq_pid || harq_pid < 0) {
     LOG_W(NR_MAC,
-          "Unexpected ULSCH HARQ PID %d (have %d) for RNTI %04x (ignore this warning for RA)\n",
+          "Unexpected ULSCH HARQ PID %d (have %d) for RNTI 0x%04x (ignore this warning for RA)\n",
           crc_pdu->harq_id,
           harq_pid,
           crc_pdu->rnti);
@@ -752,13 +778,13 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_info->UE_sched_ctrl[UE_id].ta_frame = frameP;
 
         LOG_D(NR_MAC,
-              "reset RA state information for RA-RNTI %04x/index %d\n",
+              "reset RA state information for RA-RNTI 0x%04x/index %d\n",
               ra->rnti,
               i);
 
         LOG_I(NR_MAC,
-              "[gNB %d][RAPROC] PUSCH with TC_RNTI %x received correctly, "
-              "adding UE MAC Context UE_id %d/RNTI %04x\n",
+              "[gNB %d][RAPROC] PUSCH with TC_RNTI 0x%04x received correctly, "
+              "adding UE MAC Context UE_id %d/RNTI 0x%04x\n",
               gnb_mod_idP,
               current_rnti,
               UE_id,
@@ -796,7 +822,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
             ra->state = Msg4;
             ra->Msg4_frame = (frameP + 2) % 1024;
             ra->Msg4_slot = 1;
-            LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI %04x (state %d, frame %d, slot %d)\n", ra->rnti, ra->state, ra->Msg4_frame, ra->Msg4_slot);
+            LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d, frame %d, slot %d)\n",
+                  (ra->msg3_dcch_dtch?ra->crnti:ra->rnti), ra->state, ra->Msg4_frame, ra->Msg4_slot);
           }
           else {
              nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);

@@ -360,7 +360,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
 
-  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1,0);
+  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1, 0);
   if (alloc < 0) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",

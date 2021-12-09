@@ -819,7 +819,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                                         coreset,
                                         0);
     if (CCEIndex < 0) {
-      LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
+      LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI 0x%04x!\n", __func__, ra->rnti);
       return;
     }
 
@@ -1216,7 +1216,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                         0);
 
     if (CCEIndex < 0) {
-      LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
+      LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI 0x%04x!\n", __func__, ra->rnti);
       return;
     }
 
@@ -1247,7 +1247,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dl_req->nPDUs+=1;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
 
-    LOG_I(NR_MAC,"[gNB %d][RAPROC] CC_id %d Frame %d, slotP %d: Generating RA-Msg2 DCI, rnti 0x%x, state %d, CoreSetType %d\n",
+    LOG_I(NR_MAC,"[gNB %d][RAPROC] CC_id %d Frame %d, slotP %d: Generating RA-Msg2 DCI, rnti 0x%04x, state %d, CoreSetType %d\n",
           module_idP, CC_id, frameP, slotP, ra->RA_rnti, ra->state,pdcch_pdu_rel15->CoreSetType);
 
     // SCF222: PDU index incremented for each PDSCH PDU sent in TX control message. This is used to associate control
@@ -1442,6 +1442,12 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg4\n");
 
+    rnti_t tc_rnti = ra->rnti;
+    // If UE is known by the network, C-RNTI to be used instead of TC-RNTI
+    if(ra->msg3_dcch_dtch) {
+      ra->rnti = ra->crnti;
+    }
+
     int UE_id = find_nr_UE_id(module_idP, ra->rnti);
     NR_UE_info_t *UE_info = &nr_mac->UE_info;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
@@ -1475,6 +1481,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     harq->is_waiting = true;
     ra->harq_pid = current_harq_pid;
 
+    // Remove UE associated to TC-RNTI
+    if(harq->round==0 && ra->msg3_dcch_dtch) {
+      mac_remove_nr_ue(module_idP, tc_rnti);
+    }
+
     // get CCEindex, needed also for PUCCH and then later for PDCCH
     uint8_t aggregation_level;
     uint8_t nr_of_candidates;
@@ -1494,7 +1505,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                         0);
 
     if (CCEIndex < 0) {
-      LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI %04x!\n", __func__, ra->rnti);
+      LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI 0x%04x!\n", __func__, ra->rnti);
       return;
     }
 
@@ -1518,15 +1529,21 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     uint8_t *buf = (uint8_t *) harq->tb;
     // Bytes to be transmitted
     if (harq->round == 0) {
-      uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
-      LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
-      uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, &buf[mac_pdu_length+2]);
-      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
-      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
-      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
-      ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
-      ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
-      LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, (int)sizeof(NR_MAC_SUBHEADER_SHORT), ra->mac_pdu_length);
+      if (ra->msg3_dcch_dtch) {
+        // If the UE used MSG3 to transfer a DCCH or DTCH message, then contention resolution is successful if the UE receives a PDCCH transmission which has its CRC bits scrambled by the C-RNTI
+        // Just send padding LCID
+        ra->mac_pdu_length = 0;
+      } else {
+        uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
+        LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
+        uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, &buf[mac_pdu_length+2]);
+        ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
+        ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
+        ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
+        ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
+        ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
+        LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, (int)sizeof(NR_MAC_SUBHEADER_SHORT), ra->mac_pdu_length);
+      }
     }
 
     // Calculate number of symbols
@@ -1791,8 +1808,23 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     LOG_D(NR_MAC,"precoderGranularity: %i\n", pdcch_pdu_rel15->precoderGranularity);
     LOG_D(NR_MAC,"numDlDci: %i\n", pdcch_pdu_rel15->numDlDci);
 
-    ra->state = WAIT_Msg4_ACK;
-    LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
+    if(ra->msg3_dcch_dtch) {
+      // If the UE used MSG3 to transfer a DCCH or DTCH message, then contention resolution is successful upon transmission of PDCCH
+      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CBRA procedure succeeded!\n", UE_id, ra->rnti);
+      nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
+      UE_info->active[UE_id] = true;
+      UE_info->Msg4_ACKed[UE_id] = true;
+
+      remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+      harq->feedback_slot = -1;
+      harq->is_waiting = false;
+      add_tail_nr_list(&sched_ctrl->available_dl_harq, current_harq_pid);
+      harq->round = 0;
+      harq->ndi ^= 1;
+    } else {
+      ra->state = WAIT_Msg4_ACK;
+      LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
+    }
   }
 }
 
@@ -1806,23 +1838,22 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
   NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
   NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
 
-  LOG_D(NR_MAC, "ue %d, rnti %d, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
+  LOG_D(NR_MAC, "ue %d, rnti 0x%04x, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
 
   if (harq->is_waiting == 0) {
     if (harq->round == 0) {
       if (stats->dlsch_errors == 0) {
         LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
-        nr_clear_ra_proc(module_id, CC_id, frame, ra);
         UE_info->active[UE_id] = true;
         UE_info->Msg4_ACKed[UE_id] = true;
-        if(sched_ctrl->retrans_dl_harq.head>=0)
-          remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
       }
       else {
         LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);
-        nr_mac_remove_ra_rnti(module_id, ra->rnti);
-        nr_clear_ra_proc(module_id, CC_id, frame, ra);
-        mac_remove_nr_ue(module_id, ra->rnti);
+      }
+
+      nr_clear_ra_proc(module_id, CC_id, frame, ra);
+      if(sched_ctrl->retrans_dl_harq.head >= 0) {
+        remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
       }
     }
     else {
@@ -1840,6 +1871,8 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t
   ra->timing_offset = 0;
   ra->RRC_timer = 20;
   ra->msg3_round = 0;
+  ra->msg3_dcch_dtch = false;
+  ra->crnti = 0;
   if(ra->cfra == false) {
     ra->rnti = 0;
   }

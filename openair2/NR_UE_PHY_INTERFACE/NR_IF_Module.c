@@ -81,12 +81,31 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t
 // Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
 int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
 
-  update_harq_status(dl_info, pdu_id);
+  update_harq_status(dl_info->module_id,
+                     dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid,
+                     dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack);
   if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack)
     nr_ue_send_sdu(dl_info, ul_time_alignment, pdu_id);
 
   return 0;
 }
+
+void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nack) {
+
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[harq_pid];
+
+  if (current_harq->active) {
+    current_harq->ack = ack_nack;
+    current_harq->ack_received = true;
+    LOG_D(PHY,"Updating harq_status for harq_id %d,ack/nak %d\n",harq_pid,current_harq->ack);
+  }
+  else {
+    //shouldn't get here
+    LOG_E(MAC, "Trying to process acknack for an inactive harq process (%d)\n", harq_pid);
+  }
+}
+
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
