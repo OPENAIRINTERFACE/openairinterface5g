@@ -294,7 +294,7 @@ else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
       set(COMPILATION_AVX2 "False")
     endif()
     if (CPUINFO MATCHES "sse4_1")
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1 -mpclmul")
     endif()
     if (CPUINFO MATCHES "ssse3")
       set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mssse3")
@@ -322,9 +322,9 @@ add_definitions("-DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAV
 set(commonOpts "-pipe -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic")
 
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} ${commonOpts} -std=gnu99 -funroll-loops -mpclmul")
+  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} ${commonOpts} -std=gnu99 -funroll-loops")
 set(CMAKE_CXX_FLAGS
-  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}  ${commonOpts} -std=c++11 -mpclmul")
+  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}  ${commonOpts} -std=c++11")
 
 
 
