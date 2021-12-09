@@ -1045,7 +1045,7 @@ int main(int argc, char **argv)
 
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;
         for (int i=0; i<MAX_NUM_CORESET; i++)
-          gNB_mac->UE_info.pdcch_cand[i] = 0;
+          gNB_mac->pdcch_cand[i] = 0;
       
         if (css_flag == 0) {
           nr_schedule_ue_spec(0, frame, slot);

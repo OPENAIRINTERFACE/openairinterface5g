@@ -158,18 +158,16 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,0);
 
-  int num_dl_dci = msgTx->pdcch_pdu.pdcch_pdu_rel15.numDlDci;
-  int num_ul_dci = msgTx->ul_pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci;
+  int num_pdcch_pdus = msgTx->num_ul_pdcch + msgTx->num_dl_pdcch;
 
-  if (num_dl_dci > 0 || num_ul_dci > 0) {
-    LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL DCI %d/%d)\n",
-	  gNB->Mod_id, frame, slot, num_ul_dci, num_dl_dci);
+  if (num_pdcch_pdus > 0) {
+    LOG_D(PHY, "[gNB %d] Frame %d slot %d Calling nr_generate_dci_top (number of UL/DL PDCCH PDUs %d/%d)\n",
+	  gNB->Mod_id, frame, slot, msgTx->num_ul_pdcch, msgTx->num_dl_pdcch);
   
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,1);
 
     nr_generate_dci_top(gNB,
-			num_dl_dci > 0 ? &msgTx->pdcch_pdu : NULL,
-			num_ul_dci > 0 ? &msgTx->ul_pdcch_pdu.pdcch_pdu : NULL,
+			msgTx,
 			gNB->nr_gold_pdcch_dmrs[slot],
 			&gNB->common_vars.txdataF[0][txdataF_offset],
 			AMP, fp);
