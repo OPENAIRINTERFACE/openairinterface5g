@@ -63,7 +63,7 @@
 
 #include "PHY/phy_extern.h"
 
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "common/ran_context.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 #include "common/utils/LOG/log_extern.h"
@@ -74,7 +74,6 @@
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
 #include "gnb_paramdef.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
@@ -497,7 +496,6 @@ void print_opp_meas(void) {
 void init_eNB_afterRU(void) {
   int inst,ru_id,i,aa;
   PHY_VARS_gNB *gNB;
-  gNB_MAC_INST *mac;
   LOG_I(PHY,"%s() RC.nb_nr_inst:%d\n", __FUNCTION__, RC.nb_nr_inst);
 
   if(NFAPI_MODE == NFAPI_MODE_PNF)

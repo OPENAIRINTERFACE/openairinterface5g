@@ -37,8 +37,6 @@
 #include "LTE_SCellToAddMod-r10.h"
 #include "LTE_NonMBSFN-SubframeConfig-r14.h"
 
-typedef struct gNB_MAC_INST_s gNB_MAC_INST;
-
 /** @addtogroup _PHY_STRUCTURES_
  * @{
  */

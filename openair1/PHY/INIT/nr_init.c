@@ -36,7 +36,6 @@
 #include "MBSFN-SubframeConfigList.h"*/
 #include "openair1/PHY/defs_RU.h"
 #include "openair1/PHY/CODING/nrLDPC_extern.h"
-#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "assertions.h"
 #include <math.h>
 #include <complex.h>
