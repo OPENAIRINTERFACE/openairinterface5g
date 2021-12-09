@@ -846,7 +846,6 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
       stop_meas(&ue->dlsch_llr_stats_parallelization[proc->thread_id][slot]);
       if (cpumeas(CPUMEAS_GETSTATE))
         LOG_D(PHY, "[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",frame_rx,nr_slot_rx,m,ue->dlsch_llr_stats_parallelization[proc->thread_id][slot].p_time/(cpuf*1000.0));
-
       if(first_symbol_flag) {
         proc->first_symbol_available = 1;
       }
