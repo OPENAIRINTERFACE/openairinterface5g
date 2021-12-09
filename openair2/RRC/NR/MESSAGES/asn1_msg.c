@@ -1150,7 +1150,11 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   ASN_SEQUENCE_ADD(&srs_resset0->srs_ResourceIdList->list,srs_resset0_id);
   srs_Config->srs_ResourceToReleaseList=NULL;
 
-  if(0) {
+  if(carrier->do_SRS) {
+    srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_periodic;
+    srs_resset0->resourceType.choice.periodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.periodic));
+    srs_resset0->resourceType.choice.periodic->associatedCSI_RS = NULL;
+  } else {
     srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_aperiodic;
     srs_resset0->resourceType.choice.aperiodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic));
     srs_resset0->resourceType.choice.aperiodic->aperiodicSRS_ResourceTrigger=1;
@@ -1158,10 +1162,6 @@ void fill_initial_SpCellConfig(rnti_t rnti,
     srs_resset0->resourceType.choice.aperiodic->slotOffset= calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic->slotOffset));
     *srs_resset0->resourceType.choice.aperiodic->slotOffset=2;
     srs_resset0->resourceType.choice.aperiodic->ext1=NULL;
-  } else {
-    srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_periodic;
-    srs_resset0->resourceType.choice.periodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.periodic));
-    srs_resset0->resourceType.choice.periodic->associatedCSI_RS = NULL;
   }
 
   srs_resset0->usage=NR_SRS_ResourceSet__usage_codebook;
@@ -1194,14 +1194,14 @@ void fill_initial_SpCellConfig(rnti_t rnti,
       srs_res0->freqHopping.b_SRS);
   srs_res0->groupOrSequenceHopping=NR_SRS_Resource__groupOrSequenceHopping_neither;
 
-  if(0) {
-    srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_aperiodic;
-    srs_res0->resourceType.choice.aperiodic=calloc(1,sizeof(*srs_res0->resourceType.choice.aperiodic));
-  } else {
+  if(carrier->do_SRS) {
     srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_periodic;
     srs_res0->resourceType.choice.periodic=calloc(1,sizeof(*srs_res0->resourceType.choice.periodic));
     srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl40;
     srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl40 = 7 + (uid/3)*10; // 7/17/27/37 are mixed slots
+  } else {
+    srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_aperiodic;
+    srs_res0->resourceType.choice.aperiodic=calloc(1,sizeof(*srs_res0->resourceType.choice.aperiodic));
   }
 
   srs_res0->sequenceId=40;

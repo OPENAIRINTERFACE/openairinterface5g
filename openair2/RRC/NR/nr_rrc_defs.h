@@ -449,6 +449,7 @@ typedef struct {
   int pusch_AntennaPorts;
   int minRXTXTIMEpdsch;
   int do_CSIRS;
+  int do_SRS;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
   NR_PDCCH_ConfigSIB1_t                     *pdcch_ConfigSIB1;
