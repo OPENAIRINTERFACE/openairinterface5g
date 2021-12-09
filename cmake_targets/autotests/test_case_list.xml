@@ -1182,9 +1182,10 @@
     
     <testCase id="015108">
       <class>execution</class>
-      <desc>nr_ulschsim Test cases. (Test1: 106 PRB),
-                                    (Test2: 217 PRB),
-                                    (Test3: 273 PRB)</desc>
+      <desc>nr_ulschsim Test cases. (Test1: 106 PRBs),
+                                    (Test2: 217 PRBs),
+                                    (Test3: 273 PRBs)
+                                    (Test4: 106 PRBs 4-layer MIMO)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1193,8 +1194,9 @@
       <main_exec> $OPENAIR_DIR/targets/bin/nr_ulschsim.Rel15</main_exec>
       <main_exec_args>-R 106 -m9 -s13 -n100
                       -R 217 -m15 -s15 -n100
-                      -R 273 -m19 -s20 -n100</main_exec_args>
-      <tags>nr_ulschsim.test1 nr_ulschsim.test2 nr_ulschsim.test3</tags>
+                      -R 273 -m19 -s20 -n100
+                      -R 106 -m9 -s13 -n100 -y4 -z4 -W4</main_exec_args>
+      <tags>nr_ulschsim.test1 nr_ulschsim.test2 nr_ulschsim.test3 nr_ulschsim.test4</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -1302,7 +1304,9 @@
                                  (Test12: SC-FDMA, 216 PRBs),
                                  (Test13: SC-FDMA, 273 PRBs),
                                  (Test14: SC-FDMA, 3 DMRS),
-                                 (Test15: MCS 16 50 PRBs 2 RX_Antenna)</desc>
+                                 (Test15: MCS 16 50 PRBs 2 RX_Antenna)
+                                 (Test16: MCS 9 106 PRBs MIMO 2 layers)
+                                 (Test17: MCS 9 106 PRBs MIMO 4 layers)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1323,9 +1327,11 @@
                       -n50 -s5 -Z -r216 -R217
                       -n50 -s5 -Z -r270 -R273
                       -n100 -s5 -Z -U 2 0 2
-                      -n100 -m16 -s10 -z2</main_exec_args>
+                      -n100 -m16 -s10 -z2
+                      -n100 -m9 -r106 -s10 -W2 -y2 -z2
+                      -n100 -m9 -r106 -s13 -W4 -y4 -z4</main_exec_args>
 
-      <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5 nr_ulsim.test6 nr_ulsim.test7 nr_ulsim.test8 nr_ulsim.test9 nr_ulsim.test10 nr_ulsim.test11 nr_ulsim.test12 nr_ulsim.test13 nr_ulsim.test14 nr_ulsim.test15</tags>
+      <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5 nr_ulsim.test6 nr_ulsim.test7 nr_ulsim.test8 nr_ulsim.test9 nr_ulsim.test10 nr_ulsim.test11 nr_ulsim.test12 nr_ulsim.test13 nr_ulsim.test14 nr_ulsim.test15 nr_ulsim.test16 nr_ulsim.test16</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
