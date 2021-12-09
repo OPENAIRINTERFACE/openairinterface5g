@@ -56,6 +56,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int servCellIndex,
                                      int dl_antenna_ports,
                                      int ul_antenna_ports,
+                                     int minRXTXTIMEpdsch,
                                      int do_csirs,
                                      int initial_csi_index,
                                      int uid) {
@@ -946,7 +947,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  long *delay[8];
  for (int i=0;i<8;i++) {
    delay[i] = calloc(1,sizeof(*delay[i]));
-   *delay[i] = (i<6) ? (i+2) : 0;
+   *delay[i] = i+minRXTXTIMEpdsch;
    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
  }
  pucch_Config->spatialRelationInfoToAddModList = calloc(1,sizeof(*pucch_Config->spatialRelationInfoToAddModList));
@@ -1350,6 +1351,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            NR_CellGroupConfig_t *secondaryCellGroup,
                            int dl_antenna_ports,
                            int ul_antenna_ports,
+                           int minRXTXTIMEpdsch,
                            int do_csirs,
                            int initial_csi_index,
                            int uid) {
@@ -1366,6 +1368,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                                   1,
                                   dl_antenna_ports,
                                   ul_antenna_ports,
+                                  minRXTXTIMEpdsch,
                                   do_csirs,
                                   initial_csi_index,
                                   uid);

@@ -155,6 +155,8 @@ typedef struct {
   uint8_t msg3_cqireq;
   /// Round of Msg3 HARQ
   uint8_t msg3_round;
+  /// Flag to indicate if Msg3 carries a DCCH or DTCH message
+  bool msg3_dcch_dtch;
   /// TBS used for Msg4
   int msg4_TBsize;
   /// MCS used for Msg4

@@ -768,7 +768,7 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, n_rx, 0, 0, 0);
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, n_rx, 6, 0, 0, 0);
 
   /* RRC parameter validation for secondaryCellGroup */
   fix_scd(scd);

@@ -965,7 +965,7 @@ class RANManagement():
 				if result is not None:
 					mbmsRequestMsg += 1
 			#FR1 NSA test : add new markers to make sure gNB is used
-			result = re.search('\[gNB [0-9]+\]\[RAPROC\] PUSCH with TC_RNTI [0-9a-fA-F]+ received correctly, adding UE MAC Context UE_id [0-9]+\/RNTI [0-9a-fA-F]+', str(line))
+			result = re.search('\[gNB [0-9]+\]\[RAPROC\] PUSCH with TC_RNTI 0x[0-9a-fA-F]+ received correctly, adding UE MAC Context UE_id [0-9]+\/RNTI 0x[0-9a-fA-F]+', str(line))
 			if result is not None:
 				NSA_RAPROC_PUSCH_check = 1
 			#dlsch and ulsch statistics
