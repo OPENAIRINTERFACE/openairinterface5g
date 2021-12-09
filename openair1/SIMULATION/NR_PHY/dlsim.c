@@ -400,7 +400,7 @@ int main(int argc, char **argv)
   NR_UE_MAC_INST_t *UE_mac;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
   int run_initial_sync=0;
-  int loglvl=OAILOG_INFO;
+  int loglvl=OAILOG_WARNING;
 
   //float target_error_rate = 0.01;
   int css_flag=0;

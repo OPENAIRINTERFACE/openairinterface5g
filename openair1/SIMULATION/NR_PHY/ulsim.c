@@ -272,7 +272,7 @@ int main(int argc, char **argv)
 
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
-  int loglvl = OAILOG_INFO;
+  int loglvl = OAILOG_WARNING;
   //uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   int start_symbol = 0;
