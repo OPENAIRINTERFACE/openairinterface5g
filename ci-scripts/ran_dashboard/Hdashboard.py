@@ -507,23 +507,23 @@ class Dashboard:
         s3.meta.client.copy(copy_source, 'oaitestdashboard', path+'/'+ 'test_styles.css')
 
 
-    def PostGitNote(self,mr,jobname,buildurl,status):
+    def PostGitNote(self,mr,jobname,buildurl,buildid,status):
         gl = gitlab.Gitlab.from_config('OAI')
         project_id = 223
         project = gl.projects.get(project_id)
         editable_mr = project.mergerequests.get(int(mr))
         mr_notes = editable_mr.notes.list()
         mr_note = editable_mr.notes.create({
-            'body': 'Completed Test : '+jobname+' , status : <b>'+status+'</b><br>'+\
-            'Link to this test : '+buildurl+'<br>'+\
-            '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+mr+'/index.html">Consolidated Test Results (All End-to-End LTE/NSA/SA/2x2/OAIUE)</a>'
+            'body': 'Completed Test : '+jobname+', status: <b>'+status+'</b>, '+\
+            '(<a href="'+buildurl+'">'+buildid+'</a>)<br>'+\
+            '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+mr+'/index.html">Consolidated Test Results</a>'
         })
         editable_mr.save()
 
 
 def main():
 
-    #call from Jenkinsfile : sh "python3 Hdashboard.py testevent ${params.eNB_MR} ${JOB_NAME} ${env.BUILD_URL} ${StatusForDb} "  
+    #call from Jenkinsfile : sh "python3 Hdashboard.py testevent ${params.eNB_MR} ${JOB_NAME} ${env.BUILD_URL} ${env.BUILD_ID} ${StatusForDb} "  
 
     #individual MR test results + test dashboard, event based (end of jenkins pipeline)
     if len(sys.argv)>1:
@@ -531,13 +531,14 @@ def main():
             mr=sys.argv[2]
             jobname=sys.argv[3]
             buildurl=sys.argv[4]
-            status=sys.argv[5]
+            buildid=sys.argv[5]
+            status=sys.argv[6]
             htmlDash=Dashboard()
             htmlDash.Build('singleMR',mr,'/tmp/MR'+mr+'_index.html') 
             htmlDash.CopyToS3('/tmp/MR'+mr+'_index.html','oaitestdashboard','MR'+mr+'/index.html')
             htmlDash.Build('Tests','0000','/tmp/Tests_index.html') 
             htmlDash.CopyToS3('/tmp/Tests_index.html','oaitestdashboard','index.html')
-            htmlDash.PostGitNote(mr,jobname,buildurl,status)
+            htmlDash.PostGitNote(mr,jobname,buildurl,buildid,status)
     #test and MR status dash boards, cron based
     else:
         htmlDash=Dashboard()
