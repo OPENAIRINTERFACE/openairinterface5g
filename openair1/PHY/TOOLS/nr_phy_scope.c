@@ -531,7 +531,10 @@ static void *scope_thread_gNB(void *arg) {
   OAI_phy_scope_t  *form_gnb = create_phy_scope_gnb();
 
   while (!oai_exit) {
+    fl_freeze_form(form_gnb->phy_scope);
     phy_scope_gNB(form_gnb, p, nb_ue);
+    fl_unfreeze_form(form_gnb->phy_scope);
+    fl_redraw_form(form_gnb->phy_scope);
     usleep(99*1000);
   }
 
