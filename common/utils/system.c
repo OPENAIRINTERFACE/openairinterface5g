@@ -257,7 +257,6 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
   
   pthread_setname_np(*t, name);
   if (affinity != -1 ) {
-    abort();
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(affinity, &cpuset);
