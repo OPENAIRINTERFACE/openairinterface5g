@@ -4,15 +4,24 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "database.h"
+#include "event.h"
 #include "handler.h"
 #include "config.h"
 #include "logger/logger.h"
-#include "view/view.h"
 #include "gui/gui.h"
+#include "utils.h"
+#include "openair_logo.h"
+
+int ue_id[65536];
+int next_ue_id;
 
 typedef struct {
   widget *pucch_pusch_iq_plot;
   logger *pucch_pusch_iq_logger;
+  widget *current_ue_label;
+  widget *current_ue_button;
+  widget *prev_ue_button;
+  widget *next_ue_button;
 } gnb_gui;
 
 typedef struct {
@@ -21,11 +30,12 @@ typedef struct {
   int nevents;
   pthread_mutex_t lock;
   gnb_gui *e;
+  int ue;                /* what UE is displayed in the UE specific views */
   void *database;
 } gnb_data;
 
-void is_on_changed(void *_d)
-{
+void is_on_changed(void *_d) {
+
   gnb_data *d = _d;
   char t;
 
@@ -49,58 +59,121 @@ connection_dies:
   if (pthread_mutex_unlock(&d->lock)) abort();
 }
 
-void usage(void)
-{
+void usage(void) {
   printf(
-"options:\n"
-"    -d   <database file>      this option is mandatory\n"
-"    -ip <host>                connect to given IP address (default %s)\n"
-"    -p  <port>                connect to given port (default %d)\n",
-  DEFAULT_REMOTE_IP,
-  DEFAULT_REMOTE_PORT
+      "options:\n"
+      "    -d   <database file>      this option is mandatory\n"
+      "    -ip <host>                connect to given IP address (default %s)\n"
+      "    -p  <port>                connect to given port (default %d)\n",
+      DEFAULT_REMOTE_IP,
+      DEFAULT_REMOTE_PORT
   );
   exit(1);
 }
 
-static void *gui_thread(void *_g)
-{
+static void *gui_thread(void *_g) {
   gui *g = _g;
   gui_loop(g);
   return NULL;
 }
 
-static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database,
-    gnb_data *ed)
-{
+static void set_current_ue(gui *g, gnb_data *e, int ue) {
+  char s[256];
+  sprintf(s, "[UE %d]  ", ue);
+  label_set_text(g, e->e->current_ue_label, s);
+}
+
+void reset_ue_ids(void) {
+  int i;
+  printf("resetting known UEs\n");
+  for (i = 0; i < 65536; i++) ue_id[i] = -1;
+  ue_id[65535] = 0;
+  ue_id[65534] = 1;     // HACK: to be removed
+  ue_id[2]     = 2;     // this supposes RA RNTI = 2, very openair specific
+  next_ue_id = 0;
+}
+
+static void click(void *private, gui *g, char *notification, widget *w, void *notification_data) {
+  int *d = notification_data;
+  int button = d[0];
+  gnb_data *ed = private;
+  gnb_gui *e = ed->e;
+  int ue = ed->ue;
+  int do_reset = 0;
+
+  if (button != 1) return;
+  if (w == e->prev_ue_button) { ue--; if (ue < 0) ue = 0; }
+  if (w == e->next_ue_button) ue++;
+  if (w == e->current_ue_button) do_reset = 1;
+
+  if (pthread_mutex_lock(&ed->lock)) abort();
+  if (do_reset) reset_ue_ids();
+  if (ue != ed->ue) {
+    set_current_ue(g, ed, ue);
+    ed->ue = ue;
+  }
+  if (pthread_mutex_unlock(&ed->lock)) abort();
+}
+
+static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, gnb_data *ed) {
+
   widget *main_window;
   widget *top_container;
   widget *line;
+  widget *col;
+  widget *logo;
   widget *w;
+  widget *w2;
   logger *l;
   view *v;
 
-  main_window = new_toplevel_window(g, 500, 300, "gNB tracer");
-
+  main_window = new_toplevel_window(g, 1200, 900, "gNB tracer");
   top_container = new_container(g, VERTICAL);
   widget_add_child(g, main_window, top_container, -1);
 
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
+  logo = new_image(g, openair_logo_png, openair_logo_png_len);
 
-  /* PUCCH/PUSCH IQ data */
-  w = new_xy_plot(g, 55, 55, "", 50);
+  // logo + prev/next UE buttons
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, col, logo, -1);
+  w = new_container(g, HORIZONTAL);
+  widget_add_child(g, col, w, -1);
+  w2 = new_label(g, "");
+  widget_add_child(g, w, w2, -1);
+  label_set_clickable(g, w2, 1);
+  e->current_ue_button = w2;
+  e->current_ue_label = w2;
+  w2 = new_label(g, "  [prev UE]  ");
+  widget_add_child(g, w, w2, -1);
+  label_set_clickable(g, w2, 1);
+  e->prev_ue_button = w2;
+  w2 = new_label(g, "  [next UE]  ");
+  widget_add_child(g, w, w2, -1);
+  label_set_clickable(g, w2, 1);
+  e->next_ue_button = w2;
+  widget_add_child(g, line, col, -1);
+
+  // PUCCH/PUSCH IQ data
+  w = new_xy_plot(g, 200, 200, "", 10);
   e->pucch_pusch_iq_plot = w;
   widget_add_child(g, line, w, -1);
   xy_plot_set_range(g, w, -1000, 1000, -1000, 1000);
-  xy_plot_set_title(g, w, "rxdataF");
+  xy_plot_set_title(g, w, "  GNB_PHY_PUCCH_PUSCH_IQ");
   l = new_iqlog_full(h, database, "GNB_PHY_PUCCH_PUSCH_IQ", "rxdataF");
   v = new_view_xy(300*12*14,10,g,w,new_color(g,"#000"),XY_FORCED_MODE);
   logger_add_view(l, v);
   e->pucch_pusch_iq_logger = l;
+
+  set_current_ue(g, ed, ed->ue);
+  register_notifier(g, "click", e->current_ue_button, click, ed);
+  register_notifier(g, "click", e->prev_ue_button, click, ed);
+  register_notifier(g, "click", e->next_ue_button, click, ed);
 }
 
-int main(int n, char **v)
-{
+int main(int n, char **v) {
+
   char *database_filename = NULL;
   void *database;
   char *ip = DEFAULT_REMOTE_IP;
@@ -115,8 +188,11 @@ int main(int n, char **v)
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
-    if (!strcmp(v[i], "-d"))
-      { if (i > n-2) usage(); database_filename = v[++i]; continue; }
+    if (!strcmp(v[i], "-d")) {
+      if (i > n-2) usage();
+      database_filename = v[++i];
+      continue;
+    }
     usage();
   }
 
@@ -137,6 +213,8 @@ int main(int n, char **v)
 
   on_off(database, "GNB_PHY_PUCCH_PUSCH_IQ", is_on, 1);
 
+  gnb_data.ue = 0;
+  gnb_data.e = &eg;
   gnb_data.database = database;
   gnb_data.socket = -1;
   gnb_data.is_on = is_on;
