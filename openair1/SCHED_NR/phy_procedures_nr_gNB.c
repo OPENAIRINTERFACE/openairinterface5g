@@ -116,7 +116,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   prs_data.PRSResourceRepetition=1;
   prs_data.PRSResourceTimeGap=1;
   prs_data.NPRSID=0;
-  printf(" before Combsize %d \n", prs_data.CombSize);
+  //printf(" before Combsize %d \n", prs_data.CombSize);
   // tbc
 
   nr_generate_prs(gNB->nr_gold_prs[slot],&txdataF[0][txdataF_offset], AMP, &prs_data, cfg, fp);
@@ -249,7 +249,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   prs_data.PRSResourceRepetition=1;
   prs_data.PRSResourceTimeGap=1;
   prs_data.NPRSID=0;
-  printf(" before %p \n",&prs_data);
+  //printf(" before %p \n",&prs_data);
   
   // tbc
   
