@@ -54,12 +54,12 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
     // QPSK modulation
     
     for (int m = 0; m < (12/prs_data->CombSize) * prs_data->NumRB; m++) {
-      idx = nr_gold_prs[l][m];
+      idx = (((nr_gold_prs[l][(m<<1)>>5])>>((m<<1)&0x1f))&3);
       mod_prs[m<<1] = nr_qpsk_mod_table[idx<<1];
       mod_prs[(m<<1)+1] = nr_qpsk_mod_table[(idx<<1) + 1];
       
-      #ifdef DEBUG_PRS_MOD
-      printf("m %d idx %d gold seq %d mod_prs %d %d\n", m, idx, nr_gold_prs[l][m], mod_prs[(idx<<1)], mod_prs[(idx<<1)+1]);
+#ifdef DEBUG_PRS_MOD
+      printf("m %d idx %d gold seq %d mod_prs %d %d\n", m, idx, nr_gold_prs[l][(m<<1)>>5], mod_prs[m<<1], mod_prs[(m<<1)+1]);
       #endif
       
       #ifdef DEBUG_PRS_MAP
