@@ -3164,10 +3164,10 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         pos+=fsize;
         dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
         
-        // Time domain assignment 4bit
+        // Time domain assignment
         //pos+=4;
         pos+=dci_pdu_rel15->time_domain_assignment.nbits;
-        dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0x3;
+        dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->time_domain_assignment.nbits)-1);
         
         // Not supported yet - skip for now
         // Frequency hopping flag – 1 bit 
