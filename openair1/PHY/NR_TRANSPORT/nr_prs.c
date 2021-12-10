@@ -28,36 +28,31 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
   int k_prime = 0;
   int k=0;
   int16_t mod_prs[NR_MAX_PRS_LENGTH<<1];
-  uint8_t idx=0;
-  uint8_t combSize = 6;
-  uint8_t REOffset = 0;
-  uint8_t symbolStart = 5;
-  uint8_t NumPRSSymbols = 6;
-  uint16_t NumPRBs = 106;
+  uint8_t idx=prs_data->NPRSID;
   
   // QPSK modulation
   
    // PRS resource mapping with combsize=k which means PRS symbols exist in every k-th subcarrier in frequency domain
    // According to ts138.211 sec.7.4.1.7.2
 
-  for (int l = symbolStart; l < symbolStart + NumPRSSymbols; l++) {
+  for (int l = prs_data->SymbolStart; l < prs_data->SymbolStart + prs_data->NumPRSSymbols; l++) {
 
     int symInd = l-5;
-    if (combSize==2) {
+    if (prs_data->CombSize == 2) {
       k_prime = k_prime_table[0][symInd];
     }
-    else if (combSize==4){
+    else if (prs_data->CombSize == 4){
       k_prime = k_prime_table[1][symInd];
     }
-    else if (combSize==6){
+    else if (prs_data->CombSize == 6){
       k_prime = k_prime_table[2][symInd];
     }
-    else if (combSize==12){
+    else if (prs_data->CombSize == 12){
       k_prime = k_prime_table[3][symInd];
     }
     
-    k = (REOffset+k_prime)%combSize + frame_parms->ssb_start_subcarrier;
-    for (int m = 0; m < 12/combSize*NumPRBs; m++) {
+    k = (prs_data->REOffset+k_prime) % prs_data->CombSize + frame_parms->ssb_start_subcarrier;
+    for (int m = 0; m < 12/prs_data->CombSize * prs_data->NumRB; m++) {
       
 #ifdef DEBUG_PRS_MAP
       printf("m %d at k %d of l %d\n", m, k, l);
@@ -81,7 +76,7 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
            ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
 
-    k = k +  combSize;
+    k = k +  prs_data->CombSize;
     
     if (k >= frame_parms->ofdm_symbol_size)
       k-=frame_parms->ofdm_symbol_size;

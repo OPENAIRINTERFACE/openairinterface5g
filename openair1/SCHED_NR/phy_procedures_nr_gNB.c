@@ -148,22 +148,6 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   
   // defining inputs and initials for nr_generate_prs()
   int **txdataF = gNB->common_vars.txdataF;
-  uint8_t ssb_index,n_hf;
-  ssb_index = ssb_pdu.ssb_pdu_rel15.SsbBlockIndex;
-  LOG_D(PHY,"common_signal_procedures: frame %d, slot %d ssb index %d\n",frame,slot,ssb_index);
-  
-  uint16_t ssb_start_symbol;
-  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp,ssb_index); // computing the starting symbol for current ssb
-  ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
-  
-  
-  
-  uint16_t slots_per_hf = (fp->slots_per_frame)>>1;
-  
-  if (slot<slots_per_hf)
-    n_hf=0;
-  else
-    n_hf=1;
     
 
   if ((cfg->cell_config.frame_duplex_type.value == TDD) &&
@@ -242,8 +226,19 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   //TODO: nr_generate_prs
   // check if we have prs to transmit in this frame and slot
   prs_data_t prs_data;
-  prs_data.PRSResourceSetPeriod[0]=0;
-  prs_data.PRSResourceSetPeriod[1]=0;
+  prs_data.PRSResourceSetPeriod[0]=40; // PRS resource slot period
+  prs_data.PRSResourceSetPeriod[1]=0;  // resource slot offset
+  prs_data.SymbolStart=5;		
+  prs_data.NumPRSSymbols=6;
+  prs_data.NumRB=106;
+  prs_data.RBOffset=0;
+  prs_data.CombSize=6;
+  prs_data.REOffset=0;
+  prs_data.PRSResourceOffset=0;
+  prs_data.PRSResourceRepetition=1;
+  prs_data.PRSResourceTimeGap=1;
+  prs_data.NPRSID=0;
+  
   // tbc
   
   nr_generate_prs(gNB->nr_gold_prs[slot],&txdataF[0][txdataF_offset], AMP, &prs_data, cfg, fp);
