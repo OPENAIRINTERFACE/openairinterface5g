@@ -59,11 +59,24 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
 
   /* there is a mixed slot only when in TDD */
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
+  lte_frame_type_t frame_type = nrmac->common_channels->frame_type;
+  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
   const NR_TDD_UL_DL_Pattern_t *tdd =
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   /* Uplink symbols are at the end of the slot */
-  const int symb_ulMixed = tdd ? ((1 << tdd->nrofUplinkSymbols) - 1) << (14 - tdd->nrofUplinkSymbols) : 0;
+  int symb_ulMixed = 0;
+  int nr_mix_slots = 0;
+  int nr_slots_period = n;
+  if (tdd) {
+    symb_ulMixed = ((1 << tdd->nrofUplinkSymbols) - 1) << (14 - tdd->nrofUplinkSymbols);
+    nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
+    nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+  }
+  else{
+    if(frame_type == TDD)
+      AssertFatal(1==0,"Dynamic TDD not handled yet\n");
+  }
 
   const struct NR_PUCCH_Config__resourceToAddModList *resList = ubwp->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList;
   // for the moment, just block any symbol that might hold a PUCCH, regardless
@@ -117,7 +130,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
 
   // get largest time domain allocation (TDA) for UL slot and UL in mixed slot
   int tdaMi = -1;
-  if (tdd) {
+  if (nr_mix_slots>0) {
     const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
     AssertFatal(k2 == get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu),
                 "scheduler cannot handle different k2 for UL slot (%d) and UL Mixed slot (%ld)\n",
@@ -139,16 +152,15 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
             symb_tda_mi);
     }
   }
-  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+
   nrmac->preferred_ul_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_ul_tda[bwp_id]));
-  const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
-  const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
+
   for (int slot = 0; slot < n; ++slot) {
     const int sched_slot = (slot + k2) % n;
     nrmac->preferred_ul_tda[bwp_id][slot] = -1;
-    if (!tdd || sched_slot % nr_slots_period >= tdd->nrofDownlinkSlots + nr_mix_slots)
+    if (frame_type == FDD || sched_slot % nr_slots_period >= tdd->nrofDownlinkSlots + nr_mix_slots)
       nrmac->preferred_ul_tda[bwp_id][slot] = 0;
-    else if (tdd && nr_mix_slots && sched_slot % nr_slots_period == tdd->nrofDownlinkSlots)
+    else if (nr_mix_slots && sched_slot % nr_slots_period == tdd->nrofDownlinkSlots)
       nrmac->preferred_ul_tda[bwp_id][slot] = tdaMi;
     LOG_D(MAC, "DL slot %d UL slot %d preferred_ul_tda %d\n", slot, sched_slot, nrmac->preferred_ul_tda[bwp_id][slot]);
   }

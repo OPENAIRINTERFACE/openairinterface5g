@@ -492,16 +492,25 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     find_SSB_and_RO_available(Mod_idP);
 
     const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
-    const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
-    const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
-    const int nr_dlmix_slots = tdd ? tdd->nrofDownlinkSlots + (tdd->nrofDownlinkSymbols != 0) : 0;
-    const int nr_dl_slots = tdd ? nr_dlmix_slots : n;
-    const int nr_ulstart_slot = tdd ? tdd->nrofDownlinkSlots + (tdd->nrofUplinkSymbols == 0) : 1;
+
+    int nr_slots_period = n;
+    int nr_dl_slots = n;
+    int nr_ulstart_slot = 0;
+    if (tdd) {
+      nr_dl_slots = tdd->nrofDownlinkSlots + (tdd->nrofDownlinkSymbols != 0);
+      nr_ulstart_slot = tdd->nrofDownlinkSlots + (tdd->nrofUplinkSymbols == 0);
+      nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+    }
+    else{
+      if(RC.nrmac[Mod_idP]->common_channels[0].frame_type == TDD)
+        AssertFatal(1==0,"Dynamic TDD not handled yet\n");
+    }
 
     for (int slot = 0; slot < n; ++slot) {
       /* FIXME: it seems there is a problem with slot 0/10/slots right after UL:
-       * we just get retransmissions. Thus, do not schedule such slots in DL */
-      if (slot % nr_slots_period != 0){
+       * we just get retransmissions. Thus, do not schedule such slots in DL in TDD */
+      if (RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD ||
+          (slot % nr_slots_period != 0)){
         RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
       }
       RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);

@@ -268,8 +268,8 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
                 fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
                 const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
                 const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-                const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
-                const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n_slots_frame;
+                // FR2 is only TDD, to be fixed for flexible TDD
+                const int nr_slots_period = tdd ? n_slots_frame/get_nb_periods_per_frame(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity) : n_slots_frame;
                 num_tdd_period = rel_slot/nr_slots_period;
                 gNB->tdd_beam_association[num_tdd_period]=i_ssb;
                 num_ssb++;

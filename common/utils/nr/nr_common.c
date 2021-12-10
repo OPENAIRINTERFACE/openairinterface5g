@@ -257,6 +257,48 @@ void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
   *n_rb = 6*count;
 }
 
+int get_nb_periods_per_frame(uint8_t tdd_period) {
+
+  int nb_periods_per_frame;
+  switch(tdd_period) {
+    case 0:
+      nb_periods_per_frame = 20; // 10ms/0p5ms
+      break;
+
+    case 1:
+      nb_periods_per_frame = 16; // 10ms/0p625ms
+      break;
+
+    case 2:
+      nb_periods_per_frame = 10; // 10ms/1ms
+      break;
+
+    case 3:
+      nb_periods_per_frame = 8; // 10ms/1p25ms
+      break;
+
+    case 4:
+      nb_periods_per_frame = 5; // 10ms/2ms
+      break;
+
+    case 5:
+      nb_periods_per_frame = 4; // 10ms/2p5ms
+      break;
+
+    case 6:
+      nb_periods_per_frame = 2; // 10ms/5ms
+      break;
+
+    case 7:
+      nb_periods_per_frame = 1; // 10ms/10ms
+      break;
+
+    default:
+      AssertFatal(1==0,"Undefined tdd period %d\n", tdd_period);
+  }
+  return nb_periods_per_frame;
+}
+
 
 int get_dmrs_port(int nl, uint16_t dmrs_ports) {
 

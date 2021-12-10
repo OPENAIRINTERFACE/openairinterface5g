@@ -62,9 +62,23 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
 
   /* there is a mixed slot only when in TDD */
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
+  lte_frame_type_t frame_type = nrmac->common_channels->frame_type;
+  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const NR_TDD_UL_DL_Pattern_t *tdd =
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
-  const int symb_dlMixed = tdd ? (1 << tdd->nrofDownlinkSymbols) - 1 : 0;
+
+  int symb_dlMixed = 0;
+  int nr_mix_slots = 0;
+  int nr_slots_period = n;
+  if (tdd) {
+    symb_dlMixed = (1 << tdd->nrofDownlinkSymbols) - 1;
+    nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
+    nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+  }
+  else{
+    if(frame_type == TDD)
+      AssertFatal(1==0,"Dynamic TDD not handled yet\n");
+  }
 
   int target_ss;
   if (bwp) {
@@ -97,7 +111,7 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
 
   /* check that TDA index 1 fits into DL part of mixed slot, if it exists */
   int tdaMi = -1;
-  if (tdd && tdaList->list.count > 1) {
+  if (frame_type == TDD && tdaList->list.count > 1) {
     const NR_PDSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
     AssertFatal(!tdaP_Mi->k0 || *tdaP_Mi->k0 == 0,
                 "TimeDomainAllocation at index 1: non-null k0 (%ld) is not supported by the scheduler\n",
@@ -120,16 +134,13 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
     }
   }
 
-  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   nrmac->preferred_dl_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_dl_tda[bwp_id]));
 
-  const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
-  const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
   for (int i = 0; i < n; ++i) {
     nrmac->preferred_dl_tda[bwp_id][i] = -1;
-    if (!tdd || i % nr_slots_period < tdd->nrofDownlinkSlots)
+    if (frame_type == FDD || i % nr_slots_period < tdd->nrofDownlinkSlots)
       nrmac->preferred_dl_tda[bwp_id][i] = 0;
-    else if (tdd && nr_mix_slots && i % nr_slots_period == tdd->nrofDownlinkSlots)
+    else if (nr_mix_slots && i % nr_slots_period == tdd->nrofDownlinkSlots)
       nrmac->preferred_dl_tda[bwp_id][i] = tdaMi;
     LOG_D(MAC, "slot %d preferred_dl_tda %d\n", i, nrmac->preferred_dl_tda[bwp_id][i]);
   }

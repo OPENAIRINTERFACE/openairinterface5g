@@ -397,6 +397,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
 void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
                       uint16_t *msg2_frame, uint16_t *msg2_slot,
                       NR_ServingCellConfigCommon_t *scc,
+                      lte_frame_type_t frame_type,
                       uint16_t monitoring_slot_period,
                       uint16_t monitoring_offset,uint8_t beam_index,
                       uint8_t num_active_ssb,
@@ -411,16 +412,19 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   // number of mixed slot or of last dl slot if there is no mixed slot
-  uint8_t last_dl_slot_period = tdd ? tdd->nrofDownlinkSlots : 0;
+  uint8_t last_dl_slot_period = n_slots_frame-1;
   // lenght of tdd period in slots
-  uint8_t tdd_period_slot = tdd ? scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots : n_slots_frame;
+  uint8_t tdd_period_slot = n_slots_frame;
 
-  if (tdd && (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols == 0)) {
-    last_dl_slot_period--;
+  if (tdd) {
+    last_dl_slot_period = tdd->nrofDownlinkSymbols == 0? (tdd->nrofDownlinkSlots-1) : tdd->nrofDownlinkSlots;
+    tdd_period_slot = n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
   }
-  if (tdd && ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))) {
-    tdd_period_slot++;
+  else{
+    if(frame_type == TDD)
+      AssertFatal(1==0,"Dynamic TDD not handled yet\n");
   }
+
 
   switch(response_window){
     case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
@@ -515,6 +519,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+  lte_frame_type_t frame_type = cc->frame_type;
 
   uint8_t total_RApreambles = MAX_NUM_NR_PRACH_PREAMBLES;
   uint8_t  num_ssb_per_RO = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
@@ -619,6 +624,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                        &msg2_frame,
                        &msg2_slot,
                        scc,
+                       frame_type,
                        monitoring_slot_period,
                        monitoring_offset,
                        beam_index,
@@ -728,15 +734,11 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     // beam association for FR2
     int16_t *tdd_beam_association = nr_mac->tdd_beam_association;
     if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
-
+      // FR2
       const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
       const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
-      uint8_t tdd_period_slot = tdd ? scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots : n_slots_frame;
-
-      if (tdd && ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))) {
-        tdd_period_slot++;
-      }
-
+      AssertFatal(tdd,"Dynamic TDD not handled yet\n");
+      uint8_t tdd_period_slot = n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
       int num_tdd_period = sched_slot/tdd_period_slot;
 
       if((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=ra->beam_id))
@@ -886,6 +888,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
   uint16_t msg3_nb_rb = 8; // sdu has 6 or 8 bytes
 
+  lte_frame_type_t frame_type = RC.nrmac[module_id]->common_channels->frame_type;
+
   int mu = ubwp ?
     ubwp->bwp_Common->genericParameters.subcarrierSpacing :
     scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
@@ -901,7 +905,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   const int n_slots_frame = nr_slots_per_frame[mu];
-  const int nrofUplinkSymbols = tdd ? tdd->nrofUplinkSymbols : 4;
+  const int nrofUplinkSymbols = (frame_type==TDD) ? tdd->nrofUplinkSymbols : 11; // TODO change in favor of harmonization branch
   uint8_t k2 = 0;
   for (int i=0; i<pusch_TimeDomainAllocationList->list.count; i++) {
     startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
@@ -927,10 +931,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
   // beam association for FR2
   if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
-    uint8_t tdd_period_slot = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots : n_slots_frame;
-    if (tdd && ((tdd->nrofDownlinkSymbols > 0) || (tdd->nrofUplinkSymbols > 0))) {
-      tdd_period_slot++;
-    }
+    AssertFatal(tdd,"Dynamic TDD not handled yet\n");
+    uint8_t tdd_period_slot = n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
     int num_tdd_period = ra->Msg3_slot/tdd_period_slot;
     if((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=ra->beam_id))
       AssertFatal(1==0,"Cannot schedule MSG3\n");
