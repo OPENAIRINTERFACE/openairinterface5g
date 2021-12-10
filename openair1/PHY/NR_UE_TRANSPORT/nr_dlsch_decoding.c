@@ -642,7 +642,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
     LOG_I(PHY,"Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
 
-  opp_enabled=1;
   Kr = harq_process->K; // [hna] overwrites this line "Kr = p_decParams->Z*kb"
   Kr_bytes = Kr>>3;
   offset = 0;
