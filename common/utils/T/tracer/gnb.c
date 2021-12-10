@@ -17,11 +17,13 @@ int next_ue_id;
 
 typedef struct {
   widget *pucch_pusch_iq_plot;
-  logger *pucch_pusch_iq_logger;
+  widget *ul_estimate_ue_xy_plot;
   widget *current_ue_label;
   widget *current_ue_button;
   widget *prev_ue_button;
   widget *next_ue_button;
+  logger *pucch_pusch_iq_logger;
+  logger *ul_estimate_ue_logger;
 } gnb_gui;
 
 typedef struct {
@@ -78,9 +80,17 @@ static void *gui_thread(void *_g) {
 }
 
 static void set_current_ue(gui *g, gnb_data *e, int ue) {
+
   char s[256];
+
   sprintf(s, "[UE %d]  ", ue);
   label_set_text(g, e->e->current_ue_label, s);
+
+  sprintf(s, "GNB_PHY_PUCCH_PUSCH_IQ [UE %d]", ue);
+  xy_plot_set_title(g, e->e->pucch_pusch_iq_plot, s);
+
+  sprintf(s, "UL estimated channel [UE %d]", ue);
+  xy_plot_set_title(g, e->e->ul_estimate_ue_xy_plot, s);
 }
 
 void reset_ue_ids(void) {
@@ -127,7 +137,7 @@ static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, g
   logger *l;
   view *v;
 
-  main_window = new_toplevel_window(g, 1200, 900, "gNB tracer");
+  main_window = new_toplevel_window(g, 1050, 230, "gNB tracer");
   top_container = new_container(g, VERTICAL);
   widget_add_child(g, main_window, top_container, -1);
 
@@ -160,11 +170,21 @@ static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, g
   e->pucch_pusch_iq_plot = w;
   widget_add_child(g, line, w, -1);
   xy_plot_set_range(g, w, -1000, 1000, -1000, 1000);
-  xy_plot_set_title(g, w, "  GNB_PHY_PUCCH_PUSCH_IQ");
   l = new_iqlog_full(h, database, "GNB_PHY_PUCCH_PUSCH_IQ", "rxdataF");
   v = new_view_xy(300*12*14,10,g,w,new_color(g,"#000"),XY_FORCED_MODE);
   logger_add_view(l, v);
   e->pucch_pusch_iq_logger = l;
+
+  // UL estimated channel
+  w = new_xy_plot(g, 600, 200, "", 50);
+  e->ul_estimate_ue_xy_plot = w;
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, 0, 512*10, -10, 80);
+  l = new_framelog(h, database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "subframe", "chest_t");
+  framelog_set_update_only_at_sf9(l, 0);
+  v = new_view_xy(512*10, 10, g, w, new_color(g, "#0c0c72"), XY_LOOP_MODE);
+  logger_add_view(l, v);
+  e->ul_estimate_ue_logger = l;
 
   set_current_ue(g, ed, ed->ue);
   register_notifier(g, "click", e->current_ue_button, click, ed);
@@ -212,6 +232,7 @@ int main(int n, char **v) {
   h = new_handler(database);
 
   on_off(database, "GNB_PHY_PUCCH_PUSCH_IQ", is_on, 1);
+  on_off(database, "ENB_PHY_UL_CHANNEL_ESTIMATE", is_on, 1);
 
   gnb_data.ue = 0;
   gnb_data.e = &eg;
@@ -233,7 +254,7 @@ restart:
   if (gnb_data.socket != -1) close(gnb_data.socket);
   gnb_data.socket = connect_to(ip, port);
 
-  /* send the first message - activate selected traces */
+  // send the first message - activate selected traces
   is_on_changed(&gnb_data);
 
   /* read messages */
