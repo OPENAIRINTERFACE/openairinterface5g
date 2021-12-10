@@ -104,8 +104,19 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
     nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
     
   prs_data_t prs_data;
-  prs_data.PRSResourceSetPeriod[0]=0;
-  prs_data.PRSResourceSetPeriod[1]=0;
+  prs_data.PRSResourceSetPeriod[0]=40; // PRS resource slot period
+  prs_data.PRSResourceSetPeriod[1]=0;  // resource slot offset
+  prs_data.SymbolStart=5;		
+  prs_data.NumPRSSymbols=6;
+  prs_data.NumRB=106;
+  prs_data.RBOffset=0;
+  prs_data.CombSize=6;
+  prs_data.REOffset=0;
+  prs_data.PRSResourceOffset=0;
+  prs_data.PRSResourceRepetition=1;
+  prs_data.PRSResourceTimeGap=1;
+  prs_data.NPRSID=0;
+  printf(" before Combsize %d \n", prs_data.CombSize);
   // tbc
 
   nr_generate_prs(gNB->nr_gold_prs[slot],&txdataF[0][txdataF_offset], AMP, &prs_data, cfg, fp);
@@ -238,10 +249,12 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   prs_data.PRSResourceRepetition=1;
   prs_data.PRSResourceTimeGap=1;
   prs_data.NPRSID=0;
+  printf(" before %p \n",&prs_data);
   
   // tbc
   
   nr_generate_prs(gNB->nr_gold_prs[slot],&txdataF[0][txdataF_offset], AMP, &prs_data, cfg, fp);
+  
 
   if (do_meas==1) stop_meas(&gNB->phy_proc_tx);
 
