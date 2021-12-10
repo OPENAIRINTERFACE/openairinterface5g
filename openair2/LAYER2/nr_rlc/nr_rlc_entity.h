@@ -63,6 +63,8 @@ typedef struct nr_rlc_entity_t {
   void (*max_retx_reached)(void *max_retx_reached_data,
                            struct nr_rlc_entity_t *entity);
   void *max_retx_reached_data;
+  /* buffer status computation */
+  nr_rlc_entity_buffer_status_t bstatus;
 } nr_rlc_entity_t;
 
 nr_rlc_entity_t *new_nr_rlc_entity_am(

@@ -174,7 +174,7 @@ void rx_func(void *param) {
   int down_removed = 0;
   int pucch_removed = 0;
   for (int i = 0; i < rnti_to_remove_count; i++) {
-    LOG_W(NR_PHY, "to remove rnti %d\n", rnti_to_remove[i]);
+    LOG_W(NR_PHY, "to remove rnti 0x%04x\n", rnti_to_remove[i]);
     void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
     void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
     int j;
