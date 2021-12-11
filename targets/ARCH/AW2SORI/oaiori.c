@@ -317,7 +317,10 @@ int aw2s_startstreaming(openair0_device *device) {
          (openair0_cfg->rx_num_channels > 1 && rx1->fst != ORI_FST_Operational) || 
          tx0->fst != ORI_FST_Operational || 
          (openair0_cfg->tx_num_channels > 1 && tx1->fst != ORI_FST_Operational))
-  {}	
+  {  
+     printf("rx0->fst %d,rx1->fst %d,tx0->fst %d, tx1->fst %d\n",
+	    rx0->fst,rx1 ? rx1->fst : -1, tx0->fst, tx1 ? tx1->fst: -1);
+  }	
 
   // test RX interface 
   uint64_t TS;

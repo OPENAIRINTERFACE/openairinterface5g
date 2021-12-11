@@ -153,7 +153,7 @@ unsigned int crc24a (unsigned char * inptr,
 {
   int octetlen = bitlen / 8;  /* Change in octets */
 
-  if ( bitlen % 8 || !__builtin_cpu_supports ("pclmul") ) {
+  if ( bitlen % 8 /*|| !__builtin_cpu_supports ("pclmul")*/ ) {
     unsigned int crc = 0;
     int resbit = (bitlen % 8);
     
@@ -187,7 +187,7 @@ unsigned int crc24b (unsigned char * inptr,
 {
   int octetlen = bitlen / 8;  /* Change in octets */
   
-  if ( bitlen % 8 || !__builtin_cpu_supports ("pclmul") ) {
+  if ( bitlen % 8 /*|| !__builtin_cpu_supports ("pclmul") */) {
   unsigned int crc = 0;
   int resbit = (bitlen % 8);
 
