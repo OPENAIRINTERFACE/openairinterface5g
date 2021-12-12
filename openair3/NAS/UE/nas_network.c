@@ -141,11 +141,11 @@ int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
 
   case AS_CELL_INFO_CNF: {
     /* Received cell information confirm */
-    const cell_info_cnf_t *info = &msg->msg.cell_info_cnf;
-    int cell_found = (info->errCode == AS_SUCCESS);
-    rc = nas_proc_cell_info(user, cell_found, info->tac,
-                            info->cellID, info->rat,
-                            info->rsrp, info->rsrq);
+    /* remove using pointers to fiels of the packed structure msg as it
+     * triggers warnings with gcc version 9 */
+    const cell_info_cnf_t info = msg->msg.cell_info_cnf;
+    int cell_found = (info.errCode == AS_SUCCESS);
+    rc = nas_proc_cell_info(user, cell_found, info.tac, info.cellID, info.rat, info.rsrp, info.rsrq);
     break;
   }
 
@@ -157,12 +157,12 @@ int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
 
   case AS_NAS_ESTABLISH_CNF: {
     /* Received NAS signalling connection establishment confirm */
-    const nas_establish_cnf_t *confirm = &msg->msg.nas_establish_cnf;
+    const nas_establish_cnf_t confirm = msg->msg.nas_establish_cnf;
 
-    if ( (confirm->errCode == AS_SUCCESS) ||
-         (confirm->errCode == AS_TERMINATED_NAS) ) {
-      rc = nas_proc_establish_cnf(user, confirm->nasMsg.data,
-                                  confirm->nasMsg.length);
+    if ( (confirm.errCode == AS_SUCCESS) ||
+         (confirm.errCode == AS_TERMINATED_NAS) ) {
+      rc = nas_proc_establish_cnf(user, confirm.nasMsg.data,
+                                  confirm.nasMsg.length);
     } else {
       LOG_TRACE(WARNING, "NET-MAIN  - "
                 "Initial NAS message not delivered");
@@ -191,10 +191,10 @@ int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
     break;
 
   case AS_DL_INFO_TRANSFER_IND: {
-    const dl_info_transfer_ind_t *info = &msg->msg.dl_info_transfer_ind;
+    const dl_info_transfer_ind_t info = msg->msg.dl_info_transfer_ind;
     /* Received downlink data transfer indication */
-    rc = nas_proc_dl_transfer_ind(user, info->nasMsg.data,
-                                  info->nasMsg.length);
+    rc = nas_proc_dl_transfer_ind(user, info.nasMsg.data,
+                                  info.nasMsg.length);
     break;
   }
 

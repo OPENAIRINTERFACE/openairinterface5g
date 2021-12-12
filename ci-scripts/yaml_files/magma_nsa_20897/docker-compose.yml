@@ -51,19 +51,36 @@ services:
             LTE_K: FEC86BA6EB707ED08905757B1BB44B8F 
             APN1: oai.ipv4
             APN2: oai2.ipv4
-            FIRST_IMSI: 208990100001127 
-            NB_USERS: 5
+            FIRST_IMSI: 208970100001127 
+            NB_USERS: 10
         healthcheck:
             test: /bin/bash -c "pgrep oai_hss"
             interval: 10s
             timeout: 5s
             retries: 5
 
-    oai_mme:
-        image: oai-mme:production
-        container_name: prod-oai-mme
+    redis:
+        image: redis:6.0.5
+        container_name: prod-redis
         privileged: true
-        depends_on: [oai_hss]
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.198
+        volumes:
+            - ./redis_extern.conf:/usr/local/etc/redis/redis.conf
+        entrypoint: /bin/bash -c "redis-server /usr/local/etc/redis/redis.conf"
+        healthcheck:
+            test: /bin/bash -c "redis-cli -h 192.168.61.198 -p 6380 ping"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    magma_mme:
+        image: magma-mme:production
+        container_name: prod-magma-mme
+        hostname: mme
+        privileged: true
+        depends_on: [oai_hss, redis]
         networks:
             public_net:
                 ipv4_address: 192.168.61.195
@@ -71,46 +88,16 @@ services:
             TZ: Europe/Paris
             REALM: openairinterface.org
             PREFIX: /openair-mme/etc
-            INSTANCE: 1
-            PID_DIRECTORY: /var/run
-            HSS_IP_ADDR: 192.168.61.194
             HSS_HOSTNAME: hss
             HSS_FQDN: hss.openairinterface.org
             HSS_REALM: openairinterface.org
-            MCC: '208'
-            MNC: '99'
-            MME_GID: 32768
-            MME_CODE: 3
-            TAC_0: 1
-            TAC_1: 2
-            TAC_2: 3
             MME_FQDN: mme.openairinterface.org
-            MME_S6A_IP_ADDR: 192.168.61.195
-            MME_INTERFACE_NAME_FOR_S1_MME: eth0
-            MME_IPV4_ADDRESS_FOR_S1_MME: 192.168.61.195
-            MME_INTERFACE_NAME_FOR_S11: eth0
-            MME_IPV4_ADDRESS_FOR_S11: 192.168.61.195
-            MME_INTERFACE_NAME_FOR_S10: lo
-            MME_IPV4_ADDRESS_FOR_S10: 127.0.0.10
-            OUTPUT: CONSOLE
-            SGW_IPV4_ADDRESS_FOR_S11_0: 192.168.61.196
-            PEER_MME_IPV4_ADDRESS_FOR_S10_0: 0.0.0.0
-            PEER_MME_IPV4_ADDRESS_FOR_S10_1: 0.0.0.0
-            MCC_SGW_0: '208'
-            MNC3_SGW_0: '099'
-            TAC_LB_SGW_0: '01'
-            TAC_HB_SGW_0: '00'
-            MCC_MME_0: '208'
-            MNC3_MME_0: '099'
-            TAC_LB_MME_0: '02'
-            TAC_HB_MME_0: '00'
-            MCC_MME_1: '208'
-            MNC3_MME_1: '099'
-            TAC_LB_MME_1: '03'
-            TAC_HB_MME_1: '00'
-            TAC_LB_SGW_TEST_0: '03'
-            TAC_HB_SGW_TEST_0: '00'
-            SGW_IPV4_ADDRESS_FOR_S11_TEST_0: 0.0.0.0
+            FEATURES: mme_oai
+        volumes:
+            - ./mme_fd.sprint.conf:/magma-mme/etc/mme_fd.conf.tmplt
+            - ./mme.conf:/magma-mme/etc/mme.conf
+            - ./entrypoint.sh:/magma-mme/bin/entrypoint.sh
+        entrypoint: /bin/bash -c "/magma-mme/bin/entrypoint.sh"
         healthcheck:
             test: /bin/bash -c "pgrep oai_mme"
             interval: 10s
@@ -120,7 +107,7 @@ services:
     oai_spgwc:
         image: oai-spgwc:production
         privileged: true
-        depends_on: [oai_mme]
+        depends_on: [magma_mme]
         container_name: prod-oai-spgwc
         networks:
             public_net:
@@ -138,11 +125,12 @@ services:
             UE_IP_ADDRESS_POOL_1: '12.1.1.2 - 12.1.1.254'
             UE_IP_ADDRESS_POOL_2: '12.0.0.2 - 12.0.0.254'
             MCC: '208'
-            MNC: '99'
-            MNC03: '099'
+            MNC: '97'
+            MNC03: '097'
             TAC: 1
             GW_ID: 1
             REALM: openairinterface.org
+            UE_MTU_IPV4: 1500
         healthcheck:
             test: /bin/bash -c "pgrep oai_spgwc"
             interval: 10s
@@ -168,8 +156,8 @@ services:
             NETWORK_UE_IP: '12.1.1.0/24'
             NETWORK_UE_NAT_OPTION: 'yes'
             MCC: '208'
-            MNC: '99'
-            MNC03: '099'
+            MNC: '97'
+            MNC03: '097'
             TAC: 1
             GW_ID: 1
             REALM: openairinterface.org
@@ -188,7 +176,7 @@ services:
                 ipv4_address: 192.168.61.200
         entrypoint: /bin/bash -c "ip route add 12.1.1.0/24 via 192.168.61.197 dev eth0; sleep infinity"
         healthcheck:
-            test: /bin/bash -c "ping -c 2 192.168.61.197"
+            test: /bin/bash -c "ip route | grep '12.1.1.0'"
             interval: 10s
             timeout: 5s
             retries: 5
@@ -199,8 +187,12 @@ networks:
         ipam:
             config:
                 - subnet: 192.168.68.0/26
+        driver_opts:
+            com.docker.network.bridge.name: "oai-priv-net"
     public_net:
         name: prod-oai-public-net
         ipam:
             config:
                 - subnet: 192.168.61.192/26
+        driver_opts:
+            com.docker.network.bridge.name: "oai-pub-net"

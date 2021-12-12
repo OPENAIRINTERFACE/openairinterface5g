@@ -35,6 +35,7 @@
 
 #include <stdint.h>
 #include "assertions.h"
+#include "PHY/defs_common.h"
 
 typedef struct nr_bandentry_s {
   int16_t band;
@@ -50,6 +51,12 @@ typedef struct nr_bandentry_s {
 extern const size_t nr_bandtable_size;
 extern nr_bandentry_t nr_bandtable[];
 
+void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset);
+int get_num_dmrs(uint16_t dmrs_mask);
+uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
+int get_nr_table_idx(int nr_bandP, uint8_t scs_index);
+int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index);
+lte_frame_type_t get_frame_type(uint16_t nr_bandP, uint8_t scs_index);
 uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex);
 int NRRIV2BW(int locationAndBandwidth,int N_RB);
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);

@@ -33,7 +33,7 @@
 	<testCase id="000100">
 		<class>Deploy_EPC</class>
 		<desc>Deploy all EPC containers</desc>
-		<parameters>yaml_files/fr1_epc_tim</parameters>
+		<parameters>yaml_files/magma_nsa_20897</parameters>
 	</testCase>
 
 </testCaseList>

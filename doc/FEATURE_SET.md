@@ -104,7 +104,7 @@ The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support
 - RLC interface (AM, UM)
 - UL power control
 - Link adaptation
-- Connected DRX (CDRX) support for FDD LTE UE. Compatible with R13 from 3GPP. Support for Cat-M1 UE comming soon.  
+- Connected DRX (CDRX) support for FDD LTE UE. Compatible with R13 from 3GPP. Support for Cat-M1 UE comming soon.
 
 ## eNB RLC Layer ##
 
@@ -206,7 +206,7 @@ The Physical layer implements **3GPP 36.211**, **36.212**, **36.213** and provid
 - PRACH preamble format 0
 - All downlink (DL) channels are supported: PSS, SSS, PBCH, PCFICH, PHICH, PDCCH, PDSCH, PMCH
 - All uplink (UL) channels are supported: PRACH, PUSCH, PUCCH (format 1/1a/1b), SRS, DRS
-- LTE MBMS-dedicated cell (feMBMS) procedures subset for LTE release 14 (experimental)  
+- LTE MBMS-dedicated cell (feMBMS) procedures subset for LTE release 14 (experimental)
 - LTE non-MBSFN subframe (feMBMS) Carrier Adquistion Subframe-CAS procedures (PSS/SSS/PBCH/PDSH) (experimental)
 - LTE MBSFN MBSFN subframe channel (feMBMS): PMCH (CS@1.25KHz) (channel estimation for 25MHz bandwidth) (experimental) 
 
@@ -272,10 +272,10 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  30KHz SCS for FR1 and 120 KHz SCS for FR2
 *  Generation of NR-PSS/NR-SSS
 *  NR-PBCH supports multiple SSBs and flexible periodicity
-*  Generation of NR-PDCCH for SIB1 (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc)
-   - common search space configured by MIB
-   - user-specific search space configured by RRC
-   - DCI formats: 00, 10 (01 and 11 **under integration**)
+*  Generation of NR-PDCCH (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc)
+   - common search space
+   - user-specific search space
+   - DCI formats: 00, 10, 01 and 11
 *  Generation of NR-PDSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
    - PDSCH mapping type A and B
    - DMRS configuration type 1 and 2
@@ -292,8 +292,8 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Support for 1 RX antenna
    - Support for 1 layer
 *  NR-PUCCH 
-   - Format 0 (2 bits, mainly for ACK/NACK)
-   - Format 2 (up to 64 bits, mainly for CSI feedback)
+   - Format 0 (2 bits, for ACK/NACK and SR)
+   - Format 2 (up to 11 bits, mainly for CSI feedback)
 *  NR-PRACH
    - Formats 0,1,2,3, A1-A3, B1-B3
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 are supported)
@@ -302,34 +302,104 @@ The following features are valid for the gNB and the 5G-NR UE.
    
 ## gNB Higher Layers ##
 
-**gNB RRC**  
-- NR RRC (38.331) Rel 15 messages using new asn1c 
-- LTE RRC (36.331) also updated to Rel 15 
-- Generation of CellGroupConfig (for eNB) and MIB
-- Generation of system information block 1 (SIB1)
-- Application to read configuration file and program gNB RRC
-- RRC can configure PDCP, RLC, MAC
-
-**gNB X2AP**
-- X2 setup with eNB
-- Handling of SgNB Addition Request / Addition Request Acknowledge / Reconfiguration Complete 
-
 **gNB MAC**
 - MAC -> PHY configuration using NR FAPI P5 interface
 - MAC <-> PHY data interface using FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
 - Scheduler procedures for SIB1
 - Scheduler procedures for RA
+  - Contention free RA procedure
+  - Contention based RA procedure
 - Scheduler procedures for CSI-RS
-- MAC downlink scheduler (fixed allocations)
+- MAC downlink scheduler
+  - phy-test scheduler (fixed allocation and usable also without UE)
+  - regular scheduler with dynamic allocation
+  - MCS adaptation from HARQ BLER
 - MAC header generation (including timing advance)
 - ACK / NACK handling and HARQ procedures for downlink
-- **As of May 2020** only DL was validated with COTS phone ; UL in progress, validated with OAI UE in noS1 mode
+- MAC uplink scheduler
+  - phy-test scheduler (fixed allocation)
+  - regular scheduler with dynamic allocation
+  - HARQ procedures for uplink
+- MAC procedures to handle CSI measurement report
+  - evalution of RSRP report
+  - evaluation of CQI report
+- MAC scheduling of SR reception
+
+**gNB RLC**
+- Send/Receive operations according to 38.322 Rel.16
+  - Segmentation and reassembly procedures
+  - RLC Acknowledged mode supporting PDU retransmissions
+  - RLC Unacknowledged mode
+  - DRBs and SRBs establishment/handling and association with RLC entities 
+  - Timers implementation
+  - Interfaces with PDCP, MAC 
+  - Interfaces with gtp-u (data Tx/Rx over F1-U at the DU)
+
+**gNB PDCP**
+- Send/Receive operations according to 38.323 Rel.16
+  - Integrity protection and ciphering procedures
+  - Sequence number management, SDU dicard and in-order delivery
+  - Radio bearer establishment/handling and association with PDCP entities
+  - Interfaces with RRC, RLC 
+  - Interfaces with gtp-u (data Tx/Rx over N3 and F1-U interfaces)
+
+**gNB RRC**
+- NR RRC (38.331) Rel 16 messages using new asn1c 
+- LTE RRC (36.331) also updated to Rel 15 
+- Generation of CellGroupConfig (for eNB) and MIB
+- Generation of system information block 1 (SIB1)
+- Generation of system information block 2 (SIB2)
+- Application to read configuration file and program gNB RRC
+- RRC can configure PDCP, RLC, MAC
+- Interface with gtp-u (tunnel creation/handling for S1-U (NSA), N3 (SA) interfaces)
+- Integration of RRC messages and procedures supporting UE 5G SA connection
+  - RRCSetupRequest/RRCSetup/RRCSetupComplete
+  - RRC Uplink/Downlink Information transfer carrying NAS messages transparently
+  - RRC Reconfiguration/Reconfiguration complete
+  - Support for master cell group configuration 
+  - Interface with NGAP for the interactions with the AMF
+  - Interface with F1AP for CU/DU split deployment option
+
+**gNB X2AP**
+- Integration of X2AP messages and procedures for the exchanges with the eNB over X2 interface supporting the NSA setup according to 36.423 Rel. 15
+  - X2 setup with eNB
+  - Handling of SgNB Addition Request / Addition Request Acknowledge / Reconfiguration Complete 
+
+**gNB NGAP**
+
+- Integration of NGAP messages and procedures for the exchanges with the AMF over N2 interface according to 38.413 Rel. 15
+  - NGAP Setup request/response
+  - NGAP Initial UE message
+  - NGAP Initial context setup request/response
+  - NGAP Downlink/Uplink NAS transfer
+  - NGAP UE context release request/complete
+  - NGAP UE radio capability info indication
+  - NGAP PDU session resource setup request/response
+- Interface with RRC
+
+**gNB F1AP**
+
+- Integration of F1AP messages and procedures for the control plane exchanges between the CU and DU entities according to 38.473 Rel. 16
+  - F1 Setup request/response
+  - F1 DL/UL RRC message transfer
+  - F1 Initial UL RRC message transfer
+  - F1 UE Context setup request/response
+  - F1 gNB CU configuration update
+- Interface with RRC
+- Interface with gtp-u (tunnel creation/handling for F1-U interface)
+
+**gNB GTP-U**
+- New gtp-u implementation supporting both N3 and F1-U interfaces according to 29.281 Rel.15
+  - Interfaces with RRC, F1AP for tunnel creation
+  - Interfaces with PDCP and RLC for data send/receive at the CU and DU respectively (F1-U interface)
 
 # OpenAirInterface 5G-NR UE Feature Set #
 
-**as of May 2020** only supporting "noS1" mode (DL):
-- Creates TUN interface to PDCP to inject and receive user-place traffic
-- Will only work with OAI gNB configured in the same mode
+* Supporting "noS1" mode (DL and UL):
+  - Creates TUN interface to PDCP to inject and receive user-place traffic
+  - No connection to the core network
+* Supporting Standalone (SA) mode:
+  - UE can register with the 5G Core Network, establish a PDU Session and exchange user-plane traffic
 
 ##  NR UE PHY Layer ##
 
@@ -339,10 +409,10 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  30KHz SCS for FR1 and 120 KHz SCS for FR2
 *  Reception of NR-PSS/NR-SSS
 *  NR-PBCH supports multiple SSBs and flexible periodicity
-*  Reception of NR-PDCCH for SIB1 (including reception of DCI, polar decoding, de-scrambling, de-modulation, RB de-mapping, etc)
+*  Reception of NR-PDCCH (including reception of DCI, polar decoding, de-scrambling, de-modulation, RB de-mapping, etc)
    - common search space configured by MIB
    - user-specific search space configured by RRC
-   - DCI formats: 00, 10 (01 and 11 **under integration**)
+   - DCI formats: 00, 10, 01 and 11
 *  Reception of NR-PDSCH (including Segmentation, LDPC decoding, rate de-matching, de-scrambling, de-modulation, RB de-mapping, etc).
    - PDSCH mapping type A and B
    - DMRS configuration type 1 and 2
@@ -358,29 +428,86 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Support for 1 TX antenna
    - Support for 1 layer
 *  NR-PUCCH 
-   - Format 0 (2 bits, mainly for ACK/NACK)
+   - Format 0 (2 bits for ACK/NACK and SR)
    - Format 2 (up to 64 bits, mainly for CSI feedback)
+   - Format 1, 3 and 4 present but old code never dested (need restructuring before verification)
 *  NR-PRACH
    - Formats 0,1,2,3, A1-A3, B1-B3
+*  NR-SRS
+   - Old code never dested (need restructuring before verification)
+*  SS-RSRP
+   - RSRP measured on synchronization SSB (ok only for single SSB)
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 are supported)
 *  Highly efficient 3GPP compliant polar encoder and decoder
 *  Encoder and decoder for short block
 
+## NR UE FAPI ##
+
+*  MAC -> PHY configuration via UE FAPI P5 interface
+*  Basic MAC to control PHY via UE FAPI P7 interface
+*  PHY -> MAC indication (needs some improvement)
 
 ## NR UE Higher Layers ##
 
 **UE MAC**
 *  Minimum system information (MSI)
-    - Initial sync and MIB detection
-    - System information block 1 (SIB1) reception
-*  MAC -> PHY configuration of PHY via UE FAPI P5 interface
-*  Basic MAC to control PHY via UE FAPI P7 interface
-*  Random access procedure
+   - MIB processing
+   - Scheduling of system information block 1 (SIB1) reception
+*  Random access procedure (needs improvement, there is still not a clear separation between MAC and PHY)
+   - Mapping SSBs to multiple ROs
+   - Scheduling of PRACH
+   - Processing of RAR
+   - Transmission and re-transmission of Msg3
+   - Msg4 and contention resolution
+*  DCI processing
+   - format 10 (RA-RNTI, C-RNTI, SI-RNTI, TC-RNTI)
+   - format 00 (C-RNTI, TC-RNTI)
+   - format 11 (C-RNTI)
+   - format 01 (C-RNTI)
+*  UCI processing
+   - ACK/NACK processing
+   - Triggering periodic SR
+   - CSI measurement reporting (SSB RSRP only)
+* DLSH scheduler
+   - Configuration of fapi PDU according to DCI
+   - HARQ procedures
+* ULSCH scheduler
+   - Configuration of fapi PDU according to DCI
 
 
-**RLC**
+**UE RLC**
+* Tx/Rx operations according to 38.322 Rel.16
+   - Segmentation and reassembly procedures
+   - RLC Acknowledged mode supporting PDU retransmissions
+   - RLC Unacknowledged mode
+   - DRBs and SRBs establishment and handling 
+   - Timers implementation
+   - Interfaces with PDCP, MAC
 
-**PDCP**
+**UE PDCP**
+* Tx/Rx operations according to 38.323 Rel.16
+   - Integrity protection and ciphering procedures
+   - Sequence number management, SDU dicard and in-order delivery
+   - Radio bearer establishment/handling and association with PDCP entities
+   - Interfaces with RRC, RLC 
+
+**UE RRC**
+* Integration of RRC messages and procedures supporting UE 5G SA connection according to 38.331 Rel.16 
+   - RRCSetupRequest/RRCSetup/RRCSetupComplete
+   - RRC Uplink/Downlink Information transfer carrying NAS messages transparently
+   - RRC Reconfiguration/Reconfiguration complete
+   - Support for master cell group configuration
+* Interface with PDCP: configuration, DCCH and CCCH message handling
+* Interface with RLC and MAC for configuration
+
+**UE NAS**
+* Transfer of NAS messages between the AMF and the UE supporting the UE registration with the core network and the PDU session  establishment according to 24.501 Rel.16
+  - Identity Request/Response
+  - Authentication Request/Response
+  - Security Mode Command/Complete
+  - Registration Request/Accept/Complete
+  - PDU Session Establishment Request/Accept
+  - NAS configuration and basic interfacing with RRC
 
 
 

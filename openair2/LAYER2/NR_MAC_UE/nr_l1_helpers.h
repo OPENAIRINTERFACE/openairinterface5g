@@ -19,44 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_TRANSPORT/nr_dci_tools_common.c
- * \brief
- * \author
- * \date 2018
- * \version 0.1
- * \company Eurecom
- * \email:
- * \note
- * \warning
- */
-
-#include "nr_dci.h"
-
-//#define DEBUG_FILL_DCI
-
-#include "nr_dlsch.h"
-
-
-void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
-
-  uint8_t count=0, start=0, start_set=0;
-
-  uint64_t bitmap = (((uint64_t)FreqDomainResource[0])<<37)|
-    (((uint64_t)FreqDomainResource[1])<<29)|
-    (((uint64_t)FreqDomainResource[2])<<21)|
-    (((uint64_t)FreqDomainResource[3])<<13)|
-    (((uint64_t)FreqDomainResource[4])<<5)|
-    (((uint64_t)FreqDomainResource[5])>>3);
-  
-  for (int i=0; i<45; i++)
-    if ((bitmap>>(44-i))&1) {
-      count++;
-      if (!start_set) {
-        start = i;
-        start_set = 1;
-      }
-    }
-  *rb_offset = 6*start;
-  *n_rb = 6*count;
-}
-
+/** \brief Function to compute configured maximum output power according to clause 6.2.4 of 3GPP TS 38.101-1 version 16.5.0 Release 16
+    @param Mod_id Module id of UE
+*/
+long nr_get_Pcmax(module_id_t mod_id);
+/** @}*/

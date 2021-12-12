@@ -46,9 +46,6 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#include "openair1/PHY/defs_gNB.h"
-#include "openair1/PHY/NR_TRANSPORT/nr_dlsch.h"
-
 #include "intertask_interface.h"
 
 #include "executables/softmodem-common.h"
@@ -61,7 +58,6 @@
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
 uint8_t vnf_first_sched_entry = 1;
-
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 int CC_idP,
@@ -351,7 +347,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if ((slot == 0) && (frame & 127) == 0) {
      stats_output[0]='\0';
-     dump_mac_stats(RC.nrmac[module_idP],stats_output,16384);
+     dump_mac_stats(RC.nrmac[module_idP],stats_output,16384,true);
      LOG_I(NR_MAC,"Frame.Slot %d.%d\n%s\n",frame,slot,stats_output);
   }
 

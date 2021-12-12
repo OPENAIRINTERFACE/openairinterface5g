@@ -60,22 +60,21 @@ uint16_t get_ssboffset_pointa(NR_ServingCellConfigCommon_t *scc,const long band)
   int ratio;
   switch (*scc->ssbSubcarrierSpacing) {
     case NR_SubcarrierSpacing_kHz15:
-      AssertFatal(band <= 79,
+      AssertFatal(band <= 95,
                   "Band %ld is not possible for SSB with 15 kHz SCS\n",
                   band);
-      if (band < 77)  // below 3GHz
-        ratio = 3;    // NRARFCN step is 5 kHz
-      else
-        ratio = 1;  // NRARFCN step is 15 kHz
+      // no band available above 3GHz using 15kHz
+      ratio = 3;  // NRARFCN step is 5 kHz
       break;
     case NR_SubcarrierSpacing_kHz30:
-      AssertFatal(band <= 79,
-                  "Band %ld is not possible for SSB with 15 kHz SCS\n",
+      AssertFatal(band <= 96,
+                  "Band %ld is not possible for SSB with 30 kHz SCS\n",
                   band);
-      if (band < 77)  // below 3GHz
-        ratio = 6;    // NRARFCN step is 5 kHz
+      if (band == 46 || band == 48 || band == 77 ||
+          band == 78 || band == 79 || band == 96)  // above 3GHz
+        ratio = 2;    // NRARFCN step is 15 kHz
       else
-        ratio = 2;  // NRARFCN step is 15 kHz
+        ratio = 6;  // NRARFCN step is 5 kHz
       break;
     case NR_SubcarrierSpacing_kHz120:
       AssertFatal(band >= 257,
@@ -219,6 +218,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
                                                         ssb_start_symbol,
                                                         scs,
                                                         FR1,
+                                                        band,
                                                         i_ssb,
                                                         ssb_frame_periodicity,
                                                         offset_pointa);
@@ -246,6 +246,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
                                                         ssb_start_symbol,
                                                         scs,
                                                         FR1,
+                                                        band,
                                                         i_ssb,
                                                         ssb_frame_periodicity,
                                                         offset_pointa);
@@ -281,6 +282,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
                                                         ssb_start_symbol,
                                                         scs,
                                                         FR2,
+                                                        band,
                                                         i_ssb,
                                                         ssb_frame_periodicity,
                                                         offset_pointa);
@@ -328,19 +330,16 @@ uint32_t schedule_control_sib1(module_id_t module_id,
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
-  int ret;
 
   if (gNB_mac->sched_ctrlCommon == NULL){
     LOG_D(NR_MAC,"schedule_control_common: Filling nr_mac->sched_ctrlCommon\n");
     gNB_mac->sched_ctrlCommon = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon));
     gNB_mac->sched_ctrlCommon->search_space = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->search_space));
     gNB_mac->sched_ctrlCommon->coreset = calloc(1,sizeof(*gNB_mac->sched_ctrlCommon->coreset));
-    for (int i=0; i<3; i++){ // loop over possible aggregation levels
-      ret = fill_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space,type0_PDCCH_CSS_config,4<<i);
-      if (ret == 1) break;
-    }
-    AssertFatal(ret==1,"No aggregation level for type0_PDCCH_CSS found\n");
+    fill_searchSpaceZero(gNB_mac->sched_ctrlCommon->search_space,type0_PDCCH_CSS_config);
     fill_coresetZero(gNB_mac->sched_ctrlCommon->coreset,type0_PDCCH_CSS_config);
+    gNB_mac->cset0_bwp_start = type0_PDCCH_CSS_config->cset_start_rb;
+    gNB_mac->cset0_bwp_size = type0_PDCCH_CSS_config->num_rbs;
   }
 
   gNB_mac->sched_ctrlCommon->pdsch_semi_static.time_domain_allocation = time_domain_allocation;
@@ -349,7 +348,11 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   gNB_mac->sched_ctrlCommon->num_total_bytes = num_total_bytes;
 
   uint8_t nr_of_candidates;
-  find_aggregation_candidates(&gNB_mac->sched_ctrlCommon->aggregation_level, &nr_of_candidates, gNB_mac->sched_ctrlCommon->search_space,4);
+
+  for (int i=0; i<3; i++) {
+    find_aggregation_candidates(&gNB_mac->sched_ctrlCommon->aggregation_level, &nr_of_candidates, gNB_mac->sched_ctrlCommon->search_space,4<<i);
+    if (nr_of_candidates>0) break; // choosing the lower value of aggregation level available
+  }
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
   gNB_mac->sched_ctrlCommon->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
                                                           NULL,
@@ -376,7 +379,6 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   // Calculate number of PRB_DMRS
   uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 6;
   uint16_t dmrs_length = get_num_dmrs(dlDmrsSymbPos);
-
   LOG_D(MAC,"dlDmrsSymbPos %x\n",dlDmrsSymbPos);
   int rbSize = 0;
   uint32_t TBS = 0;
@@ -434,7 +436,8 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
   dl_req->nPDUs += 1;
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-  nr_configure_pdcch(pdcch_pdu_rel15,
+  nr_configure_pdcch(NULL,
+                     pdcch_pdu_rel15,
                      gNB_mac->sched_ctrlCommon->search_space,
                      gNB_mac->sched_ctrlCommon->coreset,
                      scc,
@@ -608,8 +611,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
       // TODO: There are exceptions to this in table 5.1.2.1.1-4,5 (Default time domain allocation tables B, C)
       int mappingtype = (startSymbolIndex <= 3)? typeA: typeB;
-
-      uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex, mappingtype);
+      uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex, mappingtype, 1);
 
       // Configure sched_ctrlCommon for SIB1
       uint32_t TBS = schedule_control_sib1(module_idP, CC_id,

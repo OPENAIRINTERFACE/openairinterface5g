@@ -173,13 +173,6 @@ extern pthread_mutex_t slrb_mutex;
 //the thread function
 void *send_UE_status_notification(void *);
 
-
-
-//#include "COMMON/openair_defs.h"
-#ifndef USER_MODE
-  //#include <rtai.h>
-#endif
-
 #include "LTE_SystemInformationBlockType1.h"
 #include "LTE_SystemInformation.h"
 #include "LTE_RRCConnectionReconfiguration.h"
@@ -216,12 +209,6 @@ void *send_UE_status_notification(void *);
 #define NB_CNX_CH MAX_MOBILES_PER_ENB
 #define NB_SIG_CNX_UE 2 //MAX_MANAGED_RG_PER_MOBILE
 #define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE
-
-#ifndef NO_RRM
-  #include "L3_rrc_interface.h"
-  #include "rrc_rrm_msg.h"
-  #include "rrc_rrm_interface.h"
-#endif
 
 
 #include "intertask_interface.h"
@@ -364,7 +351,7 @@ typedef struct UE_RRC_INFO_s {
   uint8_t SIwindowsize_MBMS; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
   uint8_t handoverTarget;
   HO_STATE_t ho_state;
-  uint16_t SIperiod; //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
+  uint16_t SIperiod ; //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
   uint16_t SIperiod_MBMS; //!< Corresponds to the SIB1-MBMS si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120 TODO
   unsigned short UE_index;
   uint32_t T300_active;

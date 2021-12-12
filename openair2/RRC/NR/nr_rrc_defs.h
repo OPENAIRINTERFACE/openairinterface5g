@@ -213,7 +213,7 @@ typedef struct HANDOVER_INFO_NR_s {
 typedef struct {
   char                                                Payload[NR_RRC_BUFFER_SIZE_MAX];
   char                                                Header[NR_RRC_HEADER_SIZE_MAX];
-  char                                                payload_size;
+  int                                                 payload_size;
 } NR_RRC_BUFFER;
 
 #define NR_RRC_BUFFER_SIZE                            sizeof(RRC_BUFFER_NR)
@@ -286,10 +286,10 @@ typedef struct gNB_RRC_UE_s {
   NR_DRB_ToReleaseList_t            *DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
 
-  SRB_INFO                           SI;
-  SRB_INFO                           Srb0;
-  SRB_INFO_TABLE_ENTRY               Srb1;
-  SRB_INFO_TABLE_ENTRY               Srb2;
+  NR_SRB_INFO                           SI;
+  NR_SRB_INFO                           Srb0;
+  NR_SRB_INFO_TABLE_ENTRY               Srb1;
+  NR_SRB_INFO_TABLE_ENTRY               Srb2;
   NR_MeasConfig_t                   *measConfig;
   HANDOVER_INFO                     *handover_info;
   NR_MeasResults_t                  *measResults;
@@ -455,7 +455,6 @@ typedef struct {
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
-  int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
   int                                       p_gNB;
 
 } rrc_gNB_carrier_data_t;

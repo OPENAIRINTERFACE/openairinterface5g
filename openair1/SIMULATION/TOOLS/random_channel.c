@@ -1708,7 +1708,8 @@ void set_channeldesc_name(channel_desc_t *cdesc,char *modelname) {
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   double s;
   int i,k,l,aarx,aatx;
-  struct complexd anew[desc->nb_tx*desc->nb_rx],acorr[desc->nb_tx*desc->nb_rx];
+  struct complexd anew[desc->nb_tx*desc->nb_rx];
+  struct complexd acorr[desc->nb_tx*desc->nb_rx];
   struct complexd phase, alpha, beta;
   start_meas(&desc->random_channel);
 
@@ -1750,6 +1751,11 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
     */
     //apply correlation matrix
     //compute acorr = R_sqrt[i] * anew
+    bzero(acorr,desc->nb_tx*desc->nb_rx*sizeof(struct complexd));
+    cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void *) desc->R_sqrt[i/3], (void *) anew, 1, (void *) acorr, 1);
+
+    /*
+    FIXME: Function cblas_zgemv has an undefined output (for the same input) after a second call in RHEL8 (acorr = nan)
     alpha.r = 1.0;
     alpha.i = 0.0;
     beta.r = 0.0;
@@ -1757,6 +1763,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
     cblas_zgemv(CblasRowMajor, CblasNoTrans, desc->nb_tx*desc->nb_rx, desc->nb_tx*desc->nb_rx,
                 (void *) &alpha, (void *) desc->R_sqrt[i/3], desc->nb_rx*desc->nb_tx,
                 (void *) anew, 1, (void *) &beta, (void *) acorr, 1);
+    */
 
     /*
     for (aarx=0;aarx<desc->nb_rx;aarx++) {

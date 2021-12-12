@@ -3293,6 +3293,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.present = LTE_MTC_SSB_NR_r15__periodicityAndOffset_r15_PR_sf20_r15;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.periodicityAndOffset_r15.choice.sf20_r15 = 0;
     MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.measTimingConfig_r15.ssb_Duration_r15 = LTE_MTC_SSB_NR_r15__ssb_Duration_r15_sf4;
+
     if (rrc_inst->nr_scg_ssb_freq > 2016666) //FR2
       MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15 = LTE_RS_ConfigSSB_NR_r15__subcarrierSpacingSSB_r15_kHz120;
     else
@@ -3618,9 +3619,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
                            NULL,
                            NULL,
                            NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                            , (LTE_PMCH_InfoList_r9_t *) NULL
-#endif
                            , NULL);
 
   /* Refresh SRBs/DRBs */
@@ -3629,11 +3628,9 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
                             *SRB_configList2, // NULL,
                             *DRB_configList,
                             NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                             , (LTE_PMCH_InfoList_r9_t *) NULL,
                             0,
                             0
-#endif
                            );
   }
 
@@ -6331,9 +6328,7 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
                            NULL,
                            NULL,
                            NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                            , (LTE_PMCH_InfoList_r9_t *) NULL
-#endif
                            , NULL);
 
   /* Refresh SRBs/DRBs */
@@ -6342,11 +6337,9 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
                             *SRB_configList2, // NULL,
                             *DRB_configList,
                             NULL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                             , (LTE_PMCH_InfoList_r9_t *) NULL,
                             0,
                             0
-#endif
                            );
   }
 
@@ -7287,9 +7280,6 @@ rrc_eNB_decode_ccch(
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                 rrcConnectionReestablishmentRequest->ue_Identity.physCellId,
                 ue_context_p->ue_context.reestablishment_cause);
-#ifndef NO_RRM
-          send_msg(&S_rrc, msg_rrc_MR_attach_ind(ctxt_pP->module_id, Mac_id));
-#else
           ue_context_p->ue_context.primaryCC_id = CC_id;
           //LG COMMENT Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
           Idx = DCCH;
@@ -7343,7 +7333,6 @@ rrc_eNB_decode_ccch(
                                    );
           }
 
-#endif //NO_RRM
         }
         break;
 
@@ -7532,9 +7521,6 @@ rrc_eNB_decode_ccch(
           }
         }
 
-#ifndef NO_RRM
-        send_msg(&S_rrc, msg_rrc_MR_attach_ind(ctxt_pP->module_id, Mac_id));
-#else
         ue_context_p->ue_context.primaryCC_id = CC_id;
         //LG COMMENT Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
         Idx = DCCH;
@@ -7587,7 +7573,6 @@ rrc_eNB_decode_ccch(
                                  );
         }
 
-#endif //NO_RRM
         break;
 
       default:

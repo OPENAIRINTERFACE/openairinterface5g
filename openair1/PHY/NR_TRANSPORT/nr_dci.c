@@ -35,6 +35,7 @@
 #include "nr_dlsch.h"
 #include "nr_sch_dmrs.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "common/utils/nr/nr_common.h"
 
 //#define DEBUG_PDCCH_DMRS
 //#define DEBUG_DCI
@@ -97,13 +98,16 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     cset_start_symb = pdcch_pdu_rel15->StartSymbolIndex;
     cset_nsymb = pdcch_pdu_rel15->DurationSymbols;
     dci_idx = 0;
-    LOG_D(PHY, "pdcch: Coreset rb_offset %d, nb_rb %d BWP Start %d\n",rb_offset,n_rb,pdcch_pdu_rel15->BWPStart);
-    LOG_D(PHY, "pdcch: Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
+    if (dci_pdu->RNTI != 0xFFFF) {
+      LOG_D(PHY, "pdcch: Coreset rb_offset %d, nb_rb %d BWP Start %d\n",rb_offset,n_rb,pdcch_pdu_rel15->BWPStart);
+      LOG_D(PHY, "pdcch: Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
+    }
     // DMRS length is per OFDM symbol
     uint32_t dmrs_length = n_rb*6; //2(QPSK)*3(per RB)*6(REG per CCE)
     uint32_t encoded_length = dci_pdu->AggregationLevel*108; //2(QPSK)*9(per RB)*6(REG per CCE)
-    if (dci_pdu->RNTI!=0xFFFF) LOG_D(PHY, "DL_DCI : rb_offset %d, nb_rb %d, DMRS length per symbol %d\t DCI encoded length %d (precoder_granularity %d,reg_mapping %d),Scrambling_Id %d,ScramblingRNTI %x,PayloadSizeBits %d\n", 
-    rb_offset, n_rb,dmrs_length, encoded_length,pdcch_pdu_rel15->precoderGranularity,pdcch_pdu_rel15->CceRegMappingType,
+    if (dci_pdu->RNTI != 0xFFFF)
+      LOG_D(PHY, "DL_DCI : rb_offset %d, nb_rb %d, DMRS length per symbol %d\t DCI encoded length %d (precoder_granularity %d,reg_mapping %d),Scrambling_Id %d,ScramblingRNTI %x,PayloadSizeBits %d\n",
+      rb_offset, n_rb,dmrs_length, encoded_length,pdcch_pdu_rel15->precoderGranularity,pdcch_pdu_rel15->CceRegMappingType,
     dci_pdu->ScramblingId,dci_pdu->ScramblingRNTI,dci_pdu->PayloadSizeBits);
     dmrs_length += rb_offset*6; // To accommodate more DMRS symbols in case of rb offset
       
@@ -113,7 +117,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
       nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
       
 #ifdef DEBUG_PDCCH_DMRS
-       if(dci_pdu->RNTI!=0xFFFF) {      
+      if(dci_pdu->RNTI!=0xFFFF) {      
       for (int i=0; i<dmrs_length>>1; i++)
 	printf("symb %d i %d %p gold seq 0x%08x mod_dmrs %d %d\n", symb, i,
 	       &gold_pdcch_dmrs[symb][i>>5],gold_pdcch_dmrs[symb][i>>5], mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1] );
@@ -134,8 +138,8 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 						   dci_pdu->AggregationLevel,
 						   0,NULL);
     polar_encoder_fast((uint64_t*)dci_pdu->Payload, (void*)encoder_output, n_RNTI,1,currentPtr);
-#ifdef DEBUG_CHANNEL_CODING
-    printf("polar rnti %x,length %d, L %d\n",n_RNTI, dci_pdu->PayloadSizeBits,pdcch_pdu_rel15->dci_pdu.AggregationLevel[d]);
+#if DEBUG_CHANNEL_CODING
+    printf("polar rnti %x,length %d, L %d\n",n_RNTI, dci_pdu->PayloadSizeBits,dci_pdu->AggregationLevel);
     printf("DCI PDU: [0]->0x%lx \t [1]->0x%lx\n",
 	   ((uint64_t*)dci_pdu->Payload)[0], ((uint64_t*)dci_pdu->Payload)[1]);
     printf("Encoded Payload (length:%d dwords):\n", encoded_length>>5);
@@ -213,7 +217,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
                   (amp * mod_dmrs[l][(dmrs_idx << 1) + 1]) >> 15;
 
 #ifdef DEBUG_PDCCH_DMRS
-              if (dci_pdu->RNTI!=0xFFFF) LOG_D(PHY,"PDCCH DMRS %d: l %d position %d => (%d,%d)\n",dmrs_idx,l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+              LOG_D(PHY,"PDCCH DMRS %d: l %d position %d => (%d,%d)\n",dmrs_idx,l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
                ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
 
@@ -225,7 +229,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
               ((int16_t *) txdataF)[((l * frame_parms->ofdm_symbol_size + k) << 1) + 1] =
                   (amp * mod_dci[(dci_idx << 1) + 1]) >> 15;
 #ifdef DEBUG_DCI
-              if (dci_pdu->RNTI!=0xFFFF) LOG_D(PHY,"PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+              LOG_D(PHY,"PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
                ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
 

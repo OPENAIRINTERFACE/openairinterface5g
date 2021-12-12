@@ -308,43 +308,19 @@ nr_rrc_pdcp_config_security(
   uint8_t                            *kUPenc = NULL;
   static int                         print_keys= 1;
 
-#ifndef PHYSIM
-
-  uint8_t *k_kdf = NULL;
-
   /* Derive the keys from kgnb */
   if (SRB_configList != NULL) {
-    k_kdf = NULL;
     nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
                          ue_context_pP->ue_context.kgnb,
-                         &k_kdf);
-    /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
-    kUPenc = malloc(16);
-    if (kUPenc == NULL) exit(1);
-    memcpy(kUPenc, k_kdf+16, 16);
-    free(k_kdf);
+                         &kUPenc);
   }
 
-  k_kdf = NULL;
   nr_derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
                         ue_context_pP->ue_context.kgnb,
-                        &k_kdf);
-  /* kRRCenc: last 128 bits of key derivation function which returns 256 bits */
-  kRRCenc = malloc(16);
-  if (kRRCenc == NULL) exit(1);
-  memcpy(kRRCenc, k_kdf+16, 16);
-  free(k_kdf);
-
-  k_kdf = NULL;
+                        &kRRCenc);
   nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
                         ue_context_pP->ue_context.kgnb,
-                        &k_kdf);
-  /* kRRCint: last 128 bits of key derivation function which returns 256 bits */
-  kRRCint = malloc(16);
-  if (kRRCint == NULL) exit(1);
-  memcpy(kRRCint, k_kdf+16, 16);
-  free(k_kdf);
-#endif
+                        &kRRCint);
   if (!IS_SOFTMODEM_IQPLAYER) {
     SET_LOG_DUMP(DEBUG_SECURITY) ;
   }
@@ -603,20 +579,9 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_key);
 
       /* configure only integrity, ciphering comes after receiving SecurityModeComplete */
-      nr_rrc_pdcp_config_security(
-          &ctxt,
-          ue_context_p,
-          0);
+      nr_rrc_pdcp_config_security(&ctxt, ue_context_p, 0);
 
-      uint8_t send_security_mode_command = TRUE;
-
-      if (send_security_mode_command) {
-          rrc_gNB_generate_SecurityModeCommand (&ctxt, ue_context_p);
-          send_security_mode_command = FALSE;
-      } else {
-          /* rrc_gNB_generate_UECapabilityEnquiry */
-          rrc_gNB_generate_UECapabilityEnquiry(&ctxt, ue_context_p);
-      }
+      rrc_gNB_generate_SecurityModeCommand (&ctxt, ue_context_p);
 
     // in case, send the S1SP initial context response if it is not sent with the attach complete message
     if (ue_context_p->ue_context.StatusRrc == NR_RRC_RECONFIGURED) {

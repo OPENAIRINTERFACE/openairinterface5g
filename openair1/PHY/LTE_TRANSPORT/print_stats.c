@@ -36,10 +36,8 @@
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
 
-#ifdef OPENAIR2
   #include "openair2/LAYER2/MAC/proto.h"
   #include "openair2/RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-#endif
 
 extern int mac_get_rrc_status(uint8_t Mod_id,uint8_t eNB_flag,uint8_t index);
 
@@ -434,10 +432,8 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char *buffer, int length
           break;
       }
 
-#ifdef OPENAIR2
       RRC_status = mac_UE_get_rrc_status(ue->Mod_id, 0);
       len += sprintf(&buffer[len],"[UE PROC] RRC status = %d\n",RRC_status);
-#endif
       len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d \n",ue->transmission_mode[eNB]);
       len += sprintf(&buffer[len], "[UE PROC] PBCH err conseq %d, PBCH error total %d, PBCH FER %d\n",
                      ue->pbch_vars[eNB]->pdu_errors_conseq,

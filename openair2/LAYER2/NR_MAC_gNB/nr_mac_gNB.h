@@ -145,6 +145,8 @@ typedef struct {
   uint8_t msg3_first_rb;
   /// Msg3 number of RB
   uint8_t msg3_nb_rb;
+  /// Msg3 BWP start
+  uint8_t msg3_bwp_start;
   /// Msg3 TPC command
   uint8_t msg3_TPC;
   /// Msg3 ULdelay command
@@ -365,7 +367,8 @@ typedef struct NR_sched_pusch {
 typedef struct NR_pdsch_semi_static {
   int time_domain_allocation;
   uint8_t numDmrsCdmGrpsNoData;
-
+  uint8_t frontloaded_symb;
+  int mapping_type;
   int startSymbolIndex;
   int nrOfSymbols;
   uint8_t nrOfLayers;
@@ -420,6 +423,13 @@ typedef struct NR_UE_harq {
 
 //! fixme : need to enhace for the multiple TB CQI report
 
+typedef struct NR_DL_bler_stats {
+  frame_t last_frame_slot;
+  float bler;
+  float rd2_bler;
+  uint8_t mcs;
+  uint64_t dlsch_rounds[8];
+} NR_DL_bler_stats_t;
 
 //
 /*! As per spec 38.214 section 5.2.1.4.2
@@ -444,6 +454,7 @@ struct CRI_RI_LI_PMI_CQI {
   uint8_t pmi_x2;
   uint8_t wb_cqi_1tb;
   uint8_t wb_cqi_2tb;
+  uint8_t cqi_table;
 };
 
 typedef struct CRI_SSB_RSRP {
@@ -454,11 +465,8 @@ typedef struct CRI_SSB_RSRP {
 } CRI_SSB_RSRP_t;
 
 struct CSI_Report {
-  NR_CSI_Report_Config_PR present;
-  union Config_CSI_Report {
-    struct CRI_RI_LI_PMI_CQI cri_ri_li_pmi_cqi_report;
-    struct CRI_SSB_RSRP ssb_cri_report;
-  } choice;
+  struct CRI_RI_LI_PMI_CQI cri_ri_li_pmi_cqi_report;
+  struct CRI_SSB_RSRP ssb_cri_report;
 };
 
 #define MAX_SR_BITLEN 8
@@ -471,12 +479,13 @@ typedef struct {
 }L1_RSRP_bitlen_t;
 
 typedef struct{
+  uint8_t ri_restriction;
   uint8_t cri_bitlen;
   uint8_t ri_bitlen;
-  uint8_t li_bitlen;
-  uint8_t pmi_x1_bitlen;
-  uint8_t pmi_x2_bitlen;
-  uint8_t cqi_bitlen;
+  uint8_t li_bitlen[8];
+  uint8_t pmi_x1_bitlen[8];
+  uint8_t pmi_x2_bitlen[8];
+  uint8_t cqi_bitlen[8];
 } CSI_Meas_bitlen_t;
 
 typedef struct nr_csi_report {
@@ -563,6 +572,9 @@ typedef struct {
   /// per-LC status data
   mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
 
+  /// Estimation of HARQ from BLER
+  NR_DL_bler_stats_t dl_bler_stats;
+
   int lcid_mask;
   int lcid_to_schedule;
   uint16_t ta_frame;
@@ -578,9 +590,9 @@ typedef struct {
   int pusch_consecutive_dtx_cnt;
   int pucch_consecutive_dtx_cnt;
   int ul_failure;
-  struct CSI_Report CSI_report[MAX_CSI_REPORTS];
+  struct CSI_Report CSI_report;
   bool SR;
-
+  bool set_mcs;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
@@ -606,19 +618,19 @@ typedef struct {
 } NRUEcontext_t;
 
 typedef struct {
-  int lc_bytes_tx[64];
-  int lc_bytes_rx[64];
-  int dlsch_rounds[8];
-  int dlsch_errors;
-  int dlsch_total_bytes;
+  uint64_t lc_bytes_tx[64];
+  uint64_t lc_bytes_rx[64];
+  uint64_t dlsch_rounds[8];
+  uint64_t dlsch_errors;
+  uint64_t dlsch_total_bytes;
   int dlsch_current_bytes;
-  int ulsch_rounds[8];
-  int ulsch_errors;
-  int ulsch_DTX;
-  int ulsch_total_bytes_scheduled;
-  int ulsch_total_bytes_rx;
+  uint64_t ulsch_rounds[8];
+  uint64_t ulsch_errors;
+  uint32_t ulsch_DTX;
+  uint64_t ulsch_total_bytes_scheduled;
+  uint64_t ulsch_total_bytes_rx;
   int ulsch_current_bytes;
-  int pucch0_DTX;
+  uint32_t pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;
 } NR_mac_stats_t;
@@ -633,7 +645,6 @@ typedef struct {
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
   NR_list_t list;
   int num_UEs;
-
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *CellGroup[MAX_MOBILES_PER_GNB];
@@ -682,7 +693,8 @@ typedef struct gNB_MAC_INST_s {
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
-
+  int num_ulprbbl;
+  int ulprbbl[275];
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
@@ -747,7 +759,7 @@ typedef struct gNB_MAC_INST_s {
   int *preferred_ul_tda[MAX_NUM_BWP];
 
   /// maximum number of slots before a UE will be scheduled ULSCH automatically
-  uint32_t ulsch_max_slots_inactivity;
+  uint32_t ulsch_max_frame_inactivity;
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
@@ -755,9 +767,15 @@ typedef struct gNB_MAC_INST_s {
   nr_pp_impl_ul pre_processor_ul;
 
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
+  uint16_t cset0_bwp_start;
+  uint16_t cset0_bwp_size;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
   bool first_MIB;
+  double dl_bler_target_upper;
+  double dl_bler_target_lower;
+  double dl_rd2_bler_threshold;
+  uint8_t dl_max_mcs;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

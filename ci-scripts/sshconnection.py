@@ -60,7 +60,8 @@ class SSHConnection():
 		connect_status = False
 		while count < 4:
 			self.ssh = pexpect.spawn('ssh -o PubkeyAuthentication=no {}@{}'.format(username,ipaddress))
-			self.ssh.timeout = 5
+			# Longer timeout at connection due to asterix slowness
+			self.ssh.timeout = 25
 			self.sshresponse = self.ssh.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', 'Last login', pexpect.EOF, pexpect.TIMEOUT])
 			if self.sshresponse == 0:
 				self.ssh.sendline('yes')
@@ -163,6 +164,18 @@ class SSHConnection():
 		lSsh = subprocess.Popen(["ssh", "%s" % myHost, commandline],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		self.cmd2Results = str(lSsh.stdout.readlines())
 
+	def command3(self, commandline, timeout, silent=False):
+		if not silent:
+			logging.debug(commandline)
+		self.cmd2Results = ''
+		myHost = self.username + '@' + self.ipaddress
+		# CAUTION: THIS METHOD IMPLIES THAT THERE ARE VALID SSH KEYS
+		# BETWEEN THE PYTHON EXECUTOR NODE AND THE REMOTE HOST
+		# OTHERWISE IT WON'T WORK
+		lSsh = subprocess.Popen(["ssh", "%s" % myHost, commandline],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		return lSsh.stdout.readlines()
+
+		
 	def close(self):
 		self.ssh.timeout = 5
 		self.ssh.sendline('exit')

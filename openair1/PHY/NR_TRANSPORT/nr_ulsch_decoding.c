@@ -306,8 +306,8 @@ void nr_processULSegment(void* arg) {
   int max_ldpc_iterations = p_decoderParms->numMaxIter;
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
 
-  int16_t  z [68*384];
-  int8_t   l [68*384];
+  int16_t  z [68*384 + 16] __attribute__ ((aligned(16)));
+  int8_t   l [68*384 + 16] __attribute__ ((aligned(16)));
 
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
@@ -368,10 +368,10 @@ void nr_processULSegment(void* arg) {
                                ulsch_harq->e[r],
                                ulsch_harq->C,
                                rv_index,
-                               (ulsch_harq->round==0)?1:0,
+                               ulsch_harq->new_rx,
                                E,
-       ulsch_harq->F,
-       Kr-ulsch_harq->F-2*(p_decoderParms->Z))==-1) {
+                               ulsch_harq->F,
+                               Kr-ulsch_harq->F-2*(p_decoderParms->Z))==-1) {
 
     stop_meas(&phy_vars_gNB->ulsch_rate_unmatching_stats);
 
@@ -505,9 +505,21 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
-//  harq_process->round = nr_rv_round_map[pusch_pdu->pusch_data.rv_index];
-  if (pusch_pdu->pusch_data.rv_index == 0) harq_process->round = 0;
- 
+  harq_process->round = nr_rv_round_map[pusch_pdu->pusch_data.rv_index];
+
+  harq_process->new_rx = false; // flag to indicate if this is a new reception for this harq (initialized to false)
+  if (harq_process->round == 0) {
+    harq_process->new_rx = true;
+    harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
+  }
+
+  // this happens if there was a DTX in round 0
+  if (harq_process->ndi != pusch_pdu->pusch_data.new_data_indicator) {
+    harq_process->new_rx = true;
+    harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
+    LOG_D(PHY,"Missed ULSCH detection. NDI toggled but rv %d does not correspond to first reception\n",pusch_pdu->pusch_data.rv_index);
+  }
+
   A   = (harq_process->TBS)<<3;
 
   LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d, Coderate %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers, R);
@@ -563,7 +575,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
        stats->power[aarx]=dB_fixed_x10(pusch->ulsch_power[aarx]);
        stats->noise_power[aarx]=dB_fixed_x10(pusch->ulsch_noise_power[aarx]);
     }
-    if (harq_process->round == 0) {
+    if (harq_process->new_rx == 0) {
       stats->current_Qm = Qm;
       stats->current_RI = n_layers;
       stats->total_bytes_tx += harq_process->TBS;

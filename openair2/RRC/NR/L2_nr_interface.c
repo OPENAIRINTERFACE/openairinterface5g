@@ -218,7 +218,7 @@ nr_rrc_data_req(
   return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
 }
 
-int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
+int    mac_rrc_nr_data_req(const module_id_t Mod_idP,
                            const int         CC_id,
                            const frame_t     frameP,
                            const rb_id_t     Srb_id,
@@ -286,7 +286,7 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
     LOG_D(NR_RRC,"[gNB %d] Frame %d CCCH request (Srb_id %ld)\n", Mod_idP, frameP, Srb_id);
 
     AssertFatal(ue_context_p!=NULL,"failed to get ue_context, rnti %x\n",rnti);
-    char payload_size = ue_context_p->ue_context.Srb0.Tx_buffer.payload_size;
+    int payload_size = ue_context_p->ue_context.Srb0.Tx_buffer.payload_size;
 
     // check if data is there for MAC
     if (payload_size > 0) {
@@ -366,10 +366,10 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
 }
 
 void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,
-                            const int CC_idP,
-                            const frame_t frameP,
-                            const sub_frame_t subframeP,
-                            const rnti_t rntiP) {
+                               const int CC_idP,
+                               const frame_t frameP,
+                               const sub_frame_t subframeP,
+                               const rnti_t rntiP) {
   struct rrc_gNB_ue_context_s *ue_context_p = NULL;
   ue_context_p = rrc_gNB_get_ue_context(
                    RC.nrrrc[Mod_instP],

@@ -52,9 +52,7 @@ extern boolean_t nr_rrc_pdcp_config_asn1_req(
     uint8_t                  *const kRRCint,
     uint8_t                  *const kUPenc,
     uint8_t                  *const kUPint
-  #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-  #endif
     ,rb_id_t                 *const defaultDRB,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
@@ -153,7 +151,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   ue_context_p->ue_context.reconfig->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
   ue_context_p->ue_context.reconfig->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
-  carrier->initial_csi_index[ue_context_p->local_uid + 1] = 0;
   ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
   if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1 || get_softmodem_params()->sa == 1){
     fill_default_rbconfig(ue_context_p->ue_context.rb_config,
@@ -215,25 +212,12 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     LOG_I(RRC, "selecting integrity algorithm %d\n", ue_context_p->ue_context.integrity_algorithm);
 
     /* derive UP security key */
-    unsigned char *kUPenc_kdf;
     nr_derive_key_up_enc(ue_context_p->ue_context.ciphering_algorithm,
                          ue_context_p->ue_context.kgnb,
-                         &kUPenc_kdf);
-    /* kUPenc: last 128 bits of key derivation function which returns 256 bits */
-    kUPenc = malloc(16);
-    if (kUPenc == NULL) exit(1);
-    memcpy(kUPenc, kUPenc_kdf+16, 16);
-    free(kUPenc_kdf);
-
-    unsigned char *kUPint_kdf;
+                         &kUPenc);
     nr_derive_key_up_int(ue_context_p->ue_context.integrity_algorithm,
                          ue_context_p->ue_context.kgnb,
-                         &kUPint_kdf);
-    /* kUPint: last 128 bits of key derivation function which returns 256 bits */
-    kUPint = malloc(16);
-    if (kUPint == NULL) exit(1);
-    memcpy(kUPint, kUPint_kdf+16, 16);
-    free(kUPint_kdf);
+                         &kUPint);
 
     e_NR_CipheringAlgorithm cipher_algo;
     switch (ue_context_p->ue_context.ciphering_algorithm) {
@@ -257,7 +241,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
                         carrier->do_CSIRS,
-                        carrier->initial_csi_index[ue_context_p->local_uid + 1],
                         ue_context_p->local_uid);
   } else {
     fill_default_reconfig(carrier->servingcellconfigcommon,
@@ -266,7 +249,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
                         carrier->do_CSIRS,
-                        carrier->initial_csi_index[ue_context_p->local_uid + 1],
                         ue_context_p->local_uid);
   }
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;

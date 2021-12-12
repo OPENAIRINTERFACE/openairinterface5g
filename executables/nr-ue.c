@@ -19,6 +19,7 @@
  *      contact@openairinterface.org
  */
 
+#include <openair1/PHY/impl_defs_top.h>
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/INIT/phy_init.h"
@@ -87,11 +88,7 @@
  *
  */
 
-#ifndef NO_RAT_NR
-  #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
-#else
-  #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
-#endif
+
 #define RX_JOB_ID 0x1010
 #define TX_JOB_ID 100
 
@@ -146,14 +143,6 @@ static void UE_synch(void *arg) {
   UE->is_synchronized = 0;
 
   if (UE->UE_scan == 0) {
-
-    #ifdef FR2_TEST
-    // Overwrite DL frequency (for FR2 testing)
-    if (downlink_frequency[0][0]!=0){
-       UE->frame_parms.dl_CarrierFreq = downlink_frequency[0][0];
-       UE->frame_parms.ul_CarrierFreq = downlink_frequency[0][0];
-    }
-    #endif
 
     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
 
@@ -220,7 +209,7 @@ static void UE_synch(void *arg) {
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
       uint64_t dl_carrier, ul_carrier;
-      nr_get_carrier_frequencies(&UE->frame_parms, &dl_carrier, &ul_carrier);
+      nr_get_carrier_frequencies(UE, &dl_carrier, &ul_carrier);
 
       if (nr_initial_sync(&syncD->proc, UE, 2, get_softmodem_params()->sa, get_nrUE_params()->nr_dlsch_parallel) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
@@ -471,13 +460,18 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
   // compute TO compensation that should be applied for this frame
   if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&
        UE->rx_offset > 0 ) {
-    //LOG_I(PHY,"!!!adjusting -1 samples!!!\n");
+    LOG_I(PHY,"!!!adjusting -1 samples!!! rx_offset == %d\n", UE->rx_offset);
+    UE->rx_offset   = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
+    UE->max_pos_fil = 0; // reset IIR filter when sample shift is applied
     return -1 ;
   }
 
   if ( UE->rx_offset > UE->frame_parms.samples_per_frame/2 &&
        UE->rx_offset < UE->frame_parms.samples_per_frame ) {
-    //LOG_I(PHY,"!!!adjusting +1 samples!!!\n");
+    int rx_offset = UE->rx_offset - UE->frame_parms.samples_per_frame;
+    LOG_I(PHY,"!!!adjusting +1 samples!!! rx_offset == %d\n", rx_offset);
+    UE->rx_offset   = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
+    UE->max_pos_fil = 0; // reset IIR filter when sample shift is applied
     return 1;
   }
 

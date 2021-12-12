@@ -549,6 +549,30 @@ void RCconfig_nr_flexran()
 
 void RCconfig_NR_L1(void) {
   int j;
+  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  ////////// Identification parameters
+  paramdef_t GNBParams[]  = GNBPARAMS_DESC;
+
+  paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
+
+  config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
+  int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
+  AssertFatal (num_gnbs > 0,"Failed to parse config file no gnbs %s \n",GNB_CONFIG_STRING_ACTIVE_GNBS);
+  config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
+  char *ulprbbl = *GNBParamList.paramarray[0][GNB_ULPRBBLACKLIST_IDX].strptr; 
+  if (ulprbbl) LOG_I(NR_PHY,"PRB blacklist %s\n",ulprbbl);
+  char *pt = strtok(ulprbbl,",");
+  int prbbl[275];
+  int num_prbbl=0;
+  memset(prbbl,0,275*sizeof(int));
+
+  while (pt) {
+    prbbl[atoi(pt)] = 1;
+    LOG_I(NR_PHY,"Blacklisting prb %d\n",atoi(pt));
+    pt = strtok(NULL,",");
+    num_prbbl++;
+  }
+
   paramdef_t L1_Params[] = L1PARAMS_DESC;
   paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST,NULL,0};
 
@@ -577,6 +601,9 @@ void RCconfig_NR_L1(void) {
       RC.gNB[j]->pucch0_thres       = *(L1_ParamList.paramarray[j][L1_PUCCH0_DTX_THRESHOLD].uptr);
       RC.gNB[j]->prach_thres        = *(L1_ParamList.paramarray[j][L1_PRACH_DTX_THRESHOLD].uptr);
       RC.gNB[j]->pusch_thres        = *(L1_ParamList.paramarray[j][L1_PUSCH_DTX_THRESHOLD].uptr);
+      RC.gNB[j]->num_ulprbbl        = num_prbbl;
+      LOG_I(NR_PHY,"Copying %d blacklisted PRB to L1 context\n",num_prbbl);
+      memcpy(RC.gNB[j]->ulprbbl,prbbl,275*sizeof(int));
       if(strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
         //sf_ahead = 2; // Need 4 subframe gap between RX and TX
       }else if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
@@ -633,9 +660,31 @@ void RCconfig_NR_L1(void) {
 void RCconfig_nr_macrlc() {
   int               j;
 
+  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  ////////// Identification parameters
+  paramdef_t GNBParams[]  = GNBPARAMS_DESC;
+
+  paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
+
+  config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
+  int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
+  AssertFatal (num_gnbs > 0,"Failed to parse config file no gnbs %s \n",GNB_CONFIG_STRING_ACTIVE_GNBS);
+  
+  config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
+  char *ulprbbl = *GNBParamList.paramarray[0][GNB_ULPRBBLACKLIST_IDX].strptr; 
+  char *pt = strtok(ulprbbl,",");
+  int prbbl[275];
+  int num_prbbl=0;
+  int prb;
+  memset(prbbl,0,275*sizeof(int));
+  while (pt) {
+    prb=atoi(pt); 
+    prbbl[prb] = 1;
+    pt = strtok(NULL,",");
+    num_prbbl++;
+  }
   paramdef_t MacRLC_Params[] = MACRLCPARAMS_DESC;
   paramlist_def_t MacRLC_ParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
-
   config_getlist( &MacRLC_ParamList,MacRLC_Params,sizeof(MacRLC_Params)/sizeof(paramdef_t), NULL);    
   
   if ( MacRLC_ParamList.numelt > 0) {
@@ -701,7 +750,13 @@ void RCconfig_nr_macrlc() {
       }else { // other midhaul
         AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
       } 
-      RC.nrmac[j]->ulsch_max_slots_inactivity = *(MacRLC_ParamList.paramarray[j][MACRLC_ULSCH_MAX_SLOTS_INACTIVITY].uptr);
+      RC.nrmac[j]->ulsch_max_frame_inactivity = *(MacRLC_ParamList.paramarray[j][MACRLC_ULSCH_MAX_FRAME_INACTIVITY].uptr);
+      RC.nrmac[j]->dl_bler_target_upper = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_BLER_TARGET_UPPER_IDX].dblptr);
+      RC.nrmac[j]->dl_bler_target_lower = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_BLER_TARGET_LOWER_IDX].dblptr);
+      RC.nrmac[j]->dl_rd2_bler_threshold = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_RD2_BLER_THRESHOLD_IDX].dblptr);
+      RC.nrmac[j]->dl_max_mcs = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_MAX_MCS_IDX].u8ptr);
+      RC.nrmac[j]->num_ulprbbl = num_prbbl;
+      memcpy(RC.nrmac[j]->ulprbbl,prbbl,275*sizeof(prbbl[0]));
     }//  for (j=0;j<RC.nb_nr_macrlc_inst;j++)
   }else {// MacRLC_ParamList.numelt > 0
     LOG_E(PHY,"No %s configuration found\n", CONFIG_STRING_MACRLC_LIST);

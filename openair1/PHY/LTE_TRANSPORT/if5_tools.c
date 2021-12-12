@@ -1125,7 +1125,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
           //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
           clock_gettime( CLOCK_MONOTONIC, &start_comp);
           ru->ifdevice.trx_write_func2(&ru->ifdevice,
-	  			       (proc_timestamp + packet_id*spp_eth-500)*(30720/spsf),
+	  			       (proc_timestamp + packet_id*spp_eth-600)*(30720/spsf),
 				       (void*)txp[aid],
 				       spp_eth,
 				       aid,

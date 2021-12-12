@@ -119,13 +119,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
             dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
             dlsch0_harq->n_dmrs_cdm_groups = dlsch_config_pdu->n_dmrs_cdm_groups;
+            dlsch0_harq->dmrs_ports = dlsch_config_pdu->dmrs_ports;
             dlsch0_harq->mcs = dlsch_config_pdu->mcs;
             dlsch0_harq->rvidx = dlsch_config_pdu->rv;
             dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
             //get nrOfLayers from DCI info
             uint8_t Nl = 0;
-            for (i = 0; i < 4; i++) {
-              if (dlsch_config_pdu->dmrs_ports[i] >= i) Nl += 1;
+            for (i = 0; i < 12; i++) { // max 12 ports
+              if ((dlsch_config_pdu->dmrs_ports>>i)&0x01) Nl += 1;
             }
             dlsch0_harq->Nl = Nl;
             dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
@@ -142,7 +143,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->nEpreRatioOfPDSCHToPTRS = dlsch_config_pdu->nEpreRatioOfPDSCHToPTRS;
             dlsch0_harq->PTRSReOffset = dlsch_config_pdu->PTRSReOffset;
             dlsch0_harq->pduBitmap = dlsch_config_pdu->pduBitmap;
-            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
+            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n",
+                  dlsch0->g_pucch, dlsch0_harq->mcs);
           }
         }
       }
@@ -153,6 +155,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
       fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
 
+      pthread_mutex_lock(&ul_config->mutex_ul_config);
       for (i = 0; i < ul_config->number_pdus; ++i){
 
         AssertFatal(ul_config->ul_config_list[i].pdu_type <= FAPI_NR_UL_CONFIG_TYPES,"pdu_type %d out of bounds\n",ul_config->ul_config_list[i].pdu_type);
@@ -174,6 +177,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
           current_harq_pid = pusch_config_pdu->pusch_data.harq_process_id;
           NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch0->harq_processes[current_harq_pid];
+          harq_process_ul_ue->status = 0;
 
           if (harq_process_ul_ue){
 
@@ -183,14 +187,16 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
             ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
 
-            if (scheduled_response->tx_request){ 
-              fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[i];
-              LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
-              memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
-
-              harq_process_ul_ue->status = ACTIVE;
-
-              scheduled_response->tx_request->number_of_pdus = 0;
+            if (scheduled_response->tx_request) {
+              for (int j=0; j<scheduled_response->tx_request->number_of_pdus; j++) {
+                fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
+                if (tx_req_body->pdu_index == i) {
+                  LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
+                  memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
+                  harq_process_ul_ue->status = ACTIVE;
+                  break;
+                }
+              }
             }
 
           } else {
@@ -228,7 +234,13 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         break;
         }
       }
-      memset(ul_config, 0, sizeof(fapi_nr_ul_config_request_t));
+      if (scheduled_response->tx_request)
+        scheduled_response->tx_request->number_of_pdus = 0;
+      ul_config->sfn = 0;
+      ul_config->slot = 0;
+      ul_config->number_pdus = 0;
+      memset(ul_config->ul_config_list, 0, sizeof(ul_config->ul_config_list));
+      pthread_mutex_unlock(&ul_config->mutex_ul_config);
     }
   }
   return 0;

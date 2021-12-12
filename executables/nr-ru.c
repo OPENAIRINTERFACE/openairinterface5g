@@ -33,6 +33,7 @@
 
 #include "common/utils/assertions.h"
 #include "common/utils/system.h"
+#include "common/ran_context.h"
 
 #include "../../ARCH/COMMON/common_lib.h"
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
@@ -46,8 +47,6 @@
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/INIT/phy_init.h"
 #include "SCHED_NR/sched_nr.h"
-
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -70,10 +69,6 @@ static int DEFBFW[] = {0x00007fff};
 #include "ENB_APP/enb_paramdef.h"
 #include "GNB_APP/gnb_paramdef.h"
 #include "common/config/config_userapi.h"
-
-#ifndef OPENAIR2
-  #include "UTIL/OTG/otg_extern.h"
-#endif
 
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
@@ -1170,7 +1165,6 @@ void *ru_stats_thread(void *param) {
       }
 
       print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
-
       print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
 
       if (ru->fh_north_out) {
@@ -1246,14 +1240,10 @@ void *ru_thread( void *param ) {
   int                slot     = fp->slots_per_frame-1;
   int                frame    = 1023;
   char               threadname[40];
-  int                initial_wait=1;
+  int                initial_wait=0;
   int                opp_enabled0 = opp_enabled;
 
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
-
-  // set the timing measurements for startup phase, for RX fronthaul settling measurements, put it to configured value after
-  opp_enabled = 1;
-
   // set default return value
   ru_thread_status = 0;
   // set default return value
@@ -1308,14 +1298,9 @@ void *ru_thread( void *param ) {
   pthread_cond_signal(&RC.ru_cond);
   pthread_mutex_unlock(&RC.ru_mutex);
   wait_sync("ru_thread");
-  notifiedFIFO_elt_t *msg = newNotifiedFIFO_elt(sizeof(processingData_L1_t),0,gNB->resp_L1,rx_func);
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1_t),0,gNB->resp_L1_tx,tx_func);
-  notifiedFIFO_elt_t *msgRUTx = newNotifiedFIFO_elt(sizeof(processingData_L1_t),0,gNB->resp_RU_tx,ru_tx_func);
+
   processingData_L1_t *syncMsg;
   notifiedFIFO_elt_t *res;
-  pushNotifiedFIFO(gNB->resp_L1,msg); // to unblock the process in the beginning
-  pushNotifiedFIFO(gNB->resp_L1_tx,msgL1Tx); // to unblock the process in the beginning
-  pushNotifiedFIFO(gNB->resp_RU_tx,msgRUTx); // to unblock the process in the beginning
 
   if(!emulate_rf) {
     // Start RF device if any
@@ -1366,7 +1351,7 @@ void *ru_thread( void *param ) {
     if (proc->frame_rx>=300)  {
       initial_wait=0;
       opp_enabled = opp_enabled0;
-    } 
+    }
     if (initial_wait == 0 && ru->rx_fhaul.trials > 1000) reset_meas(&ru->rx_fhaul);
     proc->timestamp_tx = proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
     proc->frame_tx     = (proc->tti_rx > (fp->slots_per_frame-1-(fp->slots_per_subframe*sf_ahead))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
@@ -1457,9 +1442,15 @@ void *ru_thread( void *param ) {
     else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
   }
 
-  delNotifiedFIFO_elt(msg);
-  delNotifiedFIFO_elt(msgL1Tx);
-  delNotifiedFIFO_elt(msgRUTx);
+  res = pullNotifiedFIFO(gNB->resp_L1);
+  delNotifiedFIFO_elt(res);
+  res = pullNotifiedFIFO(gNB->resp_L1_tx);
+  delNotifiedFIFO_elt(res);
+  res = pullNotifiedFIFO(gNB->resp_L1_tx);
+  delNotifiedFIFO_elt(res);
+  res = pullNotifiedFIFO(gNB->resp_RU_tx);
+  delNotifiedFIFO_elt(res);
+
   ru_thread_status = 0;
   return &ru_thread_status;
 }
@@ -1516,7 +1507,6 @@ void init_RU_proc(RU_t *ru) {
     if (ru->feptx_ofdm) nr_init_feptx_thread(ru);
   }
 
-  if (opp_enabled == 1) threadCreate(&ru->ru_stats_thread,ru_stats_thread,(void *)ru, "emulateRF", -1, OAI_PRIORITY_RT_LOW);
 }
 
 void kill_NR_RU_proc(int inst) {
