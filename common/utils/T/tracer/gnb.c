@@ -232,7 +232,7 @@ int main(int n, char **v) {
   h = new_handler(database);
 
   on_off(database, "GNB_PHY_PUCCH_PUSCH_IQ", is_on, 1);
-  on_off(database, "ENB_PHY_UL_CHANNEL_ESTIMATE", is_on, 1);
+  on_off(database, "GNB_PHY_UL_CHANNEL_ESTIMATE", is_on, 1);
 
   gnb_data.ue = 0;
   gnb_data.e = &eg;
