@@ -9,11 +9,19 @@ THREAD_PARALLEL_CONFIG=${THREAD_PARALLEL_CONFIG:-PARALLEL_SINGLE_THREAD}
 # Based another env var, pick one template to use
 if [[ -v USE_NSA_TDD_MONO ]]; then cp $PREFIX/etc/gnb.nsa.tdd.conf $PREFIX/etc/gnb.conf; fi
 if [[ -v USE_SA_TDD_MONO ]]; then cp $PREFIX/etc/gnb.sa.tdd.conf $PREFIX/etc/gnb.conf; fi
+# Sometimes, the templates are not enough. We mount a conf file on $PREFIX/etc. It can be a template itself.
+if [[ -v USE_VOLUMED_CONF ]]; then cp $PREFIX/etc/mounted.conf $PREFIX/etc/gnb.conf; fi
 
 # Only this template will be manipulated
 CONFIG_FILES=`ls $PREFIX/etc/gnb.conf || true`
 
 for c in ${CONFIG_FILES}; do
+    # Sometimes templates have no pattern to be replaced.
+    if ! grep -oP '@[a-zA-Z0-9_]+@' ${c}; then
+        echo "Configuration is already set"
+        break
+    fi
+
     # grep variable names (format: ${VAR}) from template to be rendered
     VARS=$(grep -oP '@[a-zA-Z0-9_]+@' ${c} | sort | uniq | xargs)
 
