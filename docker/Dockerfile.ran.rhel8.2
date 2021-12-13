@@ -66,6 +66,5 @@ COPY . .
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai -I -w USRP
-
-RUN rm /etc/pki/entitlement/*pem
+    ./build_oai -I -w USRP && \
+    rm /etc/pki/entitlement/*pem
