@@ -180,7 +180,7 @@ static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, g
   e->ul_estimate_ue_xy_plot = w;
   widget_add_child(g, line, w, -1);
   xy_plot_set_range(g, w, 0, 512*10, -10, 80);
-  l = new_framelog(h, database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "subframe", "chest_t");
+  l = new_framelog(h, database, "GNB_PHY_UL_CHANNEL_ESTIMATE", "subframe", "chest_t");
   framelog_set_update_only_at_sf9(l, 0);
   v = new_view_xy(512*10, 10, g, w, new_color(g, "#0c0c72"), XY_LOOP_MODE);
   logger_add_view(l, v);
