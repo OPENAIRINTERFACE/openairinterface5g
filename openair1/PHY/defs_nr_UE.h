@@ -290,10 +290,6 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_estimates_ext;
-  /// \brief Downlink channel estimates extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_ptrs_estimates_ext;
   /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS. For the SIC receiver we need to store the history of this for each harq process and round
   /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
   /// - second index: ? [0..7] (hard coded) accessed via \c round

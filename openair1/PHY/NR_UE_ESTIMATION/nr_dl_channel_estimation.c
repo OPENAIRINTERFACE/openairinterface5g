@@ -1704,7 +1704,6 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
         /*------------------------------------------------------------------------------------------------------- */
         nr_ptrs_cpe_estimation(*K_ptrs,*ptrsReOffset,*dmrsConfigType,*nb_rb,
                                rnti,
-                               (int16_t *)&pdsch_vars[gNB_id]->dl_ch_ptrs_estimates_ext[aarx][symbol*nb_re_pdsch],
                                nr_slot_rx,
                                symbol,frame_parms->ofdm_symbol_size,
                                (int16_t*)&pdsch_vars[gNB_id]->rxdataF_comp0[aarx][(symbol * nb_re_pdsch)],

@@ -452,14 +452,6 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
   int32_t **ul_ch_estimates_ext;
-  /// \brief Hold the PTRS phase estimates in frequency domain.
-  /// - first index: rx antenna id [0..nb_antennas_rx[
-  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_ptrs_estimates;
-  /// \brief Uplink phase estimates extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_ptrs_estimates_ext;
   /// \brief Holds the compensated signal.
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[

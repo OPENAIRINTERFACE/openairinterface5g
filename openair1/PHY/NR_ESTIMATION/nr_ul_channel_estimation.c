@@ -1043,7 +1043,6 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
       /*------------------------------------------------------------------------------------------------------- */
       nr_ptrs_cpe_estimation(*K_ptrs,*ptrsReOffset,*dmrsConfigType,*nb_rb,
                              rel15_ul->rnti,
-                             (int16_t *)&gNB->pusch_vars[ulsch_id]->ul_ch_ptrs_estimates_ext[aarx][symbol*nb_re_pusch],
                              nr_tti_rx,
                              symbol,frame_parms->ofdm_symbol_size,
                              (int16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(symbol * nb_re_pusch)],

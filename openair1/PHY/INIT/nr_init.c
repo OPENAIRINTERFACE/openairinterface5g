@@ -258,8 +258,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     pusch_vars[ULSCH_id]->rxdataF_ext2          = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates       = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates_ext   = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates     = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ptrs_phase_per_slot   = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates_time  = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->rxdataF_comp          = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
@@ -277,8 +275,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
       pusch_vars[ULSCH_id]->ul_ch_estimates[i]       = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->ul_ch_estimates_ext[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->ul_ch_estimates_time[i]  = (int32_t *)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
-      pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates[i]       = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2*fp->symbols_per_slot ); // max intensity in freq is 1 sc every 2 RBs
-      pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->ptrs_phase_per_slot[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->symbols_per_slot); // symbols per slot
       pusch_vars[ULSCH_id]->rxdataF_comp[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
       pusch_vars[ULSCH_id]->ul_ch_mag0[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
@@ -399,8 +395,6 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_ext[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_time[i]);
-      free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates[i]);
-      free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ptrs_phase_per_slot[i]);
       free_and_zero(pusch_vars[ULSCH_id]->rxdataF_comp[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_mag0[i]);
@@ -413,8 +407,6 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext2);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_ext);
-    free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates);
-    free_and_zero(pusch_vars[ULSCH_id]->ul_ch_ptrs_estimates_ext);
     free_and_zero(pusch_vars[ULSCH_id]->ptrs_phase_per_slot);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_time);
     free_and_zero(pusch_vars[ULSCH_id]->ul_valid_re_per_slot);
