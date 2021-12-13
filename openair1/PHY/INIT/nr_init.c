@@ -252,10 +252,16 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   int N_RB_UL = cfg->carrier_config.ul_grid_size[cfg->ssb_config.scs_common.value].value;
   int n_buf = Prx*max_ul_mimo_layers;
 
+  int nb_re_pusch = N_RB_UL * NR_NB_SC_PER_RB;
+#ifdef __AVX2__
+  int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
+#else
+  int nb_re_pusch2 = nb_re_pusch;
+#endif
+
   for (int ULSCH_id=0; ULSCH_id<gNB->number_of_nr_ulsch_max; ULSCH_id++) {
     pusch_vars[ULSCH_id] = (NR_gNB_PUSCH *)malloc16_clear( sizeof(NR_gNB_PUSCH) );
     pusch_vars[ULSCH_id]->rxdataF_ext           = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->rxdataF_ext2          = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates       = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates_ext   = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ptrs_phase_per_slot   = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
@@ -265,23 +271,22 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     pusch_vars[ULSCH_id]->ul_ch_magb0           = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_mag             = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_magb            = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
-    pusch_vars[ULSCH_id]->rho                   = (int32_t **)malloc16_clear(n_buf*sizeof(int32_t*) );
+    pusch_vars[ULSCH_id]->rho                   = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
 
     for (i=0; i<Prx; i++) {
-      pusch_vars[ULSCH_id]->rxdataF_ext[i]           = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
-      pusch_vars[ULSCH_id]->rxdataF_ext2[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
+      pusch_vars[ULSCH_id]->rxdataF_ext[i]           = (int32_t *)malloc16_clear( sizeof(int32_t)*nb_re_pusch2*fp->symbols_per_slot );
     }
     for (i=0; i<n_buf; i++) {
-      pusch_vars[ULSCH_id]->ul_ch_estimates[i]       = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2*fp->symbols_per_slot );
-      pusch_vars[ULSCH_id]->ul_ch_estimates_ext[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
-      pusch_vars[ULSCH_id]->ul_ch_estimates_time[i]  = (int32_t *)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
+      pusch_vars[ULSCH_id]->ul_ch_estimates[i]       = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*fp->symbols_per_slot );
+      pusch_vars[ULSCH_id]->ul_ch_estimates_ext[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*nb_re_pusch2*fp->symbols_per_slot );
+      pusch_vars[ULSCH_id]->ul_ch_estimates_time[i]  = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size );
       pusch_vars[ULSCH_id]->ptrs_phase_per_slot[i]   = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->symbols_per_slot); // symbols per slot
-      pusch_vars[ULSCH_id]->rxdataF_comp[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*N_RB_UL*12*fp->symbols_per_slot );
-      pusch_vars[ULSCH_id]->ul_ch_mag0[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
-      pusch_vars[ULSCH_id]->ul_ch_magb0[i]           = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
-      pusch_vars[ULSCH_id]->ul_ch_mag[i]             = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
-      pusch_vars[ULSCH_id]->ul_ch_magb[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*N_RB_UL*12 );
-      pusch_vars[ULSCH_id]->rho[i]                   = (int32_t *)malloc16_clear( sizeof(int32_t)*(fp->N_RB_UL*12*7*2) );
+      pusch_vars[ULSCH_id]->rxdataF_comp[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*nb_re_pusch2*fp->symbols_per_slot );
+      pusch_vars[ULSCH_id]->ul_ch_mag0[i]            = (int32_t *)malloc16_clear( sizeof(int32_t)*nb_re_pusch2*fp->symbols_per_slot );
+      pusch_vars[ULSCH_id]->ul_ch_magb0[i]           = (int32_t *)malloc16_clear( sizeof(int32_t)*nb_re_pusch2*fp->symbols_per_slot );
+      pusch_vars[ULSCH_id]->ul_ch_mag[i]             = (int32_t *)malloc16_clear( sizeof(int32_t)*nb_re_pusch2*fp->symbols_per_slot );
+      pusch_vars[ULSCH_id]->ul_ch_magb[i]            = (int32_t *)malloc16_clear( sizeof(int32_t)*nb_re_pusch2*fp->symbols_per_slot );
+      pusch_vars[ULSCH_id]->rho[i]                   = (int32_t *)malloc16_clear( sizeof(int32_t)*nb_re_pusch2*fp->symbols_per_slot );
     }
     pusch_vars[ULSCH_id]->llr = (int16_t *)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) ); // [hna] 6144 is LTE and (8*((3*8*6144)+12)) is not clear
     pusch_vars[ULSCH_id]->ul_valid_re_per_slot  = (int16_t *)malloc16_clear( sizeof(int16_t)*fp->symbols_per_slot);
@@ -389,7 +394,6 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   for (int ULSCH_id=0; ULSCH_id<gNB->number_of_nr_ulsch_max; ULSCH_id++) {
     for (int i = 0; i < Prx; i++) {
       free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext[i]);
-      free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext2[i]);
     }
     for (int i = 0; i < n_buf; i++) {
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates[i]);
@@ -404,7 +408,6 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
       free_and_zero(pusch_vars[ULSCH_id]->rho[i]);
     }
     free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext);
-    free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext2);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates);
     free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates_ext);
     free_and_zero(pusch_vars[ULSCH_id]->ptrs_phase_per_slot);
