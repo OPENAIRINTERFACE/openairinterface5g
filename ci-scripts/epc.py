@@ -773,7 +773,7 @@ class EPCManagement():
 			HTML.CreateHtmlTestRowQueue(self.Type, 'OK', 1, html_queue)
 		else:
 			logging.debug('Undeployment went wrong')
-			HTML.CreateHtmlTestRowQueu(self.Type, 'KO', 1, html_queue)
+			HTML.CreateHtmlTestRowQueue(self.Type, 'KO', 1, html_queue)
 
 	def LogCollectHSS(self):
 		mySSH = SSH.SSHConnection()
