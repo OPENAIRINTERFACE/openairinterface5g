@@ -94,8 +94,6 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
   nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
   
-  //nr_generate_prs(gNB->nr_gold_prs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-  
 
   if (cfg->carrier_config.num_tx_ant.value <= 4)
     nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
@@ -116,8 +114,6 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   prs_data.PRSResourceRepetition=1;
   prs_data.PRSResourceTimeGap=1;
   prs_data.NPRSID=0;
-  //printf(" before Combsize %d \n", prs_data.CombSize);
-  // tbc
 
   nr_generate_prs(gNB->nr_gold_prs[slot],&txdataF[0][txdataF_offset], AMP, &prs_data, cfg, fp);
 
@@ -249,7 +245,6 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   prs_data.PRSResourceRepetition=1;
   prs_data.PRSResourceTimeGap=1;
   prs_data.NPRSID=0;
-  //printf(" before %p \n",&prs_data);
   
   // tbc
   

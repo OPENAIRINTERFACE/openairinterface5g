@@ -4,8 +4,8 @@
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/sse_intrin.h"
 
-#define DEBUG_PRS_MOD
-//#define DEBUG_PRS_MAP
+//#define DEBUG_PRS_MOD
+#define DEBUG_PRS_MAP
 
 extern short nr_qpsk_mod_table[8];
 
@@ -59,21 +59,21 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
       mod_prs[(m<<1)+1] = nr_qpsk_mod_table[(idx<<1) + 1];
       
 #ifdef DEBUG_PRS_MOD
-      printf("m %d idx %d gold seq %d mod_prs %d %d\n", m, idx, nr_gold_prs[l][(m<<1)>>5], mod_prs[m<<1], mod_prs[(m<<1)+1]);
-      #endif
+printf("m %d idx %d gold seq %d mod_prs %d %d\n", m, idx, nr_gold_prs[l][(m<<1)>>5], mod_prs[m<<1], mod_prs[(m<<1)+1]);
+#endif
       
-      #ifdef DEBUG_PRS_MAP
-      printf("m %d at k %d of l %d\n", m, k, l);
-      #endif
+#ifdef DEBUG_PRS_MAP
+printf("m %d at k %d of l %d\n", m, k, l);
+#endif
       
       ((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1]       = (amp * mod_prs[m<<1]) >> 15;
       ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * mod_prs[(m<<1) + 1]) >> 15;
     
-      #ifdef DEBUG_PRS_MAP
-      printf("(%d,%d)\n",
-           ((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
-           ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
-      #endif
+#ifdef DEBUG_PRS_MAP
+printf("(%d,%d)\n",
+((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+#endif
 
       k = k +  prs_data->CombSize;
     
@@ -81,6 +81,6 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
         k-=frame_parms->ofdm_symbol_size;
       }
   }
-  
+LOG_M("nr_prs.m", "prs",(int16_t *)&txdataF[0],frame_parms->samples_per_slot_wCP, 1, 1);
   return 0;
 }
