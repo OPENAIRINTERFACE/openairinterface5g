@@ -36,8 +36,8 @@ typedef struct {
   void *database;
 } gnb_data;
 
-void is_on_changed(void *_d) {
-
+void is_on_changed(void *_d)
+{
   gnb_data *d = _d;
   char t;
 
@@ -61,26 +61,28 @@ connection_dies:
   if (pthread_mutex_unlock(&d->lock)) abort();
 }
 
-void usage(void) {
+void usage(void)
+{
   printf(
-      "options:\n"
-      "    -d   <database file>      this option is mandatory\n"
-      "    -ip <host>                connect to given IP address (default %s)\n"
-      "    -p  <port>                connect to given port (default %d)\n",
-      DEFAULT_REMOTE_IP,
-      DEFAULT_REMOTE_PORT
+"options:\n"
+"    -d   <database file>      this option is mandatory\n"
+"    -ip <host>                connect to given IP address (default %s)\n"
+"    -p  <port>                connect to given port (default %d)\n",
+  DEFAULT_REMOTE_IP,
+  DEFAULT_REMOTE_PORT
   );
   exit(1);
 }
 
-static void *gui_thread(void *_g) {
+static void *gui_thread(void *_g)
+{
   gui *g = _g;
   gui_loop(g);
   return NULL;
 }
 
-static void set_current_ue(gui *g, gnb_data *e, int ue) {
-
+static void set_current_ue(gui *g, gnb_data *e, int ue)
+{
   char s[256];
 
   sprintf(s, "[UE %d]  ", ue);
@@ -93,17 +95,19 @@ static void set_current_ue(gui *g, gnb_data *e, int ue) {
   xy_plot_set_title(g, e->e->ul_estimate_ue_xy_plot, s);
 }
 
-void reset_ue_ids(void) {
+void reset_ue_ids(void)
+{
   int i;
   printf("resetting known UEs\n");
   for (i = 0; i < 65536; i++) ue_id[i] = -1;
   ue_id[65535] = 0;
-  ue_id[65534] = 1;     // HACK: to be removed
-  ue_id[2]     = 2;     // this supposes RA RNTI = 2, very openair specific
+  ue_id[65534] = 1;     /* HACK: to be removed */
+  ue_id[2]     = 2;     /* this supposes RA RNTI = 2, very openair specific */
   next_ue_id = 0;
 }
 
-static void click(void *private, gui *g, char *notification, widget *w, void *notification_data) {
+static void click(void *private, gui *g, char *notification, widget *w, void *notification_data)
+{
   int *d = notification_data;
   int button = d[0];
   gnb_data *ed = private;
@@ -125,8 +129,8 @@ static void click(void *private, gui *g, char *notification, widget *w, void *no
   if (pthread_mutex_unlock(&ed->lock)) abort();
 }
 
-static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, gnb_data *ed) {
-
+static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, gnb_data *ed)
+{
   widget *main_window;
   widget *top_container;
   widget *line;
@@ -145,7 +149,7 @@ static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, g
   widget_add_child(g, top_container, line, -1);
   logo = new_image(g, openair_logo_png, openair_logo_png_len);
 
-  // logo + prev/next UE buttons
+  /* logo + prev/next UE buttons */
   col = new_container(g, VERTICAL);
   widget_add_child(g, col, logo, -1);
   w = new_container(g, HORIZONTAL);
@@ -165,7 +169,7 @@ static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, g
   e->next_ue_button = w2;
   widget_add_child(g, line, col, -1);
 
-  // PUCCH/PUSCH IQ data
+  /* PUCCH/PUSCH IQ data */
   w = new_xy_plot(g, 200, 200, "", 10);
   e->pucch_pusch_iq_plot = w;
   widget_add_child(g, line, w, -1);
@@ -175,7 +179,7 @@ static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, g
   logger_add_view(l, v);
   e->pucch_pusch_iq_logger = l;
 
-  // UL estimated channel
+  /* UL estimated channel */
   w = new_xy_plot(g, 600, 200, "", 50);
   e->ul_estimate_ue_xy_plot = w;
   widget_add_child(g, line, w, -1);
@@ -192,8 +196,8 @@ static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, g
   register_notifier(g, "click", e->next_ue_button, click, ed);
 }
 
-int main(int n, char **v) {
-
+int main(int n, char **v)
+{
   char *database_filename = NULL;
   void *database;
   char *ip = DEFAULT_REMOTE_IP;
@@ -208,11 +212,8 @@ int main(int n, char **v) {
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
-    if (!strcmp(v[i], "-d")) {
-      if (i > n-2) usage();
-      database_filename = v[++i];
-      continue;
-    }
+    if (!strcmp(v[i], "-d"))
+      { if (i > n-2) usage(); database_filename = v[++i]; continue; }
     usage();
   }
 
@@ -254,7 +255,7 @@ restart:
   if (gnb_data.socket != -1) close(gnb_data.socket);
   gnb_data.socket = connect_to(ip, port);
 
-  // send the first message - activate selected traces
+  /* send the first message - activate selected traces */
   is_on_changed(&gnb_data);
 
   /* read messages */
