@@ -495,6 +495,8 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
   NR_UE_PDCCH *pdcch_vars = ue->pdcch_vars[proc->thread_id][gNB_id];
   fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &pdcch_vars->pdcch_config[n_ss];
 
+  start_meas(&ue->dlsch_rx_pdcch_stats);
+
   /*
   //  unsigned int dci_cnt=0, i;  //removed for nr_ue_pdcch_procedures and added in the loop for nb_coreset_active
 #ifdef NR_PDCCH_SCHED_DEBUG
@@ -649,7 +651,6 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_IN);
-    start_meas(&ue->dlsch_rx_pdcch_stats);
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_IN);
 #ifdef NR_PDCCH_SCHED_DEBUG
