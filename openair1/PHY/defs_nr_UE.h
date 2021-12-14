@@ -1004,6 +1004,8 @@ typedef struct {
   time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx[RX_NB_TH];
 
+  time_stats_t ue_ul_indication_stats;
+
   uint32_t use_ia_receiver;
 
   time_stats_t ofdm_mod_stats;
@@ -1025,6 +1027,7 @@ typedef struct {
   time_stats_t pdsch_procedures_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
   time_stats_t dlsch_procedures_stat[RX_NB_TH];
 
+  time_stats_t rx_pdsch_stats;
   time_stats_t ofdm_demod_stats;
   time_stats_t dlsch_rx_pdcch_stats;
   time_stats_t rx_dft_stats;

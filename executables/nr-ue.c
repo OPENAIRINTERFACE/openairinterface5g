@@ -666,6 +666,7 @@ void processSlotTX(void *arg) {
     // trigger L2 to run ue_scheduler thru IF module
     // [TODO] mapping right after NR initial sync
     if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
+      start_meas(&UE->ue_ul_indication_stats);
       nr_uplink_indication_t ul_indication;
       memset((void*)&ul_indication, 0, sizeof(ul_indication));
 
@@ -680,6 +681,7 @@ void processSlotTX(void *arg) {
       ul_indication.ue_sched_mode = rxtxD->ue_sched_mode;
 
       UE->if_inst->ul_indication(&ul_indication);
+      stop_meas(&UE->ue_ul_indication_stats);
     }
 
     if ((UE->mode != loop_through_memory) && (rxtxD->ue_sched_mode != NOT_PUSCH)) {

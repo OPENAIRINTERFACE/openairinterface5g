@@ -607,6 +607,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
       first_symbol_with_data++;
     }
 
+    start_meas(&ue->rx_pdsch_stats);
     for (m = s0; m < (s1 + s0); m++) {
  
       dual_stream_UE = 0;
@@ -646,6 +647,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
         proc->first_symbol_available = 1;
       }
     } // CRNTI active
+    stop_meas(&ue->rx_pdsch_stats);
   }
   return 0;
 }

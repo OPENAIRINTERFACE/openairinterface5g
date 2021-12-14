@@ -106,6 +106,7 @@
     {"phy_proc",          &(UE->phy_proc[0]),0,RX_NB_TH},\
     {"phy_proc_rx",       &(UE-> phy_proc_rx[0]),0,RX_NB_TH},\
     {"phy_proc_tx",       &(UE->phy_proc_tx),0,1},\
+    {"ue_ul_indication_stats",       &(UE->ue_ul_indication_stats),0,1},\
     {"ofdm_mod_stats",       &(UE->ofdm_mod_stats),0,1},\
     {"ulsch_encoding_stats",       &(UE->ulsch_encoding_stats),0,1},\
     {"ulsch_modulation_stats",       &(UE->ulsch_modulation_stats),0,1},\
@@ -146,6 +147,7 @@
     {"ue_front_end_stat",       &(UE->ue_front_end_stat[0]),0,RX_NB_TH},\
     {"ue_front_end_per_slot_stat",      &(UE->ue_front_end_per_slot_stat[0][0]),0,RX_NB_TH,LTE_SLOTS_PER_SUBFRAME},\
     {"pdcch_procedures_stat",       &(UE->pdcch_procedures_stat[0]),0,RX_NB_TH},\
+    {"rx_pdsch_stats",              &(UE->rx_pdsch_stats), 0, 1}, \
     {"pdsch_procedures_stat",       &(UE->pdsch_procedures_stat[0]),0,RX_NB_TH},\
     {"pdsch_procedures_per_slot_stat",  &(UE->pdsch_procedures_per_slot_stat[0][0]),0,RX_NB_TH,LTE_SLOTS_PER_SUBFRAME},\
     {"dlsch_procedures_stat",       &(UE->dlsch_procedures_stat[0]),0,RX_NB_TH},\
