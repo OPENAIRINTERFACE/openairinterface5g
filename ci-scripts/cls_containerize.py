@@ -606,6 +606,9 @@ class Containerize():
 				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
 			else:
 				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+			# all the xNB run logs shall be on the server 0 for logCollecting
+			if self.eNB_serverId[self.eNB_instance] != '0':
+				mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + self.eNB_logFile[self.eNB_instance], self.eNBSourceCodePath + '/cmake_targets/')
 		logging.info('\u001B[1m Undeploying OAI Object Pass\u001B[0m')
 
 	def DeployGenObject(self, HTML):
