@@ -175,7 +175,7 @@ void nr_schedule_srs(int module_id, frame_t frame) {
 
       // Check if UE will transmit the SRS in this frame
       if ( ((frame - offset/n_slots_frame)*n_slots_frame)%period == 0) {
-        LOG_D(NR_MAC,"(%d.%d) Scheduling SRS reception\n", frame, offset%n_slots_frame);
+        LOG_D(NR_MAC,"Scheduling SRS reception for %d.%d\n", frame, offset%n_slots_frame);
         nr_fill_nfapi_srs(module_id, CC_id, UE_id, offset%n_slots_frame, srs_resource);
         sched_ctrl->sched_srs.frame = frame;
         sched_ctrl->sched_srs.slot = offset%n_slots_frame;
