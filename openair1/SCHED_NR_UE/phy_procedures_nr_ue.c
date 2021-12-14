@@ -1386,6 +1386,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
+  start_meas(&ue->phy_proc_rx[proc->thread_id]);
 
   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d (energy %d dB)******  \n",
         frame_rx%1024, nr_slot_rx,
