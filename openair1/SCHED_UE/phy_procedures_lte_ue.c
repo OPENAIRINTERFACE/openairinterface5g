@@ -3193,7 +3193,7 @@ void ue_pdsch_procedures(PHY_VARS_UE *ue,
           slot = 1;
 
         stop_meas(&ue->dlsch_llr_stats_parallelization[ue->current_thread_id[subframe_rx]][slot]);
-        LOG_I(PHY, "[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",proc->frame_rx,subframe_rx,m,ue->dlsch_llr_stats_parallelization[ue->current_thread_id[subframe_rx]][slot].p_time/(cpuf*1000.0));
+        LOG_D(PHY, "[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",proc->frame_rx,subframe_rx,m,ue->dlsch_llr_stats_parallelization[ue->current_thread_id[subframe_rx]][slot].p_time/(cpuf*1000.0));
       }
 
       if(first_symbol_flag) {
@@ -3826,7 +3826,7 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 
     if ( LOG_DEBUGFLAG(UE_TIMING)) {
       stop_meas(&ue->ue_front_end_per_slot_stat[ue->current_thread_id[subframe_rx]][1]);
-      LOG_I(PHY, "[AbsSFN %d.%d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",frame_rx,subframe_rx,ue->ue_front_end_per_slot_stat[ue->current_thread_id[subframe_rx]][1].p_time/(cpuf*1000.0));
+      LOG_D(PHY, "[AbsSFN %d.%d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",frame_rx,subframe_rx,ue->ue_front_end_per_slot_stat[ue->current_thread_id[subframe_rx]][1].p_time/(cpuf*1000.0));
     }
 
     //wait until pdcch is decoded
@@ -3920,7 +3920,7 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 
     if ( LOG_DEBUGFLAG(UE_TIMING)) {
       stop_meas(&ue->pdsch_procedures_per_slot_stat[ue->current_thread_id[subframe_rx]][1]);
-      LOG_I(PHY, "[AbsSFN %d.%d] Slot1: LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_per_slot_stat[ue->current_thread_id[subframe_rx]][1].p_time/(cpuf*1000.0));
+      LOG_D(PHY, "[AbsSFN %d.%d] Slot1: LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_per_slot_stat[ue->current_thread_id[subframe_rx]][1].p_time/(cpuf*1000.0));
     }
 
     if (pthread_mutex_lock(&proc->mutex_slot1_dl_processing) != 0) {
@@ -4146,7 +4146,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,
       LOG_E(PHY,"[UE  %d] Frame %d, subframe %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,subframe_rx);
 
       if (LOG_DEBUGFLAG(UE_TIMING)) {
-        LOG_I(PHY, "[AbsSFN %d.%d] Slot0: PDCCH %5.2f \n",frame_rx,subframe_rx,ue->pdcch_procedures_stat[ue->current_thread_id[subframe_rx]].p_time/(cpuf*1000.0));
+        LOG_D(PHY, "[AbsSFN %d.%d] Slot0: PDCCH %5.2f \n",frame_rx,subframe_rx,ue->pdcch_procedures_stat[ue->current_thread_id[subframe_rx]].p_time/(cpuf*1000.0));
       }
 
       //proc->dci_slot0_available = 1;
@@ -4156,7 +4156,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,
     //proc->dci_slot0_available=1;
     if (LOG_DEBUGFLAG(UE_TIMING)) {
       stop_meas(&ue->pdcch_procedures_stat[ue->current_thread_id[subframe_rx]]);
-      LOG_I(PHY, "[AbsSFN %d.%d] Slot0: PDCCH %5.2f \n",frame_rx,subframe_rx,ue->pdcch_procedures_stat[ue->current_thread_id[subframe_rx]].p_time/(cpuf*1000.0));
+      LOG_D(PHY, "[AbsSFN %d.%d] Slot0: PDCCH %5.2f \n",frame_rx,subframe_rx,ue->pdcch_procedures_stat[ue->current_thread_id[subframe_rx]].p_time/(cpuf*1000.0));
     }
   }
 
@@ -4165,7 +4165,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,
   // first slot has been processed (FFTs + Channel Estimation, PCFICH/PHICH/PDCCH)
   if (LOG_DEBUGFLAG(UE_TIMING)) {
     stop_meas(&ue->ue_front_end_per_slot_stat[ue->current_thread_id[subframe_rx]][0]);
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",frame_rx,subframe_rx,
+    LOG_D(PHY, "[AbsSFN %d.%d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",frame_rx,subframe_rx,
           ue->ue_front_end_per_slot_stat[ue->current_thread_id[subframe_rx]][0].p_time/(cpuf*1000.0));
   }
 
@@ -4179,7 +4179,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,
 
   if (LOG_DEBUGFLAG(UE_TIMING)) {
     stop_meas(&ue->ue_front_end_stat[ue->current_thread_id[subframe_rx]]);
-    LOG_I(PHY, "[AbsSFN %d.%d] FULL FE Processing %5.2f \n",frame_rx,subframe_rx,ue->ue_front_end_per_slot_stat[ue->current_thread_id[subframe_rx]][0].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %d.%d] FULL FE Processing %5.2f \n",frame_rx,subframe_rx,ue->ue_front_end_per_slot_stat[ue->current_thread_id[subframe_rx]][0].p_time/(cpuf*1000.0));
   }
 
   /**** End Subframe FE Processing ****/
@@ -4267,7 +4267,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,
 
   if (LOG_DEBUGFLAG(UE_TIMING)) {
     stop_meas(&ue->pdsch_procedures_per_slot_stat[ue->current_thread_id[subframe_rx]][0]);
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot0: LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_per_slot_stat[ue->current_thread_id[subframe_rx]][0].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %d.%d] Slot0: LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_per_slot_stat[ue->current_thread_id[subframe_rx]][0].p_time/(cpuf*1000.0));
   }
 
   //wait until LLR Slot1 is done
@@ -4280,7 +4280,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,
 
   if (LOG_DEBUGFLAG(UE_TIMING)) {
     stop_meas(&ue->pdsch_procedures_stat[ue->current_thread_id[subframe_rx]]);
-    LOG_I(PHY, "[AbsSFN %d.%d] Full LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_stat[ue->current_thread_id[subframe_rx]].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %d.%d] Full LLR Computation %5.2f \n",frame_rx,subframe_rx,ue->pdsch_procedures_stat[ue->current_thread_id[subframe_rx]].p_time/(cpuf*1000.0));
   }
 
   //=====================================================================//
@@ -4352,7 +4352,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,
 
   if (LOG_DEBUGFLAG(UE_TIMING)) {
     stop_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[subframe_rx]]);
-    LOG_I(PHY, "[AbsSFN %d.%d] Channel Decoder: %5.2f \n",frame_rx,subframe_rx,ue->dlsch_procedures_stat[ue->current_thread_id[subframe_rx]].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %d.%d] Channel Decoder: %5.2f \n",frame_rx,subframe_rx,ue->dlsch_procedures_stat[ue->current_thread_id[subframe_rx]].p_time/(cpuf*1000.0));
   }
 
   // duplicate harq structure
