@@ -741,6 +741,11 @@ void pf_dl(module_id_t module_id,
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
     int rbStart = 0; // start wrt BWPstart
 
+    if (sched_ctrl->available_dl_harq.head < 0) {
+      LOG_D(MAC, "UE %d RNTI %04x has no free HARQ process, skipping\n", UE_id, UE_info->rnti[UE_id]);
+      continue;
+    }
+
     /* Find a free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {

@@ -107,14 +107,14 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               {
                 crc_ind->crc_list[j].handle = pusch_config_pdu->handle;
                 crc_ind->crc_list[j].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
-                LOG_I(NR_MAC, "This is the harq pid %d for crc_list[%d]\n", crc_ind->crc_list[j].harq_id, j);
-                LOG_I(NR_MAC, "This is sched sfn/sl [%d %d] and crc sfn/sl [%d %d]\n",
+                LOG_D(NR_MAC, "This is the harq pid %d for crc_list[%d]\n", crc_ind->crc_list[j].harq_id, j);
+                LOG_D(NR_MAC, "This is sched sfn/sl [%d %d] and crc sfn/sl [%d %d]\n",
                       scheduled_response->frame, scheduled_response->slot, crc_ind->sfn, crc_ind->slot);
                 crc_ind->crc_list[j].num_cb = pusch_config_pdu->pusch_data.num_cb;
                 crc_ind->crc_list[j].rnti = pusch_config_pdu->rnti;
                 crc_ind->crc_list[j].tb_crc_status = 0;
                 crc_ind->crc_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
-                crc_ind->crc_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
+                crc_ind->crc_list[j].ul_cqi = 255;
               }
 
               if (!put_queue(&nr_rx_ind_queue, rx_ind))
@@ -140,7 +140,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 crc_ind = NULL;
               }
 
-              LOG_I(PHY, "In %s: Filled queue rx/crc_ind which was filled by ulconfig. \n", __FUNCTION__);
+              LOG_D(PHY, "In %s: Filled queue rx/crc_ind which was filled by ulconfig. \n", __FUNCTION__);
 
               scheduled_response->tx_request->number_of_pdus = 0;
             }
@@ -162,7 +162,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                   "Too many dl_config pdus %d", dl_config->number_pdus);
       for (int i = 0; i < dl_config->number_pdus; ++i)
       {
-        LOG_I(PHY, "In %s: processing %s PDU of %d total DL PDUs (dl_config %p) \n",
+        LOG_D(PHY, "In %s: processing %s PDU of %d total DL PDUs (dl_config %p) \n",
               __FUNCTION__, dl_pdu_type[dl_config->dl_config_list[i].pdu_type - 1], dl_config->number_pdus, dl_config);
 
         uint8_t pdu_type = dl_config->dl_config_list[i].pdu_type;
