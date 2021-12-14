@@ -61,7 +61,9 @@ class Dashboard:
         self.git = self.__getGitData(cmd) #git data from Gitlab
         self.tests = self.__loadCfg('ran_dashboard_cfg.yaml') #tests table setup from yaml
         self.db = self.__loadFromDB() #test results from database
-
+        self.mr_list=[] #mr list in string format
+        for x in range(len(self.git)):
+            self.mr_list.append(str(self.git[x]['iid']))
 
     def __loadCfg(self,yaml_file):
         with open(yaml_file,'r') as f:
@@ -534,11 +536,14 @@ def main():
             buildid=sys.argv[5]
             status=sys.argv[6]
             htmlDash=Dashboard()
-            htmlDash.Build('singleMR',mr,'/tmp/MR'+mr+'_index.html') 
-            htmlDash.CopyToS3('/tmp/MR'+mr+'_index.html','oaitestdashboard','MR'+mr+'/index.html')
-            htmlDash.Build('Tests','0000','/tmp/Tests_index.html') 
-            htmlDash.CopyToS3('/tmp/Tests_index.html','oaitestdashboard','index.html')
-            htmlDash.PostGitNote(mr,jobname,buildurl,buildid,status)
+            if mr in self.mr_list:
+                htmlDash.Build('singleMR',mr,'/tmp/MR'+mr+'_index.html') 
+                htmlDash.CopyToS3('/tmp/MR'+mr+'_index.html','oaitestdashboard','MR'+mr+'/index.html')
+                htmlDash.Build('Tests','0000','/tmp/Tests_index.html') 
+                htmlDash.CopyToS3('/tmp/Tests_index.html','oaitestdashboard','index.html')
+                htmlDash.PostGitNote(mr,jobname,buildurl,buildid,status)
+            else:
+                print("Not a Merge Request => this build is for testing/debug purpose, no report to git")
     #test and MR status dash boards, cron based
     else:
         htmlDash=Dashboard()
