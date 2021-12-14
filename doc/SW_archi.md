@@ -17,7 +17,7 @@ body {
 
 </style>
 
-
+```mermaid
 flowchart TB
     A[ru_thread] --> RFin>block rx_rf] --> feprx
     feprx --> half-slot --> end_feprx
@@ -80,6 +80,7 @@ subgraph tx
     end 
     tx_func2 --> tx_reorder_thread
 end
+```
 
 This tuto for 5G gNB design, with Open Cells main
 {: .text-center}
