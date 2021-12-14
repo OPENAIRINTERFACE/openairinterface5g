@@ -195,8 +195,6 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
     }
   }
 
-  if (do_meas==1) stop_meas(&msgTx->phy_proc_tx);
-
 //  if ((frame&127) == 0) dump_pdsch_stats(gNB);
 
   //apply the OFDM symbol rotation here
@@ -207,6 +205,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
   //pthread_mutex_unlock(&mutextest);
 
+  if (do_meas==1) stop_meas(&msgTx->phy_proc_tx);
 }
 
 
