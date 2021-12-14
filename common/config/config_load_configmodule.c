@@ -249,7 +249,7 @@ configmodule_interface_t *load_configmodule(int argc,
   }
 
   cfgptr = calloc(sizeof(configmodule_interface_t),1);
-  cfgptr->argv_info = calloc(sizeof(int32_t), argc);
+  cfgptr->argv_info = calloc(sizeof(int32_t), argc+10);
   cfgptr->argv_info[0] |= CONFIG_CMDLINEOPT_PROCESSED;
 
   if (OoptIdx >= 0) {

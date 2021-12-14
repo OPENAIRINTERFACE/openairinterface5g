@@ -33,7 +33,6 @@
 #define ScaleZone 4
 #define localBuff(NaMe,SiZe) float NaMe[SiZe]; memset(NaMe,0,sizeof(NaMe));
 
-int otg_enabled;
 
 const FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 const FL_COLOR water_colors[4] = {FL_BLUE,FL_GREEN,FL_YELLOW,FL_RED};
