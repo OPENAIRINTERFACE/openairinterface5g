@@ -255,7 +255,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
         }
       }
 
-      gNB->nr_mimo_precoding_matrix = (int32_t ***)malloc16(4* sizeof(int32_t **));
+      gNB->nr_mimo_precoding_matrix = (int32_t ***)malloc16(gNB->frame_parms.nb_antennas_tx* sizeof(int32_t **));
       int32_t ***mat = gNB->nr_mimo_precoding_matrix;
       double complex res_code;
 
