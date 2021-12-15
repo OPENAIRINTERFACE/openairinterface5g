@@ -739,7 +739,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     int BWPSize  = nr_mac->type0_PDCCH_CSS_config[ra->beam_id].num_rbs;
     int rbStart = 0;
     for (int i = 0; (i < ra->msg3_nb_rb) && (rbStart <= (BWPSize - ra->msg3_nb_rb)); i++) {
-      if (vrb_map_UL[rbStart + BWPStart + i]&startandlength_to_bitmat(StartSymbolIndex, NrOfSymbols)) {
+      if (vrb_map_UL[rbStart + BWPStart + i]&SL_to_bitmap(StartSymbolIndex, NrOfSymbols)) {
         rbStart += i;
         i = 0;
       }
@@ -844,7 +844,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     // Mark the corresponding RBs as used
     for (int rb = 0; rb < ra->msg3_nb_rb; rb++) {
-      vrb_map_UL[rbStart + BWPStart + rb] |= startandlength_to_bitmat(StartSymbolIndex, NrOfSymbols);
+      vrb_map_UL[rbStart + BWPStart + rb] |= SL_to_bitmap(StartSymbolIndex, NrOfSymbols);
     }
 
     // reset state to wait msg3
@@ -943,11 +943,11 @@ void nr_get_Msg3alloc(module_id_t module_id,
     rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
     rbSize = 0;
     while (rbStart < bwpSize &&
-           (vrb_map_UL[rbStart + bwpStart]&startandlength_to_bitmat(StartSymbolIndex, NrOfSymbols)))
+           (vrb_map_UL[rbStart + bwpStart]&SL_to_bitmap(StartSymbolIndex, NrOfSymbols)))
       rbStart++;
     AssertFatal(rbStart < bwpSize - msg3_nb_rb, "no space to allocate Msg 3 for RA!\n");
     while (rbStart + rbSize < bwpSize
-           && !(vrb_map_UL[rbStart + bwpStart + rbSize]&startandlength_to_bitmat(StartSymbolIndex, NrOfSymbols))
+           && !(vrb_map_UL[rbStart + bwpStart + rbSize]&SL_to_bitmap(StartSymbolIndex, NrOfSymbols))
            && rbSize < msg3_nb_rb)
       rbSize++;
   }
@@ -1044,7 +1044,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
                 i + ra->msg3_first_rb,
                 ra->Msg3_frame,
                 ra->Msg3_slot);
-    vrb_map_UL[i + ra->msg3_first_rb + ra->msg3_bwp_start] |= startandlength_to_bitmat(ra->msg3_startsymb, ra->msg3_nrsymb);
+    vrb_map_UL[i + ra->msg3_first_rb + ra->msg3_bwp_start] |= SL_to_bitmap(ra->msg3_startsymb, ra->msg3_nrsymb);
   }
 
   LOG_D(NR_MAC, "[gNB %d][RAPROC] Frame %d, Slot %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
