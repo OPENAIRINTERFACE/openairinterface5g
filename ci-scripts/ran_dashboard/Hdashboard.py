@@ -536,7 +536,7 @@ def main():
             buildid=sys.argv[5]
             status=sys.argv[6]
             htmlDash=Dashboard()
-            if mr in self.mr_list:
+            if mr in htmlDash.mr_list:
                 htmlDash.Build('singleMR',mr,'/tmp/MR'+mr+'_index.html') 
                 htmlDash.CopyToS3('/tmp/MR'+mr+'_index.html','oaitestdashboard','MR'+mr+'/index.html')
                 htmlDash.Build('Tests','0000','/tmp/Tests_index.html') 
