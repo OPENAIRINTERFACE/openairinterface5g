@@ -188,10 +188,10 @@ static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, g
   w = new_xy_plot(g, 490, 200, "", 50);
   e->ul_freq_estimate_ue_xy_plot = w;
   widget_add_child(g, line, w, -1);
-  xy_plot_set_range(g, w, 0, 100*10, -10, 80);
+  xy_plot_set_range(g, w, 0, 2048, -10, 80);
   l = new_framelog(h, database, "GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE", "subframe", "chest_t");
   framelog_set_update_only_at_sf9(l, 0);
-  v = new_view_xy(100*10, 10, g, w, new_color(g, "#0c0c72"), XY_LOOP_MODE);
+  v = new_view_xy(2048, 10, g, w, new_color(g, "#0c0c72"), XY_LOOP_MODE);
   logger_add_view(l, v);
   e->ul_freq_estimate_ue_logger = l;
 
@@ -199,10 +199,10 @@ static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, g
   w = new_xy_plot(g, 490, 200, "", 50);
   e->ul_time_estimate_ue_xy_plot = w;
   widget_add_child(g, line, w, -1);
-  xy_plot_set_range(g, w, 0, 100*10, -10, 80);
+  xy_plot_set_range(g, w, 0, 2048, -10, 80);
   l = new_framelog(h, database, "GNB_PHY_UL_TIME_CHANNEL_ESTIMATE", "subframe", "chest_t");
   framelog_set_update_only_at_sf9(l, 0);
-  v = new_view_xy(100*10, 10, g, w, new_color(g, "#0c0c72"), XY_LOOP_MODE);
+  v = new_view_xy(2048, 10, g, w, new_color(g, "#0c0c72"), XY_LOOP_MODE);
   logger_add_view(l, v);
   e->ul_time_estimate_ue_logger = l;
 

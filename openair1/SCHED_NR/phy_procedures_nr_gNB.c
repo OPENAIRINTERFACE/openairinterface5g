@@ -811,13 +811,14 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                   gNB->nr_srs_info[i]->srs_received_signal,
                                   gNB->nr_srs_info[i]->srs_estimated_channel_freq,
                                   gNB->nr_srs_info[i]->srs_estimated_channel_time,
+                                  gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted,
                                   gNB->nr_srs_info[i]->noise_power);
 
-        T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(slot_rx%10), T_INT(0),
-          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_freq[0], 100 * 4));
+        T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
+          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_freq[0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
 
-        T(T_GNB_PHY_UL_TIME_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(slot_rx%10), T_INT(0),
-          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_time[0], 100 * 4));
+        T(T_GNB_PHY_UL_TIME_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
+          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted[0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
 
         srs->active = 0;
       }

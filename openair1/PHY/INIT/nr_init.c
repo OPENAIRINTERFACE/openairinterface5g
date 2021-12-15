@@ -203,11 +203,13 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     gNB->nr_srs_info[id]->srs_ls_estimated_channel = (int32_t **)malloc16(Prx*sizeof(int32_t*));
     gNB->nr_srs_info[id]->srs_estimated_channel_freq = (int32_t **)malloc16(Prx*sizeof(int32_t*));
     gNB->nr_srs_info[id]->srs_estimated_channel_time = (int32_t **)malloc16(Prx*sizeof(int32_t*));
+    gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted = (int32_t **)malloc16(Prx*sizeof(int32_t*));
     for (i=0;i<Prx;i++){
       gNB->nr_srs_info[id]->srs_received_signal[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
       gNB->nr_srs_info[id]->srs_ls_estimated_channel[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
       gNB->nr_srs_info[id]->srs_estimated_channel_freq[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
       gNB->nr_srs_info[id]->srs_estimated_channel_time[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
+      gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
     }
   }
 

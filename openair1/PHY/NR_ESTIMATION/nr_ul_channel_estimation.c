@@ -1093,6 +1093,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
                               int32_t **srs_received_signal,
                               int32_t **srs_estimated_channel_freq,
                               int32_t **srs_estimated_channel_time,
+                              int32_t **srs_estimated_channel_time_shifted,
                               uint32_t *noise_power) {
 
   if(nr_srs_info->n_symbs==0) {
@@ -1114,6 +1115,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
     memset(srs_ls_estimated_channel[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
     memset(srs_estimated_channel_freq[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
     memset(srs_estimated_channel_time[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
+    memset(srs_estimated_channel_time_shifted[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
 
     int16_t *srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[0]];
 
@@ -1201,6 +1203,14 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
     freq2time(gNB->frame_parms.ofdm_symbol_size,
               (int16_t*) srs_estimated_channel_freq[ant],
               (int16_t*) srs_estimated_channel_time[ant]);
+
+    memcpy(&srs_estimated_channel_time_shifted[ant][0],
+           &srs_estimated_channel_time[ant][gNB->frame_parms.ofdm_symbol_size>>1],
+           (gNB->frame_parms.ofdm_symbol_size>>1)*sizeof(int32_t));
+
+    memcpy(&srs_estimated_channel_time_shifted[ant][gNB->frame_parms.ofdm_symbol_size>>1],
+           &srs_estimated_channel_time[ant][0],
+           (gNB->frame_parms.ofdm_symbol_size>>1)*sizeof(int32_t));
   }
 
   *noise_power = calc_power(noise_real,frame_parms->nb_antennas_rx*nr_srs_info->n_symbs)
