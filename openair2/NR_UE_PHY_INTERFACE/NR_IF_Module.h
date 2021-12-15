@@ -240,6 +240,8 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
                            nfapi_nr_ul_dci_request_t *ul_dci_request,
                            nfapi_nr_ul_tti_request_t *ul_tti_request);
 
+bool sfn_slot_matcher(void *wanted, void *candidate);
+
 /**\brief done free of memory allocation by module_id and release to pointer pool.
    \param module_id module id*/
 int nr_ue_if_module_kill(uint32_t module_id);

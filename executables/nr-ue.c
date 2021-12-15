@@ -194,69 +194,6 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_p
   LOG_D(NR_MAC, "We have successfully filled the rach_ind queue with the recently filled rach ind\n");
 }
 
-static bool sfn_slot_matcher(void *wanted, void *candidate)
-{
-  nfapi_p7_message_header_t *msg = candidate;
-  int sfn_sf = *(int*)wanted;
-
-  switch (msg->message_id)
-  {
-    case NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION:
-    {
-      nfapi_nr_rach_indication_t *ind = candidate;
-      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->sfn && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->slot;
-    }
-
-    case NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION:
-    {
-      nfapi_nr_rx_data_indication_t *ind = candidate;
-      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->sfn && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->slot;
-    }
-
-    case NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION:
-    {
-      nfapi_nr_crc_indication_t *ind = candidate;
-      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->sfn && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->slot;
-    }
-
-    case NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION:
-    {
-      nfapi_nr_uci_indication_t *ind = candidate;
-      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->sfn && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->slot;
-    }
-
-    case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST:
-    {
-      nfapi_nr_dl_tti_request_t *ind = candidate;
-      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->SFN && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->Slot;
-    }
-
-    case NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST:
-    {
-      nfapi_nr_tx_data_request_t *ind = candidate;
-      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->SFN && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->Slot;
-    }
-
-    case NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST:
-    {
-      nfapi_nr_ul_dci_request_t *ind = candidate;
-      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->SFN && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->Slot;
-    }
-
-    case NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST:
-    {
-      nfapi_nr_ul_tti_request_t *ind = candidate;
-      return NFAPI_SFNSLOT2SFN(sfn_sf) == ind->SFN && NFAPI_SFNSLOT2SLOT(sfn_sf) == ind->Slot;
-    }
-
-    default:
-      LOG_E(NR_MAC, "sfn_slot_match bad ID: %d\n", msg->message_id);
-
-  }
-
-  return false;
-}
-
 static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
 {
   nfapi_nr_rach_indication_t *rach_ind = unqueue_matching(&nr_rach_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
@@ -264,15 +201,6 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
   nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&nr_crc_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
   nfapi_nr_dl_tti_request_t *dl_tti_request = get_queue(&nr_dl_tti_req_queue);
   nfapi_nr_ul_dci_request_t *ul_dci_request = get_queue(&nr_ul_dci_req_queue);
-
-  LOG_D(NR_MAC, "Try to get a ul_tti_req for sfn/slot %d %d from queue with %lu items\n",
-        NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot),NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot), nr_ul_tti_req_queue.num_items);
-  nfapi_nr_ul_tti_request_t *ul_tti_request = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.active_harq_sfn_slot);
-  if (!ul_tti_request)
-  {
-      LOG_D(NR_MAC, "Try to get a ul_tti_req from seprate queue because dl_tti_req was late\n");
-      ul_tti_request = unqueue_matching(&nr_wait_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.active_harq_sfn_slot);
-  }
 
   if (rach_ind && rach_ind->number_of_pdus > 0)
   {
@@ -334,10 +262,6 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
   if (ul_dci_request && ul_dci_request->numPdus > 0)
   {
     check_and_process_dci(NULL, NULL, ul_dci_request, NULL);
-  }
-  if (ul_tti_request && ul_tti_request->n_pdus > 0)
-  {
-    check_and_process_dci(NULL, NULL, NULL, ul_tti_request);
   }
 }
 

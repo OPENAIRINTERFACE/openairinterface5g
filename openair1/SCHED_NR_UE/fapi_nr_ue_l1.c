@@ -36,6 +36,7 @@
 #include "fapi_nr_ue_l1.h"
 #include "harq_nr.h"
 //#include "PHY/phy_vars_nr_ue.h"
+#include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 
 #include "PHY/defs_nr_UE.h"
 #include "PHY/impl_defs_nr.h"
@@ -50,7 +51,7 @@ queue_t nr_crc_ind_queue;
 queue_t nr_uci_ind_queue;
 
 int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
-
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   if(scheduled_response != NULL)
   {
     if (scheduled_response->ul_config != NULL)
@@ -92,10 +93,6 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 rx_ind->pdu_list[j].rnti = pusch_config_pdu->rnti;
                 rx_ind->pdu_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
                 rx_ind->pdu_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
-                char buffer[1024];
-                hexdump(rx_ind->pdu_list[j].pdu, rx_ind->pdu_list[j].pdu_length, buffer, sizeof(buffer));
-                LOG_D(NR_MAC, "Hexdump of pdu %s before queuing rx_ind\n",
-                      buffer);
               }
 
               crc_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION;
@@ -147,6 +144,84 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
             break;
           }
 
+          case FAPI_NR_UL_CONFIG_TYPE_PUCCH:
+          {
+            nfapi_nr_uci_indication_t *uci_ind = CALLOC(1, sizeof(*uci_ind));
+            uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
+            uci_ind->sfn = scheduled_response->frame;
+            uci_ind->slot = scheduled_response->slot;
+            uci_ind->num_ucis = 1;
+            uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
+            for (int j = 0; j < uci_ind->num_ucis; j++)
+            {
+              if (ul_config->ul_config_list[i].pucch_config_pdu.format_type == 2)
+              {
+                nfapi_nr_uci_pucch_pdu_format_2_3_4_t *pdu_2_3_4 = &uci_ind->uci_list[j].pucch_pdu_format_2_3_4;
+                uci_ind->uci_list[j].pdu_type = NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE;
+                uci_ind->uci_list[j].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_2_3_4_t);
+                memset(pdu_2_3_4, 0, sizeof(*pdu_2_3_4));
+                pdu_2_3_4->handle = 0;
+                pdu_2_3_4->rnti = ul_config->ul_config_list[i].pucch_config_pdu.rnti;
+                pdu_2_3_4->pucch_format = ul_config->ul_config_list[i].pucch_config_pdu.format_type;
+                pdu_2_3_4->ul_cqi = 255;
+                pdu_2_3_4->timing_advance = 0;
+                pdu_2_3_4->rssi = 0;
+                // TODO: Eventually check 38.212:Sect.631 to know when to use csi_part2, for now only using csi_part1
+                pdu_2_3_4->pduBitmap = 4;
+                pdu_2_3_4->csi_part1.csi_part1_bit_len = ul_config->ul_config_list[i].pucch_config_pdu.nr_of_symbols;
+                int csi_part1_byte_len = (int)((pdu_2_3_4->csi_part1.csi_part1_bit_len / 8) + 1);
+                AssertFatal(!pdu_2_3_4->csi_part1.csi_part1_payload, "pdu_2_3_4->csi_part1.csi_part1_payload != NULL\n");
+                pdu_2_3_4->csi_part1.csi_part1_payload = CALLOC(csi_part1_byte_len,
+                                                                sizeof(pdu_2_3_4->csi_part1.csi_part1_payload));
+                for (int k = 0; k < csi_part1_byte_len; k++)
+                {
+                  pdu_2_3_4->csi_part1.csi_part1_payload[k] = (ul_config->ul_config_list[i].
+                                                              pucch_config_pdu.payload >> (k * 8)) & 0xff;
+                }
+                pdu_2_3_4->csi_part1.csi_part1_crc = 0;
+                int sfn_slot = NFAPI_SFNSLOT2HEX(uci_ind->sfn, uci_ind->slot);
+                nfapi_nr_uci_indication_t *queued_uci_ind = unqueue_matching(&nr_uci_ind_queue,
+                                                                            MAX_QUEUE_SIZE,
+                                                                            sfn_slot_matcher,
+                                                                            &sfn_slot);
+                if (queued_uci_ind)
+                {
+                    LOG_I(NR_MAC, "There was a matching UCI with sfn %d, slot %d in queue\n",
+                          NFAPI_SFNSLOT2SFN(sfn_slot), NFAPI_SFNSLOT2SLOT(sfn_slot));
+                    if (queued_uci_ind->uci_list[0].pdu_type == NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE)
+                      pdu_2_3_4->pduBitmap = 6; // harq: pduBitmap >> 1, csi: pduBitmap >> 2
+                    free(queued_uci_ind);
+                    break;
+                }
+              }
+              else
+              {
+                nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
+                uci_ind->uci_list[j].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
+                uci_ind->uci_list[j].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
+                memset(pdu_0_1, 0, sizeof(*pdu_0_1));
+                pdu_0_1->handle = 0;
+                pdu_0_1->rnti = ul_config->ul_config_list[i].pucch_config_pdu.rnti;
+                pdu_0_1->pucch_format = 1;
+                pdu_0_1->ul_cqi = 255;
+                pdu_0_1->timing_advance = 0;
+                pdu_0_1->rssi = 0;
+              }
+            }
+
+            LOG_I(NR_PHY, "In %s: Filled queue uci_ind_234 which was filled by ulconfig.\n"
+                       "uci_num %d, SFN/SLOT: [%d, %d]\n",
+                          __FUNCTION__, uci_ind->num_ucis, uci_ind->sfn, uci_ind->slot);
+
+            if (!put_queue(&nr_uci_ind_queue, uci_ind))
+            {
+              LOG_E(NR_MAC, "Put_queue failed for uci_ind\n");
+              free(uci_ind->uci_list);
+              free(uci_ind);
+            }
+            break;
+          }
+
           default:
             LOG_I(NR_MAC, "Unknown ul_config->pdu_type %d\n", pdu_type);
           break;
@@ -173,7 +248,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
             nfapi_nr_uci_indication_t *uci_ind = CALLOC(1, sizeof(*uci_ind));
             uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
             uci_ind->sfn = scheduled_response->frame;
-            uci_ind->slot = scheduled_response->slot;
+            uci_ind->slot = NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot);
             uci_ind->num_ucis = 1;
             uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
             for (int j = 0; j < uci_ind->num_ucis; j++)

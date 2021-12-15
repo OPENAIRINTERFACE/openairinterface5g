@@ -5906,9 +5906,25 @@ static uint8_t unpack_nr_uci_pucch_0_1(nfapi_nr_uci_pucch_pdu_format_0_1_t *valu
 	return 1;
 }
 
+static uint8_t unpack_nr_uci_pucch_2_3_4(nfapi_nr_uci_pucch_pdu_format_2_3_4_t* value,
+                                         uint8_t **ppReadPackedMsg,
+                                         uint8_t *end,
+                                         nfapi_p7_codec_config_t *config) {
 
-static uint8_t unpack_nr_uci_pucch_2_3_4(nfapi_nr_uci_pucch_pdu_format_2_3_4_t* tlv, uint8_t **ppReadPackedMsg, uint8_t *end) {
-	nfapi_nr_uci_pucch_pdu_format_2_3_4_t* value = (nfapi_nr_uci_pucch_pdu_format_2_3_4_t*) tlv;
+	if (!pull8(ppReadPackedMsg, &value->pduBitmap, end))
+		return 0;
+	if (!pull32(ppReadPackedMsg, &value->handle, end))
+                return 0;
+	if (!pull16(ppReadPackedMsg, &value->rnti, end))
+                return 0;
+	if (!pull8(ppReadPackedMsg, &value->pucch_format, end))
+                return 0;
+	if (!pull8(ppReadPackedMsg, &value->ul_cqi, end))
+                return 0;
+	if (!pull16(ppReadPackedMsg, &value->timing_advance, end))
+                return 0;
+	if (!pull16(ppReadPackedMsg, &value->rssi, end))
+                return 0;
 
 	if(!(pull8(ppReadPackedMsg, &value->pduBitmap, end) &&
 	 	 pull32(ppReadPackedMsg, &value->handle, end) &&
@@ -5988,7 +6004,7 @@ static uint8_t unpack_nr_uci_indication_body(nfapi_nr_uci_t *value,
                 }
                 case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
                         nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &value->pucch_pdu_format_2_3_4;
-                        if (!unpack_nr_uci_pucch_2_3_4(uci_pdu, ppReadPackedMsg, end))
+                        if (!unpack_nr_uci_pucch_2_3_4(uci_pdu, ppReadPackedMsg, end, config))
                                 return 0;
                         break;
                 }
