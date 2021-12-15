@@ -758,10 +758,27 @@ static int Gtpv1uHandleGpdu(int h,
     return GTPNOK;
   }
 
-  int offset=8;
+  /*int offset=8;
 
   if( msgHdr->E ||  msgHdr->S ||msgHdr->PN)
-    offset+=8;
+    offset+=8;*/
+
+  
+//Minimum length of GTP-U header if non of the optional fields are present
+  int offset= sizeof(Gtpv1uMsgHeaderT);
+  
+  //Consider additional length for GTP-U header if at least one of the optional fields is present
+  if( msgHdr->E ||  msgHdr->S ||msgHdr->PN)
+    offset+=4;
+  
+  //Consider the length of 1 or more extension headers that can be present in the GTP-U PDU
+  if(msgHdr->E) {
+    while (msgBuf[offset]!=0) {
+      LOG_D(GTPU, "Extension header length in multiple of 4 bytes is: %d \n", msgBuf[offset]);
+      offset+=msgBuf[offset]*4 -1;
+     }
+   offset++;
+   }
 
   // This context is not good for gtp
   // frame, ... has no meaning

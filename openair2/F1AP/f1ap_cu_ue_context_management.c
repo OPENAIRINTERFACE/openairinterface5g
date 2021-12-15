@@ -144,7 +144,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     if(f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList!=NULL){
       asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList, uE_CapabilityRAT_ContainerList );
       OCTET_STRING_fromBuf(uE_CapabilityRAT_ContainerList, (const char *)f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
-          f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length) ;
+          f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
     }
     /* optional */
     /* 6.3 measConfig */
