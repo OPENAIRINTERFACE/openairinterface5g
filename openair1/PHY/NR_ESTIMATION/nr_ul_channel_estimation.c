@@ -41,6 +41,41 @@
 #define NO_INTERP 1
 #define dBc(x,y) (dB_fixed(((int32_t)(x))*(x) + ((int32_t)(y))*(y)))
 
+void freq2time(uint16_t ofdm_symbol_size,
+               int16_t *freq_signal,
+               int16_t *time_signal) {
+
+  switch (ofdm_symbol_size) {
+    case 128:
+      idft(IDFT_128, freq_signal, time_signal, 1);
+      break;
+    case 256:
+      idft(IDFT_256, freq_signal, time_signal, 1);
+      break;
+    case 512:
+      idft(IDFT_512, freq_signal, time_signal, 1);
+      break;
+    case 1024:
+      idft(IDFT_1024, freq_signal, time_signal, 1);
+      break;
+    case 1536:
+      idft(IDFT_1536, freq_signal, time_signal, 1);
+      break;
+    case 2048:
+      idft(IDFT_2048, freq_signal, time_signal, 1);
+      break;
+    case 4096:
+      idft(IDFT_4096, freq_signal, time_signal, 1);
+      break;
+    case 8192:
+      idft(IDFT_8192, freq_signal, time_signal, 1);
+      break;
+    default:
+      idft(IDFT_512, freq_signal, time_signal, 1);
+      break;
+  }
+}
+
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char Ns,
                                 unsigned short p,
@@ -899,63 +934,9 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #endif
 
     // Convert to time domain
-
-    switch (gNB->frame_parms.ofdm_symbol_size) {
-        case 128:
-          idft(IDFT_128,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
-                 (int16_t*) ul_ch_estimates_time[aarx],
-                 1);
-          break;
-
-        case 256:
-          idft(IDFT_256,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
-                 (int16_t*) ul_ch_estimates_time[aarx],
-                 1);
-          break;
-
-        case 512:
-          idft(IDFT_512,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
-                 (int16_t*) ul_ch_estimates_time[aarx],
-                 1);
-          break;
-
-        case 1024:
-          idft(IDFT_1024,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
-                 (int16_t*) ul_ch_estimates_time[aarx],
-                 1);
-          break;
-
-        case 1536:
-          idft(IDFT_1536,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
-                 (int16_t*) ul_ch_estimates_time[aarx],
-                 1);
-          break;
-
-        case 2048:
-          idft(IDFT_2048,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
-                 (int16_t*) ul_ch_estimates_time[aarx],
-                 1);
-          break;
-
-        case 4096:
-          idft(IDFT_4096,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
-                 (int16_t*) ul_ch_estimates_time[aarx],
-                 1);
-          break;
-
-        case 8192:
-          idft(IDFT_8192,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
-                 (int16_t*) ul_ch_estimates_time[aarx],
-                 1);
-          break;
-
-        default:
-          idft(IDFT_512,(int16_t*) &ul_ch_estimates[aarx][symbol_offset],
-                 (int16_t*) ul_ch_estimates_time[aarx],
-                 1);
-          break;
-      }
-
+    freq2time(gNB->frame_parms.ofdm_symbol_size,
+              (int16_t*) &ul_ch_estimates[aarx][symbol_offset],
+              (int16_t*) ul_ch_estimates_time[aarx]);
   }
 
 #ifdef DEBUG_CH
@@ -1111,6 +1092,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
                               int32_t *srs_generated_signal,
                               int32_t **srs_received_signal,
                               int32_t **srs_estimated_channel_freq,
+                              int32_t **srs_estimated_channel_time,
                               uint32_t *noise_power) {
 
   if(nr_srs_info->n_symbs==0) {
@@ -1131,6 +1113,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
 
     memset(srs_ls_estimated_channel[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
     memset(srs_estimated_channel_freq[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
+    memset(srs_estimated_channel_time[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
 
     int16_t *srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[0]];
 
@@ -1213,6 +1196,11 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
             prev_ls_estimated[0], prev_ls_estimated[1]);
 #endif
     }
+
+    // Convert to time domain
+    freq2time(gNB->frame_parms.ofdm_symbol_size,
+              (int16_t*) srs_estimated_channel_freq[ant],
+              (int16_t*) srs_estimated_channel_time[ant]);
   }
 
   *noise_power = calc_power(noise_real,frame_parms->nb_antennas_rx*nr_srs_info->n_symbs)
