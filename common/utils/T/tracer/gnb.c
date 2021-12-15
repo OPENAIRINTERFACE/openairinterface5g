@@ -91,7 +91,7 @@ static void set_current_ue(gui *g, gnb_data *e, int ue)
   sprintf(s, "GNB_PHY_PUCCH_PUSCH_IQ [UE %d]", ue);
   xy_plot_set_title(g, e->e->pucch_pusch_iq_plot, s);
 
-  sprintf(s, "UL estimated channel [UE %d]", ue);
+  sprintf(s, "UL channel estimation in frequency domain [UE %d]", ue);
   xy_plot_set_title(g, e->e->ul_estimate_ue_xy_plot, s);
 }
 

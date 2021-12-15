@@ -809,11 +809,11 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                   gNB->nr_srs_info[i],
                                   gNB->nr_srs_info[i]->srs_generated_signal,
                                   gNB->nr_srs_info[i]->srs_received_signal,
-                                  gNB->nr_srs_info[i]->srs_estimated_channel,
+                                  gNB->nr_srs_info[i]->srs_estimated_channel_freq,
                                   gNB->nr_srs_info[i]->noise_power);
 
         T(T_GNB_PHY_UL_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(slot_rx%10), T_INT(0),
-          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel[0], 100 * 4));
+          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_freq[0], 100 * 4));
 
         srs->active = 0;
       }

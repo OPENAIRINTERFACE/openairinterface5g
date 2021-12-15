@@ -1110,7 +1110,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
                               nr_srs_info_t *nr_srs_info,
                               int32_t *srs_generated_signal,
                               int32_t **srs_received_signal,
-                              int32_t **srs_estimated_channel,
+                              int32_t **srs_estimated_channel_freq,
                               uint32_t *noise_power) {
 
   if(nr_srs_info->n_symbs==0) {
@@ -1130,9 +1130,9 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
 
     memset(srs_ls_estimated_channel[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
-    memset(srs_estimated_channel[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
+    memset(srs_estimated_channel_freq[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
 
-    int16_t *srs_estimated_channel16 = (int16_t *)&srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[0]];
+    int16_t *srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[0]];
 
     for(int sc_idx = 0; sc_idx < nr_srs_info->n_symbs; sc_idx++) {
 
@@ -1160,38 +1160,38 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
         if(sc_idx == 0) {
           multadd_real_vector_complex_scalar(filt8_l0, ls_estimated, srs_estimated_channel16, 8);
         } else if(nr_srs_info->subcarrier_idx[sc_idx]<nr_srs_info->subcarrier_idx[sc_idx-1]) {
-          srs_estimated_channel16 = (int16_t *)&srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx+2]] - 8;
+          srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx+2]] - 8;
           multadd_real_vector_complex_scalar(filt8_l0, ls_estimated, srs_estimated_channel16, 8);
         } else if( (sc_idx < (nr_srs_info->n_symbs-1) && nr_srs_info->subcarrier_idx[sc_idx+1]<nr_srs_info->subcarrier_idx[sc_idx]) || (sc_idx == (nr_srs_info->n_symbs-1))) {
           multadd_real_vector_complex_scalar(filt8_m0, ls_estimated, srs_estimated_channel16, 8);
-          srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]+1] = srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]];
+          srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]+1] = srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]];
         } else if(sc_idx%2 == 1) {
           multadd_real_vector_complex_scalar(filt8_m0, ls_estimated, srs_estimated_channel16, 8);
         } else if(sc_idx%2 == 0) {
           multadd_real_vector_complex_scalar(filt8_mm0, ls_estimated, srs_estimated_channel16, 8);
-          srs_estimated_channel16 = (int16_t *)&srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]];
+          srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]];
         }
       } else {
         if(sc_idx>0) {
           multadd_real_vector_complex_scalar(filt8_dcr0_h, ls_estimated, srs_estimated_channel16, 8);
           if(nr_srs_info->subcarrier_idx[sc_idx]<nr_srs_info->subcarrier_idx[sc_idx-1]) {
-            srs_estimated_channel16 = (int16_t *)&srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx+1]] - 8;
+            srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx+1]] - 8;
           } else {
-            srs_estimated_channel16 = (int16_t *)&srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]];
+            srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]];
           }
           srs_estimated_channel16[0] = 0;
           srs_estimated_channel16[1] = 0;
         }
         multadd_real_vector_complex_scalar(filt8_dcl0_h, ls_estimated, srs_estimated_channel16, 8);
         if(sc_idx == (nr_srs_info->n_symbs-1)) {
-          srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]+1] = srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]];
-          srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]+2] = srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]];
-          srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]+3] = srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]];
+          srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]+1] = srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]];
+          srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]+2] = srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]];
+          srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]+3] = srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]];
         }
       }
 
-      noise_real[ant*nr_srs_info->n_symbs+sc_idx] = abs(prev_ls_estimated[0] - (int16_t)(srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]]&0xFFFF));
-      noise_imag[ant*nr_srs_info->n_symbs+sc_idx] = abs(prev_ls_estimated[1] - (int16_t)((srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]]>>16)&0xFFFF));
+      noise_real[ant*nr_srs_info->n_symbs+sc_idx] = abs(prev_ls_estimated[0] - (int16_t)(srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]]&0xFFFF));
+      noise_imag[ant*nr_srs_info->n_symbs+sc_idx] = abs(prev_ls_estimated[1] - (int16_t)((srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]]>>16)&0xFFFF));
 
 #ifdef SRS_DEBUG
       uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
@@ -1239,8 +1239,8 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
               subcarrier_log+r,
               (int16_t)(srs_ls_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]+r]&0xFFFF),
               (int16_t)((srs_ls_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]+r]>>16)&0xFFFF),
-              (int16_t)(srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]+r]&0xFFFF),
-              (int16_t)((srs_estimated_channel[ant][nr_srs_info->subcarrier_idx[sc_idx]+r]>>16)&0xFFFF),
+              (int16_t)(srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]+r]&0xFFFF),
+              (int16_t)((srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[sc_idx]+r]>>16)&0xFFFF),
               noise_real[ant*nr_srs_info->n_symbs+sc_idx],
               noise_imag[ant*nr_srs_info->n_symbs+sc_idx]);
       }
