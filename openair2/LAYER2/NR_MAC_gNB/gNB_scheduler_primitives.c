@@ -1035,27 +1035,54 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   else { // this is the default PUCCH configuration, PUCCH format 0 or 1
     LOG_D(NR_MAC,"pucch_acknak: Filling default PUCCH configuration from Tables (r_pucch %d, bwp %p)\n",r_pucch,bwp);
     int rsetindex = *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon;
-    int prboffset = r_pucch/default_pucch_csset[rsetindex];
-    int prboffsetm8 = (r_pucch-8)/default_pucch_csset[rsetindex];
-    pucch_pdu->prb_start = (r_pucch>>3)==0 ?
-                           default_pucch_prboffset[rsetindex] + prboffset:
-                           pucch_pdu->bwp_size-1-default_pucch_prboffset[rsetindex]-prboffsetm8;
+    int prb_start, second_hop_prb, nr_of_symb, start_symb;
+    set_r_pucch_parms(rsetindex,
+                      r_pucch,
+                      pucch_pdu->bwp_size,
+                      &prb_start,
+                      &second_hop_prb,
+                      &nr_of_symb,
+                      &start_symb);
+
+    pucch_pdu->prb_start = prb_start;
     pucch_pdu->rnti = rnti;
     pucch_pdu->freq_hop_flag = 1;
-    pucch_pdu->second_hop_prb = (r_pucch>>3)==0?
-                                pucch_pdu->bwp_size-1-default_pucch_prboffset[rsetindex]-prboffset:
-                                default_pucch_prboffset[rsetindex] + prboffsetm8;
+    pucch_pdu->second_hop_prb = second_hop_prb;
     pucch_pdu->format_type = default_pucch_fmt[rsetindex];
     pucch_pdu->initial_cyclic_shift = r_pucch%default_pucch_csset[rsetindex];
     if (rsetindex==3||rsetindex==7||rsetindex==11) pucch_pdu->initial_cyclic_shift*=6;
     else if (rsetindex==1||rsetindex==2) pucch_pdu->initial_cyclic_shift*=3;
     else pucch_pdu->initial_cyclic_shift*=4;
-    pucch_pdu->nr_of_symbols = default_pucch_numbsymb[rsetindex];
-    pucch_pdu->start_symbol_index = default_pucch_firstsymb[rsetindex];
+    pucch_pdu->nr_of_symbols = nr_of_symb;
+    pucch_pdu->start_symbol_index = start_symb;
     if (pucch_pdu->format_type == 1) pucch_pdu->time_domain_occ_idx = 0; // check this!!
     pucch_pdu->sr_flag = O_sr;
     pucch_pdu->prb_size=1;
   }
+}
+
+
+void set_r_pucch_parms(int rsetindex,
+                       int r_pucch,
+                       int bwp_size,
+                       int *prb_start,
+                       int *second_hop_prb,
+                       int *nr_of_symbols,
+                       int *start_symbol_index) {
+
+  int prboffset = r_pucch/default_pucch_csset[rsetindex];
+  int prboffsetm8 = (r_pucch-8)/default_pucch_csset[rsetindex];
+
+  *prb_start = (r_pucch>>3)==0 ?
+              default_pucch_prboffset[rsetindex] + prboffset:
+              bwp_size-1-default_pucch_prboffset[rsetindex]-prboffsetm8;
+
+  *second_hop_prb = (r_pucch>>3)==0?
+                   bwp_size-1-default_pucch_prboffset[rsetindex]-prboffset:
+                   default_pucch_prboffset[rsetindex] + prboffsetm8;
+
+  *nr_of_symbols = default_pucch_numbsymb[rsetindex];
+  *start_symbol_index = default_pucch_firstsymb[rsetindex];
 }
 
 
