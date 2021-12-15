@@ -3009,26 +3009,12 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
                         uint8_t nr_slot_rx,
                         uint8_t beamforming_mode)
 {
-
-  int16_t  *pllr_symbol_cw0;
-  int16_t  *pllr_symbol_cw1;
-  int16_t  *pllr_symbol_layer0;
-  int16_t  *pllr_symbol_layer1;
   uint32_t llr_offset_symbol;
   
-  if (first_symbol_flag==1) pdsch_vars[gNB_id]->llr_offset[symbol-1] = 0;
+  if (first_symbol_flag==1)
+    pdsch_vars[gNB_id]->llr_offset[symbol-1] = 0;
   llr_offset_symbol = pdsch_vars[gNB_id]->llr_offset[symbol-1];
-  //pllr_symbol_cw0_deint  = (int8_t*)pdsch_vars[gNB_id]->llr[0];
-  //pllr_symbol_cw1_deint  = (int8_t*)pdsch_vars[gNB_id]->llr[1];
-  pllr_symbol_layer0 = pdsch_vars[gNB_id]->layer_llr[0];
-  pllr_symbol_layer1 = pdsch_vars[gNB_id]->layer_llr[1];
-  pllr_symbol_layer0 += llr_offset_symbol;
-  pllr_symbol_layer1 += llr_offset_symbol;
-  pllr_symbol_cw0 = pdsch_vars[gNB_id]->llr[0];
-  pllr_symbol_cw1 = pdsch_vars[gNB_id]->llr[1];
-  pllr_symbol_cw0 += llr_offset_symbol;
-  pllr_symbol_cw1 += llr_offset_symbol;
-    
+
   pdsch_vars[gNB_id]->llr_offset[symbol] = len*dlsch0_harq->Qm + llr_offset_symbol;
  
   /*LOG_I(PHY,"compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
