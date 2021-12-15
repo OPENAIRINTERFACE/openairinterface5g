@@ -550,7 +550,7 @@ void handle_nr_ul_harq(const int CC_idP,
 
     remove_front_nr_list(&sched_ctrl->feedback_ul_harq);
     sched_ctrl->ul_harq_processes[harq_pid].is_waiting = false;
-    if(sched_ctrl->ul_harq_processes[harq_pid].round >= MAX_HARQ_ROUNDS - 1) {
+    if(sched_ctrl->ul_harq_processes[harq_pid].round >= gNB_mac->harq_round_max - 1) {
       abort_nr_ul_harq(mod_id, UE_id, harq_pid);
     } else {
       sched_ctrl->ul_harq_processes[harq_pid].round++;
@@ -571,7 +571,7 @@ void handle_nr_ul_harq(const int CC_idP,
           harq_pid,
           crc_pdu->rnti);
     add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
-  } else if (harq->round >= MAX_HARQ_ROUNDS - 1) {
+  } else if (harq->round >= gNB_mac->harq_round_max - 1) {
     abort_nr_ul_harq(mod_id, UE_id, harq_pid);
     LOG_D(NR_MAC,
           "RNTI %04x: Ulharq id %d crc failed in all rounds\n",
@@ -1481,7 +1481,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->last_ul_frame = sched_pusch->frame;
     sched_ctrl->last_ul_slot = sched_pusch->slot;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d DCI L %d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
           frame,
           slot,

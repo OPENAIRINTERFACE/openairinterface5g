@@ -1109,7 +1109,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
   memset(buffer, 0, RRC_BUF_SIZE);
   cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-  fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup);
+  fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup,
+                             rrc->um_on_default_drb);
   size = do_RRCReconfiguration(ctxt_pP, buffer,
                                 xid,
                                 *SRB_configList2,

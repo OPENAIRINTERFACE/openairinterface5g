@@ -759,6 +759,7 @@ void RCconfig_nr_macrlc() {
       RC.nrmac[j]->dl_bler_target_lower = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_BLER_TARGET_LOWER_IDX].dblptr);
       RC.nrmac[j]->dl_rd2_bler_threshold = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_RD2_BLER_THRESHOLD_IDX].dblptr);
       RC.nrmac[j]->dl_max_mcs = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_MAX_MCS_IDX].u8ptr);
+      RC.nrmac[j]->harq_round_max = *(MacRLC_ParamList.paramarray[j][MACRLC_HARQ_ROUND_MAX_IDX].u8ptr);
       RC.nrmac[j]->num_ulprbbl = num_prbbl;
       LOG_I(NR_MAC,"Blacklisted PRBS %d\n",num_prbbl);
       memcpy(RC.nrmac[j]->ulprbbl,prbbl,275*sizeof(prbbl[0]));
@@ -1041,6 +1042,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
     rrc->nr_cellid        = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
 
+    rrc->um_on_default_drb = *(GNBParamList.paramarray[i][GNB_UMONDEFAULTDRB_IDX].uptr);
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
       
     } else if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "cudu") == 0) {

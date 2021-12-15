@@ -611,7 +611,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   /* Find a free CCE */
   bool freeCCE = find_free_CCE(module_id, slot, UE_id);
   if (!freeCCE) {
-    LOG_D(MAC, "%4d.%2d could not find CCE for DL DCI retransmission UE %d/RNTI %04x\n",
+    LOG_I(MAC, "%4d.%2d allocate_dl_transmission: could not find CCE for DL DCI retransmission UE %d/RNTI %04x\n",
           frame, slot, UE_id, UE_info->rnti[UE_id]);
     return false;
   }
@@ -746,7 +746,7 @@ void pf_dl(module_id_t module_id,
     /* Find a free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
-      LOG_D(NR_MAC, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
+      LOG_I(NR_MAC, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
       continue;
     }
     /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
@@ -963,7 +963,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->is_waiting = true;
     UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
 
-    LOG_D(NR_MAC,
+    LOG_I(NR_MAC,
           "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x DCI L %d start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) PUCCH allocation %d TPC %d\n",
           frame,
           slot,
