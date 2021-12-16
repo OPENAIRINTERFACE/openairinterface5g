@@ -1196,35 +1196,34 @@ bool test_acknack_vrb_occupation(NR_UE_sched_ctrl_t *sched_ctrl,
       (csi_pucch->csi_bits + csi_pucch->dai_c) < 11)
     return true; // available resources for csi_pucch already verified
 
-  int prb_start, second_hop_prb, nr_of_symb, start_symb;
   if(r_pucch<0){
     const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[0];
     DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
-    second_hop_prb = resource->secondHopPRB!= NULL ?  *resource->secondHopPRB : 0;
-    nr_of_symb = resource->format.choice.format0->nrofSymbols;
-    start_symb = resource->format.choice.format0->startingSymbolIndex;
-    prb_start = resource->startingPRB;
+    pucch->second_hop_prb = resource->secondHopPRB!= NULL ?  *resource->secondHopPRB : 0;
+    pucch->nr_of_symb = resource->format.choice.format0->nrofSymbols;
+    pucch->start_symb = resource->format.choice.format0->startingSymbolIndex;
+    pucch->prb_start = resource->startingPRB;
   }
   else{
     int rsetindex = *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon;
     set_r_pucch_parms(rsetindex,
                       r_pucch,
                       bwp_size,
-                      &prb_start,
-                      &second_hop_prb,
-                      &nr_of_symb,
-                      &start_symb);
+                      &pucch->prb_start,
+                      &pucch->second_hop_prb,
+                      &pucch->nr_of_symb,
+                      &pucch->start_symb);
   }
 
   // verifying occupation of PRBs for ACK/NACK on dedicated pucch
   bool ret = true;
-  for (int l=0; l<nr_of_symb; l++) {
-    uint16_t symb = SL_to_bitmap(start_symb+l, 1);
+  for (int l=0; l<pucch->nr_of_symb; l++) {
+    uint16_t symb = SL_to_bitmap(pucch->start_symb+l, 1);
     int prb;
-    if (l==1 && second_hop_prb != 0)
-      prb = second_hop_prb;
+    if (l==1 && pucch->second_hop_prb != 0)
+      prb = pucch->second_hop_prb;
     else
-      prb = prb_start;
+      prb = pucch->prb_start;
     if ((vrb_map_UL[bwp_start+prb] & symb) != 0) {
       ret = false;
       break;
@@ -1489,34 +1488,14 @@ int nr_acknack_scheduling(int mod_id,
   pucch->resource_indicator = 0; // each UE has dedicated PUCCH resources
   pucch->r_pucch=r_pucch;
 
-  int prb_start, second_hop_prb, nr_of_symb, start_symb;
-  if(r_pucch<0){
-    const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[pucch->resource_indicator];
-    DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
-    second_hop_prb = resource->secondHopPRB!= NULL ?  *resource->secondHopPRB : 0;
-    nr_of_symb = resource->format.choice.format0->nrofSymbols;
-    start_symb = resource->format.choice.format0->startingSymbolIndex;
-    prb_start = resource->startingPRB;
-  }
-  else{
-    int rsetindex = *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon;
-    set_r_pucch_parms(rsetindex,
-                      r_pucch,
-                      bwp_size,
-                      &prb_start,
-                      &second_hop_prb,
-                      &nr_of_symb,
-                      &start_symb);
-  }
-
   uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
-  for (int l=0; l<nr_of_symb; l++) {
-    uint16_t symb = SL_to_bitmap(start_symb+l, 1);
+  for (int l=0; l<pucch->nr_of_symb; l++) {
+    uint16_t symb = SL_to_bitmap(pucch->start_symb+l, 1);
     int prb;
-    if (l==1 && second_hop_prb != 0)
-      prb = second_hop_prb;
+    if (l==1 && pucch->second_hop_prb != 0)
+      prb = pucch->second_hop_prb;
     else
-      prb = prb_start;
+      prb = pucch->prb_start;
     vrb_map_UL[bwp_start+prb] |= symb;
   }
   return 0;
