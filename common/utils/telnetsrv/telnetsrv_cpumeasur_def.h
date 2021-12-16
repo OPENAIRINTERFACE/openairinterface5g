@@ -112,7 +112,7 @@
     {"ulsch_modulation_stats",       &(UE->ulsch_modulation_stats),0,1},\
     {"ulsch_segmentation_stats",       &(UE->ulsch_segmentation_stats),0,1},\
     {"ulsch_rate_matching_stats",       &(UE->ulsch_rate_matching_stats),0,1},\
-    {"ulsch_turbo_encoding_stats",       &(UE->ulsch_turbo_encoding_stats),0,1},\
+    {"ulsch_ldpc_encoding_stats",       &(UE->ulsch_ldpc_encoding_stats),0,1},\
     {"ulsch_interleaving_stats",       &(UE->ulsch_interleaving_stats),0,1},\
     {"ulsch_multiplexing_stats",       &(UE->ulsch_multiplexing_stats),0,1},\
     {"generic_stat",       &(UE->generic_stat),0,1},\
@@ -124,12 +124,12 @@
     {"dlsch_f...timation_stats",       &(UE->dlsch_freq_offset_estimation_stats),0,1},\
     {"dlsch_demodulation_stats",       &(UE->dlsch_demodulation_stats),0,1},\
     {"dlsch_rate_unmatching_stats",       &(UE->dlsch_rate_unmatching_stats),0,1},\
-    {"dlsch_turbo_decoding_stats",       &(UE->dlsch_turbo_decoding_stats),0,1},\
+    {"dlsch_ldpc_decoding_stats",       &(UE->dlsch_ldpc_decoding_stats),0,1},\
     {"dlsch_deinterleaving_stats",       &(UE->dlsch_deinterleaving_stats),0,1},\
     {"dlsch_llr_stats",       &(UE->dlsch_llr_stats),0,1},\
     {"dlsch_unscrambling_stats",       &(UE->dlsch_unscrambling_stats),0,1},\
     {"dlsch_rate_matching_stats",       &(UE->dlsch_rate_matching_stats),0,1},\
-    {"dlsch_turbo_encoding_stats",       &(UE->dlsch_turbo_encoding_stats),0,1},\
+    {"dlsch_ldpc_encoding_stats",       &(UE->dlsch_ldpc_encoding_stats),0,1},\
     {"dlsch_interleaving_stats",       &(UE->dlsch_interleaving_stats),0,1},\
     {"dlsch_tc_init_stats",       &(UE->dlsch_tc_init_stats),0,1},\
     {"dlsch_tc_alpha_stats",       &(UE->dlsch_tc_alpha_stats),0,1},\

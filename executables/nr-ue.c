@@ -115,6 +115,9 @@ static int dump_L1_UE_meas_stats(PHY_VARS_NR_UE *ue, char *output, int max_len)
   stroff += print_meas_log(&ue->rx_pdsch_stats, "PDSCH receiver", NULL, NULL, output + stroff);
   stroff += print_meas_log(&ue->dlsch_decoding_stats[0], "PDSCH decoding t0", NULL, NULL, output + stroff);
   stroff += print_meas_log(&ue->dlsch_decoding_stats[1], "PDSCH decoding t1", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->dlsch_deinterleaving_stats, " -> Deinterleive", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->dlsch_rate_unmatching_stats, " -> Rate Unmatch", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->dlsch_ldpc_decoding_stats, " ->  LDPC Decode", NULL, NULL, output + stroff);
   stroff += print_meas_log(&ue->dlsch_unscrambling_stats, "PDSCH unscrambling", NULL, NULL, output + stroff);
   stroff += print_meas_log(&ue->dlsch_rx_pdcch_stats, "PDCCH handling", NULL, NULL, output + stroff);
   return stroff;

@@ -233,6 +233,10 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
   NR_UE_DLSCH_t *dlsch = (NR_UE_DLSCH_t *) rdata->dlsch;
   int r = rdata->segment_r;
 
+  merge_meas(&phy_vars_ue->dlsch_deinterleaving_stats, &rdata->ts_deinterleave);
+  merge_meas(&phy_vars_ue->dlsch_rate_unmatching_stats, &rdata->ts_rate_unmatch);
+  merge_meas(&phy_vars_ue->dlsch_ldpc_decoding_stats, &rdata->ts_ldpc_decode);
+
   bool decodeSuccess = (rdata->decodeIterations < (1+dlsch->max_ldpc_iterations));
 
   if (decodeSuccess) {
@@ -296,12 +300,6 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
 void nr_processDLSegment(void* arg) {
   ldpcDecode_ue_t *rdata = (ldpcDecode_ue_t*) arg;
   NR_UE_DLSCH_t *dlsch = rdata->dlsch;
-#if UE_TIMING_TRACE //TBD
-  PHY_VARS_NR_UE *phy_vars_ue = rdata->phy_vars_ue;
-  time_stats_t *dlsch_rate_unmatching_stats=&phy_vars_ue->dlsch_rate_unmatching_stats;
-  time_stats_t *dlsch_turbo_decoding_stats=&phy_vars_ue->dlsch_turbo_decoding_stats;
-  time_stats_t *dlsch_deinterleaving_stats=&phy_vars_ue->dlsch_deinterleaving_stats;
-#endif
   NR_DL_UE_HARQ_t *harq_process= rdata->harq_process;
   t_nrLDPC_dec_params *p_decoderParms = &rdata->decoderParms;
   int length_dec;
@@ -341,21 +339,16 @@ void nr_processDLSegment(void* arg) {
 
   t_nrLDPC_procBuf **p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf;
 
-#if UE_TIMING_TRACE
-    start_meas(dlsch_deinterleaving_stats);
-#endif
+    start_meas(&rdata->ts_deinterleave);
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DEINTERLEAVING, VCD_FUNCTION_IN);
     nr_deinterleaving_ldpc(E,
                            Qm,
                            harq_process->w[r], // [hna] w is e
                            dlsch_llr+r_offset);
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DEINTERLEAVING, VCD_FUNCTION_OUT);
-#if UE_TIMING_TRACE
-    stop_meas(dlsch_deinterleaving_stats);
-#endif
-#if UE_TIMING_TRACE
-    start_meas(dlsch_rate_unmatching_stats);
-#endif
+    stop_meas(&rdata->ts_deinterleave);
+
+    start_meas(&rdata->ts_rate_unmatch);
     /* LOG_D(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,E %d, F %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rv %d, round %d)...\n",
           harq_pid,r, G,E,harq_process->F,
           Kr*3,
@@ -380,17 +373,12 @@ void nr_processDLSegment(void* arg) {
                                  harq_process->F,
                                  Kr-harq_process->F-2*(p_decoderParms->Z))==-1) {
       //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_RATE_MATCHING, VCD_FUNCTION_OUT);
-#if UE_TIMING_TRACE
-      stop_meas(dlsch_rate_unmatching_stats);
-#endif
+      stop_meas(&rdata->ts_rate_unmatch);
       LOG_E(PHY,"dlsch_decoding.c: Problem in rate_matching\n");
       rdata->decodeIterations = dlsch->max_ldpc_iterations + 1;
-	  return;
-    } else {
-#if UE_TIMING_TRACE
-      stop_meas(dlsch_rate_unmatching_stats);
-#endif
+      return;
     }
+    stop_meas(&rdata->ts_rate_unmatch);
 
     r_offset += E;
 
@@ -418,9 +406,7 @@ void nr_processDLSegment(void* arg) {
     }
 
     {
-#if UE_TIMING_TRACE
-      start_meas(dlsch_turbo_decoding_stats);
-#endif
+      start_meas(&rdata->ts_ldpc_decode);
       //set first 2*Z_c bits to zeros
       memset(&z[0],0,2*harq_process->Z*sizeof(int16_t));
       //set Filler bits
@@ -470,9 +456,7 @@ void nr_processDLSegment(void* arg) {
         harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
       }
 
-#if UE_TIMING_TRACE
-      stop_meas(dlsch_turbo_decoding_stats);
-#endif
+      stop_meas(&rdata->ts_ldpc_decode);
     }
 }
 
@@ -673,6 +657,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     rdata->offset = offset;
     rdata->dlsch = dlsch;
     rdata->dlsch_id = 0;
+    reset_meas(&rdata->ts_deinterleave);
+    reset_meas(&rdata->ts_rate_unmatch);
+    reset_meas(&rdata->ts_ldpc_decode);
     pushTpool(&(pool_dl),req);
     nbDecode++;
     LOG_D(PHY,"Added a block to decode, in pipe: %d\n",nbDecode);
