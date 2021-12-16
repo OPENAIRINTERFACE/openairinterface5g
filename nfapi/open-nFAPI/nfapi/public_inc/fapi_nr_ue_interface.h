@@ -348,6 +348,8 @@ typedef struct {
 typedef struct {
   //uint16_t sfn;
   //uint16_t slot;
+  uint16_t sfn;
+  uint16_t slot;
   uint8_t number_pdus;
   fapi_nr_ul_config_request_pdu_t ul_config_list[FAPI_NR_UL_CONFIG_LIST_NUM];
   pthread_mutex_t mutex_ul_config;

@@ -968,10 +968,14 @@ int main(int argc, char **argv)
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   char tp_param[] = "n";
   initTpool(tp_param, gNB->threadPool, true);
-  gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->resp_L1_tx);
-  // we create 2 threads for L1 tx processing
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,processSlotTX);
+  gNB->L1_tx_free = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_filled = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_out = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initNotifiedFIFO(gNB->L1_tx_free);
+  initNotifiedFIFO(gNB->L1_tx_filled);
+  initNotifiedFIFO(gNB->L1_tx_out);
+  // we create 1 single msg for L1 tx processing (instead of 2 in full gNB)
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_free,processSlotTX);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   init_DLSCH_struct(gNB, msgDataTx);
   msgDataTx->slot = slot;
@@ -979,7 +983,6 @@ int main(int argc, char **argv)
   memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
   reset_meas(&msgDataTx->phy_proc_tx);
   gNB->phy_proc_tx[0] = &msgDataTx->phy_proc_tx;
-  pushTpool(gNB->threadPool,msgL1Tx);
 
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
@@ -1058,6 +1061,7 @@ int main(int argc, char **argv)
         Sched_INFO.UL_tti_req    = gNB_mac->UL_tti_req_ahead[slot];
         Sched_INFO.UL_dci_req  = NULL;
         Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
+	pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx);
         nr_schedule_response(&Sched_INFO);
 
         /* PTRS values for DLSIM calculations   */
