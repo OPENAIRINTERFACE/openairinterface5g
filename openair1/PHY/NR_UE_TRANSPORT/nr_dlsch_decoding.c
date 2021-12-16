@@ -206,25 +206,9 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
   return(NULL);
 }
 
-void nr_dlsch_unscrambling(int16_t *llr,
-                           uint32_t size,
-                           uint8_t q,
-                           uint32_t Nid,
-                           uint32_t n_RNTI) {
-  uint8_t reset;
-  uint32_t x1, x2, s=0;
-  reset = 1;
-  x2 = (n_RNTI<<15) + (q<<14) + Nid;
-
-  for (int i=0; i<size; i++) {
-    if ((i&0x1f)==0) {
-      s = lte_gold_generic(&x1, &x2, reset);
-      reset = 0;
-    }
-
-    if (((s>>(i&0x1f))&1)==1)
-      llr[i] = -llr[i];
-  }
+void nr_dlsch_unscrambling(int16_t *llr, uint32_t size, uint8_t q, uint32_t Nid, uint32_t n_RNTI)
+{
+  nr_codeword_unscrambling(llr, size, q, Nid, n_RNTI);
 }
 
 bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool last, notifiedFIFO_t *nf_p) {

@@ -531,6 +531,7 @@ void init_N_TA_offset(PHY_VARS_NR_UE *ue){
 void phy_init_nr_top(PHY_VARS_NR_UE *ue) {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   crcTableInit();
+  init_scrambling_luts();
   load_dftslib();
   init_context_synchro_nr(frame_parms);
   generate_ul_reference_signal_sequences(SHRT_MAX);
@@ -542,6 +543,5 @@ void phy_init_nr_top(PHY_VARS_NR_UE *ue) {
   //generate_16qam_table();
   //generate_RIV_tables();
   //init_unscrambling_lut();
-  //init_scrambling_lut();
   //set_taus_seed(1328);
 }

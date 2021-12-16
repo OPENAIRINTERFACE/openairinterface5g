@@ -33,7 +33,6 @@
 #include <stdint.h>
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
-#include "PHY/NR_REFSIG/nr_refsig.h"
 
 int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
 
@@ -82,59 +81,9 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
 
 }
 
-void nr_ulsch_unscrambling(int16_t* llr,
-                           uint32_t size,
-                           uint8_t q,
-                           uint32_t Nid,
-                           uint32_t n_RNTI) {
-
-  uint8_t reset;
-  uint32_t x1, x2, s=0;
-
-  reset = 1;
-  x2 = (n_RNTI<<15) + Nid;
-
-  for (uint32_t i=0; i<size; i++) {
-    if ((i&0x1f)==0) {
-      s = lte_gold_generic(&x1, &x2, reset);
-      reset = 0;
-    }
-    if (((s>>(i&0x1f))&1)==1)
-      llr[i] = -llr[i];
-  }
-}
-
-void nr_ulsch_unscrambling_optim(int16_t* llr,
-				 uint32_t size,
-				 uint8_t q,
-				 uint32_t Nid,
-				 uint32_t n_RNTI) {
-  
-#if defined(__x86_64__) || defined(__i386__)
-  uint32_t x1, x2, s=0;
-
-  x2 = (n_RNTI<<15) + Nid;
-
-  uint8_t *s8=(uint8_t *)&s;
-  __m128i *llr128 = (__m128i*)llr;
-  int j=0;
-  s = lte_gold_generic(&x1, &x2, 1);
-
-  for (int i=0; i<((size>>5)+((size&0x1f) > 0 ? 1 : 0)); i++,j+=4) {
-    llr128[j]   = _mm_mullo_epi16(llr128[j],byte2m128i[s8[0]]);
-    llr128[j+1] = _mm_mullo_epi16(llr128[j+1],byte2m128i[s8[1]]);
-    llr128[j+2] = _mm_mullo_epi16(llr128[j+2],byte2m128i[s8[2]]);
-    llr128[j+3] = _mm_mullo_epi16(llr128[j+3],byte2m128i[s8[3]]);
-    s = lte_gold_generic(&x1, &x2, 0);
-  }
-#else
-
-    nr_ulsch_unscrambling(llr,
-                          size,
-                          q,
-                          Nid,
-                          n_RNTI);
-#endif
+void nr_ulsch_unscrambling(int16_t* llr, uint32_t size, uint32_t Nid, uint32_t n_RNTI)
+{
+  nr_codeword_unscrambling(llr, size, 0, Nid, n_RNTI);
 }
 
 void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
