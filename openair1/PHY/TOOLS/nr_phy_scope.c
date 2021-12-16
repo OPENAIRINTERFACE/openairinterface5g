@@ -448,6 +448,7 @@ static OAI_phy_scope_t *create_phy_scope_gnb(void) {
   OAI_phy_scope_t *fdui = calloc(( sizeof *fdui ),1);
   // Define form
   fdui->phy_scope = fl_bgn_form( FL_NO_BOX, 800, 800 );
+  fl_set_form_dblbuffer(fdui->phy_scope, 1);
   // This the whole UI box
   obj = fl_add_box( FL_BORDER_BOX, 0, 0, 800, 800, "" );
   fl_set_object_color( obj, FL_BLACK, FL_WHITE );
@@ -529,7 +530,10 @@ static void *scope_thread_gNB(void *arg) {
   OAI_phy_scope_t  *form_gnb = create_phy_scope_gnb();
 
   while (!oai_exit) {
+    fl_freeze_form(form_gnb->phy_scope);
     phy_scope_gNB(form_gnb, p, nb_ue);
+    fl_unfreeze_form(form_gnb->phy_scope);
+    fl_redraw_form(form_gnb->phy_scope);
     usleep(99*1000);
   }
 
@@ -800,6 +804,7 @@ static OAI_phy_scope_t *create_phy_scope_nrue( int ID ) {
   OAI_phy_scope_t *fdui = calloc(( sizeof *fdui ),1);
   // Define form
   fdui->phy_scope = fl_bgn_form( FL_NO_BOX, 800, 900 );
+  fl_set_form_dblbuffer(fdui->phy_scope, 1);
   // This the whole UI box
   obj = fl_add_box( FL_BORDER_BOX, 0, 0, 800, 900, "" );
   fl_set_object_color( obj, FL_BLACK, FL_BLACK );
