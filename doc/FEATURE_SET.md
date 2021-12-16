@@ -104,7 +104,7 @@ The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support
 - RLC interface (AM, UM)
 - UL power control
 - Link adaptation
-- Connected DRX (CDRX) support for FDD LTE UE. Compatible with R13 from 3GPP. Support for Cat-M1 UE comming soon.  
+- Connected DRX (CDRX) support for FDD LTE UE. Compatible with R13 from 3GPP. Support for Cat-M1 UE comming soon.
 
 ## eNB RLC Layer ##
 
@@ -206,7 +206,7 @@ The Physical layer implements **3GPP 36.211**, **36.212**, **36.213** and provid
 - PRACH preamble format 0
 - All downlink (DL) channels are supported: PSS, SSS, PBCH, PCFICH, PHICH, PDCCH, PDSCH, PMCH
 - All uplink (UL) channels are supported: PRACH, PUSCH, PUCCH (format 1/1a/1b), SRS, DRS
-- LTE MBMS-dedicated cell (feMBMS) procedures subset for LTE release 14 (experimental)  
+- LTE MBMS-dedicated cell (feMBMS) procedures subset for LTE release 14 (experimental)
 - LTE non-MBSFN subframe (feMBMS) Carrier Adquistion Subframe-CAS procedures (PSS/SSS/PBCH/PDSH) (experimental)
 - LTE MBSFN MBSFN subframe channel (feMBMS): PMCH (CS@1.25KHz) (channel estimation for 25MHz bandwidth) (experimental) 
 
@@ -307,12 +307,15 @@ The following features are valid for the gNB and the 5G-NR UE.
 - MAC <-> PHY data interface using FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
 - Scheduler procedures for SIB1
 - Scheduler procedures for RA
-  - Contention free RA procedure
-  - Contention based RA procedure
+  - Contention Free RA procedure
+  - Contention Based RA procedure
+    - Msg3 can transfer uplink CCCH, DTCH or DCCH messages
+    - CBRA can be performed using MAC CE or C-RNTI
 - Scheduler procedures for CSI-RS
 - MAC downlink scheduler
   - phy-test scheduler (fixed allocation and usable also without UE)
   - regular scheduler with dynamic allocation
+  - MCS adaptation from HARQ BLER
 - MAC header generation (including timing advance)
 - ACK / NACK handling and HARQ procedures for downlink
 - MAC uplink scheduler
@@ -398,7 +401,7 @@ The following features are valid for the gNB and the 5G-NR UE.
   - Creates TUN interface to PDCP to inject and receive user-place traffic
   - No connection to the core network
 * Supporting Standalone (SA) mode:
-  - UE can register with the 5G Core Network, establish a PDU Session and exchange user-plane traffic  
+  - UE can register with the 5G Core Network, establish a PDU Session and exchange user-plane traffic
 
 ##  NR UE PHY Layer ##
 
@@ -484,7 +487,7 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Interfaces with PDCP, MAC
 
 **UE PDCP**
-* Tx/Rx operations according to 38.323 Rel.16  
+* Tx/Rx operations according to 38.323 Rel.16
    - Integrity protection and ciphering procedures
    - Sequence number management, SDU dicard and in-order delivery
    - Radio bearer establishment/handling and association with PDCP entities

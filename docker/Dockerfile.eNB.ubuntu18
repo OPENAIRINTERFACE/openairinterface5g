@@ -25,7 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM ran-build:latest AS enb-build 
+FROM ran-build:latest AS enb-build
 
 RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
@@ -37,18 +37,19 @@ RUN /bin/sh oaienv && \
     mkdir -p log && \
     ./build_oai --eNB --ninja -w USRP --verbose-ci
 
-RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
+RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml && \
+    cp /oai-ran/docker/scripts/enb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM ubuntu:bionic as oai-enb
 ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Europe
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+ENV TZ=Europe/Paris
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         software-properties-common \
+        tzdata \
         procps \
         libsctp1 \
         libnettle6 \
@@ -60,38 +61,52 @@ RUN apt-get update && \
         iputils-ping \
         iproute2 \
         iperf \
-        libyaml-0-2 && \
-    # Install UHD driver from ettus ppa 
-    # At time of writing, it is 3.14
-    add-apt-repository ppa:ettusresearch/uhd --yes && \
-    apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         python \
+        python3 \
+        python3-six \
+        python3-requests \
         libusb-1.0-0 \
-        libuhd003 \
-        uhd-host && \
+        libyaml-0-2 && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/oai-enb/bin
-COPY --from=enb-build /oai-ran/targets/bin/lte-softmodem.Rel15 .
-COPY --from=enb-build /oai-ran/docker/scripts/enb_entrypoint.sh entrypoint.sh
+COPY --from=enb-build \
+    /oai-ran/targets/bin/lte-softmodem.Rel15 \
+    /oai-ran/docker/scripts/entrypoint.sh \
+    ./
 
 WORKDIR /usr/local/lib/
-COPY --from=enb-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
-COPY --from=enb-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
-COPY --from=enb-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
-COPY --from=enb-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
-COPY --from=enb-build /oai-ran/targets/bin/libcoding.so .
-COPY --from=enb-build /oai-ran/targets/bin/libparams_libconfig.so .
-COPY --from=enb-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
-COPY --from=enb-build /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so .
-RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so"
-RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
-RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/librfsimulator.so"
+COPY --from=enb-build \
+     /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 \
+     /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 \
+     /oai-ran/targets/bin/librfsimulator.so.Rel15 \
+     /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 \
+     /oai-ran/targets/bin/libcoding.so \
+     /oai-ran/targets/bin/libparams_libconfig.so \
+     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
+     /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so \
+     /usr/local/lib/libprotobuf-c.so.1 \
+     ./
 
-COPY --from=enb-build /usr/local/lib/libprotobuf-c.so.1 .
+# Now we are copying from builder-image the UHD files.
+COPY --from=enb-build /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=enb-build /usr/local/lib/libuhd.so.3.15.0 /usr/local/lib
+COPY --from=enb-build /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-enb/bin
+WORKDIR /usr/lib/x86_64-linux-gnu
+COPY --from=enb-build \
+     /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_system.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_program_options.so.1.65.1 \
+     ./
 
-RUN ldconfig
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so" && \
+    /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so" && \
+    /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/librfsimulator.so" && \
+    ldconfig
 
 # Copy the relevant configuration files for eNB
 WORKDIR /opt/oai-enb/etc

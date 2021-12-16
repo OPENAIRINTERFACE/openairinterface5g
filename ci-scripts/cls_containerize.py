@@ -101,9 +101,42 @@ class Containerize():
 		self.cliContName = ''
 		self.cliOptions = ''
 
+		self.imageToCopy = ''
+		self.registrySvrId = ''
+		self.testSvrId = ''
+
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
+
+	def _createWorkspace(self, sshSession, password, sourcePath):
+		# on RedHat/CentOS .git extension is mandatory
+		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
+		if result is not None:
+			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
+		else:
+			full_ran_repo_name = self.ranRepository + '.git'
+		sshSession.command('mkdir -p ' + sourcePath, '\$', 5)
+		sshSession.command('cd ' + sourcePath, '\$', 5)
+		sshSession.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
+		# Raphael: here add a check if git clone or git fetch went smoothly
+		sshSession.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
+		sshSession.command('git config user.name "OAI Jenkins"', '\$', 5)
+
+		sshSession.command('echo ' + password + ' | sudo -S git clean -x -d -ff', '\$', 30)
+		sshSession.command('mkdir -p cmake_targets/log', '\$', 5)
+		# if the commit ID is provided use it to point to it
+		if self.ranCommitID != '':
+			sshSession.command('git checkout -f ' + self.ranCommitID, '\$', 30)
+		# if the branch is not develop, then it is a merge request and we need to do
+		# the potential merge. Note that merge conflicts should already been checked earlier
+		if (self.ranAllowMerge):
+			if self.ranTargetBranch == '':
+				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
+					sshSession.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+			else:
+				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
+				sshSession.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 
 	def BuildImage(self, HTML):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
@@ -173,36 +206,7 @@ class Containerize():
 	
 		self.testCase_id = HTML.testCase_id
 	
-		# on RedHat/CentOS .git extension is mandatory
-		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
-		if result is not None:
-			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
-		else:
-			full_ran_repo_name = self.ranRepository + '.git'
-		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
-		mySSH.command('cd ' + lSourcePath, '\$', 5)
-		mySSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
-		# Raphael: here add a check if git clone or git fetch went smoothly
-		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
-		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
-
-		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
-		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
-		# if the commit ID is provided use it to point to it
-		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
-		# if the branch is not develop, then it is a merge request and we need to do 
-		# the potential merge. Note that merge conflicts should already been checked earlier
-		imageTag = 'develop'
-		sharedTag = 'develop'
-		if (self.ranAllowMerge):
-			imageTag = 'ci-temp'
-			if self.ranTargetBranch == '':
-				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
-					mySSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
-			else:
-				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
-				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+		self._createWorkspace(mySSH, lPassWord, lSourcePath)
 
  		# if asterix, copy the entitlement and subscription manager configurations
 		if self.host == 'Red Hat':
@@ -212,15 +216,30 @@ class Containerize():
 			mySSH.command('sudo cp /etc/pki/entitlement/*.pem tmp/entitlement/', '\$', 5)
 
 		sharedimage = 'ran-build'
+		sharedTag = 'develop'
+		forceSharedImageBuild = False
+		imageTag = 'develop'
+		if (self.ranAllowMerge):
+			imageTag = 'ci-temp'
+			if self.ranTargetBranch == 'develop':
+				mySSH.command('git diff HEAD..origin/develop -- docker/Dockerfile.ran' + self.dockerfileprefix + ' | grep --colour=never -i INDEX', '\$', 5)
+				result = re.search('index', mySSH.getBefore())
+				if result is not None:
+					forceSharedImageBuild = True
+					sharedTag = 'ci-temp'
+		else:
+			forceSharedImageBuild = True
+
 		# Let's remove any previous run artifacts if still there
 		mySSH.command(self.cli + ' image prune --force', '\$', 30)
-		if (not self.ranAllowMerge):
-			mySSH.command(self.cli + ' image rm ' + sharedimage + ':' + sharedTag, '\$', 30)
+		if forceSharedImageBuild:
+			mySSH.command(self.cli + ' image rm ' + sharedimage + ':' + sharedTag + ' || true', '\$', 30)
 		for image,pattern in imageNames:
-			mySSH.command(self.cli + ' image rm ' + image + ':' + imageTag, '\$', 30)
+			mySSH.command(self.cli + ' image rm ' + image + ':' + imageTag + ' || true', '\$', 30)
 
 		# Build the shared image only on Push Events (not on Merge Requests)
-		if (not self.ranAllowMerge):
+		# On when the shared image docker file is being modified.
+		if forceSharedImageBuild:
 			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + sharedimage + ' --tag ' + sharedimage + ':' + sharedTag + ' --file docker/Dockerfile.ran' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-build.log 2>&1', '\$', 1600)
 		# First verify if the shared image was properly created.
 		status = True
@@ -388,6 +407,56 @@ class Containerize():
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 
+	def Copy_Image_to_Test_Server(self, HTML):
+		imageTag = 'develop'
+		if (self.ranAllowMerge):
+			imageTag = 'ci-temp'
+
+		lSsh = SSH.SSHConnection()
+		# Going to the Docker Registry server
+		if self.registrySvrId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+		elif self.registrySvrId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+		elif self.registrySvrId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+		lSsh.open(lIpAddr, lUserName, lPassWord)
+		lSsh.command('docker save ' + self.imageToCopy + ':' + imageTag + ' | gzip > ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		lSsh.copyin(lIpAddr, lUserName, lPassWord, '~/' + self.imageToCopy + '-' + imageTag + '.tar.gz', '.')
+		lSsh.command('rm ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		lSsh.close()
+
+		# Going to the Test Server
+		if self.testSvrId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+		elif self.testSvrId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+		elif self.testSvrId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+		lSsh.open(lIpAddr, lUserName, lPassWord)
+		lSsh.copyout(lIpAddr, lUserName, lPassWord, './' + self.imageToCopy + '-' + imageTag + '.tar.gz', '~')
+		lSsh.command('docker rmi ' + self.imageToCopy + ':' + imageTag, '\$', 10)
+		lSsh.command('docker load < ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		lSsh.command('rm ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		lSsh.close()
+
+		if os.path.isfile('./' + self.imageToCopy + '-' + imageTag + '.tar.gz'):
+			os.remove('./' + self.imageToCopy + '-' + imageTag + '.tar.gz')
+
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+
 	def DeployObject(self, HTML, EPC):
 		if self.eNB_serverId[self.eNB_instance] == '0':
 			lIpAddr = self.eNBIPAddress
@@ -408,35 +477,33 @@ class Containerize():
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		logging.debug('\u001B[1m Deploying OAI Object on server: ' + lIpAddr + '\u001B[0m')
+
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
-		# Putting the CPUs in a good state, we do that only on a few servers
-		mySSH.command('hostname', '\$', 5)
-		result = re.search('obelix|asterix',  mySSH.getBefore())
-		if result is not None:
-			mySSH.command('if command -v cpupower &> /dev/null; then echo ' + lPassWord + ' | sudo -S cpupower idle-set -D 0; fi', '\$', 5)
-			time.sleep(5)
 		
+		self._createWorkspace(mySSH, lPassWord, lSourcePath)
+
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
 		mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
 		imageTag = 'develop'
 		if (self.ranAllowMerge):
 			imageTag = 'ci-temp'
 		mySSH.command('sed -i -e "s/image: oai-enb:latest/image: oai-enb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
+		mySSH.command('sed -i -e "s/image: oai-gnb:latest/image: oai-gnb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
 		localMmeIpAddr = EPC.MmeIPAddress
 		mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
-		if self.flexranCtrlDeployed:
-			mySSH.command('sed -i -e \'s/FLEXRAN_ENABLED:.*/FLEXRAN_ENABLED: "yes"/\' ci-docker-compose.yml', '\$', 2)
-			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/' + self.flexranCtrlIpAddress + '/" ci-docker-compose.yml', '\$', 2)
-		else:
-			mySSH.command('sed -i -e "s/FLEXRAN_ENABLED:.*$/FLEXRAN_ENABLED: \"no\"/" ci-docker-compose.yml', '\$', 2)
-			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/127.0.0.1/" ci-docker-compose.yml', '\$', 2)
+#		if self.flexranCtrlDeployed:
+#			mySSH.command('sed -i -e "s/FLEXRAN_ENABLED:.*/FLEXRAN_ENABLED: \'yes\'/" ci-docker-compose.yml', '\$', 2)
+#			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/' + self.flexranCtrlIpAddress + '/" ci-docker-compose.yml', '\$', 2)
+#		else:
+#			mySSH.command('sed -i -e "s/FLEXRAN_ENABLED:.*$/FLEXRAN_ENABLED: \'no\'/" ci-docker-compose.yml', '\$', 2)
+#			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/127.0.0.1/" ci-docker-compose.yml', '\$', 2)
 		# Currently support only one
-		mySSH.command('docker-compose --file ci-docker-compose.yml config --services | sed -e "s@^@service=@"', '\$', 2)
+		mySSH.command('docker-compose --file ci-docker-compose.yml config --services | sed -e "s@^@service=@" 2>&1', '\$', 10)
 		result = re.search('service=(?P<svc_name>[a-zA-Z0-9\_]+)', mySSH.getBefore())
 		if result is not None:
 			svcName = result.group('svc_name')
-			mySSH.command('docker-compose --file ci-docker-compose.yml up -d ' + svcName, '\$', 2)
+			mySSH.command('docker-compose --file ci-docker-compose.yml up -d ' + svcName, '\$', 10)
 
 		# Checking Status
 		mySSH.command('docker-compose --file ci-docker-compose.yml config', '\$', 5)
@@ -450,7 +517,7 @@ class Containerize():
 			time.sleep(5)
 			cnt = 0
 			while (cnt < 3):
-				mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' ' + containerName, '\$', 5)
+				mySSH.command('docker inspect --format="{{.State.Health.Status}}" ' + containerName, '\$', 5)
 				unhealthyNb = mySSH.getBefore().count('unhealthy')
 				healthyNb = mySSH.getBefore().count('healthy') - unhealthyNb
 				startingNb = mySSH.getBefore().count('starting')
@@ -513,18 +580,17 @@ class Containerize():
 		# Currently support only one
 		mySSH.command('docker-compose --file ci-docker-compose.yml config', '\$', 5)
 		result = re.search('container_name: (?P<container_name>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
+		if self.eNB_logFile[self.eNB_instance] == '':
+			self.eNB_logFile[self.eNB_instance] = 'enb_' + HTML.testCase_id + '.log'
 		if result is not None:
 			containerName = result.group('container_name')
 			mySSH.command('docker kill --signal INT ' + containerName, '\$', 30)
 			time.sleep(5)
 			mySSH.command('docker logs ' + containerName + ' > ' + lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '\$', 30)
 			mySSH.command('docker rm -f ' + containerName, '\$', 30)
+		# Forcing the down now to remove the networks and any artifacts
+		mySSH.command('docker-compose --file ci-docker-compose.yml down', '\$', 5)
 
-		# Putting the CPUs back in a idle state, we do that only on a few servers
-		mySSH.command('hostname', '\$', 5)
-		result = re.search('obelix|asterix',  mySSH.getBefore())
-		if result is not None:
-			mySSH.command('if command -v cpupower &> /dev/null; then echo ' + lPassWord + ' | sudo -S cpupower idle-set -E; fi', '\$', 5)
 		mySSH.close()
 
 		# Analyzing log file!
@@ -540,6 +606,9 @@ class Containerize():
 				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
 			else:
 				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+			# all the xNB run logs shall be on the server 0 for logCollecting
+			if self.eNB_serverId[self.eNB_instance] != '0':
+				mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + self.eNB_logFile[self.eNB_instance], self.eNBSourceCodePath + '/cmake_targets/')
 		logging.info('\u001B[1m Undeploying OAI Object Pass\u001B[0m')
 
 	def DeployGenObject(self, HTML):
@@ -572,7 +641,7 @@ class Containerize():
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml up -d ' + self.services[0]
 		logging.debug(cmd)
 		try:
-			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 		except Exception as e:
 			self.exitStatus = 1
 			logging.error('Could not deploy')
@@ -585,7 +654,7 @@ class Containerize():
 		healthy = 0
 		while (count < 10):
 			count += 1
-			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 			healthy = 0
 			for state in deployStatus.split('\n'):
 				res = re.search('Up \(healthy\)', state)
@@ -617,7 +686,7 @@ class Containerize():
 		# if the containers are running, recover the logs!
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps --all'
 		logging.debug(cmd)
-		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		anyLogs = False
 		for state in deployStatus.split('\n'):
 			res = re.search('Name|----------', state)
@@ -631,7 +700,7 @@ class Containerize():
 				cName = res.group('container_name')
 				cmd = 'cd ' + self.yamlPath[0] + ' && docker logs ' + cName + ' > ' + cName + '.log 2>&1'
 				logging.debug(cmd)
-				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		if anyLogs:
 			cmd = 'mkdir -p ../cmake_targets/log && mv ' + self.yamlPath[0] + '/*.log ../cmake_targets/log'
 			logging.debug(cmd)
@@ -656,7 +725,7 @@ class Containerize():
 		cmd = 'mkdir -p ../cmake_targets/log'
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
-		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ../cmake_targets/log/ping_' + HTML.testCase_id + '.log'
+		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ../cmake_targets/log/ping_' + HTML.testCase_id + '.log || true'
 		logging.debug(cmd)
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
@@ -722,24 +791,24 @@ class Containerize():
 		logStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
 		# Start the server process
-		cmd = 'docker exec -d ' + self.svrContName + ' /bin/bash -c "nohup iperf ' + self.svrOptions + ' > /tmp/iperf_server.log 2>&1"'
+		cmd = 'docker exec -d ' + self.svrContName + ' /bin/bash -c "nohup iperf ' + self.svrOptions + ' > /tmp/iperf_server.log 2>&1" || true'
 		logging.debug(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		time.sleep(5)
 
 		# Start the client process
-		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee ../cmake_targets/log/iperf_client_' + HTML.testCase_id + '.log'
+		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee ../cmake_targets/log/iperf_client_' + HTML.testCase_id + '.log || true'
 		logging.debug(cmd)
 		clientStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
 		# Stop the server process
-		cmd = 'docker exec ' + self.svrContName + ' /bin/bash -c "pkill iperf"'
+		cmd = 'docker exec ' + self.svrContName + ' /bin/bash -c "pkill iperf" || true'
 		logging.debug(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		time.sleep(5)
 		cmd = 'docker cp ' + self.svrContName + ':/tmp/iperf_server.log ../cmake_targets/log/iperf_server_' + HTML.testCase_id + '.log'
 		logging.debug(cmd)
-		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 
 		# Analyze client output
 		result = re.search('Server Report:', clientStatus)
@@ -750,6 +819,7 @@ class Containerize():
 			else:
 				message = 'Server Report and Connection refused Not Found!'
 			self.IperfExit(HTML, False, message)
+			logging.error('\u001B[1;37;41m Iperf Test FAIL\u001B[0m')
 			return
 
 		# Computing the requested bandwidth in float
@@ -822,6 +892,8 @@ class Containerize():
 			self.IperfExit(HTML, iperfStatus, 'problem?')
 		if iperfStatus:
 			logging.info('\u001B[1m Iperf Test PASS\u001B[0m')
+		else:
+			logging.error('\u001B[1;37;41m Iperf Test FAIL\u001B[0m')
 
 	def IperfExit(self, HTML, status, message):
 		html_queue = SimpleQueue()
@@ -832,3 +904,114 @@ class Containerize():
 		else:
 			self.exitStatus = 1
 			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'KO', 1, html_queue)
+
+	def CheckAndAddRoute(self, svrName, ipAddr, userName, password):
+		logging.debug('Checking IP routing on ' + svrName)
+		mySSH = SSH.SSHConnection()
+		if svrName == 'porcepix':
+			mySSH.open(ipAddr, userName, password)
+			# Check if route to asterix gnb exists
+			mySSH.command('ip route | grep --colour=never "192.168.68.64/26"', '\$', 10)
+			result = re.search('192.168.18.194', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 192.168.18.194 dev eno1', '\$', 10)
+			# Check if route to obelix enb exists
+			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
+			result = re.search('192.168.18.193', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev eno1', '\$', 10)
+			# Check if route to nepes gnb exists
+			mySSH.command('ip route | grep --colour=never "192.168.68.192/26"', '\$', 10)
+			result = re.search('192.168.18.209', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 192.168.18.209 dev eno1', '\$', 10)
+			# Check if forwarding is enabled
+			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
+			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
+			# Check if iptables forwarding is accepted
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
+			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
+			mySSH.close()
+		if svrName == 'asterix':
+			mySSH.open(ipAddr, userName, password)
+			# Check if route to porcepix epc exists
+			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
+			result = re.search('192.168.18.210', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev em1', '\$', 10)
+			# Check if route to porcepix cn5g exists
+			mySSH.command('ip route | grep --colour=never "192.168.70.128/26"', '\$', 10)
+			result = re.search('192.168.18.210', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.70.128/26 via 192.168.18.210 dev em1', '\$', 10)
+			# Check if X2 route to obelix enb exists
+			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
+			result = re.search('192.168.18.193', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev em1', '\$', 10)
+			# Check if forwarding is enabled
+			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
+			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
+			# Check if iptables forwarding is accepted
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
+			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
+			mySSH.close()
+		if svrName == 'obelix':
+			mySSH.open(ipAddr, userName, password)
+			# Check if route to porcepix epc exists
+			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
+			result = re.search('192.168.18.210', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev eno1', '\$', 10)
+			# Check if X2 route to asterix gnb exists
+			mySSH.command('ip route | grep --colour=never "192.168.68.64/26"', '\$', 10)
+			result = re.search('192.168.18.194', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 192.168.18.194 dev eno1', '\$', 10)
+			# Check if X2 route to nepes gnb exists
+			mySSH.command('ip route | grep --colour=never "192.168.68.192/26"', '\$', 10)
+			result = re.search('192.168.18.209', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 192.168.18.209 dev eno1', '\$', 10)
+			# Check if forwarding is enabled
+			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
+			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
+			# Check if iptables forwarding is accepted
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
+			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
+			mySSH.close()
+		if svrName == 'nepes':
+			mySSH.open(ipAddr, userName, password)
+			# Check if route to porcepix epc exists
+			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
+			result = re.search('192.168.18.210', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev enp0s31f6', '\$', 10)
+			# Check if X2 route to obelix enb exists
+			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
+			result = re.search('192.168.18.193', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev enp0s31f6', '\$', 10)
+			# Check if forwarding is enabled
+			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
+			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
+			# Check if iptables forwarding is accepted
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
+			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
+			mySSH.close()

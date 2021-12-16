@@ -45,6 +45,93 @@
 extern RAN_CONTEXT_t RC;
 
 
+#define MACSTATSSTRLEN 16384
+
+void *nrmac_stats_thread(void *arg) {
+
+  gNB_MAC_INST *gNB = (gNB_MAC_INST *)arg;
+
+  char output[MACSTATSSTRLEN];
+  memset(output,0,MACSTATSSTRLEN);
+  FILE *fd=fopen("nrMAC_stats.log","w");
+  AssertFatal(fd!=NULL,"Cannot open nrMAC_stats.log, error %s\n",strerror(errno));
+
+  while (oai_exit == 0) {
+     dump_mac_stats(gNB,output,MACSTATSSTRLEN,false);
+     fprintf(fd,"%s\n",output);
+     fflush(fd);
+     usleep(200000);
+     fseek(fd,0,SEEK_SET);
+  }
+  fclose(fd);
+  return (void *)0;
+}
+
+void clear_mac_stats(gNB_MAC_INST *gNB) {
+  memset((void*)gNB->UE_info.mac_stats,0,MAX_MOBILES_PER_GNB*sizeof(NR_mac_stats_t));
+}
+
+void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp)
+{
+  NR_UE_info_t *UE_info = &gNB->UE_info;
+  int num = 1;
+ 
+  int stroff=0;
+  if (UE_info->num_UEs == 0) return;
+
+  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+
+    const NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
+    const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
+    stroff+=sprintf(output+stroff,"UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas)\n",
+      UE_id,
+      UE_info->rnti[UE_id],
+      num++,
+      UE_info->num_UEs,
+      sched_ctrl->ph,
+      sched_ctrl->pcmax,
+      avg_rsrp,
+      stats->num_rsrp_meas);
+
+    stroff+=sprintf(output+stroff,"UE %d: dlsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", dlsch_errors %"PRIu64", pucch0_DTX %d, BLER %.5f MCS %d\n",
+                    UE_id,
+                    stats->dlsch_rounds[0], stats->dlsch_rounds[1],
+                    stats->dlsch_rounds[2], stats->dlsch_rounds[3],
+                    stats->dlsch_errors,
+                    stats->pucch0_DTX,
+                    sched_ctrl->dl_bler_stats.bler,
+                    sched_ctrl->dl_bler_stats.mcs);
+    if (reset_rsrp) {
+      stats->num_rsrp_meas = 0;
+      stats->cumul_rsrp = 0;
+    }
+    stroff+=sprintf(output+stroff,"UE %d: dlsch_total_bytes %"PRIu64"\n", UE_id, stats->dlsch_total_bytes);
+    stroff+=sprintf(output+stroff,"UE %d: ulsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", ulsch_DTX %d, ulsch_errors %"PRIu64"\n",
+                    UE_id,
+                    stats->ulsch_rounds[0], stats->ulsch_rounds[1],
+                    stats->ulsch_rounds[2], stats->ulsch_rounds[3],
+                    stats->ulsch_DTX,
+                    stats->ulsch_errors);
+    stroff+=sprintf(output+stroff,
+                    "UE %d: ulsch_total_bytes_scheduled %"PRIu64", ulsch_total_bytes_received %"PRIu64"\n",
+                    UE_id,
+                    stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
+    for (int lc_id = 0; lc_id < 63; lc_id++) {
+      if (stats->lc_bytes_tx[lc_id] > 0) {
+        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %"PRIu64" bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
+	LOG_D(NR_MAC, "UE %d: LCID %d: %"PRIu64" bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
+      }
+      if (stats->lc_bytes_rx[lc_id] > 0) {
+        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %"PRIu64" bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
+	LOG_D(NR_MAC, "UE %d: LCID %d: %"PRIu64" bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
+      }
+    }
+  }
+  print_meas_log(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL, output+stroff);
+}
+
+
 void mac_top_init_gNB(void)
 {
   module_id_t     i;
@@ -90,6 +177,7 @@ void mac_top_init_gNB(void)
         RC.nrmac[i]->pre_processor_dl = nr_init_fr1_dlsch_preprocessor(i, 0);
         RC.nrmac[i]->pre_processor_ul = nr_init_fr1_ulsch_preprocessor(i, 0);
       }
+      pthread_create(&RC.nrmac[i]->stats_thread,NULL,nrmac_stats_thread,(void*)RC.nrmac[i]);
 
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
 
@@ -102,6 +190,7 @@ void mac_top_init_gNB(void)
       nr_DRB_preconfiguration(0x1234);
 
     rrc_init_nr_global_param();
+
 
   } else {
     RC.nrmac = NULL;

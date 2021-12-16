@@ -55,11 +55,16 @@
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTC                "remote_s_portc"
 #define CONFIG_STRING_MACRLC_LOCAL_S_PORTD                 "local_s_portd"
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
-#define CONFIG_STRING_MACRLC_ULSCH_MAX_SLOTS_INACTIVITY    "ulsch_max_slots_inactivity"
+#define CONFIG_STRING_MACRLC_ULSCH_MAX_FRAME_INACTIVITY    "ulsch_max_frame_inactivity"
 #define CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10             "pusch_TargetSNRx10"
 #define CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10             "pucch_TargetSNRx10"
 #define CONFIG_STRING_MACRLC_PUCCHFAILURETHRES             "pucch_FailureThres"
 #define CONFIG_STRING_MACRLC_PUSCHFAILURETHRES             "pusch_FailureThres"
+#define CONFIG_STRING_MACRLC_DL_BLER_TARGET_UPPER          "dl_bler_target_upper"
+#define CONFIG_STRING_MACRLC_DL_BLER_TARGET_LOWER          "dl_bler_target_lower"
+#define CONFIG_STRING_MACRLC_DL_RD2_BLER_THRESHOLD         "dl_rd2_bler_threshold"
+#define CONFIG_STRING_MACRLC_DL_MAX_MCS                    "dl_max_mcs"
+
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            MacRLC  configuration parameters                                                                           */
@@ -83,11 +88,15 @@
 {CONFIG_STRING_MACRLC_REMOTE_S_PORTC,                    NULL,     0,          uptr:NULL,           defintval:50020,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_LOCAL_S_PORTD,                     NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_REMOTE_S_PORTD,                    NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_ULSCH_MAX_SLOTS_INACTIVITY,        "Maximum number of slots before a UE is scheduled ULSCH due to inactivity", 0, uptr:NULL, defintval:200, TYPE_UINT, 0}, \
+{CONFIG_STRING_MACRLC_ULSCH_MAX_FRAME_INACTIVITY,        NULL,     0,          uptr:NULL,           defintval:10,              TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:200,             TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:150,             TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_PUCCHFAILURETHRES,                 NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_PUSCHFAILURETHRES,                 NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
+{CONFIG_STRING_MACRLC_DL_BLER_TARGET_UPPER,   "Upper threshold of BLER to decrease DL MCS",   0, dblptr:NULL,  defdblval:0.15,  TYPE_DOUBLE,  0},        \
+{CONFIG_STRING_MACRLC_DL_BLER_TARGET_LOWER,   "Lower threshold of BLER to increase DL MCS",   0, dblptr:NULL,  defdblval:0.05,  TYPE_DOUBLE,  0},        \
+{CONFIG_STRING_MACRLC_DL_RD2_BLER_THRESHOLD,  "Threshold of RD2/RETX2 BLER to decrease DL MCS", 0, dblptr:NULL,  defdblval:0.01,  TYPE_DOUBLE,  0},      \
+{CONFIG_STRING_MACRLC_DL_MAX_MCS,             "Maximum DL MCS that should be used", 0, u8ptr:NULL,  defintval:28,  TYPE_UINT8,  0},      \
 }
 #define MACRLC_CC_IDX                                          0
 #define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -106,10 +115,15 @@
 #define MACRLC_REMOTE_S_PORTC_IDX                              14
 #define MACRLC_LOCAL_S_PORTD_IDX                               15
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
-#define MACRLC_ULSCH_MAX_SLOTS_INACTIVITY                      17
+#define MACRLC_ULSCH_MAX_FRAME_INACTIVITY                      17
 #define MACRLC_PUSCHTARGETSNRX10_IDX                           18
 #define MACRLC_PUCCHTARGETSNRX10_IDX                           19
 #define MACRLC_PUCCHFAILURETHRES_IDX                           20 
 #define MACRLC_PUSCHFAILURETHRES_IDX                           21
+#define MACRLC_DL_BLER_TARGET_UPPER_IDX                        22
+#define MACRLC_DL_BLER_TARGET_LOWER_IDX                        23
+#define MACRLC_DL_RD2_BLER_THRESHOLD_IDX                       24
+#define MACRLC_DL_MAX_MCS_IDX                                  25
+
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif

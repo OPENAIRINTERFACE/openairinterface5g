@@ -60,7 +60,8 @@ class SSHConnection():
 		connect_status = False
 		while count < 4:
 			self.ssh = pexpect.spawn('ssh -o PubkeyAuthentication=no {}@{}'.format(username,ipaddress))
-			self.ssh.timeout = 5
+			# Longer timeout at connection due to asterix slowness
+			self.ssh.timeout = 25
 			self.sshresponse = self.ssh.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', 'Last login', pexpect.EOF, pexpect.TIMEOUT])
 			if self.sshresponse == 0:
 				self.ssh.sendline('yes')
@@ -99,7 +100,7 @@ class SSHConnection():
 				time.sleep(1)
 			count += 1
 		if connect_status:
-			pass
+			self.command('unset HISTFILE', '\$', 5, silent=True)
 		else:
 			sys.exit('SSH Connection Failed')
 		self.ipaddress = ipaddress

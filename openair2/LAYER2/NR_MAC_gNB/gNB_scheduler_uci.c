@@ -294,6 +294,7 @@ uint8_t compute_ri_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
   }
   else
     AssertFatal(1==0,"Other configurations not yet implemented\n");
+  return -1;
 }
 
 void compute_li_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
@@ -520,6 +521,11 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->csi_bits +=
           nr_get_csi_bitlen(Mod_idP,UE_id,csi_report_id);
 
+      NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
+        &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
+        &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+      int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+
       // going through the list of PUCCH resources to find the one indexed by resource_id
       uint16_t *vrb_map_UL = &RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
       const int m = pucch_Config->resourceToAddModList->list.count;
@@ -550,7 +556,7 @@ void nr_csi_meas_reporting(int Mod_idP,
         }
         // verify resources are free
         for (int i = start; i < start + len; ++i) {
-          vrb_map_UL[i] |= mask;
+          vrb_map_UL[i+bwp_start] |= mask;
         }
       }
     }
@@ -576,7 +582,7 @@ static void handle_dl_harq(module_id_t mod_id,
     harq->ndi ^= 1;
     NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
     stats->dlsch_errors++;
-    LOG_D(NR_MAC, "retransmission error for UE %d (total %d)\n", UE_id, stats->dlsch_errors);
+    LOG_D(NR_MAC, "retransmission error for UE %d (total %"PRIu64")\n", UE_id, stats->dlsch_errors);
   } else {
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].retrans_dl_harq, harq_pid);
     harq->round++;
@@ -696,7 +702,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   uint8_t diff_rsrp_idx = 0;
   uint8_t i, j;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
 
   if (n_dl_bwp < 4)
     pdsch_bwp_id = bwp_id;
@@ -722,9 +727,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
 
       //if strongest measured RSRP is configured
       strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
-      // including ssb rsrp in mac stats
-      stats->cumul_rsrp += strongest_ssb_rsrp;
-      stats->num_rsrp_meas++;
       ssb_rsrp[idx * nb_of_csi_ssb_report] = strongest_ssb_rsrp;
       LOG_D(NR_MAC,"ssb_rsrp = %d\n",strongest_ssb_rsrp);
 
@@ -866,12 +868,12 @@ uint8_t pickandreverse_bits(uint8_t *payload, uint16_t bitlen, uint8_t start_bit
 
 
 void evaluate_rsrp_report(NR_UE_info_t *UE_info,
-                             NR_UE_sched_ctrl_t *sched_ctrl,
-                             int UE_id,
-                             uint8_t csi_report_id,
-                             uint8_t *payload,
-                             int *cumul_bits,
-                             NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type){
+                          NR_UE_sched_ctrl_t *sched_ctrl,
+                          int UE_id,
+                          uint8_t csi_report_id,
+                          uint8_t *payload,
+                          int *cumul_bits,
+                          NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type){
 
   uint8_t cri_ssbri_bitlen = UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen.cri_ssbri_bitlen;
   uint16_t curr_payload;
@@ -901,14 +903,17 @@ void evaluate_rsrp_report(NR_UE_info_t *UE_info,
     curr_payload = pickandreverse_bits(payload, cri_ssbri_bitlen, *cumul_bits);
 
     if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP == reportQuantity_type)
-      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] =
+      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx] =
         *(UE_info->csi_report_template[UE_id][csi_report_id].SSB_Index_list[cri_ssbri_bitlen>0?((curr_payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
     else
-      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx] =
+      sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx] =
         *(UE_info->csi_report_template[UE_id][csi_report_id].CSI_Index_list[cri_ssbri_bitlen>0?((curr_payload)&~(~1<<(cri_ssbri_bitlen-1))):cri_ssbri_bitlen]);
 
     *cumul_bits += cri_ssbri_bitlen;
-    LOG_D(MAC,"SSB_index = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI [csi_ssb_idx]);
+    if(UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type == NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP)
+      LOG_D(MAC,"CSI-RS Resource Indicator = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx]);
+    else
+      LOG_D(MAC,"SSB Resource Indicator = %d\n",sched_ctrl->CSI_report[idx].choice.ssb_cri_report.CRI_SSBRI[csi_ssb_idx]);
   }
 
   curr_payload = pickandreverse_bits(payload, 7, *cumul_bits);
@@ -921,9 +926,14 @@ void evaluate_rsrp_report(NR_UE_info_t *UE_info,
     *cumul_bits += 4;
   }
   UE_info->csi_report_template[UE_id][csi_report_id].nb_of_csi_ssb_report++;
+  int strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP);
+  NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
+  // including ssb rsrp in mac stats
+  stats->cumul_rsrp += strongest_ssb_rsrp;
+  stats->num_rsrp_meas++;
   LOG_D(MAC,"rsrp_id = %d rsrp = %d\n",
         sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP,
-        get_measured_rsrp(sched_ctrl->CSI_report[idx].choice.ssb_cri_report.RSRP));
+        strongest_ssb_rsrp);
 }
 
 
@@ -1089,7 +1099,8 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       DevAssert(harq->is_waiting);
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
+      LOG_D(NR_MAC,"bit %d pid %d ack/nack %d\n",harq_bit,pid,harq_value);
+      handle_dl_harq(mod_id, UE_id, pid, harq_value == 0 && harq_confidence == 0);
       if (harq_confidence == 1)  UE_info->mac_stats[UE_id].pucch0_DTX++;
     }
   }
@@ -1150,7 +1161,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   }
   if ((uci_234->pduBitmap >> 2) & 0x01) {
     //API to parse the csi report and store it into sched_ctrl
-    extract_pucch_csi_report (csi_MeasConfig, uci_234, frame, slot, UE_id, mod_id);
+    extract_pucch_csi_report(csi_MeasConfig, uci_234, frame, slot, UE_id, mod_id);
     //TCI handling function
     tci_handling(mod_id, UE_id,frame, slot);
   }
@@ -1177,7 +1188,7 @@ int nr_acknack_scheduling(int mod_id,
   const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
   const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
   const int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
-  const int first_ul_slot_period = first_ul_slot_tdd%nr_slots_period;
+  const int first_ul_slot_period = tdd->nrofDownlinkSlots;
   const int CC_id = 0;
   NR_sched_pucch_t *csi_pucch;
 
@@ -1226,11 +1237,11 @@ int nr_acknack_scheduling(int mod_id,
         && !csi_pucch->simultaneous_harqcsi) {
       nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
       memset(csi_pucch, 0, sizeof(*csi_pucch));
-      pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-      if(((s + 1)%nr_slots_period) == 0)
-        pucch->ul_slot = (s + 1 + first_ul_slot_period) % n_slots_frame;
+      pucch->frame = pucch->ul_slot == n_slots_frame - 1 ? (pucch->frame + 1) % 1024 : pucch->frame;
+      if(((pucch->ul_slot + 1)%nr_slots_period) == 0)
+        pucch->ul_slot = (pucch->ul_slot + 1 + first_ul_slot_period) % n_slots_frame;
       else
-        pucch->ul_slot = (s + 1) % n_slots_frame;
+        pucch->ul_slot = (pucch->ul_slot + 1) % n_slots_frame;
     }
   }
 
@@ -1254,7 +1265,6 @@ int nr_acknack_scheduling(int mod_id,
 
   int max_fb_time = 0;
   get_pdsch_to_harq_feedback(mod_id, UE_id, bwp_Id, ss_type, &max_fb_time, pdsch_to_harq_feedback);
-  int max_absslot = frame*n_slots_frame + slot + max_fb_time;
 
   LOG_D(NR_MAC,"pucch_acknak 1b. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
@@ -1263,7 +1273,10 @@ int nr_acknack_scheduling(int mod_id,
     // Find the right timing_indicator value.
     int i = 0;
     while (i < 8) {
-      if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot)
+      int diff = pucch->ul_slot - slot;
+      if (diff<0)
+        diff += n_slots_frame;
+      if (pdsch_to_harq_feedback[i] == diff)
         break;
       ++i;
     }
@@ -1293,8 +1306,10 @@ int nr_acknack_scheduling(int mod_id,
   LOG_D(NR_MAC,"pucch_acknak : %d.%d DAI = 0, looking for new pucch occasion\n",frame,slot);
   /* we need to find a new PUCCH occasion */
 
-  /*Inizialization of timing information*/
-  if (pucch->frame == 0 && pucch->ul_slot == 0) {
+  /*(Re)Inizialization of timing information*/
+  if ((pucch->frame == 0 && pucch->ul_slot == 0) ||
+      ((pucch->frame*n_slots_frame + pucch->ul_slot) <
+      (frame*n_slots_frame + slot))) {
     AssertFatal(pucch->sr_flag + pucch->dai_c == 0,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
@@ -1304,13 +1319,16 @@ int nr_acknack_scheduling(int mod_id,
 
   // Find the right timing_indicator value.
   int ind_found = -1;
-  // while we are within the feedback limits and it has not been
-  while ((pucch->frame*n_slots_frame + pucch->ul_slot) <= max_absslot) {
+  // while we are within the feedback limits
+  while ((n_slots_frame + pucch->ul_slot - slot) % n_slots_frame <= max_fb_time) {
     int i = 0;
     while (i < 8) {
       LOG_D(NR_MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
             i,pdsch_to_harq_feedback[i],pucch->ul_slot,slot);
-      if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot) {
+      int diff = pucch->ul_slot - slot;
+      if (diff<0)
+        diff += n_slots_frame;
+      if (pdsch_to_harq_feedback[i] == diff) {
         ind_found = i;
         break;
       }
@@ -1328,7 +1346,7 @@ int nr_acknack_scheduling(int mod_id,
       pucch->ul_slot = (s + 1) % n_slots_frame;
   }
   if (ind_found==-1) {
-    LOG_W(NR_MAC,
+    LOG_D(NR_MAC,
           "%4d.%2d could not find pdsch_to_harq_feedback for UE %d: earliest "
           "ack slot %d\n",
           frame,
@@ -1390,18 +1408,32 @@ int nr_acknack_scheduling(int mod_id,
     pucch_Config = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
   }
 
+  NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
+    &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
+    &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+
   /* verify that at that slot and symbol, resources are free. We only do this
    * for initialCyclicShift 0 (we assume it always has that one), so other
    * initialCyclicShifts can overlap with ICS 0!*/
   if (pucch_Config) {
     const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[pucch->resource_indicator];
     DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
+    int second_hop_prb = resource->secondHopPRB!= NULL ?  *resource->secondHopPRB : 0;
+    int nr_of_symbols = resource->format.choice.format0->nrofSymbols;
     if (resource->format.choice.format0->initialCyclicShift == 0) {
       uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
-      const uint16_t symb = 1 << resource->format.choice.format0->startingSymbolIndex;
-      if ((vrb_map_UL[resource->startingPRB] & symb) != 0)
-        LOG_W(NR_MAC, "symbol 0x%x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d.%d\n", symb, resource->startingPRB, pucch->frame, pucch->ul_slot);
-      vrb_map_UL[resource->startingPRB] |= symb;
+      for (int l=0; l<nr_of_symbols; l++) {
+        uint16_t symb = 1 << (resource->format.choice.format0->startingSymbolIndex + l);
+        int prb;
+        if (l==1 && second_hop_prb != 0)
+          prb = second_hop_prb;
+        else
+          prb = resource->startingPRB;
+        if ((vrb_map_UL[bwp_start+prb] & symb) != 0)
+          LOG_W(MAC, "symbol 0x%x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d.%d\n", symb, resource->startingPRB, pucch->frame, pucch->ul_slot);
+        vrb_map_UL[bwp_start+prb] |= symb;
+      }
     }
   }
   return 0;

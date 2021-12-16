@@ -34,6 +34,8 @@
 #include "assertions.h"
 #include "nr_common.h"
 
+const char *duplex_mode[]={"FDD","TDD"};
+
 // Table 5.2-1 NR operating bands in FR1 & FR2 (3GPP TS 38.101)
 // Table 5.4.2.3-1 Applicable NR-ARFCN per operating band in FR1 & FR2 (3GPP TS 38.101)
 // Notes:
@@ -63,8 +65,8 @@ nr_bandentry_t nr_bandtable[] = {
   {41,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
   {41,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
   {47,  5855000, 5925000, 5855000, 5925000,  1, 790334,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
+  {48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
+  {48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
   {50,  1432000, 1517000, 1432000, 1517000, 20, 286400, 100},
   {51,  1427000, 1432000, 1427000, 1432000, 20, 285400, 100},
   {53,  2483500, 2495000, 2483500, 2495000, 20, 496700, 100},
@@ -88,14 +90,15 @@ nr_bandentry_t nr_bandtable[] = {
   {84,  1920000, 1980000,     000,     000, 20, 384000, 100},
   {86,  1710000, 1785000,     000,     000, 20, 342000, 100},
   {89,   824000,  849000,     000,     000, 20, 342000, 100},
-  {90,  2496000, 2690000, 2496000, 2690000, 3,  499200,  15},
-  {90,  2496000, 2690000, 2496000, 2690000, 6,  499200,  30},
+  {90,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
+  {90,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
   {90,  2496000, 2690000, 2496000, 2690000, 20, 499200, 100},
   {91,   832000,  862000, 1427000, 1432000, 20, 285400, 100},
   {92,   832000,  862000, 1432000, 1517000, 20, 286400, 100},
   {93,   880000,  915000, 1427000, 1432000, 20, 285400, 100},
   {94,   880000,  915000, 1432000, 1517000, 20, 286400, 100},
   {95,  2010000, 2025000,     000,     000, 20, 402000, 100},
+  {96,  5925000, 7125000, 5925000, 7125000,  1, 795000,  15},
   {257,26500020,29500000,26500020,29500000,  1,2054166,  60},
   {257,26500080,29500000,26500080,29500000,  2,2054167, 120},
   {258,24250080,27500000,24250080,27500000,  1,2016667,  60},
@@ -231,6 +234,30 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
 }
 
 
+void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
+
+  uint8_t count=0, start=0, start_set=0;
+
+  uint64_t bitmap = (((uint64_t)FreqDomainResource[0])<<37)|
+    (((uint64_t)FreqDomainResource[1])<<29)|
+    (((uint64_t)FreqDomainResource[2])<<21)|
+    (((uint64_t)FreqDomainResource[3])<<13)|
+    (((uint64_t)FreqDomainResource[4])<<5)|
+    (((uint64_t)FreqDomainResource[5])>>3);
+
+  for (int i=0; i<45; i++)
+    if ((bitmap>>(44-i))&1) {
+      count++;
+      if (!start_set) {
+        start = i;
+        start_set = 1;
+      }
+    }
+  *rb_offset = 6*start;
+  *n_rb = 6*count;
+}
+
+
 int get_dmrs_port(int nl, uint16_t dmrs_ports) {
 
   if (dmrs_ports == 0) return 0; // dci 1_0
@@ -249,6 +276,184 @@ int get_dmrs_port(int nl, uint16_t dmrs_ports) {
   return p;
 }
 
+int get_num_dmrs(uint16_t dmrs_mask ) {
+
+  int num_dmrs=0;
+
+  for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
+  return(num_dmrs);
+}
+
+lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
+{
+  lte_frame_type_t current_type;
+  int32_t delta_duplex = get_delta_duplex(current_band, scs_index);
+
+  if (delta_duplex == 0)
+    current_type = TDD;
+  else
+    current_type = FDD;
+
+  LOG_I(NR_MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[current_type], delta_duplex);
+
+  return current_type;
+}
+
+// Computes the duplex spacing (either positive or negative) in KHz
+int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index)
+{
+  int nr_table_idx = get_nr_table_idx(nr_bandP, scs_index);
+
+  int32_t delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
+
+  LOG_I(NR_MAC, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
+
+  return delta_duplex;
+}
+
+uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
+{
+
+  if (nr_band < 100)  { //FR1
+   switch(mu) {
+    case 0 :
+      if (nb_rb<=25)
+        return 5;
+      if (nb_rb<=52)
+        return 10;
+      if (nb_rb<=79)
+        return 15;
+      if (nb_rb<=106)
+        return 20;
+      if (nb_rb<=133)
+        return 25;
+      if (nb_rb<=160)
+        return 30;
+      if (nb_rb<=216)
+        return 40;
+      if (nb_rb<=270)
+        return 50;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    case 1 :
+      if (nb_rb<=11)
+        return 5;
+      if (nb_rb<=24)
+        return 10;
+      if (nb_rb<=38)
+        return 15;
+      if (nb_rb<=51)
+        return 20;
+      if (nb_rb<=65)
+        return 25;
+      if (nb_rb<=78)
+        return 30;
+      if (nb_rb<=106)
+        return 40;
+      if (nb_rb<=133)
+        return 50;
+      if (nb_rb<=162)
+        return 60;
+      if (nb_rb<=189)
+        return 70;
+      if (nb_rb<=217)
+        return 80;
+      if (nb_rb<=245)
+        return 90;
+      if (nb_rb<=273)
+        return 100;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    case 2 :
+      if (nb_rb<=11)
+        return 10;
+      if (nb_rb<=18)
+        return 15;
+      if (nb_rb<=24)
+        return 20;
+      if (nb_rb<=31)
+        return 25;
+      if (nb_rb<=38)
+        return 30;
+      if (nb_rb<=51)
+        return 40;
+      if (nb_rb<=65)
+        return 50;
+      if (nb_rb<=79)
+        return 60;
+      if (nb_rb<=93)
+        return 70;
+      if (nb_rb<=107)
+        return 80;
+      if (nb_rb<=121)
+        return 90;
+      if (nb_rb<=135)
+        return 100;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    default:
+      AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
+   }
+  }
+  else {
+   switch(mu) {
+    case 2 :
+      if (nb_rb<=66)
+        return 50;
+      if (nb_rb<=132)
+        return 100;
+      if (nb_rb<=264)
+        return 200;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    case 3 :
+      if (nb_rb<=32)
+        return 50;
+      if (nb_rb<=66)
+        return 100;
+      if (nb_rb<=132)
+        return 200;
+      if (nb_rb<=264)
+        return 400;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    default:
+      AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
+   }
+  }
+}
+
+// Returns the corresponding row index of the NR table
+int get_nr_table_idx(int nr_bandP, uint8_t scs_index) {
+  int i, j;
+  int scs_khz = 15 << scs_index;
+  int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
+  size_t s = sizeof(supplementary_bands)/sizeof(supplementary_bands[0]);
+
+  for(j = 0; j < s; j++){
+    if (nr_bandP == supplementary_bands[j])
+      AssertFatal(0 == 1, "Band %d is a supplementary band (%d). This is not supported yet.\n", nr_bandP, supplementary_bands[j]);
+  }
+
+  AssertFatal(nr_bandP <= nr_bandtable[nr_bandtable_size-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[nr_bandtable_size-1].band);
+  for (i = 0; i < nr_bandtable_size && nr_bandtable[i].band != nr_bandP; i++);
+
+  // In frequency bands with two deltaFRaster,
+  // the higher deltaFRaster applies to channels using only the SCS that is equal to or larger than the higher deltaFRaster
+  // and SSB SCS is equal to the higher deltaFRaster.
+  while(((i+1)<nr_bandtable_size) &&
+        (nr_bandtable[i+1].band == nr_bandtable[i].band) &&
+        (nr_bandtable[i].deltaf_raster != scs_khz)) {
+    i++;
+  }
+
+  AssertFatal(nr_bandtable[i].band == nr_bandP, "Found band table %d does not correspond to the input one %d\n",nr_bandtable[i].band,nr_bandP);
+
+
+  LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
+
+  return i;
+}
 
 int get_subband_size(int NPRB,int size) {
   // implements table  5.2.1.4-2 from 36.214

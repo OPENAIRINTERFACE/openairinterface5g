@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
@@ -429,7 +430,9 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:d:e:m:w:T:U:q")) != -1) {
+
+  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:D:e:m:w:T:U:q")) != -1) {
+
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -595,7 +598,7 @@ int main(int argc, char **argv)
     case 'b':
       g_rbSize = atoi(optarg);
       break;
-    case 'd':
+    case 'D':
       dlsch_threads = atoi(optarg);
       break;    
     case 'e':
@@ -668,7 +671,7 @@ int main(int argc, char **argv)
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
-      printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
+      printf("-D number of dlsch threads, 0: no dlsch parallelization\n");
       exit (-1);
       break;
     }
@@ -765,7 +768,7 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0, 0);
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 6, 0, 0, 0);
 
   /* RRC parameter validation for secondaryCellGroup */
   fix_scd(scd);

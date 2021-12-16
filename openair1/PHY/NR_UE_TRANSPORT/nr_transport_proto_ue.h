@@ -1087,22 +1087,6 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
                                       NR_DL_FRAME_PARMS *frame_parms,
                                       uint8_t Nl);
 
-
-
-uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
-                         UE_nr_rxtx_proc_t *proc,
-                         int eNB_id,
-                         short *dlsch_llr,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         NR_UE_DLSCH_t *dlsch,
-                         NR_DL_UE_HARQ_t *harq_process,
-                         uint32_t frame,
-                         uint16_t nb_symb_sch,
-                         uint8_t nr_slot_rx,
-                         uint8_t harq_pid,
-                         uint8_t is_crnti,
-                         uint8_t llr8_flag);
-
 void *nr_dlsch_decoding_2thread0(void *arg);
 
 void *nr_dlsch_decoding_2thread1(void *arg);
@@ -1750,8 +1734,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe);
 
 void dump_nrdlsch(PHY_VARS_NR_UE *ue,uint8_t gNB_id,uint8_t nr_slot_rx,unsigned int *coded_bits_per_codeword,int round,  unsigned char harq_pid);
-
-void *dlsch_thread(void *arg);
 /**@}*/
 #endif
 

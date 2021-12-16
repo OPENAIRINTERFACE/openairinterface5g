@@ -9,20 +9,28 @@ ENABLE_X2=${ENABLE_X2:-no}
 THREAD_PARALLEL_CONFIG=${THREAD_PARALLEL_CONFIG:-PARALLEL_SINGLE_THREAD}
 
 # Based another env var, pick one template to use
-if [[ -v USE_FDD_CU ]]; then ln -s $PREFIX/etc/cu.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_FDD_DU ]]; then ln -s $PREFIX/etc/du.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_FDD_MONO ]]; then ln -s $PREFIX/etc/enb.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_TDD_MONO ]]; then ln -s $PREFIX/etc/enb.tdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_FDD_FAPI_RCC ]]; then ln -s $PREFIX/etc/rcc.nfapi.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_FDD_IF4P5_RCC ]]; then ln -s $PREFIX/etc/rcc.if4p5.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_TDD_IF4P5_RCC ]]; then ln -s $PREFIX/etc/rcc.if4p5.tdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_FDD_RRU ]]; then ln -s $PREFIX/etc/rru.fdd.conf $PREFIX/etc/enb.conf; fi
-if [[ -v USE_TDD_RRU ]]; then ln -s $PREFIX/etc/rru.tdd.conf $PREFIX/etc/enb.conf; fi
+if [[ -v USE_FDD_CU ]]; then cp $PREFIX/etc/cu.fdd.conf $PREFIX/etc/enb.conf; fi
+if [[ -v USE_FDD_DU ]]; then cp $PREFIX/etc/du.fdd.conf $PREFIX/etc/enb.conf; fi
+if [[ -v USE_FDD_MONO ]]; then cp $PREFIX/etc/enb.fdd.conf $PREFIX/etc/enb.conf; fi
+if [[ -v USE_TDD_MONO ]]; then cp $PREFIX/etc/enb.tdd.conf $PREFIX/etc/enb.conf; fi
+if [[ -v USE_FDD_FAPI_RCC ]]; then cp $PREFIX/etc/rcc.nfapi.fdd.conf $PREFIX/etc/enb.conf; fi
+if [[ -v USE_FDD_IF4P5_RCC ]]; then cp $PREFIX/etc/rcc.if4p5.fdd.conf $PREFIX/etc/enb.conf; fi
+if [[ -v USE_TDD_IF4P5_RCC ]]; then cp $PREFIX/etc/rcc.if4p5.tdd.conf $PREFIX/etc/enb.conf; fi
+if [[ -v USE_FDD_RRU ]]; then cp $PREFIX/etc/rru.fdd.conf $PREFIX/etc/enb.conf; fi
+if [[ -v USE_TDD_RRU ]]; then cp $PREFIX/etc/rru.tdd.conf $PREFIX/etc/enb.conf; fi
+# Sometimes, the templates are not enough. We mount a conf file on $PREFIX/etc. It can be a template itself.
+if [[ -v USE_VOLUMED_CONF ]]; then cp $PREFIX/etc/mounted.conf $PREFIX/etc/enb.conf; fi
 
 # Only this template will be manipulated
 CONFIG_FILES=`ls $PREFIX/etc/enb.conf || true`
 
 for c in ${CONFIG_FILES}; do
+    # Sometimes templates have no pattern to be replaced.
+    if ! grep -oP '@[a-zA-Z0-9_]+@' ${c}; then
+        echo "Configuration is already set"
+        break
+    fi
+
     # grep variable names (format: ${VAR}) from template to be rendered
     VARS=$(grep -oP '@[a-zA-Z0-9_]+@' ${c} | sort | uniq | xargs)
 
@@ -46,11 +54,11 @@ done
 
 # Load the USRP binaries
 if [[ -v USE_B2XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t b2xx
+    $PREFIX/bin/uhd_images_downloader.py -t b2xx
 elif [[ -v USE_X3XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t x3xx
+    $PREFIX/bin/uhd_images_downloader.py -t x3xx
 elif [[ -v USE_N3XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t n3xx
+    $PREFIX/bin/uhd_images_downloader.py -t n3xx
 fi
 
 echo "=================================="
