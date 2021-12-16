@@ -303,8 +303,8 @@ void rx_func(void *param) {
 }
 static void dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output) {
   int stroff = 0;
-  stroff += print_meas_log(gNB->phy_proc_tx_0, "L1 Tx processing thread 0", NULL, NULL, output);
-  stroff += print_meas_log(gNB->phy_proc_tx_1, "L1 Tx processing thread 1", NULL, NULL, output+stroff);
+  stroff += print_meas_log(gNB->phy_proc_tx[0], "L1 Tx processing thread 0", NULL, NULL, output);
+  stroff += print_meas_log(gNB->phy_proc_tx[1], "L1 Tx processing thread 1", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->ul_indication_stats, "UL Indication", NULL, NULL, output+stroff);
@@ -339,8 +339,8 @@ void *nrL1_stats_thread(void *param) {
   fd=fopen("nrL1_stats.log","w");
   AssertFatal(fd!=NULL,"Cannot open nrL1_stats.log\n");
 
-  reset_meas(gNB->phy_proc_tx_0);
-  reset_meas(gNB->phy_proc_tx_1);
+  reset_meas(gNB->phy_proc_tx[0]);
+  reset_meas(gNB->phy_proc_tx[1]);
   reset_meas(&gNB->dlsch_encoding_stats);
   reset_meas(&gNB->phy_proc_rx);
   reset_meas(&gNB->ul_indication_stats);
@@ -444,22 +444,17 @@ void init_gNB_Tpool(int inst) {
   initNotifiedFIFO(gNB->L1_tx_free);
   initNotifiedFIFO(gNB->L1_tx_filled);
   initNotifiedFIFO(gNB->L1_tx_out);
+  
   // we create 2 threads for L1 tx processing
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_out,tx_func);
-  processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
-  init_DLSCH_struct(gNB, msgDataTx);
-  memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
-  reset_meas(&msgDataTx->phy_proc_tx);
-  gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
-  pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx); // to unblock the process in the beginning
-
-  msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_out,tx_func);
-  msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
-  init_DLSCH_struct(gNB, msgDataTx);
-  memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
-  reset_meas(&msgDataTx->phy_proc_tx);
-  gNB->phy_proc_tx_1 = &msgDataTx->phy_proc_tx;
-  pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx); // to unblock the process in the beginning
+  for (int i=0; i < 2; i++) {
+    notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_out,tx_func);
+    processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
+    init_DLSCH_struct(gNB, msgDataTx);
+    memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
+    reset_meas(&msgDataTx->phy_proc_tx);
+    gNB->phy_proc_tx[i] = &msgDataTx->phy_proc_tx;
+    pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx); // to unblock the process in the beginning
+  }
 
   threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
   threadCreate(&proc->pthread_tx_reorder, tx_reorder_thread, (void *)gNB, "thread_tx_reorder", -1, OAI_PRIORITY_RT_MAX);

@@ -978,7 +978,7 @@ int main(int argc, char **argv)
   msgDataTx->frame = frame;
   memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
   reset_meas(&msgDataTx->phy_proc_tx);
-  gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
+  gNB->phy_proc_tx[0] = &msgDataTx->phy_proc_tx;
   pushTpool(gNB->threadPool,msgL1Tx);
 
   for (SNR = snr0; SNR < snr1; SNR += .2) {
@@ -1294,7 +1294,7 @@ int main(int argc, char **argv)
 	     msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3,
 	     msgDataTx->dlsch[0][0]->harq_process.K,
 	     msgDataTx->dlsch[0][0]->harq_process.K/((msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3)>3824?22:10));
-      printDistribution(gNB->phy_proc_tx_0,table_tx,"PHY proc tx");
+      printDistribution(gNB->phy_proc_tx[0],table_tx,"PHY proc tx");
       printStatIndent2(&gNB->dlsch_encoding_stats,"DLSCH encoding time");
       printStatIndent3(&gNB->dlsch_segmentation_stats,"DLSCH segmentation time");
       printStatIndent3(&gNB->tinput,"DLSCH LDPC input processing time");

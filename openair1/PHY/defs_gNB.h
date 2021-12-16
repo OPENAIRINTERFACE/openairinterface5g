@@ -860,8 +860,7 @@ typedef struct PHY_VARS_gNB_s {
   /*
   time_stats_t phy_proc;
   */
-  time_stats_t *phy_proc_tx_0;
-  time_stats_t *phy_proc_tx_1;
+  time_stats_t *phy_proc_tx[2];
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;
   /*

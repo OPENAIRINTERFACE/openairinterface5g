@@ -61,11 +61,11 @@ static ssb_list_info_t ssb_list;
 
 void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type){
   ul_config->ul_config_list[ul_config->number_pdus].pdu_type = pdu_type;
-  ul_config->slot = slot_tx;
-  ul_config->sfn = frame_tx;
+  //ul_config->slot = slot_tx;
+  //ul_config->sfn = frame_tx;
   ul_config->number_pdus++;
 
-  LOG_D(NR_MAC, "In %s: Set config request for UL transmission in [%d.%d], number of UL PDUs: %d\n", __FUNCTION__, ul_config->sfn, ul_config->slot, ul_config->number_pdus);
+  LOG_D(NR_MAC, "In %s: Set config request for UL transmission in [%d.%d], number of UL PDUs: %d\n", __FUNCTION__, frame_tx,  slot_tx, ul_config->number_pdus);
 
 }
 
@@ -947,15 +947,15 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     // AND if a UL grant (UL DCI or Msg3) has been received (as indicated by num_pdus)
     if (ul_config){
       pthread_mutex_lock(&ul_config->mutex_ul_config);
-      if ((ul_info->slot_tx == ul_config->slot && ul_info->frame_tx == ul_config->sfn) && ul_config->number_pdus > 0){
+      if (/*(ul_info->slot_tx == ul_config->slot && ul_info->frame_tx == ul_config->sfn) && */ ul_config->number_pdus > 0){
 
-        LOG_D(NR_MAC, "In %s:[%d.%d]: number of UL PDUs: %d with UL transmission in [%d.%d]\n", __FUNCTION__, frame_tx, slot_tx, ul_config->number_pdus, ul_config->sfn, ul_config->slot);
+        LOG_D(NR_MAC, "In %s:[%d.%d]: number of UL PDUs: %d with UL transmission\n", __FUNCTION__, frame_tx, slot_tx, ul_config->number_pdus);
 
         uint8_t ulsch_input_buffer_array[NFAPI_MAX_NUM_UL_PDU][MAX_ULSCH_PAYLOAD_BYTES];
         nr_scheduled_response_t scheduled_response;
         fapi_nr_tx_request_t tx_req;
-        tx_req.slot = slot_tx;
-        tx_req.sfn = frame_tx;
+        //tx_req.slot = slot_tx;
+        //tx_req.sfn = frame_tx;
         tx_req.number_of_pdus = 0;
 
         for (int j = 0; j < ul_config->number_pdus; j++) {

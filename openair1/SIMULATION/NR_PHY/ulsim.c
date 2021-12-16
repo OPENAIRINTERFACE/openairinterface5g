@@ -670,7 +670,7 @@ int main(int argc, char **argv)
   notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,NULL);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   msgDataTx->slot = -1;
-  gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
+  gNB->phy_proc_tx[0] = &msgDataTx->phy_proc_tx;
   pushNotifiedFIFO(gNB->resp_L1_tx,msgL1Tx); // to unblock the process in the beginning
   //gNB_config = &gNB->gNB_config;
 

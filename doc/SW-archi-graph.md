@@ -4,7 +4,7 @@ flowchart TB
     feprx --> half-slot --> end_feprx
     feprx --> second-thread -- block_end_feprx --> end_feprx>feprx]
     end_feprx --> rx_nr_prach_ru
-rx_nr_prach_ru -- block_queue --> resp_L1>resp L1]
+rx_nr_prach_ru -- block_queue_singleton --> resp_L1>resp L1]
 resp_L1 -- async launch --> rx_func
 resp_L1 -- immediate return --> RFin
 
@@ -29,24 +29,35 @@ rx_func_implem[rx_func]
       handle_nr_rach
       --> handle_nr_uci
       --> handle_nr_ulsch
-      --> gNB_dlsch_ulsch_scheduler
-      --> NR_Schedule_response
+      subgraph gNB_dlsch_ulsch_scheduler
+          run_pdcp
+          --> nr_rrc_trigger
+          --> schedule_xxxx
+      end
+      handle_nr_ulsch --> gNB_dlsch_ulsch_scheduler
+      subgraph NR_Schedule_response
+         L1_tx_free3>L1_tx_free]
+         --> handle_dl_fapi
+         --> sendTxFilled((L1_tx_filled))
+         --> handle_ul_nfapi
+       
+      end
+      gNB_dlsch_ulsch_scheduler --> NR_Schedule_response
     end 
     rx_func_implem --> rxfuncbeg
     rxfuncbeg --> phy_procedures_gNB_uespec_RX
 phy_procedures_gNB_uespec_RX --> NR_UL_indication
--- block_queue --> L1_tx_free2>L1 tx free]
+-- block_queue_block_PNF_monolithic --> L1_tx_free2>L1 tx filled]
 -- async launch --> tx_func
 L1_tx_free2 -- send_msg --> rsp((resp_L1))
 end 
 rx_func --> rxfunc
 
 
-subgraph tx
+subgraph tx_func
     direction LR
-    subgraph tx_func2
-       phy_procedures_gNB_TX
-       --> dcitop[nr_generate dci top]
+    subgraph phy_procedures_gNB_TX
+       dcitop[nr_generate dci top]
        --> nr_generate_csi_rs
        --> apply_nr_rotation
        -- send_msg --> end_tx_func((L1_tx_out))
@@ -59,6 +70,6 @@ subgraph tx
         ru_tx_func --> feptx_prec
         --> feptx_ofdm
     end 
-    tx_func2 --> tx_reorder_thread
 end
+
 ```
