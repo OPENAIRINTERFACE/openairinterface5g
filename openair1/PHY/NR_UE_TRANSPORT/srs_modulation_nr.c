@@ -119,7 +119,7 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
   uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_config_pdu->bwp_start*N_SC_RB;
 
   if(nr_srs_info) {
-    nr_srs_info->n_symbs = 0;
+    nr_srs_info->sc_list_length = 0;
     nr_srs_info->srs_generated_signal_bits = log2_approx(amp);
   }
 
@@ -374,8 +374,8 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
       txptr[subcarrier] = (real_amp & 0xFFFF) + ((imag_amp<<16)&0xFFFF0000);
 
       if(nr_srs_info) {
-        nr_srs_info->subcarrier_idx[nr_srs_info->n_symbs] = subcarrier;
-        nr_srs_info->n_symbs++;
+        nr_srs_info->sc_list[nr_srs_info->sc_list_length] = subcarrier;
+        nr_srs_info->sc_list_length++;
       }
 
 #ifdef SRS_DEBUG

@@ -243,8 +243,8 @@ typedef struct {
 } NR_PRACH_RESOURCES_t;
 
 typedef struct {
-  uint16_t n_symbs;
-  uint16_t subcarrier_idx[6*NR_MAX_NB_RB];
+  uint16_t sc_list_length;
+  uint16_t sc_list[6 * NR_MAX_NB_RB];
   uint8_t srs_generated_signal_bits;
   int32_t *srs_generated_signal;
   int32_t **srs_received_signal;

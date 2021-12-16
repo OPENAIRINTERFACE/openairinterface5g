@@ -95,7 +95,7 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
                       nr_srs_info_t *nr_srs_info,
                       int32_t **srs_received_signal) {
 
-  if(nr_srs_info->n_symbs==0) {
+  if(nr_srs_info->sc_list_length == 0) {
     LOG_E(NR_PHY, "(%d.%d) nr_srs_info was not generated yet!\n", frame, slot);
     return -1;
   }
@@ -113,12 +113,12 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
     memset(srs_received_signal[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
     rx_signal = &rxdataF[ant][symbol_offset];
 
-    for(int sc_idx = 0; sc_idx < nr_srs_info->n_symbs; sc_idx++) {
-      srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx]] = rx_signal[nr_srs_info->subcarrier_idx[sc_idx]];
+    for(int sc_idx = 0; sc_idx < nr_srs_info->sc_list_length; sc_idx++) {
+      srs_received_signal[ant][nr_srs_info->sc_list[sc_idx]] = rx_signal[nr_srs_info->sc_list[sc_idx]];
 
 #ifdef SRS_DEBUG
       uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
-      int subcarrier_log = nr_srs_info->subcarrier_idx[sc_idx]-subcarrier_offset;
+      int subcarrier_log = nr_srs_info->sc_list[sc_idx]-subcarrier_offset;
       if(subcarrier_log < 0) {
         subcarrier_log = subcarrier_log + frame_parms->ofdm_symbol_size;
       }
@@ -130,8 +130,8 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
       }
       LOG_I(NR_PHY,"(%i)  \t%i\t%i\n",
             subcarrier_log,
-            (int16_t)(srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx]]&0xFFFF),
-            (int16_t)((srs_received_signal[ant][nr_srs_info->subcarrier_idx[sc_idx]]>>16)&0xFFFF));
+            (int16_t)(srs_received_signal[ant][nr_srs_info->sc_list[sc_idx]]&0xFFFF),
+            (int16_t)((srs_received_signal[ant][nr_srs_info->sc_list[sc_idx]]>>16)&0xFFFF));
 #endif
     }
   }
