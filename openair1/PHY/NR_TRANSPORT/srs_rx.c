@@ -110,7 +110,7 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
   int32_t *rx_signal;
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
 
-    memset(srs_received_signal[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
+    memset(srs_received_signal[ant], 0, frame_parms->ofdm_symbol_size*sizeof(int32_t));
     rx_signal = &rxdataF[ant][symbol_offset];
 
     for(int sc_idx = 0; sc_idx < nr_srs_info->sc_list_length; sc_idx++) {
