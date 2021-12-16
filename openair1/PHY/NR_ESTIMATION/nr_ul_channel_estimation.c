@@ -1112,10 +1112,8 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
 
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
 
-    memset(srs_ls_estimated_channel[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
-    memset(srs_estimated_channel_freq[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
-    memset(srs_estimated_channel_time[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
-    memset(srs_estimated_channel_time_shifted[ant], 0, frame_parms->samples_per_frame*sizeof(int32_t));
+    memset(srs_ls_estimated_channel[ant], 0, frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols)*sizeof(int32_t));
+    memset(srs_estimated_channel_freq[ant], 0, frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols)*sizeof(int32_t));
 
     int16_t *srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->subcarrier_idx[0]];
 
