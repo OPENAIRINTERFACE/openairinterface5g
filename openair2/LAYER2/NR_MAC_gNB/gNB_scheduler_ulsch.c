@@ -822,6 +822,24 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
             ra->state = Msg4;
             ra->Msg4_frame = (frameP + 2) % 1024;
             ra->Msg4_slot = 1;
+            
+            if (ra->msg3_dcch_dtch) {
+              // Check if the UE identified by C-RNTI still exists at the gNB
+              int UE_id_C = find_nr_UE_id(gnb_mod_idP, ra->crnti);
+              if (UE_id_C < 0) {
+                // The UE identified by C-RNTI no longer exists at the gNB
+                // Let's abort the current RA, so the UE will trigger a new RA later but using RRCSetupRequest instead. A better solution may be implemented
+                mac_remove_nr_ue(gnb_mod_idP, ra->rnti);
+                nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+                return;
+              } else {
+                // The UE identified by C-RNTI still exists at the gNB
+                // Reset uplink failure flags/counters/timers at MAC and at RRC so gNB will resume again scheduling resources for this UE
+                UE_info->UE_sched_ctrl[UE_id_C].pusch_consecutive_dtx_cnt = 0;
+                UE_info->UE_sched_ctrl[UE_id_C].ul_failure = 0;
+                nr_mac_gNB_rrc_ul_failure_reset(gnb_mod_idP, frameP, slotP, ra->crnti);
+              }
+            }
             LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d, frame %d, slot %d)\n",
                   (ra->msg3_dcch_dtch?ra->crnti:ra->rnti), ra->state, ra->Msg4_frame, ra->Msg4_slot);
           }
