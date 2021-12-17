@@ -937,8 +937,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
   } else if (ul_info) {
 
     int cc_id             = ul_info->cc_id;
-    frame_t rx_frame      = ul_info->frame_rx;
-    slot_t rx_slot        = ul_info->slot_rx;
+    //frame_t rx_frame      = ul_info->frame_rx;
+    //slot_t rx_slot        = ul_info->slot_rx;
     frame_t frame_tx      = ul_info->frame_tx;
     slot_t slot_tx        = ul_info->slot_tx;
     module_id_t mod_id    = ul_info->module_id;
