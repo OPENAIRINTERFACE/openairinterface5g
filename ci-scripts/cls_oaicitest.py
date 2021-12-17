@@ -126,6 +126,7 @@ class OaiCiTest():
 		self.desc = ''
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
+		self.ping_rttavg_threshold =''
 		self.iperf_args = ''
 		self.iperf_packetloss_threshold = ''
 		self.iperf_profile = ''
@@ -1632,6 +1633,7 @@ class OaiCiTest():
 			min_msg = 'RTT(Min)    : ' + rtt_min + ' ms'
 			avg_msg = 'RTT(Avg)    : ' + rtt_avg + ' ms'
 			max_msg = 'RTT(Max)    : ' + rtt_max + ' ms'
+
 			lock.acquire()
 			logging.debug('\u001B[1;37;44m ping result (' + UE_IPAddress + ') \u001B[0m')
 			logging.debug('\u001B[1;34m    ' + pal_msg + '\u001B[0m')
@@ -1658,17 +1660,29 @@ class OaiCiTest():
 				ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_1'])) + 'ms \n'
 
 			#building html message
-			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg + '\n' + ping_stat_msg
+			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg + '\n'  + ping_stat_msg
+
+			#checking packet loss compliance
 			packetLossOK = True
 			if packetloss is not None:
 				if float(packetloss) > float(self.ping_packetloss_threshold):
 					qMsg += '\nPacket Loss too high'
-					logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
+					logging.debug('\u001B[1;37;41m Packet Loss too high; Target: '+ self.ping_packetloss_threshold + '%\u001B[0m')
 					packetLossOK = False
 				elif float(packetloss) > 0:
 					qMsg += '\nPacket Loss is not 0%'
 					logging.debug('\u001B[1;30;43m Packet Loss is not 0% \u001B[0m')
-			if (packetLossOK):
+
+			#checking RTT avg compliance
+			rttavgOK = True
+			if self.ping_rttavg_threshold != '':
+				if float(rtt_avg)>float(self.ping_rttavg_threshold):
+					ping_rttavg_error_msg = 'RTT(Avg) too high: ' + rtt_avg + ' ms; Target: '+ self.ping_rttavg_threshold+ ' ms'
+					qMsg += '\n'+ping_rttavg_error_msg
+					logging.debug('\u001B[1;37;41m'+ ping_rttavg_error_msg +' \u001B[0m')
+					rttavgOK = False
+
+			if packetLossOK and rttavgOK:
 				statusQueue.put(0)
 			else:
 				statusQueue.put(-1)
