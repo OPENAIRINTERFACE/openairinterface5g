@@ -51,7 +51,6 @@
 #include <dlfcn.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <form.h>
 #include "common/utils/load_module_shlib.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/threadPool/thread-pool.h"
