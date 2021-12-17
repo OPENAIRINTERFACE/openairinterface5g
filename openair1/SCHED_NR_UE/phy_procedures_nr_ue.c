@@ -658,8 +658,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             PDSCH_t pdsch,
                             NR_UE_DLSCH_t *dlsch0,
                             NR_UE_DLSCH_t *dlsch1,
-                            int *dlsch_errors,
-                            uint8_t dlsch_parallel) {
+                            int *dlsch_errors) {
 
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
@@ -788,12 +787,9 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             harq_pid,
                             pdsch==PDSCH?1:0,
                             dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
-    if( dlsch_parallel) {
-      LOG_T(PHY,"dlsch decoding is parallelized, ret = %d\n", ret);
-    }
-    else {
-      LOG_T(PHY,"Sequential dlsch decoding , ret = %d\n", ret);
-    }
+
+    LOG_T(PHY,"dlsch decoding, ret = %d\n", ret);
+
 
     if(ret<dlsch0->max_ldpc_iterations+1)
       dec = true;
@@ -868,13 +864,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                                harq_pid,
                                pdsch==PDSCH?1:0,//proc->decoder_switch,
                                dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
-      if(dlsch_parallel) {
-        LOG_T(PHY,"CW dlsch decoding is parallelized, ret1 = %d\n", ret1);
-      }
-      else {
-
-        LOG_T(PHY,"CWW sequential dlsch decoding, ret1 = %d\n", ret1);
-      }
+      LOG_T(PHY,"CW dlsch decoding, ret1 = %d\n", ret1);
 
       stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
       if (cpumeas(CPUMEAS_GETSTATE)) {
@@ -1570,8 +1560,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            SI_PDSCH,
                            ue->dlsch_SI[gNB_id],
                            NULL,
-                           &ue->dlsch_SI_errors[gNB_id],
-                           dlsch_parallel);
+                           &ue->dlsch_SI_errors[gNB_id]);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_SI[gNB_id]->active = 0;
@@ -1595,8 +1584,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            P_PDSCH,
                            ue->dlsch_p[gNB_id],
                            NULL,
-                           &ue->dlsch_p_errors[gNB_id],
-                           dlsch_parallel);
+                           &ue->dlsch_p_errors[gNB_id]);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_p[gNB_id]->active = 0;
@@ -1619,8 +1607,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            RA_PDSCH,
                            ue->dlsch_ra[gNB_id],
                            NULL,
-                           &ue->dlsch_ra_errors[gNB_id],
-                           dlsch_parallel);
+                           &ue->dlsch_ra_errors[gNB_id]);
 
     // deactivate dlsch once dlsch proc is done
     ue->dlsch_ra[gNB_id]->active = 0;
@@ -1642,8 +1629,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   PDSCH,
 			   ue->dlsch[proc->thread_id][gNB_id][0],
 			   ue->dlsch[proc->thread_id][gNB_id][1],
-			   &ue->dlsch_errors[gNB_id],
-			   dlsch_parallel);
+			   &ue->dlsch_errors[gNB_id]);
 
   stop_meas(&ue->dlsch_procedures_stat[proc->thread_id]);
   if (cpumeas(CPUMEAS_GETSTATE)) {

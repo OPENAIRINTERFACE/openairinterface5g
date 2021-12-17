@@ -1423,8 +1423,7 @@ void generate_RIV_tables(void);
 int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                     PHY_VARS_NR_UE *phy_vars_ue, 
                     int n_frames,
-                    int sa,
-                    int dlsch_parallel);
+                    int sa);
 
 /*!
   \brief This function gets the carrier frequencies either from FP or command-line-set global variables, depending on the availability of the latter
