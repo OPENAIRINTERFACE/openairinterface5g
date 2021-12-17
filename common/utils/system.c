@@ -96,20 +96,15 @@ static void read_pipe(int p, char *b, int size) {
   }
 }
 int checkIfFedoraDistribution(void) {
-  return system("grep -iq 'ID_LIKE.*fedora' /etc/os-release ");
+  return !system("grep -iq 'ID_LIKE.*fedora' /etc/os-release ");
 }
 
 int checkIfGenericKernelOnFedora(void) {
-  int ret=system("uname -a | grep -q rt");
-  return 1 - ret;
+  return system("uname -a | grep -q rt");
 }
 
 int checkIfInsideContainer(void) {
-  int res=system("egrep -q 'libpod|podman|kubepods'  /proc/self/cgroup");
-  if (res > 0)
-    return 1;
-  else
-    return 0;
+  return !system("egrep -q 'libpod|podman|kubepods'  /proc/self/cgroup");
 }
 
 /********************************************************************/

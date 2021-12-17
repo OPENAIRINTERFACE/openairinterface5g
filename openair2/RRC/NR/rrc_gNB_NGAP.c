@@ -306,7 +306,7 @@ nr_rrc_pdcp_config_security(
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
   uint8_t                            *kUPenc = NULL;
-  uint8_t                            *k_kdf  = NULL;
+  //uint8_t                            *k_kdf  = NULL;
   static int                          print_keys= 1;
 
 

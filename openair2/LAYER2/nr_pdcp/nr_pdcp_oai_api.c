@@ -254,7 +254,6 @@ static void do_pdcp_data_ind(
       //ctxt_pP->enb_flag != 1 ||
       ctxt_pP->instance != 0 ||
       ctxt_pP->eNB_index != 0 ||
-      ctxt_pP->configured != 1 ||
       ctxt_pP->brOption != 0) {
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
@@ -374,7 +373,9 @@ boolean_t pdcp_data_ind(
   const MBMS_flag_t MBMS_flagP,
   const rb_id_t rb_id,
   const sdu_size_t sdu_buffer_size,
-  mem_block_t *const sdu_buffer)
+  mem_block_t *const sdu_buffer,
+  const uint32_t *const srcID,
+  const uint32_t *const dstID)
 {
   enqueue_pdcp_data_ind(ctxt_pP,
                         srb_flagP,
