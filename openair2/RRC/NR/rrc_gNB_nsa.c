@@ -156,8 +156,9 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
         LOG_E(NR_RRC,"UE Capabilities XER file %s is too large (%ld)\n", UE_NR_Capability_xer_fname,size);
       else {
         UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
-        asn_dec_rval_t dec_rval = xer_decode(0, &asn_DEF_NR_UE_NR_Capability, (void *)UE_Capability_nr, UE_NR_Capability_xer, size);
+        asn_dec_rval_t dec_rval = xer_decode(0, &asn_DEF_NR_UE_NR_Capability, (void *)&UE_Capability_nr, UE_NR_Capability_xer, size);
         assert(dec_rval.code == RC_OK);
+        xer_fprint(stdout,&asn_DEF_NR_UE_NR_Capability,(void *)UE_Capability_nr);
       }
     }
     ue_context_p->ue_context.UE_Capability_nr = UE_Capability_nr;

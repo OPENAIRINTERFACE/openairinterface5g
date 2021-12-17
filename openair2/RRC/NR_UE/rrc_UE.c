@@ -2643,8 +2643,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   ul_dcch_msg.message.choice.c1->choice.ueCapabilityInformation                            = CALLOC(1, sizeof(struct NR_UECapabilityInformation));
   ul_dcch_msg.message.choice.c1->choice.ueCapabilityInformation->rrc_TransactionIdentifier = UECapabilityEnquiry->rrc_TransactionIdentifier;
   ue_CapabilityRAT_Container.rat_Type = NR_RAT_Type_nr;
-  NR_UE_NR_Capability_t* UE_Capability_nr;
-  UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
+  NR_UE_NR_Capability_t* UE_Capability_nr = NULL;
 
   if(f){
     size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
@@ -2653,7 +2652,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
       free(UE_Capability_nr);
       return;
     }
-    dec_rval = xer_decode(0, &asn_DEF_NR_UE_NR_Capability, (void *)UE_Capability_nr, UE_NR_Capability_xer, size);
+    dec_rval = xer_decode(0, &asn_DEF_NR_UE_NR_Capability, (void *)&UE_Capability_nr, UE_NR_Capability_xer, size);
     assert(dec_rval.code == RC_OK);
   }
   else {
