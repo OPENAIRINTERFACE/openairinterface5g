@@ -154,6 +154,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
       fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
       int pdu_done = 0;
       pthread_mutex_lock(&ul_config->mutex_ul_config);
+      LOG_D(PHY, "%d.%d ul S ul_config %p pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_done, ul_config->number_pdus);
+
       for (i = 0; i < ul_config->number_pdus; ++i){
 
         AssertFatal(ul_config->ul_config_list[i].pdu_type <= FAPI_NR_UL_CONFIG_TYPES,"pdu_type %d out of bounds\n",ul_config->ul_config_list[i].pdu_type);
@@ -167,7 +169,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu;
         /* PUCCH */
         fapi_nr_ul_config_pucch_pdu *pucch_config_pdu;
-        LOG_D(PHY, "%d.%d ul B %p t %d pdu %d %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+        LOG_D(PHY, "%d.%d ul B ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
 
         switch (pdu_type){
 
@@ -193,9 +195,9 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
                   LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
                   memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
                   harq_process_ul_ue->status = ACTIVE;
-                  ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_NONE; // not handle it any more
+                  ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
                   pdu_done++;
-                  LOG_D(PHY, "%d.%d ul A %p t %d pdu %d %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+                  LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
                   break;
                 }
               }
@@ -219,9 +221,9 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
               memcpy((void*)&(pucch_vars->pucch_pdu[j]), (void*)pucch_config_pdu, sizeof(fapi_nr_ul_config_pucch_pdu));
               pucch_vars->active[j] = true;
               found = true;
-              ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_NONE; // not handle it any more
+              ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
               pdu_done++;
-              LOG_D(PHY, "%d.%d ul A %p t %d pdu %d %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+              LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
               break;
             }
           }
@@ -233,20 +235,20 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           // prach config pdu
           prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
           memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu), (void*)prach_config_pdu, sizeof(fapi_nr_ul_config_prach_pdu));
-          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_NONE; // not handle it any more
+          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
           pdu_done++;
-          LOG_D(PHY, "%d.%d ul A %p t %d pdu %d %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+          LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
         break;
 
-        case (FAPI_NR_UL_CONFIG_TYPE_NONE):
+        case (FAPI_NR_UL_CONFIG_TYPE_DONE):
           pdu_done++; // count the no of pdu processed
-          LOG_D(PHY, "%d.%d ul A %p t %d pdu %d %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+          LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
         break;
 
         default:
-          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_NONE; // not handle it any more
+          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
           pdu_done++; // count the no of pdu processed
-          LOG_D(PHY, "%d.%d ul A %p t %d pdu %d %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+          LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
         break;
         }
       }
