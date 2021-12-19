@@ -92,7 +92,8 @@
 		<desc>Ping: 20pings in 20sec</desc>
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 20</ping_args>
-		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+		<ping_packetloss_threshold>1</ping_packetloss_threshold>
+		<ping_rttavg_threshold>15</ping_rttavg_threshold>
 	</testCase>
 
 
