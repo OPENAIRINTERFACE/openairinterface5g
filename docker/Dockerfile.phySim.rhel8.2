@@ -25,11 +25,7 @@
 #
 #---------------------------------------------------------------------
 
-FROM ran-build:develop AS phy-sim-build
-
-RUN rm -Rf /oai-ran
-WORKDIR /oai-ran
-COPY . .
+FROM ran-base:latest AS phy-sim-build
 
 #run build_oai to build the target image
 RUN /bin/sh oaienv && \ 
@@ -73,7 +69,6 @@ COPY --from=phy-sim-build \
     /oai-ran/targets/bin/smallblocktest.Rel15 \
     ./
 
-WORKDIR /usr/local/lib/
 COPY --from=phy-sim-build \
     /oai-ran/targets/bin/libcoding.so \
     /lib64/liblapacke.so.3 \
@@ -90,7 +85,7 @@ COPY --from=phy-sim-build \
     /oai-ran/cmake_targets/phy_simulators/build/libSIMU.so \
     /oai-ran/cmake_targets/phy_simulators/build/libldpc.so \
     /oai-ran/cmake_targets/phy_simulators/build/libldpc_orig.so \
-    ./
+    /usr/local/lib/
 
 RUN ldconfig
 
