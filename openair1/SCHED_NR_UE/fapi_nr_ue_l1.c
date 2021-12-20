@@ -253,6 +253,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           srs_config_pdu = &ul_config->ul_config_list[i].srs_config_pdu;
           memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->srs_vars[gNB_id]->srs_config_pdu), (void*)srs_config_pdu, sizeof(fapi_nr_ul_config_srs_pdu));
           PHY_vars_UE_g[module_id][cc_id]->srs_vars[gNB_id]->active = true;
+          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+          pdu_done++;
         break;
 
         default:
