@@ -338,6 +338,12 @@ class Containerize():
 		mySSH.command('zip -r -qq build_log_' + self.testCase_id + '.zip build_log_' + self.testCase_id, '\$', 5)
 		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '.zip', '.')
 		mySSH.command('rm -f build_log_' + self.testCase_id + '.zip','\$', 5)
+		# Remove all intermediate build images
+		if self.ranAllowMerge and forceBaseImageBuild:
+			mySSH.command(self.cli + ' image rm ' + baseImage + ':' + baseTag + ' || true', '\$', 30)
+		for image,pattern in imageNames:
+			mySSH.command(self.cli + ' image rm ' + image + ':' + imageTag + ' || true', '\$', 30)
+		mySSH.command('docker rmi ran-build:' + imageTag,'\$', 5)
 		mySSH.close()
 		ZipFile('build_log_' + self.testCase_id + '.zip').extractall('.')
 

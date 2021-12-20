@@ -91,6 +91,9 @@ COPY --from=lte-ue-base \
     /lib64/libboost_atomic.so.1.66.0 \
     /lib64/libboost_timer.so.1.66.0 \
     /lib64/libboost_regex.so.1.66.0 \
+    /lib64/libicudata.so.60 \
+    /lib64/libicui18n.so.60 \
+    /lib64/libicuuc.so.60 \
     /lib64/
 
 # Now we are copying from builder-image the UHD files.
