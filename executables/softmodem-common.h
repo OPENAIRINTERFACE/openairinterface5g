@@ -119,7 +119,6 @@ extern "C"
 #define TIMING_SOURCE       softmodem_params.timing_source
 #define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
-#define USE_256QAM_TABLE    softmodem_params.use_256qam_table
 #define PRB_INTERPOLATION   softmodem_params.prb_interpolation
 #define NFAPI               softmodem_params.nfapi
 #define NON_STOP            softmodem_params.non_stop
@@ -154,11 +153,10 @@ extern int usrp_tx_thread;
     {"basicsim",             CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&basicsim,                     defintval:0,           TYPE_INT,    0},                     \
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
-    {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
-    {"do-prb-interpolation",  CONFIG_HLP_PRBINTER,     PARAMFLAG_BOOL, iptr:&PRB_INTERPOLATION,            defintval:0,           TYPE_INT,    0},                     \
-    {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,              iptr:&usrp_tx_thread,               defstrval:0,           TYPE_INT,    0},        \
-    {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                       defintval:0,           TYPE_UINT8,  0},                     \
-    {"non-stop",            CONFIG_HLP_NONSTOP,      PARAMFLAG_BOOL, iptr:&NON_STOP,                       defintval:0,           TYPE_INT,  0},                     \
+    {"do-prb-interpolation", CONFIG_HLP_PRBINTER,     PARAMFLAG_BOOL, iptr:&PRB_INTERPOLATION,            defintval:0,           TYPE_INT,    0},                     \
+    {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,              iptr:&usrp_tx_thread,               defstrval:0,           TYPE_INT,    0},                     \
+    {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                  defintval:0,           TYPE_UINT8,  0},                     \
+    {"non-stop",             CONFIG_HLP_NONSTOP,      PARAMFLAG_BOOL, iptr:&NON_STOP,                     defintval:0,           TYPE_INT,    0},                     \
   }
 
   
@@ -248,7 +246,6 @@ typedef struct {
   uint32_t       timing_source;
   int            hw_timing_advance;
   uint32_t       send_dmrs_sync;
-  int            use_256qam_table;
   int            prb_interpolation;
   uint8_t        nfapi;
   int            non_stop;

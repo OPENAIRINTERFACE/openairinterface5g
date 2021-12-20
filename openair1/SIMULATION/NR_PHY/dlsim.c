@@ -605,11 +605,6 @@ int main(int argc, char **argv)
       g_mcsIndex = atoi(optarg);
       break;
 
-    case 'q':
-      g_mcsTableIdx = 1;
-      get_softmodem_params()->use_256qam_table = 1;
-      break;
-
     case 'm':
       mu = atoi(optarg);
       break;
@@ -665,7 +660,6 @@ int main(int argc, char **argv)
       printf("-c Start symbol for PDSCH (fixed for now)\n");
       printf("-j Number of symbols for PDSCH (fixed for now)\n");
       printf("-e MSC index\n");
-      printf("-q Use 2nd MCS table (256 QAM table) for PDSCH\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
