@@ -298,12 +298,12 @@ void nr_preprocessor_phytest(module_id_t module_id,
   while (true) {
     /* advance to first free RB */
     while (rbStart < bwpSize &&
-           (vrb_map[rbStart + BWPStart]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)))
+           (vrb_map[rbStart + BWPStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
       rbStart++;
     rbSize = 1;
     /* iterate until we are at target_dl_bw or no available RBs */
     while (rbStart + rbSize < bwpSize &&
-           !(vrb_map[rbStart + rbSize + BWPStart]&(((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex)) &&
+           !(vrb_map[rbStart + rbSize + BWPStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)) &&
            rbSize < target_dl_bw)
       rbSize++;
     /* found target_dl_bw? */

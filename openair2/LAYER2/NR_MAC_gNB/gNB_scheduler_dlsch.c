@@ -830,14 +830,15 @@ void pf_dl(module_id_t module_id,
     if (ps->time_domain_allocation != tda)
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, f, ps);
 
+    const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
     // Freq-demain allocation
     while (rbStart < bwpSize &&
-           !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+           !(rballoc_mask[rbStart]&slbitmap))
       rbStart++;
 
     uint16_t max_rbSize = 1;
     while (rbStart + max_rbSize < bwpSize &&
-           (rballoc_mask[rbStart + max_rbSize]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+           (rballoc_mask[rbStart + max_rbSize]&slbitmap))
       max_rbSize++;
 
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -861,7 +862,7 @@ void pf_dl(module_id_t module_id,
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;
     for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
-      rballoc_mask[rb + sched_pdsch->rbStart] -= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+      rballoc_mask[rb + sched_pdsch->rbStart] -= slbitmap;
   }
 }
 
@@ -896,6 +897,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 				            scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
 				            MAX_BWP_SIZE);
 
+  const uint16_t slbitmap = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   uint16_t rballoc_mask[bwpSize];
   int n_rb_sched = 0;
@@ -904,8 +906,8 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
     // if any RB in vrb_map is blocked (1), the current RBG will be 0
     rballoc_mask[i] = (~vrb_map[i+BWPStart])&0x3fff; //bitwise not and 14 symbols
     // if all the pdsch symbols are free
-    if((rballoc_mask[i]&SL_to_bitmap(startSymbolIndex, nrOfSymbols)) ==
-       SL_to_bitmap(startSymbolIndex, nrOfSymbols))
+    if((rballoc_mask[i]&slbitmap) ==
+       slbitmap)
       n_rb_sched++;
   }
 

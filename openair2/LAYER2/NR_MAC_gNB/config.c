@@ -641,14 +641,16 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
         genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       }
+      else
+        AssertFatal(1==0,"Either initial BWP or active BWP should always be present\n");
       sched_ctrl->search_space = get_searchspace(scc, bwpd, target_ss);
       sched_ctrl->coreset = get_coreset(Mod_idP, scc, bwpd, sched_ctrl->search_space, target_ss);
-      UE_info->UE_sched_ctrl[UE_id].sched_pdcch = set_pdcch_structure(RC.nrmac[Mod_idP],
-                                                                      sched_ctrl->search_space,
-                                                                      sched_ctrl->coreset,
-                                                                      scc,
-                                                                      genericParameters,
-                                                                      NULL);
+      sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[Mod_idP],
+                                                    sched_ctrl->search_space,
+                                                    sched_ctrl->coreset,
+                                                    scc,
+                                                    genericParameters,
+                                                    NULL);
       sched_ctrl->maxL = 2;
     }
   }
