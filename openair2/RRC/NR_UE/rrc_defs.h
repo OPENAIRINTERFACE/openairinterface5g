@@ -70,7 +70,7 @@ typedef enum {
   nr_RadioBearerConfigX_r15=1
 } nsa_message_t;
 
-#define MAX_UE_NR_CAPABILITY_SIZE 255
+#define MAX_UE_NR_CAPABILITY_SIZE 2048
 typedef struct OAI_NR_UECapability_s {
   uint8_t sdu[MAX_UE_NR_CAPABILITY_SIZE];
   uint8_t sdu_size;
