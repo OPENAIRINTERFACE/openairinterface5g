@@ -366,7 +366,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                                                               CC_id,
                                                               gNB_mac->sched_ctrlCommon->aggregation_level,
                                                               nr_of_candidates,
-                                                              gNB_mac->sched_ctrlCommon->sched_pdcch,
+                                                              &gNB_mac->sched_ctrlCommon->sched_pdcch,
                                                               gNB_mac->sched_ctrlCommon->coreset,
                                                               0);
 
@@ -422,7 +422,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   // Mark the corresponding RBs as used
   fill_pdcch_vrb_map(gNB_mac,
                      CC_id,
-                     gNB_mac->sched_ctrlCommon->sched_pdcch,
+                     &gNB_mac->sched_ctrlCommon->sched_pdcch,
                      gNB_mac->sched_ctrlCommon->cce_index,
                      gNB_mac->sched_ctrlCommon->aggregation_level);
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize; rb++) {
@@ -452,7 +452,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   nr_configure_pdcch(pdcch_pdu_rel15,
                      gNB_mac->sched_ctrlCommon->coreset,
                      NULL,
-                     gNB_mac->sched_ctrlCommon->sched_pdcch);
+                     &gNB_mac->sched_ctrlCommon->sched_pdcch);
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));

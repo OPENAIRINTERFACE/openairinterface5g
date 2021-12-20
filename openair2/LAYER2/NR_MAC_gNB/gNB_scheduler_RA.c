@@ -799,7 +799,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
       ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       pdcch_pdu_rel15 = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
-      nr_configure_pdcch(pdcch_pdu_rel15, coreset, genericParameters, ra->sched_pdcch);
+      nr_configure_pdcch(pdcch_pdu_rel15, coreset, genericParameters, &ra->sched_pdcch);
       nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
     }
 
@@ -815,7 +815,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                                         CC_id,
                                         aggregation_level,
                                         nr_of_candidates,
-                                        ra->sched_pdcch,
+                                        &ra->sched_pdcch,
                                         coreset,
                                         0);
     if (CCEIndex < 0) {
@@ -861,7 +861,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     fill_pdcch_vrb_map(nr_mac,
                        CC_id,
-                       ra->sched_pdcch,
+                       &ra->sched_pdcch,
                        CCEIndex,
                        aggregation_level);
 
@@ -1211,7 +1211,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                         CC_id,
                                         aggregation_level,
                                         nr_of_candidates,
-                                        ra->sched_pdcch,
+                                        &ra->sched_pdcch,
                                         coreset,
                                         0);
 
@@ -1236,7 +1236,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2 + sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      nr_configure_pdcch(pdcch_pdu_rel15, coreset, genericParameters, ra->sched_pdcch);
+      nr_configure_pdcch(pdcch_pdu_rel15, coreset, genericParameters, &ra->sched_pdcch);
       nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
     }
 
@@ -1397,7 +1397,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // Mark the corresponding symbols RBs as used
     fill_pdcch_vrb_map(nr_mac,
                        CC_id,
-                       ra->sched_pdcch,
+                       &ra->sched_pdcch,
                        CCEIndex,
                        aggregation_level);
     for (int rb = 0; rb < rbSize; rb++) {
@@ -1500,7 +1500,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                         CC_id,
                                         aggregation_level,
                                         nr_of_candidates,
-                                        ra->sched_pdcch,
+                                        &ra->sched_pdcch,
                                         coreset,
                                         0);
 
@@ -1642,7 +1642,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2 + sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      nr_configure_pdcch(pdcch_pdu_rel15, coreset, genericParameters, ra->sched_pdcch);
+      nr_configure_pdcch(pdcch_pdu_rel15, coreset, genericParameters, &ra->sched_pdcch);
       nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
     }
 
@@ -1786,7 +1786,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // Mark the corresponding symbols and RBs as used
     fill_pdcch_vrb_map(nr_mac,
                        CC_id,
-                       ra->sched_pdcch,
+                       &ra->sched_pdcch,
                        CCEIndex,
                        aggregation_level);
     for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++) {

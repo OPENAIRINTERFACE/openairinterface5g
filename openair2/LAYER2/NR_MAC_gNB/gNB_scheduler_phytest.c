@@ -351,7 +351,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                       CC_id,
                                       sched_ctrl->aggregation_level,
                                       nr_of_candidates,
-                                      sched_ctrl->sched_pdcch,
+                                      &sched_ctrl->sched_pdcch,
                                       sched_ctrl->coreset,
                                       Y);
 
@@ -377,7 +377,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
 
   fill_pdcch_vrb_map(RC.nrmac[module_id],
                      CC_id,
-                     sched_ctrl->sched_pdcch,
+                     &sched_ctrl->sched_pdcch,
                      CCEIndex,
                      sched_ctrl->aggregation_level);
 
@@ -517,7 +517,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
                                       CC_id,
                                       sched_ctrl->aggregation_level,
                                       nr_of_candidates,
-                                      sched_ctrl->sched_pdcch,
+                                      &sched_ctrl->sched_pdcch,
                                       sched_ctrl->coreset,
                                       Y);
 
@@ -556,7 +556,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   /* mark the corresponding RBs as used */
   fill_pdcch_vrb_map(nr_mac,
                      CC_id,
-                     sched_ctrl->sched_pdcch,
+                     &sched_ctrl->sched_pdcch,
                      CCEIndex,
                      sched_ctrl->aggregation_level);
 

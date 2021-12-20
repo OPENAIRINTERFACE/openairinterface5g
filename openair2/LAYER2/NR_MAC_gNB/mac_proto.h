@@ -253,12 +253,12 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_BWP_t *bwp,
                         NR_sched_pdcch_t *pdcch);
 
-NR_sched_pdcch_t *set_pdcch_structure(gNB_MAC_INST *gNB_mac,
-                                      NR_SearchSpace_t *ss,
-                                      NR_ControlResourceSet_t *coreset,
-                                      NR_ServingCellConfigCommon_t *scc,
-                                      NR_BWP_t *bwp,
-                                      NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
+NR_sched_pdcch_t set_pdcch_structure(gNB_MAC_INST *gNB_mac,
+                                     NR_SearchSpace_t *ss,
+                                     NR_ControlResourceSet_t *coreset,
+                                     NR_ServingCellConfigCommon_t *scc,
+                                     NR_BWP_t *bwp,
+                                     NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
 
 uint8_t find_pdcch_candidate(gNB_MAC_INST *mac,
                              int cc_id,

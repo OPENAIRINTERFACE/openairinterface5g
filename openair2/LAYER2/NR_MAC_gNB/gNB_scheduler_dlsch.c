@@ -628,7 +628,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                       /* CC_id = */ 0,
                                       sched_ctrl->aggregation_level,
                                       nr_of_candidates,
-                                      sched_ctrl->sched_pdcch,
+                                      &sched_ctrl->sched_pdcch,
                                       sched_ctrl->coreset,
                                       Y);
 
@@ -657,7 +657,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   fill_pdcch_vrb_map(RC.nrmac[module_id],
                      /* CC_id = */ 0,
-                     sched_ctrl->sched_pdcch,
+                     &sched_ctrl->sched_pdcch,
                      CCEIndex,
                      sched_ctrl->aggregation_level);
 
@@ -785,7 +785,7 @@ void pf_dl(module_id_t module_id,
                                         /* CC_id = */ 0,
                                         sched_ctrl->aggregation_level,
                                         nr_of_candidates,
-                                        sched_ctrl->sched_pdcch,
+                                        &sched_ctrl->sched_pdcch,
                                         sched_ctrl->coreset,
                                         Y);
 
@@ -816,7 +816,7 @@ void pf_dl(module_id_t module_id,
 
     fill_pdcch_vrb_map(mac,
                        /* CC_id = */ 0,
-                       sched_ctrl->sched_pdcch,
+                       &sched_ctrl->sched_pdcch,
                        CCEIndex,
                        sched_ctrl->aggregation_level);
 
@@ -1073,7 +1073,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
       LOG_D(NR_MAC,"Trying to configure DL pdcch for UE %d, bwp %d, cs %d\n",UE_id,bwpid,coresetid);
       NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
-      nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, sched_ctrl->sched_pdcch);
+      nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, &sched_ctrl->sched_pdcch);
       gNB_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu;
     }
 

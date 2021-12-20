@@ -1024,7 +1024,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
                                       CC_id,
                                       sched_ctrl->aggregation_level,
                                       nr_of_candidates,
-                                      sched_ctrl->sched_pdcch,
+                                      &sched_ctrl->sched_pdcch,
                                       sched_ctrl->coreset,
                                       Y);
 
@@ -1036,7 +1036,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
   sched_ctrl->cce_index = CCEIndex;
   fill_pdcch_vrb_map(RC.nrmac[module_id],
                      CC_id,
-                     sched_ctrl->sched_pdcch,
+                     &sched_ctrl->sched_pdcch,
                      CCEIndex,
                      sched_ctrl->aggregation_level);
 
@@ -1170,7 +1170,7 @@ void pf_ul(module_id_t module_id,
                                           CC_id,
                                           sched_ctrl->aggregation_level,
                                           nr_of_candidates,
-                                          sched_ctrl->sched_pdcch,
+                                          &sched_ctrl->sched_pdcch,
                                           sched_ctrl->coreset,
                                           Y);
 
@@ -1194,7 +1194,7 @@ void pf_ul(module_id_t module_id,
       sched_ctrl->cce_index = CCEIndex;
       fill_pdcch_vrb_map(RC.nrmac[module_id],
                          CC_id,
-                         sched_ctrl->sched_pdcch,
+                         &sched_ctrl->sched_pdcch,
                          CCEIndex,
                          sched_ctrl->aggregation_level);
 
@@ -1280,7 +1280,7 @@ void pf_ul(module_id_t module_id,
                                         CC_id,
                                         sched_ctrl->aggregation_level,
                                         nr_of_candidates,
-                                        sched_ctrl->sched_pdcch,
+                                        &sched_ctrl->sched_pdcch,
                                         sched_ctrl->coreset,
                                         Y);
     if (CCEIndex<0) {
@@ -1350,7 +1350,7 @@ void pf_ul(module_id_t module_id,
     sched_ctrl->cce_index = CCEIndex;
     fill_pdcch_vrb_map(RC.nrmac[module_id],
                        CC_id,
-                       sched_ctrl->sched_pdcch,
+                       &sched_ctrl->sched_pdcch,
                        CCEIndex,
                        sched_ctrl->aggregation_level);
 
@@ -1754,7 +1754,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       pdcch_pdu = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
-      nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, sched_ctrl->sched_pdcch);
+      nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, &sched_ctrl->sched_pdcch);
       nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu;
     }
 

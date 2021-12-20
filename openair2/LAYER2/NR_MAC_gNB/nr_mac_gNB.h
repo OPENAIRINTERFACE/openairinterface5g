@@ -181,7 +181,7 @@ typedef struct {
   NR_SearchSpace_t *ra_ss;
   /// RA Coreset
   NR_ControlResourceSet_t *coreset;
-  NR_sched_pdcch_t *sched_pdcch;
+  NR_sched_pdcch_t sched_pdcch;
   // Beam index
   uint8_t beam_id;
   /// CellGroup for UE that is to come (NSA is non-null, null for SA)
@@ -551,7 +551,7 @@ typedef struct {
   /// CCE index and aggregation, should be coherent with cce_list
   NR_SearchSpace_t *search_space;
   NR_ControlResourceSet_t *coreset;
-  NR_sched_pdcch_t *sched_pdcch;
+  NR_sched_pdcch_t sched_pdcch;
 
   /// CCE index and Aggr. Level are shared for PUSCH/PDSCH allocation decisions
   /// corresponding to the sched_pusch/sched_pdsch structures below

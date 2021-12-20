@@ -209,41 +209,41 @@ NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
   AssertFatal(0, "Couldn't find an adequate searchspace bwp_Dedicated %p\n",bwp_Dedicated);
 }
 
-NR_sched_pdcch_t *set_pdcch_structure(gNB_MAC_INST *gNB_mac,
-                                      NR_SearchSpace_t *ss,
-                                      NR_ControlResourceSet_t *coreset,
-                                      NR_ServingCellConfigCommon_t *scc,
-                                      NR_BWP_t *bwp,
-                                      NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
-
-  NR_sched_pdcch_t *pdcch = calloc(1,sizeof(NR_sched_pdcch_t));
+NR_sched_pdcch_t set_pdcch_structure(gNB_MAC_INST *gNB_mac,
+                                     NR_SearchSpace_t *ss,
+                                     NR_ControlResourceSet_t *coreset,
+                                     NR_ServingCellConfigCommon_t *scc,
+                                     NR_BWP_t *bwp,
+                                     NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
 
   int sps;
+  NR_sched_pdcch_t pdcch;
+
   AssertFatal(*ss->controlResourceSetId == coreset->controlResourceSetId,
               "coreset id in SS %ld does not correspond to the one in coreset %ld",
               *ss->controlResourceSetId, coreset->controlResourceSetId);
 
   if (bwp) { // This is not for SIB1
     if(coreset->controlResourceSetId == 0){
-      pdcch->BWPSize  = gNB_mac->cset0_bwp_size;
-      pdcch->BWPStart = gNB_mac->cset0_bwp_start;
+      pdcch.BWPSize  = gNB_mac->cset0_bwp_size;
+      pdcch.BWPStart = gNB_mac->cset0_bwp_start;
     }
     else {
-      pdcch->BWPSize  = NRRIV2BW(bwp->locationAndBandwidth, MAX_BWP_SIZE);
-      pdcch->BWPStart = NRRIV2PRBOFFSET(bwp->locationAndBandwidth, MAX_BWP_SIZE);
+      pdcch.BWPSize  = NRRIV2BW(bwp->locationAndBandwidth, MAX_BWP_SIZE);
+      pdcch.BWPStart = NRRIV2PRBOFFSET(bwp->locationAndBandwidth, MAX_BWP_SIZE);
     }
-    pdcch->SubcarrierSpacing = bwp->subcarrierSpacing;
-    pdcch->CyclicPrefix = (bwp->cyclicPrefix==NULL) ? 0 : *bwp->cyclicPrefix;
+    pdcch.SubcarrierSpacing = bwp->subcarrierSpacing;
+    pdcch.CyclicPrefix = (bwp->cyclicPrefix==NULL) ? 0 : *bwp->cyclicPrefix;
 
     //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
     sps = bwp->cyclicPrefix == NULL ? 14 : 12;
   }
   else {
     AssertFatal(type0_PDCCH_CSS_config!=NULL,"type0_PDCCH_CSS_config is null,bwp %p\n",bwp);
-    pdcch->BWPSize = type0_PDCCH_CSS_config->num_rbs;
-    pdcch->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
-    pdcch->SubcarrierSpacing = type0_PDCCH_CSS_config->scs_pdcch;
-    pdcch->CyclicPrefix = 0;
+    pdcch.BWPSize = type0_PDCCH_CSS_config->num_rbs;
+    pdcch.BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
+    pdcch.SubcarrierSpacing = type0_PDCCH_CSS_config->scs_pdcch;
+    pdcch.CyclicPrefix = 0;
     sps = 14;
   }
 
@@ -256,29 +256,29 @@ NR_sched_pdcch_t *set_pdcch_structure(gNB_MAC_INST *gNB_mac,
 
   for (int i=0; i<sps; i++) {
     if ((monitoringSymbolsWithinSlot>>(sps-1-i))&1) {
-      pdcch->StartSymbolIndex=i;
+      pdcch.StartSymbolIndex=i;
       break;
     }
   }
 
-  pdcch->DurationSymbols = coreset->duration;
+  pdcch.DurationSymbols = coreset->duration;
 
   //cce-REG-MappingType
-  pdcch->CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
+  pdcch.CceRegMappingType = coreset->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved?
     NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED : NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
 
-  if (pdcch->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
-    pdcch->RegBundleSize = (coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize ==
+  if (pdcch.CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
+    pdcch.RegBundleSize = (coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize ==
                                 NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->reg_BundleSize);
-    pdcch->InterleaverSize = (coreset->cce_REG_MappingType.choice.interleaved->interleaverSize ==
+    pdcch.InterleaverSize = (coreset->cce_REG_MappingType.choice.interleaved->interleaverSize ==
                                   NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6) ? 6 : (2+coreset->cce_REG_MappingType.choice.interleaved->interleaverSize);
     AssertFatal(scc->physCellId != NULL,"scc->physCellId is null\n");
-    pdcch->ShiftIndex = coreset->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
+    pdcch.ShiftIndex = coreset->cce_REG_MappingType.choice.interleaved->shiftIndex != NULL ? *coreset->cce_REG_MappingType.choice.interleaved->shiftIndex : *scc->physCellId;
   }
   else {
-    pdcch->RegBundleSize = 6;
-    pdcch->InterleaverSize = 0;
-    pdcch->ShiftIndex = 0;
+    pdcch.RegBundleSize = 6;
+    pdcch.InterleaverSize = 0;
+    pdcch.ShiftIndex = 0;
   }
 
   int N_rb = 0; // nb of rbs of coreset per symbol
@@ -287,7 +287,7 @@ NR_sched_pdcch_t *set_pdcch_structure(gNB_MAC_INST *gNB_mac,
       N_rb+=((coreset->frequencyDomainResources.buf[i]>>t)&1);
     }
   }
-  pdcch->n_rb = N_rb*=6; // each bit of frequencyDomainResources represents 6 PRBs
+  pdcch.n_rb = N_rb*=6; // each bit of frequencyDomainResources represents 6 PRBs
 
   return pdcch;
 }
