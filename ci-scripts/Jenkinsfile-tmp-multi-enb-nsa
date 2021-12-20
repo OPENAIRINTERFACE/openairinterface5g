@@ -37,6 +37,7 @@ def testStageName = params.pipelineTestStageName
 // Name of the phone/server resource
 def ciSmartPhonesResource1 = params.SmartPhonesResource1
 def ciSmartPhonesResource2 = params.SmartPhonesResource2
+def ciSmartPhonesResource3 = params.SmartPhonesResource3
 
 // Global Parameters. Normally they should be populated when the master job
 // triggers the slave job with parameters
@@ -55,7 +56,7 @@ pipeline {
   options {
     disableConcurrentBuilds()
     ansiColor('xterm')
-    lock(extra: [[resource: ciSmartPhonesResource2]], resource: ciSmartPhonesResource1)
+    lock(extra: [[resource: ciSmartPhonesResource2],[resource: ciSmartPhonesResource1]],resource: ciSmartPhonesResource3)
   }
   stages {
     stage("Build Init") {
@@ -87,6 +88,9 @@ pipeline {
           if (params.SmartPhonesResource2 == null) {
             allParametersPresent = false
           }
+          if (params.SmartPhonesResource3 == null) {
+            allParametersPresent = false
+          }          
           // 1st eNB parameters
           if (params.eNB_IPAddress == null) {
             allParametersPresent = false
@@ -375,6 +379,19 @@ pipeline {
             script {
               if (currentBuild.result=='FAILURE') {StatusForDb = 'FAIL'} else {StatusForDb = 'PASS'}
               sh "python3 /home/oaicicd/mysql/sql_connect.py ${JOB_NAME} ${params.eNB_MR} ${params.eNB_Branch} ${env.BUILD_ID} ${env.BUILD_URL} ${StatusForDb} ''"
+            }
+          }
+        }
+        stage ("Result Update"){
+          when {
+            expression { params.DataBaseHost != "none" }
+          }
+          agent {label DataBaseHost}
+          steps {
+            script {
+              dir ('ci-scripts/ran_dashboard') {
+                sh "python3 Hdashboard.py testevent ${params.eNB_MR} ${JOB_NAME} ${env.BUILD_URL} ${env.BUILD_ID} ${StatusForDb} "   
+              }
             }
           }
         }

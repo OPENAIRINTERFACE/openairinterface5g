@@ -1596,9 +1596,18 @@ void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *_entity,
     exit(1);
   }
 
+  /* log SDUs rejected, at most once per second */
+  if (entity->sdu_rejected != 0
+      && entity->t_current > entity->t_log_buffer_full + 1000) {
+    LOG_E(RLC, "%s:%d:%s: warning: %d SDU rejected, SDU buffer full\n",
+          __FILE__, __LINE__, __FUNCTION__,
+          entity->sdu_rejected);
+    entity->sdu_rejected = 0;
+    entity->t_log_buffer_full = entity->t_current;
+  }
+
   if (entity->tx_size + size > entity->tx_maxsize) {
-    LOG_E(RLC, "%s:%d:%s: warning: SDU rejected, SDU buffer full\n",
-          __FILE__, __LINE__, __FUNCTION__);
+    entity->sdu_rejected++;
     return;
   }
 
@@ -1742,6 +1751,9 @@ static void check_t_reassembly(nr_rlc_entity_am_t *entity)
     sn = (sn + 1) % entity->sn_modulus;
   entity->rx_highest_status = sn;
 
+  /* trigger status report */
+  entity->status_triggered = 1;
+
   if (sn_compare_rx(entity, entity->rx_next_highest,
                     (entity->rx_highest_status+1) % entity->sn_modulus) > 0 ||
       (entity->rx_next_highest ==
@@ -1826,6 +1838,9 @@ static void clear_entity(nr_rlc_entity_am_t *entity)
   entity->force_poll        = 0;
 
   entity->t_current = 0;
+
+  entity->t_log_buffer_full = 0;
+  entity->sdu_rejected      = 0;
 
   entity->t_poll_retransmit_start = 0;
   entity->t_reassembly_start      = 0;
