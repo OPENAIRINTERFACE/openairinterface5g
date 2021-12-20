@@ -209,8 +209,7 @@ class Containerize():
 
  		# if asterix, copy the entitlement and subscription manager configurations
 		if self.host == 'Red Hat':
-			mySSH.command('mkdir -p  tmp/ca/', '\$', 5)
-			mySSH.command('mkdir -p tmp/entitlement/', '\$', 5) 
+			mySSH.command('mkdir -p tmp/ca/ tmp/entitlement/', '\$', 5)
 			mySSH.command('sudo cp /etc/rhsm/ca/redhat-uep.pem tmp/ca/', '\$', 5)
 			mySSH.command('sudo cp /etc/pki/entitlement/*.pem tmp/entitlement/', '\$', 5)
 
@@ -288,7 +287,7 @@ class Containerize():
 			# we need to update them with proper tag
 			mySSH.command('sed -i -e "s#' + baseImage + ':latest#' + baseImage + ':' + baseTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
 			if image != 'ran-build':
-				mySSH.command('sed -i -e "s#' + "ran-build" + ':latest#' + "ran-build" + ':' + baseTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
+				mySSH.command('sed -i -e "s#' + "ran-build" + ':latest#' + "ran-build" + ':' + imageTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
 			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
 			# split the log
 			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
@@ -338,6 +337,10 @@ class Containerize():
 		mySSH.command('zip -r -qq build_log_' + self.testCase_id + '.zip build_log_' + self.testCase_id, '\$', 5)
 		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '.zip', '.')
 		mySSH.command('rm -f build_log_' + self.testCase_id + '.zip','\$', 5)
+		# Remove all intermediate build images
+		if self.ranAllowMerge and forceBaseImageBuild:
+			mySSH.command(self.cli + ' image rm ' + baseImage + ':' + baseTag + ' || true', '\$', 30)
+		mySSH.command(self.cli + ' image rm ran-build:' + imageTag + ' || true','\$', 5)
 		mySSH.close()
 		ZipFile('build_log_' + self.testCase_id + '.zip').extractall('.')
 
