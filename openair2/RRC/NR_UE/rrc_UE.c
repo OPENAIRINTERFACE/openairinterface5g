@@ -2619,14 +2619,22 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
 //-----------------------------------------------------------------------------
 {
   asn_enc_rval_t enc_rval;
+  asn_dec_rval_t dec_rval;
   NR_UL_DCCH_Message_t ul_dcch_msg;
   NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container;
+  char UE_NR_Capability_xer_fname[1024];
+  char UE_NR_Capability_xer[65536];
+  size_t size;
   uint8_t buffer[200];
   int i;
   LOG_I(NR_RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), Processing UECapabilityEnquiry (gNB %d)\n",
         ctxt_pP->module_id,
         ctxt_pP->frame,
         gNB_index);
+
+  sprintf(UE_NR_Capability_xer_fname,"../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml");
+  FILE *f = fopen(UE_NR_Capability_xer_fname, "r");
+
   memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
   memset((void *)&ue_CapabilityRAT_Container,0,sizeof(NR_UE_CapabilityRAT_Container_t));
   ul_dcch_msg.message.present            = NR_UL_DCCH_MessageType_PR_c1;
@@ -2635,20 +2643,29 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   ul_dcch_msg.message.choice.c1->choice.ueCapabilityInformation                            = CALLOC(1, sizeof(struct NR_UECapabilityInformation));
   ul_dcch_msg.message.choice.c1->choice.ueCapabilityInformation->rrc_TransactionIdentifier = UECapabilityEnquiry->rrc_TransactionIdentifier;
   ue_CapabilityRAT_Container.rat_Type = NR_RAT_Type_nr;
-  NR_UE_NR_Capability_t*             UE_Capability_nr;
-  UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
-  NR_BandNR_t *nr_bandnr;
-  nr_bandnr  = CALLOC(1,sizeof(NR_BandNR_t));
-  nr_bandnr->bandNR = 1;
-  ASN_SEQUENCE_ADD(
-    &UE_Capability_nr->rf_Parameters.supportedBandListNR.list,
-    nr_bandnr);
+  NR_UE_NR_Capability_t* UE_Capability_nr = NULL;
+
+  if(f){
+    size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
+    if (size == 0 || size == sizeof UE_NR_Capability_xer) {
+      LOG_E(NR_RRC,"UE Capabilities XER file %s is too large (%ld)\n", UE_NR_Capability_xer_fname,size);
+      free(UE_Capability_nr);
+      return;
+    }
+    dec_rval = xer_decode(0, &asn_DEF_NR_UE_NR_Capability, (void *)&UE_Capability_nr, UE_NR_Capability_xer, size);
+    assert(dec_rval.code == RC_OK);
+  }
+  else {
+    NR_BandNR_t *nr_bandnr;
+    nr_bandnr  = CALLOC(1,sizeof(NR_BandNR_t));
+    nr_bandnr->bandNR = 1;
+    ASN_SEQUENCE_ADD(&UE_Capability_nr->rf_Parameters.supportedBandListNR.list,
+                     nr_bandnr);
+  }
   OAI_NR_UECapability_t *UECap;
   UECap = CALLOC(1,sizeof(OAI_NR_UECapability_t));
   UECap->UE_NR_Capability = UE_Capability_nr;
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    xer_fprint(stdout,&asn_DEF_NR_UE_NR_Capability,(void *)UE_Capability_nr);
-  }
+  xer_fprint(stdout,&asn_DEF_NR_UE_NR_Capability,(void *)UE_Capability_nr);
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_NR_Capability,
                                    NULL,
