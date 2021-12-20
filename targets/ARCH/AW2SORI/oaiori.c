@@ -101,31 +101,37 @@ static const eutra_bandentry_t eutra_bandtable[] = {
 
 uint32_t to_earfcn_DL_aw2s(int eutra_bandP, long long int dl_CarrierFreq, uint32_t bw) {
   uint32_t dl_CarrierFreq_by_100k = dl_CarrierFreq / 100000;
-  int i;
+  int i=0;
   if (eutra_bandP > 68) { printf("eutra_band %d > 68\n", eutra_bandP); exit(-1);}
 
-  for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
-  printf("AW2S: band %d, index %d\n",eutra_bandP, i);
+
+  if (eutra_bandP > 0) 
+    for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
+  printf("AW2S: band %d: index %d\n",eutra_bandP, i);
 
   if (i >= BANDTABLE_SIZE) { printf(" i = %d , it will trigger out-of-bounds read.\n",i); exit(-1);}
 
-  if (dl_CarrierFreq_by_100k < eutra_bandtable[i].dl_min) {
-              printf("Band %d, bw %u : DL carrier frequency %u .1 MHz < %u\n",
-              eutra_bandP, bw, dl_CarrierFreq_by_100k,
-              eutra_bandtable[i].dl_min); exit(-1);}
+  while(i<BANDTABLE_SIZE) {
+    if (dl_CarrierFreq_by_100k < eutra_bandtable[i].dl_min) {
+                printf("Band %d, bw %u : DL carrier frequency %u .1 MHz < %u\n",
+                eutra_bandtable[i].band, bw, dl_CarrierFreq_by_100k,
+                eutra_bandtable[i].dl_min); i++; continue;}
 
-  if(dl_CarrierFreq_by_100k >
-              (eutra_bandtable[i].dl_max - bw)) {
-              printf("Band %d, bw %u : DL carrier frequency %u .1MHz > %d\n",
-              eutra_bandP, bw, dl_CarrierFreq_by_100k,
-              eutra_bandtable[i].dl_max - bw); exit(-1); }
-  printf("AW2S: dl_CarrierFreq_by_100k %d, dl_min %d\n",dl_CarrierFreq_by_100k,eutra_bandtable[i].dl_min);
+    if(dl_CarrierFreq_by_100k >
+                (eutra_bandtable[i].dl_max - bw)) {
+                printf("Band %d, bw %u : DL carrier frequency %u .1MHz > %d\n",
+                eutra_bandtable[i].band, bw, dl_CarrierFreq_by_100k,
+                eutra_bandtable[i].dl_max - bw); i++;continue; }
+    printf("AW2S: dl_CarrierFreq_by_100k %d, dl_min %d\n",dl_CarrierFreq_by_100k,eutra_bandtable[i].dl_min);
 
-  return (dl_CarrierFreq_by_100k - eutra_bandtable[i].dl_min +
-          (eutra_bandtable[i].N_OFFs_DL / 10));
+    return (dl_CarrierFreq_by_100k - eutra_bandtable[i].dl_min +
+            (eutra_bandtable[i].N_OFFs_DL / 10));
+
+  }
+  printf("No DL band found\n");
+  exit(-1);
 }
-
 uint32_t to_earfcn_UL_aw2s(int eutra_bandP, long long int ul_CarrierFreq, uint32_t bw) {
   uint32_t ul_CarrierFreq_by_100k = ul_CarrierFreq / 100000;
   int i;
@@ -133,6 +139,7 @@ uint32_t to_earfcn_UL_aw2s(int eutra_bandP, long long int ul_CarrierFreq, uint32
      printf("eutra_band %d > 68\n", eutra_bandP);
      exit(-1);
   }
+
 
   for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
@@ -313,12 +320,13 @@ int aw2s_startstreaming(openair0_device *device) {
     printf("ORI_ObjectStateModify: %s\n", ORI_Result_Print(RE_result));
   }
 
+  /*
   while (rx0->fst != ORI_FST_Operational || 
          (openair0_cfg->rx_num_channels > 1 && rx1->fst != ORI_FST_Operational) || 
          tx0->fst != ORI_FST_Operational || 
          (openair0_cfg->tx_num_channels > 1 && tx1->fst != ORI_FST_Operational))
   {}	
-
+*/
   // test RX interface 
   uint64_t TS;
   char temp_rx[1024] __attribute__((aligned(32)));
@@ -475,7 +483,7 @@ int aw2s_oriinit(openair0_device *device) {
     txParams.TxEUtraTDD.axcW = 1;
     txParams.TxEUtraTDD.axcB = 0;
     txParams.TxEUtraTDD.chanBW = openair0_cfg->tx_bw/100e3;
-    txParams.TxEUtraTDD.earfcn = to_earfcn_DL_aw2s(38,(long long int)openair0_cfg->tx_freq[0],txParams.TxEUtraTDD.chanBW);
+    txParams.TxEUtraTDD.earfcn = to_earfcn_DL_aw2s(-1,(long long int)openair0_cfg->tx_freq[0],txParams.TxEUtraTDD.chanBW);
     txParams.TxEUtraTDD.maxTxPwr = 430-((int)openair0_cfg->tx_gain[0]*10);
     txParams.TxEUtraTDD.tddULDLConfig = 1;
     txParams.TxEUtraTDD.tddSpecialSFConfig = 0;
