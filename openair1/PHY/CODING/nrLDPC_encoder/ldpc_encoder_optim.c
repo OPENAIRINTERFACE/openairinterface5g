@@ -40,9 +40,6 @@
 #include "openair1/PHY/CODING/nrLDPC_defs.h"
 #include "ldpc_encode_parity_check.c"
 #include "ldpc_generate_coefficient.c"
-//#define DEBUG_LDPC
-
-
 
 
 
