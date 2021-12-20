@@ -855,11 +855,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
       } else AssertFatal(1==0,"Not RA_PDSCH, SI_PDSCH or PDSCH\n");
 
       stop_meas(&ue->dlsch_llr_stats_parallelization[proc->thread_id][slot]);
-#if PHYSIM
-      printf("[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",frame_rx,nr_slot_rx,m,ue->dlsch_llr_stats_parallelization[proc->thread_id][slot].p_time/(cpuf*1000.0));
-#else
       LOG_D(PHY, "[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",frame_rx,nr_slot_rx,m,ue->dlsch_llr_stats_parallelization[proc->thread_id][slot].p_time/(cpuf*1000.0));
-#endif
 
       if(first_symbol_flag) {
         proc->first_symbol_available = 1;
@@ -1039,17 +1035,11 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
 
       stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
-#if PHYSIM
-    printf(" --> Unscrambling for CW0 %5.3f\n",
-           (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-    printf("AbsSubframe %d.%d --> LDPC Decoding for CW0 %5.3f\n",
-           frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
-#else
+
     LOG_I(PHY, " --> Unscrambling for CW0 %5.3f\n",
           (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
     LOG_I(PHY, "AbsSubframe %d.%d --> LDPC Decoding for CW0 %5.3f\n",
           frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
-#endif
 
     if(is_cw1_active) {
       // start ldpc decode for CW 1
@@ -1102,19 +1092,12 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       }
 
 
-    stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
-#if PHYSIM
-      printf(" --> Unscrambling for CW1 %5.3f\n",
-             (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-      printf("AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
-             frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
-#else
+      stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
+
       LOG_D(PHY, " --> Unscrambling for CW1 %5.3f\n",
             (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
       LOG_D(PHY, "AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
             frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
-#endif
-
 
       LOG_D(PHY,"AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
             frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
@@ -1424,11 +1407,8 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 
 
     stop_meas(&ue->ue_front_end_per_slot_stat[proc->thread_id][1]);
-#if PHYSIM
-    printf("[AbsSFN %d.%d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",frame_rx,nr_slot_rx,ue->ue_front_end_per_slot_stat[proc->thread_id][1].p_time/(cpuf*1000.0));
-#else
+
     LOG_D(PHY, "[AbsSFN %d.%d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",frame_rx,nr_slot_rx,ue->ue_front_end_per_slot_stat[proc->thread_id][1].p_time/(cpuf*1000.0));
-#endif
 
 
     //wait until pdcch is decoded
@@ -1518,11 +1498,8 @@ void *UE_thread_slot1_dl_processing(void *arg) {
     //printf("Set available LLR slot1 to 1 AbsSubframe %d.%d \n",frame_rx,nr_slot_rx);
 
     stop_meas(&ue->pdsch_procedures_per_slot_stat[proc->thread_id][1]);
-#if PHYSIM
-    printf("[AbsSFN %d.%d] Slot1: LLR Computation %5.2f \n",frame_rx,nr_slot_rx,ue->pdsch_procedures_per_slot_stat[proc->thread_id][1].p_time/(cpuf*1000.0));
-#else
+
     LOG_D(PHY, "[AbsSFN %d.%d] Slot1: LLR Computation %5.2f \n",frame_rx,nr_slot_rx,ue->pdsch_procedures_per_slot_stat[proc->thread_id][1].p_time/(cpuf*1000.0));
-#endif
 
     if (pthread_mutex_lock(&proc->mutex_slot1_dl_processing) != 0) {
       LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
@@ -1891,14 +1868,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 			   dlsch_parallel);
 
   stop_meas(&ue->dlsch_procedures_stat[proc->thread_id]);
-#if PHYSIM
-  printf("[SFN %d] Slot1:       Pdsch Proc %5.2f\n",nr_slot_rx,ue->pdsch_procedures_stat[proc->thread_id].p_time/(cpuf*1000.0));
-  printf("[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_slot_rx,ue->dlsch_procedures_stat[proc->thread_id].p_time/(cpuf*1000.0));
-#else
+
   LOG_D(PHY, "[SFN %d] Slot1:       Pdsch Proc %5.2f\n",nr_slot_rx,ue->pdsch_procedures_stat[proc->thread_id].p_time/(cpuf*1000.0));
   LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_slot_rx,ue->dlsch_procedures_stat[proc->thread_id].p_time/(cpuf*1000.0));
-#endif
-
 
 
   // deactivate dlsch once dlsch proc is done
@@ -1974,9 +1946,7 @@ if (nr_slot_rx==9) {
  }
 
 stop_meas(&ue->generic_stat);
-#if PHYSIM
-printf("after tubo until end of Rx %5.2f \n",ue->generic_stat.p_time/(cpuf*1000.0));
-#endif
+ LOG_D(PHY,"after tubo until end of Rx %5.2f \n",ue->generic_stat.p_time/(cpuf*1000.0));
 
 #ifdef EMOS
 phy_procedures_emos_UE_RX(ue,slot,gNB_id);
@@ -1986,11 +1956,8 @@ phy_procedures_emos_UE_RX(ue,slot,gNB_id);
 VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
 
 stop_meas(&ue->phy_proc_rx[proc->thread_id]);
-#if PHYSIM
-printf("------FULL RX PROC [SFN %d]: %5.2f ------\n",nr_slot_rx,ue->phy_proc_rx[proc->thread_id].p_time/(cpuf*1000.0));
-#else
+
 LOG_D(PHY, "------FULL RX PROC [SFN %d]: %5.2f ------\n",nr_slot_rx,ue->phy_proc_rx[proc->thread_id].p_time/(cpuf*1000.0));
-#endif
 
 //#endif //pdsch
 

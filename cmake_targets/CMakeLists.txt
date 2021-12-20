@@ -69,8 +69,6 @@ elseif (${RF_BOARD} STREQUAL "OAI_AW2SORI")
 
 endif (${RF_BOARD} STREQUAL "OAI_USRP")
 
-message("RU=${RU}")
-
 pkg_search_module(OPENPGM openpgm-5.1 openpgm-5.2)
 if(NOT ${OPENPGM_FOUND})
   message("PACKAGE openpgm-5.1 is required by binaries such as oaisim: will fail later if this target is built")
@@ -270,6 +268,22 @@ function(make_version VERSION_VALUE)
   endforeach()
   set(${VERSION_VALUE} "${RESULT}" PARENT_SCOPE)
 endfunction()
+
+macro(compile_asn1 asn1Source asn1cCmd ResultFlag)
+   # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
+   execute_process(COMMAND ${asn1cCmd}  ${asn1Source} RESULT_VARIABLE ret)
+
+   if (NOT ${ret} STREQUAL 0)
+      message(FATAL_ERROR "${ret}: error")
+   endif (NOT ${ret} STREQUAL 0)
+
+   add_custom_target (
+     ${ResultFlag} ALL
+     ${asn1cCmd} ${asn1Source}
+     DEPENDS ${asn1Source}
+   )
+endmacro(compile_asn1)
+
 ####################################################
 # compilation flags
 #############################################
@@ -433,22 +447,11 @@ set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-15.6.
 add_definitions(-DLTE_RRC_VERSION=${LTE_RRC_VERSION})
 set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
 
-# Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-if (${RU} STREQUAL 0)
-  execute_process(COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "LTE_" " " "${RRC_FULL_DIR}" "${RRC_GRAMMAR}"
-                  RESULT_VARIABLE ret)
-endif (${RU} STREQUAL 0)
+set(rrc_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "LTE_" " " "${RRC_FULL_DIR}")
 
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${ret}: error")
-endif (NOT ${ret} STREQUAL 0)
+compile_asn1("${RRC_GRAMMAR}" "${rrc_cmd}" rrc_flag)
+
 file(GLOB rrc_source ${RRC_FULL_DIR}/*.c)
-add_custom_target (
-  rrc_flag ALL
-  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "LTE_" " " "${RRC_FULL_DIR}" "${RRC_GRAMMAR}"
-  DEPENDS ${RRC_GRAMMAR}
-  )
-
 add_library(RRC_LIB ${rrc_source}
     ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1_msg.c
     ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1_msg_NB_IoT.c)
@@ -465,21 +468,12 @@ add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/RRC_${NR_RRC_ASN1_VERSION})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-  execute_process(
-    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "NR_" "-findirect-choice" "${NR_RRC_FULL_DIR}" "${NR_RRC_GRAMMAR}"
-    RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${ret}: error")
-endif ()
+set(nr_rrc_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "NR_" "-findirect-choice" "${NR_RRC_FULL_DIR}")
+
+compile_asn1("${NR_RRC_GRAMMAR}" "${nr_rrc_cmd}"  nr_rrc_flag)
+
 file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
 file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
-
-add_custom_target (
-  nr_rrc_flag ALL
-  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "NR_" "-findirect-choice" "${NR_RRC_FULL_DIR}" "${NR_RRC_GRAMMAR}"
-  DEPENDS ${NR_RRC_GRAMMAR}
-  )
-
 add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source}
     ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c
     )
@@ -501,22 +495,11 @@ set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${S1AP_RELEASE})
 set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${S1AP_RELEASE})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-if (${RU} STREQUAL 0)
-  execute_process(
-    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "S1AP_" -fno-include-deps "${S1AP_C_DIR}" "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}"
-    RESULT_VARIABLE ret)
-  if (NOT ${ret} STREQUAL 0)
-    message(FATAL_ERROR "${ret}: error")
-  endif (NOT ${ret} STREQUAL 0)
-  file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
-endif (${RU} STREQUAL 0)
+set(s1ap_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "S1AP_" -fno-include-deps "${S1AP_C_DIR}")
 
-  add_custom_target (
-    s1ap_flag ALL
-    ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "S1AP_" -fno-include-deps "${S1AP_C_DIR}" "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}"
-    DEPENDS  "${S1AP_ASN_DIR}/${S1AP_ASN_FILES}"
-  )
+compile_asn1("${S1AP_ASN_DIR}/${S1AP_ASN_FILES}" "${s1ap_cmd}"  s1ap_flag)
 
+file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 add_library(S1AP_LIB
   ${S1AP_source}
   ${S1AP_DIR}/s1ap_common.c
@@ -558,20 +541,11 @@ set(NGAP_ASN_DIR ${NGAP_DIR}/MESSAGES/ASN1/ASN1_files)
 set(NGAP_C_DIR ${asn1_generated_dir}/NGAP_${NGAP_RELEASE})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-execute_process(
-  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "NGAP_" "-fno-include-deps -findirect-choice" "${NGAP_C_DIR}" "${NGAP_ASN_DIR}/${NGAP_ASN_FILES}"
-  RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${ret}: error")
-endif (NOT ${ret} STREQUAL 0)
+set (ngap_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "NGAP_" "-fno-include-deps -findirect-choice" "${NGAP_C_DIR}")
+
+compile_asn1("${NGAP_ASN_DIR}/${NGAP_ASN_FILES}" "${ngap_cmd}"  ngap_flag)
+
 file(GLOB NGAP_source ${NGAP_C_DIR}/*.c)
-
-add_custom_target (
-  ngap_flag ALL
-  ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "NGAP_" "-fno-include-deps -findirect-choice" "${NGAP_C_DIR}" "${NGAP_ASN_DIR}/${NGAP_ASN_FILES}"
-  DEPENDS  "${NGAP_ASN_DIR}/${NGAP_ASN_FILES}"
-)
-
 add_library(NGAP_LIB
   ${NGAP_source}
 #  ${NGAP_DIR}/ngap_common.c
@@ -625,22 +599,12 @@ set(M2AP_ASN_DIR ${M2AP_DIR}/MESSAGES/ASN1/${M2AP_RELEASE})
 set(M2AP_C_DIR ${asn1_generated_dir}/M2AP_${M2AP_RELEASE})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-if (${RU} STREQUAL 0)
-  execute_process(
-    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M2AP_" "-fno-include-deps " "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"
-    RESULT_VARIABLE ret)
-  if (NOT ${ret} STREQUAL 0)
-    message(FATAL_ERROR "${ret}: error")
-  endif (NOT ${ret} STREQUAL 0)
-endif (${RU} STREQUAL 0)
 
+set(m2ap_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M2AP_" "-fno-include-deps -DEMIT_ASN_DEBUG=1" "${M2AP_C_DIR}")
+
+
+compile_asn1("${M2AP_ASN_DIR}/${M2AP_ASN_FILES}" "${m2ap_cmd}"  m2_flag)
 file(GLOB M2AP_source ${M2AP_C_DIR}/*.c)
-
-add_custom_target (
-  m2_flag ALL
-  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M2AP_" "-fno-include-deps " "${M2AP_C_DIR}" "${M2AP_ASN_DIR}/${M2AP_ASN_FILES}"
-  DEPENDS ${M2AP_ASN_DIR}/${M2AP_ASN_FILES}
-  )
 
 add_library(M2AP_LIB
   ${M2AP_source}
@@ -698,22 +662,11 @@ set(M3AP_ASN_DIR ${M3AP_DIR}/MESSAGES/ASN1/${M3AP_RELEASE})
 set(M3AP_C_DIR ${asn1_generated_dir}/M3AP_${M3AP_RELEASE})
 
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-if (${RU} STREQUAL 0)
-  execute_process(
-    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M3AP_" -fno-include-deps "${M3AP_C_DIR}" "${M3AP_ASN_DIR}/${M3AP_ASN_FILES}"
-    RESULT_VARIABLE ret)
-  if (NOT ${ret} STREQUAL 0)
-    message(FATAL_ERROR "${ret}: error")
-  endif (NOT ${ret} STREQUAL 0)
-endif (${RU} STREQUAL 0)
+set(m3_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M3AP_" -fno-include-deps "${M3AP_C_DIR}")
+
+compile_asn1("${M3AP_ASN_DIR}/${M3AP_ASN_FILES}" "${m3_cmd}"  m3_flag)
 
 file(GLOB M3AP_source ${M3AP_C_DIR}/*.c)
-
-add_custom_target (
-  m3_flag ALL
-  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M3AP_" -fno-include-deps "${M3AP_C_DIR}" "${M3AP_ASN_DIR}/${M3AP_ASN_FILES}"
-  DEPENDS ${M3AP_ASN_DIR}/${M3AP_ASN_FILES}
-  )
 
 add_library(M3AP_LIB
   ${M3AP_source}
@@ -755,22 +708,11 @@ add_definitions(-DX2AP_VERSION=${X2AP_VERSION})
 set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${X2AP_RELEASE})
 set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${X2AP_RELEASE})
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-if (${RU} STREQUAL 0)
-  execute_process(
-    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "X2AP_" -fno-include-deps "${X2AP_C_DIR}" "${X2AP_ASN_DIR}/${X2AP_ASN_FILES}"
-    RESULT_VARIABLE ret)
-  if (NOT ${ret} STREQUAL 0)
-    message(FATAL_ERROR "${ret}: error")
-  endif (NOT ${ret} STREQUAL 0)
-endif (${RU} STREQUAL 0)
+set(x2_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "X2AP_" -fno-include-deps "${X2AP_C_DIR}")
+
+compile_asn1("${X2AP_ASN_DIR}/${X2AP_ASN_FILES}" "${x2_cmd}"  x2_flag)
 
 file(GLOB X2AP_source ${X2AP_C_DIR}/*.c)
-
-add_custom_target (
-  x2_flag ALL
-  COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "X2AP_" -fno-include-deps "${X2AP_C_DIR}" "${X2AP_ASN_DIR}/${X2AP_ASN_FILES}"
-  DEPENDS ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
-  )
 
 add_library(X2AP_LIB
   ${X2AP_source}
@@ -815,35 +757,25 @@ set(F1AP_ASN_FILES
   ${F1AP_ASN_DIR}/F1AP-Containers.asn
   )
 
-if (${RU} STREQUAL 0)
-  set(F1AP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
-  execute_process(
-    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "F1AP_" "-findirect-choice -fno-include-deps" ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
-    RESULT_VARIABLE ret
-    )
-  
-  if (NOT ${ret} STREQUAL 0)
-    message(FATAL_ERROR "asn1c: error")
-  endif (NOT ${ret} STREQUAL 0)
-  
-  add_custom_target (
-    f1_flag ALL
-    COMMAND ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "F1AP_" "-findirect-choice -fno-include-deps" ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
-    DEPENDS ${F1AP_ASN_FILES}
-    )
-  file(GLOB F1AP_ASN_GENERATED_C_FILES ${F1AP_ASN_GENERATED_C_DIR}/*.c)
-  add_library(F1AP_LIB
-    ${F1AP_ASN_GENERATED_C_FILES}
-    )
-  add_dependencies (F1AP_LIB  f1_flag)
-  
-  include_directories ("${F1AP_ASN_GENERATED_C_DIR}")
-  include_directories ("${F1AP_DIR}")
-  
-  file(GLOB F1AP_C_FILES ${F1AP_DIR}/*.c)
-  add_library(F1AP ${F1AP_C_FILES} )
-  
-endif (${RU} STREQUAL 0)
+
+set(F1AP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
+
+set(f1_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "F1AP_" "-findirect-choice -fno-include-deps" "${F1AP_ASN_GENERATED_C_DIR}")
+
+compile_asn1("${F1AP_ASN_FILES}" "${f1_cmd}" f1_flag)
+
+file(GLOB F1AP_ASN_GENERATED_C_FILES ${F1AP_ASN_GENERATED_C_DIR}/*.c)
+add_library(F1AP_LIB
+  ${F1AP_ASN_GENERATED_C_FILES}
+  )
+add_dependencies (F1AP_LIB  f1_flag)
+
+include_directories ("${F1AP_ASN_GENERATED_C_DIR}")
+include_directories ("${F1AP_DIR}")
+
+file(GLOB F1AP_C_FILES ${F1AP_DIR}/*.c)
+add_library(F1AP ${F1AP_C_FILES} )
+
 
 # Hardware dependant options
 ###################################
@@ -1033,7 +965,6 @@ add_boolean_option(DRIVER2013              True "only relevant for EXMIMO")
 add_boolean_option(EXMIMO_IOT              True "????")
 add_boolean_option(LOCALIZATION            False "???")
 add_integer_option(MAX_NUM_CCs             1     "????")
-add_boolean_option(PHYSIM                  False  "for L1 simulators (dlsim, ulsim, ...)")
 add_boolean_option(SMBV                    False "Rohde&Schwarz SMBV100A vector signal generator")
 add_boolean_option(DEBUG_PHY               False "Enable PHY layer debugging options")
 add_boolean_option(DEBUG_PHY_PROC          False "Enable debugging of PHY layer procedures")
