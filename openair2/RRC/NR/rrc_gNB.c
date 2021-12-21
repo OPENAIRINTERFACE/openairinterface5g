@@ -2891,30 +2891,6 @@ unsigned int get_ul_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   return(0);
 }
 
-int is_dl_256QAM_supported(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
-  int common_band = *rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-  int common_scs  = rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-  if (common_band>256) {
-    for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
-       NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
-       if (bandNRinfo->bandNR == common_band && !bandNRinfo->pdsch_256QAM_FR2) return (0);
-    }
-  }
-  else if (cap->phy_Parameters.phy_ParametersFR1 && !cap->phy_Parameters.phy_ParametersFR1->pdsch_256QAM_FR1) return(0);
-
-  // check featureSet
-  NR_FeatureSets_t *fs=cap->featureSets;
-  if (fs) {
-    // go through DL feature sets and look for one with current SCS
-    for (int i=0;i<fs->featureSetsDownlinkPerCC->list.count;i++) {
-       if (fs->featureSetsDownlinkPerCC->list.array[i]->supportedSubcarrierSpacingDL == common_scs &&
-           fs->featureSetsDownlinkPerCC->list.array[i]->supportedModulationOrderDL &&
-           *fs->featureSetsDownlinkPerCC->list.array[i]->supportedModulationOrderDL == NR_ModulationOrder_qam256) return(1);
-    }
-  }
-  return(0);
-}
-
 int is_ul_256QAM_supported(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   int common_band = *rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0];
   int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
@@ -3005,11 +2981,9 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
         }
 
         if (ue_context_p->ue_context.UE_Capability_nr) {
-          fprintf(fd,"NR RRC UE cap: BW DL %x. BW UL %x, 256 QAM DL %s, 256 QAM UL %s, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
+          fprintf(fd,"NR RRC UE cap: BW DL %x. BW UL %x, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
                 get_dl_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
                 get_ul_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
-                is_dl_256QAM_supported(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr) == 1 ? "yes" : "no",
-                is_ul_256QAM_supported(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr) == 1 ? "yes" : "no",
                 get_dl_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
                 get_ul_mimo_layersCB(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
                 get_ul_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr));

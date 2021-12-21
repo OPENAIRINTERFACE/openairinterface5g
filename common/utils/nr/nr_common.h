@@ -72,6 +72,7 @@ int get_subband_size(int NPRB,int size);
 void SLIV2SL(int SLIV,int *S,int *L);
 int get_dmrs_port(int nl, uint16_t dmrs_ports);
 int get_nb_periods_per_frame(uint8_t tdd_period);
+int get_supported_band_index(int scs, int band, int n_rbs);
 
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))

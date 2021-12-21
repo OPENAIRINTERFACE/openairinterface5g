@@ -98,6 +98,71 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
       ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation_msg3);
     }
   }
-
 }
+
+
+void set_dl_mcs_table(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *scc, NR_UE_NR_Capability_t *cap) {
+
+  int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  int scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
+  struct NR_FrequencyInfoDL__scs_SpecificCarrierList scs_list = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList;
+  int bw_rb = -1;
+  for(int i=0; i<scs_list.list.count; i++){
+    if(scs == scs_list.list.array[i]->subcarrierSpacing){
+      bw_rb = scs_list.list.array[i]->carrierBandwidth;
+      break;
+    }
+  }
+  AssertFatal(bw_rb>0,"Could not find scs-SpecificCarrierList element for scs %d",scs);
+  int bw = get_supported_band_index(scs, band, bw_rb);
+  AssertFatal(bw>0,"Supported band corresponding to %d RBs not found\n", bw_rb);
+
+  bool supported = false;
+  if (band>256) {
+    for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
+      NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
+      if(bandNRinfo->bandNR == band && bandNRinfo->pdsch_256QAM_FR2) {
+        supported = true;
+        break;
+      }
+    }
+  }
+  else if (cap->phy_Parameters.phy_ParametersFR1 && cap->phy_Parameters.phy_ParametersFR1->pdsch_256QAM_FR1)
+    supported = true;
+
+  // check featureSet
+  NR_FeatureSets_t *fs=cap->featureSets;
+  NR_ModulationOrder_t supported_mo = 0;
+  if (fs && supported) {
+    // go through DL feature sets and look for one with current SCS
+    for (int i=0;i<fs->featureSetsDownlinkPerCC->list.count;i++) {
+      int supported_bw;
+      NR_FeatureSetDownlinkPerCC_t *fs_cc = fs->featureSetsDownlinkPerCC->list.array[i];
+      switch (fs_cc->supportedBandwidthDL.present) {
+        case NR_SupportedBandwidth_PR_fr1:
+          supported_bw = fs_cc->supportedBandwidthDL.choice.fr1;
+          break;
+        case NR_SupportedBandwidth_PR_fr2:
+          supported_bw = fs_cc->supportedBandwidthDL.choice.fr2;
+          break;
+        default:
+          AssertFatal(1==0,"Invalid parameter for supported bandwith choice\n");
+      }
+      if (fs_cc->supportedSubcarrierSpacingDL == scs &&
+          supported_bw == bw &&
+          fs_cc->supportedModulationOrderDL)
+        supported_mo = *fs_cc->supportedModulationOrderDL ;
+    }
+  }
+  if (supported && (supported_mo == NR_ModulationOrder_qam256)) {
+    long *mcs_Table = bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table;
+    if(mcs_Table == NULL)
+      mcs_Table = calloc(1, sizeof(*mcs_Table));
+    *mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
+  }
+  else
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL; 
+}
+
+
 
