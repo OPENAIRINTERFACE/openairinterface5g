@@ -310,6 +310,13 @@ def GetParametersFromXML(action):
 			CiTestObj.ue_id = ue_id
 		CiTestObj.iperf_direction = test.findtext('direction')#used for modules only	
 		CiTestObj.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
+		iperf_bitrate_threshold = test.findtext('iperf_bitrate_threshold')
+		if (iperf_bitrate_threshold is None):
+			CiTestObj.iperf_bitrate_threshold = "90" #if no threshold is specified, default will be 90%
+		else:
+			CiTestObj.iperf_bitrate_threshold = iperf_bitrate_threshold
+
+
 		CiTestObj.iperf_profile = test.findtext('iperf_profile')
 		if (CiTestObj.iperf_profile is None):
 			CiTestObj.iperf_profile = 'balanced'

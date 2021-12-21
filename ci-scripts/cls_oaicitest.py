@@ -129,6 +129,7 @@ class OaiCiTest():
 		self.ping_rttavg_threshold =''
 		self.iperf_args = ''
 		self.iperf_packetloss_threshold = ''
+		self.iperf_bitrate_threshold = ''
 		self.iperf_profile = ''
 		self.iperf_options = ''
 		self.iperf_direction = ''
@@ -2085,13 +2086,21 @@ class OaiCiTest():
 				pl = float(100 * pl_sum / ps_sum)
 				packetloss = '%2.1f ' % (pl)
 				packetloss += '%'
+				#checking packet loss compliance
 				if float(pl) > float(self.iperf_packetloss_threshold):
 					pal_too_high_msg = 'Packet Loss too high :  actual = '+packetloss+', target = '+self.iperf_packetloss_threshold+'%\n'
 				else:
-					pal_too_high_msg=''			
+					pal_too_high_msg=''
+				#checking bitrate perf compliance
+				if float(br_loss) < float(self.iperf_bitrate_threshold):
+					bit_too_low_msg = 'Bitrate too low :  actual = '+bitperf+', target = '+self.iperf_bitrate_threshold+'%\n'
+				else:
+					bit_too_low_msg=''
 			lock.acquire()
-			if (br_loss < 90) or (float(pl) > float(self.iperf_packetloss_threshold)):
+			if (br_loss < self.iperf_bitrate_threshold) or (float(pl) > float(self.iperf_packetloss_threshold)):
 				statusQueue.put(1)
+			elif (br_loss < self.iperf_bitrate_threshold) and (float(pl) > float(self.iperf_packetloss_threshold)): 
+				statusQueue.put(-1)
 			else:
 				statusQueue.put(0)
 			statusQueue.put(device_id)
@@ -2101,7 +2110,7 @@ class OaiCiTest():
 			brl_msg = 'Bitrate Perf: ' + bitperf
 			jit_msg = 'Jitter      : ' + jitter
 			pal_msg = 'Packet Loss : ' + packetloss
-			statusQueue.put(req_msg + '\n' + bir_msg + '\n' + brl_msg + '\n' + jit_msg + '\n' + pal_msg + '\n' + pal_too_high_msg + '\n')
+			statusQueue.put(req_msg + '\n' + bir_msg + '\n' + brl_msg + '\n' + jit_msg + '\n' + pal_msg + '\n' + pal_too_high_msg + '\n' + bit_too_low_msg + '\n')
 			logging.debug('\u001B[1;37;45m iperf result (' + UE_IPAddress + ') \u001B[0m')
 			logging.debug('\u001B[1;35m    ' + req_msg + '\u001B[0m')
 			logging.debug('\u001B[1;35m    ' + bir_msg + '\u001B[0m')
@@ -2109,6 +2118,7 @@ class OaiCiTest():
 			logging.debug('\u001B[1;35m    ' + jit_msg + '\u001B[0m')
 			logging.debug('\u001B[1;35m    ' + pal_msg + '\u001B[0m')
 			logging.debug('\u001B[1;35m    ' + pal_too_high_msg + '\u001B[0m')
+			logging.debug('\u001B[1;35m    ' + bit_too_low_msg + '\u001B[0m')
 			lock.release()
 		else:
 			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Could not analyze from server log')
