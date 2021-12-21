@@ -43,7 +43,7 @@ import gitlab
 import yaml
 import os
 import time
-
+import sys
 
 from sqlconnect import SQLConnect
 
@@ -61,7 +61,9 @@ class Dashboard:
         self.git = self.__getGitData(cmd) #git data from Gitlab
         self.tests = self.__loadCfg('ran_dashboard_cfg.yaml') #tests table setup from yaml
         self.db = self.__loadFromDB() #test results from database
-
+        self.mr_list=[] #mr list in string format
+        for x in range(len(self.git)):
+            self.mr_list.append(str(self.git[x]['iid']))
 
     def __loadCfg(self,yaml_file):
         with open(yaml_file,'r') as f:
@@ -85,6 +87,29 @@ class Dashboard:
             mydb.get(MR)
         mydb.close_connection()
         return mydb.data
+
+    def singleMR_initHTML(self, date):
+        self.f_html.write('<!DOCTYPE html>\n')
+        self.f_html.write('<head>\n')
+        self.f_html.write('<link rel="stylesheet" href="../test_styles.css">\n')
+        self.f_html.write('<title>Test Dashboard</title>\n')
+        self.f_html.write('</head>\n')
+        self.f_html.write('<br>\n')
+        self.f_html.write('<br>\n')
+        self.f_html.write('<table>\n')
+        self.f_html.write('<tr>\n')
+        self.f_html.write('<td class="Main">OAI RAN TEST Status Dashboard</td>\n')
+        self.f_html.write('</td>\n')
+        self.f_html.write('<tr>\n')
+        self.f_html.write('<tr></tr>\n')
+        self.f_html.write('<tr>\n')
+        self.f_html.write('<td class="Date">Update : '+date+'</td>\n')
+        self.f_html.write('</td>\n')
+        self.f_html.write('</tr>\n')
+        self.f_html.write('</table>\n')
+        self.f_html.write('<br>\n')
+        self.f_html.write('<br>\n')
+
 
     def Test_initHTML(self, date):
         self.f_html.write('<!DOCTYPE html>\n')
@@ -197,11 +222,13 @@ class Dashboard:
         self.f_html.write('</tr>\n')
 
 
-    def Build(self, type, htmlfilename):
+    def Build(self, type, mr, htmlfilename):
         if type=='MR':
             self.Build_MR_Table(htmlfilename)
         elif type=='Tests':
             self.Build_Test_Table(htmlfilename)
+        elif type=='singleMR':
+            self.Build_singleMR_Table(mr,htmlfilename)
         else :
             print("Undefined Dashboard Type, options : MR or Tests")
 
@@ -289,6 +316,93 @@ class Dashboard:
 
         #terminate HTML table and close file
         self.Test_terminateHTML()
+
+
+    def Build_singleMR_Table(self,singlemr,htmlfilename):
+        print("Building single MR Tests Results...")
+
+        self.f_html=open(htmlfilename,'w')
+
+        ###update date/time, format dd/mm/YY H:M:S
+        now = datetime.now()
+        dt_string = now.strftime("%d/%m/%Y %H:%M")	  
+        #HTML table header
+        self.singleMR_initHTML(dt_string)
+
+
+        #1 table per MR if test results exist => 1 table for matching mr
+        for x in range(len(self.git)):
+            mr=str(self.git[x]['iid'])
+            if mr==singlemr:
+            #if 'PASS' not in self.db[mr]:
+                self.f_html.write('<h3><a href="https://gitlab.eurecom.fr/oai/openairinterface5g/-/merge_requests/'+mr+'">'+mr+'</a>'+'   '+self.git[x]['title'] + '</h3>\n')
+                self.f_html.write('<table class="Test_Table">\n')
+                self.f_html.write('<tr>\n')
+                self.f_html.write('<th class="Test_Name">Test Name</th>\n')
+                self.f_html.write('<th class="Test_Descr">Bench</th> \n')  
+                self.f_html.write('<th class="Test_Descr">Test</th> \n')
+                self.f_html.write('<th class="Pass"># Pass</th>\n')
+                self.f_html.write('<th class="Fail"># Fail</th>\n')
+                self.f_html.write('<th class="Last_Pass">Last Pass</th>\n')
+                self.f_html.write('<th class="Last_Fail">Last Fail</th>\n')
+                self.f_html.write('</tr>\n')
+
+                #parsing the tests
+                for t in self.tests:
+
+                    row=[]
+                    short_name= t
+                    hyperlink= self.tests[t]['link']
+                    job=self.tests[t]['job']
+
+
+                    if job in self.db[mr]:
+                        if 'PASS' in self.db[mr][job]:
+                            row.append(self.db[mr][job]['PASS'])
+                        else:
+                            row.append('')
+                        if 'FAIL' in self.db[mr][job]:
+                            row.append(self.db[mr][job]['FAIL'])
+                        else:
+                            row.append('')
+                        #2 columns for last_pass and last_fail links
+                        if 'last_pass' in self.db[mr][job]:
+                            lastpasshyperlink=  self.db[mr][job]['last_pass'][1]
+                            lastpasstext= self.db[mr][job]['last_pass'][0]
+                        else:
+                            lastpasshyperlink=''
+                            lastpasstext=''
+
+                        if 'last_fail' in self.db[mr][job]:
+                            lastfailhyperlink=  self.db[mr][job]['last_fail'][1] 
+                            lastfailtext= self.db[mr][job]['last_fail'][0]
+                        else:
+                            lastfailhyperlink=''
+                            lastfailtext=''
+
+
+
+                        self.f_html.write('<tr>\n')
+                        self.f_html.write('<td><a href='+hyperlink+'>'+short_name+'</a></td>\n')
+                        self.f_html.write('<td>'+self.tests[t]['bench']+'</td>\n')
+                        self.f_html.write('<td>'+self.tests[t]['test']+'</td>\n')
+                        if row[0]!='':
+                            self.f_html.write('<td style="background-color: rgb(58, 236, 58);">'+str(row[0])+'</td>\n')
+                        else:
+                            self.f_html.write('<td></td>\n')
+                        if row[1]!='':
+                            self.f_html.write('<td style="background-color: red;">'+str(row[1])+'</td>\n')
+                        else:
+                            self.f_html.write('<td></td>\n')
+                        self.f_html.write('<td><a href='+lastpasshyperlink+'>'+lastpasstext+'</a></td>\n')
+                        self.f_html.write('<td><a href='+lastfailhyperlink+'>'+lastfailtext+'</a></td>\n')
+                        self.f_html.write('</tr>\n')
+
+                self.f_html.write('</table>\n')
+
+        #terminate HTML table and close file
+        self.Test_terminateHTML()
+
 
 
     def Build_MR_Table(self,htmlfilename):
@@ -379,6 +493,7 @@ class Dashboard:
         #terminate HTML table and close file
         self.MR_terminateHTML()
 
+
     def CopyToS3(self,htmlfilename,bucket,key):
         print("Uploading to S3 bucket")
         #Creating Session With Boto3.
@@ -387,15 +502,58 @@ class Dashboard:
         #Creating S3 Resource From the Session.
         result = s3.upload_file(htmlfilename, bucket,key, ExtraArgs={'ACL':'public-read','ContentType': 'text/html'})
 
+    #unused
+    def CopyCSS(self,path):
+        s3 = boto3.resource('s3')
+        copy_source = {'Bucket': 'oaitestdashboard','Key':'test_styles.css'}
+        s3.meta.client.copy(copy_source, 'oaitestdashboard', path+'/'+ 'test_styles.css')
+
+
+    def PostGitNote(self,mr,jobname,buildurl,buildid,status):
+        gl = gitlab.Gitlab.from_config('OAI')
+        project_id = 223
+        project = gl.projects.get(project_id)
+        editable_mr = project.mergerequests.get(int(mr))
+        mr_notes = editable_mr.notes.list()
+        mr_note = editable_mr.notes.create({
+            'body': 'Completed Test : '+jobname+', status: <b>'+status+'</b>, '+\
+            '(<a href="'+buildurl+'">'+buildid+'</a>)<br>'+\
+            '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+mr+'/index.html">Consolidated Test Results</a>'
+        })
+        editable_mr.save()
+
+
 def main():
 
-    htmlDash=Dashboard()
-    htmlDash.Build('MR','/tmp/MR_index.html') 
-    htmlDash.CopyToS3('/tmp/MR_index.html','oairandashboard','index.html')  
-    htmlDash.Build('Tests','/tmp/Tests_index.html') 
-    htmlDash.CopyToS3('/tmp/Tests_index.html','oaitestdashboard','index.html') 
+    #call from Jenkinsfile : sh "python3 Hdashboard.py testevent ${params.eNB_MR} ${JOB_NAME} ${env.BUILD_URL} ${env.BUILD_ID} ${StatusForDb} "  
 
-        
+    #individual MR test results + test dashboard, event based (end of jenkins pipeline)
+    if len(sys.argv)>1:
+        if sys.argv[1]=="testevent" :
+            mr=sys.argv[2]
+            jobname=sys.argv[3]
+            buildurl=sys.argv[4]
+            buildid=sys.argv[5]
+            status=sys.argv[6]
+            htmlDash=Dashboard()
+            if mr in htmlDash.mr_list:
+                htmlDash.Build('singleMR',mr,'/tmp/MR'+mr+'_index.html') 
+                htmlDash.CopyToS3('/tmp/MR'+mr+'_index.html','oaitestdashboard','MR'+mr+'/index.html')
+                htmlDash.Build('Tests','0000','/tmp/Tests_index.html') 
+                htmlDash.CopyToS3('/tmp/Tests_index.html','oaitestdashboard','index.html')
+                htmlDash.PostGitNote(mr,jobname,buildurl,buildid,status)
+            else:
+                print("Not a Merge Request => this build is for testing/debug purpose, no report to git")
+    #test and MR status dash boards, cron based
+    else:
+        htmlDash=Dashboard()
+        htmlDash.Build('MR','0000','/tmp/MR_index.html') 
+        htmlDash.CopyToS3('/tmp/MR_index.html','oairandashboard','index.html') 
+        htmlDash.Build('Tests','0000','/tmp/Tests_index.html') 
+        htmlDash.CopyToS3('/tmp/Tests_index.html','oaitestdashboard','index.html') 
+
+
+
 if __name__ == "__main__":
     # execute only if run as a script
     main()      
