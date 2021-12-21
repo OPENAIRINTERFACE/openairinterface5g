@@ -184,7 +184,7 @@ typedef struct {
   //! estimated rssi (dBm)
   short          rx_rssi_dBm[NUMBER_OF_CONNECTED_gNB_MAX];
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_CONNECTED_gNB_MAX][4][4];
+  int            rx_correlation[NUMBER_OF_CONNECTED_gNB_MAX][NB_ANTENNAS_RX][NR_MAX_NB_LAYERS*NR_MAX_NB_LAYERS];//
   //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
   int            rx_correlation_dB[NUMBER_OF_CONNECTED_gNB_MAX][2];
 

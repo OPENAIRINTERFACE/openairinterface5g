@@ -64,7 +64,7 @@ extern uint16_t beta_cqi[16];
  * \param[in] frame_parms LTE_DL_FRAME_PARMS structure.
  * \note This function is optimistic in that it expects malloc() to succeed.
  */
-void phy_init_nr_ue__PDSCH(NR_UE_PDSCH *const pdsch,
+void phy_init_nr_ue_PDSCH(NR_UE_PDSCH *const pdsch,
                            const NR_DL_FRAME_PARMS *const fp) {
   AssertFatal( pdsch, "pdsch==0" );
 
@@ -132,7 +132,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   NR_UE_COMMON *const common_vars        = &ue->common_vars;
   NR_UE_PBCH  **const pbch_vars          = ue->pbch_vars;
   NR_UE_PRACH **const prach_vars         = ue->prach_vars;
-  int i,j,k,l,slot,symb,q;
+  int i,j,slot,symb,q;
   int gNB_id;
   int th_id;
   uint32_t ****pusch_dmrs;
@@ -317,56 +317,18 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
     if (abstraction_flag == 0) {
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-        phy_init_nr_ue__PDSCH( ue->pdsch_vars[th_id][gNB_id], fp );
+        phy_init_nr_ue_PDSCH( ue->pdsch_vars[th_id][gNB_id], fp );
       }
 
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-        for (int i=0; i<NR_MAX_NB_CODEWORDS; i++) {
+        for (i=0; i<NR_MAX_NB_CODEWORDS; i++) {
           ue->pdsch_vars[th_id][gNB_id]->llr[i] = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );//Q_m = 8 bits/Sym, Code_Rate=3, Number of Segments =8, Circular Buffer K_cb = 8448
         }
-        for (int i=0; i<NR_MAX_NB_LAYERS; i++) {
+        for (i=0; i<NR_MAX_NB_LAYERS; i++) {
           ue->pdsch_vars[th_id][gNB_id]->layer_llr[i] = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );//Q_m = 8 bits/Sym, Code_Rate=3, Number of Segments =8, Circular Buffer K_cb = 8448
         }
       }
-
-      for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-        ue->pdsch_vars[th_id][gNB_id]->dl_ch_rho2_ext      = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
-      }
-
-      for (i=0; i<fp->nb_antennas_rx; i++)
-        for (j=0; j<4; j++) {
-          const int idx = (j*fp->nb_antennas_rx)+i;
-          const size_t num = 7*2*fp->N_RB_DL*12+4;
-
-          for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-            ue->pdsch_vars[th_id][gNB_id]->dl_ch_rho2_ext[idx] = (int32_t *)malloc16_clear( sizeof(int32_t) * num );
-          }
-        }
-
-      //const size_t num = 7*2*fp->N_RB_DL*12+4;
-      for (k=0; k<8; k++) { //harq_pid
-        for (l=0; l<8; l++) { //round
-          for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-            ue->pdsch_vars[th_id][gNB_id]->rxdataF_comp1[k][l] = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
-            ue->pdsch_vars[th_id][gNB_id]->dl_ch_rho_ext[k][l] = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
-            ue->pdsch_vars[th_id][gNB_id]->dl_ch_mag1[k][l]    = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
-            ue->pdsch_vars[th_id][gNB_id]->dl_ch_magb1[k][l]   = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
-          }
-
-          for (int i=0; i<fp->nb_antennas_rx; i++)
-            for (int j=0; j<4; j++) { //frame_parms->nb_antennas_tx; j++)
-              const int idx = (j*fp->nb_antennas_rx)+i;
-
-              for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-                ue->pdsch_vars[th_id][gNB_id]->dl_ch_rho_ext[k][l][idx] = (int32_t *)malloc16_clear(7*2*sizeof(int32_t)*(fp->N_RB_DL*12));
-                ue->pdsch_vars[th_id][gNB_id]->rxdataF_comp1[k][l][idx] = (int32_t *)malloc16_clear(7*2*sizeof(int32_t)*(fp->N_RB_DL*12));
-                ue->pdsch_vars[th_id][gNB_id]->dl_ch_mag1[k][l][idx]    = (int32_t *)malloc16_clear(7*2*sizeof(int32_t)*(fp->N_RB_DL*12));
-                ue->pdsch_vars[th_id][gNB_id]->dl_ch_magb1[k][l][idx]   = (int32_t *)malloc16_clear(7*2*sizeof(int32_t)*(fp->N_RB_DL*12));
-              }
-            }
-        }
-      }
-
+      // PDCCH
       // 100 PRBs * 12 REs/PRB * 4 PDCCH SYMBOLS * 2 LLRs/RE
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
         ue->pdcch_vars[th_id][gNB_id]->llr                 = (int16_t *)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
