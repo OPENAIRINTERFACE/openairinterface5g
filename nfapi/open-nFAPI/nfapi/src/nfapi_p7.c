@@ -907,6 +907,7 @@ static uint8_t pack_ul_tti_request_pucch_pdu(nfapi_nr_pucch_pdu_t *pucch_pdu, ui
           push8(pucch_pdu->cyclic_prefix, ppWritePackedMsg, end) &&
           push8(pucch_pdu->format_type, ppWritePackedMsg, end) &&
           push8(pucch_pdu->multi_slot_tx_indicator, ppWritePackedMsg, end) &&
+          push8(pucch_pdu->pi_2bpsk, ppWritePackedMsg, end) &&
           push16(pucch_pdu->prb_start, ppWritePackedMsg, end) &&
           push16(pucch_pdu->prb_size, ppWritePackedMsg, end) &&
           push8(pucch_pdu->start_symbol_index, ppWritePackedMsg, end) &&
@@ -4402,6 +4403,7 @@ static uint8_t unpack_ul_tti_request_pucch_pdu(void *tlv, uint8_t **ppReadPacked
           pull8(ppReadPackedMsg, &pucch_pdu->cyclic_prefix, end) &&
           pull8(ppReadPackedMsg, &pucch_pdu->format_type, end) &&
           pull8(ppReadPackedMsg, &pucch_pdu->multi_slot_tx_indicator, end) &&
+          pull8(ppReadPackedMsg, &pucch_pdu->pi_2bpsk, end) &&
           pull16(ppReadPackedMsg, &pucch_pdu->prb_start, end) &&
           pull16(ppReadPackedMsg, &pucch_pdu->prb_size, end) &&
           pull8(ppReadPackedMsg, &pucch_pdu->start_symbol_index, end) &&
