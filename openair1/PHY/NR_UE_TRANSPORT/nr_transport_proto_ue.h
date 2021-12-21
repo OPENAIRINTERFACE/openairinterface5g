@@ -1055,14 +1055,15 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   @param[in] size, of input bits
   @param[in] Nid, cell id
   @param[in] n_RNTI, CRNTI
+  @param[in] uci_on_pusch whether UCI placeholder bits need to be scrambled (true -> no optimized scrambling)
   @param[out] out, the scrambled bits
 */
-
 void nr_pusch_codeword_scrambling(uint8_t *in,
-                         uint32_t size,
-                         uint32_t Nid,
-                         uint32_t n_RNTI,
-                         uint32_t* out);
+                                  uint32_t size,
+                                  uint32_t Nid,
+                                  uint32_t n_RNTI,
+                                  bool uci_on_pusch,
+                                  uint32_t* out);
 
 /** \brief Perform the following functionalities:
     - encoding
