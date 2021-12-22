@@ -1412,6 +1412,12 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             rrc_gNB_carrier_data_t *carrier,
                             NR_UE_NR_Capability_t *uecap) {
 
+ NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
+ struct NR_ServingCellConfig__downlinkBWP_ToAddModList *DL_BWP_list = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+ for (int i=0; i<DL_BWP_list->list.count; i++){
+   NR_BWP_Downlink_t *bwp = DL_BWP_list->list.array[i];
+   set_dl_mcs_table(bwp, carrier->servingcellconfigcommon, uecap);
+ }
 }
 
 void fill_initial_cellGroupConfig(rnti_t rnti,
