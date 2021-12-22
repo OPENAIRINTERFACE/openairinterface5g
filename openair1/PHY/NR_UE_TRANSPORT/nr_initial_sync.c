@@ -42,6 +42,7 @@
 
 #include "common_lib.h"
 #include <math.h>
+#include <nr-uesoftmodem.h>
 
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/sss_nr.h"
@@ -250,21 +251,31 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 #endif
 
     // digital compensation of FFO for SSB symbols
-    if (ue->UE_fo_compensation){  
-	double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
-	double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
+    if (ue->UE_fo_compensation){
+      double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
+      double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
 
-	int start = is*fp->samples_per_frame+ue->ssb_offset;  // start for offset correction is at ssb_offset (pss time position)
-  	int end = start + 4*(fp->ofdm_symbol_size + fp->nb_prefix_samples);  // loop over samples in 4 symbols (ssb size), including prefix  
+      // In SA we need to perform frequency offset correction in two consecutive frames because we need to decode SIB1
+      // and we do not know yet in which slot it goes.
 
-	for(int n=start; n<end; n++){  	
-	  for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
-		re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
-		im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
-		((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle))); 
-		((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
-	  }
-	}
+      // start for offset correction
+      int start = get_softmodem_params()->sa ?
+                  is*fp->samples_per_frame :
+                  is*fp->samples_per_frame + ue->ssb_offset;
+
+      // loop over samples
+      int end = get_softmodem_params()->sa ?
+                start + (fp->samples_per_frame<<1):
+                start + NR_N_SYMBOLS_SSB*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
+
+      for(int n=start; n<end; n++){
+        for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
+          re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
+          im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
+          ((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle)));
+          ((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+        }
+      }
     }
 
     /* check that SSS/PBCH block is continuous inside the received buffer */
