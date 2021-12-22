@@ -26,7 +26,7 @@
 #---------------------------------------------------------------------
 
 
-FROM registry.access.redhat.com/ubi8/ubi:latest AS ran-build
+FROM registry.access.redhat.com/ubi8/ubi:latest AS ran-base
 ARG NEEDED_GIT_PROXY
 ENV TZ=Europe/Paris
 ENV BUILD_UHD_FROM_SOURCE=True
