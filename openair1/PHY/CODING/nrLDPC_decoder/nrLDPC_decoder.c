@@ -724,7 +724,7 @@ if (BG==1)
                 #ifdef __AVX512BW__
                 nrLDPC_bnProc_BG2_R13_AVX512(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
                 #else
-                nrLDPC_bnProc_BG2_R13_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,+p_procBuf->llrRes, Z);
+                nrLDPC_bnProc_BG2_R13_AVX2(p_procBuf->bnProcBuf, p_procBuf->bnProcBufRes,p_procBuf->llrRes, Z);
                 #endif
                 break;
             }
