@@ -777,6 +777,8 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 NULL,
                                 dedicatedNAS_MessageList,
                                 NULL,
+                                NULL,
+                                NULL,
                                 NULL);
 
   free(ue_context_pP->ue_context.nas_pdu.buffer);
@@ -1046,6 +1048,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                                 NULL,
                                 NULL,
                                 dedicatedNAS_MessageList,
+                                ue_context_pP,
+                                &rrc->carrier,
                                 NULL,
                                 cellGroupConfig);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Reconfiguration\n");
@@ -1154,6 +1158,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
                                NULL,
                                NULL,
                                dedicatedNAS_MessageList,
+                               NULL,
+                               NULL,
                                NULL,
                                NULL);
 
@@ -1678,6 +1684,8 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
                                 NULL,
                                 NULL,
                                 NULL, // MeasObj_list,
+                                NULL,
+                                NULL,
                                 NULL,
                                 NULL,
                                 NULL);
