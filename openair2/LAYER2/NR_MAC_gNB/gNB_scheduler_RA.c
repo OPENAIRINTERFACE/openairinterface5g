@@ -458,7 +458,7 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // slot and frame limit to transmit msg2 according to response window
   uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame[mu];
-  uint8_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
+  uint16_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
 
   // computing start of next period
 
