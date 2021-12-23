@@ -63,18 +63,22 @@
 
 /************** VARIABLES *****************************************/
 
-#define PHASE_HYPOTHESIS_NUMBER       (7)
+#define PHASE_HYPOTHESIS_NUMBER       (16)
 #define INDEX_NO_PHASE_DIFFERENCE     (3)          /* this is for no phase shift case */
 
 EXTERN const int16_t phase_re_nr[PHASE_HYPOTHESIS_NUMBER]
 #ifdef INIT_VARIABLES_SSS_NR_H
-= {16383, 25101, 30791, 32767, 30791, 25101, 16383}
+// -pi/3 ---- pi/3
+= {16384,20173,23571,26509,28932,30791,32051,32687,32687,32051,30791,
+   28932,26509,23571,20173,16384}
 #endif
 ;
 
 EXTERN const int16_t phase_im_nr[PHASE_HYPOTHESIS_NUMBER]
 #ifdef INIT_VARIABLES_SSS_NR_H
-= {-28378, -21063, -11208, 0, 11207, 21062, 28377};
+// -pi/3 ---- pi/3
+= {-28377,-25821,-22762,-19260,-15383,-11207,-6813,-2286,2286,6813,11207,
+   15383,19260,22762,25821,28377}
 #endif
 ;
 
