@@ -103,6 +103,11 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
 
 void set_dl_mcs_table(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *scc, NR_UE_NR_Capability_t *cap) {
 
+  if (cap == NULL){
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;
+    return;
+  }
+
   int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
   int scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
   struct NR_FrequencyInfoDL__scs_SpecificCarrierList scs_list = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList;
