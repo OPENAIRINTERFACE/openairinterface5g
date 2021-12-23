@@ -59,6 +59,7 @@ static inline int get_num_dmrs(uint16_t dmrs_mask ) {
 }
 
 
+int get_SLIV(uint8_t S, uint8_t L);
 void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset);
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 int get_nr_table_idx(int nr_bandP, uint8_t scs_index);
@@ -78,6 +79,7 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
 int get_subband_size(int NPRB,int size);
 void SLIV2SL(int SLIV,int *S,int *L);
 int get_dmrs_port(int nl, uint16_t dmrs_ports);
+int get_nb_periods_per_frame(uint8_t tdd_period);
 
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
