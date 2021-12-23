@@ -2899,27 +2899,6 @@ unsigned int get_ul_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   return(0);
 }
 
-int is_ul_256QAM_supported(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
-  int common_band = *rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0];
-  int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-  for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
-       NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
-       if (bandNRinfo->bandNR == common_band && !bandNRinfo->pusch_256QAM) return (0);
-  }
-
-  // check featureSet
-  NR_FeatureSets_t *fs=cap->featureSets;
-  if (fs) {
-    // go through UL feature sets and look for one with current SCS
-    for (int i=0;i<fs->featureSetsUplinkPerCC->list.count;i++) {
-       if (fs->featureSetsUplinkPerCC->list.array[i]->supportedSubcarrierSpacingUL == common_scs &&
-           fs->featureSetsUplinkPerCC->list.array[i]->supportedModulationOrderUL &&
-           *fs->featureSetsUplinkPerCC->list.array[i]->supportedModulationOrderUL == NR_ModulationOrder_qam256) return(1);
-    }
-  }
-  return(0);
-}
-
 int get_ul_mimo_layersCB(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
 

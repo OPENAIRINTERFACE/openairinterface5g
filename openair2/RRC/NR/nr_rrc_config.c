@@ -155,13 +155,12 @@ void set_dl_mcs_table(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *scc,
     }
   }
   if (supported && (supported_mo == NR_ModulationOrder_qam256)) {
-    long *mcs_Table = bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table;
-    if(mcs_Table == NULL)
-      mcs_Table = calloc(1, sizeof(*mcs_Table));
-    *mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
+    if(bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL)
+      bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table));
+    *bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
   }
   else
-    bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL; 
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;
 }
 
 

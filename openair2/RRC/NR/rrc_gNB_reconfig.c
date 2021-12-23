@@ -697,8 +697,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pusch_Config->pusch_TimeDomainAllocationList = NULL;
  pusch_Config->pusch_AggregationFactor=NULL;
  pusch_Config->mcs_Table=NULL;
- pusch_Config->mcs_TableTransformPrecoder=NULL;
  pusch_Config->transformPrecoder= NULL;
+ pusch_Config->mcs_TableTransformPrecoder=NULL;
  /* if msg3_transformprecoding is set in conf file - pusch config should not disable it */
  if (servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL) {
     pusch_Config->transformPrecoder=calloc(1,sizeof(*pusch_Config->transformPrecoder));
