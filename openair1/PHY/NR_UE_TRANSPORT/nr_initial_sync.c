@@ -31,8 +31,6 @@
 */
 #include "PHY/types.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/phy_extern_nr_ue.h"
-#include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "nr_transport_proto_ue.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
@@ -42,12 +40,10 @@
 
 #include "common_lib.h"
 #include <math.h>
-#include <nr-uesoftmodem.h>
 
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/sss_nr.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_TRANSPORT/nr_dci.h"
 
 extern openair0_config_t openair0_cfg[];
 //static  nfapi_nr_config_request_t config_t;
@@ -202,6 +198,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 {
 
   int32_t sync_pos, sync_pos_frame; // k_ssb, N_ssb_crb, sync_pos2,
+  int32_t accumulated_freq_offset = 0;
   int32_t metric_tdd_ncp=0;
   uint8_t phase_tdd_ncp;
   double im, re;
@@ -254,19 +251,16 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     if (ue->UE_fo_compensation){
       double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
       double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
+      accumulated_freq_offset += ue->common_vars.freq_offset;
 
-      // In SA we need to perform frequency offset correction in two consecutive frames because we need to decode SIB1
+      // In SA we need to perform frequency offset correction until the end of buffer because we need to decode SIB1
       // and we do not know yet in which slot it goes.
 
       // start for offset correction
-      int start = get_softmodem_params()->sa ?
-                  is*fp->samples_per_frame :
-                  is*fp->samples_per_frame + ue->ssb_offset;
+      int start = sa ? is*fp->samples_per_frame : is*fp->samples_per_frame + ue->ssb_offset;
 
       // loop over samples
-      int end = get_softmodem_params()->sa ?
-                start + (fp->samples_per_frame<<1):
-                start + NR_N_SYMBOLS_SSB*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      int end = sa ? n_frames*fp->samples_per_frame-1 : start + NR_N_SYMBOLS_SSB*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
 
       for(int n=start; n<end; n++){
         for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
@@ -555,6 +549,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     }
     if (dec == false) // sib1 not decoded
       ret = -1;
+
+    ue->common_vars.freq_offset = accumulated_freq_offset;
   }
   //  exit_fun("debug exit");
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_OUT);
