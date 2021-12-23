@@ -2097,9 +2097,9 @@ class OaiCiTest():
 				else:
 					bit_too_low_msg=''
 			lock.acquire()
-			if (br_loss < self.iperf_bitrate_threshold) or (float(pl) > float(self.iperf_packetloss_threshold)):
+			if (float(br_loss) < float(self.iperf_bitrate_threshold)) or (float(pl) > float(self.iperf_packetloss_threshold)):
 				statusQueue.put(1)
-			elif (br_loss < self.iperf_bitrate_threshold) and (float(pl) > float(self.iperf_packetloss_threshold)): 
+			elif (float(br_loss) < float(self.iperf_bitrate_threshold)) and (float(pl) > float(self.iperf_packetloss_threshold)): 
 				statusQueue.put(-1)
 			else:
 				statusQueue.put(0)
