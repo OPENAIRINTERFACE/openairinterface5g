@@ -2656,6 +2656,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
     assert(dec_rval.code == RC_OK);
   }
   else {
+    UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
     NR_BandNR_t *nr_bandnr;
     nr_bandnr  = CALLOC(1,sizeof(NR_BandNR_t));
     nr_bandnr->bandNR = 1;
