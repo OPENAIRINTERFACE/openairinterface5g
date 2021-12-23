@@ -1,4 +1,4 @@
-#/*
+#/* 
 # * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
@@ -308,7 +308,7 @@ else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
       set(COMPILATION_AVX2 "False")
     endif()
     if (CPUINFO MATCHES "sse4_1")
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1 -mpclmul")
     endif()
     if (CPUINFO MATCHES "ssse3")
       set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mssse3")
@@ -893,7 +893,7 @@ set(HWLIB_BENETEL_4G_SOURCE
   )
 add_library(benetel_4g MODULE ${HWLIB_BENETEL_4G_SOURCE} )
 
-set_target_properties(benetel_4g PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -march=native -I$ENV{RTE_SDK}/$ENV{RTE_TARGET}/include")
+set_target_properties(benetel_4g PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -I$ENV{RTE_SDK}/$ENV{RTE_TARGET}/include")
 
 SET(DPDK_LIBS "-Wl,-rpath,$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -Wl,--whole-archive -L$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -ldpdk -Wl,--no-whole-archive")
 TARGET_LINK_LIBRARIES(benetel_4g ${DPDK_LIBS})
@@ -911,7 +911,7 @@ set(HWLIB_BENETEL_5G_SOURCE
   )
 add_library(benetel_5g MODULE ${HWLIB_BENETEL_5G_SOURCE} )
 
-set_target_properties(benetel_5g PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -march=native -I$ENV{RTE_SDK}/$ENV{RTE_TARGET}/include")
+set_target_properties(benetel_5g PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -I$ENV{RTE_SDK}/$ENV{RTE_TARGET}/include")
 
 SET(DPDK_LIBS "-Wl,-rpath,$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -Wl,--whole-archive -L$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -ldpdk -Wl,--no-whole-archive")
 TARGET_LINK_LIBRARIES(benetel_5g ${DPDK_LIBS})
@@ -997,7 +997,6 @@ add_boolean_option(TRACE_RLC_AM_HOLE       False "TRACE for RLC AM, TO BE CHANGE
 add_boolean_option(TRACE_RLC_AM_PDU        False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
 add_boolean_option(TRACE_RLC_AM_RESEGMENT  False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
 add_boolean_option(TRACE_RLC_AM_RX         False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_AM_RX_DECODE  False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
 add_boolean_option(TRACE_RLC_AM_TX         False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
 add_boolean_option(TRACE_RLC_AM_TX_STATUS  False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
 add_boolean_option(TRACE_RLC_AM_STATUS_CREATION   False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
@@ -1577,7 +1576,6 @@ set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach_common.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pucch_common.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_scrambling.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_gold_generic.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/srs_modulation.c
   ${OPENAIR1_DIR}/PHY/MODULATION/ofdm_mod.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_time.c
