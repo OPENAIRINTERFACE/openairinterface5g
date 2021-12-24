@@ -65,7 +65,7 @@
 		<air_interface>lte</air_interface>
 		<eNB_Trace>yes</eNB_Trace>
 		<eNB_Stats>yes</eNB_Stats>
-		<USRP_IPAddress>192.168.18.241</USRP_IPAddress>
+		<USRP_IPAddress>192.168.18.16</USRP_IPAddress>
 	</testCase>
 
 
