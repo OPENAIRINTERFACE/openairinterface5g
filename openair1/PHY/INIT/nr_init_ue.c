@@ -20,23 +20,14 @@
  */
 
 #include "phy_init.h"
-#include "SCHED_UE/sched_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
-//#include "SIMULATION/TOOLS/sim.h"
-/*#include "RadioResourceConfigCommonSIB.h"
-#include "RadioResourceConfigDedicated.h"
-#include "TDD-Config.h"
-#include "MBSFN-SubframeConfigList.h"*/
 #include "openair1/PHY/defs_RU.h"
 #include "openair1/PHY/impl_defs_nr.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
-#include <math.h>
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-//#include "PHY/LTE_REFSIG/lte_refsig.h"
-#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
-#include "PHY/INIT/phy_init.h"
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
