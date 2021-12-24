@@ -29,7 +29,7 @@
 
 static uint32_t get_packed_msg_len(uintptr_t msgHead, uintptr_t msgEnd) {
   if (msgEnd < msgHead) {
-    NFAPI_TRACE(NFAPI_TRACE_ERROR, "get_packed_msg_len: Error in pointers supplied %d, %d\n", msgHead, msgEnd);
+    NFAPI_TRACE(NFAPI_TRACE_ERROR, "get_packed_msg_len: Error in pointers supplied %lu, %lu\n", msgHead, msgEnd);
     return 0;
   }
 

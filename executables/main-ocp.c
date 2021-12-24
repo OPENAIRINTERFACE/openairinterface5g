@@ -1043,7 +1043,7 @@ void init_pdcp(void) {
     pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_W_MBMS_BIT;
 
     if ( split73!=SPLIT73_DU)
-      pdcp_module_init(pdcp_initmask);
+      pdcp_module_init(pdcp_initmask, 0);
 
     if (NODE_IS_CU(RC.rrc[0]->node_type)) {
       //pdcp_set_rlc_data_req_func(proto_agent_send_rlc_data_req);
@@ -1057,14 +1057,14 @@ void init_pdcp(void) {
 }
 
 static  void wait_nfapi_init(char *thread_name) {
-  printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
+  LOG_I(ENB_APP, "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
   pthread_mutex_lock( &nfapi_sync_mutex );
 
   while (nfapi_sync_var<0)
     pthread_cond_wait( &nfapi_sync_cond, &nfapi_sync_mutex );
 
   pthread_mutex_unlock(&nfapi_sync_mutex);
-  printf( "NFAPI: got sync (%s)\n", thread_name);
+  LOG_I(ENB_APP, "NFAPI: got sync (%s)\n", thread_name);
 }
 
 void terminate_task(module_id_t mod_id, task_id_t from, task_id_t to) {

@@ -316,6 +316,8 @@ void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x
   AssertFatal(cg_configinfo->criticalExtensions.choice.c1->present == NR_CG_ConfigInfo__criticalExtensions__c1_PR_cg_ConfigInfo,
               "ueCapabilityInformation not present\n");
   parse_CG_ConfigInfo(rrc,cg_configinfo,m);
+  LOG_A(NR_RRC, "Successfully parsed CG_ConfigInfo of size %zu bits. (%zu bytes)\n",
+        dec_rval.consumed, (dec_rval.consumed +7/8));
 }
 
 
@@ -790,8 +792,8 @@ rrc_gNB_generate_defaultRRCReconfiguration(
     dedicatedNAS_MessageList = NULL;
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
-  size = do_RRCReconfiguration(ctxt_pP, buffer,
+  memset(buffer, 0, sizeof(buffer));
+  size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),
                                 xid,
                                 NULL, //*SRB_configList2,
                                 NULL, //*DRB_configList,
@@ -1058,10 +1060,10 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     dedicatedNAS_MessageList = NULL;
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
   cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
   fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup);
-  size = do_RRCReconfiguration(ctxt_pP, buffer,
+  size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),
                                 xid,
                                 *SRB_configList2,
                                 *DRB_configList,
@@ -1169,8 +1171,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
     LOG_W(NR_RRC,"dedlicated NAS list is empty\n");
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
-  size = do_RRCReconfiguration(ctxt_pP, buffer, xid,
+  memset(buffer, 0, sizeof(buffer));
+  size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer), xid,
                                NULL,
                                NULL,
                                *DRB_Release_configList2,
@@ -1480,6 +1482,7 @@ rrc_gNB_generate_RRCReestablishment(
         ue_context_pP,
         CC_id,
         (uint8_t *) ue_context->Srb0.Tx_buffer.Payload,
+        sizeof(ue_context->Srb0.Tx_buffer.Payload),
         //(uint8_t) carrier->p_gNB, // at this point we do not have the UE capability information, so it can only be TM1 or TM2
         rrc_gNB_get_next_transaction_identifier(module_id),
         SRB_configList
@@ -1735,9 +1738,9 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
           i, ue_context_pP->ue_context.pduSession[i].status, "PDU_SESSION_STATUS_DONE");
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
 
-  size = do_RRCReconfiguration(ctxt_pP, buffer,
+  size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),
                                 xid,
                                *SRB_configList2,
                                 DRB_configList,
@@ -3713,7 +3716,7 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case X2AP_ENDC_SGNB_RECONF_COMPLETE:
-        LOG_I(NR_RRC, "Handling of reconfiguration complete message at RRC gNB is pending \n");
+        LOG_A(NR_RRC, "Handling of reconfiguration complete message at RRC gNB is pending \n");
         break;
 
       case NGAP_INITIAL_CONTEXT_SETUP_REQ:
@@ -3940,9 +3943,10 @@ rrc_gNB_generate_RRCRelease(
   uint8_t buffer[RRC_BUF_SIZE];
   uint16_t size = 0;
 
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
 
-  size = do_NR_RRCRelease(buffer,rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
+  size = do_NR_RRCRelease(buffer, sizeof(buffer),
+                          rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
   ue_context_pP->ue_context.ul_failure_timer = 0;

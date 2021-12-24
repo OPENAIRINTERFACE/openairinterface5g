@@ -56,7 +56,7 @@ struct nlmsghdr *nas_nlh_rx = NULL;
 struct iovec nas_iov_tx;
 struct iovec nas_iov_rx = {nl_rx_buf, sizeof(nl_rx_buf)};
 
-int nas_sock_fd[MAX_MOBILES_PER_ENB];
+int nas_sock_fd[MAX_MOBILES_PER_ENB*2]; //Allocated for both LTE UE and NR UE.
 
 int nas_sock_mbms_fd;
 
@@ -95,11 +95,16 @@ static int tun_alloc(char *dev) {
 }
 
 
-int netlink_init_mbms_tun(char *ifprefix) {
+int netlink_init_mbms_tun(char *ifprefix, int id) {//for UE, id = 1, 2, ...,
   int ret;
   char ifname[64];
 
-    sprintf(ifname, "oaitun_%.3s1",ifprefix); // added "1": for historical reasons
+    if (id > 0) {
+      sprintf(ifname, "oaitun_%.3s%d", ifprefix, id-1);
+    }
+    else {
+      sprintf(ifname, "oaitun_%.3s1", ifprefix); // added "1": for historical reasons
+    }
     nas_sock_mbms_fd = tun_alloc(ifname);
 
     if (nas_sock_mbms_fd == -1) {
@@ -123,14 +128,17 @@ int netlink_init_mbms_tun(char *ifprefix) {
     nas_src_addr.nl_pid = 1;//getpid();  /* self pid */
     nas_src_addr.nl_groups = 0;  /* not in mcast groups */
     ret = bind(nas_sock_mbms_fd, (struct sockaddr *)&nas_src_addr, sizeof(nas_src_addr));
+
   return 1;
 }
 
-int netlink_init_tun(char *ifprefix, int num_if) {
+int netlink_init_tun(char *ifprefix, int num_if, int id) {//for UE, id = 1, 2, ...,
   int ret;
   char ifname[64];
 
-  for (int i = 0; i < num_if; i++) {
+  int begx = (id == 0) ? 0 : id - 1;
+  int endx = (id == 0) ? num_if : id;
+  for (int i = begx; i < endx; i++) {
     sprintf(ifname, "oaitun_%.3s%d",ifprefix,i+1);
     nas_sock_fd[i] = tun_alloc(ifname);
 
@@ -189,6 +197,7 @@ int netlink_init(void) {
   nas_dest_addr.nl_pid = 0;   /* For Linux Kernel */
   nas_dest_addr.nl_groups = 0; /* unicast */
   // TX PART
+  free(nas_nlh_tx);
   nas_nlh_tx=(struct nlmsghdr *)malloc(NLMSG_SPACE(NL_MAX_PAYLOAD));
   memset(nas_nlh_tx, 0, NLMSG_SPACE(NL_MAX_PAYLOAD));
   /* Fill the netlink message header */
@@ -211,3 +220,8 @@ int netlink_init(void) {
   return(nas_sock_fd[0]);
 }
 
+void netlink_cleanup(void)
+{
+  free(nas_nlh_tx);
+  nas_nlh_tx = NULL;
+}

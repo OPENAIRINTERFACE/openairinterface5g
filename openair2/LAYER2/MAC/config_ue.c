@@ -200,7 +200,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
           LTE_MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
       }
 
-      if(NFAPI_MODE !=  NFAPI_UE_STUB_PNF)
+      if(NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF)
         phy_config_harq_ue(Mod_idP, 0, eNB_index, UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx);
 
       if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer) {
@@ -308,7 +308,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
   }
 
   if (physicalConfigDedicated != NULL) {
-    if(NFAPI_MODE !=  NFAPI_UE_STUB_PNF)
+    if(NFAPI_MODE != NFAPI_UE_STUB_PNF && NFAPI_MODE != NFAPI_MODE_STANDALONE_PNF)
       phy_config_dedicated_ue(Mod_idP, 0, eNB_index,
                               physicalConfigDedicated);
 

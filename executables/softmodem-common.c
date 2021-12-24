@@ -211,10 +211,13 @@ void set_softmodem_sighandler(void) {
   memset(&act,0,sizeof(act));
   act.sa_handler=signal_handler;
   sigaction(SOFTMODEM_RTSIGNAL,&act,&oldact);
+  // Disabled in order generate a core dump for analysis with gdb
+  # if 0
   printf("Send signal %d to display resource usage...\n",SIGRTMIN+1);
   signal(SIGSEGV, signal_handler);
   signal(SIGINT,  signal_handler);
   signal(SIGTERM, signal_handler);
   signal(SIGABRT, signal_handler);
+  #endif
 }
 

@@ -157,6 +157,7 @@ char         uecap_xer[1024];
  */
 uint8_t abstraction_flag=0;
 
+
 /*---------------------BMC: timespec helpers -----------------------------*/
 
 struct timespec min_diff_time = { .tv_sec = 0, .tv_nsec = 0 };
@@ -190,10 +191,17 @@ int create_tasks_nrue(uint32_t ue_nb) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
     }
-  if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
-    LOG_E(NR_RRC, "Create task for NAS UE failed\n");
-    return -1;
-  }
+    if (get_softmodem_params()->nsa) {
+      init_connections_with_lte_ue();
+      if (itti_create_task (TASK_RRC_NSA_NRUE, recv_msgs_from_lte_ue, NULL) < 0) {
+        LOG_E(NR_RRC, "Create task for RRC NSA nr-UE failed\n");
+        return -1;
+      }
+    }
+    if (itti_create_task (TASK_NAS_NRUE, nas_nrue_task, NULL) < 0) {
+      LOG_E(NR_RRC, "Create task for NAS UE failed\n");
+      return -1;
+    }
   }
 
   itti_wait_ready(0);
@@ -371,25 +379,23 @@ void init_openair0(void) {
   }
 }
 
-static void init_pdcp(void) {
+static void init_pdcp(int ue_id) {
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
   /*if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }*/
 
-  if (IS_SOFTMODEM_NOKRNMOD)
+  if (IS_SOFTMODEM_NOKRNMOD) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
-
-  /*if (rlc_module_init() != 0) {
+  }
+  if (get_softmodem_params()->nsa && rlc_module_init(0) != 0) {
     LOG_I(RLC, "Problem at RLC initiation \n");
   }
   pdcp_layer_init();
-  nr_DRB_preconfiguration();*/
-  pdcp_layer_init();
-  pdcp_module_init(pdcp_initmask);
-  pdcp_set_rlc_data_req_func(rlc_data_req);
-  pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
+  nr_pdcp_module_init(pdcp_initmask, ue_id);
+  pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+  pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
 }
 
 // Stupid function addition because UE itti messages queues definition is common with eNB
@@ -399,6 +405,13 @@ void *rrc_enb_process_msg(void *notUsed) {
 
 
 int main( int argc, char **argv ) {
+  set_priority(79);
+  if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
+  {
+    fprintf(stderr, "mlockall: %s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
+
   //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
   PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
   start_background_system();
@@ -441,13 +454,27 @@ int main( int argc, char **argv ) {
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
   init_NR_UE(1,rrc_config_path);
-  if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa)
-	  init_pdcp();
+
+  int mode_offset = get_softmodem_params()->nsa ? NUMBER_OF_UE_MAX : 1;
+  uint16_t node_number = get_softmodem_params()->node_number;
+  ue_id_g = (node_number == 0) ? 0 : node_number - 2;
+  AssertFatal(ue_id_g >= 0, "UE id is expected to be nonnegative.\n");
+  if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa || get_softmodem_params()->nsa) {
+    if(node_number == 0) {
+      init_pdcp(0);
+    }
+    else {
+      init_pdcp(mode_offset + ue_id_g);
+    }
+  }
 
   NB_UE_INST=1;
   NB_INST=1;
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE **));
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
+  if (get_softmodem_params()->emulate_l1) {
+    RCconfig_nr_ue_L1();
+  }
 
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");
@@ -455,54 +482,57 @@ int main( int argc, char **argv ) {
   if (get_softmodem_params()->sa)
     AssertFatal(get_softmodem_params()->phy_test == 0,"Standalone mode and phy_test are mutually exclusive\n");
 
-  for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+  if (!get_softmodem_params()->nsa && get_softmodem_params()->emulate_l1)
+    start_oai_nrue_threads();
 
-    PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
-    UE[CC_id] = PHY_vars_UE_g[0][CC_id];
-    memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
+  if (!get_softmodem_params()->emulate_l1) {
+    for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
+      UE[CC_id] = PHY_vars_UE_g[0][CC_id];
+      memset(UE[CC_id],0,sizeof(PHY_VARS_NR_UE));
 
-    set_options(CC_id, UE[CC_id]);
-    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+      set_options(CC_id, UE[CC_id]);
+      NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
-    if (get_softmodem_params()->sa) {
-      uint16_t nr_band = get_band(downlink_frequency[CC_id][0],uplink_frequency_offset[CC_id][0]);
-      mac->nr_band = nr_band;
-      nr_init_frame_parms_ue_sa(&UE[CC_id]->frame_parms,
-                                downlink_frequency[CC_id][0],
-                                uplink_frequency_offset[CC_id][0],
-                                get_softmodem_params()->numerology,
-                                nr_band);
+      if (get_softmodem_params()->sa) { // set frame config to initial values from command line and assume that the SSB is centered on the grid
+        uint16_t nr_band = get_band(downlink_frequency[CC_id][0],uplink_frequency_offset[CC_id][0]);
+        mac->nr_band = nr_band;
+        nr_init_frame_parms_ue_sa(&UE[CC_id]->frame_parms,
+                                  downlink_frequency[CC_id][0],
+                                  uplink_frequency_offset[CC_id][0],
+                                  get_softmodem_params()->numerology,
+                                  nr_band);
+      }
+      else{
+        if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
+          mac->if_module->phy_config_request(&mac->phy_config);
+
+        fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+
+        nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config,
+            *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+      }
+
+      init_symbol_rotation(&UE[CC_id]->frame_parms);
+      init_timeshift_rotation(&UE[CC_id]->frame_parms);
+      init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
     }
-    else{
-      if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL)
-        mac->if_module->phy_config_request(&mac->phy_config);
 
-      fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
+    init_openair0();
+    // init UE_PF_PO and mutex lock
+    pthread_mutex_init(&ue_pf_po_mutex, NULL);
+    memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
+    configure_linux();
+    mlockall(MCL_CURRENT | MCL_FUTURE);
 
-      nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+    if(IS_SOFTMODEM_DOSCOPE) {
+      load_softscope("nr",PHY_vars_UE_g[0][0]);
     }
 
-    init_symbol_rotation(&UE[CC_id]->frame_parms);
-    init_timeshift_rotation(&UE[CC_id]->frame_parms);
-    init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
-
+    init_NR_UE_threads(1);
+    printf("UE threads created by %ld\n", gettid());
   }
 
-  init_openair0();
-  // init UE_PF_PO and mutex lock
-  pthread_mutex_init(&ue_pf_po_mutex, NULL);
-  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
-  configure_linux();
-  mlockall(MCL_CURRENT | MCL_FUTURE);
- 
-  if(IS_SOFTMODEM_DOSCOPE) {
-    load_softscope("nr",PHY_vars_UE_g[0][0]);
-  }     
-
-  
-  init_NR_UE_threads(1);
-  printf("UE threads created by %ld\n", gettid());
-  
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
 

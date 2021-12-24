@@ -51,6 +51,7 @@
 #include "f1ap_du_task.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include <openair2/LAYER2/nr_pdcp/nr_pdcp.h>
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 extern unsigned char NB_gNB_INST;
 
 extern RAN_CONTEXT_t RC;
@@ -144,7 +145,7 @@ static void init_pdcp(void) {
       pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT;
     }
 
-    pdcp_module_init(pdcp_initmask);
+    nr_pdcp_module_init(pdcp_initmask, 0);
 
     if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
       LOG_I(PDCP, "node is CU, pdcp send rlc_data_req by proto_agent \n");
@@ -181,6 +182,8 @@ void *gNB_app_task(void *args_p)
 
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
+  RCconfig_NR_L1();
+
   if (RC.nb_nr_macrlc_inst>0) RCconfig_nr_macrlc();
 
   LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
@@ -202,7 +205,7 @@ void *gNB_app_task(void *args_p)
     configure_nr_rrc(gnb_id);
   }
 
-  if (RC.nb_nr_inst > 0)  {
+  if (RC.nb_nr_inst > 0 && !get_softmodem_params()->nsa)  {
     init_pdcp();
   }
 

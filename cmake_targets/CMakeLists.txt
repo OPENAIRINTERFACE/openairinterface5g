@@ -359,6 +359,10 @@ set(CMAKE_C_FLAGS_DEBUG "${debugOpt} -O0")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${debugOpt} -O2")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 
+# Enable assert() for RelWithDebInfo builds
+string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+
 set(GIT_BRANCH        "UNKNOWN")
 set(GIT_COMMIT_HASH   "UNKNOWN")
 set(GIT_COMMIT_DATE   "UNKNOWN")
@@ -1472,6 +1476,7 @@ set(NFAPI_USER_SRC
   ${NFAPI_USER_DIR}/nfapi.c
   ${NFAPI_USER_DIR}/nfapi_pnf.c
   ${NFAPI_USER_DIR}/nfapi_vnf.c
+  ${NFAPI_USER_DIR}/gnb_ind_vars.c
 )
 add_library(NFAPI_USER_LIB ${NFAPI_USER_SRC})
 add_dependencies(NFAPI_USER_LIB rrc_flag)
@@ -2025,6 +2030,7 @@ set(NR_L2_SRC_UE
   ${NR_UE_RRC_DIR}/L2_interface_ue.c
   ${NR_UE_RRC_DIR}/main_ue.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
+  ${NR_UE_RRC_DIR}/rrc_nsa.c
   )
 
 set (MAC_SRC
@@ -2069,6 +2075,7 @@ set (MAC_NR_SRC
 
 set (MAC_SRC_UE
   ${PHY_INTERFACE_DIR}/phy_stub_UE.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${MAC_DIR}/main_ue.c
   ${MAC_DIR}/ue_procedures.c
   ${MAC_DIR}/ra_procedures.c
@@ -2782,6 +2789,7 @@ add_executable(lte-softmodem
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
   ${XFORMSINTERFACE_SOURCE}
@@ -2826,6 +2834,7 @@ add_executable(ocp-enb
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
@@ -2966,6 +2975,7 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
@@ -3006,6 +3016,7 @@ add_executable(ocp-gnb
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${XFORMS_SOURCE_NR}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
@@ -3209,14 +3220,16 @@ add_executable(nr_dlsim
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${NR_UE_RRC_DIR}/rrc_nsa.c
   ${NFAPI_USER_DIR}/nfapi.c
   ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_dlsim
-  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI ${OPENSSL_LIBRARIES} dl
   )
 target_compile_definitions(nr_dlsim PUBLIC -DPHYSICAL_SIMULATOR)
@@ -3229,13 +3242,15 @@ add_executable(nr_prachsim
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${NR_UE_RRC_DIR}/rrc_nsa.c
   ${NFAPI_USER_DIR}/nfapi.c
   ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim
-  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI ${OPENSSL_LIBRARIES} dl)
 
 add_executable(nr_ulschsim
@@ -3244,6 +3259,7 @@ add_executable(nr_ulschsim
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -3262,13 +3278,15 @@ add_executable(nr_ulsim
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${NR_UE_RRC_DIR}/rrc_nsa.c
   ${NFAPI_USER_DIR}/nfapi.c
+  ${PHY_INTERFACE_DIR}/queue_t.c
   ${UTIL_SRC}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_ulsim
-  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB -Wl,--end-group
+  -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI ${OPENSSL_LIBRARIES} dl
   )
 target_compile_definitions(nr_ulsim PUBLIC -DPHYSICAL_SIMULATOR)

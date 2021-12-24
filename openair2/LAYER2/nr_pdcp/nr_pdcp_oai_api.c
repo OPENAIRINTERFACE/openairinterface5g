@@ -556,7 +556,7 @@ void pdcp_layer_init(void)
 #include "targets/RT/USER/lte-softmodem.h"
 #include "openair2/RRC/NAS/nas_config.h"
 
-uint64_t pdcp_module_init(uint64_t _pdcp_optmask)
+uint64_t nr_pdcp_module_init(uint64_t _pdcp_optmask, int id)
 {
   /* hack: be sure to initialize only once */
   static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
@@ -588,16 +588,18 @@ uint64_t pdcp_module_init(uint64_t _pdcp_optmask)
     nas_getparams();
 
     if(UE_NAS_USE_TUN) {
-      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )? MAX_MOBILES_PER_ENB : 1;
-      netlink_init_tun("ue",num_if);
+      char *ifsuffix_ue = get_softmodem_params()->nsa ? "nrue" : "ue";
+      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF)? MAX_MOBILES_PER_ENB : 1;
+      netlink_init_tun(ifsuffix_ue, num_if, id);
       //Add --nr-ip-over-lte option check for next line
       if (IS_SOFTMODEM_NOS1)
-          nas_config(1, 1, 2, "ue");
+          nas_config(1, 1, !get_softmodem_params()->nsa ? 2 : 3, ifsuffix_ue);
       LOG_I(PDCP, "UE pdcp will use tun interface\n");
       start_pdcp_tun_ue();
     } else if(ENB_NAS_USE_TUN) {
-      netlink_init_tun("enb",1);
-      nas_config(1, 1, 1, "enb");
+      char *ifsuffix_base_s = get_softmodem_params()->nsa ? "gnb" : "enb";
+      netlink_init_tun(ifsuffix_base_s, 1, id);
+      nas_config(1, 1, 1, ifsuffix_base_s);
       LOG_I(PDCP, "ENB pdcp will use tun interface\n");
       start_pdcp_tun_enb();
     } else {
@@ -620,7 +622,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   int rb_id;
   int i;
 
-  if(IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN){
+  if (IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN) {
     LOG_D(PDCP, "IP packet received, to be sent to TUN interface");
 
     if(entity->has_sdapDLheader){
@@ -631,7 +633,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
     }
 
     if (len != size) {
-      LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
+      LOG_E(PDCP, "%s:%d:%s: fatal error %d: %s\n", __FILE__, __LINE__, __FUNCTION__, errno, strerror(errno));
     }
     
   }
@@ -1186,7 +1188,7 @@ void nr_DRB_preconfiguration(uint16_t crnti)
 
   NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
   nr_rlc_bearer_init(RLC_BearerConfig,NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity);
-  nr_drb_config(RLC_BearerConfig->rlc_Config, NR_RLC_Config_PR_um_Bi_Directional);
+  nr_drb_config(RLC_BearerConfig->rlc_Config, NR_RLC_Config_PR_am);
   nr_rlc_bearer_init_ul_spec(RLC_BearerConfig->mac_LogicalChannelConfig);
 
   Rlc_Bearer_ToAdd_list = calloc(1,sizeof(*Rlc_Bearer_ToAdd_list));

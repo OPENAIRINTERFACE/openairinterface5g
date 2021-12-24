@@ -563,6 +563,7 @@ void nr_csi_meas_reporting(int Mod_idP,
   }
 }
 
+__attribute__((unused))
 static void handle_dl_harq(module_id_t mod_id,
                            int UE_id,
                            int8_t harq_pid,
@@ -1094,8 +1095,10 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
       NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
-      if (!harq)
+      if (!harq) {
+        LOG_E(NR_MAC, "Oh no! Could not find a harq in %s!\n", __FUNCTION__);
         break;
+      }
       DevAssert(harq->is_waiting);
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);

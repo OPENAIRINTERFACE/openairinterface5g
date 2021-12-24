@@ -212,6 +212,14 @@ typedef enum config_action_e {
   CONFIG_ACTION_MBMS_MODIFY       = 11
 } config_action_t;
 
+/* Maximum size of any message we might send or receive (e.g., via a socket) */
+#define MAX_MESSAGE_SIZE 8192
+
+typedef struct nsa_msg_t {
+  uint8_t msg_type;
+  uint8_t msg_buffer[MAX_MESSAGE_SIZE];
+} nsa_msg_t;
+
 //-----------------------------------------------------------------------------
 // GTPV1U TYPES
 //-----------------------------------------------------------------------------

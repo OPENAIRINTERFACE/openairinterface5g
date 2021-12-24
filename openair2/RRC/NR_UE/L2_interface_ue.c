@@ -149,7 +149,7 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
 }
 
 uint8_t
-rrc_data_req_ue(
+rrc_data_req_nr_ue(
   const protocol_ctxt_t   *const ctxt_pP,
   const rb_id_t                  rb_idP,
   const mui_t                    muiP,

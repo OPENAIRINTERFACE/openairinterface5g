@@ -1281,8 +1281,10 @@ int main(int argc, char **argv)
 
 	if (n_trials == 1  && round==0) {
 #ifdef __AVX2__
+	  __attribute__((unused))
 	  int off = ((nb_rb&1) == 1)? 4:0;
 #else
+	  __attribute__((unused))
 	  int off = 0;
 #endif
 

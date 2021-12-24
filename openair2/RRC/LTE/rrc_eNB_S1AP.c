@@ -593,14 +593,20 @@ rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(
   S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
 
   for (e_rab = 0; e_rab < ue_context_pP->ue_context.nb_of_e_rabs; e_rab++) {
-    if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+   if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE || ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_TOMODIFY) {
       e_rabs_done++;
       S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
       // TODO add other information from S1-U when it will be integrated
       S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].gtp_teid = ue_context_pP->ue_context.enb_gtp_teid[e_rab];
       S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr = ue_context_pP->ue_context.enb_gtp_addrs[e_rab];
       S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr.length = 4;
-      ue_context_pP->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
+      if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+        ue_context_pP->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
+        S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).nb_of_e_rabs = e_rabs_done;
+        S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).nb_of_e_rabs_failed = e_rabs_failed;
+        itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
+      }
+
     } else {
       e_rabs_failed++;
       ue_context_pP->ue_context.e_rab[e_rab].status = E_RAB_STATUS_FAILED;
@@ -619,9 +625,6 @@ rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(
     ue_context_pP->ue_id_rnti,
     S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).eNB_ue_s1ap_id,
     e_rabs_done, e_rabs_failed);
-  S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).nb_of_e_rabs = e_rabs_done;
-  S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).nb_of_e_rabs_failed = e_rabs_failed;
-  itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
 }
 
 //------------------------------------------------------------------------------
@@ -1981,7 +1984,7 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
           message_p = itti_alloc_new_message (TASK_RRC_ENB, 0, RRC_PCCH_DATA_REQ);
           /* Create message for PDCP (DLInformationTransfer_t) */
           length = do_Paging (instance,
-                              buffer,
+                              buffer, sizeof(buffer),
                               S1AP_PAGING_IND(msg_p).ue_paging_identity,
                               S1AP_PAGING_IND(msg_p).cn_domain);
 

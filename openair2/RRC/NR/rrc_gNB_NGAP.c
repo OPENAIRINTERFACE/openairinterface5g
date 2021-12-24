@@ -1055,7 +1055,7 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
     uint8_t nb_pdusessions_tosetup = NGAP_PDUSESSION_SETUP_REQ(msg_p).nb_pdusessions_tosetup;
     pdu_sessions_done = 0;
 
-    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0, 0);
     for (int i = 0; i < NR_NB_RB_MAX - 3; i++) {
       if(ue_context_p->ue_context.pduSession[i].status >= PDU_SESSION_STATUS_DONE)
         continue;
