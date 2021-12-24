@@ -642,7 +642,9 @@ void *UE_thread(void *arg) {
       readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms);
       writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH) % nb_slot_frame, &UE->frame_parms);
     } else {
-      UE->rx_offset_diff = computeSamplesShift(UE);
+      //UE->rx_offset_diff = computeSamplesShift(UE);
+
+
       readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms) -
                     UE->rx_offset_diff;
       writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH) % nb_slot_frame, &UE->frame_parms)- UE->rx_offset_diff;

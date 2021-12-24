@@ -34,6 +34,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <math.h>
+#include <nr-uesoftmodem.h>
 
 #include "PHY/defs_nr_UE.h"
 
@@ -975,3 +976,87 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
   return(peak_position);
 }
 
+int nr_adjust_pss_synch(PHY_VARS_NR_UE *ue, int *f_off) {
+
+  int **rxdata = ue->common_vars.rxdata;
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  uint8_t Nid2 = GET_NID2(frame_parms->Nid_cell);
+
+  int maxval=0;
+  for (int i=0;i<2*(frame_parms->ofdm_symbol_size);i++) {
+    maxval = max(maxval,primary_synchro_time_nr[Nid2][i]);
+    maxval = max(maxval,-primary_synchro_time_nr[Nid2][i]);
+  }
+  int shift = log2_approx(maxval);
+
+  /* Search pss in the received buffer each 4 samples which ensures a memory alignment on 128 bits (32 bits x 4 ) */
+  /* This is required by SIMD (single instruction Multiple Data) Extensions of Intel processors. */
+  /* Correlation computation is based on a dot product which is realized thank to SIMS extensions */
+  int64_t peak_value = 0;
+  int peak_position = 0;
+  int64_t result = 0;
+  int64_t avg=0;
+  int start = 2*(frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples) + frame_parms->nb_prefix_samples0 - 200;
+  int length = 2*frame_parms->ofdm_symbol_size + 200;
+  memset(pss_corr_ue[Nid2],0,(start+length)*sizeof(int64_t));
+  for (int n=start; n < start+length; n+=4) { //
+    for (int ar=0; ar<frame_parms->nb_antennas_rx; ar++) {
+      result  = dot_product64((short*)primary_synchro_time_nr[Nid2],
+                              (short*) &(rxdata[ar][n]),
+                              frame_parms->ofdm_symbol_size,
+                              shift);
+      pss_corr_ue[Nid2][n] += abs64(result);
+    }
+    avg+=pss_corr_ue[Nid2][n];
+    if (pss_corr_ue[Nid2][n] > peak_value) {
+      peak_value = pss_corr_ue[Nid2][n];
+      peak_position = n;
+    }
+  }
+
+  avg/=(length/4);
+  if (peak_value < 5*avg) {
+    return 0;
+  }
+
+  int peak_position_diff = peak_position - ( ((frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples)<<1) + frame_parms->nb_prefix_samples0);
+
+  // Fractional frequency offset computation according to Cross-correlation Synchronization Algorithm Using PSS
+  // Shoujun Huang, Yongtao Su, Ying He and Shan Tang, "Joint time and frequency offset estimation in LTE downlink,"
+  // 7th International Conference on Communications and Networking in China, 2012.
+
+  // Computing cross-correlation at peak on half the symbol size for first half of data
+  int64_t result1  = dot_product64((short*)primary_synchro_time_nr[Nid2],
+                                   (short*) &(rxdata[0][peak_position]),
+                                   frame_parms->ofdm_symbol_size>>1,
+                                   shift);
+
+  // Computing cross-correlation at peak on half the symbol size for data shifted by half symbol size
+  // as it is real and complex it is necessary to shift by a value equal to symbol size to obtain such shift
+  int64_t result2  = dot_product64((short*)primary_synchro_time_nr[Nid2]+(frame_parms->ofdm_symbol_size),
+                                   (short*) &(rxdata[0][peak_position])+frame_parms->ofdm_symbol_size,
+                                   frame_parms->ofdm_symbol_size>>1,
+                                   shift);
+
+  int64_t re1 = ((int*) &result1)[0];
+  int64_t re2 = ((int*) &result2)[0];
+  int64_t im1 = ((int*) &result1)[1];
+  int64_t im2 = ((int*) &result2)[1];
+
+  // Estimation of fractional frequency offset: angle[(result1)'*(result2)]/pi
+  double ffo_est = atan2(re1*im2-re2*im1,re1*re2+im1*im2)/M_PI;
+
+  // Computing absolute value of frequency offset
+  *f_off = ffo_est*frame_parms->subcarrier_spacing;
+
+  /*nr_rf_card_config_freq(&openair0_cfg[ue->rf_map.card], openair0_cfg->tx_freq[0], openair0_cfg->rx_freq[0], ue->common_vars.freq_offset);
+
+  if (ue->mode != loop_through_memory) {
+    ue->rfdevice.trx_set_freq_func(&ue->rfdevice,&openair0_cfg[0],0);
+  }*/
+
+  LOG_I(NR_PHY,"nr_adjust_pss_synch: peak_position %d, peak_position_diff %d, peak_value %d dB, avg %d dB, ffo %lf\n",
+        peak_position, peak_position_diff, dB_fixed64(peak_value),dB_fixed64(avg),ffo_est);
+
+  return peak_position_diff;
+}

@@ -39,6 +39,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "SCHED_NR_UE/defs.h"
@@ -1647,10 +1648,12 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     if ((ue->decode_MIB == 1) && slot_pbch) {
 
+      int peak_position_diff = nr_adjust_pss_synch(ue, (int *)&ue->common_vars.freq_offset);
+
       LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
       nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
 
-      if (ue->no_timing_correction==0) {
+     /* if (ue->no_timing_correction==0) {
         LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
         nr_adjust_synch_ue(fp,
                            ue,
@@ -1659,7 +1662,11 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            nr_slot_rx,
                            0,
                            16384);
-      }
+      }*/
+
+      //ue->rx_offset = peak_position_diff;
+
+      ue->rx_offset_diff = -peak_position_diff;
 
       LOG_D(PHY, "Doing N0 measurements in %s\n", __FUNCTION__);
       nr_ue_rrc_measurements(ue, proc, nr_slot_rx);
