@@ -87,7 +87,6 @@
 #include <openair1/PHY/NR_TRANSPORT/nr_ulsch.h>
 #include <openair1/PHY/NR_TRANSPORT/nr_dlsch.h>
 #include <PHY/NR_ESTIMATION/nr_ul_estimation.h>
-#define DEBUG_THREADS 0
 
 //#define USRP_DEBUG 1
 // Fix per CC openair rf/if device update
@@ -418,15 +417,15 @@ void init_gNB_Tpool(int inst) {
   LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->pusch_proc_threads,numCPU);
   int threadCnt = min(numCPU, gNB->pusch_proc_threads);
   if (threadCnt < 2) LOG_E(PHY,"Number of threads for gNB should be more than 1. Allocated only %d\n",threadCnt);
-  char ul_pool[80];
-  sprintf(ul_pool,"-1");
+  char pool[80];
+  sprintf(pool,"-1");
   int s_offset = 0;
   for (int icpu=1; icpu<threadCnt; icpu++) {
-    sprintf(ul_pool+2+s_offset,",-1");
+    sprintf(pool+2+s_offset,",-1");
     s_offset += 3;
   }
-  if (getenv("noThreads")) strcpy(ul_pool, "n");
-  initTpool(ul_pool, gNB->threadPool, false);
+  if (getenv("noThreads")) strcpy(pool, "n");
+  initTpool(pool, gNB->threadPool, false);
   // ULSCH decoder result FIFO
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   initNotifiedFIFO(gNB->respDecode);

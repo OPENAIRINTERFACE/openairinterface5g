@@ -60,6 +60,12 @@ static prach_association_pattern_t prach_assoc_pattern;
 static ssb_list_info_t ssb_list;
 
 void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type){
+  // clear ul_config for new frame/slot
+  if ((ul_config->slot != slot_tx || ul_config->sfn != frame_tx) && ul_config->number_pdus != 0) {
+    LOG_D(MAC, "%d.%d %d.%d f clear ul_config %p t %d pdu %d\n", frame_tx, slot_tx, ul_config->sfn, ul_config->slot, ul_config, pdu_type, ul_config->number_pdus);
+    ul_config->number_pdus = 0;
+    memset(ul_config->ul_config_list, 0, sizeof(ul_config->ul_config_list)); 
+  }
   ul_config->ul_config_list[ul_config->number_pdus].pdu_type = pdu_type;
   //ul_config->slot = slot_tx;
   //ul_config->sfn = frame_tx;
@@ -125,7 +131,7 @@ long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
   }
 
   AssertFatal(k2 >= DURATION_RX_TO_TX,
-              "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d)\n",
+              "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d). K2 set according to min_rxtxtime in config file.\n",
               k2,DURATION_RX_TO_TX);
 
   LOG_D(NR_MAC, "get_k2(): k2 is %ld\n", k2);
@@ -933,8 +939,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
   } else if (ul_info) {
 
     int cc_id             = ul_info->cc_id;
-    frame_t rx_frame      = ul_info->frame_rx;
-    slot_t rx_slot        = ul_info->slot_rx;
+    //frame_t rx_frame      = ul_info->frame_rx;
+    //slot_t rx_slot        = ul_info->slot_rx;
     frame_t frame_tx      = ul_info->frame_tx;
     slot_t slot_tx        = ul_info->slot_tx;
     module_id_t mod_id    = ul_info->module_id;
@@ -1024,7 +1030,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         }
         pthread_mutex_unlock(&ul_config->mutex_ul_config); // avoid double lock
 
-        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, rx_frame, rx_slot, ul_info->thread_id);
+        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, frame_tx, slot_tx, ul_info->thread_id);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           mac->if_module->scheduled_response(&scheduled_response);
         }

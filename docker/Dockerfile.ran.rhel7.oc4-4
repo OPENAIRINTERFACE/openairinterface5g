@@ -26,7 +26,7 @@
 #---------------------------------------------------------------------
 
 
-FROM registry.access.redhat.com/ubi7/ubi:latest AS ran-build
+FROM registry.access.redhat.com/ubi7/ubi:latest AS ran-base
 
 # Entitlements and RHSM configurations are Open-Shift Secret and ConfigMaps
 # It is pre-requisite
