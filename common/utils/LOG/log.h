@@ -409,8 +409,6 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 // debugging macros
 #define LOG_F  LOG_I           /* because  LOG_F was originaly to dump a message or buffer but is also used as a regular level...., to dump use LOG_DUMPMSG */
 
-#define LOG_MINIMAL 1 /* 1 for minimal logging: E, W and A */
-
 #if LOG_MINIMAL
 
   void logMinimal(int component, int level, const char *format, ...) __attribute__((format(printf, 3, 4)));
