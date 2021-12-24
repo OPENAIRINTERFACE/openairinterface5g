@@ -266,6 +266,8 @@ void ldpc8blocks( void *p) {
     for (int i =0; i<16; i++)
       printf("output interleaving f[%d]= %d r_offset %u\n", i,impp->output[i+r_offset], r_offset);
 
+    if (r==impp->n_segments-1)
+      write_output("enc_output.m","enc",impp->output,G,1,4);
 
 #endif
     r_offset += E;

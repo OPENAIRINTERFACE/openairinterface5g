@@ -336,8 +336,8 @@ void generate_pucch1x(int32_t **txdataF,
 
 
 
-inline void pucch2x_scrambling(LTE_DL_FRAME_PARMS *fp,int subframe,uint16_t rnti,uint32_t B,uint8_t *btilde) __attribute__((always_inline));
-inline void pucch2x_scrambling(LTE_DL_FRAME_PARMS *fp,int subframe,uint16_t rnti,uint32_t B,uint8_t *btilde) {
+static inline void pucch2x_scrambling(LTE_DL_FRAME_PARMS *fp,int subframe,uint16_t rnti,uint32_t B,uint8_t *btilde) __attribute__((always_inline));
+static inline void pucch2x_scrambling(LTE_DL_FRAME_PARMS *fp,int subframe,uint16_t rnti,uint32_t B,uint8_t *btilde) {
 
   uint32_t x1, x2, s=0;
   int i;

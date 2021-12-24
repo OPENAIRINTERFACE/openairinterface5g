@@ -21,37 +21,29 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-NSA-FR1-TM1-B200</htmlTabRef>
-	<htmlTabName>NSA SanityCheck with QUECTEL</htmlTabName>
+	<htmlTabRef>TEST-SA-FR1-Tab3</htmlTabRef>
+	<htmlTabName>SA Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
- 000001
- 010002
- 030000
- 030101
- 000001
- 030102
- 000001
+ 040000
+ 000002
  010000
  000001
  050000
  050001
  070000
  070001
- 050000
- 050001
- 010002
  000001
- 030202
- 030201
+ 010002
+ 080000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
 	<testCase id="010000">
 		<class>Initialize_UE</class>
 		<desc>Initialize Quectel</desc>
-		<id>idefix</id>
+		<id>nrmodule2_quectel</id>
 		<UE_Trace>yes</UE_Trace>
 	</testCase>
 
@@ -59,31 +51,20 @@
 	<testCase id="010002">
 		<class>Terminate_UE</class>
 		<desc>Terminate Quectel</desc>
-		<id>idefix</id>
+		<id>nrmodule2_quectel</id>
 	</testCase>
 
-	<testCase id="030000">
-		<class>Copy_Image_to_Test</class>
-		<desc>Copy gNB image to test server</desc>
-		<image_name>oai-gnb</image_name>
-		<registry_svr_id>0</registry_svr_id>
-		<test_svr_id>1</test_svr_id>
-	</testCase>
 
-	<testCase id="030101">
-		<class>Deploy_Object</class>
-		<desc>Deploy eNB (FDD/Band7/5MHz/B200) in a container</desc>
-		<yaml_path>ci-scripts/yaml_files/nsa_b200_enb</yaml_path>
+	<testCase id="040000">
+		<class>Initialize_eNB</class>
+		<desc>Initialize gNB</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.162PRB.2x2.usrpn310.conf --sa -q --usrp-tx-thread-config 1</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
-	</testCase>
-
-	<testCase id="030102">
-		<class>Deploy_Object</class>
-		<desc>Deploy gNB (TDD/Band78/40MHz/B200) in a container</desc>
-		<yaml_path>ci-scripts/yaml_files/nsa_b200_gnb</yaml_path>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
+		<air_interface>nr</air_interface>
+		<eNB_Trace>yes</eNB_Trace>
+		<eNB_Stats>yes</eNB_Stats>
+		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
 	</testCase>
 
 	<testCase id="000001">
@@ -102,56 +83,47 @@
 	<testCase id="050000">
 		<class>Ping</class>
 		<desc>Ping: 20pings in 20sec</desc>
-		<id>idefix</id>
+		<id>nrmodule2_quectel</id>
 		<ping_args>-c 20</ping_args>
-		<ping_packetloss_threshold>1</ping_packetloss_threshold>
-		<ping_rttavg_threshold>15</ping_rttavg_threshold>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="050001">
 		<class>Ping</class>
 		<desc>Ping: 100pings in 20sec</desc>
-		<id>idefix</id>
-		<ping_args>-c 100 -i 0.2</ping_args>
-		<ping_packetloss_threshold>1</ping_packetloss_threshold>
-		<ping_rttavg_threshold>15</ping_rttavg_threshold>
+		<id>nrmodule2_quectel</id>
+		<ping_args>-c 100 -i 0,2</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="070000">
 		<class>Iperf</class>
-		<desc>iperf (DL/40Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 40M -t 60</iperf_args>
+		<desc>iperf (DL/140Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 140M -t 60</iperf_args>
 		<direction>DL</direction>
-		<id>idefix</id>
-		<iperf_packetloss_threshold>3</iperf_packetloss_threshold>
+		<id>nrmodule2_quectel</id>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
 	<testCase id="070001">
 		<class>Iperf</class>
-		<desc>iperf (UL/2Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 2M -t 60</iperf_args>
+		<desc>iperf (UL/3Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 3M -t 60</iperf_args>
 		<direction>UL</direction>
-		<id>idefix</id>
-		<iperf_packetloss_threshold>1</iperf_packetloss_threshold>
+		<id>nrmodule2_quectel</id>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
-    <testCase id="030201">
-        <class>Undeploy_Object</class>
-        <desc>Undeploy eNB</desc>
-		<yaml_path>ci-scripts/yaml_files/nsa_b200_enb</yaml_path>
-        <eNB_instance>0</eNB_instance>
-        <eNB_serverId>0</eNB_serverId>
-    </testCase>
 
-    <testCase id="030202">
-        <class>Undeploy_Object</class>
-        <desc>Undeploy gNB</desc>
-		<yaml_path>ci-scripts/yaml_files/nsa_b200_gnb</yaml_path>
-        <eNB_instance>1</eNB_instance>
-        <eNB_serverId>1</eNB_serverId>
-    </testCase>
+	<testCase id="080000">
+		<class>Terminate_eNB</class>
+		<desc>Terminate gNB</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+		<air_interface>nr</air_interface>
+	</testCase>
 
 </testCaseList>
 

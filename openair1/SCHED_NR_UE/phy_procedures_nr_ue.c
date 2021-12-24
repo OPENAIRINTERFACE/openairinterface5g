@@ -1080,13 +1080,12 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       }
 
 
-    stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
+      stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
+
       LOG_D(PHY, " --> Unscrambling for CW1 %5.3f\n",
             (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
       LOG_D(PHY, "AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
             frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
-
-
       LOG_D(PHY,"AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
             frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
 
@@ -1856,7 +1855,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   stop_meas(&ue->dlsch_procedures_stat[proc->thread_id]);
   LOG_D(PHY, "[SFN %d] Slot1:       Pdsch Proc %5.2f\n",nr_slot_rx,ue->pdsch_procedures_stat[proc->thread_id].p_time/(cpuf*1000.0));
   LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_slot_rx,ue->dlsch_procedures_stat[proc->thread_id].p_time/(cpuf*1000.0));
-
 
 
   // deactivate dlsch once dlsch proc is done
