@@ -643,7 +643,7 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
     entity->status_triggered = 1;
     if (!(sn_compare_rx(entity, sn, entity->rx_highest_status) < 0 ||
           sn_compare_rx(entity, sn, v) >= 0)) {
-      LOG_W(RLC, "%s:%d:%s: warning: STATUS trigger should be delayed, according to specs\n",
+      LOG_D(RLC, "%s:%d:%s: warning: STATUS trigger should be delayed, according to specs\n",
             __FILE__, __LINE__, __FUNCTION__);
     }
   }
