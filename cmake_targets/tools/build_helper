@@ -756,6 +756,7 @@ check_install_oai_software() {
 	libidn11-dev \
 	libmysqlclient-dev  \
 	libpython2.7-dev \
+        libreadline-dev \
 	libsctp1  \
 	libsctp-dev  \
 	libssl-dev  \
@@ -842,6 +843,7 @@ check_install_oai_software() {
       patch \
       psmisc \
       python \
+      readline-devel \
       subversion \
       xmlstarlet \
       python-pip \
