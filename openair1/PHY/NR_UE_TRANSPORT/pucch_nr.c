@@ -805,8 +805,8 @@ void nr_generate_pucch1_old(PHY_VARS_NR_UE *ue,
 }
 #endif //0
 
-static inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) __attribute__((always_inline));
-static inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) {
+inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) __attribute__((always_inline));
+inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) {
   uint32_t x1, x2, s=0;
   int i;
   uint8_t c;

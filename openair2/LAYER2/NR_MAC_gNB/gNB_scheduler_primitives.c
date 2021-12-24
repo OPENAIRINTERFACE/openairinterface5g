@@ -351,7 +351,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
-                              const NR_BWP_UplinkDedicated_t *ubwpd,
+			                        const NR_BWP_UplinkDedicated_t *ubwpd,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,

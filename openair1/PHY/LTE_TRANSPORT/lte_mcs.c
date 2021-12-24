@@ -147,10 +147,10 @@ uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb) {
   }
 }
 
-int adjust_G2(int Ncp, int frame_type, int N_RB_DL, uint32_t *rb_alloc, uint8_t mod_order, uint8_t subframe, uint8_t symbol) {
+int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms, uint32_t *rb_alloc, uint8_t mod_order, uint8_t subframe, uint8_t symbol) {
   int rb,re_pbch_sss=0;
   int rb_alloc_ind,nsymb;
-  nsymb = (Ncp==NORMAL) ? 14 : 12;
+  nsymb = (frame_parms->Ncp==NORMAL) ? 14 : 12;
 
   //      printf("adjust_G2 : symbol %d, subframe %d\n",symbol,subframe);
   if ((subframe!=0) && (subframe!=5) && (subframe!=6))  // if not PBCH/SSS or SSS
@@ -158,12 +158,12 @@ int adjust_G2(int Ncp, int frame_type, int N_RB_DL, uint32_t *rb_alloc, uint8_t 
 
   //first half of slot and TDD (no adjustments in first slot except for subframe 6 - PSS)
   if ((symbol<(nsymb>>1))&&
-      (frame_type == TDD)&&
+      (frame_parms->frame_type == TDD)&&
       (subframe!=6))
     return(0);
 
   // after PBCH
-  if (frame_type==TDD) { //TDD
+  if (frame_parms->frame_type==TDD) { //TDD
     if ((symbol>((nsymb>>1)+3)) &&
         (symbol!=(nsymb-1)))  ///SSS
       return(0);
@@ -185,9 +185,9 @@ int adjust_G2(int Ncp, int frame_type, int N_RB_DL, uint32_t *rb_alloc, uint8_t 
       return(0);
   }
 
-  if ((N_RB_DL&1) == 1) { // ODD N_RB_DL
-    for (rb=((N_RB_DL>>1)-3);
-         rb<=((N_RB_DL>>1)+3);
+  if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
+    for (rb=((frame_parms->N_RB_DL>>1)-3);
+         rb<=((frame_parms->N_RB_DL>>1)+3);
          rb++) {
       if (rb < 32)
         rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
@@ -201,16 +201,16 @@ int adjust_G2(int Ncp, int frame_type, int N_RB_DL, uint32_t *rb_alloc, uint8_t 
         rb_alloc_ind = 0;
 
       if (rb_alloc_ind==1) {
-        if ((rb==(N_RB_DL>>1)-3) ||
-            (rb==((N_RB_DL>>1)+3))) {
+        if ((rb==(frame_parms->N_RB_DL>>1)-3) ||
+            (rb==((frame_parms->N_RB_DL>>1)+3))) {
           re_pbch_sss += 6;
         } else
           re_pbch_sss += 12;
       }
     }
   } else {
-    for (rb=((N_RB_DL>>1)-3);
-         rb<((N_RB_DL>>1)+3);
+    for (rb=((frame_parms->N_RB_DL>>1)-3);
+         rb<((frame_parms->N_RB_DL>>1)+3);
          rb++) {
       if (rb < 32)
         rb_alloc_ind = (rb_alloc[0]>>rb) & 1;

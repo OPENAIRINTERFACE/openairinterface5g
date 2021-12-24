@@ -64,7 +64,7 @@ void *nrmac_stats_thread(void *arg) {
      fseek(fd,0,SEEK_SET);
   }
   fclose(fd);
-  return NULL;
+  return (void *)0;
 }
 
 void clear_mac_stats(gNB_MAC_INST *gNB) {

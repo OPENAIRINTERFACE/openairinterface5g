@@ -39,6 +39,8 @@
 #include "PHY/TOOLS/time_meas.h"
 #include "defs.h"
 
+//#define DEBUG_LDPC
+
 #include "ldpc384_byte.c"
 #include "ldpc352_byte.c"
 #include "ldpc320_byte.c"

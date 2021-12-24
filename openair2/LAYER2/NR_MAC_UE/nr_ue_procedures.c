@@ -944,10 +944,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
 
-   if(rnti != ra->ra_rnti && rnti != SI_RNTI)
-     AssertFatal(1+dci->pdsch_to_harq_feedback_timing_indicator.val>=DURATION_RX_TO_TX,"PDSCH to HARQ feedback time (%d) cannot be less than DURATION_RX_TO_TX (%d).\n",
-                 1+dci->pdsch_to_harq_feedback_timing_indicator.val,DURATION_RX_TO_TX);
-
    // set the harq status at MAC for feedback
    set_harq_status(mac,dci->pucch_resource_indicator,
                    dci->harq_pid,
@@ -1236,7 +1232,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     uint8_t feedback_ti =
       ubwpd->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
 
-    AssertFatal(feedback_ti>=DURATION_RX_TO_TX,"PDSCH to HARQ feedback time (%d) cannot be less than DURATION_RX_TO_TX (%d). Min feedback time set in config file (min_rxtxtime).\n",
+    AssertFatal(feedback_ti>=DURATION_RX_TO_TX,"PDSCH to HARQ feedback time (%d) cannot be less than DURATION_RX_TO_TX (%d)\n",
                 feedback_ti,DURATION_RX_TO_TX);
 
     // set the harq status at MAC for feedback
@@ -3164,10 +3160,10 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         pos+=fsize;
         dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
         
-        // Time domain assignment
+        // Time domain assignment 4bit
         //pos+=4;
         pos+=dci_pdu_rel15->time_domain_assignment.nbits;
-        dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->time_domain_assignment.nbits)-1);
+        dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0x3;
         
         // Not supported yet - skip for now
         // Frequency hopping flag – 1 bit 

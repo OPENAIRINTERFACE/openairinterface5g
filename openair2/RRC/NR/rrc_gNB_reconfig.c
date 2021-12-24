@@ -55,7 +55,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int scg_id,
                                      int servCellIndex,
                                      int dl_antenna_ports,
-                                     int minRXTXTIME,
+                                     int minRXTXTIMEpdsch,
                                      int do_csirs,
                                      int initial_csi_index,
                                      int uid) {
@@ -483,10 +483,10 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_PDSCH_TimeDomainResourceAllocation_t *pdschi;
  for (int i=0;i<servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count;i++) {
    pdschi= calloc(1,sizeof(*pdschi));
-   if(servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0){
-     pdschi->k0 = calloc(1,sizeof(*pdschi->k0));
-     *pdschi->k0 = *servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
-   }
+   AssertFatal(servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0!=NULL,"element %d is null\n",i);
+ 
+   pdschi->k0 = calloc(1,sizeof(*pdschi->k0));
+   *pdschi->k0 = *servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
    pdschi->mappingType = servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->mappingType;
    pdschi->startSymbolAndLength = servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
    ASN_SEQUENCE_ADD(&bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,pdschi);
@@ -946,7 +946,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  long *delay[8];
  for (int i=0;i<8;i++) {
    delay[i] = calloc(1,sizeof(*delay[i]));
-   *delay[i] = i+minRXTXTIME;
+   *delay[i] = i+minRXTXTIMEpdsch;
    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
  }
  pucch_Config->spatialRelationInfoToAddModList = calloc(1,sizeof(*pucch_Config->spatialRelationInfoToAddModList));
@@ -1349,7 +1349,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
                            int dl_antenna_ports,
-                           int minRXTXTIME,
+                           int minRXTXTIMEpdsch,
                            int do_csirs,
                            int initial_csi_index,
                            int uid) {
@@ -1365,7 +1365,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                                   1,
                                   1,
                                   dl_antenna_ports,
-                                  minRXTXTIME,
+                                  minRXTXTIMEpdsch,
                                   do_csirs,
                                   initial_csi_index,
                                   uid);

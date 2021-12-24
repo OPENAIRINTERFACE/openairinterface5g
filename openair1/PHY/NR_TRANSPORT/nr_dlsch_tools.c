@@ -96,6 +96,11 @@ void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
   }
 }
 
+
+uint16_t get_SLIV(uint8_t S, uint8_t L) {
+  return ( (uint16_t)(((L-1)<=7)? (14*(L-1)+S) : (14*(15-L)+(13-S))) );
+}
+
 static inline uint8_t get_K0(uint8_t row_idx, uint8_t time_alloc_type) {
   return ( (time_alloc_type == NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A)||
   (time_alloc_type == NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_C)? 0 :

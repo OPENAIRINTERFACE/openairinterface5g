@@ -209,6 +209,7 @@ uint32_t get_samples_per_slot(int slot, NR_DL_FRAME_PARMS* fp)
   return samp_count;
 }
 
+
 uint32_t get_slot_from_timestamp(openair0_timestamp timestamp_rx, NR_DL_FRAME_PARMS* fp)
 {
    uint32_t slot_idx = 0;

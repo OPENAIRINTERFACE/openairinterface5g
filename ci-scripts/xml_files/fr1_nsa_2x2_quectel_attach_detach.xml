@@ -24,7 +24,7 @@
 	<htmlTabRef>TEST-NSA-FR1-TM2-Tab2</htmlTabRef>
 	<htmlTabName>NSA 2x2 Attach-Detach with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>1</repeatCount>
+	<repeatCount>5</repeatCount>
 	<TestCaseRequestedList>
  031000
  041000
