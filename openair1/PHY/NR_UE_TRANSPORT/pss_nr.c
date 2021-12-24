@@ -1058,13 +1058,7 @@ int nr_adjust_pss_synch(PHY_VARS_NR_UE *ue, int *f_off) {
   // Computing absolute value of frequency offset
   *f_off = ffo_est*frame_parms->subcarrier_spacing;
 
-  /*nr_rf_card_config_freq(&openair0_cfg[ue->rf_map.card], openair0_cfg->tx_freq[0], openair0_cfg->rx_freq[0], ue->common_vars.freq_offset);
-
-  if (ue->mode != loop_through_memory) {
-    ue->rfdevice.trx_set_freq_func(&ue->rfdevice,&openair0_cfg[0],0);
-  }*/
-
-  LOG_I(NR_PHY,"nr_adjust_pss_synch: peak_position %d, peak_position_diff %d, peak_value %d dB, avg %d dB, ffo %lf\n",
+  LOG_D(NR_PHY,"nr_adjust_pss_synch: peak_position %d, peak_position_diff %d, peak_value %d dB, avg %d dB, ffo %lf\n",
         peak_position, peak_position_diff, dB_fixed64(peak_value),dB_fixed64(avg),ffo_est);
 
   return peak_position_diff;
