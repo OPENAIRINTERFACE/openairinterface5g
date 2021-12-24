@@ -117,7 +117,6 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
 
   /* check that TDA index 1 fits into UL slot and does not overlap with PUCCH */
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-  AssertFatal(tdaList->list.count >= 3, "need to have at least three TDAs for UL slots\n");
   const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_UL = tdaList->list.array[0];
   const int k2 = get_K2(scc, (NR_BWP_Uplink_t*)ubwp,0, mu);
   int start, len;

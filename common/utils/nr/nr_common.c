@@ -318,14 +318,6 @@ int get_dmrs_port(int nl, uint16_t dmrs_ports) {
   return p;
 }
 
-int get_num_dmrs(uint16_t dmrs_mask ) {
-
-  int num_dmrs=0;
-
-  for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
-  return(num_dmrs);
-}
-
 lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
 {
   lte_frame_type_t current_type;
@@ -512,6 +504,10 @@ int get_subband_size(int NPRB,int size) {
   if (NPRB<275) return (size==0 ? 16 : 32);
   AssertFatal(1==0,"Shouldn't get here, NPRB %d\n",NPRB);
  
+}
+
+int get_SLIV(uint8_t S, uint8_t L) {
+  return ( (uint16_t)(((L-1)<=7)? (14*(L-1)+S) : (14*(15-L)+(13-S))) );
 }
 
 void SLIV2SL(int SLIV,int *S,int *L) {

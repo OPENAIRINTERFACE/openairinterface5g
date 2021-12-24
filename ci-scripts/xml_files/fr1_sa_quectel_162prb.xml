@@ -21,24 +21,21 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-NSA-FR1-TM2-Tab1</htmlTabRef>
-	<htmlTabName>NSA 2x2 Ping DL UL with QUECTEL</htmlTabName>
+	<htmlTabRef>TEST-SA-FR1-Tab3</htmlTabRef>
+	<htmlTabName>SA Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
- 030000
  040000
  000002
  010000
  000001
  050000
  050001
- 000002
  070000
  070001
  000001
  010002
- 080001
  080000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
@@ -58,26 +55,14 @@
 	</testCase>
 
 
-	<testCase id="030000">
-		<class>Initialize_eNB</class>
-		<desc>Initialize eNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band38.nsa_2x2.100PRB.usrpn310.conf --usrp-tx-thread-config 1 --thread-pool 0,2,4,6</Initialize_eNB_args>
-		<eNB_instance>0</eNB_instance>
-		<eNB_serverId>0</eNB_serverId>
-		<air_interface>lte</air_interface>
-		<eNB_Trace>yes</eNB_Trace>
-		<eNB_Stats>yes</eNB_Stats>
-		<USRP_IPAddress>192.168.18.241</USRP_IPAddress>
-	</testCase>
-
-
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.nsa_2x2.106PRB.usrpn310.conf -q --usrp-tx-thread-config 1</Initialize_eNB_args>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.162PRB.2x2.usrpn310.conf --sa -q --usrp-tx-thread-config 1</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
 		<air_interface>nr</air_interface>
+		<eNB_Trace>yes</eNB_Trace>
 		<eNB_Stats>yes</eNB_Stats>
 		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
 	</testCase>
@@ -85,7 +70,7 @@
 	<testCase id="000001">
 		<class>IdleSleep</class>
 		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>60</idle_sleep_time_in_sec>
+		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
 	</testCase>
 
 	<testCase id="000002">
@@ -113,8 +98,8 @@
 
 	<testCase id="070000">
 		<class>Iperf</class>
-		<desc>iperf (DL/60Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 60M -t 60</iperf_args>
+		<desc>iperf (DL/140Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 140M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
@@ -123,7 +108,7 @@
 
 	<testCase id="070001">
 		<class>Iperf</class>
-		<desc>iperf (UL/1Mbps/UDP)(20 sec)(single-ue profile)</desc>
+		<desc>iperf (UL/3Mbps/UDP)(60 sec)(single-ue profile)</desc>
 		<iperf_args>-u -b 3M -t 60</iperf_args>
 		<direction>UL</direction>
 		<id>nrmodule2_quectel</id>
@@ -134,17 +119,9 @@
 
 	<testCase id="080000">
 		<class>Terminate_eNB</class>
-		<desc>Terminate eNB</desc>
+		<desc>Terminate gNB</desc>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
-		<air_interface>lte</air_interface>
-	</testCase>
-
-	<testCase id="080001">
-		<class>Terminate_eNB</class>
-		<desc>Terminate gNB</desc>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>
 	</testCase>
 
