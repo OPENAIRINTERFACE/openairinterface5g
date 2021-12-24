@@ -981,6 +981,7 @@ int nr_adjust_pss_synch(PHY_VARS_NR_UE *ue, int *f_off) {
   int **rxdata = ue->common_vars.rxdata;
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   uint8_t Nid2 = GET_NID2(frame_parms->Nid_cell);
+  int peak_position_ref = ((frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples)<<1) + frame_parms->nb_prefix_samples0;
 
   int maxval=0;
   for (int i=0;i<2*(frame_parms->ofdm_symbol_size);i++) {
@@ -996,8 +997,8 @@ int nr_adjust_pss_synch(PHY_VARS_NR_UE *ue, int *f_off) {
   int peak_position = 0;
   int64_t result = 0;
   int64_t avg=0;
-  int start = 2*(frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples) + frame_parms->nb_prefix_samples0 - 200;
-  int length = 2*frame_parms->ofdm_symbol_size + 200;
+  int start = peak_position_ref - (frame_parms->ofdm_symbol_size>>3);
+  int length = frame_parms->ofdm_symbol_size + (frame_parms->ofdm_symbol_size>>3);
   memset(pss_corr_ue[Nid2],0,(start+length)*sizeof(int64_t));
   for (int n=start; n < start+length; n+=4) { //
     for (int ar=0; ar<frame_parms->nb_antennas_rx; ar++) {
@@ -1019,7 +1020,15 @@ int nr_adjust_pss_synch(PHY_VARS_NR_UE *ue, int *f_off) {
     return 0;
   }
 
-  int peak_position_diff = peak_position - ( ((frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples)<<1) + frame_parms->nb_prefix_samples0);
+  int peak_position_diff = peak_position_ref - peak_position;
+
+  ue->rx_offset_diff = 0;
+  if(peak_position_diff != 0) {
+    ue->rx_offset_diff = peak_position_diff>>3;
+    if (ue->rx_offset_diff == 0) {
+      ue->rx_offset_diff = peak_position_diff > 0 ? 1 : -1;
+    }
+  }
 
   // Fractional frequency offset computation according to Cross-correlation Synchronization Algorithm Using PSS
   // Shoujun Huang, Yongtao Su, Ying He and Shan Tang, "Joint time and frequency offset estimation in LTE downlink,"

@@ -1648,7 +1648,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     if ((ue->decode_MIB == 1) && slot_pbch) {
 
-      int peak_position_diff = nr_adjust_pss_synch(ue, (int *)&ue->common_vars.freq_offset);
+      nr_adjust_pss_synch(ue, (int *)&ue->common_vars.freq_offset);
 
       LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
       nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
@@ -1663,10 +1663,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            0,
                            16384);
       }*/
-
-      //ue->rx_offset = peak_position_diff;
-
-      ue->rx_offset_diff = -peak_position_diff;
 
       LOG_D(PHY, "Doing N0 measurements in %s\n", __FUNCTION__);
       nr_ue_rrc_measurements(ue, proc, nr_slot_rx);
