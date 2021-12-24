@@ -891,7 +891,7 @@ typedef struct PHY_VARS_gNB_s {
   notifiedFIFO_t *resp_RU_tx;
   tpool_t *threadPool;
   int nbDecode;
-  uint8_t pusch_proc_threads;
+  uint8_t thread_pool_size;
   int number_of_nr_dlsch_max;
   int number_of_nr_ulsch_max;
   void * scopeData;

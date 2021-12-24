@@ -653,7 +653,7 @@ void RCconfig_NR_L1(void) {
 	      RC.gNB[j]->Mod_id  = j;
       }
 
-      RC.gNB[j]->pusch_proc_threads = *(L1_ParamList.paramarray[j][L1_PUSCH_PROC_THREADS].uptr);
+      RC.gNB[j]->thread_pool_size   = *(L1_ParamList.paramarray[j][L1_THREAD_POOL_SIZE].uptr);
       RC.gNB[j]->ofdm_offset_divisor = *(L1_ParamList.paramarray[j][L1_OFDM_OFFSET_DIVISOR].uptr);
       RC.gNB[j]->pucch0_thres       = *(L1_ParamList.paramarray[j][L1_PUCCH0_DTX_THRESHOLD].uptr);
       RC.gNB[j]->prach_thres        = *(L1_ParamList.paramarray[j][L1_PRACH_DTX_THRESHOLD].uptr);
