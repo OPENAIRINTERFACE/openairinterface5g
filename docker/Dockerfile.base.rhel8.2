@@ -21,32 +21,39 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for Ubuntu 18.04
+#   Valid for RHEL8
 #
 #---------------------------------------------------------------------
 
 
-FROM ubuntu:bionic AS ran-build
+FROM registry.access.redhat.com/ubi8/ubi:latest AS ran-base
 ARG NEEDED_GIT_PROXY
-ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Paris
 ENV BUILD_UHD_FROM_SOURCE=True
 ENV UHD_VERSION=3.15.0.0
 
+COPY tmp/ca/redhat-uep.pem /etc/rhsm/ca
+COPY tmp/entitlement/*.pem /etc/pki/entitlement
+
 #install developers pkg/repo
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
-    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+RUN rm -f /etc/rhsm-host && \
+    yum repolist --disablerepo=* && \
+    subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms && \
+    yum update -y && \
+    yum install -y \
        #gcc needed for build_oai
-       build-essential \
+       gcc gcc-c++ \ 
+       diffutils \
+       file \
        psmisc \
        git \
-       xxd \
+       # python3-pip and pyyaml are used for conf template generation
+       python3-pip \
        #unzip is needed for protobuf
-       unzip \
-       # python3-pip for conf template generation
-       python3-pip && \
-    pip3 install --ignore-installed pyyaml
+       unzip && \
+    pip3 install --ignore-installed pyyaml && \
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
+    echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
 # In some network environments, GIT proxy is required
 RUN /bin/bash -c "if [[ -v NEEDED_GIT_PROXY ]]; then git config --global http.proxy $NEEDED_GIT_PROXY; fi"
@@ -59,4 +66,5 @@ COPY . .
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai -I -w USRP
+    ./build_oai -I -w USRP && \
+    rm /etc/pki/entitlement/*pem

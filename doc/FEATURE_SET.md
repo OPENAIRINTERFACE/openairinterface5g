@@ -307,8 +307,10 @@ The following features are valid for the gNB and the 5G-NR UE.
 - MAC <-> PHY data interface using FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
 - Scheduler procedures for SIB1
 - Scheduler procedures for RA
-  - Contention free RA procedure
-  - Contention based RA procedure
+  - Contention Free RA procedure
+  - Contention Based RA procedure
+    - Msg3 can transfer uplink CCCH, DTCH or DCCH messages
+    - CBRA can be performed using MAC CE or C-RNTI
 - Scheduler procedures for CSI-RS
 - MAC downlink scheduler
   - phy-test scheduler (fixed allocation and usable also without UE)

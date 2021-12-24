@@ -1185,9 +1185,9 @@ void fill_initial_SpCellConfig(rnti_t rnti,
  long *delay[8];
  for (int i=0;i<8;i++) {
    delay[i] = calloc(1,sizeof(*delay[i]));
-   AssertFatal(carrier->minRXTXTIMEpdsch >=2 && carrier->minRXTXTIMEpdsch <7,
-               "check minRXTXTIMEpdsch %d\n",carrier->minRXTXTIMEpdsch);
-   *delay[i] = (i+carrier->minRXTXTIMEpdsch);
+   AssertFatal(carrier->minRXTXTIME >=2 && carrier->minRXTXTIME <7,
+               "check minRXTXTIME %d\n",carrier->minRXTXTIME);
+   *delay[i] = (i+carrier->minRXTXTIME);
    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
  }
 

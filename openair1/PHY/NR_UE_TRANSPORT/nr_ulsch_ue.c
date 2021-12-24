@@ -103,8 +103,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint32_t available_bits;
   uint8_t cwd_index, l;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
-  	  
-  int8_t Wf[2], Wt[2], l_prime[2], delta;
+  int8_t Wf[2], Wt[2];
+  int l_prime[2], delta;
   uint8_t nb_dmrs_re_per_rb;
   int ap, i;
   int sample_offsetF, N_RE_prime;
