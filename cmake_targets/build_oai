@@ -62,6 +62,7 @@ CMAKE_CMD="$CMAKE"
 UE_AUTOTEST_TRACE="False"
 UE_DEBUG_TRACE="False"
 UE_TIMING_TRACE="False"
+NOAVX512="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 NR="False"
@@ -161,6 +162,8 @@ Options
    Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES or \"all\"
 --usrp-recplay
    Build for I/Q record-playback modes
+--noavx512
+   Build without AVX512 if it is present on CPU
 -k | --skip-shared-libraries
    Skip build for shared libraries to reduce compilation time when building frequently for debugging purposes
 --ittiSIM
@@ -417,6 +420,10 @@ function main() {
             USRP_REC_PLAY="True"
             echo_info "Enabling USRP record playback mode"
             shift 1;;
+        --noavx512)
+            NOAVX512="True"
+            echo_info "Disabling AVX512"
+            shift 1;;
         -k | --skip-shared-libraries)
             SKIP_SHARED_LIB_FLAG="True"
             echo_info "Skipping build of shared libraries, rfsimulator and transport protocol libraries"
@@ -614,6 +621,7 @@ function main() {
     echo "set ( UE_DEBUG_TRACE $UE_DEBUG_TRACE )"                         >> $cmake_file
     echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
     echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
+    echo "set ( NOAVX512 $NOAVX512 )"                                     >> $cmake_file
     echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
     echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
     echo "set ( SANITIZE_ADDRESS $SANITIZE_ADDRESS )"                     >> $cmake_file

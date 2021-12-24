@@ -319,6 +319,7 @@ int main(int argc, char **argv)
   int ibwps=24;
   int ibwp_rboffset=41;
   int params_from_file = 0;
+  int threadCnt=1;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
   }
@@ -329,7 +330,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:t:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -454,7 +455,9 @@ int main(int argc, char **argv)
       snr0 = atof(optarg);
       printf("Setting SNR0 to %f\n", snr0);
       break;
-
+    case 't':
+      threadCnt = atoi(optarg);
+      break;
     case 'u':
       mu = atoi(optarg);
       break;
@@ -662,7 +665,14 @@ int main(int argc, char **argv)
   gNB->ofdm_offset_divisor = UINT_MAX;
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  char tp_param[] = "n";
+  char tp_param[80];
+  sprintf(tp_param,"-1");
+  int s_offset = 0;
+  for (int icpu=1; icpu<threadCnt; icpu++) {
+    sprintf(tp_param+2+s_offset,",-1");
+    s_offset += 3;
+  }
+
   initTpool(tp_param, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
   gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
