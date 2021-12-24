@@ -115,6 +115,11 @@ int ue_query_mch(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
 		 sub_frame_t subframe, uint8_t eNB_index,
 		 uint8_t * sync_area, uint8_t * mcch_active){ return(0);}
 
+
+int ue_query_mch_fembms(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
+		 sub_frame_t subframe, uint8_t eNB_index,
+		 uint8_t * sync_area, uint8_t * mcch_active){ return(0);}
+
 void dl_phy_sync_success(module_id_t module_idP,
 			 frame_t frameP,
 			 unsigned char eNB_index, uint8_t first_sync){}
@@ -137,6 +142,15 @@ void thread_top_init(char *thread_name,
 
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) { return(0);}
 int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return(0); }
+int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
+int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
+int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
+int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
+int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) { return(0);  }
 
 int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) { return(0); }
 

@@ -84,7 +84,7 @@ int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
   uint32_t f_gh = 0;
   SRS_Resource_t *p_SRS_Resource;
   int frame_number = proc->frame_tx;
-  int slot_number = proc->nr_tti_tx;
+  int slot_number = proc->nr_slot_tx;
   uint16_t n_SRS, n_SRS_cs_i;
   double alpha_i;
   uint8_t K_TC_p;
@@ -278,7 +278,7 @@ int32_t generate_srs_nr(SRS_ResourceSet_t *p_srs_resource_set,
           n_SRS = l/R;
         }
         else {
-          int8_t N_slot_frame = NR_NUMBER_OF_SUBFRAMES_PER_FRAME * frame_parms->ttis_per_subframe;
+          int8_t N_slot_frame = frame_parms->slots_per_frame;
           n_SRS = ((N_slot_frame*frame_number + slot_number - T_offset)/T_SRS)*(N_symb_SRS/R)+(l/R);
         }
 
@@ -399,7 +399,7 @@ int is_srs_period_nr(SRS_Resource_t *p_SRS_Resource, NR_DL_FRAME_PARMS *frame_pa
     return (-1);
   }
 
-  int16_t N_slot_frame = NR_NUMBER_OF_SUBFRAMES_PER_FRAME * frame_parms->ttis_per_subframe;
+  int16_t N_slot_frame = frame_parms->slots_per_frame;
   if ((N_slot_frame*frame_tx + slot_tx - T_offset)%T_SRS == 0) {
     return (0);
   }
@@ -445,7 +445,7 @@ int ue_srs_procedure_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB
         /* SRS resource configurated ? */
         if (p_srs_resource != NULL) {
           if (p_srs_resource_set->resourceType == periodic) {
-            if (is_srs_period_nr(p_srs_resource, frame_parms, proc->frame_tx, proc->nr_tti_tx) == 0) {
+            if (is_srs_period_nr(p_srs_resource, frame_parms, proc->frame_tx, proc->nr_slot_tx) == 0) {
               generate_srs = 1;
             }
           }
@@ -459,7 +459,7 @@ int ue_srs_procedure_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB
   if (generate_srs == 1) {
     int16_t txptr = AMP;
     uint16_t nsymb = (ue->frame_parms.Ncp==0) ? 14:12;
-    uint16_t symbol_offset = (int)ue->frame_parms.ofdm_symbol_size*((proc->nr_tti_tx*nsymb)+(nsymb-1));
+    uint16_t symbol_offset = (int)ue->frame_parms.ofdm_symbol_size*((proc->nr_slot_tx*nsymb)+(nsymb-1));
     if (generate_srs_nr(p_srs_resource_set, frame_parms, &ue->common_vars.txdataF[eNB_id][symbol_offset], txptr, proc) == 0) {
       return 0;
     }

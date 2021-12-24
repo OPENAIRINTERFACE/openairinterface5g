@@ -80,7 +80,7 @@ int s1ap_eNB_handle_nas_first_req(
                          s1ap_nas_first_req_p->ue_identity.gummei);
 
         if (mme_desc_p) {
-            S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through GUMMEI MCC %d MNC %d MMEGI %d MMEC %d\n",
+            S1AP_INFO("[eNB %ld] Chose MME '%s' (assoc_id %d) through GUMMEI MCC %d MNC %d MMEGI %d MMEC %d\n",
                       instance,
                       mme_desc_p->mme_name,
                       mme_desc_p->assoc_id,
@@ -101,7 +101,7 @@ int s1ap_eNB_handle_nas_first_req(
                              s1ap_nas_first_req_p->ue_identity.s_tmsi.mme_code);
 
             if (mme_desc_p) {
-                S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through S-TMSI MMEC %d and selected PLMN Identity index %d MCC %d MNC %d\n",
+                S1AP_INFO("[eNB %ld] Chose MME '%s' (assoc_id %d) through S-TMSI MMEC %d and selected PLMN Identity index %d MCC %d MNC %d\n",
                           instance,
                           mme_desc_p->mme_name,
                           mme_desc_p->assoc_id,
@@ -122,7 +122,7 @@ int s1ap_eNB_handle_nas_first_req(
                          s1ap_nas_first_req_p->selected_plmn_identity);
 
         if (mme_desc_p) {
-            S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
+            S1AP_INFO("[eNB %ld] Chose MME '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
                       instance,
                       mme_desc_p->mme_name,
                       mme_desc_p->assoc_id,
@@ -138,11 +138,11 @@ int s1ap_eNB_handle_nas_first_req(
          * identity, selects the MME with the highest capacity.
          */
         mme_desc_p = s1ap_eNB_nnsf_select_mme(
-                         instance_p,
-                         s1ap_nas_first_req_p->establishment_cause);
+                       instance_p,
+                       s1ap_nas_first_req_p->establishment_cause);
 
         if (mme_desc_p) {
-            S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through highest relative capacity\n",
+            S1AP_INFO("[eNB %ld] Chose MME '%s' (assoc_id %d) through highest relative capacity\n",
                       instance,
                       mme_desc_p->mme_name,
                       mme_desc_p->assoc_id);
@@ -358,10 +358,18 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
     container = &pdu->choice.initiatingMessage.value.choice.DownlinkNASTransport;
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_MME_UE_S1AP_ID, true);
+    if(ie == NULL)
+    {
+      return -1;
+    }
     mme_ue_s1ap_id = ie->value.choice.MME_UE_S1AP_ID;
 
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID, true);
+    if(ie == NULL)
+    {
+      return -1;
+    }
     enb_ue_s1ap_id = ie->value.choice.ENB_UE_S1AP_ID;
 
     if ((ue_desc_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance,
@@ -416,6 +424,10 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
 
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_NAS_PDU, true);
+    if(ie == NULL)
+    {
+      return -1;
+    }
     /* Forward the NAS PDU to RRC */
     s1ap_eNB_itti_send_nas_downlink_ind(s1ap_eNB_instance->instance,
                                         ue_desc_p->ue_initial_id,
@@ -494,9 +506,9 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
     ie->criticality = S1AP_Criticality_ignore;
     ie->value.present = S1AP_UplinkNASTransport_IEs__value_PR_EUTRAN_CGI;
     MCC_MNC_TO_PLMNID(
-        s1ap_eNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
-        s1ap_eNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
-        s1ap_eNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
+        s1ap_eNB_instance_p->mcc[ue_context_p->mme_ref->broadcast_plmn_index[0]],
+        s1ap_eNB_instance_p->mnc[ue_context_p->mme_ref->broadcast_plmn_index[0]],
+        s1ap_eNB_instance_p->mnc_digit_length[ue_context_p->mme_ref->broadcast_plmn_index[0]],
         &ie->value.choice.EUTRAN_CGI.pLMNidentity);
     //#warning "TODO get cell id from RRC"
     MACRO_ENB_ID_TO_CELL_IDENTITY(s1ap_eNB_instance_p->eNB_id,
@@ -935,7 +947,7 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
     /* Prepare the S1AP message to encode */
     memset(&pdu, 0, sizeof(pdu));
     pdu.present = S1AP_S1AP_PDU_PR_successfulOutcome;
-    pdu.choice.successfulOutcome.procedureCode = S1AP_ProcedureCode_id_E_RABModify;
+    pdu.choice.successfulOutcome.procedureCode = S1AP_ProcedureCode_id_E_RABSetup;
     pdu.choice.successfulOutcome.criticality = S1AP_Criticality_reject;
     pdu.choice.successfulOutcome.value.present = S1AP_SuccessfulOutcome__value_PR_E_RABSetupResponse;
     out = &pdu.choice.successfulOutcome.value.choice.E_RABSetupResponse;
@@ -1032,7 +1044,7 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
                 break;
             }
 
-            S1AP_DEBUG("e_rab_modify_resp: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
+            S1AP_DEBUG("e_rab_setup_resp: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
             ASN_SEQUENCE_ADD(&ie->value.choice.E_RABList.list, item);
         }
 
@@ -1620,3 +1632,319 @@ int s1ap_eNB_path_switch_req(instance_t instance,
 
   return ret;
 }
+
+
+//-----------------------------------------------------------------------------
+/*
+* eNB generate a S1 E_RAB Modification Indication towards MME
+*/
+/*int s1ap_eNB_generate_E_RAB_Modification_Indication(
+		instance_t instance,
+  s1ap_e_rab_modification_ind_t *e_rab_modification_ind)
+//-----------------------------------------------------------------------------
+{
+  struct s1ap_eNB_ue_context_s        *ue_context_p        = NULL;
+  S1AP_S1AP_PDU_t            pdu;
+  S1AP_E_RABModificationIndication_t     *out = NULL;
+  S1AP_E_RABModificationIndicationIEs_t   *ie = NULL;
+  S1AP_E_RABToBeModifiedItemBearerModInd_t 	  *E_RAB_ToBeModifiedItem_BearerModInd = NULL;
+  S1AP_E_RABToBeModifiedItemBearerModIndIEs_t *E_RAB_ToBeModifiedItem_BearerModInd_IEs = NULL;
+
+  S1AP_E_RABNotToBeModifiedItemBearerModInd_t 	  *E_RAB_NotToBeModifiedItem_BearerModInd = NULL;
+  S1AP_E_RABNotToBeModifiedItemBearerModIndIEs_t  *E_RAB_NotToBeModifiedItem_BearerModInd_IEs = NULL;
+
+
+  s1ap_eNB_instance_t          *s1ap_eNB_instance_p = NULL;
+  s1ap_eNB_instance_p = s1ap_eNB_get_instance(instance);
+  uint8_t  *buffer = NULL;
+  uint32_t  len = 0;
+  int       ret = 0;
+  DevAssert(s1ap_eNB_instance_p != NULL);
+  DevAssert(e_rab_modification_ind != NULL);
+
+  int num_e_rabs_tobemodified = e_rab_modification_ind->nb_of_e_rabs_tobemodified;
+  int num_e_rabs_nottobemodified = e_rab_modification_ind->nb_of_e_rabs_nottobemodified;
+
+  uint32_t CSG_id = 0;
+
+  if ((ue_context_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p,
+		  e_rab_modification_ind->eNB_ue_s1ap_id)) == NULL) {
+          // The context for this eNB ue s1ap id doesn't exist in the map of eNB UEs 
+          S1AP_WARN("Failed to find ue context associated with eNB ue s1ap id: 0x%06x\n",
+        		  e_rab_modification_ind->eNB_ue_s1ap_id);
+          return -1;
+  }
+
+  // Prepare the S1AP message to encode 
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = S1AP_S1AP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage.procedureCode = S1AP_ProcedureCode_id_E_RABModificationIndication;
+  pdu.choice.initiatingMessage.criticality = S1AP_Criticality_reject;
+  pdu.choice.initiatingMessage.value.present = S1AP_InitiatingMessage__value_PR_E_RABModificationIndication;
+  out = &pdu.choice.initiatingMessage.value.choice.E_RABModificationIndication;
+  // mandatory 
+  ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_MME_UE_S1AP_ID;
+  ie->criticality = S1AP_Criticality_reject;
+  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_MME_UE_S1AP_ID;
+  ie->value.choice.MME_UE_S1AP_ID = e_rab_modification_ind->mme_ue_s1ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID;
+  ie->criticality = S1AP_Criticality_reject;
+  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_ENB_UE_S1AP_ID;
+  ie->value.choice.ENB_UE_S1AP_ID = e_rab_modification_ind->eNB_ue_s1ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  //E-RABs to be modified list
+  ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_E_RABToBeModifiedListBearerModInd;
+  ie->criticality = S1AP_Criticality_reject;
+  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_E_RABToBeModifiedListBearerModInd;
+
+  //The following two for-loops here will probably need to change. We should do a different type of search
+  for(int i=0; i<num_e_rabs_tobemodified; i++){
+	  E_RAB_ToBeModifiedItem_BearerModInd_IEs = (S1AP_E_RABToBeModifiedItemBearerModIndIEs_t *)calloc(1,sizeof(S1AP_E_RABToBeModifiedItemBearerModIndIEs_t));
+	  E_RAB_ToBeModifiedItem_BearerModInd_IEs->id = S1AP_ProtocolIE_ID_id_E_RABToBeModifiedItemBearerModInd;
+	  E_RAB_ToBeModifiedItem_BearerModInd_IEs->criticality = S1AP_Criticality_reject;
+	  E_RAB_ToBeModifiedItem_BearerModInd_IEs->value.present = S1AP_E_RABToBeModifiedItemBearerModIndIEs__value_PR_E_RABToBeModifiedItemBearerModInd;
+	  E_RAB_ToBeModifiedItem_BearerModInd = &E_RAB_ToBeModifiedItem_BearerModInd_IEs->value.choice.E_RABToBeModifiedItemBearerModInd;
+
+	  {
+	  E_RAB_ToBeModifiedItem_BearerModInd->e_RAB_ID = e_rab_modification_ind->e_rabs_tobemodified[i].e_rab_id;
+
+	  E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.size  = e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.length/8;
+	  E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.bits_unused = e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.length%8;
+	  E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.buf = calloc(1, E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.size);
+	  memcpy (E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.buf, e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.buffer,
+			  E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.size);
+
+	  INT32_TO_OCTET_STRING(e_rab_modification_ind->e_rabs_tobemodified[i].gtp_teid, &E_RAB_ToBeModifiedItem_BearerModInd->dL_GTP_TEID);
+
+	  }
+	  ASN_SEQUENCE_ADD(&ie->value.choice.E_RABToBeModifiedListBearerModInd.list, E_RAB_ToBeModifiedItem_BearerModInd_IEs);
+  }
+
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  //E-RABs NOT to be modified list
+  ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_E_RABNotToBeModifiedListBearerModInd;
+  ie->criticality = S1AP_Criticality_reject;
+  if(num_e_rabs_nottobemodified > 0) {
+	  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_E_RABNotToBeModifiedListBearerModInd;
+
+	  for(int i=0; i<num_e_rabs_nottobemodified; i++){
+		  E_RAB_NotToBeModifiedItem_BearerModInd_IEs = (S1AP_E_RABNotToBeModifiedItemBearerModIndIEs_t *)calloc(1,sizeof(S1AP_E_RABNotToBeModifiedItemBearerModIndIEs_t));
+		  E_RAB_NotToBeModifiedItem_BearerModInd_IEs->id = S1AP_ProtocolIE_ID_id_E_RABNotToBeModifiedItemBearerModInd;
+		  E_RAB_NotToBeModifiedItem_BearerModInd_IEs->criticality = S1AP_Criticality_reject;
+		  E_RAB_NotToBeModifiedItem_BearerModInd_IEs->value.present = S1AP_E_RABNotToBeModifiedItemBearerModIndIEs__value_PR_E_RABNotToBeModifiedItemBearerModInd;
+		  E_RAB_NotToBeModifiedItem_BearerModInd = &E_RAB_NotToBeModifiedItem_BearerModInd_IEs->value.choice.E_RABNotToBeModifiedItemBearerModInd;
+
+		  {
+			  E_RAB_NotToBeModifiedItem_BearerModInd->e_RAB_ID = e_rab_modification_ind->e_rabs_nottobemodified[i].e_rab_id;
+
+			  E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.size  = e_rab_modification_ind->e_rabs_nottobemodified[i].eNB_addr.length/8;
+			  E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.bits_unused = e_rab_modification_ind->e_rabs_nottobemodified[i].eNB_addr.length%8;
+			  E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.buf =
+	  	    				calloc(1, E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.size);
+			  memcpy (E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.buf, e_rab_modification_ind->e_rabs_nottobemodified[i].eNB_addr.buffer,
+					  E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.size);
+
+			  INT32_TO_OCTET_STRING(e_rab_modification_ind->e_rabs_nottobemodified[i].gtp_teid, &E_RAB_NotToBeModifiedItem_BearerModInd->dL_GTP_TEID);
+
+		  }
+		  ASN_SEQUENCE_ADD(&ie->value.choice.E_RABNotToBeModifiedListBearerModInd.list, E_RAB_NotToBeModifiedItem_BearerModInd_IEs);
+	  }
+  }
+  else{
+	  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_E_RABNotToBeModifiedListBearerModInd;
+	  ie->value.choice.E_RABNotToBeModifiedListBearerModInd.list.size = 0;
+  }  
+  
+	   
+
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_CSGMembershipInfo;
+  ie->criticality = S1AP_Criticality_reject;
+  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_CSGMembershipInfo;
+  ie->value.choice.CSGMembershipInfo.cSGMembershipStatus = S1AP_CSGMembershipStatus_member;
+  INT32_TO_BIT_STRING(CSG_id, &ie->value.choice.CSGMembershipInfo.cSG_Id);
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+
+  if (s1ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+    S1AP_ERROR("Failed to encode S1 E-RAB modification indication \n");
+    return -1;
+  }
+
+  // Non UE-Associated signalling -> stream = 0 
+  S1AP_INFO("Size of encoded message: %d \n", len);
+  s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
+                                       ue_context_p->mme_ref->assoc_id, buffer,
+                                       len, ue_context_p->tx_stream);  
+
+//s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance, ue_context_p->mme_ref->assoc_id, buffer, len, 0);
+  return ret;
+}*/
+
+int s1ap_eNB_generate_E_RAB_Modification_Indication(
+		instance_t instance,
+  s1ap_e_rab_modification_ind_t *e_rab_modification_ind)
+//-----------------------------------------------------------------------------
+{
+  struct s1ap_eNB_ue_context_s        *ue_context_p        = NULL;
+  S1AP_S1AP_PDU_t            pdu;
+  S1AP_E_RABModificationIndication_t     *out = NULL;
+  S1AP_E_RABModificationIndicationIEs_t   *ie = NULL;
+  S1AP_E_RABToBeModifiedItemBearerModInd_t 	  *E_RAB_ToBeModifiedItem_BearerModInd = NULL;
+  S1AP_E_RABToBeModifiedItemBearerModIndIEs_t *E_RAB_ToBeModifiedItem_BearerModInd_IEs = NULL;
+
+  //S1AP_E_RABNotToBeModifiedItemBearerModInd_t 	  *E_RAB_NotToBeModifiedItem_BearerModInd = NULL;
+  //S1AP_E_RABNotToBeModifiedItemBearerModIndIEs_t  *E_RAB_NotToBeModifiedItem_BearerModInd_IEs = NULL;
+
+
+  s1ap_eNB_instance_t          *s1ap_eNB_instance_p = NULL;
+  s1ap_eNB_instance_p = s1ap_eNB_get_instance(instance);
+  uint8_t  *buffer = NULL;
+  uint32_t  len = 0;
+  int       ret = 0;
+  DevAssert(s1ap_eNB_instance_p != NULL);
+  DevAssert(e_rab_modification_ind != NULL);
+
+  int num_e_rabs_tobemodified = e_rab_modification_ind->nb_of_e_rabs_tobemodified;
+  //int num_e_rabs_nottobemodified = e_rab_modification_ind->nb_of_e_rabs_nottobemodified;
+
+  //uint32_t CSG_id = 0;
+  //uint32_t pseudo_gtp_teid = 10;
+
+  if ((ue_context_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p,
+		  e_rab_modification_ind->eNB_ue_s1ap_id)) == NULL) {
+          // The context for this eNB ue s1ap id doesn't exist in the map of eNB UEs 
+          S1AP_WARN("Failed to find ue context associated with eNB ue s1ap id: 0x%06x\n",
+        		  e_rab_modification_ind->eNB_ue_s1ap_id);
+          return -1;
+  }
+
+  // Prepare the S1AP message to encode 
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = S1AP_S1AP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage.procedureCode = S1AP_ProcedureCode_id_E_RABModificationIndication;
+  pdu.choice.initiatingMessage.criticality = S1AP_Criticality_reject;
+  pdu.choice.initiatingMessage.value.present = S1AP_InitiatingMessage__value_PR_E_RABModificationIndication;
+  out = &pdu.choice.initiatingMessage.value.choice.E_RABModificationIndication;
+  /* mandatory */
+  ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_MME_UE_S1AP_ID;
+  ie->criticality = S1AP_Criticality_reject;
+  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_MME_UE_S1AP_ID;
+  ie->value.choice.MME_UE_S1AP_ID = e_rab_modification_ind->mme_ue_s1ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID;
+  ie->criticality = S1AP_Criticality_reject;
+  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_ENB_UE_S1AP_ID;
+  ie->value.choice.ENB_UE_S1AP_ID = e_rab_modification_ind->eNB_ue_s1ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  //E-RABs to be modified list
+  ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_E_RABToBeModifiedListBearerModInd;
+  ie->criticality = S1AP_Criticality_reject;
+  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_E_RABToBeModifiedListBearerModInd;
+
+  //The following two for-loops here will probably need to change. We should do a different type of search
+  for(int i=0; i<num_e_rabs_tobemodified; i++){
+	  E_RAB_ToBeModifiedItem_BearerModInd_IEs = (S1AP_E_RABToBeModifiedItemBearerModIndIEs_t *)calloc(1,sizeof(S1AP_E_RABToBeModifiedItemBearerModIndIEs_t));
+	  E_RAB_ToBeModifiedItem_BearerModInd_IEs->id = S1AP_ProtocolIE_ID_id_E_RABToBeModifiedItemBearerModInd;
+	  E_RAB_ToBeModifiedItem_BearerModInd_IEs->criticality = S1AP_Criticality_reject;
+	  E_RAB_ToBeModifiedItem_BearerModInd_IEs->value.present = S1AP_E_RABToBeModifiedItemBearerModIndIEs__value_PR_E_RABToBeModifiedItemBearerModInd;
+	  E_RAB_ToBeModifiedItem_BearerModInd = &E_RAB_ToBeModifiedItem_BearerModInd_IEs->value.choice.E_RABToBeModifiedItemBearerModInd;
+
+	  {
+	  E_RAB_ToBeModifiedItem_BearerModInd->e_RAB_ID = e_rab_modification_ind->e_rabs_tobemodified[i].e_rab_id;
+
+	  E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.size  = e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.length/8;
+	  E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.bits_unused = e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.length%8;
+	  E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.buf = calloc(1, E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.size);
+	  memcpy (E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.buf, e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.buffer,
+			  E_RAB_ToBeModifiedItem_BearerModInd->transportLayerAddress.size);
+
+	  INT32_TO_OCTET_STRING(e_rab_modification_ind->e_rabs_tobemodified[i].gtp_teid, &E_RAB_ToBeModifiedItem_BearerModInd->dL_GTP_TEID);
+
+	  }
+	  ASN_SEQUENCE_ADD(&ie->value.choice.E_RABToBeModifiedListBearerModInd.list, E_RAB_ToBeModifiedItem_BearerModInd_IEs);
+  }
+
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  //E-RABs NOT to be modified list
+  /*ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_E_RABNotToBeModifiedListBearerModInd;
+  ie->criticality = S1AP_Criticality_reject;
+  //if(num_e_rabs_nottobemodified > 0) {
+	  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_E_RABNotToBeModifiedListBearerModInd;
+
+	  for(int i=0; i<num_e_rabs_tobemodified; i++){
+		  E_RAB_NotToBeModifiedItem_BearerModInd_IEs = (S1AP_E_RABNotToBeModifiedItemBearerModIndIEs_t *)calloc(1,sizeof(S1AP_E_RABNotToBeModifiedItemBearerModIndIEs_t));
+		  E_RAB_NotToBeModifiedItem_BearerModInd_IEs->id = S1AP_ProtocolIE_ID_id_E_RABNotToBeModifiedItemBearerModInd;
+		  E_RAB_NotToBeModifiedItem_BearerModInd_IEs->criticality = S1AP_Criticality_reject;
+		  E_RAB_NotToBeModifiedItem_BearerModInd_IEs->value.present = S1AP_E_RABNotToBeModifiedItemBearerModIndIEs__value_PR_E_RABNotToBeModifiedItemBearerModInd;
+		  E_RAB_NotToBeModifiedItem_BearerModInd = &E_RAB_NotToBeModifiedItem_BearerModInd_IEs->value.choice.E_RABNotToBeModifiedItemBearerModInd;
+
+		  {
+			  E_RAB_NotToBeModifiedItem_BearerModInd->e_RAB_ID = 10; //e_rab_modification_ind->e_rabs_tobemodified[i].e_rab_id;
+
+			  E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.size  = e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.length/8;
+			  E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.bits_unused = e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.length%8;
+			  E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.buf =
+	  	    				calloc(1, E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.size);
+			  memcpy (E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.buf, e_rab_modification_ind->e_rabs_tobemodified[i].eNB_addr.buffer,
+					  E_RAB_NotToBeModifiedItem_BearerModInd->transportLayerAddress.size);
+
+			  //INT32_TO_OCTET_STRING(e_rab_modification_ind->e_rabs_tobemodified[i].gtp_teid, &E_RAB_NotToBeModifiedItem_BearerModInd->dL_GTP_TEID);
+			    INT32_TO_OCTET_STRING(pseudo_gtp_teid, &E_RAB_NotToBeModifiedItem_BearerModInd->dL_GTP_TEID);
+
+		  }
+		  ASN_SEQUENCE_ADD(&ie->value.choice.E_RABNotToBeModifiedListBearerModInd.list, E_RAB_NotToBeModifiedItem_BearerModInd_IEs);
+	  }
+ // }
+  //else{
+//	  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_E_RABNotToBeModifiedListBearerModInd;
+//	  ie->value.choice.E_RABNotToBeModifiedListBearerModInd.list.size = 0;
+//  } / 
+  
+	   
+
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);*/
+
+  /*ie = (S1AP_E_RABModificationIndicationIEs_t *)calloc(1, sizeof(S1AP_E_RABModificationIndicationIEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_CSGMembershipInfo;
+  ie->criticality = S1AP_Criticality_reject;
+  ie->value.present = S1AP_E_RABModificationIndicationIEs__value_PR_CSGMembershipInfo;
+  ie->value.choice.CSGMembershipInfo.cSGMembershipStatus = S1AP_CSGMembershipStatus_member;
+  INT32_TO_BIT_STRING(CSG_id, &ie->value.choice.CSGMembershipInfo.cSG_Id);
+  ie->value.choice.CSGMembershipInfo.cSG_Id.bits_unused=5; 
+  ie->value.choice.CSGMembershipInfo.cellAccessMode = S1AP_CellAccessMode_hybrid;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);*/
+  
+  if (s1ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+    S1AP_ERROR("Failed to encode S1 E-RAB modification indication \n");
+    return -1;
+  }
+
+  // Non UE-Associated signalling -> stream = 0 
+  S1AP_INFO("Size of encoded message: %d \n", len);
+  s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
+                                       ue_context_p->mme_ref->assoc_id, buffer,
+                                       len, ue_context_p->tx_stream);  
+
+//s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance, ue_context_p->mme_ref->assoc_id, buffer, len, 0);
+  return ret;
+}
+
+

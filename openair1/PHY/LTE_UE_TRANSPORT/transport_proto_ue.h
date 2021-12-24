@@ -1303,7 +1303,7 @@ uint32_t conv_nprb(uint8_t ra_header,uint32_t rb_alloc,int N_RB_DL);
 int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe, uint8_t beamforming_mode);
 
 int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe);
-int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol);
+
 
 
 #ifndef modOrder
@@ -1739,11 +1739,6 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
   uint8_t n_antenna_port,
   LTE_UE_DLSCH_t *dlsch_ue);
 */
-
-uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
-                             uint8_t prach_ConfigIndex,
-                             uint8_t n_ra_prboffset,
-                             uint8_t tdd_mapindex, uint16_t Nf);
 
 /**@}*/
 #endif

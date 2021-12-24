@@ -11,27 +11,11 @@
  *
  * Copyright (C) 2009 Martin Mathieson. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE
+ * SPDX-License-Identifier: BSD-2-Clause
  */
+
+#ifndef __COMMON_UTILS_T_TRACER_PACKET_MAC_LTE__H__
+#define __COMMON_UTILS_T_TRACER_PACKET_MAC_LTE__H__
 
 //#include "ws_symbol_export.h"
 
@@ -64,9 +48,9 @@
 /* and implemented by this dissector, using the definitions      */
 /* below. A link to an example program showing you how to encode */
 /* these headers and send LTE MAC PDUs on a UDP socket is        */
-/* provided at https://wiki.wireshark.org/MAC-LTE                 */
+/* provided at https://wiki.wireshark.org/MAC-LTE                */
 /*                                                               */
-/* A heuristic dissecter (enabled by a preference) will          */
+/* A heuristic dissector (enabled by a preference) will          */
 /* recognise a signature at the beginning of these frames.       */
 /*****************************************************************/
 
@@ -123,19 +107,27 @@
           MCS index (1 byte), redundancy version (1 byte), resource block length (1 byte),
           HARQ id (1 byte), NDI (1 byte), TB (1 byte), DL reTx (1 byte) */
 
-#define MAC_LTE_SIMULT_PUCCH_PUSCH_PCELL  0x0C
+#define MAC_LTE_SIMULT_PUCCH_PUSCH_PCELL_TAG  0x0C
 /* 0 byte */
 
-#define MAC_LTE_SIMULT_PUCCH_PUSCH_PSCELL 0x0D
+#define MAC_LTE_SIMULT_PUCCH_PUSCH_PSCELL_TAG 0x0D
 /* 0 byte */
 
-#define MAC_LTE_CE_MODE             0x0E
+#define MAC_LTE_CE_MODE_TAG         0x0E
 /* 1 byte containing mac_lte_ce_mode enum value */
 
-#define MAC_LTE_NB_MODE             0x0F
+#define MAC_LTE_NB_MODE_TAG         0x0F
 /* 1 byte containing mac_lte_nb_mode enum value */
+
+#define MAC_LTE_N_UL_RB_TAG         0x10
+/* 1 byte containing the number of UL resource blocks: 6, 15, 25, 50, 75 or 100 */
+
+#define MAC_LTE_SR_TAG              0x11
+/* 2 bytes for the number of items, followed by that number of ueid, rnti (2 bytes each) */
+
 
 /* MAC PDU. Following this tag comes the actual MAC PDU (there is no length, the PDU
    continues until the end of the frame) */
 #define MAC_LTE_PAYLOAD_TAG 0x01
 
+#endif

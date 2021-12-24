@@ -124,8 +124,9 @@ typedef struct s1ap_eNB_mme_data_s {
   /* This is the optional name provided by the MME */
   char *mme_name;
 
-  /* MME S1AP IP address */
+  /* MME S1AP IP address and port */
   net_ip_address_t mme_s1_ip;
+  uint16_t         mme_port;
 
   /* List of served GUMMEI per MME. There is one GUMMEI per RAT with a max
    * number of 8 RATs but in our case only one is used. The LTE related pool
@@ -164,6 +165,12 @@ typedef struct s1ap_eNB_mme_data_s {
 
   /* Only meaningfull in virtual mode */
   struct s1ap_eNB_instance_s *s1ap_eNB_instance;
+  
+  uint32_t nb_calls;
+  net_ip_address_t mme_ip_address;
+  long             timer_id;
+  uint16_t         s1_setupreq_cnt;
+  uint16_t         sctp_req_cnt;
 } s1ap_eNB_mme_data_t;
 
 typedef struct s1ap_eNB_instance_s {
@@ -216,6 +223,14 @@ typedef struct s1ap_eNB_instance_s {
 
   /* Default Paging DRX of the eNB as defined in TS 36.304 */
   paging_drx_t default_drx;
+  net_ip_address_t   enb_ip_address;
+  uint16_t           s1_setuprsp_wait_timer;
+  uint16_t           s1_setupreq_wait_timer;
+  uint16_t           s1_setupreq_count;
+  uint16_t           sctp_req_timer;
+  uint16_t           sctp_req_count;
+  uint16_t           sctp_in_streams;
+  uint16_t           sctp_out_streams;
 } s1ap_eNB_instance_t;
 
 typedef struct {

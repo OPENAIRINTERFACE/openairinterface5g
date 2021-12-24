@@ -98,17 +98,17 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
                                           F1AP_F1AP_PDU_t *pdu);
 
 int DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
-                    F1AP_GNBCUConfigurationUpdateFailure_t *GNBCUConfigurationUpdateFailure);
+                                                f1ap_gnb_cu_configuration_update_failure_t *GNBCUConfigurationUpdateFailure);
 
 int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-                    F1AP_GNBCUConfigurationUpdateAcknowledge_t *GNBCUConfigurationUpdateAcknowledge);
+                                                    f1ap_gnb_cu_configuration_update_acknowledge_t *GNBCUConfigurationUpdateAcknowledge);
 
 
 /*
  * gNB-DU Resource Coordination
  */
 int DU_send_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
-                    F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest);
+                                                 F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest);
 
 int DU_handle_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
                                                     uint32_t assoc_id,

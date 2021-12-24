@@ -220,8 +220,12 @@ void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,
                       uint32_t rx_power_fil_dB,
                       unsigned char eNB_id);
 
-int lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
+int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
                               L1_rxtx_proc_t *proc,
+				  LTE_eNB_ULSCH_t * ulsch,
+				  int32_t **ul_ch_estimates,
+				  int32_t **ul_ch_estimates_time,
+				  int32_t **rxdataF_ext,
                               module_id_t UE_id,
                               uint8_t l,
                               uint8_t Ns);
@@ -258,7 +262,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
                            unsigned char number_of_cards,
                            short coef);
 
-int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,module_id_t UE_id);
+int lte_est_timing_advance_pusch(LTE_DL_FRAME_PARMS *frame_parms,
+                                 int32_t **ul_ch_estimates_time);
 
 void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNB,
                              int subframe,
@@ -283,6 +288,8 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
                        unsigned short Msc_RS,
                        unsigned char Qm);
 
+void init_fde(void);
 
+void dump_I0_stats(FILE *fd,PHY_VARS_eNB *eNB);
 /** @} */
 #endif

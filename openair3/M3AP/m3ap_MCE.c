@@ -136,12 +136,26 @@ void m3ap_MCE_handle_sctp_association_resp(instance_t instance, sctp_new_associa
   //dump_trees_m3();
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
-    M3AP_WARN("Received unsuccessful result for SCTP association (%u), instance %d, cnx_id %u\n",
+    M3AP_WARN("Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u\n",
               sctp_new_association_resp->sctp_state,
               instance,
               sctp_new_association_resp->ulp_cnx_id);
     //m3ap_handle_m3_setup_message(instance_p, m3ap_enb_data_p,
                                  //sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
+	  sleep(4);
+	  int index;
+	  /* Trying to connect to the provided list of eNB ip address */
+	  for (index = 0; index < instance_p->nb_m3; index++) {
+	    //M2AP_INFO("eNB[%d] eNB id %u acting as an initiator (client)\n",
+	     //         instance_id, instance->eNB_id);
+	    m3ap_MCE_register_MCE(instance_p,
+				  &instance_p->target_mme_m3_ip_address[index],
+				  &instance_p->mme_m3_ip_address,
+				  instance_p->sctp_in_streams,
+				  instance_p->sctp_out_streams,
+				  instance_p->mce_port_for_M3C,
+				  instance_p->multi_sd);
+	  }
     return;
   }
 
@@ -215,7 +229,7 @@ int m3ap_MCE_init_sctp (m3ap_MCE_instance_t *instance_p,
   sctp_init_t                            *sctp_init  = NULL;
   DevAssert(instance_p != NULL);
   DevAssert(local_ip_addr != NULL);
-  message = itti_alloc_new_message (TASK_M3AP_MCE, SCTP_INIT_MSG_MULTI_REQ);
+  message = itti_alloc_new_message (TASK_M3AP_MCE, 0, SCTP_INIT_MSG_MULTI_REQ);
   sctp_init = &message->ittiMsg.sctp_init_multi;
   sctp_init->port = mce_port_for_M3C;
   sctp_init->ppid = M3AP_SCTP_PPID;
@@ -249,7 +263,7 @@ static void m3ap_MCE_register_MCE(m3ap_MCE_instance_t *instance_p,
   m3ap_MCE_data_t                  *m3ap_mce_data             = NULL;
   DevAssert(instance_p != NULL);
   DevAssert(target_MCE_ip_address != NULL);
-  message = itti_alloc_new_message(TASK_M3AP_MCE, SCTP_NEW_ASSOCIATION_REQ_MULTI);
+  message = itti_alloc_new_message(TASK_M3AP_MCE, 0, SCTP_NEW_ASSOCIATION_REQ_MULTI);
   sctp_new_association_req = &message->ittiMsg.sctp_new_association_req_multi;
   sctp_new_association_req->port = mce_port_for_M3C;
   sctp_new_association_req->ppid = M3AP_SCTP_PPID;
@@ -299,7 +313,7 @@ void m3ap_MCE_handle_register_MCE(instance_t instance,
     DevCheck(new_instance->tac == m3ap_register_MCE->tac, new_instance->tac, m3ap_register_MCE->tac, 0);
     DevCheck(new_instance->mcc == m3ap_register_MCE->mcc, new_instance->mcc, m3ap_register_MCE->mcc, 0);
     DevCheck(new_instance->mnc == m3ap_register_MCE->mnc, new_instance->mnc, m3ap_register_MCE->mnc, 0);
-    M3AP_WARN("MCE[%d] already registered\n", instance);
+    M3AP_WARN("MCE[%ld] already registered\n", instance);
   } else {
     new_instance = calloc(1, sizeof(m3ap_MCE_instance_t));
     DevAssert(new_instance != NULL);
@@ -343,7 +357,7 @@ void m3ap_MCE_handle_register_MCE(instance_t instance,
     new_instance->mce_port_for_M3C  = m3ap_register_MCE->mme_port_for_M3C;
     /* Add the new instance to the list of MCE (meaningfull in virtual mode) */
     m3ap_MCE_insert_new_instance(new_instance);
-    M3AP_INFO("Registered new MCE[%d] and %s MCE id %u\n",
+    M3AP_INFO("Registered new MCE[%ld] and %s MCE id %u\n",
               instance,
               m3ap_register_MCE->cell_type == CELL_MACRO_ENB ? "macro" : "home",
               m3ap_register_MCE->MCE_id);
@@ -356,7 +370,7 @@ void m3ap_MCE_handle_register_MCE(instance_t instance,
       return;
     }
 
-    M3AP_INFO("MCE[%d] MCE id %u acting as a listner (server)\n",
+    M3AP_INFO("MCE[%ld] MCE id %u acting as a listner (server)\n",
               instance, m3ap_register_MCE->MCE_id);
   }
 }
@@ -383,7 +397,7 @@ void m3ap_MCE_handle_sctp_init_msg_multi_cnf(
   /* Trying to connect to the provided list of MCE ip address */
 
   for (index = 0; index < instance->nb_m3; index++) {
-    M3AP_INFO("MCE[%d] MCE id %u acting as an initiator (client)\n",
+    M3AP_INFO("MCE[%ld] MCE id %u acting as an initiator (client)\n",
               instance_id, instance->MCE_id);
     m3ap_MCE_register_MCE(instance,
                           &instance->target_mme_m3_ip_address[index],
@@ -523,7 +537,7 @@ void *m3ap_MCE_task(void *arg) {
     switch (ITTI_MSG_ID(received_msg)) {
       case MESSAGE_TEST:
 //	LOG_W(M3AP,"MCE Received Test Message ... TODO\n");
-//	//MessageDef * message_p = itti_alloc_new_message(TASK_M3AP, MESSAGE_TEST);
+//	//MessageDef * message_p = itti_alloc_new_message(TASK_M3AP, 0, MESSAGE_TEST);
 //	//itti_send_msg_to_task(TASK_M2AP_ENB, 1/*ctxt_pP->module_id*/, message_p);
 // 
 //        asn_dec_rval_t dec_ret;
@@ -563,78 +577,78 @@ void *m3ap_MCE_task(void *arg) {
         break;
 
       case M3AP_SUBFRAME_PROCESS:
-        m3ap_check_timers(ITTI_MESSAGE_GET_INSTANCE(received_msg));
+        m3ap_check_timers(ITTI_MSG_DESTINATION_INSTANCE(received_msg));
         break;
 
       case M3AP_REGISTER_MCE_REQ:
 	        LOG_I(M3AP,"MCE Received M3AP_REGISTER_MCE_REQ Message\n");
 
-        m3ap_MCE_handle_register_MCE(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        m3ap_MCE_handle_register_MCE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                      &M3AP_REGISTER_MCE_REQ(received_msg));
         break;
 
       case M3AP_MBMS_SESSION_START_RESP:
 	        LOG_I(M3AP,"MCE M3AP_MBMS_SESSION_START_RESP Message\n");
-	MCE_send_MBMS_SESSION_START_RESPONSE(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+	MCE_send_MBMS_SESSION_START_RESPONSE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                      &M3AP_MBMS_SESSION_START_RESP(received_msg));
 
 	break;
 		
       case M3AP_MBMS_SESSION_STOP_RESP:
 	        LOG_I(M3AP,"MCE M3AP_MBMS_SESSION_STOP_RESP Message\n");
-	MCE_send_MBMS_SESSION_STOP_RESPONSE(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+	MCE_send_MBMS_SESSION_STOP_RESPONSE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                      &M3AP_MBMS_SESSION_START_RESP(received_msg));
 
 	break;
 
       case M3AP_MBMS_SESSION_UPDATE_RESP:
 	        LOG_I(M3AP,"MCE M3AP_MBMS_SESSION_UPDATE_RESP Message\n");
-	//MCE_send_MBMS_SESSION_UPDATE_RESPONSE(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+	//MCE_send_MBMS_SESSION_UPDATE_RESPONSE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                      //&M3AP_MBMS_SESSION_START_RESP(received_msg));
 
 	break;
 
 	
 //      case M3AP_HANDOVER_REQ:
-//        m3ap_eNB_handle_handover_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+//        m3ap_eNB_handle_handover_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
 //                                     &M3AP_HANDOVER_REQ(received_msg));
 //        break;
 //
 //      case M3AP_HANDOVER_REQ_ACK:
-//        m3ap_eNB_handle_handover_req_ack(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+//        m3ap_eNB_handle_handover_req_ack(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
 //                                         &M3AP_HANDOVER_REQ_ACK(received_msg));
 //        break;
 //
 //      case M3AP_UE_CONTEXT_RELEASE:
-//        m3ap_eNB_ue_context_release(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+//        m3ap_eNB_ue_context_release(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
 //                                                &M3AP_UE_CONTEXT_RELEASE(received_msg));
 //        break;
 //
       case SCTP_INIT_MSG_MULTI_CNF:
 	        LOG_D(M3AP,"MCE Received SCTP_INIT_MSG_MULTI_CNF Message\n");
 
-        m3ap_MCE_handle_sctp_init_msg_multi_cnf(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        m3ap_MCE_handle_sctp_init_msg_multi_cnf(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                                 &received_msg->ittiMsg.sctp_init_msg_multi_cnf);
         break;
 
       case SCTP_NEW_ASSOCIATION_RESP:
 	        LOG_D(M3AP,"MCE Received SCTP_NEW_ASSOCIATION_RESP Message\n");
 
-        m3ap_MCE_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        m3ap_MCE_handle_sctp_association_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                               &received_msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_NEW_ASSOCIATION_IND:
 	        LOG_D(M3AP,"MCE Received SCTP_NEW_ASSOCIATION Message\n");
 
-        m3ap_MCE_handle_sctp_association_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        m3ap_MCE_handle_sctp_association_ind(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                              &received_msg->ittiMsg.sctp_new_association_ind);
         break;
 
       case SCTP_DATA_IND:
 	        LOG_D(M3AP,"MCE Received SCTP_DATA_IND Message\n");
 
-        m3ap_MCE_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        m3ap_MCE_handle_sctp_data_ind(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                       &received_msg->ittiMsg.sctp_data_ind);
         break;
 

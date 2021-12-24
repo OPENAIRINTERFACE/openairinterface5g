@@ -22,7 +22,7 @@
 extern unsigned int dlsch_tbs25[27][25],TBStable[27][110],TBStable1C[32];
 extern unsigned short lte_cqi_eff1024[16];
 extern char lte_cqi_snr_dB[15];
-extern short conjugate[8],conjugate2[8];
+extern const short conjugate[8],conjugate2[8];
 extern short minus_one[8];
 extern short minus_one[8];
 extern short *ul_ref_sigs[30][2][34];

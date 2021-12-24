@@ -46,15 +46,25 @@ void set_latency_target(void);
 void configure_linux(void);
 
 void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name, int affinity, int priority);
-#define OAI_PRIORITY_RT_LOW sched_get_priority_min(SCHED_FIFO)
-#define OAI_PRIORITY_RT sched_get_priority_max(SCHED_FIFO)-10
-#define OAI_PRIORITY_RT_MAX sched_get_priority_max(SCHED_FIFO)
+ 
+#define SCHED_OAI SCHED_RR
+#define OAI_PRIORITY_RT_LOW sched_get_priority_min(SCHED_OAI)
+#define OAI_PRIORITY_RT ((sched_get_priority_min(SCHED_OAI)+sched_get_priority_max(SCHED_OAI))/2)
+#define OAI_PRIORITY_RT_MAX sched_get_priority_max(SCHED_OAI)-2
 
 void thread_top_init(char *thread_name,
                      int affinity,
                      uint64_t runtime,
                      uint64_t deadline,
                      uint64_t period);
+
+/****************************************************
+ * Functions to check system at runtime.
+ ****************************************************/
+
+int checkIfFedoraDistribution(void);
+int checkIfGenericKernelOnFedora(void);
+int checkIfInsideContainer(void);
 
 #ifdef __cplusplus
 }

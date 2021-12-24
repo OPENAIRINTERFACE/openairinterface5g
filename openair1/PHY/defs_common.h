@@ -99,9 +99,6 @@
 
 #define NB_RX_ANTENNAS_MAX 64
 
-#ifdef OCP_FRAMEWORK
-#include "enums.h"
-#else
 
 typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
@@ -122,7 +119,6 @@ typedef enum {
   one=6,
   two=12
 } PHICH_RESOURCE_t;
-#endif
 /// PHICH-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: PHICH-Duration, see TS 36.211 (Table 6.9.3-1).
@@ -250,12 +246,10 @@ typedef struct {
 } UL_REFERENCE_SIGNALS_PUSCH_t;
 
 /// Enumeration for parameter Hopping-mode \ref PUSCH_CONFIG_COMMON::hoppingMode.
-#ifndef OCP_FRAMEWORK
 typedef enum {
   interSubFrame=0,
   intraAndInterSubFrame=1
 } PUSCH_HOPPING_t;
-#endif
 
 /// PUSCH-ConfigCommon from 36.331 RRC spec.
 typedef struct {
@@ -434,7 +428,6 @@ typedef struct {
   uint8_t filterCoefficient;
 } UL_POWER_CONTROL_DEDICATED;
 
-#ifndef OCP_FRAMEWORK
 /// Enumeration for parameter \f$\alpha\f$ \ref UL_POWER_CONTROL_CONFIG_COMMON::alpha.
 typedef enum {
   al0=0,
@@ -446,7 +439,6 @@ typedef enum {
   al09=6,
   al1=7
 } PUSCH_alpha_t;
-#endif
 
 /// \note UNUSED
 typedef enum {
@@ -875,8 +867,10 @@ typedef enum {
   NOT_SYNCHED=0,
   PRACH=1,
   RA_RESPONSE=2,
-  PUSCH=3,
-  RESYNCH=4
+  RA_WAIT_CR=3,
+  PUSCH=4,
+  RESYNCH=5,
+  NUM_UE_MODE=6
 } UE_MODE_t;
 
 #define FOREACH_PARALLEL(GEN)   \
@@ -949,6 +943,23 @@ extern int sync_var;
 #define ENCODE_C_FPTRIDX             11
 #define ENCODE_INIT_SSE_FPTRIDX      12
 #define DECODE_NUM_FPTR              13
+
+
+// Mask for identifying subframe for MBMS
+#define MBSFN_TDD_SF3 0x80// for TDD
+#define MBSFN_TDD_SF4 0x40
+#define MBSFN_TDD_SF7 0x20
+#define MBSFN_TDD_SF8 0x10
+#define MBSFN_TDD_SF9 0x08
+
+
+
+#define MBSFN_FDD_SF1 0x80// for FDD
+#define MBSFN_FDD_SF2 0x40
+#define MBSFN_FDD_SF3 0x20
+#define MBSFN_FDD_SF6 0x10
+#define MBSFN_FDD_SF7 0x08
+#define MBSFN_FDD_SF8 0x04
 
 
 typedef uint8_t(decoder_if_t)(int16_t *y,
@@ -1101,6 +1112,5 @@ static inline int release_thread(pthread_mutex_t *mutex,
   AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] release_thread(): error unlocking mutex return %d for %s\n", rc, name);
   return(0);
 }
-
 
 #endif //  __PHY_DEFS_COMMON_H__

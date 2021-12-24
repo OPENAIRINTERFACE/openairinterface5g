@@ -1985,10 +1985,13 @@ find_UE_id(module_id_t mod_idP,
 {
   int UE_id;
   UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
+  if(!UE_info)
+    return -1;
 
   for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
     if (UE_info->active[UE_id] == TRUE) {
-      if (UE_info->UE_template[UE_PCCID(mod_idP, UE_id)][UE_id].rnti == rntiP) {
+      int CC_id = UE_PCCID(mod_idP, UE_id);
+      if (CC_id>=0 && CC_id<NFAPI_CC_MAX && UE_info->UE_template[CC_id][UE_id].rnti == rntiP) {
         return UE_id;
       }
     }
@@ -2131,33 +2134,36 @@ dump_ue_list(UE_list_t *listP) {
  * Add a UE to UE_list listP
  */
 inline void add_ue_list(UE_list_t *listP, int UE_id) {
-  if (listP->head == -1) {
-    listP->head = UE_id;
-    listP->next[UE_id] = -1;
-  } else {
-    int i = listP->head;
-    while (listP->next[i] >= 0)
-      i = listP->next[i];
-    listP->next[i] = UE_id;
-    listP->next[UE_id] = -1;
-  }
+  int *cur = &listP->head;
+  while (*cur >= 0)
+    cur = &listP->next[*cur];
+  *cur = UE_id;
 }
 
 //------------------------------------------------------------------------------
 /*
- * Remove a UE from the UE_list listP, return the previous element
+ * Remove a UE from the UE_list listP
  */
 inline int remove_ue_list(UE_list_t *listP, int UE_id) {
-  listP->next[UE_id] = -1;
-  if (listP->head == UE_id) {
-    listP->head = listP->next[UE_id];
-    return -1;
-  }
+  int *cur = &listP->head;
+  while (*cur != -1 && *cur != UE_id)
+    cur = &listP->next[*cur];
+  if (*cur == -1)
+    return 0;
+  int *next = &listP->next[*cur];
+  *cur = listP->next[*cur];
+  *next = -1;
+  return 1;
+}
 
-  int previous = prev(listP, UE_id);
-  if (previous != -1)
-    listP->next[previous] = listP->next[UE_id];
-  return previous;
+//------------------------------------------------------------------------------
+/*
+ * Initialize the UE_list listP
+ */
+inline void init_ue_list(UE_list_t *listP) {
+  listP->head = -1;
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; ++i)
+    listP->next[i] = -1;
 }
 
 //------------------------------------------------------------------------------
@@ -2170,6 +2176,7 @@ add_new_ue(module_id_t mod_idP,
           )
 //------------------------------------------------------------------------------
 {
+  eNB_MAC_INST *eNB     = RC.mac[mod_idP];
   int UE_id;
   int i, j;
   UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
@@ -2196,6 +2203,12 @@ add_new_ue(module_id_t mod_idP,
     UE_info->active[UE_id] = TRUE;
     add_ue_list(&UE_info->list, UE_id);
     dump_ue_list(&UE_info->list);
+    pp_impl_param_t* dl = &RC.mac[mod_idP]->pre_processor_dl;
+    if (dl->slices) // inform slice implementation about new UE
+      dl->add_UE(dl->slices, UE_id);
+    pp_impl_param_t* ul = &RC.mac[mod_idP]->pre_processor_ul;
+    if (ul->slices) // inform slice implementation about new UE
+      ul->add_UE(ul->slices, UE_id);
     if (IS_SOFTMODEM_IQPLAYER)// not specific to record/playback ?
       UE_info->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
     UE_info->UE_template[cc_idP][UE_id].rach_resource_type = rach_resource_type;
@@ -2206,7 +2219,19 @@ add_new_ue(module_id_t mod_idP,
            0,
            sizeof(eNB_UE_STATS));
     UE_info->UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
+    UE_info->UE_sched_ctrl[UE_id].ta_update_f = 31.0;
     UE_info->UE_sched_ctrl[UE_id].ta_update = 31;
+    UE_info->UE_sched_ctrl[UE_id].pusch_snr[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_cqi_f[cc_idP]     = (eNB->puSch10xSnr+640)/5;
+    UE_info->UE_sched_ctrl[UE_id].pusch_cqi[cc_idP]     = (eNB->puSch10xSnr+640)/5;
+    UE_info->UE_sched_ctrl[UE_id].pusch_snr_avg[cc_idP] = eNB->puSch10xSnr/10;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_num[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_num_old[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num_old[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_bler[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].ret_cnt[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].first_cnt[cc_idP] = 0;
 
     for (j = 0; j < 8; j++) {
       UE_info->UE_template[cc_idP][UE_id].oldNDI[j] = 0;
@@ -2259,6 +2284,12 @@ rrc_mac_remove_ue(module_id_t mod_idP,
   UE_info->num_UEs--;
 
   remove_ue_list(&UE_info->list, UE_id);
+  pp_impl_param_t* dl = &RC.mac[mod_idP]->pre_processor_dl;
+  if (dl->slices) // inform slice implementation about new UE
+    dl->remove_UE(dl->slices, UE_id);
+  pp_impl_param_t* ul = &RC.mac[mod_idP]->pre_processor_ul;
+  if (ul->slices) // inform slice implementation about new UE
+    ul->remove_UE(ul->slices, UE_id);
 
   /* Clear all remaining pending transmissions */
   memset(&UE_info->UE_template[pCC_id][UE_id], 0, sizeof(UE_TEMPLATE));
@@ -4919,6 +4950,7 @@ cqi_indication(module_id_t mod_idP,
 {
   int UE_id = find_UE_id(mod_idP, rntiP);
   UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
+  uint64_t pdu_val = *(uint64_t *) pdu;
 
   if (UE_id == -1) {
     LOG_W(MAC, "cqi_indication: UE %x not found\n", rntiP);
@@ -4958,10 +4990,10 @@ cqi_indication(module_id_t mod_idP,
                         subframeP,
                         pdu,
                         rel9->length);
-      LOG_D(MAC,"Frame %d Subframe %d update CQI:%d\n",
+      LOG_D(MAC,"Frame %d Subframe %d update CQI:%d pdu 0x%016"PRIx64"\n",
             frameP,
             subframeP,
-            sched_ctl->dl_cqi[CC_idP]);
+            sched_ctl->dl_cqi[CC_idP],pdu_val);
       sched_ctl->cqi_req_flag &= (~(1 << subframeP));
       sched_ctl->cqi_received = 1;
     }
@@ -5149,7 +5181,7 @@ harq_indication(module_id_t mod_idP,
   /* don't care about cqi reporting if NACK/DTX is there */
   if (channel == 0 && !nack_or_dtx_reported(cc,
       harq_pdu)) {
-    sched_ctl->pucch1_snr[CC_idP] = ul_cqi;
+    sched_ctl->pucch1_snr[CC_idP] = (5 * ul_cqi - 640) / 10;
     sched_ctl->pucch1_cqi_update[CC_idP] = 1;
   }
 

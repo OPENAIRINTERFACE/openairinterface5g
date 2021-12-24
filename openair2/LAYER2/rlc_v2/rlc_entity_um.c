@@ -360,6 +360,7 @@ static tx_pdu_size_t tx_pdu_size(rlc_entity_um_t *entity, int maxsize)
   ret.data_size = 0;
   ret.header_size = 0;
   ret.last_sdu_is_full = 1;
+  ret.first_sdu_length = 0;
 
   /* TX PDU - let's make the biggest PDU we can with the SDUs we have */
   sdu_count = 0;

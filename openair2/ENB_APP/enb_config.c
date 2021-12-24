@@ -29,6 +29,7 @@
 
 #include <string.h>
 #include <inttypes.h>
+#include <dlfcn.h>
 
 #include "common/utils/LOG/log.h"
 #include "assertions.h"
@@ -56,11 +57,14 @@
 #include "enb_paramdef.h"
 #include "proto_agent.h"
 #include "executables/thread-common.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw);
 extern uint32_t to_earfcn_UL(int eutra_bandP, uint32_t ul_CarrierFreq, uint32_t bw);
 extern char *parallel_config;
 extern char *worker_config;
+
+RAN_CONTEXT_t RC;
 
 void RCconfig_flexran() {
   /* get number of eNBs */
@@ -120,15 +124,14 @@ void RCconfig_L1(void) {
       RC.nb_L1_CC[j] = *(L1_ParamList.paramarray[j][L1_CC_IDX].uptr);
 
       if (RC.eNB[j] == NULL) {
-        RC.eNB[j]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB *));
+        RC.eNB[j]  = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB *));
         LOG_I(PHY,"RC.eNB[%d] = %p\n",j,RC.eNB[j]);
         memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB *));
       }
 
       for (i=0; i<RC.nb_L1_CC[j]; i++) {
         if (RC.eNB[j][i] == NULL) {
-          RC.eNB[j][i] = (PHY_VARS_eNB *)malloc(sizeof(PHY_VARS_eNB));
-          memset((void *)RC.eNB[j][i],0,sizeof(PHY_VARS_eNB));
+          RC.eNB[j][i] = (PHY_VARS_eNB *)calloc(1, sizeof(PHY_VARS_eNB));
           LOG_I(PHY,"RC.eNB[%d][%d] = %p\n",j,i,RC.eNB[j][i]);
           RC.eNB[j][i]->Mod_id  = j;
           RC.eNB[j][i]->CC_id   = i;
@@ -169,6 +172,10 @@ void RCconfig_L1(void) {
         RC.eNB[j][0]->pucch1_DTX_threshold_emtc[ce_level]   = *(L1_ParamList.paramarray[j][L1_PUCCH1_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
         RC.eNB[j][0]->pucch1ab_DTX_threshold_emtc[ce_level] = *(L1_ParamList.paramarray[j][L1_PUCCH1AB_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
       }
+
+
+      RC.eNB[j][0]->pusch_signal_threshold    = *(L1_ParamList.paramarray[j][L1_PUSCH_SIGNAL_THRESHOLD_IDX].iptr);
+      LOG_I(ENB_APP,"PUSCH singal threshold = %d \n",RC.eNB[j][0]->pusch_signal_threshold);
     }// j=0..num_inst
 
     LOG_I(ENB_APP,"Initializing northbound interface for L1\n");
@@ -213,13 +220,26 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
     for (j = 0; j < RC.nb_macrlc_inst; j++) {
       RC.mac[j]->puSch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUSCH10xSNR_IDX ].iptr);
       RC.mac[j]->puCch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUCCH10xSNR_IDX ].iptr);
+      RC.mac[j]->ue_multiple_max = *(MacRLC_ParamList.paramarray[j][MACRLC_UE_MULTIPLE_MAX_IDX ].iptr);
+      RC.mac[j]->use_mcs_offset = *(MacRLC_ParamList.paramarray[j][MACRLC_USE_MCS_OFFSET_IDX ].iptr);
+      RC.mac[j]->bler_lower = *(MacRLC_ParamList.paramarray[j][MACRLC_BLER_TARGET_LOWER_IDX ].dblptr);
+      RC.mac[j]->bler_upper = *(MacRLC_ParamList.paramarray[j][MACRLC_BLER_TARGET_UPPER_IDX ].dblptr);
+      RC.mac[j]->max_ul_rb_index = *(MacRLC_ParamList.paramarray[j][MACRLC_MAX_UL_RB_INDEX_IDX ].iptr);
       RC.nb_mac_CC[j] = *(MacRLC_ParamList.paramarray[j][MACRLC_CC_IDX].iptr);
-
+      LOG_I(ENB_APP,"MAC instance %d parameters : pusch_snr %lf, pucch_snr %lf, ue_multiple_max %d, use_mcs_offset %d, bler_lower %lf, bler_upper %lf,max_ul_rb_index %d\n",
+	j,
+	RC.mac[j]->puSch10xSnr/10.0,
+	RC.mac[j]->puCch10xSnr/10.0,
+	RC.mac[j]->ue_multiple_max,
+	RC.mac[j]->use_mcs_offset,
+	RC.mac[j]->bler_lower,
+	RC.mac[j]->bler_upper,
+	RC.mac[j]->max_ul_rb_index);
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
         // check number of instances is same as RRC/PDCP
-        printf("Configuring local RRC for MACRLC\n");
+        LOG_I(ENB_APP,"Configuring local RRC for MACRLC\n");
       } else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0) {
-        printf("Configuring F1 interfaces for MACRLC\n");
+        LOG_I(ENB_APP,"Configuring F1 interfaces for MACRLC\n");
         RC.mac[j]->eth_params_n.local_if_name            = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_IF_NAME_IDX].strptr));
         RC.mac[j]->eth_params_n.my_addr                  = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_ADDRESS_IDX].strptr));
         RC.mac[j]->eth_params_n.remote_addr              = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_ADDRESS_IDX].strptr));
@@ -260,6 +280,16 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
         global_scheduler_mode=SCHED_MODE_DEFAULT;
         printf("sched mode = default %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
       }
+
+      char *s = *MacRLC_ParamList.paramarray[j][MACRLC_DEFAULT_SCHED_DL_ALGO_IDX].strptr;
+      void *d = dlsym(NULL, s);
+      AssertFatal(d, "%s(): no default scheduler DL algo '%s' found\n", __func__, s);
+      // release default, add new
+      pp_impl_param_t *dl_pp = &RC.mac[j]->pre_processor_dl;
+      dl_pp->dl_algo.unset(&dl_pp->dl_algo.data);
+      dl_pp->dl_algo = *(default_sched_dl_algo_t *) d;
+      dl_pp->dl_algo.data = dl_pp->dl_algo.setup();
+      LOG_I(ENB_APP, "using default scheduler DL algo '%s'\n", dl_pp->dl_algo.name);
     }// j=0..num_inst
   } /*else {// MacRLC_ParamList.numelt > 0 // ignore it
 
@@ -276,7 +306,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
   int32_t           offsetMaxLimit                = 0;
   int32_t           cycleNb                       = 0;
    
-  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_CONFIGURATION_REQ);
+  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_ENB, 0, RRC_CONFIGURATION_REQ);
   ccparams_lte_t ccparams_lte;
   ccparams_sidelink_t SLconfig;
   ccparams_eMTC_t eMTCconfig;
@@ -1545,7 +1575,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               RRC_CONFIGURATION_REQ(msg_p).eMBMS_configured = 0;
               printf("No eMBMS configuration, skipping it\n");
               // eMTC configuration
-              char brparamspath[MAX_OPTNAME_SIZE*2 + 16];
+              char brparamspath[MAX_OPTNAME_SIZE*2 + 160];
               sprintf(brparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_EMTC_PARAMETERS);
               config_get(eMTCParams, sizeof(eMTCParams)/sizeof(paramdef_t), brparamspath);
               RRC_CONFIGURATION_REQ(msg_p).eMTC_configured = eMTCconfig.eMTC_configured&1;
@@ -1554,7 +1584,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               else                            printf("No eMTC configuration, skipping it\n");
 
               // Sidelink configuration
-              char SLparamspath[MAX_OPTNAME_SIZE*2 + 16];
+              char SLparamspath[MAX_OPTNAME_SIZE*2 + 160];
               sprintf(SLparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_SL_PARAMETERS);
               config_get( SLParams, sizeof(SLParams)/sizeof(paramdef_t), SLparamspath);
               // Sidelink Resource pool information
@@ -1564,6 +1594,8 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               else                                 printf("No SL configuration skipping it\n");
             } // !NODE_IS_DU(node_type)
           }
+
+          RRC_CONFIGURATION_REQ (msg_p).nr_scg_ssb_freq = ccparams_lte.nr_scg_ssb_freq;
 
           if (!NODE_IS_DU(rrc->node_type)) {
             char srb1path[MAX_OPTNAME_SIZE*2 + 8];
@@ -1976,7 +2008,7 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nrb                 = rrc->carrier[0].mib.message.dl_Bandwidth;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.num_frequency_bands = 1;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_band[0]          = rrc->carrier[0].sib1->freqBandIndicator;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active          = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.sul_active          = 0;
         } else {
           LOG_I(ENB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
           F1AP_SETUP_REQ (msg_p).fdd_flag = 1;
@@ -2038,11 +2070,13 @@ int RCconfig_gtpu(void ) {
 
   if (address) {
     MessageDef *message;
-    AssertFatal((message = itti_alloc_new_message(TASK_ENB_APP, GTPV1U_ENB_S1_REQ))!=NULL,"");
+    AssertFatal((message = itti_alloc_new_message(TASK_ENB_APP, 0, GTPV1U_ENB_S1_REQ))!=NULL,"");
     IPV4_STR_ADDR_TO_INT_NWBO ( address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
     LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
     GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = enb_port_for_S1U;
-    itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+    strcpy(GTPV1U_ENB_S1_REQ(message).addrStr,address);
+    sprintf(GTPV1U_ENB_S1_REQ(message).portStr,"%d", enb_port_for_S1U);
+    itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
   } else
     LOG_E(GTPU,"invalid address for S1U\n");
 
@@ -2413,6 +2447,65 @@ int RCconfig_S1(
                         "to\n"
                         "    tracking_area_code  =  1; // no string!!\n"
                         "    plmn_list = ( { mcc = 208; mnc = 93; mnc_length = 2; } )\n");
+            if(*ENBParamList.paramarray[k][ENB_S1SETUP_RSP_TIMER_IDX].uptr <= 0xffff)
+            {
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setuprsp_wait_timer = *ENBParamList.paramarray[k][ENB_S1SETUP_RSP_TIMER_IDX].uptr;
+            }
+            else
+            {
+              LOG_E(S1AP, 
+                    "s1setup_rsp_timer value in conf file is invalid (%d). Default value is set.\n",
+                    *ENBParamList.paramarray[k][ENB_S1SETUP_RSP_TIMER_IDX].uptr);
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setuprsp_wait_timer = 5;
+            }
+
+            if(*ENBParamList.paramarray[k][ENB_S1SETUP_REQ_TIMER_IDX].uptr <= 0xffff)
+            {
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setupreq_wait_timer = *ENBParamList.paramarray[k][ENB_S1SETUP_REQ_TIMER_IDX].uptr;
+            }
+            else
+            {
+              LOG_E(S1AP, 
+                    "s1setup_req_timer value in conf file is invalid (%d). Default value is set.\n",
+                    *ENBParamList.paramarray[k][ENB_S1SETUP_REQ_TIMER_IDX].uptr);
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setupreq_wait_timer = 5;
+            }
+
+            if(*ENBParamList.paramarray[k][ENB_S1SETUP_REQ_COUNT_IDX].uptr <= 0xffff)
+            {
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setupreq_count = *ENBParamList.paramarray[k][ENB_S1SETUP_REQ_COUNT_IDX].uptr;
+            }
+            else
+            {
+              LOG_E(S1AP, 
+                    "s1setup_req_count value in conf file is invalid (%d). Default value is set.\n",
+                    *ENBParamList.paramarray[k][ENB_S1SETUP_REQ_COUNT_IDX].uptr);
+              S1AP_REGISTER_ENB_REQ(msg_p).s1_setupreq_count = 0xffff;
+            }
+
+            if(*ENBParamList.paramarray[k][ENB_SCTP_REQ_TIMER_IDX].uptr <= 0xffff)
+            {
+              S1AP_REGISTER_ENB_REQ(msg_p).sctp_req_timer = *ENBParamList.paramarray[k][ENB_SCTP_REQ_TIMER_IDX].uptr;
+            }
+            else
+            {
+              LOG_E(S1AP, 
+                    "sctp_req_timer value in conf file is invalid (%d). Default value is set.\n",
+                    *ENBParamList.paramarray[k][ENB_SCTP_REQ_TIMER_IDX].uptr);
+              S1AP_REGISTER_ENB_REQ(msg_p).sctp_req_timer = 180;
+            }
+
+            if(*ENBParamList.paramarray[k][ENB_SCTP_REQ_COUNT_IDX].uptr <= 0xffff)
+            {
+              S1AP_REGISTER_ENB_REQ(msg_p).sctp_req_count = *ENBParamList.paramarray[k][ENB_SCTP_REQ_COUNT_IDX].uptr;
+            }
+            else
+            {
+              LOG_E(S1AP, 
+                    "sctp_req_count value in conf file is invalid (%d). Default value is set.\n",
+                    *ENBParamList.paramarray[k][ENB_SCTP_REQ_COUNT_IDX].uptr);
+              S1AP_REGISTER_ENB_REQ(msg_p).sctp_req_count = 0xffff;
+            }
             config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
 
             if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6) {
@@ -2497,6 +2590,9 @@ int RCconfig_S1(
               } else {
                 S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = 0;
               }
+
+              /* set S1-mme port (sctp) */
+              S1AP_REGISTER_ENB_REQ(msg_p).mme_port[l] = *S1ParamList.paramarray[l][ENB_MME_PORT_IDX].u16ptr;
 
               AssertFatal(S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] <= S1AP_REGISTER_ENB_REQ(msg_p).num_plmn,
                           "List of broadcast PLMN to be sent to MME can not be longer than actual "
@@ -2698,12 +2794,13 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
                         "value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
                         X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
             X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
-
+            LOG_I(X2AP,"X2ParamList.numelt %d\n",X2ParamList.numelt);
             for (l = 0; l < X2ParamList.numelt; l++) {
               X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 += 1;
               strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4_address,*(X2ParamList.paramarray[l][ENB_X2_IPV4_ADDRESS_IDX].strptr));
               strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6_address,*(X2ParamList.paramarray[l][ENB_X2_IPV6_ADDRESS_IDX].strptr));
 
+              LOG_I(X2AP,"registering with ip : %s\n",*(X2ParamList.paramarray[l][ENB_X2_IPV4_ADDRESS_IDX].strptr));
               if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
                 X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
                 X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 0;
@@ -2720,20 +2817,28 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
             {
               int t_reloc_prep = 0;
               int tx2_reloc_overall = 0;
+              int t_dc_prep = 0;
+              int t_dc_overall = 0;
               paramdef_t p[] = {
                 { "t_reloc_prep", "t_reloc_prep", 0, iptr:&t_reloc_prep, defintval:0, TYPE_INT, 0 },
-                { "tx2_reloc_overall", "tx2_reloc_overall", 0, iptr:&tx2_reloc_overall, defintval:0, TYPE_INT, 0 }
+                { "tx2_reloc_overall", "tx2_reloc_overall", 0, iptr:&tx2_reloc_overall, defintval:0, TYPE_INT, 0 },
+                { "t_dc_prep", "t_dc_prep", 0, iptr:&t_dc_prep, defintval:0, TYPE_INT, 0 },
+                { "t_dc_overall", "t_dc_overall", 0, iptr:&t_dc_overall, defintval:0, TYPE_INT, 0 }
               };
               config_get(p, sizeof(p)/sizeof(paramdef_t), aprefix);
 
               if (t_reloc_prep <= 0 || t_reloc_prep > 10000 ||
-                  tx2_reloc_overall <= 0 || tx2_reloc_overall > 20000) {
-                LOG_E(X2AP, "timers in configuration file have wrong values. We must have [0 < t_reloc_prep <= 10000] and [0 < tx2_reloc_overall <= 20000]\n");
+                  tx2_reloc_overall <= 0 || tx2_reloc_overall > 20000 ||
+                  t_dc_prep <= 0 || t_dc_prep > 10000 ||
+                  t_dc_overall <= 0 || t_dc_overall > 20000) {
+                LOG_E(X2AP, "timers in configuration file have wrong values. We must have [0 < t_reloc_prep <= 10000] and [0 < tx2_reloc_overall <= 20000] and [0 < t_dc_prep <= 10000] and [0 < t_dc_overall <= 20000]\n");
                 exit(1);
               }
 
               X2AP_REGISTER_ENB_REQ (msg_p).t_reloc_prep = t_reloc_prep;
               X2AP_REGISTER_ENB_REQ (msg_p).tx2_reloc_overall = tx2_reloc_overall;
+              X2AP_REGISTER_ENB_REQ (msg_p).t_dc_prep = t_dc_prep;
+              X2AP_REGISTER_ENB_REQ (msg_p).t_dc_overall = t_dc_overall;
             }
             // SCTP SETTING
             X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
@@ -2875,7 +2980,7 @@ void extract_and_decode_SI(int inst,int si_ind,uint8_t *si_container,int si_cont
   eNB_RRC_INST *rrc = RC.rrc[inst];
   rrc_eNB_carrier_data_t *carrier = &rrc->carrier[0];
   LTE_BCCH_DL_SCH_Message_t *bcch_message ;
-  AssertFatal(si_ind==0,"Can only handle a single SI block for now\n");
+  AssertFatal(si_ind==2,"Can only handle a single SI block for now\n");
   LOG_I(ENB_APP, "rrc inst %d: Trying to decode SI block %d @ %p, length %d\n",inst,si_ind,si_container,si_container_length);
   // point to first SI block
   bcch_message = &carrier->systemInformation;
@@ -3041,7 +3146,8 @@ void configure_du_mac(int inst) {
                          (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
                          (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
                          (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
+			 (LTE_MBSFNAreaConfiguration_r9_t*) NULL
                         );
 }
 
@@ -3055,21 +3161,25 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
       rrc_eNB_carrier_data_t *carrier =  &RC.rrc[i]->carrier[0];
       // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
       LOG_I(ENB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, resp->nr_cellid %lx\n",
-            j,i,RC.rrc[i]->nr_cellid,resp->nr_cellid[j]);
+            j,i,RC.rrc[i]->nr_cellid,resp->cells_to_activate[j].nr_cellid);
 
-      if (RC.rrc[i]->nr_cellid == resp->nr_cellid[j] &&
-          (check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
-           resp->nrpci[j] == carrier->physCellId)) {
+      if (RC.rrc[i]->nr_cellid == resp->cells_to_activate[j].nr_cellid &&
+          (check_plmn_identity(carrier, resp->cells_to_activate[j].mcc, resp->cells_to_activate[j].mnc, resp->cells_to_activate[j].mnc_digit_length)>0 &&
+           resp->cells_to_activate[j].nrpci == carrier->physCellId)) {
         // copy system information and decode it
-        for (si_ind=0; si_ind<resp->num_SI[j]; si_ind++)  {
-          //printf("SI %d size %d: ", si_ind, resp->SI_container_length[j][si_ind]);
-          //for (int n=0;n<resp->SI_container_length[j][si_ind];n++)
-          //  printf("%02x ",resp->SI_container[j][si_ind][n]);
+        for (si_ind=2; si_ind<resp->cells_to_activate[j].num_SI + 2; si_ind++)  {
+          //printf("SI %d size %d: ", si_ind, resp->cells_to_activate[j].SI_container_length[si_ind]);
+          //for (int n=0;n<resp->cells_to_activate[j].SI_container_length[si_ind];n++)
+          //  printf("%02x ",resp->cells_to_activate[j].SI_container[si_ind][n]);
           //printf("\n");
-          extract_and_decode_SI(i,
-                                si_ind,
-                                resp->SI_container[j][si_ind],
-                                resp->SI_container_length[j][si_ind]);
+          if (si_ind==6) si_ind=9;
+          if (resp->cells_to_activate[j].SI_container[si_ind] != NULL) {
+            extract_and_decode_SI(i,
+                                  si_ind,
+                                  resp->cells_to_activate[j].SI_container[si_ind],
+                                  resp->cells_to_activate[j].SI_container_length[si_ind]);
+          }
+
         }
 
         // perform MAC/L1 common configuration

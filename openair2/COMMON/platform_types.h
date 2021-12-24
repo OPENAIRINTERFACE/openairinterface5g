@@ -28,10 +28,13 @@
 
  ***************************************************************************/
 #ifndef __PLATFORM_TYPES_H__
-#    define __PLATFORM_TYPES_H__
+#define __PLATFORM_TYPES_H__
 
 #if !defined(NAS_NETLINK)
-  #include <stdint.h>
+#include <stdint.h>
+#else
+#include <linux/types.h>
+typedef void * intptr_t;
 #endif
 
 //-----------------------------------------------------------------------------
@@ -192,21 +195,13 @@ typedef uint8_t            mme_code_t;
 typedef uint32_t           m_tmsi_t;
 
 //Random UE identity length = 40 bits
-#if ! defined(NOT_A_RANDOM_UE_IDENTITY)
   #define NOT_A_RANDOM_UE_IDENTITY (uint64_t)0xFFFFFFFF
-#endif
-#if ! defined(NOT_A_RNTI)
   #define NOT_A_RNTI (rnti_t)0
-#endif
-#if ! defined(M_RNTI)
   #define M_RNTI     (rnti_t)0xFFFD
-#endif
-#if ! defined(P_RNTI)
   #define P_RNTI     (rnti_t)0xFFFE
-#endif
-#if ! defined(SI_RNTI)
   #define SI_RNTI    (rnti_t)0xFFFF
-#endif
+#define CBA_RNTI   (rnti_t)0xfff4
+#define OAI_C_RNTI (rnti_t)0x1234
 typedef enum config_action_e {
   CONFIG_ACTION_NULL              = 0,
   CONFIG_ACTION_ADD               = 1,
@@ -222,16 +217,14 @@ typedef enum config_action_e {
 //-----------------------------------------------------------------------------
 typedef uint32_t           teid_t; // tunnel endpoint identifier
 typedef uint8_t            ebi_t;  // eps bearer id
-
+typedef uint8_t            pdusessionid_t;
 
 
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
 // may be ITTI not enabled, but type instance is useful also for OTG,
-#if !defined(instance_t)
-  typedef uint16_t instance_t;
-#endif
+typedef intptr_t instance_t;
 typedef struct protocol_ctxt_s {
   module_id_t module_id;     /*!< \brief  Virtualized module identifier      */
   eNB_flag_t  enb_flag;      /*!< \brief  Flag to indicate eNB (1) or UE (0) */
@@ -292,10 +285,16 @@ typedef struct protocol_ctxt_s {
   (Ctxt_Pp)->subframe  = sUBfRAME; \
   PROTOCOL_CTXT_COMPUTE_MODULE_ID(Ctxt_Pp)
 
-#define PROTOCOL_CTXT_FMT "[FRAME %05u][%s][MOD %02u][RNTI %" PRIx16 "]"
+#define PROTOCOL_CTXT_FMT "[FRAME %05u][%s][MOD %02d][RNTI %" PRIx16 "]"
 #define PROTOCOL_CTXT_ARGS(CTXT_Pp) \
   (CTXT_Pp)->frame, \
   ((CTXT_Pp)->enb_flag == ENB_FLAG_YES) ? "eNB":" UE", \
+  (CTXT_Pp)->module_id, \
+  (CTXT_Pp)->rnti
+
+#define PROTOCOL_NR_CTXT_ARGS(CTXT_Pp) \
+  (CTXT_Pp)->frame, \
+  ((CTXT_Pp)->enb_flag == GNB_FLAG_YES) ? "gNB":" UE", \
   (CTXT_Pp)->module_id, \
   (CTXT_Pp)->rnti
 

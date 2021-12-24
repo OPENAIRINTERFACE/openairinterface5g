@@ -39,11 +39,16 @@
 #include "executables/thread-common.h"
 #include "common/utils/LOG/log.h"
 #include "softmodem-common.h"
+#include "nfapi/oai_integration/vendor_ext.h"
+
 
 static softmodem_params_t softmodem_params;
 char *parallel_config=NULL;
 char *worker_config=NULL;
+msc_interface_t msc_interface;
+int usrp_tx_thread = 0;
 
+uint8_t nfapi_mode=0;
 
 static mapping softmodem_funcs[] = MAPPING_SOFTMODEM_FUNCTIONS;
 static struct timespec start;
@@ -83,8 +88,8 @@ char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr) {
 void get_common_options(uint32_t execmask) {
   uint32_t online_log_messages=0;
   uint32_t glog_level=0 ;
-  uint32_t start_telnetsrv = 0;
-  uint32_t noS1 = 0, nokrnmod = 0, nonbiot = 0;
+  uint32_t start_telnetsrv = 0, start_telnetclt = 0;
+  uint32_t noS1 = 0, nokrnmod = 1, nonbiot = 0;
   uint32_t rfsim = 0, basicsim = 0, do_forms = 0;
   char *logmem_filename = NULL;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
@@ -92,20 +97,25 @@ void get_common_options(uint32_t execmask) {
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
   check_execmask(execmask);
   config_get( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
-  config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams,
-                            sizeof(cmdline_logparams)/sizeof(paramdef_t));
-  config_get( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
-
-  if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
+  
+  int numparams=sizeof(cmdline_logparams)/sizeof(paramdef_t);
+  config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams,numparams);
+  config_get( cmdline_logparams,numparams,NULL);
+  
+  if(config_isparamset(cmdline_logparams,config_paramidx_fromname(cmdline_logparams,numparams, CONFIG_FLOG_OPT))) {
     set_glog_onlinelog(online_log_messages);
   }
 
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
+  if(config_isparamset(cmdline_logparams,config_paramidx_fromname(cmdline_logparams,numparams, CONFIG_LOGL_OPT))) {
     set_glog(glog_level);
   }
 
   if (start_telnetsrv) {
     load_module_shlib("telnetsrv",NULL,0,NULL);
+  }
+  
+  if (start_telnetclt) {
+    set_softmodem_optmask(SOFTMODEM_TELNETCLT_BIT);
   }
 
   if (logmem_filename != NULL && strlen(logmem_filename) > 0) {
@@ -137,12 +147,13 @@ void get_common_options(uint32_t execmask) {
   }
 
   if (do_forms) {
-    set_softmodem_optmask(SOFTMODEM_DOFORMS_BIT);
+    set_softmodem_optmask(SOFTMODEM_DOSCOPE_BIT);
   }
 
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
 
   if(worker_config != NULL)   set_worker_conf(worker_config);
+  nfapi_setmode(nfapi_mode);
 }
 void softmodem_printresources(int sig, telnet_printfunc_t pf) {
   struct rusage usage;

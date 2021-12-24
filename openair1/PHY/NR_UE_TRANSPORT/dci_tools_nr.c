@@ -45,11 +45,6 @@
 
 //#define DEBUG_HARQ
 
-//#include "LAYER2/MAC/extern.h"
-//#include "LAYER2/MAC/defs.h"
-//#include "../openair2/LAYER2/MAC/extern.h"
-//#include "../openair2/LAYER2/MAC/defs.h"
-
 //#define DEBUG_DCI
 #define NR_PDCCH_DCI_TOOLS
 //#define NR_PDCCH_DCI_TOOLS_DEBUG
@@ -59,7 +54,7 @@
 
 
 
-uint8_t nr_subframe2harq_pid(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t nr_tti_rx) {
+uint8_t nr_subframe2harq_pid(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t slot) {
   /*
     #ifdef DEBUG_DCI
     if (frame_parms->frame_type == TDD)
@@ -69,11 +64,11 @@ uint8_t nr_subframe2harq_pid(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8
     #endif
   */
   uint8_t ret = 255;
-  uint8_t subframe = nr_tti_rx>>((int)(log2 (frame_parms->ttis_per_subframe)));
+  uint8_t subframe = slot / frame_parms->slots_per_subframe;
 
   AssertFatal(1==0,"Not ready for this ...\n");
   if (frame_parms->frame_type == FDD) {
-    ret = (((frame<<1)+nr_tti_rx)&7);
+    ret = (((frame<<1)+slot)&7);
   } else {
 
   }

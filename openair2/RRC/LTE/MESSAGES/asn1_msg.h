@@ -142,7 +142,11 @@ uint8_t do_SidelinkUEInformation(uint8_t Mod_id, uint8_t *buffer, LTE_SL_Destina
 /** \brief Generate an RRCConnectionSetupComplete UL-DCCH-Message (UE)
 @param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
 @returns Size of encoded bit stream in bytes*/
-uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Transaction_id, const int dedicatedInfoNASLength,
+uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id,
+                                      uint8_t *buffer,
+                                      const uint8_t Transaction_id,
+                                      uint8_t sel_plmn_id,
+                                      const int dedicatedInfoNASLength,
                                       const char *dedicatedInfoNAS);
 
 /** \brief Generate an RRCConnectionReconfigurationComplete UL-DCCH-Message (UE)
@@ -355,15 +359,17 @@ uint8_t
 do_UECapabilityEnquiry(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t               *const buffer,
-  const uint8_t                Transaction_id
-);
+  const uint8_t                Transaction_id,
+  int16_t              eutra_band,
+  uint32_t              nr_band);
 
 uint8_t
 do_NR_UECapabilityEnquiry(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t               *const buffer,
-  const uint8_t                Transaction_id
-);
+  const uint8_t                Transaction_id,
+  int16_t              eutra_band,
+  uint32_t             nr_band);
 
 uint8_t do_SecurityModeCommand(
   const protocol_ctxt_t *const ctxt_pP,

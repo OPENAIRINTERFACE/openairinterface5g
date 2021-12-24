@@ -33,6 +33,16 @@
 #include "PHY/defs_common.h" // for PRACH_RESOURCES_t and lte_subframe_t
 #include "openair2/COMMON/mac_messages_types.h"
 
+/** \fn void schedule_fembms_mib(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
+\brief MIB scheduling for PBCH. This function requests the MIB from RRC and provides it to L1.
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+
+*/
+
+void schedule_fembms_mib(module_id_t module_idP,
+		  frame_t frameP, sub_frame_t subframeP);
 
 /** \addtogroup _mac
  *  @{
@@ -186,8 +196,6 @@ void add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
 //main.c
 
 void init_UE_info(UE_info_t *UE_info);
-
-void init_slice_info(slice_info_t *sli);
 
 int mac_top_init(int eMBMS_active, char *uecap_xer,
                  uint8_t cba_group_active, uint8_t HO_active);
@@ -534,6 +542,10 @@ int ue_query_mch(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
                  sub_frame_t subframe, uint8_t eNB_index,
                  uint8_t *sync_area, uint8_t *mcch_active);
 
+int ue_query_mch_fembms(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
+		 sub_frame_t subframe, uint8_t eNB_index,
+		 uint8_t * sync_area, uint8_t * mcch_active);
+
 
 /* \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3 SDUs and generates header and forms the complete MAC SDU.
 @param Mod_id Instance id of UE in machine
@@ -661,6 +673,7 @@ int prev(UE_list_t *listP, int nodeP);
 void add_ue_list(UE_list_t *listP, int UE_id);
 int remove_ue_list(UE_list_t *listP, int UE_id);
 void dump_ue_list(UE_list_t *listP);
+void init_ue_list(UE_list_t *listP);
 int UE_num_active_CC(UE_info_t *listP, int ue_idP);
 int UE_PCCID(module_id_t mod_idP, int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
@@ -675,10 +688,10 @@ void set_ul_DAI(int module_idP,
 
 void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    int CC_id,
-                                   int frameP,
+                                   frame_t frameP,
                                    sub_frame_t subframeP,
-                                   int sched_frameP,
-                                   unsigned char sched_subframeP);
+                                   frame_t sched_frameP,
+                                   sub_frame_t sched_subframeP);
 
 int phy_stats_exist(module_id_t Mod_id, int rnti);
 
@@ -900,6 +913,7 @@ int generate_dlsch_header(unsigned char *mac_header,
 @param non_MBSFN_SubframeConfig pointer to FeMBMS Non MBSFN Subframe Config
 @param sib1_mbms_r14_fembms pointer SI Scheduling infomration for SI-MBMS
 @param mbsfn_AreaInfoList_fembms pointer to FeMBMS MBSFN Area Info list from SIB1-MBMS
+@param mbms_AreaConfiguration pointer to eMBMS MBSFN Area Configuration
 */
 
 int rrc_mac_config_req_eNB(module_id_t module_idP,
@@ -936,7 +950,8 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
                            LTE_SchedulingInfo_MBMS_r14_t *schedulingInfo_fembms,
                            struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig,
                            LTE_SystemInformationBlockType1_MBMS_r14_t   *sib1_mbms_r14_fembms,
-                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms
+                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms,
+			   LTE_MBSFNAreaConfiguration_r9_t * mbms_AreaConfiguration
                           );
 
 /** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.

@@ -33,6 +33,7 @@
 # include "memory.h"
 
 #include "nas_user.h"
+#include <common/utils/msc/msc.h>
 
 // FIXME make command line option for NAS_UE_AUTOSTART
 # define NAS_UE_AUTOSTART 1
@@ -136,7 +137,7 @@ void *nas_ue_task(void *args_p)
   for (instance = NB_eNB_INST; instance < (NB_eNB_INST + NB_UE_INST); instance++) {
     MessageDef *message_p;
 
-    message_p = itti_alloc_new_message(TASK_NAS_UE, DEACTIVATE_MESSAGE);
+    message_p = itti_alloc_new_message(TASK_NAS_UE, 0, DEACTIVATE_MESSAGE);
     itti_send_msg_to_task(TASK_L2L1, instance, message_p);
   }
 
@@ -145,7 +146,7 @@ void *nas_ue_task(void *args_p)
     itti_receive_msg (TASK_NAS_UE, &msg_p);
 
     if (msg_p != NULL) {
-      instance = ITTI_MSG_INSTANCE (msg_p);
+      instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
       Mod_id = instance - NB_eNB_INST;
       if (instance == INSTANCE_DEFAULT) {
         printf("%s:%d: FATAL: instance is INSTANCE_DEFAULT, should not happen.\n",

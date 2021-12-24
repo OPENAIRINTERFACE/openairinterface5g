@@ -36,8 +36,8 @@
 
 	<testCase id="000001">
 		<class>IdleSleep</class>
-		<desc>Waiting for 45 seconds</desc>
-		<idle_sleep_time_in_sec>45</idle_sleep_time_in_sec>
+		<desc>Waiting for 55 seconds</desc>
+		<idle_sleep_time_in_sec>55</idle_sleep_time_in_sec>
 	</testCase>
 
 	<testCase id="000002">

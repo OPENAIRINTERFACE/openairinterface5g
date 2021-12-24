@@ -573,10 +573,7 @@ schedule_ue_spec(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,
                                           VCD_FUNCTION_IN);
   start_meas(&eNB->schedule_dlsch_preprocessor);
-  dlsch_scheduler_pre_processor(module_idP,
-                                CC_id,
-                                frameP,
-                                subframeP);
+  eNB->pre_processor_dl.dl(module_idP, CC_id, frameP, subframeP);
   stop_meas(&eNB->schedule_dlsch_preprocessor);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,
                                           VCD_FUNCTION_OUT);
@@ -588,6 +585,7 @@ schedule_ue_spec(module_id_t module_idP,
     UE_sched_ctrl_t *ue_sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     UE_TEMPLATE *ue_template = &UE_info->UE_template[CC_id][UE_id];
     eNB_UE_STATS *eNB_UE_stats = &UE_info->eNB_UE_stats[CC_id][UE_id];
+    eNB_UE_stats->TBS = 0;
     const rnti_t rnti = ue_template->rnti;
 
     // If TDD
@@ -653,7 +651,7 @@ schedule_ue_spec(module_id_t module_idP,
     eNB_UE_stats->rrc_status = mac_eNB_get_rrc_status(module_idP, rnti);
     eNB_UE_stats->harq_pid = harq_pid;
     eNB_UE_stats->harq_round = round_DL;
-
+    eNB_UE_stats->dlsch_rounds[round_DL&7]++;
     if (eNB_UE_stats->rrc_status < RRC_RECONFIGURED) {
       ue_sched_ctrl->uplane_inactivity_timer = 0;
     }
@@ -679,15 +677,15 @@ schedule_ue_spec(module_id_t module_idP,
       const uint32_t rbc = allocate_prbs_sub(
           nb_rb, N_RB_DL, N_RBG, ue_sched_ctrl->rballoc_sub_UE[CC_id]);
 
-      if (nb_rb > ue_sched_ctrl->pre_nb_available_rbs[CC_id]) {
-        LOG_D(MAC,
-              "[eNB %d] Frame %d CC_id %d : don't schedule UE %d, its retransmission takes more resources than we have\n",
+      if (nb_rb > ue_sched_ctrl->pre_nb_available_rbs[CC_id])
+        LOG_W(MAC,
+              "[eNB %d] %d.%d CC_id %d : should not schedule UE %d, its "
+              "retransmission takes more resources than we have\n",
               module_idP,
               frameP,
+              subframeP,
               CC_id,
               UE_id);
-        continue;
-      }
 
       /* CDRX */
       ue_sched_ctrl->harq_rtt_timer[CC_id][harq_pid] = 1; // restart HARQ RTT timer
@@ -794,11 +792,11 @@ schedule_ue_spec(module_id_t module_idP,
           // No TX request for retransmission (check if null request for FAPI)
       }
 
-      //eNB_UE_stats->dlsch_trials[round]++;
       eNB_UE_stats->num_retransmission += 1;
       eNB_UE_stats->rbs_used_retx = nb_rb;
       eNB_UE_stats->total_rbs_used_retx += nb_rb;
       eNB_UE_stats->dlsch_mcs2 = eNB_UE_stats->dlsch_mcs1;
+      eNB_UE_stats->TBS = TBS;
     } else {
       // Now check RLC information to compute number of required RBs
       // get maximum TBS size for RLC request
@@ -822,6 +820,7 @@ schedule_ue_spec(module_id_t module_idP,
 
         /* reset ta_update */
         ue_sched_ctrl->ta_update = 31;
+        ue_sched_ctrl->ta_update_f = 31.0;
       }
 
       int ta_len = (ta_update != 31) ? 2 : 0;
@@ -842,13 +841,18 @@ schedule_ue_spec(module_id_t module_idP,
         if (ue_sched_ctrl->dl_lc_bytes[i] == 0) // no data in this LC!
           continue;
 
-        LOG_D(MAC, "[eNB %d] SFN/SF %d.%d, LC%d->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+        const uint32_t data =
+            min(ue_sched_ctrl->dl_lc_bytes[i],
+                TBS - ta_len - header_length_total - sdu_length_total - 3);
+        LOG_D(MAC,
+              "[eNB %d] SFN/SF %d.%d, LC%d->DLSCH CC_id %d, Requesting %d "
+              "bytes from RLC (RRC message)\n",
               module_idP,
               frameP,
               subframeP,
               lcid,
               CC_id,
-              TBS - ta_len - header_length_total - sdu_length_total - 3);
+              data);
 
         sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
                                                  rnti,
@@ -857,7 +861,7 @@ schedule_ue_spec(module_id_t module_idP,
                                                  ENB_FLAG_YES,
                                                  MBMS_FLAG_NO,
                                                  lcid,
-                                                 TBS - ta_len - header_length_total - sdu_length_total - 3,
+                                                 data,
                                                  (char *)&dlsch_buffer[sdu_length_total],
                                                  0,
                                                  0
@@ -1046,7 +1050,7 @@ schedule_ue_spec(module_id_t module_idP,
         // this is the snr
         // unit is not dBm, it's special from nfapi
         // converting to dBm
-        int snr = (5 * ue_sched_ctrl->pucch1_snr[CC_id] - 640) / 10;
+        int snr = ue_sched_ctrl->pucch1_snr[CC_id];
         int target_snr = eNB->puCch10xSnr / 10;
         // this assumes accumulated tpc
         // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -1060,20 +1064,23 @@ schedule_ue_spec(module_id_t module_idP,
             ue_template->pucch_tpc_tx_frame = frameP;
             ue_template->pucch_tpc_tx_subframe = subframeP;
 
-            if (snr > target_snr + 4) {
+            if (snr > target_snr + PUCCH_PCHYST) {
               tpc = 0;  //-1
-            } else if (snr < target_snr - 4) {
+	      ue_sched_ctrl->pucch_tpc_accumulated[CC_id]--;
+            } else if (snr < target_snr - PUCCH_PCHYST) {
               tpc = 2;  //+1
+              ue_sched_ctrl->pucch_tpc_accumulated[CC_id]--;
             } else {
               tpc = 1;  //0
             }
 
-            LOG_D(MAC, "[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, snr/target snr %d/%d (normal case)\n",
+            LOG_D(MAC, "[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d (accumulated %d), snr/target snr %d/%d (normal case)\n",
                   module_idP,
                   frameP,
                   subframeP,
                   harq_pid,
                   tpc,
+		  ue_sched_ctrl->pucch_tpc_accumulated[CC_id],
                   snr,
                   target_snr);
           } // Po_PUCCH has been updated
@@ -1362,6 +1369,7 @@ schedule_ue_spec_br(module_id_t module_idP,
 
           /* Reset ta_update */
           ue_sched_ctl->ta_update = 31;
+          ue_sched_ctl->ta_update_f = 31.0;
         } else {
           ta_update = 31;
         }
@@ -1680,7 +1688,7 @@ schedule_ue_spec_br(module_id_t module_idP,
           /* Do PUCCH power control */
           /* This is the snr */
           /* unit is not dBm, it's special from nfapi, convert to dBm */
-          snr = (5 * ue_sched_ctl->pucch1_snr[CC_id] - 640) / 10;
+          snr = ue_sched_ctl->pucch1_snr[CC_id];
           target_snr = mac->puCch10xSnr / 10;
           /* This assumes accumulated tpc */
           /* Make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out */
@@ -1694,9 +1702,9 @@ schedule_ue_spec_br(module_id_t module_idP,
               UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_frame = frameP;
               UE_info->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe = subframeP;
 
-              if (snr > target_snr + 4) {
+              if (snr > target_snr + PUCCH_PCHYST) {
                 tpc = 0; //-1
-              } else if (snr < target_snr - 4) {
+              } else if (snr < target_snr - PUCCH_PCHYST) {
                 tpc = 2; //+1
               } else {
                 tpc = 1; //0

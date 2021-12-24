@@ -1,0 +1,105 @@
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+#---------------------------------------------------------------------
+#
+# Dockerfile for the Open-Air-Interface BUILD service
+#   Valid for RHEL8
+#
+#---------------------------------------------------------------------
+
+FROM ran-base:latest AS ru-base
+
+FROM ran-build:latest AS ru-build
+
+RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml && \
+    cp /oai-ran/docker/scripts/lte_ru_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
+
+#start from scratch for target executable
+FROM registry.access.redhat.com/ubi8/ubi:latest as oai-lte-ru
+ENV TZ=Europe/Paris
+
+RUN yum update -y && \
+    yum install -y --enablerepo="ubi-8-codeready-builder" \
+        tzdata \
+        procps-ng \
+        atlas \
+        python3 \
+        python3-pip \
+        net-tools \
+        iputils \
+        iproute && \
+    pip3 install six && \
+    pip3 install requests && \
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
+    echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
+
+WORKDIR /opt/oai-lte-ru/bin
+COPY --from=ru-build \
+    /oai-ran/targets/bin/oairu.Rel15 \
+    /oai-ran/docker/scripts/entrypoint.sh \
+    .
+
+COPY --from=ru-build \
+    /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
+    /oai-ran/cmake_targets/ran_build/build/libtcp_bridge_oai.so \
+    /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
+    /oai-ran/cmake_targets/ran_build/build/liboai_usrpdevif.so \
+    /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
+    /oai-ran/cmake_targets/ran_build/build/libdfts.so \
+    /usr/local/lib/
+
+COPY --from=ru-base \
+    /lib64/libconfig.so.9 \
+    /lib64/libblas.so.3 \
+    /lib64/liblapack.so.3 \
+    /lib64/liblapacke.so.3 \
+    /lib64/libboost_chrono.so.1.66.0 \
+    /lib64/libboost_date_time.so.1.66.0 \
+    /lib64/libboost_filesystem.so.1.66.0 \
+    /lib64/libboost_program_options.so.1.66.0 \
+    /lib64/libboost_serialization.so.1.66.0 \
+    /lib64/libboost_thread.so.1.66.0 \
+    /lib64/libboost_system.so.1.66.0 \
+    /lib64/libboost_unit_test_framework.so.1.66.0 \
+    /lib64/libboost_atomic.so.1.66.0 \
+    /lib64/libboost_timer.so.1.66.0 \
+    /lib64/libboost_regex.so.1.66.0 \
+    /lib64/
+
+# Copying from the ran-build image the USRP needed packages
+COPY --from=ru-base /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=ru-base /usr/local/lib64/libuhd.so.3.15.0 /usr/local/lib64
+COPY --from=ru-base /usr/local/lib64/uhd/utils/uhd_images_downloader.py /opt/oai-lte-ru/bin
+
+WORKDIR /usr/local/share/uhd/rfnoc
+COPY --from=ru-base /usr/local/share/uhd/rfnoc/ .
+
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
+    ldconfig
+
+# Copy the relevant configuration files for RRU
+WORKDIR /opt/oai-lte-ru/etc
+COPY --from=ru-build /oai-ran/docker/etc/rru* ./
+
+WORKDIR /opt/oai-lte-ru
+
+ENTRYPOINT ["/opt/oai-lte-ru/bin/entrypoint.sh"]
+CMD ["/opt/oai-lte-ru/bin/oairu.Rel15", "-O", "/opt/oai-lte-ru/etc/rru.conf"]

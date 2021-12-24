@@ -49,33 +49,62 @@
 
 int16_t get_kRE_ref(uint8_t dmrs_antenna_port, uint8_t pusch_dmrs_type, uint8_t resourceElementOffset);
 
-uint8_t get_K_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint16_t N_RB);
-
 void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
                        uint8_t duration_in_symbols,
                        uint8_t start_symbol,
-                       uint8_t dmrs_type,
                        uint8_t L_ptrs,
-                       uint8_t pusch_maxLength,
-                       uint16_t ofdm_symbol_size);
+                       uint16_t ul_dmrs_symb_pos);
 
-uint8_t get_L_ptrs(ptrs_UplinkConfig_t *ptrs_UplinkConfig, uint8_t I_mcs);
+uint8_t is_ptrs_subcarrier(uint16_t k,
+                           uint16_t n_rnti,
+                           uint8_t dmrs_antenna_port,
+                           uint8_t pusch_dmrs_type,
+                           uint8_t K_ptrs,
+                           uint16_t N_RB,
+                           uint8_t k_RE_ref,
+                           uint16_t start_sc,
+                           uint16_t ofdm_symbol_size);
 
-uint8_t is_ptrs_subcarrier(uint16_t k, uint8_t K_ptrs, uint16_t n_rnti, uint16_t N_RB, int16_t k_RE_ref, uint16_t start_sc, uint16_t ofdm_symbol_size);
+/*******************************************************************
+*
+* NAME :         is_ptrs_symbol
+*
+* PARAMETERS : l                      ofdm symbol index within slot
+*              ptrs_symbols           bit mask of ptrs
+*
+* RETURN :       1 if symbol is ptrs, or 0 otherwise
+*
+* DESCRIPTION :  3GPP TS 38.211 6.4.1.2 Phase-tracking reference signal for PUSCH
+*
+*********************************************************************/
 
-uint8_t is_ptrs_symbol(uint8_t l,
-                       uint16_t k,
-                       uint16_t n_rnti,
-                       uint16_t N_RB,
-                       uint8_t duration_in_symbols,
-                       uint8_t dmrs_antenna_port,
-                       uint8_t K_ptrs,
-                       uint16_t ptrs_symbols,
-                       uint16_t start_sc,
-                       uint16_t ofdm_symbol_size,
-                       pusch_dmrs_type_t pusch_dmrs_type,
-                       uint8_t resourceElementOffset);
+static inline uint8_t is_ptrs_symbol(uint8_t l, uint16_t ptrs_symbols) { return ((ptrs_symbols >> l) & 1); }
 
+uint8_t get_ptrs_symbols_in_slot(uint16_t l_prime_mask, uint16_t start_symb, uint16_t nb_symb);
+int8_t get_next_ptrs_symbol_in_slot(uint16_t  ptrsSymbPos, uint8_t counter, uint8_t nb_symb);
+int8_t get_next_estimate_in_slot(uint16_t  ptrsSymbPos,uint16_t  dmrsSymbPos, uint8_t counter,uint8_t nb_symb);
 
+int8_t nr_ptrs_process_slot(uint16_t dmrsSymbPos,
+                            uint16_t ptrsSymbPos,
+                            int16_t *estPerSymb,
+                            uint16_t startSymbIdx,
+                            uint16_t noSymb
+                            );
+/*  general function to estimate common phase error based upon PTRS */
+void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
+                            uint8_t ptrsReOffset,
+                            uint8_t dmrsConfigType,
+                            uint16_t nb_rb,
+                            uint16_t rnti,
+                            int16_t *ptrs_ch_p,
+                            unsigned char Ns,
+                            unsigned char symbol,
+                            uint16_t ofdm_symbol_size,
+                            int16_t *rxF_comp,
+                            uint32_t *gold_seq,
+                            int16_t *error_est,
+                            int32_t *ptrs_sc);
 
+void get_slope_from_estimates(uint8_t start, uint8_t end, int16_t *est_p, double *slope_p);
+void ptrs_estimate_from_slope(int16_t *error_est, double *slope_p, uint8_t start, uint8_t end);
 #endif /* PTRS_NR_H */

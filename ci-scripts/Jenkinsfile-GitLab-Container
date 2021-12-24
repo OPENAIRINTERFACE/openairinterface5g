@@ -1,0 +1,377 @@
+#!/bin/groovy
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+// Location of the executor node
+def nodeExecutor = params.nodeExecutor
+
+// Tags to shorten pipeline duration
+def doMandatoryTests = false
+def doFullTestsuite = false
+
+//
+def gitCommitAuthorEmailAddr
+
+pipeline {
+  agent {
+    label nodeExecutor
+  }
+  options {
+    disableConcurrentBuilds()
+    timestamps()
+    gitLabConnection('OAI GitLab')
+    ansiColor('xterm')
+  }
+
+  stages {
+    stage ("Verify Parameters") {
+      steps {
+        script {
+          JOB_TIMESTAMP = sh returnStdout: true, script: 'date --utc --rfc-3339=seconds | sed -e "s#+00:00##"'
+          JOB_TIMESTAMP = JOB_TIMESTAMP.trim()
+
+          echo '\u2705 \u001B[32mVerify Parameters\u001B[0m'
+          def allParametersPresent = true
+
+          echo '\u2705 \u001B[32mVerify Labels\u001B[0m'
+          if ("MERGE".equals(env.gitlabActionType)) {
+            LABEL_CHECK = sh returnStdout: true, script: 'ci-scripts/checkGitLabMergeRequestLabels.sh --mr-id ' + env.gitlabMergeRequestIid
+            LABEL_CHECK = LABEL_CHECK.trim()
+            if (LABEL_CHECK == 'NONE') {
+              def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Your merge request has none of the mandatory labels:\n\n"
+              message += " - BUILD-ONLY\n"
+              message += " - 4G-LTE\n"
+              message += " - 5G-NR\n"
+              message += " - CI\n\n"
+              message += "Not performing CI due to lack of labels"
+              addGitLabMRComment comment: message
+              error('Not performing CI due to lack of labels')
+            } else if (LABEL_CHECK == 'FULL') {
+              doMandatoryTests = true
+              doFullTestsuite = true
+            } else if (LABEL_CHECK == 'SHORTEN-5G') {
+              doMandatoryTests = true
+            } else {
+              def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): We will perform only build stages on your Merge Request"
+              addGitLabMRComment comment: message
+            }
+          } else {
+            doMandatoryTests = true
+            doFullTestsuite = true
+          }
+        }
+      }
+    }
+    stage ("Verify Guidelines") {
+      steps {
+        echo "Git URL     is ${GIT_URL}"
+        echo "GitLab Act    is ${env.gitlabActionType}"
+        script {
+          if ("MERGE".equals(env.gitlabActionType)) {
+            // since a bit, in push events, gitlabUserEmail is not populated
+            gitCommitAuthorEmailAddr = env.gitlabUserEmail
+            echo "GitLab Usermail is ${gitCommitAuthorEmailAddr}"
+            // GitLab-Jenkins plugin integration is lacking to perform the merge by itself
+            // Doing it manually --> it may have merge conflicts
+            sh "./ci-scripts/doGitLabMerge.sh --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+          } else {
+            echo "Git Branch    is ${GIT_BRANCH}"
+            echo "Git Commit    is ${GIT_COMMIT}"
+            // since a bit, in push events, gitlabUserEmail is not populated
+            gitCommitAuthorEmailAddr = sh returnStdout: true, script: 'git log -n1 --pretty=format:%ae ${GIT_COMMIT}'
+            gitCommitAuthorEmailAddr = gitCommitAuthorEmailAddr.trim()
+            echo "GitLab Usermail is ${gitCommitAuthorEmailAddr}"
+            sh "git log -n1 --pretty=format:\"%s\" > .git/CI_COMMIT_MSG"
+          }
+        }
+      }
+      post {
+        failure {
+          script {
+            def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Merge Conflicts -- Cannot perform CI"
+            addGitLabMRComment comment: message
+            currentBuild.result = 'FAILURE'
+          }
+        }
+      }
+    }
+    // Build Stages are Mandatory
+    // Later we will add a Ubuntu20 build
+    stage ("Image Building Processes") {
+      parallel {
+        stage ("Ubuntu18 Build") {
+          steps {
+            script {
+              triggerSlaveJob ('RAN-Ubuntu18-Image-Builder', 'Ubuntu18-Images-Build')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-Ubuntu18-Image-Builder')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("RHEL8 Build") {
+          steps {
+            script {
+              triggerSlaveJob ('RAN-RHEL8-Image-Builder', 'RHEL8-Images-Build')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-RHEL8-Image-Builder')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("CppCheck Analysis") {
+          steps {
+            script {
+              triggerSlaveJob ('RAN-cppcheck', 'CppCheck Analysis')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-cppcheck')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+      }
+    }
+    stage ("Image Test Processes") {
+      parallel {
+        stage ("Physical Simulators") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-PhySim-Cluster', 'Test-Physim-Cluster')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-PhySim-Cluster')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("RF Simulators") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-RF-Sim-Test', 'Test-RF-Sim-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-RF-Sim-Test')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("NSA B200 Sanity Check") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-NSA-B200-Module-LTEBOX-Container', 'Test-NSA-B200')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-NSA-B200-Module-LTEBOX-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+      }
+    }
+    stage ("Images Push to Registries") {
+      when { expression {"PUSH".equals(env.gitlabActionType)} }
+      steps {
+        script {
+          triggerSlaveJob ('RAN-DockerHub-Push', 'Push-to-Docker-Hub')
+        }
+      }
+      post {
+        failure {
+          script {
+            echo "Push to Docker-Hub KO"
+            currentBuild.result = 'FAILURE'
+          }
+        }
+      }
+    }
+  }
+  post {
+    always {
+      script {
+        def eSubject = JOB_NAME + ' - Build # ' + BUILD_ID + ' - ' + currentBuild.result + '!'
+        def eBody = "Hi,\n\n"
+        eBody += "Here are attached HTML report files for " + JOB_NAME + "  - Build # " + BUILD_ID + " - " + currentBuild.result + "!\n\n"
+        eBody += "Regards,\n"
+        eBody += "OAI CI Team"
+        emailext attachmentsPattern: '*results*.html',
+           body: eBody,
+           replyTo: 'no-reply@openairinterface.org',
+           subject: eSubject,
+           to: gitCommitAuthorEmailAddr
+
+        if (fileExists('.git/CI_COMMIT_MSG')) {
+          sh "rm -f .git/CI_COMMIT_MSG"
+        }
+      }
+    }
+    success {
+      script {
+        def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ")"
+        if ("MERGE".equals(env.gitlabActionType)) {
+          echo "This is a MERGE event"
+          addGitLabMRComment comment: message
+        }
+        echo "Pipeline is SUCCESSFUL"
+      }
+    }
+    failure {
+      script {
+        def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ")"
+        if ("MERGE".equals(env.gitlabActionType)) {
+          echo "This is a MERGE event"
+          addGitLabMRComment comment: message
+        }
+        echo "Pipeline FAILED"
+      }
+    }
+  }
+}
+
+// ----  Slave Job functions
+
+def triggerSlaveJob (jobName, gitlabStatusName) {
+  if ("MERGE".equals(env.gitlabActionType)) {
+    MR_NUMBER = env.gitlabMergeRequestIid
+  } else {
+    MR_NUMBER = 'develop'
+  }
+  // Workaround for the "cancelled" GitLab pipeline notification
+  // The slave job is triggered with the propagate false so the following commands are executed
+  // Its status is now PASS/SUCCESS from a stage pipeline point of view
+  // localStatus variable MUST be analyzed to properly assess the status
+  localStatus = build job: jobName,
+    parameters: [
+      string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+      string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+      string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+      string(name: 'eNB_MR', value: String.valueOf(MR_NUMBER)),
+      booleanParam(name: 'eNB_mergeRequest', value: "MERGE".equals(env.gitlabActionType)),
+      string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
+    ], propagate: false
+  localResult = localStatus.getResult()
+  echo "${jobName} Slave Job status is ${localResult}"
+  gitlabCommitStatus(name: gitlabStatusName) {
+    if (localStatus.resultIsBetterOrEqualTo('SUCCESS')) {
+       echo "${jobName} Slave Job is OK"
+    } else {
+       echo "${jobName} Slave Job is KO"
+       sh "ci-scripts/fail.sh"
+    }
+  }
+}
+
+def triggerSlaveJobNoGitLab (jobName) {
+  if ("MERGE".equals(env.gitlabActionType)) {
+    MR_NUMBER = env.gitlabMergeRequestIid
+  } else {
+    MR_NUMBER = 'develop'
+  }
+  // Workaround for the "cancelled" GitLab pipeline notification
+  // The slave job is triggered with the propagate false so the following commands are executed
+  // Its status is now PASS/SUCCESS from a stage pipeline point of view
+  // localStatus variable MUST be analyzed to properly assess the status
+  localStatus = build job: jobName,
+    parameters: [
+      string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+      string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+      string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+      string(name: 'eNB_MR', value: String.valueOf(MR_NUMBER)),
+      booleanParam(name: 'eNB_mergeRequest', value: "MERGE".equals(env.gitlabActionType)),
+      string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
+    ], propagate: false
+  localResult = localStatus.getResult()
+  echo "${jobName} Slave Job status is ${localResult}"
+  if (localStatus.resultIsBetterOrEqualTo('SUCCESS')) {
+     echo "${jobName} Slave Job is OK"
+  } else {
+     echo "${jobName} Slave Job is KO"
+     sh "ci-scripts/fail.sh"
+  }
+}
+
+def finalizeSlaveJob(jobName) {
+  // In case of any non-success, we are retrieving the HTML report of the last completed
+  // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
+  fileName = "test_results-${jobName}.html"
+  if (!fileExists(fileName)) {
+    copyArtifacts(projectName: jobName,
+      filter: 'test_results*.html',
+      selector: lastCompleted())
+    if (fileExists(fileName)) {
+      sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' ${fileName}"
+      archiveArtifacts artifacts: fileName
+    }
+  }
+}

@@ -36,9 +36,9 @@
 #include "dci.h"
 #include "mdci.h"
 #include "uci_common.h"
-#ifndef STANDALONE_COMPILE
-  #include "UTIL/LISTS/list.h"
-#endif
+//#ifndef STANDALONE_COMPILE
+//  #include "UTIL/LISTS/list.h"
+//#endif
 
 
 // structures below implement 36-211 and 36-212

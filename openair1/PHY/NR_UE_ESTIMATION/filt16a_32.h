@@ -133,4 +133,53 @@ extern short filt8_rr1[8];
 
 extern short filt8_rr2[8];
 
+extern short filt8_rm2[8];
+
+extern short filt8_rl2[8];
+
+extern short filt8_l2[8];
+
+extern short filt8_r2[8];
+
+extern short filt8_m2[8];
+
+extern short filt8_mm2[8];
+
+extern short filt8_l3[8];
+
+extern short filt8_r3[8];
+
+extern short filt8_rr3[8];
+
+extern short filt8_rl3[8];
+
+extern short filt8_dcrl1[8];
+
+extern short filt8_dcrh1[8];
+
+extern short filt8_dcll1[8];
+
+extern short filt8_dclh1[8];
+
+extern short filt8_dcrl2[8];
+
+extern short filt8_dcrh2[8];
+
+extern short filt8_dcll2[8];
+
+extern short filt8_dclh2[8];
+
+extern short filt8_avlip0[8];
+
+extern short filt8_avlip1[8];
+
+extern short filt8_avlip2[8];
+
+extern short filt8_avlip3[8];
+
+extern short filt8_avlip4[8];
+
+extern short filt8_avlip5[8];
+
+extern short filt8_avlip6[8];
 #endif

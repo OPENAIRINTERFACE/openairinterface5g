@@ -24,22 +24,6 @@
 #include "transport_eNB.h"
 #include "transport_proto.h"
 #include "transport_common_proto.h"
-// Mask for identifying subframe for MBMS
-#define MBSFN_TDD_SF3 0x80// for TDD
-#define MBSFN_TDD_SF4 0x40
-#define MBSFN_TDD_SF7 0x20
-#define MBSFN_TDD_SF8 0x10
-#define MBSFN_TDD_SF9 0x08
-
-
-
-#define MBSFN_FDD_SF1 0x80// for FDD
-#define MBSFN_FDD_SF2 0x40
-#define MBSFN_FDD_SF3 0x20
-#define MBSFN_FDD_SF6 0x10
-#define MBSFN_FDD_SF7 0x08
-#define MBSFN_FDD_SF8 0x04
-
 
 
 
@@ -126,5 +110,55 @@ void generate_mch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,uint8_t *a)
 		 &eNB->frame_parms,
 		 eNB->dlsch_MCH);
 
+}
+
+void generate_mch_khz_1dot25(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,uint8_t *a)
+{
+
+  int G;
+  int subframe = proc->subframe_tx;
+  int frame    = proc->frame_tx;
+  //int bits;
+
+  G = get_G_khz_1dot25(&eNB->frame_parms,
+            eNB->frame_parms.N_RB_DL,
+            eNB->dlsch_MCH->harq_processes[0]->rb_alloc,
+            get_Qm(eNB->dlsch_MCH->harq_processes[0]->mcs),1,
+            2,proc->frame_tx,subframe,0);
+
+  //FeMBMS
+  eNB->dlsch_MCH->harq_processes[0]->Qm = get_Qm(eNB->dlsch_MCH->harq_processes[0]->mcs);
+
+
+  generate_mbsfn_pilot_khz_1dot25(eNB,proc,
+                       eNB->common_vars.txdataF,
+                       AMP);
+
+
+  AssertFatal(dlsch_encoding_fembms_pmch(eNB,
+			    proc,
+                            // a,
+			     eNB->dlsch_MCH->harq_processes[0]->pdu,
+                             1,
+                             eNB->dlsch_MCH,
+                             proc->frame_tx,
+                             subframe,
+                             &eNB->dlsch_rate_matching_stats,
+                             &eNB->dlsch_turbo_encoding_stats,
+                             &eNB->dlsch_interleaving_stats)==0,
+              "problem in dlsch_encoding");
+
+
+  /*for(bits=0;bits<G;bits++)
+        printf("%d",eNB->dlsch_MCH->harq_processes[0]->e[bits]);
+  printf("\n");*/
+
+  dlsch_scrambling(&eNB->frame_parms,1,eNB->dlsch_MCH,0,G,0,frame,subframe<<1);
+
+  mch_modulation_khz_1dot25(eNB->common_vars.txdataF,
+                 AMP,
+                 subframe,
+                 &eNB->frame_parms,
+                 eNB->dlsch_MCH);
 }
 

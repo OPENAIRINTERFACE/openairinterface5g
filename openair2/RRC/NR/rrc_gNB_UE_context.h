@@ -27,8 +27,9 @@
  * \company Eurecom
  * \email: lionel.gauthier@eurecom.fr
  */
-#ifndef __RRC_ENB_UE_CONTEXT_H__
-#define __RRC_ENB_UE_CONTEXT_H__
+#ifndef __RRC_GNB_UE_CONTEXT_H__
+#define __RRC_GNB_UE_CONTEXT_H__
+
 #include "collection/tree.h"
 #include "COMMON/platform_types.h"
 #include "nr_rrc_defs.h"
@@ -72,10 +73,34 @@ rrc_gNB_get_ue_context(
   rnti_t rntiP
 );
 
+void rrc_gNB_free_mem_UE_context(
+  const protocol_ctxt_t               *const ctxt_pP,
+  struct rrc_gNB_ue_context_s         *const ue_context_pP
+);
+
 void rrc_gNB_remove_ue_context(
   const protocol_ctxt_t* const ctxt_pP,
   gNB_RRC_INST*                rrc_instance_pP,
   struct rrc_gNB_ue_context_s* ue_context_pP
+);
+
+struct rrc_gNB_ue_context_s *
+rrc_gNB_ue_context_random_exist(
+  gNB_RRC_INST                *rrc_instance_pP,
+  const uint64_t               ue_identityP
+);
+
+struct rrc_gNB_ue_context_s *
+rrc_gNB_ue_context_5g_s_tmsi_exist(
+    gNB_RRC_INST                *rrc_instance_pP,
+    const uint64_t              s_TMSI
+);
+
+struct rrc_gNB_ue_context_s *
+rrc_gNB_get_next_free_ue_context(
+  const protocol_ctxt_t       *const ctxt_pP,
+  gNB_RRC_INST                *rrc_instance_pP,
+  const uint64_t               ue_identityP
 );
 
 #endif

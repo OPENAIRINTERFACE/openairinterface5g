@@ -11,23 +11,18 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
 #include "PHY/CODING/coding_defs.h"
 #include "SIMULATION/TOOLS/sim.h"
-#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
-//#include "PHY/NR_TRANSPORT/nr_transport.h"
 //#include "common/utils/LOG/log.h"
-
+#include "coding_unitary_defs.h"
 //#define DEBUG_DCI_POLAR_PARAMS
 //#define DEBUG_POLAR_TIMING
 //#define DEBUG_POLARTEST
 
-RAN_CONTEXT_t RC;
-PHY_VARS_UE ***PHY_vars_UE_g;
-uint16_t NB_UE_INST = 1;
 
 int main(int argc, char *argv[])
 {
   //Default simulation values (Aim for iterations = 1000000.)
   int decoder_int16=0;
-  int itr, iterations = 1000, arguments, polarMessageType = 0; //0=PBCH, 1=DCI, -1=UCI
+  int itr, iterations = 1000, arguments, polarMessageType = 0; //0=PBCH, 1=DCI, 2=UCI
   double SNRstart = -20.0, SNRstop = 0.0, SNRinc= 0.5; //dB
   double SNR, SNR_lin;
   int16_t nBitError = 0; // -1 = Decoding failed (All list entries have failed the CRC checks).
@@ -42,6 +37,7 @@ int main(int argc, char *argv[])
     switch (arguments) {
     case 's':
     	SNRstart = atof(optarg);
+	SNRstop = SNRstart + 2;
     	break;
 
     case 'd':
@@ -91,7 +87,7 @@ int main(int argc, char *argv[])
 
     case 'k':
     	testLength=atoi(optarg);
-    	if (testLength < 12 || testLength > 60) {
+    	if (testLength < 12 || testLength > 127) {
     		printf("Illegal packet bitlength %d \n",testLength);
     		exit(-1);
     	}
@@ -113,19 +109,19 @@ int main(int argc, char *argv[])
   //Initiate timing. (Results depend on CPU Frequency. Therefore, might change due to performance variances during simulation.)
     time_stats_t timeEncoder,timeDecoder;
     opp_enabled=1;
-    cpu_freq_GHz = get_cpu_freq_GHz();
     reset_meas(&timeEncoder);
     reset_meas(&timeDecoder);
     randominit(0);
     crcTableInit();
 
   if (polarMessageType == 0) { //PBCH
-	  aggregation_level = NR_POLAR_PBCH_AGGREGATION_LEVEL;
+    aggregation_level = NR_POLAR_PBCH_AGGREGATION_LEVEL;
   } else if (polarMessageType == 1) { //DCI
-	  coderLength = 108*aggregation_level;
-  } else if (polarMessageType == -1) { //UCI
-	  printf("UCI testing not supported yet\n");
-	  exit(-1);
+    coderLength = 108*aggregation_level;
+  } else if (polarMessageType == 2) { //UCI
+    //pucch2 parameters, 1 symbol, aggregation_level = NPRB
+    AssertFatal(aggregation_level>2,"For UCI formats, aggregation (N_RB) should be > 2\n");
+    coderLength = 16*aggregation_level; 
   }
 
   //Logging
@@ -323,9 +319,9 @@ if (logFlag){
 #endif
 
       //Iteration times are in microseconds.
-      timeEncoderCumulative+=(timeEncoder.diff/(cpu_freq_GHz*1000.0));
-      timeDecoderCumulative+=(timeDecoder.diff/(cpu_freq_GHz*1000.0));
-      if (logFlag) fprintf(logFile,",%f,%d,%u,%f,%f\n", SNR, nBitError, blockErrorState, (timeEncoder.diff/(cpu_freq_GHz*1000.0)), (timeDecoder.diff/(cpu_freq_GHz*1000.0)));
+      timeEncoderCumulative+=(timeEncoder.diff/(get_cpu_freq_GHz()*1000.0));
+      timeDecoderCumulative+=(timeDecoder.diff/(get_cpu_freq_GHz()*1000.0));
+      if (logFlag) fprintf(logFile,",%f,%d,%u,%f,%f\n", SNR, nBitError, blockErrorState, (timeEncoder.diff/(get_cpu_freq_GHz()*1000.0)), (timeDecoder.diff/(get_cpu_freq_GHz()*1000.0)));
 
       if (nBitError<0) {
         blockErrorCumulative++;
@@ -347,7 +343,7 @@ if (logFlag){
     printf("[ListSize=%d] SNR=%+8.3f, BLER=%9.6f, BER=%12.9f, t_Encoder=%9.3fus, t_Decoder=%9.3fus\n",
            decoderListSize, SNR, ((double)blockErrorCumulative/iterations),
            ((double)bitErrorCumulative / (iterations*testLength)),
-           (double)timeEncoder.diff/timeEncoder.trials/(cpu_freq_GHz*1000.0),(double)timeDecoder.diff/timeDecoder.trials/(cpu_freq_GHz*1000.0));
+           (double)timeEncoder.diff/timeEncoder.trials/(get_cpu_freq_GHz()*1000.0),(double)timeDecoder.diff/timeDecoder.trials/(get_cpu_freq_GHz()*1000.0));
     //(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);
 
     if (blockErrorCumulative==0 && bitErrorCumulative==0) break;

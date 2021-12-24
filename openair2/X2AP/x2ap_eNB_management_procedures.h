@@ -26,8 +26,8 @@
  * \version 1.0
  */
 
-#ifndef X2AP_ENB_MANAGEMENT_PROCEDURES_H_
-#define X2AP_ENB_MANAGEMENT_PROCEDURES_H
+#ifndef __X2AP_ENB_MANAGEMENT_PROCEDURES__H__
+#define __X2AP_ENB_MANAGEMENT_PROCEDURES__H__
 
 void x2ap_eNB_prepare_internal_data(void);
 
@@ -51,4 +51,4 @@ struct x2ap_eNB_data_s *x2ap_get_eNB(x2ap_eNB_instance_t *instance_p,
                                      int32_t assoc_id,
                                      uint16_t cnx_id);
 
-#endif /* X2AP_ENB_MANAGEMENT_PROCEDURES_H_ */
+#endif /* __X2AP_ENB_MANAGEMENT_PROCEDURES__H__ */

@@ -39,8 +39,8 @@ Description Command line parser of the user simulator process
 
 *****************************************************************************/
 
-#ifndef __USER_PARSER_H__
-#define __USER_PARSER__H__
+#ifndef __NAS_TEST_USER_USER_PARSER__H__
+#define __NAS_TEST_USER_USER_PARSER__H__
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -74,4 +74,4 @@ const char* user_parser_get_port(void);
 const char* user_parser_get_devpath(void);
 const char* user_parser_get_devattr(void);
 
-#endif /* __USER_PARSER_H__*/
+#endif /* __NAS_TEST_USER_USER_PARSER__H__ */

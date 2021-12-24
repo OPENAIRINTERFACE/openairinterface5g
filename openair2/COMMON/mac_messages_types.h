@@ -30,6 +30,7 @@
 #define MAC_MESSAGES_TYPES_H_
 
 #include <LTE_DRX-Config.h>
+#include "OCTET_STRING.h"
 
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
@@ -38,6 +39,7 @@
 
 #define RRC_MAC_BCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_data_req
 #define RRC_MAC_BCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_data_ind
+#define NR_RRC_MAC_BCCH_DATA_IND(mSGpTR)        (mSGpTR)->ittiMsg.nr_rrc_mac_bcch_data_ind
 
 #define RRC_MAC_BCCH_MBMS_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_mbms_data_req
 #define RRC_MAC_BCCH_MBMS_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_mbms_data_ind
@@ -45,6 +47,7 @@
 #define RRC_MAC_CCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_ccch_data_req
 #define RRC_MAC_CCCH_DATA_CNF(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_ccch_data_cnf
 #define RRC_MAC_CCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_ccch_data_ind
+#define NR_RRC_MAC_CCCH_DATA_IND(mSGpTR)        (mSGpTR)->ittiMsg.nr_rrc_mac_ccch_data_ind
 
 #define RRC_MAC_MCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_mcch_data_req
 #define RRC_MAC_MCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_mcch_data_ind
@@ -86,6 +89,15 @@ typedef struct RrcMacBcchDataInd_s {
   uint8_t   rsrp;
 } RrcMacBcchDataInd;
 
+typedef struct NRRrcMacBcchDataInd_s {
+  uint32_t  frame;
+  uint8_t   sub_frame;
+  uint32_t  sdu_size;
+  uint8_t   sdu[BCCH_SDU_SIZE];
+  uint8_t   gnb_index;
+  uint8_t   rsrq;
+  uint8_t   rsrp;
+} NRRrcMacBcchDataInd;
 
 typedef struct RrcMacBcchMbmsDataReq_s {
   uint32_t  frame;
@@ -125,6 +137,17 @@ typedef struct RrcMacCcchDataInd_s {
   uint8_t   enb_index;
   int       CC_id;
 } RrcMacCcchDataInd;
+
+typedef struct NRRrcMacCcchDataInd_s {
+  uint32_t  frame;
+  uint8_t   sub_frame;
+  uint16_t  rnti;
+  uint32_t  sdu_size;
+  uint8_t   sdu[CCCH_SDU_SIZE];
+  OCTET_STRING_t *du_to_cu_rrc_container;
+  uint8_t   gnb_index;
+  int       CC_id;
+} NRRrcMacCcchDataInd;
 
 typedef struct RrcMacMcchDataReq_s {
   uint32_t  frame;

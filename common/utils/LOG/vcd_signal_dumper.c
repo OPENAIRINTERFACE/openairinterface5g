@@ -248,7 +248,8 @@ const char* eurecomVariablesNames[] = {
   "slot_number_TX1_gNB",
   "slot_number_RX0_gNB",
   "slot_number_RX1_gNB",
-  "ru_tx_ofdm_mask"
+  "ru_tx_ofdm_mask",
+  "usrp_send_return"
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -282,6 +283,8 @@ const char* eurecomFunctionsNames[] = {
   "lock_mutex_ru",
   "lock_mutex_ru1",
   "lock_mutex_ru2",
+  /* uhd signals */
+  "trx_write_thread",
   /* simulation signals */
   "do_DL_sig",
   "do_UL_sig",
@@ -299,6 +302,9 @@ const char* eurecomFunctionsNames[] = {
   /* PHY signals  */
   "ue_synch",
   "ue_slot_fep",
+  "ue_slot_fep_pdcch",
+  "ue_slot_fep_pbch",
+  "ue_slot_fep_pdsch",
   "ue_slot_fep_mbsfn",
   "ue_slot_fep_mbsfn_khz_1dot25",
   "ue_rrc_measurements",
@@ -387,6 +393,8 @@ const char* eurecomFunctionsNames[] = {
   "rx_pmch",
   "rx_pmch_khz_1dot25",
   "pdsch_procedures",
+  "pdsch_procedures_crnti",
+  //"dlsch_procedures_crnti",
   "pdsch_procedures_si",
   "pdsch_procedures_p",
   "pdsch_procedures_ra",
@@ -515,7 +523,29 @@ const char* eurecomFunctionsNames[] = {
   "wakeup_txfh",
   "gNB_thread_rxtx0",
   "gNB_thread_rxtx1",
-  "ru_thread_tx_wait"
+  "ru_thread_tx_wait",
+  "gNB_ulsch_decoding",
+  "gNB_pdsch_codeword_scrambling",
+  "gNB_dlsch_encoding",
+  "gNB_pdsch_modulation",
+  "gNB_pdcch_tx",
+  "phy_procedures_gNB_tx",
+  "phy_procedures_gNB_common_tx",
+  "phy_procedures_gNB_uespec_rx",
+  "nr_rx_pusch",
+  "nr_ulsch_procedures_rx",
+  "macxface_gNB_dlsch_ulsch_scheduler",
+
+  /*NR ue-softmodem signal*/
+  "nr_ue_ulsch_encoding",
+  "nr_segmentation",
+  "ldpc_encoder_optim",
+  "nr_rate_matching_ldpc",
+  "nr_interleaving_ldpc",
+  "pss_synchro_nr",
+  "pss_search_time_nr",
+  "nr_initial_ue_sync",
+  "beam_switching_gpio"
 };
 
 struct vcd_module_s vcd_modules[] = {
@@ -789,6 +819,7 @@ static inline unsigned long long int vcd_get_time(void)
   return (long long unsigned int)((time.tv_nsec - g_time_start.tv_nsec)) +
          ((long long unsigned int)time.tv_sec - (long long unsigned int)g_time_start.tv_sec) * 1000000000UL;
 #endif
+  return 0;
 }
 
 void vcd_signal_dumper_create_header(void)

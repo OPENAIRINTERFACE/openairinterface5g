@@ -20,11 +20,11 @@
  */
 
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
-// This is 512/(1:256) in __m128i format
-int16_t inv_ch[256*8] = {512,512,512,512,512,512,512,512,
+// This is 4096/(1:4096) in __m128i format
+__m128i inv_ch[4096];/* = {512,512,512,512,512,512,512,512,
                          256,256,256,256,256,256,256,256,
                          170,170,170,170,170,170,170,170,
                          128,128,128,128,128,128,128,128,
@@ -280,7 +280,11 @@ int16_t inv_ch[256*8] = {512,512,512,512,512,512,512,512,
                          2,2,2,2,2,2,2,2,
                          2,2,2,2,2,2,2,2,
                          2,2,2,2,2,2,2,2,
-                        };
+                        };*/
+
+void init_fde() {
+  for (int i=1;i<4096;i++) inv_ch[i] = _mm_set1_epi16(4096/i);
+}
 
 void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
                        int32_t **rxdataF_comp,
@@ -313,12 +317,12 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
 
     amp=(*((int16_t*)&ul_ch_mag128[re]));
 
-    if (amp>255)
-      amp=255;
+    if (amp>4095)
+      amp=4095;
 
-    //     printf("freq_eq: symbol %d re %d => %d,%d,%d, (%d) (%d,%d) => ",symbol,re,*((int16_t*)(&ul_ch_mag128[re])),amp,inv_ch[8*amp],*((int16_t*)(&ul_ch_mag128[re]))*inv_ch[8*amp],*(int16_t*)&(rxdataF_comp128[re]),*(1+(int16_t*)&(rxdataF_comp128[re])));
+    //printf("freq_eq: symbol %d re %d => mag %d,amp %d,inv %d, prod %d (%d,%d)\n",symbol,re,*((int16_t*)(&ul_ch_mag128[re])),amp,_mm_extract_epi16(inv_ch[amp],0),(*((int16_t*)(&ul_ch_mag128[re]))*_mm_extract_epi16(inv_ch[amp],0))>>3,*(int16_t*)&(rxdataF_comp128[re]),*(1+(int16_t*)&(rxdataF_comp128[re])));
 #if defined(__x86_64__) || defined(__i386__)
-    rxdataF_comp128[re] = _mm_mullo_epi16(rxdataF_comp128[re],*((__m128i *)&inv_ch[8*amp]));
+    rxdataF_comp128[re] = _mm_srai_epi16(_mm_mullo_epi16(rxdataF_comp128[re],inv_ch[amp]),3);
 
     if (Qm==4)
       ul_ch_mag128[re]  = _mm_set1_epi16(324);  // this is 512*2/sqrt(10)
@@ -327,7 +331,7 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
       ul_ch_magb128[re] = _mm_set1_epi16(158);  // this is 512*2/sqrt(42)
     }
 #elif defined(__arm__)
-    rxdataF_comp128[re] = vmulq_s16(rxdataF_comp128[re],*((int16x8_t *)&inv_ch[8*amp]));
+    rxdataF_comp128[re] = vmulq_s16(rxdataF_comp128[re],inv_ch[amp]);
 
     if (Qm==4)
       ul_ch_mag128[re]  = vdupq_n_s16(324);  // this is 512*2/sqrt(10)

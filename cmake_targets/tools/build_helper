@@ -40,7 +40,15 @@ esac
 KERNEL_VERSION=$(uname -r | cut -d '.' -f1)
 KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
 
-SUDO='sudo -E'
+#check if we run inside a container
+IS_CONTAINER=`egrep -c "docker|podman|kubepods|libpod|buildah" /proc/self/cgroup || true`
+#sudo is not needed when we are root
+if [ "$UID" = 0 ]
+then
+  SUDO=''
+else
+  SUDO='sudo -S -E'
+fi
 
 ###############################
 ## echo and  family
@@ -104,6 +112,14 @@ check_supported_distribution() {
         "rhel7")       return 0 ;;
         "rhel7.6")     return 0 ;;
         "rhel7.7")     return 0 ;;
+        "rhel7.8")     return 0 ;;
+        "rhel7.9")     return 0 ;;
+        "rhel8.2")     return 0 ;;
+        "rhel8.3")     return 0 ;;
+        "rhel8.4")     return 0 ;;
+        "rhel8.5")     return 0 ;;
+        "rhel8.6")     return 0 ;;
+        "rhel8.7")     return 0 ;;
         "centos7")     return 0 ;;
     esac
     return 1
@@ -150,7 +166,9 @@ clean_all_files() {
  set_openair_env
  dir=$OPENAIR_DIR/cmake_targets
  rm -rf $dir/log $OPENAIR_DIR/targets/bin/*
- rm -rf $dir/ran_build $dir/lte-simulators/build
+ rm -rf $dir/ran_build $dir/ran_build_noLOG
+ rm -rf $dir/lte-simulators/build 
+ rm -rf $dir/phy_simulators/build $dir/nas_sim_tools/build 
  rm -rf $dir/oaisim_build_oai/build $dir/oaisim_build_oai/CMakeLists.txt
  rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build
 }
@@ -167,36 +185,64 @@ check_warnings() {
   #we look for 'warning:' in the compilation log file
   #this is how gcc starts a warning
   #this is not perfect, we may get false positive
-  warning_count=`grep "warning:" "$1"|wc -l`
+  warning_count=`grep "warning:" "$1" | egrep -v "jobserver unavailable|disabling jobserver mode" | wc -l`
   if [ $warning_count -gt 0 ]; then
     echo_error "WARNING: $warning_count warnings. See $1"
   fi
 }
 
+#check_errors:
+#    print error message if the compilation had errors
+#argument:
+#    $1: log file
+check_errors() {
+  #we look for 'warning:' in the compilation log file
+  error_count=`grep "error:" "$1" | wc -l`
+  if [ $error_count -gt 0 ]; then
+    echo_error "ERROR: $error_count error. See $1"
+  fi
+}
+
 compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
+  echo_info "Log file for compilation is being written to: $dlog/$2.$REL.txt"
   set +e
   {
-    rm -f $3
     if [ "$BUILD_COVERITY_SCAN" == "1" ]; then
         COV_SCAN_PREFIX="cov-build --dir cov-int"
     else
         COV_SCAN_PREFIX=""
     fi
+    if [ "$MAKE_CMD" != "" ]; then
+       $MAKE_CMD $2
+    else 
     if [ "$VERBOSE_COMPILE" == "1" ]; then
        $COV_SCAN_PREFIX make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
     else
        $COV_SCAN_PREFIX make -j`nproc` $2
     fi
-
+    fi
+    ret=$?
   } > $dlog/$2.$REL.txt 2>&1
   set -e
-  echo_info "Log file for compilation has been written to: $dlog/$2.$REL.txt"
+  if [ "$VERBOSE_CI" == "1" ]; then
+     echo_info "====== Start of log for $2.$REL.txt ======"
+     cat $dlog/$2.$REL.txt
+     echo_info "====== End of log for $2.$REL.txt ======"
+  fi
+  if [[ $ret -ne 0 ]]; then
+     check_warnings "$dlog/$2.$REL.txt"
+     check_errors "$dlog/$2.$REL.txt"
+     echo_error "$2 compilation failed"
+     exit 1
+  fi
   if [ -s $3 ] ; then
      cp $3 $4
      echo_success "$2 compiled"
      check_warnings "$dlog/$2.$REL.txt"
   else
+     check_warnings "$dlog/$2.$REL.txt"
+     check_errors "$dlog/$2.$REL.txt"
      echo_error "$2 compilation failed"
      exit 1
   fi
@@ -213,18 +259,33 @@ install_protobuf_from_source(){
     cd /tmp
     echo "Downloading protobuf"
     #rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
-    #wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+    #wget https://github.com/protocolbuffers/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
     #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
     #cd protobuf-2.6.1/
-    rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-    wget --tries=3 --retry-connrefused https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
-    tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
-    cd protobuf-3.3.0/
+
+    if [ $IS_CONTAINER -eq 0 ]
+    then
+      rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
+      wget --tries=3 --retry-connrefused https://github.com/protocolbuffers/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+      tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $(id -u) --group $(id -g) --no-same-owner
+      cd protobuf-3.3.0/
+    else
+      export LD_LIBRARY_PATH=/usr/local/lib #protoc needs to know where toclook for shared libs
+      rm -rf /tmp/protobuf
+      git clone --depth=1 --branch=v3.3.0 https://github.com/protocolbuffers/protobuf.git /tmp/protobuf
+      cd /tmp/protobuf
+      git submodule update --init --recursive
+      ./autogen.sh
+    fi
     ./configure
     echo "Compiling protobuf"
     make -j`nproc`
     $SUDO make install
     $SUDO ldconfig
+    if [[ -v CI_ENV ]]; then
+        cd /tmp
+        $SUDO rm -rf protobuf*
+    fi
     ) >& $protobuf_install_log
 }
 
@@ -247,6 +308,10 @@ install_protobuf_c_from_source(){
     make -j`nproc`
     $SUDO make install
     $SUDO ldconfig
+    if [[ -v CI_ENV ]]; then
+        cd /tmp
+        $SUDO rm -rf protobuf*
+    fi
     ) >& $protobuf_c_install_log
 }
 
@@ -254,30 +319,59 @@ install_usrp_uhd_driver_from_source(){
     uhd_install_log=$OPENAIR_DIR/cmake_targets/log/uhd_install_log.txt
     echo_info "\nInstalling UHD driver from sources. The log file for UHD driver installation is here: $uhd_install_log "
     (
-    cd /tmp
-    echo "Downloading UHD driver"
+    pushd /tmp
+    echo "Cloning UHD driver repository"
     rm -rf /tmp/uhd
     git clone https://github.com/EttusResearch/uhd.git
     cd uhd
-    git checkout tags/v3.13.0.2
+    if [[ -v UHD_VERSION ]]; then
+        git checkout tags/v${UHD_VERSION}
+    else
+        git checkout tags/v4.0.0.0
+    fi
     mkdir -p host/build
-    cd host/build
-    $CMAKE ../
+    cd host/build || true
+    $CMAKE ../ -GNinja
     echo "Compiling UHD"
-    make -j`nproc`
-    make test
-    $SUDO make install
-    $SUDO ldconfig
+    ninja
+    $SUDO ninja install
+    $SUDO ldconfig -v
+    if [ $IS_CONTAINER -eq 0 ]; then
+        if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+            $SUDO /usr/local/lib/uhd/utils/uhd_images_downloader.py
+        fi
+        if [[ "$OS_DISTRO" == "rhel" ]]; then
+            $SUDO /usr/local/lib64/uhd/utils/uhd_images_downloader.py
+        fi
+    fi
+    popd
+    rm -rf /tmp/uhd
     ) >& $uhd_install_log
 }
 
 check_install_usrp_uhd_driver(){
     if [[ "$OS_DISTRO" == "ubuntu" ]]; then
         #first we remove old installation
-        $SUDO apt-get remove -y uhd || true
-        $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y || true
+        $SUDO apt-get remove uhd -y || true
+        $SUDO apt-get remove uhd-host -y || true
+        $SUDO apt-get remove libuhd-dev -y || true
+        $SUDO apt-get remove libuhd003 -y || true
+        $SUDO apt-get remove libuhd3.13.1 -y || true
+        $SUDO apt-get remove libuhd3.14.0 -y || true
+        $SUDO apt-get remove libuhd3.14.1 -y || true
+        $SUDO apt-get remove libuhd3.15.0 -y || true
+        local distribution=$(get_distribution_release)
+        if [[ "$distribution" == "ubuntu18.04" ]]; then
+            $SUDO apt-get remove libuhd4.0.0 -y || true
+            $SUDO apt-get remove libuhd4.1.0 -y || true
+        fi
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
+        if [[ -v BUILD_UHD_FROM_SOURCE ]]; then
+            $SUDO apt-get install -y libboost-all-dev libusb-1.0-0-dev doxygen python3-docutils python3-mako python3-numpy python3-requests python3-setuptools ninja-build
+            install_usrp_uhd_driver_from_source
+            return
+        fi
         # The new USRP repository
         # Raphael Defosseux: Adding a loop on adding PPA because in CI the gpg key retrieve may
         # timeout due to proxy / network latencies in Eurecom on VM
@@ -297,13 +391,27 @@ check_install_usrp_uhd_driver(){
         done
         $SUDO apt-get update
         $SUDO apt-get -y install  python python-tk libboost-all-dev libusb-1.0-0-dev
-        $SUDO apt-get -y install libuhd-dev libuhd003 uhd-host
+        if [[ "$distribution" == "ubuntu16.04" ]]; then
+            $SUDO apt-get -y install libuhd-dev libuhd3.15.0 uhd-host
+        fi
+        if [[ "$distribution" == "ubuntu18.04" ]]; then
+            $SUDO apt-get -y install libuhd-dev libuhd4.1.0 uhd-host
+        fi
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
-        $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
-        $SUDO -H pip install requests
+        if [ $IS_CONTAINER -eq 0 ]
+        then
+            $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils $CMAKE
+            $SUDO -H pip install requests
+        else
+            $SUDO $INSTALLER -y install boost boost-devel $CMAKE
+            $SUDO pip3 install mako requests
+        fi
         if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
-            # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
-            $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
+            if [ $IS_CONTAINER -eq 0 ]
+            then
+                # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
+                $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
+            fi
             install_usrp_uhd_driver_from_source
         else
             $SUDO $INSTALLER -y install uhd uhd-devel uhd-firmware
@@ -421,7 +529,7 @@ install_soapy_from_source(){
     #git checkout tags/release_003_010_001_001
     mkdir -p build
     cd build
-    cmake ../
+    $CMAKE ../
     echo "Compiling SoapyRemote"
     make -j`nproc`
     $SUDO make install
@@ -440,7 +548,7 @@ install_soapy_iris_from_source(){
     cd sklk-soapyiris
     mkdir -p build
     cd build
-    cmake ../
+    $CMAKE ../
     echo "Compiling SoapyIris"
     make -j`nproc`
     $SUDO make install
@@ -617,8 +725,10 @@ check_install_oai_software() {
 	automake  \
 	bison  \
 	build-essential \
-	cmake \
+	$CMAKE \
 	cmake-curses-gui  \
+	curl \
+        ninja-build \
 	doxygen \
 	doxygen-gui \
 	texlive-latex-base \
@@ -724,6 +834,8 @@ check_install_oai_software() {
       libxml2 \
       libxml2-devel \
       libxslt-devel \
+      ninja-build \
+      make \
       openssh-clients \
       openssh-server \
       openssl \
@@ -769,6 +881,9 @@ install_asn1c_from_source(){
     $SUDO make install
     cd -
     $SUDO ldconfig
+    if [[ -v CI_ENV ]]; then
+        $SUDO rm -rf /tmp/asn1c
+    fi
     ) > $asn1_install_log 2>&1
 }
 

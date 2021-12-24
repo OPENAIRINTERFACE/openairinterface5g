@@ -34,10 +34,6 @@
 #ifndef __PDCP_H__
 #    define __PDCP_H__
 //-----------------------------------------------------------------------------
-#ifndef NON_ACCESS_STRATUM
-  #include "UTIL/MEM/mem_block.h"
-  #include "UTIL/LISTS/list.h"
-#endif //NON_ACCESS_STRATUM
 //-----------------------------------------------------------------------------
 #include "RRC/LTE/rrc_defs.h"
 #include "COMMON/platform_constants.h"
@@ -57,9 +53,6 @@ typedef rlc_op_status_t  (*send_rlc_data_req_func_t)(const protocol_ctxt_t *cons
 typedef boolean_t (*pdcp_data_ind_func_t)( const protocol_ctxt_t *, const srb_flag_t,
     const MBMS_flag_t, const rb_id_t, const sdu_size_t,
     mem_block_t *,const uint32_t *const, const uint32_t *const);
-/* maximum number of tun interfaces that will be created to emulates UEs */
-/* UEs beyond that will be multiplexed on the same tun   */
-#define MAX_NUMBER_NETIF           16
 
 #define ENB_NAS_USE_TUN_W_MBMS_BIT      (1<< 10)
 #define PDCP_USE_NETLINK_BIT            (1<< 11)
@@ -74,9 +67,7 @@ typedef struct {
 } pdcp_params_t;
 
 
-#ifndef PDCP_USE_NETLINK
-  #define PDCP_USE_NETLINK          ( get_pdcp_optmask() & PDCP_USE_NETLINK_BIT)
-#endif
+#define PDCP_USE_NETLINK          ( get_pdcp_optmask() & PDCP_USE_NETLINK_BIT)
 #define LINK_ENB_PDCP_TO_IP_DRIVER  ( get_pdcp_optmask() & LINK_ENB_PDCP_TO_IP_DRIVER_BIT)
 #define LINK_ENB_PDCP_TO_GTPV1U     ( get_pdcp_optmask() & LINK_ENB_PDCP_TO_GTPV1U_BIT)
 #define UE_NAS_USE_TUN              ( get_pdcp_optmask() & UE_NAS_USE_TUN_BIT)
@@ -98,34 +89,34 @@ extern int             pdcp_instance_cnt;
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
 
-uint32_t Pdcp_stats_tx_window_ms[MAX_eNB][MAX_MOBILES_PER_ENB];
-uint32_t Pdcp_stats_tx_bytes[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_tx_bytes_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_tx_bytes_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_tx[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_tx_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_tx_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_tx_sn[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_tx_throughput_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_tx_aiat[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_tx_aiat_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_tx_aiat_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_tx_iat[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx_window_ms[MAX_eNB][MAX_MOBILES_PER_ENB];
+extern uint32_t Pdcp_stats_tx_bytes[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx_bytes_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx_bytes_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx_sn[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx_throughput_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx_aiat[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx_aiat_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx_aiat_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_tx_iat[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
 
-uint32_t Pdcp_stats_rx_window_ms[MAX_eNB][MAX_MOBILES_PER_ENB];
-uint32_t Pdcp_stats_rx[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_bytes[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_bytes_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_bytes_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_sn[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_goodput_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_aiat[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_aiat_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_aiat_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_iat[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
-uint32_t Pdcp_stats_rx_outoforder[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_window_ms[MAX_eNB][MAX_MOBILES_PER_ENB];
+extern uint32_t Pdcp_stats_rx[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_bytes[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_bytes_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_bytes_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_sn[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_goodput_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_aiat[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_aiat_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_aiat_tmp_w[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_iat[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
+extern uint32_t Pdcp_stats_rx_outoforder[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX];
 
 void pdcp_update_perioidical_stats(const protocol_ctxt_t *const  ctxt_pP);
 
@@ -145,7 +136,7 @@ typedef struct pdcp_enb_s {
 
 } pdcp_enb_t;
 
-pdcp_enb_t pdcp_enb[MAX_NUM_CCs];
+extern pdcp_enb_t pdcp_enb[MAX_NUM_CCs];
 
 typedef struct pdcp_stats_s {
   time_stats_t pdcp_run;
@@ -249,17 +240,18 @@ typedef struct pdcp_mbms_s {
 * \note None
 * @ingroup _pdcp
 */
+
 boolean_t pdcp_data_req(
   protocol_ctxt_t  *ctxt_pP,
   const srb_flag_t srb_flagP,
   const rb_id_t rb_id,
   const mui_t muiP,
-  const confirm_t confirmP, \
+  const confirm_t confirmP,
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer,
   const pdcp_transmission_mode_t mode,
-  const uint32_t *const sourceL2Id,
-  const uint32_t *const destinationL2Id
+  const uint32_t * sourceL2Id,
+  const uint32_t * destinationL2Id
 );
 
 /*! \fn boolean_t pdcp_data_ind(const protocol_ctxt_t* const, srb_flag_t, MBMS_flag_t, rb_id_t, sdu_size_t, mem_block_t*, boolean_t)
@@ -462,10 +454,10 @@ struct pdcp_netlink_element_s {
 //TTN for D2D (PC5S)
 #define PDCP_SOCKET_PORT_NO 9999 //temporary value
 #define PC5_SIGNALLING_PAYLOAD_SIZE   100  //should be updated with a correct value
-int pdcp_pc5_sockfd;
-struct sockaddr_in prose_ctrl_addr;
-struct sockaddr_in prose_pdcp_addr;
-struct sockaddr_in pdcp_sin;
+extern int pdcp_pc5_sockfd;
+extern struct sockaddr_in prose_ctrl_addr;
+extern struct sockaddr_in prose_pdcp_addr;
+extern struct sockaddr_in pdcp_sin;
 void pdcp_pc5_socket_init(void);
 
 typedef struct  {
@@ -507,28 +499,17 @@ typedef struct {
 #define REORDERING_WINDOW_SN_7BIT 64
 #define REORDERING_WINDOW_SN_12BIT 2048
 
-signed int             pdcp_2_nas_irq;
-pdcp_stats_t              UE_pdcp_stats[MAX_MOBILES_PER_ENB];
-pdcp_stats_t              eNB_pdcp_stats[NUMBER_OF_eNB_MAX];
+extern pdcp_stats_t              UE_pdcp_stats[MAX_MOBILES_PER_ENB];
+extern pdcp_stats_t              eNB_pdcp_stats[NUMBER_OF_eNB_MAX];
 
 
 // for UE code conly
-rnti_t                 pdcp_UE_UE_module_id_to_rnti[MAX_MOBILES_PER_ENB];
-rnti_t                 pdcp_eNB_UE_instance_to_rnti[MAX_MOBILES_PER_ENB]; // for noS1 mode
-unsigned int           pdcp_eNB_UE_instance_to_rnti_index;
+extern rnti_t                 pdcp_UE_UE_module_id_to_rnti[MAX_MOBILES_PER_ENB];
+extern rnti_t                 pdcp_eNB_UE_instance_to_rnti[MAX_MOBILES_PER_ENB]; // for noS1 mode
+extern unsigned int           pdcp_eNB_UE_instance_to_rnti_index;
 
-pdcp_mbms_t               pdcp_mbms_array_ue[MAX_MOBILES_PER_ENB][LTE_maxServiceCount][LTE_maxSessionPerPMCH];   // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
-pdcp_mbms_t               pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][LTE_maxServiceCount][LTE_maxSessionPerPMCH]; // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
 
-sdu_size_t             pdcp_output_sdu_bytes_to_write;
-sdu_size_t             pdcp_output_header_bytes_to_write;
-list_t                 pdcp_sdu_list;
-int                    pdcp_sent_a_sdu;
-pdcp_data_req_header_t pdcp_input_header;
-unsigned char          pdcp_input_sdu_buffer[MAX_IP_PACKET_SIZE];
-sdu_size_t             pdcp_input_index_header;
-sdu_size_t             pdcp_input_sdu_size_read;
-sdu_size_t             pdcp_input_sdu_remaining_size_to_read;
+extern notifiedFIFO_t         pdcp_sdu_list;
 
 #define PDCP_COLL_KEY_VALUE(mODULE_iD, rNTI, iS_eNB, rB_iD, iS_sRB) \
   ((hash_key_t)mODULE_iD          | \

@@ -921,7 +921,4 @@ int flexran_agent_unregister_rrc_xface(mid_t mod_id)
   return 0;
 }
 
-AGENT_RRC_xface *flexran_agent_get_rrc_xface(mid_t mod_id)
-{
-  return agent_rrc_xface[mod_id];
-}
+

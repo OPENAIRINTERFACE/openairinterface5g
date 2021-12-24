@@ -31,6 +31,7 @@
 #ifndef TELNETSRV_H
 #define TELNETSRV_H
 
+#include <common/ran_context.h> 
 #define TELNETSRV_MODNAME  "telnetsrv"
 
 #define TELNET_PORT               9090
@@ -53,13 +54,26 @@
 /* to add a set of new command to the telnet server shell */
 typedef void(*telnet_printfunc_t)(const char* format, ...);
 typedef int(*cmdfunc_t)(char*, int, telnet_printfunc_t prnt);
+typedef int(*qcmdfunc_t)(char*, int, telnet_printfunc_t prnt,void *arg);
 
+#define TELNETSRV_CMDFLAG_PUSHINTPOOLQ   (1<<0)    // ask the telnet server to push the command in a thread pool queue
 typedef struct cmddef {
     char cmdname[TELNET_CMD_MAXSIZE];
     char helpstr[TELNET_HELPSTR_SIZE];
     cmdfunc_t cmdfunc; 
+    unsigned int cmdflags;
+    void *qptr;
 } telnetshell_cmddef_t;
 
+/*----------------------------------------------------------------------------*/
+/* structure used to send a command via a message queue to enable */
+/* executing a command in a thread different from the telnet server thread */
+typedef struct telnetsrv_qmsg {
+  qcmdfunc_t cmdfunc;
+  telnet_printfunc_t prnt;
+  int debug;
+  char *cmdbuff;
+} telnetsrv_qmsg_t;
 /*----------------------------------------------------------------------------*/
 /*structure to be used when adding a module to the telnet server */
 /* This is the first parameter of the add_telnetcmd function, which can be used   */
@@ -94,6 +108,7 @@ typedef struct cmdparser {
 /* global variables used by the telnet server                                        */
 typedef struct {
      pthread_t telnet_pthread;       // thread id of the telnet server
+     pthread_t telnetclt_pthread;    // thread id of the telnet client (used when listenstdin set to true)
      int telnetdbg;                  // debug level of the server
      int priority;                   // server running priority
      char *histfile;                 // command history
@@ -105,14 +120,12 @@ typedef struct {
      char msgbuff[TELNET_MAX_MSGLENGTH];      // internal buffer of the client_printf function which is used to print to the client terminal */
      unsigned int   listenport;           // ip port the telnet server is listening on
      unsigned int   listenaddr;           // ip address the telnet server is listening on
+     unsigned int   listenstdin;          // enable command input from stdin    
      unsigned int   loopcount;            // loop command param: number of loop iteration
      unsigned int   loopdelay;            // loop command param: delay in ms between 2 iterations
      unsigned int   phyprntbuff_size;     // for phy module,  dump_eNB_stats function buffer size
 } telnetsrv_params_t;
 
-
-
-typedef int(*addcmdfunc_t)(char*, telnetshell_vardef_t*, telnetshell_cmddef_t*);
 
 typedef void(*settelnetmodule_t)(char *name, void *ptr); 
 
@@ -133,7 +146,9 @@ VT escape sequence definition, for smarter display....
 
 /*---------------------------------------------------------------------------------------------*/
 #define TELNET_ADDCMD_FNAME "add_telnetcmd"
+#define TELNET_POLLCMDQ_FNAME "poll_telnetcmdq"
 typedef int(*add_telnetcmd_func_t)(char *, telnetshell_vardef_t *, telnetshell_cmddef_t *);
+typedef void(*poll_telnetcmdq_func_t)(void *qid,void *arg);
 #ifdef TELNETSERVERCODE
 int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd);
 void set_sched(pthread_t tid, int pid,int priority);

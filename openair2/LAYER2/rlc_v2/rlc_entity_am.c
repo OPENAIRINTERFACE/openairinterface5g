@@ -898,6 +898,64 @@ static tx_pdu_size_t compute_new_pdu_size(rlc_entity_am_t *entity, int maxsize)
   return ret;
 }
 
+/* return number of missing parts of a sn
+ * if everything is missing (nothing received), return 0
+ */
+static int count_nack_missing_parts(rlc_entity_am_t *entity, int sn)
+{
+  rlc_rx_pdu_segment_t *l = entity->rx_list;
+  int last_byte;
+  int new_last_byte;
+  int count;
+
+  while (l != NULL) {
+    if (l->sn == sn)
+      break;
+    l = l->next;
+  }
+  /* nothing received, everything is missing, return 0 */
+  if (l == NULL)
+    return 0;
+
+  last_byte = -1;
+  count = 0;
+  while (l != NULL && l->sn == sn) {
+    if (l->so > last_byte + 1)
+      /* missing part detected */
+      count++;
+    if (l->is_last)
+      /* end of PDU reached - no more missing part to add */
+      return count;
+    new_last_byte = l->so + l->size - l->data_offset - 1;
+    if (new_last_byte > last_byte)
+      last_byte = new_last_byte;
+    l = l->next;
+  }
+  /* at this point: end of PDU not received, one more missing part */
+  count++;
+
+  return count;
+}
+
+/* return size of nack reporting for sn, in bits */
+static int segment_nack_size(rlc_entity_am_t *entity, int sn)
+{
+  /* nack + e1 + e2 = 12 bits
+   * SOstart + SOend = 30 bits
+   */
+  int count;
+
+  count = count_nack_missing_parts(entity, sn);
+
+  /* count_nack_missing_parts returns 0 when everything is missing
+   * in which case we don't have SOstart/SOend, so only 12 bits
+   */
+  if (count == 0)
+    return 12;
+
+  return count * (12 + 30);
+}
+
 static int status_size(rlc_entity_am_t *entity, int maxsize)
 {
   /* let's count bits */
@@ -912,11 +970,16 @@ static int status_size(rlc_entity_am_t *entity, int maxsize)
     return 0;
   }
 
-  /* each NACK adds 12 bits */
+  /* add size of NACKs */
   sn = entity->vr_r;
-  while (bits + 12 <= maxsize && sn_compare_rx(entity, sn, entity->vr_ms) < 0) {
-    if (!(rlc_am_segment_full(entity, sn)))
-      bits += 12;
+  while (sn_compare_rx(entity, sn, entity->vr_ms) < 0) {
+    if (!(rlc_am_segment_full(entity, sn))) {
+      int nack_size = segment_nack_size(entity, sn);
+      /* stop there if not enough room */
+      if (bits + nack_size > maxsize)
+        break;
+      bits += nack_size;
+    }
     sn = (sn + 1) % 1024;
   }
 
@@ -929,7 +992,8 @@ static int generate_status(rlc_entity_am_t *entity, char *buffer, int size)
   int bits = 15;               /* minimum size is 15 (header+ack_sn+e1) */
   int sn;
   rlc_pdu_encoder_t encoder;
-  int has_nack = 0;
+  rlc_pdu_encoder_t encoder_ack;
+  rlc_pdu_encoder_t previous_e1;
   int ack;
 
   rlc_pdu_encoder_init(&encoder, buffer, size);
@@ -947,24 +1011,68 @@ static int generate_status(rlc_entity_am_t *entity, char *buffer, int size)
   rlc_pdu_encoder_put_bits(&encoder, 0, 3);   /* CPT */
 
   /* reserve room for ACK (it will be set after putting the NACKs) */
+  encoder_ack = encoder;
   rlc_pdu_encoder_put_bits(&encoder, 0, 10);
+  /* put 0 for e1, will be set to 1 later in the code if needed */
+  previous_e1 = encoder;
+  rlc_pdu_encoder_put_bits(&encoder, 0, 1);
 
   /* at this point, ACK is VR(R) */
   ack = entity->vr_r;
 
-  /* each NACK adds 12 bits */
   sn = entity->vr_r;
-  while (bits + 12 <= size && sn_compare_rx(entity, sn, entity->vr_ms) < 0) {
+  while (sn_compare_rx(entity, sn, entity->vr_ms) < 0) {
     if (!(rlc_am_segment_full(entity, sn))) {
-      /* put previous e1 (is 1) */
-      rlc_pdu_encoder_put_bits(&encoder, 1, 1);
-      /* if previous was NACK, put previous e2 (0, we don't do 'so' thing) */
-      if (has_nack)
-        rlc_pdu_encoder_put_bits(&encoder, 0, 1);
-      /* put NACKed sn */
-      rlc_pdu_encoder_put_bits(&encoder, sn, 10);
-      has_nack = 1;
-      bits += 12;
+      rlc_rx_pdu_segment_t *l;
+      int i;
+      int count     = count_nack_missing_parts(entity, sn);
+      int nack_bits = count == 0 ? 12 : count * (12 + 30);
+      int last_byte;
+      int new_last_byte;
+      int so_start;
+      int so_end;
+      /* if not enough room, stop putting NACKs */
+      if (bits + nack_bits > size)
+        break;
+      /* set previous e1 to 1 */
+      rlc_pdu_encoder_put_bits(&previous_e1, 1, 1);
+
+      if (count == 0) {
+        /* simply NACK, no SOstart/SOend */
+        rlc_pdu_encoder_put_bits(&encoder, sn, 10);                 /* nack */
+        previous_e1 = encoder;
+        rlc_pdu_encoder_put_bits(&encoder, 0, 2);                 /* e1, e2 */
+      } else {
+        /* count is not 0, so we have 'count' NACK+e1+e2+SOstart+SOend */
+        l = entity->rx_list;
+        last_byte = -1;
+        while (l->sn != sn) l = l->next;
+        for (i = 0; i < count; i++) {
+          rlc_pdu_encoder_put_bits(&encoder, sn, 10);               /* nack */
+          previous_e1 = encoder;
+          /* all NACKs but the last have a following NACK, set e1 for them */
+          rlc_pdu_encoder_put_bits(&encoder, i != count - 1, 1);      /* e1 */
+          rlc_pdu_encoder_put_bits(&encoder, 1, 1);                   /* e2 */
+          /* look for the next segment with missing data before it */
+          while (l != NULL && l->sn == sn && !(l->so > last_byte + 1)) {
+            new_last_byte = l->so + l->size - l->data_offset - 1;
+            if (new_last_byte > last_byte)
+              last_byte = new_last_byte;
+            l = l->next;
+          }
+          so_start = last_byte + 1;
+          if (l == NULL)
+            so_end = 0x7fff;
+          else
+            so_end = l->so - 1;
+          rlc_pdu_encoder_put_bits(&encoder, so_start, 15);
+          rlc_pdu_encoder_put_bits(&encoder, so_end, 15);
+          if (l != NULL)
+            last_byte = l->so + l->size - l->data_offset - 1;
+        }
+      }
+
+      bits += nack_bits;
     } else {
       /* this sn is full and we put all NACKs before it, use it for ACK */
       ack = (sn + 1) % 1024;
@@ -972,24 +1080,10 @@ static int generate_status(rlc_entity_am_t *entity, char *buffer, int size)
     sn = (sn + 1) % 1024;
   }
 
-  /* go to highest full sn+1 for ACK, VR(MS) is the limit */
-  while (sn_compare_rx(entity, sn, entity->vr_ms) < 0 &&
-         rlc_am_segment_full(entity, sn)) {
-    ack = (sn + 1) % 1024;
-    sn = (sn + 1) % 1024;
-  }
-
-  /* at this point, if last put was NACK then put 2 bits else put 1 bit */
-  if (has_nack)
-    rlc_pdu_encoder_put_bits(&encoder, 0, 2);
-  else
-    rlc_pdu_encoder_put_bits(&encoder, 0, 1);
-
   rlc_pdu_encoder_align(&encoder);
 
   /* let's put the ACK */
-  buffer[0] |= ack >> 6;
-  buffer[1] |= (ack & 0x3f) << 2;
+  rlc_pdu_encoder_put_bits(&encoder_ack, ack, 10);
 
   /* reset the trigger */
   entity->status_triggered = 0;

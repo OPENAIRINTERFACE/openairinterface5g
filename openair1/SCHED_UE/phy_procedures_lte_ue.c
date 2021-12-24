@@ -2383,10 +2383,12 @@ void ue_pbch_procedures(uint8_t eNB_id,
   if (pbch_phase>=4)
     pbch_phase=0;
 
+if((ue->frame_parms.FeMBMS_active == 0)|| is_fembms_cas_subframe(frame_rx,subframe_rx,&ue->frame_parms) || first_run) {
+
   for (pbch_trials=0; pbch_trials<4; pbch_trials++) {
     //for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
     //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
-    if(is_fembms_cas_subframe(frame_rx,subframe_rx,&ue->frame_parms)) {
+    if(is_fembms_cas_subframe(frame_rx,subframe_rx,&ue->frame_parms) || ue->frame_parms.FeMBMS_active) {
       pbch_tx_ant = rx_pbch_fembms(&ue->common_vars,
                                    ue->pbch_vars[eNB_id],
                                    &ue->frame_parms,
@@ -2431,9 +2433,10 @@ void ue_pbch_procedures(uint8_t eNB_id,
 
     ue->pbch_vars[eNB_id]->pdu_errors_conseq = 0;
 
-    if(is_fembms_cas_subframe(frame_rx,subframe_rx,&ue->frame_parms)) {
+    if(is_fembms_cas_subframe(frame_rx,subframe_rx,&ue->frame_parms) || ue->frame_parms.FeMBMS_active) {
       frame_tx  = (int)((ue->pbch_vars[eNB_id]->decoded_output[2]&31)<<1);
       frame_tx += ue->pbch_vars[eNB_id]->decoded_output[1]>>7;
+      frame_tx = frame_tx<<4;
       frame_tx +=4*pbch_phase;
     } else {
       frame_tx = (((int)(ue->pbch_vars[eNB_id]->decoded_output[2]&0x03))<<8);
@@ -2490,7 +2493,7 @@ void ue_pbch_procedures(uint8_t eNB_id,
     }
 
     if (LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
-      LOG_UI(PHY,"[UE %d] frame %d, subframe %d, Received PBCH (MIB): nb_antenna_ports_eNB %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d/6!\n",
+      LOG_D(PHY,"[UE %d] frame %d, subframe %d, Received PBCH (MIB): nb_antenna_ports_eNB %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d/6!\n",
              ue->Mod_id,
              frame_rx,
              subframe_rx,
@@ -2501,6 +2504,17 @@ void ue_pbch_procedures(uint8_t eNB_id,
              ue->frame_parms.phich_config_common.phich_duration,
              ue->frame_parms.phich_config_common.phich_resource);
     }
+    LOG_D(PHY,"[UE %d] frame %d, subframe %d, Received PBCH (MIB): nb_antenna_ports_eNB %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d/6!\n",
+             ue->Mod_id,
+             frame_rx,
+             subframe_rx,
+             ue->frame_parms.nb_antenna_ports_eNB,
+             pbch_tx_ant,
+             frame_tx,
+             ue->frame_parms.N_RB_DL,
+             ue->frame_parms.phich_config_common.phich_duration,
+             ue->frame_parms.phich_config_common.phich_resource);
+
   } else {
     if (LOG_DUMPFLAG(DEBUG_UE_PHYPROC)) {
       LOG_E(PHY,"[UE %d] frame %d, subframe %d, Error decoding PBCH!\n",
@@ -2532,6 +2546,8 @@ void ue_pbch_procedures(uint8_t eNB_id,
            ue->pbch_vars[eNB_id]->pdu_errors,
            ue->pbch_vars[eNB_id]->pdu_errors_conseq);
   }
+
+} //if((ue->frame_parms.FeMBMS_active == 0)|| is_fembms_cas_subframe(frame_rx,subframe_rx,&ue->frame_parms) || first_run)
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
 }
@@ -2877,10 +2893,19 @@ void ue_pmch_procedures(PHY_VARS_UE *ue,
   int l;
   int ret=0;
 
-  if (is_pmch_subframe(frame_rx,subframe_rx,&ue->frame_parms)) {
+  if (is_pmch_subframe(frame_rx,subframe_rx,&ue->frame_parms) || fembms_flag) {
     // LOG_D(PHY,"ue calling pmch subframe ..\n ");
     LOG_D(PHY,"[UE %d] Frame %d, subframe %d: Querying for PMCH demodulation\n",
           ue->Mod_id,frame_rx,subframe_rx);
+    if(fembms_flag)
+    pmch_mcs = ue_query_mch_fembms(ue->Mod_id,
+                            CC_id,
+                            frame_rx,
+                            subframe_rx,
+                            eNB_id,
+                            &sync_area,
+                            &mcch_active);
+    else
     pmch_mcs = ue_query_mch(ue->Mod_id,
                             CC_id,
                             frame_rx,
@@ -2960,6 +2985,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue,
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> Nl %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->Nl);
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> G  %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->G);
       LOG_D(PHY,"start turbo decode for MCH %d.%d --> Kmimo  %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->Kmimo);
+
       ret = dlsch_decoding(ue,
                            ue->pdsch_vars_MCH[ue->current_thread_id[subframe_rx]][0]->llr[0],
                            &ue->frame_parms,
@@ -3007,14 +3033,14 @@ void ue_pmch_procedures(PHY_VARS_UE *ue,
         //  if (subframe_rx==9)
         //  mac_xface->macphy_exit("Why are we exiting here?");
       } else { // decoding successful
-        LOG_D(PHY,"[UE %d] Frame %d, subframe %d: PMCH OK (%d,%d), passing to L2 (TBS %d, iter %d,G %d)\n",
+        LOG_D(PHY,"[UE %d] Frame %d, subframe %d: PMCH OK (%d,%d), passing to L2 (TBS %d, iter %d,G %d) ret %d\n",
               ue->Mod_id,
               frame_rx,subframe_rx,
               ue->dlsch_mcch_errors[sync_area][0],
               ue->dlsch_mtch_errors[sync_area][0],
               ue->dlsch_MCH[0]->harq_processes[0]->TBS>>3,
               ue->dlsch_MCH[0]->max_turbo_iterations,
-              ue->dlsch_MCH[0]->harq_processes[0]->G);
+              ue->dlsch_MCH[0]->harq_processes[0]->G,ret);
         ue_send_mch_sdu(ue->Mod_id,
                         CC_id,
                         frame_rx,
@@ -3022,6 +3048,8 @@ void ue_pmch_procedures(PHY_VARS_UE *ue,
                         ue->dlsch_MCH[0]->harq_processes[0]->TBS>>3,
                         eNB_id,// not relevant in eMBMS context
                         sync_area);
+        //dump_mch(ue,0,ue->dlsch_MCH[0]->harq_processes[0]->G,subframe_rx);
+        //exit_fun("nothing to add");
 
         if (mcch_active == 1)
           ue->dlsch_mcch_received[sync_area][0]++;
@@ -4429,6 +4457,15 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,
     ue_pmch_procedures(ue,proc,eNB_id,abstraction_flag,1);
     return 0;
   } else { // this gets closed at end
+    if (is_fembms_cas_subframe(frame_rx,subframe_rx,&ue->frame_parms) || is_fembms_nonMBSFN_subframe(frame_rx,subframe_rx,&ue->frame_parms) ) {
+      l=0;
+      slot_fep(ue,
+       l,
+       subframe_rx<<1,
+       0,
+       0,
+       0);
+    }
     pmch_flag = is_pmch_subframe(frame_rx,subframe_rx,&ue->frame_parms) ? 1 : 0;
 
     if (do_pdcch_flag) {
@@ -4911,7 +4948,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,
           break;
 
         default:
-          LOG_E(PHY, "[UE %d] Received unexpected message %s\n", ITTI_MSG_INSTANCE (msg_p), ITTI_MSG_NAME (msg_p));
+          LOG_E(PHY, "[UE %ld] Received unexpected message %s\n", ITTI_MSG_DESTINATION_INSTANCE (msg_p), ITTI_MSG_NAME (msg_p));
           break;
       }
 

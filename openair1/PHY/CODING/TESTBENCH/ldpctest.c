@@ -26,9 +26,11 @@
 #include "assertions.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "PHY/CODING/nrLDPC_extern.h"
-#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+//#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
+#include "openair1/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.h"
+#include "openair1/PHY/defs_nr_common.h"
+#include "coding_unitary_defs.h"
 
-#define MAX_NUM_DLSCH_SEGMENTS 16
 #define MAX_BLOCK_LENGTH 8448
 
 #ifndef malloc16
@@ -81,9 +83,6 @@ typedef struct {
   int n_iter_max;
 } n_iter_stats_t;
 
-RAN_CONTEXT_t RC;
-PHY_VARS_UE ***PHY_vars_UE_g;
-uint16_t NB_UE_INST = 1;
 nrLDPC_encoderfunc_t encoder_orig;
 
 short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
@@ -102,7 +101,8 @@ int test_ldpc(short No_iteration,
               unsigned int *crc_misses,
               time_stats_t *time_optim,
               time_stats_t *time_decoder,
-              n_iter_stats_t *dec_iter)
+              n_iter_stats_t *dec_iter
+              )
 {
   //clock initiate
   //time_stats_t time,time_optim,tinput,tprep,tparity,toutput, time_decoder;
@@ -114,11 +114,9 @@ int test_ldpc(short No_iteration,
 
   double sigma;
   sigma = 1.0/sqrt(2*SNR);
-
   opp_enabled=1;
-  cpu_freq_GHz = get_cpu_freq_GHz();
   //short test_input[block_length];
-  unsigned char *test_input[MAX_NUM_DLSCH_SEGMENTS]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};;
+  unsigned char *test_input[MAX_NUM_NR_DLSCH_SEGMENTS]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};;
   //short *c; //padded codeword
   unsigned char *estimated_output[MAX_NUM_DLSCH_SEGMENTS];
   unsigned char *estimated_output_bit[MAX_NUM_DLSCH_SEGMENTS];
@@ -144,7 +142,7 @@ int test_ldpc(short No_iteration,
   t_nrLDPC_procBuf nrLDPC_procBuf;
   t_nrLDPC_procBuf* p_nrLDPC_procBuf = &nrLDPC_procBuf;
     
-  t_nrLDPC_time_stats decoder_profiler;
+  t_nrLDPC_time_stats decoder_profiler = {0};
   t_nrLDPC_time_stats* p_decoder_profiler =&decoder_profiler ;
 
   int32_t n_iter = 0;
@@ -395,18 +393,13 @@ int test_ldpc(short No_iteration,
       decParams.R=code_rate_vec[R_ind];//13;
       decParams.numMaxIter=No_iteration;
       decParams.outMode = nrLDPC_outMode_BIT;
+      decParams.block_length=block_length;
       //decParams.outMode =nrLDPC_outMode_LLRINT8;
-
-
-      for(j=0;j<n_segments;j++) {
+	  nrLDPC_initcall(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j]);
+	  for(j=0;j<n_segments;j++) {
     	  start_meas(time_decoder);
-      // decode the sequence
-      // decoder supports BG2, Z=128 & 256
-      //esimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
-      ///nrLDPC_decoder(&decParams, channel_output_fixed, estimated_output, NULL);
           n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
-      
-	stop_meas(time_decoder);
+	      stop_meas(time_decoder);
       }
 
       //for (i=(Kb+nrows) * Zc-5;i<(Kb+nrows) * Zc;i++)
@@ -506,13 +499,15 @@ int test_ldpc(short No_iteration,
 
 int main(int argc, char *argv[])
 {
+
   unsigned int errors, errors_bit, crc_misses;
   double errors_bit_uncoded;
   short block_length=8448; // decoder supports length: 1201 -> 1280, 2401 -> 2560
-
+  char *ldpc_version=NULL; /* version of the ldpc decoder library to use (XXX suffix to use when loading libldpc_XXX.so */
   short No_iteration=5;
   int n_segments=1;
   //double rate=0.333;
+  
   int nom_rate=1;
   int denom_rate=3;
   double SNR0=-2.0,SNR,SNR_lin;
@@ -531,7 +526,7 @@ int main(int argc, char *argv[])
 
   short BG=0,Zc,Kb=0;
 
-  while ((c = getopt (argc, argv, "q:r:s:S:l:n:d:i:t:u:h")) != -1)
+  while ((c = getopt (argc, argv, "q:r:s:S:l:G:n:d:i:t:u:hv:")) != -1)
     switch (c)
     {
       case 'q':
@@ -548,6 +543,10 @@ int main(int argc, char *argv[])
 
       case 'l':
         block_length = atoi(optarg);
+        break;
+		
+      case 'G':
+        ldpc_version="_cuda";
         break;
 
       case 'n':
@@ -573,9 +572,11 @@ int main(int argc, char *argv[])
       case 'u':
         test_uncoded = atoi(optarg);
         break;
-
+      case 'v':
+          ldpc_version=strdup(optarg);
+        break;
       case 'h':
-            default:
+      default:
               printf("CURRENTLY SUPPORTED CODE RATES: \n");
               printf("BG1 (blocklength > 3840): 1/3, 2/3, 22/25 (8/9) \n");
               printf("BG2 (blocklength <= 3840): 1/5, 1/3, 2/3 \n\n");
@@ -584,6 +585,7 @@ int main(int argc, char *argv[])
               printf("-r Nominator rate, (1, 2, 22), Default: 1\n");
               printf("-d Denominator rate, (3, 5, 25), Default: 1\n");
               printf("-l Block length (l > 3840 -> BG1, rest BG2 ), Default: 8448\n");
+			  printf("-G give 1 to run cuda for LDPC, Default: 0\n");
               printf("-n Number of simulation trials, Default: 1\n");
               //printf("-M MCS2 for TB 2\n");
               printf("-s SNR per information bit (EbNo) in dB, Default: -2\n");
@@ -591,10 +593,10 @@ int main(int argc, char *argv[])
               printf("-t SNR simulation step, Default: 0.1\n");
               printf("-i Max decoder iterations, Default: 5\n");
               printf("-u Set SNR per coded bit, Default: 0\n");
+              printf("-v XXX Set ldpc shared library version. libldpc_XXX.so will be used \n");
               exit(1);
               break;
     }
-  cpu_freq_GHz = get_cpu_freq_GHz();
   //printf("the decoder supports BG2, Kb=10, Z=128 & 256\n");
   //printf(" range of blocklength: 1201 -> 1280, 2401 -> 2560\n");
   printf("block length %d: \n", block_length);
@@ -602,7 +604,10 @@ int main(int argc, char *argv[])
   printf("SNR0 %f: \n", SNR0);
 
 
-  load_nrLDPClib();
+  if (ldpc_version != NULL)
+    load_nrLDPClib(ldpc_version);
+  else
+    load_nrLDPClib(NULL); 
   load_nrLDPClib_ref("_orig", &encoder_orig);
   //for (block_length=8;block_length<=MAX_BLOCK_LENGTH;block_length+=8)
 
@@ -683,25 +688,25 @@ int main(int argc, char *argv[])
     printf("SNR %f, Std iterations: %f\n",SNR, dec_iter->n_iter_std);
     printf("SNR %f, Max iterations: %d\n",SNR, dec_iter->n_iter_max);
     printf("\n");
-    printf("Encoding time mean: %15.3f us\n",(double)time_optim->diff/time_optim->trials/1000.0/cpu_freq_GHz);
-    printf("Encoding time std: %15.3f us\n",sqrt((double)time_optim->diff_square/time_optim->trials/pow(1000,2)/pow(cpu_freq_GHz,2)-pow((double)time_optim->diff/time_optim->trials/1000.0/cpu_freq_GHz,2)));
-    printf("Encoding time max: %15.3f us\n",(double)time_optim->max/1000.0/cpu_freq_GHz);
+    printf("Encoding time mean: %15.3f us\n",(double)time_optim->diff/time_optim->trials/1000.0/get_cpu_freq_GHz());
+    printf("Encoding time std: %15.3f us\n",sqrt((double)time_optim->diff_square/time_optim->trials/pow(1000,2)/pow(get_cpu_freq_GHz(),2)-pow((double)time_optim->diff/time_optim->trials/1000.0/get_cpu_freq_GHz(),2)));
+    printf("Encoding time max: %15.3f us\n",(double)time_optim->max/1000.0/get_cpu_freq_GHz());
     printf("\n");
-    printf("Decoding time mean: %15.3f us\n",(double)time_decoder->diff/time_decoder->trials/1000.0/cpu_freq_GHz);
-    printf("Decoding time std: %15.3f us\n",sqrt((double)time_decoder->diff_square/time_decoder->trials/pow(1000,2)/pow(cpu_freq_GHz,2)-pow((double)time_decoder->diff/time_decoder->trials/1000.0/cpu_freq_GHz,2)));
-    printf("Decoding time max: %15.3f us\n",(double)time_decoder->max/1000.0/cpu_freq_GHz);
+    printf("Decoding time mean: %15.3f us\n",(double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz());
+    printf("Decoding time std: %15.3f us\n",sqrt((double)time_decoder->diff_square/time_decoder->trials/pow(1000,2)/pow(get_cpu_freq_GHz(),2)-pow((double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz(),2)));
+    printf("Decoding time max: %15.3f us\n",(double)time_decoder->max/1000.0/get_cpu_freq_GHz());
 
     fprintf(fd,"%f %f %f %f %f %f %f %f %f %f %f %f %d \n",
     		SNR,
     		(double)decoded_errors[i]/(double)n_trials ,
     		(double)errors_bit/(double)n_trials/(double)block_length/(double)n_segments ,
     		errors_bit_uncoded/(double)n_trials/(double)n_segments ,
-    		(double)time_optim->diff/time_optim->trials/1000.0/cpu_freq_GHz,
-    		sqrt((double)time_optim->diff_square/time_optim->trials/pow(1000,2)/pow(cpu_freq_GHz,2)-pow((double)time_optim->diff/time_optim->trials/1000.0/cpu_freq_GHz,2)),
-    		(double)time_optim->max/1000.0/cpu_freq_GHz,
-    		(double)time_decoder->diff/time_decoder->trials/1000.0/cpu_freq_GHz,
-    		sqrt((double)time_decoder->diff_square/time_decoder->trials/pow(1000,2)/pow(cpu_freq_GHz,2)-pow((double)time_decoder->diff/time_decoder->trials/1000.0/cpu_freq_GHz,2)),
-    		(double)time_decoder->max/1000.0/cpu_freq_GHz,
+    		(double)time_optim->diff/time_optim->trials/1000.0/get_cpu_freq_GHz(),
+    		sqrt((double)time_optim->diff_square/time_optim->trials/pow(1000,2)/pow(get_cpu_freq_GHz(),2)-pow((double)time_optim->diff/time_optim->trials/1000.0/get_cpu_freq_GHz(),2)),
+    		(double)time_optim->max/1000.0/get_cpu_freq_GHz(),
+    		(double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz(),
+    		sqrt((double)time_decoder->diff_square/time_decoder->trials/pow(1000,2)/pow(get_cpu_freq_GHz(),2)-pow((double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz(),2)),
+    		(double)time_decoder->max/1000.0/get_cpu_freq_GHz(),
     		dec_iter->n_iter_mean,
     		dec_iter->n_iter_std,
     		dec_iter->n_iter_max

@@ -389,16 +389,17 @@ void phy_config_request(PHY_Config_t *phy_config);
 void phy_config_update_sib2_request(PHY_Config_t *phy_config);
 void phy_config_update_sib13_request(PHY_Config_t *phy_config);
 
-
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
-int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp);
+int nr_get_ssb_start_symbol(NR_DL_FRAME_PARMS *fp,uint8_t i_ssb);
 int nr_init_frame_parms(nfapi_nr_config_request_scf_t *config, NR_DL_FRAME_PARMS *frame_parms);
-int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *frame_parms,fapi_nr_config_request_t *config,int Ncp);
+int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *frame_parms, fapi_nr_config_request_t *config, uint16_t nr_band);
+void nr_init_frame_parms_ue_sa(NR_DL_FRAME_PARMS *frame_parms, uint64_t downlink_frequency, int32_t uplink_frequency_offset, uint8_t mu, uint16_t nr_band);
 int init_nr_ue_signal(PHY_VARS_NR_UE *ue,int nb_connected_eNB,uint8_t abstraction_flag);
 void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag);
+void init_N_TA_offset(PHY_VARS_NR_UE *ue);
 void nr_dump_frame_parms(NR_DL_FRAME_PARMS *frame_parms);
-int phy_init_nr_gNB(PHY_VARS_gNB *gNB, unsigned char is_secondary_gNB, unsigned char abstraction_flag);
+int phy_init_nr_gNB(PHY_VARS_gNB *gNB, unsigned char is_secondary_gNB, unsigned char lowmem_flag);
 void nr_phy_config_request(NR_PHY_Config_t *gNB);
 void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell,uint64_t position_in_burst);
 void phy_free_nr_gNB(PHY_VARS_gNB *gNB);
@@ -407,6 +408,8 @@ void init_nr_transport(PHY_VARS_gNB *gNB);
 
 void init_dfts(void);
 
+void fill_subframe_mask(PHY_VARS_eNB *eNB);
+void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg);
 
 /** @} */
 #endif

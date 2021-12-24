@@ -1,0 +1,210 @@
+version: '3.8'
+
+services:
+    cassandra:
+        image: cassandra:2.1
+        container_name: prod-cassandra
+        networks:
+            private_net:
+                ipv4_address: 192.168.68.2
+        environment:
+            CASSANDRA_CLUSTER_NAME: "OAI HSS Cluster"
+            CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+        healthcheck:
+            test: /bin/bash -c "nodetool status"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    db_init:
+        image: cassandra:2.1
+        container_name: prod-db-init
+        depends_on: [cassandra]
+        deploy:
+            restart_policy:
+                condition: on-failure
+                max_attempts: 10
+        networks:
+            private_net:
+                ipv4_address: 192.168.68.4
+        volumes:
+            - ./oai_db.cql:/home/oai_db.cql
+        entrypoint: /bin/bash -c "cqlsh --file /home/oai_db.cql 192.168.68.2 && echo 'OK'"
+
+    oai_hss:
+        image: oai-hss:production
+        container_name: prod-oai-hss
+        privileged: true
+        depends_on: [cassandra]
+        networks:
+            private_net:
+                ipv4_address: 192.168.68.3
+            public_net:
+                ipv4_address: 192.168.61.194
+        environment:
+            TZ: Europe/Paris
+            REALM: openairinterface.org
+            HSS_FQDN: hss.openairinterface.org
+            PREFIX: /openair-hss/etc
+            cassandra_Server_IP: 192.168.68.2
+            OP_KEY: 1006020f0a478bf6b699f15c062e42b3
+            LTE_K: FEC86BA6EB707ED08905757B1BB44B8F 
+            APN1: oai.ipv4
+            APN2: oai2.ipv4
+            FIRST_IMSI: 208970100001127 
+            NB_USERS: 5
+        healthcheck:
+            test: /bin/bash -c "pgrep oai_hss"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    oai_mme:
+        image: oai-mme:production
+        container_name: prod-oai-mme
+        privileged: true
+        depends_on: [oai_hss]
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.195
+        environment:
+            TZ: Europe/Paris
+            REALM: openairinterface.org
+            PREFIX: /openair-mme/etc
+            INSTANCE: 1
+            PID_DIRECTORY: /var/run
+            HSS_IP_ADDR: 192.168.61.194
+            HSS_HOSTNAME: hss
+            HSS_FQDN: hss.openairinterface.org
+            HSS_REALM: openairinterface.org
+            MCC: '208'
+            MNC: '97'
+            MME_GID: 32768
+            MME_CODE: 3
+            TAC_0: 1
+            TAC_1: 2
+            TAC_2: 3
+            MME_FQDN: mme.openairinterface.org
+            MME_S6A_IP_ADDR: 192.168.61.195
+            MME_INTERFACE_NAME_FOR_S1_MME: eth0
+            MME_IPV4_ADDRESS_FOR_S1_MME: 192.168.61.195
+            MME_INTERFACE_NAME_FOR_S11: eth0
+            MME_IPV4_ADDRESS_FOR_S11: 192.168.61.195
+            MME_INTERFACE_NAME_FOR_S10: lo
+            MME_IPV4_ADDRESS_FOR_S10: 127.0.0.10
+            OUTPUT: CONSOLE
+            SGW_IPV4_ADDRESS_FOR_S11_0: 192.168.61.196
+            PEER_MME_IPV4_ADDRESS_FOR_S10_0: 0.0.0.0
+            PEER_MME_IPV4_ADDRESS_FOR_S10_1: 0.0.0.0
+            MCC_SGW_0: '208'
+            MNC3_SGW_0: '097'
+            TAC_LB_SGW_0: '01'
+            TAC_HB_SGW_0: '00'
+            MCC_MME_0: '208'
+            MNC3_MME_0: '097'
+            TAC_LB_MME_0: '02'
+            TAC_HB_MME_0: '00'
+            MCC_MME_1: '208'
+            MNC3_MME_1: '097'
+            TAC_LB_MME_1: '03'
+            TAC_HB_MME_1: '00'
+            TAC_LB_SGW_TEST_0: '03'
+            TAC_HB_SGW_TEST_0: '00'
+            SGW_IPV4_ADDRESS_FOR_S11_TEST_0: 0.0.0.0
+        volumes:
+            - ./mme.conf:/openair-mme/etc/mme.conf
+            - ./entrypoint.sh:/openair-mme/bin/entrypoint.sh
+        healthcheck:
+            test: /bin/bash -c "pgrep oai_mme"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    oai_spgwc:
+        image: oai-spgwc:production
+        privileged: true
+        depends_on: [oai_mme]
+        container_name: prod-oai-spgwc
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.196
+        environment:
+            TZ: Europe/Paris
+            SGW_INTERFACE_NAME_FOR_S11: eth0
+            PGW_INTERFACE_NAME_FOR_SX: eth0
+            DEFAULT_DNS_IPV4_ADDRESS: 192.168.18.129
+            DEFAULT_DNS_SEC_IPV4_ADDRESS: 8.8.4.4
+            PUSH_PROTOCOL_OPTION: 'true'
+            APN_NI_1: oai.ipv4
+            APN_NI_2: oai2.ipv4
+            DEFAULT_APN_NI_1: oai.ipv4
+            UE_IP_ADDRESS_POOL_1: '12.1.1.2 - 12.1.1.254'
+            UE_IP_ADDRESS_POOL_2: '12.0.0.2 - 12.0.0.254'
+            MCC: '208'
+            MNC: '97'
+            MNC03: '097'
+            TAC: 1
+            GW_ID: 1
+            REALM: openairinterface.org
+            UE_MTU_IPV4: 1500
+        healthcheck:
+            test: /bin/bash -c "pgrep oai_spgwc"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    oai_spgwu:
+        image: oai-spgwu-tiny:production
+        privileged: true
+        container_name: prod-oai-spgwu-tiny
+        depends_on: [oai_spgwc]
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.197
+        environment:
+            TZ: Europe/Paris
+            PID_DIRECTORY: /var/run
+            INSTANCE: 1
+            SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP: eth0
+            PGW_INTERFACE_NAME_FOR_SGI: eth0
+            SGW_INTERFACE_NAME_FOR_SX: eth0
+            SPGWC0_IP_ADDRESS: 192.168.61.196
+            NETWORK_UE_IP: '12.1.1.0/24'
+            NETWORK_UE_NAT_OPTION: 'yes'
+            MCC: '208'
+            MNC: '97'
+            MNC03: '097'
+            TAC: 1
+            GW_ID: 1
+            REALM: openairinterface.org
+        healthcheck:
+            test: /bin/bash -c "pgrep oai_spgwu"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    trf_gen:
+        image: trf-gen:production
+        privileged: true
+        container_name: prod-trf-gen
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.200
+        entrypoint: /bin/bash -c "ip route add 12.1.1.0/24 via 192.168.61.197 dev eth0; sleep infinity"
+        healthcheck:
+            test: /bin/bash -c "ping -c 2 192.168.61.197"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    private_net:
+        name: prod-oai-private-net
+        ipam:
+            config:
+                - subnet: 192.168.68.0/26
+    public_net:
+        name: prod-oai-public-net
+        ipam:
+            config:
+                - subnet: 192.168.61.192/26

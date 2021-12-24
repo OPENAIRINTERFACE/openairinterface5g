@@ -30,8 +30,8 @@
 * \warning
 */
 
-#ifndef __CONFIGEN_IF_H__
-#define __CONFIG_IF_H__
+#ifndef __UTIL_OCG_OCG_IF__H__
+#define __UTIL_OCG_OCG_IF__H__
 
 #ifdef __cplusplus
 extern "C" {

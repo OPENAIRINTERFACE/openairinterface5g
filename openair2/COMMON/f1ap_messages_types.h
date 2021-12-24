@@ -31,6 +31,9 @@
 
 #define F1AP_SETUP_REQ(mSGpTR)                     (mSGpTR)->ittiMsg.f1ap_setup_req
 #define F1AP_SETUP_RESP(mSGpTR)                    (mSGpTR)->ittiMsg.f1ap_setup_resp
+#define F1AP_GNB_CU_CONFIGURATION_UPDATE(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_gnb_cu_configuration_update
+#define F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_gnb_cu_configuration_update_acknowledge
+#define F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_gnb_cu_configuration_update_failure
 #define F1AP_SETUP_FAILURE(mSGpTR)                 (mSGpTR)->ittiMsg.f1ap_setup_failure
 
 #define F1AP_INITIAL_UL_RRC_MESSAGE(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_initial_ul_rrc_message
@@ -55,6 +58,8 @@
 // Note this should be 512 from maxval in 38.473
 #define F1AP_MAX_NB_CELLS 2
 
+#define F1AP_MAX_NO_OF_TNL_ASSOCIATIONS 32
+#define F1AP_MAX_NO_UE_ID 1024 
 typedef struct f1ap_net_ip_address_s {
   unsigned ipv4:1;
   unsigned ipv6:1;
@@ -98,7 +103,7 @@ typedef struct f1ap_setup_req_s {
 
   // Served Cell Information
   /* Tracking area code */
-  uint16_t tac[F1AP_MAX_NB_CELLS];
+  uint32_t tac[F1AP_MAX_NB_CELLS];
 
   /* Mobile Country Codes
    * Mobile Network Codes
@@ -174,6 +179,24 @@ typedef struct f1ap_setup_req_s {
 
 } f1ap_setup_req_t;
 
+typedef struct served_cells_to_activate_s {
+  /// mcc of DU cells
+  uint16_t mcc;
+  /// mnc of DU cells
+  uint16_t mnc;
+  /// mnc digit length of DU cells
+  uint8_t mnc_digit_length;
+  // NR Global Cell Id
+  uint64_t nr_cellid;
+  /// NRPCI
+  uint16_t nrpci;
+  /// num SI messages per DU cell
+  uint8_t num_SI;
+  /// SI message containers (up to 21 messages per cell)
+  uint8_t *SI_container[21];
+  int      SI_container_length[21];
+} served_cells_to_activate_t;
+
 typedef struct f1ap_setup_resp_s {
   /* Connexion id used between SCTP/F1AP */
   uint16_t cnx_id;
@@ -189,28 +212,61 @@ typedef struct f1ap_setup_resp_s {
   char     *gNB_CU_name;
   /// number of DU cells to activate
   uint16_t num_cells_to_activate; //0< num_cells_to_activate <= 512;
-  /// mcc of DU cells
-  uint16_t mcc[F1AP_MAX_NB_CELLS];
-  /// mnc of DU cells
-  uint16_t mnc[F1AP_MAX_NB_CELLS];
-  /// mnc digit length of DU cells
-  uint8_t mnc_digit_length[F1AP_MAX_NB_CELLS];
-  // NR Global Cell Id
-  uint64_t nr_cellid[F1AP_MAX_NB_CELLS];
-  /// NRPCI
-  uint16_t nrpci[F1AP_MAX_NB_CELLS];
-  /// num SI messages per DU cell
-  uint8_t num_SI[F1AP_MAX_NB_CELLS];
-  /// SI message containers (up to 21 messages per cell)
-  uint8_t *SI_container[F1AP_MAX_NB_CELLS][21];
-  int      SI_container_length[F1AP_MAX_NB_CELLS][21];
+  served_cells_to_activate_t cells_to_activate[F1AP_MAX_NB_CELLS];
 } f1ap_setup_resp_t;
+
+typedef struct f1ap_gnb_cu_configuration_update_s {
+  /* Connexion id used between SCTP/F1AP */
+  uint16_t cnx_id;
+
+  /* SCTP association id */
+  int32_t  assoc_id;
+
+  /* Number of SCTP streams used for a mme association */
+  uint16_t sctp_in_streams;
+  uint16_t sctp_out_streams;
+
+  /// string holding gNB_CU_name
+  char     *gNB_CU_name;
+  /// number of DU cells to activate
+  uint16_t num_cells_to_activate; //0< num_cells_to_activate/mod <= 512;
+  served_cells_to_activate_t cells_to_activate[F1AP_MAX_NB_CELLS];
+} f1ap_gnb_cu_configuration_update_t;
 
 typedef struct f1ap_setup_failure_s {
   uint16_t cause;
   uint16_t time_to_wait;
   uint16_t criticality_diagnostics; 
 } f1ap_setup_failure_t;
+
+typedef struct f1ap_gnb_cu_configuration_update_acknowledge_s {
+  uint16_t num_cells_failed_to_be_activated;
+  uint16_t mcc[F1AP_MAX_NB_CELLS];
+  uint16_t mnc[F1AP_MAX_NB_CELLS];
+  uint8_t mnc_digit_length[F1AP_MAX_NB_CELLS];
+  uint64_t nr_cellid[F1AP_MAX_NB_CELLS];
+  uint16_t cause[F1AP_MAX_NB_CELLS];
+  int have_criticality;
+  uint16_t criticality_diagnostics; 
+  uint16_t noofTNLAssociations_to_setup;
+  uint16_t have_port[F1AP_MAX_NO_OF_TNL_ASSOCIATIONS];
+  in_addr_t tl_address[F1AP_MAX_NO_OF_TNL_ASSOCIATIONS]; // currently only IPv4 supported
+  uint16_t noofTNLAssociations_failed;
+  in_addr_t tl_address_failed[F1AP_MAX_NO_OF_TNL_ASSOCIATIONS]; // currently only IPv4 supported
+  uint16_t cause_failed[F1AP_MAX_NO_OF_TNL_ASSOCIATIONS];
+  uint16_t noofDedicatedSIDeliveryNeededUEs;
+  uint32_t gNB_CU_ue_id[F1AP_MAX_NO_UE_ID]; 
+  uint16_t ue_mcc[F1AP_MAX_NO_UE_ID]; 
+  uint16_t ue_mnc[F1AP_MAX_NO_UE_ID]; 
+  uint8_t  ue_mnc_digit_length[F1AP_MAX_NO_UE_ID]; 
+  uint64_t ue_nr_cellid[F1AP_MAX_NO_UE_ID];  
+} f1ap_gnb_cu_configuration_update_acknowledge_t;
+
+typedef struct f1ap_gnb_cu_configuration_update_failure_s {
+  uint16_t cause;
+  uint16_t time_to_wait;
+  uint16_t criticality_diagnostics; 
+} f1ap_gnb_cu_configuration_update_failure_t;
 
 typedef struct f1ap_dl_rrc_message_s {
 
@@ -243,7 +299,7 @@ typedef struct f1ap_initial_ul_rrc_message_s {
   uint16_t crnti;
   uint8_t *rrc_container;
   int      rrc_container_length;
-  uint8_t *du2cu_rrc_container;
+  int8_t *du2cu_rrc_container;
   int      du2cu_rrc_container_length;
 } f1ap_initial_ul_rrc_message_t;
 

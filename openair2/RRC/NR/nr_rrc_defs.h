@@ -54,6 +54,7 @@
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_PLMN-IdentityInfo.h"
 #include "NR_MCC-MNC-Digit.h"
+#include "NR_NG-5G-S-TMSI.h"
 //#include "MCCH-Message.h"
 //#include "MBSFNAreaConfiguration-r9.h"
 //#include "SCellToAddMod-r10.h"
@@ -65,6 +66,7 @@
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfigCommon.h"
 #include "NR_EstablishmentCause.h"
+#include "NR_SIB1.h"
 //-------------------
 
 #include "intertask_interface.h"
@@ -89,10 +91,10 @@ typedef struct nr_uid_linear_allocator_s {
     
 
 #define PROTOCOL_NR_RRC_CTXT_UE_FMT                PROTOCOL_CTXT_FMT
-#define PROTOCOL_NR_RRC_CTXT_UE_ARGS(CTXT_Pp)      PROTOCOL_CTXT_ARGS(CTXT_Pp)
+#define PROTOCOL_NR_RRC_CTXT_UE_ARGS(CTXT_Pp)      PROTOCOL_NR_CTXT_ARGS(CTXT_Pp)
 
 #define PROTOCOL_NR_RRC_CTXT_FMT                   PROTOCOL_CTXT_FMT
-#define PROTOCOL_NR_RRC_CTXT_ARGS(CTXT_Pp)         PROTOCOL_CTXT_ARGS(CTXT_Pp)
+#define PROTOCOL_NR_RRC_CTXT_ARGS(CTXT_Pp)         PROTOCOL_NR_CTXT_ARGS(CTXT_Pp)
 
 
 #define NR_UE_MODULE_INVALID ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!!
@@ -126,7 +128,7 @@ typedef enum UE_STATE_NR_e {
 #define MAX_MEAS_ID                                   6
 
 #define PAYLOAD_SIZE_MAX                              1024
-#define RRC_BUF_SIZE                                  255
+#define RRC_BUF_SIZE                                  8192
 #define UNDEF_SECURITY_MODE                           0xff
 #define NO_SECURITY_MODE                              0x20
 
@@ -149,7 +151,7 @@ typedef struct UE_RRC_INFO_NR_s {
   uint32_t                                            SIStatus;
   uint32_t                                            SIcnt;
   uint8_t                                             MCCHStatus[8];             // MAX_MBSFN_AREA
-  uint8_t                                             SIwindowsize;              //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
+  uint16_t                                            SIwindowsize;              //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
   uint8_t                                             handoverTarget;
   //HO_STATE_t ho_state;
   uint16_t
@@ -168,8 +170,9 @@ typedef struct UE_RRC_INFO_NR_s {
 
 typedef struct UE_S_TMSI_NR_s {
   boolean_t                                           presence;
-  mme_code_t                                          mme_code;
-  m_tmsi_t                                            m_tmsi;
+  uint16_t                                            amf_set_id;
+  uint8_t                                             amf_pointer;
+  uint32_t                                            fiveg_tmsi;
 } __attribute__ ((__packed__)) NR_UE_S_TMSI;
 
 
@@ -236,16 +239,42 @@ typedef struct RB_INFO_TABLE_ENTRY_NR_s {
   NR_RB_INFO                                          Rb_info;
   uint8_t                                             Active;
   uint32_t                                            Next_check_frame;
-  uint8_t                                             Status;
+  uint8_t                                             status;
 } NR_RB_INFO_TABLE_ENTRY;
 
 typedef struct SRB_INFO_TABLE_ENTRY_NR_s {
   NR_SRB_INFO                                         Srb_info;
   uint8_t                                             Active;
-  uint8_t                                             Status;
+  uint8_t                                             status;
   uint32_t                                            Next_check_frame;
 } NR_SRB_INFO_TABLE_ENTRY;
 
+typedef struct nr_rrc_guami_s {
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t  mnc_len;
+  uint8_t  amf_region_id;
+  uint16_t amf_set_id;
+  uint8_t  amf_pointer;
+} nr_rrc_guami_t;
+
+typedef enum pdu_session_satus_e {
+  PDU_SESSION_STATUS_NEW,
+  PDU_SESSION_STATUS_DONE,
+  PDU_SESSION_STATUS_ESTABLISHED,
+  PDU_SESSION_STATUS_REESTABLISHED, // after HO
+  PDU_SESSION_STATUS_TOMODIFY,      // ENDC NSA
+  PDU_SESSION_STATUS_FAILED,
+  PDU_SESSION_STATUS_TORELEASE  // to release DRB between eNB and UE
+} pdu_session_status_t;
+
+typedef struct pdu_session_param_s {
+  pdusession_t param;
+  uint8_t status;
+  uint8_t xid; // transaction_id
+  ngap_Cause_t cause;
+  uint8_t cause_value;
+} __attribute__ ((__packed__)) pdu_session_param_t;
 
 typedef struct gNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
@@ -267,71 +296,94 @@ typedef struct gNB_RRC_UE_s {
 
 
   NR_UE_NR_Capability_t*             UE_Capability_nr;
+  int                                UE_Capability_size;
   NR_UE_MRDC_Capability_t*           UE_Capability_MRDC;
+  int                                UE_MRDC_Capability_size;
 
   NR_CellGroupConfig_t               *secondaryCellGroup;
+  NR_CellGroupConfig_t               *masterCellGroup;
   NR_RRCReconfiguration_t            *reconfig;
   NR_RadioBearerConfig_t             *rb_config;
 
   ImsiMobileIdentity_t               imsi;
 
-#if defined(ENABLE_SECURITY)
-  /* KeNB as derived from KASME received from EPC */
-  uint8_t kenb[32];
-  int8_t  kenb_ncc;
+  /* KgNB as derived from KASME received from EPC */
+  uint8_t kgnb[32];
+  int8_t  kgnb_ncc;
   uint8_t nh[32];
   int8_t  nh_ncc;
-#endif
+
   /* Used integrity/ciphering algorithms */
   NR_CipheringAlgorithm_t            ciphering_algorithm;
   e_NR_IntegrityProtAlgorithm        integrity_algorithm;
 
-  uint8_t                            Status;
+  uint8_t                            StatusRrc;
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 
-  /* Information from UE RRC ConnectionRequest */
-  UE_S_TMSI                          Initialue_identity_s_TMSI;
+  /* Information from UE RRC Setup Request */
+  NR_UE_S_TMSI                       Initialue_identity_5g_s_TMSI;
+  uint64_t                           ng_5G_S_TMSI_Part1;
+  uint16_t                           ng_5G_S_TMSI_Part2;
   NR_EstablishmentCause_t            establishment_cause;
 
   /* Information from UE RRC ConnectionReestablishmentRequest */
-  NR_ReestablishmentCause_t             reestablishment_cause;
+  NR_ReestablishmentCause_t          reestablishment_cause;
 
   /* UE id for initial connection to S1AP */
   uint16_t                           ue_initial_id;
 
   /* Information from S1AP initial_context_setup_req */
   uint32_t                           gNB_ue_s1ap_id :24;
+  uint32_t                           gNB_ue_ngap_id;
+  uint64_t                           amf_ue_ngap_id:40;
+  nr_rrc_guami_t                     ue_guami;
 
-  security_capabilities_t            security_capabilities;
+  ngap_security_capabilities_t       security_capabilities;
 
   /* Total number of e_rab already setup in the list */
   uint8_t                           setup_e_rabs;
   /* Number of e_rab to be setup in the list */
   uint8_t                            nb_of_e_rabs;
+  /* Total number of pdu session already setup in the list */
+  uint8_t                           setup_pdu_sessions;
+  /* Number of pdu session to be setup in the list */
+  uint8_t                            nb_of_pdusessions;
   /* Number of e_rab to be modified in the list */
   uint8_t                            nb_of_modify_e_rabs;
   uint8_t                            nb_of_failed_e_rabs;
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* list of e_rab to be setup by RRC layers */
+  /* list of pdu session to be setup by RRC layers */
   e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
+  pdu_session_param_t                pduSession[NR_NB_RB_MAX];//[NGAP_MAX_PDU_SESSION];
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
+  uint8_t                            nb_release_of_pdusessions;
+  pdusession_failed_t                pdusessions_release_failed[NGAP_MAX_PDUSESSION];
   // LG: For GTPV1 TUNNELS
-  uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
-  transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
-  rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
+  uint32_t                           gnb_gtp_teid[S1AP_MAX_E_RAB];
+  transport_layer_addr_t             gnb_gtp_addrs[S1AP_MAX_E_RAB];
+  rb_id_t                            gnb_gtp_ebi[S1AP_MAX_E_RAB];
+  rb_id_t                            gnb_gtp_psi[S1AP_MAX_E_RAB];
+
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;
   uint32_t                           ue_release_timer_s1;
   uint32_t                           ue_release_timer_thres_s1;
+  uint32_t                           ue_release_timer_ng;
+  uint32_t                           ue_release_timer_thres_ng;
   uint32_t                           ue_release_timer_rrc;
   uint32_t                           ue_release_timer_thres_rrc;
   uint32_t                           ue_reestablishment_timer;
   uint32_t                           ue_reestablishment_timer_thres;
   uint8_t                            e_rab_release_command_flag;
+  uint8_t                            pdu_session_release_command_flag;
+  uint8_t                            established_pdu_sessions_flag;
+  uint32_t                           ue_rrc_inactivity_timer;
+  int8_t                             reestablishment_xid;
   //------------------------------------------------------------------------------//
   NR_CellGroupId_t                                      cellGroupId;
   struct NR_SpCellConfig                                *spCellConfig;
@@ -341,6 +393,10 @@ typedef struct gNB_RRC_UE_s {
   struct NR_CellGroupConfig__rlc_BearerToReleaseList    *rlc_BearerRelease;
   struct NR_MAC_CellGroupConfig                         *mac_CellGroupConfig;
   struct NR_PhysicalCellGroupConfig                     *physicalCellGroupConfig;
+
+  /* Nas Pdu */
+  uint8_t                        nas_pdu_flag;
+  ngap_nas_pdu_t                 nas_pdu;
 
 } gNB_RRC_UE_t;
 
@@ -372,27 +428,60 @@ typedef struct {
   uint8_t                                   *SIB1;
   uint8_t                                   sizeof_SIB1;
 
+  uint8_t                                   *SIB23;
+  uint8_t                                   sizeof_SIB23;
+
   uint8_t                                   *ServingCellConfigCommon;
   uint8_t                                   sizeof_servingcellconfigcommon;
 
+  int                                       physCellId;
+
   NR_BCCH_BCH_Message_t                     mib;
-  int ssb_SubcarrierOffset;                  
+  NR_BCCH_BCH_Message_t                    *mib_DU;
+  NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
+  NR_SIB1_t                                *sib1;
+  NR_SIB2_t                                *sib2;
+  NR_SIB3_t                                *sib3;
+  NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
+  int ssb_SubcarrierOffset;
+  int sib1_tda;
   int pdsch_AntennaPorts;
+  int pusch_AntennaPorts;
+  int minRXTXTIME;
+  int do_CSIRS;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
+  NR_PDCCH_ConfigSIB1_t                     *pdcch_ConfigSIB1;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
   int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
+  int                                       p_gNB;
 
 } rrc_gNB_carrier_data_t;
 //---------------------------------------------------
 
 
+typedef struct {
+  /* nea0 = 0, nea1 = 1, ... */
+  int ciphering_algorithms[4];
+  int ciphering_algorithms_count;
+
+  /* nia0 = 0, nia1 = 1, ... */
+  int integrity_algorithms[4];
+  int integrity_algorithms_count;
+
+  /* flags to enable/disable ciphering and integrity for DRBs */
+  int do_drb_ciphering;
+  int do_drb_integrity;
+} nr_security_configuration_t;
 
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
+  ngran_node_t                                        node_type;
+  uint32_t                                            node_id;
+  char                                               *node_name;
   int                                                 module_id;
   eth_params_t                                        eth_params_s;
   rrc_gNB_carrier_data_t                              carrier;
@@ -401,6 +490,14 @@ typedef struct gNB_RRC_INST_s {
   int                                                 Nb_ue;
   hash_table_t                                        *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t
   hash_table_t                                        *s1ap_id2_s1ap_ids   ; // key is    content is rrc_ue_s1ap_ids_t
+  hash_table_t                                        *initial_id2_ngap_ids;
+  hash_table_t                                        *ngap_id2_ngap_ids   ;
+
+  /// NR cell id
+  uint64_t nr_cellid;
+
+  // RRC configuration
+  gNB_RrcConfigurationReq configuration;
 
   // other PLMN parameters
   /// Mobile country code
@@ -418,9 +515,14 @@ typedef struct gNB_RRC_INST_s {
   int srb1_timer_reordering;
   int srb1_timer_status_prohibit;
   int srs_enable[MAX_NUM_CCs];
+  uint16_t sctp_in_streams;
+  uint16_t sctp_out_streams;
+  int cell_info_configured;
+  pthread_mutex_t cell_info_mutex;
 
+  // security configuration (preferred algorithms)
+  nr_security_configuration_t security;
 } gNB_RRC_INST;
-
 
 #include "nr_rrc_proto.h" //should be put here otherwise compilation error
 

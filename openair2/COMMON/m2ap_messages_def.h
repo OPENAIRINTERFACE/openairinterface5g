@@ -50,6 +50,7 @@ MESSAGE_DEF(M2AP_DEREGISTERED_ENB_IND           , MESSAGE_PRIORITY_MED, m2ap_der
 /* M2AP -> SCTP */
 
 MESSAGE_DEF(M2AP_MCE_SCTP_REQ        , MESSAGE_PRIORITY_MED, m2ap_mce_sctp_req_t       , m2ap_mce_sctp_req)
+MESSAGE_DEF(M2AP_ENB_SCTP_REQ        , MESSAGE_PRIORITY_MED, m2ap_enb_sctp_req_t       , m2ap_enb_sctp_req)
 //MESSAGE_DEF(M2AP_ENB_SCTP_REQ        , MESSAGE_PRIORITY_MED, m2ap_enb_setup_req_t       , f1ap_enb_setup_req)
 
 /* eNB_DU application layer -> M2AP messages or CU M2AP -> RRC*/

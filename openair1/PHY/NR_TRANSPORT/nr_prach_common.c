@@ -34,15 +34,14 @@
 #include "PHY/impl_defs_nr.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/NR_TRANSPORT/nr_prach.h"
-#include "PHY/NR_TRANSPORT/nr_transport_proto_common.h"
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-
 #include "T.h"
 
-void init_nr_prach_tables(int N_ZC);
 
-void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
+
+/*void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
 
   FILE *fd;
 
@@ -76,23 +75,13 @@ void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
   fprintf(fd,"prach_config: n_ra_prboffset    = %d\n",frame_parms->prach_config_common.prach_ConfigInfo.msg1_frequencystart);
   fclose(fd);
 
-}
+}*/
 
 // This function computes the du
-void nr_fill_du(uint8_t prach_fmt)
+void nr_fill_du(uint16_t N_ZC,uint16_t *prach_root_sequence_map)
 {
 
   uint16_t iu,u,p;
-  uint16_t N_ZC;
-  uint16_t *prach_root_sequence_map;
-
-  if (prach_fmt<4) {
-    N_ZC = 839;
-    prach_root_sequence_map = prach_root_sequence_map_0_3;
-  } else {
-    N_ZC = 139;
-    prach_root_sequence_map = prach_root_sequence_map_abc;
-  }
 
   for (iu=0; iu<(N_ZC-1); iu++) {
 
@@ -107,214 +96,49 @@ void nr_fill_du(uint8_t prach_fmt)
 
 }
 
-int is_nr_prach_subframe(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t subframe) {
-
-  uint8_t prach_ConfigIndex  = frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
-  /*
-  // For FR1 paired
-  if (((frame%table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][2]) == table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][3]) &&
-  ((table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][4]&(1<<subframe)) == 1)) {
-  // using table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
-  return(1);
-  } else {
-  return(0);
-  }
-  */
-  // For FR1 unpaired
-  if (((frame%table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][2]) == table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][3]) &&
-      ((table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][4]&(1<<subframe)) == 1)) {
-    // using table 6.3.3.2-2: Random access configurations for FR1 and unpaired
-    return(1);
-  } else {
-    return(0);
-  }
-  /*
-  // For FR2: FIXME
-  if ((((frame%table_6_3_3_2_4_prachConfig_Index[prach_ConfigIndex][2]) == table_6_3_3_2_4_prachConfig_Index[prach_ConfigIndex][3]) ||
-  ((frame%table_6_3_3_2_4_prachConfig_Index[prach_ConfigIndex][2]) == table_6_3_3_2_4_prachConfig_Index[prach_ConfigIndex][4]))
-  &&
-  ((table_6_3_3_2_4_prachConfig_Index[prach_ConfigIndex][5]&(1<<subframe)) == 1)) {
-  // using table 6.3.3.2-2: Random access configurations for FR1 and unpaired
-  return(1);
-  } else {
-  return(0);
-  }
-  */
-}
-
-
-int do_prach_rx(NR_DL_FRAME_PARMS *fp,int frame,int slot) {
-
-  int subframe = slot / fp->slots_per_subframe;
-  // when were in the last slot of the subframe and this is a PRACH subframe ,return 1
-  if (((slot%fp->slots_per_subframe) == fp->slots_per_subframe-1)&&
-      (is_nr_prach_subframe(fp,frame,subframe))) return (1);
-  else return(0);
-}
-
-uint16_t get_nr_prach_fmt(int prach_ConfigIndex,lte_frame_type_t frame_type, nr_frequency_range_e fr)
-{
-
-  if (frame_type==FDD) return (table_6_3_3_2_2_prachConfig_Index[prach_ConfigIndex][0]); // if using table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
-  else if (fr==nr_FR1) return (table_6_3_3_2_3_prachConfig_Index[prach_ConfigIndex][0]); // if using table 6.3.3.2-3: Random access configurations for FR1 and unpaired spectrum
-  else AssertFatal(1==0,"FR2 prach configuration not supported yet\n");
-  // For FR2 not implemented. FIXME
-}
-
-void compute_nr_prach_seq(uint16_t rootSequenceIndex,
-			  uint8_t prach_ConfigIndex,
-			  uint8_t zeroCorrelationZoneConfig,
-			  uint8_t highSpeedFlag,
-			  lte_frame_type_t frame_type,
-			  nr_frequency_range_e fr,
-			  uint32_t X_u[64][839])
-{
+void compute_nr_prach_seq(uint8_t short_sequence,
+                          uint8_t num_sequences,
+                          uint8_t rootSequenceIndex,
+                          uint32_t X_u[64][839]){
 
   // Compute DFT of x_u => X_u[k] = x_u(inv(u)*k)^* X_u[k] = exp(j\pi u*inv(u)*k*(inv(u)*k+1)/N_ZC)
-  unsigned int k,inv_u,i,NCS=0,num_preambles;
+  unsigned int k,inv_u,i;
   int N_ZC;
-  uint8_t prach_fmt = get_nr_prach_fmt(prach_ConfigIndex,frame_type,fr);
+
   uint16_t *prach_root_sequence_map;
-  uint16_t u, preamble_offset;
-  uint16_t n_shift_ra,n_shift_ra_bar, d_start,numshift;
-  uint8_t not_found;
+  uint16_t u;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_COMPUTE_PRACH, VCD_FUNCTION_IN);
 
-#ifdef NR_PRACH_DEBUG
-  LOG_I(PHY,"compute_prach_seq: NCS_config %d, prach_fmt %x\n",zeroCorrelationZoneConfig, prach_fmt);
-#endif
+  LOG_D(PHY,"compute_prach_seq: prach short sequence %x, num_sequences %d, rootSequenceIndex %d\n", short_sequence, num_sequences, rootSequenceIndex);
 
-
-  N_ZC = (prach_fmt < 4) ? 839 : 139;
+  N_ZC = (short_sequence) ? 139 : 839;
   //init_prach_tables(N_ZC); //moved to phy_init_lte_ue/eNB, since it takes to long in real-time
   
   init_nr_prach_tables(N_ZC);
 
-  if (prach_fmt < 4) {
-    prach_root_sequence_map = prach_root_sequence_map_0_3;
-  } else {
+  if (short_sequence) {
     // FIXME cannot be reached
     prach_root_sequence_map = prach_root_sequence_map_abc;
-  }
-
-
-#ifdef PRACH_DEBUG
-  LOG_I( PHY, "compute_prach_seq: done init prach_tables\n" );
-#endif
-
-
-
-
-  int restricted_Type = 0; //this is hardcoded ('0' for restricted_TypeA; and '1' for restricted_TypeB). FIXME
-
-  if (highSpeedFlag== 0) {
-    
-#ifdef PRACH_DEBUG
-    LOG_I(PHY,"Low speed prach : NCS_config %d\n",zeroCorrelationZoneConfig);
-#endif
-    
-    AssertFatal(zeroCorrelationZoneConfig<=15,
-		"FATAL, Illegal Ncs_config for unrestricted format %"PRIu8"\n", zeroCorrelationZoneConfig );
-    if (prach_fmt<3)  NCS = NCS_unrestricted_delta_f_RA_125[zeroCorrelationZoneConfig];
-    if (prach_fmt==3) NCS = NCS_unrestricted_delta_f_RA_5[zeroCorrelationZoneConfig];
-    if (prach_fmt>3)  NCS = NCS_unrestricted_delta_f_RA_15[zeroCorrelationZoneConfig];
-    
-    num_preambles = (NCS==0) ? 64 : ((64*NCS)/N_ZC);
-
-    if (NCS>0) num_preambles++;
-
-    preamble_offset = 0;
   } else {
-
-#ifdef PRACH_DEBUG
-    LOG_I( PHY, "high speed prach : NCS_config %"PRIu8"\n", zeroCorrelationZoneConfig );
-#endif
-
-    AssertFatal(zeroCorrelationZoneConfig<=14,
-		"FATAL, Illegal Ncs_config for restricted format %"PRIu8"\n", zeroCorrelationZoneConfig );
-    if (prach_fmt<3){
-      if (restricted_Type == 0) NCS = NCS_restricted_TypeA_delta_f_RA_125[zeroCorrelationZoneConfig]; // for TypeA, this is hardcoded. FIXME
-      if (restricted_Type == 1) NCS = NCS_restricted_TypeB_delta_f_RA_125[zeroCorrelationZoneConfig]; // for TypeB, this is hardcoded. FIXME
-    }
-    if (prach_fmt==3){
-      if (restricted_Type == 0) NCS = NCS_restricted_TypeA_delta_f_RA_5[zeroCorrelationZoneConfig]; // for TypeA, this is hardcoded. FIXME
-      if (restricted_Type == 1) NCS = NCS_restricted_TypeB_delta_f_RA_5[zeroCorrelationZoneConfig]; // for TypeB, this is hardcoded. FIXME
-    }
-    if (prach_fmt>3){
-
-    }
-
-    nr_fill_du(prach_fmt);
-
-    num_preambles = 64; // compute ZC sequence for 64 possible roots
-    // find first non-zero shift root (stored in preamble_offset)
-    not_found = 1;
-    preamble_offset = 0;
-
-    while (not_found == 1) {
-      // current root depending on rootSequenceIndex
-      int index = (rootSequenceIndex + preamble_offset) % N_ZC;
-
-      if (prach_fmt<4) {
-        // prach_root_sequence_map points to prach_root_sequence_map0_3
-        DevAssert( index < sizeof(prach_root_sequence_map_0_3) / sizeof(prach_root_sequence_map_0_3[0]) );
-      } else {
-        // prach_root_sequence_map points to prach_root_sequence_map4
-        DevAssert( index < sizeof(prach_root_sequence_map_abc) / sizeof(prach_root_sequence_map_abc[0]) );
-      }
-
-      u = prach_root_sequence_map[index];
-
-      uint16_t n_group_ra = 0;
-
-      if ( (nr_du[u]<(N_ZC/3)) && (nr_du[u]>=NCS) ) {
-        n_shift_ra     = nr_du[u]/NCS;
-        d_start        = (nr_du[u]<<1) + (n_shift_ra * NCS);
-        n_group_ra     = N_ZC/d_start;
-        n_shift_ra_bar = max(0,(N_ZC-(nr_du[u]<<1)-(n_group_ra*d_start))/N_ZC);
-      } else if  ( (nr_du[u]>=(N_ZC/3)) && (nr_du[u]<=((N_ZC - NCS)>>1)) ) {
-        n_shift_ra     = (N_ZC - (nr_du[u]<<1))/NCS;
-        d_start        = N_ZC - (nr_du[u]<<1) + (n_shift_ra * NCS);
-        n_group_ra     = nr_du[u]/d_start;
-        n_shift_ra_bar = min(n_shift_ra,max(0,(nr_du[u]- (n_group_ra*d_start))/NCS));
-      } else {
-        n_shift_ra     = 0;
-        n_shift_ra_bar = 0;
-      }
-
-      // This is the number of cyclic shifts for the current root u
-      numshift = (n_shift_ra*n_group_ra) + n_shift_ra_bar;
-
-      // skip to next root and recompute parameters if numshift==0
-      if (numshift>0)
-        not_found = 0;
-      else
-        preamble_offset++;
-    }
+    prach_root_sequence_map = prach_root_sequence_map_0_3;
   }
 
-#ifdef PRACH_DEBUG
+  LOG_D( PHY, "compute_prach_seq: done init prach_tables\n" );
 
-  if (NCS>0)
-    LOG_I( PHY, "Initializing %u preambles for PRACH (NCS_config %"PRIu8", NCS %u, N_ZC/NCS %u)\n",
-           num_preambles, zeroCorrelationZoneConfig, NCS, N_ZC/NCS );
+  for (i=0; i<num_sequences; i++) {
+    int index = (rootSequenceIndex+i) % (N_ZC-1);
 
-#endif
-
-  for (i=0; i<num_preambles; i++) {
-    int index = (rootSequenceIndex+i+preamble_offset) % N_ZC;
-
-    if (prach_fmt<4) {
-      // prach_root_sequence_map points to prach_root_sequence_map0_3
-      DevAssert( index < sizeof(prach_root_sequence_map_0_3) / sizeof(prach_root_sequence_map_0_3[0]) );
-    } else {
+    if (short_sequence) {
       // prach_root_sequence_map points to prach_root_sequence_map4
       DevAssert( index < sizeof(prach_root_sequence_map_abc) / sizeof(prach_root_sequence_map_abc[0]) );
+    } else {
+      // prach_root_sequence_map points to prach_root_sequence_map0_3
+      DevAssert( index < sizeof(prach_root_sequence_map_0_3) / sizeof(prach_root_sequence_map_0_3[0]) );
     }
 
     u = prach_root_sequence_map[index];
-
+    LOG_D(PHY,"prach index %d => u=%d\n",index,u);
     inv_u = nr_ZC_inv[u]; // multiplicative inverse of u
 
 
@@ -322,8 +146,8 @@ void compute_nr_prach_seq(uint16_t rootSequenceIndex,
     // for the unrestricted case X_u[0] is the first root indicated by the rootSequenceIndex
 
     for (k=0; k<N_ZC; k++) {
-      // 420 is the multiplicative inverse of 2 (required since ru is exp[j 2\pi n])
-      X_u[i][k] = ((uint32_t*)nr_ru)[(((k*(1+(inv_u*k)))%N_ZC)*420)%N_ZC];
+      // multiply by inverse of 2 (required since ru is exp[j 2\pi n])
+      X_u[i][k] = ((uint32_t*)nr_ru)[(((k*(1+(inv_u*k)))%N_ZC)*nr_ZC_inv[2])%N_ZC];
     }
   }
 

@@ -97,7 +97,6 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 #define CMDLINE_UEPARAMS_DESC {  \
-    {"siml1",             CONFIG_HLP_SIML1,       PARAMFLAG_BOOL,  iptr:&simL1flag,                    defintval:0,          TYPE_INT,      0},   \
     {"U",                 CONFIG_HLP_NUMUE,       0,               u16ptr:&NB_UE_INST,                 defuintval:1,         TYPE_UINT16,   0},   \
     {"ue-rxgain",         CONFIG_HLP_UERXG,       0,               dblptr:&(rx_gain[0][0]),            defdblval:130,        TYPE_DOUBLE,   0},   \
     {"ue-rxgain-off",     CONFIG_HLP_UERXGOFF,    0,               dblptr:&rx_gain_off,                defdblval:0,          TYPE_DOUBLE,   0},   \
@@ -155,6 +154,10 @@ extern int sync_var;
 extern int transmission_mode;
 extern double cpuf;
 
+extern int emulate_rf;
+extern int numerology;
+extern int usrp_tx_thread;
+
 // In lte-enb.c
 extern void stop_eNB(int);
 extern void kill_eNB_proc(int inst);
@@ -167,7 +170,7 @@ extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
 extern void kill_RU_proc(RU_t *ru);
 extern void set_function_spec_param(RU_t *ru);
-extern void init_RU(char *, int send_dmrssync);
+extern void init_RU(RU_t **rup,int nb_RU,PHY_VARS_eNB ***eNBp,int nb_L1,int *nb_CC,char *rf_config_file, int send_dmrssync);
 
 // In lte-ue.c
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
@@ -195,7 +198,6 @@ extern void init_te_thread(PHY_VARS_eNB *);
 extern void kill_td_thread(PHY_VARS_eNB *);
 extern void kill_te_thread(PHY_VARS_eNB *);
 
-extern void RCConfig_sim(void);
 extern void init_ocm(void);
 extern void init_ue_devices(PHY_VARS_UE *);
 

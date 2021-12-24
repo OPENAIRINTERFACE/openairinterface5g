@@ -1,0 +1,1912 @@
+[CONFIG] get parameters from libconfig ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.minimassive.master.conf , debug flags: 0x00000000
+[CONFIG] function config_libconfig_init returned 0
+[CONFIG] config module libconfig loaded
+[LIBCONFIG] config: 1/1 parameters successfully set, (1 to default value)
+# /dev/cpu_dma_latency set to 0us
+[LIBCONFIG] log_config: 3/3 parameters successfully set, (1 to default value)
+[LIBCONFIG] log_config: 52/52 parameters successfully set, (46 to default value)
+[LIBCONFIG] log_config: 52/52 parameters successfully set, (52 to default value)
+[LIBCONFIG] log_config: 15/15 parameters successfully set, (15 to default value)
+[LIBCONFIG] log_config: 15/15 parameters successfully set, (15 to default value)
+log init done
+Reading in command-line options
+[LIBCONFIG] (root): 23/23 parameters successfully set, (19 to default value)
+[LIBCONFIG] (root): 5/5 parameters successfully set, (4 to default value)
+Getting ENBSParams
+[LIBCONFIG] (root): 3/3 parameters successfully set, (1 to default value)
+[LIBCONFIG] THREAD_STRUCT.[0]: 2/2 parameters successfully set, (0 to default value)
+[0m[1;31m[ENB_APP]   Impossible value: PARALLEL_RU_L1_TRX_SPLITaaaaaa
+[0m[CONFIG] parallel_conf is set to 0
+[LIBCONFIG] THREAD_STRUCT.[0]: 2/2 parameters successfully set, (0 to default value)
+[0m[1;31m[ENB_APP]   Impossible value: ENABLE
+[0m[CONFIG] worker_conf is set to 0
+Configuration: nb_rrc_inst 1, nb_L1_inst 1, nb_ru 1
+[LIBCONFIG] loader: 2/2 parameters successfully set, (2 to default value)
+[LIBCONFIG] loader.NB_IoT: 2/2 parameters successfully set, (1 to default value)
+               nb_nbiot_rrc_inst 0, nb_nbiot_L1_inst 0, nb_nbiot_macrlc_inst 0
+[LIBCONFIG] TTracer: 4/4 parameters successfully set, (4 to default value)
+configuring for RAU/RRU
+CPU Freq is 2.992899 
+ITTI init, useMME: 1
+[0m[TMR]   Starting itti queue: TASK_UNKNOWN as task 0
+[0m[0m[TMR]   Starting itti queue: TASK_TIMER as task 1
+[0m[0m[TMR]   Starting itti queue: TASK_L2L1 as task 2
+[0m[0m[TMR]   Starting itti queue: TASK_BM as task 3
+[0m[0m[TMR]   Starting itti queue: TASK_PHY_ENB as task 4
+[0m[0m[TMR]   Starting itti queue: TASK_MAC_ENB as task 5
+[0m[0m[TMR]   Starting itti queue: TASK_RLC_ENB as task 6
+[0m[0m[TMR]   Starting itti queue: TASK_RRC_ENB_NB_IoT as task 7
+[0m[0m[TMR]   Starting itti queue: TASK_PDCP_ENB as task 8
+[0m[0m[TMR]   Starting itti queue: TASK_DATA_FORWARDING as task 9
+[0m[0m[TMR]   Starting itti queue: TASK_END_MARKER as task 10
+[0m[0m[TMR]   Starting itti queue: TASK_RRC_ENB as task 11
+[0m[0m[TMR]   Starting itti queue: TASK_RRC_GNB as task 12
+[0m[0m[TMR]   Starting itti queue: TASK_RAL_ENB as task 13
+[0m[0m[TMR]   Starting itti queue: TASK_S1AP as task 14
+[0m[0m[TMR]   Starting itti queue: TASK_X2AP as task 15
+[0m[0m[TMR]   Starting itti queue: TASK_M2AP_ENB as task 16
+[0m[0m[TMR]   Starting itti queue: TASK_M2AP_MCE as task 17
+[0m[0m[TMR]   Starting itti queue: TASK_M3AP as task 18
+[0m[0m[TMR]   Starting itti queue: TASK_M3AP_MME as task 19
+[0m[0m[TMR]   Starting itti queue: TASK_M3AP_MCE as task 20
+[0m[0m[TMR]   Starting itti queue: TASK_SCTP as task 21
+[0m[0m[TMR]   Starting itti queue: TASK_ENB_APP as task 22
+[0m[0m[TMR]   Starting itti queue: TASK_GNB_APP as task 23
+[0m[0m[TMR]   Starting itti queue: TASK_MCE_APP as task 24
+[0m[0m[TMR]   Starting itti queue: TASK_MME_APP as task 25
+[0m[0m[TMR]   Starting itti queue: TASK_FLEXRAN_AGENT as task 26
+[0m[0m[TMR]   Starting itti queue: TASK_PHY_UE as task 27
+[0m[0m[TMR]   Starting itti queue: TASK_MAC_UE as task 28
+[0m[0m[TMR]   Starting itti queue: TASK_RLC_UE as task 29
+[0m[0m[TMR]   Starting itti queue: TASK_PDCP_UE as task 30
+[0m[0m[TMR]   Starting itti queue: TASK_RRC_UE as task 31
+[0m[0m[TMR]   Starting itti queue: TASK_NAS_UE as task 32
+[0m[0m[TMR]   Starting itti queue: TASK_RAL_UE as task 33
+[0m[0m[TMR]   Starting itti queue: TASK_MSC as task 34
+[0m[0m[TMR]   Starting itti queue: TASK_GTPV1_U as task 35
+[0m[0m[TMR]   Starting itti queue: TASK_UDP as task 36
+[0m[0m[TMR]   Starting itti queue: TASK_CU_F1 as task 37
+[0m[0m[TMR]   Starting itti queue: TASK_DU_F1 as task 38
+[0m[LIBCONFIG] opt: 3/3 parameters successfully set, (3 to default value)
+[0m[OPT]   OPT disabled
+[0mreported resolution = 1 ns
+[0m[HW]   Version: Branch: NR_RRC_harq_hacks Abrev. Hash: 94fa9c5 Date: Fri Jun 19 18:16:53 2020 +0200
+[0mRuntime table
+[0m[PHY]   RC.eNB = 0x2b10b70
+[0m[LIBCONFIG] L1s.[0]: 24/24 parameters successfully set, (22 to default value)
+[0m[PHY]   RC.eNB[0] = 0x2b10c20
+[0m[0m[PHY]   RC.eNB[0][0] = 0x7f9fab347010
+[0m[0m[ENB_APP]   Initializing northbound interface for L1
+[0m[0m[PHY]   l1_north_init_eNB() RC.nb_L1_inst:1
+[0m[0m[PHY]   l1_north_init_eNB() RC.nb_L1_CC[0]:1
+[0m[0m[PHY]   l1_north_init_eNB() RC.eNB[0][0] installing callbacks
+[0m[0m[PHY]   read_config_and_init() RC.nb_L1_inst: 1
+[0m[LIBCONFIG] MACRLCs.[0]: 20/20 parameters successfully set, (15 to default value)
+[LIBCONFIG] MACRLCs.[0]: 20/20 parameters successfully set, (15 to default value)
+[0m[MAC]   [MAIN] Init function start:nb_macrlc_inst=1
+[0m[0m[PDCP]   PDCP layer has been initialized
+[0mConfiguring local RRC for MACRLC
+[0m[ENB_APP]   sched mode = default 0 [default]
+[0m[0m[MAC]   read_config_and_init() RC.nb_macrlc_inst: 1
+[0m[0m[PHY]   l1_north_init_eNB() RC.nb_L1_inst:1
+[0m[0m[PHY]   l1_north_init_eNB() RC.nb_L1_CC[0]:1
+[0m[0m[PHY]   l1_north_init_eNB() RC.eNB[0][0] installing callbacks
+[0m[LIBCONFIG] (root): 3/3 parameters successfully set, (1 to default value)
+[LIBCONFIG] eNBs.[0]: 20/20 parameters successfully set, (11 to default value)
+[0m[RRC]   Instance 0: Southbound Transport local_mac
+[0m[0m[RRC]   Setting node_type to ngran_eNB
+[0m[LIBCONFIG] eNBs.[0].plmn_list.[0]: 3/3 parameters successfully set, (0 to default value)
+[0m[RRC]   num component carriers 1 
+[0m[0m[RRC]   enb_config::RCconfig_RRC() parameter number: 0, total number of parameters: 78, ccspath: eNBs.[0].component_carriers.[0] 
+ 
+[0m[LIBCONFIG] eNBs.[0].component_carriers.[0]: 78/78 parameters successfully set, (17 to default value)
+phich.resource 0 (ONESIXTH), phich.duration 0 (NORMAL)
+No eMBMS configuration, skipping it
+[LIBCONFIG] eNBs.[0].component_carriers.[0].emtc_parameters: 88/88 parameters successfully set, (88 to default value)
+No eMTC configuration, skipping it
+[LIBCONFIG] eNBs.[0].component_carriers.[0].SLparameters: 39/39 parameters successfully set, (39 to default value)
+No SL configuration skipping it
+[LIBCONFIG] eNBs.[0].srb1_parameters: 6/6 parameters successfully set, (0 to default value)
+[0m[RRC]   Node type 0 
+ [0m[LIBCONFIG] (root): 3/3 parameters successfully set, (1 to default value)
+[LIBCONFIG] NETWORK_CONTROLLER: 6/6 parameters successfully set, (6 to default value)
+[LIBCONFIG] RUs.[0]: 27/27 parameters successfully set, (18 to default value)
+Creating RC.ru[0]:0x2b41780
+Setting function for RU 0 to eNodeB_3GPP
+[0m[PHY]   number of L1 instances 1, number of RU 1, number of CPU cores 4
+[0m[0m[FLEXRAN_AGENT]   FlexRAN Agent for eNB 0 is DISABLED
+[0m[0m[PDCP]   PDCP layer has been initialized
+[0m[0m[PDCP]   pdcp init,usegtp 
+[0m[0m[93m[PDCP]   ENB pdcp will use tun interface for MBMS
+[0m[NETLINK]Opened socket oaitun_enm1 with fd 84
+returnValue 0
+returnValue 0
+returnValue 0
+[0m[OIP]   Interface oaitun_enm1 successfully configured, ip address 10.0.2.1, mask 255.255.255.0 broadcast address 10.0.2.255
+[0m[0m[ENB_APP]   Creating ENB_APP eNB Task
+[0m[0m[TMR]   Created Posix thread TASK_ENB_APP
+[0m[0m[RRC]   Creating RRC eNB Task
+[0m[LIBCONFIG] (root): 3/3 parameters successfully set, (1 to default value)
+[0m[TMR]   Created Posix thread TASK_RRC_ENB
+[0m[LIBCONFIG] eNBs.[0]: 20/20 parameters successfully set, (11 to default value)
+[0m[TMR]   Created Posix thread TASK_SCTP
+[0m[0m[RRC]   Entering main loop of RRC message task
+[0m[LIBCONFIG] eNBs.[0].plmn_list.[0]: 3/3 parameters successfully set, (0 to default value)
+[0m[TMR]   Created Posix thread TASK_S1AP
+[0m[0m[TMR]   Created Posix thread TASK_UDP
+[0m[0m[SCTP]   Starting SCTP layer
+[0m[0m[S1AP]   Starting S1AP layer
+[0m[0m[UDP]   Initializing UDP task interface
+[0m[0m[UDP]   Initializing UDP task interface: DONE
+[0m[LIBCONFIG] eNBs.[0].component_carriers.[0]: 78/78 parameters successfully set, (17 to default value)
+[LIBCONFIG] eNBs.[0].mme_ip_address.[0]: 5/5 parameters successfully set, (0 to default value)
+[LIBCONFIG] eNBs.[0].SCTP: 2/2 parameters successfully set, (0 to default value)
+[LIBCONFIG] eNBs.[0].NETWORK_INTERFACES: 11/11 parameters successfully set, (2 to default value)
+[0m[TMR]   Created Posix thread TASK_GTPV1_U
+[0m[0m[GTPV1U]   Configuring GTPu
+[0m[LIBCONFIG] (root): 3/3 parameters successfully set, (1 to default value)
+[LIBCONFIG] eNBs.[0]: 1/1 parameters successfully set, (0 to default value)
+[LIBCONFIG] gNBs.[0]: 1/1 parameters successfully set, (1 to default value)
+[LIBCONFIG] eNBs.[0].NETWORK_INTERFACES: 3/3 parameters successfully set, (0 to default value)
+[0m[GTPV1U]   Configuring GTPu address : 192.168.18.199 -> c712a8c0
+[0m[0m[ENB_APP]   default drx 2
+[0m[0m[ENB_APP]   [eNB 0] eNB_app_register via S1AP for instance 0
+[0m[LIBCONFIG] (root): 3/3 parameters successfully set, (1 to default value)
+[0m[GTPV1U]   Initializing GTPU stack 0x16968b0
+[0m[LIBCONFIG] eNBs.[0]: 20/20 parameters successfully set, (11 to default value)
+[LIBCONFIG] eNBs.[0].plmn_list.[0]: 3/3 parameters successfully set, (0 to default value)
+[0m[S1AP]   Registered new eNB[0] and macro eNB id 3585
+[0m[0m[S1AP]   [eNB 0] check the mme registration state
+[0m[0m[GTPV1U]   Tx UDP_INIT IP addr 192.168.18.199 (868)
+[0m[0m[UDP]   Initializing UDP for local address 192.168.18.199 with port 2152
+[0m[0m[TMR]   Created Posix thread TASK_X2AP
+[0m[0m[MAC]   Creating MAC eNB Task
+[0m[LIBCONFIG] eNBs.[0].component_carriers.[0]: 78/78 parameters successfully set, (17 to default value)
+[LIBCONFIG] list eNBs.[0].target_enb_x2_ip_address not found in config file ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.minimassive.master.conf 
+[LIBCONFIG] eNBs.[0]: 2/2 parameters successfully set, (0 to default value)
+[LIBCONFIG] eNBs.[0].SCTP: 2/2 parameters successfully set, (0 to default value)
+[0m[UDP]   Inserting new descriptor for task 35, sd 85
+[0m[LIBCONFIG] eNBs.[0].NETWORK_INTERFACES: 11/11 parameters successfully set, (2 to default value)
+[0m[UDP]   Initializing UDP for local address 192.168.18.199 with port 2152: DONE
+[0m[0m[MAC]   Starting main loop of MAC message task
+[0m[LIBCONFIG] eNBs.[0]: 1/1 parameters successfully set, (1 to default value)
+[0m[SCTP]   sctp_bindx SCTP_BINDX_ADD_ADDR socket bound to : 192.168.18.199
+[0m[0m[X2AP]   Registered new eNB[0] and macro eNB id 3585
+[0m[0m[X2AP]   eNB[0] eNB id 3585 acting as a listner (server)
+[0m[0m[TMR]   Created Posix thread TASK_MAC_ENB
+[0m[0m[SCTP]   Converted ipv4 address 192.168.18.99 to network type
+[0m[0m[RRC]   [eNB 0] Received RRC_CONFIGURATION_REQ : 0x2b4a80c
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 0] Init...
+[0m[0m[SCTP]   connectx assoc_id  903 in progress..., used 1 addresses
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 0] Checking release 
+[0m[0m[SCTP]   Inserted new descriptor for sd 86 in list, nb elements 1, assoc_id 903
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 0] Rel14 RRC detected, MBMS flag 0
+[0m[0m[SCTP]   Received SCTP_INIT_MSG_MULTI_REQ
+[0m[0m[RRC]   [eNB 0] Node type 0 
+ [0m[0m[SCTP]   Creating new listen socket on port 36422 with
+[0m[0m[SCTP]   ipv4 addresses:
+[0m[0m[SCTP]   	- 192.168.18.199
+[0m[0m[RRC]   configuration->schedulingInfoSIB1_BR_r13[CC_id] 0
+[0m[0m[RRC]   Configuring MIB (N_RB_DL 25,phich_Resource 0,phich_Duration 0)
+[0m[0m[RRC]   [MIB] systemBandwidth 2, phich_duration 0, phich_resource 0, sfn 0
+[0m[0m[RRC]   [MIB] schedulingInfoSIB1 0
+[0m[0m[RRC]   [eNB 0] Configuration SIB2/3, eMBMS = 0
+[0m[0m[RRC]   do_SIB23, size 38 
+ [0m[0m[MAC]   Configuring MIB for instance 0, CCid 0 : (band 7,N_RB_DL 25,Nid_cell 0,p 1,DL freq 2680000000,phich_config.resource 0, phich_config.duration 0)
+[0m[0m[MAC]   config_mib() NFAPI_CONFIG_REQUEST(num_tlv:16) DL_BW:25 UL_BW:25 Ncp 0,p_eNB 1,earfcn 3350,band 7,phich_resource 0 phich_duration 0 phich_power_offset 6000 PSS 6000 SSS 6000 PCI 0 PBCH repetition 0
+[0m[0m[MAC]   [CONFIG]SIB2/3 Contents (partial)
+[0m[0m[MAC]   [CONFIG]pusch_config_common.n_SB = 1
+[0m[0m[MAC]   [CONFIG]pusch_config_common.hoppingMode = 0
+[0m[0m[MAC]   [CONFIG]pusch_config_common.pusch_HoppingOffset = 0
+[0m[0m[MAC]   [CONFIG]pusch_config_common.enable64QAM = 0
+[0m[0m[MAC]   [CONFIG]pusch_config_common.groupHoppingEnabled = 1
+[0m[0m[MAC]   [CONFIG]pusch_config_common.groupAssignmentPUSCH = 0
+[0m[0m[MAC]   [CONFIG]pusch_config_common.sequenceHoppingEnabled = 0
+[0m[0m[MAC]   [CONFIG]pusch_config_common.cyclicShift  = 1
+[0m[0m[PHY]   Configuring MIB for instance 0, CCid 0 : (band 7,N_RB_DL 25, N_RB_UL 25, Nid_cell 0,eNB_tx_antenna_ports 1,Ncp 0,DL freq 3350,phich_config.resource 0, phich_config.duration 0)
+[0m[0m[PHY]   Initializing frame parms for N_RB_DL 25, Ncp 0, osf 1
+[0m[0m[PHY]   lte_parms.c: Setting N_RB_DL to 25, ofdm_symbol_size 512
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   Received notification for sd 86, type 32769
+[0m[0m[SCTP]   Client association changed: 0
+[0m[0m[SCTP]   ----------------------
+[0m[0m[SCTP]   Peer addresses:
+[0m[0m[SCTP]       - [192.168.18.99]
+[0m[0m[SCTP]   ----------------------
+[0m[0m[SCTP]   ----------------------
+[0m[0m[SCTP]   SCTP Status:
+[0m[0m[SCTP]   assoc id .....: 903
+[0m[0m[SCTP]   state ........: 4
+[0m[0m[SCTP]   instrms ......: 2
+[0m[0m[SCTP]   outstrms .....: 2
+[0m[0m[SCTP]   fragmentation : 1452
+[0m[0m[SCTP]   pending data .: 0
+[0m[0m[SCTP]   unack data ...: 0
+[0m[0m[SCTP]   rwnd .........: 106496
+[0m[0m[SCTP]   peer info     :
+[0m[0m[SCTP]       state ....: 2
+[0m[0m[SCTP]       cwnd .....: 4380
+[0m[0m[SCTP]       srtt .....: 0
+[0m[0m[SCTP]       rto ......: 3000
+[0m[0m[SCTP]       mtu ......: 1500
+[0m[0m[SCTP]   ----------------------
+[0m[0m[SCTP]   Comm up notified for sd 86, assigned assoc_id 903
+[0m[0m[S1AP]   3585 -> 00e010
+[0m<S1AP-PDU>
+    <initiatingMessage>
+        <procedureCode>17</procedureCode>
+        <criticality><reject/></criticality>
+        <value>
+            <S1SetupRequest>
+                <protocolIEs>
+                    <S1SetupRequestIEs>
+                        <id>59</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <Global-ENB-ID>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <eNB-ID>
+                                    <macroENB-ID>
+                                        00000000111000000001
+                                    </macroENB-ID>
+                                </eNB-ID>
+                            </Global-ENB-ID>
+                        </value>
+                    </S1SetupRequestIEs>
+                    <S1SetupRequestIEs>
+                        <id>60</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <ENBname>eNB-Eurecom-LTEBox</ENBname>
+                        </value>
+                    </S1SetupRequestIEs>
+                    <S1SetupRequestIEs>
+                        <id>64</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <SupportedTAs>
+                                <SupportedTAs-Item>
+                                    <tAC>00 01</tAC>
+                                    <broadcastPLMNs>
+                                        <PLMNidentity>22 F2 10</PLMNidentity>
+                                    </broadcastPLMNs>
+                                </SupportedTAs-Item>
+                            </SupportedTAs>
+                        </value>
+                    </S1SetupRequestIEs>
+                    <S1SetupRequestIEs>
+                        <id>137</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <PagingDRX><v128/></PagingDRX>
+                        </value>
+                    </S1SetupRequestIEs>
+                </protocolIEs>
+            </S1SetupRequest>
+        </value>
+    </initiatingMessage>
+</S1AP-PDU>
+[0m[SCTP]   Successfully sent 59 bytes on stream 0 for assoc_id 903
+[0m[LIBCONFIG] loader.coding: 2/2 parameters successfully set, (1 to default value)
+[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   Received notification for sd 86, type 32777
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   [903][86] Msg of length 58 received from port 36412, on stream 0, PPID 18
+[0m[0m[S1AP]   servedGUMMEIs.list.count 3
+[0m[0m[S1AP]   servedPLMNs.list.count 1
+[0m[0m[S1AP]   servedPLMNs.list.count 1
+[0m[0m[S1AP]   servedPLMNs.list.count 1
+[0m[0m[ENB_APP]   [eNB 0] Received S1AP_REGISTER_ENB_CNF: associated MME 1
+[0m[LOADER] library libcoding.so successfully loaded
+[0m[PHY]   prach_config_common.rootSequenceIndex = 0
+[0m[0m[PHY]   prach_config_common.prach_ConfigInfo.prach_ConfigIndex = 0
+[0m[0m[PHY]   prach_config_common.prach_ConfigInfo.highSpeedFlag = 0
+[0m[0m[PHY]   prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig = 1
+[0m[0m[PHY]   prach_config_common.prach_ConfigInfo.prach_FreqOffset = 2
+[0m[0m[PHY]   pusch_config_common.n_SB = 1
+[0m[0m[PHY]   pusch_config_common.hoppingMode = 0
+[0m[0m[PHY]   pusch_config_common.pusch_HoppingOffset = 0
+[0m[0m[PHY]   pusch_config_common.enable64QAM = 0
+[0m[0m[PHY]   pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1
+[0m[0m[PHY]   pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0
+[0m[0m[PHY]   pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0
+[0m[0m[PHY]   pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 2
+[0m[0m[PHY]   eNB 0/0 configured
+[0m[0m[RRC]   [eNB] handover active state is 0 
+[0m[0m[RRC]   [eNB] eMBMS active state is 0 
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 0] ENB:OPENAIR RRC IN....
+[0m[0m[ENB_APP]   START MAIN THREADS
+[0mRC.nb_L1_inst:1
+Initializing eNB threads single_thread_flag:0 wait_for_sync:0
+[0m[PHY]   [lte-softmodem.c] eNB structure about to allocated RC.nb_L1_inst:1 RC.nb_L1_CC[0]:1
+[0m[0m[PHY]   [lte-softmodem.c] eNB structure RC.eNB allocated
+[0m[0m[PHY]   Initializing eNB 0 CC_id 0 single_thread_flag:0
+[0m[0m[PHY]   Initializing eNB 0 CC_id 0
+[0m[0m[PHY]   Registering with MAC interface module
+[0m[0m[PHY]   Setting indication lists
+[0m[0m[PHY]   [lte-softmodem.c] eNB structure allocated
+[0mwait_eNBs()
+Waiting for eNB L1 instances to all get configured ... sleeping 50ms (nb_L1_inst 1)
+RC.nb_L1_CC[0]:1
+eNB L1 are configured
+About to Init RU threads RC.nb_RU:1
+Initializing RU threads
+[0m[1;31m[PHY]   DJP - delete code above this /home/eurecom/panos/NR_RRC_harq_hacks/openairinterface5g/targets/RT/USER/lte-ru.c:2739
+[0m[0m[PHY]   Copying frame parms from eNB 0 to ru 0
+[0m[0m[PHY]   Initializing RRU descriptor 0 : (local RF,synch_to_ext_device,0)
+[0mconfiguring ru_id 0 (start_rf 0x5b1a00)
+[0m[PHY]   Starting ru_thread 0, is_slave 0, send_dmrs 0
+[0m[0m[PHY]   Initializing RU proc 0 (eNodeB_3GPP,synch_to_ext_device),
+[0m[0m[PHY]   init_RU_proc() DJP - added creation of pthread_prach
+[0m[0m[93m[HW]   thread_top_init() called with affinity>0, but overruled by #ifndef CPU_AFFINITY.
+[0m[0m[HW]   [SCHED][eNB] ru_thread started on CPU 1, sched_policy = SCHED_FIFO , priority = 99, CPU Affinity= CPU_0 CPU_1 CPU_2 CPU_3 
+[0m[0m[PHY]   thread ru created id=7295
+[0m[0m[PHY]   Starting RU 0 (eNodeB_3GPP,synch_to_ext_device),
+[0mwaiting for sync (ru_thread,-1/0xff4968,0x17af520,0x16952a0)
+channel 0, Setting tx_gain offset 0.000000, rx_gain offset 118.000000, tx_freq 2680000000.000000, rx_freq 2560000000.000000
+[0m[93m[HW]   thread_top_init() called with affinity>0, but overruled by #ifndef CPU_AFFINITY.
+[0m[0m[PHY]   Initializing frame parms for N_RB_DL 25, Ncp 0, osf 1
+[0m[0m[PHY]   lte_parms.c: Setting N_RB_DL to 25, ofdm_symbol_size 512
+[0m[0m[PHY]   Initializing RU signal buffers (if_south local RF) nb_tx 1
+[0m[0m[HW]   [SCHED][eNB] ru_thread_prach started on CPU 2, sched_policy = SCHED_FIFO , priority = 99, CPU Affinity= CPU_0 CPU_1 CPU_2 CPU_3 
+[0m[0m[PHY]   [INIT] common.txdata[0] = 0x7f9fafc66010 (307200 bytes)
+[0m[0m[PHY]   ru_thread_prach() RU configured - RACH processing thread running
+[0m[LIBCONFIG] loader.dfts: 2/2 parameters successfully set, (1 to default value)
+[LOADER] library libdfts.so successfully loaded
+[0m[PHY]   nb_tx 1
+[0m[0m[PHY]   rxdata_7_5kHz[0] 0x2b9c1c0 for RU 0
+[0m[0m[PHY]   [INIT] common.txdata_BF= 0x2b4ae80 (8 bytes)
+[0m[0m[PHY]   txdataF_BF[0] 0x2bba1e0 for RU 0
+[0m[0m[PHY]   rxdataF[0] 0x2bc1200 for RU 0
+[0m[LIBCONFIG] device.recplay: 7/7 parameters successfully set, (7 to default value)
+[LIBCONFIG] device: 1/1 parameters successfully set, (1 to default value)
+[LIBCONFIG] loader.oai_device: 2/2 parameters successfully set, (1 to default value)
+[LOADER] library liboai_device.so successfully loaded
+[0m[HW]   UHD version 3.13.0.HEAD-0-g0ddc19e5 (3.13.0)
+[0m[0m[HW]   Found USRP b200
+[0mFound USRP b200
+[0m[93m[HW]   Clock source set neither in usrp_args nor on command line, using default!
+[0m[0m[93m[HW]   Time source set neither in usrp_args nor on command line, using default!
+[0m[0m[SCTP]   Found data for descriptor 87
+[0m[0m[SCTP]   Received notification for sd 87, type 32769
+[0m[0m[SCTP]   Client association changed: 0
+[0m[0m[SCTP]   Comm up notified for sd 87, assigned assoc_id 904
+[0m[0m[SCTP]   ----------------------
+[0m[0m[SCTP]   SCTP Status:
+[0m[0m[SCTP]   assoc id .....: 904
+[0m[0m[SCTP]   state ........: 4
+[0m[0m[SCTP]   instrms ......: 32
+[0m[0m[SCTP]   outstrms .....: 32
+[0m[0m[SCTP]   fragmentation : 1452
+[0m[0m[SCTP]   pending data .: 0
+[0m[0m[SCTP]   unack data ...: 0
+[0m[0m[SCTP]   rwnd .........: 106496
+[0m[0m[SCTP]   peer info     :
+[0m[0m[SCTP]       state ....: 2
+[0m[0m[SCTP]       cwnd .....: 4380
+[0m[0m[SCTP]       srtt .....: 0
+[0m[0m[SCTP]       rto ......: 3000
+[0m[0m[SCTP]       mtu ......: 1500
+[0m[0m[SCTP]   ----------------------
+[0mx2ap_eNB_handle_sctp_association_ind at 1 (called for instance 0)
+here comes the tree (instance 0):
+---------------------------------------------
+---------------------------------------------
+x2ap_eNB_handle_sctp_association_ind at 2
+here comes the tree (instance 0):
+---------------------------------------------
+-----------------------
+eNB id 0 (null)
+state 2
+nextstream 0
+in_streams 0 out_streams 0
+cnx_id 1 assoc_id 0
+---------------------------------------------
+x2ap_eNB_handle_sctp_association_ind at 3
+here comes the tree (instance 0):
+---------------------------------------------
+-----------------------
+eNB id 0 (null)
+state 2
+nextstream 0
+in_streams 32 out_streams 32
+cnx_id 1 assoc_id 904
+---------------------------------------------
+[0m[SCTP]   Found data for descriptor 95
+[0m[0m[SCTP]   [904][95] Msg of length 66 received from port 36422, on stream 0, PPID 27
+[0m<X2AP-PDU>
+    <initiatingMessage>
+        <procedureCode>36</procedureCode>
+        <criticality><reject/></criticality>
+        <value>
+            <ENDCX2SetupRequest>
+                <protocolIEs>
+                    <ENDCX2SetupRequest-IEs>
+                        <id>244</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <InitiatingNodeType-EndcX2Setup>
+                                <init-en-gNB>
+                                    <En-gNB-ENDCX2SetupReqIEs>
+                                        <id>252</id>
+                                        <criticality><reject/></criticality>
+                                        <value>
+                                            <GlobalGNB-ID>
+                                                <pLMN-Identity>22 F2 10</pLMN-Identity>
+                                                <gNB-ID>
+                                                    <gNB-ID>
+                                                        00000000000000000000111000000000
+                                                    </gNB-ID>
+                                                </gNB-ID>
+                                            </GlobalGNB-ID>
+                                        </value>
+                                    </En-gNB-ENDCX2SetupReqIEs>
+                                    <En-gNB-ENDCX2SetupReqIEs>
+                                        <id>253</id>
+                                        <criticality><reject/></criticality>
+                                        <value>
+                                            <ServedNRcellsENDCX2ManagementList>
+                                                <SEQUENCE>
+                                                    <servedNRCellInfo>
+                                                        <nrpCI>0</nrpCI>
+                                                        <nrCellID>
+                                                            <pLMN-Identity>22 F2 10</pLMN-Identity>
+                                                            <nRcellIdentifier>
+                                                                000000000000000000000000111000000000
+                                                            </nRcellIdentifier>
+                                                        </nrCellID>
+                                                        <fiveGS-TAC>00 64 90</fiveGS-TAC>
+                                                        <broadcastPLMNs>
+                                                            <PLMN-Identity>22 F2 10</PLMN-Identity>
+                                                        </broadcastPLMNs>
+                                                        <nrModeInfo>
+                                                            <tdd>
+                                                                <nRFreqInfo>
+                                                                    <nRARFCN>0</nRARFCN>
+                                                                    <freqBandListNr>
+                                                                        <FreqBandNrItem>
+                                                                            <freqBandIndicatorNr>1</freqBandIndicatorNr>
+                                                                            <supportedSULBandList>
+                                                                                <SupportedSULFreqBandItem>
+                                                                                    <freqBandIndicatorNr>80</freqBandIndicatorNr>
+                                                                                </SupportedSULFreqBandItem>
+                                                                            </supportedSULBandList>
+                                                                        </FreqBandNrItem>
+                                                                    </freqBandListNr>
+                                                                </nRFreqInfo>
+                                                                <nR-TxBW>
+                                                                    <nRSCS><scs15/></nRSCS>
+                                                                    <nRNRB><nrb106/></nRNRB>
+                                                                </nR-TxBW>
+                                                            </tdd>
+                                                        </nrModeInfo>
+                                                        <measurementTimingConfiguration>00</measurementTimingConfiguration>
+                                                    </servedNRCellInfo>
+                                                </SEQUENCE>
+                                            </ServedNRcellsENDCX2ManagementList>
+                                        </value>
+                                    </En-gNB-ENDCX2SetupReqIEs>
+                                </init-en-gNB>
+                            </InitiatingNodeType-EndcX2Setup>
+                        </value>
+                    </ENDCX2SetupRequest-IEs>
+                </protocolIEs>
+            </ENDCX2SetupRequest>
+        </value>
+    </initiatingMessage>
+</X2AP-PDU>
+[0m[X2AP]   X2AP_ProcedureCode_id_endcX2Setup message!
+[0m[0m[X2AP]   TAC: 006490
+[0m[0m[X2AP]   PLMN: 22f210
+[0m<X2AP-PDU>
+    <successfulOutcome>
+        <procedureCode>36</procedureCode>
+        <criticality><reject/></criticality>
+        <value>
+            <ENDCX2SetupResponse>
+                <protocolIEs>
+                    <ENDCX2SetupResponse-IEs>
+                        <id>246</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <RespondingNodeType-EndcX2Setup>
+                                <respond-eNB>
+                                    <ENB-ENDCX2SetupReqAckIEs>
+                                        <id>21</id>
+                                        <criticality><reject/></criticality>
+                                        <value>
+                                            <GlobalENB-ID>
+                                                <pLMN-Identity>22 F2 10</pLMN-Identity>
+                                                <eNB-ID>
+                                                    <macro-eNB-ID>
+                                                        00000000111000000001
+                                                    </macro-eNB-ID>
+                                                </eNB-ID>
+                                            </GlobalENB-ID>
+                                        </value>
+                                    </ENB-ENDCX2SetupReqAckIEs>
+                                    <ENB-ENDCX2SetupReqAckIEs>
+                                        <id>250</id>
+                                        <criticality><reject/></criticality>
+                                        <value>
+                                            <ServedEUTRAcellsENDCX2ManagementList>
+                                                <SEQUENCE>
+                                                    <servedEUTRACellInfo>
+                                                        <pCI>0</pCI>
+                                                        <cellId>
+                                                            <pLMN-Identity>22 F2 10</pLMN-Identity>
+                                                            <eUTRANcellIdentifier>
+                                                                0000000011100000000100000000
+                                                            </eUTRANcellIdentifier>
+                                                        </cellId>
+                                                        <tAC>00 01</tAC>
+                                                        <broadcastPLMNs>
+                                                            <PLMN-Identity>22 F2 10</PLMN-Identity>
+                                                        </broadcastPLMNs>
+                                                        <eUTRA-Mode-Info>
+                                                            <fDD>
+                                                                <uL-EARFCN>21350</uL-EARFCN>
+                                                                <dL-EARFCN>3350</dL-EARFCN>
+                                                                <uL-Transmission-Bandwidth><bw25/></uL-Transmission-Bandwidth>
+                                                                <dL-Transmission-Bandwidth><bw25/></dL-Transmission-Bandwidth>
+                                                            </fDD>
+                                                        </eUTRA-Mode-Info>
+                                                    </servedEUTRACellInfo>
+                                                </SEQUENCE>
+                                            </ServedEUTRAcellsENDCX2ManagementList>
+                                        </value>
+                                    </ENB-ENDCX2SetupReqAckIEs>
+                                </respond-eNB>
+                            </RespondingNodeType-EndcX2Setup>
+                        </value>
+                    </ENDCX2SetupResponse-IEs>
+                </protocolIEs>
+            </ENDCX2SetupResponse>
+        </value>
+    </successfulOutcome>
+</X2AP-PDU>
+[0m[SCTP]   Successfully sent 53 bytes on stream 0 for assoc_id 904
+[0m[0m[SCTP]   Found data for descriptor 95
+[0m[0m[SCTP]   Received notification for sd 95, type 32777
+[0m[0m[HW]   cal 0: freq 3500000000.000000, offset 44.000000, diff 940000000.000000
+[0m[0m[HW]   cal 1: freq 2660000000.000000, offset 49.800000, diff 100000000.000000
+[0m[0m[HW]   cal 2: freq 2300000000.000000, offset 51.000000, diff 260000000.000000
+[0m[0m[HW]   cal 3: freq 1880000000.000000, offset 53.000000, diff 680000000.000000
+[0m[0m[HW]   cal 4: freq 816000000.000000, offset 57.000000, diff 1744000000.000000
+[0m[0m[HW]   RX Gain 0 118.000000 (55.800000) => 62.200000 (max 76.000000)
+[0m[0m[HW]   USRP TX_GAIN:89.75 gain_range:89.75 tx_gain:0.00
+[0m[0m[HW]   Actual master clock: 30.720000MHz...
+[0m[0m[HW]   Actual clock source internal...
+[0m[0m[HW]   Actual time source internal...
+[0m[0m[HW]   RF board max packet size 1916, size for 100µs jitter 768 
+[0m[0m[HW]   rx_max_num_samps 768
+[0m[0m[HW]   RX Channel 0
+[0m[0m[HW]     Actual RX sample rate: 7.680000MSps...
+[0m[0m[HW]     Actual RX frequency: 2.560000GHz...
+[0m[0m[HW]     Actual RX gain: 62.000000...
+[0m[0m[HW]     Actual RX bandwidth: 20.000000M...
+[0m[0m[HW]     Actual RX antenna: RX2...
+[0m[0m[HW]   TX Channel 0
+[0m[0m[HW]     Actual TX sample rate: 7.680000MSps...
+[0m[0m[HW]     Actual TX frequency: 2.680000GHz...
+[0m[0m[HW]     Actual TX gain: 89.750000...
+[0m[0m[HW]     Actual TX bandwidth: 20.000000M...
+[0m[0m[HW]     Actual TX antenna: TX/RX...
+[0m[0m[HW]     Actual TX packet size: 1916
+[0m[0m[HW]   Device timestamp: 1.703971...
+[0m[0m[HW]   [RAU] has loaded USRP B200 device.
+[0msetup_RU_buffers: frame_parms = 0x7f9fab347e68
+[0m[PHY]   Signaling main thread that RU 0 (is_slave 0,send_dmrs 0) is ready in state RU_RUN
+[0mwait RUs
+[0m[ENB_APP]   Waiting for RUs to be configured ... RC.ru_mask:00
+[0m[0m[PHY]   RUs configured
+[0m[0m[ENB_APP]   RC.nb_RU:1
+[0mALL RUs ready - init eNBs
+[0m[ENB_APP]   Not NFAPI mode - call init_eNB_afterRU()
+[0m[0m[PHY]   init_eNB_afterRU() RC.nb_inst:1
+[0m[0m[PHY]   RC.nb_CC[inst]:1
+[0m[0m[PHY]   RC.nb_CC[inst:0][CC_id:0]:0x7f9fab347010
+[0m[0m[PHY]   [eNB 0] phy_init_lte_eNB() About to wait for eNB to be configured[0m[0m[PHY]   [eNB 0] Initializing DL_FRAME_PARMS : N_RB_DL 25, PHICH Resource 1, PHICH Duration 0 nb_antennas_tx:0 nb_antennas_rx:1 nb_antenna_ports_eNB:1 PRACH[rootSequenceIndex:0 prach_Config_enabled:1 configIndex:0 highSpeed:0 zeroCorrelationZoneConfig:1 freqOffset:2]
+[0m[0m[PHY]   [eNB 0] Initializing DL_FRAME_PARMS : N_RB_DL 25, PHICH Resource 1, PHICH Duration 0
+[0mpcfich_reg : 0,12,25,37
+[0m[PHY]   [INIT] NB_ANTENNA_PORTS_ENB:6 fp->nb_antenna_ports_eNB:1
+[0m[0m[PHY]   [INIT] common_vars->txdataF[0] = 0x7f9fafb87010 (286720 bytes)
+[0m[0m[PHY]   [INIT] common_vars->txdataF[5] = 0x7f9fa80ff010 (286720 bytes)
+[0m[0m[PHY]   Mapping RX ports from 1 RUs to eNB 0
+[0m[0m[PHY]   Overwriting eNB->prach_vars.rxsigF[0]:0x330a6c0
+[0m[0m[PHY]   Overwriting eNB->prach_vars_br.rxsigF.rxsigF[0]:(nil)
+[0m[0m[PHY]   Overwriting eNB->prach_vars_br.rxsigF.rxsigF[0]:(nil)
+[0m[0m[PHY]   Overwriting eNB->prach_vars_br.rxsigF.rxsigF[0]:(nil)
+[0m[0m[PHY]   Overwriting eNB->prach_vars_br.rxsigF.rxsigF[0]:(nil)
+[0m[0m[PHY]   eNB->num_RU:1
+[0m[0m[PHY]   Attaching RU 0 antenna 0 to eNB antenna 0
+[0m[0m[PHY]   init_eNB_afterRU() ************* DJP ***** eNB->frame_parms.nb_antennas_tx:0 - GOING TO HARD CODE TO 1[0m[0m[PHY]   inst 0, CC_id 0 : nb_antennas_rx 1
+[0m[0m[PHY]   Initialise transport
+[0m[0m[PHY]   init_eNB_proc(inst:0) RC.nb_CC[inst]:1 
+[0m[0m[PHY]   Initializing eNB processes instance:0 CC_id 0 
+[0m[0m[PHY]   eNB->single_thread_flag:0
+[0m[0m[93m[HW]   thread_top_init() called with affinity>0, but overruled by #ifndef CPU_AFFINITY.
+[0m[0m[HW]   [SCHED][eNB] eNB_thread_prach started on CPU 0, sched_policy = SCHED_FIFO , priority = 99, CPU Affinity= CPU_0 CPU_1 CPU_2 CPU_3 
+[0m[0m[ENB_APP]   ALL RUs ready - ALL eNBs ready
+[0m[0m[93m[HW]   thread_top_init() called with affinity>0, but overruled by #ifndef CPU_AFFINITY.
+[0m[0m[HW]   [SCHED][eNB] eNB_thread_prach_br started on CPU 0, sched_policy = SCHED_FIFO , priority = 99, CPU Affinity= CPU_0 CPU_1 CPU_2 CPU_3 
+[0m[0m[ENB_APP]   Sending sync to all threads
+[0m[0m[MME_APP]   Creating MME_APP eNB Task
+[0mgot sync (ru_thread)
+[0m[TMR]   Created Posix thread TASK_MME_APP
+[0m[0m[HW]   Time in secs now: 22168192 
+[0m[LIBCONFIG] MMEs.[0]: 1/1 parameters successfully set, (1 to default value)
+[0m[MCE_APP]   Creating MCE_APP eNB Task
+[0m[0m[HW]   Time in secs last pps: 21747824 
+[0m[0m[PHY]   RU 0 rf device ready
+[0m[0m[TMR]   Created Posix thread TASK_MCE_APP
+[0m[LIBCONFIG] MCEs.[0]: 1/1 parameters successfully set, (1 to default value)
+[LIBCONFIG] MCEs.[0]: 1/1 parameters successfully set, (1 to default value)
+[0m[ENB_APP]   TYPE <CTRL-C> TO TERMINATE
+[0m[0m[ENB_APP]   [MCE 0] MCE_app_register via M3AP for instance 0
+[0m[0m[1;31m[HW]   [recv] received 0 samples out of 7680
+[0m[0m[1;31m[HW]   ERROR_CODE_OVERFLOW (Out of sequence error)
+
+[0m[0m[1;31m[PHY]   rx_rf: Asked for 7680 samples, got 0 from SDR
+[0m[0m[1;31m[PHY]   problem receiving samples[0m[0m[1;31m[MAC]   SCHED_MODE = 0
+[0m[0m[PHY]   rx_rf: rfdevice timing drift of 22200737 samples (ts_off 0)
+[0m[0m[PHY]   prach_I0 = 0.0 dB
+[0m[0m[PHY]   max_I0 18, min_I0 0
+[0m[0m[1;31m[PHY]   fill_ulsch UE_id 0 nb_rb = 0
+[0m[0m[RRC]   [FRAME 00738][eNB][MOD 00][RNTI 43eb] Decoding UL CCCH 59.e8.a9.2.18.72 (0x3a52693)
+[0m[0m[RRC]   [FRAME 00738][eNB][MOD 00][RNTI 43eb] Accept new connection from UE random UE identity (0x8721908a9e000000) MME code 0 TMSI 0 cause 1
+[0m[0m[MAC]   UE 0 RNTI 43eb adding LC 1 idx 0 to scheduling control (total 1)
+[0m[0m[MAC]   UE 0 RNTI 43eb adding LC 2 idx 1 to scheduling control (total 2)
+[0m[0m[MAC]   Added physicalConfigDedicated 0x7f9f600085d0 for 0.0
+[0m[0m[RRC]   [FRAME 00738][eNB][MOD 00][RNTI 43eb]CALLING RLC CONFIG SRB1 (rbid 1)
+[0madd new uid is 0 43eb
+
+[0m[PDCP]   [FRAME 00738][eNB][MOD 00][RNTI 43eb][SRB 01]  Action ADD  LCID 1 (SRB id 1) configured with SN size 5 bits and RLC AM
+[0m[0m[MAC]   generate_Msg4 ra->Msg4_frame SFN/SF: 739.2,  frameP SFN/SF: 739.2 FOR eNB_Mod: 0 
+[0m[0m[MAC]   [eNB 0][RAPROC] CC_id 0 Frame 739, subframeP 2: Generating Msg4 with RRC Piggyback (RNTI 43eb)
+[0m[0m[1;31m[PHY]   fill_ulsch UE_id 0 nb_rb = 0
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 6] CC_id 0 740.6 ULSCH in error in round 0, ul_cqi 132, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 6] CC_id 0 741.4 ULSCH in error in round 1, ul_cqi 138, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 6] CC_id 0 742.2 ULSCH in error in round 2, ul_cqi 134, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 6] CC_id 0 743.0 ULSCH in error in round 3, ul_cqi 132, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 6] CC_id 0 743.8 ULSCH in error in round 0, ul_cqi 140, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 6] CC_id 0 744.6 ULSCH in error in round 1, ul_cqi 140, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 6] CC_id 0 745.4 ULSCH in error in round 2, ul_cqi 142, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 6] CC_id 0 746.2 ULSCH in error in round 3, ul_cqi 143, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 6] CC_id 0 747.0 ULSCH in error in round 0, ul_cqi 143, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[1;31m[PHY]   fill_ulsch UE_id 0 nb_rb = 0
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 748.8 ULSCH in error in round 0, ul_cqi 146, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] [RAPROC] Logical Channel UL-DCCH, processing LTE_RRCConnectionSetupComplete from UE (SRB1 Active)
+[0m[0m[NAS]    AttachRequest.c:40  EMM  - attach_request len = 97
+[0m[0m[NAS]    UeNetworkCapability.c:46  decode_ue_network_capability len = 7
+[0m[0m[NAS]    UeNetworkCapability.c:63  uenetworkcapability decoded UMTS
+
+[0m[0m[NAS]    UeNetworkCapability.c:74  uenetworkcapability decoded GPRS
+
+[0m[0m[NAS]    UeNetworkCapability.c:82  uenetworkcapability decoded=6
+
+[0m[0m[NAS]    UeNetworkCapability.c:86  uenetworkcapability then decoded=8
+
+[0m[0m[NAS]    AttachRequest.c:285  EMM: Can't decode the message with iei 111
+
+[0m[0m[S1AP]   [eNB 0] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI mme_code 1 mme_group_id 32768 ue 43eb
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] UE State = RRC_CONNECTED 
+[0m[0m[S1AP]   [eNB 0] Chose MME 'MME 1' (assoc_id 903) through GUMMEI MCC 222 MNC 1 MMEGI 32768 MMEC 1
+[0m[0m[S1AP]   Found usable eNB_ue_s1ap_id: 0x06692d 420141(10)
+[0m[0m[S1AP]   GUMMEI_ID_PRESENT
+[0m<S1AP-PDU>
+    <initiatingMessage>
+        <procedureCode>12</procedureCode>
+        <criticality><ignore/></criticality>
+        <value>
+            <InitialUEMessage>
+                <protocolIEs>
+                    <InitialUEMessage-IEs>
+                        <id>8</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <ENB-UE-S1AP-ID>420141</ENB-UE-S1AP-ID>
+                        </value>
+                    </InitialUEMessage-IEs>
+                    <InitialUEMessage-IEs>
+                        <id>26</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <NAS-PDU>
+                                17 A0 9C 9B 3F 04 07 41 02 0B F6 22 F2 10 80 00 
+                                01 00 00 00 37 07 F0 70 C0 40 10 00 10 00 2A 02 
+                                1F D0 11 D1 27 23 80 80 21 10 01 00 00 10 81 06 
+                                00 00 00 00 83 06 00 00 00 00 00 0D 00 00 0A 00 
+                                00 05 00 00 10 00 00 11 00 52 22 F2 10 00 01 5C 
+                                0A 00 31 04 E5 E0 34 01 90 11 03 57 58 A6 5D 01 
+                                00 E0 C1 6F 04 F0 00 70 00
+                            </NAS-PDU>
+                        </value>
+                    </InitialUEMessage-IEs>
+                    <InitialUEMessage-IEs>
+                        <id>67</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <TAI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <tAC>00 01</tAC>
+                            </TAI>
+                        </value>
+                    </InitialUEMessage-IEs>
+                    <InitialUEMessage-IEs>
+                        <id>100</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <EUTRAN-CGI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <cell-ID>
+                                    0000000011100000000100000000
+                                </cell-ID>
+                            </EUTRAN-CGI>
+                        </value>
+                    </InitialUEMessage-IEs>
+                    <InitialUEMessage-IEs>
+                        <id>134</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <RRC-Establishment-Cause><highPriorityAccess/></RRC-Establishment-Cause>
+                        </value>
+                    </InitialUEMessage-IEs>
+                    <InitialUEMessage-IEs>
+                        <id>75</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <GUMMEI>
+                                <pLMN-Identity>22 F2 10</pLMN-Identity>
+                                <mME-Group-ID>80 00</mME-Group-ID>
+                                <mME-Code>01</mME-Code>
+                            </GUMMEI>
+                        </value>
+                    </InitialUEMessage-IEs>
+                </protocolIEs>
+            </InitialUEMessage>
+        </value>
+    </initiatingMessage>
+</S1AP-PDU>
+[0m[SCTP]   Successfully sent 164 bytes on stream 1 for assoc_id 903
+[0m[0m[93m[RLC]   /home/eurecom/panos/NR_RRC_harq_hacks/openairinterface5g/openair2/LAYER2/rlc_v2/rlc_entity_am.c:941:generate_status: warning: cannot generate status PDU, not enough room
+[0m[0m[93m[RLC]   /home/eurecom/panos/NR_RRC_harq_hacks/openairinterface5g/openair2/LAYER2/rlc_v2/rlc_entity_am.c:941:generate_status: warning: cannot generate status PDU, not enough room
+[0m[0m[93m[RLC]   /home/eurecom/panos/NR_RRC_harq_hacks/openairinterface5g/openair2/LAYER2/rlc_v2/rlc_entity_am.c:941:generate_status: warning: cannot generate status PDU, not enough room
+[0m[0m[93m[RLC]   /home/eurecom/panos/NR_RRC_harq_hacks/openairinterface5g/openair2/LAYER2/rlc_v2/rlc_entity_am.c:941:generate_status: warning: cannot generate status PDU, not enough room
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   Received notification for sd 86, type 32777
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   [903][86] Msg of length 32 received from port 36412, on stream 1, PPID 18
+[0m[0m[RRC]   [eNB 0] Received S1AP_DOWNLINK_NAS: ue_initial_id 1, eNB_ue_s1ap_id 420141
+[0m[0m[RRC]   sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+[0m[0m[1;31m[PHY]   fill_ulsch UE_id 0 nb_rb = 0
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 752.3 ULSCH in error in round 0, ul_cqi 146, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 752.8 ULSCH in error in round 0, ul_cqi 152, UE_id 0, RNTI 43eb (len 63)
+[0m<S1AP-PDU>
+    <initiatingMessage>
+        <procedureCode>13</procedureCode>
+        <criticality><ignore/></criticality>
+        <value>
+            <UplinkNASTransport>
+                <protocolIEs>
+                    <UplinkNASTransport-IEs>
+                        <id>0</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <MME-UE-S1AP-ID>553648130</MME-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>8</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <ENB-UE-S1AP-ID>420141</ENB-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>26</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <NAS-PDU>
+                                17 A8 76 C5 F5 05 07 56 08 29 22 10 10 00 00 11 
+                                04
+                            </NAS-PDU>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>100</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <EUTRAN-CGI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <cell-ID>
+                                    0000000011100000000100000000
+                                </cell-ID>
+                            </EUTRAN-CGI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>67</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <TAI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <tAC>00 01</tAC>
+                            </TAI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                </protocolIEs>
+            </UplinkNASTransport>
+        </value>
+    </initiatingMessage>
+</S1AP-PDU>
+[0m[SCTP]   Successfully sent 68 bytes on stream 1 for assoc_id 903
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   Received notification for sd 86, type 32777
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   [903][86] Msg of length 65 received from port 36412, on stream 1, PPID 18
+[0m[0m[RRC]   [eNB 0] Received S1AP_DOWNLINK_NAS: ue_initial_id 1, eNB_ue_s1ap_id 420141
+[0m[0m[RRC]   sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+[0m[0m[1;31m[PHY]   fill_ulsch UE_id 0 nb_rb = 0
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 4] CC_id 0 761.2 ULSCH in error in round 0, ul_cqi 158, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[1;31m[PHY]   fill_ulsch UE_id 0 nb_rb = 0
+[0m[0m[1;31m[PHY]   fill_ulsch UE_id 0 nb_rb = 0
+[0m[0m[MAC]   UE  rnti 43eb : in synch, PHR 40 dB DL CQI 15 PUSCH SNR 10 PUCCH SNR 10
+[0m<S1AP-PDU>
+    <initiatingMessage>
+        <procedureCode>13</procedureCode>
+        <criticality><ignore/></criticality>
+        <value>
+            <UplinkNASTransport>
+                <protocolIEs>
+                    <UplinkNASTransport-IEs>
+                        <id>0</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <MME-UE-S1AP-ID>553648130</MME-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>8</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <ENB-UE-S1AP-ID>420141</ENB-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>26</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <NAS-PDU>
+                                17 9B EE 3B BF 06 07 53 08 ED CA A1 31 56 26 D7 
+                                E1
+                            </NAS-PDU>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>100</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <EUTRAN-CGI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <cell-ID>
+                                    0000000011100000000100000000
+                                </cell-ID>
+                            </EUTRAN-CGI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>67</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <TAI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <tAC>00 01</tAC>
+                            </TAI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                </protocolIEs>
+            </UplinkNASTransport>
+        </value>
+    </initiatingMessage>
+</S1AP-PDU>
+[0m[SCTP]   Successfully sent 68 bytes on stream 1 for assoc_id 903
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   Received notification for sd 86, type 32777
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   [903][86] Msg of length 51 received from port 36412, on stream 1, PPID 18
+[0m[0m[RRC]   [eNB 0] Received S1AP_DOWNLINK_NAS: ue_initial_id 1, eNB_ue_s1ap_id 420141
+[0m[0m[RRC]   sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+[0m<S1AP-PDU>
+    <initiatingMessage>
+        <procedureCode>13</procedureCode>
+        <criticality><ignore/></criticality>
+        <value>
+            <UplinkNASTransport>
+                <protocolIEs>
+                    <UplinkNASTransport-IEs>
+                        <id>0</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <MME-UE-S1AP-ID>553648130</MME-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>8</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <ENB-UE-S1AP-ID>420141</ENB-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>26</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <NAS-PDU>47 86 59 47 B7 00 07 5E</NAS-PDU>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>100</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <EUTRAN-CGI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <cell-ID>
+                                    0000000011100000000100000000
+                                </cell-ID>
+                            </EUTRAN-CGI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>67</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <TAI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <tAC>00 01</tAC>
+                            </TAI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                </protocolIEs>
+            </UplinkNASTransport>
+        </value>
+    </initiatingMessage>
+</S1AP-PDU>
+[0m[SCTP]   Successfully sent 59 bytes on stream 1 for assoc_id 903
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   Received notification for sd 86, type 32777
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   [903][86] Msg of length 38 received from port 36412, on stream 1, PPID 18
+[0m[0m[RRC]   [eNB 0] Received S1AP_DOWNLINK_NAS: ue_initial_id 1, eNB_ue_s1ap_id 420141
+[0m[0m[RRC]   sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+[0m<S1AP-PDU>
+    <initiatingMessage>
+        <procedureCode>13</procedureCode>
+        <criticality><ignore/></criticality>
+        <value>
+            <UplinkNASTransport>
+                <protocolIEs>
+                    <UplinkNASTransport-IEs>
+                        <id>0</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <MME-UE-S1AP-ID>553648130</MME-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>8</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <ENB-UE-S1AP-ID>420141</ENB-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>26</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <NAS-PDU>
+                                27 F5 4A 60 81 01 02 1F DA 28 09 03 6F 61 69 04 
+                                69 70 76 34
+                            </NAS-PDU>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>100</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <EUTRAN-CGI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <cell-ID>
+                                    0000000011100000000100000000
+                                </cell-ID>
+                            </EUTRAN-CGI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>67</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <TAI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <tAC>00 01</tAC>
+                            </TAI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                </protocolIEs>
+            </UplinkNASTransport>
+        </value>
+    </initiatingMessage>
+</S1AP-PDU>
+[0m[SCTP]   Successfully sent 71 bytes on stream 1 for assoc_id 903
+[0m[0m[1;31m[PHY]   fill_ulsch UE_id 0 nb_rb = 0
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   Received notification for sd 86, type 32777
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   [903][86] Msg of length 235 received from port 36412, on stream 1, PPID 18
+[0m[0m[S1AP]   Received NAS message with the E_RAB setup procedure
+[0m[0m[RRC]   [eNB 0] Received S1AP_INITIAL_CONTEXT_SETUP_REQ: ue_initial_id 1, eNB_ue_s1ap_id 420141, nb_of_e_rabs 1
+[0m[0m[GTPV1U]   Configured GTPu address : c712a8c0
+[0m[0m[GTPV1U]   Copied to create_tunnel_resp tunnel: index 0 target gNB ip 192.168.18.199 length 4 gtp teid 3396329693
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP tunnel (3396329693, 3396329693) bearer UE context index 0, msg index 0, id 5, gtp addr len 4 
+[0m[0m[RRC]   [eNB 0][UE 43eb] Selected security algorithms (0x7f9f9400213c): 0, 2, changed
+[0m[0m[RRC]   [eNB 0][UE 43eb] Saved security key 107FB5D1A79727631F15C38738093134AAF72931EA06D9495605EDB00D8D8044
+[0m[0m[RRC]   [0m
+KeNB:10 7f b5 d1 a7 97 27 63 1f 15 c3 87 38 09 31 34 aa f7 29 31 ea 06 d9 49 56 05 ed b0 0d 8d 80 44 
+[0m[RRC]   [0m
+KRRCenc:1b 33 28 35 5a 74 f3 6a 05 c6 cf 34 e9 be 54 63 7b a8 5a 48 1d 72 54 67 ae b0 12 a4 1d 3b 7d 86 
+[0m[RRC]   [0m
+KRRCint:ba a3 e0 18 79 1e 68 44 c6 60 dd c9 a8 8c 65 c2 e8 74 09 da 28 d6 f2 d9 6f ad da 41 d7 ec 8e 71 
+[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] Logical Channel DL-DCCH, Generate SecurityModeCommand (bytes 3)
+[0m[0m[RRC]   calling rrc_data_req :securityModeCommand
+[0m[0m[RRC]   sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] received securityModeComplete on UL-DCCH 1 from UE
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] Logical Channel DL-DCCH, Generate UECapabilityEnquiry (bytes 3)
+[0m[0m[RRC]   sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] received ueCapabilityInformation on UL-DCCH 1 from UE
+[0m[0m[RRC]   got UE capabilities for UE 43eb
+[0m[0m[93m[RRC]   drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated
+[0m[0m[RRC]   [eNB 0] frame 0: requesting A2, A3, A4, and A5 event reporting
+[0m<S1AP-PDU>
+    <initiatingMessage>
+        <procedureCode>22</procedureCode>
+        <criticality><ignore/></criticality>
+        <value>
+            <UECapabilityInfoIndication>
+                <protocolIEs>
+                    <UECapabilityInfoIndicationIEs>
+                        <id>0</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <MME-UE-S1AP-ID>553648130</MME-UE-S1AP-ID>
+                        </value>
+                    </UECapabilityInfoIndicationIEs>
+                    <UECapabilityInfoIndicationIEs>
+                        <id>8</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <ENB-UE-S1AP-ID>420141</ENB-UE-S1AP-ID>
+                        </value>
+                    </UECapabilityInfoIndicationIEs>
+                    <UECapabilityInfoIndicationIEs>
+                        <id>74</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <UERadioCapability>
+                                04 43 DA 01 08 87 7D DB 80 51 81 80 01 04 0C 20 
+                                71 63 08 11 24 4C C1 93 67 0F A1 4A 99 3A 85 AF 
+                                CC 58 FF FF FF 95 FF EC 7F FF FF CA FF F6 3F FF 
+                                FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE 
+                                C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 
+                                2B FF D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 3F 
+                                FF FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F 
+                                FE C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 FF FF 
+                                FF 2B FF D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 
+                                3F FF FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 
+                                5F FE C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 FF 
+                                FF FF 2B FF D8 FF FF FF 95 FF DF F3 FF AF A2 0C 
+                                00 8C 85 3C 10 65 3A 54 95 1F C0 77 7E 00 00 00 
+                                00 02 04 BD 80 00 00 08 09 DF 00 00 00 02 F5 C0 
+                                0C 00 A0 04 00 04 00 A0 06 00 48 20 0C 10 06 08 
+                                03 04 01 82 00 C1 08 60 84 30 42 18 21 0A 08 03 
+                                04 01 82 00 C1 00 60 84 30 42 18 20 0C 10 06 08 
+                                03 04 01 82 00 A1 80 01 04 30 00 20 86 00 04 10 
+                                C0 00 82 18 00 10 43 00 02 08 40 00 61 00 01 84 
+                                00 82 10 00 18 40 08 21 00 01 84 00 82 10 00 18 
+                                40 08 21 00 01 84 00 82 10 02 08 60 08 43 0C 01 
+                                08 61 80 21 0C 30 04 21 84 00 86 10 02 18 40 08 
+                                61 00 21 84 00 86 10 02 18 60 08 43 0C 01 08 61 
+                                80 21 0C 30 04 21 84 00 86 10 02 18 40 08 61 00 
+                                21 84 00 86 10 02 18 41 08 61 04 21 84 10 86 08 
+                                43 04 21 82 10 C1 08 60 04 84 00 86 10 02 18 40 
+                                08 61 00 21 84 00 86 10 02 18 21 0C 10 86 10 00 
+                                18 40 00 60 80 30 03 00 25 A0 7D 54 6C 1E 00 00 
+                                35 81 8C 00 08 20 60 00 02 08 18 20 00 80 06 10 
+                                00 20 81 86 00 08 00 62 00 02 00 18 E0 00 80 06 
+                                58 00 20 01 98 00 08 00 68 00 02 00 1A 20 00 80 
+                                06 90 00 20 01 A6 00 08 00 6C 00 02 00 1B 20 00 
+                                80 06 D8 00 20 00 B8 10 00 5F 08 00 70 80 02 00 
+                                1C A0 00 82 07 30 00 20 01 CE 00 08 20 74 00 02 
+                                08 0D A1 00 0F F0 00 40 05 7C 20 63 00 02 08 3B 
+                                60 00 80 8C 10 41 5B 08 18 C0 00 82 0E 98 00 20 
+                                23 04 10 54 C2 06 30 00 20 83 8C 00 08 28 41 04 
+                                14 60 83 84 00 08 20 E3 00 02 0A 00 41 05 18 20 
+                                E0 00 02 08 2B E1 03 00 00 10 01 DB 00 04 04 00 
+                                82 0A D8 40 C0 00 04 10 74 C0 01 01 00 20 82 A6 
+                                10 30 00 01 04 1C 20 00 41 40 08 20 A1 04 1C 00 
+                                00 41 05 7C 20 61 00 02 08 3B 60 00 80 84 10 41 
+                                5B 08 18 40 00 82 0E 98 00 20 21 04 10 54 C2 06 
+                                10 00 20 82 BE 10 34 C0 01 00 35 F0 81 A6 00 08 
+                                08 C1 05 08 20 06 BE 10 14 C2 06 30 00 20 A1 04 
+                                00 D7 C2 02 98 40 46 08 38 40 00 80 1A F8 40 D3 
+                                00 04 04 60 82 80 10 03 5F 08 0A 61 03 18 00 10 
+                                50 02 00 6B E1 01 4C 20 23 04 1C 00 00 40 09 7C 
+                                20 69 80 02 02 30 41 09 7C 20 29 84 0C 60 00 41 
+                                09 7C 20 63 00 02 0A 10 48 09 7C 20 63 00 02 02 
+                                10 49 09 7C 20 23 04 1C 20 00 48 09 7C 20 23 04 
+                                0C 20 00 49 09 7C 20 63 00 02 0A 10 40 09 7C 20 
+                                63 00 02 02 10 41 09 7C 20 23 04 1C 20 00 40 09 
+                                7C 20 23 04 0C 20 00 41 09 7C 20 63 00 02 0A 00 
+                                40 09 7C 20 23 04 1C 00 00 40 0F 6C 00 10 11 82 
+                                0A 10 41 40 08 21 AD 84 0C 60 00 41 42 08 28 01 
+                                04 35 B0 80 8C 10 70 80 01 05 00 20 86 B6 10 11 
+                                82 0A 10 41 C0 00 04 10 B6 C0 01 01 18 20 A1 04 
+                                10 96 C2 06 30 00 20 A1 04 10 96 C2 02 30 41 C2 
+                                00 04 10 B6 C0 01 01 18 20 A0 04 10 96 C2 06 30 
+                                00 20 A0 04 10 96 C2 02 30 41 C0 00 04 10 F4 C0 
+                                01 01 18 20 A1 04 14 00 82 1A 98 40 C6 00 04 14 
+                                20 82 80 10 43 53 08 08 C1 07 08 00 10 50 02 08 
+                                6A 61 01 18 20 A1 04 1C 00 00 41 0B 4C 00 10 11 
+                                82 0A 10 41 09 4C 20 63 00 02 0A 10 41 09 4C 20 
+                                23 04 1C 20 00 41 0B 4C 00 10 11 82 0A 00 41 09 
+                                4C 20 63 00 02 0A 00 41 09 4C 20 23 04 1C 00 00 
+                                41 0B 18 00 10 50 82 0A 00 41 09 18 20 E1 00 02 
+                                0A 00 41 09 18 20 A1 04 1C 00 00 41 07 18 04 12 
+                                50 82 08 28 C1 27 08 00 10 41 C6 00 04 14 20 92 
+                                0A 30 41 C2 01 04 90 31 80 41 24 25 F0 81 A6 00 
+                                08 08 01 00 25 F0 80 A6 10 30 00 01 00 2D B0 00 
+                                40 42 08 28 01 04 25 B0 81 84 00 08 28 01 04 25 
+                                B0 80 84 10 70 00 01 04 2D 30 00 40 42 08 28 01 
+                                04 25 30 81 84 00 08 28 01 04 25 30 80 84 10 70 
+                                00 01 04 1C 20 00 41 40 09 20 A1 04 1C 00 00 49 
+                                09 7C 20 69 80 02 02 10 41 09 7C 20 29 84 0C 20 
+                                00 41 05 7C 20 61 00 02 48 18 40 20 92 07 28 08 
+                                24 EB B1 FF FF FF 2B FF D8 FF FF FF 95 FF EC 7F 
+                                FF FF CA FF F6 3F FF FF E5 7F FB 1F FF FF F2 BF 
+                                FD 8F FF FF F9 5F FE C7 FF FF FC AF FF 63 FF FF 
+                                FE 57 FF B1 FF FF FF 2B FF D8 FF FF FF 95 FF EC 
+                                7F FF FF CA FF F6 3F FF FF E5 7F FB 1F FF FF F2 
+                                BF FD 8F FF FF F9 5F FE C7 FF FF FC AF FF 63 FF 
+                                FF FE 57 FF B1 FF FF FF 2B FF D8 FF FF FF 95 FF 
+                                EC 7F FF FF CA FF F6 3F FF FF E5 7F FB 1F FF FF 
+                                F2 BF FD 8F FF FF F9 5F FE C7 FF FF FC AF FF 63 
+                                FF FF FE 57 FF B1 FF FF FF 2B FF D8 FF FF FF 95 
+                                FF EC 7F FF FF CA FF F6 3F FF FF E5 7F FB 1F FF 
+                                FF F2 BF FD 8F FF FF F9 5F FE C7 FF FF FC AF FF 
+                                63 FF FF FE 57 FF B1 FF FF FF 2B FF D8 FF FF FF 
+                                95 FF EC 7F FF FF CA FF F6 3F FF FF E5 7F FB 1F 
+                                FF FF F2 BF FD 8F FF FF F9 5F FE C7 FF FF FC AF 
+                                FF 63 FF FF FE 57 FF B1 FF FF FF 2B FF D8 FF FF 
+                                FF 95 FF EC 7F FF FF CA FF F6 3F FF FF E5 7F FB 
+                                1F FF FF F2 BF FD 8F FF FF F9 5F FE C7 FF FF FC 
+                                AF FF 63 FF FF FE 57 FF B1 FF FF FF 2B FF D8 FF 
+                                FF FF 95 FF EC 7F FF FF CA FF F6 3F FF FF E5 7F 
+                                FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE C7 FF FF 
+                                FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 2B FF D8 
+                                FF FF FF 95 FF EC 7F FF FF CA FF F6 3F FF FF E5 
+                                7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE C7 FF 
+                                FF FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 2B FF 
+                                D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 3F FF FF 
+                                E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE C7 
+                                FF FF FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 2B 
+                                FF D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 3F FF 
+                                FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE 
+                                C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 
+                                2B FF D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 3F 
+                                FF FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F 
+                                FE C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 FF FF 
+                                FF 2B FF D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 
+                                3F FF FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 
+                                5F FE C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 FF 
+                                FF FF 2B FF D8 FF FF FF 95 FF EC 7F FF FF CA FF 
+                                F6 3F FF FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF 
+                                F9 5F FE C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 
+                                FF FF FF 2B FF D8 FF FF FF 95 FF EC 7F FF FF CA 
+                                FF F6 3F FF FF E5 7F F6 CE C0 00 0F D8 81 B3 B0 
+                                00 00 8F 9D 80 00 1A C0 00 00 08 78 78 BC 5E 1E 
+                                1E 1E 1D 0F 0E 43 C3 A1 E1 E1 E1 E1 C0 00 08 78 
+                                78 78 71 17 8B C5 E1 E1 E1 E1 E1 E1 E1 E2 F1 78 
+                                BC 3C 3C 3C 3C 39 17 00 01 F5 80 00 00 00 00 00 
+                                00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+                                00 00 00 80 82 00 80 20 08 02 00 80 20 08 02 00 
+                                80 20 08 02 00 80 20 08 02 00 80 20 08 02 00 80 
+                                60 01 80 06 00 18 00 60 01 80 04 00 40 04 00 40 
+                                04 00 40 04 00 40 04 00 40 04 00 40 06 00 18 00 
+                                60 01 80 04 00 40 04 00 40 04 00 40 06 00 18 00 
+                                60 01 80 04 00 40 04 00 40 04 00 40 04 00 40 04 
+                                00 20 08 02 00 80 00 40 04 00 40 04 00 40 04 00 
+                                40 04 00 20 08 04 00 40 02 00 00 1F 04 01 20 03 
+                                E6 57 9A 04 01 4B 1F FF FF FF FF FF FE 69 4B BC 
+                                50 0F 80 04 20 09 86 00 00 00 00 00 05 50 92 48 
+                                81 01 00 02 F2 42 0B 51 40 01 34 00 00 00
+                            </UERadioCapability>
+                        </value>
+                    </UECapabilityInfoIndicationIEs>
+                </protocolIEs>
+        [0m[RRC]   RRCConnectionReconfiguration Encoded 1796 bits (225 bytes)
+[0m[0m[RRC]   [eNB 0] Frame 0, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes 225, UE id 43eb)
+[0m    </UECapabilityInfoIndication>[0m[RRC]   sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+[0m
+        </value>
+    </initiatingMessage>[0m[PDCP]   [FRAME 00000][eNB][MOD 00][RNTI 43eb][SRB 02]  Action ADD  LCID 2 (SRB id 2) configured with SN size 5 bits and RLC AM
+[0m
+</S1AP-PDU>
+[0m[PDCP]   [FRAME 00000][eNB][MOD 00][RNTI 43eb][DRB 01]  Action ADD  LCID 3 (DRB id 1) configured with SN size 12 bits and RLC AM
+[0m[0m[SCTP]   Successfully sent 2206 bytes on stream 1 for assoc_id 903
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   Received notification for sd 86, type 32777
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] UE State = RRC_RECONFIGURED (default DRB, xid 2)
+[0m[0m[PDCP]   [FRAME 00000][eNB][MOD 00][RNTI 43eb][SRB 02]  Action MODIFY LCID 2 RB id 2 reconfigured with SN size 5 and RLC AM 
+[0m[0m[PDCP]   [FRAME 00000][eNB][MOD 00][RNTI 43eb][DRB 01]  Action MODIFY LCID 3 RB id 1 reconfigured with SN size 1 and RLC AM 
+[0m[0m[RRC]   [eNB 0] Frame  0 CC 0 : SRB2 is now active
+[0m[0m[RRC]   [eNB 0] Frame  0 : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete from UE rnti 43eb, reconfiguring DRB 1/LCID 3
+[0m[0m[RRC]   [eNB 0] Frame  0 : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete from UE 0, reconfiguring DRB 1/LCID 3
+[0m[0m[MAC]   UE 0 RNTI 43eb adding LC 3 idx 2 to scheduling control (total 3)
+[0m[0m[MAC]   Added physicalConfigDedicated 0x7f9f600085d0 for 0.0
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes 27)
+[0m[0m[RRC]   sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+[0m[0m[S1AP]   initial_ctxt_resp_p: e_rab ID 5, enb_addr 192.168.18.199, SIZE 4 
+[0m<S1AP-PDU>
+    <initiatingMessage>
+        <procedureCode>13</procedureCode>
+        <criticality><ignore/></criticality>
+        <value>
+            <UplinkNASTransport>
+                <protocolIEs>
+                    <UplinkNASTransport-IEs>
+                        <id>0</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <MME-UE-S1AP-ID>553648130</MME-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>8</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <ENB-UE-S1AP-ID>420141</ENB-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>26</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <NAS-PDU>27 22 5C 78 F3 02 07 43 00 03 52 00 C2</NAS-PDU>
+                        </value[0m[SCTP]   Successfully sent 43 bytes on stream 1 for assoc_id 903
+[0m>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>100</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <EUTRAN-CGI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <cell-ID>
+                                    0000000011100000000100000000
+                                </cell-ID>
+                            </EUTRAN-CGI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>67</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <TAI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <tAC>00 01</tAC>
+                            </TAI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                </protocolIEs>
+            </UplinkNASTransport>
+        </value>
+    </initiatingMessage>
+</S1AP-PDU>
+[0m[SCTP]   Successfully sent 64 bytes on stream 1 for assoc_id 903
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] received ueCapabilityInformation on UL-DCCH 1 from UE
+[0m[0m[RRC]   got UE capabilities for UE 43eb
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 7] CC_id 0 796.7 ULSCH in error in round 0, ul_cqi 152, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[RRC]   [eNB 0] frame 0 subframe 0: UE rnti 43eb switching to NSA mode
+[0m[0m[RRC]   Read in 2056 bytes for uecap
+[0m<X2AP-PDU>
+    <initiatingMessage>
+        <procedureCode>27</procedureCode>
+        <criticality><reject/></criticality>
+        <value>
+            <SgNBAdditionRequest>
+                <protocolIEs>
+                    <SgNBAdditionRequest-IEs>
+                        <id>111</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <UE-X2AP-ID>0</UE-X2AP-ID>
+                        </value>
+                    </SgNBAdditionRequest-IEs>
+                    <SgNBAdditionRequest-IEs>
+                        <id>248</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <NRUESecurityCapabilities>
+                                <nRencryptionAlgorithms>
+                                    0000000000000000
+                                </nRencryptionAlgorithms>
+                                <nRintegrityProtectionAlgorithms>
+                                    0000000000000000
+                                </nRintegrityProtectionAlgorithms>
+                            </NRUESecurityCapabilities>
+                        </value>
+                    </SgNBAdditionRequest-IEs>
+                    <SgNBAdditionRequest-IEs>
+                        <id>203</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <SgNBSecurityKey>
+                                0000000000000000000000000000000000000000000000000000000000000000
+                                0000000000000000000000000000000000000000000000000000000000000000
+                                0000000000000000000000000000000000000000000000000000000000000000
+                                0000000000000000000000000000000000000000000000000000000000000000
+                            </SgNBSecurityKey>
+                        </value>
+                    </SgNBAdditionRequest-IEs>
+                    <SgNBAdditionRequest-IEs>
+                        <id>204</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <UEAggregateMaximumBitRate>
+                                <uEaggregateMaximumBitRateDownlink>100000000</uEaggregateMaximumBitRateDownlink>
+                                <uEaggregateMaximumBitRateUplink>100000000</uEaggregateMaximumBitRateUplink>
+                            </UEAggregateMaximumBitRate>
+                        </value>
+                    </SgNBAdditionRequest-IEs>
+                    <SgNBAdditionRequest-IEs>
+                        <id>205</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <E-RABs-ToBeAdded-SgNBAddReqList>
+                                <ProtocolIE-Single-Container>
+                                    <id>209</id>
+                                    <criticality><ignore/></criticality>
+                                    <value>
+                                        <E-RABs-ToBeAdded-SgNBAddReq-Item>
+                                            <e-RAB-ID>5</e-RAB-ID>
+                                            <drb-ID>1</drb-ID>
+                                            <en-DC-ResourceConfiguration>
+                                                <pDCPatSgNB><present/></pDCPatSgNB>
+                                                <mCGresources><not-present/></mCGresources>
+                                                <sCGresources><not-present/></sCGresources>
+                                            </en-DC-ResourceConfiguration>
+                                            <resource-configuration>
+                                                <sgNBPDCPpresent>
+                                                    <full-E-RAB-Level-QoS-Parameters>
+                                                        <qCI>1</qCI>
+                                                        <allocationAndRetentionPriority>
+                                                            <priorityLevel>15</priorityLevel>
+                                                            <pre-emptionCapability><shall-not-trigger-pre-emption/></pre-emptionCapability>
+                                                            <pre-emptionVulnerability><not-pre-emptable/></pre-emptionVulnerability>
+                                                        </allocationAndRetentionPriority>
+                                                    </full-E-RAB-Level-QoS-Parameters>
+                                                    <s1-UL-GTPtunnelEndpoint>
+                                                        <transportLayerAddress>
+                                                            11000000101010000001001001100011
+                                                        </transportLayerAddress>
+                                                        <gTP-TEID>00 00 00 02</gTP-TEID>
+                                                    </s1-UL-GTPtunnelEndpoint>
+                                                </sgNBPDCPpresent>
+                                            </resource-configuration>
+                                        </E-RABs-ToBeAdded-SgNBAddReq-Item>
+                                    </value>
+                                </ProtocolIE-Single-Container>
+                            </E-RABs-ToBeAdded-SgNBAddReqList>
+                        </value>
+                    </SgNBAdditionRequest-IEs>
+                    <SgNBAdditionRequest-IEs>
+                        <id>206</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <MeNBtoSgNBContainer>
+                                3A 03 08 78 8D DB 80 51 81 80 01 04 0C 20 71 63 
+                                08 11 24 4C C1 93 67 0F A1 4A 99 3A 85 AF CC 58 
+                                FF FF FF 95 FF EC 7F FF FF CA FF F6 3F FF FF E5 
+                                7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE C7 FF 
+                                FF FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 2B FF 
+                                D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 3F FF FF 
+                                E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE C7 
+                                FF FF FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 2B 
+                                FF D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 3F FF 
+                                FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE 
+                                C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 
+                                2B FF D8 FF FF FF 95 FF DF F3 FF AF A2 0C 00 8C 
+                                85 3C 10 65 3A 54 97 1F C0 68 FE 00 00 00 00 02 
+                                04 BD 80 00 00 08 09 DF 00 00 00 02 EE C0 0C 00 
+                                A0 04 00 04 00 A0 06 00 48 20 0C 10 06 08 03 04 
+                                01 82 10 C1 08 60 84 30 42 18 20 0C 10 06 08 43 
+                                04 21 82 00 C1 00 60 80 30 40 18 20 0C 10 06 18 
+                                02 10 C3 00 42 18 60 08 43 0C 01 08 61 80 21 0C 
+                                30 04 21 86 00 84 30 C0 10 86 10 02 18 40 08 61 
+                                00 21 84 00 86 10 02 18 40 08 61 00 21 84 00 86 
+                                10 02 18 20 0C 10 06 18 02 10 C3 00 42 18 60 08 
+                                43 0C 01 08 61 00 21 84 00 86 10 02 18 41 08 61 
+                                04 21 84 10 86 10 42 18 41 08 61 04 21 84 10 86 
+                                10 42 18 41 08 60 84 30 42 18 21 0C 10 86 00 61 
+                                00 21 84 00 86 10 02 18 40 08 61 00 21 84 00 86 
+                                08 43 04 21 82 00 C1 00 60 04 B4 7D 54 6C 1E 00 
+                                00 2E 81 8C 00 08 20 60 00 02 08 18 20 00 80 06 
+                                10 00 20 81 86 00 08 00 62 00 02 00 18 E0 00 80 
+                                06 58 00 20 01 98 00 08 00 68 00 02 00 1A 20 00 
+                                80 06 90 00 20 01 A6 00 08 00 6C 00 02 00 1B 20 
+                                00 80 06 D8 00 20 00 B8 10 00 5F 08 00 70 80 02 
+                                00 1C A0 00 82 07 30 00 20 01 CE 00 08 20 74 00 
+                                02 08 0D A1 00 0F F0 00 40 07 4C 00 10 11 82 08 
+                                2A 61 03 18 00 10 41 C7 00 04 04 60 82 0A 38 40 
+                                C6 00 04 10 71 80 01 05 08 20 82 8C 10 70 80 01 
+                                04 1C 60 00 41 40 08 20 A3 04 1C 00 00 41 07 4C 
+                                00 10 10 02 08 2A 61 03 00 00 10 41 C2 00 04 14 
+                                00 82 0A 10 41 C0 00 04 10 76 C0 01 01 08 20 82 
+                                B6 10 30 80 01 04 1D 30 00 40 42 08 20 A9 84 0C 
+                                20 00 41 07 1C 00 10 10 82 08 28 E1 03 08 00 10 
+                                43 D3 00 04 04 60 82 84 12 50 02 08 6A 61 03 18 
+                                00 10 50 82 4A 00 41 0D 4C 20 23 04 1C 20 00 49 
+                                40 08 21 A9 84 04 60 82 84 12 70 00 01 04 3D 30 
+                                00 40 46 08 28 41 05 00 20 86 A6 10 31 80 01 05 
+                                08 20 A0 04 10 D4 C2 02 30 41 C2 00 04 14 00 82 
+                                1A 98 40 46 08 28 41 07 00 00 10 42 D3 00 04 04 
+                                60 82 84 12 42 53 08 18 C0 00 82 84 12 42 53 08 
+                                08 C1 07 08 00 12 42 D3 00 04 04 60 82 84 10 42 
+                                53 08 18 C0 00 82 84 10 42 53 08 08 C1 07 08 00 
+                                10 42 D3 00 04 04 60 82 80 10 42 53 08 18 C0 00 
+                                82 80 10 42 53 08 08 C1 07 00 00 10 41 D3 00 04 
+                                04 60 92 0A 98 40 C6 00 04 90 F1 C0 01 01 18 20 
+                                A1 04 14 00 82 1A 38 40 C6 00 04 14 20 82 80 10 
+                                43 47 08 08 C1 07 08 00 10 50 02 08 68 E1 01 18 
+                                20 A1 04 1C 00 00 41 0B 1C 00 10 11 82 0A 10 41 
+                                09 1C 20 63 00 02 0A 10 41 09 1C 20 23 04 1C 20 
+                                00 41 0B 18 00 12 50 82 0A 00 41 09 18 24 E1 00 
+                                02 0A 00 41 09 18 24 A1 04 1C 00 00 41 0B 18 00 
+                                10 50 82 4A 00 41 09 18 20 E1 00 02 4A 00 41 09 
+                                18 20 A1 04 9C 00 00 41 0B 18 00 10 50 82 0A 00 
+                                41 09 18 20 E1 00 02 0A 00 41 09 18 20 A1 04 1C 
+                                00 00 41 07 18 04 12 50 82 08 28 C1 27 08 00 10 
+                                41 C6 00 04 14 20 92 0A 30 41 C2 01 04 90 31 80 
+                                41 24 2D 30 00 40 42 09 28 01 04 25 30 81 84 00 
+                                09 28 01 04 25 30 80 84 12 70 00 01 04 2D 30 00 
+                                40 42 08 28 01 04 25 30 81 84 00 08 28 01 04 25 
+                                30 80 84 10 70 00 01 04 1C 20 10 49 40 08 20 A1 
+                                04 9C 00 00 41 07 4C 00 10 10 82 48 2A 61 03 08 
+                                00 12 40 C2 01 04 9B B6 3F FF FF E5 7F FB 1F FF 
+                                FF F2 BF FD 8F FF FF F9 5F FE C7 FF FF FC AF FF 
+                                63 FF FF FE 57 FF B1 FF FF FF 2B FF D8 FF FF FF 
+                                95 FF EC 7F FF FF CA FF F6 3F FF FF E5 7F FB 1F 
+                                FF FF F2 BF FD 8F FF FF F9 5F FE C7 FF FF FC AF 
+                                FF 63 FF FF FE 57 FF B1 FF FF FF 2B FF D8 FF FF 
+                                FF 95 FF EC 7F FF FF CA FF F6 3F FF FF E5 7F FB 
+                                1F FF FF F2 BF FD 8F FF FF F9 5F FE C7 FF FF FC 
+                                AF FF 63 FF FF FE 57 FF B1 FF FF FF 2B FF D8 FF 
+                                FF FF 95 FF EC 7F FF FF CA FF F6 3F FF FF E5 7F 
+                                FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE C7 FF FF 
+                                FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 2B FF D8 
+                                FF FF FF 95 FF EC 7F FF FF CA FF F6 3F FF FF E5 
+                                7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE C7 FF 
+                                FF FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 2B FF 
+                                D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 3F FF FF 
+                                E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE C7 
+                                FF FF FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 2B 
+                                FF D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 3F FF 
+                                FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F FE 
+                                C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 FF FF FF 
+                                2B FF D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 3F 
+                                FF FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 5F 
+                                FE C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 FF FF 
+                                FF 2B FF D8 FF FF FF 95 FF EC 7F FF FF CA FF F6 
+                                3F FF FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF F9 
+                                5F FE C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 FF 
+                                FF FF 2B FF D8 FF FF FF 95 FF EC 7F FF FF CA FF 
+                                F6 3F FF FF E5 7F FB 1F FF FF F2 BF FD 8F FF FF 
+                                F9 5F FE C7 FF FF FC AF FF 63 FF FF FE 57 FF B1 
+                                FF FF FF 2B FF D8 FF FF FF 95 FF EC 7F FF FF CA 
+                                FF F6 3F FF FF E5 7F FB 1F FF FF F2 BF FD 8F FF 
+                                FF F9 5F FE C7 FF FF FC AF FF 63 FF FF FE 57 FF 
+                                B1 FF FF FF 2B FF D8 FF FF FF 95 FF EC 7F FF FF 
+                                CA FF F6 3F FF FF E5 7F FB 1F FF FF F2 BF FD 8F 
+                                FF FF F9 5F FE C7 FF FF FC AF FF 63 FF FF FE 57 
+                                FF B1 FF FF FF 2B FF B6 76 00 00 7E C4 0D 9D 80 
+                                00 04 7C EC 00 00 BA 00 00 00 8B C5 E2 F1 78 78 
+                                78 78 72 1E 1E 1E 1E 1E 1E 3F 8F C2 1E 1E 1E 1E 
+                                1E 1E 1E 1E 1E 1E 2F 17 8B 90 F0 F0 F0 F1 78 BC 
+                                5E 1E 1E 1E 1E 1E 1E 1E 1E 1E 1E 1C 8B 80 0F 74 
+                                00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+                                00 00 00 00 00 00 00 00 04 04 10 04 01 00 40 10 
+                                04 01 00 40 10 04 01 00 40 10 04 01 00 40 10 04 
+                                03 00 0C 00 30 00 C0 03 00 0C 00 30 00 C0 02 00 
+                                20 02 00 20 02 00 20 02 00 20 02 00 10 04 03 00 
+                                0C 00 30 00 C0 02 00 20 02 00 20 02 00 20 02 00 
+                                20 02 00 20 02 00 20 01 00 40 10 04 00 02 00 20 
+                                02 00 20 02 00 20 01 00 40 10 04 00 3E 08 02 40 
+                                07 CC AF 34 08 02 96 3F FF FF FF FF FF FC D2 97 
+                                78 A0 1F 00 08 40 13 0C 00 00 00 00 00 0A A1 34 
+                                91 02 02 00 05 E4 84 12 E2 80 02 6B C0 C0 04 00 
+                                01 04 10 40 00 28 C8 00 00 08 80 00 05 58 E1 00 
+                                00 00 01 4F 7E 03 02 00 00 01 40 48 07 06 0E 22 
+                                0C 00 02 13 60 10 73 E4 20 F0 00 82 40 31 10 00 
+                                A0 58 9B A0 21 94 34 08 81 07 41 86 04 C0 42 54 
+                                41 01 00 80 06 08 1C 1C 22 03 C8 0F 00 20 1A 02 
+                                6E 26 F0 00 09 00 00 00 00 72 A6 80 00 80 00 02 
+                                0C 30 00 1A 55 30 62 00 11 C0 48 16 0C 01 C4 D0 
+                                00 00 00 40 04 03 40 4D 01 04 40 41 4E 9C 00 02 
+                                00 01 00 80 80 10 02 00
+                            </MeNBtoSgNBContainer>
+                        </value>
+                    </SgNBAdditionRequest-IEs>
+                </protocolIEs>
+            </SgNBAdditionRequest>
+        </value>
+    </initiatingMessage>
+</X2AP-PDU>
+[0m[SCTP]   Successfully sent 2161 bytes on stream 0 for assoc_id 904
+[0m[0m[SCTP]   Found data for descriptor 95
+[0m[0m[SCTP]   Received notification for sd 95, type 32777
+[0m[0m[SCTP]   Found data for descriptor 95
+[0m[0m[SCTP]   [904][95] Msg of length 371 received from port 36422, on stream 0, PPID 27
+[0m<X2AP-PDU>
+    <successfulOutcome>
+        <procedureCode>27</procedureCode>
+        <criticality><reject/></criticality>
+        <value>
+            <SgNBAdditionRequestAcknowledge>
+                <protocolIEs>
+                    <SgNBAdditionRequestAcknowledge-IEs>
+                        <id>111</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <UE-X2AP-ID>0</UE-X2AP-ID>
+                        </value>
+                    </SgNBAdditionRequestAcknowledge-IEs>
+                    <SgNBAdditionRequestAcknowledge-IEs>
+                        <id>207</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <SgNB-UE-X2AP-ID>0</SgNB-UE-X2AP-ID>
+                        </value>
+                    </SgNBAdditionRequestAcknowledge-IEs>
+                    <SgNBAdditionRequestAcknowledge-IEs>
+                        <id>210</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <E-RABs-Admitted-ToBeAdded-SgNBAddReqAckList>
+                                <ProtocolIE-Single-Container>
+                                    <id>213</id>
+                                    <criticality><ignore/></criticality>
+                                    <value>
+                                        <E-RABs-Admitted-ToBeAdded-SgNBAddReqAck-Item>
+                                            <e-RAB-ID>5</e-RAB-ID>
+                                            <en-DC-ResourceConfiguration>
+                                                <pDCPatSgNB><present/></pDCPatSgNB>
+                                                <mCGresources><not-present/></mCGresources>
+                                                <sCGresources><not-present/></sCGresources>
+                                            </en-DC-ResourceConfiguration>
+                                            <resource-configuration>
+                                                <sgNBPDCPpresent>
+                                                    <s1-DL-GTPtunnelEndpoint>
+                                                        <transportLayerAddress>
+                                                            11000000101010000001001011000110
+                                                        </transportLayerAddress>
+                                                        <gTP-TEID>92 CC 30 02</gTP-TEID>
+                                                    </s1-DL-GTPtunnelEndpoint>
+                                                </sgNBPDCPpresent>
+                                            </resource-configuration>
+                                        </E-RABs-Admitted-ToBeAdded-SgNBAddReqAck-Item>
+                                    </value>
+                                </ProtocolIE-Single-Container>
+                            </E-RABs-Admitted-ToBeAdded-SgNBAddReqAckList>
+                        </value>
+                    </SgNBAdditionRequestAcknowledge-IEs>
+                    <SgNBAdditionRequestAcknowledge-IEs>
+                        <id>211</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <SgNBtoMeNBContainer>
+                                18 04 09 A8 44 09 92 E2 07 8E 01 90 43 7E 30 D0 
+                                41 E6 41 C8 54 1E 21 00 83 2B A1 6E 63 00 1A 4E 
+                                47 C0 13 49 C4 00 00 00 26 96 18 DE 35 00 05 38 
+                                05 10 0D 60 1B 40 39 D2 02 68 00 01 34 E4 E1 8D 
+                                E3 2A 31 00 0D 66 66 BE E4 E0 24 BC A1 5B C2 C5 
+                                8F 68 9C 2E 00 50 E0 18 04 21 60 3B 00 91 19 1F 
+                                5E 24 62 00 1A CC CD 00 03 F0 DB 00 10 1C 02 D9 
+                                00 92 00 20 24 04 63 2C E1 96 65 14 0F FF F8 00 
+                                00 00 08 70 00 41 03 08 14 30 73 70 44 30 00 00 
+                                80 80 1A 70 0A 20 1A C0 36 80 72 CA 80 40 FF FF 
+                                80 00 00 00 87 00 04 10 30 81 43 07 0D C2 10 C0 
+                                00 08 05 90 01 01 20 23 25 61 52 C0 E1 04 16 0E 
+                                0C 10 E1 00 71 28 1C 00 00 20 5E F4 01 00 02 00 
+                                00 0F 40 01 41 00 19 73 86 59 95 18 80 06 B3 33 
+                                5F 72 70 12 5E 50 AD E1 62 C7 B4 4E 17 00 28 70 
+                                6A A4 1A 80 81 04 42 0C 20 30 08 C0 03 40 43 00 
+                                0C 01 8A 17 B4 08 28 5E C9 07 91 A2 B3 80 00 40 
+                                00 7F 42 10 84 00 80 40 25 81 C2 08 2C 1C 18 21 
+                                C2 00 E2 50 38 00 00 40 BD E8 02 00 04 00 00 1E 
+                                80 02 82 00 70 01 01 88 00 40 A0 49 40 BC 16 00 
+                                60 00
+                            </SgNBtoMeNBContainer>
+                        </value>
+                    </SgNBAdditionRequestAcknowledge-IEs>
+                </protocolIEs>
+            </SgNBAdditionRequestAcknowledge>
+        </value>
+    </successfulOutcome>
+</X2AP-PDU>
+[0m[X2AP]   x2ap_eNB_decode_successfuloutcome_message!
+[0m[0m[X2AP]   X2AP Association id: 904 
+[0m322: 180409a8440992e2078e0190437e30d041e641c8541e2100832ba16e63001a4e47c01349c4000000269618de3500053805100d601b4039d20268000134e4e18de32a31000d6666bee4e024bca15bc2c58f689c2e0050e0180421603b0091191f5e2462001acccd0003f0db00101c02d9009200202404632ce19665140ffff8000000087000410308143073704430000080801a700a201ac0368072ca8040ffff8000000087000410308143070dc210c00008059001012023256152c0e104160e0c10e10071281c0000205ef401000200000f400141001973865995188006b3335f7270125e50ade162c7b44e170028706aa41a808104420c203008c0034043000c018a17b408285ec90791a2b3800040007f4210840080402581c2082c1c1821c200e25038000040bde802000400001e80028200700101880040a04940bc16006000
+<CG-Config>
+    <criticalExtensions>
+        <c1>
+            <cg-Config>
+                <scg-CellGroupConfig>
+                    08 81 32 5C 40 F1 C0 32 08 6F C6 1A 08 3C C8 39 
+                    0A 83 C4 20 10 65 74 2D CC 60 03 49 C8 F8 02 69 
+                    38 80 00 00 04 D2 C3 1B C6 A0 00 A7 00 A2 01 AC 
+                    03 68 07 3A 40 4D 00 00 26 9C 9C 31 BC 65 46 20 
+                    01 AC CC D7 DC 9C 04 97 94 2B 78 58 B1 ED 13 85 
+                    C0 0A 1C 03 00 84 2C 07 60 12 23 23 EB C4 8C 40 
+                    03 59 99 A0 00 7E 1B 60 02 03 80 5B 20 12 40 04 
+                    04 80 8C 65 9C 32 CC A2 81 FF FF 00 00 00 01 0E 
+                    00 08 20 61 02 86 0E 6E 08 86 00 00 10 10 03 4E 
+                    01 44 03 58 06 D0 0E 59 50 08 1F FF F0 00 00 00 
+                    10 E0 00 82 06 10 28 60 E1 B8 42 18 00 01 00 B2 
+                    00 20 24 04 64 AC 2A 58 1C 20 82 C1 C1 82 1C 20 
+                    0E 25 03 80 00 04 0B DE 80 20 00 40 00 01 E8 00 
+                    28 20 03 2E 70 CB 32 A3 10 00 D6 66 6B EE 4E 02 
+                    4B CA 15 BC 2C 58 F6 89 C2 E0 05 0E 0D 54 83 50 
+                    10 20 88 41 84 06 01 18 00 68 08 60 01 80 31 42 
+                    F6 81 05 0B D9 20 F2 34 56 70 00 08 00 0F E8 42 
+                    10 80 10 08 04 B0 38 41 05 83 83 04 38 40 1C 4A 
+                    07 00 00 08 17 BD 00 40 00 80 00 03 D0 00 50 40 
+                    0E 00 20 31 00
+                </scg-CellGroupConfig>
+                <scg-RB-Config>14 09 28 17 82 C0 0C 00</scg-RB-Config>
+            </cg-Config>
+        </c1>
+    </criticalExtensions>
+</CG-Config>
+[0m[RRC]   Dumping scg_CellGroupConfig: 309[0m0881325c40f1c032086fc61a083cc8390a83c4201065742dcc600349c8f802693880000004d2c31bc6a000a700a201ac0368073a404d0000269c9c31bc65462001acccd7dc9c0497942b7858b1ed1385c00a1c0300842c0760122323ebc48c40035999a0007e1b600203805b2012400404808c659c32cca281ffff000000010e0008206102860e6e088600001010034e0144035806d00e5950081ffff000000010e0008206102860e1b84218000100b20020240464ac2a581c2082c1c1821c200e25038000040bde802000400001e8002820032e70cb32a31000d6666bee4e024bca15bc2c58f689c2e0050e0d54835010208841840601180068086001803142f681050bd920f23456700008000fe8421080100804b038410583830438401c4a0700000817bd004000800003d00050400e00203100
+[0m[RRC]   Dumping scg_RB_Config: 8[0m1409281782c00c00
+[0m[RRC]   Dumping nr_SecondaryCellGroupConfig: 309[0m0881325c40f1c032086fc61a083cc8390a83c4201065742dcc600349c8f802693880000004d2c31bc6a000a700a201ac0368073a404d0000269c9c31bc65462001acccd7dc9c0497942b7858b1ed1385c00a1c0300842c0760122323ebc48c40035999a0007e1b600203805b2012400404808c659c32cca281ffff000000010e0008206102860e6e088600001010034e0144035806d00e5950081ffff000000010e0008206102860e1b84218000100b20020240464ac2a581c2082c1c1821c200e25038000040bde802000400001e8002820032e70cb32a31000d6666bee4e024bca15bc2c58f689c2e0050e0d54835010208841840601180068086001803142f681050bd920f23456700008000fe8421080100804b038410583830438401c4a0700000817bd004000800003d00050400e00203100
+[0m[RRC]   Dumping nr_RadioBearerConfig1: 8[0m1409281782c00c00
+len = 336
+ 22 02 8c 00 23 08 10 00 ac 24 a0 82 1e 32 04 d4 22 04 c9 71 03 c7 00 c8 21 bf 18 68 20 f3 20 e4 2a 0f 10 80 41 95 d0 b7 31 80 0d 27 23 e0 09 a4 e2 00 00 00 13 4b 0c 6f 1a 80 02 9c 02 88 06 b0 0d a0 1c e9 01 34 00 00 9a 72 70 c6 f1 95 18 80 06 b3 33 5f 72 70 12 5e 50 ad e1 62 c7 b4 4e 17 00 28 70 0c 02 10 b0 1d 80 48 8c 8f af 12 31 00 0d 66 66 80 01 f8 6d 80 08 0e 01 6c 80 49 00 10 12 02 31 96 70 cb 32 8a 07 ff fc 00 00 00 04 38 00 20 81 84 0a 18 39 b8 22 18 00 00 40 40 0d 38 05 10 0d 60 1b 40 39 65 40 20 7f ff c0 00 00 00 43 80 02 08 18 40 a1 83 86 e1 08 60 00 04 02 c8 00 80 90 11 92 b0 a9 60 70 82 0b 07 06 08 70 80 38 94 0e 00 00 10 2f 7a 00 80 01 00 00 07 a0 00 a0 80 0c b9 c3 2c ca 8c 40 03 59 99 af b9 38 09 2f 28 56 f0 b1 63 da 27 0b 80 14 38 35 52 0d 40 40 82 21 06 10 18 04 60 01 a0 21 80 06 00 c5 0b da 04 14 2f 64 83 c8 d1 59 c0 00 20 00 3f a1 08 42 00 40 20 12 c0 e1 04 16 0e 0c 10 e1 00 71 28 1c 00 00 20 5e f4 01 00 02 00 00 0f 40 01 41 00 38 00 80 c4 00 00 00 20 50 24 a0 5e 0b 00 30 00
+[0m[RRC]   sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] UE State = RRC_RECONFIGURED (default DRB, xid 1)
+[0m[0m[RRC]   E-RAB modification indication: nb nb_of_e_rabs 1 status 4
+[0m[0m[RRC]   S1AP_E_RAB_MODIFICATION_IND: sending the message: nb_of_erabstobemodified 1, total e_rabs 1, index 1
+[0m<S1AP-PDU>
+    <initiatingMessage>
+        <procedureCode>50</procedureCode>
+        <criticality><reject/></criticality>
+        <value>
+            <E-RABModificationIndication>
+                <protocolIEs>
+                    <E-RABModificationIndicationIEs>
+                        <id>0</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <MME-UE-S1AP-ID>553648130</MME-UE-S1AP-ID>
+                        </value>
+                    </E-RABModificationIndicationIEs>
+                    <E-RABModificationIndicationIEs>
+                        <id>8</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <ENB-UE-S1AP-ID>420141</ENB-UE-S1AP-ID>
+                        </value>
+                    </E-RABModificationIndicationIEs>
+                    <E-RABModificationIndicationIEs>
+                        <id>199</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <E-RABToBeModifiedListBearerModInd>
+                                <ProtocolIE-SingleContainer>
+                                    <id>200</id>
+                                    <criticality><reject/></criticality>
+                                    <value>
+                                        <E-RABToBeModifiedItemBearerModInd>
+                                            <e-RAB-ID>5</e-RAB-ID>
+                                            <transportLayerAddress>
+                                                11000000101010000001001011000110
+                                            </transportLayerAddress>
+                                            <dL-GTP-TEID>92 CC 30 02</dL-GTP-TEID>
+                                        </E-RABToBeModifiedItemBearerModInd>
+                                    </value>
+                                </ProtocolIE-SingleContainer>
+                            </E-RABToBeModifiedListBearerModInd>
+                        </value>
+                    </E-RABModificationIndicationIEs>
+                </protocolIEs>
+            </E-RABModificationIndication>
+        </value>
+    </initiatingMessage>
+</S1AP-PDU>
+[0m[S1AP]   Size of encoded message: 43 
+[0m[0m[S1AP]   initial context setup response: failed e_rab ID 5
+[0m[0m[SCTP]   Successfully sent 43 bytes on stream 1 for assoc_id 903
+[0m[0m[1;31m[SCTP]   Sctp_sendmsg failed: Message too long
+[0m[0m[GTPV1U]   NW_GTP_END_MARKER
+[0m[0m[93m[PDCP]   Handed SDU is of size 0! Ignoring...
+[0m[0m[93m[GTPV1U]   PDCP data request failed, cause: [UE:43eb]RB is not configured!
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   Received notification for sd 86, type 32777
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   [903][86] Msg of length 34 received from port 36412, on stream 1, PPID 18
+[0m[0m[93m[S1AP]   Implementation of S1AP E-RAB Modification confirm handler is pending...
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 1] CC_id 0 874.5 ULSCH in error in round 0, ul_cqi 158, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[MAC]   UE  rnti 43eb : in synch, PHR 40 dB DL CQI 15 PUSCH SNR 18 PUCCH SNR 15
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[MAC]   UE  rnti 43eb : in synch, PHR 40 dB DL CQI 15 PUSCH SNR 15 PUCCH SNR 16
+[0m[0m[RRC]   UE rnti 43eb failure timer 0/8
+[0m[0m[PHY]   prach_I0 = 0.0 dB
+[0m[0m[PHY]   max_I0 19, min_I0 12
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 4] CC_id 0 73.2 ULSCH in error in round 0, ul_cqi 159, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 7] CC_id 0 114.3 ULSCH in error in round 0, ul_cqi 165, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[MAC]   UE  rnti 43eb : in synch, PHR 40 dB DL CQI 15 PUSCH SNR 13 PUCCH SNR 10
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 218.4 ULSCH in error in round 0, ul_cqi 158, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 6] CC_id 0 226.2 ULSCH in error in round 0, ul_cqi 164, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[MAC]   UE  rnti 43eb : in synch, PHR 40 dB DL CQI 15 PUSCH SNR 13 PUCCH SNR 13
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[MAC]   UE  rnti 43eb : in synch, PHR 40 dB DL CQI 15 PUSCH SNR 19 PUCCH SNR 15
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[MAC]   UE  rnti 43eb : in synch, PHR 40 dB DL CQI 15 PUSCH SNR 18 PUCCH SNR 13
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[MAC]   UE  rnti 43eb : in synch, PHR 40 dB DL CQI 15 PUSCH SNR 13 PUCCH SNR 15
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 2] CC_id 0 753.0 ULSCH in error in round 0, ul_cqi 164, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[MAC]   UE  rnti 43eb : in synch, PHR 40 dB DL CQI 15 PUSCH SNR 18 PUCCH SNR 15
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[MAC]   UE  rnti 43eb : in synch, PHR 40 dB DL CQI 15 PUSCH SNR 15 PUCCH SNR 16
+[0m<S1AP-PDU>
+    <initiatingMessage>
+        <procedureCode>13</procedureCode>
+        <criticality><ignore/></criticality>
+        <value>
+            <UplinkNASTransport>
+                <protocolIEs>
+                    <UplinkNASTransport-IEs>
+                        <id>0</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <MME-UE-S1AP-ID>553648130</MME-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>8</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <ENB-UE-S1AP-ID>420141</ENB-UE-S1AP-ID>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>26</id>
+                        <criticality><reject/></criticality>
+                        <value>
+                            <NAS-PDU>
+                                27 D6 DB 4F 5E 03 07 45 0B 0B F6 22 F2 10 80 00 
+                                01 00 00 00 37
+                            </NAS-PDU>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>100</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <EUTRAN-CGI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <cell-ID>
+                                    0000000011100000000100000000
+                                </cell-ID>
+                            </EUTRAN-CGI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                    <UplinkNASTransport-IEs>
+                        <id>67</id>
+                        <criticality><ignore/></criticality>
+                        <value>
+                            <TAI>
+                                <pLMNidentity>22 F2 10</pLMNidentity>
+                                <tAC>00 01</tAC>
+                            </TAI>
+                        </value>
+                    </UplinkNASTransport-IEs>
+                </protocolIEs>
+            </UplinkNASTransport>
+        </value>
+    </initiatingMessage>
+</S1AP-PDU>
+[0m[SCTP]   Successfully sent 72 bytes on stream 1 for assoc_id 903
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   Received notification for sd 86, type 32777
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   [903][86] Msg of length 25 received from port 36412, on stream 1, PPID 18
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes 3)
+[0m[0m[RRC]   sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 927.5 ULSCH in error in round 0, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 928.3 ULSCH in error in round 1, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 929.1 ULSCH in error in round 2, ul_cqi 112, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 929.9 ULSCH in error in round 3, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 930.7 ULSCH in error in round 0, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 931.5 ULSCH in error in round 1, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 932.3 ULSCH in error in round 2, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 933.1 ULSCH in error in round 3, ul_cqi 128, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 933.9 ULSCH in error in round 0, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 934.7 ULSCH in error in round 1, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 935.5 ULSCH in error in round 2, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 3] CC_id 0 936.3 ULSCH in error in round 3, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 936.8 ULSCH in error in round 0, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 937.6 ULSCH in error in round 1, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 938.4 ULSCH in error in round 2, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 939.2 ULSCH in error in round 3, ul_cqi 112, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 940.0 ULSCH in error in round 0, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 940.8 ULSCH in error in round 1, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 941.6 ULSCH in error in round 2, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 942.4 ULSCH in error in round 3, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 943.2 ULSCH in error in round 0, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 944.0 ULSCH in error in round 1, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 944.8 ULSCH in error in round 2, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 945.6 ULSCH in error in round 3, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 946.4 ULSCH in error in round 0, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 947.2 ULSCH in error in round 1, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 948.0 ULSCH in error in round 2, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 948.8 ULSCH in error in round 3, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 949.6 ULSCH in error in round 0, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 950.4 ULSCH in error in round 1, ul_cqi 112, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 951.2 ULSCH in error in round 2, ul_cqi 112, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 952.0 ULSCH in error in round 3, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 952.8 ULSCH in error in round 0, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 953.6 ULSCH in error in round 1, ul_cqi 112, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 954.4 ULSCH in error in round 2, ul_cqi 112, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 955.2 ULSCH in error in round 3, ul_cqi 112, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 956.0 ULSCH in error in round 0, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 956.8 ULSCH in error in round 1, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 957.6 ULSCH in error in round 2, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 958.4 ULSCH in error in round 3, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 959.2 ULSCH in error in round 0, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 960.0 ULSCH in error in round 1, ul_cqi 112, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 960.8 ULSCH in error in round 2, ul_cqi 122, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[93m[MAC]   [eNB 0][PUSCH 0] CC_id 0 961.6 ULSCH in error in round 3, ul_cqi 116, UE_id 0, RNTI 43eb (len 63)
+[0m[0m[MAC]   UE 0 rnti 43eb: UL Failure timer 1 
+[0m[0m[93m[RRC]   S1AP removed entry in hashtable s1ap_id2_s1ap_ids for eNB_ue_s1ap_id 420141
+[0m[0m[93m[RRC]   S1AP removed entry in hashtable initial_id2_s1ap_ids for ue_initial_id 1
+[0m[0m[93m[S1AP]   Removed UE context eNB_ue_s1ap_id 420141
+[0m[0m[SCTP]   Successfully sent 24 bytes on stream 1 for assoc_id 903
+[0m[0m[RRC]   Removing UE 43eb instance after UE_CONTEXT_RELEASE_Complete (ue_release_timer_rrc timeout)
+[0m[0m[93m[RRC]   [eNB 0] Removing UE RNTI 43eb
+[0m[0m[RRC]   Put UE 43eb into freeList
+[0m[0m[RRC]   clean_eNb_dlsch dlsch[2] UE 43eb 
+[0m[0m[MAC]   clean eNb uci_vars[0] UE 43eb 
+[0m[0m[MAC]   clean eNb uci_vars[1] UE 43eb 
+[0m[0m[MAC]   clean eNb uci_vars[2] UE 43eb 
+[0m[0m[MAC]   clean eNb uci_vars[3] UE 43eb 
+[0m[0m[RRC]   remove UE 43eb from ul_config_pdu_list 0/1
+[0m[0m[MAC]   Removing UE 0 from Primary CC_id 0 (rnti 43eb)
+[0m[0m[PDCP]   remove uid is 0/0 43eb
+[0m[0m[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 43eb] Removed UE context
+[0m[0m[RRC]   [release_UE_in_freeList] remove UE 43eb from freeList
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[SCTP]   Found data for descriptor 86
+[0m[0m[SCTP]   Received notification for sd 86, type 32777
+[0m[0m[PHY]   prach_I0 = 0.0 dB
+[0m[0m[PHY]   max_I0 18, min_I0 12
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m[0m[X2AP]   X2 has 1 process ongoing
+[0m

@@ -64,10 +64,6 @@
 #include "rrc_nas_primitives.h"
 #include "COMMON/platform_types.h"
 
-#ifndef MAKE_VERSION
-  #define MAKE_VERSION(a,b,c) ((a)*256+(b)*16+(c))
-#endif
-
 struct rb_entity {
   nasRadioBearerId_t rab_id;
   nasSapId_t sapi;
@@ -181,11 +177,5 @@ extern struct net_device *nasdev[NB_INSTANCES_MAX];
 
 
 extern uint8_t NAS_NULL_IMEI[14];
-
-//global variables shared with RRC
-#ifndef PDCP_USE_NETLINK
-  extern int pdcp_2_nas_irq;
-#endif
-
 
 #endif

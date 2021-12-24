@@ -43,6 +43,7 @@ extern int otg_enabled;
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <netinet/ip.h>
 #define rtf_put write
 #define rtf_get read
 
@@ -55,7 +56,6 @@ extern int otg_enabled;
 #include "common/utils/LOG/log.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "nfapi/oai_integration/vendor_ext.h"
-#include "UTIL/FIFO/pad_list.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "platform_constants.h"
 #include "msc.h"
@@ -79,19 +79,9 @@ extern int nas_sock_fd[MAX_MOBILES_PER_ENB];
 
 extern int nas_sock_mbms_fd;
 
-extern int mbms_rab_id;
-
-
 extern struct msghdr nas_msg_tx;
 extern struct msghdr nas_msg_rx;
 
-
-
-#ifdef UESIM_EXPANSION
-  extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
-#endif
-
-extern Packet_OTG_List_t *otg_pdcp_buffer;
 
 
 #  include "gtpv1u_eNB_task.h"
@@ -111,69 +101,59 @@ void debug_pdcp_pc5s_sdu(sidelink_pc5s_element *sl_pc5s_msg, char *title) {
 }
 //-----------------------------------------------------------------------------
 int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
-  mem_block_t     *sdu_p;
+  notifiedFIFO_elt_t  *sdu_p;
   int              pdcp_nb_sdu_sent = 0;
   int              ret=0;
+  while ((sdu_p = pollNotifiedFIFO(&pdcp_sdu_list)) != NULL ) {
+    pdcp_data_ind_header_t * pdcpHead=(pdcp_data_ind_header_t *)NotifiedFifoData(sdu_p);
 
-  while ((sdu_p = list_get_head (&pdcp_sdu_list)) != NULL && ((pdcp_data_ind_header_t *)(sdu_p->data))->inst == ctxt_pP->module_id) {
-	  ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
-    int rb_id = ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id;
-    int sizeToWrite= sizeof (pdcp_data_ind_header_t) +
-                     ((pdcp_data_ind_header_t *) sdu_p->data)->data_size;
+    /* Note: we ignore the instance ID in the context and use the one in the
+     * PDCP packet to pick the right socket below */
 
+    int rb_id = pdcpHead->rb_id;
+    void * pdcpData=(void*)(pdcpHead+1);
     if (rb_id == 10) { //hardcoded for PC5-Signaling
       if( LOG_DEBUGFLAG(DEBUG_PDCP) ) {
-        debug_pdcp_pc5s_sdu((sidelink_pc5s_element *)&(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),
+        debug_pdcp_pc5s_sdu((sidelink_pc5s_element *)pdcpData,
                             "pdcp_fifo_flush_sdus sends a aPC5S message");
       }
 
-      ret = sendto(pdcp_pc5_sockfd, &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),
+      ret = sendto(pdcp_pc5_sockfd, pdcpData,
                    sizeof(sidelink_pc5s_element), 0, (struct sockaddr *)&prose_pdcp_addr,sizeof(prose_pdcp_addr) );
 
     } else if (UE_NAS_USE_TUN) {
-      //ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+      //ret = write(nas_sock_fd[pdcpHead->inst], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
        if(rb_id == mbms_rab_id){
-       ret = write(nas_sock_mbms_fd, &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
-       LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH MBMS DATA TO rb_id %d handle %d sizeToWrite %d\n",ret,rb_id,nas_sock_fd[ctxt_pP->module_id],sizeToWrite);
+       ret = write(nas_sock_mbms_fd, pdcpData, pdcpHead->data_size );
+       LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH MBMS DATA TO rb_id %d handle %d sizeToWrite %d\n",
+	     ret,rb_id,nas_sock_fd[pdcpHead->inst],pdcpHead->data_size);
         }
        else
        {
-		#if defined(ENABLE_PDCP_PAYLOAD_DEBUG)
-    		LOG_I(PHY, "PDCP output to be sent to TUN interface: \n");
-    		for (int i = sizeof(pdcp_data_ind_header_t); i < sizeToWrite; i++) {
-    			printf("%02x ",(unsigned char)sdu_p->data[i]);
-    		}
-    		printf("\n");
-    	#endif
-    	ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
-       //LOG_I(PDCP,"[PDCP_FIFOS] ret %d TRIED TO PUSH DATA TO rb_id %d handle %d sizeToWrite %d\n",ret,rb_id,nas_sock_fd[ctxt_pP->module_id],sizeToWrite);
+	 if( LOG_DEBUGFLAG(DEBUG_PDCP) ) 
+	   log_dump(PDCP, pdcpData, pdcpHead->data_size, LOG_DUMP_CHAR,"PDCP output to be sent to TUN interface: \n");
+	 ret = write(nas_sock_fd[pdcpHead->inst], pdcpData,pdcpHead->data_size );
+	 LOG_T(PDCP,"[UE PDCP_FIFOS] ret %d TRIED TO PUSH DATA TO rb_id %d handle %d sizeToWrite %d\n",
+	       ret,rb_id,nas_sock_fd[pdcpHead->inst],pdcpHead->data_size);
        }
     } else if (ENB_NAS_USE_TUN) {
-		#if defined(ENABLE_PDCP_PAYLOAD_DEBUG)
-    		LOG_I(PHY, "PDCP output to be sent to TUN interface: \n");
-    		for (int i = sizeof(pdcp_data_ind_header_t); i < sizeToWrite; i++) {
-    			printf("%02x ",(unsigned char)sdu_p->data[i]);
-    		}
-    		printf("\n");
-		#endif
-    	ret = write(nas_sock_fd[0], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]), sizeToWrite);
-
+      if( LOG_DEBUGFLAG(DEBUG_PDCP) ) 
+	log_dump(PDCP, pdcpData, pdcpHead->data_size, LOG_DUMP_CHAR,"PDCP output to be sent to TUN interface: \n");
+      ret = write(nas_sock_fd[0], pdcpData, pdcpHead->data_size);
+       LOG_T(PDCP,"[NB PDCP_FIFOS] ret %d TRIED TO PUSH DATA TO rb_id %d handle %d sizeToWrite %d\n",ret,rb_id,nas_sock_fd[0],pdcpHead->data_size);
     } else if (PDCP_USE_NETLINK) {
-      memcpy(NLMSG_DATA(nas_nlh_tx), (uint8_t *) sdu_p->data,  sizeToWrite);
+      int sizeToWrite= sizeof (pdcp_data_ind_header_t) + pdcpHead->data_size;
+      memcpy(NLMSG_DATA(nas_nlh_tx), (uint8_t *) pdcpHead,  sizeToWrite);
       nas_nlh_tx->nlmsg_len = sizeToWrite;
       ret = sendmsg(nas_sock_fd[0],&nas_msg_tx,0);
     }  //  PDCP_USE_NETLINK
-
-    AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s), nas_sock_fd[0]: %d\n", errno, strerror(errno), nas_sock_fd[0]);
     
-    #if defined(ENABLE_PDCP_PAYLOAD_DEBUG)
-    LOG_I(PDCP, "Printing first bytes of PDCP SDU before removing it from the list: \n");
-      for (int i=0; i<30; i++){
-    	  LOG_I(PDCP, "%x", sdu_p->data[i]);
-      }
-    #endif
-    list_remove_head (&pdcp_sdu_list);
-    free_mem_block (sdu_p, __func__);
+    AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s), nas_sock_fd[0]: %d\n", errno, strerror(errno), nas_sock_fd[0]);
+
+    if( LOG_DEBUGFLAG(DEBUG_PDCP) )
+      log_dump(PDCP, pdcpData, min(pdcpHead->data_size,30) , LOG_DUMP_CHAR,
+	       "Printing first bytes of PDCP SDU before removing it from the list: \n");
+    delNotifiedFIFO_elt (sdu_p);
     pdcp_nb_sdu_sent ++;
   }
 
@@ -181,12 +161,13 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
 }
 
 int pdcp_fifo_flush_mbms_sdus(const protocol_ctxt_t *const  ctxt_pP) {
-  mem_block_t     *sdu_p;
+  notifiedFIFO_elt_t     *sdu_p;
   int              pdcp_nb_sdu_sent = 0;
   //int              ret=0;
 
-  while ((sdu_p = list_get_head (&pdcp_sdu_list)) != NULL && ((pdcp_data_ind_header_t *)(sdu_p->data))->inst == ctxt_pP->module_id) {
-    ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
+  while ((sdu_p = pollNotifiedFIFO(&pdcp_sdu_list)) != NULL ) {
+    pdcp_data_ind_header_t * pdcpHead=(pdcp_data_ind_header_t *)NotifiedFifoData(sdu_p);
+    AssertFatal(pdcpHead->inst==ctxt_pP->module_id, "To implement correctly multi module id\n");
     //int rb_id = ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id;
     //int sizeToWrite= sizeof (pdcp_data_ind_header_t) +
                      //((pdcp_data_ind_header_t *) sdu_p->data)->data_size;
@@ -212,8 +193,9 @@ int pdcp_fifo_flush_mbms_sdus(const protocol_ctxt_t *const  ctxt_pP) {
     //}  //  PDCP_USE_NETLINK
 
     //AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s)\n", errno, strerror(errno));
-    list_remove_head (&pdcp_sdu_list);
-    free_mem_block (sdu_p, __func__);
+
+    //AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s)\n", errno, strerror(errno));
+    delNotifiedFIFO_elt (sdu_p);
     pdcp_nb_sdu_sent ++;
   }
 
@@ -241,7 +223,11 @@ int pdcp_fifo_read_input_sdus_fromtun (const protocol_ctxt_t *const  ctxt_pP) {
       key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
       h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
     } else { // => ENB_NAS_USE_TUN
-      ctxt.rnti=pdcp_eNB_UE_instance_to_rnti[0];
+      /* Get the IP from a packet */
+      struct ip *ip_pack = (struct ip *) nl_rx_buf;
+      /* Use last octet of destination IP to get index of UE */
+      int ue_indx = ((ip_pack->ip_dst.s_addr >> 24) -  2) % MAX_MOBILES_PER_ENB;
+      ctxt.rnti=pdcp_eNB_UE_instance_to_rnti[ue_indx];
       ctxt.enb_flag=ENB_FLAG_YES;
       ctxt.module_id=0;
       key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
@@ -252,9 +238,9 @@ int pdcp_fifo_read_input_sdus_fromtun (const protocol_ctxt_t *const  ctxt_pP) {
           ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
 
     if (h_rc == HASH_TABLE_OK) {
-      LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d on Rab %ld \n",
+      LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %ld: Received socket with length %d on Rab %ld \n",
             ctxt.frame, ctxt.instance, len, rab_id);
-      LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %04x][RB %ld]\n",
+      LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %ld][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %04x][RB %ld]\n",
             ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
             ctxt.rnti, rab_id);
 
@@ -273,7 +259,7 @@ int pdcp_fifo_read_input_sdus_fromtun (const protocol_ctxt_t *const  ctxt_pP) {
                    );
     } else {
       LOG_D(PDCP,
-            "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %04x][RB %ld] TUN NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
+            "[FRAME %5u][UE][IP][INSTANCE %ld][RB %ld][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %04x][RB %ld] TUN NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
             ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
             ctxt.rnti, rab_id, key);
     }
@@ -320,9 +306,9 @@ int pdcp_fifo_read_input_mbms_sdus_fromtun (const protocol_ctxt_t *const  ctxt_p
           ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
 
     if (h_rc == HASH_TABLE_OK) {
-      LOG_I(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d on Rab %ld \n",
+      LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %ld: Received socket with length %d on Rab %ld \n",
             ctxt.frame, ctxt.instance, len, rab_id);
-      LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %04x][RB %ld]\n",
+      LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %ld][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %04x][RB %ld]\n",
             ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
             ctxt.rnti, rab_id);
       MSC_LOG_RX_MESSAGE((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
@@ -359,7 +345,7 @@ int pdcp_fifo_read_input_mbms_sdus_fromtun (const protocol_ctxt_t *const  ctxt_p
         MSC_AS_TIME_ARGS(ctxt_pP),
         ctxt.instance, rab_id, rab_id, len);
       LOG_D(PDCP,
-            "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %04x][RB %ld] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
+            "[FRAME %5u][UE][IP][INSTANCE %ld][RB %ld][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %04x][RB %ld] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
             ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
             ctxt.rnti, rab_id, key);
        //if (!UE_NAS_USE_TUN) {
@@ -392,7 +378,6 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
     protocol_ctxt_t                ctxt;
     hash_key_t                     key       = HASHTABLE_NOT_A_KEY_VALUE;
     hashtable_rc_t                 h_rc;
-    module_id_t                    ue_id     = 0;
     pdcp_t                        *pdcp_p    = NULL;
     static unsigned char pdcp_read_state_g =0;
     rb_id_t          rab_id  = 0;
@@ -486,38 +471,11 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
             } else  { // rb_id =0, thus interpreated as broadcast and transported as multiple unicast
               // is a broadcast packet, we have to send this packet on all default RABS of all connected UEs
               //#warning CODE TO BE REVIEWED, ONLY WORK FOR SIMPLE TOPOLOGY CASES
-              for (ue_id = 0; ue_id < NB_UE_INST; ue_id++) {
-                if (oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt_cpy.module_id][ue_id] != NOT_A_RNTI) {
-                  ctxt.rnti = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt_cpy.module_id][ue_id];
-                  LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB DEFAULT_RAB_ID %u]\n",
-                        ctxt.frame,
-                        pdcp_read_header_g.inst,
-                        pdcp_read_header_g.rb_id,
-                        pdcp_read_header_g.data_size,
-                        ctxt.module_id,
-                        ctxt.rnti,
-                        DEFAULT_RAB_ID);
-                  pdcp_data_req (
-                    &ctxt,
-                    SRB_FLAG_NO,
-                    DEFAULT_RAB_ID,
-                    RLC_MUI_UNDEFINED,
-                    RLC_SDU_CONFIRM_NO,
-                    pdcp_read_header_g.data_size,
-                    (unsigned char *)NLMSG_DATA(nas_nlh_rx),
-                    PDCP_TRANSMISSION_MODE_DATA
-                    ,NULL, NULL
-                  );
-                }
-              }
+              // never finished code, dropped
             }
           } else { // ctxt.enb_flag => UE
             if (NFAPI_MODE == NFAPI_UE_STUB_PNF) {
-#ifdef UESIM_EXPANSION
-              ctxt.module_id = inst_pdcp_list[pdcp_read_header_g.inst];
-#else
               ctxt.module_id = pdcp_read_header_g.inst;
-#endif
             } else {
               ctxt.module_id = 0;
             }
@@ -645,7 +603,7 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
   //int optval;
   int bytes_received;
   sidelink_pc5s_element *sl_pc5s_msg_send = NULL;
-  pc5s_header_t *pc5s_header = NULL;
+  pc5s_header_t *pc5s_header  = NULL;
   rb_id_t          rab_id  = 0;
   //TTN for D2D (PC5S)
   // receive a message from ProSe App
@@ -746,6 +704,12 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
                 pc5s_header->rb_id,
                 rab_id,
                 pc5s_header->data_size);
+            /* pointers to pc5s_header fields possibly not aligned because pc5s_header points to a packed structure
+             * Using these possibly unaligned pointers in a function call may trigger alignment errors at run time and
+             * gcc, from v9,  now warns about it. fix these warnings by using  local variables
+             */
+              uint32_t sourceL2Id = pc5s_header->sourceL2Id;
+              uint32_t destinationL2Id = pc5s_header->destinationL2Id;
               pdcp_data_req(
                 &ctxt,
                 SRB_FLAG_NO,
@@ -755,9 +719,11 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
                 pc5s_header->data_size,
                 (unsigned char *)receive_buf,
                 PDCP_TRANSMISSION_MODE_DATA,
-                &pc5s_header->sourceL2Id,
-                &pc5s_header->destinationL2Id
+                &sourceL2Id,
+                &destinationL2Id
               );
+              pc5s_header->sourceL2Id = sourceL2Id;
+              pc5s_header->destinationL2Id=destinationL2Id;             
             } else { /* else of h_rc == HASH_TABLE_OK */
               MSC_LOG_RX_DISCARDED_MESSAGE(
                 (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
@@ -801,6 +767,12 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
               pc5s_header->rb_id,
               DEFAULT_RAB_ID,
               pc5s_header->data_size);
+            /* pointers to pc5s_header fields possibly not aligned because pc5s_header points to a packed structure
+             * Using these possibly unaligned pointers in a function call may trigger alignment errors at run time and
+             * gcc, from v9,  now warns about it. fix these warnings by using  local variables
+             */
+            uint32_t sourceL2Id = pc5s_header->sourceL2Id;
+            uint32_t destinationL2Id = pc5s_header->destinationL2Id;
             pdcp_data_req (
               &ctxt,
               SRB_FLAG_NO,
@@ -810,9 +782,11 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
               pc5s_header->data_size,
               (unsigned char *)receive_buf,
               PDCP_TRANSMISSION_MODE_DATA,
-              &pc5s_header->sourceL2Id,
-              &pc5s_header->destinationL2Id
+              &sourceL2Id,
+              &destinationL2Id
             );
+            pc5s_header->sourceL2Id = sourceL2Id;
+            pc5s_header->destinationL2Id=destinationL2Id; 
           }
         } /* end of !ctxt.enb_flag */
 

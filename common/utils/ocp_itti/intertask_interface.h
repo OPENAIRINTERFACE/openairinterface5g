@@ -45,7 +45,7 @@ typedef struct {
   uint32_t      interval_sec;
   uint32_t      interval_us;
   long          task_id;
-  int32_t       instance;
+  instance_t       instance;
   timer_type_t  type;
   void         *timer_arg;
   long          timer_id;
@@ -230,6 +230,7 @@ typedef struct IttiMsgText_s {
 #include <openair2/COMMON/sctp_messages_types.h>
 #include <openair2/COMMON/udp_messages_types.h>
 #include <openair2/COMMON/gtpv1_u_messages_types.h>
+#include <openair2/COMMON/ngap_messages_types.h>
 #include <openair3/SCTP/sctp_eNB_task.h>
 #include <openair3/NAS/UE/nas_proc_defs.h>
 #include <openair3/NAS/UE/ESM/esmData.h>
@@ -256,9 +257,14 @@ typedef struct IttiMsgText_s {
 //#include <proto.h>
 
 #include <openair3/GTPV1-U/gtpv1u_eNB_task.h>
+#include <openair3/GTPV1-U/gtpv1u_gNB_task.h>
 void *rrc_enb_process_itti_msg(void *);
 #include <openair3/SCTP/sctp_eNB_task.h>
-#include <openair3/S1AP/s1ap_eNB.h>
+#include <openair3/NGAP/ngap_gNB.h>
+
+#ifdef ITTI_SIM
+  #include <openair2/COMMON/itti_sim_messages_types.h>
+#endif
 
 /*
   static const char *const messages_definition_xml = {
@@ -294,7 +300,7 @@ typedef struct {
 //TASK_DEF(TASK_RRC_ENB,  TASK_PRIORITY_MED,  200, NULL, NULL)
 //TASK_DEF(TASK_GTPV1_U,  TASK_PRIORITY_MED,  1000,NULL, NULL)
 //TASK_DEF(TASK_UDP,      TASK_PRIORITY_MED,  1000, NULL, NULL)
-void * rrc_enb_process_msg(void*);
+void *rrc_enb_process_msg(void *);
 #define FOREACH_TASK(TASK_DEF) \
   TASK_DEF(TASK_UNKNOWN,  TASK_PRIORITY_MED, 50, NULL, NULL)  \
   TASK_DEF(TASK_TIMER,    TASK_PRIORITY_MED, 10, NULL, NULL)   \
@@ -311,6 +317,7 @@ void * rrc_enb_process_msg(void*);
   TASK_DEF(TASK_RRC_GNB,  TASK_PRIORITY_MED,  200, NULL,NULL)\
   TASK_DEF(TASK_RAL_ENB,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_S1AP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_NGAP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_X2AP,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_M2AP_ENB,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_M2AP_MCE,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
@@ -328,13 +335,18 @@ void * rrc_enb_process_msg(void*);
   TASK_DEF(TASK_RLC_UE,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_PDCP_UE,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_RRC_UE,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_RRC_NRUE, TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_NAS_UE,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_RAL_UE,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_MSC,      TASK_PRIORITY_MED,  200, NULL, NULL)\
   TASK_DEF(TASK_GTPV1_U,  TASK_PRIORITY_MED,  1000,NULL, NULL)\
+  TASK_DEF(OCP_GTPV1_U,  TASK_PRIORITY_MED,  1000,NULL, NULL)\
   TASK_DEF(TASK_UDP,      TASK_PRIORITY_MED,  1000, NULL, NULL)\
   TASK_DEF(TASK_CU_F1,    TASK_PRIORITY_MED,  200, NULL, NULL) \
   TASK_DEF(TASK_DU_F1,    TASK_PRIORITY_MED,  200, NULL, NULL) \
+  TASK_DEF(TASK_RRC_UE_SIM,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_RRC_GNB_SIM,  TASK_PRIORITY_MED,  200, NULL, NULL)  \
+  TASK_DEF(TASK_NAS_NRUE,     TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_MAX,      TASK_PRIORITY_MED,  200, NULL, NULL)
 
 #define TASK_DEF(TaskID, pRIO, qUEUEsIZE, FuNc, ThreadFunc)          { pRIO, qUEUEsIZE, #TaskID, FuNc, ThreadFunc },
@@ -392,7 +404,8 @@ typedef struct MessageHeader_s {
   MessagesIds messageId;          /**< Unique message id as referenced in enum MessagesIds */
   task_id_t  originTaskId;        /**< ID of the sender task */
   task_id_t  destinationTaskId;   /**< ID of the destination task */
-  instance_t instance;            /**< Task instance for virtualization */
+  instance_t originInstance;
+  instance_t destinationInstance;
   itti_lte_time_t lte_time;
   MessageHeaderSize ittiMsgSize;         /**< Message size (not including header size) */
 } MessageHeader;
@@ -414,7 +427,7 @@ static const message_info_t messages_info[] = {
 #undef MESSAGE_DEF
 };
 
-typedef struct __attribute__ ((__packed__)) MessageDef_s {
+typedef struct MessageDef_s {
   MessageHeader ittiMsgHeader; /**< Message header */
   msg_t         ittiMsg;
 } MessageDef;
@@ -422,11 +435,11 @@ typedef struct __attribute__ ((__packed__)) MessageDef_s {
 
 
 /* Extract the instance from a message */
-#define ITTI_MESSAGE_GET_INSTANCE(mESSAGE)  ((mESSAGE)->ittiMsgHeader.instance)
 #define ITTI_MSG_ID(mSGpTR)                 ((mSGpTR)->ittiMsgHeader.messageId)
 #define ITTI_MSG_ORIGIN_ID(mSGpTR)          ((mSGpTR)->ittiMsgHeader.originTaskId)
 #define ITTI_MSG_DESTINATION_ID(mSGpTR)     ((mSGpTR)->ittiMsgHeader.destinationTaskId)
-#define ITTI_MSG_INSTANCE(mSGpTR)           ((mSGpTR)->ittiMsgHeader.instance)
+#define ITTI_MSG_ORIGIN_INSTANCE(mSGpTR)           ((mSGpTR)->ittiMsgHeader.originInstance)
+#define ITTI_MSG_DESTINATION_INSTANCE(mSGpTR)           ((mSGpTR)->ittiMsgHeader.destinationInstance)
 #define ITTI_MSG_NAME(mSGpTR)               itti_get_message_name(ITTI_MSG_ID(mSGpTR))
 #define ITTI_MSG_ORIGIN_NAME(mSGpTR)        itti_get_task_name(ITTI_MSG_ORIGIN_ID(mSGpTR))
 #define ITTI_MSG_DESTINATION_NAME(mSGpTR)   itti_get_task_name(ITTI_MSG_DESTINATION_ID(mSGpTR))
@@ -460,6 +473,9 @@ void itti_subscribe_event_fd(task_id_t task_id, int fd);
 void itti_unsubscribe_event_fd(task_id_t task_id, int fd);
 
 /** \brief Return the list of events excluding the fd associated with itti
+    \the fd associated with itti can return, but it is marked events[i].events &= ~EPOLLIN
+    \as it is not EPOLLIN, the reader should ignore this fd
+    \or it can manage the list of fd's in his interest, so ignore the other ones
     \param task_id Task ID of the task
     \param events events list
     @returns number of events to handle
@@ -488,6 +504,8 @@ void itti_poll_msg(task_id_t task_id, MessageDef **received_msg);
 int itti_create_task(task_id_t task_id,
                      void *(*start_routine) (void *),
                      void *args_p);
+
+int itti_create_queue(const task_info_t *task_info);
 
 /** \brief Exit the current task.
  **/
@@ -519,6 +537,7 @@ const char *itti_get_task_name(task_id_t task_id);
  **/
 MessageDef *itti_alloc_new_message(
   task_id_t         origin_task_id,
+  instance_t originInstance,
   MessagesIds       message_id);
 
 /** \brief Alloc and memset(0) a new itti message.
@@ -529,6 +548,7 @@ MessageDef *itti_alloc_new_message(
  **/
 MessageDef *itti_alloc_new_message_sized(
   task_id_t         origin_task_id,
+  instance_t originInstance,
   MessagesIds       message_id,
   MessageHeaderSize size);
 
@@ -536,7 +556,7 @@ MessageDef *itti_alloc_new_message_sized(
    This function should be called from the main thread after having created all ITTI tasks.
  **/
 void itti_wait_tasks_end(void);
-#define  THREAD_MAX 0 //for compatibility
+#define  ADDED_QUEUES_MAX 10 // Fix me: MSC component too hard to understand, we keep room for 10 queues created dynamically
 void itti_set_task_real_time(task_id_t task_id);
 
 /** \brief Send a termination message to all tasks.
@@ -550,13 +570,12 @@ void *malloc_or_fail(size_t size);
 int memory_read(const char *datafile, void *data, size_t size);
 int itti_free(task_id_t task_id, void *ptr);
 
-int itti_init(task_id_t task_max, thread_id_t thread_max, MessagesIds messages_id_max, const task_info_t *tasks_info,
-              const message_info_t *messages_info);
+int itti_init(task_id_t task_max, const task_info_t *tasks_info);
 int timer_setup(
   uint32_t      interval_sec,
   uint32_t      interval_us,
   task_id_t     task_id,
-  int32_t       instance,
+  instance_t       instance,
   timer_type_t  type,
   void         *timer_arg,
   long         *timer_id);

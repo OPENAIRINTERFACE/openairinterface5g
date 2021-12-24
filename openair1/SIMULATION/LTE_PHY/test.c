@@ -75,7 +75,7 @@ int main(int argc, char **argv)
   double rx_gain;
   int rx_pwr2, target_rx_pwr_dB;
 
-  struct complex **ch;
+  struct complexd **ch;
   unsigned char first_call = 1;
 
   LTE_DL_FRAME_PARMS frame_parms;
@@ -169,10 +169,10 @@ int main(int argc, char **argv)
 
   channel_length = (int) 11+2*BW*Td;
 
-  ch = (struct complex**) malloc(4 * sizeof(struct complex*));
+  ch = (struct complexd**) malloc(4 * sizeof(struct complexd*));
 
   for (i = 0; i<4; i++)
-    ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
+    ch[i] = (struct complexd*) malloc(channel_length * sizeof(struct complexd));
 
   randominit(0);
   set_taus_seed(0);

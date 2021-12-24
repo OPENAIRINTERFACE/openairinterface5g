@@ -34,7 +34,8 @@ int fullread(int fd, void *_buf, int count) {
   while (count) {
     l = read(fd, buf, count);
 
-    if (l <= 0) return -1;
+    if (l <= 0)
+      return -1;
 
     count -= l;
     buf += l;
@@ -43,6 +44,44 @@ int fullread(int fd, void *_buf, int count) {
 
   return ret;
 }
+#define shift 4
+int32_t signal_energy(int32_t *input,uint32_t length) {
+  int32_t i;
+  int32_t temp,temp2;
+  register __m64 mm0,mm1,mm2,mm3;
+  __m64 *in = (__m64 *)input;
+  mm0 = _mm_setzero_si64();//pxor(mm0,mm0);
+  mm3 = _mm_setzero_si64();//pxor(mm3,mm3);
+
+  for (i=0; i<length>>1; i++) {
+    mm1 = in[i];
+    mm2 = mm1;
+    mm1 = _m_pmaddwd(mm1,mm1);
+    mm1 = _m_psradi(mm1,shift);// shift any 32 bits blocs of the word by the value shift
+    mm0 = _m_paddd(mm0,mm1);// add the two 64 bits words 4 bytes by 4 bytes
+    //    mm2 = _m_psrawi(mm2,shift_DC);
+    mm3 = _m_paddw(mm3,mm2);// add the two 64 bits words 2 bytes by 2 bytes
+  }
+
+  mm1 = mm0;
+  mm0 = _m_psrlqi(mm0,32);
+  mm0 = _m_paddd(mm0,mm1);
+  temp = _m_to_int(mm0);
+  temp/=length;
+  temp<<=shift;   // this is the average of x^2
+  // now remove the DC component
+  mm2 = _m_psrlqi(mm3,32);
+  mm2 = _m_paddw(mm2,mm3);
+  mm2 = _m_pmaddwd(mm2,mm2);
+  temp2 = _m_to_int(mm2);
+  temp2/=(length*length);
+  //  temp2<<=(2*shift_DC);
+  temp -= temp2;
+  _mm_empty();
+  _m_empty();
+  return((temp>0)?temp:1);
+}
+
 
 void fullwrite(int fd, void *_buf, int count) {
   char *buf = _buf;
@@ -131,8 +170,8 @@ void setblocking(int sock, enum blocking_t active) {
 }
 
 int main(int argc, char *argv[]) {
-  if(argc != 4) {
-    printf("Need parameters: source file, server or destination IP, TCP port\n");
+  if(argc < 4) {
+    printf("Need parameters: source file, server or destination IP, TCP port (4043), 'UL|DL' if raw 2*16bits format: UL for UL IQ, DL for DL IQs \n");
     exit(1);
   }
 
@@ -147,10 +186,23 @@ int main(int argc, char *argv[]) {
     serviceSock=client_start(argv[2],atoi(argv[3]));
   }
 
+  uint64_t typeStamp=ENB_MAGICDL;
+  boolean_t raw=false;
+
+  if ( argc == 5 ) {
+    raw=true;
+
+    if (strcmp(argv[4],"UL") == 0 )
+      typeStamp=UE_MAGICDL;
+  }
+
   samplesBlockHeader_t header;
   int bufSize=100000;
   void *buff=malloc(bufSize);
-  uint64_t readTS=0;
+  uint64_t timestamp=0;
+  const int blockSize=1920;
+  // If fileSize is not multiple of blockSize*4 then discard remaining samples
+  fileSize = (fileSize/(blockSize<<2))*(blockSize<<2);
 
   while (1) {
     //Rewind the file to loop on the samples
@@ -159,10 +211,21 @@ int main(int argc, char *argv[]) {
 
     // Read one block and send it
     setblocking(serviceSock, blocking);
-    AssertFatal(read(fd,&header,sizeof(header)), "");
+
+    if ( raw ) {
+      header.magic=typeStamp;
+      header.size=blockSize;
+      header.nbAnt=1;
+      header.timestamp=timestamp;
+      timestamp+=blockSize;
+      header.option_value=0;
+      header.option_flag=0;
+    } else {
+      AssertFatal(read(fd,&header,sizeof(header)), "");
+    }
+
     fullwrite(serviceSock, &header, sizeof(header));
     int dataSize=sizeof(int32_t)*header.size*header.nbAnt;
-    uint64_t wroteTS=header.timestamp;
 
     if (dataSize>bufSize) {
       void *new_buff = realloc(buff, dataSize);
@@ -176,21 +239,28 @@ int main(int argc, char *argv[]) {
     }
 
     AssertFatal(read(fd,buff,dataSize) == dataSize, "");
+
+    if (raw) // UHD shifts the 12 ADC values in MSB
+      for (int i=0; i<header.size*header.nbAnt*2; i++)
+        ((int16_t *)buff)[i]/=16;
+
+    usleep(1000);
+    printf("sending at ts: %lu, number of samples: %d, energy: %d\n",
+           header.timestamp, header.size, signal_energy(buff, header.size));
     fullwrite(serviceSock, buff, dataSize);
     // Purge incoming samples
-    setblocking(serviceSock, blocking);
+    setblocking(serviceSock, notBlocking);
+    int ret;
 
-    while(readTS < wroteTS) {
-      if ( fullread(serviceSock, &header,sizeof(header)) != sizeof(header) ||
-           fullread(serviceSock, buff, sizeof(int32_t)*header.size*header.nbAnt) !=
-           sizeof(int32_t)*header.size*header.nbAnt
-         ) {
+    do {
+      char buff[64000];
+      ret=read(serviceSock, buff, 64000);
+
+      if ( ret<0 && !( errno == EAGAIN || errno == EWOULDBLOCK ) ) {
         printf("error: %s\n", strerror(errno));
         exit(1);
       }
-
-      readTS=header.timestamp;
-    }
+    } while ( ret > 0 ) ;
   }
 
   return 0;

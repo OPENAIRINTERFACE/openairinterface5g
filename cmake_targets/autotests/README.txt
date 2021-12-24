@@ -142,10 +142,14 @@ Obj.#   Case#   Test#	Description
                         (Test 11: 10 MHz, R7.FDD (MCS 25), EVA5, 17.7dB (70%))
                         (TM2 Test 1 10 MHz, R.11 FDD (MCS 14), EVA5, 6.8 dB (70%)),
                         (TM2 Test 1b 20 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%)),
-01      51      11      nr_ulsim Test cases. (Test1: MCS 9),
-                        (Test2: MCS 16),
-                        (Test3: MCS 28)
-
+01      51      11      nr_ulsim Test cases. (Test1: MCS 9 106 PRBs),
+                        (Test2: MCS 16 50 PRBs),
+                        (Test3: MCS 28 50 PRBs),
+                        (Test4: MCS 9 217 PRBs),
+                        (Test5: MCS 9 273 PRBs)
+01      51      12      nr_prachsim Test cases.(Test1: 106 PRBs),
+                        (Test2: 217 PRBs),
+                        (Test3: 273 PRBs)
 
 
 

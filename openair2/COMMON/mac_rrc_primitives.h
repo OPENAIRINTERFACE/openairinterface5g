@@ -22,9 +22,7 @@
 #ifndef __MAC_RRC_PRIMITIVES_H__
 #define __MAC_RRC_PRIMITIVES_H__
 
-#ifndef OPENAIR2_IN
-  #include "LAYER2/RLC/rlc.h"
-#endif
+#include "LAYER2/RLC/rlc.h"
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
 #include "openair2/RRC/LTE/rrc_defs.h"
@@ -189,7 +187,7 @@ typedef struct MEAS_REQ_TABLE_ENTRY {
   MAC_MEAS_REQ Mac_meas_req;
   unsigned int Last_report_frame;
   unsigned int Next_check_frame;
-  uint8_t Status;
+  uint8_t StatusMeas;
   uint8_t Meas_req_status;
   uint8_t Rx_activity;
   //uint8_t Meas_Direction;//???
@@ -269,7 +267,7 @@ typedef struct {
   char Wideband_sinr;
   uint8_t Forg_fact;
   unsigned short Rep_interval;
-  uint8_t Status;
+  uint8_t StatusMeas;
   unsigned int Last_report_frame;
   unsigned int Next_check_frame;
   uint8_t Active;
@@ -299,14 +297,12 @@ typedef struct {
   unsigned short Rep_interval;
   unsigned int Last_report_frame;
   unsigned int Next_check_frame;
-  uint8_t Status; //IDLE,NEED_rADIO_CONFIG, RADIO_CONFIG_TX, RADIO_CONFIG_ok
+  uint8_t StatusMeas; //IDLE,NEED_rADIO_CONFIG, RADIO_CONFIG_TX, RADIO_CONFIG_ok
   uint8_t Active;
 } __attribute__ ((__packed__)) DEFAULT_CH_MEAS;
 #define DEFAULT_eNB_MEAS_SIZE sizeof(DEFAULT_eNB_MEAS)
 
 
-
-#ifndef OPENAIR2_IN
 
 typedef struct {  //RRC_INTERFACE_FUNCTIONS
   unsigned int Frame_index;
@@ -373,10 +369,6 @@ typedef struct {
   void (*mrbch_phy_sync_failure) (uint8_t Mod_id, frame_t frame, uint8_t Free_ch_index);
   void (*dl_phy_sync_success) (uint8_t Mod_id, frame_t frame, uint8_t eNB_index);
 } MAC_RLC_XFACE;
-
-
-#endif
-
 
 
 //#define IDLE 0

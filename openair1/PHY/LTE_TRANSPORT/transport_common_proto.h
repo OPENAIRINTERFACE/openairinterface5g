@@ -101,7 +101,7 @@ int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint
 int get_G_khz_1dot25(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint8_t mod_order,uint8_t Nl,uint8_t num_pdcch_symbols,int frame,uint8_t subframe, uint8_t beamforming_mode);
 
 int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe);
-int adjust_G2(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol);
+int adjust_G2(int Ncp, int frame_type, int N_RB_DL, uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol);
 
 
 #ifndef modOrder
@@ -223,7 +223,9 @@ uint8_t get_num_prach_tdd(module_id_t Mod_id);
   @param frame_type 0-FDD, 1-TDD
   @returns 0-1 accordingly
 */
+/*
 uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type);
+*/
 
 /*!
   \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index
@@ -270,6 +272,9 @@ int is_pmch_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parm
 */
 int is_fembms_cas_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
 
+int is_fembms_nonMBSFN_subframe (frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
+
+
 /*!
   \brief Return the status of MBSFN in this frame/subframe
   @param frame Frame index
@@ -303,12 +308,12 @@ void init_scrambling_lut(void);
 
 void init_unscrambling_lut(void);
 
-
+/*
 uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
                              uint8_t prach_ConfigIndex,
                              uint8_t n_ra_prboffset,
                              uint8_t tdd_mapindex, uint16_t Nf);
-
+*/
 uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);
 uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);
 
@@ -316,6 +321,6 @@ uint32_t conv_1C_RIV(int32_t rballoc,uint32_t N_RB_DL);
 
 void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t *rb_alloc2);
 
-int16_t estimate_ue_tx_power(uint32_t tbs, uint32_t nb_rb, uint8_t control_only, lte_prefix_type_t ncp, uint8_t use_srs);
+int16_t estimate_ue_tx_power(int norm,uint32_t tbs, uint32_t nb_rb, uint8_t control_only, lte_prefix_type_t ncp, uint8_t use_srs);
 
 #endif

@@ -39,11 +39,10 @@
 #include "platform_constants.h"
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
+#include "ngap_messages_types.h"
+#include "f1ap_messages_types.h"
 
-#ifdef CMAKER
 #include "rrc_messages_types.h"
-#endif
-
 #include "intertask_interface.h"
 #include "RRC/NR/nr_rrc_defs.h"
 
@@ -91,7 +90,7 @@ typedef struct ru_config_s {
   uint8_t   if_compress;
 } ru_config_t;
 */
-extern void RCconfig_RU(void);
+extern void NRRCconfig_RU(void);
 extern void RCconfig_nr_flexran(void);
 extern void RCconfig_NR_L1(void);
 extern void RCconfig_nr_macrlc(void);
@@ -102,8 +101,12 @@ extern void NRRCConfig(void);
 //void                          ru_config_display(void);
 
 void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc);
-int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i);
+int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i);
 int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i);
+int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i);
+int gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp);
+int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_update_t *gnb_cu_cfg_update);
+void nr_read_config_and_init(void);
 
 #endif /* GNB_CONFIG_H_ */
 /** @} */

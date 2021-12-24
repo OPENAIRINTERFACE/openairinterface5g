@@ -197,8 +197,10 @@ decoder_node_t *add_nodes(int level, int first_leaf_index, t_nrPolar_params *pol
   }
 
   for (int i=0;i<Nv;i++) {
-    if (polarParams->information_bit_pattern[i+first_leaf_index]>0)
-    	all_frozen_below=0;
+    if (polarParams->information_bit_pattern[i+first_leaf_index]>0) {
+    	  all_frozen_below=0;
+        break;
+    }
   }
 
   if (all_frozen_below==0)

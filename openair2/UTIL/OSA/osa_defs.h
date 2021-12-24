@@ -29,8 +29,8 @@
  * @ingroup security
 */
 
-#ifndef SECU_DEFS_H_
-#define SECU_DEFS_H_
+#ifndef __UTIL_OSA_OSA_DEFS__H__
+#define __UTIL_OSA_OSA_DEFS__H__
 
 #define EIA0_ALG_ID     0x00
 #define EIA1_128_ALG_ID 0x01
@@ -48,12 +48,17 @@ typedef enum {
   NAS_INT_ALG = 0x02,
   RRC_ENC_ALG = 0x03,
   RRC_INT_ALG = 0x04,
-  UP_ENC_ALG  = 0x05
+  UP_ENC_ALG  = 0x05,
+  UP_INT_ALG  = 0x06
 } algorithm_type_dist_t;
 
 //int derive_keNB(const uint8_t kasme[32], const uint32_t nas_count, uint8_t **keNB);
 
+int derive_skgNB(const uint8_t *keNB, const uint16_t sk_counter, uint8_t *skgNB);
+
 int derive_key(algorithm_type_dist_t nas_alg_type, uint8_t nas_enc_alg_id,
+               const uint8_t key[32], uint8_t **out);
+int nr_derive_key(algorithm_type_dist_t alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out);
 
 //#define derive_key_nas_enc(aLGiD, kEY, kNAS)    derive_key(NAS_ENC_ALG, aLGiD, kEY, kNAS)
@@ -71,6 +76,19 @@ int derive_key(algorithm_type_dist_t nas_alg_type, uint8_t nas_enc_alg_id,
 
 #define derive_key_up_int(aLGiD, kEY, kNAS)  \
     derive_key(UP_INT_ALG, aLGiD, kEY, kNAS)
+
+// 5G SA
+#define nr_derive_key_rrc_enc(aLGiD, kEY, kRRC)  \
+    nr_derive_key(RRC_ENC_ALG, aLGiD, kEY, kRRC)
+
+#define nr_derive_key_rrc_int(aLGiD, kEY, kRRC)  \
+    nr_derive_key(RRC_INT_ALG, aLGiD, kEY, kRRC)
+
+#define nr_derive_key_up_enc(aLGiD, kEY, kUP)  \
+    nr_derive_key(UP_ENC_ALG, aLGiD, kEY, kUP)
+
+#define nr_derive_key_up_int(aLGiD, kEY, kUP)  \
+    nr_derive_key(UP_INT_ALG, aLGiD, kEY, kUP)
 
 typedef struct {
   uint8_t  *key;
@@ -115,4 +133,4 @@ int stream_decrypt(uint8_t algorithm, stream_cipher_t *stream_cipher, uint8_t **
 int stream_check_integrity(uint8_t algorithm, stream_cipher_t *stream_cipher, uint8_t *expected);
 #undef SECU_DEBUG
 
-#endif /* SECU_DEFS_H_ */
+#endif /* __UTIL_OSA_OSA_DEFS__H__ */

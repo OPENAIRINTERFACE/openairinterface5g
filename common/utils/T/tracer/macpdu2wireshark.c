@@ -18,11 +18,14 @@
 #define DEFAULT_LIVE_PORT 2021
 
 #define NO_PREAMBLE -1
+#define NO_SR_RNTI -1
 
 typedef struct {
   int socket;
   struct sockaddr_in to;
   OBUF buf;
+
+  /* LTE traces */
   /* ul */
   int ul_rnti;
   int ul_frame;
@@ -46,6 +49,40 @@ typedef struct {
   int rar_frame;
   int rar_subframe;
   int rar_data;
+  /* SR */
+  int sr_rnti;
+  int sr_frame;
+  int sr_subframe;
+
+  /* NR traces */
+  /* NR ul */
+  int nr_ul_rnti;
+  int nr_ul_frame;
+  int nr_ul_slot;
+  int nr_ul_harq_pid;
+  int nr_ul_data;
+  /* NR dl */
+  int nr_dl_rnti;
+  int nr_dl_frame;
+  int nr_dl_slot;
+  int nr_dl_harq_pid;
+  int nr_dl_data;
+  /* NR dl retx */
+  int nr_dl_retx_rnti;
+  int nr_dl_retx_frame;
+  int nr_dl_retx_slot;
+  int nr_dl_retx_harq_pid;
+  int nr_dl_retx_data;
+  /* NR mib */
+  int nr_mib_frame;
+  int nr_mib_slot;
+  int nr_mib_data;
+  /* NR RAR */
+  int nr_rar_rnti;
+  int nr_rar_frame;
+  int nr_rar_slot;
+  int nr_rar_data;
+
   /* config */
   int no_mib;
   int no_sib;
@@ -56,10 +93,25 @@ typedef struct {
   /* runtime vars */
   int cur_mib;
   int cur_sib;
+
+  /* hack to report UE id:
+   * each time we see a rnti, we allocate the next ue_id
+   * (two separate versions for lte and nr)
+   */
+  int lte_rnti_to_ueid[65536];
+  int lte_next_ue_id;
+  int nr_rnti_to_ueid[65536];
+  int nr_next_ue_id;
 } ev_data;
 
-void trace(ev_data *d, int direction, int rnti_type, int rnti,
-           int frame, int subframe, void *buf, int bufsize, int preamble) {
+/****************************************************************************/
+/* LTE                                                                      */
+/****************************************************************************/
+
+void trace_lte(ev_data *d, int direction, int rnti_type, int rnti,
+        int frame, int subframe, void *buf, int bufsize, int preamble,
+        int sr_rnti)
+{
   ssize_t ret;
   int fsf;
   int i;
@@ -73,6 +125,18 @@ void trace(ev_data *d, int direction, int rnti_type, int rnti,
     PUTC(&d->buf, MAC_LTE_RNTI_TAG);
     PUTC(&d->buf, (rnti>>8) & 255);
     PUTC(&d->buf, rnti & 255);
+
+    /* put UE id */
+    if (rnti < 0 || rnti > 65535) { printf("bad rnti!\n"); exit(1); }
+    /* if no UE id allocated for this rnti then allocate the next one */
+    if (d->lte_rnti_to_ueid[rnti] == -1) {
+      d->lte_rnti_to_ueid[rnti] = d->lte_next_ue_id;
+      d->lte_next_ue_id++;
+    }
+
+    PUTC(&d->buf, MAC_LTE_UEID_TAG);
+    PUTC(&d->buf, (d->lte_rnti_to_ueid[rnti]>>8) & 255);
+    PUTC(&d->buf, d->lte_rnti_to_ueid[rnti] & 255);
   }
 
   /* for newer version of wireshark? */
@@ -89,6 +153,25 @@ void trace(ev_data *d, int direction, int rnti_type, int rnti,
     PUTC(&d->buf, 0); /* rach attempt - always 0 for us (not sure of this) */
   }
 
+  if (sr_rnti != NO_SR_RNTI) {
+    PUTC(&d->buf, MAC_LTE_SR_TAG);
+    PUTC(&d->buf, 0); /* number of items byte 1 */
+    PUTC(&d->buf, 1); /* number of items byte 2 */
+
+    /* put UE id */
+    if (sr_rnti < 0 || sr_rnti > 65535) { printf("bad sr rnti!\n"); exit(1); }
+    /* if no UE id allocated for this rnti then allocate the next one */
+    if (d->lte_rnti_to_ueid[sr_rnti] == -1) {
+      d->lte_rnti_to_ueid[sr_rnti] = d->lte_next_ue_id;
+      d->lte_next_ue_id++;
+    }
+    PUTC(&d->buf, (d->lte_rnti_to_ueid[sr_rnti]>>8) & 255);
+    PUTC(&d->buf, d->lte_rnti_to_ueid[sr_rnti] & 255);
+
+    PUTC(&d->buf, (sr_rnti>>8) & 255);
+    PUTC(&d->buf, sr_rnti & 255);
+  }
+
   PUTC(&d->buf, MAC_LTE_PAYLOAD_TAG);
 
   for (i = 0; i < bufsize; i++)
@@ -100,15 +183,17 @@ void trace(ev_data *d, int direction, int rnti_type, int rnti,
   if (ret != d->buf.osize) abort();
 }
 
-void ul(void *_d, event e) {
+void ul(void *_d, event e)
+{
   ev_data *d = _d;
-  trace(d, DIRECTION_UPLINK, C_RNTI, e.e[d->ul_rnti].i,
-        e.e[d->ul_frame].i, e.e[d->ul_subframe].i,
-        e.e[d->ul_data].b, e.e[d->ul_data].bsize,
-        NO_PREAMBLE);
+  trace_lte(d, DIRECTION_UPLINK, C_RNTI, e.e[d->ul_rnti].i,
+            e.e[d->ul_frame].i, e.e[d->ul_subframe].i,
+            e.e[d->ul_data].b, e.e[d->ul_data].bsize,
+            NO_PREAMBLE, NO_SR_RNTI);
 }
 
-void dl(void *_d, event e) {
+void dl(void *_d, event e)
+{
   ev_data *d = _d;
 
   if (e.e[d->dl_rnti].i == 0xffff) {
@@ -119,14 +204,15 @@ void dl(void *_d, event e) {
     d->cur_sib++;
   }
 
-  trace(d, DIRECTION_DOWNLINK,
-        e.e[d->dl_rnti].i != 0xffff ? C_RNTI : SI_RNTI, e.e[d->dl_rnti].i,
-        e.e[d->dl_frame].i, e.e[d->dl_subframe].i,
-        e.e[d->dl_data].b, e.e[d->dl_data].bsize,
-        NO_PREAMBLE);
+  trace_lte(d, DIRECTION_DOWNLINK,
+            e.e[d->dl_rnti].i != 0xffff ? C_RNTI : SI_RNTI, e.e[d->dl_rnti].i,
+            e.e[d->dl_frame].i, e.e[d->dl_subframe].i,
+            e.e[d->dl_data].b, e.e[d->dl_data].bsize,
+            NO_PREAMBLE, NO_SR_RNTI);
 }
 
-void mib(void *_d, event e) {
+void mib(void *_d, event e)
+{
   ev_data *d = _d;
 
   if (d->no_mib) return;
@@ -134,50 +220,227 @@ void mib(void *_d, event e) {
   if (d->max_mib && d->cur_mib == d->max_mib) return;
 
   d->cur_mib++;
-  trace(d, DIRECTION_DOWNLINK, NO_RNTI, 0,
-        e.e[d->mib_frame].i, e.e[d->mib_subframe].i,
-        e.e[d->mib_data].b, e.e[d->mib_data].bsize,
-        NO_PREAMBLE);
+  trace_lte(d, DIRECTION_DOWNLINK, NO_RNTI, 0,
+            e.e[d->mib_frame].i, e.e[d->mib_subframe].i,
+            e.e[d->mib_data].b, e.e[d->mib_data].bsize,
+            NO_PREAMBLE, NO_SR_RNTI);
 }
 
-void preamble(void *_d, event e) {
+void preamble(void *_d, event e)
+{
   ev_data *d = _d;
-  trace(d, DIRECTION_UPLINK, NO_RNTI, 0,
-        e.e[d->preamble_frame].i, e.e[d->preamble_subframe].i,
-        NULL, 0,
-        e.e[d->preamble_preamble].i);
+  trace_lte(d, DIRECTION_UPLINK, NO_RNTI, 0,
+            e.e[d->preamble_frame].i, e.e[d->preamble_subframe].i,
+            NULL, 0,
+            e.e[d->preamble_preamble].i, NO_SR_RNTI);
 }
 
-void rar(void *_d, event e) {
+void rar(void *_d, event e)
+{
   ev_data *d = _d;
-  trace(d, DIRECTION_DOWNLINK, RA_RNTI, e.e[d->rar_rnti].i,
-        e.e[d->rar_frame].i, e.e[d->rar_subframe].i,
-        e.e[d->rar_data].b, e.e[d->rar_data].bsize,
-        NO_PREAMBLE);
+  trace_lte(d, DIRECTION_DOWNLINK, RA_RNTI, e.e[d->rar_rnti].i,
+            e.e[d->rar_frame].i, e.e[d->rar_subframe].i,
+            e.e[d->rar_data].b, e.e[d->rar_data].bsize,
+            NO_PREAMBLE, NO_SR_RNTI);
 }
+
+void sr(void *_d, event e)
+{
+  ev_data *d = _d;
+  trace_lte(d, DIRECTION_UPLINK, NO_RNTI, 0,
+            e.e[d->sr_frame].i, e.e[d->sr_subframe].i,
+            NULL, 0,
+            NO_PREAMBLE, e.e[d->sr_rnti].i);
+}
+
+/****************************************************************************/
+/* NR                                                                       */
+/****************************************************************************/
+
+#define MAC_NR_START_STRING "mac-nr"
+
+#define MAC_NR_PAYLOAD_TAG    0x01
+#define MAC_NR_RNTI_TAG       0x02
+#define MAC_NR_UEID_TAG       0x03
+#define MAC_NR_HARQID         0x06
+#define MAC_NR_FRAME_SLOT_TAG 0x07
+
+#define NR_FDD_RADIO 1
+#define NR_TDD_RADIO 2
+
+#define NR_DIRECTION_UPLINK   0
+#define NR_DIRECTION_DOWNLINK 1
+
+#define NR_NO_RNTI 0
+#define NR_RA_RNTI 2
+#define NR_C_RNTI  3
+
+void trace_nr(ev_data *d, int direction, int rnti_type, int rnti,
+        int frame, int slot, int harq_pid, void *buf, int bufsize,
+        int preamble)
+{
+  ssize_t ret;
+  int i;
+  d->buf.osize = 0;
+  PUTS(&d->buf, MAC_NR_START_STRING);
+  PUTC(&d->buf, NR_TDD_RADIO);
+  PUTC(&d->buf, direction);
+  PUTC(&d->buf, rnti_type);
+
+  if (rnti_type == NR_C_RNTI || rnti_type == NR_RA_RNTI) {
+    PUTC(&d->buf, MAC_NR_RNTI_TAG);
+    PUTC(&d->buf, (rnti>>8) & 255);
+    PUTC(&d->buf, rnti & 255);
+
+    /* put UE id */
+    if (rnti < 0 || rnti > 65535) { printf("bad rnti!\n"); exit(1); }
+    /* if no UE id allocated for this rnti then allocate the next one */
+    if (d->nr_rnti_to_ueid[rnti] == -1) {
+      d->nr_rnti_to_ueid[rnti] = d->nr_next_ue_id;
+      d->nr_next_ue_id++;
+    }
+
+    PUTC(&d->buf, MAC_NR_UEID_TAG);
+    PUTC(&d->buf, (d->nr_rnti_to_ueid[rnti]>>8) & 255);
+    PUTC(&d->buf, d->nr_rnti_to_ueid[rnti] & 255);
+  }
+
+#if 0
+  /* for old versions of wireshark; not sure if correct */
+  int fsf = (frame << 4) + slot;
+  PUTC(&d->buf, 4 /* MAC_NR_FRAME_SUBFRAME_TAG */);
+  PUTC(&d->buf, (fsf>>8) & 255);
+  PUTC(&d->buf, fsf & 255);
+#else
+  PUTC(&d->buf, MAC_NR_FRAME_SLOT_TAG);
+  PUTC(&d->buf, (frame>>8) & 255);
+  PUTC(&d->buf, frame & 255);
+  PUTC(&d->buf, (slot>>8) & 255);
+  PUTC(&d->buf, slot & 255);
+  PUTC(&d->buf, MAC_NR_HARQID);
+  PUTC(&d->buf, harq_pid);
+#endif
+
+  PUTC(&d->buf, MAC_NR_PAYLOAD_TAG);
+
+  for (i = 0; i < bufsize; i++)
+    PUTC(&d->buf, ((char *)buf)[i]);
+
+  ret = sendto(d->socket, d->buf.obuf, d->buf.osize, 0,
+               (struct sockaddr *)&d->to, sizeof(struct sockaddr_in));
+
+  if (ret != d->buf.osize) abort();
+}
+
+void nr_ul(void *_d, event e)
+{
+  ev_data *d = _d;
+
+  trace_nr(d, NR_DIRECTION_UPLINK, NR_C_RNTI, e.e[d->nr_ul_rnti].i,
+           e.e[d->nr_ul_frame].i, e.e[d->nr_ul_slot].i,
+           e.e[d->nr_ul_harq_pid].i, e.e[d->nr_ul_data].b,
+           e.e[d->nr_ul_data].bsize, NO_PREAMBLE);
+}
+
+void nr_dl(void *_d, event e)
+{
+  ev_data *d = _d;
+
+  trace_nr(d, NR_DIRECTION_DOWNLINK, NR_C_RNTI, e.e[d->nr_dl_rnti].i,
+           e.e[d->nr_dl_frame].i, e.e[d->nr_dl_slot].i,
+           e.e[d->nr_dl_harq_pid].i, e.e[d->nr_dl_data].b,
+           e.e[d->nr_dl_data].bsize, NO_PREAMBLE);
+}
+
+void nr_dl_retx(void *_d, event e)
+{
+  ev_data *d = _d;
+
+  trace_nr(d, NR_DIRECTION_DOWNLINK, NR_C_RNTI, e.e[d->nr_dl_retx_rnti].i,
+           e.e[d->nr_dl_retx_frame].i, e.e[d->nr_dl_retx_slot].i,
+           e.e[d->nr_dl_retx_harq_pid].i, e.e[d->nr_dl_retx_data].b,
+           e.e[d->nr_dl_retx_data].bsize, NO_PREAMBLE);
+}
+
+void nr_mib(void *_d, event e)
+{
+  ev_data *d = _d;
+
+  if (d->no_mib) return;
+
+  if (d->max_mib && d->cur_mib == d->max_mib) return;
+
+  d->cur_mib++;
+
+  trace_nr(d, NR_DIRECTION_DOWNLINK, NR_NO_RNTI, 0,
+           e.e[d->nr_mib_frame].i, e.e[d->nr_mib_slot].i, 0 /* harq pid */,
+           e.e[d->nr_mib_data].b, e.e[d->nr_mib_data].bsize, NO_PREAMBLE);
+}
+
+void nr_rar(void *_d, event e)
+{
+  ev_data *d = _d;
+
+  trace_nr(d, NR_DIRECTION_DOWNLINK, NR_RA_RNTI, e.e[d->nr_rar_rnti].i,
+           e.e[d->nr_rar_frame].i, e.e[d->nr_rar_slot].i, 0 /* harq pid */,
+           e.e[d->nr_rar_data].b, e.e[d->nr_rar_data].bsize, NO_PREAMBLE);
+}
+
+/****************************************************************************/
+/****************************************************************************/
 
 void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
-                int preamble_id, int rar_id) {
+                int preamble_id, int rar_id, int sr_id,
+                int nr_ul_id, int nr_dl_id, int nr_dl_retx_id, int nr_mib_id,
+                int nr_rar_id)
+{
   database_event_format f;
   int i;
-  d->ul_rnti           = -1;
-  d->ul_frame          = -1;
-  d->ul_subframe       = -1;
-  d->ul_data           = -1;
-  d->dl_rnti           = -1;
-  d->dl_frame          = -1;
-  d->dl_subframe       = -1;
-  d->dl_data           = -1;
-  d->mib_frame         = -1;
-  d->mib_subframe      = -1;
-  d->mib_data          = -1;
-  d->preamble_frame    = -1;
-  d->preamble_subframe = -1;
-  d->preamble_preamble = -1;
-  d->rar_rnti           = -1;
-  d->rar_frame          = -1;
-  d->rar_subframe       = -1;
-  d->rar_data           = -1;
+  d->ul_rnti             = -1;
+  d->ul_frame            = -1;
+  d->ul_subframe         = -1;
+  d->ul_data             = -1;
+  d->dl_rnti             = -1;
+  d->dl_frame            = -1;
+  d->dl_subframe         = -1;
+  d->dl_data             = -1;
+  d->mib_frame           = -1;
+  d->mib_subframe        = -1;
+  d->mib_data            = -1;
+  d->preamble_frame      = -1;
+  d->preamble_subframe   = -1;
+  d->preamble_preamble   = -1;
+  d->rar_rnti            = -1;
+  d->rar_frame           = -1;
+  d->rar_subframe        = -1;
+  d->rar_data            = -1;
+  d->sr_rnti             = -1;
+  d->sr_frame            = -1;
+  d->sr_subframe         = -1;
+
+  d->nr_ul_rnti          = -1;
+  d->nr_ul_frame         = -1;
+  d->nr_ul_slot          = -1;
+  d->nr_ul_harq_pid      = -1;
+  d->nr_ul_data          = -1;
+  d->nr_dl_rnti          = -1;
+  d->nr_dl_frame         = -1;
+  d->nr_dl_slot          = -1;
+  d->nr_dl_harq_pid      = -1;
+  d->nr_dl_data          = -1;
+  d->nr_dl_retx_rnti     = -1;
+  d->nr_dl_retx_frame    = -1;
+  d->nr_dl_retx_slot     = -1;
+  d->nr_dl_retx_harq_pid = -1;
+  d->nr_dl_retx_data     = -1;
+  d->nr_mib_frame        = -1;
+  d->nr_mib_slot         = -1;
+  d->nr_mib_data         = -1;
+  d->nr_rar_rnti         = -1;
+  d->nr_rar_frame        = -1;
+  d->nr_rar_slot         = -1;
+  d->nr_rar_data         = -1;
+
 #define G(var_name, var_type, var) \
   if (!strcmp(f.name[i], var_name)) { \
     if (strcmp(f.type[i], var_type)) goto error; \
@@ -247,6 +510,90 @@ void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
   if (d->rar_rnti == -1 || d->rar_frame == -1 || d->rar_subframe == -1 ||
       d->rar_data == -1) goto error;
 
+  /* sr: rnti, frame, subframe */
+  f = get_format(database, sr_id);
+
+  for (i = 0; i < f.count; i++) {
+    G("rnti",     "int",    d->sr_rnti);
+    G("frame",    "int",    d->sr_frame);
+    G("subframe", "int",    d->sr_subframe);
+  }
+
+  if (d->sr_rnti == -1 || d->sr_frame == -1 || d->sr_subframe == -1)
+    goto error;
+
+  /* NR ul: rnti, frame, slot, harq_pid, data */
+  f = get_format(database, nr_ul_id);
+
+  for (i = 0; i < f.count; i++) {
+    G("rnti",     "int",    d->nr_ul_rnti);
+    G("frame",    "int",    d->nr_ul_frame);
+    G("slot",     "int",    d->nr_ul_slot);
+    G("harq_pid", "int",    d->nr_ul_harq_pid);
+    G("data",     "buffer", d->nr_ul_data);
+  }
+
+  if (d->nr_ul_rnti == -1 || d->nr_ul_frame == -1 || d->nr_ul_slot == -1 ||
+      d->nr_ul_harq_pid == -1 || d->nr_ul_data == -1)
+    goto error;
+
+  /* NR dl: rnti, frame, slot, harq_pid, data */
+  f = get_format(database, nr_dl_id);
+
+  for (i = 0; i < f.count; i++) {
+    G("rnti",     "int",    d->nr_dl_rnti);
+    G("frame",    "int",    d->nr_dl_frame);
+    G("slot",     "int",    d->nr_dl_slot);
+    G("harq_pid", "int",    d->nr_dl_harq_pid);
+    G("data",     "buffer", d->nr_dl_data);
+  }
+
+  if (d->nr_dl_rnti == -1 || d->nr_dl_frame == -1 || d->nr_dl_slot == -1 ||
+      d->nr_dl_harq_pid == -1 || d->nr_dl_data == -1)
+    goto error;
+
+  /* NR dl retx: rnti, frame, slot, harq_pid, data */
+  f = get_format(database, nr_dl_retx_id);
+
+  for (i = 0; i < f.count; i++) {
+    G("rnti",     "int",    d->nr_dl_retx_rnti);
+    G("frame",    "int",    d->nr_dl_retx_frame);
+    G("slot",     "int",    d->nr_dl_retx_slot);
+    G("harq_pid", "int",    d->nr_dl_retx_harq_pid);
+    G("data",     "buffer", d->nr_dl_retx_data);
+  }
+
+  if (d->nr_dl_retx_rnti == -1 || d->nr_dl_retx_frame == -1 ||
+      d->nr_dl_retx_slot == -1 || d->nr_dl_retx_harq_pid == -1 ||
+      d->nr_dl_retx_data == -1)
+    goto error;
+
+  /* NR MIB: frame, slot, data */
+  f = get_format(database, nr_mib_id);
+
+  for (i = 0; i < f.count; i++) {
+    G("frame", "int",    d->nr_mib_frame);
+    G("slot",  "int",    d->nr_mib_slot);
+    G("data",  "buffer", d->nr_mib_data);
+  }
+
+  if (d->nr_mib_frame == -1 || d->nr_mib_slot== -1 || d->nr_mib_data == -1)
+    goto error;
+
+  /* NR RAR: rnti, frame, slot, data */
+  f = get_format(database, nr_rar_id);
+
+  for (i = 0; i < f.count; i++) {
+    G("rnti",  "int",    d->nr_rar_rnti);
+    G("frame", "int",    d->nr_rar_frame);
+    G("slot",  "int",    d->nr_rar_slot);
+    G("data",  "buffer", d->nr_rar_data);
+  }
+
+  if (d->nr_rar_rnti == -1 || d->nr_rar_frame == -1 || d->nr_rar_slot == -1 ||
+      d->nr_rar_data == -1)
+    goto error;
+
 #undef G
   return;
 error:
@@ -254,7 +601,8 @@ error:
   abort();
 }
 
-void *receiver(void *_d) {
+void *receiver(void *_d)
+{
   ev_data *d = _d;
   int s;
   char buf[100000];
@@ -279,7 +627,8 @@ void *receiver(void *_d) {
   return 0;
 }
 
-void usage(void) {
+void usage(void)
+{
   printf(
     "options:\n"
     "    -d <database file>        this option is mandatory\n"
@@ -304,14 +653,17 @@ void usage(void) {
   exit(1);
 }
 
-int main(int n, char **v) {
+int main(int n, char **v)
+{
   char *database_filename = NULL;
   char *input_filename = NULL;
   void *database;
   event_handler *h;
   int in;
   int i;
-  int ul_id, dl_id, mib_id = -1, preamble_id, rar_id;
+  int ul_id, dl_id, mib_id, preamble_id, rar_id;
+  int nr_ul_id, nr_dl_id, nr_dl_retx_id, nr_mib_id, nr_rar_id;
+  int sr_id;
   ev_data d;
   char *ip = DEFAULT_IP;
   int port = DEFAULT_PORT;
@@ -319,6 +671,11 @@ int main(int n, char **v) {
   int live_port = DEFAULT_LIVE_PORT;
   int live = 0;
   memset(&d, 0, sizeof(ev_data));
+
+  for (i = 0; i < 65536; i++) {
+    d.lte_rnti_to_ueid[i] = -1;
+    d.nr_rnti_to_ueid[i] = -1;
+  }
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
@@ -381,6 +738,13 @@ int main(int n, char **v) {
     on_off(database, "ENB_PHY_MIB", is_on, 1);
     on_off(database, "ENB_PHY_INITIATE_RA_PROCEDURE", is_on, 1);
     on_off(database, "ENB_MAC_UE_DL_RAR_PDU_WITH_DATA", is_on, 1);
+    on_off(database, "ENB_MAC_SCHEDULING_REQUEST", is_on, 1);
+
+    on_off(database, "GNB_MAC_UL_PDU_WITH_DATA", is_on, 1);
+    on_off(database, "GNB_MAC_DL_PDU_WITH_DATA", is_on, 1);
+    on_off(database, "GNB_MAC_RETRANSMISSION_DL_PDU_WITH_DATA", is_on, 1);
+    on_off(database, "GNB_PHY_MIB", is_on, 1);
+    on_off(database, "GNB_MAC_DL_RAR_PDU_WITH_DATA", is_on, 1);
 
     /* activate selected traces */
     if (socket_send(in, &mt, 1) == -1 ||
@@ -398,12 +762,30 @@ int main(int n, char **v) {
   mib_id = event_id_from_name(database, "ENB_PHY_MIB");
   preamble_id = event_id_from_name(database, "ENB_PHY_INITIATE_RA_PROCEDURE");
   rar_id = event_id_from_name(database, "ENB_MAC_UE_DL_RAR_PDU_WITH_DATA");
-  setup_data(&d, database, ul_id, dl_id, mib_id, preamble_id, rar_id);
+  sr_id = event_id_from_name(database, "ENB_MAC_SCHEDULING_REQUEST");
+
+  nr_ul_id = event_id_from_name(database, "GNB_MAC_UL_PDU_WITH_DATA");
+  nr_dl_id = event_id_from_name(database, "GNB_MAC_DL_PDU_WITH_DATA");
+  nr_dl_retx_id = event_id_from_name(database, "GNB_MAC_RETRANSMISSION_DL_PDU_WITH_DATA");
+  nr_mib_id = event_id_from_name(database, "GNB_PHY_MIB");
+  nr_rar_id = event_id_from_name(database, "GNB_MAC_DL_RAR_PDU_WITH_DATA");
+
+  setup_data(&d, database, ul_id, dl_id, mib_id, preamble_id, rar_id, sr_id,
+             nr_ul_id, nr_dl_id, nr_dl_retx_id, nr_mib_id, nr_rar_id);
+
   register_handler_function(h, ul_id, ul, &d);
   register_handler_function(h, dl_id, dl, &d);
   register_handler_function(h, mib_id, mib, &d);
   register_handler_function(h, preamble_id, preamble, &d);
   register_handler_function(h, rar_id, rar, &d);
+  register_handler_function(h, sr_id, sr, &d);
+
+  register_handler_function(h, nr_ul_id, nr_ul, &d);
+  register_handler_function(h, nr_dl_id, nr_dl, &d);
+  register_handler_function(h, nr_dl_retx_id, nr_dl_retx, &d);
+  register_handler_function(h, nr_mib_id, nr_mib, &d);
+  register_handler_function(h, nr_rar_id, nr_rar, &d);
+
   d.socket = socket(AF_INET, SOCK_DGRAM, 0);
 
   if (d.socket == -1) {
@@ -424,8 +806,11 @@ int main(int n, char **v) {
 
     if (e.type == -1) break;
 
-    if (!(e.type == ul_id || e.type == dl_id || e.type == mib_id ||
-          e.type == preamble_id || e.type == rar_id)) continue;
+    if (!(e.type == ul_id         || e.type == dl_id     || e.type == mib_id ||
+          e.type == preamble_id   || e.type == rar_id    || e.type == sr_id  ||
+          e.type == nr_ul_id      || e.type == nr_dl_id  ||
+          e.type == nr_dl_retx_id || e.type == nr_mib_id ||
+          e.type == nr_rar_id)) continue;
 
     handle_event(h, e);
   }

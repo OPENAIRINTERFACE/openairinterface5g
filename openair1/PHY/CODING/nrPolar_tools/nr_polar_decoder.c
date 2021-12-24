@@ -40,9 +40,9 @@
 #include "assertions.h"
 
 int8_t polar_decoder(double *input,
-					 uint32_t *out,
-					 t_nrPolar_params *polarParams,
-					 uint8_t listSize)
+                     uint32_t *out,
+                     const t_nrPolar_params *polarParams,
+                     uint8_t listSize)
 {
   //Assumes no a priori knowledge.
   uint8_t ***bit = nr_alloc_uint8_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
@@ -299,7 +299,7 @@ int8_t polar_decoder(double *input,
 
 int8_t polar_decoder_dci(double *input,
                          uint32_t *out,
-                         t_nrPolar_params *polarParams,
+                         const t_nrPolar_params *polarParams,
                          uint8_t listSize,
                          uint16_t n_RNTI) {
   uint8_t ***bit = nr_alloc_uint8_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
@@ -569,7 +569,7 @@ int8_t polar_decoder_dci(double *input,
 }
 
 void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
-  AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
+  AssertFatal(polarParams->K > 17, "K = %d < 18, is not allowed\n",polarParams->K);
   AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
   int bit_i,ip,ipmod64;
   int numbytes = polarParams->K>>3;
@@ -670,7 +670,9 @@ uint32_t polar_decoder_int16(int16_t *input,
     A32_flip[1+offset]=((uint8_t *)&Aprime)[2];
     A32_flip[2+offset]=((uint8_t *)&Aprime)[1];
     A32_flip[3+offset]=((uint8_t *)&Aprime)[0];
-    crc = (uint64_t)(crc24c(A32_flip,8*offset+len)>>8);
+    if      (crclen == 24) crc = (uint64_t)((crc24c(A32_flip,8*offset+len)>>8)&0xffffff);
+    else if (crclen == 11) crc = (uint64_t)((crc11(A32_flip,8*offset+len)>>21)&0x7ff);
+    else if (crclen == 6)  crc = (uint64_t)((crc6(A32_flip,8*offset+len)>>26)&0x3f);
   } else if (len<=64) {
     Ar = (B[0]>>crclen) | (B[1]<<(64-crclen));;
     uint8_t A64_flip[8+offset];
@@ -688,7 +690,9 @@ uint32_t polar_decoder_int16(int16_t *input,
     A64_flip[5+offset]=((uint8_t *)&Aprime)[2];
     A64_flip[6+offset]=((uint8_t *)&Aprime)[1];
     A64_flip[7+offset]=((uint8_t *)&Aprime)[0];
-    crc = (uint64_t)(crc24c(A64_flip,8*offset+len)>>8);
+    if      (crclen==24) crc = (uint64_t)(crc24c(A64_flip,8*offset+len)>>8)&0xffffff;
+    else if (crclen==11) crc = (uint64_t)(crc11(A64_flip,8*offset+len)>>21)&0x7ff;
+    else if (crclen==6) crc = (uint64_t)(crc6(A64_flip,8*offset+len)>>26)&0x3f;
   }
 
 #if 0

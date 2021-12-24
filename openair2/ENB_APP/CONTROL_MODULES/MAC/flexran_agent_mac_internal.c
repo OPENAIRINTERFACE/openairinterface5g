@@ -33,13 +33,11 @@
 #include "flexran_agent_mac_internal.h"
 #include "flexran_agent_mac_slice_verification.h"
 
-/* from flexran_agent_mac.c */
-extern Protocol__FlexSliceConfig *slice_config[MAX_NUM_SLICES];
-extern Protocol__FlexSliceConfig *sc_update[MAX_NUM_SLICES];
-extern int perform_slice_config_update_count;
-extern Protocol__FlexUeConfig *ue_slice_assoc_update[MAX_NUM_SLICES];
-extern int n_ue_slice_assoc_updates;
-extern pthread_mutex_t sc_update_mtx;
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
+extern SLIST_HEAD(flexran_so_handle,
+                  flexran_agent_so_handle_s) flexran_handles[NUM_MAX_ENB];
 
 Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol__FlexranMessage *new_message,
 									Protocol__FlexranMessage *old_message) {
@@ -1033,724 +1031,195 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
   
 }
 
-Protocol__FlexSliceConfig *flexran_agent_create_slice_config(int n_dl, int m_ul)
-{
-  int i;
-  Protocol__FlexSliceConfig *fsc = malloc(sizeof(Protocol__FlexSliceConfig));
-  if (!fsc) return NULL;
-  protocol__flex_slice_config__init(fsc);
-
-  /* say there are n_dl slices but reserve memory for up to MAX_NUM_SLICES so
-   * we don't need to reserve again later */
-  fsc->n_dl = n_dl;
-  fsc->dl = calloc(MAX_NUM_SLICES, sizeof(Protocol__FlexDlSlice *));
-  if (!fsc->dl) fsc->n_dl = 0;
-  for (i = 0; i < MAX_NUM_SLICES; i++) {
-    fsc->dl[i] = malloc(sizeof(Protocol__FlexDlSlice));
-    if (!fsc->dl[i]) continue;
-    protocol__flex_dl_slice__init(fsc->dl[i]);
-  }
-
-  /* as above */
-  fsc->n_ul = m_ul;
-  fsc->ul = calloc(MAX_NUM_SLICES, sizeof(Protocol__FlexUlSlice *));
-  if (!fsc->ul) fsc->n_ul = 0;
-  for (i = 0; i < MAX_NUM_SLICES; i++) {
-    fsc->ul[i] = malloc(sizeof(Protocol__FlexUlSlice));
-    if (!fsc->ul[i]) continue;
-    protocol__flex_ul_slice__init(fsc->ul[i]);
-  }
-  return fsc;
-}
-
-void flexran_agent_read_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *s)
-{
-  s->intraslice_share_active = flexran_get_intraslice_sharing_active(mod_id);
-  s->has_intraslice_share_active = 1;
-  s->interslice_share_active = flexran_get_interslice_sharing_active(mod_id);
-  s->has_interslice_share_active = 1;
-}
-
-void flexran_agent_read_slice_dl_config(mid_t mod_id, int slice_idx, Protocol__FlexDlSlice *dl_slice)
-{
-  dl_slice->id = flexran_get_dl_slice_id(mod_id, slice_idx);
-  dl_slice->has_id = 1;
-  /* read label from corresponding sc_update entry or give default */
-  dl_slice->label = PROTOCOL__FLEX_SLICE_LABEL__xMBB;
-  dl_slice->has_label = 1;
-  for (int i = 0; i < sc_update[mod_id]->n_dl; i++) {
-    if (sc_update[mod_id]->dl[i]->id == dl_slice->id
-        && sc_update[mod_id]->dl[i]->has_label) {
-      dl_slice->label = sc_update[mod_id]->dl[i]->label;
-      break;
-    }
-  }
-  dl_slice->percentage = flexran_get_dl_slice_percentage(mod_id, slice_idx);
-  dl_slice->has_percentage = 1;
-  dl_slice->isolation = flexran_get_dl_slice_isolation(mod_id, slice_idx);
-  dl_slice->has_isolation = 1;
-  dl_slice->priority = flexran_get_dl_slice_priority(mod_id, slice_idx);
-  dl_slice->has_priority = 1;
-  dl_slice->position_low = flexran_get_dl_slice_position_low(mod_id, slice_idx);
-  dl_slice->has_position_low = 1;
-  dl_slice->position_high = flexran_get_dl_slice_position_high(mod_id, slice_idx);
-  dl_slice->has_position_high = 1;
-  dl_slice->maxmcs = flexran_get_dl_slice_maxmcs(mod_id, slice_idx);
-  dl_slice->has_maxmcs = 1;
-  dl_slice->n_sorting = flexran_get_dl_slice_sorting(mod_id, slice_idx, &dl_slice->sorting);
-  if (dl_slice->n_sorting < 1) dl_slice->sorting = NULL;
-  dl_slice->accounting = flexran_get_dl_slice_accounting_policy(mod_id, slice_idx);
-  dl_slice->has_accounting = 1;
-  const char *s_name = flexran_get_dl_slice_scheduler(mod_id, slice_idx);
-  if (!dl_slice->scheduler_name
-      || strcmp(dl_slice->scheduler_name, s_name) != 0) {
-    dl_slice->scheduler_name = realloc(dl_slice->scheduler_name, strlen(s_name) + 1);
-    strcpy(dl_slice->scheduler_name, s_name);
-  }
-}
-
-void flexran_agent_read_slice_ul_config(mid_t mod_id, int slice_idx, Protocol__FlexUlSlice *ul_slice)
-{
-  ul_slice->id = flexran_get_ul_slice_id(mod_id, slice_idx);
-  ul_slice->has_id = 1;
-  /* read label from corresponding sc_update entry or give default */
-  ul_slice->label = PROTOCOL__FLEX_SLICE_LABEL__xMBB;
-  ul_slice->has_label = 1;
-  for (int i = 0; i < sc_update[mod_id]->n_ul; i++) {
-    if (sc_update[mod_id]->ul[i]->id == ul_slice->id
-        && sc_update[mod_id]->ul[i]->has_label) {
-      ul_slice->label = sc_update[mod_id]->ul[i]->label;
-      break;
-    }
-  }
-  ul_slice->percentage = flexran_get_ul_slice_percentage(mod_id, slice_idx);
-  ul_slice->has_percentage = 1;
-  /*ul_slice->isolation = flexran_get_ul_slice_isolation(mod_id, slice_idx);*/
-  ul_slice->has_isolation = 0;
-  /*ul_slice->priority = flexran_get_ul_slice_priority(mod_id, slice_idx);*/
-  ul_slice->has_priority = 0;
-  ul_slice->first_rb = flexran_get_ul_slice_first_rb(mod_id, slice_idx);
-  ul_slice->has_first_rb = 1;
-  /*ul_slice-> = flexran_get_ul_slice_length_rb(mod_id, slice_idx);
-  ul_slice->has_length_rb = 0;*/
-  ul_slice->maxmcs = flexran_get_ul_slice_maxmcs(mod_id, slice_idx);
-  ul_slice->has_maxmcs = 1;
-  ul_slice->n_sorting = 0;
-  /*if (ul_slice->sorting) {
-    free(ul_slice->sorting);
-    ul_slice->sorting = NULL;
-  }
-  ul_slice->n_sorting = flexran_get_ul_slice_sorting(mod_id, slice_idx, &ul_slice->sorting);
-  if (ul_slice->n_sorting < 1) ul_slice->sorting = NULL;*/
-  /*ul_slice->accounting = flexran_get_ul_slice_accounting_policy(mod_id, slice_idx);*/
-  ul_slice->has_accounting = 0;
-  const char *s_name = flexran_get_ul_slice_scheduler(mod_id, slice_idx);
-  if (!ul_slice->scheduler_name
-      || strcmp(ul_slice->scheduler_name, s_name) != 0) {
-    ul_slice->scheduler_name = realloc(ul_slice->scheduler_name, strlen(s_name) + 1);
-    strcpy(ul_slice->scheduler_name, s_name);
-  }
-}
-
-int check_dl_sorting_update(Protocol__FlexDlSlice *old, Protocol__FlexDlSlice *new)
-{
-  /* sorting_update => true when old->n_sorting == 0 or different numbers of
-   * elements; otherwise will check * element-wise */
-  int sorting_update = old->n_sorting == 0 || (old->n_sorting != new->n_sorting);
-  for (int i = 0; i < old->n_sorting && !sorting_update; ++i) {
-    sorting_update = sorting_update || (new->sorting[i] != old->sorting[i]);
-  }
-  return sorting_update;
-}
-
-int check_ul_sorting_update(Protocol__FlexUlSlice *old, Protocol__FlexUlSlice *new)
-{
-  /* sorting_update => true when old->n_sorting == 0 or different numbers of
-   * elements; otherwise will check * element-wise */
-  int sorting_update = old->n_sorting == 0 || (old->n_sorting != new->n_sorting);
-  for (int i = 0; i < old->n_sorting && !sorting_update; ++i) {
-    sorting_update = sorting_update || (new->sorting[i] != old->sorting[i]);
-  }
-  return sorting_update;
-}
-
-void overwrite_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *exist, Protocol__FlexSliceConfig *update)
-{
-  if (update->has_intraslice_share_active
-      && exist->intraslice_share_active != update->intraslice_share_active) {
-    LOG_I(FLEXRAN_AGENT, "[%d] update intraslice_share_active: %d -> %d\n",
-          mod_id, exist->intraslice_share_active, update->intraslice_share_active);
-    exist->intraslice_share_active = update->intraslice_share_active;
-    exist->has_intraslice_share_active = 1;
-  }
-  if (update->has_interslice_share_active
-      && exist->interslice_share_active != update->interslice_share_active) {
-    LOG_I(FLEXRAN_AGENT, "[%d] update interslice_share_active: %d -> %d\n",
-          mod_id, exist->interslice_share_active, update->interslice_share_active);
-    exist->interslice_share_active = update->interslice_share_active;
-    exist->has_interslice_share_active = 1;
-  }
-}
-
-void overwrite_slice_config_dl(mid_t mod_id, Protocol__FlexDlSlice *exist, Protocol__FlexDlSlice *update)
-{
-  if (update->label != exist->label) {
-    LOG_I(FLEXRAN_AGENT, "[%d][DL slice %d] update label: %d -> %d\n",
-          mod_id, update->id, exist->label, update->label);
-    exist->label = update->label;
-    exist->has_label = 1;
-  }
-  if (update->percentage != exist->percentage) {
-    LOG_I(FLEXRAN_AGENT, "[%d][DL slice %d] update percentage: %d -> %d\n",
-          mod_id, update->id, exist->percentage, update->percentage);
-    exist->percentage = update->percentage;
-    exist->has_percentage = 1;
-  }
-  if (update->isolation != exist->isolation) {
-    LOG_I(FLEXRAN_AGENT, "[%d][DL slice %d] update isolation: %d -> %d\n",
-          mod_id, update->id, exist->isolation, update->isolation);
-    exist->isolation = update->isolation;
-    exist->has_isolation = 1;
-  }
-  if (update->priority != exist->priority) {
-    LOG_I(FLEXRAN_AGENT, "[%d][DL slice %d] update priority: %d -> %d\n",
-          mod_id, update->id, exist->priority, update->priority);
-    exist->priority = update->priority;
-    exist->has_priority = 1;
-  }
-  if (update->position_low != exist->position_low) {
-    LOG_I(FLEXRAN_AGENT, "[%d][DL slice %d] update position_low: %d -> %d\n",
-          mod_id, update->id, exist->position_low, update->position_low);
-    exist->position_low = update->position_low;
-    exist->has_position_low = 1;
-  }
-  if (update->position_high != exist->position_high) {
-    LOG_I(FLEXRAN_AGENT, "[%d][DL slice %d] update position_high: %d -> %d\n",
-          mod_id, update->id, exist->position_high, update->position_high);
-    exist->position_high = update->position_high;
-    exist->has_position_high = 1;
-  }
-  if (update->maxmcs != exist->maxmcs) {
-    LOG_I(FLEXRAN_AGENT, "[%d][DL slice %d] update maxmcs: %d -> %d\n",
-          mod_id, update->id, exist->maxmcs, update->maxmcs);
-    exist->maxmcs = update->maxmcs;
-    exist->has_maxmcs = 1;
-  }
-  if (check_dl_sorting_update(exist, update)) {
-    LOG_I(FLEXRAN_AGENT, "[%d][DL slice %d] update sorting array\n", mod_id, update->id);
-    if (exist->n_sorting != update->n_sorting) {
-      exist->n_sorting = update->n_sorting;
-      exist->sorting = realloc(exist->sorting, exist->n_sorting * sizeof(Protocol__FlexDlSorting));
-      if (!exist->sorting) exist->n_sorting = 0;
-    }
-    for (int i = 0; i < exist->n_sorting; i++)
-      exist->sorting[i] = update->sorting[i];
-  }
-  if (update->accounting != exist->accounting) {
-    LOG_I(FLEXRAN_AGENT, "[%d][DL slice %d] update accounting: %d -> %d\n",
-          mod_id, update->id, exist->accounting, update->accounting);
-    exist->accounting = update->accounting;
-    exist->has_accounting = 1;
-  }
-  if (!exist->scheduler_name
-      || strcmp(update->scheduler_name, exist->scheduler_name) != 0) {
-    LOG_I(FLEXRAN_AGENT, "[%d][DL slice %d] update scheduler: %s -> %s\n",
-          mod_id, update->id, exist->scheduler_name, update->scheduler_name);
-    if (exist->scheduler_name) free(exist->scheduler_name);
-    exist->scheduler_name = strdup(update->scheduler_name);
-  }
-}
-
-void overwrite_slice_config_ul(mid_t mod_id, Protocol__FlexUlSlice *exist, Protocol__FlexUlSlice *update)
-{
-  if (update->label != exist->label) {
-    LOG_I(FLEXRAN_AGENT, "[%d][UL slice %d] update label: %d -> %d\n",
-          mod_id, update->id, exist->label, update->label);
-    exist->label = update->label;
-    exist->has_label = 1;
-  }
-  if (update->percentage != exist->percentage) {
-    LOG_I(FLEXRAN_AGENT, "[%d][UL slice %d] update percentage: %d -> %d\n",
-          mod_id, update->id, exist->percentage, update->percentage);
-    exist->percentage = update->percentage;
-    exist->has_percentage = 1;
-  }
-  if (update->isolation != exist->isolation) {
-    LOG_I(FLEXRAN_AGENT, "[%d][UL slice %d] update isolation: %d -> %d\n",
-          mod_id, update->id, exist->isolation, update->isolation);
-    exist->isolation = update->isolation;
-    exist->has_isolation = 1;
-  }
-  if (update->priority != exist->priority) {
-    LOG_I(FLEXRAN_AGENT, "[%d][UL slice %d] update priority: %d -> %d\n",
-          mod_id, update->id, exist->priority, update->priority);
-    exist->priority = update->priority;
-    exist->has_priority = 1;
-  }
-  if (update->first_rb != exist->first_rb) {
-    LOG_I(FLEXRAN_AGENT, "[%d][UL slice %d] update first_rb: %d -> %d\n",
-	  mod_id, update->id, exist->first_rb, update->first_rb);
-    exist->first_rb = update ->first_rb;
-    exist->has_first_rb = 1;
-  }
-  /*if (update->lenght_rb != exist->lenght_rb) {
-    LOG_I(FLEXRAN_AGENT, "[%d][UL slice %d] update lenght_rb: %d -> %d\n",
-          mod_id, update->id, exist->lenght_rb, update->lenght_rb);
-    exist->lenght_rb = update->lenght_rb;
-  }*/
-  if (update->maxmcs != exist->maxmcs) {
-    LOG_I(FLEXRAN_AGENT, "[%d][UL slice %d] update maxmcs: %d -> %d\n",
-          mod_id, update->id, exist->maxmcs, update->maxmcs);
-    exist->maxmcs = update->maxmcs;
-    exist->has_maxmcs = 1;
-  }
-  /* TODO
-  int sorting_update = 0;
-  int n = min(exist->n_sorting, update->n_sorting);
-  int i = 0;
-  while (i < n && !sorting_update) {
-    sorting_update = sorting_update || (update->sorting[i] != exist->sorting[i]);
-    i++;
-  }
-  if (sorting_update) {
-    LOG_I(FLEXRAN_AGENT, "[%d][UL slice %d] update sorting array\n", update->id, mod_id);
-    if (exist->n_sorting != update->n_sorting)
-      LOG_W(FLEXRAN_AGENT, "[%d][UL slice %d] only writing %d elements\n",
-          mod_id, update->id, n);
-    for (i = 0; i < n; i++)
-      exist->sorting[i] = update->sorting[i];
-  }
-  */
-  if (update->accounting != exist->accounting) {
-    LOG_I(FLEXRAN_AGENT, "[%d][UL slice %d] update accounting: %d -> %d\n",
-          mod_id, update->id, exist->accounting, update->accounting);
-    exist->accounting = update->accounting;
-    exist->has_accounting = 1;
-  }
-  if (!exist->scheduler_name
-      || strcmp(update->scheduler_name, exist->scheduler_name) != 0) {
-    LOG_I(FLEXRAN_AGENT, "[%d][UL slice %d] update scheduler: %s -> %s\n",
-          mod_id, update->id, exist->scheduler_name, update->scheduler_name);
-    if (exist->scheduler_name) free(exist->scheduler_name);
-    exist->scheduler_name = strdup(update->scheduler_name);
-  }
-}
-
-void fill_dl_slice(mid_t mod_id, Protocol__FlexDlSlice *s, Protocol__FlexDlSlice *from)
-{
-  /* function fills slice with information from another slice or with default
-   * values (currently slice 0) if from is NULL */
-  /* TODO fill the slice depending on the chosen label */
-  if (!s->has_label) {
-    s->has_label = 1;
-    s->label = from ? from->label : sc_update[mod_id]->dl[0]->label;
-  }
-  if (!s->has_percentage) {
-    s->has_percentage = 1;
-    s->percentage = from ? from->percentage : sc_update[mod_id]->dl[0]->percentage;
-  }
-  if (!s->has_isolation) {
-    s->has_isolation = 1;
-    s->isolation = from ? from->isolation : sc_update[mod_id]->dl[0]->isolation;
-  }
-  if (!s->has_priority) {
-    s->has_priority = 1;
-    s->priority = from ? from->priority : sc_update[mod_id]->dl[0]->priority;
-  }
-  if (!s->has_position_low) {
-    s->has_position_low = 1;
-    s->position_low = from ? from->position_low : sc_update[mod_id]->dl[0]->position_low;
-  }
-  if (!s->has_position_high) {
-    s->has_position_high = 1;
-    s->position_high = from ? from->position_high : sc_update[mod_id]->dl[0]->position_high;
-  }
-  if (!s->has_maxmcs) {
-    s->has_maxmcs = 1;
-    s->maxmcs = from ? from->maxmcs : sc_update[mod_id]->dl[0]->maxmcs;
-  }
-  if (s->n_sorting == 0) {
-    s->n_sorting = from ? from->n_sorting : sc_update[mod_id]->dl[0]->n_sorting;
-    s->sorting = calloc(s->n_sorting, sizeof(Protocol__FlexDlSorting));
-    if (!s->sorting) s->n_sorting = 0;
-    for (int i = 0; i < s->n_sorting; ++i)
-      s->sorting[i] = from ? from->sorting[i] : sc_update[0]->dl[0]->sorting[i];
-  }
-  if (!s->has_accounting) {
-    s->accounting = from ? from->accounting : sc_update[mod_id]->dl[0]->accounting;
-  }
-  if (!s->scheduler_name) {
-    s->scheduler_name = strdup(from ? from->scheduler_name : sc_update[mod_id]->dl[0]->scheduler_name);
-  }
-}
-
-Protocol__FlexDlSlice *get_existing_dl_slice(mid_t mod_id, int id)
-{
-  for (int i = 0; i < sc_update[mod_id]->n_dl; ++i) {
-    if (id == sc_update[mod_id]->dl[i]->id) {
-      return sc_update[mod_id]->dl[i];
-    }
+void *search_so(mid_t mod_id, char *name) {
+  if (!name) // no name -> nothing to return, so use NULL for executable
+    return NULL;
+  if (dlsym(NULL, name)) // found it in executable
+    return NULL;
+  flexran_agent_so_handle_t *so = NULL;
+  SLIST_FOREACH(so, &flexran_handles[mod_id], entries) {
+    if (strcmp(so->name, name) == 0)
+      return so->dl_handle;
   }
   return NULL;
 }
 
-Protocol__FlexDlSlice *create_new_dl_slice(mid_t mod_id, int id)
-{
-  LOG_I(FLEXRAN_AGENT,
-        "[%d] Creating DL slice with ID %d, taking default values from DL slice 0\n",
-        mod_id, id);
-  Protocol__FlexDlSlice *to = sc_update[mod_id]->dl[sc_update[mod_id]->n_dl];
-  sc_update[mod_id]->n_dl++;
-  AssertFatal(sc_update[mod_id]->n_dl <= MAX_NUM_SLICES,
-              "cannot create more than MAX_NUM_SLICES\n");
-  to->id = id;
-  return to;
-}
-
-void fill_ul_slice(mid_t mod_id, Protocol__FlexUlSlice *s, Protocol__FlexUlSlice *from)
-{
-  /* function fills slice with information from another slice or with default
-   * values (currently slice 0) if from is NULL */
-  /* TODO fill the slice depending on the chosen label */
-  if (!s->has_label) {
-    s->has_label = 1;
-    s->label = from ? from->label : sc_update[mod_id]->ul[0]->label;
-  }
-  if (!s->has_percentage) {
-    s->has_percentage = 1;
-    s->percentage = from ? from->percentage : sc_update[mod_id]->ul[0]->percentage;
-  }
-  if (!s->has_isolation) {
-    s->has_isolation = 1;
-    s->isolation = from ? from->isolation : sc_update[mod_id]->ul[0]->isolation;
-  }
-  if (!s->has_priority) {
-    s->has_priority = 1;
-    s->priority = from ? from->priority : sc_update[mod_id]->ul[0]->priority;
-  }
-  if (!s->has_first_rb) {
-    s->has_first_rb = 1;
-    s->first_rb = from ? from->first_rb : sc_update[mod_id]->ul[0]->first_rb;
-  }
-  if (!s->has_maxmcs) {
-    s->has_maxmcs = 1;
-    s->maxmcs = from ? from->maxmcs : sc_update[mod_id]->ul[0]->maxmcs;
-  }
-  if (s->n_sorting == 0) {
-    s->n_sorting = from ? from->n_sorting : sc_update[0]->ul[0]->n_sorting;
-    s->sorting = calloc(s->n_sorting, sizeof(Protocol__FlexUlSorting));
-    if (!s->sorting) s->n_sorting = 0;
-    for (int i = 0; i < s->n_sorting; ++i)
-      s->sorting[i] = from ? from->sorting[i] : sc_update[0]->ul[0]->sorting[i];
-  }
-  if (!s->has_accounting) {
-    s->accounting = from ? from->accounting : sc_update[0]->ul[0]->accounting;
-  }
-  if (!s->scheduler_name) {
-    s->scheduler_name = strdup(from ? from->scheduler_name : sc_update[mod_id]->ul[0]->scheduler_name);
-  }
-}
-
-Protocol__FlexUlSlice *get_existing_ul_slice(mid_t mod_id, int id)
-{
-  for (int i = 0; i < sc_update[mod_id]->n_ul; ++i) {
-    if (id == sc_update[mod_id]->ul[i]->id) {
-      return sc_update[mod_id]->ul[i];
-    }
-  }
-  return NULL;
-}
-
-Protocol__FlexUlSlice *create_new_ul_slice(mid_t mod_id, int id)
-{
-  LOG_I(FLEXRAN_AGENT,
-        "[%d] Creating UL slice with ID %d, taking default values from UL slice 0\n",
-        mod_id, id);
-  Protocol__FlexUlSlice *to = sc_update[mod_id]->ul[sc_update[mod_id]->n_ul];
-  sc_update[mod_id]->n_ul++;
-  AssertFatal(sc_update[mod_id]->n_ul <= MAX_NUM_SLICES,
-              "cannot create more than MAX_NUM_SLICES\n");
-  to->id = id;
-  return to;
-}
-
-void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *sup)
-{
-  int verified = 1;
-  if (!sc_update[mod_id]) {
-    LOG_E(FLEXRAN_AGENT, "Can not update slice policy (no existing slice profile)\n");
-    return;
-  }
-
-  pthread_mutex_lock(&sc_update_mtx);
-  /* no need for tests in the current state as there are only two protobuf
-    * bools for intra-/interslice sharing. The function applies new values if
-    * applicable */
-  overwrite_slice_config(mod_id, sc_update[mod_id], sup);
-
-  if (sup->n_dl == 0) {
-    LOG_I(FLEXRAN_AGENT, "[%d] no DL slice configuration in flex_slice_config message\n", mod_id);
+void update_or_remove_dl(mid_t mod_id, Protocol__FlexSlice *s) {
+  if (s->params_case == PROTOCOL__FLEX_SLICE__PARAMS__NOT_SET
+      && !s->label && !s->scheduler) {
+    LOG_I(FLEXRAN_AGENT, "remove DL slice ID %d\n", s->id);
+    const int rc = flexran_remove_dl_slice(mod_id, s);
+    if (!rc)
+      LOG_W(FLEXRAN_AGENT, "error while removing slice ID %d\n", s->id);
   } else {
-    /* verify slice parameters */
-    for (int i = 0; i < sup->n_dl; i++) {
-      if (!sup->dl[i]->has_id) {
-        verified = 0;
-        break;
-      }
-      Protocol__FlexDlSlice *dls = get_existing_dl_slice(mod_id, sup->dl[i]->id);
-      /* fill up so that the slice is complete. This way, we don't need to
-       * worry about it later */
-      fill_dl_slice(mod_id, sup->dl[i], dls);
-      verified = verified && flexran_verify_dl_slice(mod_id, sup->dl[i]);
-      if (!verified) break;
-    }
-
-    /* verify group-based parameters (e.g. sum percentage should not exceed
-     * 100%). Can be used to perform admission control */
-    verified = verified && flexran_verify_group_dl_slices(mod_id,
-        sc_update[mod_id]->dl, sc_update[mod_id]->n_dl, sup->dl, sup->n_dl);
-
-    if (verified) {
-      for (int i = 0; i < sup->n_dl; i++) {
-        /* if all verifications were successful, get existing slice for ID or
-         * create new one and overwrite with the update */
-        Protocol__FlexDlSlice *dls = get_existing_dl_slice(mod_id, sup->dl[i]->id);
-        if (!dls) dls = create_new_dl_slice(mod_id, sup->dl[i]->id);
-        overwrite_slice_config_dl(mod_id, dls, sup->dl[i]);
-      }
-    } else {
-      LOG_E(FLEXRAN_AGENT, "[%d] DL slice verification failed, refusing application\n", mod_id);
-    }
+    void *lib = search_so(mod_id, s->scheduler);
+    LOG_I(FLEXRAN_AGENT,
+          "updating DL slice ID %d (library handle %p)\n",
+          s->id,
+          lib);
+    const int rc = flexran_create_dl_slice(mod_id, s, lib);
+    if (rc < 0)
+      LOG_W(FLEXRAN_AGENT,
+            "error while update slice ID %d: flexran_create_dl_slice() -> %d\n",
+            s->id, rc);
   }
+}
 
-  verified = 1;
-  if (sup->n_ul == 0) {
-    LOG_I(FLEXRAN_AGENT, "[%d] no UL slice configuration in flex_slice_config message\n", mod_id);
+void update_or_remove_ul(mid_t mod_id, Protocol__FlexSlice *s) {
+  if (s->params_case == PROTOCOL__FLEX_SLICE__PARAMS__NOT_SET
+      && !s->label && !s->scheduler) {
+    LOG_I(FLEXRAN_AGENT, "remove UL slice ID %d\n", s->id);
+    const int rc = flexran_remove_ul_slice(mod_id, s);
+    if (!rc)
+      LOG_W(FLEXRAN_AGENT, "error while removing slice ID %d\n", s->id);
   } else {
-    /* verify slice parameters */
-    for (int i = 0; i < sup->n_ul; i++) {
-      if (!sup->ul[i]->has_id) {
-        verified = 0;
-        break;
-      }
-      Protocol__FlexUlSlice *uls = get_existing_ul_slice(mod_id, sup->ul[i]->id);
-      /* fill up so that the slice is complete. This way, we don't need to
-       * worry about it later */
-      fill_ul_slice(mod_id, sup->ul[i], uls);
-      verified = verified && flexran_verify_ul_slice(mod_id, sup->ul[i]);
-      if (!verified) break;
-    }
-
-    /* verify group-based parameters (e.g. sum percentage should not exceed
-     * 100%). Can be used to perform admission control */
-    verified = verified && flexran_verify_group_ul_slices(mod_id,
-        sc_update[mod_id]->ul, sc_update[mod_id]->n_ul, sup->ul, sup->n_ul);
-
-    if (verified) {
-      for (int i = 0; i < sup->n_ul; i++) {
-        /* if all verifications were successful, get existing slice for ID or
-         * create new one and overwrite with the update */
-        Protocol__FlexUlSlice *uls = get_existing_ul_slice(mod_id, sup->ul[i]->id);
-        if (!uls) uls = create_new_ul_slice(mod_id, sup->ul[i]->id);
-        overwrite_slice_config_ul(mod_id, uls, sup->ul[i]);
-      }
-    } else {
-      LOG_E(FLEXRAN_AGENT, "[%d] UL slice verification failed, refusing application\n", mod_id);
-    }
+    void *lib = search_so(mod_id, s->scheduler);
+    LOG_I(FLEXRAN_AGENT,
+          "updating UL slice ID %d (library handle %p)\n",
+          s->id,
+          lib);
+    const int rc = flexran_create_ul_slice(mod_id, s, lib);
+    if (rc < 0)
+      LOG_W(FLEXRAN_AGENT,
+            "error while updating slice ID %d: flexran_create_ul_slice() -> %d)\n",
+            s->id, rc);
   }
-  pthread_mutex_unlock(&sc_update_mtx);
-
-  perform_slice_config_update_count = 1;
 }
 
-int apply_new_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *olds, Protocol__FlexSliceConfig *news)
-{
-  /* not setting the old configuration is intentional, as it will be picked up
-   * later when reading the configuration. There is thus a direct feedback
-   * whether it has been set. */
-  int changes = 0;
-  if (olds->intraslice_share_active != news->intraslice_share_active) {
-    flexran_set_intraslice_sharing_active(mod_id, news->intraslice_share_active);
-    changes++;
-  }
-  if (olds->interslice_share_active != news->interslice_share_active) {
-    flexran_set_interslice_sharing_active(mod_id, news->interslice_share_active);
-    changes++;
-  }
-  return changes;
-}
-
-int apply_new_slice_dl_config(mid_t mod_id, Protocol__FlexDlSlice *oldc, Protocol__FlexDlSlice *newc)
-{
-  /* not setting the old configuration is intentional, as it will be picked up
-   * later when reading the configuration. There is thus a direct feedback
-   * whether it has been set. */
-  int changes = 0;
-  int slice_idx = flexran_find_dl_slice(mod_id, newc->id);
-  if (slice_idx < 0) {
-    LOG_W(FLEXRAN_AGENT, "[%d] cannot find index for slice ID %d\n", mod_id, newc->id);
-    return 0;
-  }
-  if (oldc->percentage != newc->percentage) {
-    flexran_set_dl_slice_percentage(mod_id, slice_idx, newc->percentage);
-    changes++;
-  }
-  if (oldc->isolation != newc->isolation) {
-    flexran_set_dl_slice_isolation(mod_id, slice_idx, newc->isolation);
-    changes++;
-  }
-  if (oldc->priority != newc->priority) {
-    flexran_set_dl_slice_priority(mod_id, slice_idx, newc->priority);
-    changes++;
-  }
-  if (oldc->position_low != newc->position_low) {
-    flexran_set_dl_slice_position_low(mod_id, slice_idx, newc->position_low);
-    changes++;
-  }
-  if (oldc->position_high != newc->position_high) {
-    flexran_set_dl_slice_position_high(mod_id, slice_idx, newc->position_high);
-    changes++;
-  }
-  if (oldc->maxmcs != newc->maxmcs) {
-    flexran_set_dl_slice_maxmcs(mod_id, slice_idx, newc->maxmcs);
-    changes++;
-  }
-  if (check_dl_sorting_update(oldc, newc)) {
-    flexran_set_dl_slice_sorting(mod_id, slice_idx, newc->sorting, newc->n_sorting);
-    changes++;
-  }
-  if (oldc->accounting != newc->accounting) {
-    flexran_set_dl_slice_accounting_policy(mod_id, slice_idx, newc->accounting);
-    changes++;
-  }
-  if (!oldc->scheduler_name
-      || strcmp(oldc->scheduler_name, newc->scheduler_name) != 0) {
-    int ret = flexran_set_dl_slice_scheduler(mod_id, slice_idx, newc->scheduler_name);
-    AssertFatal(ret, "could not set DL slice scheduler for slice %d idx %d\n",
-                newc->id, slice_idx);
-    changes++;
-  }
-  return changes;
-}
-
-int apply_new_slice_ul_config(mid_t mod_id, Protocol__FlexUlSlice *oldc, Protocol__FlexUlSlice *newc)
-{
-  /* not setting the old configuration is intentional, as it will be picked up
-   * later when reading the configuration. There is thus a direct feedback
-   * whether it has been set. */
-  int changes = 0;
-  int slice_idx = flexran_find_ul_slice(mod_id, newc->id);
-  if (slice_idx < 0) {
-    LOG_W(FLEXRAN_AGENT, "[%d] cannot find index for slice ID %d\n", mod_id, newc->id);
-    return 0;
-  }
-  if (oldc->percentage != newc->percentage) {
-    flexran_set_ul_slice_percentage(mod_id, slice_idx, newc->percentage);
-    changes++;
-  }
-  if (oldc->isolation != newc->isolation) {
-    /*flexran_set_ul_slice_isolation(mod_id, slice_idx, newc->isolation);
-     *changes++;*/
-    LOG_W(FLEXRAN_AGENT, "[%d][UL slice %d] setting isolation is not supported\n",
-          mod_id, newc->id);
-  }
-  if (oldc->priority != newc->priority) {
-    /*flexran_set_ul_slice_priority(mod_id, slice_idx, newc->priority);
-     *changes++;*/
-    LOG_W(FLEXRAN_AGENT, "[%d][UL slice %d] setting the priority is not supported\n",
-          mod_id, newc->id);
-  }
-  if (oldc->first_rb != newc->first_rb) {
-    flexran_set_ul_slice_first_rb(mod_id, slice_idx, newc->first_rb);
-    changes++;
-  }
-  /*if (oldc->length_rb != newc->length_rb) {
-    flexran_set_ul_slice_length_rb(mod_id, slice_idx, newc->length_rb);
-    changes++;
-    LOG_W(FLEXRAN_AGENT, "[%d][UL slice %d] setting length_rb is not supported\n",
-          mod_id, newc->id);
-  }*/
-  if (oldc->maxmcs != newc->maxmcs) {
-    flexran_set_ul_slice_maxmcs(mod_id, slice_idx, newc->maxmcs);
-    changes++;
-  }
-  /*if (check_ul_sorting_update(oldc, newc)) {
-    flexran_set_ul_slice_sorting(mod_id, slice_idx, newc->sorting, n);
-    changes++;
-    LOG_W(FLEXRAN_AGENT, "[%d][UL slice %d] setting the sorting is not supported\n",
-        mod_id, newc->id);
-  }*/
-  if (oldc->accounting != newc->accounting) {
-    /*flexran_set_ul_slice_accounting_policy(mod_id, slice_idx, newc->accounting);
-     *changes++;*/
-    LOG_W(FLEXRAN_AGENT, "[%d][UL slice %d] setting the accounting is not supported\n",
-          mod_id, newc->id);
-  }
-  if (!oldc->scheduler_name
-      || strcmp(oldc->scheduler_name, newc->scheduler_name) != 0) {
-    int ret = flexran_set_ul_slice_scheduler(mod_id, slice_idx, newc->scheduler_name);
-    AssertFatal(ret, "could not set DL slice scheduler for slice %d idx %d\n",
-                newc->id, slice_idx);
-    changes++;
-  }
-  return changes;
-}
-
-void prepare_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig *ue_config)
-{
-  if (n_ue_slice_assoc_updates == MAX_NUM_SLICES) {
-    LOG_E(FLEXRAN_AGENT,
-          "[%d] can not handle flex_ue_config message, buffer is full; try again later\n",
-          mod_id);
+void apply_update_dl_slice_config(mid_t mod_id, Protocol__FlexSliceDlUlConfig *dl) {
+  if (!dl)
     return;
+
+  Protocol__FlexSliceAlgorithm dl_algo = flexran_get_dl_slice_algo(mod_id);
+  if (dl->has_algorithm && dl_algo != dl->algorithm) {
+    LOG_I(FLEXRAN_AGENT, "loading new DL slice algorithm %d\n", dl->algorithm);
+    dl_algo = dl->algorithm;
+    flexran_set_dl_slice_algo(mod_id, dl_algo);
   }
+
+  /* first update existing slices, then create new. Thus, we go through the
+   * list twice. First round, if a slice exists, handle and mark as such. Then,
+   * apply all others in the second round */
+  if (dl->n_slices > 0) {
+    if (dl_algo == PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "cannot update slices: no algorithm loaded\n");
+      return;
+    }
+    int handled_dl[dl->n_slices];
+    for (int i = 0; i < dl->n_slices; ++i) {
+      if (flexran_find_dl_slice(mod_id, dl->slices[i]->id) < 0) {
+        handled_dl[i] = 0;
+        continue;
+      }
+      update_or_remove_dl(mod_id, dl->slices[i]);
+      handled_dl[i] = 1;
+    }
+    for (int i = 0; i < dl->n_slices; ++i) {
+      if (handled_dl[i])
+        continue;
+      update_or_remove_dl(mod_id, dl->slices[i]);
+    }
+  }
+
+  if (dl->scheduler) {
+    if (dl_algo != PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "cannot update scheduling algorithm: slice algorithm loaded\n");
+      return;
+    }
+    void *lib = search_so(mod_id, dl->scheduler);
+    LOG_I(FLEXRAN_AGENT,
+          "loading DL new scheduling algorithm '%s' (library handle %p)\n",
+          dl->scheduler,
+          lib);
+    const int rc = flexran_set_dl_scheduler(mod_id, dl->scheduler, lib);
+    if (rc < 0) {
+      LOG_E(FLEXRAN_AGENT,
+            "error while updating scheduling algorithm: "
+            "flexran_update_dl_sched_algo() -> %d)\n",
+            rc);
+      return;
+    }
+  }
+}
+
+void apply_update_ul_slice_config(mid_t mod_id, Protocol__FlexSliceDlUlConfig *ul) {
+  if (!ul)
+    return;
+
+  Protocol__FlexSliceAlgorithm ul_algo = flexran_get_ul_slice_algo(mod_id);
+  if (ul->has_algorithm && ul_algo != ul->algorithm) {
+    LOG_I(FLEXRAN_AGENT, "loading new UL slice algorithm %d\n", ul->algorithm);
+    ul_algo = ul->algorithm;
+    flexran_set_ul_slice_algo(mod_id, ul_algo);
+  }
+  if (ul->n_slices > 0) {
+    if (ul_algo == PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "cannot update slices: no algorithm loaded\n");
+      return;
+    }
+    int handled_ul[ul->n_slices];
+    for (int i = 0; i < ul->n_slices; ++i) {
+      if (flexran_find_ul_slice(mod_id, ul->slices[i]->id) < 0) {
+        handled_ul[i] = 0;
+        continue;
+      }
+      update_or_remove_ul(mod_id, ul->slices[i]);
+      handled_ul[i] = 1;
+    }
+    for (int i = 0; i < ul->n_slices; ++i) {
+      if (handled_ul[i])
+        continue;
+      update_or_remove_ul(mod_id, ul->slices[i]);
+    }
+  }
+
+  if (ul->scheduler) {
+    if (ul_algo != PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "cannot update scheduling algorithm: slice algorithm loaded\n");
+      return;
+    }
+    void *lib = search_so(mod_id, ul->scheduler);
+    LOG_I(FLEXRAN_AGENT,
+          "loading new UL scheduling algorithm '%s' (library handle %p)\n",
+          ul->scheduler,
+          lib);
+    const int rc = flexran_set_ul_scheduler(mod_id, ul->scheduler, lib);
+    if (rc < 0) {
+      LOG_E(FLEXRAN_AGENT,
+            "error while updating scheduling algorithm: "
+            "flexran_update_dl_sched_algo() -> %d)\n",
+            rc);
+      return;
+    }
+  }
+}
+
+int apply_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig *ue_config)
+{
   if (!ue_config->has_rnti) {
     LOG_E(FLEXRAN_AGENT,
           "[%d] cannot update UE to slice association, no RNTI in flex_ue_config message\n",
           mod_id);
-    return;
+    return 0;
   }
-  if (ue_config->has_dl_slice_id)
-    LOG_I(FLEXRAN_AGENT, "[%d] associating UE RNTI %#x to DL slice ID %d\n",
-          mod_id, ue_config->rnti, ue_config->dl_slice_id);
-  if (ue_config->has_ul_slice_id)
-    LOG_I(FLEXRAN_AGENT, "[%d] associating UE RNTI %#x to UL slice ID %d\n",
-          mod_id, ue_config->rnti, ue_config->ul_slice_id);
-  ue_slice_assoc_update[n_ue_slice_assoc_updates++] = ue_config;
-  perform_slice_config_update_count = 2;
-}
-
-int apply_ue_slice_assoc_update(mid_t mod_id)
-{
-  int i;
-  int changes = 0;
-  for (i = 0; i < n_ue_slice_assoc_updates; i++) {
-    int ue_id = find_UE_id(mod_id, ue_slice_assoc_update[i]->rnti);
-    if (ue_id < 0 || ue_id > MAX_MOBILES_PER_ENB){
-      LOG_E(FLEXRAN_AGENT,"UE_id %d is wrong!!\n",ue_id);
-      continue;
-    }
-    if (ue_slice_assoc_update[i]->has_dl_slice_id) {
-      int slice_idx = flexran_find_dl_slice(mod_id, ue_slice_assoc_update[i]->dl_slice_id);
-      if (flexran_dl_slice_exists(mod_id, slice_idx)) {
-        flexran_set_ue_dl_slice_idx(mod_id, ue_id, slice_idx);
-        changes++;
-      } else {
-        LOG_W(FLEXRAN_AGENT, "[%d] DL slice %d does not exist, refusing change\n",
-              mod_id, ue_slice_assoc_update[i]->dl_slice_id);
-      }
-    }
-    if (ue_slice_assoc_update[i]->has_ul_slice_id) {
-      int slice_idx = flexran_find_ul_slice(mod_id, ue_slice_assoc_update[i]->ul_slice_id);
-      if (flexran_ul_slice_exists(mod_id, slice_idx)) {
-        flexran_set_ue_ul_slice_idx(mod_id, ue_id, slice_idx);
-        changes++;
-      } else {
-        LOG_W(FLEXRAN_AGENT, "[%d] UL slice %d does not exist, refusing change\n",
-              mod_id, ue_slice_assoc_update[i]->ul_slice_id);
-      }
+  int UE_id = flexran_get_mac_ue_id_rnti(mod_id, ue_config->rnti);
+  if (ue_config->has_dl_slice_id) {
+    if (flexran_get_dl_slice_algo(mod_id) == PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "no DL slice algorithm loaded\n");
+    } else {
+      LOG_I(FLEXRAN_AGENT, "[%d] associating UE RNTI %04x - %d/UE %d to DL slice ID %d\n",
+            mod_id, ue_config->rnti, ue_config->rnti, UE_id, ue_config->dl_slice_id);
+      flexran_set_ue_dl_slice_id(mod_id, UE_id, ue_config->dl_slice_id);
     }
   }
-  n_ue_slice_assoc_updates = 0;
-  return changes;
+  if (ue_config->has_ul_slice_id) {
+    if (flexran_get_ul_slice_algo(mod_id) == PROTOCOL__FLEX_SLICE_ALGORITHM__None) {
+      LOG_E(FLEXRAN_AGENT, "no UL slice algorithm loaded\n");
+    } else {
+      LOG_I(FLEXRAN_AGENT, "[%d] associating UE RNTI %04x - %d/UE %d to UL slice ID %d\n",
+            mod_id, ue_config->rnti, ue_config->rnti, UE_id, ue_config->ul_slice_id);
+      flexran_set_ue_ul_slice_id(mod_id, UE_id, ue_config->ul_slice_id);
+    }
+  }
+  return 0;
 }

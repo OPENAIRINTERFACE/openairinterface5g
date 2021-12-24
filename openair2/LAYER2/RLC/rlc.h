@@ -133,17 +133,17 @@ typedef struct {
 #define  RLC_MAX_MBMS_LC (LTE_maxSessionPerPMCH * LTE_maxServiceCount)
 #define  RLC_MAX_LC  ((max_val_LTE_DRB_Identity+1)* MAX_MOBILES_PER_ENB)
 
-void (*rlc_rrc_data_ind)(
+extern void (*rlc_rrc_data_ind)(
   const protocol_ctxt_t *const ctxtP,
   const rb_id_t     rb_idP,
   const sdu_size_t  sdu_sizeP,
   const uint8_t    *const sduP)  __attribute__ ((aligned(32)));
 
-void (*rlc_rrc_data_conf)(
+extern void (*rlc_rrc_data_conf)(
   const protocol_ctxt_t *const ctxtP,
   const rb_id_t         rb_idP,
   const mui_t           muiP,
-  const rlc_tx_status_t statusP);
+  const rlc_tx_status_t statusP) __attribute__ ((aligned(32)));
 
 typedef void (rrc_data_ind_cb_t)(
   const protocol_ctxt_t *const ctxtP,
@@ -184,8 +184,8 @@ typedef struct rlc_mbms_id_s {
 
 //rlc_mbms_t           rlc_mbms_array_ue[MAX_MOBILES_PER_ENB][maxServiceCount][maxSessionPerPMCH];   // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
 //rlc_mbms_t           rlc_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH]; // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
-rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_ue[MAX_MOBILES_PER_ENB][RLC_MAX_MBMS_LC];    // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
-rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[MAX_eNB][RLC_MAX_MBMS_LC];  // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
+extern rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_ue[MAX_MOBILES_PER_ENB][RLC_MAX_MBMS_LC];    // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
+extern rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[MAX_eNB][RLC_MAX_MBMS_LC];  // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
 
 #define rlc_mbms_enb_get_lcid_by_rb_id(Enb_mOD,rB_iD) rlc_mbms_rbid2lcid_eNB[Enb_mOD][rB_iD]
 ;
@@ -201,8 +201,8 @@ rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[MAX_eNB][RLC_MAX_MBMS_
     rlc_mbms_rbid2lcid_ue[uE_mOD][rB_iD] = lOG_cH_iD; \
   } while (0);
 
-logical_chan_id_t    rlc_mbms_rbid2lcid_ue [MAX_MOBILES_PER_ENB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
-logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[MAX_eNB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
+extern logical_chan_id_t    rlc_mbms_rbid2lcid_ue [MAX_MOBILES_PER_ENB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
+extern logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[MAX_eNB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
 
 
 #define RLC_COLL_KEY_VALUE(eNB_iD, rNTI, iS_eNB, rB_iD, iS_sRB) \
@@ -250,7 +250,7 @@ logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[MAX_eNB][NB_RB_MBMS_MAX];           
    (((hash_key_t)(sESSION_ID)) << 37) | \
    (((hash_key_t)(0x0000000000000001))  << 63))
 
-hash_table_t  *rlc_coll_p  __attribute__ ((aligned(32)));
+extern hash_table_t  *rlc_coll_p  __attribute__ ((aligned(32)));
 
 /*! \fn tbs_size_t mac_rlc_serialize_tb (char* bufferP, list_t transport_blocksP)
 * \brief  Serialize a list of transport blocks coming from RLC in order to be processed by MAC.
@@ -624,6 +624,14 @@ rlc_op_status_t rlc_stat_req     (
 */
 int rlc_module_init(int enb_flag);
 
+void du_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
+                     const srb_flag_t   srb_flagP,
+                     const MBMS_flag_t  MBMS_flagP,
+                     const rb_id_t      rb_idP,
+                     const mui_t        muiP,
+                     confirm_t    confirmP,
+                     sdu_size_t   sdu_sizeP,
+                     mem_block_t *sdu_pP);
 /** @} */
 
 #define RLC_FG_COLOR_BLACK            "\e[0;30m"

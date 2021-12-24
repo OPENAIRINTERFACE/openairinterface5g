@@ -29,13 +29,11 @@
 * \note
 * \warning
 */
-#ifndef USER_MODE
-#include "PHY/types.h"
-#else
+
+#ifndef __PHY_NR_UE_TRANSPORT_DCI_NR__H__
+#define __PHY_NR_UE_TRANSPORT_DCI_NR__H__
+
 #include <stdint.h>
-#endif
-
-
 
 #define MAX_DCI_SIZE_BITS 45
 
@@ -117,5 +115,6 @@ struct NR_DCI_INFO_EXTRACTED {
 typedef struct NR_DCI_INFO_EXTRACTED NR_DCI_INFO_EXTRACTED_t;
 
 
+#endif
 #endif
 

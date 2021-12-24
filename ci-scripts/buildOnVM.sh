@@ -62,6 +62,12 @@ function build_on_vm {
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
     echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
 
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]] || [[ "$VM_NAME" == *"-phy-sim"* ]]
+    then
+        echo "This VM type is no longer supported in the pipeline framework"
+        return
+    fi
+
     IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
 
     if [ $IS_VM_ALIVE -eq 0 ]
@@ -158,6 +164,9 @@ function build_on_vm {
     echo "cd tmp" >> $VM_CMDS
     echo "echo \"unzip -qq -DD ../localZip.zip\"" >> $VM_CMDS
     echo "unzip -qq -DD ../localZip.zip" >> $VM_CMDS
+    # Trying to make some room on filesystem before building
+    echo "rm ../localZip.zip" >> $VM_CMDS
+    echo "export CI_ENV=True" >> $VM_CMDS
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
     then
         echo "mkdir cmake_targets/log" >> $VM_CMDS
@@ -178,6 +187,8 @@ function build_on_vm {
         echo "mkdir -p cmake_targets/log" >> $VM_CMDS
         echo "chmod 777 cmake_targets/log" >> $VM_CMDS
         echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
+        # Patching the pistache build for Xenial (cmake too old for new commits)
+        echo "sed -i -e 's@cd pistache@cd pistache \&\& git checkout -f 9a65f40975fafca5bb5370ba6d0d00f42cbc4356@' ./tools/install_dependencies" >> $VM_CMDS
         echo "echo \"./tools/install_dependencies \"" >> $VM_CMDS
         echo "./tools/install_dependencies > cmake_targets/log/install-build.txt 2>&1" >> $VM_CMDS
         echo "echo \"mkdir build\"" >> $VM_CMDS
@@ -206,7 +217,15 @@ function build_on_vm {
             echo "echo \"./build_oai -I $BUILD_OPTIONS \"" >> $VM_CMDS
             echo "./build_oai -I $BUILD_OPTIONS > log/install-build.txt 2>&1" >> $VM_CMDS
         else
-            echo "echo \"./build_oai -I $BUILD_OPTIONS\" > ./my-vm-build.sh" >> $VM_CMDS
+            if [[ "$VM_NAME" == *"-enb-ethernet"* ]]
+            then
+                echo "echo \"sleep 170 && ./build_oai -I $BUILD_OPTIONS\" > ./my-vm-build.sh" >> $VM_CMDS
+            elif [[ "$VM_NAME" == *"-ue-ethernet"* ]]
+            then
+                echo "echo \"sleep 60 && ./build_oai -I $BUILD_OPTIONS\" > ./my-vm-build.sh" >> $VM_CMDS
+            else
+                echo "echo \"./build_oai -I $BUILD_OPTIONS\" > ./my-vm-build.sh" >> $VM_CMDS
+            fi
             echo "chmod 775 ./my-vm-build.sh " >> $VM_CMDS
             echo "echo \"sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp/cmake_targets -o /home/ubuntu/tmp/cmake_targets/log/install-build.txt ./my-vm-build.sh\"" >> $VM_CMDS
             echo "sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp/cmake_targets -o /home/ubuntu/tmp/cmake_targets/log/install-build.txt ./my-vm-build.sh" >> $VM_CMDS

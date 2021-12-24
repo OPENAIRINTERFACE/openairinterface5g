@@ -1,0 +1,53 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+        <htmlTabRef>gNB-PHY-Test</htmlTabRef>
+        <htmlTabName>Run-gNB-PHY-Test</htmlTabName>
+        <htmlTabIcon>tasks</htmlTabIcon>	
+	<repeatCount>3</repeatCount>
+	<TestCaseRequestedList>
+090101 000001 090109
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+	
+        <testCase id="090101">
+                <class>Initialize_eNB</class>
+                <desc>Initialize gNB USRP</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test -q -U 787200 -T 106 -t 28 -D 130175 -m 28 -M 106</Initialize_eNB_args>
+		<air_interface>NR</air_interface>
+        </testCase>
+
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>300</idle_sleep_time_in_sec>
+	</testCase>
+
+
+        <testCase id="090109">
+                <class>Terminate_eNB</class>
+                <desc>Terminate gNB</desc>
+		<air_interface>NR</air_interface>
+        </testCase>
+
+</testCaseList>

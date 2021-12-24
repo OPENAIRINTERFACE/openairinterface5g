@@ -41,10 +41,13 @@
 AGENT_PHY_xface *flexran_agent_get_phy_xface(mid_t mod_id);
 
 /* Control module interface for the communication of the MAC Control Module with the agent */
-AGENT_MAC_xface *flexran_agent_get_mac_xface(mid_t mod_id);
 
+extern AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
+#define flexran_agent_get_mac_xface(mod_id) (agent_mac_xface[mod_id])
 /* Control module interface for the communication of the RRC Control Module with the agent */
-AGENT_RRC_xface *flexran_agent_get_rrc_xface(mid_t mod_id);
+// AGENT_RRC_xface *flexran_agent_get_rrc_xface(mid_t mod_id);
+extern AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB];
+#define flexran_agent_get_rrc_xface(mod_id) (agent_rrc_xface[mod_id])
 
 /* Control module interface for the communication of the RRC Control Module with the agent */
 AGENT_PDCP_xface *flexran_agent_get_pdcp_xface(mid_t mod_id);

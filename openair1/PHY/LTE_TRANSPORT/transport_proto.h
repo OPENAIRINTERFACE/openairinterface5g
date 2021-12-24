@@ -123,6 +123,42 @@ int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
                        time_stats_t *te_stats,
                        time_stats_t *i_stats);
 
+/** \fn dlsch_encoding(PHY_VARS_eNB *eNB,
+    uint8_t *input_buffer,
+    LTE_DL_FRAME_PARMS *frame_parms,
+    uint8_t num_pdcch_symbols,
+    LTE_eNB_DLSCH_t *dlsch,
+    int frame,
+    uint8_t subframe)
+    \brief This function performs a subset of the bit-coding functions for LTE as described in 36-212, Release 8.Support is limited to turbo-coded channels (DLSCH/ULSCH). The implemented functions are:
+    - CRC computation and addition
+    - Code block segmentation and sub-block CRC addition
+    - Channel coding (Turbo coding)
+    - Rate matching (sub-block interleaving, bit collection, selection and transmission
+    - Code block concatenation
+    @param eNB Pointer to eNB PHY context
+    @param input_buffer Pointer to input buffer for sub-frame
+    @param frame_parms Pointer to frame descriptor structure
+    @param num_pdcch_symbols Number of PDCCH symbols in this subframe
+    @param dlsch Pointer to dlsch to be encoded
+    @param frame Frame number
+    @param subframe Subframe number
+    @param rm_stats Time statistics for rate-matching
+    @param te_stats Time statistics for turbo-encoding
+    @param i_stats Time statistics for interleaving
+    @returns status
+*/
+int32_t dlsch_encoding_fembms_pmch(PHY_VARS_eNB *eNB,
+                       L1_rxtx_proc_t *proc,
+                       uint8_t *a,
+                       uint8_t num_pdcch_symbols,
+                       LTE_eNB_DLSCH_t *dlsch,
+                       int frame,
+                       uint8_t subframe,
+                       time_stats_t *rm_stats,
+                       time_stats_t *te_stats,
+                       time_stats_t *i_stats);
+
 
 
 
@@ -269,6 +305,30 @@ int mch_modulation(int32_t **txdataF,
                    LTE_DL_FRAME_PARMS *frame_parms,
                    LTE_eNB_DLSCH_t *dlsch);
 
+/*
+  \brief This function is the top-level routine for generation of the sub-frame signal (frequency-domain) for MCH.
+  @param txdataF Table of pointers for frequency-domain TX signals
+  @param amp Amplitude of signal
+  @param subframe_offset Offset of this subframe in units of subframes (usually 0)
+  @param frame_parms Pointer to frame descriptor
+  @param dlsch Pointer to DLSCH descriptor for this allocation
+*/
+int mch_modulation_khz_1dot25(int32_t **txdataF,
+                   int16_t amp,
+                   uint32_t subframe_offset,
+                   LTE_DL_FRAME_PARMS *frame_parms,
+                   LTE_eNB_DLSCH_t *dlsch);
+
+
+/** \brief Top-level generation function for eNB TX of MBSFN
+    @param phy_vars_eNB Pointer to eNB variables
+    @param a Pointer to transport block
+    @param abstraction_flag
+
+*/
+void generate_mch_khz_1dot25(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc,uint8_t *a);
+
+
 /** \brief Top-level generation function for eNB TX of MBSFN
     @param phy_vars_eNB Pointer to eNB variables
     @param a Pointer to transport block
@@ -318,6 +378,12 @@ int32_t generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
                              uint16_t slot,
                              int first_pilot_only);
 
+int32_t generate_mbsfn_pilot_khz_1dot25(PHY_VARS_eNB *phy_vars_eNB,
+                             L1_rxtx_proc_t *proc,
+                             int32_t **txdataF,
+                             int16_t amp);
+
+
 int32_t generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
                              L1_rxtx_proc_t *proc,
                              int32_t **txdataF,
@@ -349,6 +415,13 @@ int32_t generate_pbch(LTE_eNB_PBCH *eNB_pbch,
                       LTE_DL_FRAME_PARMS *frame_parms,
                       uint8_t *pbch_pdu,
                       uint8_t frame_mod4);
+
+int32_t generate_pbch_fembms(LTE_eNB_PBCH *eNB_pbch,
+                      int32_t **txdataF,
+                      int32_t amp,
+                      LTE_DL_FRAME_PARMS *frame_parms,
+                      uint8_t *pbch_pdu,
+                      uint8_t frame_mod16);
 
 
 
@@ -446,6 +519,9 @@ int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *PHY_vars_eNB,
 
 
 void dump_ulsch(PHY_VARS_eNB *phy_vars_eNB,int frame, int subframe, uint8_t UE_id,int round);
+
+void dump_ulsch_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame);
+void dump_uci_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame);
 
 
 
@@ -548,7 +624,11 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
                       uint16_t frame,
                       uint8_t Ns);
 
-
+uint32_t calc_pucch_1x_interference(PHY_VARS_eNB *eNB,
+                 int     frame,
+                 uint8_t subframe,
+                 uint8_t shortened_format
+);
 
 uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
                   PUCCH_FMT_t fmt,
@@ -614,15 +694,57 @@ void conv_eMTC_rballoc(uint16_t resource_block_coding,
                        uint32_t N_RB_DL,
                        uint32_t *rb_alloc);
 
-int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
+int find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 
-int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
+int find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 
-int16_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type);
+int find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type);
 
-uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type);
+static inline  uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset)
+{
+  int32_t n;
 
-uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
+  // 3GPP 3x.211
+  // Nc = 1600
+  // c(n)     = [x1(n+Nc) + x2(n+Nc)]mod2
+  // x1(n+31) = [x1(n+3)                     + x1(n)]mod2
+  // x2(n+31) = [x2(n+3) + x2(n+2) + x2(n+1) + x2(n)]mod2
+  if (reset)
+  {
+      // Init value for x1: x1(0) = 1, x1(n) = 0, n=1,2,...,30
+      // x1(31) = [x1(3) + x1(0)]mod2 = 1
+      *x1 = 1 + (1U<<31);
+      // Init value for x2: cinit = sum_{i=0}^30 x2*2^i
+      // x2(31) = [x2(3)    + x2(2)    + x2(1)    + x2(0)]mod2
+      //        =  (*x2>>3) ^ (*x2>>2) + (*x2>>1) + *x2
+      *x2 = *x2 ^ ((*x2 ^ (*x2>>1) ^ (*x2>>2) ^ (*x2>>3))<<31);
+
+      // x1 and x2 contain bits n = 0,1,...,31
+
+      // Nc = 1600 bits are skipped at the beginning
+      // i.e., 1600 / 32 = 50 32bit words
+
+      for (n = 1; n < 50; n++)
+      {
+          // Compute x1(0),...,x1(27)
+          *x1 = (*x1>>1) ^ (*x1>>4);
+          // Compute x1(28),..,x1(31) and xor
+          *x1 = *x1 ^ (*x1<<31) ^ (*x1<<28);
+          // Compute x2(0),...,x2(27)
+          *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x2>>4);
+          // Compute x2(28),..,x2(31) and xor
+          *x2 = *x2 ^ (*x2<<31) ^ (*x2<<30) ^ (*x2<<29) ^ (*x2<<28);
+      }
+  }
+
+  *x1 = (*x1>>1) ^ (*x1>>4);
+  *x1 = *x1 ^ (*x1<<31) ^ (*x1<<28);
+  *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x2>>4);
+  *x2 = *x2 ^ (*x2<<31) ^ (*x2<<30) ^ (*x2<<29) ^ (*x2<<28);
+
+  // c(n) = [x1(n+Nc) + x2(n+Nc)]mod2
+  return(*x1^*x2);
+}
 
 
 /**@}*/

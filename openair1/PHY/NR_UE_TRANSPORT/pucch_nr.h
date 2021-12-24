@@ -20,7 +20,7 @@
  */
 
 /*! \file PHY/NR_UE_TRANSPORT/pucch_nr.c
-* \brief Top-level routines for generating and decoding the PUCCH physical channel
+* \brief Top-level routines for generating the PUCCH physical channel
 * \author A. Mico Pereperez
 * \date 2018
 * \version 0.1
@@ -29,12 +29,14 @@
 * \note
 * \warning
 */
+#ifndef __PUCCH_NR__H__
+#define __PUCCH_NR__H__
+
 //#include "PHY/defs.h"
 #include "PHY/impl_defs_nr.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 //#include "PHY/extern.h"
-//#include "LAYER2/MAC/extern.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -42,105 +44,38 @@
 #include "T.h"
 #define ONE_OVER_SQRT2 23170 // 32767/sqrt(2) = 23170 (ONE_OVER_SQRT2)
 
-void nr_decode_pucch1(  int32_t **rxdataF,
-                        pucch_GroupHopping_t pucch_GroupHopping,
-                        uint32_t n_id,       // hoppingID higher layer parameter
-                        uint64_t *payload,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t m0,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint16_t startingPRB,
-                        uint16_t startingPRB_intraSlotHopping,
-                        uint8_t timeDomainOCC,
-                        uint8_t nr_bit);
 
-void nr_decode_pucch0( int32_t **rxdataF,
-			pucch_GroupHopping_t PUCCH_GroupHopping,
-                        uint32_t n_id,                                       //PHY_VARS_gNB *gNB, generally rxdataf is in gNB->common_vars
-                        uint64_t *payload,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t m0,                                          // should come from resource set
-                        uint8_t nrofSymbols,				    // should come from resource set	
-                        uint8_t startingSymbolIndex,			    // should come from resource set
-                        uint16_t startingPRB,				   // should come from resource set
-			uint8_t nr_bit);
-
-void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
-                                uint32_t n_id,
-                                uint8_t n_hop,
-                                int nr_tti_tx,
-                                uint8_t *u,
-                                uint8_t *v);
-double nr_cyclic_shift_hopping(uint32_t n_id,
-                               uint8_t m0,
-                               uint8_t mcs,
-                               uint8_t lnormal,
-                               uint8_t lprime,
-                               int nr_tti_tx);
 void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
-                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t m0,
-			uint8_t mcs,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint16_t startingPRB);
+                        int nr_slot_tx,
+                        fapi_nr_ul_config_pucch_pdu *pucch_pdu);
+
 void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
-                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                        uint64_t payload,
                         int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t m0,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint16_t startingPRB,
-                        uint16_t startingPRB_intraSlotHopping,
-                        uint8_t timeDomainOCC,
-                        uint8_t nr_bit);
+                        int nr_slot_tx,
+                        fapi_nr_ul_config_pucch_pdu *pucch_pdu);
+
 void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
-                        uint16_t crnti,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
-                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                        uint64_t payload,
                         int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint8_t nrofPRB,
-                        uint16_t startingPRB,
-                        uint8_t nr_bit);
+                        int nr_slot_tx,
+                        fapi_nr_ul_config_pucch_pdu *pucch_pdu);
+
 void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
-                          uint16_t crnti,
                           int32_t **txdataF,
                           NR_DL_FRAME_PARMS *frame_parms,
-                          pucch_format_nr_t fmt,
-                          PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                          uint64_t payload,
                           int16_t amp,
-                          int nr_tti_tx,
-                          uint8_t nrofSymbols,
-                          uint8_t startingSymbolIndex,
-                          uint8_t nrofPRB,
-                          uint16_t startingPRB,
-                          uint16_t startingPRB_intraSlotHopping,
-                          uint8_t nr_bit,
-                          uint8_t occ_length_format4,
-                          uint8_t occ_index_format4);
+                          int nr_slot_tx,
+                          fapi_nr_ul_config_pucch_pdu *pucch_pdu);
 
 // tables for mcs values for different payloads 
- static const uint8_t table1_mcs[]={0,3,6,9};
- static const uint8_t table2_mcs[]={0,1,3,4,6,7,9,10};
+ static const uint8_t table1_mcs[]={0,6,3,9};
+ static const uint8_t table2_mcs[]={0,3,9,6,1,4,10,7};
 
   /*
    * The following tables implement TS 38.211 Subclause 5.2.2.2 Base sequences of length less than 36 (rows->u {0,1,..,29} / columns->n {0,1,...,M_ZC-1)
@@ -454,3 +389,4 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
                                          73, 79, 83, 89, 97, 101,103,107,109,113,
                                          127,131,137,139,149,151,157,163,167,173,
                                          179,181,191,193,197,199};
+#endif

@@ -28,6 +28,14 @@
  * \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr
  */
 
+/*! \file asn1_msg.c
+ * \brief added primitives to build the asn1 messages for FeMBMS 
+ * \author Javier Morgade
+ * \date 2019-2020
+ * \version 1.0
+ * \email: javier.morgade@ieee.org
+ */
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h> /* for atoi(3) */
@@ -91,6 +99,7 @@
 
 
 #include "intertask_interface.h"
+#include "NR_FreqBandList.h"
 
 
 #include "common/ran_context.h"
@@ -185,7 +194,8 @@ uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId) {
 uint8_t do_MIB_FeMBMS(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t additionalNonMBSFN, uint32_t frame) {
   asn_enc_rval_t enc_rval;
   LTE_BCCH_BCH_Message_MBMS_t *mib_fembms=&carrier->mib_fembms;
-  uint8_t sfn = (uint8_t)((frame>>2)&0xff);
+  frame=198;
+  uint8_t sfn = (uint8_t)((frame>>4)&0xff);
   uint16_t *spare = calloc(1,sizeof(uint16_t));
 
   if( spare == NULL  ) abort();
@@ -223,15 +233,16 @@ uint8_t do_MIB_FeMBMS(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_
         (uint32_t)mib_fembms->message.dl_Bandwidth_MBMS_r14,
         (uint32_t)additionalNonMBSFN,
         (uint32_t)sfn);
+  sfn = sfn<<2;
   mib_fembms->message.systemFrameNumber_r14.buf = &sfn;
   mib_fembms->message.systemFrameNumber_r14.size = 1;
-  mib_fembms->message.systemFrameNumber_r14.bits_unused=0;
+  mib_fembms->message.systemFrameNumber_r14.bits_unused=2;
   mib_fembms->message.spare.buf = (uint8_t *)spare;
   mib_fembms->message.spare.size = 2;
-  mib_fembms->message.spare.bits_unused = 6;  // This makes a spare of 10 bits
+  mib_fembms->message.spare.bits_unused = 3;  // This makes a spare of 10 bits
   //TODO additionalNonBMSFNSubframes-r14  INTEGER (0..3) ?
   //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    //xer_fprint(stdout, &asn_DEF_LTE_BCCH_BCH_Message_MBMS, (void *)mib_fembms);
+    xer_fprint(stdout, &asn_DEF_LTE_BCCH_BCH_Message_MBMS, (void *)mib_fembms);
   //}
   enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_BCH_Message_MBMS,
                                    NULL,
@@ -387,7 +398,11 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
   //  SystemInformation_t systemInformation;
   int num_plmn = configuration->num_plmn;
 
-  LTE_PLMN_IdentityInfo_t *PLMN_identity_info;
+  //LTE_PLMN_IdentityInfo_t *PLMN_identity_info;
+  LTE_PLMN_IdentityInfo_t * PLMN_identity_info = &carrier->PLMN_identity_info_MBMS[0];
+  //LTE_MCC_MNC_Digit_t dummy_mcc[num_plmn][3], dummy_mnc[num_plmn][3];
+  //LTE_MCC_MNC_Digit_t *dummy_mcc = &carrier->dummy_mcc_MBMS[0][0];
+  //LTE_MCC_MNC_Digit_t *dummy_mnc = &carrier->dummy_mnc_MBMS[0][0];
   LTE_MCC_MNC_Digit_t *dummy_mcc_0;
   LTE_MCC_MNC_Digit_t *dummy_mcc_1;
   LTE_MCC_MNC_Digit_t *dummy_mcc_2;
@@ -395,7 +410,9 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
   LTE_MCC_MNC_Digit_t *dummy_mnc_1;
   LTE_MCC_MNC_Digit_t *dummy_mnc_2;
   asn_enc_rval_t enc_rval;
-  LTE_SchedulingInfo_MBMS_r14_t *schedulingInfo;
+  //LTE_SchedulingInfo_MBMS_r14_t *schedulingInfo;
+  //LTE_SchedulingInfo_MBMS_r14_t schedulingInfo;
+  LTE_SchedulingInfo_MBMS_r14_t *schedulingInfo = &carrier->schedulingInfo_MBMS;
   LTE_SIB_Type_t *sib_type;
   uint8_t *buffer                      = carrier->SIB1_MBMS;
   LTE_BCCH_DL_SCH_Message_MBMS_t *bcch_message  = &carrier->siblock1_MBMS;
@@ -408,6 +425,8 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
   //  memcpy(&bcch_message.message.choice.c1.choice.systemInformationBlockType1,sib1,sizeof(SystemInformationBlockType1_t));
   *sib1_MBMS = &bcch_message->message.choice.c1.choice.systemInformationBlockType1_MBMS_r14;
   PLMN_identity_info = CALLOC(1, sizeof(LTE_PLMN_IdentityInfo_t) * num_plmn);
+  //memset(&schedulingInfo,0,sizeof(LTE_SchedulingInfo_MBMS_r14_t));
+  memset(schedulingInfo,0,sizeof(LTE_SchedulingInfo_MBMS_r14_t));
 
   if (PLMN_identity_info == NULL)
     exit(1);
@@ -528,7 +547,7 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
     MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.size= 1;
     MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=0x20<<2;  // FDD: SF1
     MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused= 2;
-    MBSFN_Area1->mcch_Config_r9.signallingMCS_r9= LTE_MBSFN_AreaInfo_r9__mcch_Config_r9__signallingMCS_r9_n7;
+    MBSFN_Area1->mcch_Config_r9.signallingMCS_r9= LTE_MBSFN_AreaInfo_r9__mcch_Config_r9__signallingMCS_r9_n2;
     (MBSFN_Area1)->ext1 = CALLOC (1, sizeof(*(MBSFN_Area1)->ext1));
     memset((MBSFN_Area1)->ext1,0,sizeof(*(MBSFN_Area1)->ext1));
     MBSFN_Area1->ext1->subcarrierSpacingMBMS_r14 = CALLOC(1,sizeof(*( MBSFN_Area1->ext1)->subcarrierSpacingMBMS_r14));
@@ -541,18 +560,18 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
   if(1) {
     (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14 =                             CALLOC(1,sizeof(struct LTE_NonMBSFN_SubframeConfig_r14));
     memset((*sib1_MBMS)->nonMBSFN_SubframeConfig_r14,0,sizeof(struct LTE_NonMBSFN_SubframeConfig_r14));
-    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->radioFrameAllocationPeriod_r14 = LTE_NonMBSFN_SubframeConfig_r14__radioFrameAllocationPeriod_r14_rf8;
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->radioFrameAllocationPeriod_r14 = LTE_NonMBSFN_SubframeConfig_r14__radioFrameAllocationPeriod_r14_rf4;
     (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->radioFrameAllocationOffset_r14 = 0;
     (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf = MALLOC(2);
     //100000001 byte(0)=10000000 byte(1)=xxxxxxx1
-    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf[0] = 0x80<<0;
-    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf[1] = 0x1<<7;
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf[0] = 0x8<<0;
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf[1] = 0;
     (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.size = 2;
     (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.bits_unused = 7;
   }
 
   //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    //xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS, (void *)bcch_message);
+    xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS, (void *)bcch_message);
   //}
   enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS,
                                    NULL,
@@ -2310,7 +2329,7 @@ uint8_t do_SidelinkUEInformation(uint8_t Mod_id, uint8_t *buffer,  LTE_SL_Destin
   return((enc_rval.encoded+7)/8);
 }
 
-uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Transaction_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS) {
+uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Transaction_id, uint8_t sel_plmn_id, const int dedicatedInfoNASLength, const char *dedicatedInfoNAS) {
   asn_enc_rval_t enc_rval;
   LTE_UL_DCCH_Message_t ul_dcch_msg;
   LTE_RRCConnectionSetupComplete_t *rrcConnectionSetupComplete;
@@ -2323,7 +2342,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.present = LTE_RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8;
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension=CALLOC(1,
       sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension));
-  rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity= 1;
+  rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity= sel_plmn_id;
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME =
     NULL;//calloc(1,sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME));
   /*
@@ -2709,7 +2728,7 @@ do_RRCConnectionSetup(
   //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax,
   //SchedulingRequestConfig__setup__dsr_TransMax_n4);
   //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
-  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = LTE_SchedulingRequestConfig__setup__dsr_TransMax_n4;
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = LTE_SchedulingRequestConfig__setup__dsr_TransMax_n64;
   rrcConnectionSetup->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionSetup->criticalExtensions.present = LTE_RRCConnectionSetup__criticalExtensions_PR_c1;
   rrcConnectionSetup->criticalExtensions.choice.c1.present = LTE_RRCConnectionSetup__criticalExtensions__c1_PR_rrcConnectionSetup_r8 ;
@@ -3181,9 +3200,13 @@ uint8_t do_SecurityModeCommand(
 //------------------------------------------------------------------------------
 uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                 uint8_t               *const buffer,
-                                const uint8_t                Transaction_id)
+                                const uint8_t                Transaction_id,
+                                int16_t              eutra_band,
+                                uint32_t              nr_band)
 //------------------------------------------------------------------------------
 {
+  NR_FreqBandList_t *nsa_band_list;
+  NR_FreqBandInformation_t *nsa_band;
   LTE_DL_DCCH_Message_t dl_dcch_msg;
   LTE_RAT_Type_t rat=LTE_RAT_Type_eutra;
   asn_enc_rval_t enc_rval;
@@ -3197,10 +3220,78 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count=0;
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list,
                    &rat);
+  LTE_UECapabilityEnquiry_r8_IEs_t *r8 = &dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8;
+  LTE_UECapabilityEnquiry_v8a0_IEs_t r8_a0;
+  LTE_UECapabilityEnquiry_v1180_IEs_t r11_80;
+  LTE_UECapabilityEnquiry_v1310_IEs_t r13_10;
+  LTE_UECapabilityEnquiry_v1430_IEs_t r14_30;
+  LTE_UECapabilityEnquiry_v1510_IEs_t r15_10;
+  OCTET_STRING_t req_freq;
 
-  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    xer_fprint(stdout, &asn_DEF_LTE_DL_DCCH_Message, (void *)&dl_dcch_msg);
+  if (nr_band>0) {
+
+    /* request NR configuration */
+
+    memset(&r8_a0, 0, sizeof(r8_a0));
+    memset(&r11_80, 0, sizeof(r11_80));
+    memset(&r13_10, 0, sizeof(r13_10));
+    memset(&r14_30, 0, sizeof(r14_30));
+    memset(&r15_10, 0, sizeof(r15_10));
+
+    r8->nonCriticalExtension = &r8_a0;
+    r8_a0.nonCriticalExtension = &r11_80;
+    r11_80.nonCriticalExtension = &r13_10;
+    r13_10.nonCriticalExtension = &r14_30;
+    r14_30.nonCriticalExtension = &r15_10;
+
+    /* TODO: no hardcoded values here */
+
+    nsa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
+
+    nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+    nsa_band->present = NR_FreqBandInformation_PR_bandInformationEUTRA;
+    nsa_band->choice.bandInformationEUTRA = (NR_FreqBandInformationEUTRA_t *) calloc(1, sizeof(NR_FreqBandInformationEUTRA_t));
+    nsa_band->choice.bandInformationEUTRA->bandEUTRA = eutra_band;
+    ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
+
+    nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+    nsa_band->present = NR_FreqBandInformation_PR_bandInformationNR;
+    nsa_band->choice.bandInformationNR = (NR_FreqBandInformationNR_t *) calloc(1, sizeof(NR_FreqBandInformationNR_t));
+  //if(nr_band > 0)
+    nsa_band->choice.bandInformationNR->bandNR = nr_band;
+  //else
+  //  nsa_band->choice.bandInformationNR->bandNR = 78;
+    ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
+
+  //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
+    unsigned char req_freq_buf[1024];
+    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_FreqBandList,
+                                NULL,
+                                (void *)nsa_band_list,
+                                req_freq_buf,
+                                1024);
+
+    xer_fprint(stdout, &asn_DEF_NR_FreqBandList, (void *)nsa_band_list);
+
+
+
+  //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x08, 0x18 };  // bands 7 & nr260
+
+  //unsigned char req_freq_buf[13] = { 0x00, 0xc0, 0x18, 0x01, 0x01, 0x30, 0x4b, 0x04, 0x0e, 0x08, 0x24, 0x04, 0xd0 };
+//  unsigned char req_freq_buf[21] = {
+//0x01, 0x60, 0x18, 0x05, 0x80, 0xc0, 0x04, 0x04, 0xc1, 0x2c, 0x10, 0x08, 0x20, 0x30, 0x40, 0xe0, 0x82, 0x40, 0x28, 0x80, 0x9a
+//  };
+
+    req_freq.buf = req_freq_buf;
+    req_freq.size = (enc_rval.encoded+7)/8;
+//  req_freq.size = 21;
+
+    r15_10.requestedFreqBandsNR_MRDC_r15 = &req_freq;
+    // Add request for eutra-nr 
   }
+//  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_LTE_DL_DCCH_Message, (void *)&dl_dcch_msg);
+//  }
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_DCCH_Message,
                                    NULL,
@@ -3233,9 +3324,13 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 //------------------------------------------------------------------------------
 uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    uint8_t               *const buffer,
-                                   const uint8_t                Transaction_id)
+                                   const uint8_t                Transaction_id,
+                                   int16_t              eutra_band,
+                                   uint32_t             nr_band)
 //------------------------------------------------------------------------------
 {
+  NR_FreqBandList_t *nsa_band_list;
+  NR_FreqBandInformation_t *nsa_band;
   LTE_DL_DCCH_Message_t dl_dcch_msg;
   LTE_RAT_Type_t rat_nr=LTE_RAT_Type_nr;
   LTE_RAT_Type_t rat_eutra_nr=LTE_RAT_Type_eutra_nr;
@@ -3275,18 +3370,42 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
   /* TODO: no hardcoded values here */
 
+  nsa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
+
+  nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+  nsa_band->present = NR_FreqBandInformation_PR_bandInformationEUTRA;
+  nsa_band->choice.bandInformationEUTRA = (NR_FreqBandInformationEUTRA_t *) calloc(1, sizeof(NR_FreqBandInformationEUTRA_t));
+  nsa_band->choice.bandInformationEUTRA->bandEUTRA = eutra_band;
+  ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
+
+  nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+  nsa_band->present = NR_FreqBandInformation_PR_bandInformationNR;
+  nsa_band->choice.bandInformationNR = (NR_FreqBandInformationNR_t *) calloc(1, sizeof(NR_FreqBandInformationNR_t));
+  if(nr_band > 0)
+    nsa_band->choice.bandInformationNR->bandNR = nr_band;
+  else
+    nsa_band->choice.bandInformationNR->bandNR = 78;
+  ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
+
   OCTET_STRING_t req_freq;
   //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
+  unsigned char req_freq_buf[100];
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_FreqBandList,
+      NULL,
+      (void *)nsa_band_list,
+      req_freq_buf,
+      1024);
+
   //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x08, 0x18 };  // bands 7 & nr260
 
   //unsigned char req_freq_buf[13] = { 0x00, 0xc0, 0x18, 0x01, 0x01, 0x30, 0x4b, 0x04, 0x0e, 0x08, 0x24, 0x04, 0xd0 };
-  unsigned char req_freq_buf[21] = {
-0x01, 0x60, 0x18, 0x05, 0x80, 0xc0, 0x04, 0x04, 0xc1, 0x2c, 0x10, 0x08, 0x20, 0x30, 0x40, 0xe0, 0x82, 0x40, 0x28, 0x80, 0x9a
-  };
+//  unsigned char req_freq_buf[21] = {
+//0x01, 0x60, 0x18, 0x05, 0x80, 0xc0, 0x04, 0x04, 0xc1, 0x2c, 0x10, 0x08, 0x20, 0x30, 0x40, 0xe0, 0x82, 0x40, 0x28, 0x80, 0x9a
+//  };
 
   req_freq.buf = req_freq_buf;
-  req_freq.size = 5;
-  req_freq.size = 21;
+  req_freq.size = (enc_rval.encoded+7)/8;
+//  req_freq.size = 21;
 
   r15_10.requestedFreqBandsNR_MRDC_r15 = &req_freq;
 

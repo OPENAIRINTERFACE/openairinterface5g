@@ -31,6 +31,7 @@
  */
 
 #include "nr_dci.h"
+#include "common/utils/nr/nr_common.h"
 
 //#define DEBUG_FILL_DCI
 
@@ -118,11 +119,11 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint16_t n_shift, uint8_t m) {
 
 */
 
-void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m) {
+void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m,  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15) {
 
   nr_cce_t* cce;
   nr_reg_t* reg;
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu_rel15 = &gNB->pdcch_pdu->pdcch_pdu_rel15;
+
   int bsize = pdcch_pdu_rel15->RegBundleSize;
   int R = pdcch_pdu_rel15->InterleaverSize;
   int n_shift = pdcch_pdu_rel15->ShiftIndex;
@@ -136,11 +137,13 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m) {
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
 
 
-  int N_reg = n_rb * pdcch_pdu_rel15->DurationSymbols;
+  int N_reg = n_rb;
   int C=-1;
 
+  AssertFatal(N_reg > 0,"N_reg cannot be 0\n");
+
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
-    int  L = pdcch_pdu_rel15->AggregationLevel[d];
+    int  L = pdcch_pdu_rel15->dci_pdu[d].AggregationLevel;
 
     if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1)
       AssertFatal(L>=4, "Invalid aggregation level for SIB1 configured PDCCH %d\n", L);
@@ -151,10 +154,10 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m) {
       C = N_reg/(bsize*R);
     }
     
-    LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", m, bsize, R, pdcch_pdu_rel15->CceIndex[d]);
+    if (pdcch_pdu_rel15->dci_pdu[d].RNTI != 0xFFFF) LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", m, bsize, R, pdcch_pdu_rel15->dci_pdu[d].CceIndex);
     for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
       cce = &gNB->cce_list[d][cce_idx];
-      cce->cce_idx = pdcch_pdu_rel15->CceIndex[d] + cce_idx;
+      cce->cce_idx = pdcch_pdu_rel15->dci_pdu[d].CceIndex + cce_idx;
       LOG_D(PHY, "cce_idx %d\n", cce->cce_idx);
       
       if (pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
@@ -172,8 +175,8 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m) {
 	  for (uint8_t reg_idx=0; reg_idx<bsize; reg_idx++) {
 	    reg = &cce->reg_list[reg_idx];
 	    reg->reg_idx = bsize*idx + reg_idx;
-	    reg->start_sc_idx = (reg->reg_idx/pdcch_pdu_rel15->DurationSymbols) * NR_NB_SC_PER_RB;
-	    reg->symb_idx = reg->reg_idx % pdcch_pdu_rel15->DurationSymbols;
+	    reg->start_sc_idx = reg->reg_idx * NR_NB_SC_PER_RB;
+	    reg->symb_idx = 0;
 	    LOG_D(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
 	  }
 	}
@@ -183,8 +186,8 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m) {
 	for (uint8_t reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
 	  reg = &cce->reg_list[reg_idx];
 	  reg->reg_idx = cce->cce_idx*NR_NB_REG_PER_CCE + reg_idx;
-	  reg->start_sc_idx = (reg->reg_idx/pdcch_pdu_rel15->DurationSymbols) * NR_NB_SC_PER_RB;
-	  reg->symb_idx = reg->reg_idx % pdcch_pdu_rel15->DurationSymbols;
+	  reg->start_sc_idx = reg->reg_idx * NR_NB_SC_PER_RB;
+	  reg->symb_idx = 0;
 	  LOG_D(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
 	}
 	
@@ -200,63 +203,3 @@ void nr_fill_cce_list(PHY_VARS_gNB *gNB, uint8_t m) {
     ret |= ((field>>i)&1)<<(size-i-1);
   return ret;
 }*/
-
-void nr_fill_dci(PHY_VARS_gNB *gNB,
-                 int frame,
-                 int slot) {
-
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &gNB->pdcch_pdu->pdcch_pdu_rel15;
-  NR_gNB_DLSCH_t *dlsch; 
-
-  for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
-
-    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->Payload[i];
-
-
-    int dlsch_id = find_nr_dlsch(pdcch_pdu_rel15->RNTI[i],gNB,SEARCH_EXIST_OR_FREE);
-    if( (dlsch_id<0) || (dlsch_id>=NUMBER_OF_NR_DLSCH_MAX) ){
-      LOG_E(PHY,"illegal dlsch_id found!!! rnti %04x dlsch_id %d\n",(unsigned int)pdcch_pdu_rel15->RNTI[i],dlsch_id);
-      return;
-    }
-    
-    dlsch = gNB->dlsch[dlsch_id][0];
-    int harq_pid = 0;//extract_harq_pid(i,pdu_rel15);
-
-    dlsch->slot_tx[slot]             = 1;
-    dlsch->harq_ids[frame%2][slot]   = harq_pid;
-    AssertFatal(harq_pid < 8 && harq_pid >= 0,
-		"illegal harq_pid %d\n",harq_pid);
-    
-    dlsch->harq_mask                |= (1<<harq_pid);
-    dlsch->rnti                      = pdcch_pdu_rel15->RNTI[i];
-    
-    nr_fill_cce_list(gNB,0);  
-    /*
-    LOG_D(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
-    LOG_D(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
-    */
-
-  }
-
-}
-void nr_fill_ul_dci(PHY_VARS_gNB *gNB,
-		    int frame,
-		    int slot) {
-
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &gNB->ul_dci_pdu->pdcch_pdu.pdcch_pdu_rel15;
-
-
-  for (int i=0;i<pdcch_pdu_rel15->numDlDci;i++) {
-
-    //uint64_t *dci_pdu = (uint64_t*)pdcch_pdu_rel15->Payload[i];
-
-    // if there's no DL DCI then generate CCE list
-    if (gNB->pdcch_pdu) nr_fill_cce_list(gNB,0);  
-    /*
-    LOG_D(PHY, "DCI PDU: [0]->0x%lx \t [1]->0x%lx \n",dci_pdu[0], dci_pdu[1]);
-    LOG_D(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
-    */
-
-  }
-
-}

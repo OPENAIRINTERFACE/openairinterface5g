@@ -35,12 +35,13 @@
 #include "phy_scope_interface.h"
 
 #define SOFTSCOPE_ENDFUNC_IDX 0
+
 static  loader_shlibfunc_t scope_fdesc[]= {{"end_forms",NULL}};
 
-int load_softscope(char *exectype) {
+int load_softscope(char *exectype, void *initarg) {
   char libname[64];
   sprintf(libname,"%.10sscope",exectype);
-  return load_module_shlib(libname,scope_fdesc,1,NULL);
+  return load_module_shlib(libname,scope_fdesc,1,initarg);
 }
 
 int end_forms(void) {

@@ -29,6 +29,9 @@
 #include <stdio.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <dlfcn.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include "flexran_agent_common.h"
 #include "flexran_agent_common_internal.h"
@@ -39,6 +42,7 @@
 #include "flexran_agent_mac.h"
 #include "flexran_agent_rrc.h"
 #include "flexran_agent_s1ap.h"
+#include "flexran_agent_app.h"
 //#include "PHY/extern.h"
 #include "common/utils/LOG/log.h"
 #include "flexran_agent_mac_internal.h"
@@ -48,6 +52,9 @@
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rrc_eNB_UE_context.h"
+
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
 
 /*
  * message primitives
@@ -306,6 +313,7 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
     if (reply->cell_config[i]->mbsfn_subframe_config_sfalloc)
       free(reply->cell_config[i]->mbsfn_subframe_config_sfalloc);
 
+    /* si_config is shared between MAC and RRC, free here */
     if (reply->cell_config[i]->si_config) {
       for(int j = 0; j < reply->cell_config[i]->si_config->n_si_message; j++) {
         free(reply->cell_config[i]->si_config->si_message[j]);
@@ -316,26 +324,7 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
     }
 
     if (reply->cell_config[i]->slice_config) {
-      for (int j = 0; j < reply->cell_config[i]->slice_config->n_dl; ++j) {
-        if (reply->cell_config[i]->slice_config->dl[j]->n_sorting > 0)
-          free(reply->cell_config[i]->slice_config->dl[j]->sorting);
-
-        free(reply->cell_config[i]->slice_config->dl[j]->scheduler_name);
-        free(reply->cell_config[i]->slice_config->dl[j]);
-      }
-
-      free(reply->cell_config[i]->slice_config->dl);
-
-      for (int j = 0; j < reply->cell_config[i]->slice_config->n_ul; ++j) {
-        if (reply->cell_config[i]->slice_config->ul[j]->n_sorting > 0)
-          free(reply->cell_config[i]->slice_config->ul[j]->sorting);
-
-        free(reply->cell_config[i]->slice_config->ul[j]->scheduler_name);
-        free(reply->cell_config[i]->slice_config->ul[j]);
-      }
-
-      free(reply->cell_config[i]->slice_config->ul);
-      free(reply->cell_config[i]->slice_config);
+      flexran_agent_destroy_mac_slice_config(reply->cell_config[i]);
     }
 
     free(reply->cell_config[i]);
@@ -343,6 +332,12 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
   
   if (reply->s1ap)
     flexran_agent_free_s1ap_cell_config(&reply->s1ap);
+
+  if (reply->loadedapps)
+    free(reply->loadedapps);
+
+  if (reply->loadedmacobjects)
+    free(reply->loadedmacobjects);
 
   free(reply->cell_config);
   free(reply);
@@ -442,26 +437,65 @@ long timer_end(struct timespec start_time) {
 int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexControlDelegation *control_delegation_msg = input->control_delegation_msg;
-  //  struct timespec vartime = timer_start();
-  //Write the payload lib into a file in the cache and load the lib
-  char lib_name[120];
-  char target[512];
-  snprintf(lib_name, sizeof(lib_name), "/%s.so", control_delegation_msg->name);
-  strcpy(target, RC.flexran[mod_id]->cache_name);
-  strcat(target, lib_name);
-  FILE *f;
-  f = fopen(target, "wb");
+  *msg = NULL;
 
-  if (f) {
-    fwrite(control_delegation_msg->payload.data, control_delegation_msg->payload.len, 1, f);
-    fclose(f);
-  } else {
-    LOG_W(FLEXRAN_AGENT, "[%d] can not write control delegation data to %s\n",
-          mod_id, target);
+  char target[512];
+  int len = snprintf(target, sizeof(target), "%s/libflex.%s.so",
+                     RC.flexran[mod_id]->cache_name,
+                     control_delegation_msg->name);
+  if (len >= sizeof(target)) {
+    LOG_E(FLEXRAN_AGENT, "target has been truncated, cannot write file name\n");
+    return 0;
   }
 
-  //  long time_elapsed_nanos = timer_end(vartime);
-  *msg = NULL;
+  if (control_delegation_msg->has_payload) {
+    /* use low-level API: check whether exists while creating so we can abort if
+     * it exists to not overwrite anything */
+    int fd = open(target, O_CREAT | O_WRONLY | O_EXCL, S_IRUSR | S_IWUSR);
+    if (fd >= 0) {
+      ssize_t l = write(fd,
+                        control_delegation_msg->payload.data,
+                        control_delegation_msg->payload.len);
+      close(fd);
+      if (l < control_delegation_msg->payload.len) {
+        LOG_E(FLEXRAN_AGENT,
+              "could not write complete control delegation to %s: only %ld out of "
+              "%ld bytes\n",
+              target,
+              l,
+              control_delegation_msg->payload.len);
+        return 0;
+      } else if (l < 0) {
+        LOG_E(FLEXRAN_AGENT, "can not write control delegation data to %s: %s\n",
+              target, strerror(errno));
+        return 0;
+      }
+      LOG_I(FLEXRAN_AGENT, "wrote shared object %s\n", target);
+    } else {
+      if (errno == EEXIST) {
+        LOG_W(FLEXRAN_AGENT, "file %s already exists, remove it first\n", target);
+      } else {
+        LOG_E(FLEXRAN_AGENT, "can not write control delegation data to %s: %s\n",
+              target, strerror(errno));
+      }
+      return 0;
+    }
+  } else {
+    LOG_W(FLEXRAN_AGENT, "remove file %s\n", target);
+    int rc = remove(target);
+    if (rc < 0)
+      LOG_E(FLEXRAN_AGENT, "cannot remove file %s: %s\n", target, strerror(errno));
+  }
+
+  if (control_delegation_msg->has_delegation_type
+      && control_delegation_msg->delegation_type == PROTOCOL__FLEX_CONTROL_DELEGATION_TYPE__FLCDT_MAC_DL_UE_SCHEDULER
+      && control_delegation_msg->header
+      && control_delegation_msg->header->has_xid) {
+    /* Inform the MAC subsystem that a control delegation for it has arrived */
+    /* TODO this should be triggered by an agent reconfiguration? */
+    flexran_agent_mac_inform_delegation(mod_id, control_delegation_msg);
+  }
+
   return 0;
 }
 
@@ -470,10 +504,44 @@ int flexran_agent_destroy_control_delegation(Protocol__FlexranMessage *msg) {
   return 0;
 }
 
+int flexran_agent_map_name_to_delegated_object(mid_t mod_id, const char *name,
+    char *path, int maxlen) {
+  int len = snprintf(path, maxlen, "%s/libflex.%s.so",
+                     RC.flexran[mod_id]->cache_name, name);
+  if (len >= maxlen) {
+    LOG_E(FLEXRAN_AGENT, "path has been truncated, cannot read object\n");
+    return -1;
+  }
+
+  struct stat buf;
+  int status = stat(path, &buf);
+  if (status < 0) {
+    LOG_E(FLEXRAN_AGENT, "Could not stat object %s: %s\n", path, strerror(errno));
+    return -1;
+  }
+  return 0;
+}
+
 int flexran_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexAgentReconfiguration *agent_reconfiguration_msg = input->agent_reconfiguration_msg;
-  apply_reconfiguration_policy(mod_id, agent_reconfiguration_msg->policy, strlen(agent_reconfiguration_msg->policy));
+  if (agent_reconfiguration_msg->policy) {
+    /* for compatibility: call old YAML configuration code, although we don't
+     * use it anymore */
+    apply_reconfiguration_policy(mod_id,
+                                 agent_reconfiguration_msg->policy,
+                                 strlen(agent_reconfiguration_msg->policy));
+  }
+  for (int i = 0; i < agent_reconfiguration_msg->n_systems; ++i) {
+    const Protocol__FlexAgentReconfigurationSystem *sys = agent_reconfiguration_msg->systems[i];
+    if (strcmp(sys->system, "app") == 0) {
+      flexran_agent_handle_apps(mod_id, sys->subsystems, sys->n_subsystems);
+    } else {
+      LOG_E(FLEXRAN_AGENT,
+            "unknown system name %s in flex_agent_reconfiguration message\n",
+            sys->system);
+    }
+  }
   *msg = NULL;
   return 0;
 }
@@ -483,6 +551,15 @@ int flexran_agent_destroy_agent_reconfiguration(Protocol__FlexranMessage *msg) {
   return 0;
 }
 
+int flexran_agent_destroy_control_delegation_request(Protocol__FlexranMessage *msg) {
+  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_CONTROL_DEL_REQ_MSG)
+    return -1;
+
+  free(msg->control_del_req_msg->header);
+  free(msg->control_del_req_msg->name);
+  free(msg);
+  return 0;
+}
 
 int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   xid_t xid;
@@ -573,18 +650,6 @@ error:
  * UE Configuration Reply
  * ************************************
  */
-
-int sort_ue_config(const void *a, const void *b) {
-  const Protocol__FlexUeConfig *fa = a;
-  const Protocol__FlexUeConfig *fb = b;
-
-  if (fa->rnti < fb->rnti)
-    return -1;
-  else if (fa->rnti < fb->rnti)
-    return 1;
-
-  return 0;
-}
 
 int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   xid_t xid;
@@ -768,6 +833,10 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
   if (flexran_agent_get_s1ap_xface(mod_id))
     flexran_agent_fill_s1ap_cell_config(mod_id, &enb_config_reply_msg->s1ap);
 
+  flexran_agent_fill_loaded_apps(mod_id, enb_config_reply_msg);
+
+  flexran_agent_mac_fill_loaded_mac_objects(mod_id, enb_config_reply_msg);
+
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 
   if(*msg == NULL) {
@@ -893,31 +962,42 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexEnbConfigReply *enb_config = input->enb_config_reply_msg;
 
-  if (enb_config->n_cell_config == 0) {
-    LOG_W(FLEXRAN_AGENT,
-          "received enb_config_reply message does not contain a cell_config\n");
-    *msg = NULL;
-    return 0;
-  }
-
   if (enb_config->n_cell_config > 1)
     LOG_W(FLEXRAN_AGENT, "ignoring slice configs for other cell except cell 0\n");
 
-  if (flexran_agent_get_mac_xface(mod_id) && enb_config->cell_config[0]->slice_config) {
-    prepare_update_slice_config(mod_id, enb_config->cell_config[0]->slice_config);
-  } else if (enb_config->cell_config[0]->has_eutra_band
-          && enb_config->cell_config[0]->has_dl_freq
-          && enb_config->cell_config[0]->has_ul_freq
-          && enb_config->cell_config[0]->has_dl_bandwidth) {
-    initiate_soft_restart(mod_id, enb_config->cell_config[0]);
-  } else if (flexran_agent_get_rrc_xface(mod_id)
-          && enb_config->cell_config[0]->has_x2_ho_net_control) {
-    LOG_I(FLEXRAN_AGENT,
-          "setting X2 HO NetControl to %d\n",
-          enb_config->cell_config[0]->x2_ho_net_control);
-    const int rc = flexran_set_x2_ho_net_control(mod_id, enb_config->cell_config[0]->x2_ho_net_control);
-    if (rc < 0)
-      LOG_E(FLEXRAN_AGENT, "Error in configuring X2 handover controlled by network");
+  if (enb_config->n_cell_config > 0) {
+    if (flexran_agent_get_mac_xface(mod_id) && enb_config->cell_config[0]->slice_config) {
+      prepare_update_slice_config(mod_id,
+                                  &enb_config->cell_config[0]->slice_config,
+                                  1 /* request objects if necessary */);
+    }
+    if (enb_config->cell_config[0]->has_eutra_band
+        && enb_config->cell_config[0]->has_dl_freq
+        && enb_config->cell_config[0]->has_ul_freq
+        && enb_config->cell_config[0]->has_dl_bandwidth) {
+      initiate_soft_restart(mod_id, enb_config->cell_config[0]);
+    }
+    if (flexran_agent_get_rrc_xface(mod_id)
+        && enb_config->cell_config[0]->has_x2_ho_net_control) {
+      LOG_I(FLEXRAN_AGENT,
+            "setting X2 HO NetControl to %d\n",
+            enb_config->cell_config[0]->x2_ho_net_control);
+      const int rc = flexran_set_x2_ho_net_control(mod_id, enb_config->cell_config[0]->x2_ho_net_control);
+      if (rc < 0)
+        LOG_E(FLEXRAN_AGENT, "Error in configuring X2 handover controlled by network");
+    }
+    if (flexran_agent_get_rrc_xface(mod_id) && enb_config->cell_config[0]->n_plmn_id > 0) {
+      flexran_agent_handle_plmn_update(mod_id,
+                                       0,
+                                       enb_config->cell_config[0]->n_plmn_id,
+                                       enb_config->cell_config[0]->plmn_id);
+    }
+  }
+
+  if (flexran_agent_get_s1ap_xface(mod_id) && enb_config->s1ap) {
+    flexran_agent_handle_mme_update(mod_id,
+                                    enb_config->s1ap->n_mme,
+                                    enb_config->s1ap->mme);
   }
 
   *msg = NULL;
@@ -930,7 +1010,11 @@ int flexran_agent_handle_ue_config_reply(mid_t mod_id, const void *params, Proto
   Protocol__FlexUeConfigReply *ue_config_reply = input->ue_config_reply_msg;
 
   for (i = 0; flexran_agent_get_mac_xface(mod_id) && i < ue_config_reply->n_ue_config; i++)
-    prepare_ue_slice_assoc_update(mod_id, ue_config_reply->ue_config[i]);
+    prepare_ue_slice_assoc_update(mod_id, &ue_config_reply->ue_config[i]);
+  /* prepare_ue_slice_assoc_update takes ownership of the individual
+   * FlexUeConfig messages. Therefore, mark zero messages to not accidentally
+   * free them twice */
+  ue_config_reply->n_ue_config = 0;
 
   *msg = NULL;
   return 0;

@@ -30,6 +30,10 @@
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "common/config/config_load_configmodule.h"
 #include "common/config/config_userapi.h"
+#include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
+#include "openair1/PHY/defs_gNB.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h"
+#include "openair1/PHY/LTE_TRANSPORT/transport_common.h"
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr,
@@ -50,6 +54,7 @@ extern nfapi_tx_request_pdu_t* tx_request_pdu[1023][10][10];
 
 extern uint16_t sf_ahead;
 
+static eth_params_t         stub_eth_params;
 void Msg1_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 void Msg3_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 
@@ -63,8 +68,6 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
                                int index) {
   nfapi_rx_indication_pdu_t *pdu;
   int timing_advance_update;
-
-  pthread_mutex_lock(&fill_ul_mutex.rx_mutex);
 
   UL_INFO->rx_ind.sfn_sf = frame << 4 | subframe;
   UL_INFO->rx_ind.rx_indication_body.tl.tag = NFAPI_RX_INDICATION_BODY_TAG;
@@ -101,7 +104,6 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,
 
   UL_INFO->rx_ind.rx_indication_body.number_of_pdus++;
   UL_INFO->rx_ind.sfn_sf = frame << 4 | subframe;
-  pthread_mutex_unlock(&fill_ul_mutex.rx_mutex);
 }
 
 void fill_sr_indication_UE_MAC(int Mod_id,
@@ -109,8 +111,6 @@ void fill_sr_indication_UE_MAC(int Mod_id,
                                int subframe,
                                UL_IND_t *UL_INFO,
                                uint16_t rnti) {
-  pthread_mutex_lock(&fill_ul_mutex.sr_mutex);
-
   nfapi_sr_indication_t *sr_ind = &UL_INFO->sr_ind;
   nfapi_sr_indication_body_t *sr_ind_body = &sr_ind->sr_indication_body;
   nfapi_sr_indication_pdu_t *pdu = &sr_ind_body->sr_pdu_list[sr_ind_body->number_of_srs];
@@ -139,7 +139,6 @@ void fill_sr_indication_UE_MAC(int Mod_id,
 
   // UL_INFO->rx_ind.rx_indication_body.number_of_pdus++;
   sr_ind_body->number_of_srs++;
-  pthread_mutex_unlock(&fill_ul_mutex.sr_mutex);
 }
 
 void fill_crc_indication_UE_MAC(int Mod_id,
@@ -149,8 +148,6 @@ void fill_crc_indication_UE_MAC(int Mod_id,
                                 uint8_t crc_flag,
                                 int index,
                                 uint16_t rnti) {
-  pthread_mutex_lock(&fill_ul_mutex.crc_mutex);
-
   nfapi_crc_indication_pdu_t *pdu =
       &UL_INFO->crc_ind.crc_indication_body
            .crc_pdu_list[UL_INFO->crc_ind.crc_indication_body.number_of_crcs];
@@ -174,8 +171,6 @@ void fill_crc_indication_UE_MAC(int Mod_id,
         __FUNCTION__,
         pdu->rx_ue_information.rnti,
         UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
-
-  pthread_mutex_unlock(&fill_ul_mutex.crc_mutex);
 }
 
 void fill_rach_indication_UE_MAC(int Mod_id,
@@ -184,10 +179,6 @@ void fill_rach_indication_UE_MAC(int Mod_id,
                                  UL_IND_t *UL_INFO,
                                  uint8_t ra_PreambleIndex,
                                  uint16_t ra_RNTI) {
-  LOG_D(MAC, "fill_rach_indication_UE_MAC 1 \n");
-
-  pthread_mutex_lock(&fill_ul_mutex.rach_mutex);
-
   UL_INFO->rach_ind.rach_indication_body.number_of_preambles = 1;
 
   UL_INFO->rach_ind.header.message_id = NFAPI_RACH_INDICATION;
@@ -232,8 +223,6 @@ void fill_rach_indication_UE_MAC(int Mod_id,
   // should call it when we merge with that branch.
   oai_nfapi_rach_ind(&UL_INFO->rach_ind);
   free(UL_INFO->rach_ind.rach_indication_body.preamble_list);
-
-  pthread_mutex_unlock(&fill_ul_mutex.rach_mutex);
 }
 
 void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
@@ -241,7 +230,6 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
                                       uint8_t subframe,
                                       UL_IND_t *UL_INFO,
                                       uint16_t rnti) {
-  pthread_mutex_lock(&fill_ul_mutex.cqi_mutex);
   nfapi_cqi_indication_pdu_t *pdu =
       &UL_INFO->cqi_ind.cqi_indication_body
            .cqi_pdu_list[UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis];
@@ -275,7 +263,6 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id,
   raw_pdu->pdu[0] = cqi << 4;
 
   UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis++;
-  pthread_mutex_unlock(&fill_ul_mutex.cqi_mutex);
 }
 
 void fill_ulsch_harq_indication_UE_MAC(
@@ -285,8 +272,6 @@ void fill_ulsch_harq_indication_UE_MAC(
     UL_IND_t *UL_INFO,
     nfapi_ul_config_ulsch_harq_information *harq_information,
     uint16_t rnti) {
-  pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
-
   nfapi_harq_indication_pdu_t *pdu =
       &UL_INFO->harq_ind.harq_indication_body.harq_pdu_list
            [UL_INFO->harq_ind.harq_indication_body.number_of_harqs];
@@ -318,7 +303,6 @@ void fill_ulsch_harq_indication_UE_MAC(
   }
 
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs++;
-  pthread_mutex_unlock(&fill_ul_mutex.harq_mutex);
 }
 
 void fill_uci_harq_indication_UE_MAC(int Mod_id,
@@ -327,8 +311,6 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
 			      UL_IND_t *UL_INFO,
 			      nfapi_ul_config_harq_information *harq_information,
 			      uint16_t rnti) {
-  pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
-
   nfapi_harq_indication_t *ind = &UL_INFO->harq_ind;
   nfapi_harq_indication_body_t *body = &ind->harq_indication_body;
   nfapi_harq_indication_pdu_t *pdu =
@@ -410,7 +392,6 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
   LOG_D(PHY,
         "Incremented eNB->UL_INFO.harq_ind.number_of_harqs:%d\n",
         UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
-  pthread_mutex_unlock(&fill_ul_mutex.harq_mutex);
 }
 
 void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
@@ -800,7 +781,37 @@ void dl_config_req_UE_MAC_dci(int sfn,
           UE_mac_inst[ue_id].first_ULSCH_Tx = 1;
         }
       }
-    } else {
+    } 
+    //else if (dl_config_pdu_list[i].pdu_type == NFAPI_DL_CONFIG_BCH_PDU_TYPE) {
+    //  // BCH case: Last parameter is 1 if first time synchronization and zero
+    //  // otherwise.  Not sure which value to put for our case.
+    //  if (UE_mac_inst[Mod_id].UE_mode[0] == NOT_SYNCHED){
+    //    dl_phy_sync_success(Mod_id, sfn, 0, 1);
+    //    LOG_E(MAC,
+    //          "%s(): Received MIB: UE_mode: %d, sfn/sf: %d.%d\n",
+    //          __func__,
+    //          UE_mac_inst[Mod_id].UE_mode[0],
+    //          sfn,
+    //          sf);
+    //    UE_mac_inst[Mod_id].UE_mode[0] = PRACH;
+    //  } else {
+    //    dl_phy_sync_success(Mod_id, sfn, 0, 0);
+    //  }
+    //} else if (dl_config_pdu_list[i].pdu_type == NFAPI_DL_CONFIG_MCH_PDU_TYPE){
+    //    if (UE_mac_inst[Mod_id].UE_mode[0] == NOT_SYNCHED) {
+    //       /* this check is in the code before refactoring, but I don't know
+    //        * why. Leave it in here for the moment */
+    //       continue;
+    //    }
+    //    nfapi_dl_config_request_pdu_t *dl_config_pdu_tmp = &dl_config_pdu_list[i];
+    //    const int pdu_index = dl_config_pdu_tmp->dlsch_pdu.dlsch_pdu_rel8.pdu_index;
+    //    ue_send_mch_sdu(Mod_id, 0, sfn,
+    //        tx_request_pdu_list[pdu_index].segments[0].segment_data,
+    //        tx_request_pdu_list[pdu_index].segments[0].segment_length,
+    //        0,0);
+
+    //} 
+    else {
       LOG_W(MAC, "can not handle special RNTI %x\n", rnti);
     }
   }

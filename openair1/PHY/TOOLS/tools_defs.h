@@ -39,9 +39,9 @@ extern "C" {
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 
-struct complex {
-  double x;
-  double y;
+struct complexd {
+  double r;
+  double i;
 };
 
 struct complexf {
@@ -183,11 +183,6 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
 
 
 
-
-
-
-
-
 #ifdef OAIDFTS_MAIN
 typedef  void(*adftfunc_t)(int16_t *sigF,int16_t *sig,unsigned char scale_flag);  
 typedef  void(*aidftfunc_t)(int16_t *sigF,int16_t *sig,unsigned char scale_flag);     
@@ -231,9 +226,26 @@ void dft1024(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft1080(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft1152(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft1200(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1296(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1440(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1500(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft1536(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void dft1620(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1728(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1800(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1920(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft1944(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft2048(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft2160(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft2304(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft2400(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft2592(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft2700(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft2880(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft2916(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft3000(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft3072(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
+void dft3240(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft4096(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft6144(int16_t *sigF,int16_t *sig,uint8_t scale_flag);
 void dft8192(int16_t *x,int16_t *y,uint8_t scale_flag);
@@ -288,21 +300,25 @@ typedef enum DFT_size_idx {
 	DFT_108,   DFT_120,   DFT_128,  DFT_144,    DFT_180,  DFT_192,  DFT_216,   DFT_240,
 	DFT_256,   DFT_288,   DFT_300,  DFT_324,    DFT_360,  DFT_384,  DFT_432,   DFT_480,
 	DFT_512,   DFT_540,   DFT_576,  DFT_600,    DFT_648,  DFT_720,  DFT_768,   DFT_864,
-	DFT_900,   DFT_960,   DFT_972,  DFT_1024,   DFT_1080, DFT_1152, DFT_1200,  DFT_1536,
-	DFT_2048,  DFT_3072,  DFT_4096, DFT_6144,   DFT_8192, DFT_9216, DFT_12288, DFT_18432, 
-	DFT_24576, DFT_36864, DFT_49152, DFT_73728, DFT_98304,
+	DFT_900,   DFT_960,   DFT_972,  DFT_1024,   DFT_1080, DFT_1152, DFT_1200,  DFT_1296,
+	DFT_1440,  DFT_1500,  DFT_1536, DFT_1620,   DFT_1728, DFT_1800, DFT_1920,  DFT_1944,
+	DFT_2048,  DFT_2160,  DFT_2304, DFT_2400,   DFT_2592, DFT_2700, DFT_2880,  DFT_2916,
+	DFT_3000,  DFT_3072,  DFT_3240, DFT_4096,   DFT_6144, DFT_8192, DFT_9216,  DFT_12288,
+	DFT_18432, DFT_24576, DFT_36864, DFT_49152, DFT_73728, DFT_98304,
 	DFT_SIZE_IDXTABLESIZE
 } dft_size_idx_t;
 
 #ifdef OAIDFTS_MAIN
 adftfunc_t dft_ftab[]={
 	dft12,    dft24,    dft36,    dft48,    dft60,   dft72,   dft96,
-	dft108,   dft120,   dft128,   dft144,   dft180,  dft192,  dft216,   dft240,   
+	dft108,   dft120,   dft128,   dft144,   dft180,  dft192,  dft216,   dft240,
 	dft256,   dft288,   dft300,   dft324,   dft360,  dft384,  dft432,   dft480,
 	dft512,   dft540,   dft576,   dft600,   dft648,  dft720,  dft768,   dft864,
-	dft900,   dft960,   dft972,   dft1024,  dft1080, dft1152, dft1200,  dft1536,
-	dft2048,  dft3072,  dft4096,  dft6144,  dft8192, dft9216, dft12288, dft18432, 
-	dft24576, dft36864, dft49152, dft73728, dft98304
+	dft900,   dft960,   dft972,   dft1024,  dft1080, dft1152, dft1200,  dft1296,
+	dft1440,  dft1500,  dft1536,  dft1620,  dft1728, dft1800, dft1920,  dft1944,
+	dft2048,  dft2160,  dft2304,  dft2400,  dft2592, dft2700, dft2880,  dft2916,
+	dft3000,  dft3072,  dft3240,  dft4096,  dft6144, dft8192, dft9216,  dft12288,
+	dft18432, dft24576, dft36864, dft49152, dft73728, dft98304
 };
 #endif
 
@@ -314,9 +330,9 @@ typedef enum idft_size_idx {
 } idft_size_idx_t;
 #ifdef OAIDFTS_MAIN
 aidftfunc_t idft_ftab[]={
-        idft128,   idft256,  idft512,   idft1024,  idft1536,  idft2048,  idft3072,  idft4096,
-	    idft6144,  idft8192, idft9216,  idft12288, idft18432, idft24576, idft36864, idft49152, 
-	    idft73728, idft98304
+	idft128,   idft256,  idft512,   idft1024,  idft1536,  idft2048,  idft3072,  idft4096,
+	idft6144,  idft8192, idft9216,  idft12288, idft18432, idft24576, idft36864, idft49152,
+	idft73728, idft98304
 };
 #endif
 
@@ -436,6 +452,9 @@ int32_t subcarrier_energy(int32_t *,uint32_t, int32_t* subcarrier_energy, uint16
 */
 int32_t signal_energy_nodc(int32_t *,uint32_t);
 
+int32_t signal_power(int32_t *,uint32_t);
+int32_t interference_power(int32_t *,uint32_t);
+
 /*!\fn double signal_energy_fp(double *s_re[2], double *s_im[2],uint32_t, uint32_t,uint32_t);
 \brief Computes the signal energy per subcarrier
 */
@@ -444,7 +463,7 @@ double signal_energy_fp(double *s_re[2], double *s_im[2], uint32_t nb_antennas, 
 /*!\fn double signal_energy_fp2(struct complex *, uint32_t);
 \brief Computes the signal energy per subcarrier
 */
-double signal_energy_fp2(struct complex *s, uint32_t length);
+double signal_energy_fp2(struct complexd *s, uint32_t length);
 
 
 int32_t iSqrt(int32_t value);
@@ -474,6 +493,7 @@ uint8_t dB_fixed64(uint64_t x);
 int8_t dB_fixed2(uint32_t x,uint32_t y);
 
 int16_t dB_fixed_times10(uint32_t x);
+int16_t dB_fixed_x10(uint32_t x);
 
 int32_t phy_phase_compensation_top(uint32_t pilot_type,
                                    uint32_t initial_pilot,

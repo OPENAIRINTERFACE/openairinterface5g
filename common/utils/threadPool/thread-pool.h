@@ -31,21 +31,29 @@
 #include <assertions.h>
 #include <LOG/log.h>
 #include <common/utils/system.h>
+//#include <stdatomic.h>
 
 #ifdef DEBUG
   #define THREADINIT   PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
 #else
   #define THREADINIT   PTHREAD_MUTEX_INITIALIZER
 #endif
-#define mutexinit(mutex)   AssertFatal(pthread_mutex_init(&mutex,NULL)==0,"");
-#define condinit(signal)   AssertFatal(pthread_cond_init(&signal,NULL)==0,"");
-#define mutexlock(mutex)   AssertFatal(pthread_mutex_lock(&mutex)==0,"");
+#define mutexinit(mutex)   {int ret=pthread_mutex_init(&mutex,NULL); \
+                            AssertFatal(ret==0,"ret=%d\n",ret);}
+#define condinit(signal)   {int ret=pthread_cond_init(&signal,NULL); \
+                            AssertFatal(ret==0,"ret=%d\n",ret);}
+#define mutexlock(mutex)   {int ret=pthread_mutex_lock(&mutex); \
+                            AssertFatal(ret==0,"ret=%d\n",ret);}
 #define mutextrylock(mutex)   pthread_mutex_trylock(&mutex)
-#define mutexunlock(mutex) AssertFatal(pthread_mutex_unlock(&mutex)==0,"");
-#define condwait(condition, mutex) AssertFatal(pthread_cond_wait(&condition, &mutex)==0,"");
-#define condbroadcast(signal) AssertFatal(pthread_cond_broadcast(&signal)==0,"");
-#define condsignal(signal)    AssertFatal(pthread_cond_broadcast(&signal)==0,"");
-
+#define mutexunlock(mutex) {int ret=pthread_mutex_unlock(&mutex); \
+                            AssertFatal(ret==0,"ret=%d\n",ret);}
+#define condwait(condition, mutex) {int ret=pthread_cond_wait(&condition, &mutex); \
+                                    AssertFatal(ret==0,"ret=%d\n",ret);}
+#define condbroadcast(signal) {int ret=pthread_cond_broadcast(&signal); \
+                               AssertFatal(ret==0,"ret=%d\n",ret);}
+#define condsignal(signal)    {int ret=pthread_cond_signal(&signal); \
+                               AssertFatal(ret==0,"ret=%d\n",ret);}
+#define tpool_nbthreads(tpool)   (tpool.nbThreads)
 typedef struct notifiedFIFO_elt_s {
   struct notifiedFIFO_elt_s *next;
   uint64_t key; //To filter out elements
@@ -78,7 +86,7 @@ static inline notifiedFIFO_elt_t *newNotifiedFIFO_elt(int size,
   ret->reponseFifo=reponseFifo;
   ret->processingFunc=processingFunc;
   // We set user data piece aligend 32 bytes to be able to process it with SIMD
-  ret->msgData=(void *)ret+(sizeof(notifiedFIFO_elt_t)/32+1)*32;
+  ret->msgData=(void *)((uint8_t*)ret+(sizeof(notifiedFIFO_elt_t)/32+1)*32);
   ret->malloced=true;
   return ret;
 }
@@ -123,7 +131,7 @@ static inline void pushNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf, notifiedFIF
 static inline void pushNotifiedFIFO(notifiedFIFO_t *nf, notifiedFIFO_elt_t *msg) {
   mutexlock(nf->lockF);
   pushNotifiedFIFO_nothreadSafe(nf,msg);
-  condbroadcast(nf->notifF);
+  condsignal(nf->notifF);
   mutexunlock(nf->lockF);
 }
 
@@ -294,6 +302,6 @@ static inline int abortTpool(tpool_t *t, uint64_t key) {
   mutexunlock(nf->lockF);
   return nbRemoved;
 }
-void initTpool(char *params,tpool_t *pool, bool performanceMeas);
-
+void initNamedTpool(char *params,tpool_t *pool, bool performanceMeas, char *name);
+#define  initTpool(PARAMPTR,TPOOLPTR, MEASURFLAG) initNamedTpool(PARAMPTR,TPOOLPTR, MEASURFLAG, NULL)
 #endif

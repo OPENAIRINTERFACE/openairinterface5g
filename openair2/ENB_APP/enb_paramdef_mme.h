@@ -30,6 +30,9 @@
  * \warning
  */
 
+#ifndef __ENB_APP_ENB_PARAMDEF_MME__H__
+#define __ENB_APP_ENB_PARAMDEF_MME__H__
+
 #include "common/config/config_paramdesc.h"
 #include "RRC_paramsvalues.h"
 
@@ -77,6 +80,4 @@
 {MME_CONFIG_STRING_MME_PORT_FOR_M3C,                     NULL,      0,         uptr:&mme_port_for_m3c,           	 defintval:36444L,    TYPE_UINT,        0},      \
 } 
 
-
-
-
+#endif

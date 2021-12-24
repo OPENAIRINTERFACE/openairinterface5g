@@ -1,0 +1,356 @@
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+
+---
+- paths:
+    source_dir: "ci-scripts/conf_files/"
+    dest_dir: docker/etc
+    
+- configurations:
+  - filePrefix: cu.band7.tm1.25PRB
+    outputfilename: "cu.fdd.conf"
+    config:
+    - key: Active_eNBs
+      env: "@ENB_NAME@"
+    - key: eNB_name
+      env: "@ENB_NAME@"
+    - key: plmn_list
+      env:
+        mcc: "@MCC@"
+        mnc: "@MNC@"
+        mnc_length: "@MNC_LENGTH@"
+    - key: tracking_area_code
+      env: "@TAC@"
+    - key: local_s_if_name
+      env: "@F1_IF_NAME@"
+    - key: remote_s_address
+      env: "@F1_DU_IP_ADDRESS@"
+    - key: local_s_address
+      env: "@F1_CU_IP_ADDRESS@"
+    - key: eutra_band
+      env: "@UTRA_BAND_ID@"
+    - key: downlink_frequency
+      env: "@DL_FREQUENCY_IN_MHZ@000000"
+    - key: uplink_frequency_offset
+      env: "@UL_FREQUENCY_OFFSET_IN_MHZ@000000"
+    - key: Nid_cell
+      env: "@NID_CELL@"
+    - key: N_RB_DL
+      env: "@NB_PRB@"
+    - key: ipv4
+      env: "@MME_S1C_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1_MME
+      env: "@S1C_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1_MME
+      env: "@F1_CU_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1U
+      env: "@S1U_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1U
+      env: "@F1_CU_IP_ADDRESS@"
+    - key: ENB_IPV4_ADDRESS_FOR_X2C
+      env: "@F1_CU_IP_ADDRESS@"
+      
+  - filePrefix: du.band7.tm1.25PRB
+    outputfilename: "du.fdd.conf"
+    config:
+    - key: Active_eNBs
+      env: "@ENB_NAME@"
+    - key: eNB_name
+      env: "@ENB_NAME@"
+    - key: plmn_list
+      env:
+        mcc: "@MCC@"
+        mnc: "@MNC@"
+        mnc_length: "@MNC_LENGTH@"
+    - key: tracking_area_code
+      env: "@TAC@"
+    - key: local_n_if_name
+      env: "@F1_IF_NAME@"
+    - key: remote_n_address
+      env: "@F1_DU_IP_ADDRESS@"
+    - key: local_n_address
+      env: "@F1_CU_IP_ADDRESS@"
+    - key: eutra_band
+      env: "@UTRA_BAND_ID@"
+    - key: downlink_frequency
+      env: "@DL_FREQUENCY_IN_MHZ@000000"
+    - key: uplink_frequency_offset
+      env: "@UL_FREQUENCY_OFFSET_IN_MHZ@000000"
+    - key: Nid_cell
+      env: "@NID_CELL@"
+    - key: N_RB_DL
+      env: "@NB_PRB@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
+      
+  - filePrefix: rru.fdd
+    outputfilename: "rru.fdd.conf"
+    config:
+    - key: local_if_name
+      env: "@RRU_IF4P5_IF_NAME@"
+    - key: remote_address
+      env: "@RCC_REMOTE_IP_ADDRESS@"
+    - key: local_address
+      env: "@RRU_LOCAL_IP_ADDRESS@"
+    - key: bands
+      env: "@UTRA_BAND_ID@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
+      
+  - filePrefix: rru.tdd
+    outputfilename: "rru.tdd.conf"
+    config:
+    - key: local_if_name
+      env: "@RRU_IF4P5_IF_NAME@"
+    - key: remote_address
+      env: "@RCC_REMOTE_IP_ADDRESS@"
+    - key: local_address
+      env: "@RRU_LOCAL_IP_ADDRESS@"
+    - key: bands
+      env: "@UTRA_BAND_ID@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
+      
+  - filePrefix: enb.band7.tm1.fr1.25PRB.usrpb210.conf
+    outputfilename: "enb.fdd.conf"
+    config:
+    - key: Active_eNBs
+      env: "@ENB_NAME@"
+    - key: eNB_name
+      env: "@ENB_NAME@"
+    - key: plmn_list
+      env:
+        mcc: "@MCC@"
+        mnc: "@MNC@"
+        mnc_length: "@MNC_LENGTH@"
+    - key: tracking_area_code
+      env: "@TAC@"
+    - key: eutra_band
+      env: "@UTRA_BAND_ID@"
+    - key: downlink_frequency
+      env: "@DL_FREQUENCY_IN_MHZ@000000"
+    - key: uplink_frequency_offset
+      env: "@UL_FREQUENCY_OFFSET_IN_MHZ@000000"
+    - key: Nid_cell
+      env: "@NID_CELL@"
+    - key: N_RB_DL
+      env: "@NB_PRB@"
+    - key: enable_measurement_reports
+      env: "@ENABLE_MEASUREMENT_REPORTS@"
+    - key: enable_x2
+      env: "@ENABLE_X2@"
+    - key: ipv4
+      env: "@MME_S1C_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1_MME
+      env: "@ENB_S1C_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1_MME
+      env: "@ENB_S1C_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1U
+      env: "@ENB_S1U_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1U
+      env: "@ENB_S1U_IP_ADDRESS@"
+    - key: ENB_IPV4_ADDRESS_FOR_X2C
+      env: "@ENB_X2_IP_ADDRESS@"
+    - key: rrc_inactivity_threshold
+      env: "@RRC_INACTIVITY_THRESHOLD@"
+    - key: FLEXRAN_ENABLED
+      env: "@FLEXRAN_ENABLED@"
+    - key: FLEXRAN_INTERFACE_NAME
+      env: "@FLEXRAN_INTERFACE_NAME@"
+    - key: FLEXRAN_IPV4_ADDRESS
+      env: "@FLEXRAN_IPV4_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
+      
+  - filePrefix: enb.band40.tm1.25PRB.FairScheduler.usrpb210
+    outputfilename: "enb.tdd.conf"
+    config:
+    - key: Active_eNBs
+      env: "@ENB_NAME@"
+    - key: eNB_name
+      env: "@ENB_NAME@"
+    - key: plmn_list
+      env:
+        mcc: "@MCC@"
+        mnc: "@MNC@"
+        mnc_length: "@MNC_LENGTH@"
+    - key: tracking_area_code
+      env: "@TAC@"
+    - key: eutra_band
+      env: "@UTRA_BAND_ID@"
+    - key: downlink_frequency
+      env: "@DL_FREQUENCY_IN_MHZ@000000"
+    - key: uplink_frequency_offset
+      env: "@UL_FREQUENCY_OFFSET_IN_MHZ@000000"
+    - key: Nid_cell
+      env: "@NID_CELL@"
+    - key: N_RB_DL
+      env: "@NB_PRB@"
+    - key: ipv4
+      env: "@MME_S1C_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1_MME
+      env: "@S1C_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1_MME
+      env: "@F1_CU_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1U
+      env: "@S1U_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1U
+      env: "@F1_CU_IP_ADDRESS@"
+    - key: ENB_IPV4_ADDRESS_FOR_X2C
+      env: "@F1_CU_IP_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
+      
+  - filePrefix: "rcc.band7.tm1.nfapi"
+    outputfilename: "rcc.nfapi.fdd.conf"
+    config:
+    - key: Active_eNBs
+      env: "@ENB_NAME@"
+    - key: eNB_name
+      env: "@ENB_NAME@"
+    - key: plmn_list
+      env:
+        mcc: "@MCC@"
+        mnc: "@MNC@"
+        mnc_length: "@MNC_LENGTH@"
+    - key: tracking_area_code
+      env: "@TAC@"
+    - key: local_s_if_name
+      env: "@F1_IF_NAME@"
+    - key: remote_s_address
+      env: "@F1_DU_IP_ADDRESS@"
+    - key: local_s_address
+      env: "@F1_CU_IP_ADDRESS@"
+    - key: eutra_band
+      env: "@UTRA_BAND_ID@"
+    - key: downlink_frequency
+      env: "@DL_FREQUENCY_IN_MHZ@000000"
+    - key: uplink_frequency_offset
+      env: "@UL_FREQUENCY_OFFSET_IN_MHZ@000000"
+    - key: Nid_cell
+      env: "@NID_CELL@"
+    - key: N_RB_DL
+      env: "@NB_PRB@"
+    - key: ipv4
+      env: "@MME_S1C_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1_MME
+      env: "@S1C_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1_MME
+      env: "@F1_CU_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1U
+      env: "@S1U_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1U
+      env: "@F1_CU_IP_ADDRESS@"
+    - key: ENB_IPV4_ADDRESS_FOR_X2C
+      env: "@F1_CU_IP_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
+
+  - filePrefix: "rcc.band7.tm1.if4p5.lo.25PRB"
+    outputfilename: "rcc.if4p5.fdd.conf"
+    config:
+    - key: Active_eNBs
+      env: "@ENB_NAME@"
+    - key: eNB_name
+      env: "@ENB_NAME@"
+    - key: plmn_list
+      env:
+        mcc: "@MCC@"
+        mnc: "@MNC@"
+        mnc_length: "@MNC_LENGTH@"
+    - key: tracking_area_code
+      env: "@TAC@"
+    - key: eutra_band
+      env: "@UTRA_BAND_ID@"
+    - key: downlink_frequency
+      env: "@DL_FREQUENCY_IN_MHZ@000000"
+    - key: uplink_frequency_offset
+      env: "@UL_FREQUENCY_OFFSET_IN_MHZ@000000"
+    - key: Nid_cell
+      env: "@NID_CELL@"
+    - key: N_RB_DL
+      env: "@NB_PRB@"
+    - key: ipv4
+      env: "@MME_S1C_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1_MME
+      env: "@RCC_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1_MME
+      env: "@RCC_S1C_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1U
+      env: "@RCC_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1U
+      env: "@RCC_IP_ADDRESS@"
+    - key: ENB_IPV4_ADDRESS_FOR_X2C
+      env: "@RCC_IP_ADDRESS@"
+    - key: local_if_name
+      env: "@IF4P5_IF_NAME@"
+    - key: remote_address
+      env: "@IF4P5_RRU_IP_ADDRESS@"
+    - key: local_address
+      env: "@IF4P5_RCC_IP_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
+
+  - filePrefix: "rcc.band40.tm1.25PRB"
+    outputfilename: "rcc.if4p5.tdd.conf"
+    config:
+    - key: Active_eNBs
+      env: "@ENB_NAME@"
+    - key: eNB_name
+      env: "@ENB_NAME@"
+    - key: plmn_list
+      env:
+        mcc: "@MCC@"
+        mnc: "@MNC@"
+        mnc_length: "@MNC_LENGTH@"
+    - key: tracking_area_code
+      env: "@TAC@"
+    - key: eutra_band
+      env: "@UTRA_BAND_ID@"
+    - key: downlink_frequency
+      env: "@DL_FREQUENCY_IN_MHZ@000000"
+    - key: uplink_frequency_offset
+      env: "@UL_FREQUENCY_OFFSET_IN_MHZ@000000"
+    - key: Nid_cell
+      env: "@NID_CELL@"
+    - key: N_RB_DL
+      env: "@NB_PRB@"
+    - key: ipv4
+      env: "@MME_S1C_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1_MME
+      env: "@RCC_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1_MME
+      env: "@RCC_S1C_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1U
+      env: "@RCC_IF_NAME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1U
+      env: "@RCC_IP_ADDRESS@"
+    - key: ENB_IPV4_ADDRESS_FOR_X2C
+      env: "@RCC_IP_ADDRESS@"
+    - key: local_if_name
+      env: "@IF4P5_IF_NAME@"
+    - key: remote_address
+      env: "@IF4P5_RRU_IP_ADDRESS@"
+    - key: local_address
+      env: "@IF4P5_RCC_IP_ADDRESS@"
+    - key: parallel_config
+      env: "@THREAD_PARALLEL_CONFIG@"
+

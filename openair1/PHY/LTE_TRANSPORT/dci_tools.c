@@ -53,22 +53,25 @@
 //#undef LOG_D
 //#define LOG_D(A,B...) printf(B)
 
-int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
-  uint16_t i;
-  int16_t first_free_index=-1;
+int find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
+  int first_free_index=-1;
   AssertFatal(eNB!=NULL,"eNB is null\n");
 
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d] is null\n",i);
-    AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d][0] is null\n",i);
+  for (int i=0; i<NUMBER_OF_DLSCH_MAX; i++) {
+    if (eNB->dlsch[i][0] == NULL) continue;
     LOG_D(PHY,"searching for rnti %x : UE index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,eNB->dlsch[i][0]->harq_mask,eNB->dlsch[i][0]->rnti,first_free_index);
 
-    if ((eNB->dlsch[i][0]->harq_mask >0) &&
-        (eNB->dlsch[i][0]->rnti==rnti))       return i;
-    else if ((eNB->dlsch[i][0]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+    if (type == SEARCH_EXIST_RA) {
+      if (eNB->dlsch[i][0]->rnti==rnti) return i;
+    } else {
+      if ((eNB->dlsch[i][0]->harq_mask >0) &&
+          (eNB->dlsch[i][0]->rnti==rnti))       return i;
+      else if ((eNB->dlsch[i][0]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+    }
+
   }
 
-  if (type == SEARCH_EXIST)
+  if (type == SEARCH_EXIST_RA || type == SEARCH_EXIST)
     return -1;
 
   if (first_free_index != -1)
@@ -78,20 +81,23 @@ int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
 }
 
 
-int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
-  uint16_t i;
-  int16_t first_free_index=-1;
+int find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type) {
+  int first_free_index=-1;
   AssertFatal(eNB!=NULL,"eNB is null\n");
 
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    AssertFatal(eNB->ulsch[i]!=NULL,"eNB->ulsch[%d] is null\n",i);
+  for (int i=0; i<NUMBER_OF_ULSCH_MAX; i++) {
+    if (eNB->ulsch[i]==NULL) continue;
 
-    if ((eNB->ulsch[i]->harq_mask >0) &&
-        (eNB->ulsch[i]->rnti==rnti))       return i;
-    else if ((eNB->ulsch[i]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+    if (type == SEARCH_EXIST_RA) {
+      if (eNB->ulsch[i]->rnti == rnti) return i;
+    } else {
+      if ((eNB->ulsch[i]->harq_mask >0) &&
+          (eNB->ulsch[i]->rnti==rnti))       return i;
+      else if ((eNB->ulsch[i]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+    }
   }
 
-  if (type == SEARCH_EXIST)
+  if (type == SEARCH_EXIST_RA || type == SEARCH_EXIST)
     return -1;
 
   if (first_free_index != -1)
@@ -301,7 +307,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
 
   UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
 
-  if( (UE_id<0) || (UE_id>=NUMBER_OF_UE_MAX) ) {
+  if( (UE_id<0) || (UE_id>=NUMBER_OF_DLSCH_MAX) ) {
     LOG_E(PHY,"illegal UE_id found!!! rnti %04x UE_id %d\n",rel8->rnti,UE_id);
     return;
   }
@@ -476,7 +482,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
             ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->harq_pid  = rel8->harq_process;
             ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->dai       = rel8->downlink_assignment_index;
             ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->padding   = 0;
-            //        printf("TDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
+            //LOG_D(PHY,"TDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,NPRB);
           } else {
             dci_alloc->dci_length                         = sizeof_DCI1A_20MHz_FDD_t;
             ((DCI1A_20MHz_FDD_t *)dci_pdu)->type          = 1;
@@ -535,7 +541,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
 
       dlsch0->harq_mask |= (1 << rel8->harq_process);
 
-      if (rel8->rnti_type == 1) LOG_D(PHY,"DCI 1A: round %d, mcs %d, TBS %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->round,rel8->mcs_1,dlsch0_harq->TBS,rel8->resource_block_coding,
+      if (rel8->rnti != SI_RNTI) LOG_D(PHY,"DCI 1A: round %d, mcs %d, TBS %d, rballoc %x, rv %d, rnti %x, harq process %d\n",dlsch0_harq->round,rel8->mcs_1,dlsch0_harq->TBS,rel8->resource_block_coding,
                                         rel8->redundancy_version_1,rel8->rnti,rel8->harq_process);
 
       break;
@@ -1521,7 +1527,9 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
   if (dlsch0->active)
     T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(0), T_INT(frame), T_INT(subframe),
       T_INT(rel8->rnti), T_INT(rel8->dci_format), T_INT(rel8->harq_process),
-      T_INT(rel8->mcs_1), T_INT(dlsch0_harq->TBS));
+      T_INT(rel8->mcs_1), T_INT(dlsch0_harq->TBS), T_INT(rel8->new_data_indicator_1),
+      T_INT(rel8->redundancy_version_1), T_INT(rel8->resource_block_coding),
+      T_INT(dlsch0_harq->nb_rb), T_INT(dlsch0_harq->rb_alloc[0]));
 
 #endif
 }
@@ -1550,7 +1558,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
   dci_alloc->i0 = rel13->initial_transmission_sf_io;
   UE_id = find_dlsch (rel13->rnti, eNB, SEARCH_EXIST_OR_FREE);
   AssertFatal (UE_id != -1, "no free or exiting dlsch_context\n");
-  AssertFatal (UE_id < NUMBER_OF_UE_MAX, "returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n", UE_id, NUMBER_OF_UE_MAX);
+  AssertFatal (UE_id < NUMBER_OF_DLSCH_MAX, "returned UE_id %d >= %d(NUMBER_OF_DLSCH_MAX)\n", UE_id, NUMBER_OF_DLSCH_MAX);
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch0_harq = dlsch0->harq_processes[rel13->harq_process];
   dci_alloc->ra_flag = 0;
@@ -1955,7 +1963,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
   if(frame_parms->frame_type == TDD) {
     UE_id = find_ulsch(pdu->dci_pdu_rel8.rnti, eNB,SEARCH_EXIST_OR_FREE);
 
-    if(UE_id != -1) {
+    if(UE_id >=0 -1 || UE_id < NUMBER_OF_ULSCH_MAX) {
       eNB->ulsch[UE_id]->harq_processes[pdu->dci_pdu_rel8.harq_pid]->V_UL_DAI = dai +1;
     }
   }
@@ -2004,11 +2012,6 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
   if(ulsch_pdu->ulsch_pdu_rel13.repetition_number >1)	// Fill the Harq process parameters in the first Rep only
   {
 	  return;
-  }
-
-  //AssertFatal(ulsch->harq_processes[harq_pid]->nb_rb>0,"nb_rb = 0\n");
-  if(ulsch->harq_processes[harq_pid]->nb_rb == 0) {
-    LOG_E(PHY, "fill_ulsch UE_id %d nb_rb = 0\n", UE_id);
   }
 
   ulsch->harq_processes[harq_pid]->frame                                 = frame;
@@ -2076,6 +2079,8 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
     ulsch->harq_processes[harq_pid]->round++;
     ulsch->harq_processes[harq_pid]->TBS           = ulsch_pdu->ulsch_pdu_rel8.size<<3;
     ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
+    ulsch->harq_processes[harq_pid]->Or1           = 0;
+    ulsch->harq_processes[harq_pid]->Or2           = 0;
   }
 
   ulsch->rnti = ulsch_pdu->ulsch_pdu_rel8.rnti;

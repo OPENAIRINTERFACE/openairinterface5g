@@ -179,7 +179,7 @@ void prach_eNB_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eNB, L1_r
     ru=eNB->RU_list[i];
 
     for (ru_aa=0,aa=0; ru_aa<ru->nb_rx; ru_aa++,aa++) {
-      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
+      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[0][ru_aa];
       int ce_level;
 
       for (ce_level=0; ce_level<4; ce_level++)
@@ -401,7 +401,7 @@ void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_
   hULUE(newUDPheader)->O_ACK=eNB->ulsch[UE_id]->harq_processes[harq_pid]->O_ACK;
   memcpy(hULUE(newUDPheader)->o_ACK, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK,
          sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o_ACK));
-  hULUE(newUDPheader)->ta=lte_est_timing_advance_pusch(eNB, UE_id);
+  hULUE(newUDPheader)->ta=lte_est_timing_advance_pusch(&eNB->frame_parms, eNB->pusch_vars[UE_id]->drs_ch_estimates_time);
   hULUE(newUDPheader)->segment=segmentID;
   memcpy(hULUE(newUDPheader)->o, eNB->ulsch[UE_id]->harq_processes[harq_pid]->o,
          sizeof(eNB->ulsch[UE_id]->harq_processes[harq_pid]->o));
@@ -435,7 +435,7 @@ void pusch_procedures_tosplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *eN
     if ((ulsch) &&
         (ulsch->rnti>0) &&
         (ulsch_harq->status == ACTIVE) &&
-        ((ulsch_harq->frame == frame)	    || (ulsch_harq->repetition_number >1) ) &&
+        ((ulsch_harq->frame == frame)     || (ulsch_harq->repetition_number >1) ) &&
         ((ulsch_harq->subframe == subframe) || (ulsch_harq->repetition_number >1) ) &&
         (ulsch_harq->handled == 0)) {
       // UE has ULSCH scheduling
@@ -750,7 +750,7 @@ void phy_procedures_eNB_uespec_RX_fromsplit(uint8_t *bufferZone, int nbBlocks,PH
   recvFs6Ul(bufferZone, nbBlocks, eNB, ul_propa);
 
   // dirty memory allocation in OAI...
-  for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++)
+  for (int i = 0; i < NUMBER_OF_UCI_MAX; i++)
     if ( eNB->uci_vars[i].frame == proc->frame_rx &&
          eNB->uci_vars[i].subframe == proc->subframe_rx )
       eNB->uci_vars[i].active=0;
@@ -917,7 +917,7 @@ void phy_procedures_eNB_TX_fromsplit(uint8_t *bufferZone, int nbBlocks, PHY_VARS
 
   if (NFAPI_MODE==NFAPI_MONOLITHIC || NFAPI_MODE==NFAPI_MODE_PNF) {
     if (is_pmch_subframe(frame,subframe,fp)) {
-      pmch_procedures(eNB,proc);
+      pmch_procedures(eNB,proc,0);
     } else {
       // this is not a pmch subframe, so generate PSS/SSS/PBCH
       common_signal_procedures(eNB,frame, subframe);
@@ -1145,7 +1145,7 @@ void appendFs6DLUEcch(uint8_t *bufferZone, PHY_VARS_eNB *eNB, int frame, int sub
   commonUDP_t *newUDPheader=(commonUDP_t *) firstFreeByte;
   bool first_UE=true;
 
-  for (int i = 0; i < NUMBER_OF_UCI_VARS_MAX; i++) {
+  for (int i = 0; i < NUMBER_OF_UCI_MAX; i++) {
     LTE_eNB_UCI *uci = &(eNB->uci_vars[i]);
 
     if ((uci->active == 1) && (uci->frame == frame) && (uci->subframe == subframe)) {
@@ -1194,6 +1194,8 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
   for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
     int harq_pid;
     LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[i];
+    if (ulsch == NULL)
+      continue;
 
     if (ulsch->ue_type > NOCE)
       harq_pid = 0;
@@ -1209,9 +1211,10 @@ void phy_procedures_eNB_TX_tosplit(uint8_t *bufferZone, PHY_VARS_eNB *eNB, L1_rx
 
     for (int k=0; k<8; k++) {
       ulsch_harq = ulsch->harq_processes[k];
+      if (ulsch_harq == NULL)
+        continue;
 
-      if (ulsch &&
-          (ulsch->rnti>0) &&
+      if ((ulsch->rnti>0) &&
           (ulsch_harq->status == ACTIVE) &&
           (ulsch_harq->frame == frame) &&
           (ulsch_harq->subframe == subframe) &&
@@ -1510,13 +1513,14 @@ void *cu_fs6(void *arg) {
   char remoteIP[1024];
   strncpy(remoteIP,get_softmodem_params()->split73+3, 1023); //three first char should be cu: or du:
   char port_def[256]=DU_PORT;
+
   for (int i=0; i <1000; i++)
     if (remoteIP[i]==':') {
       strncpy(port_def,remoteIP+i+1,255);
       remoteIP[i]=0;
       break;
     }
-    
+
   AssertFatal(createUDPsock(NULL, CU_PORT, remoteIP, port_def, &sockFS6), "");
   L1_rxtx_proc_t L1proc= {0};
   // We pick the global thread pool from the legacy code global vars
@@ -1558,12 +1562,14 @@ void *du_fs6(void *arg) {
   char remoteIP[1024];
   strncpy(remoteIP,get_softmodem_params()->split73+3,1023); //three first char should be cu: or du:
   char port_def[256]=CU_PORT;
+
   for (int i=0; i <1000; i++)
     if (remoteIP[i]==':') {
       strncpy(port_def,remoteIP+i+1,255);
       remoteIP[i]=0;
       break;
     }
+
   AssertFatal(createUDPsock(NULL, DU_PORT, remoteIP, port_def, &sockFS6), "");
 
   if (ru->rfdevice.trx_start_func(&ru->rfdevice) != 0)

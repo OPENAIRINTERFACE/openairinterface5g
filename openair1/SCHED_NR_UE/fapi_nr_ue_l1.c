@@ -34,169 +34,254 @@
 
 #include "fapi_nr_ue_interface.h"
 #include "fapi_nr_ue_l1.h"
+#include "harq_nr.h"
 //#include "PHY/phy_vars_nr_ue.h"
 
 #include "PHY/defs_nr_UE.h"
 #include "PHY/impl_defs_nr.h"
+
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
-int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
-{
+const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH", "SI_DLSCH", "P_DLSCH"};
+const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 
+int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
+  bool found = false;
   if(scheduled_response != NULL){
-    /// module id
-    module_id_t module_id = scheduled_response->module_id; 
-    /// component carrier id
-    uint8_t cc_id = scheduled_response->CC_id;
+
+    module_id_t module_id = scheduled_response->module_id;
+    uint8_t cc_id = scheduled_response->CC_id, thread_id;
     uint32_t i;
-    int slot = scheduled_response->slot; 	
+    int slot = scheduled_response->slot;
+
     // Note: we have to handle the thread IDs for this. To be revisited completely.
-    uint8_t thread_id = PHY_vars_UE_g[module_id][cc_id]->current_thread_id[slot];
+    thread_id = scheduled_response->thread_id;
+    NR_UE_DLSCH_t *dlsch0 = NULL;
     NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
-    NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
     NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0][0];
-    //NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
-    PRACH_RESOURCES_t *prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[0];
-        
-    //        PUCCH_ConfigCommon_nr_t    *pucch_config_common = PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0];
-    //        PUCCH_Config_t             *pucch_config_dedicated = PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0];
+    NR_UE_PUCCH *pucch_vars = PHY_vars_UE_g[module_id][cc_id]->pucch_vars[thread_id][0];
 
     if(scheduled_response->dl_config != NULL){
       fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
 
-      LOG_D(PHY,"Received %d DL pdus\n",dl_config->number_pdus);
       pdcch_vars->nb_search_space = 0;
-      for(i=0; i<dl_config->number_pdus; ++i){
-	if(dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DCI){
-	  fapi_nr_dl_config_dci_dl_pdu_rel15_t *pdcch_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
-	  memcpy((void*)&pdcch_vars->pdcch_config[pdcch_vars->nb_search_space],(void*)pdcch_config,sizeof(*pdcch_config));
-	  pdcch_vars->nb_search_space = pdcch_vars->nb_search_space + 1;
-	  LOG_D(PHY,"Number of DCI SearchSpaces %d\n",pdcch_vars->nb_search_space);
-	}else{  //FAPI_NR_DL_CONFIG_TYPE_DLSCH
-	  //  dlsch config pdu
 
-	  fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
-	  uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
-	  dlsch0->current_harq_pid = current_harq_pid;
-	  dlsch0->active = 1;
-	  dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
-                    
-	  //dlsch0->harq_processes[0]->mcs = &dlsch_config_pdu->mcs;
-                    
-	  NR_DL_UE_HARQ_t *dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
+      for (i = 0; i < dl_config->number_pdus; ++i){
+        AssertFatal(dl_config->number_pdus < FAPI_NR_DL_CONFIG_LIST_NUM,"dl_config->number_pdus %d out of bounds\n",dl_config->number_pdus);
+        AssertFatal(dl_config->dl_config_list[i].pdu_type<=FAPI_NR_DL_CONFIG_TYPES,"pdu_type %d > 2\n",dl_config->dl_config_list[i].pdu_type);
+        LOG_D(PHY, "In %s: frame %d slot %d received 1 DL %s PDU of %d total DL PDUs:\n",
+              __FUNCTION__, scheduled_response->frame, slot, dl_pdu_type[dl_config->dl_config_list[i].pdu_type - 1], dl_config->number_pdus);
 
-	  dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
-	  dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
-	  dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
-	  dlsch0_harq->start_rb = dlsch_config_pdu->start_rb;
-	  dlsch0_harq->nb_symbols = dlsch_config_pdu->number_symbols;
-	  dlsch0_harq->start_symbol = dlsch_config_pdu->start_symbol;
-	  dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
-	  dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
-	  dlsch0_harq->mcs = dlsch_config_pdu->mcs;
-	  dlsch0_harq->DCINdi = dlsch_config_pdu->ndi;
-	  dlsch0_harq->rvidx = dlsch_config_pdu->rv;
-	  dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
-	  dlsch0_harq->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
-	  dlsch0_harq->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
-	  dlsch0_harq->Nl=1;
-	  dlsch0_harq->mcs_table=0;
-	  dlsch0_harq->status = ACTIVE;
-	  LOG_D(MAC,">>>> \tdlsch0->g_pucch=%d\tdlsch0_harq.mcs=%d\n",dlsch0->g_pucch,dlsch0_harq->mcs);
+        if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DCI) {
 
-	}
+          fapi_nr_dl_config_dci_dl_pdu_rel15_t *pdcch_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
+          memcpy((void*)&pdcch_vars->pdcch_config[pdcch_vars->nb_search_space],(void*)pdcch_config,sizeof(*pdcch_config));
+          pdcch_vars->nb_search_space = pdcch_vars->nb_search_space + 1;
+          pdcch_vars->sfn = scheduled_response->frame;
+          pdcch_vars->slot = slot;
+          LOG_D(PHY,"Number of DCI SearchSpaces %d\n",pdcch_vars->nb_search_space);
+
+        } else {
+
+          fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
+          uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
+
+          if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DLSCH){
+            dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
+          }
+          else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH){
+            dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_ra[0];
+            dlsch0->rnti_type = _RA_RNTI_;
+            dlsch0->harq_processes[current_harq_pid]->status = ACTIVE;
+          }
+          else if (dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH){
+            dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch_SI[0];
+            dlsch0->rnti_type = _SI_RNTI_;
+            dlsch0->harq_processes[current_harq_pid]->status = ACTIVE;
+          }
+
+          dlsch0->current_harq_pid = current_harq_pid;
+          dlsch0->active = 1;
+          dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
+
+          LOG_D(PHY,"slot %d current_harq_pid = %d\n",slot, current_harq_pid);
+
+          NR_DL_UE_HARQ_t *dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
+          if (dlsch0_harq){
+
+            dlsch0_harq->BWPStart = dlsch_config_pdu->BWPStart;
+            dlsch0_harq->BWPSize = dlsch_config_pdu->BWPSize;
+            dlsch0_harq->nb_rb = dlsch_config_pdu->number_rbs;
+            dlsch0_harq->start_rb = dlsch_config_pdu->start_rb;
+            dlsch0_harq->nb_symbols = dlsch_config_pdu->number_symbols;
+            dlsch0_harq->start_symbol = dlsch_config_pdu->start_symbol;
+            dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
+            dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
+            dlsch0_harq->n_dmrs_cdm_groups = dlsch_config_pdu->n_dmrs_cdm_groups;
+            dlsch0_harq->mcs = dlsch_config_pdu->mcs;
+            dlsch0_harq->rvidx = dlsch_config_pdu->rv;
+            dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
+            //get nrOfLayers from DCI info
+            uint8_t Nl = 0;
+            for (i = 0; i < 4; i++) {
+              if (dlsch_config_pdu->dmrs_ports[i] >= i) Nl += 1;
+            }
+            dlsch0_harq->Nl = Nl;
+            dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
+            downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch_config_pdu->rv, dlsch0->rnti_type);
+            if (dlsch0_harq->status != ACTIVE) {
+              // dlsch0_harq->status not ACTIVE due to false retransmission
+              // Reset the following flag to skip PDSCH procedures in that case and retrasmit harq status
+              dlsch0->active = 0;
+              update_harq_status(module_id,dlsch0->current_harq_pid,dlsch0_harq->ack);
+            }
+            /* PTRS */
+            dlsch0_harq->PTRSFreqDensity = dlsch_config_pdu->PTRSFreqDensity;
+            dlsch0_harq->PTRSTimeDensity = dlsch_config_pdu->PTRSTimeDensity;
+            dlsch0_harq->PTRSPortIndex = dlsch_config_pdu->PTRSPortIndex;
+            dlsch0_harq->nEpreRatioOfPDSCHToPTRS = dlsch_config_pdu->nEpreRatioOfPDSCHToPTRS;
+            dlsch0_harq->PTRSReOffset = dlsch_config_pdu->PTRSReOffset;
+            dlsch0_harq->pduBitmap = dlsch_config_pdu->pduBitmap;
+            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
+          }
+        }
       }
-    }else{
-      pdcch_vars->nb_search_space = 0;
+      dl_config->number_pdus = 0;
     }
 
-    if(scheduled_response->ul_config != NULL){
+    if (scheduled_response->ul_config != NULL){
+
       fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
-      for(i=0; i<ul_config->number_pdus; ++i){
-	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUSCH){
-	  // pusch config pdu
-	  fapi_nr_ul_config_pusch_pdu_rel15_t *pusch_config_pdu = &ul_config->ul_config_list[i].ulsch_config_pdu.ulsch_pdu_rel15;
-	  uint8_t current_harq_pid = pusch_config_pdu->harq_process_nbr;
-	  ulsch0->harq_processes[current_harq_pid]->nb_rb = pusch_config_pdu->number_rbs;
-	  ulsch0->harq_processes[current_harq_pid]->first_rb = pusch_config_pdu->start_rb;
-	  ulsch0->harq_processes[current_harq_pid]->number_of_symbols = pusch_config_pdu->number_symbols;
-	  ulsch0->harq_processes[current_harq_pid]->start_symbol = pusch_config_pdu->start_symbol;
-	  ulsch0->harq_processes[current_harq_pid]->mcs = pusch_config_pdu->mcs;
-	  ulsch0->harq_processes[current_harq_pid]->DCINdi = pusch_config_pdu->ndi;
-	  ulsch0->harq_processes[current_harq_pid]->rvidx = pusch_config_pdu->rv;
-	  ulsch0->harq_processes[current_harq_pid]->Nl = pusch_config_pdu->n_layers;
-	  ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
-	}
-	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUCCH){
-	  // pucch config pdu
-	  fapi_nr_ul_config_pucch_pdu *pucch_config_pdu = &ul_config->ul_config_list[i].pucch_config_pdu;
-	  uint8_t pucch_resource_id = 0; //FIXME!!!
-	  uint8_t format = 1; // FIXME!!!
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.initialCyclicShift = pucch_config_pdu->initialCyclicShift;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.nrofSymbols = pucch_config_pdu->nrofSymbols;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.startingSymbolIndex = pucch_config_pdu->startingSymbolIndex;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.nrofPRBs = pucch_config_pdu->nrofPRBs;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->startingPRB = pucch_config_pdu->startingPRB;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.timeDomainOCC = pucch_config_pdu->timeDomainOCC;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.occ_length = pucch_config_pdu->occ_length;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->format_parameters.occ_Index = pucch_config_pdu->occ_Index;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->intraSlotFrequencyHopping = pucch_config_pdu->intraSlotFrequencyHopping;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].PUCCH_Resource[pucch_resource_id]->secondHopPRB = pucch_config_pdu->secondHopPRB; // Not sure this parameter is used
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].formatConfig[format-1]->additionalDMRS = pucch_config_pdu->additionalDMRS; // At this point we need to know which format is going to be used
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_dedicated_nr[0].formatConfig[format-1]->pi2PBSK = pucch_config_pdu->pi2PBSK;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0].pucch_GroupHopping = pucch_config_pdu->pucch_GroupHopping;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0].hoppingId = pucch_config_pdu->hoppingId;
-	  PHY_vars_UE_g[module_id][cc_id]->pucch_config_common_nr[0].p0_nominal = pucch_config_pdu->p0_nominal;
-	  /*                     pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.initialCyclicShift = pucch_config_pdu->initialCyclicShift;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.nrofSymbols = pucch_config_pdu->nrofSymbols;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.startingSymbolIndex = pucch_config_pdu->startingSymbolIndex;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.nrofPRBs = pucch_config_pdu->nrofPRBs;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->startingPRB = pucch_config_pdu->startingPRB;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.timeDomainOCC = pucch_config_pdu->timeDomainOCC;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.occ_length = pucch_config_pdu->occ_length;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->format_parameters.occ_Index = pucch_config_pdu->occ_Index;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->intraSlotFrequencyHopping = pucch_config_pdu->intraSlotFrequencyHopping;
-				 pucch_config_dedicated->PUCCH_Resource[pucch_resource_id]->secondHopPRB = pucch_config_pdu->secondHopPRB; // Not sure this parameter is used
-				 pucch_config_dedicated->formatConfig[format-1]->additionalDMRS = pucch_config_pdu->additionalDMRS; // At this point we need to know which format is going to be used
-				 pucch_config_dedicated->formatConfig[format-1]->pi2PBSK = pucch_config_pdu->pi2PBSK;
-				 pucch_config_common->pucch_GroupHopping = pucch_config_pdu->pucch_GroupHopping;
-				 pucch_config_common->hoppingId = pucch_config_pdu->hoppingId;
-				 pucch_config_common->p0_nominal = pucch_config_pdu->p0_nominal;*/
-	}
-	if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PRACH){
-	  // prach config pdu
-	  fapi_nr_ul_config_prach_pdu *prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
-	  /*frame_parms.prach_config_common.rootSequenceIndex = prach_config_pdu->root_sequence_index;
-	  frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = prach_config_pdu->prach_configuration_index;
-	  frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig = prach_config_pdu->zero_correlation_zone_config;
-	  frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag = prach_config_pdu->restrictedset_config;
-	  frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset = prach_config_pdu->prach_freq_offset;*/
-	  prach_resources->ra_PreambleIndex = prach_config_pdu->preamble_index;
-	}
+      int pdu_done = 0;
+      pthread_mutex_lock(&ul_config->mutex_ul_config);
+      LOG_D(PHY, "%d.%d ul S ul_config %p pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_done, ul_config->number_pdus);
+
+      for (i = 0; i < ul_config->number_pdus; ++i){
+
+        AssertFatal(ul_config->ul_config_list[i].pdu_type <= FAPI_NR_UL_CONFIG_TYPES,"pdu_type %d out of bounds\n",ul_config->ul_config_list[i].pdu_type);
+        LOG_D(PHY, "In %s: processing %s PDU of %d total UL PDUs (ul_config %p) \n", __FUNCTION__, ul_pdu_type[ul_config->ul_config_list[i].pdu_type - 1], ul_config->number_pdus, ul_config);
+
+        uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, current_harq_pid, gNB_id = 0;
+        /* PRACH */
+        //NR_PRACH_RESOURCES_t *prach_resources;
+        fapi_nr_ul_config_prach_pdu *prach_config_pdu;
+        /* PUSCH */
+        nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu;
+        /* PUCCH */
+        fapi_nr_ul_config_pucch_pdu *pucch_config_pdu;
+        LOG_D(PHY, "%d.%d ul B ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+
+        switch (pdu_type){
+
+        case (FAPI_NR_UL_CONFIG_TYPE_PUSCH):
+          // pusch config pdu
+          pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
+          current_harq_pid = pusch_config_pdu->pusch_data.harq_process_id;
+          NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch0->harq_processes[current_harq_pid];
+          harq_process_ul_ue->status = 0;
+
+          if (harq_process_ul_ue){
+
+            nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &harq_process_ul_ue->pusch_pdu;
+
+            memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
+
+            ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
+
+            if (scheduled_response->tx_request) {
+              for (int j=0; j<scheduled_response->tx_request->number_of_pdus; j++) {
+                fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
+                if ((tx_req_body->pdu_index == i) && (tx_req_body->pdu_length > 0)) {
+                  LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
+                  memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
+                  harq_process_ul_ue->status = ACTIVE;
+                  ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+                  pdu_done++;
+                  LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+                  break;
+                }
+              }
+            }
+
+          } else {
+
+            LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
+            return -1;
+
+          }
+
+        break;
+
+        case (FAPI_NR_UL_CONFIG_TYPE_PUCCH):
+          found = false;
+          pucch_config_pdu = &ul_config->ul_config_list[i].pucch_config_pdu;
+          for(int j=0; j<2; j++) {
+            if(pucch_vars->active[j] == false) {
+              LOG_D(PHY,"%d.%d Copying pucch pdu to UE PHY\n",scheduled_response->frame,slot);
+              memcpy((void*)&(pucch_vars->pucch_pdu[j]), (void*)pucch_config_pdu, sizeof(fapi_nr_ul_config_pucch_pdu));
+              pucch_vars->active[j] = true;
+              found = true;
+              ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+              pdu_done++;
+              LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+              break;
+            }
+          }
+          if (!found)
+            LOG_E(PHY, "Couldn't find allocation for PUCCH PDU in PUCCH VARS\n");
+        break;
+
+        case (FAPI_NR_UL_CONFIG_TYPE_PRACH):
+          // prach config pdu
+          prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
+          memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu), (void*)prach_config_pdu, sizeof(fapi_nr_ul_config_prach_pdu));
+          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+          pdu_done++;
+          LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+        break;
+
+        case (FAPI_NR_UL_CONFIG_TYPE_DONE):
+          pdu_done++; // count the no of pdu processed
+          LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+        break;
+
+        default:
+          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+          pdu_done++; // count the no of pdu processed
+          LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+        break;
+        }
       }
-    }else{
-            
-    }
 
-    if(scheduled_response->tx_request != NULL){
-
-    }else{
-            
+      //Clear the fields when all the config pdu are done
+      if (pdu_done == ul_config->number_pdus) {
+        if (scheduled_response->tx_request)
+          scheduled_response->tx_request->number_of_pdus = 0;
+        ul_config->sfn = 0;
+        ul_config->slot = 0;
+        ul_config->number_pdus = 0;
+        LOG_D(PHY, "%d.%d clear ul_config %p\n", scheduled_response->frame, slot, ul_config);
+        memset(ul_config->ul_config_list, 0, sizeof(ul_config->ul_config_list));
+      }
+      pthread_mutex_unlock(&ul_config->mutex_ul_config);
     }
   }
-
   return 0;
 }
+
+
 
 
 int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
   fapi_nr_config_request_t *nrUE_config = &PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->nrUE_config;
-  
-  if(phy_config != NULL)
+
+  if(phy_config != NULL) {
       memcpy(nrUE_config,&phy_config->config_req,sizeof(fapi_nr_config_request_t));
-    
+      if (PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] == NOT_SYNCHED)
+	      PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] = PRACH;
+  }
   return 0;
 }
 

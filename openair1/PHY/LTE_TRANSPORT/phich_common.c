@@ -102,6 +102,34 @@ unsigned char subframe2_ul_harq(LTE_DL_FRAME_PARMS *frame_parms,unsigned char su
     return(subframe&7);
 
   switch (frame_parms->tdd_config) {
+  case 1:
+    if (subframe == 6) {
+      return(0);
+    } else if (subframe==9){
+      return(1);
+    } else if (subframe==1){
+      return(2);
+    } else if (subframe==4){
+      return(3);
+    } else {
+      LOG_E(PHY,"phich.c: subframe2_ul_harq, illegal subframe %d for tdd_config %d\n",
+            subframe,frame_parms->tdd_config);
+      return(0);
+    }
+
+    break;
+  case 2:
+    if (subframe == 3) {
+      return(1);
+    } else if (subframe==8){
+      return(0);
+    } else {
+      LOG_E(PHY,"phich.c: subframe2_ul_harq, illegal subframe %d for tdd_config %d\n",
+            subframe,frame_parms->tdd_config);
+      return(0);
+    }
+
+    break;
     case 3:
       if ( (subframe == 8) || (subframe == 9) ) {
         return(subframe-8);

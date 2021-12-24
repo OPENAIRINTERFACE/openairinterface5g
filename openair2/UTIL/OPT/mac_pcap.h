@@ -1,8 +1,12 @@
+#ifndef __UTIL_OPT_MAC_PCAP__H__
+#define __UTIL_OPT_MAC_PCAP__H__
+
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
 
 #define MAC_LTE_DLT 147
+#define DLT_IPV4 228
 /********************************************************/
 /* Definitions and descriptions come from:
     http://wiki.wireshark.org/Development/LibpcapFileFormat */
@@ -26,20 +30,4 @@ typedef struct pcaprec_hdr_s {
   unsigned int   orig_len;       /* actual length of packet */
 } pcaprec_hdr_t;
 
-/* Context information for every MAC PDU that will be logged */
-typedef struct MAC_Context_Info_t {
-  unsigned short radioType;
-  unsigned char  direction;
-  unsigned char  rntiType;
-  unsigned short rnti;
-  unsigned short ueid;
-  unsigned char  isRetx;
-  unsigned char  crcStatusOK;
-
-  unsigned short sysFrameNumber;
-  unsigned short subFrameNumber;
-
-  unsigned int   subframesSinceCaptureStart;
-} MAC_Context_Info_t;
-
-
+#endif

@@ -48,12 +48,17 @@ typedef enum {
   MSC_MAC_ENB,
   MSC_RLC_ENB,
   MSC_PDCP_ENB,
+  MSC_PDCP_GNB,
   MSC_RRC_ENB,
+  MSC_RRC_GNB,
   MSC_IP_ENB,
   MSC_S1AP_ENB,
+  MSC_NGAP_GNB,
   MSC_GTPU_ENB,
+  MSC_GTPU_GNB,
   MSC_GTPU_SGW,
   MSC_S1AP_MME,
+  MSC_NGAP_AMF,
   MSC_MMEAPP_MME,
   MSC_NAS_MME,
   MSC_NAS_EMM_MME,
@@ -112,7 +117,7 @@ void msc_log_message(
 
 #define MESSAGE_CHART_GENERATOR  msc_interface.msc_loaded
 
-msc_interface_t msc_interface;
+extern msc_interface_t msc_interface;
 #define MSC_INIT(arg1,arg2)                                     if(msc_interface.msc_loaded) msc_interface.msc_init(arg1,arg2)
 #define MSC_START_USE                                           if(msc_interface.msc_loaded) msc_interface.msc_start_use
 #define MSC_END                                                 if(msc_interface.msc_loaded) msc_interface.msc_end

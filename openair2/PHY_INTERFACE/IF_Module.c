@@ -7,8 +7,8 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #define MAX_IF_MODULES 100
 
-IF_Module_t *if_inst[MAX_IF_MODULES];
-Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
+static IF_Module_t *if_inst[MAX_IF_MODULES];
+static Sched_Rsp_t Sched_INFO[MAX_IF_MODULES][MAX_NUM_CCs];
 
 extern int oai_nfapi_harq_indication(nfapi_harq_indication_t *harq_ind);
 extern int oai_nfapi_crc_indication(nfapi_crc_indication_t *crc_ind);
@@ -18,6 +18,8 @@ extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 
 extern uint16_t sf_ahead;
 extern UL_RCC_IND_t  UL_RCC_INFO;
+
+extern RAN_CONTEXT_t RC;
 
 uint16_t frame_cnt=0;
 void handle_rach(UL_IND_t *UL_info) {
@@ -685,7 +687,7 @@ static void dump_dl(Sched_Rsp_t *d) {
 /* debug utility functions end                                              */
 /****************************************************************************/
 
-void UL_indication(UL_IND_t *UL_info, L1_rxtx_proc_t *proc) {
+void UL_indication(UL_IND_t *UL_info, void *proc) {
   AssertFatal(UL_info!=NULL,"UL_INFO is null\n");
 #ifdef DUMP_FAPI
   dump_ul(UL_info);

@@ -473,7 +473,7 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
     if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 4000) {
       // note: probably ul_failure_timer should be less than UE radio link failure time(see T310/N310/N311)
       if (NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
-        MessageDef *m = itti_alloc_new_message(TASK_MAC_ENB, F1AP_UE_CONTEXT_RELEASE_REQ);
+        MessageDef *m = itti_alloc_new_message(TASK_MAC_ENB, 0, F1AP_UE_CONTEXT_RELEASE_REQ);
         F1AP_UE_CONTEXT_RELEASE_REQ(m).rnti = rnti;
         F1AP_UE_CONTEXT_RELEASE_REQ(m).cause = F1AP_CAUSE_RADIO_NETWORK;
         F1AP_UE_CONTEXT_RELEASE_REQ(m).cause_value = 1; // 1 = F1AP_CauseRadioNetwork_rl_failure
@@ -547,7 +547,7 @@ copy_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
     ul_req_tmp->ul_config_request_body.number_of_pdus = 0;
 
     if (ul_req->ul_config_request_body.number_of_pdus>0) {
-      LOG_D(PHY, "%s() active NOW (frameP:%d subframeP:%d) pdus:%d\n", __FUNCTION__, frameP, subframeP, ul_req->ul_config_request_body.number_of_pdus);
+      LOG_D(MAC, "%s() active NOW (frameP:%d subframeP:%d) pdus:%d\n", __FUNCTION__, frameP, subframeP, ul_req->ul_config_request_body.number_of_pdus);
     }
 
     memcpy((void *)ul_req->ul_config_request_body.ul_config_pdu_list,
@@ -555,6 +555,8 @@ copy_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
            ul_req->ul_config_request_body.number_of_pdus*sizeof(nfapi_ul_config_request_pdu_t));
   }
 }
+
+#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 
 void
 eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
@@ -581,6 +583,23 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     memset(cc[CC_id].vrb_map_UL, 0, 100);
     cc[CC_id].mcch_active = 0;
     clear_nfapi_information(RC.mac[module_idP], CC_id, frameP, subframeP);
+
+    /* hack: skip BCH RBs in subframe 0 for DL scheduling,
+     *       because with high MCS we may exceed code rate 0.93
+     *       when using those RBs (36.213 7.1.7 says the UE may
+     *       skip decoding if the code rate is higher than 0.93)
+     * TODO: remove this hack, deal with physical bits properly
+     *       i.e. reduce MCS in the scheduler if code rate > 0.93
+     */
+    if (subframeP == 0) {
+      int i;
+      int bw = cc[CC_id].mib->message.dl_Bandwidth;
+      /* start and count defined for RBs: 6, 15, 25, 50, 75, 100 */
+      int start[6] = { 0, 4, 9, 22, 34, 47 };
+      int count[6] = { 6, 7, 7,  6,  7,  6 };
+      for (i = 0; i < count[bw]; i++)
+        cc[CC_id].vrb_map[start[bw] + i] = 1;
+    }
   }
 
   /* Refresh UE list based on UEs dropped by PHY in previous subframe */
@@ -590,16 +609,45 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       CC_id = UE_PCCID(module_idP, UE_id);
       UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
+/* to be merged with MAC_stats.log generation. probably redundant
       if (((frameP & 127) == 0) && (subframeP == 0)) {
-        LOG_I(MAC,"UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n",
+        double total_bler;
+        if(UE_scheduling_control->pusch_rx_num[CC_id] == 0 && UE_scheduling_control->pusch_rx_error_num[CC_id] == 0) {
+          total_bler = 0;
+        }
+        else {
+          total_bler = (double)UE_scheduling_control->pusch_rx_error_num[CC_id] / (double)(UE_scheduling_control->pusch_rx_error_num[CC_id] + UE_scheduling_control->pusch_rx_num[CC_id]) * 100;
+        }
+        LOG_I(MAC,"UE %x : %s, PHR %d DLCQI %d PUSCH %d PUCCH %d RLC disc %d UL-stat rcv %lu err %lu bler %lf mcsoff %d bsr %u sched %u tbs %lu cnt %u , DL-stat tbs %lu cnt %u rb %u buf %u 1st %u ret %u ri %d\n",
               rnti,
               UE_scheduling_control->ul_out_of_sync == 0 ? "in synch" : "out of sync",
               UE_info->UE_template[CC_id][UE_id].phr_info,
               UE_scheduling_control->dl_cqi[CC_id],
-              (5 * UE_scheduling_control->pusch_snr[CC_id] - 640) / 10,
-              (5 * UE_scheduling_control->pucch1_snr[CC_id] - 640) / 10);
+              UE_scheduling_control->pusch_snr_avg[CC_id],
+              UE_scheduling_control->pucch1_snr[CC_id],
+              UE_scheduling_control->rlc_out_of_resources_cnt,
+              UE_scheduling_control->pusch_rx_num[CC_id],
+              UE_scheduling_control->pusch_rx_error_num[CC_id],
+              total_bler,
+              UE_scheduling_control->mcs_offset[CC_id],
+              UE_info->UE_template[CC_id][UE_id].estimated_ul_buffer,
+              UE_info->UE_template[CC_id][UE_id].scheduled_ul_bytes,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes_rx,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_num_pdus_rx,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_num_pdus,
+              UE_info->eNB_UE_stats[CC_id][UE_id].total_rbs_used,
+#if defined(PRE_SCD_THREAD)
+              UE_info->UE_template[CC_id][UE_id].dl_buffer_total,
+#else
+              0,
+#endif
+              UE_scheduling_control->first_cnt[CC_id],
+              UE_scheduling_control->ret_cnt[CC_id],
+              UE_scheduling_control->aperiodic_ri_received[CC_id]
+        );
       }
-
+*/
       RC.eNB[module_idP][CC_id]->pusch_stats_bsr[UE_id][(frameP * 10) + subframeP] = -63;
 
       if (UE_id == UE_info->list.head) {
@@ -843,6 +891,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
           }
 
           /* Note: This should not be done in the MAC! */
+	  /*
           for (int ii=0; ii<MAX_MOBILES_PER_ENB; ii++) {
             LTE_eNB_ULSCH_t *ulsch = RC.eNB[module_idP][CC_id]->ulsch[ii];
 
@@ -862,6 +911,17 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
               clean_eNb_dlsch(dlsch);
             }
           }
+	  */
+
+	int id;
+
+	// clean ULSCH entries for rnti
+	id = find_ulsch(rnti,RC.eNB[module_idP][CC_id],SEARCH_EXIST);
+        if (id>=0) clean_eNb_ulsch(RC.eNB[module_idP][CC_id]->ulsch[id]);
+
+	// clean DLSCH entries for rnti
+	id = find_dlsch(rnti,RC.eNB[module_idP][CC_id],SEARCH_EXIST);
+        if (id>=0) clean_eNb_dlsch(RC.eNB[module_idP][CC_id]->dlsch[id][0]);
 
           for (int j = 0; j < 10; j++) {
             nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
@@ -897,13 +957,16 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 #if (!defined(PRE_SCD_THREAD))
   if (!NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
+    void rlc_tick(int, int);
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, subframeP, module_idP);
+    rlc_tick(frameP, subframeP);
     pdcp_run(&ctxt);
     pdcp_mbms_run(&ctxt);
     rrc_rx_tx(&ctxt, CC_id);
   }
 #endif
 
+  int do_fembms_si=0;
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     if (cc[CC_id].MBMS_flag > 0) {
       start_meas(&RC.mac[module_idP]->schedule_mch);
@@ -914,6 +977,10 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       }
       stop_meas(&RC.mac[module_idP]->schedule_mch);
     }
+    if (cc[CC_id].FeMBMS_flag > 0) {
+	do_fembms_si = 1;
+    }
+
   }
 
   static int debug_flag = 0;
@@ -935,12 +1002,22 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   /* This schedules MIB */
-  if ((subframeP == 0) && (frameP & 3) == 0)
-    schedule_mib(module_idP, frameP, subframeP);
+  if(!do_fembms_si/*get_softmodem_params()->fembms*/){
+    if ((subframeP == 0) && (frameP & 3) == 0)
+      schedule_mib(module_idP, frameP, subframeP);
+  }else{
+    if ((subframeP == 0) && (frameP & 15) == 0 ){
+       schedule_fembms_mib(module_idP, frameP, subframeP);
+       //schedule_SI_MBMS(module_idP, frameP, subframeP);
+    }
+  }
 
   if (get_softmodem_params()->phy_test == 0) {
     /* This schedules SI for legacy LTE and eMTC starting in subframeP */
-    schedule_SI(module_idP, frameP, subframeP);
+    if(!do_fembms_si/*get_softmodem_params()->fembms*/)
+       schedule_SI(module_idP, frameP, subframeP);
+    else
+       schedule_SI_MBMS(module_idP, frameP, subframeP);
     /* This schedules Paging in subframeP */
     schedule_PCH(module_idP,frameP,subframeP);
     /* This schedules Random-Access for legacy LTE and eMTC starting in subframeP */

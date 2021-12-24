@@ -33,6 +33,7 @@
 #ifndef COMMON_LIB_H
 #define COMMON_LIB_H
 #include <stdint.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <openair1/PHY/TOOLS/tools_defs.h>
 #include "record_player.h"
@@ -41,6 +42,8 @@
 #define OAI_RF_LIBNAME        "oai_device"
 /* name of shared library implementing the transport */
 #define OAI_TP_LIBNAME        "oai_transpro"
+/* name of shared library implementing a third-party transport */
+#define OAI_THIRDPARTY_TP_LIBNAME        "thirdparty_transpro"
 /* name of shared library implementing the rf simulator */
 #define OAI_RFSIM_LIBNAME     "rfsimulator"
 /* name of shared library implementing the basic simulator */
@@ -51,10 +54,10 @@
 /* flags for BBU to determine whether the attached radio head is local or remote */
 #define RAU_LOCAL_RADIO_HEAD  0
 #define RAU_REMOTE_RADIO_HEAD 1
-
-#ifndef MAX_CARDS
-  #define MAX_CARDS 8
-#endif
+#define RAU_REMOTE_THIRDPARTY_RADIO_HEAD 2
+#define MAX_WRITE_THREAD_PACKAGE     10
+#define MAX_WRITE_THREAD_BUFFER_SIZE 8
+#define MAX_CARDS 8
 
 typedef int64_t openair0_timestamp;
 typedef volatile int64_t openair0_vtimestamp;
@@ -69,13 +72,9 @@ typedef enum {
   max_gain=0,med_gain,byp_gain
 } rx_gain_t;
 
-#if OCP_FRAMEWORK
-#include <enums.h>
-#else
 typedef enum {
   duplex_mode_TDD=1,duplex_mode_FDD=0
 } duplex_mode_t;
-#endif
 
 
 /** @addtogroup _GENERIC_PHY_RF_INTERFACE_
@@ -91,6 +90,8 @@ typedef enum {
   USRP_B200_DEV,
   /*!\brief device is USRP X300/X310*/
   USRP_X300_DEV,
+  /*!\brief device is USRP N300/N310*/
+  USRP_N300_DEV,
   /*!\brief device is BLADE RF*/
   BLADERF_DEV,
   /*!\brief device is LMSSDR (SoDeRa)*/
@@ -103,9 +104,10 @@ typedef enum {
   ADRV9371_ZC706_DEV,
   /*!\brief device is UEDv2 */
   UEDv2_DEV,
+  RFSIMULATOR,
   MAX_RF_DEV_TYPE
 } dev_type_t;
-#define DEVTYPE_NAMES {"","EXMIMO","USRP B200","USRP X300","BLADERF","LMSSDR","IRIS","No HW","ADRV9371_ZC706","UEDv2"} 
+#define DEVTYPE_NAMES {"","EXMIMO","USRP B200","USRP X300","USRP N300","BLADERF","LMSSDR","IRIS","No HW","ADRV9371_ZC706","UEDv2", "RFSIMULATOR"} 
 /*!\brief transport protocol types
  */
 typedef enum {
@@ -275,8 +277,37 @@ typedef struct {
   void *rx;
 } if_buffer_t;
 
+typedef struct {
+  openair0_timestamp timestamp;
+  void *buff[MAX_WRITE_THREAD_BUFFER_SIZE];// buffer to be write;
+  int nsamps;
+  int cc;
+  signed char first_packet;
+  signed char last_packet;
+  int flags_msb;
+} openair0_write_package_t;
+
+typedef struct {
+  openair0_write_package_t write_package[MAX_WRITE_THREAD_PACKAGE];
+  int start;
+  int end;
+  /// \internal This variable is protected by \ref mutex_write
+  int count_write;
+  /// pthread struct for trx write thread
+  pthread_t pthread_write;
+  /// pthread attributes for trx write thread
+  pthread_attr_t attr_write;
+  /// condition varible for trx write thread
+  pthread_cond_t cond_write;
+  /// mutex for trx write thread
+  pthread_mutex_t mutex_write;
+} openair0_thread_t;
+
 /*!\brief structure holds the parameters to configure USRP devices */
 struct openair0_device_t {
+  /*!tx write thread*/
+  openair0_thread_t write_thread;
+
   /*!brief Module ID of this device */
   int Mod_id;
 
@@ -337,12 +368,22 @@ struct openair0_device_t {
   /*! \brief Called to send samples to the RF target
       @param device pointer to the device structure specific to the RF hardware target
       @param timestamp The timestamp at whicch the first sample MUST be sent
-      @param buff Buffer which holds the samples
+      @param buff Buffer which holds the samples (2 dimensional)
+      @param nsamps number of samples to be sent
+      @param number of antennas 
+      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+  */
+  int (*trx_write_func)(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int antenna_id, int flags);
+
+  /*! \brief Called to send samples to the RF target
+      @param device pointer to the device structure specific to the RF hardware target
+      @param timestamp The timestamp at whicch the first sample MUST be sent
+      @param buff Buffer which holds the samples (1 dimensional)
       @param nsamps number of samples to be sent
       @param antenna_id index of the antenna if the device has multiple anteannas
       @param flags flags must be set to TRUE if timestamp parameter needs to be applied
   */
-  int (*trx_write_func)(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int antenna_id, int flags);
+  int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void *buff, int nsamps,int antenna_id, int flags);
 
   /*! \brief Receive samples from hardware.
    * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
@@ -352,10 +393,24 @@ struct openair0_device_t {
    * \param[out] ptimestamp the time at which the first sample was received.
    * \param[out] buff An array of pointers to buffers for received samples. The buffers must be large enough to hold the number of samples \ref nsamps.
    * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
-   * \param antenna_id Index of antenna for which to receive samples
+   * \param num_antennas number of antennas from which to receive samples
    * \returns the number of sample read
    */
-  int (*trx_read_func)(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps,int antenna_id);
+
+  int (*trx_read_func)(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps,int num_antennas);
+
+  /*! \brief Receive samples from hardware, this version provides a single antenna at a time and returns.
+   * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
+   * the first channel. *ptimestamp is the time at which the first sample
+   * was received.
+   * \param device the hardware to use
+   * \param[out] ptimestamp the time at which the first sample was received.
+   * \param[out] buff A pointers to a buffer for received samples. The buffer must be large enough to hold the number of samples \ref nsamps.
+   * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
+   * \param antenna_id Index of antenna from which samples were received
+   * \returns the number of sample read
+   */
+  int (*trx_read_func2)(openair0_device *device, openair0_timestamp *ptimestamp, void *buff, int nsamps,int *antenna_id);
 
   /*! \brief print the device statistics
    * \param device the hardware to use
@@ -400,21 +455,47 @@ struct openair0_device_t {
    * \param arg pointer to capabilities or configuration
    */
   void (*configure_rru)(int idx, void *arg);
+
+/*! \brief Pointer to generic RRU private information
+   */
+
+  void *thirdparty_priv;
+
+  /*! \brief Callback for Third-party RRU Initialization routine
+     \param device the hardware configuration to use
+   */
+  int (*thirdparty_init)(openair0_device *device);
+  /*! \brief Callback for Third-party RRU Cleanup routine
+     \param device the hardware configuration to use
+   */
+  int (*thirdparty_cleanup)(openair0_device *device);
+
+  /*! \brief Callback for Third-party start streaming routine
+     \param device the hardware configuration to use
+   */
+  int (*thirdparty_startstreaming)(openair0_device *device);
+
+  /*! \brief RRU Configuration callback
+   * \param idx RU index
+   * \param arg pointer to capabilities or configuration
+   */
+  int (*trx_write_init)(openair0_device *device);
+  /* \brief Get internal parameter
+   * \param id parameter to get
+   * \return a pointer to the parameter
+   */
+  void *(*get_internal_parameter)(char *id);
 };
 
 /* type of device init function, implemented in shared lib */
 typedef int(*oai_device_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg);
 /* type of transport init function, implemented in shared lib */
 typedef int(*oai_transport_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t *eth_params);
-#define UE_MAGICDL_FDD 0xA5A5A5A5A5A5A5A5  // UE DL FDD record
-#define UE_MAGICUL_FDD 0x5A5A5A5A5A5A5A5A  // UE UL FDD record
-#define UE_MAGICDL_TDD 0xA6A6A6A6A6A6A6A6  // UE DL TDD record
-#define UE_MAGICUL_TDD 0x6A6A6A6A6A6A6A6A  // UE UL TDD record
+#define UE_MAGICDL 0xA5A5A5A5A5A5A5A5  // UE DL FDD record
+#define UE_MAGICUL 0x5A5A5A5A5A5A5A5A  // UE UL FDD record
 
-#define ENB_MAGICDL_FDD 0xB5B5B5B5B5B5B5B5  // eNB DL FDD record
-#define ENB_MAGICUL_FDD 0x5B5B5B5B5B5B5B5B  // eNB UL FDD record
-#define ENB_MAGICDL_TDD 0xB6B6B6B6B6B6B6B6  // eNB DL TDD record
-#define ENB_MAGICUL_TDD 0x6B6B6B6B6B6B6B6B  // eNB UL TDD record
+#define ENB_MAGICDL 0xB5B5B5B5B5B5B5B5  // eNB DL FDD record
+#define ENB_MAGICUL 0x5B5B5B5B5B5B5B5B  // eNB UL FDD record
 
 #define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
 
@@ -430,19 +511,6 @@ typedef struct {
   uint32_t option_value;   // Option value
   uint32_t option_flag;    // Option flag
 } samplesBlockHeader_t;
-
-#define UE_MAGICDL_FDD 0xA5A5A5A5A5A5A5A5  // UE DL FDD record
-#define UE_MAGICUL_FDD 0x5A5A5A5A5A5A5A5A  // UE UL FDD record
-#define UE_MAGICDL_TDD 0xA6A6A6A6A6A6A6A6  // UE DL TDD record
-#define UE_MAGICUL_TDD 0x6A6A6A6A6A6A6A6A  // UE UL TDD record
-
-#define ENB_MAGICDL_FDD 0xB5B5B5B5B5B5B5B5  // eNB DL FDD record
-#define ENB_MAGICUL_FDD 0x5B5B5B5B5B5B5B5B  // eNB UL FDD record
-#define ENB_MAGICDL_TDD 0xB6B6B6B6B6B6B6B6  // eNB DL TDD record
-#define ENB_MAGICUL_TDD 0x6B6B6B6B6B6B6B6B  // eNB UL TDD record
-
-#define OPTION_LZ4  0x00000001          // LZ4 compression (option_value is set to compressed size)
-
 
 #ifdef __cplusplus
 extern "C"
@@ -491,7 +559,10 @@ extern int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **r
 extern void iqrecorder_end(openair0_device *device);
 
 
+#include <unistd.h>
+#ifndef gettid
 #define gettid() syscall(__NR_gettid)
+#endif
 /*@}*/
 
 

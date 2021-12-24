@@ -24,7 +24,7 @@
 	<htmlTabRef>test-multi-rru-10</htmlTabRef>
 	<htmlTabName>Test-Multi-RRU-10MHz</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>4</repeatCount>
+	<repeatCount>2</repeatCount>
 	<TestCaseRequestedList>
  030211 030212 030213
  030111 030112 030113

@@ -19,6 +19,9 @@
  *      contact@openairinterface.org
  */
 
+#ifndef __TEST_OAISIM_MME_TEST_S1C_S1AP__H__
+#define __TEST_OAISIM_MME_TEST_S1C_S1AP__H__
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,3 +56,5 @@ void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
                                   uint16_t             out_streams);
 void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *s1ap_register_eNB);
 void *s1ap_eNB_task(void *arg);
+
+#endif

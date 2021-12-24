@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <openair1/PHY/defs_eNB.h>
+#include <common/utils/telnetsrv/telnetsrv_proccmd.h>
 
 #define CU_PORT "7878"
 #define DU_PORT "8787"
@@ -279,7 +280,7 @@ int init_rf(RU_t *ru);
 void rx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
 void tx_rf(RU_t *ru, L1_rxtx_proc_t *proc);
 void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe);
-void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
+void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, int fembms_flag);
 bool dlsch_procedures(PHY_VARS_eNB *eNB,
                       L1_rxtx_proc_t *proc,
                       int harq_pid,
@@ -325,5 +326,6 @@ void fep_full(RU_t *ru, int subframe);
 void feptx_prec(RU_t *ru,int frame,int subframe);
 void feptx_ofdm(RU_t *ru, int frame, int subframe);
 void oai_subframe_ind(uint16_t sfn, uint16_t sf);
+void softmodem_printresources(int sig, telnet_printfunc_t pf);
 extern uint16_t sf_ahead;
 #endif

@@ -19,6 +19,9 @@
  *      contact@openairinterface.org
  */
 
+#ifndef __COMMON_UTILS_ASSERTIONS__H__
+#define __COMMON_UTILS_ASSERTIONS__H__
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -30,16 +33,13 @@
 # include "backtrace.h"
 #endif
 
-#ifndef ASSERTIONS_H_
-#define ASSERTIONS_H_
-
 void output_log_mem(void);
 #define _Assert_Exit_                           \
     fprintf(stderr, "\nExiting execution\n");   \
     display_backtrace();                        \
     fflush(stdout);                             \
     fflush(stderr);                             \
-    exit(EXIT_FAILURE);                         \
+    abort();
 
 #define _Assert_(cOND, aCTION, fORMAT, aRGS...)             \
 do {                                                        \
@@ -83,4 +83,4 @@ do {                                                            \
     }                                                           \
 } while(0)
 
-#endif /* ASSERTIONS_H_ */
+#endif /* __COMMON_UTILS_ASSERTIONS__H__ */

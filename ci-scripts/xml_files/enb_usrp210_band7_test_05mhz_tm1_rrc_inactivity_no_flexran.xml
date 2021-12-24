@@ -24,6 +24,7 @@
 	<htmlTabRef>test-05-tm1-rrc-no-flex</htmlTabRef>
 	<htmlTabName>Test-05MHz-TM1-RRC-Inactivity</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>2</repeatCount>
 	<TestCaseRequestedList>
  030201
  040101
@@ -33,8 +34,8 @@
 
 	<testCase id="000001">
 		<class>IdleSleep</class>
-		<desc>Waiting for 35 seconds</desc>
-		<idle_sleep_time_in_sec>35</idle_sleep_time_in_sec>
+		<desc>Waiting for 55 seconds</desc>
+		<idle_sleep_time_in_sec>55</idle_sleep_time_in_sec>
 	</testCase>
 
 	<testCase id="000002">
