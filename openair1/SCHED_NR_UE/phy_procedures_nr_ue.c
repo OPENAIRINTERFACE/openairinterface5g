@@ -1085,7 +1085,6 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
             (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
       LOG_D(PHY, "AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
             frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
-
       LOG_D(PHY,"AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
             frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats[proc->thread_id].p_time)/(cpuf*1000.0));
 
@@ -1932,7 +1931,6 @@ if (nr_slot_rx==9) {
  }
 
 stop_meas(&ue->generic_stat);
- LOG_D(PHY,"after tubo until end of Rx %5.2f \n",ue->generic_stat.p_time/(cpuf*1000.0));
 
 #ifdef EMOS
 phy_procedures_emos_UE_RX(ue,slot,gNB_id);
