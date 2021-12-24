@@ -257,6 +257,48 @@ void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
   *n_rb = 6*count;
 }
 
+int get_nb_periods_per_frame(uint8_t tdd_period) {
+
+  int nb_periods_per_frame;
+  switch(tdd_period) {
+    case 0:
+      nb_periods_per_frame = 20; // 10ms/0p5ms
+      break;
+
+    case 1:
+      nb_periods_per_frame = 16; // 10ms/0p625ms
+      break;
+
+    case 2:
+      nb_periods_per_frame = 10; // 10ms/1ms
+      break;
+
+    case 3:
+      nb_periods_per_frame = 8; // 10ms/1p25ms
+      break;
+
+    case 4:
+      nb_periods_per_frame = 5; // 10ms/2ms
+      break;
+
+    case 5:
+      nb_periods_per_frame = 4; // 10ms/2p5ms
+      break;
+
+    case 6:
+      nb_periods_per_frame = 2; // 10ms/5ms
+      break;
+
+    case 7:
+      nb_periods_per_frame = 1; // 10ms/10ms
+      break;
+
+    default:
+      AssertFatal(1==0,"Undefined tdd period %d\n", tdd_period);
+  }
+  return nb_periods_per_frame;
+}
+
 
 int get_dmrs_port(int nl, uint16_t dmrs_ports) {
 
@@ -274,14 +316,6 @@ int get_dmrs_port(int nl, uint16_t dmrs_ports) {
   }
   AssertFatal(p>-1,"No dmrs port corresponding to layer %d found\n",nl);
   return p;
-}
-
-int get_num_dmrs(uint16_t dmrs_mask ) {
-
-  int num_dmrs=0;
-
-  for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
-  return(num_dmrs);
 }
 
 lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
@@ -472,9 +506,14 @@ int get_subband_size(int NPRB,int size) {
  
 }
 
+
 // from start symbol index and nb or symbols to symbol occupation bitmap in a slot
 uint16_t SL_to_bitmap(int startSymbolIndex, int nrOfSymbols) {
  return ((1<<nrOfSymbols)-1)<<startSymbolIndex;
+}
+
+int get_SLIV(uint8_t S, uint8_t L) {
+  return ( (uint16_t)(((L-1)<=7)? (14*(L-1)+S) : (14*(15-L)+(13-S))) );
 }
 
 void SLIV2SL(int SLIV,int *S,int *L) {
