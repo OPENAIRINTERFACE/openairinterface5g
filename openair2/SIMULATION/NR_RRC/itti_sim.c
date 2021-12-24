@@ -383,7 +383,7 @@ void terminate_task(task_id_t task_id, module_id_t mod_id) {
 //extern void  free_transport(PHY_VARS_gNB *);
 extern void  nr_phy_free_RU(RU_t *);
 
-void init_pdcp(void) {
+statis void init_pdcp(void) {
   //if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
   pdcp_layer_init();
   uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
@@ -396,8 +396,8 @@ void init_pdcp(void) {
 
   pdcp_module_init(pdcp_initmask);
 
-  pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-  pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+  pdcp_set_rlc_data_req_func(rlc_data_req);
+  pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
 }
 
 

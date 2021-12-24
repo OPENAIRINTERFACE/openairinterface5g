@@ -99,7 +99,9 @@ pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 
-
+// not used in UE
+instance_t CUuniqInstance=0;
+instance_t DUuniqInstance=0;
 
 RAN_CONTEXT_t RC;
 volatile int             oai_exit = 0;
@@ -369,7 +371,7 @@ void init_openair0(void) {
   }
 }
 
-void init_pdcp(void) {
+static void init_pdcp(void) {
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
   /*if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
@@ -386,8 +388,8 @@ void init_pdcp(void) {
   nr_DRB_preconfiguration();*/
   pdcp_layer_init();
   pdcp_module_init(pdcp_initmask);
-  pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-  pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+  pdcp_set_rlc_data_req_func(rlc_data_req);
+  pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
 }
 
 // Stupid function addition because UE itti messages queues definition is common with eNB

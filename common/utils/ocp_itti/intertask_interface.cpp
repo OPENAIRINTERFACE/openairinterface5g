@@ -136,12 +136,12 @@ extern "C" {
       LOG_E(TMR,"Queue for %s task contains %ld messages\n", itti_get_task_name(destination_task_id), s );
 
     if ( s > 50 )
-      LOG_I(TMR,"Queue for %s task size: %ld (last message %s)\n",itti_get_task_name(destination_task_id), s+1,ITTI_MSG_NAME(message));
+      LOG_I(ITTI,"Queue for %s task size: %ld (last message %s)\n",itti_get_task_name(destination_task_id), s+1,ITTI_MSG_NAME(message));
 
     t->message_queue.insert(t->message_queue.begin(), message);
     eventfd_t sem_counter = 1;
     AssertFatal ( sizeof(sem_counter) == write(t->sem_fd, &sem_counter, sizeof(sem_counter)), "");
-    LOG_D(TMR,"sent messages id=%d to %s\n",message_id, t->admin.name);
+    LOG_D(ITTI,"sent messages id=%d to %s\n",message_id, t->admin.name);
     return 0;
   }
 
@@ -152,7 +152,7 @@ extern "C" {
 
     while ( t->message_queue.size()>0 && t->admin.func != NULL ) {
       if (t->message_queue.size()>1)
-        LOG_W(TMR,"queue in no thread mode is %ld\n", t->message_queue.size());
+        LOG_W(ITTI,"queue in no thread mode is %ld\n", t->message_queue.size());
 
       pthread_mutex_unlock (&t->queue_cond_lock);
       t->admin.func(NULL);
@@ -208,7 +208,7 @@ extern "C" {
               message->ittiMsg.timer_has_expired.arg=it->second.timer_arg;
 
               if (itti_send_msg_to_task_locked(task_id, it->second.instance, message) < 0) {
-                LOG_W(TMR,"Failed to send msg TIMER_HAS_EXPIRED to task %u\n", task_id);
+                LOG_W(ITTI,"Failed to send msg TIMER_HAS_EXPIRED to task %u\n", task_id);
                 free(message);
                 t->timer_map.erase(it);
                 return -1;
@@ -233,7 +233,7 @@ extern "C" {
         epoll_timeout = t->next_timer-current_time;
 
       pthread_mutex_unlock(&t->queue_cond_lock);
-      LOG_D(TMR,"enter blocking wait for %s\n", itti_get_task_name(task_id));
+      LOG_D(ITTI,"enter blocking wait for %s, timeout: %d ms\n", itti_get_task_name(task_id),  epoll_timeout);
       t->nb_events = epoll_wait(t->epoll_fd,t->events,t->nb_fd_epoll, epoll_timeout);
 
       if ( t->nb_events  < 0 && (errno == EINTR || errno == EAGAIN ) )
@@ -243,7 +243,7 @@ extern "C" {
     AssertFatal (t->nb_events >=0,
                  "epoll_wait failed for task %s, nb fds %d, timeout %lu: %s!\n",
                  itti_get_task_name(task_id), t->nb_fd_epoll, t->next_timer != UINT64_MAX ? t->next_timer-current_time : -1, strerror(errno));
-    LOG_D(TMR,"receive on %d descriptors for %s\n", t->nb_events, itti_get_task_name(task_id));
+    LOG_D(ITTI,"receive on %d descriptors for %s\n", t->nb_events, itti_get_task_name(task_id));
 
     if (t->nb_events == 0)
       /* No data to read -> return */
@@ -292,11 +292,11 @@ extern "C" {
     // in this case, *received_msg is NULL
     if (t->message_queue.empty()) {
       *received_msg=NULL;
-      LOG_D(TMR,"task %s received even from other fd (total fds: %d), returning msg NULL\n",t->admin.name, t->nb_fd_epoll);
+      LOG_D(ITTI,"task %s received even from other fd (total fds: %d), returning msg NULL\n",t->admin.name, t->nb_fd_epoll);
     } else {
       *received_msg=t->message_queue.back();
       t->message_queue.pop_back();
-      LOG_D(TMR,"task %s received a message\n",t->admin.name);
+      LOG_D(ITTI,"task %s received a message\n",t->admin.name);
     }
 
     pthread_mutex_unlock (&t->queue_cond_lock);
@@ -308,7 +308,7 @@ extern "C" {
     pthread_mutex_lock(&t->queue_cond_lock);
 
     if (!t->message_queue.empty()) {
-      LOG_D(TMR,"task %s received a message in polling mode\n",t->admin.name);
+      LOG_D(ITTI,"task %s received a message in polling mode\n",t->admin.name);
       *received_msg=t->message_queue.back();
       t->message_queue.pop_back();
     } else
@@ -322,7 +322,7 @@ extern "C" {
                        void *args_p) {
     task_list_t *t=tasks[task_id];
     threadCreate (&t->thread, start_routine, args_p, (char *)itti_get_task_name(task_id),-1,OAI_PRIORITY_RT);
-    LOG_I(TMR,"Created Posix thread %s\n",  itti_get_task_name(task_id) );
+    LOG_I(ITTI,"Created Posix thread %s\n",  itti_get_task_name(task_id) );
     return 0;
   }
 
@@ -344,7 +344,7 @@ extern "C" {
     tasks = new_tasks;
     tasks[newQueue]= new task_list_t;
     pthread_mutex_unlock (&lock_nb_queues);
-    LOG_I(TMR,"Starting itti queue: %s as task %d\n", taskInfo->name, newQueue);
+    LOG_I(ITTI,"Starting itti queue: %s as task %d\n", taskInfo->name, newQueue);
     pthread_mutex_init(&tasks[newQueue]->queue_cond_lock, NULL);
     memcpy(&tasks[newQueue]->admin, taskInfo, sizeof(task_info_t));
     AssertFatal( ( tasks[newQueue]->epoll_fd = epoll_create1(0) ) >=0, "");
@@ -392,7 +392,7 @@ extern "C" {
     clock_gettime(CLOCK_MONOTONIC, &tp);
 
     if (interval_us%1000 != 0)
-      LOG_W(TMR, "Can't set timer precision below 1ms, rounding it\n");
+      LOG_W(ITTI, "Can't set timer precision below 1ms, rounding it\n");
 
     timer.duration  = interval_sec*1000+interval_us/1000;
     timer.timeout= ((uint64_t)tp.tv_sec*1000+tp.tv_nsec/(1000*1000)+timer.duration);
@@ -421,7 +421,7 @@ extern "C" {
     if (ret==1)
       return 0;
     else {
-      LOG_W(TMR, "tried to remove a non existing timer\n");
+      LOG_W(ITTI, "tried to remove a non existing timer\n");
       return 1;
     }
   }

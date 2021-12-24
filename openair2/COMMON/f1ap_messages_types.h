@@ -39,6 +39,7 @@
 #define F1AP_INITIAL_UL_RRC_MESSAGE(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_initial_ul_rrc_message
 #define F1AP_UL_RRC_MESSAGE(mSGpTR)                (mSGpTR)->ittiMsg.f1ap_ul_rrc_message
 #define F1AP_UE_CONTEXT_SETUP_REQ(mSGpTR)          (mSGpTR)->ittiMsg.f1ap_ue_context_setup_req
+#define F1AP_UE_CONTEXT_SETUP_RESP(mSGpTR)          (mSGpTR)->ittiMsg.f1ap_ue_context_setup_resp
 #define F1AP_UE_CONTEXT_RELEASE_RESP(mSGpTR)       (mSGpTR)->ittiMsg.f1ap_ue_context_release_resp
 #define F1AP_UE_CONTEXT_MODIFICATION_RESP(mSGpTR)  (mSGpTR)->ittiMsg.f1ap_ue_context_modification_resp
 #define F1AP_UE_CONTEXT_MODIFICATION_FAIL(mSGpTR)  (mSGpTR)->ittiMsg.f1ap_ue_context_modification_fail
@@ -71,6 +72,29 @@ typedef struct f1ap_cu_setup_req_s {
    //
 } f1ap_cu_setup_req_t;
 
+typedef struct cellIDs_s {
+
+  // Served Cell Information
+  /* Tracking area code */
+  uint32_t tac;
+
+  /* Mobile Country Codes
+   * Mobile Network Codes
+   */
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t  mnc_digit_length;
+
+  // NR Global Cell Id
+  uint64_t nr_cellid;
+  // NR Physical Cell Ids
+  uint16_t nr_pci;
+  // Number of slide support items (max 16, could be increased to as much as 1024)
+  uint16_t num_ssi;
+  uint8_t sst;
+  uint8_t sd;
+} cellIDs_t;
+
 typedef struct f1ap_setup_req_s {
 
   // Midhaul networking parameters
@@ -84,6 +108,8 @@ typedef struct f1ap_setup_req_s {
   /* The eNB IP address to bind */
   f1ap_net_ip_address_t CU_f1_ip_address;
   f1ap_net_ip_address_t DU_f1_ip_address;
+  uint16_t CUport;
+  uint16_t DUport;
 
   /* Number of SCTP streams used for a mme association */
   uint16_t sctp_in_streams;
@@ -100,26 +126,7 @@ typedef struct f1ap_setup_req_s {
   
   /// number of DU cells available
   uint16_t num_cells_available; //0< num_cells_available <= 512;
-
-  // Served Cell Information
-  /* Tracking area code */
-  uint32_t tac[F1AP_MAX_NB_CELLS];
-
-  /* Mobile Country Codes
-   * Mobile Network Codes
-   */
-  uint16_t mcc[F1AP_MAX_NB_CELLS];//[6];
-  uint16_t mnc[F1AP_MAX_NB_CELLS];//[6];
-  uint8_t  mnc_digit_length[F1AP_MAX_NB_CELLS];//[6];
-
-  // NR Global Cell Id
-  uint64_t nr_cellid[F1AP_MAX_NB_CELLS];
-  // NR Physical Cell Ids
-  uint16_t nr_pci[F1AP_MAX_NB_CELLS];
-  // Number of slide support items (max 16, could be increased to as much as 1024)
-  uint16_t num_ssi[F1AP_MAX_NB_CELLS];//[6];
-  uint8_t sst[F1AP_MAX_NB_CELLS];//[16][6];
-  uint8_t sd[F1AP_MAX_NB_CELLS];//[16][6];
+  cellIDs_t cell[F1AP_MAX_NB_CELLS];
   // fdd_flag = 1 means FDD, 0 means TDD
   int  fdd_flag;
 
@@ -195,6 +202,7 @@ typedef struct served_cells_to_activate_s {
   /// SI message containers (up to 21 messages per cell)
   uint8_t *SI_container[21];
   int      SI_container_length[21];
+  int SI_type[21];
 } served_cells_to_activate_t;
 
 typedef struct f1ap_setup_resp_s {
@@ -299,7 +307,7 @@ typedef struct f1ap_initial_ul_rrc_message_s {
   uint16_t crnti;
   uint8_t *rrc_container;
   int      rrc_container_length;
-  int8_t *du2cu_rrc_container;
+  char du2cu_rrc_container[200];
   int      du2cu_rrc_container_length;
 } f1ap_initial_ul_rrc_message_t;
 
@@ -312,19 +320,32 @@ typedef struct f1ap_ul_rrc_message_s {
 
 typedef struct f1ap_up_tnl_s {
   in_addr_t tl_address; // currently only IPv4 supported
-  uint32_t  gtp_teid;
+  teid_t  teid;
+  uint16_t port;
 } f1ap_up_tnl_t;
 
 typedef struct f1ap_drb_to_be_setup_s {
-  uint8_t        drb_id;
+  long           drb_id;
   f1ap_up_tnl_t  up_ul_tnl[2];
   uint8_t        up_ul_tnl_length;
+  f1ap_up_tnl_t  up_dl_tnl[2];
+  uint8_t        up_dl_tnl_length;
   rlc_mode_t     rlc_mode;
 } f1ap_drb_to_be_setup_t;
 
-typedef struct f1ap_ue_context_setup_req_s {
+typedef struct f1ap_srb_to_be_setup_s {
+  long           srb_id;
+  rlc_mode_t     rlc_mode;
+  uint8_t        lcid;
+} f1ap_srb_to_be_setup_t;
+
+typedef struct f1ap_rb_failed_to_be_setup_s {
+  long           rb_id;
+} f1ap_rb_failed_to_be_setup_t;
+
+typedef struct f1ap_ue_context_setup_s {
   uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
-  uint32_t *gNB_DU_ue_id;
+  uint32_t gNB_DU_ue_id;
   uint16_t rnti; 
   // SpCell Info
   uint16_t mcc;
@@ -336,13 +357,37 @@ typedef struct f1ap_ue_context_setup_req_s {
   uint32_t servCellId;
   uint8_t *cu_to_du_rrc_information;
   uint8_t  cu_to_du_rrc_information_length;
+  uint8_t *du_to_cu_rrc_information;
+  uint8_t  du_to_cu_rrc_information_length;
   f1ap_drb_to_be_setup_t *drbs_to_be_setup; // BK: need to replace by s1ap_initial_context_setup_req
   uint8_t  drbs_to_be_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
+  uint8_t  drbs_failed_to_be_setup_length;
+  f1ap_rb_failed_to_be_setup_t *drbs_failed_to_be_setup;
+  f1ap_srb_to_be_setup_t *srbs_to_be_setup;
+  uint8_t  srbs_to_be_setup_length;
+  uint8_t  srbs_failed_to_be_setup_length;
+  f1ap_rb_failed_to_be_setup_t *srbs_failed_to_be_setup;
   s1ap_initial_context_setup_req_t *s1ap_initial_context_setup_req;
    // coniatner for the rrc_eNB_generate_SecurityModeCommand message
   uint8_t *rrc_container;
   int      rrc_container_length;
-} f1ap_ue_context_setup_req_t;
+} f1ap_ue_context_setup_t;
+
+typedef struct f1ap_ue_context_setup_resp_s {
+  uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
+  uint32_t gNB_DU_ue_id;
+  uint16_t rnti;
+  uint8_t  du_to_cu_rrc_information[1024 /*Arbitrarily big enough*/];
+  uint32_t  du_to_cu_rrc_information_length;
+  f1ap_drb_to_be_setup_t *drbs_setup; // BK: need to replace by s1ap_initial_context_setup_req
+  uint8_t  drbs_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
+  f1ap_srb_to_be_setup_t *srbs_setup;
+  uint8_t  srbs_setup_length;
+  uint8_t  srbs_failed_to_be_setup_length;
+  f1ap_rb_failed_to_be_setup_t *srbs_failed_to_be_setup;
+  uint8_t  drbs_failed_to_be_setup_length;
+  f1ap_rb_failed_to_be_setup_t *drbs_failed_to_be_setup;
+} f1ap_ue_context_setup_resp_t;
 
 typedef enum F1ap_Cause_e {
   F1AP_CAUSE_NOTHING,  /* No components present */

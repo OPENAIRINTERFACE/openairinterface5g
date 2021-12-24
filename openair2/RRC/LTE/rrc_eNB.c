@@ -8767,9 +8767,9 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
     for (int j=0; j<RC.nb_inst; j++) {
       eNB_RRC_INST *rrc = RC.rrc[j];
 
-      if (rrc->configuration.mcc[0] == f1_setup_req->mcc[i] &&
-          rrc->configuration.mnc[0] == f1_setup_req->mnc[i] &&
-          rrc->nr_cellid == f1_setup_req->nr_cellid[i]) {
+      if (rrc->configuration.mcc[0] == f1_setup_req->cell[i].mcc &&
+          rrc->configuration.mnc[0] == f1_setup_req->cell[i].mnc &&
+          rrc->nr_cellid == f1_setup_req->cell[i].nr_cellid) {
         // check that CU rrc instance corresponds to mcc/mnc/cgi (normally cgi should be enough, but just in case)
         rrc->carrier[0].MIB = malloc(f1_setup_req->mib_length[i]);
         rrc->carrier[0].sizeof_MIB = f1_setup_req->mib_length[i];
@@ -8809,7 +8809,7 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         AssertFatal(bcch_message->message.choice.c1.present == LTE_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1,
                     "bcch_message->message.choice.c1.present != LTE_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1\n");
         rrc->carrier[0].sib1 = &bcch_message->message.choice.c1.choice.systemInformationBlockType1;
-        rrc->carrier[0].physCellId = f1_setup_req->nr_pci[i];
+        rrc->carrier[0].physCellId = f1_setup_req->cell[i].nr_pci;
         // prepare F1_SETUP_RESPONSE
 
         if (msg_p == NULL) {
@@ -8821,7 +8821,7 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].mnc                           = rrc->configuration.mnc[0];
         F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].mnc_digit_length              = rrc->configuration.mnc_digit_length[0];
         F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].nr_cellid                     = rrc->nr_cellid;
-        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].nrpci                         = f1_setup_req->nr_pci[i];
+        F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].nrpci                         = f1_setup_req->cell[i].nr_pci;
         int num_SI= 0;
         if (rrc->carrier[0].SIB23) {
           F1AP_SETUP_RESP (msg_p).cells_to_activate[cu_cell_ind].SI_container[2+num_SI]        = rrc->carrier[0].SIB23;
@@ -8842,7 +8842,7 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         break;
       } else {// setup_req mcc/mnc match rrc internal list element
         LOG_W(RRC,"[Inst %d] No matching MCC/MNC: rrc->mcc/f1_setup_req->mcc %d/%d rrc->mnc/f1_setup_req->mnc %d/%d \n",
-              j, rrc->configuration.mcc[0], f1_setup_req->mcc[i],rrc->configuration.mnc[0], f1_setup_req->mnc[i]);
+              j, rrc->configuration.mcc[0], f1_setup_req->cell[i].mcc,rrc->configuration.mnc[0], f1_setup_req->cell[i].mnc);
       }
     }// for (int j=0;j<RC.nb_inst;j++)
 

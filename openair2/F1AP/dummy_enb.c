@@ -29,6 +29,19 @@
 void apply_macrlc_config(gNB_RRC_INST *rrc,
                          rrc_gNB_ue_context_t         *const ue_context_pP,
                          const protocol_ctxt_t        *const ctxt_pP ) {
-abort();
+  abort();
 }
 
+boolean_t sdap_gnb_data_req(protocol_ctxt_t *ctxt_p,
+                            const srb_flag_t srb_flag,
+                            const rb_id_t rb_id,
+                            const mui_t mui,
+                            const confirm_t confirm,
+                            const sdu_size_t sdu_buffer_size,
+                            unsigned char *const sdu_buffer,
+                            const pdcp_transmission_mode_t pt_mode,
+                            const uint32_t *sourceL2Id,
+                            const uint32_t *destinationL2Id
+                           ) {
+abort();
+}

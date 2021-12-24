@@ -140,6 +140,36 @@ extern volatile int oai_exit;
 
 pthread_t pdcp_stats_thread_desc;
 
+// will be called when 4G F1 implementation will use GTP-U instead of protobuf
+boolean_t cu_f1u_data_req(
+  protocol_ctxt_t  *ctxt_pP,
+  const srb_flag_t srb_flagP,
+  const rb_id_t rb_id,
+  const mui_t muiP,
+  const confirm_t confirmP,
+  const sdu_size_t sdu_buffer_size,
+  unsigned char *const sdu_buffer,
+  const pdcp_transmission_mode_t mode,
+  const uint32_t *const sourceL2Id,
+  const uint32_t *const destinationL2Id
+  ) {
+  mem_block_t *memblock = get_free_mem_block(sdu_buffer_size, __func__);
+  if (memblock == NULL) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+  memcpy(memblock->data,sdu_buffer, sdu_buffer_size);
+  // weird rb id management in 4G, not fully understand (looks bad design)
+  // overcomplex: if i understand, on the interface DRB start at 4 because there can be SRB 0..3
+  // but it would be much simpler to use absolute numbering
+  // instead of this "srb flag" associated to these +/-4
+  int ret=pdcp_data_ind(ctxt_pP,srb_flagP, false, rb_id-4, sdu_buffer_size, memblock, NULL, NULL);
+  if (!ret) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
+    /* what to do in case of failure? for the moment: nothing */
+  }
+  return ret;
+}
 void *pdcp_stats_thread(void *param) {
 
    FILE *fd;
@@ -176,6 +206,33 @@ void *pdcp_stats_thread(void *param) {
 uint64_t get_pdcp_optmask(void) {
   return pdcp_params.optmask;
 }
+
+rlc_op_status_t cu_send_to_du(const protocol_ctxt_t *const ctxt,
+			       const srb_flag_t srb_flag, const MBMS_flag_t MBMS_flag,
+			       const rb_id_t rb_id, const mui_t mui,
+			       confirm_t confirm, sdu_size_t size, mem_block_t *sdu,
+                               const uint32_t *const sourceID, const uint32_t *const destID) {
+  uint8_t *gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
+				       size  + GTPU_HEADER_OVERHEAD_MAX);
+  AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
+  memcpy(gtpu_buffer_p+GTPU_HEADER_OVERHEAD_MAX,
+	 sdu->data,
+	 size );
+  MessageDef  *message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
+  AssertFatal(message_p != NULL, "OUT OF MEMORY");
+  gtpv1u_enb_tunnel_data_req_t *req=&GTPV1U_ENB_TUNNEL_DATA_REQ(message_p);
+  req->buffer        = gtpu_buffer_p;
+  req->length        = size;
+  req->offset        = GTPU_HEADER_OVERHEAD_MAX;
+  req->rnti          = ctxt->rnti;
+  req->rab_id = rb_id+4;
+  LOG_D(PDCP, "%s() (drb %ld) sending message to gtp size %d\n",
+	__func__, rb_id, size);
+  extern instance_t CUuniqInstance;
+  itti_send_msg_to_task(TASK_VARIABLE, CUuniqInstance, message_p);
+  return TRUE;
+}
+
 //-----------------------------------------------------------------------------
 /*
  * If PDCP_UNIT_TEST is set here then data flow between PDCP and RLC is broken
@@ -249,12 +306,8 @@ boolean_t pdcp_data_req(
       LOG_W(PDCP, PROTOCOL_CTXT_FMT" Instance is not configured for rb_id %ld Ignoring SDU...\n",
             PROTOCOL_CTXT_ARGS(ctxt_pP),
             rb_idP);
-      ctxt_pP->configured=FALSE;
       return FALSE;
     }
-  } else {
-    // instance for a given RB is configured
-    ctxt_pP->configured=TRUE;
   }
 
   if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
@@ -575,7 +628,9 @@ pdcp_data_ind(
   const MBMS_flag_t  MBMS_flagP,
   const rb_id_t      rb_idP,
   const sdu_size_t   sdu_buffer_sizeP,
-  mem_block_t *const sdu_buffer_pP
+  mem_block_t *const sdu_buffer_pP,
+  const uint32_t *const srcID,
+  const uint32_t *const dstID
 )
 //-----------------------------------------------------------------------------
 {
@@ -1491,7 +1546,7 @@ void pdcp_add_UE(const protocol_ctxt_t *const  ctxt_pP) {
         pdcp_enb[ctxt_pP->module_id].rnti[i]=ctxt_pP->rnti;
         pdcp_enb[ctxt_pP->module_id].uid[i]=i;
         pdcp_enb[ctxt_pP->module_id].num_ues++;
-        printf("add new uid is %d %x\n\n", i, ctxt_pP->rnti);
+        LOG_I(PDCP,"add new uid is %d %x\n", i, ctxt_pP->rnti);
         pdcp_init_stats_UE(ctxt_pP->module_id, i);
         // ret=1;
         break;

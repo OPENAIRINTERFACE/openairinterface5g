@@ -596,20 +596,20 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
 
   /* dicard PDU if no data */
   if (data_size <= 0) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, no data\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, no data\n",
           __FILE__, __LINE__, __FUNCTION__);
     goto discard;
   }
 
   /* dicard PDU if rx buffer is full */
   if (entity->rx_size + data_size > entity->rx_maxsize) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, RX buffer full\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, RX buffer full\n",
           __FILE__, __LINE__, __FUNCTION__);
     goto discard;
   }
 
   if (!sn_in_recv_window(entity, sn)) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, sn out of window (sn %d rx_next %d)\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, sn out of window (sn %d rx_next %d)\n",
           __FILE__, __LINE__, __FUNCTION__,
            sn, entity->rx_next);
     goto discard;
@@ -617,7 +617,7 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
 
   /* discard segment if all the bytes of the segment are already there */
   if (segment_already_received(entity, sn, so, data_size)) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, already received\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, already received\n",
           __FILE__, __LINE__, __FUNCTION__);
     goto discard;
   }
@@ -643,7 +643,7 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
     entity->status_triggered = 1;
     if (!(sn_compare_rx(entity, sn, entity->rx_highest_status) < 0 ||
           sn_compare_rx(entity, sn, v) >= 0)) {
-      LOG_D(RLC, "%s:%d:%s: warning: STATUS trigger should be delayed, according to specs\n",
+      LOG_W(RLC, "%s:%d:%s: warning: STATUS trigger should be delayed, according to specs\n",
             __FILE__, __LINE__, __FUNCTION__);
     }
   }
@@ -653,7 +653,7 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
 control:
   cpt = nr_rlc_pdu_decoder_get_bits(&decoder, 3); R(decoder);
   if (cpt != 0) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, CPT not 0 (%d)\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, CPT not 0 (%d)\n",
           __FILE__, __LINE__, __FUNCTION__, cpt);
     goto discard;
   }
@@ -1660,7 +1660,7 @@ static void check_t_poll_retransmit(nr_rlc_entity_am_t *entity)
    */
   entity->force_poll = 1;
 
-  LOG_D(RLC, "%s:%d:%s: warning: t_poll_retransmit expired\n",
+  LOG_W(RLC, "%s:%d:%s: warning: t_poll_retransmit expired\n",
         __FILE__, __LINE__, __FUNCTION__);
 
   /* do we meet conditions of 38.322 5.3.3.4? */

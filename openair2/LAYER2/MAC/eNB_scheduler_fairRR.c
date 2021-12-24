@@ -560,7 +560,7 @@ void dlsch_scheduler_pre_ue_select_fairRR(
   return;
 }
 
-void dlsch_scheduler_pre_processor_reset_fairRR(
+static void dlsch_scheduler_pre_processor_reset_fairRR(
     module_id_t module_idP,
     frame_t frameP,
     sub_frame_t subframeP,
@@ -729,7 +729,7 @@ void dlsch_scheduler_pre_processor_reset_fairRR(
 }
 
 // This function returns the estimated number of RBs required by each UE for downlink scheduling
-void assign_rbs_required_fairRR(
+static void assign_rbs_required_fairRR(
     module_id_t Mod_id,
     frame_t frameP,
     sub_frame_t subframe,

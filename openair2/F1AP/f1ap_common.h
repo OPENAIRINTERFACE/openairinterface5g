@@ -31,19 +31,20 @@
  */
 
 #if HAVE_CONFIG_H_
-# include "config.h"
+  #include "config.h"
 #endif
 
 #ifndef F1AP_COMMON_H_
 #define F1AP_COMMON_H_
 
 #include "openairinterface5g_limits.h"
+#include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
 
 #define F1AP_UE_IDENTIFIER_NUMBER 3
 #define F1AP_TRANSACTION_IDENTIFIER_NUMBER 3
 
 #if defined(EMIT_ASN_DEBUG_EXTERN)
-inline void ASN_DEBUG(const char *fmt, ...);
+  inline void ASN_DEBUG(const char *fmt, ...);
 #endif
 
 #include "F1AP_RAT-FrequencyPriorityInformation.h"
@@ -360,14 +361,14 @@ inline void ASN_DEBUG(const char *fmt, ...);
 
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)
-# error "You are compiling f1ap with the wrong version of ASN1C"
+  # error "You are compiling f1ap with the wrong version of ASN1C"
 #endif
 
 #ifndef FALSE
-# define FALSE (0)
+  #define FALSE (0)
 #endif
 #ifndef TRUE
-# define TRUE  (!FALSE)
+  #define TRUE  (!FALSE)
 #endif
 
 #define F1AP_UE_ID_FMT  "0x%06"PRIX32
@@ -375,20 +376,20 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "assertions.h"
 
 #if defined(ENB_MODE)
-# include "common/utils/LOG/log.h"
-# include "f1ap_default_values.h"
-# define F1AP_ERROR(x, args...) LOG_E(F1AP, x, ##args)
-# define F1AP_WARN(x, args...)  LOG_W(F1AP, x, ##args)
-# define F1AP_TRAF(x, args...)  LOG_I(F1AP, x, ##args)
-# define F1AP_INFO(x, args...) LOG_I(F1AP, x, ##args)
-# define F1AP_DEBUG(x, args...) LOG_I(F1AP, x, ##args)
+  #include "common/utils/LOG/log.h"
+  #include "f1ap_default_values.h"
+  #define F1AP_ERROR(x, args...) LOG_E(F1AP, x, ##args)
+  #define F1AP_WARN(x, args...)  LOG_W(F1AP, x, ##args)
+  #define F1AP_TRAF(x, args...)  LOG_I(F1AP, x, ##args)
+  #define F1AP_INFO(x, args...) LOG_I(F1AP, x, ##args)
+  #define F1AP_DEBUG(x, args...) LOG_I(F1AP, x, ##args)
 #else
-//# include "mme_default_values.h"
-# define F1AP_ERROR(x, args...) do { fprintf(stdout, "[F1AP][E]"x, ##args); } while(0)
-# define F1AP_WARN(x, args...)  do { fprintf(stdout, "[F1AP][W]"x, ##args); } while(0)
-# define F1AP_TRAF(x, args...)  do { fprintf(stdout, "[F1AP][T]"x, ##args); } while(0)
-# define F1AP_INFO(x, args...) do { fprintf(stdout, "[F1AP][I]"x, ##args); } while(0)
-# define F1AP_DEBUG(x, args...) do { fprintf(stdout, "[F1AP][D]"x, ##args); } while(0)
+  //# include "mme_default_values.h"
+  #define F1AP_ERROR(x, args...) do { fprintf(stdout, "[F1AP][E]"x, ##args); } while(0)
+  #define F1AP_WARN(x, args...)  do { fprintf(stdout, "[F1AP][W]"x, ##args); } while(0)
+  #define F1AP_TRAF(x, args...)  do { fprintf(stdout, "[F1AP][T]"x, ##args); } while(0)
+  #define F1AP_INFO(x, args...) do { fprintf(stdout, "[F1AP][I]"x, ##args); } while(0)
+  #define F1AP_DEBUG(x, args...) do { fprintf(stdout, "[F1AP][D]"x, ##args); } while(0)
 #endif
 
 //Forward declaration
@@ -407,73 +408,85 @@ inline void ASN_DEBUG(const char *fmt, ...);
     if (mandatory) DevAssert(ie != NULL); \
   } while(0)
 
-/** \brief Function callback prototype.
+/** \brief Function array prototype.
  **/
-typedef int (*f1ap_message_decoded_callback)(
+typedef int (*f1ap_message_processing_t)(
   instance_t             instance,
   uint32_t               assoc_id,
   uint32_t               stream,
   F1AP_F1AP_PDU_t       *message_p
 );
+int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
+                        const uint8_t *const data, const uint32_t data_length);
 
 typedef struct f1ap_cudu_ue_inst_s {
   // used for eNB stats generation
   rnti_t      rnti;
-  module_id_t f1ap_uid;
-  module_id_t mac_uid;
-  module_id_t du_ue_f1ap_id;
-  module_id_t cu_ue_f1ap_id;
+  instance_t f1ap_uid;
+  instance_t du_ue_f1ap_id;
+  instance_t cu_ue_f1ap_id;
 } f1ap_cudu_ue_t;
 
 typedef struct f1ap_cudu_inst_s {
+  f1ap_setup_req_t setupReq;
+  uint16_t sctp_in_streams;
+  uint16_t sctp_out_streams;
+  uint16_t default_sctp_stream_id;
+  instance_t gtpInst;
+  uint64_t gNB_DU_id;
   uint16_t num_ues;
   f1ap_cudu_ue_t f1ap_ue[MAX_MOBILES_PER_ENB];
 } f1ap_cudu_inst_t;
 
+typedef enum {
+  DUtype=0,
+  CUtype
+} F1_t;
 
 
-uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_t cu_mod_idP);
+uint8_t F1AP_get_next_transaction_identifier(instance_t enb_mod_idP, instance_t cu_mod_idP);
 
+f1ap_cudu_inst_t *getCxt(F1_t isCU, instance_t instanceP);
 
-int f1ap_add_ue(f1ap_cudu_inst_t *f1_inst,
-                module_id_t     module_idP,
-                int             CC_idP,
-                int             UE_id,
+void createF1inst(F1_t isCU, instance_t instanceP, f1ap_setup_req_t *req);
+int f1ap_add_ue(F1_t isCu,
+                instance_t     instanceP,
                 rnti_t          rntiP);
 
-int f1ap_remove_ue(f1ap_cudu_inst_t *f1_inst,
+int f1ap_remove_ue(F1_t isCu, instance_t instanceP,
                    rnti_t            rntiP);
 
-int f1ap_get_du_ue_f1ap_id (f1ap_cudu_inst_t *f1_inst,
+int f1ap_get_du_ue_f1ap_id (F1_t isCu, instance_t instanceP,
                             rnti_t            rntiP);
 
-int f1ap_get_cu_ue_f1ap_id (f1ap_cudu_inst_t *f1_inst,
+int f1ap_get_cu_ue_f1ap_id (F1_t isCu, instance_t instanceP,
                             rnti_t            rntiP);
 
 
-int f1ap_get_rnti_by_du_id(f1ap_cudu_inst_t *f1_inst,
-                           module_id_t       du_ue_f1ap_id );
+int f1ap_get_rnti_by_du_id(F1_t isCu, instance_t instanceP,
+                           instance_t       du_ue_f1ap_id );
 
 
-int f1ap_get_rnti_by_cu_id(f1ap_cudu_inst_t *f1_inst,
-                           module_id_t       cu_ue_f1ap_id );
+int f1ap_get_rnti_by_cu_id(F1_t isCu, instance_t instanceP,
+                           instance_t       cu_ue_f1ap_id );
 
+int f1ap_du_add_cu_ue_id(instance_t instanceP,
+                         instance_t       du_ue_f1ap_id,
+                         instance_t       cu_ue_f1ap_id);
 
-int f1ap_get_du_uid(f1ap_cudu_inst_t *f1_inst,
-                    module_id_t       du_ue_f1ap_id );
+int f1ap_assoc_id(F1_t isCu, instance_t instanceP);
 
-int f1ap_get_cu_uid(f1ap_cudu_inst_t *f1_inst,
-                    module_id_t       cu_ue_f1ap_id );
+static inline f1ap_setup_req_t *f1ap_req(F1_t isCu, instance_t instanceP) {
+  return &getCxt(isCu, instanceP)->setupReq;
+}
 
-int f1ap_get_uid_by_rnti(f1ap_cudu_inst_t *f1_inst,
-                         rnti_t            rntiP );
+#define TASK_F1APP f1ap_req(false, instance)->cell_type==CELL_MACRO_GNB?TASK_GNB_APP:TASK_ENB_APP
 
-int f1ap_du_add_cu_ue_id(f1ap_cudu_inst_t *f1_inst,
-                         module_id_t       du_ue_f1ap_id,
-                         module_id_t       cu_ue_f1ap_id);
-
-int f1ap_cu_add_du_ue_id(f1ap_cudu_inst_t *f1_inst,
-                         module_id_t       cu_ue_f1ap_id,
-                         module_id_t       du_ue_f1ap_id);
+//lts: C struct type is not homogeneous, so we need macros instead of functions
+#define addnRCGI(nRCGi, servedCelL) \
+  MCC_MNC_TO_PLMNID((servedCelL)->mcc,(servedCelL)-> mnc,(servedCelL)->mnc_digit_length, \
+                    &((nRCGi).pLMN_Identity));        \
+  NR_CELL_ID_TO_BIT_STRING((servedCelL)->nr_cellid, &((nRCGi).nRCellIdentity));
+extern RAN_CONTEXT_t RC;
 
 #endif /* F1AP_COMMON_H_ */

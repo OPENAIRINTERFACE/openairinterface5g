@@ -178,7 +178,6 @@ eth_params_t *eth_params;
 double cpuf;
 
 int oaisim_flag=0;
-uint8_t proto_agent_flag = 0;
 
 
 /* forward declarations */
@@ -479,7 +478,7 @@ int restart_L1L2(module_id_t enb_id) {
   return 0;
 }
 
-void init_pdcp(void) {
+static void init_pdcp(void) {
   if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
     pdcp_layer_init();
     uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
@@ -493,13 +492,13 @@ void init_pdcp(void) {
     pdcp_module_init(pdcp_initmask);
 
     if (NODE_IS_CU(RC.rrc[0]->node_type)) {
-      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+      pdcp_set_rlc_data_req_func(cu_send_to_du);
     } else {
-      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+      pdcp_set_rlc_data_req_func(rlc_data_req);
+      pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
     }
   } else {
-    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+    pdcp_set_pdcp_data_ind_func(proto_agent_send_pdcp_data_ind);
   }
 }
 
