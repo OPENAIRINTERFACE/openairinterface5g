@@ -73,7 +73,7 @@ mapping log_options[] = {
   {"nocolor", FLAG_NOCOLOR  },
   {"level",   FLAG_LEVEL  },
   {"thread",  FLAG_THREAD },
-  {"line",    FLAG_FILE_LINE },
+  {"line_num",    FLAG_FILE_LINE },
   {"function", FLAG_FUNCT},
   {"time",     FLAG_TIME}
 };
