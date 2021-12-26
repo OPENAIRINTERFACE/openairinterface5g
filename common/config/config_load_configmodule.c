@@ -194,6 +194,11 @@ configmodule_interface_t *load_configmodule(int argc,
   int i;
   int OoptIdx=-1;
 
+  printf("CMDLINE: ");
+  for (int i=0; i<argc; i++)
+    printf("\"%s\" ", argv[i]);
+  printf("\n");
+
   /* first parse the command line to look for the -O option */
   for (i = 0; i<argc; i++) {
     if (strlen(argv[i]) < 2)
