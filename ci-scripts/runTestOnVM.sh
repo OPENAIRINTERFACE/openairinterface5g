@@ -65,7 +65,7 @@ function start_basic_sim_enb {
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/ran_build/" >> $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
-    echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --basicsim\" > ./my-lte-softmodem-run.sh " >> $1
+    echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor,line_num --basicsim\" > ./my-lte-softmodem-run.sh " >> $1
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
@@ -110,7 +110,7 @@ function start_basic_sim_ue {
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/ran_build/build/\"" > $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build" >> $1
-    echo "echo \"./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_NB_RBS  --log_config.global_log_options nocolor,level --basicsim\" > ./my-lte-uesoftmodem-run.sh" >> $1
+    echo "echo \"./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_NB_RBS  --log_config.global_log_options nocolor,line_num,level --basicsim\" > ./my-lte-uesoftmodem-run.sh" >> $1
     echo "chmod 775 ./my-lte-uesoftmodem-run.sh" >> $1
     echo "cat ./my-lte-uesoftmodem-run.sh" >> $1
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE; fi" >> $1
@@ -818,9 +818,9 @@ function start_l2_sim_enb {
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --noS1\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor,line_num --noS1\" > ./my-lte-softmodem-run.sh " >> $1
     else
-        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor \" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor,line_num \" > ./my-lte-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
@@ -929,9 +929,9 @@ function start_l2_sim_ue {
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread 1 --nokrnmod 1 --log_config.global_log_options level,nocolor --noS1\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread 1 --nokrnmod 1 --log_config.global_log_options level,nocolor,line_num --noS1\" > ./my-lte-softmodem-run.sh " >> $1
     else
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread 1 --nokrnmod 1 --log_config.global_log_options level,nocolor\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES --nums_ue_thread 1 --nokrnmod 1 --log_config.global_log_options level,nocolor,line_num\" > ./my-lte-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
@@ -1051,9 +1051,9 @@ function start_rf_sim_enb {
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --rfsim --log_config.global_log_options level,nocolor --noS1 --eNBs.[0].rrc_inactivity_threshold 0\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --rfsim --log_config.global_log_options level,nocolor,line_num --noS1 --eNBs.[0].rrc_inactivity_threshold 0\" > ./my-lte-softmodem-run.sh " >> $1
     else
-        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --rfsim --log_config.global_log_options level,nocolor --eNBs.[0].rrc_inactivity_threshold 0 --eNBs.[0].plmn_list.[0].mnc 93\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --rfsim --log_config.global_log_options level,nocolor,line_num --eNBs.[0].rrc_inactivity_threshold 0 --eNBs.[0].plmn_list.[0].mnc 93\" > ./my-lte-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
@@ -1159,9 +1159,9 @@ function start_rf_sim_ue {
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --ue-rxgain 140 --ue-txgain 120 --nokrnmod 1 --rfsim --log_config.global_log_options level,nocolor --noS1\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --ue-rxgain 140 --ue-txgain 120 --nokrnmod 1 --rfsim --log_config.global_log_options level,nocolor,line_num --noS1\" > ./my-lte-softmodem-run.sh " >> $1
     else
-        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --ue-rxgain 140 --ue-txgain 120 --nokrnmod 1 --rfsim --log_config.global_log_options level,nocolor\" > ./my-lte-softmodem-run.sh " >> $1
+        echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --ue-rxgain 140 --ue-txgain 120 --nokrnmod 1 --rfsim --log_config.global_log_options level,nocolor,line_num\" > ./my-lte-softmodem-run.sh " >> $1
     fi
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
@@ -1281,12 +1281,12 @@ function start_rf_sim_gnb {
     then
         if [ $LOC_RA_SA_TEST -eq 0 ] #no RA test => use --phy-test option
         then
-            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --phy-test --lowmem --noS1\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor,line_num --parallel-config PARALLEL_SINGLE_THREAD --noS1 --nokrnmod 1 --rfsim --phy-test --lowmem --noS1\" > ./my-nr-softmodem-run.sh " >> $1
         elif [ $LOC_RA_SA_TEST -eq 1 ] #RA test => use --do-ra option
         then
-            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --rfsim --do-ra --lowmem --noS1\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor,line_num --parallel-config PARALLEL_SINGLE_THREAD --rfsim --do-ra --lowmem --noS1\" > ./my-nr-softmodem-run.sh " >> $1
         else #SA test => use --sa option
-            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor --parallel-config PARALLEL_SINGLE_THREAD --rfsim --sa --lowmem \" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --log_config.global_log_options level,nocolor,line_num --parallel-config PARALLEL_SINGLE_THREAD --rfsim --sa --lowmem \" > ./my-nr-softmodem-run.sh " >> $1
         fi
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
@@ -1397,12 +1397,12 @@ function start_rf_sim_nr_ue {
     then
         if [ $LOC_RA_SA_TEST -eq 0 ] #no RA test => use --phy-test option
         then
-            echo "echo \"./nr-uesoftmodem --nokrnmod 1 --rfsim --phy-test --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/ --log_config.global_log_options level,nocolor --noS1\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-uesoftmodem --nokrnmod 1 --rfsim --phy-test --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/ --log_config.global_log_options level,nocolor,line_num --noS1\" > ./my-nr-softmodem-run.sh " >> $1
         elif [ $LOC_RA_SA_TEST -eq 1 ] #RA test => use --do-ra option
         then
-            echo "echo \"./nr-uesoftmodem --rfsim --do-ra --log_config.global_log_options level,nocolor --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-uesoftmodem --rfsim --do-ra --log_config.global_log_options level,nocolor,line_num --rrc_config_path /home/ubuntu/tmp/cmake_targets/ran_build/build/\" > ./my-nr-softmodem-run.sh " >> $1
         else #SA test => use --sa option
-            echo "echo \"./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --log_config.global_log_options level,nocolor\" > ./my-nr-softmodem-run.sh " >> $1
+            echo "echo \"./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --log_config.global_log_options level,nocolor,line_num\" > ./my-nr-softmodem-run.sh " >> $1
         fi
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1

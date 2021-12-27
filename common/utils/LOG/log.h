@@ -323,7 +323,6 @@ int register_log_component(char *name, char *fext, int compidx);
 #define LOG_MEM_SIZE 100*1024*1024
 #define LOG_MEM_FILE "./logmem.log"
 void flush_mem_to_file(void);
-void log_output_memory(const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
 int logInit_log_mem(void);
 void close_log_mem(void);
   

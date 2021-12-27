@@ -62,11 +62,6 @@
 #include "executables/softmodem-common.h"
 extern RAN_CONTEXT_t RC;
 
-extern int
-gtpv1u_delete_s1u_tunnel(
-  const instance_t instanceP,
-  const gtpv1u_enb_delete_tunnel_req_t *const req_pP);
-
 /* Value to indicate an invalid UE initial id */
 static const uint16_t UE_INITIAL_ID_INVALID = 0;
 
