@@ -111,6 +111,7 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
   last_symbol   = start_symbol + duration_in_symbols - 1;
   if (L_ptrs==0) {
     LOG_E(PHY,"bug: impossible L_ptrs\n");
+    *ptrs_symbols = 0;
     return;
   }
 
@@ -263,9 +264,13 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
   uint16_t              re_cnt           = 0;
   uint16_t              cnt              = 0;
   unsigned short        nb_re_pdsch      = NR_NB_SC_PER_RB * nb_rb;
+  if (K_ptrs==0) {
+    LOG_E(PHY,"K_ptrs == 0\n");
+    return;
+  }
   uint16_t              sc_per_symbol    = (nb_rb + K_ptrs - 1)/K_ptrs;
-  int16_t              *ptrs_p           = (int16_t *)malloc(sizeof(int32_t)*(sc_per_symbol));
-  int16_t              *dmrs_comp_p      = (int16_t *)malloc(sizeof(int32_t)*(sc_per_symbol));
+  int16_t              *ptrs_p           = (int16_t *)malloc(sizeof(int32_t)*((1 + sc_per_symbol/4)*4));
+  int16_t              *dmrs_comp_p      = (int16_t *)malloc(sizeof(int32_t)*((1 + sc_per_symbol/4)*4));
   double                abs              = 0.0;
   double                real             = 0.0;
   double                imag             = 0.0;
