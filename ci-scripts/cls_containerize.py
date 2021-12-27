@@ -700,7 +700,7 @@ class Containerize():
 		logging.debug(cmd)
 		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
-	def UndeployGenObject(self, HTML):
+	def UndeployGenObject(self, HTML, RAN):
 		self.exitStatus = 0
 		ymlPath = self.yamlPath[0].split('/')
 		logPath = '../cmake_targets/log/' + ymlPath[1]
@@ -731,7 +731,24 @@ class Containerize():
 				logging.debug(cmd)
 				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		if anyLogs:
-			cmd = 'mkdir -p '+ logPath + ' && mv ' + self.yamlPath[0] + '/*.log ' + logPath
+			cmd = 'mkdir -p '+ logPath + ' && cp ' + self.yamlPath[0] + '/*.log ' + logPath
+			logging.debug(cmd)
+			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+
+			# Analyzing log file!
+			filename = self.yamlPath[0] + '/rfsim?g_oai_?nb.log'
+			logging.debug('\u001B[1m Analyzing xNB logfile \u001B[0m ' + filename)
+			cmd = 'ls ' + filename
+			logfileLs = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=5)
+			logging.debug(logfileLs)
+			# For the moment just assume this exists
+			logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML)
+			if (logStatus < 0):
+				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
+			else:
+				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+
+			cmd = 'rm ' + self.yamlPath[0] + '/*.log'
 			logging.debug(cmd)
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 			if self.tsharkStarted:
