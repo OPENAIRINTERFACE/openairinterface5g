@@ -585,6 +585,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     MCC_MNC_TO_PLMNID(cell->mcc, cell->mnc, cell->mnc_digit_length, &servedPLMN_item->pLMN_Identity);
     // // /* - CHOICE NR-MODE-Info */
     F1AP_NR_Mode_Info_t *nR_Mode_Info=&served_cell_information->nR_Mode_Info;
+    LOG_E(F1AP,"Here hardcoded values instead of values from configuration file\n");
 
     if (f1ap_setup_req->fdd_flag) {
       nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_fDD;

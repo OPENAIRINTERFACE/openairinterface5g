@@ -115,34 +115,32 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_Served_Cells_List, true);
   req->num_cells_available = ie->value.choice.GNB_DU_Served_Cells_List.list.count;
-  LOG_D(F1AP, "req->num_cells_available %d \n",
-        req->num_cells_available);
-  int num_cells_available = req->num_cells_available;
+  LOG_D(F1AP, "req->num_cells_available %d \n", req->num_cells_available);
 
-  for (i=0; i<num_cells_available; i++) {
+  for (i=0; i<req->num_cells_available; i++) {
     F1AP_GNB_DU_Served_Cells_Item_t *served_cells_item_p;
     served_cells_item_p = &(((F1AP_GNB_DU_Served_Cells_ItemIEs_t *)
                              ie->value.choice.GNB_DU_Served_Cells_List.list.array[i])->
                             value.choice.GNB_DU_Served_Cells_Item);
-
+    F1AP_Served_Cell_Information_t *served_cell_information= &gnb_du_served_cells_item->served_Cell_Information;
     /* tac */
-    if (served_cells_item_p->served_Cell_Information.fiveGS_TAC) {
-      OCTET_STRING_TO_INT16(served_cells_item_p->served_Cell_Information.fiveGS_TAC, req->cell[i].tac);
+    if (served_Cell_Information->fiveGS_TAC) {
+      OCTET_STRING_TO_INT16(served_Cell_Information->fiveGS_TAC, req->cell[i].tac);
       LOG_D(F1AP, "req->tac[%d] %d \n", i, req->cell[i].tac);
     }
 
     /* - nRCGI */
-    TBCD_TO_MCC_MNC(&(served_cells_item_p->served_Cell_Information.nRCGI.pLMN_Identity), req->cell[i].mcc,
+    TBCD_TO_MCC_MNC(&(served_Cell_Information->nRCGI.pLMN_Identity), req->cell[i].mcc,
                     req->cell[i].mnc,req->cell[i].mnc_digit_length);
     // NR cellID
-    BIT_STRING_TO_NR_CELL_IDENTITY(&served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity,
+    BIT_STRING_TO_NR_CELL_IDENTITY(&served_Cell_Information->nRCGI.nRCellIdentity,
                                    req->cell[i].nr_cellid);
     LOG_D(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
           req->cell[i].mcc,
           req->cell[i].mnc,
           (long long unsigned int)req->cell[i].nr_cellid);
     /* - nRPCI */
-    req->cell[i].nr_pci = served_cells_item_p->served_Cell_Information.nRPCI;
+    req->cell[i].nr_pci = served_Cell_Information->nRPCI;
     LOG_D(F1AP, "req->nr_pci[%d] %d \n", i, req->cell[i].nr_pci);
 
     // LTS: FIXME data model failure: we don't KNOW if we receive a 4G or a 5G cell
@@ -151,6 +149,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
       f1ap_req(true, instance)->cell_type=CELL_MACRO_GNB;
     else
       f1ap_req(true, instance)->cell_type=CELL_MACRO_ENB;
+
+    
 
     LOG_I(F1AP, "Received Cell in %d context\n", f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB);
     // System Information
@@ -208,11 +208,14 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   //     uint16_t nr_sul_band[32];
   //   } tdd;
   // } nr_mode_info[F1AP_MAX_NB_CELLS];
+
+
+  
   // We copy and store in F1 task data, RRC will free "req" as it frees all itti received messages
   message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
   memcpy(&F1AP_SETUP_REQ(message_p), req, sizeof(f1ap_setup_req_t) );
 
-  if (num_cells_available > 0) {
+  if (req->num_cells_available > 0) {
     if (f1ap_req(true, instance)->cell_type == CELL_MACRO_GNB) {
       itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
     } else {
