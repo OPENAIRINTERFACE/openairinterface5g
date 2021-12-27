@@ -533,10 +533,7 @@ static inline int log_header(log_component_t *c,
   if ( flag & FLAG_TIME ) {
     struct timespec t;
     clock_gettime(CLOCK_MONOTONIC, &t);
-    static double tOrigin=0;
-    if (tOrigin==0)
-      tOrigin=t.tv_sec+t.tv_nsec/1.0e9;
-    snprintf(timeString, sizeof t,"%05.3f",t.tv_sec+t.tv_nsec/1.0e9-tOrigin);
+    snprintf(timeString, sizeof t,"%05.3f",t.tv_sec+t.tv_nsec/1.0e9);
   } else {
     timeString[0]=0;
   }
