@@ -642,16 +642,17 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       ra->preamble_index = preamble_index;
       ra->beam_id = beam_index;
 
-      LOG_D(NR_MAC,
+      LOG_I(NR_MAC,
             "[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB "
-            "index %u\n",
+            "index %u RA index %d\n",
             module_idP,
             CC_id,
             frameP,
             ra->Msg2_frame,
             ra->Msg2_slot,
             ra->RA_rnti,
-            cc->ssb_index[beam_index]);
+            cc->ssb_index[beam_index],
+            i);
 
       return;
     }

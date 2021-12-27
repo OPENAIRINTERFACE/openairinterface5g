@@ -104,6 +104,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
     int npdus = UL_INFO.rach_ind.number_of_pdus;
     for(int i = 0; i < npdus; i++) {
       UL_INFO.rach_ind.number_of_pdus--;
+      UL_info->rach_ind.number_of_pdus--;
       if (UL_INFO.rach_ind.pdu_list[i].num_preamble>0)
       AssertFatal(UL_INFO.rach_ind.pdu_list[i].num_preamble==1,
                   "More than 1 preamble not supported\n");
