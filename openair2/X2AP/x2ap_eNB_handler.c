@@ -512,8 +512,8 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
   return x2ap_eNB_generate_x2_setup_response(instance_p, x2ap_eNB_data);
 }
 
-const char *X2AP_cause_str1[4]={"radioNetwork","transport","protocol","misc"};
-const char *X2AP_case_str_radio[50]={" X2AP_CauseRadioNetwork_handover_desirable_for_radio_reasons",
+const char *X2AP_ResetRequest_str[2]={"X2AP_ResetRequest_IEs__value_PR_Cause","X2AP_ResetRequest_IEs__value_PR_InterfaceInstanceIndication"};
+const char *X2AP_case_str_radio[50]={"X2AP_CauseRadioNetwork_handover_desirable_for_radio_reasons",
         "X2AP_CauseRadioNetwork_time_critical_handover",
         "X2AP_CauseRadioNetwork_resource_optimisation_handover",
         "X2AP_CauseRadioNetwork_reduce_load_in_serving_cell",
@@ -617,8 +617,9 @@ x2ap_eNB_handle_x2_reset_request(instance_t instance,
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
     return -1;
   } else {
-    AssertFatal(ie->value.present <= X2AP_Cause_PR_misc && ie->value.present > 0,"Cause value %d, is impossible\n",ie->value.present);
-    LOG_I(X2AP,"Received X2AP Reset Request with Cause Type %s\n",X2AP_cause_str1[ie->value.present-1]);
+    AssertFatal(ie->value.present <= X2AP_ResetRequest_IEs__value_PR_InterfaceInstanceIndication && ie->value.present > 0,
+                "Cause value %d, is impossible\n",ie->value.present);
+    LOG_I(X2AP,"Received X2AP Reset Request with Cause Type %s\n",X2AP_ResetRequest_str[ie->value.present-1]);
   }
 
   X2AP_DEBUG("Adding eNB to the list of associated eNBs\n");

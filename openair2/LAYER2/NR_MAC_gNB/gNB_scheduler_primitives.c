@@ -351,7 +351,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 
 void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
-			                        const NR_BWP_UplinkDedicated_t *ubwpd,
+                              const NR_BWP_UplinkDedicated_t *ubwpd,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
@@ -1926,7 +1926,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 {
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_idP]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
-  LOG_I(NR_MAC, "[gNB %d] Adding UE with rnti %x (num_UEs %d)\n",
+  LOG_I(NR_MAC, "[gNB %d] Adding UE with rnti 0x%04x (num_UEs %d)\n",
         mod_idP,
         rntiP,
         UE_info->num_UEs);
@@ -2064,7 +2064,7 @@ void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
     destroy_nr_list(&sched_ctrl->available_ul_harq);
     destroy_nr_list(&sched_ctrl->feedback_ul_harq);
     destroy_nr_list(&sched_ctrl->retrans_ul_harq);
-    LOG_I(NR_MAC, "[gNB %d] Remove NR UE_id %d : rnti %x\n",
+    LOG_I(NR_MAC, "[gNB %d] Remove NR UE_id %d: rnti 0x%04x\n",
           mod_id,
           UE_id,
           rnti);
@@ -2202,6 +2202,7 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
     }
   }
 }
+
 
 
 void nr_csirs_scheduling(int Mod_idP,

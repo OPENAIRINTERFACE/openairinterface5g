@@ -374,7 +374,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_prach(module_idP, f, s);
   }
 
-    // This schedule SR
+  // This schedule SR
   nr_sr_reporting(module_idP, frame, slot);
 
   // Schedule CSI-RS transmission

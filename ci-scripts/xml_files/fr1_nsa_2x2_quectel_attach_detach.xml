@@ -24,7 +24,7 @@
 	<htmlTabRef>TEST-NSA-FR1-TM2-Tab2</htmlTabRef>
 	<htmlTabName>NSA 2x2 Attach-Detach with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>5</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  031000
  041000
@@ -94,7 +94,7 @@
 	<testCase id="041000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.nsa_2x2.106PRB.usrpn310.conf -q --usrp-tx-thread-config 1 --thread-pool 0,2,4,6</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.nsa_2x2.106PRB.usrpn310.conf -q --usrp-tx-thread-config 1</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>
