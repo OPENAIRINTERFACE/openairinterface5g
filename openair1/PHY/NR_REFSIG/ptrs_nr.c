@@ -105,14 +105,18 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
                        uint8_t L_ptrs,
                        uint16_t ul_dmrs_symb_pos) {
 
-  uint8_t i = 0, last_symbol, is_dmrs_symbol, l_ref;
-  int8_t l_counter;
+  uint i = 0, last_symbol, l_ref;
+  int l_counter;
   l_ref         = start_symbol;
   last_symbol   = start_symbol + duration_in_symbols - 1;
+  if (L_ptrs==0) {
+    LOG_E(PHY,"bug: impossible L_ptrs\n");
+    return;
+  }
 
   while ( (l_ref + i*L_ptrs) <= last_symbol) {
 
-    is_dmrs_symbol = 0;
+    int is_dmrs_symbol = 0;
 
     for(l_counter = l_ref + i*L_ptrs; l_counter >= max(l_ref + (i-1)*L_ptrs + 1, l_ref); l_counter--) {
 
