@@ -341,7 +341,7 @@ class Containerize():
 		# Remove all intermediate build images
 		if self.ranAllowMerge and forceBaseImageBuild:
 			mySSH.command(self.cli + ' image rm ' + baseImage + ':' + baseTag + ' || true', '\$', 30)
-		mySSH.command(self.cli + ' image rm ran-build:' + imageTag + ' || true','\$', 5)
+		mySSH.command(self.cli + ' image rm ran-build:' + imageTag + ' || true','\$', 30)
 		# Cleaning any created tmp volume
 		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
 		mySSH.close()
