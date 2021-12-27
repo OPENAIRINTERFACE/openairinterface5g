@@ -61,7 +61,7 @@
 	<testCase id="030000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/benetel-4g.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/benetel-4g.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>lte</air_interface>
@@ -71,7 +71,7 @@
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/benetel-5g.conf -q</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/benetel-5g.conf -q --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>

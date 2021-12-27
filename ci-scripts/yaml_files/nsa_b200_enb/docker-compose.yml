@@ -31,6 +31,7 @@ services:
             FLEXRAN_INTERFACE_NAME: eth0
             FLEXRAN_IPV4_ADDRESS: 192.168.18.210
             THREAD_PARALLEL_CONFIG: PARALLEL_SINGLE_THREAD
+            USE_ADDITIONAL_OPTIONS: --log_config.global_log_options level,nocolor,line
         volumes:
             - /dev:/dev
         networks:
