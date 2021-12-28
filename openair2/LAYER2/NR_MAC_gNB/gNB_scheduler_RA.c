@@ -902,9 +902,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   const int n_slots_frame = nr_slots_per_frame[mu];
-  const int nrofUplinkSymbols = (frame_type==TDD) ? tdd->nrofUplinkSymbols : 11; // TODO change in favor of harmonization branch
   uint8_t k2 = 0;
-  lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
   if (frame_type == TDD) {
     int nb_periods_per_frame = get_nb_periods_per_frame(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
     int nb_slots_per_period = ((1<<mu)*10)/nb_periods_per_frame;

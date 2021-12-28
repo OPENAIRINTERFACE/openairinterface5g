@@ -2050,7 +2050,7 @@ void configure_gnb_du_mac(int inst) {
                         rrc->configuration.pdsch_AntennaPorts,
                         rrc->configuration.pusch_AntennaPorts,
                         rrc->configuration.sib1_tda,
-                        rrc->configuration.minRXTXTIMEpdsch,
+                        rrc->configuration.minRXTXTIME,
                         rrc->configuration.scc,
                         NULL,
                         0,
