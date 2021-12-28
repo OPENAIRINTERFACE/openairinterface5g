@@ -131,7 +131,7 @@ typedef struct f1ap_setup_req_s {
   int  fdd_flag;
 
   union {
-    struct {
+    struct fdd_s {
       uint32_t ul_nr_arfcn;
       uint8_t ul_scs;
       uint8_t ul_nrb;
@@ -155,7 +155,7 @@ typedef struct f1ap_setup_req_s {
       uint8_t dl_num_sul_frequency_bands;
       uint16_t dl_nr_sul_band[32];
     } fdd;
-    struct {
+    struct tdd_s {
 
       uint32_t nr_arfcn;
       uint8_t scs;
