@@ -31,6 +31,50 @@
 #include "nr_rrc_config.h"
 #include "common/utils/nr/nr_common.h"
 
+void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
+                       NR_ServingCellConfigCommon_t *scc,
+                       int numerology,
+                       int rbsize,
+                       int mcs_table) {
+
+  int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  NR_BandNR_t *nr_bandnr = CALLOC(1,sizeof(NR_BandNR_t));
+  nr_bandnr->bandNR = band;
+  ASN_SEQUENCE_ADD(&cap->rf_Parameters.supportedBandListNR.list,
+                   nr_bandnr);
+  if (mcs_table == 1) {
+    int bw = get_supported_band_index(numerology, band, rbsize);
+    if (band>256) {
+      NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[0];
+      bandNRinfo->pdsch_256QAM_FR2 = CALLOC(1,sizeof(*bandNRinfo->pdsch_256QAM_FR2));
+      *bandNRinfo->pdsch_256QAM_FR2 = NR_BandNR__pdsch_256QAM_FR2_supported;
+    }
+    else{
+      cap->phy_Parameters.phy_ParametersFR1 = CALLOC(1,sizeof(*cap->phy_Parameters.phy_ParametersFR1));
+      NR_Phy_ParametersFR1_t *phy_fr1 = cap->phy_Parameters.phy_ParametersFR1;
+      phy_fr1->pdsch_256QAM_FR1 = CALLOC(1,sizeof(*phy_fr1->pdsch_256QAM_FR1));
+      *phy_fr1->pdsch_256QAM_FR1 = NR_Phy_ParametersFR1__pdsch_256QAM_FR1_supported;
+    }
+    cap->featureSets = CALLOC(1,sizeof(*cap->featureSets));
+    NR_FeatureSets_t *fs=cap->featureSets;
+    fs->featureSetsDownlinkPerCC = CALLOC(1,sizeof(*fs->featureSetsDownlinkPerCC));
+    NR_FeatureSetDownlinkPerCC_t *fs_cc = CALLOC(1,sizeof(NR_FeatureSetDownlinkPerCC_t));
+    fs_cc->supportedSubcarrierSpacingDL = numerology;
+    if(band>256) {
+      fs_cc->supportedBandwidthDL.present = NR_SupportedBandwidth_PR_fr2;
+      fs_cc->supportedBandwidthDL.choice.fr2 = bw;
+    }
+    else{
+      fs_cc->supportedBandwidthDL.present = NR_SupportedBandwidth_PR_fr1;
+      fs_cc->supportedBandwidthDL.choice.fr1 = bw;
+    }
+    fs_cc->supportedModulationOrderDL = CALLOC(1,sizeof(*fs_cc->supportedModulationOrderDL));
+    *fs_cc->supportedModulationOrderDL = NR_ModulationOrder_qam256;
+    ASN_SEQUENCE_ADD(&fs->featureSetsDownlinkPerCC->list,
+                     fs_cc);
+  }
+}
+
 void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc){
 
   lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);

@@ -1093,17 +1093,18 @@
                                  (Test8: 217 PRB 100 PDSCH-PRBs 110 PDSCH-Offset),
                                  (Test9: 106 PRBs 50 PDSCH-PRBs MCS Index 27),
                                  (Test10: 106 PRBs 50 PDSCH-PRBs MCS Index 16),
-                                 (Test11: HARQ test 25% TP (4 rounds),
-                                 (Test12: HARQ test 33% TP (3 rounds),
-                                 (Test13: HARQ test 50% TP (2 rounds),
-                                 (Test14: 3 PTRS, 8 Interpolated Symbols),
-                                 (Test15: 6 PTRS, 5 Interpolated Symbols),
-                                 (Test16: 11 PTRS, 0 Interpolated Symbols),
-                                 (Test17: Mapping type A, 2 DMRS Symbols),
-                                 (Test18: Mapping type A, 3 DMRS Symbols),
-                                 (Test19: Mapping type B, 4 DMRS Symbols),
-                                 (Test20: 4x4 MIMO, 1 Layer),
-                                 (Test21: 4x4 MIMO, 2 Layers)</desc>
+                                 (Test11: 106 MCS-TABLE 256 QAM MCS Index 26),
+                                 (Test12: HARQ test 25% TP (4 rounds),
+                                 (Test13: HARQ test 33% TP (3 rounds),
+                                 (Test14: HARQ test 50% TP (2 rounds),
+                                 (Test15: 3 PTRS, 8 Interpolated Symbols),
+                                 (Test16: 6 PTRS, 5 Interpolated Symbols),
+                                 (Test17: 11 PTRS, 0 Interpolated Symbols),
+                                 (Test18: Mapping type A, 2 DMRS Symbols),
+                                 (Test19: Mapping type A, 3 DMRS Symbols),
+                                 (Test20: Mapping type B, 4 DMRS Symbols),
+                                 (Test21: 4x4 MIMO, 1 Layer),
+                                 (Test22: 4x4 MIMO, 2 Layers)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1118,8 +1119,9 @@
                   -n100 -R217 -b100 -s5
                   -n100 -R217 -a80 -s5
                   -n100 -R217 -a110 -s5 -b100
-                  -n100 -e27 -s30 
-                  -n100 -e16 -s10 
+                  -n100 -e27 -s30
+                  -n100 -e16 -s10
+                  -n100 -q1 -e26 -s30
                   -n100 -s1 -t25
                   -n100 -s1 -t33
                   -n100 -s1 -t50
@@ -1131,7 +1133,7 @@
                   -n100 -s2 -U 2 1 3
                   -n10 -s20 -U 3 0 0 2 -gR -x1 -y4 -z4
                   -n10 -s20 -U 3 0 0 2 -gR -x2 -y4 -z4</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13 nr_dlsim.test14 nr_dlsim.test15 nr_dlsim.test16 nr_dlsim.test17 nr_dlsim.test18 nr_dlsim.test19 nr_dlsim.test20 nr_dlsim.test21</tags>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13 nr_dlsim.test14 nr_dlsim.test15 nr_dlsim.test16 nr_dlsim.test17 nr_dlsim.test18 nr_dlsim.test19 nr_dlsim.test20 nr_dlsim.test21 nr_dlsim.test22</tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
