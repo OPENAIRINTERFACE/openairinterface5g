@@ -538,7 +538,7 @@ init_MCCH(
     RC.rrc[enb_mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[sync_area] = do_MBSFNAreaConfig(enb_mod_idP,
         sync_area,
         (uint8_t *)RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESSAGE[sync_area],
-        100, /* TODO: what is the actual size of .MCCH_MESSAGE[sync_area]? */
+        32, /* TODO: what is the actual size of .MCCH_MESSAGE[sync_area]? */
         &RC.rrc[enb_mod_idP]->carrier[CC_id].mcch,
         &RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message);
     LOG_I(RRC, "mcch message pointer %p for sync area %d \n",
@@ -1225,7 +1225,7 @@ rrc_eNB_generate_SecurityModeCommand(
 )
 //-----------------------------------------------------------------------------
 {
-  uint8_t                             buffer[100];
+  uint8_t                             buffer[100]={0};
   uint8_t                             size;
   T(T_ENB_RRC_SECURITY_MODE_COMMAND, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
@@ -2201,10 +2201,9 @@ rrc_eNB_generate_RRCConnectionRelease(
 )
 //-----------------------------------------------------------------------------
 {
-  uint8_t buffer[RRC_BUF_SIZE];
+  uint8_t buffer[RRC_BUF_SIZE]={0};
   uint16_t size = 0;
   int release_num;
-  memset(buffer, 0, sizeof(buffer));
   T(T_ENB_RRC_CONNECTION_RELEASE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 #if 0
@@ -4993,19 +4992,17 @@ void rrc_eNB_handover_ue_context_release(
   struct rrc_eNB_ue_context_s *ue_context_p) {
   int e_rab = 0;
   //MessageDef *msg_release_p = NULL;
-  MessageDef *msg_delete_tunnels_p = NULL;
   uint32_t eNB_ue_s1ap_id = ue_context_p->ue_context.eNB_ue_s1ap_id;
   //msg_release_p = itti_alloc_new_message(TASK_RRC_ENB, 0, S1AP_UE_CONTEXT_RELEASE);
   //itti_send_msg_to_task(TASK_S1AP, ctxt_pP->module_id, msg_release_p);
   s1ap_ue_context_release(ctxt_pP->instance, ue_context_p->ue_context.eNB_ue_s1ap_id);
   //MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_GTPU_ENB, NULL,0, "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ", eNB_ue_s1ap_id);
-  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, 0, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-  memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
-  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 0;
+  gtpv1u_enb_delete_tunnel_req_t delete_tunnels={0};
+  delete_tunnels.rnti = ue_context_p->ue_context.rnti;
+  delete_tunnels.from_gnb = 0;
 
   for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-    GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
+    delete_tunnels.eps_bearer_id[delete_tunnels.num_erab++] =
       ue_context_p->ue_context.enb_gtp_ebi[e_rab];
     // erase data
     ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
@@ -5013,7 +5010,7 @@ void rrc_eNB_handover_ue_context_release(
     ue_context_p->ue_context.enb_gtp_ebi[e_rab] = 0;
   }
 
-  itti_send_msg_to_task(TASK_VARIABLE, ctxt_pP->module_id, msg_delete_tunnels_p);
+  gtpv1u_delete_s1u_tunnel(ctxt_pP->module_id, &delete_tunnels);
   struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids = NULL;
   rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(RC.rrc[ctxt_pP->module_id], 0, eNB_ue_s1ap_id);
 
@@ -5166,7 +5163,7 @@ check_handovers(
         msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_HANDOVER_REQ_ACK);
         rrc_eNB_generate_HO_RRCConnectionReconfiguration(ctxt_pP, ue_context_p,
             X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer,
-            RRC_BUF_SIZE, // TODO: supposed to be size of the .rrc_buffer. Is this right?
+            sizeof(X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer),
             &X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer_size);
         rrc_eNB_configure_rbs_handover(ue_context_p,ctxt_pP);
         X2AP_HANDOVER_REQ_ACK(msg).rnti = ue_context_p->ue_context.rnti;
@@ -7869,7 +7866,6 @@ rrc_eNB_decode_dcch(
   LTE_UL_DCCH_Message_t               *ul_dcch_msg = NULL; //&uldcchmsg;
   int i;
   struct rrc_eNB_ue_context_s        *ue_context_p = NULL;
-  MessageDef                         *msg_delete_tunnels_p = NULL;
   uint8_t                             xid;
   int dedicated_DRB=0;
   T(T_ENB_RRC_UL_DCCH_DATA_IN, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
@@ -8107,21 +8103,19 @@ rrc_eNB_decode_dcch(
               xid = ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier;
               ue_context_p->ue_context.e_rab_release_command_flag = 0;
               //gtp tunnel delete
-              msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, 0, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-              memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-              GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
-              GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 0;
+              gtpv1u_enb_delete_tunnel_req_t delete_tunnels={0};
+              delete_tunnels.rnti = ue_context_p->ue_context.rnti;
+              delete_tunnels.from_gnb = 0;
 
               for(i = 0; i < NB_RB_MAX; i++) {
                 if(xid == ue_context_p->ue_context.e_rab[i].xid) {
-                  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] = ue_context_p->ue_context.enb_gtp_ebi[i];
+                  delete_tunnels.eps_bearer_id[delete_tunnels.num_erab++] = ue_context_p->ue_context.enb_gtp_ebi[i];
                   ue_context_p->ue_context.enb_gtp_teid[i] = 0;
                   memset(&ue_context_p->ue_context.enb_gtp_addrs[i], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[i]));
                   ue_context_p->ue_context.enb_gtp_ebi[i]  = 0;
                 }
               }
-
-              itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->instance, msg_delete_tunnels_p);
+	      gtpv1u_delete_s1u_tunnel(ctxt_pP->instance, &delete_tunnels);
               //S1AP_E_RAB_RELEASE_RESPONSE
               rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(ctxt_pP,
                   ue_context_p,

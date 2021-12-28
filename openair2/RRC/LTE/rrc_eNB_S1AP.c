@@ -1695,7 +1695,6 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
   uint8_t b_existed,is_existed;
   uint8_t xid;
   uint8_t e_rab_release_drb;
-  MessageDef                     *msg_delete_tunnels_p = NULL;
   e_rab_release_drb = 0;
   memcpy(&e_rab_release_params[0], &(S1AP_E_RAB_RELEASE_COMMAND (msg_p).e_rab_release_params[0]), sizeof(e_rab_release_t)*S1AP_MAX_E_RAB);
   eNB_ue_s1ap_id = S1AP_E_RAB_RELEASE_COMMAND (msg_p).eNB_ue_s1ap_id;
@@ -1763,21 +1762,19 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
       rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(&ctxt, ue_context_p, xid, S1AP_E_RAB_RELEASE_COMMAND (msg_p).nas_pdu.length, S1AP_E_RAB_RELEASE_COMMAND (msg_p).nas_pdu.buffer);
     } else {
       //gtp tunnel delete
-      msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, 0, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-      memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-      GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
-      GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).from_gnb = 0;
+      gtpv1u_enb_delete_tunnel_req_t  delete_tunnels={0};
+      delete_tunnels.rnti = ue_context_p->ue_context.rnti;
+      delete_tunnels.from_gnb = 0;
 
       for(i = 0; i < NB_RB_MAX; i++) {
         if(xid == ue_context_p->ue_context.e_rab[i].xid) {
-          GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] = ue_context_p->ue_context.enb_gtp_ebi[i];
+          delete_tunnels.eps_bearer_id[delete_tunnels.num_erab++] = ue_context_p->ue_context.enb_gtp_ebi[i];
           ue_context_p->ue_context.enb_gtp_teid[i] = 0;
           memset(&ue_context_p->ue_context.enb_gtp_addrs[i], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[i]));
           ue_context_p->ue_context.enb_gtp_ebi[i]  = 0;
         }
       }
-
-      itti_send_msg_to_task(TASK_VARIABLE, instance, msg_delete_tunnels_p);
+      gtpv1u_delete_s1u_tunnel(instance,&delete_tunnels);
       //S1AP_E_RAB_RELEASE_RESPONSE
       rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(&ctxt, ue_context_p, xid);
     }
@@ -2242,8 +2239,16 @@ int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p,
                                &delete_tunnel_req);
       /* TBD: release the DRB not admitted */
       //rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(&ctxt, ue_context_p, 0);
-    }
-
+      if ( ue_context_p->ue_context.ue_release_timer_rrc > 0 &&
+	   (ue_context_p->ue_context.handover_info == NULL ||
+	    (ue_context_p->ue_context.handover_info->state != HO_RELEASE &&
+	     ue_context_p->ue_context.handover_info->state != HO_CANCEL
+	     )
+	    )
+	   )
+      ue_context_p->ue_context.ue_release_timer_rrc = ue_context_p->ue_context.ue_release_timer_thres_rrc;
+  }
+  
     /* Security key */
     ue_context_p->ue_context.next_hop_chain_count=S1AP_PATH_SWITCH_REQ_ACK (msg_p).next_hop_chain_count;
     memcpy ( ue_context_p->ue_context.next_security_key,
