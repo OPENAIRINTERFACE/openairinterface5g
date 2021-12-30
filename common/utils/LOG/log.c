@@ -919,7 +919,7 @@ static void log_output_memory(log_component_t *c, const char *file, const char *
         }
       }
   }else{
-    fwrite(log_buffer, len, 1, c->stream);
+    if (write(fileno(c->stream), log_buffer, len)) {};
   }
 }
 

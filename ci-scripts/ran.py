@@ -474,7 +474,7 @@ class RANManagement():
 			mySSH.command('echo ' + lPassWord + ' | echo "ulimit -c unlimited && sudo UHD_RFNOC_DIR=/usr/local/share/uhd/rfnoc ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		#otherwise the regular command is ok
 		else:
-			mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+			mySSH.command('echo "ulimit -c unlimited && catchsegv ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
