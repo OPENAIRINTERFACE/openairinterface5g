@@ -47,9 +47,8 @@ void set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
   int nrofUplinkSlots     = tdd_config->pattern1.nrofUplinkSlots;
   int nrofUplinkSymbols   = tdd_config->pattern1.nrofUplinkSymbols;
   int slot_number = 0;
-  int nb_periods_per_frame = get_nb_periods_per_frame(cfg->tdd_table.tdd_period);
+  int nb_periods_per_frame = get_nb_periods_per_frame(tdd_config->pattern1.dl_UL_TransmissionPeriodicity);
   int nb_slots_to_set = TDD_CONFIG_NB_FRAMES*(1<<mu)*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-
   int nb_slots_per_period = ((1<<mu) * NR_NUMBER_OF_SUBFRAMES_PER_FRAME)/nb_periods_per_frame;
   cfg->tdd_table.tdd_period_in_slots = nb_slots_per_period;
 
