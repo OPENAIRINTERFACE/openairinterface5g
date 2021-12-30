@@ -882,9 +882,6 @@ class RANManagement():
 			result = re.search('[Cc]ore [dD]ump', str(line))
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
-			result = re.search('./ran_build/build/lte-softmodem', str(line))
-			if result is not None and not exitSignalReceived:
-				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
 			if result is not None and not exitSignalReceived:
 				foundAssertion = True
