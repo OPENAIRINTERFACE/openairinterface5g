@@ -120,6 +120,8 @@ typedef struct NR_UE_RRC_INST_s {
     NR_DRB_ToAddMod_t              *DRB_config[NB_CNX_UE][8];
     rb_id_t                        *defaultDRB; // remember the ID of the default DRB
 
+    char *uecap_path;
+
     NR_SRB_INFO Srb0[NB_SIG_CNX_UE];
     NR_SRB_INFO_TABLE_ENTRY        Srb1[NB_CNX_UE];
     NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];

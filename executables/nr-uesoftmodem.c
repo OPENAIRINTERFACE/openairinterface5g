@@ -115,6 +115,7 @@ int                 vcdflag = 0;
 double          rx_gain_off = 0.0;
 char             *usrp_args = NULL;
 char       *rrc_config_path = NULL;
+char            *uecap_path = NULL;
 int               dumpframe = 0;
 
 uint64_t        downlink_frequency[MAX_NUM_CCs][4];
@@ -443,7 +444,7 @@ int main( int argc, char **argv ) {
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-  init_NR_UE(1,rrc_config_path);
+  init_NR_UE(1,uecap_path,rrc_config_path);
   if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa)
 	  init_pdcp();
 

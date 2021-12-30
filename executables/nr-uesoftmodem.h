@@ -33,8 +33,9 @@
     {"dlsch-parallel",           CONFIG_HLP_DLSCH_PARA,  0,               iptr:(int32_t *)&nrUE_params.nr_dlsch_parallel,       defintval:0,           TYPE_UINT8,  0}, \
     {"offset-divisor",           CONFIG_HLP_OFFSET_DIV,  0,               uptr:(uint32_t *)&nrUE_params.ofdm_offset_divisor,    defuintval:UINT_MAX,           TYPE_UINT32,  0}, \
     {"nr-dlsch-demod-shift",     CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&nr_dlsch_demod_shift,    defintval:0,     TYPE_INT,    0}, \
-    {"V" ,                       CONFIG_HLP_VCD,         PARAMFLAG_BOOL,  iptr:&vcdflag,                            defintval:0,     TYPE_INT,    0}, \
-    {"rrc_config_path",          CONFIG_HLP_RRC_CFG_PATH,0,               strptr:(char **)&rrc_config_path,         defstrval:"./",  TYPE_STRING, 0} \
+    {"V" ,                       CONFIG_HLP_VCD,         PARAMFLAG_BOOL,  iptr:&vcdflag,                      defintval:0,     TYPE_INT,    0}, \
+    {"uecap_path",               CONFIG_HLP_UECAP_PATH,  0,               strptr:(char **)&uecap_path,        defstrval:"./",  TYPE_STRING, 0}, \
+    {"rrc_config_path",          CONFIG_HLP_RRC_CFG_PATH,0,               strptr:(char **)&rrc_config_path,   defstrval:"./",  TYPE_STRING, 0}  \
 }
 
 
@@ -84,7 +85,7 @@ extern nrUE_params_t *get_nrUE_params(void);
 // In nr-ue.c
 extern int setup_nr_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
-extern void init_NR_UE(int, char*);
+extern void init_NR_UE(int, char*, char*);
 extern void init_NR_UE_threads(int);
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
