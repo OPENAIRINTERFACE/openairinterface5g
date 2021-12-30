@@ -786,7 +786,7 @@ void init_NR_UE_threads(int nb_inst) {
 /* HACK: this function is needed to compile the UE
  * fix it somehow
  */
-int8_t find_dlsch(uint16_t rnti,
+int find_dlsch(uint16_t rnti,
                   PHY_VARS_eNB *eNB,
                   find_type_t type)
 {
