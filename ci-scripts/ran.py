@@ -752,6 +752,7 @@ class RANManagement():
 		msgLine = 0
 		foundSegFault = False
 		foundRealTimeIssue = False
+		foundRealTimeIssue_cnt = 0
 		rrcSetupComplete = 0
 		rrcReleaseRequest = 0
 		rrcReconfigRequest = 0
@@ -890,6 +891,7 @@ class RANManagement():
 			result = re.search('LLL', str(line))
 			if result is not None and not exitSignalReceived:
 				foundRealTimeIssue = True
+				foundRealTimeIssue_cnt += 1
 			if foundAssertion and (msgLine < 3):
 				msgLine += 1
 				msgAssertion += str(line)
@@ -1258,7 +1260,7 @@ class RANManagement():
 			global_status = CONST.ENB_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB faced real time issues! \u001B[0m')
-			htmleNBFailureMsg += nodeB_prefix + 'NB faced real time issues!\n'
+			htmleNBFailureMsg += nodeB_prefix + 'NB faced real time issues! COUNT = '+ str(foundRealTimeIssue_cnt) +' lines\n'
 		if rlcDiscardBuffer > 0:
 			rlcMsg = nodeB_prefix + 'NB RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
