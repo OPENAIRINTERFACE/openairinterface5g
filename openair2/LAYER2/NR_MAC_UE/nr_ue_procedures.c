@@ -470,6 +470,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
                                                       NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList,
 						      nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
 						      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      int *mapping_type,
 						      uint8_t time_domain_ind,
                                                       int default_abc,
                                                       bool use_default){
@@ -547,13 +548,15 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
     }
     else {// Default configuration from tables
 
+      bool is_typeA;
       get_info_from_tda_tables(default_abc,
                                time_domain_ind,
                                dmrs_typeA_pos,
                                1, // normal CP
+                               &is_typeA,
                                &sliv_S,
                                &sliv_L);
-
+      *mapping_type = is_typeA? typeA : typeB;
       dlsch_config_pdu->number_symbols = sliv_L;
       dlsch_config_pdu->start_symbol = sliv_S;
     }
@@ -859,12 +862,17 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     else if (mac->scc_SIB && mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup)
       pdsch_TimeDomainAllocationList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
 
+    int mappingtype;
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,pdsch_TimeDomainAllocationList,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val,default_abc,rnti==SI_RNTI) < 0) {
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,pdsch_TimeDomainAllocationList,
+                                                       NULL,dlsch_config_pdu_1_0,&mappingtype,
+                                                       dci->time_domain_assignment.val,
+                                                       default_abc,rnti==SI_RNTI) < 0) {
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
-    int mappingtype = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType : ((dlsch_config_pdu_1_0->start_symbol <= 3)? typeA: typeB);
+    if(pdsch_TimeDomainAllocationList && rnti!=SI_RNTI)
+      mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
 
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
@@ -1054,13 +1062,16 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
+    int mappingtype;
     NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = choose_dl_tda_list(pdsch_Config,bwpc->pdsch_ConfigCommon->choice.setup);
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,pdsch_TimeDomainAllocationList,NULL,dlsch_config_pdu_1_1,dci->time_domain_assignment.val,0,false) < 0) {
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,pdsch_TimeDomainAllocationList,
+                                                       NULL,dlsch_config_pdu_1_1,&mappingtype,
+                                                       dci->time_domain_assignment.val,0,false) < 0) {
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
-
-    int mappingtype = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType : ((dlsch_config_pdu_1_1->start_symbol <= 3)? typeA: typeB);
+    if(pdsch_TimeDomainAllocationList)
+      mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
 
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_1->dlDmrsSymbPos = fill_dmrs_mask(pdsch_Config,

@@ -138,6 +138,7 @@ void get_info_from_tda_tables(int default_abc,
                               int tda,
                               int dmrs_TypeA_Position,
                               int normal_CP,
+                              bool *is_mapping_typeA,
                               int *startSymbolIndex,
                               int *nrOfSymbols);
 
