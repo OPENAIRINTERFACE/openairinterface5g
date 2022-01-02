@@ -303,7 +303,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   LTE_DL_FRAME_PARMS *fp   = ru->frame_parms;
   openair0_config_t *cfg   = &ru->openair0_cfg;
   //printf("////////////////numerology in config = %d\n",numerology);
-  int numerology = get_softmodem_params()->numerology;
+  int numerology = 0; //get_softmodem_params()->numerology;
 
   if(fp->N_RB_DL == 100) {
     if(numerology == 0) {
