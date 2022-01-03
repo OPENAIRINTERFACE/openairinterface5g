@@ -1579,6 +1579,7 @@ class OaiCiTest():
 					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 					#cat is executed on EPC
 					SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+					ping_log_file='ping_' + self.testCase_id + '_' + device_id + '.log'
 				else: #launch from Module
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 					#target address is different depending on EPC type
@@ -1596,6 +1597,7 @@ class OaiCiTest():
 
 					#cat is executed locally 
 					SSH.command('cat ping_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', 5)
+					ping_log_file='ping_' + self.testCase_id + '_' + self.ue_id + '.log'
 					ping_status=0
 
 			# TIMEOUT CASE
@@ -1643,7 +1645,7 @@ class OaiCiTest():
 			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
 
 			#adding extra ping stats from local file
-			ping_log_file='ping_' + self.testCase_id + '_' + device_id + '.log'
+			#ping_log_file variable is defined above in this function, depending on device/ue
 			logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
 			ping_stat=GetPingTimeAnalysis(ping_log_file)
 			ping_stat_msg=''
@@ -2088,12 +2090,12 @@ class OaiCiTest():
 				packetloss += '%'
 				#checking packet loss compliance
 				if float(pl) > float(self.iperf_packetloss_threshold):
-					pal_too_high_msg = 'Packet Loss too high :  actual = '+packetloss+', target = '+self.iperf_packetloss_threshold+'%'
+					pal_too_high_msg = 'Packet Loss too high :  tested = '+packetloss+', target = '+self.iperf_packetloss_threshold+'%'
 				else:
 					pal_too_high_msg='Packet Loss value is within acceptance range'
 				#checking bitrate perf compliance
 				if float(br_loss) < float(self.iperf_bitrate_threshold):
-					bit_too_low_msg = 'Bitrate too low :  actual = '+bitperf+', target = '+self.iperf_bitrate_threshold+'%'
+					bit_too_low_msg = 'Bitrate too low :  tested = '+bitperf+', target = '+self.iperf_bitrate_threshold+'%'
 				else:
 					bit_too_low_msg='Bitrate perf value is within acceptance range'
 			lock.acquire()
