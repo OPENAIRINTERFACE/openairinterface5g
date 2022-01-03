@@ -2088,19 +2088,19 @@ class OaiCiTest():
 				packetloss += '%'
 				#checking packet loss compliance
 				if float(pl) > float(self.iperf_packetloss_threshold):
-					pal_too_high_msg = 'Packet Loss too high :  actual = '+packetloss+', target = '+self.iperf_packetloss_threshold+'%\n'
+					pal_too_high_msg = 'Packet Loss too high :  actual = '+packetloss+', target = '+self.iperf_packetloss_threshold+'%'
 				else:
-					pal_too_high_msg=''
+					pal_too_high_msg='Packet Loss value is within acceptance range'
 				#checking bitrate perf compliance
 				if float(br_loss) < float(self.iperf_bitrate_threshold):
-					bit_too_low_msg = 'Bitrate too low :  actual = '+bitperf+', target = '+self.iperf_bitrate_threshold+'%\n'
+					bit_too_low_msg = 'Bitrate too low :  actual = '+bitperf+', target = '+self.iperf_bitrate_threshold+'%'
 				else:
-					bit_too_low_msg=''
+					bit_too_low_msg='Bitrate perf value is within acceptance range'
 			lock.acquire()
-			if (float(br_loss) < float(self.iperf_bitrate_threshold)) or (float(pl) > float(self.iperf_packetloss_threshold)):
-				statusQueue.put(1)
-			elif (float(br_loss) < float(self.iperf_bitrate_threshold)) and (float(pl) > float(self.iperf_packetloss_threshold)): 
+			if (float(br_loss) < float(self.iperf_bitrate_threshold)) and (float(pl) > float(self.iperf_packetloss_threshold)):
 				statusQueue.put(-1)
+			elif (float(br_loss) < float(self.iperf_bitrate_threshold)) or (float(pl) > float(self.iperf_packetloss_threshold)): 
+				statusQueue.put(1)
 			else:
 				statusQueue.put(0)
 			statusQueue.put(device_id)
