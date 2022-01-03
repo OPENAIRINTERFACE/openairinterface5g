@@ -459,7 +459,6 @@ uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
 int get_nr_table_idx(int nr_bandP, uint8_t scs_index) {
   int scs_khz = 15 << scs_index;
   int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
-
   for(int j = 0; j < sizeofArray(supplementary_bands); j++){
     if (nr_bandP == supplementary_bands[j])
       AssertFatal(0 == 1, "Band %d is a supplementary band (%d). This is not supported yet.\n", nr_bandP, supplementary_bands[j]);
@@ -471,7 +470,14 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index) {
       break;
   }
 
-  AssertFatal(i < sizeofArray(nr_bandtable), "band is not existing: %d\n",nr_bandP);
+  if (i == sizeofArray(nr_bandtable)) {
+    LOG_I(PHY, "not found same deltaf_raster == scs_khz, use only band and last deltaf_raster \n");
+    for(i=sizeofArray(nr_bandtable)-1; i >=0; i--)
+       if ( nr_bandtable[i].band == nr_bandP )
+         break;
+  }
+
+  AssertFatal(i > 0 && i < sizeofArray(nr_bandtable), "band is not existing: %d\n",nr_bandP);
   LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
 
   return i;
