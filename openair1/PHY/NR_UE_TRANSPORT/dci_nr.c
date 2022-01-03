@@ -130,76 +130,76 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
   */
   int c = 0, r = 0;
-  uint16_t bundle_j = 0, f_bundle_j = 0, f_reg = 0;
+  uint16_t f_bundle_j = 0;
   uint32_t coreset_C = 0;
   uint16_t index_z, index_llr;
   int coreset_interleaved = 0;
+  int N_regs = coreset_nbr_rb*coreset_time_dur;
+  int B_rb = reg_bundle_size_L/coreset_time_dur; // nb of RBs occupied by each REG bundle
 
   if (reg_bundle_size_L != 0) { // interleaving will be done only if reg_bundle_size_L != 0
     coreset_interleaved = 1;
-    coreset_C = (uint32_t) (coreset_nbr_rb / (coreset_interleaver_size_R * reg_bundle_size_L));
+    coreset_C = (uint32_t) (N_regs / (coreset_interleaver_size_R * reg_bundle_size_L));
   } else {
     reg_bundle_size_L = 6;
   }
 
+  int num_bundles_per_cce = 6/reg_bundle_size_L;
+  int max_bundles = NR_MAX_PDCCH_AGG_LEVEL*num_bundles_per_cce;
+  int f_bundle_j_list[max_bundles];
 
-  int f_bundle_j_list[(2*NR_MAX_PDCCH_AGG_LEVEL) - 1] = {};
-
-  for (int reg = 0; reg < coreset_nbr_rb; reg++) {
-    if ((reg % reg_bundle_size_L) == 0) {
+  // for each bundle
+  for (int nb = 0; nb < max_bundles; nb++) {
+    if (coreset_interleaved == 0) f_bundle_j = nb;
+    else {
       if (r == coreset_interleaver_size_R) {
         r = 0;
         c++;
       }
-
-      bundle_j = (c * coreset_interleaver_size_R) + r;
-      f_bundle_j = ((r * coreset_C) + c + n_shift) % (coreset_nbr_rb / reg_bundle_size_L);
-
-      if (coreset_interleaved == 0) f_bundle_j = bundle_j;
-
-      f_bundle_j_list[reg / 6] = f_bundle_j;
-
+      f_bundle_j = ((r * coreset_C) + c + n_shift) % (N_regs / reg_bundle_size_L);
+      r++;
     }
-    if ((reg % reg_bundle_size_L) == 0) r++;
+    f_bundle_j_list[nb] = f_bundle_j;
   }
 
-  // Get cce_list indices by reg_idx in ascending order
-  int f_bundle_j_list_id = 0;
-  int f_bundle_j_list_ord[(2*NR_MAX_PDCCH_AGG_LEVEL)-1] = {};
+  // Get cce_list indices by bundle index in ascending order
+  int f_bundle_j_list_ord[number_of_candidates][max_bundles];
   for (int c_id = 0; c_id < number_of_candidates; c_id++ ) {
-    f_bundle_j_list_id = CCE[c_id];
-    for (int p = 0; p < NR_MAX_PDCCH_AGG_LEVEL; p++) {
-      for (int p2 = CCE[c_id]; p2 < CCE[c_id] + L[c_id]; p2++) {
-        AssertFatal(p2<2*NR_MAX_PDCCH_AGG_LEVEL,"number_of_candidates %d : p2 %d,  CCE[%d] %d, L[%d] %d\n",number_of_candidates,p2,c_id,CCE[c_id],c_id,L[c_id]);
-        if (f_bundle_j_list[p2] == p) {
-          AssertFatal(f_bundle_j_list_id < 2*NR_MAX_PDCCH_AGG_LEVEL,"f_bundle_j_list_id %d\n",f_bundle_j_list_id);
-          f_bundle_j_list_ord[f_bundle_j_list_id] = p;
+    int start_bund_cand = CCE[c_id]*num_bundles_per_cce;
+    int max_bund_per_cand = L[c_id]*num_bundles_per_cce;
+    int f_bundle_j_list_id = 0;
+    for(int nb = 0; nb < max_bundles; nb++) {
+      for(int bund_cand = start_bund_cand; bund_cand < start_bund_cand+max_bund_per_cand; bund_cand++){
+        if (f_bundle_j_list[bund_cand] == nb) {
+          f_bundle_j_list_ord[c_id][f_bundle_j_list_id] = nb;
           f_bundle_j_list_id++;
-          break;
+
         }
       }
     }
   }
 
-  int rb = 0;
+  int rb_count = 0;
   for (int c_id = 0; c_id < number_of_candidates; c_id++ ) {
     for (int symbol_idx = start_symbol; symbol_idx < start_symbol+coreset_time_dur; symbol_idx++) {
-      for (int cce_count = CCE[c_id/coreset_time_dur]+c_id%coreset_time_dur; cce_count < CCE[c_id/coreset_time_dur]+c_id%coreset_time_dur+L[c_id]; cce_count += coreset_time_dur) {
-        for (int reg_in_cce_idx = 0; reg_in_cce_idx < NR_NB_REG_PER_CCE; reg_in_cce_idx++) {
+      for (int cce_count = 0; cce_count < L[c_id]; cce_count ++) {
+        for (int k=0; k<6/reg_bundle_size_L; k++) { // loop over REG bundles
+          int f = f_bundle_j_list_ord[c_id][k+6*cce_count/reg_bundle_size_L];
+          for(int rb=0; rb<B_rb; rb++) { // loop over the RBs of the bundle
+            // 9 sub-carriers with data per PRB
+            index_z = 9 * rb_count;
+            index_llr = (uint16_t) (f*B_rb + rb + symbol_idx * coreset_nbr_rb) * 9;
 
-          f_reg = (f_bundle_j_list_ord[cce_count] * reg_bundle_size_L) + reg_in_cce_idx;
-          index_z = 9 * rb;
-          index_llr = (uint16_t) (f_reg + symbol_idx * coreset_nbr_rb) * 9;
-
-          for (int i = 0; i < 9; i++) {
-            z[index_z + i] = llr[index_llr + i];
+            for (int i = 0; i < 9; i++) {
+              z[index_z + i] = llr[index_llr + i];
 #ifdef NR_PDCCH_DCI_DEBUG
-            LOG_I(PHY,"[cce_count=%d,reg_in_cce_idx=%d,bundle_j=%d,symbol_idx=%d,candidate=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
-                  cce_count,reg_in_cce_idx,bundle_j,symbol_idx,c_id,(index_z + i),*(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]),
-                   f_reg,f_bundle_j,(index_llr + i),*(int16_t *) &llr[index_llr + i], *(1 + (int16_t *) &llr[index_llr + i]));
+              LOG_I(PHY,"[candidate=%d,symbol_idx=%d,cce=%d,REG bundle=%d,PRB=%d] z[%d]=(%d,%d) <-> \t llr[%d]=(%d,%d) \n",
+                    c_id,symbol_idx,cce_count,k,f*B_rb + rb,(index_z + i),*(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]),
+                    (index_llr + i),*(int16_t *) &llr[index_llr + i], *(1 + (int16_t *) &llr[index_llr + i]));
 #endif
+            }
+            rb_count++;
           }
-          rb++;
         }
       }
     }
@@ -783,15 +783,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                                     rel15->number_of_candidates,
                                     rel15->CCE,
                                     rel15->L);
-    /*
-    nr_pdcch_unscrambling(rel15->rnti,
-                          frame_parms,
-                          slot,
-                          pdcch_vars->e_rx,
-                          rel15->coreset.duration*n_rb*9*2,
-                          // get_nCCE(n_pdcch_symbols, frame_parms, mi) * 72,
-                          rel15->coreset.pdcch_dmrs_scrambling_id);
-    */
+
   LOG_D(PHY,"we end nr_pdcch_unscrambling()\n");
   LOG_D(PHY,"Ending nr_rx_pdcch() function\n");
 
@@ -866,6 +858,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
   //int gNB_id = 0;
   int16_t tmp_e[16*108];
   rnti_t n_rnti;
+  int e_rx_cand_idx = 0;
 
   for (int j=0;j<rel15->number_of_candidates;j++) {
     int CCEind = rel15->CCE[j];
@@ -889,13 +882,13 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
       const t_nrPolar_params *currentPtrDCI = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, dci_length, L, 1, &ue->polarList);
 
       LOG_D(PHY, "Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d, length %d, format %s\n",
-            j, rel15->number_of_candidates, CCEind, CCEind*9*6*2, L, dci_length,nr_dci_format_string[rel15->dci_format_options[k]]);
+            j, rel15->number_of_candidates, CCEind, e_rx_cand_idx, L, dci_length,nr_dci_format_string[rel15->dci_format_options[k]]);
 
-      nr_pdcch_unscrambling(&pdcch_vars->e_rx[CCEind*108], rel15->coreset.scrambling_rnti, L*108, rel15->coreset.pdcch_dmrs_scrambling_id, tmp_e);
+      nr_pdcch_unscrambling(&pdcch_vars->e_rx[e_rx_cand_idx], rel15->coreset.scrambling_rnti, L*108, rel15->coreset.pdcch_dmrs_scrambling_id, tmp_e);
 
 #ifdef DEBUG_DCI_DECODING
-      uint32_t * z = (uint32_t *) &pdcch_vars->e_rx[CCEind*108];
-      for (int index_z = 0; index_z < 96; index_z++){
+      uint32_t *z = (uint32_t *) &pdcch_vars->e_rx[e_rx_cand_idx];
+      for (int index_z = 0; index_z < L*6; index_z++){
         for (int i=0; i<9; i++) {
           LOG_D(PHY,"z[%d]=(%d,%d) \n", (9*index_z + i), *(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]));
         }
@@ -935,6 +928,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
         LOG_D(PHY,"(%i.%i) Decoded crc %x does not match rnti %x for DCI format %d\n", proc->frame_rx, proc->nr_slot_rx, crc, n_rnti, rel15->dci_format_options[k]);
       }
     }
+    e_rx_cand_idx += 9*L*6*2; //e_rx index for next candidate (L CCEs, 6 REGs per CCE and 9 REs per REG and 2 uint16_t per RE)
   }
   pdcch_vars->nb_search_space = 0;
   return(dci_ind->number_of_dcis);
