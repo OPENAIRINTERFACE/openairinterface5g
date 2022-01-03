@@ -976,7 +976,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
   return(peak_position);
 }
 
-int nr_adjust_pss_synch(PHY_VARS_NR_UE *ue, int *f_off) {
+int nr_adjust_pss_synch(PHY_VARS_NR_UE *ue) {
 
   int **rxdata = ue->common_vars.rxdata;
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
@@ -1030,36 +1030,8 @@ int nr_adjust_pss_synch(PHY_VARS_NR_UE *ue, int *f_off) {
     }
   }
 
-  // Fractional frequency offset computation according to Cross-correlation Synchronization Algorithm Using PSS
-  // Shoujun Huang, Yongtao Su, Ying He and Shan Tang, "Joint time and frequency offset estimation in LTE downlink,"
-  // 7th International Conference on Communications and Networking in China, 2012.
-
-  // Computing cross-correlation at peak on half the symbol size for first half of data
-  int64_t result1  = dot_product64((short*)primary_synchro_time_nr[Nid2],
-                                   (short*) &(rxdata[0][peak_position]),
-                                   frame_parms->ofdm_symbol_size>>1,
-                                   shift);
-
-  // Computing cross-correlation at peak on half the symbol size for data shifted by half symbol size
-  // as it is real and complex it is necessary to shift by a value equal to symbol size to obtain such shift
-  int64_t result2  = dot_product64((short*)primary_synchro_time_nr[Nid2]+(frame_parms->ofdm_symbol_size),
-                                   (short*) &(rxdata[0][peak_position])+frame_parms->ofdm_symbol_size,
-                                   frame_parms->ofdm_symbol_size>>1,
-                                   shift);
-
-  int64_t re1 = ((int*) &result1)[0];
-  int64_t re2 = ((int*) &result2)[0];
-  int64_t im1 = ((int*) &result1)[1];
-  int64_t im2 = ((int*) &result2)[1];
-
-  // Estimation of fractional frequency offset: angle[(result1)'*(result2)]/pi
-  double ffo_est = atan2(re1*im2-re2*im1,re1*re2+im1*im2)/M_PI;
-
-  // Computing absolute value of frequency offset
-  *f_off = ffo_est*frame_parms->subcarrier_spacing;
-
-  LOG_D(NR_PHY,"nr_adjust_pss_synch: peak_position %d, peak_position_diff %d, peak_value %d dB, avg %d dB, ffo %lf\n",
-        peak_position, peak_position_diff, dB_fixed64(peak_value),dB_fixed64(avg),ffo_est);
+  LOG_D(NR_PHY,"nr_adjust_pss_synch: peak_position %d, peak_position_diff %d, peak_value %d dB, avg %d dB\n",
+        peak_position, peak_position_diff, dB_fixed64(peak_value),dB_fixed64(avg));
 
   return peak_position_diff;
 }

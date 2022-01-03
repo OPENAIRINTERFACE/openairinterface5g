@@ -1648,7 +1648,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     if ((ue->decode_MIB == 1) && slot_pbch) {
 
-      nr_adjust_pss_synch(ue, (int *)&ue->common_vars.freq_offset);
+      nr_adjust_pss_synch(ue);
 
       LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
       nr_ue_pbch_procedures(gNB_id, ue, proc, 0);
