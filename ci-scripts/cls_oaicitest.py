@@ -62,7 +62,7 @@ import cls_ci_ueinfra		#class defining the multi Ue infrastrucure
 # Utility functions
 #-----------------------------------------------------------
 
-def GetPingTimeAnalysis(ping_log_file):
+def GetPingTimeAnalysis(ping_log_file,ping_rttavg_threshold):
 	#ping time values read from file
 	t_ping=[]
 	#ping stats (dictionary) to be returned by the function
@@ -92,6 +92,24 @@ def GetPingTimeAnalysis(ping_log_file):
 		ping_stat['mean_1']=stat.mean(t_ping)
 		ping_stat['median_1']=stat.median(t_ping)
 		ping_stat['max_1']=max(t_ping)
+
+		#plot ping over time and save png for artifacts
+		ticks = np.arange(0, len(t_ping), 1)
+		figure, axis = plt.subplots(figsize=(10, 10))
+		axis.plot(ticks,t_ping,marker='o')
+		axis.set_xlabel('Ping Events')
+		axis.set_ylabel("Ping RTT (in ms)")
+		axis.set_title(ping_log_file)
+		YMAX=20 #base scale
+		if max(t_ping) > YMAX:
+			y_max=max(t_ping)+1
+		else:
+			y_max=YMAX+1
+		plt.ylim(0,y_max)
+		th_label="Ping Fail Threshold="+ping_rttavg_threshold
+		plt.axhline(y=float(ping_rttavg_threshold), color='r', linestyle='-',label=th_label)
+		axis.legend()
+		plt.savefig(ping_log_file+'.png')
 
 		return ping_stat
 
@@ -1647,7 +1665,7 @@ class OaiCiTest():
 			#adding extra ping stats from local file
 			#ping_log_file variable is defined above in this function, depending on device/ue
 			logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
-			ping_stat=GetPingTimeAnalysis(ping_log_file)
+			ping_stat=GetPingTimeAnalysis(ping_log_file,self.ping_rttavg_threshold)
 			ping_stat_msg=''
 			if (ping_stat!=-1) and (len(ping_stat)!=0):
 				ping_stat_msg+='Ping stats before removing largest value : \n'
