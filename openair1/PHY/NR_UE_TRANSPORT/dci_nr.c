@@ -135,7 +135,6 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
   uint16_t index_z, index_llr;
   int coreset_interleaved = 0;
   int N_regs = coreset_nbr_rb*coreset_time_dur;
-  int B_rb = reg_bundle_size_L/coreset_time_dur; // nb of RBs occupied by each REG bundle
 
   if (reg_bundle_size_L != 0) { // interleaving will be done only if reg_bundle_size_L != 0
     coreset_interleaved = 1;
@@ -144,6 +143,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
     reg_bundle_size_L = 6;
   }
 
+  int B_rb = reg_bundle_size_L/coreset_time_dur; // nb of RBs occupied by each REG bundle
   int num_bundles_per_cce = 6/reg_bundle_size_L;
   int max_bundles = NR_MAX_PDCCH_AGG_LEVEL*num_bundles_per_cce;
   int f_bundle_j_list[max_bundles];
