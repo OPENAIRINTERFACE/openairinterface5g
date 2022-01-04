@@ -65,7 +65,7 @@ import numpy as np
 # Utility functions
 #-----------------------------------------------------------
 
-def GetPingTimeAnalysis(ping_log_file,ping_rttavg_threshold):
+def GetPingTimeAnalysis(RAN,ping_log_file,ping_rttavg_threshold):
 	#ping time values read from file
 	t_ping=[]
 	#ping stats (dictionary) to be returned by the function
@@ -89,12 +89,13 @@ def GetPingTimeAnalysis(ping_log_file,ping_rttavg_threshold):
 		max_loc=t_ping.index(max(t_ping))
 		ping_stat['max_loc']=max_loc
 		#remove it
-		t_ping.pop(max_loc)
+		t_ping_post=t_ping.copy()
+		t_ping_post.pop(max_loc)
 		#new stats after removing max value
-		ping_stat['min_1']=min(t_ping)
-		ping_stat['mean_1']=stat.mean(t_ping)
-		ping_stat['median_1']=stat.median(t_ping)
-		ping_stat['max_1']=max(t_ping)
+		ping_stat['min_1']=min(t_ping_post)
+		ping_stat['mean_1']=stat.mean(t_ping_post)
+		ping_stat['median_1']=stat.median(t_ping_post)
+		ping_stat['max_1']=max(t_ping_post)
 
 		#plot ping over time and save png for artifacts
 		ticks = np.arange(0, len(t_ping), 1)
@@ -118,7 +119,7 @@ def GetPingTimeAnalysis(ping_log_file,ping_rttavg_threshold):
 
 		#copy the png file already to enb to move it move it later into the artifacts
 		mySSH = sshconnection.SSHConnection()
-		mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, ping_log_file+'.png', self.eNBSourceCodePath + '/cmake_targets/')
+		mySSH.copyout(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, ping_log_file+'.png', RAN.eNBSourceCodePath + '/cmake_targets/')
 
 		return ping_stat
 
@@ -1559,7 +1560,7 @@ class OaiCiTest():
 		statusQueue.put(message)
 		lock.release()
 
-	def Ping_common(self, lock, UE_IPAddress, device_id, statusQueue,EPC, Module_UE):
+	def Ping_common(self, lock, UE_IPAddress, device_id, statusQueue,EPC, Module_UE,RAN):
 		try:
 			SSH = sshconnection.SSHConnection()
 			# Launch ping on the EPC side (true for ltebox and old open-air-cn)
@@ -1674,7 +1675,7 @@ class OaiCiTest():
 			#adding extra ping stats from local file
 			#ping_log_file variable is defined above in this function, depending on device/ue
 			logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
-			ping_stat=GetPingTimeAnalysis(ping_log_file,self.ping_rttavg_threshold)
+			ping_stat=GetPingTimeAnalysis(RAN,ping_log_file,self.ping_rttavg_threshold)
 			ping_stat_msg=''
 			if (ping_stat!=-1) and (len(ping_stat)!=0):
 				ping_stat_msg+='Ping stats before removing largest value : \n'
@@ -1864,7 +1865,7 @@ class OaiCiTest():
 				device_id = self.UEDevices[i]
 			else:
 				device_id = Module_UE.ID + "-" + Module_UE.Kind 
-			p = Process(target = self.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,EPC,Module_UE,))
+			p = Process(target = self.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,EPC,Module_UE,RAN,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
