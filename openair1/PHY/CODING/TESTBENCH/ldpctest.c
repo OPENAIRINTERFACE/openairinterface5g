@@ -30,6 +30,7 @@
 #include "openair1/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.h"
 #include "openair1/PHY/defs_nr_common.h"
 #include "coding_unitary_defs.h"
+#include "common/utils/LOG/log.h"
 
 #define MAX_BLOCK_LENGTH 8448
 
@@ -78,9 +79,12 @@ char quantize8bit(double D,double x)
 }
 
 typedef struct {
-  double n_iter_mean;
-  double n_iter_std;
-  int n_iter_max;
+  double n_iter_mean[100];
+  double n_iter_std[100];
+  int n_iter_max[100];
+  double snr[100];
+  double ber[100];
+  double bler[100];
 } n_iter_stats_t;
 
 nrLDPC_encoderfunc_t encoder_orig;
@@ -101,8 +105,8 @@ int test_ldpc(short No_iteration,
               unsigned int *crc_misses,
               time_stats_t *time_optim,
               time_stats_t *time_decoder,
-              n_iter_stats_t *dec_iter
-              )
+              n_iter_stats_t *dec_iter,
+              int nsnr)
 {
   //clock initiate
   //time_stats_t time,time_optim,tinput,tprep,tparity,toutput, time_decoder;
@@ -280,6 +284,15 @@ int test_ldpc(short No_iteration,
   //  printf("puncture:%d\n",no_punctured_columns);
   removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length/((float)nom_rate/(float)denom_rate));
   encoder_implemparams_t impp=INIT0_LDPCIMPLEMPARAMS;
+
+  // CRC attachement
+  for (j=0; j<n_segments; j++) {
+    int crc = 0;
+    crc = crc24b(test_input[j],block_length-24)>>8;
+    test_input[j][(block_length-24)>>3] = ((uint8_t*)&crc)[2];
+    test_input[j][1+((block_length-24)>>3)] = ((uint8_t*)&crc)[1];
+    test_input[j][2+((block_length-24)>>3)] = ((uint8_t*)&crc)[0];
+  }
  
   impp.gen_code=1;
   if (ntrials==0)
@@ -402,7 +415,7 @@ int test_ldpc(short No_iteration,
 
       //count errors
       for(j=0;j<n_segments;j++) {
-      for (i=0; i<block_length>>3; i++)
+      for (i=0; i<(block_length-24)>>3; i++)
       {
           //printf("block_length>>3: %d \n",block_length>>3);
          /// printf("i: %d \n",i);
@@ -416,7 +429,7 @@ int test_ldpc(short No_iteration,
         }
       }
 
-      for (i=0; i<block_length; i++)
+      for (i=0; i<block_length-24; i++)
         {
           estimated_output_bit[j][i] = (estimated_output[j][i/8]&(1<<(i&7)))>>(i&7);
           test_input_bit[i] = (test_input[j][i/8]&(1<<(i&7)))>>(i&7); // Further correct for multiple segments
@@ -446,9 +459,9 @@ int test_ldpc(short No_iteration,
   }
 
 
-  dec_iter->n_iter_mean = n_iter_mean/(double)ntrials/(double)n_segments - 1;
-  dec_iter->n_iter_std = sqrt(n_iter_std/(double)ntrials/(double)n_segments - pow(n_iter_mean/(double)ntrials/(double)n_segments - 1,2));
-  dec_iter->n_iter_max = n_iter_max -1;
+  dec_iter->n_iter_mean[nsnr] = n_iter_mean/(double)ntrials/(double)n_segments - 1;
+  dec_iter->n_iter_std[nsnr] = sqrt(n_iter_std/(double)ntrials/(double)n_segments - pow(n_iter_mean/(double)ntrials/(double)n_segments - 1,2));
+  dec_iter->n_iter_max[nsnr] = n_iter_max -1;
 
   *errors_bit_uncoded = *errors_bit_uncoded / (double)((Kb+nrows-no_punctured_columns-2) * Zc-removed_bit);
 
@@ -515,7 +528,7 @@ int main(int argc, char *argv[])
   int test_uncoded= 0;
 
   time_stats_t time_optim[10], time_decoder[10];
-  n_iter_stats_t dec_iter[3];
+  n_iter_stats_t dec_iter;
 
   short BG=0,Zc,Kb=0;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
@@ -682,14 +695,18 @@ int main(int argc, char *argv[])
                                 &crc_misses,
                                 time_optim,
                                 time_decoder,
-                                dec_iter);
+                                &dec_iter,
+                                i);
 
-    printf("SNR %f, BLER %f (%u/%d)\n", SNR, (float)decoded_errors[i]/(float)n_trials, decoded_errors[i], n_trials);
-    printf("SNR %f, BER %f (%u/%d)\n", SNR, (float)errors_bit/(float)n_trials/(float)block_length/(double)n_segments, decoded_errors[i], n_trials);
+    dec_iter.snr[i] = SNR;
+    dec_iter.ber[i] = (float)errors_bit/(float)n_trials/(float)block_length/(double)n_segments;
+    dec_iter.bler[i] = (float)decoded_errors[i]/(float)n_trials;
+    printf("SNR %f, BLER %f (%u/%d)\n", SNR, dec_iter.bler[i], decoded_errors[i], n_trials);
+    printf("SNR %f, BER %f (%u/%d)\n", SNR, dec_iter.ber[i], decoded_errors[i], n_trials);
     printf("SNR %f, Uncoded BER %f (%u/%d)\n",SNR, errors_bit_uncoded/(float)n_trials/(double)n_segments, decoded_errors[i], n_trials);
-    printf("SNR %f, Mean iterations: %f\n",SNR, dec_iter->n_iter_mean);
-    printf("SNR %f, Std iterations: %f\n",SNR, dec_iter->n_iter_std);
-    printf("SNR %f, Max iterations: %d\n",SNR, dec_iter->n_iter_max);
+    printf("SNR %f, Mean iterations: %f\n",SNR, dec_iter.n_iter_mean[i]);
+    printf("SNR %f, Std iterations: %f\n",SNR, dec_iter.n_iter_std[i]);
+    printf("SNR %f, Max iterations: %d\n",SNR, dec_iter.n_iter_max[i]);
     printf("\n");
     printf("Encoding time mean: %15.3f us\n",(double)time_optim->diff/time_optim->trials/1000.0/get_cpu_freq_GHz());
     printf("Encoding time std: %15.3f us\n",sqrt((double)time_optim->diff_square/time_optim->trials/pow(1000,2)/pow(get_cpu_freq_GHz(),2)-pow((double)time_optim->diff/time_optim->trials/1000.0/get_cpu_freq_GHz(),2)));
@@ -710,16 +727,20 @@ int main(int argc, char *argv[])
     		(double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz(),
     		sqrt((double)time_decoder->diff_square/time_decoder->trials/pow(1000,2)/pow(get_cpu_freq_GHz(),2)-pow((double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz(),2)),
     		(double)time_decoder->max/1000.0/get_cpu_freq_GHz(),
-    		dec_iter->n_iter_mean,
-    		dec_iter->n_iter_std,
-    		dec_iter->n_iter_max
+    		dec_iter.n_iter_mean[i],
+    		dec_iter.n_iter_std[i],
+    		dec_iter.n_iter_max[i]
     		);
 
-    if (decoded_errors[i] == 0) break;
-
     i=i+1;
+    if (decoded_errors[i-1] == 0) break;
+
   }
   fclose(fd);
+  LOG_M("ldpctestStats.m","SNR",&dec_iter.snr[0],i,1,7);
+  LOG_MM("ldpctestStats.m","BLER",&dec_iter.bler[0],i,1,7);
+  LOG_MM("ldpctestStats.m","BER",&dec_iter.ber[0],i,1,7);
+  LOG_MM("ldpctestStats.m","meanIter",&dec_iter.n_iter_mean[0],i,1,7);
 
   return(0);
 }

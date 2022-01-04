@@ -105,7 +105,7 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint16_t N_RB_UL, uint
 {
 
   NR_gNB_ULSCH_t *ulsch;
-  uint8_t i,r;
+  uint8_t exit_flag = 0,i,r;
   uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
 
   if (N_RB_UL != 273) {
@@ -167,9 +167,13 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint16_t N_RB_UL, uint
         exit_flag=1;
       }
     }
+
+    if (exit_flag==0)
+      return(ulsch);
   }
-  
-  return(ulsch);
+  printf("new_gNB_ulsch with size %zu: exit_flag = %hhu\n",sizeof(NR_UL_gNB_HARQ_t), exit_flag);
+  free_gNB_ulsch(&ulsch,N_RB_UL);
+  return(NULL);
 }
 
 void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
