@@ -57,6 +57,7 @@ import sshconnection
 import cls_module_ue
 import cls_ci_ueinfra		#class defining the multi Ue infrastrucure
 
+logging.getLogger("matplotlib").setLevel(logging.WARNING)
 import matplotlib.pyplot as plt
 import numpy as np
 
