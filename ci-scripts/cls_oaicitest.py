@@ -103,16 +103,22 @@ def GetPingTimeAnalysis(ping_log_file,ping_rttavg_threshold):
 		axis.set_xlabel('Ping Events')
 		axis.set_ylabel("Ping RTT (in ms)")
 		axis.set_title(ping_log_file)
+		axis.set_xticks(ticks)
+		axis.set_xticklabels([])
 		YMAX=20 #base scale
 		if max(t_ping) > YMAX:
 			y_max=max(t_ping)+1
 		else:
 			y_max=YMAX+1
 		plt.ylim(0,y_max)
-		th_label="Ping Fail Threshold="+ping_rttavg_threshold
+		th_label="AVG Ping Fail Threshold="+ping_rttavg_threshold
 		plt.axhline(y=float(ping_rttavg_threshold), color='r', linestyle='-',label=th_label)
 		axis.legend()
 		plt.savefig(ping_log_file+'.png')
+
+		#copy the png file already to enb to move it move it later into the artifacts
+		mySSH = sshconnection.SSHConnection()
+		mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, ping_log_file+'.png', self.eNBSourceCodePath + '/cmake_targets/')
 
 		return ping_stat
 
