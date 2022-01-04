@@ -655,13 +655,6 @@ int main(int argc, char **argv)
 		  	  	  	  	    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
   printf("txlev %d (%f)\n",txlev,10*log10(txlev));*/
 
-
-  for (i=0; i<frame_length_complex_samples; i++) {
-    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-      r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-      r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
-    }
-  }
   
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
@@ -669,6 +662,14 @@ int main(int argc, char **argv)
     n_errors_payload = 0;
 
     for (trial=0; trial<n_trials; trial++) {
+
+      for (i=0; i<frame_length_complex_samples; i++) {
+        for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+          r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
+          r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+        }
+      }
+
       // multipath channel
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
@@ -697,13 +698,11 @@ int main(int argc, char **argv)
            0.0,  // IQ imbalance (dB),
 	   0.0); // IQ phase imbalance (rad)
 
-   
       for (i=0; i<frame_length_complex_samples; i++) {
-	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-	  
-	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	}
+        for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+          ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+          ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+        }
       }
 
       if (n_trials==1) {
