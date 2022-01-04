@@ -34,7 +34,7 @@
     {"offset-divisor",           CONFIG_HLP_OFFSET_DIV,  0,               uptr:(uint32_t *)&nrUE_params.ofdm_offset_divisor,    defuintval:UINT_MAX,           TYPE_UINT32,  0}, \
     {"nr-dlsch-demod-shift",     CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&nr_dlsch_demod_shift,    defintval:0,     TYPE_INT,    0}, \
     {"V" ,                       CONFIG_HLP_VCD,         PARAMFLAG_BOOL,  iptr:&vcdflag,                      defintval:0,     TYPE_INT,    0}, \
-    {"uecap_path",               CONFIG_HLP_UECAP_PATH,  0,               strptr:(char **)&uecap_path,        defstrval:"./",  TYPE_STRING, 0}, \
+    {"uecap_file",               CONFIG_HLP_UECAP_FILE,  0,               strptr:(char **)&uecap_file,        defstrval:"./",  TYPE_STRING, 0}, \
     {"rrc_config_path",          CONFIG_HLP_RRC_CFG_PATH,0,               strptr:(char **)&rrc_config_path,   defstrval:"./",  TYPE_STRING, 0}  \
 }
 

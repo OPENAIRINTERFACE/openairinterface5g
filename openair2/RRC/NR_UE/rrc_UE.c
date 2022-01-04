@@ -410,7 +410,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
 
 }
 
-NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_path, char* rrc_config_path){
+NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_path){
   int nr_ue;
   if(NB_NR_UE_INST > 0){
     NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)malloc(NB_NR_UE_INST * sizeof(NR_UE_RRC_INST_t));
@@ -485,7 +485,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_path, char* rrc_config_
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].CSI_ReportConfig_list, NR_maxNrofCSI_ReportConfigurations);
     }
 
-    NR_UE_rrc_inst->uecap_path = uecap_path;
+    NR_UE_rrc_inst->uecap_file = uecap_file;
 
     if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1) {
       // read in files for RRCReconfiguration and RBconfig
@@ -2634,13 +2634,6 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
         ctxt_pP->frame,
         gNB_index);
 
-  FILE *f = NULL;
-  char *file_path = NR_UE_rrc_inst[ctxt_pP->module_id].uecap_path;
-  if (file_path) {
-    sprintf(UE_NR_Capability_xer_fname,"%s/uecap.xml",file_path);
-    f = fopen(UE_NR_Capability_xer_fname, "r");
-  }
-
   memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
   memset((void *)&ue_CapabilityRAT_Container,0,sizeof(NR_UE_CapabilityRAT_Container_t));
   ul_dcch_msg.message.present            = NR_UL_DCCH_MessageType_PR_c1;
@@ -2650,6 +2643,13 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   ul_dcch_msg.message.choice.c1->choice.ueCapabilityInformation->rrc_TransactionIdentifier = UECapabilityEnquiry->rrc_TransactionIdentifier;
   ue_CapabilityRAT_Container.rat_Type = NR_RAT_Type_nr;
   NR_UE_NR_Capability_t* UE_Capability_nr = NULL;
+
+  FILE *f = NULL;
+  char *file_path = NR_UE_rrc_inst[ctxt_pP->module_id].uecap_file;
+  if (file_path) {
+    sprintf(UE_NR_Capability_xer_fname,"%s",file_path);
+    f = fopen(UE_NR_Capability_xer_fname, "r");
+  }
 
   if(f){
     size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
