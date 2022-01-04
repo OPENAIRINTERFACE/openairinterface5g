@@ -24,7 +24,7 @@
 	<htmlTabRef>TEST-NSA-FR1-TM2-Tab1</htmlTabRef>
 	<htmlTabName>NSA 2x2 Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>5</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  030000
  040000

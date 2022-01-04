@@ -21,17 +21,19 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-SA-FR1-Tab1</htmlTabRef>
-	<htmlTabName>SA Ping DL UL with OAI NR UE (N310)</htmlTabName>
+	<htmlTabRef>TEST-SA-FR1-Tab3</htmlTabRef>
+	<htmlTabName>SA Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  040000
  000002
  010000
- 000002
+ 000001
  050000
  050001
+ 070000
+ 070001
  000001
  010002
  080000
@@ -39,22 +41,24 @@
 	<TestCaseExclusionList></TestCaseExclusionList>
 
 	<testCase id="010000">
-		<class>Initialize_OAI_UE</class>
-		<desc>Initialize OAI UE (N310)</desc>
-		<air_interface>nr</air_interface>
-		<Initialize_OAI_UE_args>--sa -O ../../../ci-scripts/conf_files/ue.sa.conf --usrp-args "mgmt_addr=192.168.18.16,second_addr=192.168.10.2"  --numerology 1 -r 106 --band 78 -C 3319680000 --nokrnmod 1 --ue-txgain 0 --ue-rxgain 70 --ue-fo-compensation </Initialize_OAI_UE_args>
+		<class>Initialize_UE</class>
+		<desc>Initialize Quectel</desc>
+		<id>nrmodule2_quectel</id>
+		<UE_Trace>yes</UE_Trace>
 	</testCase>
 
+
 	<testCase id="010002">
-		<class>Terminate_OAI_UE</class>
-		<desc>Terminate OAI UE</desc>
+		<class>Terminate_UE</class>
+		<desc>Terminate Quectel</desc>
+		<id>nrmodule2_quectel</id>
 	</testCase>
 
 
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf --sa --usrp-tx-thread-config 1</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.162PRB.2x2.usrpn310.conf --sa -q --usrp-tx-thread-config 1</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>nr</air_interface>
@@ -78,22 +82,24 @@
 
 	<testCase id="050000">
 		<class>Ping</class>
-		<desc>Ping from CN to UE: 20pings in 20sec</desc>
+		<desc>Ping: 20pings in 20sec</desc>
+		<id>nrmodule2_quectel</id>
 		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="050001">
 		<class>Ping</class>
-		<desc>Ping from CN to UE: 100pings in 20sec</desc>
-		<ping_args>-c 100 -i 0.2</ping_args>
+		<desc>Ping: 100pings in 20sec</desc>
+		<id>nrmodule2_quectel</id>
+		<ping_args>-c 100 -i 0,2</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="070000">
 		<class>Iperf</class>
-		<desc>iperf (DL/60Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 60M -t 60</iperf_args>
+		<desc>iperf (DL/140Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 140M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
