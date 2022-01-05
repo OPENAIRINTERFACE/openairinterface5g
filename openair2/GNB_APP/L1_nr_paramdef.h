@@ -46,7 +46,7 @@
 #define CONFIG_STRING_L1_LOCAL_N_PORTD                     "local_n_portd"
 #define CONFIG_STRING_L1_REMOTE_N_PORTD                    "remote_n_portd"
 #define CONFIG_STRING_L1_TRANSPORT_N_PREFERENCE            "tr_n_preference"
-#define CONFIG_STRING_L1_THREAD_POOL_SIZE                  "thread_pool_size"
+#define CONFIG_STRING_L1_PUSCH_PROC_THREADS                "pusch_proc_threads"
 #define CONFIG_STRING_L1_OFDM_OFFSET_DIVISOR               "ofdm_offset_divisor"
 #define CONFIG_STRING_L1_PUCCH0_DTX_THRESHOLD              "pucch0_dtx_threshold"
 #define CONFIG_STRING_L1_PRACH_DTX_THRESHOLD               "prach_dtx_threshold"
@@ -65,8 +65,8 @@
 {CONFIG_STRING_L1_REMOTE_N_PORTC,                    NULL,      0,         uptr:NULL,           defintval:50030,           TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_LOCAL_N_PORTD,                     NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_REMOTE_N_PORTD,                    NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_THREAD_POOL_SIZE,                  NULL,      0,         uptr:NULL,           defintval:4,               TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_OFDM_OFFSET_DIVISOR,               NULL,      0,         uptr:NULL,           defuintval:8,              TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_PUSCH_PROC_THREADS,                NULL,      0,         uptr:NULL,           defintval:3,               TYPE_UINT,     0}, \
+{CONFIG_STRING_L1_OFDM_OFFSET_DIVISOR,               NULL,      0,         uptr:NULL,           defuintval:8,              TYPE_UINT,     0}, \
 {CONFIG_STRING_L1_PUCCH0_DTX_THRESHOLD,              NULL,      0,         uptr:NULL,           defintval:100,             TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PRACH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:150,             TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PUSCH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:50,              TYPE_UINT,     0}          \
@@ -80,7 +80,7 @@
 #define L1_REMOTE_N_PORTC_IDX                              6
 #define L1_LOCAL_N_PORTD_IDX                               7
 #define L1_REMOTE_N_PORTD_IDX                              8
-#define L1_THREAD_POOL_SIZE                                9
+#define L1_PUSCH_PROC_THREADS                              9
 #define L1_OFDM_OFFSET_DIVISOR                             10
 #define L1_PUCCH0_DTX_THRESHOLD                            11
 #define L1_PRACH_DTX_THRESHOLD                             12

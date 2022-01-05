@@ -400,8 +400,8 @@ void init_gNB_Tpool(int inst) {
   // ULSCH decoding threadpool
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-  LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->thread_pool_size,numCPU);
-  int threadCnt = min(numCPU, gNB->thread_pool_size);
+  LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->pusch_proc_threads,numCPU);
+  int threadCnt = min(numCPU, gNB->pusch_proc_threads);
   if (threadCnt < 2) LOG_E(PHY,"Number of threads for gNB should be more than 1. Allocated only %d\n",threadCnt);
   char pool[80];
   sprintf(pool,"-1");
