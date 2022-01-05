@@ -3434,6 +3434,41 @@ class OaiCiTest():
 					CONTAINERS.UndeployObject(HTML,RAN)
 		RAN.prematureExit=True
 
+	#this function is called only if eNB/gNB fails to start
+	#RH to be re-factored
+	def AutoTerminateeNB(self,HTML,RAN,EPC,CONTAINERS):
+		if (RAN.Initialize_eNB_args != ''):
+			self.testCase_id = 'AUTO-KILL-RAN'
+			HTML.testCase_id = self.testCase_id
+			self.desc = 'Automatic Termination of all RAN nodes'
+			HTML.desc = self.desc
+			self.ShowTestID()
+			#terminate all RAN nodes eNB/gNB/OCP
+			for instance in range(0, len(RAN.air_interface)):
+				if RAN.air_interface[instance]!='':
+					logging.debug('Auto Termination of Instance ' + str(instance) + ' : ' + RAN.air_interface[instance])
+					RAN.eNB_instance=instance
+					RAN.TerminateeNB(HTML,EPC)
+		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
+			self.testCase_id = 'AUTO-KILL-flexran-ctl'
+			HTML.testCase_id = self.testCase_id
+			self.desc = 'Automatic Termination of FlexRan CTL'
+			HTML.desc = self.desc
+			self.ShowTestID()
+			self.TerminateFlexranCtrl(HTML,RAN,EPC)
+		if CONTAINERS.yamlPath[0] != '':
+			self.testCase_id = 'AUTO-KILL-CONTAINERS'
+			HTML.testCase_id = self.testCase_id
+			self.desc = 'Automatic Termination of all RAN containers'
+			HTML.desc = self.desc
+			self.ShowTestID()
+			for instance in range(0, len(CONTAINERS.yamlPath)):
+				if CONTAINERS.yamlPath[instance]!='':
+					CONTAINERS.eNB_instance=instance
+					CONTAINERS.UndeployObject(HTML,RAN)
+		RAN.prematureExit=True
+
+
 	def IdleSleep(self,HTML):
 		time.sleep(self.idle_sleep_time)
 		HTML.CreateHtmlTestRow(str(self.idle_sleep_time) + ' sec', 'OK', CONST.ALL_PROCESSES_OK)
